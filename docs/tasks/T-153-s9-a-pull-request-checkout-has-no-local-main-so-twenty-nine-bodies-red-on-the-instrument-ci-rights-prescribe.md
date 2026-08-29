@@ -341,3 +341,290 @@ under-claiming half of the disagreement — reversible by whoever
 integrates, and wrong only in costing one stamp — while `done` on an
 unmerged branch would assert something no tree carries. The seat that
 merges owns the flip.
+
+## Verdicts
+
+2026-08-30 — verifier claude-opus-5@subagent (independent hand, two-phase
+blind: the card was read at its BASE ref `a533a4d` down to *What it would
+take*, and the code diff read, before the notes or any executor text):
+**APPROVED WITH ONE ASSIGNED CORRECTION.** The mechanism is right, the
+safety property is proven rather than argued, the three checkout shapes
+reproduce on fixtures this seat built from scratch, and the sweep's
+one-site answer is independently confirmed. The correction is to the
+NARROWED regex's accounting claim, which this seat measured false. Three
+further findings are routed as cards and none of them blocks. Every
+figure below is this seat's own, at the ref named beside it.
+
+### The owed battery — lane worktree, tip `960555d`, exits unpiped
+
+| command | from | exit | figures |
+|---|---|---|---|
+| `npm run typecheck` | tools/e2e | **0** | — |
+| `npm run lint:tokens -- --selftest` | tools/e2e | **0** | — |
+| `npm run lint:tokens` | tools/e2e | **0** | TOKEN 151 files, CONTROL 869 tracked text files |
+| `npm run lint:docs` | tools/e2e | **0** | 22 derived readers across 4 suites, 0 frontmatter issues, 4 budgets held |
+| `npm test` (`NPUTER_E2E_PORT=14533`) | tools/e2e | **0** | **283 passed**, 2.8m |
+| `npx vitest run` | lib/parser | **0** | **314 passed** / 15 files |
+| `npm run build` | lib/parser | **0** | — |
+| `npm run build` | app | **0** | — |
+| `npm test` | app | **0** | **1013 passed** / 47 files |
+| `npm run capabilities:check` | tools/e2e | **1** | STALE, committed 21992 to fresh 22190 bytes |
+
+`lsof -nP -iTCP:14533 -sTCP:LISTEN` returned zero rows immediately before
+the lane bound it. **The capabilities staleness is EXACTLY the two new
+behaviours and nothing else** — regenerated, diffed, restored: two spec
+sentences added under `## brief` and the census line 281 to 283, `3
+insertions / 1 deletion`, no other hunk. `docs/CAPABILITIES.md` restored,
+`shasum -a 256` back to
+`fe5fac7d220b7f5aa8004a5df0fb18a38da8234abf54eb00b5dae6435b920437` with
+`git status --porcelain` empty. This is `T-153-s8`'s class and the
+integrator's regen; the executor's routing of it is correct.
+
+**No cargo was run and none is owed to this seat**, derivation confirmed
+rather than accepted: GRAPH REGEN's trigger DOES fire (`brief.spec.ts` is
+a `.ts` outside `docs/`), and `.nputerignore` at `960555d` excludes
+`docs/` and `tools/` — so a diff confined to those two trees matches the
+trigger and cannot move the graph by construction, which is that bullet's
+own "deliberately wider than the walk" clause with its two worked
+examples. The regen and the hand `index --check` belong to the integrator
+at the checkpoint; CI run `33275876129` step 18 is green on the merged
+tree independently.
+
+### THE RESOLVER — attacked on fixtures this seat built
+
+**(a) The safety argument, PROVEN and not read.** The identity claim is
+that on a checkout holding the local branch the resolved revision is the
+revision the module always spent. Measured two ways at `960555d`. By
+construction: candidate one is the bare name, so `rev === branch` and the
+argv handed to `git log` is byte-identical to the pre-fix argv. By
+experiment: the base module extracted into a detached worktree at
+`a533a4d` and the tip module were both run against the same clone, and
+the two briefs diff to **one line** with the live clocks normalised —
+
+    27a28
+    >   integration ref this checkout resolves: main  <- read <CLOCK> ; git rev-parse --verify, …
+
+143 lines against 144. Every figure, every provenance string and the
+`git log --first-parent --format=%H %s main` spelling are character for
+character unchanged.
+
+**(b) Three shapes, built fresh** — clones of this repository rather than
+the executor's `git archive` plus `git init` fixtures. Driven with
+`brief.mjs --task T-133 --root <shape>`:
+
+| shape | how built | exit | resolved | tip |
+|---|---|---|---|---|
+| local | `git clone` of the main checkout | **0** | `main` | `129e3c92…` |
+| detached | clone, `checkout --detach`, `branch -D main` | **0** | `origin/main` | `129e3c92…`, the SAME commit; full brief assembles, 144 lines |
+| orphan | the same plus `remote remove origin` | **3** | none | no base commit printed |
+
+The orphan's stderr names all three spellings, says *"will not substitute
+HEAD"*, and contains no `ambiguous argument`. The pre-fix module against
+those same two non-local shapes: exit **3** with `fatal: ambiguous
+argument 'main': unknown revision or path not in the working tree` on
+stderr — the card's own repro, on this seat's fixtures.
+
+**A FOURTH SHAPE THE SUITE DOES NOT BUILD, because the property deserves
+it.** A clone with one extra LOCAL commit: local `main` `dbabd129…`,
+`origin/main` `129e3c92…`, and the brief answers `integration ref this
+checkout resolves: main` at the LOCAL tip. That is the doc comment's real
+claim — *"a remote-tracking ref can sit at a DIFFERENT commit"* — and it
+holds. It is routed as `T-153-s16` arm four because nothing in the suite
+drives it: the shipped `local` fixture has no remote at all, so its
+positive control passes for a reason unrelated to preference order.
+
+**(c) The sweep, run independently and CONFIRMED.** Method deliberately
+different from the executor's: every `git` subcommand argument array
+under `tools/e2e/{scripts,tests}`, every use of `integrationBranch`,
+`integrationRef` and `integrationLog`, and every literal `"main"`.
+Exactly ONE site spends a branch NAME as a revision — `context()`'s
+`integrationLog` read, the one fixed. `card-figures.mjs` spends the
+spelling only into a provenance STRING and never into a git argv, so the
+card's "two call sites" is wrong and the notes' correction of it is
+right. Everything else spends `HEAD`, hashes parsed out of
+`docs/CONVENTIONS.md` (`range-rule.mjs`), `${sinceHash}..HEAD`
+(`health-bands.mjs`), or no revision at all. The two `"main"` literals in
+`refShapes()` are a fixture's own `--initial-branch` and its deletion.
+**No second spending site exists**; the REJECTED-level condition is not
+met.
+
+### THE NARROWED REGEX — two-sided, and the one thing that is wrong
+
+**The inherited red is real.** Reproduced against the UNCHANGED base
+module pointed at this worktree: 140 stamped lines, `\bmain\b` matches
+**5**, violations **2** — `T-153-s9 touches:` and `T-153-s9 board
+status:`, both carrying this card's own file name as a tree-stamped
+provenance. Repairing it in fence is correct.
+
+**Positive side — the narrowing still catches a real revision spend.**
+Producer-side plant in a detached scratch worktree at `960555d`: one
+extra row-4 line with a CONSTANT value, so the earlier `changed` loop
+cannot claim it, and a provenance `git rev-list -n1 <branch>` stamped
+`tree()`. `tests/brief.spec.ts` gives **1 failed / 24 passed**, dying at
+line 408, `for (const line of refReads) expect(line).toContain("  <-
+read ")`. Not vacuous.
+
+**Negative side — it does not fire on this card's file name.** At the
+tip: 141 stamped lines, `\bmain\b` **6**, token match **4** (all LIVE),
+dropped **2** (both TREE). Body green.
+
+**AND THE ASSIGNED CORRECTION.** The diff claims, in the spec comment and
+again in the notes, that the dropped class is accounted for *"so a real
+violation cannot hide in the difference between the two patterns"*. **A
+real violation does hide there, and this seat planted one.** The same
+plant with the provenance `git rev-parse <branch>^{commit}` — a genuine
+revision spend, TREE-stamped: the token match misses it, because `^` is
+in neither `[\s,]` nor the end anchor; the `dropped` loop then asserts it
+is a TREE fact, which it is; and the suite reports **25 passed**. The
+mutant SURVIVES. Under `\bmain\b` it would have redded. The three
+patterns over that same planted tree:
+
+| pattern | matches | violations |
+|---|---|---|
+| `\bmain\b`, pre-repair | 7 | **3** — the plant plus the two false file-name hits |
+| shipped, `(?=[\s,]` or end) | 4 | **0** |
+| proposed, `(?=[\s,^~:]`, `@{` or end) | 5 | **1** — the plant, and only it |
+
+**THE CORRECTION, named precisely.** In
+`tools/e2e/tests/brief.spec.ts`, body *"a figure read from the MOVING
+integration ref is a LIVE fact — two reads at ONE ref disagree"*, in the
+local `spendsBranch` predicate, widen the lookahead to admit the
+revision-suffix characters — `[\\s,]` becomes `[\\s,^~:]`, with `@\\{`
+added as an alternative before the end anchor — so `main^{commit}`,
+`main~3`, `main@{u}` and `main:path` are spends while a hyphenated
+file-name fragment still is not. **Validated by this seat before
+assigning it**, in the drill worktree: with the plant it reds at line 408
+(**1 failed / 24 passed**); without the plant `tests/brief.spec.ts` is
+**25 passed**; `npm run typecheck` exit 0 and `npm run lint:tokens` exit 0
+with the same 151/869 corpora. **The alternative discharge is equally
+acceptable and is the integrator's call**: keep the pattern and correct
+the two sentences instead, since a stated residual is not a defect and an
+overstated guard is. What may not stand is the pair as it is — a keeper
+weaker than the claim written beside it is the shape
+`docs/NORTH_STAR.md`'s band calls a stop-the-line defect.
+
+### THE DRILL — five mutants of this seat's own, in a detached scratch worktree
+
+Work committed first (`960555d`), worktree detached at that commit, one
+stem derived from the lane for the worktree, the driver and every
+artefact, every mutation read back with `git diff` before the run,
+producer side only, each restored and sha256-proved.
+
+| # | mutant | result |
+|---|---|---|
+| 1 | `context()` spends `spellings.integrationBranch` again — the resolver exported but unwired | **KILLED, 1 failed / 24 passed.** The whole-brief body only, dying with `fatal: ambiguous argument 'main'` naming the detached fixture. The unit body survives, so the failing-body count is ONE and the whole-brief body is non-duplicative in T-072-s2's sense |
+| 2 | candidate order reversed | **KILLED, 1 failed / 24 passed** — the unit body's first-candidate assertion, by its safety message. The whole-brief body does NOT die here, its `local` fixture having no remote, which is `T-153-s16` arm four |
+| 3 | the `throw` replaced by a `HEAD` substitution | **KILLED, 2 failed / 23 passed** — the unit body's `toThrow` and the whole-brief body's orphan `CANNOT_RUN` |
+| 4 | **third candidate deleted** — this seat's own, not among the executor's eight | **SURVIVED, 25 passed** — POISON SHAPE FIVE. Routed as `T-153-s16` |
+| 5 | a constant-valued line whose provenance spends the branch as a revision, TREE-stamped — this seat's own | **KILLED at line 408** as the narrowing's positive control; its `^{commit}` variant **SURVIVED**, which is the assigned correction above |
+
+Restorations: `dispatch-brief.mjs` to
+`f13ac1a2c95c251d7d3574551dc74082c3d209d24e9a3b3bb1af49730a0a393a`,
+`card-figures.mjs` to
+`eed3d1df54a2c1ef11f2052bde7ec3d6e66d7c558469e6c349835654da44324e`,
+`brief.spec.ts` to
+`d2032e1cfbf11e5d311210efc90f5e57c17a8c3994d2b1e0ff07c0e07ef70844`, each
+matching `git show HEAD:<path>` with `git status --porcelain` empty over
+tracked paths. The first two agree with the executor's own figures, which
+is an independent check on those two files.
+
+### SECURITY SWEEP — no findings
+
+No dependency added; the diff touches three files and no manifest. Every
+new git call goes through `spawnSync` or `execFileSync` with an ARGV
+array and no shell, so the branch spelling cannot inject a command. The
+one residual is named rather than passed over: neither the probe nor the
+read puts a `--` before the revision, and neither would survive a
+spelling that begins with a dash; the value is parsed out of a tracked
+governing document rather than taken from any caller, so this is a shape
+and not a live hole. The fixture's `FIXTURE_GIT_ENV` spreads
+`process.env` whole, which is `T-153-s4`'s class and belongs to a test
+fixture rather than to the runner's built environment — ADR-003 is
+untouched. Temp trees are `mkdtempSync` under `os.tmpdir()` and removed
+in a `finally`. No secret, no key, no new endpoint, no authz surface.
+
+### ARCHITECTURE AND ADJACENT FEATURES
+
+Nothing in `docs/ARCHITECTURE.md` moves: `tools/e2e` is dev tooling under
+no component and `.nputerignore`d out of the map, and no interface in
+that file mentions the brief's rows. The new row-4 line is emitted INSIDE
+row 4 rather than as a fifth row, so `brief.spec.ts`'s
+row-set-from-the-role-file derivation is untouched — confirmed by the
+full lane at 283. The `card-figures` split, the figure TEXT keeping the
+branch while the provenance names the ref, is the right way round and is
+the only way a `card:` stamp can verify identically on both event types;
+the executor's mutants 7 and 8 pin both halves.
+
+### CI EVIDENCE — read per body, read-only
+
+- **`33272976860`** (pull_request, head `aadf874`, pre-fix): **29 failed
+  / 252 passed**; body `brief.spec.ts:313` dies with `Command failed: git
+  -C /home/runner/work/nputer/nputer log --first-parent --format=%H %s
+  main` and `fatal: ambiguous argument 'main'`. The card's twenty-nine,
+  confirmed at its own run.
+- **`33275876129`** (pull_request, head `a0e7a66`, merge `cbaa33f`,
+  post-fix): **282 passed / 1 failed**, steps 1 through 24 all success
+  including `graph currency (index --check)` and the whole-tree docs
+  gate. The single failure is that same body, now at its PRECONDITION —
+  *"main carries only one Checkpoint here"* — with no `ambiguous
+  argument` anywhere in the log. 282 plus 1 is 283, so **both new bodies
+  ran and passed**, and since exactly one body failed overall, 28 of the
+  card's 29 pass. **The failure mode changed, which is the claim, and
+  this seat verifies it end to end.**
+- **`T-153-s14`'s routing is SOUND and the refusal to fix on a guess is
+  correct.** The residual is a claim about the CONTENT of the log the
+  runner read, not about the resolver — the same run's `brief
+  DISCLOSURE` body assembled *"every row"* at `cbaa33f`, which requires
+  that read to have found a Checkpoint at all. This seat cannot explain
+  it either and did not try to; a fix on an unreproduced cause is the
+  guess `docs/CONVENTIONS.md` names in *"a regen skipped on a guess
+  proves nothing"*. **One thing that card should carry**: the disclosure
+  that would answer it landed at `3f374a0`, cycle 2 died at step 19
+  before the e2e lane, and cycle 3 was not spent — so **the instrument
+  has never executed**, and `T-153-s14` waits on a run rather than on an
+  idea.
+- **Cycle 2 `33277133108`** — step 19 failure, steps 20 through 26
+  skipped, e2e never reached. `T-153-s13`'s diagnosis, not re-litigated.
+
+### THE ONE PIECE OF NEWS THIS VERDICT CARRIES OUTWARD
+
+`T-153-s13` is FIXED on main and validated — run **`33277730761`**
+(push, head `129e3c9`) has step 19 and step 20 both success. **That same
+run is RED: 2 failed / 279 passed at `workflow-parity.spec.ts`**, because
+the guard rewrote step 19's `run:` and `docs/CONVENTIONS.md` still
+publishes the bare `cargo install cargo-audit --locked`. **main's own
+e2e lane is not green**, and the next `pull_request` run on this lane
+will carry those two reds plus the `T-153-s14` residual — three failures,
+none of them this card's. Filed as **`T-153-s15`, priority 1**. The
+integrator should read it before merging, because it decides what a
+post-merge CI colour means.
+
+### ROUTED, NEVER BLOCKING
+
+- **`T-153-s15`** — the ci.yml, CONVENTIONS and workflow-parity
+  divergence above. Priority 1, outside this fence.
+- **`T-153-s16`** — the candidate list: `origin/<b>` outranked by a local
+  `refs/heads/origin/<b>` (measured: three different commits),
+  `refs/remotes/origin/<b>` unreachable whenever it exists, no
+  cardinality floor (mutant 4 survived), and no divergent fixture for the
+  safety property.
+- **`T-153-s17`** — the missing `--` separator: a checkout holding a root
+  path named for the branch still produces `fatal: ambiguous argument
+  'main': both revision and filename`, end to end, exit 3. Pre-existing
+  at `a533a4d`, unchanged by this diff, and worth naming because it
+  prints the same first line as the defect this card removed.
+- **A note for triage, not a card**: `T-153-s13` is discharged by
+  `129e3c9` and still stands at `status: suggested`. Per
+  `docs/CONVENTIONS.md`'s fourth-question clause that is correct — it
+  wants a `closed_by:` line in its own body and a triage move, not a
+  status edit.
+
+### WHAT THIS SEAT DID NOT DO
+
+No merge, no push, no branch move, no write outside this lane. The
+`status:` stays `verifying` and no frontmatter field was touched — the
+ceremony divergence the notes record is the merging seat's to flip, and
+this verdict does not resolve it. Gates owed for THIS seat's own writes —
+this Verdicts section plus three suggestion cards, all flat
+`docs/tasks/T-*.md`, which the DOCS GATE answers with three suites — are
+run at the tip these commits create and recorded immediately below.
