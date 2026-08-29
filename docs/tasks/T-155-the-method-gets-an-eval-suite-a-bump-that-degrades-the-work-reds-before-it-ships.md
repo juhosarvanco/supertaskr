@@ -493,3 +493,32 @@ walks the new tree, and `index --check` is CURRENT with it present.
 `TOKEN_ROOTS` is `["app/src", "app/test", "tools/e2e"]` and
 `TOKEN_ROOTS_OUT` names four other trees, so the suite is outside TOKEN
 and inside CONTROL, exactly as `T-155-s2` records.
+
+### The gates my own commit could move, run at the tip it created
+
+This verdict and the two findings are a commit nobody had tested, so the
+triggers were derived against `0712ca3..2f2b6fb` rather than assumed.
+GRAPH REGEN: **0** paths with a code suffix, and `docs/` is
+`.nputerignore`d besides. BOOT GATE: **0** paths under `app/src/**`,
+`app/src-tauri/**` or either manifest. METHOD EVAL GATE: **0** paths
+under `method/**`, so not owed — run anyway, `node
+tools/method-evals/run.mjs` exit **0**. DOCS GATE: **FIRES**, exit 1,
+naming three suites for the three card paths, each run at `2f2b6fb`:
+
+| owed | figure | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | 314 passed | 0 |
+| `npm test` from app/ | 1013 passed, 47 files | 0 |
+| `npm test` from tools/e2e | 258 passed, `NPUTER_E2E_PORT=15155` | 0 |
+
+`brief.mjs --task T-155` assembles at `2f2b6fb` at exit 0 with the card
+reading `status: verifying`, and `brief.mjs --card` audits all three
+files at exit 0, so no figure here is stale and no provenance arrow is
+unrunnable.
+
+**THE ONE COMMIT LATER THAN THOSE RUNS IS THIS PARAGRAPH**, which is
+prose in a card that was already in the answer set. The gates prose can
+actually move — the whole-tree frontmatter half and the card-figure audit
+— were re-run at the final tip and are green; the three suites above
+carry the ref they were measured at, which is what makes them true
+afterwards.
