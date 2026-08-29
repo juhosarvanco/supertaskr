@@ -501,3 +501,377 @@ untracked `.t127s6-target/`.
   real decision that the cycle's removal makes askable for the first
   time, and it is nobody's to take in passing** — it belongs with the
   CONVENTIONS edit, behind the same `tools/e2e` collision.
+
+## Verdicts
+
+### APPROVED WITH ASSIGNED CORRECTIONS — adversarial verifier, `claude-opus-5@subagent`, 2026-08-29
+
+**Provenance.** Independent hand, two-phase blind: the attack set was
+written from the card AT ITS BASE REF `fc45724` and from the raw diff
+`fc45724..c10595f` with `docs/tasks/**` HELD BACK, and only then were the
+Implementation notes, `T-127-s1`'s notes and the three routed cards
+opened. Every figure below is my own measurement at a NAMED ref; nothing
+is quoted from the notes, and where I reproduce a figure the notes also
+carry, that is corroboration from a second seat and is said so.
+
+**The work is correct, the cycle is genuinely broken rather than
+hidden, and the reconciliation strengthens the fixtures rather than
+weakening them.** The corrections are four sentences and one stale
+figure; not one of them moves an assertion.
+
+#### ONE — the headline, re-derived, and the dependency is BROKEN not the declaration deleted
+
+At `c10595f`, `cargo run -p nputer-index -- arch cycles --root ../..`,
+exit read unpiped from `$?`:
+
+    verdict  ACYCLIC  no declared cycle among 15 components and 43 declared edges
+    exit 0
+
+At the base registry — the 13 files of `fc45724` reconstructed into a
+scratch root beside a byte-identical `graph.json`
+(`bcf97a26cab8f2f2a8eb8da86e3fbbab596e8ae42b6a25ef339e3259bf842335` on
+both sides), so the ONLY thing that moved is the registry:
+
+    cycle    C-08 -> C-09 -> C-08
+    verdict  DECLARED CYCLE  1 cycle(s) among 13 components
+    exit 1   (13 components / 35 declared edges)
+
+**`arch cycles` reads the DECLARED relation only, so exit 0 is not by
+itself evidence.** The falsifier I set myself was: if the fix had deleted
+`C-09` from C-08's `depends_on:` while the imports stood, `arch` would
+still report the edge — as `undeclared`. It does not. `arch --root ../..`
+at `c10595f` gives C-08 exactly four rows — `C-06 confirmed 3`,
+`C-11 planned 0`, `C-16 confirmed 3`, `C-17 confirmed 10` — and **no row
+from C-08 to C-09 in any relation**, while the tree still carries two
+live undeclared rows (`C-05 -> C-15`, `C-10 -> C-14`) that prove the
+reporter would have said so.
+
+**The reverse edge stands and is OBSERVED**: `edge C-09 -> C-08
+confirmed observed=2`, and I named the two file edges from
+`graph.json` — `TaskDetailPanel.tsx -> TaskCard.tsx` and
+`TaskDetailPanel.tsx -> badges/ReviewBadge.tsx`.
+
+**No import severed, no file moved**, in the graph's own terms.
+`index --check --root ../..` at `c10595f` is exit 1 STALE and it is a
+REAL stale, not the `--root` false red — it prints both sides:
+`1021562 bytes / 189 files / 2157 symbols / 2111 edges` on BOTH,
+`files +0 -0 ~3`, the three `~` being `loc`/content on the three edited
+test files only. Identical symbol and edge totals are the proof that no
+import was cut; `+0 -0` is the proof that no file moved. `arch` summary
+`files=189 mapped=189 unmapped=0 findings=4 drift_components=4` at
+`c10595f` against `files=189 mapped=189 unmapped=0 findings=4
+drift_components=4` at the base registry — **the acyclicity costs no new
+drift and strands no file.** The landing regen is the INTEGRATOR's at the
+checkpoint; no graph was regenerated anywhere by this seat.
+
+#### TWO — the battery, every exit read unpiped at `c10595f`
+
+| command | where | result |
+|---|---|---|
+| `cargo test --no-fail-fast` | app/src-tauri | **522 passed / 0 failed / 4 ignored, exit 0** |
+| — the cache cliff | | lib suite **200 passed in 4.16s**, well under the 9.5s green line; `startup_arm_watches_the_initial_root` ok; no `cargo clean` |
+| `npx vitest run` | lib/parser | **15 files, 314 passed, exit 0 — unmoved** |
+| `npx tsc --noEmit` | lib/parser | exit 0 |
+| `npm run build` | app | exit 0 |
+| `npm test` | app | **47 files, 1013 passed, exit 0** |
+| `npm run typecheck` | tools/e2e | exit 0 |
+| `npm run lint:tokens` | tools/e2e | exit 0 — TOKEN 150 files, **CONTROL 856** tracked text files |
+| `npm run lint:docs` | tools/e2e | exit 0 |
+| `NPUTER_E2E_PORT=14533 npm test` | tools/e2e | **280 passed / 1 failed of 281, exit 1** |
+
+Port 14533 was `lsof -nP -iTCP:14533 -sTCP:LISTEN`'d to zero rows
+immediately before binding; 1420 was read with the one permitted command
+and never probed (`node`, `TCP [::1]:1420 (LISTEN)` — the human's app was
+up throughout).
+
+**THE ONE RED, CLASSIFIED AGAINST THE ARMED FENCE BEFORE IT WAS
+ATTRIBUTED.** `brief.spec.ts:439` *"THE SLUG MAP COMES FROM THE FIELD,
+and the prose block is compared rather than trusted"* — the block in
+`docs/ARCHITECTURE.md` says `app-board -> C-08, C-09, C-11`, the fields
+now say five. I expanded every entry of `.nputer/lane-fence.json`
+(20 paths + the always-writable `docs/tasks/`) against the failing path
+mechanically: `docs/ARCHITECTURE.md` matches NO token — the
+`docs/architecture/components` entry is a case-sensitive prefix and does
+not cover it. **Out of fence, therefore ROUTING material and NOT a lane
+defect**, and the lane could not have repaired it without widening its
+own fence from inside. `shell-frame.spec.ts` was GREEN in my run,
+which is the independent second reading the executor asked for on its
+own misattribution (see FIVE).
+
+I also ran the DOCS GATE's diff half myself at the RANGE RULE's
+pre-merge pair (`main` `4717ad1`, `merge-tree --write-tree` exit 0,
+tree `b096b9a`, **14 paths**): exit 1, FIRES, **11** docs/ paths are
+code inputs, four suites named — `cargo test from app/src-tauri/`,
+`npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`. All four are in the table above.
+Its reader listing also confirms `T-127-s8` from my own hand:
+`brief.spec.ts` appears against NO component file, which is exactly the
+reader the census cannot see.
+
+#### THREE — guard testing with MY OWN mutants, and they are not replays
+
+Detached scratch worktree `/Users/ujju/Projects/nputer-vrf-T127s6` at
+`c10595f`, one stem spent on the worktree and on its
+`CARGO_TARGET_DIR=<scratch>/.drilltarget-T127s6vrf` (a non-`target`
+stem, inside itself); the lane's own `target/` was never entered by a
+drill build and no graph was regenerated inside the drill. The work was
+already COMMITTED, so a restore cannot be a revert. Every mutation was
+read back with `git diff` before its run.
+
+- **M1 — registry side, a cycle the executor did not use.** Give C-17
+  `C-18` in `depends_on:` (C-18 already declares C-17). `cargo test -p
+  nputer-index --test arch` → **9 passed / 1 failed, exit 101** on
+  `the_live_registry_declares_exactly_the_cycles_this_crate_still_allows`,
+  `left: ["C-17 -> C-18 -> C-17", "C-08 -> C-17 -> C-18 -> C-08",
+  "C-09 -> C-17 -> C-18 -> C-09", "C-08 -> C-17 -> C-18 -> C-09 -> C-08"]`,
+  `right: []`, every cycle named as a PATH and rotated. **The
+  failing-body count is exactly ONE**, which is poison shape SIX
+  discharged for the enforcing copy: no other body already covers it.
+- **M2a — the emptied allowlist, assertion side.** Put
+  `"C-17 -> C-18 -> C-17"` back on `KNOWN_DECLARED_CYCLES` against a
+  CLEAN registry → **9 passed / 1 failed, exit 101**, `left: []` /
+  `right: ["C-17 -> C-18 -> C-17"]`. The exact set reds in BOTH
+  directions, which is the property the new doc comment claims.
+- **M2b — the emptied allowlist, enforcement side.** Neuter the
+  comparison (`assert_eq!(KNOWN_DECLARED_CYCLES, KNOWN_DECLARED_CYCLES,
+  …)`) and re-apply M1's cyclic registry → **10 passed, exit 0.** So
+  that assertion IS the enforcement and M1's red came from nowhere else.
+  Poison shape TEN is answered from both ends rather than one.
+- **M3 — a CARDINALITY-PRESERVING mutant, aimed at poison shape NINE.**
+  Swap `task-detail.ts` and `Board.tsx` between C-17 and C-18. Every
+  per-component file count, the component id set and
+  `fileComponent.size` are UNCHANGED (`arch`: C-17 files=2, C-18
+  files=1, files=189). `npm test` from app/ → **7 failed / 1006 passed
+  of 1013, exit 1**, including the `C-0x -> C-06` seam body — and the
+  file-count rows `["C-17",2]`/`["C-18",1]` did **not** red. That is
+  shape nine live: a count floor is blind to reclassification and the
+  IDENTITY assertions the executor added are what carry the
+  discrimination.
+- **C3 — THE TWO-SIDED PROOF, and it is the side the executor's
+  sixteen assertion-side mutants do not cover.** Revert
+  `docs/architecture/components/` to `fc45724` inside the drill (the
+  OLD truth, `arch cycles` exit 1 again) and leave the NEW fixtures
+  untouched: `npm test` from app/ → **6 failed / 1007 passed of 1013,
+  exit 1**, in exactly `architecture-dogfood.test.ts` and
+  `map-dogfood-render.test.tsx` and no others, naming all six
+  reconciled bodies. **Every new expectation REDS under the old truth.**
+  Restored, and the suite is 1013 passed exit 0 again.
+
+Restorations proved, never asserted: `shasum -a 256` of each working
+file against `git show HEAD:<path>` after every mutant, all 15 registry
+files re-proved after C3 and M3, `git diff --stat` and
+`git diff --cached --stat` empty each time, and the drill's
+`git status --short` holding only its own untracked
+`.drilltarget-T127s6vrf/`.
+
+#### FOUR — the adversarial questions the brief set, answered
+
+**(a) Were the six reds reconciled by MOVING assertions or by WEAKENING
+them? MOVED, and the set grew.** Census over `fc45724..c10595f`:
+`architecture-dogfood.test.ts` **45 -> 49** assertions in the same 10
+bodies, `map-dogfood-render.test.tsx` **44 -> 46** in the same 8,
+`tests/arch.rs` **41 -> 41** in the same 10. No matcher class DECREASED
+in either fixture — `toEqual` +2, `toBe` +2 and +2, `not.toBeNull` +2,
+`toContain` and `toHaveLength` flat — so nothing was traded down and
+poison shape FIVE is cleared mechanically. The three deleted relation
+rows (`C-05->C-08`, `C-08->C-09`, `C-13->C-08`) and the three deleted
+`fileEdges` entries all REAPPEAR under their new owners; the seam body
+went from three components to four rather than losing one. C3 and M3
+above are the behavioural half of the same answer.
+
+**(b) The `touch_slugs: [app-board]` choice — assessed, and it is the
+right one for a stronger reason than the notes give.** I expanded EVERY
+slug through the fields at both refs and compared the path sets:
+
+    app-agent  app-board  app-dispatch  app-interview
+    app-map    app-shell  crate-index   lib-parser
+    -> all eight expansions BYTE-IDENTICAL at fc45724 and at c10595f
+       (app-board 18 entries both sides, app-shell 45, app-map 18)
+
+Only the slug's COMPONENT list moves (`app-board` 3 -> 5), which is a
+label, not a fence. **Not one live card's fence moves by a single path** —
+the four non-`done` cards reading `app-board` are `T-031-s1`, `T-112`,
+`T-137-s4` and `T-137-s5`, and all four hold exactly what they held.
+The counterfactual is arithmetic on the same derivation: a new word, or
+an omitted field, takes `app-board` from 18 paths to 15, silently
+narrowing those four with no dispatch deciding it. The choice is correct
+and its cost is the one routed line in `docs/ARCHITECTURE.md`.
+
+**(c) Transcribed denominators in the new text — THREE FOUND, all of
+them narrative, none of them an assertion.** Every NUMBER in the new
+fixture text is right; I re-derived all of them from `arch`'s own
+listing at `c10595f` and independently from `graph.json` by attributing
+each file edge to its owner. What is wrong is three sentences about
+WHERE the edges went. See the assigned corrections.
+
+**(d) Does anything still claim the cycle stands? Swept and
+classified.** `command grep` from the ROOT for `C-08 -> C-09`,
+`C-08 <-> C-09`, `arch cycles`, `held open`, `KNOWN_DECLARED_CYCLES`:
+
+- IN FENCE, **accurate as written, correctly left**:
+  `src/arch/cycles.rs` and `src/cli.rs`. I reached this independently in
+  phase 1, before reading the notes: both use `C-08 -> C-09 -> C-08` as
+  an illustration of the PRINT FORMAT ("rotated to start at its
+  numerically-lowest component") and neither asserts the cycle stands.
+  The card's claim that they "describe the cycle as standing" is FALSE
+  and the executor is right to have left them. Corroborated, not copied.
+- IN FENCE, **updated and correct**: the C-08, C-09, C-17 and C-18
+  component files, all rewritten to the past tense.
+- OUT OF FENCE, stale-but-green, ROUTING: `docs/STATE.md`'s standing
+  exception (the integrator's at the checkpoint);
+  `docs/CONVENTIONS.md:39` and `:258`;
+  `tools/e2e/tests/workflow-parity.spec.ts:342`, whose `why` string
+  still names `T-127-s1` — green, because what it asserts is the
+  command's ABSENCE from CI, which is still true.
+- OUT OF FENCE, the ONE red: `docs/ARCHITECTURE.md`'s slug block.
+
+#### FIVE — the executor's least-confident point, checked
+
+The backtick-titled-card misattribution: the corrected reading holds at
+this tip. `yaml` at `tools/e2e` REJECTS a `title:` opening with a
+backtick — `YAMLParseError`, *"Plain value cannot start with reserved
+character"*, naming it — while the same backtick MID-string parses fine, so
+`T-127-s9`'s premise is real and I confirmed it directly rather than
+from the report. All three routed cards' titles open with a letter, all
+three carry a legal `status: suggested`, `lint:docs` says every live
+card parses, and my own full lane run has `shell-frame.spec.ts` green
+with only `brief.spec.ts:439` red. Nothing card-shaped is left armed.
+`components()` in `dispatch-brief.mjs` does read through
+`trackedFiles()` (`git ls-files`), so finding 3's standing hazard — an
+uncommitted registry is invisible to the e2e readers — is mechanically
+true and worth the promotion it got.
+
+#### SIX — ASSIGNED CORRECTIONS (the integrator performs these at merge)
+
+**AC1 — `app/test/architecture-dogfood.test.ts`, the comment replacing
+the deleted `["C-08","C-09","confirmed",6]` row.** It says *"All six
+observed edges belonged to `Board.tsx` reaching the drawer, and
+`Board.tsx` is C-18's now — so they reappear as `C-18 -> C-09` at the
+bottom of this table."* **Both halves are false**, and the row eight
+lines down (`["C-18","C-09","confirmed",1]`) contradicts it in the same
+body. Derived from `docs/architecture/graph.json` at `c10595f`, the six
+were: `Board.tsx -> TaskDetailPanel.tsx`; `Board.tsx -> task-detail.ts`;
+and `task-detail.ts` imported from each of `FeatureColumn.tsx`,
+`GhostCard.tsx`, `ParkedRow.tsx`, `TaskCard.tsx`. **ONE** is Board.tsx
+reaching the drawer and it is the one that reappears as `C-18 -> C-09`;
+**FOUR** reappear as `C-08 -> C-17` and **ONE** as `C-18 -> C-17`.
+Replace with the derivation, e.g.: *"ONE of the six was `Board.tsx ->
+TaskDetailPanel.tsx` and it reappears as `C-18 -> C-09`; the other five
+were imports of `task-detail.ts`, which is C-17's now — four from the
+card faces (`C-08 -> C-17`) and one from `Board.tsx` (`C-18 -> C-17`).
+The row leaves because BOTH files changed owner, which is why extracting
+C-17 alone would not have closed it."*
+
+**AC2 — `docs/architecture/components/C-18-board-root.md`.** *"`Board.tsx`
+was C-08's, and it is the single file that made `C-08 -> C-09` true"* —
+it was **one of five**; it becomes the single one only AFTER
+`task-detail.ts` leaves for C-17. The paragraph's conclusion (C-18 earns
+its node, measured as `cycle C-05 -> C-13 -> C-05` exit 1) is correct
+and untouched by this; only the sentence needs its clause: *"…and once
+the model leaves for C-17 it is the single remaining file that makes
+`C-08 -> C-09` true."*
+
+**AC3 — `app/test/architecture-dogfood.test.ts`, the new
+`["C-08","C-17","confirmed",10]` row's comment.** *"ten sites in the
+card faces read the board's selectors, every one of them an import this
+component already made when `board-model.ts` was its own file."*
+Derived: the ten are SIX imports of `board-model.ts` (FeatureColumn,
+GhostCard, ParkedRow, TaskCard, `badges/ModelBadge.tsx`, and
+`app/test/select-board.test.ts` — a TEST file, not a card face) and FOUR
+imports of `task-detail.ts`, which was **C-09's** file and the detail
+derivation rather than "the board's selectors". Six were internal to
+C-08; four were `C-08 -> C-09`.
+
+*The class these three share, named because a defect is a defect of a
+class until somebody looks:* a narrative sentence that re-states a
+measured attribution, in a body whose every NUMBER is correct —
+CONVENTIONS' *"a comment that restates a measured figure is a second
+implementation"* one category over. **The sweep was run**: I read every
+claim in `fc45724..c10595f` about where an edge went and checked each
+against `arch` at `c10595f` and against a per-file attribution over
+`graph.json`. Three hits, all above; the other eight rewritten rows and
+every tally (`33 + 2 + 10 = 45`, `C-08 -2 / C-09 -1 / C-17 +2 / C-18 +1`,
+`5 + 3` -> `3 + 2 + 2 + 1`, C-17 2/2 and C-18 4/4) reproduce exactly.
+
+**AC4 — this card's own suites table.** The `lint:tokens` row records
+`CONTROL 853 tracked text files`; at `c10595f` it is **856** — the three
+routed cards this same lane then committed. The notes' preamble promises
+every figure at the lane's own ref, and this row is the FIGURE CASE the
+verifier role names: a count stale at the tip its own commits created.
+Re-derive to 856, or stamp the row `@ f0ff62d`.
+
+**AC5 — land `T-127-s7`'s one line in the same merge, or main goes red.**
+`docs/ARCHITECTURE.md`'s slug block must become
+
+    app-board    -> C-08, C-09, C-11, C-17, C-18   app-map  -> C-12
+
+(four-space indent kept; `slugMapFromProse` matches
+`/([a-z][a-z-]*)\s+->\s+((?:C-\d+)(?:,\s*C-\d+)*)/g` per line and stops
+before `app-map` because what follows C-18 is not `, C-`). I derived the
+same line independently. **`T-127-s7` names two stale sentences to take
+with it; there is a THIRD it does not name**, and this one was already
+wrong before this lane: the same paragraph's *"Three slugs are claimed
+by more than one component (`app-shell`, `app-board`, `app-map`)"*. At
+`fc45724` the multi-component slugs are TWO (`app-shell` 4, `app-board`
+3) and `app-map` is C-12 alone; at `c10595f` they are still TWO
+(`app-shell` 4, `app-board` 5). Fix all four in one edit.
+
+#### SEVEN — reported, not assigned
+
+- **`docs/CAPABILITIES.md` is STALE and it is nobody's fault here.**
+  `npm run capabilities:check` at `c10595f` is **exit 1** — committed
+  21886 bytes, a fresh generation 21992 — and the runner header of my
+  own lane run says `Running 281 tests` against the file's census of
+  280. It is stale by CONSTRUCTION at the base too: neither
+  `docs/CAPABILITIES.md` nor any `tools/e2e/**` path appears in
+  `fc45724..c10595f`, so the check's two inputs are byte-identical at
+  both refs. Out of every fence, pre-existing, and **already carded as
+  `T-154-s3`** — cited rather than re-filed, so no duplicate arrives on
+  the board. Worth the integrator's eye only because CLAUDE.md tells
+  every session to trust that file.
+- **A pre-existing figure in a body name, in fence, offered rather than
+  assigned.** `architecture-dogfood.test.ts`'s body *"all 185 files map
+  and the bucket is EMPTY again…"* asserts `fileComponent.size` = 189,
+  and its own comment two lines up says 189. The lane edited rows inside
+  that body and never touched the title, and the denominator did not
+  move at this merge — so it is inherited, not caused. The integrator
+  holds this file's fence at merge and may take it; it is not a defect
+  of this diff.
+- **Whether `arch cycles` should now become a CI step** is newly askable
+  and I agree with the executor that it is nobody's to take in passing.
+  It belongs with the CONVENTIONS edit behind the `tools/e2e` collision.
+
+#### EIGHT — disclosure of this seat's own hand
+
+While probing the capabilities census I ran
+`node tools/e2e/scripts/capabilities.mjs` without `--check` from the
+lane root, and it WROTE `docs/CAPABILITIES.md` — a Bash-mediated write,
+which the lane-fence hook cannot see (CONVENTIONS says so in as many
+words) and which is outside this seat's permitted writes. Caught
+immediately, reverted, and PROVED: `git show HEAD:docs/CAPABILITIES.md |
+shasum -a 256` and the working file both
+`5a8a8e4c544bbc3506b306604556afa495f0fcf2309d9f922e693f46f1e06b6d`,
+`git status --short` empty. Recorded because an unrecorded near-miss and
+an unrun check are indistinguishable to the next reader — and because
+`--check` and the bare command differ by one flag on a script whose
+default is to write.
+
+#### NINE — security, and the adjacent features
+
+The diff touches no production source (`app/src/**`,
+`app/src-tauri/src/**`, `lib/**` are all absent), no manifest, no
+lockfile and no dependency; there is no new input path, no endpoint, no
+query and no secret-shaped string in it. All 14 changed paths are inside
+the armed manifest or under the always-writable `docs/tasks/`; the card's
+`touches:` still matches the manifest's stamp, so no fence was widened
+from inside; `.nputer/` is untracked. Adjacent readers of the registry
+that were NOT predicted to move and did not: `lib/parser/test/smoke.test.ts`
+(T-033 made its id array derive from the directory listing — confirmed at
+a third ref, 314 passed), `fence.test.ts`, `rejected-exclusion.test.ts`
+and `select-board.test.ts` (all inside app/'s green 1013).
+
+#### TEN — status, and what this verdict owes its own tip
+
+Status left at `verifying`. This verdict is a WRITE, so the gates my own
+commit can move were re-run at MY tip and are recorded beneath this
+section rather than assumed.
