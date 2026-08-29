@@ -426,3 +426,21 @@ and this lane already proved that the hard way. Exits from `$?`, unpiped.
 this table. The code has not moved since **`b5e3e4e`** — every commit
 since is `docs/tasks/` — so CI cycles 1 and 2 tested exactly the source
 that ships here.
+
+### CI cycles 3 and 4, and where the branch is left
+
+Cycle **3** (`33256856543`, tip `34856d0`) was **cancelled** by the
+workflow's own `concurrency: cancel-in-progress` when cycle 4's push
+superseded it — not a red, and not a signal about anything.
+
+Cycle **4** (`33257012982`, tip `6f4205e`): **`cargo suite` SUCCESS**, the
+third consecutive green cargo step, and the job stops at `graph currency`
+for the third time. **THE ANSWER HAS NOT MOVED ACROSS THREE RUNS AND TWO
+DISTINCT TREES**, which is what makes it a property rather than a run.
+
+**THIS COMMIT IS DELIBERATELY NOT PUSHED.** The remote branch is left at
+`6f4205e`, one commit behind, because pushing this paragraph would spend a
+fifth CI cycle to re-measure a code diff that has not changed since
+`b5e3e4e` — and the brief's cap is four. The lane's authority is the local
+branch, which the merge is performed from; the PR exists for the runner
+and nothing else.
