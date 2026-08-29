@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **280 behaviours** — 278 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **281 behaviours** — 279 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -240,6 +240,7 @@ Census: **280 behaviours** — 278 extracted sentences + 2 named-not-extracted (
 - the PreToolUse hook is wired for the file-writing tools, and leaves room for a second source
 - the runner answers in EXIT CODES — block is 2 with the reason on stderr, allow is a silent 0
 - an unreadable request costs an integrator nothing and buys an executor nothing
+- a suffixed card id survives every derivation that once truncated it — the id is not the slug's prefix
 
 ## map-retarget
 

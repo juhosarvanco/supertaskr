@@ -2903,8 +2903,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/arch.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/arch.rs",
       "lang": "rust",
-      "hash": "blake3:69e1d0d59cd73067d0f7b90bb2b8b7f953f42335f4fe92bf9961caf1c990e8ff",
-      "loc": 323,
+      "hash": "blake3:088603d2be723844fb04a826302301cf024515ad4a91338b5b98c307fb3be4bb",
+      "loc": 333,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#KNOWN_DECLARED_CYCLES",
@@ -2912,8 +2912,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            228,
-            228
+            238,
+            238
           ]
         },
         {
@@ -2922,8 +2922,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            283,
-            323
+            293,
+            333
           ]
         },
         {
@@ -3012,8 +3012,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            231,
-            246
+            241,
+            256
           ]
         },
         {
@@ -3022,8 +3022,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            249,
-            280
+            259,
+            290
           ]
         },
         {
@@ -16648,8 +16648,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:28e047e4d1fabc9d191654a079b7b01408da806c5c6b01836625da989b3a13e3",
-      "loc": 2402,
+      "hash": "blake3:4457ba4b71f3f381b815675a77229795f919f0b6361a3c648f9646ccfd266aa3",
+      "loc": 2563,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -19244,8 +19244,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:cad7e4ad930997810c5f8cbb348e9c69f8c58f903321fd3c1cecf7bbaffb3ea6",
-      "loc": 770,
+      "hash": "blake3:a56e670c3bd745ee0e48d7503e6243f9da4e39ab1895a1846db1d87d78f40437",
+      "loc": 795,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",

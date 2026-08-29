@@ -5,13 +5,13 @@ milestone: 4
 priority: 5
 size: M
 title: The cycle fix needs [docs/architecture/components/, app-map, crate-index] — T-149 moved the two dogfood fixtures out from under T-127-s1's fence, so the card written to reach them no longer does
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/architecture/components/, app-map, crate-index]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 suggested_by: executor claude-opus-5 @T-127-s1
 ---
@@ -314,7 +314,7 @@ subtracting would have lost a check the seam body exists to make:
 | `cargo test` | app/src-tauri | **522 passed / 0 failed / 4 ignored, exit 0** |
 | `cargo test -p nputer-index --test arch` | app/src-tauri | 10 passed, exit 0 |
 | `npm run typecheck` | tools/e2e | exit 0 |
-| `npm run lint:tokens` | tools/e2e | exit 0 — TOKEN 150 files, CONTROL 853 tracked text files |
+| `npm run lint:tokens` | tools/e2e | exit 0 — TOKEN 150 files, CONTROL 853 tracked text files @ f0ff62d (856 at tip — the three routed cards; AC4) |
 | `npm run lint:docs` | tools/e2e | exit 0 |
 | `npm test` | tools/e2e | **280 passed / 1 failed of 281, exit 1** — `brief.spec.ts:439` only, the routed `T-127-s7`. Two earlier runs read 5 failed; the other four were my own malformed card, see finding 4 |
 | `NPUTER_BOOT_PORT=14521 npm run boot:check` | tools/e2e | exit 0, both `[nputer]` lines |

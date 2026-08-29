@@ -35,8 +35,8 @@
   `cargo run -p nputer-index -- arch cycles --root ../..` (T-127 —
   reads the REGISTRY ONLY, so a stale graph cannot redden it; exit 0
   acyclic, 1 a declared cycle named as a path, 2 called wrong, 3 the
-  registry could not be read; LOCAL ONLY while the declared
-  C-08 <-> C-09 cycle is held open, the ENFORCING copy being
+  registry could not be read; ANSWERS ACYCLIC exit 0 since T-127-s6
+  (2026-08-29) broke the last declared cycle — the ENFORCING copy is
   `cargo test`'s exact-set census) ·
   `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`
   (T-135 — dependents derived from the committed graph at read time, a
@@ -254,8 +254,8 @@
   `cargo run -p nputer-index -- index --watch --root ../..`, which runs
   until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
   which reports rather than gates, nor
-  `cargo run -p nputer-index -- arch cycles --root ../..`, whose red is
-  DESIGNED to stand while the C-08 <-> C-09 ruling is held open (the
+  `cargo run -p nputer-index -- arch cycles --root ../..`, which
+  answers ACYCLIC since T-127-s6 closed the last declared cycle (the
   enforcing copy is `cargo test`'s exact-set census, T-127), nor
   `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`,
   which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
@@ -883,10 +883,11 @@
   checkpoint and records the verdict there** — that hand run is the
   confirmation the property actually has TODAY. **The CI step becomes
   the ENFORCING copy at the repo's FIRST PUSH, and not before**
-  (T-054-s4, closed here): `git remote` returns ZERO remotes — verified
-  at the fourth triage and again at T-078 — and ci.yml has never executed
-  a single step on a runner, so anything written here in the present
-  tense about "a gate" is written in the FUTURE tense in fact. BE FAIR
+  (T-054-s4, closed here) — and THAT PUSH HAPPENED: since 2026-08-29
+  `git remote` returns `origin` (github.com/juhosarvanco/nputer) and
+  ci.yml executes on every push of main, so the CI step IS the
+  enforcing copy now (the zero-remotes reading held from the fourth
+  triage through T-078 and retired at the first push). BE FAIR
   ABOUT WHAT DOES HOLD IT MEANWHILE, because it is considerably more than
   nothing: the regen obligation is retained in full, a failing regen reds
   on its own, deleting the CI step reds

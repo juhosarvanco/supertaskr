@@ -2151,12 +2151,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `["C-08","C-09","confirmed",6]` IS GONE, AND THIS IS THE ROW THE
       // WHOLE CARD EXISTS TO REMOVE. It was half of `C-08 -> C-09 -> C-08`,
       // the registry's last declared cycle and the reason
-      // `arch cycles --root ../..` exited 1 by design. All six observed
-      // edges belonged to `Board.tsx` reaching the drawer, and `Board.tsx`
-      // is C-18's now — so they reappear as `C-18 -> C-09` at the bottom of
-      // this table. **NO IMPORT WAS SEVERED**: the count moves because the
-      // BOUNDARY moved, and `C-09 -> C-08` three rows down still stands,
-      // which is what makes this a broken cycle rather than a hidden one.
+      // `arch cycles --root ../..` exited 1 by design. ONE of the six was
+      // `Board.tsx -> TaskDetailPanel.tsx` and it reappears as
+      // `C-18 -> C-09`; the other five were imports of `task-detail.ts`,
+      // which is C-17's now — four from the card faces (`C-08 -> C-17`)
+      // and one from `Board.tsx` (`C-18 -> C-17`). The row leaves because
+      // BOTH files changed owner, which is why extracting C-17 alone
+      // would not have closed it (derivation: T-127-s6's verdict, AC1).
+      // **NO IMPORT WAS SEVERED**: the counts move because the BOUNDARY
+      // moved, and `C-09 -> C-08` three rows down still stands, which is
+      // what makes this a broken cycle rather than a hidden one.
       ["C-08", "C-11", "planned", 0],
       // NEW at T-033, and it REPLACES `["C-08","C-05","undeclared",4]`:
       // three `cn` imports plus `board-model.ts -> verdicts.ts`, all four
@@ -2165,9 +2169,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 4 -> 3 AT T-127-s6: `board-model.ts -> verdicts.ts` leaves with
       // `board-model.ts` and is counted as `C-17 -> C-16` below.
       ["C-08", "C-16", "confirmed", 3],
-      // NEW at T-127-s6 and the heaviest of the eight: ten sites in the
-      // card faces read the board's selectors, every one of them an import
-      // this component already made when `board-model.ts` was its own file.
+      // NEW at T-127-s6 and the heaviest of the eight. The ten (verdict,
+      // AC3): SIX imports of `board-model.ts` (FeatureColumn, GhostCard,
+      // ParkedRow, TaskCard, badges/ModelBadge.tsx, and
+      // app/test/select-board.test.ts — a test file, not a card face) and
+      // FOUR imports of `task-detail.ts`, which was C-09's file — so six
+      // were internal to C-08 before the split and four were C-08 -> C-09.
       ["C-08", "C-17", "confirmed", 10],
       ["C-09", "C-06", "confirmed", 2],   // T-149: 2 -> 3; T-127-s6: 3 -> 2
       ["C-09", "C-08", "confirmed", 2],   // T-127-s6: 3 -> 2

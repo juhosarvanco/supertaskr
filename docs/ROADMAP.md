@@ -100,8 +100,9 @@ opens with the card id that still holds its story.
   control bands as data with measured reasons, doc-headroom bands
   derived from the budgets themselves, and the first official
   reading caught STATE breached while the merge was still landing.
-  The surviving cycle's removal is now MEASURED (T-127-s1's honest
-  stop, 2026-08-29) and rides T-127-s6, the fence that reaches it.
+  The last declared cycle is BROKEN (T-127-s1's measured stop ->
+  T-127-s6, 2026-08-29): `arch cycles` answers ACYCLIC on main for
+  the first time, with C-17/C-18 minted and no import severed.
 
 ## Milestones
 

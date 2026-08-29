@@ -43,9 +43,9 @@ gotcha in CONVENTIONS).
 **THE SLUG MAP'S AUTHORITY IS EACH COMPONENT FILE'S OWN `touch_slugs:`
 FIELD — read the field, never prose.** Two implementations compute it
 (C-06's `slugPathIndex`, C-08's `expandTouch`), which is T-057's own
-failure shape and `T-137` was the vehicle for unifying them. Three
-slugs are claimed by more than one component (`app-shell`, `app-board`,
-`app-map`), so a fence computed from any prose signpost would call two
+failure shape and `T-137` was the vehicle for unifying them. Two
+slugs are claimed by more than one component (`app-shell`,
+`app-board`), so a fence computed from any prose signpost would call two
 overlapping cards disjoint — the exact failure a fence exists to
 prevent (`T-089-s7`). Derived mechanically from
 `docs/architecture/components/C-*.md` at this compaction — and this
@@ -54,7 +54,7 @@ run, so a component change that moves the fields reds it by name
 rather than letting it go quietly stale:
 
     app-agent    -> C-14          app-interview -> C-13
-    app-board    -> C-08, C-09, C-11   app-map  -> C-12
+    app-board    -> C-08, C-09, C-11, C-17, C-18   app-map  -> C-12
     app-dispatch -> C-15          app-shell     -> C-05, C-10, C-11, C-16
     crate-index  -> C-07          lib-parser    -> C-06
 

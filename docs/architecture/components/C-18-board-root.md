@@ -16,7 +16,8 @@ is precisely why it is its own node.
 
 **WHY A NODE OF ITS OWN, AND WHY FOLDING IT INTO C-05 IS REFUSED —
 MEASURED RATHER THAN PREDICTED (T-127-s1, at `95cf2d0`).** `Board.tsx`
-was C-08's, and it is the single file that made `C-08 -> C-09` true; the
+was C-08's — one of five files behind `C-08 -> C-09`, and once the model
+leaves for C-17 it is the single remaining file that makes it true; the
 return hop is the drawer reading the card faces and the board model.
 Splitting the model out (C-17) is not enough on its own, because the
 composition root still points down at both halves. The obvious economy is

@@ -1,19 +1,15 @@
 # State
 
-Updated: 2026-08-29 at the T-127-s1 checkpoint — the cycle card's
-honest stop: the fixtures had moved out from under its fence (T-149),
-so the measured partition rides `T-127-s6`, whose lane can reach it.
-Current record: docs/checkpoints/2026-08-29-T-127-s1.md.
-Pre-compaction narrative:
+Updated: 2026-08-29 at the T-127-s6 checkpoint — `arch cycles`
+answers ACYCLIC, exit 0, on main for the FIRST TIME: the last
+declared cycle is genuinely broken (C-17/C-18 minted, three files
+re-owned, no import severed). Current record:
+docs/checkpoints/2026-08-29-T-127-s6.md. Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
-**NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
-`cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
-design — the declared cycle `C-08 -> C-09 -> C-08` stands until
-`T-127-s6` lands (s1's honest stop measured the fix and routed it
-there); the ENFORCING copy is `cargo test`, green. Its
-report is on stderr. Also BY DESIGN: `npm run health` exits 3 while
-four bands await keepers (T-156-s1/s2).
+**NOTHING IS BROKEN.** The one designed non-zero exit a session will
+meet: `npm run health` exits 3 while four bands await keepers
+(T-156-s1/s2) — never read that 3 as clean, and never "fix" it.
 
 ## The contract this file is under
 
@@ -28,8 +24,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: TWO lanes — T-153-s5 (executor mid-CI-measurement)
-  and T-127-s6 (dispatching). Dispatch writes the fence manifest
+  this rewrite: ONE lane — T-153-s5 (verifier running; executor done,
+  its two bodies PASS on Linux 3x). Dispatch writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
   `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
@@ -53,11 +49,12 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-155` is DONE and merged. `T-153-s5` dispatches now (tools/e2e
-   free), then `T-153-s6` (they collide on tools/e2e — sequential) —
-   THEN main pushes: the two CI runs so far red on four bodies, ALL
-   carded to s5/s6, so the next push should be the repository's
-   FIRST GREEN Linux run. Watch it as a first run regardless.
+1. `T-153-s5` — verifier running (its bodies already PASS on Linux;
+   PR runs also carry the T-153-s9 class, 29 reds that are the PR
+   checkout's, green on main pushes). On its merge, `T-153-s6`
+   dispatches (same fence) — THEN main pushes: every main-run red is
+   carded to s5/s6, so the push should be the FIRST GREEN Linux run.
+   Watch it as a first run regardless.
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release
@@ -70,8 +67,9 @@ hazard is never deleted to fit.
 5. @human's items: `T-025-s2` (one real genesis), `T-151` (graph
    budget number), D3 (may the app write docs/?).
 6. Standing hooks: `T-135` Half B (never re-dispatch whole), `T-112`
-   (most colliding), `T-140`, `T-139-s2` (wants a room), `T-127-s6`
-   (the cycle fix, fence corrected), `T-144`, `T-111-s10`, `T-147`.
+   (most colliding), `T-140`, `T-139-s2` (wants a room), `T-144`,
+   `T-111-s10` (+riders T-153-s7), `T-147`, `T-160` (the dispatch
+   preflight, @human's), `T-153-s9`, `T-127-s7/s8/s9`.
 
 ## Standing hazards — the section that saves the hour
 
