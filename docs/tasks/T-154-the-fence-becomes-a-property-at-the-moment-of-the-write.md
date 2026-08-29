@@ -166,7 +166,7 @@ in the integration checkout alike.
 naming the dispatch command, pointing at `decide` as the authority
 rather than restating it, and declaring the three limits.
 
-### The suite ledger — counts AND exits, unpiped, at `954087f`
+### The suite ledger — counts AND exits, unpiped, at the tip `1fc8071`
 
 | command | where | result |
 |---|---|---|
@@ -187,7 +187,10 @@ The e2e suite was 233 tests at the base and is 258 here; the new spec is
 Range per the RANGE RULE's executor row —
 `TREE=$(git merge-tree --write-tree <main tip> HEAD)` then
 `git diff --name-only <main tip> "$TREE"`, `merge-tree` exit read
-FIRST. At main `3607a94` the trigger set is **8 paths**.
+FIRST (**0**, a tree and not a conflict report). Against main
+`3607a94` at the tip `1fc8071` the set is **11 paths**; it was 8 before
+this card's own notes and its three routed suggestions joined it, and
+the figure is stated at a ref for that reason.
 
 - **BOOT GATE — NOT OWED.** Nothing under `app/src-tauri/**`,
   `app/src/**`, or either manifest is in the set.
@@ -198,9 +201,12 @@ FIRST. At main `3607a94` the trigger set is **8 paths**.
   (`.mjs` and `.json` are in neither `Lang::for_extension` nor the
   walk). The regen still belongs to the integrator at the checkpoint;
   this is the executor's derivation, not a substitute for it.
-- **DOCS GATE — FIRES**, 2 paths under `docs/` are code inputs
-  (`docs/CONVENTIONS.md`, this card). It named FOUR suites and all four
-  are in the ledger above, green.
+- **DOCS GATE — FIRES**, **5** paths under `docs/` are code inputs at
+  the tip (`docs/CONVENTIONS.md`, this card, the three suggestions). It
+  named FOUR suites and all four are in the ledger above, green — every
+  one of them re-run AFTER the suggestion cards landed, because a flat
+  `docs/tasks/T-*.md` is a parser input and a ledger measured before it
+  existed would be a ledger about a different tree.
 
 **THE DOCS GATE ALSO CAUGHT THIS LANE ONCE, WHICH IS WHY IT IS WORTH
 SAYING.** The first commit spelled the spec's own docs read as
