@@ -4365,7 +4365,34 @@ fn t060_child_lifted_arm() {
 #[test]
 fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
     for (tag, model) in [
-        ("oversize", "M".repeat(200_000)),
+        // T-153-s2: THIS NUMBER WAS 200,000 AND THAT MADE THE BODY A
+        // MACOS-ONLY TEST. The `model` reaches the fake CLI as the
+        // `NPUTER_FAKE_MODEL` environment pair, and `execve` bounds each
+        // string it copies — envp strings exactly as much as argv ones.
+        // Linux's per-element cap is `MAX_ARG_STRLEN`, the kernel's
+        // `PAGE_SIZE * 32`, so 131,072 bytes on a 4 KiB-page x86-64 and
+        // INDEPENDENT of the much larger total `ARG_MAX`; 200,000 is over
+        // it by construction, so the spawn could not succeed and the turn
+        // died as `SpawnFailed` three layers from the cause. macOS has no
+        // cap of that shape — measured at this task's ref on Darwin
+        // 25.6.0 arm64, a single 1,040,000-byte env pair `exec`s cleanly
+        // and the first failure is at 1,048,000, i.e. against `getconf
+        // ARG_MAX` = 1,048,576, a TOTAL — which is why every local run
+        // this repository ever made was green and CI was not.
+        //
+        // 50,000 is chosen against the THREE bounds this line sits
+        // between, and it is the only band where the body means what its
+        // name says. It must be over `adapter::MODEL_MAX_LEN` (128), or
+        // the model is legal and nothing is refused. It must be under
+        // `adapter::SPAWN_ELEMENT_MAX_LEN`, or the runner drops the pair
+        // before the child sees it and the fake reports its own default
+        // `fake-model-1` instead — a legal name that round-trips, which
+        // `registry model` below would catch. And being under that bound
+        // puts it under every platform's `execve` cap with room to spare,
+        // which is what makes THIS the assertion that runs identically on
+        // both. The refusal now comes from the product's own bound rather
+        // than from a kernel, and that is the whole repair.
+        ("oversize", "M".repeat(50_000)),
         ("control-chars", "claude\u{1b}[2K\u{7}-opus\nSTOLEN".to_string()),
         ("non-ascii", "clau\u{202e}de-opus".to_string()),
     ] {
@@ -4422,6 +4449,101 @@ fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
             .expect("registry file")
             .contains(model));
     }
+}
+
+/// **T-153-s2, CRITERION: NOTHING THE RUNNER HANDS `execve` IS
+/// UNBOUNDED, AND CROSSING THE BOUND COSTS THE VALUE RATHER THAN THE
+/// TURN.**
+///
+/// The failure this body pins was found by CI and could not be found
+/// locally: `execve` bounds every string it copies, argv and envp alike,
+/// and Linux's per-element cap (`MAX_ARG_STRLEN`, the kernel's `PAGE_SIZE
+/// * 32`) is independent of the far larger total `ARG_MAX`, while macOS
+/// bounds only the total. One oversized pair therefore killed the WHOLE
+/// spawn on one platform — `SpawnFailed { os: "Argument list too long" }`,
+/// a turn that never started — and did nothing at all on the other.
+///
+/// **THE TWO ARMS ARE ONE BYTE APART AND THE FIRST ONE IS THE POSITIVE
+/// CONTROL.** A body that only proved the oversized pair is missing would
+/// pass just as happily if the pair never arrived for some unrelated
+/// reason, or if the harness had stopped placing it at all: a refusal
+/// that cannot be told from an absence is not evidence of a refusal. So
+/// the widest pair that still FITS is asserted PRESENT, at its exact
+/// byte length, through the child's own environment dump — and the same
+/// value one byte wider is asserted ABSENT there, with everything else
+/// about the turn unchanged.
+///
+/// The second half of each arm reads the registry, which is where the two
+/// bounds are visibly different rules: the fitting value is placed and
+/// then refused as a MODEL by [`adapter::MODEL_MAX_LEN`], so nothing is
+/// recorded; the oversized one never reaches the child at all, so the
+/// fake reports its own default and that default round-trips. Two
+/// mechanisms, two different observable outcomes, neither of them
+/// "nothing happened".
+#[test]
+fn an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands() {
+    // The harness places the model as this key.
+    const KEY: &str = "NPUTER_FAKE_MODEL";
+    // `execve` copies ONE string per pair — `KEY=VALUE` and its NUL — so
+    // the widest value that still fits is the bound less the key, the
+    // `=` and the terminator. The arithmetic belongs to
+    // `adapter::child_env_pair_fits` and is spelled once here only to
+    // name the boundary the two arms straddle; the assertions below
+    // check the OUTCOME either side of it, not the sum.
+    let widest = adapter::SPAWN_ELEMENT_MAX_LEN - KEY.len() - "=".len() - 1;
+
+    // ---- THE POSITIVE CONTROL: the widest pair that fits is PLACED ----
+    let h = harness(
+        "env-at-bound",
+        Options { model: Some("M".repeat(widest)), ..Options::default() },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    let env = read_env(&h.dump, 1);
+    assert_eq!(
+        env.get(KEY).map(String::len),
+        Some(widest),
+        "the widest pair that fits must reach the child WHOLE - if this is None the bound is \
+         off by one in the refusing direction, and if it is a smaller number the value was \
+         truncated, which this runner never does"
+    );
+    // And it is still refused one bound further in, by the model gate:
+    // fitting into `execve` was never a claim about being a model name.
+    assert_eq!(
+        sessions::load(&h.project).sessions[0].model,
+        None,
+        "a {widest}-byte model is past MODEL_MAX_LEN and must not be recorded"
+    );
+
+    // ---- ONE BYTE WIDER: the pair is DROPPED, the turn still STANDS ----
+    let h = harness(
+        "env-over-bound",
+        Options { model: Some("M".repeat(widest + 1)), ..Options::default() },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    // THE REGRESSION ITSELF: before the bound this line was the failure.
+    // The spawn was refused whole, the turn came back `Failed`, and
+    // `wait_completed` timed out three layers from the cause.
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    let env = read_env(&h.dump, 1);
+    assert!(
+        !env.contains_key(KEY),
+        "an oversized pair must not be handed to execve at all; the child saw {:?}",
+        env.get(KEY).map(String::len)
+    );
+    // The child ran with the variable UNSET rather than with a shortened
+    // one — the fake's own fallback is the discriminator, and it is a
+    // legal name, so it round-trips.
+    assert_eq!(
+        sessions::load(&h.project).sessions[0].model.as_deref(),
+        Some("fake-model-1"),
+        "the fake should have fallen back to its default, which proves the pair was refused \
+         whole rather than coerced into something acceptable"
+    );
 }
 
 // ---- the one env-gated real smoke (§7) ---------------------------------

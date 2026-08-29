@@ -616,6 +616,52 @@ pub fn validate_model(model: &str) -> Result<(), ModelRejection> {
     Ok(())
 }
 
+// ---- T-153-s2: the per-element bound `execve` itself imposes -----------
+
+/// Longest single string this runner will hand to `execve` — one argv
+/// element, or one `KEY=VALUE` environment pair, NUL included.
+///
+/// **THE CONSTRAINT IS A PER-ELEMENT KERNEL CAP AND IT IS NOT
+/// `ARG_MAX`.** Linux bounds each string `execve` copies — argv strings
+/// and envp strings alike, since one routine copies both — at
+/// `MAX_ARG_STRLEN`, defined in the kernel's `binfmts.h` as `PAGE_SIZE *
+/// 32`. It is independent of `ARG_MAX`, which bounds the TOTAL and is
+/// megabytes larger; over the per-element cap `execve` returns `E2BIG`
+/// however small the total is. The cap therefore MOVES WITH THE PAGE
+/// SIZE: 131,072 bytes on the 4 KiB-page x86-64 this project's CI runs
+/// on, and larger on a 16 KiB- or 64 KiB-page kernel.
+///
+/// **macOS HAS NO CAP OF THAT SHAPE, which is why this went unseen
+/// locally for the life of the repository.** Measured at this task's ref
+/// on Darwin 25.6.0 arm64 by `exec`ing `/usr/bin/true` under a single
+/// oversized env pair: 200,000 bytes succeeds, 1,000,000 succeeds,
+/// 1,040,000 succeeds, and the first failure is at 1,048,000 — i.e.
+/// against `getconf ARG_MAX` = 1,048,576, a TOTAL. There is no
+/// per-element limit to find; the one that exists is the sum.
+///
+/// **SO THE BOUND IS THE SMALLEST PLATFORM'S PER-ELEMENT CAP WITH
+/// MARGIN, NOT THAT CAP.** 65,536 is half of 32 × 4 KiB, which leaves
+/// room for the NUL the kernel counts inside its own length (a string of
+/// exactly the cap does not fit — the terminator does not come free) and
+/// for a page size smaller than any kernel now ships. It costs nothing:
+/// the longest value this runner legitimately places is 128 bytes
+/// ([`SESSION_ID_MAX_LEN`], [`MODEL_MAX_LEN`]), so the bound sits 512×
+/// above everything real and only an absurd value can reach it.
+pub const SPAWN_ELEMENT_MAX_LEN: usize = 65_536;
+
+/// Does this environment pair fit [`SPAWN_ELEMENT_MAX_LEN`]?
+///
+/// `execve` sees ONE string per pair — `KEY=VALUE`, then a NUL — so the
+/// accounting is the key, the `=`, the value and the terminator. It lives
+/// here, in one place, because a size rule counted twice is two rules:
+/// the caller supplies the pair and never the arithmetic.
+///
+/// Byte lengths, not character counts: `OsStr::len` is what `execve`
+/// copies on unix, and no lossy conversion happens on the way.
+pub fn child_env_pair_fits(key: &std::ffi::OsStr, value: &std::ffi::OsStr) -> bool {
+    key.len() + "=".len() + value.len() + 1 <= SPAWN_ELEMENT_MAX_LEN
+}
+
 /// EVERY OPTION `claude 2.1.226` DOCUMENTS, long and short, read
 /// first-hand from its own `--help` at build time of this task (`--help`
 /// only — no model was called). Aliases are listed separately because the
@@ -1694,6 +1740,73 @@ mod tests {
         assert_eq!(planner_adapter().binary, "claude");
         assert_eq!(planner_adapter().min_major, 2);
         assert_eq!(planner_adapter().parse, ParseMode::StreamJsonV1);
+    }
+
+    /// **T-153-s2: THE ARGV SIDE OF THE `execve` BOUND IS HELD BY THE ID
+    /// GATE, AND THIS BODY IS WHAT SAYS SO OUT LOUD.**
+    ///
+    /// The runner hands `execve` two kinds of string, and they are
+    /// bounded by different owners. The ENVIRONMENT is bounded at the
+    /// spawn site by [`child_env_pair_fits`]. ARGV is bounded HERE, one
+    /// step earlier and much more tightly: every element is a literal
+    /// from a fixed template except the one substituted
+    /// [`SESSION_ID_SLOT`], and [`validate_session_id`] has already
+    /// refused anything past [`SESSION_ID_MAX_LEN`] before assembly
+    /// begins. So a second length check inside [`AgentAdapter::argv`]
+    /// would be unreachable code, and a bound nothing can reach is a
+    /// second owner of a rule rather than a safeguard.
+    ///
+    /// What this pins instead is the RELATION the argument rests on —
+    /// that the id gate's bound stays under the spawn bound, and that no
+    /// template literal has quietly grown past it. Raise
+    /// `SESSION_ID_MAX_LEN` above [`SPAWN_ELEMENT_MAX_LEN`], or paste a
+    /// 64 KiB system prompt into a template, and this reds by name rather
+    /// than becoming a `SpawnFailed` on Linux only.
+    #[test]
+    fn every_argv_element_an_adapter_can_assemble_fits_the_spawn_bound() {
+        assert!(
+            SESSION_ID_MAX_LEN < SPAWN_ELEMENT_MAX_LEN,
+            "the id gate is what keeps the substituted element inside the execve bound; \
+             at {SESSION_ID_MAX_LEN} vs {SPAWN_ELEMENT_MAX_LEN} it no longer does"
+        );
+
+        // The widest argv the id gate can let through: a maximum-length
+        // id in the slot, every literal beside it.
+        let widest_id = "a".repeat(SESSION_ID_MAX_LEN);
+        validate_session_id(&widest_id).expect("a maximum-length id is legal");
+        for argv in [
+            CLAUDE_V1.argv(None).expect("the spawn template assembles"),
+            CLAUDE_V1.argv(Some(&widest_id)).expect("the resume template assembles"),
+        ] {
+            for element in &argv {
+                assert!(
+                    element.len() <= SPAWN_ELEMENT_MAX_LEN,
+                    "argv element {element:?} is {} bytes, past the {SPAWN_ELEMENT_MAX_LEN}-byte \
+                     bound execve enforces per element",
+                    element.len()
+                );
+            }
+        }
+    }
+
+    /// The pair accounting is `KEY=VALUE` plus its NUL, and the boundary
+    /// is checked one byte either side rather than described.
+    #[test]
+    fn a_child_env_pair_fits_up_to_the_bound_and_not_one_byte_past_it() {
+        use std::ffi::OsStr;
+
+        let key = OsStr::new("NPUTER_FAKE_MODEL");
+        let widest = SPAWN_ELEMENT_MAX_LEN - key.len() - "=".len() - 1;
+        assert!(child_env_pair_fits(key, OsStr::new(&"M".repeat(widest))));
+        assert!(!child_env_pair_fits(key, OsStr::new(&"M".repeat(widest + 1))));
+
+        // A longer KEY takes its bytes out of the same budget — the bound
+        // is on the assembled string, not on the value.
+        let longer = OsStr::new("NPUTER_FAKE_MODEL_XX");
+        assert!(!child_env_pair_fits(longer, OsStr::new(&"M".repeat(widest))));
+
+        // And an ordinary pair is nowhere near it.
+        assert!(child_env_pair_fits(OsStr::new("TERM"), OsStr::new("dumb")));
     }
 
     #[test]
