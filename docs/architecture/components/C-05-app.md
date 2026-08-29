@@ -46,7 +46,7 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/src-tauri/tauri.conf.json
   - app/src-tauri/capabilities/**
   - app/src-tauri/tests/graph_budget_bench.rs   # T-141 settlement, see below
-depends_on: [C-01, C-06, C-07, C-08, C-09, C-10, C-11, C-12, C-13, C-14, C-16]
+depends_on: [C-01, C-06, C-07, C-09, C-10, C-11, C-12, C-13, C-14, C-16, C-18]   # C-08 -> C-18 at T-127-s6: App.tsx mounts Board.tsx, which is C-18's
 decisions: [ADR-007, ADR-008, ADR-010, ADR-012]
 status: auto
 touch_slugs: [app-shell]

@@ -17,7 +17,7 @@ paths:
   - app/test/interview-harness.test.ts
   - app/test/interview-model.test.ts
   - app/test/interview-resume-dom.test.tsx
-depends_on: [C-06, C-08, C-10, C-11, C-14, C-16]
+depends_on: [C-06, C-10, C-11, C-14, C-16, C-18]   # C-08 -> C-18 at T-127-s6: BoardCrescendo.tsx imports Board.tsx, which is C-18's
 decisions: [ADR-006, ADR-017]
 status: auto
 touch_slugs: [app-interview]
