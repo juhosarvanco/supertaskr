@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 5
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [docs/architecture/components/, app-shell, lib-parser]
 suggested_by: executor claude-opus-5 @T-127
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
