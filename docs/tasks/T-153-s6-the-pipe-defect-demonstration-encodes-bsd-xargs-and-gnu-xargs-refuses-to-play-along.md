@@ -461,3 +461,18 @@ premise by reading the parity body.
 
 Status left at `verifying`; no merge, no push, nothing written outside
 this lane.
+
+#### THE GATES MY OWN WRITING MOVED
+
+This verdict and `T-153-s12` are two cards under `docs/tasks/`, which is
+a code input. At `84fc0f6` — the commit carrying them, one commit past
+the reviewed tip — `node tools/e2e/scripts/docs-gate.mjs $(git diff
+--name-only aadf874 84fc0f6)` FIRES on both cards and names three
+suites, not four: `npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/` (no cargo, because this commit does
+not touch `docs/CONVENTIONS.md`). All three run green at `84fc0f6` —
+e2e **281 passed exit 0** (`NPUTER_E2E_PORT=14920`, lsof zero rows
+first), lib/parser **314 passed exit 0**, app **1013 passed exit 0** —
+and `npm run lint:docs` exits 0 with every live card's frontmatter
+parsing under a legal status. The only commit after that one is the one
+adding this section, and it changes nothing but this prose.
