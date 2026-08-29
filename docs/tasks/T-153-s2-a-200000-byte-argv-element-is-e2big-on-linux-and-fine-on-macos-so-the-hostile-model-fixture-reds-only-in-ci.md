@@ -409,3 +409,20 @@ made**, on either branch. The regen at the checkpoint is what unblocks
 them, and the FIRST push of main after it is the run that will say whether
 "CI runs green end to end" is true. It should be watched as a first run,
 not as a formality.
+
+### Final verification, all four suites at `34856d0`
+
+Re-run after the last notes edit, because the card body is a code input
+and this lane already proved that the hard way. Exits from `$?`, unpiped.
+
+| command | from | result | exit |
+|---|---|---|---|
+| `cargo test` | app/src-tauri/ | 18 `test result: ok` lines, 0 failed anywhere — **200** lib · **81** agent_runner (+1 ignored) · **188** nputer-index; lib suite **4.14s** | **0** |
+| `npx vitest run` | lib/parser/ | **314** passed, 15 files | **0** |
+| `npm test` | app/ | **1013** passed, 47 files | **0** |
+| `NPUTER_E2E_PORT=14566 npm test` | tools/e2e/ | **233** passed, 2.4m | **0** |
+
+`34856d0` is the tip these were measured at; the only thing after it is
+this table. The code has not moved since **`b5e3e4e`** — every commit
+since is `docs/tasks/` — so CI cycles 1 and 2 tested exactly the source
+that ships here.
