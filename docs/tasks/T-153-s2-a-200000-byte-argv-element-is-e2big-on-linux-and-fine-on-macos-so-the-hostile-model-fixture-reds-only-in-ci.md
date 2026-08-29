@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 20
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
@@ -444,3 +444,302 @@ fifth CI cycle to re-measure a code diff that has not changed since
 `b5e3e4e` — and the brief's cap is four. The lane's authority is the local
 branch, which the merge is performed from; the PR exists for the runner
 and nothing else.
+
+---
+
+## Verdicts
+
+2026-08-29 — verifier `claude-opus-5@subagent` (independent hand; the
+executor's notes were read only AFTER the attack set below was written,
+and every figure stamped here is my own measurement at a named ref):
+**APPROVED WITH ASSIGNED CORRECTIONS — one correction, named in §5.**
+
+The mechanism is right, the card's own diagnosis of the CHANNEL is wrong
+and the executor's replacement is correct, the guard FIRES rather than
+merely passing, and the one instruction the executor refused is refused
+correctly — I reproduced the impossibility rather than taking the
+argument. What is not delivered is a body over the arm the change exists
+to protect: the two PRODUCTION-shaped call sites are killed by nothing in
+the tree.
+
+### 1. What I attacked, written BEFORE the notes were opened
+
+From the card (frontmatter through `## Disposal`) and
+`git diff b650f62..5622db9` alone: that arm (a) says *bound `model` where
+the argv is BUILT* while the diff bounds the ENVIRONMENT, so either the
+card or the diff is wrong about the channel; that arm (a)'s promise
+(*"then the fixture passes on both platforms"*) is testable by putting
+200,000 back; the off-by-one, bound-removed and truncate-not-drop mutants;
+whether the NUL in the pair arithmetic is pinned or shares a literal with
+its test (the symmetric-mutation hazard); whether the bound-removed mutant
+can red at all on macOS, where no per-element cap exists; whether the argv
+body is parametrised by the constant it checks (T-063) and whether it
+walks the adapter PLURAL (shape seven); whether a production path puts a
+model on `execve` at all; whether `set_child_env`'s stderr line echoes an
+attacker-controlled key; and whether a dropped `PATH` is a worse failure
+than the `E2BIG` it replaces.
+
+### 2. The card is wrong about the channel, and the executor is right
+
+Derived from the tree before reading a word of the notes.
+`--model` is **deliberately never argv** — `validate_model`'s own header
+and `sessions.rs`'s `model` field both say so (ADR-003, the user's CLI
+default IS the model), and the only `--model` in `adapter.rs` is a member
+of the documented-flag catalogue. `AgentAdapter::argv` assembles a FIXED
+template with exactly one substituted `SESSION_ID_SLOT`, and `ADAPTERS`
+holds one entry. The channel is the child ENVIRONMENT:
+`Options.model` → `NPUTER_FAKE_MODEL` in `RunnerConfig.extra_env` →
+`apply_child_env` → the new `set_child_env`.
+
+**And `extra_env` is a test seam, so the card's "product half" as written
+does not exist.** The only production construction is
+`RunnerConfig::default()` (`lib.rs`, the `app.manage(AgentState::new(...))`
+site), whose `extra_env: Vec::new()` is itself pinned by a unit assert in
+`runner.rs`. No production path puts a model on `execve`. The exposure
+that IS real is the one the executor names: `ENV_ALLOWLIST` values read
+from the parent with `std::env::var_os`, and `PATH` captured from a login
+shell by the `NPUTER_LOGIN_PATH=$PATH` probe. Both now pass through the
+bound. **The diagnosis holds, the named channel did not, and the
+substitution is legitimate.**
+
+### 3. `MAX_ARG_STRLEN`, and the macOS half re-measured by hand
+
+The Linux claim — that the per-element cap bounds envp strings exactly as
+argv strings — is correct from the kernel's own structure: `copy_strings`
+is the single routine called for BOTH vectors and it carries the
+`MAX_ARG_STRLEN` check, which is `PAGE_SIZE * 32` and independent of the
+far larger total `ARG_MAX`. No Linux was reachable from this seat either,
+so I did not restate it as a measurement — but CI settles it
+behaviourally (§6).
+
+macOS, my own probe, Darwin 25.6.0 arm64, `exec`ing `/usr/bin/true` under
+one oversized env pair: **200,000 → 0 · 1,000,000 → 0 · 1,040,000 → 0 ·
+1,048,000 → fails · 1,100,000 → fails**, against `getconf ARG_MAX`
+1,048,576 and `getconf PAGE_SIZE` 16,384. There is no per-element cap to
+find here; the only limit is the sum. The executor's figures reproduce
+exactly.
+
+**The bound's VALUE (65,536) is a judgement and it is not indefensible** —
+half the smallest per-element cap, 512× the longest legitimate value
+(`SESSION_ID_MAX_LEN` / `MODEL_MAX_LEN` = 128). I record that mutants M1
+through M4 below red on the MECHANISM and not on the number: every
+assertion derives its inputs from the constant, so moving the value
+re-derives rather than reds. That is the right property for a judgement
+call and it is why I do not contest the number.
+
+### 4. The drill — the guard is shown to FIRE
+
+Detached worktree `/Users/ujju/Projects/v153s2-drill` at **`5622db9`**,
+33-character root, `CARGO_TARGET_DIR` inside it at `.v153s2-target`; one
+stem `v153s2` on the worktree, the target dir, the driver and every
+results file, with a guard that recognises MY drill and not the shared
+prefix. Every mutation one-sided and read back with `git diff` before the
+run. **Baseline 200 / 81 (+1 ignored) / 188, exit 0, lib suite 4.06s.**
+
+| # | mutated (one side) | exit | bodies killed |
+|---|---|---|---|
+| M1 | `child_env_pair_fits` `<=` → `<` (off by one, refusing) | **101** | 2, one per binary: `a_child_env_pair_fits_up_to_the_bound_and_not_one_byte_past_it` (199/1) and `an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands` (80/1) — **the positive control dies** |
+| M2 | the bound removed (`true \|\| …`) | **101** | the same 2, 199/1 and 80/1 — **and it reds on macOS**, which was the open question |
+| M3 | TRUNCATE the value instead of dropping it whole | **101** | **1** — `an_env_pair_past_…`; lib stays 200/0. The refused-WHOLE discriminator is real |
+| M4 | the NUL dropped from the pair arithmetic | **101** | **1** — the adapter unit body (199/1). The arithmetic is pinned; the two sides are NOT symmetric |
+| M5 | the `ENV_ALLOWLIST` loop bypasses `set_child_env` | **0** | **NONE — whole suite green** |
+| M6 | `PATH` bypasses `set_child_env` | **0** | **NONE — whole suite green** |
+| M7 | `MODEL_MAX_LEN` → `60_000` | **101** | **1** — `a_hostile_init_line_model_is_refused_and_a_real_one_round_trips` (80/1); the moved fixture still earns its band |
+| M8 | `SESSION_ID_MAX_LEN` → `70_000` | **101** | 3, incl. `every_argv_element_an_adapter_can_assemble_fits_the_spawn_bound` |
+| M9 | a 70,000-byte literal into `CLAUDE_V1.spawn_args` | **101** | 3 (197/3), incl. the same argv body |
+| M10 | the card's ORIGINAL `200_000` fixture restored, bound in place | **101** | `[oversize] registry model` — `left: Some("fake-model-1")` / `right: None` |
+
+**Restoration proved, not asserted.** All four touched files sha256-MATCH
+`5622db9` (`adapter.rs` `027955f4…`, `runner.rs` `13ed6cc4…`,
+`agent_runner.rs` `58af342d…`, `fake_agent.rs` `b0bd0728…`);
+`git status --porcelain` showed only my own `.v153s2-target/`; **restored
+run 200 / 81 (+1) / 188, exit 0**, identical to baseline. Worktree
+removed; nothing from the drill was ever committed and no graph was
+regenerated inside it (`T-153-s3`'s hazard, respected).
+
+**M10 settles two things the executor asked to be taken on argument.**
+First, the refused brief instruction: a fixture that crosses the new bound
+CANNOT keep `registry.model == None`, because crossing removes
+`NPUTER_FAKE_MODEL` and `fake_agent`'s `unwrap_or_else` reports the legal
+default `fake-model-1`, which round-trips. That is now measured, not
+reasoned. Second — and the card should carry this — **arm (a)'s own
+sentence is false**: bounding the runner does NOT make the 200,000 fixture
+pass on both platforms, it makes it red on both. Arm (b) was NECESSARY,
+not the cheap alternative the Disposal section presents it as. The
+executor reached the right pair; the card's stated reason for it was wrong.
+
+### 5. ASSIGNED CORRECTION (one)
+
+**M5 and M6 are the finding.** Reverting either production-shaped call
+site — the `ENV_ALLOWLIST` loop, or `PATH` — from `set_child_env` back to
+`command.env(…)` leaves the ENTIRE cargo suite green at exit **0**. The
+only body driving the bound drives `extra_env`, which §2 establishes is
+empty in production. So the arm the change EXISTS to protect is killed by
+nothing in the tree: POISON DRILL **shape seven**, a mutant no body kills
+because the mutant set followed what the seam can drive rather than the
+criterion. The executor disclosed this himself under "Least confident" §4
+and named the seam — it is an unclosed gap, not a concealed one, which is
+why this is a correction and not a rejection.
+
+**The correction, precisely.** Add ONE body to
+`app/src-tauri/tests/agent_runner.rs`, two arms one byte apart, shaped
+exactly like `an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands`
+but driving a channel `set_child_env` reaches in production. The cheapest
+vehicle already exists: `RunnerConfig.path_override` is the FIRST branch
+of `apply_child_env`'s `PATH` chain, so
+`path_override: Some("P".repeat(SPAWN_ELEMENT_MAX_LEN - "PATH".len() - 2))`
+must arrive in the child's `env.json` at its exact byte length (the
+positive control), and the same value one byte wider must be ABSENT with
+the turn still `Completed`. If the integrator wants the allowlist loop
+covered too rather than only `PATH`, the harness already plants a parent
+variable (`CANARY` at `agent_runner.rs`'s `harness`) and a body already
+asserts the child's environment against it, so an oversized `HTTPS_PROXY`
+is the same shape one line over. **The acceptance test for this correction
+is mechanical: mutants M5 and M6 above must red.** Everything else in the
+diff stands as delivered.
+
+### 6. Suites and gates — my own runs, at the refs named
+
+Lane worktree at **`5622db9`**, working tree carrying only my own card
+edit. Exits read from `$?` unpiped, into files under `/private/tmp`.
+
+| command | from | result | exit |
+|---|---|---|---|
+| `cargo test` | app/src-tauri/ | 18 `test result: ok` lines, 0 failed anywhere — **200** lib · **81** agent_runner (+1 ignored) · **188** nputer-index; lib suite **4.19s**, under the cache cliff's 9.5s | **0** |
+| `npm ci` + `npm run build` + `npx vitest run` | lib/parser/ | **314** passed, 15 files | **0** |
+| `npm install` + `npm run build` + `npm test` | app/ | **1013** passed, 47 files | **0** |
+| `NPUTER_E2E_PORT=16218 npm test` | tools/e2e/ | **233** passed, 2.5m; tree clean afterwards but for my card | **0** |
+| `NPUTER_BOOT_PORT=16219 npm run boot:check` | tools/e2e/ | both lines — `[nputer] project folder: …/nputer-T-153s2` and `[nputer] window "main" created` | **0** |
+
+Both scratch ports were `lsof -nP -iTCP:<port> -sTCP:LISTEN`-read at ZERO
+ROWS immediately before binding. **1420 was read once with the one
+permitted command and nothing else**, and it is HELD — `node` pid 19746,
+`TCP [::1]:1420 (LISTEN)`, the human's app on IPv6 loopback exactly as the
+PORT RULE records. It was never probed, bound or contacted; the lane's
+`npm install` ran in this worktree, not in the checkout the app serves
+from.
+
+**Standing gates**, derived by the RANGE RULE's pre-merge form against the
+CURRENT main tip `3ff7f30` (`git merge-tree --write-tree` exit **0**, tree
+`66977a08`, **5 paths**; never `main..HEAD`):
+
+- **GRAPH REGEN — FIRES** (3 `.rs` outside docs/). **ASKED, not
+  predicted**: `index --check --root ../..` exits **1** and it is the REAL
+  red, not the `--root` false one — it prints both sides (committed
+  **1,020,023 B · 189 files · 2,152 symbols · 2,111 edges** against fresh
+  **1,021,184 · 189 · 2,156 · 2,111**) and names `~3` files, which are this
+  lane's own three. **NOT A LANE DEFECT**: CONVENTIONS' GRAPH REGEN bullet
+  commits `docs/architecture/graph.json` *with the CHECKPOINT*, for the
+  stated reason that the checkpoint edits indexed fixture files and a
+  regen committed earlier is stale again by the time it lands; and that
+  path is outside `[app-agent]`, whose fence is C-14's `paths:`.
+- **BOOT GATE — FIRES** (3 paths under `app/src-tauri/**`). Run by me,
+  exit **0**, both lines above.
+- **DOCS GATE — FIRES**, exit **1**, on the two `docs/tasks/T-*.md` paths,
+  owing app/, tools/e2e/ and lib/parser/ — all three run green above. It
+  also reports *"every live task card's frontmatter parses, with a legal
+  status"*, which covers my own `building` → `verifying` flip.
+
+**CI, read-only via `gh`; nothing pushed and no run triggered.** All three
+lane runs — **33255912812**, **33256467475**, **33257012982** — show
+`cargo suite` **✓** on `ubuntu-24.04` and then **X** at
+`graph currency (nputer-index index --check)`, with steps 18–26 (`cargo
+audit`, the whole-tree docs gate, the e2e types/browser/lane steps and the
+xvfb boot step) skipped. Read from run 33257012982's own log:
+`a_hostile_init_line_model_is_refused_and_a_real_one_round_trips ... ok`,
+`an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands
+... ok`, **200 / 81 (+1 ignored) / 188**, then
+`graph.json is STALE`. Run 33256856543 is `cancelled`, not red. The prior
+card's run 33253673074 fails AT `cargo suite` with graph currency never
+reached, so the executor's "no run has reached this step before" holds.
+
+**That Linux log is the strongest evidence in this verdict** and it is
+worth naming as such: on the platform that HAS the per-element cap, a
+65,517-byte env pair crossed `execve` and a 65,518-byte one was refused by
+this runner before it tried, both green. The Linux half of the derivation
+is confirmed behaviourally, which is exactly the claim macOS cannot make.
+
+### 7. Security sweep — clean, and the class sweep is recorded
+
+No dependency additions and no manifest movement (the pair is three `.rs`
+and two `.md`, nothing else). No secrets, no new IPC surface, no endpoint,
+no authz change. `set_child_env`'s stderr line echoes the KEY and never
+the value — and the key is never attacker-controlled on any production
+path, being an `ENV_ALLOWLIST` literal, `TERM`, `PATH`, or an `extra_env`
+entry that production never writes.
+
+**Class named, sweep run, result recorded even though it is nearly
+empty** — the class is *a string handed to `execve` without a bound*, and
+the sweep was `Command::new` / `.env(` / `.envs(` / `.arg(` / `.args(`
+over `app/src-tauri/src/**/*.rs` from the repo root. Four production
+sites: the turn spawn (covered on both vectors), and the login-shell and
+version probes, which set no environment at all and inherit the parent's
+whole — theoretical only, since the parent was itself `execve`d through
+the same cap. Filed as `T-153-s4` rather than folded in here.
+
+### 8. Judged and not raised as defects
+
+- **Dropping rather than failing the turn** (the executor's "Least
+  confident" §2) is the right call and I decline to reopen it: the typed
+  failure family exists so a failure never costs an affordance falsely,
+  and a typed `TurnError` here would cost a turn that works on macOS
+  today. The drop is loud on stderr and names the key.
+- **An oversized `PATH` is now dropped rather than `E2BIG`**, so on macOS
+  a >64 KiB `PATH` changes from "forwarded and working" to "absent". At
+  ~600 hundred-character entries this is pathological, the program itself
+  is resolved absolutely so the spawn survives, and the drop is announced.
+  Noted, not charged.
+- **`every_argv_element_an_adapter_can_assemble_fits_the_spawn_bound`
+  kills no mutant uniquely** — 3 bodies under M8, 3 under M9. That is
+  shape SIX, whose own catalogue entry says a redundant body costs
+  nothing; its diagnostic value is real, because the bodies that red
+  beside it red with unrelated messages. Not charged.
+- **The bound's value** — §3. A judgement, defended in the constant's own
+  doc comment, and not contested.
+
+### 9. Routed rather than judged
+
+- **`T-153-s4`** filed by me: the two probe spawn sites the bound never
+  reaches, and the argv body walking `CLAUDE_V1` where the file's own
+  house style walks `ADAPTERS`.
+- **`T-153-s3`** (the executor's) parses and is correctly shaped; its
+  hazard was respected in my drill and nothing was committed from it.
+- **Housekeeping for the integrator, not a defect**: the executor's drill
+  worktree `/Users/ujju/Projects/t153s2-drill` is still on disk at
+  `b5e3e4e`. It is detached, holds no fence and is not a lane, but it is
+  the litter the scratch-collision bullet warns about; mine was removed.
+- **A method conflict I did not resolve.** `method/roles/verifier.md`
+  states that this seat does NOT read `docs/ROADMAP.md`, with its reason;
+  the dispatch brief instructed reading it. **I followed the role file and
+  did not open ROADMAP** — nothing in this verdict rests on it — and route
+  the disagreement to the orchestrator rather than settling it in a
+  verdict.
+
+### 10. The gates at the tip THIS verdict created
+
+A verdict is a commit, and every figure in §6 was measured at `5622db9`,
+which is not the tip a reader of this page is standing on. So the
+obligation was discharged rather than assumed. At my own verdict tip the
+RANGE RULE's pre-merge form against main `3ff7f30` returns **6 paths**
+(the three `.rs`, and now three `docs/tasks/T-*.md`), `merge-tree` exit
+**0**. The **DOCS GATE** fires at exit **1** owing the same three suites
+and reports *"every live task card's frontmatter parses, with a legal
+status"* — which is what clears my `verifying` flip and the new card's
+frontmatter. Run twice, because amending this section moved the tip the
+first set was measured at: once at **`36edfda`** and again at
+**`1f5e139`**, identical both times.
+
+| command | from | result at `1f5e139` | exit |
+|---|---|---|---|
+| `npx vitest run` | lib/parser/ | **314** passed, 15 files | **0** |
+| `npm test` | app/ | **1013** passed, 47 files | **0** |
+| `NPUTER_E2E_PORT=16221 npm test` | tools/e2e/ | **233** passed, 2.4m | **0** |
+
+Ports 16220 and 16221 were `lsof`-read at zero rows immediately before
+binding; the tree was clean after each. GRAPH REGEN and BOOT GATE cannot
+be moved by a docs-only commit and were not re-run — their answers stand
+at §6, where they carry their ref. **`1f5e139` is the ref those three
+were measured at, and the only thing after it is this paragraph** — the
+same honest ceiling the executor's own final ledger states, and the
+reason no count on this page appears without the commit it was taken at.
+
