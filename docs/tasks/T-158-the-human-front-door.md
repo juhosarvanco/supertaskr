@@ -859,3 +859,268 @@ run; `1420` untouched throughout.
 The only change after `77ca368` is this ledger — card prose, no
 frontmatter field moved — and the counts above are stamped at
 `77ca368` rather than left to read as current.
+
+### 2026-08-29 — APPROVED, re-verification (claude-opus-5@subagent, review: same-model)
+
+Same verifier, second pass, at tip `635552a`. Verified from a fresh
+detached scratch worktree at `/tmp/v158b`
+(`git worktree add --detach /tmp/v158b 635552a`), never from the lane
+and never from the integration checkout; every figure below is stamped
+at `635552a` unless it names another ref. `1420` was read zero times.
+
+**Both blocking defects are closed, the closure is derived rather than
+asserted, and the mechanism that closed them found a third instance the
+rejection had not seen.** I opened all seven cited sources and matched
+the new `seat` and `room` rows phrase by phrase; every phrase resolves
+and every phrase is supported. The falsifying commands from my
+rejection now return confirmation instead of contradiction. Nothing
+that survived the first pass regressed: the fence is still two paths,
+the adapters are still the same blob at both ends of the range, the
+page still states no figure, and the verdict section above is
+byte-identical to what I wrote.
+
+#### DEFECT 1 — CLOSED, and checked against the sources rather than against the claim sheet
+
+The false clause is gone:
+
+    grep -n "never verifies\|builds a change never" README.md
+      exit 1, no output
+
+Its replacement was checked phrase by phrase against the two files it
+cites, opened at `635552a`. All four line citations in the executor's
+own derivation table are exact, and — more to the point — each phrase
+is supported by what the line actually says:
+
+- *"a verifier is handed only the card and the diff, never the
+  builder's reasoning, and is adversarial by design"* —
+  `method/roles/verifier.md:3` opens *"You are adversarial by design.
+  You receive ONLY the task file (spec + acceptance criteria) and the
+  diff — never the executor's reasoning"*, and
+  `method/tasks/TASK-FORMAT.md` restates it in the README's own words:
+  *"the verifier receives only the card and the diff, never the
+  executor's reasoning, and is adversarial by design."* SUPPORTED,
+  near-verbatim from the second source.
+- *"records which hand held the pen"* — `TASK-FORMAT.md:103`,
+  *"read `review:` as PROVENANCE — which hand held the pen"*.
+  SUPPORTED, verbatim.
+- *"`self-verified` is the value that names the guarantee as missing"*
+  — `TASK-FORMAT.md:121`, *"`self-verified` is the one value that names
+  a MISSING guarantee"*. SUPPORTED.
+- *"The independence that pays is that blindness rather than model or
+  session diversity"* — `TASK-FORMAT.md:101` is *"THE INDEPENDENCE THAT
+  PAYS IS INFORMATIONAL, NOT MODEL DIVERSITY"*, and the paragraph under
+  it gives *"That blindness is what catches the failure a builder
+  cannot catch."* SUPPORTED for "blindness" and for "model"; the words
+  "or session" reach one term past the source, and that is note 1
+  below — non-blocking, with the reasoning stated there.
+
+**The rejection's own falsifying evidence, re-derived independently at
+`635552a` rather than read off the fix-pass ledger:**
+
+    grep -h '^review:' docs/tasks/T-*.md | sort | uniq -c | sort -rn
+      83 same-model · 20 self-verified · 5 independent · 43 blank
+    grep -l '^review: self-verified' docs/tasks/T-*.md | wc -l   → 20
+    (each of those 20 still reads status: done)
+
+Identical to the figures in my rejection, which is the point: the
+board did not change, the sentence did. The twenty cards are no longer
+counterexamples because the row now says what they record — the
+guarantee was not applied, and the card is where that is written down.
+
+#### DEFECT 2 — CLOSED, and the citations SUPPORT rather than merely resolve
+
+The absolute is gone; `every house term is mapped` no longer appears.
+Its replacement is checkable and I checked it:
+
+    awk '/^\| \*\*/ {n++; if ($0 ~ /\]\(/) c++} END {print n, c}' README.md
+      7 7
+
+Seven rows, seven citations — and a citation that resolves is not yet a
+citation that supports, so I opened all seven:
+
+- **card** → `method/tasks/TASK-FORMAT.md`. Its card skeleton at
+  lines 33–36 is `## Acceptance criteria  EARS notation`,
+  `## Implementation notes  appended by the executor`,
+  `## Verdicts  appended by the verifier`, over the frontmatter block
+  at the top. The row states that anatomy in that order. SUPPORTED.
+- **lane** → `method/lane-protocol.md`, whose line 3 is the row
+  verbatim: *"One task, one branch, one worktree, one session — and the
+  integration branch is none of them."* SUPPORTED.
+- **fence** → `method/lane-protocol.md` **rule 5**, and rule 5 is in
+  fact the disjointness rule — *"A FENCE NAMES PATHS … DISJOINTNESS IS
+  COMPUTED OVER THE EXPANDED SETS — NEVER OVER THE TOKENS … Comparing
+  tokens reports two lanes DISJOINT whenever their names differ."* The
+  row's second half is that sentence. SUPPORTED, and the section number
+  is right.
+- **seat** → `method/roles/verifier.md` + `method/tasks/TASK-FORMAT.md`.
+  Checked above.
+- **room** → `method/rooms/ROOM-FORMAT.md`. Checked below.
+- **poison drill** → `docs/CONVENTIONS.md`'s POISON DRILL bullet:
+  *"MUTATE every new or changed assertion so that it ought to fail, RUN
+  its suite, and require the RED. MUTATE ONE SIDE ONLY … never a
+  literal the two SHARE"*, then the restoration proof by `shasum`.
+  SUPPORTED, and the row's *"rather than with a clean `git status`"* is
+  conservative relative to the source, which is the safe direction.
+- **checkpoint record** → **ADR-019**, and this is the citation that
+  changed since my first pass, where I had verified the claim against
+  STATE's restatement instead. ADR-019's own lines 54–57:
+  *"docs/checkpoints/ holds one append-only file per integration …
+  No suite, gate or generator may DEPEND on this directory's
+  contents."* SUPPORTED at the source it now names.
+
+#### THE THIRD FIX — the `room` row, and it matches its source exactly
+
+The row previously said a room is *"closed by a ruling that becomes a
+decision record"* — unconditional. `method/rooms/ROOM-FORMAT.md:32`
+reads, in full: *"if the room was a debate, the Resolution is the draft
+of its ADR."* The row now reads *"closed by a `## Resolution` stating
+the decision and what it changed; where the room was a debate, that
+resolution is the draft of its decision record."* Both halves check
+out: ROOM-FORMAT step 2 requires a `## Resolution` section carrying
+**Question / Decision / Why / Changed**, which is what "stating the
+decision and what it changed" names, and the ADR half is now scoped by
+the source's own conditional, with `ADR` rendered as "decision record"
+— the same expansion the tour's `docs/decisions/` line already uses.
+CORRECTION MATCHES SOURCE.
+
+That this was found by adopting the citation recommendation, inside the
+pass that adopted it, is the strongest evidence available that the
+recommendation was right, and it is why note 2 of my rejection should
+be read as a mechanism rather than as a style preference: **a claim
+needs a citation for the same reason a figure needs a keeper.**
+
+#### My verdict section, untouched — measured, not trusted
+
+    git show a0be8f7:<card> | tail -n +348  > /tmp/verdicts_a0be8f7.md
+    git show 635552a:<card> | tail -n +523  > /tmp/verdicts_635552a.md
+    cmp   → exit 0
+    shasum -a 256 → 4865206b444d9b998ade06ea83a5f1af889116d9dae7cdcd18190406464e33b8
+                    for BOTH files, 19,285 bytes each
+
+Byte-identical. The 175 lines the fix pass added all sit above
+`## Verdicts`, in the Implementation notes where they belong.
+Frontmatter `status:` is still `building` and the `verifier:` stamp is
+unchanged.
+
+#### Fence and adapters — unchanged from the first pass
+
+    git diff 3607a94..635552a --name-only
+      README.md
+      docs/tasks/T-158-the-human-front-door.md        (2 paths, exit 0)
+    git diff 3607a94..635552a --name-only -- CLAUDE.md AGENTS.md
+      (0 paths, exit 0)
+
+Blob identity, which is stronger than a path count: `CLAUDE.md` and
+`AGENTS.md` are both `03bbe073` at `3607a94` and at `635552a` — and are
+that same blob as each other. Byte-untouched.
+
+#### The fix-pass ledger, spot-checked by re-derivation
+
+Four of its claims re-derived rather than read, in my own scratch:
+
+- **17 links.** `perl -0777` over the anchor form: **17** unique
+  targets, **17** exist, **17** git-tracked, **0** missing. The five new
+  ones (`TASK-FORMAT.md`, `lane-protocol.md`, `verifier.md`,
+  `ROOM-FORMAT.md`, ADR-019's file) all resolve and are tracked.
+- **The digit sweep.** `grep -n '[0-9]' README.md` returns **7** lines,
+  up from 5, and every digit on them is an identifier: a milestone
+  number, a card id, a checkpoint FILENAME's date, two ADR numbers and
+  `rule 5`. `rule 5` was checked rather than assumed — lane-protocol's
+  rule 5 IS the fence rule the row states, so the number is a correct
+  identifier and not a quantity. No count, size, hash, percentage or
+  range anywhere. **POSITIVE CONTROL**: the same sweep over the file
+  plus a planted *"the census is 233 behaviours and the budget has 919
+  bytes left"* returns the planted line at exit 0, so the zero is a
+  measurement and not a silence. Law 2 still discharged by subtraction.
+- **The board census.** Re-derived above: 83/20/5/43, matching the fix
+  ledger and matching my rejection.
+- **The marketing sweep.** 30 superlative terms plus `!` and emoji:
+  **0** hits, exit **1**, over prose that changed in four places.
+  **POSITIVE CONTROL**: the same pattern over the file plus a planted
+  *"A seamless, world-class experience!"* returns 1 at exit 0.
+
+Also checked, unprompted: the vision paragraph is still byte-identical
+to `docs/NORTH_STAR.md` (`diff` exit **0**), and the executor's second
+commit `635552a` corrects two figures in its own re-check ledger — a
+"T-083 twice / ADR-019 twice" enumeration and a "sixteen terms" count
+describing MY command, which it could not derive. Both were replaced
+with shapes rather than tallies. That is CONVENTIONS' *cite the shape,
+not the tally* applied by an executor to its own prose, unasked, and it
+is the right call.
+
+#### Suites — every count and exit read unpiped from `$?`, at `635552a`
+
+    (root)      node tools/e2e/scripts/docs-gate.mjs \
+                  $(git diff --name-only 3607a94 635552a)   exit 1  FIRES
+    lib/parser  npm ci · npm run build                       exit 0
+    lib/parser  npx vitest run                                exit 0  314/314
+    app         npm install · npm run build                   exit 0
+    app         npm test                                      exit 0  1013/1013
+    tools/e2e   npm ci                                        exit 0
+    tools/e2e   NPUTER_E2E_PORT=16113 npm test                exit 0  233/233
+    tools/e2e   npm run lint:tokens -- --selftest             exit 0
+    tools/e2e   npm run lint:tokens                           exit 0  TOKEN 144, CONTROL 846
+    tools/e2e   npm run lint:docs                             exit 0
+
+The gate names the same three suites and the same nine readers as at
+`487186e`; exit **1** is the code meaning it HAS a verdict. It also
+reports every live card's frontmatter parsing with a legal status —
+the check the `verifier:` stamp could have broken. Port `16113` read at
+zero rows on both `lsof` forms immediately before the bind and after
+the run; `git status --porcelain` empty in the scratch afterwards, so
+the lane's plant-and-restore left nothing. `cargo test` not run and not
+owed: no `.rs` in the diff and the gate does not name it.
+
+POISON DRILL: not triggered — no test body in this diff. Both
+search-based zeros above were run against a planted hit before their
+zeros were written down. SECURITY: no input path, endpoint, dependency,
+secret or executable code; every link repo-relative, none leaving the
+repository.
+
+#### Not blocking — named, with the reasoning, and none of them held the approval
+
+1. **"rather than model or session diversity"** reaches one word past
+   its source. `TASK-FORMAT.md:101` says *NOT MODEL DIVERSITY* and
+   pointedly does not say "session", because it cannot: `self-verified`
+   is a SESSION fact and the same file calls it *"a real weakening"*.
+   Session separation is not the guarantee, but it is how blindness is
+   obtained — a single session has read its own reasoning by
+   construction. **Why this is not blocking**: the row's very next
+   clause names `self-verified` as the value that records the guarantee
+   as missing, so a reader finishes the row with the source's own
+   position and no falsifiable claim is left standing. Deleting the two
+   words would cost nothing and would make the row exactly its source.
+2. **"for a word the table does not carry, that owning file is where it
+   is defined"** has a loose antecedent — the reader is not told how to
+   find that file. `dispatch brief`, used on line 20, is owned by
+   `method/roles/executor.md`, which no row cites.
+3. **"Every claim below links to the record that holds it or names the
+   command that derives it"** is closer to true than it was — 7 of 7
+   table rows now carry citations — but the Laws 1 and 2 gloss and the
+   adapters sentence still carry neither. **I am deliberately NOT
+   raising this to blocking**: I had the same evidence at the first pass
+   and ruled it non-blocking there, and moving that line on a second
+   pass with no new evidence would be this seat failing its own
+   discipline. One citation on that paragraph (*ADR-019 Laws 1 and 2*)
+   closes it whenever someone is next in the file.
+4. **The decisions-tour venue list** — *"a room, a task's verification,
+   or a human directive"* — still does not cover `architect promotion`
+   or `F-03 decomposition`, two of the nineteen `Decided in:` values.
+   Carried forward from the first pass unchanged.
+5. **The `MapView.tsx` comment** stays routed and outside this fence, as
+   the fix pass correctly declined to widen it.
+
+#### Why APPROVED
+
+The card's two acceptance criteria were already discharged at
+`487186e` and are discharged still: the five tour links each land on a
+record that substantiates the sentence beside them, verified by opening
+all five, and the page states no figure at all, verified by a sweep
+with a positive control. What sent it back was a constraint rather than
+a criterion — *every claim in it either links to its record or carries
+its derive command* — and the front page's most load-bearing sentence
+failed it in the direction that flattered the project. That sentence is
+now derived from the method's own ruling, phrase by phrase, and the
+mechanism that fixed it caught a third instance nobody had found. The
+page is better than the one I rejected, and it is better in the way
+NORTH_STAR's bar asks for: it now survives the grep it invites.
