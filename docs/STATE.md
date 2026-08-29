@@ -1,10 +1,10 @@
 # State
 
-Updated: 2026-08-29 at the T-156 checkpoint — the method now watches
-its own health (`npm run health` from tools/e2e; this file's warn
-headroom is a WATCHED BAND, and the first official reading caught it
-breached — this regen is the remedy). Current record:
-docs/checkpoints/2026-08-29-T-156.md. Pre-compaction narrative:
+Updated: 2026-08-29 at the T-155 checkpoint — the method can now red
+its own degradation (`node tools/method-evals/run.mjs` from the repo
+root; a version bump owes the eval block) and watches its own health
+(`npm run health` from tools/e2e). Current record:
+docs/checkpoints/2026-08-29-T-155.md. Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
@@ -27,8 +27,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: ONE lane — T-155, verdict in (approved with
-  corrections), merge next. Dispatch writes the fence manifest
+  this rewrite: NO lanes — the board is briefly all-merged, T-153-s5
+  dispatches next. Dispatch writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
   `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
@@ -52,12 +52,11 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-155` merges (one prose correction rides the checkpoint). Then
-   `T-153-s5` dispatches (tools/e2e freed), then `T-153-s6` (needs
-   CONVENTIONS freed too) — THEN main pushes: the two CI runs so far
-   red on four bodies, ALL carded to s5/s6, so the next push should
-   be the repository's FIRST GREEN Linux run. Watch it as a first
-   run regardless.
+1. `T-155` is DONE and merged. `T-153-s5` dispatches now (tools/e2e
+   free), then `T-153-s6` (they collide on tools/e2e — sequential) —
+   THEN main pushes: the two CI runs so far red on four bodies, ALL
+   carded to s5/s6, so the next push should be the repository's
+   FIRST GREEN Linux run. Watch it as a first run regardless.
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release

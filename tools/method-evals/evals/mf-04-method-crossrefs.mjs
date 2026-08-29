@@ -26,6 +26,18 @@
  *   3. A project path — `docs/STATE.md`, `docs/CONVENTIONS.md`. Those
  *      exist in THIS repository and must not in a generic one; a method
  *      file naming them is naming the adapter's job.
+ *
+ * AND A FOURTH SHAPE THAT IS SILENT, NOT DELIBERATE (T-155's verdict,
+ * AC-1): a BARE, UNPREFIXED reference to a method-root file that does
+ * not exist — a planted `lane-protocolz.md` is never examined, because
+ * BARE_FILES is an allowlist of the roots that DO exist, and a bare
+ * name outside it does not parse as a reference at all. The verifier
+ * measured the suite exiting 0 over the plant, reporting "13 distinct
+ * method references, all resolving". Widening the predicate to count
+ * unknown bare names is design work (every prose word ending in `.md`
+ * becomes a candidate) and belongs to the T-155-s6 family; until then
+ * this enumeration is honest about the hole instead of implying the
+ * check covers it.
  */
 
 import { control, degraded, readCorpus } from "../lib/corpus.mjs";

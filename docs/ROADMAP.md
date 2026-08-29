@@ -30,7 +30,10 @@ opens with the card id that still holds its story.
   the record), and since the amnesty sitting (2026-08-29) the
   backlog is metabolized: all 140 suggested cards dispositioned (73
   promoted, 62 parked with resurfacing conditions, 5 rejected),
-  arrivals queue for T-159's rules.
+  arrivals queue for T-159's rules. Since T-155 (2026-08-29) the
+  method reds its own degradation before it ships: ten canned evals
+  with executable derivations, and every version bump owes the eval
+  block.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
