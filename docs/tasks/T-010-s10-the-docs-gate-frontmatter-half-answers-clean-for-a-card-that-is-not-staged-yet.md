@@ -1,9 +1,67 @@
 ---
 id: T-010-s10
-title: The docs gate's frontmatter half reads git ls-files, so a card written but not yet staged gets a confident false clean
-status: suggested
+title: The DOCS GATE's frontmatter verdict overclaims — it judges the TRACKED tree with a looser check than the parser, and prints a sentence about neither
+feature: F-01
+milestone: 4
+priority: 39
+size: S
+status: planned
+blocked_by: []
+touches: [tools/e2e]
 suggested_by: verifier claude-opus-5 @T-010-verify
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29, as the owner of its
+class.** Two independent findings say the same sentence is wrong in two
+different directions, and both needles are live at this base:
+
+- `liveTaskCards()` in `tools/e2e/scripts/docs-scan.mjs` is
+  `trackedFiles(root).filter(isTaskCardPath)`, so an unstaged card is
+  not merely unchecked — it is INVISIBLE, and the gate reports the
+  absence of a problem it never looked for. The positive control on
+  this card settles that the check itself works: the same file, one
+  `git add` apart, goes from `0 frontmatter issue(s)` to
+  `1 task card(s) the parser will refuse`.
+- The check the gate DOES run is more permissive than the parser's, so
+  the gate can say every card parses on a card the parser rejects
+  (T-137-s8, absorbed).
+
+Both errors point the same way — toward *"everything is fine"* — which
+is the direction T-090 removed `xargs` for, and both land on the one
+sentence at `docs-gate.mjs:337`: *"every live task card's frontmatter
+parses, with a legal status."* The gate is run BY HAND, by an executor
+before hand-off and by an integrator before a merge, and the natural
+moment to run it is right after writing the cards and before committing
+them — the exact moment the sentence is least true.
+
+## Acceptance criteria
+
+- WHEN the whole-tree half prints its verdict THE verdict SHALL name
+  its own corpus — the card count and the fact that `git ls-files` is
+  the source — so a census that names its corpus cannot mislead about
+  it (the move T-090 already made for the reader census).
+- WHEN an `isTaskCardPath` argument handed to the gate is NOT tracked
+  THE gate SHALL account for it — checked, or reported as
+  "not tracked, not judged" — rather than dropping it silently.
+- THE gate's frontmatter check SHALL NOT accept a card the parser
+  refuses; the two readers SHALL be reconciled, and the reconciliation
+  SHALL be pinned by a body that plants a card each reader disagrees
+  about.
+- THE pinning body SHALL assert BOTH rows of this card's table — the
+  untracked row and the tracked row — in one test. Running only the
+  tracked row cannot tell a fix from the behaviour already there.
+- THE DIFF half's argument handling SHALL NOT change. `T-101-s3`'s
+  "a path that is not tracked is exit 2" was explicitly NOT built at
+  T-090 because a merge's diff names paths the working tree does not
+  have; conflating the two halves re-opens the case T-090 closed on
+  purpose.
+
+## The record, kept verbatim
 
 **Not a T-010 defect** — a `tools/e2e` finding, made while verifying
 T-010 because it happened to me and cost a green reading I had already
@@ -82,3 +140,8 @@ diff names paths the working tree does not have. This finding is about
 the WHOLE-TREE half's own corpus and its printed sentence, not about the
 diff half's argument handling — the two must not be conflated, or fixing
 this one will re-open the case T-090 closed on purpose.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

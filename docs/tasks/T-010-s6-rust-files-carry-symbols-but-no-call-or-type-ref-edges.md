@@ -1,7 +1,7 @@
 ---
 id: T-010-s6
 title: Rust files enter the graph with symbols and import edges but no call/type_ref edges, so semantic zoom T2 is half-lit for them
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-010
 ---
 
@@ -41,3 +41,5 @@ smallest:
    are a different product.
 
 **Fence: `[crate-index]`** for arm 2; arm 1 is `[app-map]`.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live (resolve/rust.rs still emits no call/type_ref candidates, and the crate's own header says so on purpose), but arm 3 — leave it and record it — is a legitimate product call: the map's Rust story today is components, files and module structure, and arm 2 spends graph headroom T-151 is already rationing. RESURFACES: the next crate-index or app-map dispatch; arm 1 (the panel saying "not extracted for this language" instead of showing an empty edge list) is one line and should ride that lane.

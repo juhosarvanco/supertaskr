@@ -1,7 +1,7 @@
 ---
 id: T-010-s7
 title: ARCHITECTURE asserts four times that languages ["ts"] hides app/src-tauri/src/agent/**, and T-010 makes all four false
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-010
 ---
 
@@ -46,3 +46,5 @@ Two more sentences in the same file need the same treatment:
 `[crate-index, docs/architecture/components/]` — the COMPONENT files, not
 the architecture document — so this is routed rather than made.
 See `T-010-s1` for the same problem in `docs/CONVENTIONS.md`.
+
+Amnesty triage 2026-08-29 (triage seat): REJECTED — the needle is gone. All four sentences this card names lived in docs/ARCHITECTURE.md's per-merge chronicle, which phase 6 of ADR-019 (925a814) cut from 133,682 bytes to 8,525; command grep -n 'languages: \["ts"\]|still hides' over ARCHITECTURE.md and CONVENTIONS.md returns nothing at this base. The two extra sentences it routed went with the same compaction — ARCHITECTURE's C-07 row now reads "TS/JS/Rust" and the churn paragraph it quotes no longer exists. The chronicle is permanently readable at git show a6491e6:docs/ARCHITECTURE.md, where the sentences are true of the merges they describe, which is what the card asked for.

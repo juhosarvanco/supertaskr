@@ -1,7 +1,7 @@
 ---
 id: T-052-s1
 title: The fresh-install refusal is a hand-run ritual and every ingredient for a real gate already exists
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-052
 ---
 
@@ -56,3 +56,5 @@ this checkout?" with the four codes, reused by whatever wants it, plus
 a spec pinning both arms — the refusal AND the positive control. Fence
 `[tools/e2e]`. It does NOT need to be wired into `npm test`; being
 runnable and documented is the whole of what the ritual lacks.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — real and fully designed — the hand sequence was demonstrated with both arms, and both stack probes are already the PORT RULE's own lesson — but the ritual has not failed since it was written, and the exit-code contract it proposes (3 for could-not-run) is exactly the contract T-132-s1 shows the DOCS GATE itself does not yet honour. RESURFACES: the next tools/e2e dispatch, or the first time the ritual is skipped and a checkout's node_modules is deleted under a live server.

@@ -1,7 +1,7 @@
 ---
 id: T-010-s9
 title: The cargo-prefixed package qualifier closes the id collision from the Rust side only, and a TS specifier can still land on the same node
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-010-verify
 ---
 
@@ -68,3 +68,5 @@ closed reason taxonomy already has `unsupported`.
 A test wants BOTH directions: the `.ts`-first and the `.rs`-first
 orderings, since only running one of them cannot tell a fix from a
 coincidence of sort order.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live — resolve/ts.rs's is_unsupported still rejects only /, http:, https: and data:, so a cargo:-prefixed TS specifier still lands on the minted package node — but the card measures its own reachability as latent, not live: no npm package can be named cargo:anything and no shipping toolchain writes that specifier. RESURFACES: the next crate-index dispatch, or the first real cargo:-prefixed specifier in any indexed tree.

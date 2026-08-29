@@ -1,9 +1,63 @@
 ---
 id: T-088-s4
-title: A watcher startup-arm test reds because the build cache had grown to 78,000 files — not a flake, and the title below is the wrong diagnosis kept for the record
-status: suggested
+title: The docs-watcher tests bound an FSEvents wait on a wall clock, so the size of the build cache decides whether the suite is green — recv_emit wants a deterministic rendezvous
+feature: F-02
+milestone: 4
+priority: 12
+size: M
+status: planned
+blocked_by: [T-153]
+touches: [app-shell]
 suggested_by: integrator claude-opus-5 @T-088
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29.** The card's own armed
+unpark trigger fired and went on firing — three red in six full-suite
+runs at ONE integration, over trees whose Rust is byte-identical — and
+`docs/STATE.md` now carries it as the FIRST standing hazard every
+session must be briefed about. The briefing cost is being paid on every
+dispatch and twice per integration, which is the interruption the
+parking note said it was waiting for. The record below is kept verbatim,
+including its own two retractions: it is the measurement, and the
+correction history is half of what it teaches.
+
+`blocked_by: [T-153]` is not ceremony. T-153 is live in
+`app/src-tauri/src/docs_watch.rs` RIGHT NOW, holds `app-shell`, and its
+finding 1 proposes the same shape from a different direction — *"recv
+until an emit satisfies the predicate (or quiescence), bounded by the
+existing timeout"*. That fix keeps the wall-clock bound this card is
+about, so the two do not collide in intent; they collide in the file.
+Read T-153's landing before starting, and re-derive what survives it.
+
+## Acceptance criteria
+
+- WHEN a docs-watcher test waits for an emit THE wait SHALL be a
+  deterministic rendezvous rather than a wall-clock deadline, fixed at
+  the HELPER rather than at any one body — the card measures 20 call
+  sites across 11 bodies in that module, plus six further `recv_timeout`
+  waits at 5 and 10 seconds.
+- THE deliberate 1200 ms NEGATIVE wait SHALL keep a bound, because a
+  rendezvous cannot express "and nothing arrives"; the diff SHALL say
+  which waits are which and why.
+- THE bound SHALL NOT simply be widened. A wider deadline buys a slower
+  suite that fails anyway on a slower machine; this card refuses that
+  arm twice and the refusal is a criterion, not advice.
+- WHEN the change lands THE lane SHALL report `cargo test
+  --no-fail-fast` from `app/src-tauri/`, unpiped, with the lib suite's
+  own `finished in` beside every run, taken under DELIBERATE load rather
+  than on an idle machine — this card's own control shows a green run on
+  an idle machine proves nothing, and the healthy/degraded bands
+  (every green under 9.5s, every red over 14.6s, nothing between) are
+  the reading to compare against.
+- IF a wait that needs fixing sits outside `app-shell` THEN it SHALL be
+  recorded and routed rather than made.
+
+## The record, kept verbatim
 
 > **SETTLED BY CONTROLLED EXPERIMENT, 2026-08-25, architect, at main
 > `82c69a8`, on @human's instruction. THIS IS NOT A FLAKE AND NEVER WAS.**
@@ -241,3 +295,8 @@ all green" instead of re-deriving the question each time. **Recommend
 deliberate load rather than on an idle machine. Fence `[app-shell]`
 (`app/src-tauri/src/docs_watch.rs` is C-10's, whose slug is `app-shell`).
 It owes `cargo test`.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts
