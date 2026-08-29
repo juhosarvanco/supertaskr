@@ -278,13 +278,66 @@ passes. So the runner saw a different log than its ref state implies,
 and nothing in this diff explains it. The precondition now DISCLOSES
 what it saw — the branch, the ref it resolved to, the line count, the
 Checkpoint count, the index and the head line — so the next run answers
-the question instead of posing it.
+the question instead of posing it. Routed as `T-153-s14` with the three
+readings that remain open and the measurement that rules none of them
+out; it is NOT closed here, and this card does not claim it is.
+
+**Cycle 2 — run `33277133108`, head `3f374a0` — never reached the e2e
+lane, and what stopped it is a repository-wide CI blocker.** It died at
+step 19, `install cargo-audit`, with `error: binary cargo-audit already
+exists in destination`, and skipped eight steps behind it. The cause is
+the cargo cache: cycle 1 MISSED the key `cargo-Linux-740f9629d9d8…`,
+installed cargo-audit into `~/.cargo/bin`, and saved that binary into the
+cache; cycle 2 HIT the same key, restored the binary, and `cargo install`
+refused to overwrite it. The key carries no event and no ref, so **a push
+to main hits it exactly as a pull_request does** — every run on this
+`Cargo.lock` now stops before its suites. Filed as `T-153-s13` against
+`.github/workflows/`, outside this fence.
+
+**CYCLE 3 WAS NOT SPENT, AND THE REASON IS THAT IT COULD NOT MEASURE
+ANYTHING.** With the cache poisoned, a third run dies at the same step
+before the e2e lane and produces no verdict about any body. The cap is
+2 of 3 used. Deleting the cache entry would buy exactly one run and
+would re-poison itself on that run's own save, so it is a repository
+administration call for the integrator rather than a lane's to make.
 
 ### Routed, not built
 
-- **`docs/CAPABILITIES.md` is one regen behind.** It is generated from
-  the e2e spec names and was `CURRENT (21992 bytes)` at `a533a4d020cd`;
-  this diff adds two spec bodies, so it now needs `npm run capabilities`
-  from `tools/e2e/`. That file is under `docs/`, outside this lane's
-  `touches: [tools/e2e]` fence, so it is NOT written here — it is owed at
-  the merge, and it is one command.
+- **`docs/CAPABILITIES.md` is two behaviours behind.** It is generated
+  from the e2e spec names and was `CURRENT (21992 bytes)` at
+  `a533a4d020cd`; this diff adds two spec bodies, so it now needs `npm
+  run capabilities` from `tools/e2e/`. That file is under `docs/`,
+  outside this lane's `touches: [tools/e2e]` fence, so it is NOT written
+  here — it is owed at the merge, and it is one command. No new card:
+  `T-153-s8` already holds the class (the census can go stale and no
+  gate can say so), and this is one more instance of it, not a second
+  finding.
+- **`T-153-s13`** — `install cargo-audit` fails on every run that
+  restores the cache the previous run populated. Fence
+  `.github/workflows/`. Found by this card's cycle 2; it blocks the whole
+  repository's CI, main pushes included, and it is the reason cycle 3 was
+  not spent.
+- **`T-153-s14`** — the one body of the twenty-nine still red on a
+  `pull_request` checkout, for a cause this card's mechanism does not
+  explain and the runner's own ref state does not reproduce. Fence
+  `tools/e2e`, blocked on `T-153-s13` because a `pull_request` run is
+  what answers it and no such run can currently reach the e2e lane.
+
+### The ceremony row, and a divergence recorded rather than decided
+
+`tasks/TASK-FORMAT.md`'s table gives two rows at size S, and the boundary
+is read off `touches:` under its own rule of thumb — *docs, method and
+tooling self-integrate; anything a user could run does not*. This diff is
+`tools/e2e` plus `docs/tasks`, which is tooling, so the table's row is **S,
+diff outside shipped code: no verifier, and the executor is its own
+integrator**. Under `roles/executor.md` step 6 that row's exit stamp
+would be `done`, and the executor would merge and checkpoint its own work.
+
+**This lane stamped `verifying` and merged nothing**, because its
+dispatch brief named a separate integrator, withheld the merge, and asked
+for a report addressed to that seat. The two do not agree, and this note
+is the record rather than the resolution: `verifying` is the
+under-claiming half of the disagreement — reversible by whoever
+integrates, and wrong only in costing one stamp — while `done` on an
+unmerged branch would assert something no tree carries. The seat that
+merges owns the flip.
