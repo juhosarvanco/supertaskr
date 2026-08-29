@@ -482,13 +482,14 @@ Both search-based zeros were re-proved capable of firing before being
 written down, per CONVENTIONS:
 
     grep -n "[0-9]" README.md
-      7 lines, every digit an identifier — Milestone 3, T-083 twice,
-      the checkpoint FILENAME's date, ADR-019 twice, ADR-018, and
-      `rule 5`, a section number inside the new fence citation. No
-      count, size, hash or range: Law 2 still holds by subtraction.
+      7 lines, and every digit on them is an identifier: a milestone
+      number, a card id, the date inside a checkpoint FILENAME, two
+      ADR numbers, and `rule 5`, a section number inside the new fence
+      citation. No count, size, hash or range anywhere on the page, so
+      Law 2 still holds by subtraction.
       POSITIVE CONTROL: the same sweep over the file plus a planted
       `233` returns the planted line.
-    marketing sweep, sixteen terms plus `!`     exit 1, no hits
+    marketing sweep, superlative terms plus `!`    exit 1, no hits
       POSITIVE CONTROL: the same pattern over the file plus a planted
       "This is the best, most seamless tool!" returns that line.
     control-byte sweep, C0 and DEL over raw bytes        0
