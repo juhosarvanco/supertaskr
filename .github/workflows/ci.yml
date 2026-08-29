@@ -167,7 +167,13 @@ jobs:
       # RUSTSEC advisory DB — the one network-touching step.
       - name: install cargo-audit
         working-directory: app/src-tauri
-        run: cargo install cargo-audit --locked
+        # Idempotent on purpose (T-153-s13): the cargo cache saves
+        # ~/.cargo/bin, so the run AFTER the first install restores the
+        # binary and a bare `cargo install` refuses with "binary already
+        # exists" — which stopped every run on this Cargo.lock, main
+        # pushes included, at this step. A restored binary is the happy
+        # path, not an error.
+        run: command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked
       - name: cargo audit
         working-directory: app/src-tauri
         run: cargo audit
