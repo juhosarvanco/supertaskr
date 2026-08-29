@@ -394,11 +394,19 @@ test("in a lane, a request with no readable path is refused rather than waved th
   const blind = decide({ toolName: "Write", cwd: fx.lane, toolInput: {} });
   expect(blind.verdict, blind.reason).toBe("block");
   expect(blind.code).toBe("unreadable-request");
-  for (const field of WRITE_TOOL_PATH_FIELDS) expect(blind.reason).toContain(field);
 
-  // BOTH published spellings are read, because the harness's own hook
+  // THE SPELLINGS ARE NAMED LITERALLY, NOT LOOPED OVER THE CONSTANT
+  // UNDER TEST. This body's first draft iterated WRITE_TOOL_PATH_FIELDS,
+  // so shrinking that array to one member deleted the array's own check
+  // and the drill went green at 25 of 25 — poison shape FIVE, and T-063's
+  // "a test parametrised by the constant it checks cannot pin that
+  // constant". Both spellings are here because the harness's own hook
   // examples and its tool reference disagree about which one it is.
-  for (const field of WRITE_TOOL_PATH_FIELDS) {
+  for (const field of ["file_path", "path", "notebook_path"] as const) {
+    expect([...WRITE_TOOL_PATH_FIELDS], `${field} is no longer a spelling this hook reads`).toContain(
+      field,
+    );
+    expect(blind.reason, `${field} is not named in the refusal`).toContain(field);
     const seen = decide({
       toolName: "Write",
       cwd: fx.lane,
