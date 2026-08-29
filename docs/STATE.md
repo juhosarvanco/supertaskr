@@ -1,11 +1,11 @@
 # State
 
-Updated: 2026-08-29 at the T-153-s6 checkpoint — the LAST carded
-Linux red is fixed (the xargs dialect is probed, never assumed), and
-MAIN IS PUSHED from this commit: the run it triggers is the
-repository's first plausible end-to-end green, watched as a first
-run. Current record: docs/checkpoints/2026-08-29-T-153-s6.md.
-Pre-compaction narrative:
+Updated: 2026-08-30 at the T-153-s9 checkpoint (with T-140's record
+landed in the same sitting) — the FIRST GREEN CI RUN is on the books
+(33274798983, attempt 2), the lane instrument no longer manufactures
+its own PR reds, and the file ceiling PRINTS from `index --check` on
+every run. Current record: docs/checkpoints/2026-08-30-T-153-s9.md
+(and -T-140.md beside it). Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -25,8 +25,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — T-153-s9 and T-140 dispatch next in
-  parallel (fences disjoint). Dispatch writes the fence manifest
+  this rewrite: NO lanes — T-160 (the dispatch preflight, @human's
+  card) dispatches next. Dispatch writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
   `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
@@ -50,14 +50,14 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. The T-153 family's critical path is CLOSED (parent, s2, s5, s6
-   all merged) and main is pushed. Overnight queue (@human's ruled
-   order, 2026-08-29 night): `T-153-s9` (the PR-checkout 29 — makes
-   lane CI clean) -> `T-160` (the dispatch preflight; same fence,
-   sequential) with `T-140` in parallel (disjoint) -> `T-157` ->
-   `T-159` -> the FIRST standing triage under T-159's rules -> the
-   CONVENTIONS train (`T-111-s10`, `T-147`) -> `T-143`, `T-156-s1`
-   -> derive T-112's flip pairs (prep only, no dispatch).
+1. FIRST GREEN RUN recorded; `T-153-s9` and `T-140` are DONE and
+   merged. Remaining night order (@human's ruling): `T-160` (the
+   dispatch preflight) -> `T-157` -> `T-159` -> the FIRST standing
+   triage under T-159's rules -> the CONVENTIONS train (`T-111-s10`,
+   `T-147`) -> `T-143`, `T-156-s1` -> derive T-112's flip pairs
+   (prep only, no dispatch). Watch-list on any push: `T-161` (the
+   stderr-drain intermittent, 1-in-2 that day) and `T-153-s14` (one
+   PR run answers it — its precondition now discloses everything).
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release

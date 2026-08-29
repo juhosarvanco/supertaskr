@@ -2209,7 +2209,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // DECLARES C-10, so the new edge is confirmed rather than drift —
       // which is why the fence question the card raised about that import
       // was never a fence question.
-      ["C-12", "C-10", "confirmed", 5],   // T-149: 2 -> 5
+      // 5 -> 6 AT THE T-140 CHECKPOINT: MapView gained `import type
+      // { SkipReason } from docs-model` for the graphSkip prop — the
+      // lane's own battery ran against the pre-regen graph (the regen
+      // is the integrator's), so the sixth edge appears here, at the
+      // regen that landed it.
+      ["C-12", "C-10", "confirmed", 6],   // T-149: 2 -> 5; T-140: 5 -> 6
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.

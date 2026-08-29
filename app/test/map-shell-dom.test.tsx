@@ -35,9 +35,12 @@ afterEach(() => {
 // watermark; each payload in this file uses a fresh higher seq.
 let nextSeq = 1000;
 
-function payload(files: { path: string; content: string }[]): DocsSnapshotPayload {
+function payload(
+  files: { path: string; content: string }[],
+  extra: Partial<DocsSnapshotPayload> = {},
+): DocsSnapshotPayload {
   nextSeq += 1;
-  return { seq: nextSeq, projectDir: "/dogfood", generatedAtMs: nextSeq, files };
+  return { seq: nextSeq, projectDir: "/dogfood", generatedAtMs: nextSeq, files, ...extra };
 }
 
 const TASK = `---
@@ -174,5 +177,35 @@ describe("the switcher through the real store", () => {
     });
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull(); // full mode now
     expect(container.querySelector('[data-component-id="C-01"]')).not.toBeNull();
+  });
+
+  // T-140's VERDICT, assigned correction 2: the SHELL's wiring is the
+  // pinned thing here, not MapView's rendering — the verifier's mutant
+  // made App.tsx's `graphSkip` lookup never match and the whole suite
+  // stayed green, because every oversize body drove MapView directly.
+  // This body drives the real App through the harness, so breaking the
+  // one wiring line kills it and nothing else.
+  it("an oversize graph skip reaches the map THROUGH THE SHELL — banner up, button withdrawn", () => {
+    openProject();
+    act(() => {
+      (container.querySelector("[data-testid=pane-rail-map]") as HTMLElement).click();
+    });
+    // Two-sided: before the skip arrives, no oversize banner and the
+    // run-index affordance is present.
+    expect(container.textContent).not.toContain("too large to map");
+    expect(container.querySelector("[data-testid=map-run-index]")).not.toBeNull();
+
+    act(() => {
+      window.__nputerDocsHarness?.apply(
+        payload([{ path: "docs/ROADMAP.md", content: ROADMAP }], {
+          skipped: [{ path: "docs/architecture/graph.json", reason: "oversize" }],
+        }),
+      );
+    });
+    expect(container.textContent).toContain("too large to map");
+    expect(container.textContent).toContain("graph too large to deliver");
+    // The button that could only rewrite the same too-large file is
+    // withdrawn, not disabled — an affordance that cannot help is noise.
+    expect(container.querySelector("[data-testid=map-run-index]")).toBeNull();
   });
 });

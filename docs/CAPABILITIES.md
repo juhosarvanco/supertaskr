@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **281 behaviours** — 279 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **283 behaviours** — 281 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -62,6 +62,8 @@ Census: **281 behaviours** — 279 extracted sentences + 2 named-not-extracted (
 - THE COMMAND IS A READ — it writes nothing into the checkout it runs in
 - THE EXIT CODES keep `I derived it` apart from `I could not tell you`
 - a brief assembled at this ref names the lanes the repository holds, and no others
+- THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still wins wherever it exists
+- the WHOLE brief assembles on a pull_request-shaped checkout, and names the ref it actually spent
 
 ## card-figures
 

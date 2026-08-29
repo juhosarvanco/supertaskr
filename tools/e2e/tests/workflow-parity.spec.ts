@@ -257,10 +257,16 @@ const CI_SEQUENCE: Correspondence[] = [
   },
   {
     kind: "ci-only",
-    step: { dir: "app/src-tauri", run: "cargo install cargo-audit --locked" },
+    step: {
+      dir: "app/src-tauri",
+      run: "command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked",
+    },
     why:
-      "the one-time local dev-tool setup, run per job because a fresh runner " +
-      "has no ~/.cargo/bin. A dev tool, never a repo dep (T-009-s3).",
+      "the dev-tool setup, guarded (T-153-s13): the cargo cache saves " +
+      "~/.cargo/bin, so the run after the first install restores the binary " +
+      "and a bare `cargo install` refuses with `binary already exists` — " +
+      "which stopped every run on this Cargo.lock at this step. A restored " +
+      "binary is the happy path. A dev tool, never a repo dep (T-009-s3).",
   },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo audit" },
   { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
@@ -726,7 +732,7 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
   const claimedCount = CI_SEQUENCE.filter((e) => e.kind !== "ci-only").length + LOCAL_ONLY.length;
   expect(problems.filter((p) => p.startsWith("this spec expects")).length).toBe(claimedCount);
   expect(steps.map(stepKey)).toEqual([
-    "[app/src-tauri] cargo install cargo-audit --locked",
+    "[app/src-tauri] command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked",
     "[tools/e2e] npx playwright install --with-deps chromium",
   ]);
 });

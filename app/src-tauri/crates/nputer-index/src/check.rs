@@ -635,6 +635,26 @@ mod tests {
             projected_ceiling(&dense_text) < projected_ceiling(&sparse_text),
             "a costlier file must project a SMALLER reach:\n{sparse_text}\n{dense_text}"
         );
+
+        // THE ARITHMETIC PIN (T-140's verdict, correction 1): the printed
+        // bytes/file and ceiling must BE the division of the report's own
+        // fields, re-derived here — the verdict's surviving mutant halved
+        // the headline projection and shipped green, because only the
+        // ORDINAL (dense < sparse) was pinned. A constant factor on the
+        // card's whole subject must never print unnoticed again.
+        for (report, text) in [(&sparse_report, &sparse_text), (&dense_report, &dense_text)] {
+            let per_file = (report.floor_bytes as f64) / (report.fresh_stats.0 as f64);
+            let ceiling = ((report.budget_bytes as f64) / per_file).floor() as usize;
+            assert!(
+                text.contains(&format!("{per_file:.0} bytes/file")),
+                "the printed per-file cost must equal floor/files re-derived ({per_file:.0}):\n{text}"
+            );
+            assert_eq!(
+                projected_ceiling(text),
+                ceiling,
+                "the printed ceiling must equal budget/per-file re-derived:\n{text}"
+            );
+        }
     }
 
     /// The state the card is about, rendered: a project whose files and

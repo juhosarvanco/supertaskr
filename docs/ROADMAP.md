@@ -29,10 +29,10 @@ opens with the card id that still holds its story.
   front door (T-158 — a README whose every link is verified against
   the record), and since the amnesty sitting (2026-08-29) the
   backlog is metabolized — 140 cards dispositioned (73 promoted, 62
-  parked, 5 rejected), arrivals queue for T-159's rules — and since
-  T-153-s6 the e2e recipes probe the xargs dialect at run time
-  rather than encoding the measuring platform: the last carded
-  Linux red.
+  parked, 5 rejected), arrivals queue for T-159's rules. The e2e
+  recipes probe the xargs dialect at run time (T-153-s6) and every
+  seat RESOLVES the integration branch instead of assuming the name
+  exists (T-153-s9) — the first fully green CI run followed.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -40,10 +40,9 @@ opens with the card id that still holds its story.
   screen (T-062), a declared window minimum (T-051), diagnostics that
   stay reachable (T-066). Hardening continues as inherited backlog —
   the F-02 cards riding milestone 4 — with `app-shell`'s
-  umbrella-fence cost just cut by T-149. Since T-153 (2026-08-29) the
-  docs watcher's live tests await the CONVERGED state across
-  platforms — the first fix CI's Linux activation demanded, green
-  198/0 on ubuntu. Next: T-149-s1…s5.
+  umbrella-fence cost just cut by T-149, and the docs watcher's live
+  tests awaiting the CONVERGED state across platforms (T-153, CI's
+  first Linux fix). Next: T-149-s1…s5.
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer
@@ -53,10 +52,9 @@ opens with the card id that still holds its story.
   CLI-less kickoff all exist (T-029); the runner is hardened —
   validated session ids (T-039), probe-only CLI resolution (T-060),
   fast honest cancel (T-043), typed failures that never cost a user an
-  affordance (T-069/T-101/T-102/T-107/T-113). Since T-153-s2
-  (2026-08-29) nothing the runner hands execve is unbounded — an
-  oversized env pair costs the value, never the turn, proven on the
-  production channels. THE GATE THAT REMAINS is
+  affordance (T-069/T-101/T-102/T-107/T-113), and nothing the runner
+  hands execve is unbounded (T-153-s2 — an oversized env pair costs
+  the value, never the turn). THE GATE THAT REMAINS is
   not a card: no planner turn has ever run against a real model —
   every stream ever seen is a fixture. `T-025-s2`, @human's, one real
   timed genesis on an authenticated machine. The archaeology variant
@@ -92,19 +90,20 @@ opens with the card id that still holds its story.
   the indexer degrades instead of aborting on hostile input (T-129),
   and the graph budget carries a measured reason — 1,040,000 bytes,
   T-139 — whose HEADROOM is the number nothing reports: derive it
-  with `index --check`, never quote it. Since T-092 and T-093
-  (2026-08-27) the poison-drill taxonomy and the hand's measurement
-  hazards are written rules — a query that runs clean is not yet an
-  answer. Next: T-140 (the ~802 bytes-per-file floor caps the map at
-  ~1,000 files — the real constraint on pointing nputer at a big
-  codebase), and the budget VALUE call now rides `T-151`. Since
+  with `index --check`, never quote it. The drill taxonomy and the
+  hand's measurement hazards are written rules (T-092/T-093 — a query
+  that runs clean is not yet an answer), and the budget VALUE call
+  rides `T-151`. Since
   T-156 (2026-08-29) the method watches its own health: fourteen
   control bands as data with measured reasons, doc-headroom bands
   derived from the budgets themselves, and the first official
   reading caught STATE breached while the merge was still landing.
   The last declared cycle is BROKEN (T-127-s1's measured stop ->
   T-127-s6, 2026-08-29): `arch cycles` answers ACYCLIC on main for
-  the first time, with C-17/C-18 minted and no import severed.
+  the first time, with C-17/C-18 minted and no import severed. The
+  file ceiling PRINTS from `index --check` every run (T-140: ~918
+  files at this tree's density), an oversize graph tells the map the
+  truth, and the payload's shape rides T-140-s1, @human's.
 
 ## Milestones
 

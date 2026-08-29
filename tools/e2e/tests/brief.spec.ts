@@ -398,8 +398,14 @@ test("a figure read from the MOVING integration ref is a LIVE fact — two reads
   // remote-tracking spelling) and followed by a space, a comma or the end
   // — while a file name carries it as a fragment of a longer identifier.
   const via = (l: string) => l.replace(/^.*? {2}<- /, "");
+  // T-153-s9's VERDICT, the assigned correction: the lookahead also
+  // admits the revision-operator suffixes — `main^{commit}`, `main~2`,
+  // `main:path`, `main@{u}` are SPENT revisions the narrow [\s,] class
+  // dropped, and the verifier planted one stamped TREE that the suite
+  // then passed at 25 green. A real violation could hide in exactly
+  // the gap the comment below claims is empty; now it cannot.
   const spendsBranch = (l: string) =>
-    new RegExp(`(?:^|[\\s/])${branch}(?=[\\s,]|$)`).test(via(l));
+    new RegExp(`(?:^|[\\s/])${branch}(?=[\\s,^~:]|@\\{|$)`).test(via(l));
   const refReads = before.filter((l) => l.includes("  <- ") && spendsBranch(l));
   expect(
     refReads.length,

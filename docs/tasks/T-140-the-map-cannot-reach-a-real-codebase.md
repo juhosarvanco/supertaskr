@@ -1,17 +1,17 @@
 ---
 id: T-140
-title: The graph's floor is 802 bytes per file, so the map stops working at about a thousand files — nputer cannot currently be pointed at a real codebase
+title: The graph carries an undroppable floor per file (1,131 B at landing, ~919-file ceiling — printed live by index --check since this card), so nputer cannot yet be pointed at a big codebase
 feature: F-06
 milestone: 5
 priority: 6
 size: L
-status: verifying
+status: done
 blocked_by: [T-139]
 touches: [crate-index, app-map, app-shell]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5
-verified_by:
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -27,9 +27,13 @@ This card exists so `T-139`'s raise is not mistaken for an answer.**
 
 `emit::apply_budget` drops symbol arrays when the graph exceeds its budget
 and **never drops files or `import` edges**. So there is a floor the budget
-cannot go below, and at this repository's shape it is **802 bytes per
-file** (146 788 bytes for 183 files, derived by serializing files-without-
-symbols plus import edges alone).
+cannot go below. RETRACTED AT MERGE (verdict, correction 4): the 802
+bytes/file / ~1,000-file figures below were this card's FILING-time
+measurement and are STALE — the landed re-derivation is **1,131
+bytes/file over 189 files, ceiling ~919** (both re-derived by the
+verifier to the byte), and the live figure now PRINTS from
+`index --check`'s floor line at every run, which is the only place it
+cannot go stale. The table below is kept as the filing-time record.
 
 | project | skeleton ALONE | against the 1 MiB collector cap |
 |---|---|---|
@@ -335,10 +339,16 @@ suite, as the card requires.
 | A4a | `graphSkip === "oversize"` → `"nonUtf8"` on the banner branch | **1 failed / 1013**, the new map body alone |
 | A4b | the hint string in the producer only (the assertion's copy verifiably unmoved) | **1 failed / 1013**, the new map body alone |
 
-**R3 IS THE FINDING AND IT IS RECORDED RATHER THAN PAPERED OVER: the
-relation body is SHAPE SIX.** It reds under a value poison and kills no
-mutant another body does not already kill, and the reason is structural
-rather than careless — the floor is linear because BOTH halves of it are,
+**R3's SHAPE-SIX CLASSIFICATION WAS FALSIFIED AT VERIFICATION AND IS
+CORRECTED HERE (verdict, correction 3):** the verifier's
+`graph.files.truncate(24)` mutant kills the relation body ALONE (1 of
+525) — a measured UNIQUE kill this record now carries in place of the
+shape-six claim. The honest half SURVIVES the correction: an
+`edges.clear()` mutant does NOT red the relation body, so it stays
+blind to a fix that removes the import-edge 75% while keeping the file
+list — which is exactly the flat-payload shape T-140-s1 proposes, and
+why the body remains that card's discriminator. The original reasoning
+stands for the half it got right — the floor is linear because BOTH halves of it are,
 so any mutant that flattens it has to drop files or import edges, and
 each of those is already pinned by a stronger invariant. R3 shows this
 directly: truncating files alone leaves the floor linear, because the

@@ -147,9 +147,11 @@
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
   hundreds of MB, deliberately outside the tree) and
-  `cargo install cargo-audit --locked` for `cargo audit`, run from
-  app/src-tauri/ (fetches the RUSTSEC advisory DB — the one
-  network-touching command).
+  `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
+  for `cargo audit`, run from app/src-tauri/ (fetches the RUSTSEC
+  advisory DB — the one network-touching command; idempotent since
+  T-153-s13, because the cargo cache restores ~/.cargo/bin and a
+  restored binary once stopped every run at this step).
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
@@ -246,9 +248,11 @@
   The boot check runs as `xvfb-run -a npm run boot:check` from tools/e2e:
   the wrapper is real, since a headless runner has no display, but what
   it wraps is now the documented command rather than a second spelling
-  of it. CI also runs `cargo install cargo-audit --locked` (the one-time
-  dev-tool setup above, per run because a fresh runner has no
-  ~/.cargo/bin), and it deliberately does NOT run `npm run tauri dev` or
+  of it. CI also runs
+  `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
+  (the dev-tool setup above — guarded, because the cargo cache
+  restores ~/.cargo/bin and a restored binary is the happy path,
+  T-153-s13), and it deliberately does NOT run `npm run tauri dev` or
   `npm run tauri build` — one opens a window and the other packages a
   bundle; the xvfb boot step covers the dev path — nor
   `cargo run -p nputer-index -- index --watch --root ../..`, which runs

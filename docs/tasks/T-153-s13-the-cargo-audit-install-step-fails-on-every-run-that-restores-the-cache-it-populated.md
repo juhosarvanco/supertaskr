@@ -84,3 +84,5 @@ list against CONVENTIONS and is the place a static half would live.
 
 **FENCE.** `.github/workflows/` — outside `T-153-s9`'s `tools/e2e`, which
 is why it is routed rather than fixed where it was found.
+
+Discharged: closed_by 129e3c9 (2026-08-30, integrator) — the guard landed on main directly under the CI-green authorization before this card could reach a lane; this card arrived with the s9 merge already satisfied.

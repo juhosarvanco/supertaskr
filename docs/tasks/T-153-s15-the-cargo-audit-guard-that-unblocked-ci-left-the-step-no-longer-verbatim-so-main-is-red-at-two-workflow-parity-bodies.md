@@ -101,3 +101,5 @@ three cannot come back green, which is how this arrived.
 the same run. This card is the sweep that fix owed and did not run: the
 class is *a CI step edited without the two readers that derive from it*,
 and it has exactly one member today.
+
+Discharged: closed_by the T-153-s9 checkpoint (2026-08-30, integrator) — the three-copy alignment landed with the merge that freed the fence: CONVENTIONS twins, the CI_SEQUENCE declaration, and the fixture expectation all carry the guarded spelling; workflow-parity 17/17 green at the checkpoint.
