@@ -207,3 +207,257 @@ at `c9e6a3d`, main's dispatch commit atop it, which is what the
 dispatcher's coordinates say and what `git merge-base` confirms.
 
 ## Verdicts
+
+### 2026-08-29 — APPROVED WITH ASSIGNED CORRECTIONS
+
+**verifier claude-opus-5@subagent, independent hand.** Base `c9e6a3d`,
+tip `aadf874`, pair `git diff c9e6a3d..aadf874`. Every figure below is
+my own measurement at the ref it names; nothing is transcribed from the
+executor's notes. Battery and drills run in the lane worktree
+`/Users/ujju/Projects/nputer-T-153-s6` at `aadf874`, exits read unpiped,
+each playwright port lsof'd to zero rows immediately before binding
+(`14907`, `14908`–`14919`); port 1420 read only. Every shim lived in the
+session scratchpad and never in the tree; every repository file I
+poisoned was restored and the restoration proved by sha256. CI was read
+through `gh` only — nothing pushed, no run triggered.
+
+**THE PROBE IS A MEASUREMENT AND THE PIN IS TWO-SIDED, AND I COULD NOT
+FALSIFY EITHER.** Both corrections below are PROSE in this card's own
+record; neither changes a line of shipped behaviour, which is why they
+are assigned rather than a rejection.
+
+#### THE BATTERY, at `aadf874`
+
+| command | cwd | result | exit |
+|---|---|---|---|
+| `npm run typecheck` | tools/e2e/ | clean | 0 |
+| `npm run lint:tokens` | tools/e2e/ | clean | 0 |
+| `npm run lint:docs` | tools/e2e/ | 22 derived docs readers across 4 suites, 0 frontmatter issues | 0 |
+| `npm run capabilities:check` | tools/e2e/ | CURRENT (21992 bytes) | 0 |
+| `npx playwright test` | tools/e2e/ | 281 passed (2.7m), `NPUTER_E2E_PORT=14907` | 0 |
+| `cargo test` | app/src-tauri/ | 522 passed, 0 failed, 4 ignored | 0 |
+| `npx vitest run` | lib/parser/ | 314 passed, 15 files | 0 |
+| `npm test` | app/ | 1013 passed, 47 files | 0 |
+
+The cargo cache cliff is not near: the lib suite reports its own time as
+**4.02s**, under the 9.5s band, so nothing was cleaned. The e2e run
+printed its own dialect disclosure, and the ref in it is mine:
+`range-rule DISCLOSURE [docs-gate-recipe-exit-codes]:
+/Users/ujju/Projects/nputer-T-153-s6 @ aadf874 — xargs at
+/usr/bin/xargs: empty input does NOT run the utility; a utility exit of
+7 arrives as 1 — the bsd row; the matrix's bsd column is the one
+compared`. `docs/CONVENTIONS.md` is **117399 bytes** at this tip against
+`DOC_BUDGETS`'s warn of 137928 and fail of 165513 — **20529 bytes of
+headroom to the warn**, 48114 to the fail, and 7057 grown since the
+landed 110342. The bullet grew 1673 bytes across this pair.
+
+#### THE PROBER, ATTACKED
+
+**It measures the shell the recipes use.** All three sites spawn
+`/bin/sh -c` and invoke a BARE `xargs`, so PATH resolution is one
+question asked once: `xargs-dialect.mjs`'s `sh()`,
+`docs-input-gate.spec.ts`'s local `sh` at :913 (`execFileSync`), and
+`range-rule.mjs`'s exported `sh` at :110 (`spawnSync`). No `bash`, no
+`shell: true`, no absolute `/usr/bin/xargs`, anywhere in the three. The
+cwd differs (the prober inherits the worker's, the consumers pass
+`repoRoot`) and cannot matter here: this machine's PATH holds no
+relative entry and `which -a xargs` returns exactly `/usr/bin/xargs`. I
+reproduced both observables by hand before reading any of the module's
+own output: `printf '' | xargs /bin/sh -c 'printf XARGS-RAN'` prints
+nothing and exits 0, and `printf 'x\n' | xargs /bin/sh -c 'exit 7'`
+exits **1** — the bsd row, which is what `probeXargs()` then returned.
+
+**And a probe path that DID disagree with the recipe path would be
+caught.** This is the sharpest question the card raises, so I drove it
+rather than reasoned about it. I put a shim on PATH that is GNU to the
+prober's synthetic utility and BSD to the real gate — it runs the
+utility on empty input when `$1` is a shell and skips it otherwise.
+`probeXargs()` duly classifies it **gnu**, and both consumers red:
+`range-rule` says *"the probe calls this `xargs` gnu, which RUNS the
+utility on an empty list, but piping a FAILED range into the real gate
+did not produce the gate's own output. One of the two measurements is
+wrong and neither may be trusted until it is settled"*, and
+`docs-input-gate.spec.ts:907` reds at the piped code (expected 123,
+Received 0). The cross-check is live and not vacuous.
+
+**`unknown` is a FAILURE at both consumers, driven not read.** A third
+dialect on PATH (runs on empty like GNU, maps every nonzero to 99 like
+neither) reds `docs-input-gate.spec.ts:907` with *"this machine's xargs
+matches no dialect this spec has measured … do not widen an expectation
+until it fits"* and reds `range-rule.spec.ts:91`'s
+`docs-gate-recipe-exit-codes` with the matching refusal. Neither picks a
+branch.
+
+**It resolves no path under `docs/`, and the census did not move.**
+`node scripts/docs-gate.mjs --census` at `aadf874` derives **22 readers
+across 4 suites**, and `tools/e2e/scripts/xargs-dialect.mjs` appears
+nowhere in that derivation — scripts ARE scanned (the census lists
+`capabilities.mjs` and `docs-gate.mjs` as readers), so its absence is a
+measurement rather than an omission. Its only two `docs/` mentions are
+inside a JSDoc sentence and resolve nothing.
+
+#### MY OWN MUTANTS — eight, each run in the lane
+
+| # | mutant | side | observed |
+|---|---|---|---|
+| 1 | the matrix's GNU empty-list cell reverted to the LITERAL pre-fix text `**123**, or **0**` | document | **RED** on Darwin: *"the … 'called wrong' row does not say what the piped spelling gives ON AN EMPTY LIST for every dialect it scores (bsd=0, gnu=null)"* |
+| 2 | the same cell written as `**123**, or **0** on an empty list` | document | **RED** on Darwin: *"the DOCS GATE matrix now gives the SAME empty-list code for every dialect (0, 0)"* |
+| 3 | the spec's `gnu` expectation collapsed to `{code: 0, gateRan: false}` | spec | **RED** at :997 *"the codes differ"*, before any measurement is taken |
+| 4 | `XARGS_DIALECTS.gnu.runsUtilityOnEmptyInput` flipped to `false` | prober | **RED** *"the dialects must differ"* |
+| 5 | `XARGS_DIALECTS.gnu.nonzeroBecomes` changed 123 to 1 | prober | **GREEN, 67 passed, exit 0** — see the finding below |
+| 6 | the two piped column HEADERS swapped, values left in place | document | **RED** *"the FORBIDDEN piped spelling on a failed range, under bsd `xargs`: … says 123 on an empty list, this machine observes 0"* — the parser really does read the header |
+| 7 | a `busybox` dialect column pair added to the matrix | document | **RED** *"the DOCS GATE matrix scores [bsd, busybox, gnu] and this lane's prober knows [bsd, gnu] … Both sides move together or neither does"* |
+| 8 | a GNU-emulating shim ahead of PATH, no repository file touched | environment | **GREEN, 67 passed, exit 0**, both bodies on the gnu branch, disclosure naming the gnu row |
+
+Four more parser mutants, applied in memory so the tree was never
+touched: a header that loses its dialect, a row short one value cell, a
+`$(…)` dialect set that disagrees with the piped one, and a header
+naming neither form — all four THROW with a message that names the
+column or row.
+
+Restoration proof, all three poisoned files back to their pre-drill
+sha256 with `git status` clean: `docs/CONVENTIONS.md`
+`48eedf2b905d4d46789e65e2db660336851cd43463a6be128f3faaf376ee76d6`,
+`tools/e2e/tests/docs-input-gate.spec.ts`
+`f0aca063a03aafaa5606511ed2b382ee7bc3a6a763b648364805f46c642b9692`,
+`tools/e2e/scripts/xargs-dialect.mjs`
+`ad1a7b2d7a27488b14b7e4f54083e45a75d0deb1a44e8715ec41b361cafa22a6`.
+
+Mutant 5 is a real residual and I have filed it as `T-153-s12` rather
+than held the lane for it: GNU's exit mapping is now stated twice — the
+matrix's piped GNU cells and `XARGS_DIALECTS.gnu.nonzeroBecomes` — and
+nothing compares the two, so corrupting the prober's copy is silent on
+Darwin and only becomes a loud `unknown` on Linux. It is the card's own
+defect class one level up. It is NOT a rejection: the criteria are about
+the two bodies deriving per-platform behaviour at run time, which they
+do, and the corrupted copy fails LOUDLY on the platform it is wrong
+about rather than passing a wrong assertion.
+
+#### CI, READ-ONLY, PER BODY
+
+Three Linux runs, not two. The card left the third for the integrator;
+it has since completed and I classified it.
+
+| run | head | the two bodies | dialect disclosure | other reds |
+|---|---|---|---|---|
+| 33271000696 | `3639d01` | BOTH GREEN | the gnu row | 29 |
+| 33272004368 | `24f96cd` | BOTH GREEN | the gnu row | 29 |
+| 33272976860 | `aadf874` | BOTH GREEN | the gnu row | 29 |
+
+`docs-input-gate.spec.ts:907` and `range-rule.spec.ts:91`'s
+`docs-gate-recipe-exit-codes` are green in all three, 252 passed and 29
+failed in each. I extracted each run's failing set and diffed them: the
+three sets are IDENTICAL to each other and identical, line for line, to
+`T-153-s9`'s enumeration — `brief.spec.ts` at :255, :291, :313, :630,
+:656, :679, :706; `card-figures.spec.ts` at :121, :132, :144, :157,
+:173, :187, :198, :213, :226, :264, :276, :291, :316, :331, :347, :384,
+:398, :409, :425, :431, :438; `dispatch-order.spec.ts` at :200. Nothing
+outside that set redded. The runner printed, in each: `xargs at
+/usr/bin/xargs: empty input RUNS the utility; a utility exit of 7
+arrives as 123 — the gnu row`. **Run 33272976860 is the strongest piece
+of evidence in this lane and nobody had read it**: it is the only run
+whose head is the tip under review.
+
+The two refs the bullet now cites for its GNU column check out as their
+own runs' heads — 33259394002 is `8de9de4`, 33260414204 is `8f7b58c` —
+and I read the older run's failure text rather than trusting the
+citation: it reds with `Received: 123` against `.toBe(0)` and with *"the
+doc's measured matrix says 0 on an empty list, this machine observes
+123"*. The GNU column's provenance is sound.
+
+#### THE EXECUTOR'S LEAST-CONFIDENT POINT — closed
+
+The shim's encoding of GNU is consistent with what CI's real `xargs`
+printed, on both observables and in the same words: shim `{empty input
+RUNS the utility, a utility exit of 7 arrives as 123}` against the
+runner's identical disclosure line. Beyond those two the shim is coarse
+(one batch, no argument-length splitting, no `-0`/`-I`), and neither
+consumer exercises any of that. Three real-GNU runs at three refs make
+the dialect a measurement; the shim only ever proved the code path, and
+it does.
+
+**The `--no-run-if-empty` control is not worth a card.** It can only run
+where GNU is, so it costs a CI cycle to learn that a flag documented to
+suppress the empty invocation suppresses it — and it protects no
+assertion in the tree, because the operative cells are already measured
+on both platforms. If anyone wants the causal sentence pinned, the cheap
+shape is a THIRD observable inside `xargs-dialect.mjs` (does
+`--no-run-if-empty` change the empty-input answer), which runs
+everywhere and needs no runner time; that belongs as a rider on
+`T-153-s12`, not as its own card.
+
+#### THE SECOND COPY
+
+The two copies AGREE at the tip: `docs/CONVENTIONS.md`'s bullet and
+`tools/e2e/scripts/docs-gate.mjs`'s header both now say GNU runs the
+gate once on an empty list, the refusal fires and arrives as 123, where
+BSD hides the same failed range at 0. I confirmed independently that
+nothing holds them there: `docs-input-gate.spec.ts`'s *ONE SPELLING, TWO
+PLACES* filters both files for the two lines containing
+`docs-gate.mjs $(git diff` or `TREE=$(git merge-tree` and compares only
+those, so every surrounding paragraph is unpinned. The drift class is
+real and `T-153-s11` states it correctly.
+
+#### CORRECTION 1 — the drill table quotes a message its own mutant does not produce
+
+The *Drills* table's first row pairs the mutant *"the matrix's GNU
+empty-list cell reverted to the pre-fix `**0**`"* with the observed
+message *"the DOCS GATE matrix now gives the SAME empty-list code for
+every dialect (0, 0)"*. Those are two different mutants. The literal
+pre-fix cell is `**123**, or **0**`, and `onEmptyList()` matches only
+`/\*\*(\d+)\*\* on an empty list/`, so it returns **null** for that
+text: the arm that fires is the missing-cell arm, *"…does not say what
+the piped spelling gives ON AN EMPTY LIST for every dialect it scores
+(bsd=0, gnu=null)"*. The quoted SAME-code message requires the cell to
+read `**123**, or **0** on an empty list`. I drove both (mutants 1 and 2
+above); both red on Darwin, so the CLAIM the row makes is true and only
+its evidence is mismatched.
+
+**Assigned:** in the *Drills* table, either name the mutant as the cell
+text that produces the quoted message, or keep the pre-fix text and
+quote the missing-cell message. Both arms are live and either pairing is
+honest; the present pairing is not.
+
+#### CORRECTION 2 — the owed-suite record names two suites where the gate names four
+
+Run at `aadf874`, `node tools/e2e/scripts/docs-gate.mjs $(git diff
+--name-only c9e6a3d aadf874)` exits **1** and prints *"FIRES — 3 path(s)
+under docs/ are code inputs"*, naming FOUR suites: `cargo test from
+app/src-tauri/`, `npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`. The third path is not
+`docs/CONVENTIONS.md` — it is the two task CARDS, which the parser and
+app suites read. The card's *Local* section names only e2e and cargo and
+says the gate names those two "for `docs/CONVENTIONS.md`", which is true
+of that path and understates the diff's owed set, so the record reads as
+though the debt were discharged when two suites were unrecorded.
+
+**Assigned:** record all four owed suites in the *Local* section, with
+these figures, which are my own measurements at `aadf874` and need only
+transcription: `npx vitest run` from lib/parser/ **314 passed, 15
+files, exit 0** (after `npm run build` there, exit 0, per STATE's
+`lib/parser/dist` hazard) and `npm test` from app/ **1013 passed, 47
+files, exit 0** (after `npm run build`, exit 0).
+
+#### SECURITY SWEEP
+
+No finding. The new module runs two shell strings built ONLY from its
+own frozen module constants (`PROBE_EXIT`, `MARKER`); no repository
+content, no environment value and no argument reaches a command string.
+The one PATH-derived value it captures, `command -v xargs`'s first line,
+is interpolated into a human-readable `evidence` STRING and never into a
+command. No dependency was added, no network path, no secret, no
+credential, no new endpoint, and nothing writes. `spawnSync` is used
+without `shell: true`, so the only interpreter is the explicit
+`/bin/sh`. The failure default is the safe one: a signal, an absent
+`xargs` or an unrecognised dialect all end as a refusal rather than as a
+branch.
+
+#### ROUTED
+
+`T-153-s12` (suggested): the prober's GNU row restates a number the DOCS
+GATE matrix already holds and nothing compares the copies — mutant 5
+above. `T-153-s11` stands as the executor filed it and I confirmed its
+premise by reading the parity body.
+
+Status left at `verifying`; no merge, no push, nothing written outside
+this lane.
