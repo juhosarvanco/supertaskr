@@ -1,6 +1,6 @@
 ---
 id: T-153-s17
-title: The integration revision is still spent with no `--` separator, so a checkout holding a root path named for the branch reproduces `fatal: ambiguous argument` — the same message the resolver was built to remove, by the other half of the same git rule
+title: The integration revision is still spent with no `--` separator, so a checkout holding a root path named for the branch reproduces the same ambiguous-argument fatal the resolver was built to remove — the other half of the same git rule
 feature: F-01
 milestone: 4
 priority: 3
