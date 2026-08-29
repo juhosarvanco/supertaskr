@@ -5,10 +5,10 @@ feature: F-01
 milestone: 4
 priority: 32
 size: L
-status: planned
+status: building
 blocked_by: []
 touches: [tools/method-evals, docs/CONVENTIONS.md]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
