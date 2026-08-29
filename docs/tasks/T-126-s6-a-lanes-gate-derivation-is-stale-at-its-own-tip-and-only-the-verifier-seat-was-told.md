@@ -1,7 +1,7 @@
 ---
 id: T-126-s6
 title: A lane's gate derivation goes stale at its own last commit, and T-104 landed that rule in the verifier's role file only — the executor seat still says "name your ref", which the T-126 lane did while its DOCS GATE flipped from not-owed to owed
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-126
 ---
 
@@ -70,3 +70,5 @@ names, so a single lane could reasonably take all four.
 Do not restate ruling FIVE's verifier wording; cite it. Two descriptions
 of one rule is the failure `T-111`'s note about ruling NINE's two homes
 already records.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live: method/roles/executor.md still asks for the two halves separately and joins neither — a gate derivation is not a figure, and "not owed" recorded at a ref one commit behind the tip reads as "not owed" full stop. The mechanism is structural rather than careless, and that is what makes it recur: the one gate whose trigger is docs/ is the one a lane's LAST commit is guaranteed to feed, because a lane's last commit is almost always its notes and findings. RESURFACES: the next method/ dispatch — T-159. It is ruling FIVE's missing second seat, and it belongs beside T-091-s4's predicted-tree lines and T-052-s5's steps-versus-rules vocabulary, all three of which are parked on the same vehicle.

@@ -1,7 +1,7 @@
 ---
 id: T-110-s12
 title: read_small stats the link and then opens by path again, so the symlink policy has a TOCTOU window
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-110-pass3
 ---
 
@@ -77,3 +77,5 @@ executor's.
 Absorbs (eleventh triage, 2026-08-26): T-110-s7 T-110-s8 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE ANSWERS THE CARD'S FIRST QUESTION: recorded as ACCEPTED for now. The card makes its own case honestly — the race needs concurrent write access to <repo>/.git/worktrees/<name>/, an attacker holding that can write the gitdir contents directly and does not need the race, nothing is written, the read is capped at MAX_METADATA_BYTES, and the reader is not wired into anything yet. The fix carries a libc manifest addition and a Windows arm, which is a dependency decision and not an executor's. RESURFACES: the moment read_small is wired into a caller a user can reach (T-112's territory), or the moment libc becomes a dependency of this crate for another reason — at which point O_NOFOLLOW plus stat-the-handle is nearly free. Read it with T-110-s7's un-normalised worktree_path: both are "the reader trusts a path more than it should" and want one card.

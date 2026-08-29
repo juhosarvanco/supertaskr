@@ -1,7 +1,7 @@
 ---
 id: T-124-s3
 title: A SECOND watcher-shaped flake — the result-only-denial tail body reds under the loaded cargo suite and is green in every isolated run, and nothing has filed it before
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-124-verify
 ---
 
@@ -94,3 +94,5 @@ so the ring is empty when `ExitNonZero` is assembled. If that is right
 the defect is in the RUNNER (a tail that can be silently empty) and not
 in the body, and the body is simply the only thing that asserts the ring
 carried anything at all. **Fence `[app-agent]`.**
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — DELIBERATELY NOT CLOSED, and kept separate from the other two intermittents because the evidence says they are separate. The card's own arithmetic is the reason: at the pooled 1-in-9 rate observed on the degraded cache, fifteen clean runs show zero reds 17 times in 100, so the clean sweep that settled T-088-s4 proves nothing here. Every figure on this card was measured on the degraded machine and needs re-deriving with it. RESURFACES: the next app-agent dispatch, which SHALL either run the forty clean runs the card names or record that it did not; or the first time this body costs a verdict or a merge. Do NOT retire it on a clean sweep — that is the exact move T-088-s4 recorded itself making wrongly, on circular arithmetic, within the hour.

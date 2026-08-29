@@ -15,6 +15,8 @@ verified_by: claude-opus-5
 review: same-model
 ---
 
+Absorbs: T-111-s2 (Amnesty triage 2026-08-29 (triage seat)) — this card discharged its premise. [app-board] was thirteen globs of which not one was a test collector; C-08 and C-09 now carry app/test entries of their own (two and six at this base), so a card fenced to app-board CAN pin what it builds. The general shape it names — T-015-s1's instances, a source-only fence — is closed for the app-board case by the same routing.
+
 Absorbs: T-033-s5 (Amnesty triage 2026-08-29 (triage seat)) — arm (b) — split app/test/** in C-05's paths: so test files follow the component they exercise — is exactly what this card built, and it is no longer true that every app test lives under app-shell: detail-presentation.test.ts is C-09's, map-view-dom.test.tsx is C-12's, genesis-pane-dom.test.tsx is C-13's. Arms (a) and (c) are moot with (b) taken.
 
 Absorbs: T-031-s4 (Amnesty triage 2026-08-29 (triage seat)) — this card retired the rule the finding is about. C-05's paths: no longer carries the app/test/** catch-all — sixteen shell-exercising files are named one by one and the other thirty-three went to the components they exercise, so the registry no longer claims a directory thirteen lanes were editing without the slug.

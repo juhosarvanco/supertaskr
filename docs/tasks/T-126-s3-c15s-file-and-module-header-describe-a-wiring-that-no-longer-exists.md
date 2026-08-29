@@ -1,7 +1,7 @@
 ---
 id: T-126-s3
 title: C-15's component file names a deleted path and its module header says lib.rs does not declare it — three stale sentences and one dangling glob, all created by T-126 landing
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-126
 ---
 
@@ -100,3 +100,5 @@ this reconciles that suite in the same commit — changed, never loosened.
 Absorbs (eleventh triage, 2026-08-26): T-110-s9 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — ITEM 1 IS DISCHARGED — C-15's paths: no longer names the deleted tests/dispatch_lanes.rs (removed in the eleventh triage's cleanup), and the component file now carries the settlement's obituary instead. Items 2 and 3 are live at this base: dispatch/mod.rs:26 still says "No #[tauri::command] registers it and lib.rs does not declare it", and C-15's opening paragraph still says the TS half "joins it against the board", which stopped being true at T-110's rebuild. Item 3 IS T-110-s9's EDIT ONE, and its half-discharge is why it survived a merge and a checkpoint. RESURFACES: the next app-dispatch dispatch, paired with docs/architecture/components/ — one lane takes both surviving items and T-110-s9 with them. Item 4 (C-05's depends_on missing C-15, now visible to arch drift) rides T-135 Half B, which owns ADR-018 and is never re-dispatched whole.

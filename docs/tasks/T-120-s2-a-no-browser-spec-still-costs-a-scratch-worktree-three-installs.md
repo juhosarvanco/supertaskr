@@ -1,9 +1,66 @@
 ---
 id: T-120-s2
-title: 92 e2e test bodies never open a browser, and running any one of them in a scratch worktree still costs three npm installs, a parser build and a vite boot — which every POISON DRILL pays
-status: suggested
+title: 92 e2e bodies open no browser and every POISON DRILL still pays 330M of installs and a vite boot to run one of them
+feature: F-01
+milestone: 4
+priority: 11
+size: M
+status: planned
+blocked_by: []
+touches: [tools/e2e]
 suggested_by: executor claude-opus-5 @T-120
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29.** This is the card that
+makes a standing discipline affordable, and the argument for it is the
+second-order one the finding states plainly: *a discipline whose setup
+costs 330M and several minutes is one a session under pressure finds
+reasons to run once instead of nine times, which is the direction that
+turns a drill into a gesture.* The POISON DRILL is mandatory for any
+task that adds or changes a test body, it mandates a detached worktree
+precisely for the specs that read first-party source, and that is the
+same set as the five headless spec files.
+
+Needle re-checked at this base: `tools/e2e/playwright.config.ts` declares
+exactly one project (`chromium`) and an unconditional `webServer` with
+`reuseExistingServer: false`, and `preflight.ts` throws at CONFIG LOAD
+for a missing `lib/parser/dist`, a missing `app/node_modules` or a busy
+port — so naming a single headless spec on the command line does not
+avoid any of it. This sitting paid a version of the same toll: its own
+fresh worktree could not run `docs-gate.mjs` until `npm ci` had been run
+in `tools/e2e`.
+
+## Acceptance criteria
+
+- WHEN a spec that opens no browser is run from a bare `tools/e2e`
+  checkout THE run SHALL succeed without `lib/parser/dist`, without
+  `app/node_modules` and without a vite boot.
+- THE browser preconditions SHALL be asserted for the browser project
+  only, not unconditionally at module scope, and the split SHALL be
+  derived from what each spec actually needs rather than from its
+  filename.
+- **THE PORT PROBE SHALL NOT MOVE WITH THE PRECONDITIONS.**
+  `resolveLanePort`'s refusal on 1420 is the only thing standing between
+  a lane and @human's live window; it SHALL run for anything that binds
+  a port and for nothing that does not, and the lane SHALL pin both arms.
+- WHEN the split lands NO arm of any spec's behaviour SHALL move — the
+  same bodies run, with the same results, under both projects — and the
+  lane SHALL show this by running the full lane before and after at its
+  own ref.
+- THE headless set SHALL be DERIVED at the lane's ref, not transcribed:
+  this card's five files and 92 bodies are a floor measured at `c4cfe52`
+  by the strictest available test (the string `page` absent from the
+  file), and two further specs are excluded only because they mention
+  `page` somewhere.
+- THE change SHALL carry its own drill, since it changes how every spec
+  in the lane is run.
+
+## The record, kept verbatim
 
 **Found by paying it.** T-120's drill is nine mutants over
 `tools/e2e/tests/docs-input-gate.spec.ts` — a spec whose own header
@@ -79,3 +136,8 @@ criteria say *"NO ARM OF THE GATE'S BEHAVIOUR MOVES"*, and a
 `playwright.config.ts` split changes how **every** spec in the lane is
 run, which is a change that deserves its own drill and its own verifier
 rather than a ride on a regression pin.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

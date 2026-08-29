@@ -1,7 +1,7 @@
 ---
 id: T-124-s1
 title: The two planner instructions T-124 measured and could not write — run git bare in the cwd, write files with the Write tool — for T-104's owed v0.1.6 bump
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-124
 ---
 
@@ -96,3 +96,5 @@ boundary as well as the scaffold.
   evidence. `real_cli_arms_forbidden` structurally forbids a test from
   resolving the user's CLI (T-047-s6, T-060), so nothing in the suite can
   regenerate these strings and a fresh capture costs a real model call.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — READY TO LAND AND PARKED ONLY FOR ITS VEHICLE. The needle is live — neither method/roles/planner.md nor method/interview/plan-interview.md carries either instruction at this base — and the card is finished work: the exact proposed wording is written, and each sentence is derived from one of three refusals captured from a real claude 2.1.226 during a live genesis, carried as data in adapter::OBSERVED_PLANNER_REFUSALS. Both are instructions to the PLANNER about spelling, not new capabilities; every operation named is already granted. Its named vehicle (T-104's owed v0.1.6 bump) has since merged and the method now stands at v0.1.7, so it needs the NEXT bump. RESURFACES: T-159, the v0.1.8 metabolism release — the one bump owning all method text, whose three-file commit is exactly the shape a kit change needs (METHOD_SNAPSHOT_VERSION in kit.rs is cross-checked on every cargo test). It SHALL be taken before @human's T-025-s2, because these three refusals are what a real planner turn will meet.

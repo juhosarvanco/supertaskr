@@ -1,7 +1,7 @@
 ---
 id: T-124-s4
 title: Two sentences in adapter.rs's T-124 block state as measured what the capture only makes plausible — the hook guard's independence, and a prefix model silent about the refusal the project's own capture holds
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-124-verify
 ---
 
@@ -99,3 +99,5 @@ nothing else), so no argv, no spawn and no permission decision reads it.
    own model call, so it is a @human look, not a lane's.
 
 **Fence `[app-agent]`.** All three are inside `app/src-tauri/src/agent/`.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both are live and both err in the SAFE direction, which is why nothing green depends on them — but adapter.rs is the file the next author of the grant table opens, and a sentence there that reads as measured will be quoted as measured. The second half is the sharper one: the prefix model is silent about the CLI's multi-operation refusal, and this repository already TRACKS the capture that proves it (docs/research/captures/real-planner-turn-2026-08-19.jsonl), read by a body the same lane was running. RESURFACES: the next app-agent dispatch — hedging the independence sentence costs a clause, and calibrating the second rule against a capture already in the tree costs a test. A real-CLI probe would settle the first for the price of one turn, which makes @human's T-025-s2 a second trigger.

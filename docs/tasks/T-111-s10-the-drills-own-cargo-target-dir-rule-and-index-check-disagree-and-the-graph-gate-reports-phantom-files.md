@@ -1,10 +1,71 @@
 ---
 id: T-111-s10
-title: CONVENTIONS tells a drill to put CARGO_TARGET_DIR *inside* its worktree, and `index --check` walks it — the graph gate reported three phantom files and a wrong edge count on a tree that was clean
-status: suggested
-suggested_by: executor claude-opus-5 @T-111
+title: The POISON DRILL tells a drill to put its CARGO_TARGET_DIR inside its own worktree and the graph walk indexes it, so the gate every checkpoint reads answers confidently and wrongly
+feature: F-06
+milestone: 4
+priority: 4
+size: S
+status: planned
+blocked_by: []
 touches: [docs/CONVENTIONS.md]
+suggested_by: executor claude-opus-5 @T-111
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+Absorbs: T-110-s4 (Amnesty triage 2026-08-29 (triage seat)) — the same collision measured first, in a different drill with a different directory name (.drilltarget rather than .fctarget) and a different phantom file (a tauri build-script __global-api-script.js carrying zero symbols and zero edges, so only the FILE count moved). It reached the same recommendation — arm (a) plus a sentence in the POISON DRILL bullet — and it adds the consequence this card's criteria keep: the two dogfood fixtures reported six moved assertions where five are real, including an unmapped bucket that the merge will not produce.
+
+**PROMOTED at the amnesty triage, 2026-08-29, as the owner of its class.**
+Two lanes, two seats, two different target-directory names, one defect:
+the directory the POISON DRILL bullet tells you to create is INSIDE the
+tree the graph walk indexes, and `.gitignore` excludes `target/` and
+nothing else.
+
+Absorbs: T-110-s4 (see the corroboration line below).
+
+Needle re-checked at this base: `docs/CONVENTIONS.md` still says
+*"GIVE IT ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF"* with
+`<scratch>/.drilltarget` as the worked example, and neither
+`.gitignore` nor `.nputerignore` mentions `.drilltarget`, `.fctarget`, or
+any other name arm (c) invites you to choose.
+
+**WHY IT IS WORTH A CARD RATHER THAN A NOTE.** `files +0 -0` is the
+sentence a checkpoint decides on — it is the whole argument for *"the
+checkpoint owes NO fixture reconciliation"*. A phantom `+3` inverts that
+sentence, and a session that has just followed arm (c) faithfully will
+read it and reasonably conclude the merge owes a reconciliation it does
+not. The cheap failure direction is over-reconciliation; **the expensive
+one is equally available** — a real `+1` hidden among build artefacts a
+reader has learned to discount. Both measurements are on this card, from
+two different drills, and they agree.
+
+## Acceptance criteria
+
+- THE POISON DRILL bullet SHALL name a target directory the walk already
+  excludes — arm (a), `<scratch>/target` — rather than leaving the name
+  to the reader. The hazard arm (c) exists for is not sharing the
+  PARENT's cache, never the directory's name, so the property is
+  unchanged and the fix costs one word.
+- THE bullet SHALL state the reason in the form the finding gives it:
+  a drill's target directory must be invisible to the WALK as well as to
+  the parent's cache, and only one of those two was written down.
+- THE class fix (teaching the walk to skip any directory containing
+  cargo's own `CACHEDIR.TAG`) SHALL be ROUTED as its own `[crate-index]`
+  card rather than taken here — it is code, it is a different fence, and
+  the doc edit must not wait on it. Arm (a) and arm (c) are not
+  alternatives.
+- THE lane SHALL re-derive the `docs/CONVENTIONS.md` edit queue at its
+  own ref before writing (`T-104-s5` catalogues one, and that catalogue
+  is itself a transcribed census two of whose named homes have since
+  merged). Anything still owed at this seat may ride the same edit;
+  nothing SHALL be taken from that card's list without re-deriving it.
+- THE byte budget on `docs/CONVENTIONS.md` is a gate — the lane SHALL
+  report `npm run lint:docs`'s answer rather than assume headroom.
+
+## The record, kept verbatim
 
 **TWO STANDING RULES IN THIS FILE COLLIDE, AND THE COLLISION PRODUCES A
 CONFIDENT WRONG ANSWER FROM A GATE RATHER THAN AN ERROR.** Measured on
@@ -91,3 +152,8 @@ word, (c) fixes the class. The doc edit should not wait on the code one.
 
 *A drill's target directory must be invisible to the walk as well as to
 the parent's cache, and only one of those two is currently written down.*
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

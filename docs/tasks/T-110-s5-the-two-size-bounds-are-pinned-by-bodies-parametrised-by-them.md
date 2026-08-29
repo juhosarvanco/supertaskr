@@ -1,7 +1,7 @@
 ---
 id: T-110-s5
 title: Two of the lane reader's three size bounds are pinned by bodies parametrised by the bound itself, so neither can red
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-110-verify
 ---
 
@@ -34,3 +34,5 @@ them. `app/src-tauri/src/dispatch/lanes.rs`, fence `[app-dispatch]`.
 Absorbs (eleventh triage, 2026-08-26): T-110-s6 T-110-s10 T-110-s11 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and the diagnosis is exact — BRANCH_MAX_LEN 255->256 and MAX_METADATA_BYTES 4096->40960 both survive at 16/16 exit 0, because input and expectation move together. It is CONVENTIONS' own T-063 shape, and the fix is mechanical: one literal input and one literal expected length per row, beside the derived rows rather than instead of them, exactly as TASK_ID_MAX_DIGITS already does. RESURFACES: the next app-dispatch dispatch — T-112 is the F-04 card that next holds that slug, and the module is app/src-tauri/src/dispatch/lanes.rs, which it will be reading anyway.

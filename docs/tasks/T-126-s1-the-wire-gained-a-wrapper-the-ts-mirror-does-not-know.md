@@ -1,7 +1,7 @@
 ---
 id: T-126-s1
 title: The lane wire gained a wrapper type and the TypeScript mirror does not know it exists — dispatch-store.ts types LaneScan and the command returns something one level up
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-126
 ---
 
@@ -49,3 +49,5 @@ fact belongs, and it belongs to whoever holds `[app-dispatch]`.
 
 `[app-dispatch]`, or `[app-dispatch, app-shell]` if the wrapper is moved
 into C-15 rather than mirrored. Free at the time of writing.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — live-but-unreachable, by the card's own census: no frontend file invokes dispatch_lanes yet, so the missing wrapper type costs nothing today. And the card is right that mirroring it by reflex would be the wrong move — the alternative is to fold "no project is open" into C-15 as a sixth LaneScan kind, which puts one type where one fence owns it and DELETES this finding instead of implementing it. That is a ruling about where the fact belongs. RESURFACES: the first frontend call of dispatch_lanes — T-112's territory, and the ruling belongs to whoever holds [app-dispatch] when it happens.

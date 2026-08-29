@@ -1,7 +1,7 @@
 ---
 id: T-126-s5
 title: Two fences on the board right now cannot be obeyed as written — one card mandates an edit its touches does not contain, and one card claims every card on the board
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-126
 ---
 
@@ -71,3 +71,5 @@ beside `T-033-s4` and with `T-104`, where the method half lands.
 
 `[method/, docs/tasks/]` for the ruling; arm two's narrowing is
 `[docs/tasks/]` and is T-108's own to make.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — THE GENERAL RULING LANDED. method/tasks/TASK-FORMAT.md now carries "A CRITERION MAY NOT ORDER WORK OUTSIDE ITS OWN CARD'S touches:" with the whole argument — widen the fence BEFORE dispatch or write the criterion as a ROUTE, a card whose criterion and fence disagree is a DEFECTIVE CARD, and a criterion-shaped exception cannot be granted because every out-of-fence edit is made because some criterion seemed to want it. It arrived via T-132 (b1783a6). Both named instances are historical: T-126 and T-108 are done. ONE RESIDUAL SURVIVES and is arm two's real question, still unwritten anywhere: whether a lane's OWN card is exempt from every fence. The exemption is already universal practice — every executor writes implementation notes and a status stamp into its own card — and nothing states it, so T-108's [docs/tasks/] fence was disjoint from no lane that has ever run here and nobody noticed. RESURFACES: the next method/ dispatch — T-159 owns method text, and the residual is one sentence in TASK-FORMAT or lane-protocol saying that a lane's own card is outside every fence.

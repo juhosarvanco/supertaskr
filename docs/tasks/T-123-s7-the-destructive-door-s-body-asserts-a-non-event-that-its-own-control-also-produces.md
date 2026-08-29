@@ -1,9 +1,11 @@
 ---
 id: T-123-s7
 title: The destructive door's body asserts a non-event its own control also produces, and the shape-six check covered four of the ten new bodies
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-123-verify2
 ---
+
+Absorbs: T-123-s6 (Amnesty triage 2026-08-29 (triage seat)) — same class from the other module: a pin that reads as proving more than it proves. Here a mutant replacing the CARRIED reachability with a second independent read survives the whole suite at exit 0, so the sentence T-064's veto-only property rests on has no tripwire. Its fix is a FIXTURE not a guard — relayed_state's on_arm hook already runs code inside the rendezvous window — and its fence is app-shell where this card's is app-agent, which is why one card wants both.
 
 Two measurements about the strength of T-123's new assertions. Neither
 is a defect in the shipped code; both are places where a body says less
@@ -66,3 +68,5 @@ kill. It is not vacuous and it is not wrong; it is unexamined, and the
 card's own Verification line asks for the check *on each new body*.
 Either name them as deliberate duplicates or fold them into the body
 they duplicate.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both halves are live and neither is a defect in shipped code — they are places where a body says less than it reads as saying. The sharper one is measured with the control the body lacks: fresh_genesis resolves the CLI BEFORE mark_planner_dead, and T-060's structural refusal makes resolve_cli fail under cargo test unconditionally, so "the recorded session was NOT marked dead" is satisfied by absence for EVERY fixture. That is CONVENTIONS' A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL in its exact form. RESURFACES: the next app-agent dispatch (the fresh_genesis body and the two shape-six duplicates) paired with app-shell for the carried-registry fixture absorbed here; both fences are cheap to hold together and the two findings share one seat.

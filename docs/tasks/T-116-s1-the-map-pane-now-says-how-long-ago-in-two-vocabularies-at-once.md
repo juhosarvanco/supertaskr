@@ -1,7 +1,7 @@
 ---
 id: T-116-s1
 title: The churn overlay now says "how long ago" in TWO vocabularies at once — relativeTime in the footer, churnAge in the panel, disagreeing at every interval under a minute
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-116
 ---
 
@@ -69,3 +69,5 @@ APPROVED (`c259f87`) while T-116 built, and which merges FIRST. Writing
 either would have been a real collision on an approved diff. Filed
 rather than fixed for that reason, and the fix is a few lines whenever
 `app-map` is next free.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and the collision is on one screen: relativeTime says "just now" where churnAge says "0m ago", and the two take OPPOSITE positions on the same zero sentinel that T-116's own criterion rules must render nothing. Three modules, three answers, one sentinel — T-057's shape, in the pane whose card exists to have one spelling of "how old is this number". The blocker at filing (T-033 held the eight-path set) is gone: app-map is free. RESURFACES: the next app-map dispatch — arm (a), making churnAge a caller of relativeTime and keeping only its <= 0 -> unknown guard, is a few lines in files that lane holds anyway (T-032, T-059, T-067 and T-115 all carry the slug).
