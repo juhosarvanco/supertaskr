@@ -20,13 +20,14 @@ the record wins. Nothing here is the only copy of itself, which is also
 the rule the method applies to its own dispatch briefs.
 
 The files beside it — `CLAUDE.md` and `AGENTS.md` — are adapters for
-agent sessions rather than documentation for people. They name the
-read-first set and stop. This file is the human's door; those are the
-agents'.
+agent sessions rather than documentation for people. They point a
+session at the read-first set and the standing rules for using it.
+This file is the human's door; those are the agents'.
 
-The vocabulary here is local, and none of it has to be learned in
-advance: every house term is mapped to its standard name in the table
-below.
+The vocabulary here is local. The table below maps the terms this page
+leans on hardest to their standard names, each row citing the file that
+owns the rule; for a word the table does not carry, that owning file is
+where it is defined.
 
 ## Where the work stands
 
@@ -78,15 +79,15 @@ assertion. Read them in any order.
 Coined only where nothing standard exists; where something standard
 does, the standard name is the one that binds.
 
-| here | the standard name | what it is |
+| here | the standard name | what it is, and where the rule lives |
 |---|---|---|
-| **card** | the work item, kept in-repo as the spec | one task in `docs/tasks/`: frontmatter, acceptance criteria in EARS form, then the executor's notes and the verdicts appended beneath them |
-| **lane** | branch isolation | one task, one branch, one git worktree, one session; the integration branch is none of them |
-| **fence** | computed write-set disjointness | the path set a lane may write. Concurrent lanes must not overlap, and overlap is computed over the EXPANDED path sets — comparing the component names instead reports two lanes disjoint whenever their names differ |
-| **seat** | a role, with adversarial separation | the session that builds a change never verifies it, and the verifier is handed the card and the diff rather than the builder's reasoning |
-| **room** | a design discussion in a file, closer to an RFC than a thread | opened with a question, argued in writing, and closed by a ruling that becomes a decision record |
-| **poison drill** | mutation testing, run as a hand discipline | mutate a new or changed assertion so that it ought to fail — one side only, never a literal the code and the test share — run its suite and require the red; then restore, and prove the restoration with a hash rather than with a clean `git status` |
-| **checkpoint record** | the integration log entry | append-only, one per merge, in `docs/checkpoints/` — and no gate, suite or generator is permitted to depend on the directory's contents |
+| **card** | the work item, kept in-repo as the spec | one task in `docs/tasks/`: frontmatter, acceptance criteria in EARS form, then the executor's notes and the verdicts appended beneath them — [method/tasks/TASK-FORMAT.md](method/tasks/TASK-FORMAT.md) |
+| **lane** | branch isolation | one task, one branch, one git worktree, one session; the integration branch is none of them — [method/lane-protocol.md](method/lane-protocol.md) |
+| **fence** | computed write-set disjointness | the path set a lane may write. Concurrent lanes must not overlap, and overlap is computed over the EXPANDED path sets — comparing the component names instead reports two lanes disjoint whenever their names differ — [method/lane-protocol.md](method/lane-protocol.md) rule 5 |
+| **seat** | a role, adversarially separated by what it may read | a verifier is handed only the card and the diff, never the builder's reasoning, and is adversarial by design. The independence that pays is that blindness rather than model or session diversity: a card's `review:` field records which hand held the pen, and `self-verified` is the value that names the guarantee as missing — [method/roles/verifier.md](method/roles/verifier.md), [method/tasks/TASK-FORMAT.md](method/tasks/TASK-FORMAT.md) |
+| **room** | a design discussion in a file, closer to an RFC than a thread | opened with a question, argued in writing, and closed by a `## Resolution` stating the decision and what it changed; where the room was a debate, that resolution is the draft of its decision record — [method/rooms/ROOM-FORMAT.md](method/rooms/ROOM-FORMAT.md) |
+| **poison drill** | mutation testing, run as a hand discipline | mutate a new or changed assertion so that it ought to fail — one side only, never a literal the code and the test share — run its suite and require the red; then restore, and prove the restoration with a hash rather than with a clean `git status` — [docs/CONVENTIONS.md](docs/CONVENTIONS.md) |
+| **checkpoint record** | the integration log entry | append-only, one per merge, in `docs/checkpoints/` — and no gate, suite or generator is permitted to depend on the directory's contents — [ADR-019](docs/decisions/019-governing-docs-rules-truths-records.md) |
 
 The habits underneath the vocabulary matter more than the words, and
 neither of these is a coinage. **Derive it, never quote it**: a number

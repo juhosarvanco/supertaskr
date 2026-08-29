@@ -345,6 +345,180 @@ The README describes the rule, not the residual, and I judged the
 residual too deep for a front page — but it is a real caveat and it is
 recorded here rather than left unsaid.
 
+### 2026-08-29 — FIX PASS, closing the REJECTED verdict below
+
+Same executor, same lane; the fix is cut on top of `a0be8f7`, the
+verifier's own ledger commit. Both blocking defects are accepted
+without argument, and the recommendation the verdict filed as
+non-blocking note 2 is taken as well, because it is the mechanism that
+would have prevented defect 1.
+
+**What the rejection taught, stated as a mechanism rather than as an
+apology.** My link-verification ledger was thorough about the five tour
+links and silent about the seven table rows, and the verdict names the
+reason: *"only the links have targets to check."* I built a
+verification apparatus shaped by what was easy to verify, then trusted
+the parts of the page it could not reach. The `seat` row was the one
+row carrying no citation and it is the row that was false — not a
+coincidence, but this repository's own *a figure needs a keeper*
+arriving one category over as **a claim needs a citation**. Worse, I
+named that row as my second least-confident item and then looked for
+its residual in the wrong place: I reached for a subtle unresolved
+conflict in `method/roles/executor.md` and missed that
+`grep -c '^review: self-verified' docs/tasks/T-*.md` settles the
+question outright. **The lesson I am taking is that "least confident"
+is an instruction to run a command, not a licence to write a caveat.**
+
+#### Defect 1 — the `seat` row, rewritten from the method's own ruling
+
+The false clause was *"the session that builds a change never verifies
+it"*. It is gone. The row's third column now reads:
+
+> a verifier is handed only the card and the diff, never the builder's
+> reasoning, and is adversarial by design. The independence that pays
+> is that blindness rather than model or session diversity: a card's
+> `review:` field records which hand held the pen, and `self-verified`
+> is the value that names the guarantee as missing —
+> method/roles/verifier.md, method/tasks/TASK-FORMAT.md
+
+and the middle column moves from *"a role, with adversarial
+separation"* to *"a role, adversarially separated by what it may
+read"*, because the separation the method charters is over INFORMATION
+and the old wording let a reader hear it as a separation of sessions.
+
+Derived rather than invented, phrase by phrase, each matched at this
+ref:
+
+| the README now says | its source |
+|---|---|
+| "handed only the card and the diff, never the builder's reasoning, and is adversarial by design" | `method/roles/verifier.md:3` — *"You are adversarial by design. You receive ONLY the task file (spec + acceptance criteria) and the diff — never the executor's reasoning"* |
+| "the independence that pays is that blindness rather than model or session diversity" | `method/tasks/TASK-FORMAT.md:101` — *"THE INDEPENDENCE THAT PAYS IS INFORMATIONAL, NOT MODEL DIVERSITY"* |
+| "records which hand held the pen" | `method/tasks/TASK-FORMAT.md:103` — *"read `review:` as PROVENANCE — which hand held the pen"*, taken verbatim |
+| "`self-verified` is the value that names the guarantee as missing" | `method/tasks/TASK-FORMAT.md:121` — *"`self-verified` is the one value that names a MISSING guarantee"* |
+
+The verdict's falsifying commands, re-run at the fix:
+
+    grep -n "never verifies\|builds a change never" README.md
+      exit 1, no output
+    grep -h '^review:' docs/tasks/T-*.md | sort | uniq -c | sort -rn
+      83 same-model, 43 blank, 20 self-verified, 5 independent
+    grep -l '^review: self-verified' docs/tasks/T-*.md | wc -l
+      20
+
+The twenty `self-verified` cards are no longer counterexamples,
+because the sentence no longer claims what they refute: it now says
+what those cards themselves record — the guarantee was not applied,
+and the card is where that is written down.
+
+#### Defect 2 — the false absolute, and the note that would have prevented both
+
+*"every house term is mapped to its standard name in the table below"*
+is gone. I took the expensive repair where it was cheap and the cheap
+one where rows would have bloated a front page: the promise is scoped
+to what the table delivers, AND the table gained the per-row citations
+the verdict recommended. The section now opens:
+
+> The vocabulary here is local. The table below maps the terms this
+> page leans on hardest to their standard names, each row citing the
+> file that owns the rule; for a word the table does not carry, that
+> owning file is where it is defined.
+
+That replaces an absolute the body falsified with one the body
+satisfies, and the new one is CHECKABLE rather than merely softer —
+which is the point, since a promise nobody can test is how the first
+one reached a verdict:
+
+    awk '/^\| \*\*/ {n++; if ($0 ~ /\]\(/) c++} END {print n, c}' README.md
+    7 7
+
+**Note 2 taken, and it paid inside the same pass.** Citing every row
+forced me to open every source, and the `room` row did not survive it.
+It had said a room is *"closed by a ruling that becomes a decision
+record"*; `method/rooms/ROOM-FORMAT.md:32` says only *"if the room was
+a debate, the Resolution is the draft of its ADR"*. The row now states
+the `## Resolution` requirement and scopes the ADR half to debates.
+That is a third false absolute of the same family, found by the
+mechanism the verifier recommended, in the pass that adopted it —
+which is the strongest argument available for the recommendation and
+why I took it rather than leaving it routed.
+
+**Note 1 taken.** *"They name the read-first set and stop"* undersold
+the adapters, which also carry an operating rule, a command and the
+method pointers; it now reads *"They point a session at the read-first
+set and the standing rules for using it."*
+
+**Note 3 left routed**, as filed: the `MapView.tsx` comment is outside
+this fence, and a lane never widens its own fence.
+
+**Note 4 acknowledged**: the status question belongs to the merge-time
+seat. `status: building` is untouched, and so is every byte of the
+verdict.
+
+#### Re-check ledger — every changed sentence re-verified at its source
+
+The link ledger was re-run WHOLE rather than incrementally, because
+five citations are new targets and a partial ledger is how the first
+gap happened:
+
+    17 unique markdown targets — 17 exist, 17 git-tracked, 0 missing
+
+The new targets are `method/tasks/TASK-FORMAT.md`,
+`method/lane-protocol.md`, `method/roles/verifier.md`,
+`method/rooms/ROOM-FORMAT.md` and
+`docs/decisions/019-governing-docs-rules-truths-records.md`. The five
+TOUR links are byte-untouched by this pass and were not re-argued: the
+verdict opened all five independently and accepted them.
+
+Each citation was checked to SUPPORT its row, not merely to resolve —
+`card` against TASK-FORMAT's frontmatter block and the Body-sections
+table naming EARS; `lane` against `lane-protocol.md`'s opening
+sentence; `fence` against that file's rule 5 including the
+token-comparison failure; `seat` against the two sources tabulated
+above; `room` against ROOM-FORMAT's Resolution section, which is what
+corrected it; `poison drill` against CONVENTIONS' POISON DRILL bullet;
+`checkpoint record` against ADR-019's Records section.
+
+Both search-based zeros were re-proved capable of firing before being
+written down, per CONVENTIONS:
+
+    grep -n "[0-9]" README.md
+      7 lines, every digit an identifier — Milestone 3, T-083 twice,
+      the checkpoint FILENAME's date, ADR-019 twice, ADR-018, and
+      `rule 5`, a section number inside the new fence citation. No
+      count, size, hash or range: Law 2 still holds by subtraction.
+      POSITIVE CONTROL: the same sweep over the file plus a planted
+      `233` returns the planted line.
+    marketing sweep, sixteen terms plus `!`     exit 1, no hits
+      POSITIVE CONTROL: the same pattern over the file plus a planted
+      "This is the best, most seamless tool!" returns that line.
+    control-byte sweep, C0 and DEL over raw bytes        0
+    non-ASCII inventory                          U+2014 only
+
+#### Gates and suites at the fix tip
+
+The verdict set the bar for a re-verification: the DOCS GATE plus its
+three suites at the new tip, plus the two defect greps returning
+nothing. The greps are above; the runs are in the ledger below, each
+exit code read unpiped, all of them in this worktree and never in the
+integration checkout.
+
+    (root)      docs-gate.mjs $(merge-tree range)   exit 1  FIRES, names the card only
+    lib/parser  npx vitest run                      exit 0  314/314
+    app         npm test                            exit 0  1013/1013
+    tools/e2e   NPUTER_E2E_PORT=14733 npm test      exit 0  233/233
+    tools/e2e   npm run lint:tokens -- --selftest   exit 0
+    tools/e2e   npm run lint:tokens                 exit 0  TOKEN 144, CONTROL 846
+    tools/e2e   npm run lint:docs                   exit 0
+    (root)      brief.mjs --card T-158              exit 0  no figure claims a provenance
+
+`README.md` is still absent from the DOCS GATE's owed-path list, which
+is the mechanical confirmation that this pass moved only prose the
+gate does not read. Port `14733` was read at zero rows on both `lsof`
+forms before the bind; `1420` was never probed, bound, connected to or
+signalled. `git status --porcelain` is empty after the lane's
+plant-and-restore. POISON DRILL still not triggered: no test body is
+added or changed by this diff.
+
 ## Verdicts
 
 ### 2026-08-29 — REJECTED (claude-opus-5@subagent, review: same-model)
