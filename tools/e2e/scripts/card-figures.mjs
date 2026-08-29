@@ -427,9 +427,17 @@ export const CARD_DERIVERS = new Map([
       answers: "how long the integration branch is, and how old a ref is",
       /** @param {Ctx} ctx */
       derive(ctx) {
+        // THE FIGURE IS NAMED FOR THE BRANCH AND SOURCED FROM THE REF, and
+        // the two are deliberately different strings (T-153-s9). A card
+        // states a figure about the project's integration BRANCH, whose
+        // name is the same in every checkout — so the text a stamp is
+        // verified against character for character must not move with the
+        // event type that produced it. The PROVENANCE is the command that
+        // ran, which on a detached `pull_request` checkout spells that
+        // branch through its remote-tracking ref.
         const branch = ctx.spellings.integrationBranch;
         const firstParent = ctx.integrationLog.split(/\r?\n/).filter((l) => l.trim() !== "").length;
-        const via = `git log --first-parent ${branch}`;
+        const via = `git log --first-parent ${ctx.integrationRef}`;
         /** @type {import("./dispatch-brief.mjs").Rec[]} */
         const recs = [
           value(`history ${branch} first-parent commits: ${firstParent}`, live(ctx, via)),

@@ -1,4 +1,6 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
@@ -16,6 +18,7 @@ import {
   context,
   fenceOverlaps,
   frontmatterFields,
+  integrationRefCandidates,
   laneSpellings,
   laneWorktrees,
   liveProv,
@@ -25,6 +28,7 @@ import {
   parseWorktreePorcelain,
   readDoc,
   render,
+  resolveIntegrationRef,
   roleText,
   slugMapFromFields,
   slugMapFromProse,
@@ -333,11 +337,21 @@ test("a figure read from the MOVING integration ref is a LIVE fact — two reads
   // branch moving does to this log.
   const lines = ctx.integrationLog.split("\n").filter((l) => l.trim() !== "");
   const cut = lines.findIndex((l) => l.slice(41).startsWith("Checkpoint:"));
-  expect(cut, `${branch} carries no Checkpoint, so this body has no subject`).toBeGreaterThanOrEqual(0);
+  const checkpoints = lines.filter((l) => l.slice(41).startsWith("Checkpoint:")).length;
+  // THE PRECONDITION NAMES WHAT IT SAW (T-153-s9). This body's subject is
+  // the SHAPE of one read of a mutable ref, and which ref that is now
+  // depends on the checkout: a `pull_request` runner holds no local
+  // branch and answers through a remote-tracking spelling. A precondition
+  // that fails without naming the ref, the length and the count sends the
+  // reader to guess which of the three moved.
+  const seen =
+    `${branch} -> ${ctx.integrationRef}: ${lines.length} first-parent line(s), ` +
+    `${checkpoints} Checkpoint(s), newest at index ${cut}, head ${lines[0]?.slice(0, 60) ?? "(none)"}`;
+  expect(cut, `${branch} carries no Checkpoint, so this body has no subject — ${seen}`).toBeGreaterThanOrEqual(0);
   const older = lines.slice(cut + 1);
   expect(
     older.some((l) => l.slice(41).startsWith("Checkpoint:")),
-    `${branch} carries only one Checkpoint here, so a second read cannot be built out of it`,
+    `${branch} carries only one Checkpoint here, so a second read cannot be built out of it — ${seen}`,
   ).toBe(true);
 
   // ONE VARIABLE. The same ctx object: the same ref, the same clock, the
@@ -371,13 +385,42 @@ test("a figure read from the MOVING integration ref is a LIVE fact — two reads
   // against the experiment: every line whose SOURCE names the integration
   // branch carries a clock. Positive control first — without it, "they are
   // all live" is satisfied by a report that reads the branch nowhere.
+  //
+  // **THE MATCH IS ON A REVISION TOKEN, NOT ON THE LETTERS** (T-153-s9,
+  // found by this lane against its own card). `\bmain\b` matches inside
+  // `T-153-s9-a-pull-request-checkout-has-no-local-main-so-…md`, because
+  // a hyphen is a word boundary — so a live lane whose card SLUG happens
+  // to carry the branch's name reddened this body with a card-file
+  // provenance that is a tree fact and is correctly stamped as one.
+  // Measured at `a533a4d` against the UNCHANGED module: two violations,
+  // both this lane's own `<id> touches:` and `<id> board status:` lines.
+  // A revision is a whole token — preceded by a space or a slash (the
+  // remote-tracking spelling) and followed by a space, a comma or the end
+  // — while a file name carries it as a fragment of a longer identifier.
   const via = (l: string) => l.replace(/^.*? {2}<- /, "");
-  const refReads = before.filter((l) => l.includes("  <- ") && new RegExp(`\\b${branch}\\b`).test(via(l)));
+  const spendsBranch = (l: string) =>
+    new RegExp(`(?:^|[\\s/])${branch}(?=[\\s,]|$)`).test(via(l));
+  const refReads = before.filter((l) => l.includes("  <- ") && spendsBranch(l));
   expect(
     refReads.length,
     "no emitted line names the integration branch as its source, so the rule below has no subject",
   ).toBeGreaterThan(1);
   for (const line of refReads) expect(line).toContain("  <- read ");
+
+  // AND THE NARROWING IS ACCOUNTED FOR RATHER THAN POCKETED. Every line
+  // the tightening drops — the branch's letters present, no revision
+  // token — is required to be a TREE fact, so a real violation cannot
+  // hide in the difference between the two patterns.
+  const dropped = before.filter(
+    (l) => l.includes("  <- ") && new RegExp(`\\b${branch}\\b`).test(via(l)) && !spendsBranch(l),
+  );
+  for (const line of dropped) {
+    expect(
+      line,
+      "a line the revision-token match dropped is stamped LIVE, so it was not the file-name case " +
+        "the narrowing was written for — widen the pattern back rather than accepting this",
+    ).toContain("  <- @ ");
+  }
 
   // THE OTHER DIRECTION, or "stamp everything live" would pass. With no
   // task named, the create command is the document's own text — `<base>`
@@ -777,4 +820,246 @@ test("a brief assembled at this ref names the lanes the repository holds, and no
       : `${ctx.root} @ ${ctx.ref.slice(0, 12)} — ${ctx.findings.join(" ;; ")}`;
   test.info().annotations.push({ type: "brief disclosure", description: line });
   process.stdout.write(`\n  brief DISCLOSURE: ${line}\n`);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE CHECKOUT THIS COMMAND RUNS IN (T-153-s9) — three shapes, built
+ * rather than described.
+ *
+ * `actions/checkout` on a `pull_request` event leaves the workspace
+ * DETACHED at the PR's merge ref and creates no local branch, so the
+ * integration branch's bare name resolves to nothing and every figure
+ * this command takes off that branch died with `fatal: ambiguous
+ * argument 'main'` — twenty-nine bodies red on a run whose only
+ * difference from a green one was the EVENT. A lane may not push main,
+ * so a draft PR is the CI a dispatch brief hands an executor: the shape
+ * these bodies drive is the shape a lane actually runs in.
+ *
+ * THE FIXTURE IS THE REPOSITORY'S OWN TRACKED TREE, not a hand-built
+ * stand-in. Every row of the brief is derived from real project files —
+ * CONVENTIONS' lane bullet, the role file's contract table, the card
+ * index, the component registry — so a fixture missing them would prove
+ * something about a different repository.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** Author and committer come from the environment, so a runner with no configured identity can still commit. */
+const FIXTURE_GIT_ENV = {
+  ...process.env,
+  GIT_AUTHOR_NAME: "t153s9",
+  GIT_AUTHOR_EMAIL: "t153s9@example.invalid",
+  GIT_COMMITTER_NAME: "t153s9",
+  GIT_COMMITTER_EMAIL: "t153s9@example.invalid",
+};
+
+function fixtureGit(cwd: string, args: string[]): string {
+  return execFileSync("git", ["-C", cwd, ...args], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    env: FIXTURE_GIT_ENV,
+  });
+}
+
+interface RefShapes {
+  /** the mkdtemp root, for the teardown */
+  dir: string;
+  /** a checkout holding the integration branch LOCALLY — every developer tree, every push-event runner */
+  local: string;
+  /** detached, no local branch, the remote-tracking ref present — what a pull_request checkout is */
+  detached: string;
+  /** detached and with no remote at all — no spelling of the branch resolves */
+  orphan: string;
+}
+
+function refShapes(): RefShapes {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t153s9-refshape-"));
+  const local = path.join(dir, "local");
+  mkdirSync(local);
+  const tar = path.join(dir, "tree.tar");
+  writeFileSync(
+    tar,
+    execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
+  );
+  execFileSync("tar", ["-x", "-f", tar, "-C", local]);
+  fixtureGit(local, ["init", "--initial-branch=main", "--quiet"]);
+  fixtureGit(local, ["add", "-A"]);
+  // TWO `Checkpoint:` commits, because the base rule reads the newest one
+  // out of the first-parent log and a fixture with none would fail for a
+  // reason that has nothing to do with the ref this body is about.
+  fixtureGit(local, ["commit", "--quiet", "-m", "Checkpoint: fixture base"]);
+  fixtureGit(local, ["commit", "--quiet", "--allow-empty", "-m", "Checkpoint: fixture tip"]);
+
+  // THE PULL_REQUEST SHAPE, built the way the runner leaves one: clone,
+  // detach, and drop the local branch. What survives is exactly what
+  // `actions/checkout` leaves behind — a remote-tracking ref and no
+  // local name.
+  const detached = path.join(dir, "detached");
+  execFileSync("git", ["clone", "--quiet", local, detached], { env: FIXTURE_GIT_ENV });
+  fixtureGit(detached, ["checkout", "--quiet", "--detach", "HEAD"]);
+  fixtureGit(detached, ["branch", "--quiet", "-D", "main"]);
+
+  // AND THE SHAPE WHERE NOTHING SPELLS IT. `git remote remove` takes the
+  // remote-tracking refs with it, so this tree holds the whole history
+  // and no name for the branch it is on.
+  const orphan = path.join(dir, "orphan");
+  execFileSync("git", ["clone", "--quiet", local, orphan], { env: FIXTURE_GIT_ENV });
+  fixtureGit(orphan, ["checkout", "--quiet", "--detach", "HEAD"]);
+  fixtureGit(orphan, ["branch", "--quiet", "-D", "main"]);
+  fixtureGit(orphan, ["remote", "remove", "origin"]);
+
+  return { dir, local, detached, orphan };
+}
+
+test("THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still wins wherever it exists", () => {
+  // KILLED BY: spending the branch NAME as a revision (the defect this
+  // card removes), and equally by hard-coding `origin/<branch>` in its
+  // place — the first shape below is what makes the fallback a fallback
+  // rather than a silent redirection to whatever the remote says.
+  const fx = refShapes();
+  try {
+    const branch = laneSpellings(conventions()).integrationBranch;
+    expect(
+      integrationRefCandidates(branch)[0],
+      "the bare name is asked for FIRST, so a checkout that holds it is answered with it",
+    ).toBe(branch);
+    expect(integrationRefCandidates(branch)).toContain(`origin/${branch}`);
+
+    // THE GUARD CLAUSE, ASSERTED RATHER THAN ARGUED: where the local
+    // branch exists this module spends exactly the revision it always
+    // spent, so nothing the derivations prove on a developer checkout or
+    // a push-event runner is weakened by the fallbacks behind it.
+    const held = resolveIntegrationRef(fx.local, branch);
+    expect(held.rev).toBe(branch);
+    expect(held.commit).toMatch(/^[0-9a-f]{40}$/);
+
+    // THE PULL_REQUEST SHAPE. The pre-condition is asserted first —
+    // without it, "the fallback fired" is satisfied by a tree where the
+    // bare name was there all along.
+    const bare = spawnSync("git", ["-C", fx.detached, "rev-parse", "--verify", "--quiet", branch], {
+      encoding: "utf8",
+    });
+    expect(
+      bare.status,
+      "the fixture still holds the local branch, so this shape is not a pull_request checkout",
+    ).not.toBe(0);
+    const fellBack = resolveIntegrationRef(fx.detached, branch);
+    expect(fellBack.rev).toBe(`origin/${branch}`);
+    expect(
+      fellBack.commit,
+      "the fallback answered with a DIFFERENT history — a usable ref is one that spells the same branch",
+    ).toBe(held.commit);
+
+    // AND WHERE NO CANDIDATE RESOLVES IT REFUSES, LOUDLY AND BY NAME.
+    // The three assertions are separate on purpose: that it throws, that
+    // the message names every spelling it asked for, and that it does not
+    // answer with the checkout's own HEAD — which is the invention that
+    // would hand a dispatcher a base commit off the lane's own branch.
+    const head = fixtureGit(fx.orphan, ["rev-parse", "HEAD"]).trim();
+    let refusal = "";
+    expect(() => {
+      try {
+        resolveIntegrationRef(fx.orphan, branch);
+      } catch (err) {
+        refusal = err instanceof Error ? err.message : String(err);
+        throw err;
+      }
+    }).toThrow(/holds no revision spelling the integration branch/);
+    for (const candidate of integrationRefCandidates(branch)) {
+      expect(refusal, `the refusal names ${candidate} as one of the spellings it asked for`).toContain(
+        candidate,
+      );
+    }
+    expect(refusal).not.toContain(head);
+  } finally {
+    rmSync(fx.dir, { recursive: true, force: true });
+  }
+});
+
+test("the WHOLE brief assembles on a pull_request-shaped checkout, and names the ref it actually spent", () => {
+  // KILLED BY: the same mutant as the body above, one layer out — this
+  // one runs the real command end to end against the real tree, which is
+  // what the twenty-nine reds were. It is also the body that would catch
+  // a resolver that is correct and NOT WIRED IN: a fix living in an
+  // exported function nobody calls passes the unit body and fails here.
+  const fx = refShapes();
+  try {
+    const branch = laneSpellings(conventions()).integrationBranch;
+    const run = (root: string) =>
+      spawnSync(process.execPath, [CLI, "--task", "T-133", "--root", root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+      });
+
+    const pr = run(fx.detached);
+    // CLEAN or FOUND, never CANNOT_RUN: whether a fixture tree carries a
+    // finding is a property of the tree, and the claim here is that the
+    // command HAS an answer on this checkout shape at all.
+    expect([EXIT.CLEAN, EXIT.FOUND], pr.stderr ?? "").toContain(pr.status);
+    expect(
+      pr.stderr ?? "",
+      "the error the event type used to produce, arriving through a body instead of through a verdict",
+    ).not.toContain("ambiguous argument");
+    expect(pr.stdout).toContain("ROW 1 —");
+    expect(pr.stdout).toContain("ROW 4 — The lane");
+    // THE FIGURES ROW 4 TAKES OFF THAT BRANCH ARE PRESENT, not merely
+    // un-crashed: a command that printed the row and no base hash would
+    // satisfy every assertion above.
+    expect(pr.stdout).toMatch(/base commit: [0-9a-f]{40}/);
+    expect(pr.stdout).toMatch(/integration tip right now: [0-9a-f]{40}/);
+    // HONEST ABOUT WHERE IT RAN. The published spelling is still the
+    // project's, and the ref this checkout resolved it to is emitted
+    // beside it — a provenance naming a revision the checkout does not
+    // hold is a provenance nobody can re-run.
+    expect(pr.stdout).toContain(`integration branch: ${branch}`);
+    expect(pr.stdout).toContain(`integration ref this checkout resolves: origin/${branch}`);
+    expect(unstampedLines(pr.stdout.trimEnd())).toEqual([]);
+
+    // THE CARD LEDGER SHARES THAT RESOLUTION, and the two halves split
+    // the other way round on purpose. A card states a figure about the
+    // project's integration BRANCH, whose name is the same in every
+    // checkout — so the TEXT a `card:` stamp is verified against
+    // character for character must NOT move with the event type that
+    // produced it, while the provenance names the command that ran.
+    const card = spawnSync(process.execPath, [CLI, "--card", "T-133", "--root", fx.detached], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect([EXIT.CLEAN, EXIT.FOUND], card.stderr ?? "").toContain(card.status);
+    const history =
+      card.stdout.split("\n").find((l) => l.includes(`history ${branch} first-parent commits:`)) ?? "";
+    expect(history, "the card ledger emitted no history figure, so this half has no subject").not.toBe(
+      "",
+    );
+    expect(
+      history.split("  <- ")[0],
+      "the figure's TEXT moved with the checkout, so a stamped card line would go STALE on a " +
+        "pull_request run and be VERIFIED on a push run — one figure with two answers",
+    ).toContain(`history ${branch} first-parent commits:`);
+    expect(
+      history,
+      "the provenance names a revision this checkout does not hold, so nobody can re-run it",
+    ).toContain(`; git log --first-parent origin/${branch}`);
+
+    // POSITIVE CONTROL FOR THAT LINE, from the shape that holds the
+    // branch: it says the bare name, so the line is reporting a
+    // resolution rather than printing a constant.
+    const localRun = run(fx.local);
+    expect([EXIT.CLEAN, EXIT.FOUND], localRun.stderr ?? "").toContain(localRun.status);
+    expect(localRun.stdout).toContain(`integration ref this checkout resolves: ${branch}`);
+
+    // AND THE OTHER SIDE: no spelling resolves, so the command reaches
+    // its own COULD-NOT-RUN code rather than throwing an exec error
+    // through a body, and it says which spellings it asked for.
+    const orphan = run(fx.orphan);
+    expect(
+      orphan.status,
+      "a checkout that cannot spell the integration branch is not a clean brief",
+    ).toBe(EXIT.CANNOT_RUN);
+    expect(orphan.stderr).toContain("COULD NOT RUN");
+    expect(orphan.stderr).toContain("holds no revision spelling the integration branch");
+    expect(orphan.stderr).toContain("will not substitute HEAD");
+    expect(orphan.stderr).not.toContain("ambiguous argument");
+    expect(orphan.stdout).not.toContain("base commit:");
+  } finally {
+    rmSync(fx.dir, { recursive: true, force: true });
+  }
 });

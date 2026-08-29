@@ -611,6 +611,99 @@ export function laneWorktrees(porcelain, spellings) {
 }
 
 /**
+ * THE CANDIDATE SPELLINGS OF ONE BRANCH, IN THE ORDER A CHECKOUT SHOULD
+ * BE ASKED FOR THEM (T-153-s9). The project publishes ONE integration
+ * branch name and that name is right; what is not guaranteed is that the
+ * checkout this command runs in holds it as a LOCAL branch.
+ *
+ * THE BARE NAME IS FIRST AND THAT ORDERING IS THE WHOLE SAFETY PROPERTY.
+ * Where the local branch exists — every developer checkout, every
+ * `push`-event runner — the first candidate resolves and this module
+ * spends exactly the revision it always spent, so nothing the derivations
+ * prove on such a checkout is weakened by the fallbacks behind it. A
+ * remote-tracking ref can sit at a DIFFERENT commit from the local branch
+ * of the same name; preferring it would silently answer a question about
+ * this checkout with a fact about the remote.
+ *
+ * @param {string} branch
+ * @returns {string[]}
+ */
+export function integrationRefCandidates(branch) {
+  return [branch, `origin/${branch}`, `refs/remotes/origin/${branch}`];
+}
+
+/**
+ * @typedef {object} IntegrationRef
+ * @property {string} rev     the revision THIS checkout can actually spend
+ * @property {string} commit  what it resolves to at the moment it was asked
+ * @property {string[]} tried every candidate in order, so a refusal names them
+ */
+
+/**
+ * THE INTEGRATION REF, RESOLVED RATHER THAN ASSUMED (T-153-s9).
+ *
+ * ── THE MEASUREMENT ──────────────────────────────────────────────────
+ * `actions/checkout` on a `pull_request` event leaves the workspace
+ * DETACHED at the PR's merge ref and creates no local branch. The name
+ * `main` — a local branch in every developer checkout and on a
+ * push-to-main runner — then resolves to nothing, and the bare-revision
+ * read below died with `fatal: ambiguous argument 'main'` on TWENTY-NINE
+ * e2e bodies that were green at the same body index on the same
+ * repository's push run. The spelling was never wrong; its RESOLUTION is
+ * event-dependent, which is why no local run and no push run had seen it.
+ *
+ * **THAT IS NOT A CI DETAIL — IT IS THE ONE INSTRUMENT A LANE HAS.**
+ * `ci.yml` triggers on push-to-main, on `pull_request` and on
+ * `workflow_dispatch`; a lane may not push main, so a draft PR is the CI
+ * a dispatch brief hands an executor. A derivation that only works on the
+ * event a lane cannot fire manufactures reds the merge will not
+ * reproduce, which docs/CONVENTIONS.md's RANGE RULE calls the worse of
+ * its two failures — arriving through CI instead of through a diff.
+ *
+ * ── WHY A RESOLVER AND NOT A SECOND SPELLING ─────────────────────────
+ * `origin/main` written at the read site would fix the PR run and break
+ * every checkout with no remote — a fresh `git init` fixture, a clone
+ * whose remote is named something else, this repository before its first
+ * push. The question is not which name is right; it is which name THIS
+ * CHECKOUT HOLDS, and that is a live fact to be READ. One resolver, at
+ * the one place the log is read, rather than a fix per call site (T-057).
+ *
+ * ── AND IT REFUSES RATHER THAN INVENTS ───────────────────────────────
+ * Where no candidate resolves, this throws by name and the wrapper turns
+ * that into the house's COULD-NOT-RUN code — the same four-code
+ * discipline `index --check`, `boot:check` and the DOCS GATE keep, so "I
+ * derived it" and "I could not tell you" are never the same number. A
+ * fallback that quietly answered with HEAD would give a brief a base
+ * commit off the lane's own branch, and lane-protocol rule 2 wants that
+ * hash precisely because a wrong one is invisible.
+ *
+ * @param {string} root
+ * @param {string} branch
+ * @returns {IntegrationRef}
+ */
+export function resolveIntegrationRef(root, branch) {
+  const tried = integrationRefCandidates(branch);
+  for (const rev of tried) {
+    // `--verify --quiet` answers with a code and no stderr, and
+    // `^{commit}` refuses a ref that is not a commit rather than handing
+    // back a tag or a tree object for `git log` to fail on later.
+    const probe = spawnSync("git", ["-C", root, "rev-parse", "--verify", "--quiet", `${rev}^{commit}`], {
+      encoding: "utf8",
+    });
+    if (probe.error !== undefined) throw probe.error;
+    const out = (probe.stdout ?? "").trim();
+    if (probe.status === 0 && /^[0-9a-f]{40}$/.test(out)) return { rev, commit: out, tried };
+  }
+  throw new Error(
+    `dispatch-brief: this checkout holds no revision spelling the integration branch ` +
+      `${JSON.stringify(branch)} — asked git rev-parse --verify for ${tried.join(", ")} and it ` +
+      "resolved none of them. The base commit, the tip and the history counts are all reads of " +
+      "that branch, so this command has no answer to give and will not substitute HEAD or any " +
+      "other revision for it.",
+  );
+}
+
+/**
  * THE TWO FIGURES ROW 4 TAKES FROM THE INTEGRATION BRANCH — the base
  * commit and the tip — out of ONE read of that branch. **Both are LIVE
  * facts.** They are reads of a MUTABLE REF, so neither is a function of
@@ -1016,6 +1109,10 @@ export function unstampedLines(rendered) {
  * @property {Map<string, string[]>} slugs
  * @property {Lane[]} lanes
  * @property {string} porcelain
+ * @property {string} integrationRef  the revision THIS checkout spells the
+ *   integration branch with — the bare name where it exists, a
+ *   remote-tracking spelling where the event type left none. Live, not a
+ *   function of the tree: see `resolveIntegrationRef`
  * @property {string} integrationLog  one read of the integration BRANCH, held
  *   beside the porcelain and for the same reason: it is a read of something
  *   MUTABLE, so the figures taken from it are live facts and a pin has to be
@@ -1139,8 +1236,13 @@ function deriveReadFirst(ctx) {
 /** @param {Ctx} ctx @returns {Rec[]} */
 function deriveLane(ctx) {
   const s = ctx.spellings;
-  const logVia = `git log --first-parent --format=%H %s ${s.integrationBranch}`;
-  const { tip, base } = integrationRefs(ctx.integrationLog, s.integrationBranch);
+  // THE COMMAND THAT ACTUALLY RAN, not the one the document names. Where
+  // the two differ the difference is the whole point: a reader re-deriving
+  // this figure on a checkout like this one needs the revision that
+  // answers, and a provenance naming a revision the checkout does not hold
+  // is a provenance nobody can re-run.
+  const logVia = `git log --first-parent --format=%H %s ${ctx.integrationRef}`;
+  const { tip, base } = integrationRefs(ctx.integrationLog, ctx.integrationRef);
   const laneBullet = rawBullet(ctx.conventions, "THE LANE PROTOCOL");
   const dispatchBullet = rawBullet(ctx.conventions, "DISPATCH FROM THE LAST CHECKPOINT").replace(
     /\s+/g,
@@ -1162,6 +1264,21 @@ function deriveLane(ctx) {
   const carriesBase = create.includes(base);
   return [
     value(`integration branch: ${s.integrationBranch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet")),
+    // WHICH SPELLING OF THAT BRANCH THIS CHECKOUT HOLDS. A live fact by
+    // executor.md's own test — the same tree answers one way on a
+    // push-event runner and another on a detached `pull_request` merge
+    // ref — and emitted rather than hidden, because a brief that read a
+    // remote-tracking ref while saying nothing about it would be a figure
+    // whose source the reader cannot reproduce.
+    value(
+      `integration ref this checkout resolves: ${ctx.integrationRef}`,
+      live(
+        ctx,
+        `git rev-parse --verify, first that resolves of: ${integrationRefCandidates(
+          s.integrationBranch,
+        ).join(" ")}`,
+      ),
+    ),
     value(`branch: ${branch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet branch spelling")),
     value(
       `worktree (absolute, per lane-protocol rule three): ${absolute}`,
@@ -1768,6 +1885,11 @@ export function context(opts = {}) {
   const cards = cardIndex(root);
   const comps = components(root);
   const taskId = opts.taskId === undefined || opts.taskId === "" ? "" : normaliseTaskId(opts.taskId);
+  // RESOLVED BEFORE IT IS SPENT. Which spelling of the integration branch
+  // this checkout holds is a LIVE fact — the same tree answers differently
+  // on a `push` runner and on a `pull_request` one — so it is read here,
+  // once, and every consumer spends the answer rather than the name.
+  const integration = resolveIntegrationRef(root, spellings.integrationBranch);
   return {
     root,
     ref: git(root, ["rev-parse", "HEAD"]).trim(),
@@ -1781,12 +1903,8 @@ export function context(opts = {}) {
     slugs: slugMapFromFields(comps),
     lanes: laneWorktrees(porcelain, spellings),
     porcelain,
-    integrationLog: git(root, [
-      "log",
-      "--first-parent",
-      "--format=%H %s",
-      spellings.integrationBranch,
-    ]),
+    integrationRef: integration.rev,
+    integrationLog: git(root, ["log", "--first-parent", "--format=%H %s", integration.rev]),
     spellings,
     conventions,
     roleMd: roleText(role, root),
