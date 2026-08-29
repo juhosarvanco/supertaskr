@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 3
 size: M
-status: planned
+status: building
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: "@human (2026-08-29): is there a step when a task is started that makes sure the task is doing work we want it to do — that the task and its description is up to date and makes sense?"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
@@ -101,3 +101,5 @@ CI-green sequence outranks priority 3 by @human's standing runbook.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Fence corrected at dispatch (2026-08-30, integrator): criterion five lands in docs/CONVENTIONS.md, which the filed fence did not cover — the exact claim class this card exists to preflight, caught by hand at its own dispatch. Widened to [tools/e2e, docs/CONVENTIONS.md]; manifest rewritten and read back.
