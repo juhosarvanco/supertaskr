@@ -354,3 +354,58 @@ the merge is a fast-forward and the tested tree is this branch's).
   by the repository, for the reason given at the top of these notes: the
   new bound and the fixture's own assertion cannot both fire. The bound
   has its own body instead.
+
+### The DOCS GATE caught this lane's own red, which is worth recording beside the ledger
+
+Filing `T-153-s3` re-fired the gate (2 paths under docs/ now), and the
+re-run it owed came back **1 failed of 314** in lib/parser and **1012 of
+1013** in app — because I filed it as **`T-153-s2-s1`**, and the parser's
+vocabulary is `T-NNN` or `T-NNN-sN` with no second level. It surfaced as
+`smoke.test.ts > finds zero issues in the live tree` expecting `[]`, four
+packages away from the markdown file that caused it — the exact shape the
+DOCS GATE bullet's two precedents (`9c64cd8`, `fede266`) describe. Filed
+as the next free sibling of the lane's own id instead, and re-run green.
+**The gate paid for itself inside one card**, and the ledger below is the
+tip's, not the first attempt's.
+
+| command | from | result | exit |
+|---|---|---|---|
+| `npx vitest run` at `33f61d7` | lib/parser/ | **314** passed, 15 files | **0** |
+| `npm test` at `33f61d7` | app/ | **1013** passed, 47 files | **0** |
+| `NPUTER_E2E_PORT=14564 npm test` at `33f61d7` | tools/e2e/ | **233** passed, 2.5m; tree clean afterwards | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs …` at `33f61d7` | repo root | FIRES on 2 paths; *"every live task card's frontmatter parses, with a legal status"* | **1** |
+
+**And the finding was already half-known.** `T-153-s3` names the prior
+sighting rather than claiming the discovery: T-154's verifier hit the same
+collision hours earlier and routed it as item 5 of its verdict, with the
+same twelve artifacts. The two seats saw opposite halves — that one a
+false STALE at exit 1, this one a CURRENT at exit 0 over a poisoned graph
+— and the card says so.
+
+**Main moved under this lane while it ran** (T-154 merged and
+checkpointed, `b650f62` → `0d82a60`). The gate derivation was re-run
+against the new tip: `git merge-tree --write-tree 0d82a60 HEAD` exits 0
+and the merge still adds the same **5** paths, so no gate's answer moves.
+
+### CI cycle 2 — the delivered tip, and the same two answers
+
+Run **33256467475** on `33f61d7`, `ubuntu-24.04`, job `99110974064`.
+
+- **`cargo suite` — SUCCESS**, second consecutive green: **200 / 0**,
+  **81 / 0** (+1 ignored), **188 / 0**, with
+  `a_hostile_init_line_model_is_refused_and_a_real_one_round_trips ... ok`
+  and `an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands
+  ... ok`.
+- **`graph currency` — FAILURE**, `graph.json is STALE`, and steps 19–26
+  skipped again. Unchanged and expected: the regen belongs to the
+  checkpoint (GRAPH REGEN), and `docs/architecture/graph.json` is outside
+  `[app-agent]`.
+
+**Two of a cap of four cycles spent, and the cap was not the constraint.**
+The card's own red is closed and reproduces closed. What is NOT closed by
+this lane, and cannot be from inside it, is the rest of the job: **steps
+19–26 have still never executed on Linux in any run this repository has
+made**, on either branch. The regen at the checkpoint is what unblocks
+them, and the FIRST push of main after it is the run that will say whether
+"CI runs green end to end" is true. It should be watched as a first run,
+not as a formality.

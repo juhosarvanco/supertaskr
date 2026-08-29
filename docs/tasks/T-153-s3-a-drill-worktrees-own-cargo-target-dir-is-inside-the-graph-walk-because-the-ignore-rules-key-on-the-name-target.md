@@ -42,6 +42,31 @@ restored and sha256-proved against `b5e3e4e` before anything else ran.
 It was caught only because the file count looked wrong beside a number
 read minutes earlier — not by any gate.
 
+## THIS IS THE SECOND SIGHTING IN ONE DAY, BY A DIFFERENT SEAT
+
+**T-154's verifier hit it first and routed it**, hours before this lane
+did — read it there rather than trusting this card's account of it:
+`docs/tasks/T-154-the-fence-becomes-a-property-at-the-moment-of-the-write.md`,
+the paragraph headed *"A HAZARD I CREATED AND ANYONE REPEATING THIS PASS
+WILL CREATE"*, plus its routed item 5. Same mechanism, same **twelve**
+cargo build artifacts, target directory at `/tmp/v154/.cargotarget`. Its
+own sentence is the diagnosis this lane independently reached: *"Two
+written rules collide here and neither names the other"*.
+
+**IT IS FILED HERE BECAUSE A VERDICT'S ROUTED ITEM IS NOT A CARD** and
+the board cannot see one — which is the same reason the suggestion-triage
+convention makes filing, not mentioning, the move that discharges a
+finding.
+
+**AND THE TWO SIGHTINGS SAW OPPOSITE HALVES, WHICH IS WHAT RAISES THIS
+ABOVE A REPEAT.** T-154's seat saw a FALSE STALE — the gate refusing over
+artifacts, loud, exit 1, and it cost that session a run. This lane ran the
+REGEN first, so the artifacts went INTO the committed graph and
+`index --check` then answered **CURRENT at exit 0** over a tree containing
+twelve files that exist in one scratch directory and nowhere else. **The
+loud half costs a run; the silent half is the one that commits**, and no
+gate stands between it and a checkpoint.
+
 ## Why this is a defect and not a session's mistake
 
 The three rules that produce it are each right on their own, and they are
