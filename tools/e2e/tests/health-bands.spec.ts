@@ -220,13 +220,29 @@ test("the lib suite's duration is taken from the lib.rs binary BY NAME, never by
   // tempting shortcut — reads the wrong population and would have said
   // 22.10s here, well past a breach line that describes a different
   // binary entirely.
+  // THE LIB BINARY IS DELIBERATELY NOT FIRST HERE, and that ordering is
+  // the whole body. Written with lib.rs first, this fixture is passed
+  // just as happily by a parser that takes the FIRST binary and ignores
+  // the name — measured: broadening the guard to /Running unittests/
+  // survived that ordering with the suite at 20-for-20, and dies here.
   const cargo = [
+    "   Running unittests src/main.rs (target/debug/deps/nputer-1111111)",
+    "test result: ok. 3 passed; 0 failed; finished in 22.10s",
     "   Running unittests src/lib.rs (target/debug/deps/nputer-9a1b2c3)",
     "test result: ok. 412 passed; 0 failed; 0 ignored; finished in 8.91s",
+    "   Running tests/budget.rs (target/debug/deps/budget-2222222)",
+    "test result: ok. 9 passed; 0 failed; finished in 31.70s",
+  ].join("\n");
+  expect(parseLibSuiteSeconds(cargo)?.value).toBe(8.91);
+  expect(parseLibSuiteSeconds(cargo)?.derivation).toContain("src/lib.rs");
+
+  // A workspace that ran binaries but not the lib one is UNREAD, never
+  // some other binary's number wearing the lib band's name.
+  const noLib = [
     "   Running unittests src/main.rs (target/debug/deps/nputer-1111111)",
     "test result: ok. 3 passed; 0 failed; finished in 22.10s",
   ].join("\n");
-  expect(parseLibSuiteSeconds(cargo)?.value).toBe(8.91);
+  expect(parseLibSuiteSeconds(noLib)).toBeNull();
   expect(parseLibSuiteSeconds("test result: ok. finished in 5.0s")).toBeNull();
 });
 
