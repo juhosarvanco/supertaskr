@@ -1,5 +1,5 @@
 ---
-id: T-153-s2-s1
+id: T-153-s3
 title: A drill worktree's own CARGO_TARGET_DIR is INSIDE the graph walk, because the ignore rules key on the name "target" and the convention tells you to pick a different one
 status: suggested
 suggested_by: executor claude-opus-5 @T-153-s2

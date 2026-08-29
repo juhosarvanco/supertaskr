@@ -332,7 +332,7 @@ the merge is a fast-forward and the tested tree is this branch's).
 
 ### Routed, not built
 
-- **`T-153-s2-s1`** (filed): a drill worktree's own `CARGO_TARGET_DIR`
+- **`T-153-s3`** (filed): a drill worktree's own `CARGO_TARGET_DIR`
   sits INSIDE the graph walk, because the ignore rules key on the name
   `target` and the drill convention requires a lane-derived stem that is
   not it. Found here by regenerating the graph inside the drill worktree
