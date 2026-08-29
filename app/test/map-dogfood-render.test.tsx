@@ -79,7 +79,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all thirteen declared components in full mode, and the bucket is GONE again", () => {
+  it("renders all fifteen declared components in full mode, and the bucket is GONE again", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -128,9 +128,25 @@ describe("the nputer repo on its own map", () => {
     // was 518/0/4 exit 0 with the bucket present and 518/0/4 exit 0 with
     // it gone; `arch drift` exits 0 without `--fail-on`. A React render
     // test is this repository's tripwire for unclaimed Rust territory.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(13);
+    // 13 → 15 AT T-127-s6 (2026-08-29), AND THE TOTAL MOVES WITH NO FILE
+    // ADDED, NO FILE DELETED AND NO IMPORT SEVERED — the first entry in
+    // this ledger where it moves for a pure re-partition. C-17 Board model
+    // and C-18 Board root are EXTRACTED from C-08 and C-09 to break
+    // `C-08 -> C-09 -> C-08`, the registry's last declared cycle and the
+    // reason `arch cycles --root ../..` exited 1 by design: three paths
+    // change owner and `derived.fileComponent.size` is unchanged at 189.
+    // The identity assertions below carry the meaning as always — the
+    // bucket must still be ABSENT, and a re-partition that stranded a file
+    // would show up THERE rather than in this total, which is the
+    // distinction T-139 and T-141 taught this body.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(15);
     expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
     expect(container.querySelector('[data-component-id="C-16"]')).not.toBeNull();
+    // The two new nodes asserted by IDENTITY, for the same reason C-16 is:
+    // "fifteen nodes" must not be reachable by a synthesised bucket
+    // standing in for a component the extraction failed to declare.
+    expect(container.querySelector('[data-component-id="C-17"]')).not.toBeNull();
+    expect(container.querySelector('[data-component-id="C-18"]')).not.toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
 
@@ -309,7 +325,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 37-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
+  it("draws the full 45-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -401,7 +417,16 @@ describe("the nputer repo on its own map", () => {
     // C-10 is a watcher that does not read the indexer. Both numbers here
     // were derived from `arch` at `2a922ce` with the claim applied, before
     // the suite was re-run, because a red on the first hides the second.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(37);
+    // 37 → 45 AT T-127-s6 (2026-08-29), AND THE UNDECLARED COUNT DOES NOT
+    // MOVE, which is the whole shape of the change stated on this map:
+    // eleven confirmed rows arrive and three leave (33 + 2 + 10 = 45),
+    // every one of the eleven a RENAMED or RE-ATTRIBUTED edge rather than a
+    // new import. The row that leaves and matters is `C-08 → C-09`, half of
+    // `C-08 -> C-09 -> C-08`; `C-09 → C-08` is still drawn, which is what
+    // makes this a broken cycle and not a hidden one. Derived from `arch`'s
+    // own edge listing at the edited registry before the suite was re-run,
+    // because a red on this count hides the two assertions below it.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(45);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );

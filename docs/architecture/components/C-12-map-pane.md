@@ -29,7 +29,7 @@ paths:                    # decided location (plan §6.1 as revised by §0.0-3);
   - app/test/map-view-dom.test.tsx
   - app/test/map-visuals.test.ts
   - app/test/map-zoom.test.ts
-depends_on: [C-06, C-07, C-09, C-10, C-11, C-16]   # C-05 dropped at T-033, see below
+depends_on: [C-06, C-07, C-09, C-10, C-11, C-16, C-17]   # C-05 dropped at T-033 (below); C-17 gained at T-127-s6 — the map's own derivation reads board-model.ts, which left C-08
 decisions: [ADR-013, ADR-015]
 status: auto
 touch_slugs: [app-map]

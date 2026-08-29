@@ -214,18 +214,28 @@ fn a_registry_directory_that_is_a_symlink_is_refused_not_followed() {
 /// An allowlist that can only ever be too small is a rule that rots
 /// quietly, which is the failure `arch::cycles` exists to prevent.
 ///
-/// 2026-08-25 (T-127) — `C-08 -> C-09 -> C-08` predates @human's
-/// no-cycles ruling by nine days (`T-033-s10`). Removing it re-partitions
-/// C-08/C-09's `paths:`, and that MOVES two live-registry fixtures:
-/// measured on T-127's lane at `afe23c1`, the smallest acyclic
-/// re-partition takes `npm test` from `app/` to **6 failed / 967 passed
-/// of 973, exit 1**, in `app/test/architecture-dogfood.test.ts` and
-/// `app/test/map-dogfood-render.test.tsx`. Both sit under `app/test/**`
-/// — C-05's `app-shell` — outside T-127's
-/// `[crate-index, docs/architecture/components/]` fence, so the move is
-/// routed as `T-127-s1`.
-/// **DELETE THIS ENTRY IN THE SAME COMMIT THAT CLOSES THAT CARD.**
-const KNOWN_DECLARED_CYCLES: &[&str] = &["C-08 -> C-09 -> C-08"];
+/// **THE LIST IS EMPTY AND THAT IS THE POINT — DO NOT ADD TO IT TO MAKE
+/// A RED GO AWAY.** Since T-127-s6 (2026-08-29) this repository declares
+/// no cycle at all, so `arch cycles --root ../..` exits 0 and this
+/// assertion compares two empty sets. An entry appearing here again is a
+/// deliberate, dated exception to @human's no-cycles ruling of
+/// 2026-08-25 and needs the ruling moved, not this constant edited.
+///
+/// The one entry this ever held was `C-08 -> C-09 -> C-08`, which
+/// predated that ruling by nine days (`T-033-s10`). It was retired by
+/// re-partitioning C-08/C-09's `paths:` — `board-model.ts` and
+/// `task-detail.ts` to C-17, `Board.tsx` to C-18 — with **no import
+/// severed and no file moved on disk**. That move also moves the two
+/// live-registry fixtures `app/test/architecture-dogfood.test.ts` and
+/// `app/test/map-dogfood-render.test.tsx` (C-12's `app-map` since
+/// T-149), which is why the work took a fence three cards were cut to
+/// carry: T-127, then `T-127-s1`, then `T-127-s6`.
+///
+/// The positive control for the empty case is the body below it: with no
+/// reported cycle the removal set is empty and it asserts the LIVE tree
+/// is acyclic, so this pair does not go vacuous the day the last red
+/// goes away.
+const KNOWN_DECLARED_CYCLES: &[&str] = &[];
 
 #[test]
 fn the_live_registry_declares_exactly_the_cycles_this_crate_still_allows() {

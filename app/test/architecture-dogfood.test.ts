@@ -1097,7 +1097,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(graphResult.graph).toBeDefined();
   });
 
-  it("the live registry is the thirteen known components", () => {
+  it("the live registry is the fifteen known components", () => {
     expect((project.components ?? []).map((c) => c.id)).toEqual([
       "C-01",
       "C-05",
@@ -1122,9 +1122,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // fileComponent.size below is UNCHANGED at 178 while C-05 goes
       // 65 -> 62 and C-16 takes the 3.
       "C-16",
+      // T-127-s6: C-17 Board model and C-18 Board root, EXTRACTED from
+      // C-08 and C-09 to break `C-08 -> C-09 -> C-08` — the registry's
+      // last declared cycle, which predated @human's no-cycles ruling by
+      // nine days. Like C-16 above, they add NO territory: three paths
+      // change owner, nothing moves on disk, no import is severed, and
+      // `fileComponent.size` below is unchanged at 189. It is the SECOND
+      // assertion in this body — the declared COUNT — that hides behind
+      // this array when both move, which is why both were derived from
+      // `arch cycles`' own `components=15` and `arch`'s own component
+      // lines rather than read off the first red.
+      "C-17",
+      "C-18",
     ]);
     expect(derived.mode).toBe("full");
-    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(13);
+    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(15);
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
@@ -1573,12 +1585,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // component's own files plus the parser it already declares, so the
       // relation table below gains no row for them — C-08 → C-06 merely
       // goes 4 → 5.
-      ["C-08", 12],
+      // 12 → 10 AT T-127-s6 (2026-08-29), and this row moves WITHOUT THE
+      // GRAPH MOVING AT ALL — the fourth time, after T-033's extraction,
+      // T-141's claim and T-149's routing. No file was added or deleted and
+      // `derived.fileComponent.size` is still 189: `Board.tsx` changes owner
+      // to C-18 and `board-model.ts` to C-17. Those two files sitting HERE,
+      // beside the card faces, are what made `C-08 -> C-09 -> C-08` the
+      // registry's one declared cycle. THE FOUR ROWS THAT MOVE AT THIS
+      // MERGE SUM TO ZERO — C-08 -2, C-09 -1, C-17 +2, C-18 +1 — which is
+      // the check worth running on an extraction: a re-partition that loses
+      // or duplicates a file breaks the sum before it breaks any row.
+      // Derived from `arch`'s own `component … files=` lines at the edited
+      // registry, never off the failure output.
+      ["C-08", 10],
       // 3 → 6 at T-149: `detail-presentation.test.ts`,
       // `panel-dismissal.test.ts` and `select-task-detail.test.ts`. The
       // first also reads C-16's `verdicts.ts`, which this component already
       // declares, so again no new row — C-09 → C-16 goes 2 → 3.
-      ["C-09", 6],
+      // 6 → 5 AT T-127-s6: `task-detail.ts` leaves for C-17, the other half
+      // of the pair that closed the cycle — it reads `board-model.ts`, so
+      // while the two lived in different components each owned a file the
+      // other needed. The drawer keeps its three tests and its two source
+      // files and now DECLARES C-17 instead of owning half of it.
+      ["C-09", 5],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has
       // claimed by name since T-003 and which no walk could see.
       // 3 → 7 at T-149: `docs-model.test.ts`, `shell-harness.test.ts`,
@@ -1795,6 +1824,30 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the half of the history where nothing else spoke.** Recorded, not
       // fixed — wiring a drift gate is a separate decision and not this
       // card's; it is `T-141-s1`.
+      //
+      // AND THE TWO ROWS T-127-s6 CREATES (2026-08-29). C-17 Board model
+      // and C-18 Board root, both EXTRACTED and neither new on disk — the
+      // second and third components in this ledger to arrive with files and
+      // add none, after C-16 at T-033. They exist to break
+      // `C-08 -> C-09 -> C-08`, the registry's last declared cycle, which
+      // predated @human's no-cycles ruling by nine days. **NO IMPORT WAS
+      // SEVERED**: over the whole committed graph the only file-level SCC
+      // in this repository lies inside C-07 (`T-127-s3`), so the tangle was
+      // the BOUNDARY's, and the sanctioned remedy is extraction. The
+      // minimal alternative — `TaskDetailPanel.tsx` to C-08 and
+      // `board-model.ts` to C-09 — is also acyclic at 13 components and
+      // reds only two assertions in this file, and it was REFUSED on the
+      // merits: it leaves "Detail panel" owning the board's model and
+      // "Board pane" owning the drawer, which is how the cycle was born.
+      // Both were measured before the choice was made (`T-127-s1`).
+      ["C-17", 2],
+      // Folding `Board.tsx` into C-05 instead of giving it this row was
+      // refused and the refusal is MEASURED, not predicted:
+      // `BoardCrescendo.tsx` (C-13) imports `Board`, so C-05 would gain
+      // `C-13 -> C-05` beside the declared `C-05 -> C-13` —
+      // `cycle C-05 -> C-13 -> C-05`, `1 cycle(s) among 14 components`,
+      // exit 1. One cycle traded for another; C-18 earns its node.
+      ["C-18", 1],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1962,7 +2015,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 25 confirmed, 2 undeclared, 10 planned", () => {
+  it("the full relation table: 33 confirmed, 2 undeclared, 10 planned", () => {
+    // T-127-s6: 37 ROWS -> 45, AND EVERY ONE OF THE EIGHT IS A RENAMED OR
+    // RE-ATTRIBUTED EDGE RATHER THAN A NEW IMPORT. The graph did not move
+    // — `derived.fileComponent.size` is still 189 and `index --check` is
+    // CURRENT on both sides of this edit. Eleven rows ARRIVE (C-05->C-18,
+    // C-08->C-17, C-09->C-17, C-12->C-17, C-13->C-18, C-17->C-06,
+    // C-17->C-16, C-18->C-06, C-18->C-08, C-18->C-09, C-18->C-17) and
+    // THREE LEAVE (C-05->C-08, C-08->C-09, C-13->C-08), so the tally goes
+    // 25/2/10 -> 33/2/10 and only the confirmed column moves. The row that
+    // matters is the one that LEAVES: `C-08 -> C-09` was half of the
+    // registry's last declared cycle, and `arch cycles --root ../..` goes
+    // exit 1 -> exit 0 on this table. Derived from `arch`'s own edge
+    // listing at the edited registry, never off the failure output.
     // T-149: THE ROW COUNT DOES NOT MOVE AND FIFTEEN OF THE THIRTY-SEVEN
     // ROWS DO, WHICH IS THE WHOLE RESULT STATED AS A RELATION. Routing 33
     // test files out of C-05's umbrella adds NO row and removes NO row —
@@ -2023,7 +2088,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // gets SHORTER instead of longer: nothing new is observed, one
       // endpoint is renamed.
       ["C-05", "C-07", "confirmed", 2],
-      ["C-05", "C-08", "confirmed", 2],   // T-149: 4 -> 2
+      // `["C-05","C-08","confirmed",2]` (T-149: 4 -> 2) IS GONE AT
+      // T-127-s6. Both observed edges were `App.tsx -> Board.tsx` and its
+      // sibling, and `Board.tsx` is C-18's now — so the row is RENAMED to
+      // `C-05 -> C-18` eight rows down, not deleted. The observed count
+      // rides across unchanged at 2, which is the tell that this moved by a
+      // BOUNDARY and not by code.
       ["C-05", "C-09", "planned", 0],     // T-149: confirmed 3 -> planned 0
       // 38 -> 39 at the T-116 merge regen: map-churn-age.test.tsx imports
       // `startDocsWatcher` from app/src/lib/watcher-store.ts, which is
@@ -2072,21 +2142,46 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // two siblings. The shell is now a CONSUMER of the primitives it
       // used to own, which is the extraction working in both directions.
       ["C-05", "C-16", "confirmed", 2],   // T-149: 3 -> 2
+      // NEW at T-127-s6, and it is the RENAMED `C-05 -> C-08` row above:
+      // the shell mounts `Board.tsx`, which is C-18's from this commit. Two
+      // observed edges before, two after — nothing was added to the graph.
+      ["C-05", "C-18", "confirmed", 2],
       ["C-06", "C-01", "planned", 0],
-      ["C-08", "C-06", "confirmed", 5],   // T-149: 4 -> 5
-      ["C-08", "C-09", "confirmed", 6],
+      ["C-08", "C-06", "confirmed", 3],   // T-149: 4 -> 5; T-127-s6: 5 -> 3
+      // `["C-08","C-09","confirmed",6]` IS GONE, AND THIS IS THE ROW THE
+      // WHOLE CARD EXISTS TO REMOVE. It was half of `C-08 -> C-09 -> C-08`,
+      // the registry's last declared cycle and the reason
+      // `arch cycles --root ../..` exited 1 by design. All six observed
+      // edges belonged to `Board.tsx` reaching the drawer, and `Board.tsx`
+      // is C-18's now — so they reappear as `C-18 -> C-09` at the bottom of
+      // this table. **NO IMPORT WAS SEVERED**: the count moves because the
+      // BOUNDARY moved, and `C-09 -> C-08` three rows down still stands,
+      // which is what makes this a broken cycle rather than a hidden one.
       ["C-08", "C-11", "planned", 0],
       // NEW at T-033, and it REPLACES `["C-08","C-05","undeclared",4]`:
       // three `cn` imports plus `board-model.ts -> verdicts.ts`, all four
       // now landing on C-16. Declaring C-08 -> C-05 instead would have
       // written a cycle against the already-declared C-05 -> C-08.
-      ["C-08", "C-16", "confirmed", 4],
-      ["C-09", "C-06", "confirmed", 3],   // T-149: 2 -> 3
-      ["C-09", "C-08", "confirmed", 3],
+      // 4 -> 3 AT T-127-s6: `board-model.ts -> verdicts.ts` leaves with
+      // `board-model.ts` and is counted as `C-17 -> C-16` below.
+      ["C-08", "C-16", "confirmed", 3],
+      // NEW at T-127-s6 and the heaviest of the eight: ten sites in the
+      // card faces read the board's selectors, every one of them an import
+      // this component already made when `board-model.ts` was its own file.
+      ["C-08", "C-17", "confirmed", 10],
+      ["C-09", "C-06", "confirmed", 2],   // T-149: 2 -> 3; T-127-s6: 3 -> 2
+      ["C-09", "C-08", "confirmed", 2],   // T-127-s6: 3 -> 2
       ["C-09", "C-11", "planned", 0],
       // NEW at T-033, replacing `["C-09","C-05","undeclared",2]`: `cn` and
       // `verdicts` from TaskDetailPanel.tsx.
       ["C-09", "C-16", "confirmed", 3],   // T-149: 2 -> 3
+      // NEW at T-127-s6: the drawer reads `task-detail.ts`, which used to be
+      // its OWN file. That is the tell for why this cycle was a boundary
+      // problem — `task-detail.ts` imports `board-model.ts`, which was
+      // C-08's, so C-09 owned a file that depended on C-08 while C-08 owned
+      // a file that depended on C-09. Splitting both into C-17 leaves each
+      // component declaring a leaf instead of owning half of one.
+      ["C-09", "C-17", "confirmed", 3],
       ["C-10", "C-06", "confirmed", 1],
       // THE ONE UNDECLARED ROW LEFT IN THIS REPOSITORY, and it is left on
       // purpose: declaring it would write this registry's first cycle
@@ -2099,7 +2194,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // is not there — which also closed C-05 <-> C-12.
       ["C-12", "C-06", "confirmed", 17],  // T-149: 6 -> 17
       ["C-12", "C-07", "planned", 0],
-      ["C-12", "C-09", "confirmed", 5],
+      ["C-12", "C-09", "confirmed", 2],   // T-127-s6: 5 -> 2
       // 1 -> 2 at the T-116 merge regen, and this is the card's own
       // architectural content on the map: churn-source.ts now imports
       // `getShellState`/`subscribeShell` from watcher-store.ts, so the map
@@ -2112,8 +2207,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.
       ["C-12", "C-16", "confirmed", 7],
+      // NEW at T-127-s6, and it is three of the five edges the row above
+      // this pair used to carry: the map's own derivation reads
+      // `board-model.ts` and `task-detail.ts`, which are C-17's now. C-12
+      // is the FOURTH consumer of the extracted model, which is the
+      // argument for extracting it — a leaf four components read is not a
+      // board-pane implementation detail.
+      ["C-12", "C-17", "confirmed", 3],
       ["C-13", "C-06", "confirmed", 1],
-      ["C-13", "C-08", "confirmed", 1],
+      // `["C-13","C-08","confirmed",1]` IS GONE at T-127-s6, renamed to
+      // `C-13 -> C-18` below: the one edge was `BoardCrescendo.tsx ->
+      // Board.tsx`. THIS ROW IS ALSO THE MEASURED REASON C-18 EXISTS —
+      // folding `Board.tsx` into C-05 instead would make this
+      // `C-13 -> C-05` beside the declared `C-05 -> C-13`, and
+      // `arch cycles` answers `cycle C-05 -> C-13 -> C-05`, exit 1. One
+      // cycle traded for another.
       ["C-13", "C-10", "confirmed", 14],  // T-149: 6 -> 14
       ["C-13", "C-11", "planned", 0],
       ["C-13", "C-14", "confirmed", 9],   // T-149: 5 -> 9
@@ -2122,8 +2230,25 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // that the arrow was an artifact of WHERE the primitives lived:
       // genesis never depended on the shell, it depended on a button.
       ["C-13", "C-16", "confirmed", 3],
+      // NEW at T-127-s6, the renamed `C-13 -> C-08` row above.
+      ["C-13", "C-18", "confirmed", 1],
       ["C-14", "C-10", "confirmed", 2],
       ["C-15", "C-10", "planned", 0],
+      // THE FOUR ROWS THE EXTRACTION CREATES ON ITS OWN TWO NODES, AND
+      // EVERY ONE OF THEM IS OBSERVED — `arch` reports C-17 2/2 and C-18
+      // 4/4, so neither new component declares an intent it does not have.
+      // That is the test that separated this partition from the minimal
+      // one: a new node whose declared edges are not all observed has been
+      // drawn around the wrong files.
+      ["C-17", "C-06", "confirmed", 2],
+      ["C-17", "C-16", "confirmed", 1],
+      // C-18 reaches BOTH halves of the old pair, which is exactly why it
+      // is its own node: it is the only file on the board side that does.
+      // Leaving it in C-08 is what closed `C-08 -> C-09 -> C-08`.
+      ["C-18", "C-06", "confirmed", 1],
+      ["C-18", "C-08", "confirmed", 1],
+      ["C-18", "C-09", "confirmed", 1],
+      ["C-18", "C-17", "confirmed", 2],
       // AND THE TWO ROWS THAT STOOD HERE FOR ONE MERGE, KEPT AS A COMMENT.
       // T-139 (2026-08-26, merge `aed77b6`) added `unmapped -> C-07` and
       // `unmapped -> C-10`, the first and only rows this table has ever
@@ -2153,7 +2278,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // routing — no row arrived and none left. Derived from `arch`'s own
       // edge listing at the edited registry, and forecast by a per-file
       // simulation over `graph.json` before the registry was touched.
-      ["confirmed", 25],
+      // 25 -> 33 AT T-127-s6, and the OTHER TWO COLUMNS DO NOT MOVE AT
+      // ALL, which is the whole shape of an extraction stated as a tally:
+      // eleven confirmed rows arrive and three leave, and nothing becomes
+      // or stops being drift. 33 + 2 + 10 = 45. Derived from `arch`'s own
+      // edge listing at the edited registry — 33 confirmed / 2 undeclared /
+      // 10 planned — before the suite was re-run.
+      ["confirmed", 33],
       ["planned", 10],
       // 2 → 4 at T-139, both new rows from the one unmapped file above.
       // 4 → 2 AT T-141, both leaving for the same reason they arrived. This
@@ -2198,11 +2329,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // never be silently absent).
     const c08 = derived.edges.find((e) => e.from === "C-08" && e.to === "C-06");
     expect(c08?.relation).toBe("confirmed");
+    // 5 -> 3 AT T-127-s6, AND THE TWO THAT LEFT ARE NAMED IN THE TWO NEW
+    // BODIES BELOW RATHER THAN SUBTRACTED. `Board.tsx` is C-18's and
+    // `board-model.ts` is C-17's from this commit; both still consume the
+    // parser through the same package seam, so the seam's own invariant —
+    // a `file:`-dep edge renders as REAL and is never silently absent —
+    // is checked on all five files, on four components instead of three.
+    // A re-partition that dropped one would show up here as an edge that
+    // vanished rather than moved, which is why this list is asserted by
+    // IDENTITY and not by count.
     expect(c08?.fileEdges).toEqual([
-      { from: "app/src/components/board/Board.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/src/components/board/badges/ReviewBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/src/components/board/badges/SizeBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
-      { from: "app/src/lib/board-model.ts", to: LIB_PARSER, package: PARSER_PKG },
       // 4 -> 5 at T-149: `select-board.test.ts` arrives from C-05's
       // dissolved test umbrella and consumes the parser through the same
       // seam. `review-badge.test.tsx` arrives too and does NOT appear here
@@ -2214,10 +2352,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(c09?.relation).toBe("confirmed");
     expect(c09?.fileEdges).toEqual([
       { from: "app/src/components/board/TaskDetailPanel.tsx", to: LIB_PARSER, package: PARSER_PKG },
-      { from: "app/src/lib/task-detail.ts", to: LIB_PARSER, package: PARSER_PKG },
+      // 3 -> 2 at T-127-s6: `task-detail.ts` leaves for C-17 and reappears
+      // in the C-17 body below.
       // 2 -> 3 at T-149: `select-task-detail.test.ts`. Of the three tests
       // routed here, it is the only parser consumer.
       { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+    ]);
+    // THE TWO CONSUMERS T-127-s6 CREATES, and they hold the three file
+    // edges the two bodies above lost — 5 + 3 was the pair's total before
+    // the extraction and 3 + 2 + 2 + 1 is the four components' total after,
+    // the same eight edges under four owners instead of two.
+    const c17 = derived.edges.find((e) => e.from === "C-17" && e.to === "C-06");
+    expect(c17?.relation).toBe("confirmed");
+    expect(c17?.fileEdges).toEqual([
+      { from: "app/src/lib/board-model.ts", to: LIB_PARSER, package: PARSER_PKG },
+      { from: "app/src/lib/task-detail.ts", to: LIB_PARSER, package: PARSER_PKG },
+    ]);
+    const c18 = derived.edges.find((e) => e.from === "C-18" && e.to === "C-06");
+    expect(c18?.relation).toBe("confirmed");
+    expect(c18?.fileEdges).toEqual([
+      { from: "app/src/components/board/Board.tsx", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c10 = derived.edges.find((e) => e.from === "C-10" && e.to === "C-06");
     expect(c10?.relation).toBe("confirmed");
