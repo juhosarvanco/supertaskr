@@ -5,24 +5,26 @@ feature: F-04
 milestone: 4
 priority: 30
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [.claude/, tools/e2e, method/lane-protocol.md, docs/CONVENTIONS.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
-review:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
+review: same-model
 ---
 
-ADR-020 decision 1. Three logged incidents would have been blocked
-mechanically: `db4c903` (an architect edit inside T-138's held fence),
-T-126's breach (verdict `de05430` ruled the fence should have held and
-approved only by necessity), and the architect session's 2026-08-29
-report ("I edited a file a live lane held"). Lane-protocol rule 5 is a
-discipline today; this card makes it a property — the ADR-019
-promote-if-it-slips trajectory applied one layer earlier, to the
-moment of the write.
+ADR-020 decision 1. ONE of three logged incidents would have been
+blocked mechanically — T-126's breach (verdict `de05430`), a lane
+reaching out — while the other two (`db4c903` and the architect
+session's 2026-08-29 report) are integration-seat writes reaching IN,
+which is `T-154-s2`'s scope. *This paragraph originally claimed all
+three; the verifier ruled that a defect in the CARD, not the work, and
+the correction landed at the merge per the verdict.* Lane-protocol
+rule 5 is a discipline today; this card makes the lane half a
+property — the ADR-019 promote-if-it-slips trajectory applied one
+layer earlier, to the moment of the write.
 
 ## The mechanism — expand at dispatch, read at the write
 

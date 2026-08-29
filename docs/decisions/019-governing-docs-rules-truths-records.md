@@ -113,3 +113,17 @@ exactly the two records, exit 1 read unpiped, before the repair
 landed. ROADMAP ticking stays a ritual — judgment is not mechanically
 checkable — but STATE, the file every session reads first, can no
 longer be forgotten silently.
+
+## Addendum 3 (2026-08-29, at T-154's checkpoint)
+
+docs/CONVENTIONS.md re-landed at **110,342 bytes** — the T-093/T-092
+floor-droppers plus ADR-020's merge gate plus T-154's ruled guard
+bullet (with the fourth limit the verdict required disclosed). Every
+byte of the growth is rule text that survived the pipeline, which is
+what the document is FOR; the tripwire fired on the way (warn at
+107,967, T-092-s2's prediction to the sentence) and its disposition
+is this addendum, per §Budgets: gate values re-derived at the new
+landing — warn 137,928, fail 165,513 — with the 48 KB target still
+standing as the aim for the day T-092/T-093's classes retire their
+kept spans. Measured reason recorded; the mechanism, not the
+adjective, is the bar.

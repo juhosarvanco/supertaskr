@@ -1,7 +1,9 @@
 # State
 
-Updated: 2026-08-29 at the T-153 checkpoint. Current record:
-docs/checkpoints/2026-08-29-T-153.md. The pre-compaction narrative
+Updated: 2026-08-29 at the T-154 checkpoint — THE FENCE HOOK IS ARMED
+REPO-WIDE from this merge (lanes fenced at the write; non-lane
+checkouts allow silently). Current record:
+docs/checkpoints/2026-08-29-T-154.md. The pre-compaction narrative
 remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
@@ -27,9 +29,11 @@ never deleted to fit.
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
   --state`, which stamps the reading. Read at this rewrite: ONE
-  `task/` lane live — T-154, verdict pending — plus the triage
-  worktree on its own branch (2026-08-29, T-153 checkpoint). Before
-  ANY dispatch run
+  `task/` lane live — T-153-s2, executor running — plus the triage
+  worktree on its own branch (2026-08-29, T-154 checkpoint). Since
+  T-154, dispatch also writes the lane's fence manifest
+  (`brief.mjs --task T-NNN --write-fence <worktree>`) — a lane
+  without one is blocked at its first write. Before ANY dispatch run
   `brief.mjs --task T-NNN`; never read the ledger's FREE column as a
   verdict — it is keyed by slug and two slugs can name one component.
 - THE HUMAN'S APP: port 1420 is read with
@@ -57,10 +61,10 @@ from this list.
    push-hold now stands behind `T-153-s2` alone — the E2BIG argv
    fixture, C-14's fence, dispatched next — and lifts when it lands:
    main pushes, CI runs green end to end, draft PR #1 closes.
-2. `T-154` — the fence hook, THROUGH THE PIPELINE with an
-   independent verifier: the builder of the cage is not its
-   inspector. Mechanism redesigned pre-dispatch (dispatch-time
-   manifest; the card carries it).
+2. `T-154` is DONE and merged — the fence is a PROPERTY now, armed
+   repo-wide, verified with hostile payloads. Its live follow-up:
+   `T-154-s2`, the fenceless-seat-reaching-in class (needs every-lane
+   manifests and a ruling).
 3. `T-155` method evals → `T-156` health bands (now also keeper of
    NORTH_STAR's own never-derived indicators) → `T-157` session
    economics. `T-158` is DONE and merged — the front door exists,

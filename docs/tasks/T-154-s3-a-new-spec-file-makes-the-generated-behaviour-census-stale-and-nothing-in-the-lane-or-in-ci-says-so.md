@@ -41,3 +41,10 @@ are (a) red the lane and rule that a spec-adding card's fence must reach
 `docs/CAPABILITIES.md`, or (b) red at the checkpoint only, as a
 CI/integrator step, keeping the executor's fence narrow. Both are
 defensible; picking one is triage's call and not an executor's.
+
+closed_by (partial): T-154's own checkpoint — the integrator ran
+`npm run capabilities` at the merge (Census 233 → 258 = the runner's
+own count) and asked `capabilities:check` before and after, which is
+the instance discharged. The CLASS this card names — nothing in a
+LANE or in CI says the census went stale — remains open for triage:
+the check as a CI step is the remedy on offer.

@@ -967,15 +967,22 @@
     `touches:` no longer matches the manifest's stamp refuses with
     `re-expand`, so a fence cannot be widened from inside the lane it
     fences — `method/lane-protocol.md` rule 5, made mechanical.
-    **THREE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
+    **FOUR LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write
     and stays protocol-covered. A path OUTSIDE the lane's own checkout
     is allowed, the manifest's domains being repository-relative: the
     scratchpad and a drill tree are reachable, and so is a sibling
-    lane's. And the guard is armed by the WRITING session's own branch,
+    lane's. The guard is armed by the WRITING session's own branch,
     so a seat in this checkout editing a file a live lane holds is not
     seen — the shape of two of the three incidents the card cites.
+    And the hook FAILS OPEN in exactly one shape, proven at
+    verification to be the harness's own contract rather than this
+    guard's choice: a command hook whose script cannot be LOCATED
+    never starts, and a process that never starts cannot exit 2 — it
+    takes `CLAUDE_PROJECT_DIR` unset AND a shell cwd outside any
+    checkout carrying the hook, both wrong at once (added at T-154's
+    merge, closing the verdict's disclosure condition).
     The manifest is a RUNTIME file carrying a self-ignoring `.gitignore`
     beside it: one that reached the integration branch would hand every
     checkout one lane's permanently stale fence.

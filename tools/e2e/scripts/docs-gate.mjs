@@ -138,7 +138,7 @@ const DOC_BUDGETS = Object.freeze({
   "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
   "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
   "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  "docs/CONVENTIONS.md": { landed: 86373, warn: 107967, fail: 129560 },
+  "docs/CONVENTIONS.md": { landed: 110342, warn: 137928, fail: 165513 },
 });
 
 const CENSUS_FLAG = "--census";

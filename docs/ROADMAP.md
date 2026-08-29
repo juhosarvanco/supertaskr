@@ -62,7 +62,10 @@ opens with the card id that still holds its story.
   REASONS a human can argue with (T-111), and the brief is a written
   contract (T-089) a program assembles (dispatch-brief.mjs). The
   named slice — "dispatch without writing the prompt" — deliberately
-  spawns nothing. Next: T-112 hands you the brief and lane commands
+  spawns nothing. Since T-154 (2026-08-29) the fence is a PROPERTY at
+  the moment of the write: dispatch stamps an expanded manifest into
+  the lane and a zero-dependency hook blocks what the fence forbids,
+  verified with hostile payloads. Next: T-112 hands you the brief and lane commands
   from the board (the slice's third clause); it is also the board's
   most colliding card — derive the flip pairs first. Open rulings:
   D3 (may the app write into docs/?) and D5 (`model@session`

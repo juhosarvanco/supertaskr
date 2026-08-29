@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **233 behaviours** — 231 extracted sentences + 2 named-not-extracted (listed at the end) — across 25 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **258 behaviours** — 256 extracted sentences + 2 named-not-extracted (listed at the end) — across 26 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -187,6 +187,34 @@ Census: **233 behaviours** — 231 extracted sentences + 2 named-not-extracted (
 
 - real Enter on a focused blocker chip re-targets without closing
 - real Space on a focused blocker chip re-targets without closing
+
+## lane-fence
+
+- the SAME write is refused in the lane and allowed in the integration checkout
+- a DETACHED worktree is not a lane, and the drill it stands for is not blocked
+- a directory that is no repository at all is not a lane
+- a lane branch with NO manifest blocks — dispatch skipped its step
+- a path inside the manifest is allowed, through a PATH token and through a SLUG
+- an outside write is refused NAMING the fence, the path and the route
+- docs/tasks is always writable, and the hook takes that set from the parser
+- a card whose touches line moved under the lane blocks with `re-expand`
+- a manifest the hook cannot read is a refusal, never a shrug
+- in a lane, a request with no readable path is refused rather than waved through
+- a path outside the lane's own checkout is allowed, and the limit is declared
+- the manifest is stamped with the card's RAW touches line, taken from the frontmatter
+- the writer REFUSES a fence it could not fully expand, and writes nothing
+- the writer refuses a worktree that is not this card's lane
+- the manifest cannot be committed into the tree everyone else reads
+- `--write-fence` is a NAMED arm of the brief command, and needs its task
+- the hook's lane-branch spelling is the one docs/CONVENTIONS.md publishes
+- the writer puts the manifest exactly where the reader opens it, at one version
+- ONE `touches:` extraction, and it agrees with `yaml` on every live card
+- the frontmatter is where a fence lives — a body line is never read as one
+- containment is the path rule, and a name that merely starts the same is not inside
+- the hook depends on NOTHING a fresh worktree lacks
+- the PreToolUse hook is wired for the file-writing tools, and leaves room for a second source
+- the runner answers in EXIT CODES — block is 2 with the reason on stderr, allow is a silent 0
+- an unreadable request costs an integrator nothing and buys an executor nothing
 
 ## map-retarget
 
