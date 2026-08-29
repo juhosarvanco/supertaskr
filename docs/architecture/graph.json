@@ -4232,8 +4232,8 @@
       "id": "f:app/src-tauri/src/agent/adapter.rs",
       "path": "app/src-tauri/src/agent/adapter.rs",
       "lang": "rust",
-      "hash": "blake3:b87e848febb93341985ba9cfb686f16b85a66e6a573b59029e3ca6838cbde0e0",
-      "loc": 1707,
+      "hash": "blake3:0e7cf5172d38717675d23b54d393a94978e0effd6f2a174ccd6c2489dfddea36",
+      "loc": 1820,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/adapter.rs#ADAPTERS",
@@ -4281,8 +4281,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            628,
-            704
+            674,
+            750
           ]
         },
         {
@@ -4291,8 +4291,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            710,
-            726
+            756,
+            772
           ]
         },
         {
@@ -4386,6 +4386,16 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#SPAWN_ELEMENT_MAX_LEN",
+          "name": "SPAWN_ELEMENT_MAX_LEN",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            650,
+            650
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/agent/adapter.rs#SessionIdRejection",
           "name": "SessionIdRejection",
           "kind": "enum",
@@ -4411,8 +4421,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            784,
-            806
+            830,
+            852
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#child_env_pair_fits",
+          "name": "child_env_pair_fits",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            661,
+            663
           ]
         },
         {
@@ -4421,8 +4441,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            737,
-            757
+            783,
+            803
           ]
         },
         {
@@ -4441,8 +4461,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            808,
-            863
+            854,
+            909
           ]
         },
         {
@@ -4491,8 +4511,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            891,
-            907
+            937,
+            953
           ]
         },
         {
@@ -4501,8 +4521,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            869,
-            876
+            915,
+            922
           ]
         },
         {
@@ -4521,8 +4541,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            910,
-            1707
+            956,
+            1820
           ]
         },
         {
@@ -5009,8 +5029,8 @@
       "id": "f:app/src-tauri/src/agent/runner.rs",
       "path": "app/src-tauri/src/agent/runner.rs",
       "lang": "rust",
-      "hash": "blake3:53fd150faf6db7b5e3d0f547ab2f9461586d6ea9e51273a0ae7c8d05cfc944d4",
-      "loc": 3536,
+      "hash": "blake3:b59ae606ba394170d53a659c3ffaf8c0bd249b6bb0180def34faac450026041e",
+      "loc": 3577,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/runner.rs#ChildHandle",
@@ -5018,8 +5038,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1247,
-            1254
+            1288,
+            1295
           ]
         },
         {
@@ -5028,8 +5048,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            1084,
-            1103
+            1085,
+            1104
           ]
         },
         {
@@ -5038,8 +5058,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            1106,
-            1107
+            1107,
+            1108
           ]
         },
         {
@@ -5048,8 +5068,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            299,
-            302
+            300,
+            303
           ]
         },
         {
@@ -5058,8 +5078,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1273,
-            1285
+            1314,
+            1326
           ]
         },
         {
@@ -5068,8 +5088,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            2565,
-            2569
+            2606,
+            2610
           ]
         },
         {
@@ -5078,8 +5098,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            166,
-            166
+            167,
+            167
           ]
         },
         {
@@ -5088,8 +5108,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            105,
-            105
+            106,
+            106
           ]
         },
         {
@@ -5098,8 +5118,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            113,
-            113
+            114,
+            114
           ]
         },
         {
@@ -5108,8 +5128,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            141,
-            141
+            142,
+            142
           ]
         },
         {
@@ -5118,8 +5138,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            97,
-            97
+            98,
+            98
           ]
         },
         {
@@ -5128,8 +5148,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            95,
-            95
+            96,
+            96
           ]
         },
         {
@@ -5138,8 +5158,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            100,
-            100
+            101,
+            101
           ]
         },
         {
@@ -5148,8 +5168,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            102,
-            102
+            103,
+            103
           ]
         },
         {
@@ -5158,8 +5178,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1446,
-            1451
+            1487,
+            1492
           ]
         },
         {
@@ -5168,8 +5188,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            443,
-            443
+            444,
+            444
           ]
         },
         {
@@ -5178,8 +5198,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1361,
-            1361
+            1402,
+            1402
           ]
         },
         {
@@ -5188,8 +5208,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            419,
-            426
+            420,
+            427
           ]
         },
         {
@@ -5198,8 +5218,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            429,
-            437
+            430,
+            438
           ]
         },
         {
@@ -5208,8 +5228,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            598,
-            612
+            599,
+            613
           ]
         },
         {
@@ -5218,8 +5238,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1471,
-            1474
+            1512,
+            1515
           ]
         },
         {
@@ -5228,8 +5248,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            2617,
-            2620
+            2658,
+            2661
           ]
         },
         {
@@ -5238,8 +5258,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            241,
-            280
+            242,
+            281
           ]
         },
         {
@@ -5248,8 +5268,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            366,
-            398
+            367,
+            399
           ]
         },
         {
@@ -5258,8 +5278,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            1009,
-            1012
+            1010,
+            1013
           ]
         },
         {
@@ -5268,8 +5288,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            1477,
-            1533
+            1518,
+            1574
           ]
         },
         {
@@ -5278,8 +5298,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            181,
-            233
+            182,
+            234
           ]
         },
         {
@@ -5288,8 +5308,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1768,
-            1775
+            1809,
+            1816
           ]
         },
         {
@@ -5298,8 +5318,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1757,
-            1763
+            1798,
+            1804
           ]
         },
         {
@@ -5308,8 +5328,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1111,
-            1142
+            1152,
+            1183
           ]
         },
         {
@@ -5318,8 +5338,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1675,
-            1682
+            1716,
+            1723
           ]
         },
         {
@@ -5328,8 +5348,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1690,
-            1692
+            1731,
+            1733
           ]
         },
         {
@@ -5338,8 +5358,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2561,
-            2563
+            2602,
+            2604
           ]
         },
         {
@@ -5348,8 +5368,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1536,
-            1670
+            1577,
+            1711
           ]
         },
         {
@@ -5358,8 +5378,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1715,
-            1738
+            1756,
+            1779
           ]
         },
         {
@@ -5368,8 +5388,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1696,
-            1703
+            1737,
+            1744
           ]
         },
         {
@@ -5378,8 +5398,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1749,
-            1751
+            1790,
+            1792
           ]
         },
         {
@@ -5388,8 +5408,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            887,
-            905
+            888,
+            906
           ]
         },
         {
@@ -5398,8 +5418,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2544,
-            2559
+            2585,
+            2600
           ]
         },
         {
@@ -5408,8 +5428,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1213,
-            1219
+            1254,
+            1260
           ]
         },
         {
@@ -5418,8 +5438,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            527,
-            533
+            528,
+            534
           ]
         },
         {
@@ -5428,8 +5448,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            1256,
-            1268
+            1297,
+            1309
           ]
         },
         {
@@ -5438,8 +5458,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            400,
-            414
+            401,
+            415
           ]
         },
         {
@@ -5448,8 +5468,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            304,
-            338
+            305,
+            339
           ]
         },
         {
@@ -5458,8 +5478,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            2622,
-            2638
+            2663,
+            2679
           ]
         },
         {
@@ -5468,8 +5488,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            282,
-            294
+            283,
+            295
           ]
         },
         {
@@ -5478,8 +5498,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            614,
-            626
+            615,
+            627
           ]
         },
         {
@@ -5488,8 +5508,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            590,
-            592
+            591,
+            593
           ]
         },
         {
@@ -5498,8 +5518,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1221,
-            1226
+            1262,
+            1267
           ]
         },
         {
@@ -5508,8 +5528,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            858,
-            872
+            859,
+            873
           ]
         },
         {
@@ -5518,8 +5538,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            917,
-            957
+            918,
+            958
           ]
         },
         {
@@ -5528,8 +5548,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            168,
-            173
+            169,
+            174
           ]
         },
         {
@@ -5538,8 +5558,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1201,
-            1207
+            1242,
+            1248
           ]
         },
         {
@@ -5548,8 +5568,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            990,
-            1007
+            991,
+            1008
           ]
         },
         {
@@ -5558,8 +5578,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2575,
-            2614
+            2616,
+            2655
           ]
         },
         {
@@ -5568,8 +5588,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            506,
-            511
+            507,
+            512
           ]
         },
         {
@@ -5578,8 +5598,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            745,
-            810
+            746,
+            811
           ]
         },
         {
@@ -5588,8 +5608,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1784,
-            2542
+            1825,
+            2583
           ]
         },
         {
@@ -5598,8 +5618,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1016,
-            1051
+            1017,
+            1052
           ]
         },
         {
@@ -5608,8 +5628,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            548,
-            559
+            549,
+            560
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#set_child_env",
+          "name": "set_child_env",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1132,
+            1143
           ]
         },
         {
@@ -5618,8 +5648,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1147,
-            1193
+            1188,
+            1234
           ]
         },
         {
@@ -5628,8 +5658,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1429,
-            1441
+            1470,
+            1482
           ]
         },
         {
@@ -5638,8 +5668,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1411,
-            1421
+            1452,
+            1462
           ]
         },
         {
@@ -5648,8 +5678,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1369,
-            1400
+            1410,
+            1441
           ]
         },
         {
@@ -5658,8 +5688,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1322,
-            1356
+            1363,
+            1397
           ]
         },
         {
@@ -5668,8 +5698,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            2641,
-            3536
+            2682,
+            3577
           ]
         },
         {
@@ -5678,8 +5708,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            659,
-            664
+            660,
+            665
           ]
         },
         {
@@ -5688,8 +5718,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            673,
-            707
+            674,
+            708
           ]
         },
         {
@@ -5698,8 +5728,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            984,
-            988
+            985,
+            989
           ]
         },
         {
@@ -5708,8 +5738,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            970,
-            975
+            971,
+            976
           ]
         }
       ]
@@ -7947,8 +7977,8 @@
       "id": "f:app/src-tauri/tests/agent_runner.rs",
       "path": "app/src-tauri/tests/agent_runner.rs",
       "lang": "rust",
-      "hash": "blake3:ef99465501476c85d9d9a520210fe12a49c91b828c3ed8ddbeb287119ef57de8",
-      "loc": 5036,
+      "hash": "blake3:d9a815a10cb0ea6ec8d28f3628848d10cfc39e69dbdfc5fbae8d871442f58337",
+      "loc": 5267,
       "symbols": [
         {
           "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY",
@@ -7976,8 +8006,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            772,
-            772
+            782,
+            782
           ]
         },
         {
@@ -7997,7 +8027,7 @@
           "exported": false,
           "range": [
             69,
-            90
+            95
           ]
         },
         {
@@ -8006,8 +8036,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            660,
-            666
+            670,
+            676
           ]
         },
         {
@@ -8016,8 +8046,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            4486,
-            4491
+            4717,
+            4722
           ]
         },
         {
@@ -8026,8 +8056,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4021,
-            4021
+            4031,
+            4031
           ]
         },
         {
@@ -8036,8 +8066,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4023,
-            4023
+            4033,
+            4033
           ]
         },
         {
@@ -8046,8 +8076,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4027,
-            4028
+            4037,
+            4038
           ]
         },
         {
@@ -8056,8 +8086,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1034,
-            1078
+            1044,
+            1088
           ]
         },
         {
@@ -8066,8 +8096,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4719,
-            4752
+            4950,
+            4983
           ]
         },
         {
@@ -8076,8 +8106,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3039,
-            3047
+            3049,
+            3057
           ]
         },
         {
@@ -8086,8 +8116,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            862,
-            882
+            872,
+            892
           ]
         },
         {
@@ -8096,8 +8126,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1896,
-            1930
+            1906,
+            1940
           ]
         },
         {
@@ -8106,8 +8136,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1521,
-            1570
+            1531,
+            1580
           ]
         },
         {
@@ -8116,8 +8146,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2311,
-            2352
+            2321,
+            2362
           ]
         },
         {
@@ -8126,8 +8156,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2266,
-            2282
+            2276,
+            2292
           ]
         },
         {
@@ -8136,8 +8166,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2374,
-            2411
+            2384,
+            2421
           ]
         },
         {
@@ -8146,8 +8176,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2929,
-            2937
+            2939,
+            2947
           ]
         },
         {
@@ -8156,8 +8186,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1298,
-            1362
+            1308,
+            1372
           ]
         },
         {
@@ -8166,8 +8196,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4366,
-            4425
+            4376,
+            4462
           ]
         },
         {
@@ -8176,8 +8206,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3481,
-            3557
+            3491,
+            3567
           ]
         },
         {
@@ -8186,8 +8216,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3303,
-            3363
+            3313,
+            3373
           ]
         },
         {
@@ -8196,8 +8226,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3419,
-            3473
+            3429,
+            3483
           ]
         },
         {
@@ -8206,8 +8236,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4603,
-            4640
+            4834,
+            4871
           ]
         },
         {
@@ -8216,8 +8246,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3004,
-            3018
+            3014,
+            3028
           ]
         },
         {
@@ -8226,8 +8256,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3050,
-            3071
+            3060,
+            3081
           ]
         },
         {
@@ -8236,8 +8266,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2940,
-            2948
+            2950,
+            2958
           ]
         },
         {
@@ -8246,8 +8276,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1377,
-            1392
+            1387,
+            1402
           ]
         },
         {
@@ -8256,8 +8286,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3105,
-            3130
+            3115,
+            3140
           ]
         },
         {
@@ -8266,8 +8296,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2227,
-            2241
+            2237,
+            2251
           ]
         },
         {
@@ -8276,8 +8306,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            896,
-            932
+            906,
+            942
           ]
         },
         {
@@ -8286,8 +8316,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2150,
-            2175
+            2160,
+            2185
           ]
         },
         {
@@ -8296,8 +8326,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2203,
-            2221
+            2213,
+            2231
           ]
         },
         {
@@ -8306,8 +8336,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2846,
-            2893
+            2856,
+            2903
           ]
         },
         {
@@ -8316,8 +8346,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2709,
-            2734
+            2719,
+            2744
           ]
         },
         {
@@ -8326,8 +8356,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3787,
-            3860
+            3797,
+            3870
           ]
         },
         {
@@ -8336,8 +8366,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            939,
-            966
+            949,
+            976
           ]
         },
         {
@@ -8346,8 +8376,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1817,
-            1876
+            1827,
+            1886
           ]
         },
         {
@@ -8356,8 +8386,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1729,
-            1769
+            1739,
+            1779
           ]
         },
         {
@@ -8366,8 +8396,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2750,
-            2763
+            2760,
+            2773
           ]
         },
         {
@@ -8376,8 +8406,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1668,
-            1715
+            1678,
+            1725
           ]
         },
         {
@@ -8386,8 +8416,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3074,
-            3091
+            3084,
+            3101
           ]
         },
         {
@@ -8396,8 +8426,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4646,
-            4711
+            4877,
+            4942
           ]
         },
         {
@@ -8406,8 +8436,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3094,
-            3102
+            3104,
+            3112
           ]
         },
         {
@@ -8416,8 +8446,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1444,
-            1483
+            1454,
+            1493
           ]
         },
         {
@@ -8426,8 +8456,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1177,
-            1231
+            1187,
+            1241
           ]
         },
         {
@@ -8436,8 +8466,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            817,
-            853
+            827,
+            863
           ]
         },
         {
@@ -8446,8 +8476,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2462,
-            2554
+            2472,
+            2564
           ]
         },
         {
@@ -8456,8 +8486,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4530,
-            4593
+            4761,
+            4824
           ]
         },
         {
@@ -8466,8 +8496,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2672,
-            2689
+            2682,
+            2699
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
+          "name": "an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4494,
+            4557
           ]
         },
         {
@@ -8476,8 +8516,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1409,
-            1434
+            1419,
+            1444
           ]
         },
         {
@@ -8486,8 +8526,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2951,
-            2959
+            2961,
+            2969
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
+          "name": "an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4574,
+            4656
           ]
         },
         {
@@ -8496,8 +8546,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4986,
-            5036
+            5217,
+            5267
           ]
         },
         {
@@ -8506,8 +8556,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            293,
-            303
+            303,
+            313
           ]
         },
         {
@@ -8516,8 +8566,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            536,
-            588
+            546,
+            598
           ]
         },
         {
@@ -8526,8 +8576,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            204,
-            222
+            214,
+            232
           ]
         },
         {
@@ -8536,8 +8586,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1238,
-            1277
+            1248,
+            1287
           ]
         },
         {
@@ -8546,8 +8596,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            226,
-            235
+            236,
+            245
           ]
         },
         {
@@ -8556,8 +8606,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3371,
-            3411
+            3381,
+            3421
           ]
         },
         {
@@ -8566,8 +8616,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2962,
-            2970
+            2972,
+            2980
           ]
         },
         {
@@ -8586,8 +8636,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3748,
-            3759
+            3758,
+            3769
           ]
         },
         {
@@ -8596,8 +8646,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            108,
-            160
+            114,
+            170
           ]
         },
         {
@@ -8606,8 +8656,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            92,
-            106
+            97,
+            112
           ]
         },
         {
@@ -8616,8 +8666,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            796,
-            805
+            806,
+            815
           ]
         },
         {
@@ -8636,8 +8686,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            748,
-            752
+            758,
+            762
           ]
         },
         {
@@ -8646,8 +8696,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            775,
-            786
+            785,
+            796
           ]
         },
         {
@@ -8656,8 +8706,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            669,
-            745
+            679,
+            755
           ]
         },
         {
@@ -8666,8 +8716,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3877,
-            3971
+            3887,
+            3981
           ]
         },
         {
@@ -8676,8 +8726,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3253,
-            3284
+            3263,
+            3294
           ]
         },
         {
@@ -8696,8 +8746,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1595,
-            1635
+            1605,
+            1645
           ]
         },
         {
@@ -8706,8 +8756,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3575,
-            3583
+            3585,
+            3593
           ]
         },
         {
@@ -8716,8 +8766,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3589,
-            3592
+            3599,
+            3602
           ]
         },
         {
@@ -8726,8 +8776,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            319,
-            323
+            329,
+            333
           ]
         },
         {
@@ -8736,8 +8786,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            330,
-            333
+            340,
+            343
           ]
         },
         {
@@ -8746,8 +8796,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            325,
-            328
+            335,
+            338
           ]
         },
         {
@@ -8756,8 +8806,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4437,
-            4473
+            4668,
+            4704
           ]
         },
         {
@@ -8766,8 +8816,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4497,
-            4520
+            4728,
+            4751
           ]
         },
         {
@@ -8776,8 +8826,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3596,
-            3608
+            3606,
+            3618
           ]
         },
         {
@@ -8786,8 +8836,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            239,
-            251
+            249,
+            261
           ]
         },
         {
@@ -8796,8 +8846,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            647,
-            654
+            657,
+            664
           ]
         },
         {
@@ -8806,8 +8856,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2973,
-            2985
+            2983,
+            2995
           ]
         },
         {
@@ -8816,8 +8866,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2988,
-            3001
+            2998,
+            3011
           ]
         },
         {
@@ -8826,8 +8876,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            354,
-            421
+            364,
+            431
           ]
         },
         {
@@ -8836,8 +8886,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4248,
-            4302
+            4258,
+            4312
           ]
         },
         {
@@ -8846,8 +8896,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4308,
-            4351
+            4318,
+            4361
           ]
         },
         {
@@ -8856,8 +8906,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4116,
-            4118
+            4126,
+            4128
           ]
         },
         {
@@ -8866,8 +8916,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4120,
-            4244
+            4130,
+            4254
           ]
         },
         {
@@ -8876,8 +8926,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4082,
-            4114
+            4092,
+            4124
           ]
         },
         {
@@ -8886,8 +8936,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            308,
-            313
+            318,
+            323
           ]
         },
         {
@@ -8896,8 +8946,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2062,
-            2127
+            2072,
+            2137
           ]
         },
         {
@@ -8906,8 +8956,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4860,
-            4925
+            5091,
+            5156
           ]
         },
         {
@@ -8916,8 +8966,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3229,
-            3247
+            3239,
+            3257
           ]
         },
         {
@@ -8926,8 +8976,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            425,
-            462
+            435,
+            472
           ]
         },
         {
@@ -8936,8 +8986,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4071,
-            4078
+            4081,
+            4088
           ]
         },
         {
@@ -8946,8 +8996,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2584,
-            2613
+            2594,
+            2623
           ]
         },
         {
@@ -8956,8 +9006,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            595,
-            625
+            605,
+            635
           ]
         },
         {
@@ -8966,8 +9016,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1128,
-            1169
+            1138,
+            1179
           ]
         },
         {
@@ -8976,8 +9026,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1085,
-            1120
+            1095,
+            1130
           ]
         },
         {
@@ -8986,8 +9036,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4762,
-            4790
+            4993,
+            5021
           ]
         },
         {
@@ -8996,8 +9046,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4935,
-            4980
+            5166,
+            5211
           ]
         },
         {
@@ -9006,8 +9056,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4796,
-            4838
+            5027,
+            5069
           ]
         },
         {
@@ -9016,8 +9066,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            513,
-            530
+            523,
+            540
           ]
         },
         {
@@ -9026,8 +9076,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3995,
-            4016
+            4005,
+            4026
           ]
         },
         {
@@ -9036,8 +9086,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            983,
-            1027
+            993,
+            1037
           ]
         },
         {
@@ -9046,8 +9096,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1370,
-            1372
+            1380,
+            1382
           ]
         },
         {
@@ -9056,8 +9106,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            466,
-            508
+            476,
+            518
           ]
         },
         {
@@ -9066,8 +9116,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3138,
-            3222
+            3148,
+            3232
           ]
         },
         {
@@ -9076,8 +9126,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2779,
-            2798
+            2789,
+            2808
           ]
         },
         {
@@ -9086,8 +9136,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2183,
-            2197
+            2193,
+            2207
           ]
         },
         {
@@ -9096,8 +9146,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2907,
-            2926
+            2917,
+            2936
           ]
         },
         {
@@ -9106,8 +9156,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1953,
-            2037
+            1963,
+            2047
           ]
         },
         {
@@ -9116,8 +9166,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            2632,
-            2654
+            2642,
+            2664
           ]
         },
         {
@@ -9126,8 +9176,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3638,
-            3743
+            3648,
+            3753
           ]
         },
         {
@@ -9136,8 +9186,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            315,
-            317
+            325,
+            327
           ]
         },
         {
@@ -9146,8 +9196,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            184,
-            186
+            194,
+            196
           ]
         },
         {
@@ -9156,8 +9206,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            188,
-            193
+            198,
+            203
           ]
         },
         {
@@ -9166,8 +9216,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            162,
-            182
+            172,
+            192
           ]
         },
         {
@@ -9176,8 +9226,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            335,
-            346
+            345,
+            356
           ]
         },
         {
@@ -9186,8 +9236,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3023,
-            3034
+            3033,
+            3044
           ]
         },
         {
@@ -9196,8 +9246,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3610,
-            3619
+            3620,
+            3629
           ]
         }
       ]
@@ -24577,6 +24627,7 @@
       "to": "f:app/src-tauri/src/agent/adapter.rs",
       "kind": "import",
       "symbols": [
+        "*",
         "AgentAdapter",
         "is_executable_file",
         "parse_major",
@@ -24607,6 +24658,7 @@
         "Instant",
         "Mutex",
         "Ordering",
+        "OsStr",
         "Path",
         "PathBuf",
         "Read",
@@ -38744,7 +38796,7 @@
   ],
   "stats": {
     "files": 189,
-    "symbols": 2152,
+    "symbols": 2157,
     "edges": 2111
   }
 }

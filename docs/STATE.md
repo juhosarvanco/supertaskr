@@ -1,10 +1,11 @@
 # State
 
-Updated: 2026-08-29 at the amnesty-triage checkpoint — the suggested
-backlog is ZERO for the first time since the board existed; arrivals
-now queue for T-159's metabolism rules. Current record:
-docs/checkpoints/2026-08-29-amnesty-triage.md. The pre-compaction
-narrative remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 at the T-153-s2 checkpoint — THE PUSH-HOLD IS
+LIFTED: every local blocker CI named is merged, main pushes from this
+commit, and CI steps 19–26 meet Linux for the FIRST time (watch that
+run as a first run, never a formality). Current record:
+docs/checkpoints/2026-08-29-T-153-s2.md. The pre-compaction narrative
+remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
@@ -28,9 +29,10 @@ never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
-  --state`, which stamps the reading. Read at this rewrite: ONE
-  `task/` lane — T-153-s2, executor DONE at tip 5622db9, verifier
-  RUNNING (2026-08-29, amnesty checkpoint). Since T-154, dispatch
+  --state`, which stamps the reading. Read at this rewrite: TWO
+  `task/` lanes — T-155 and T-156, executors running, cut from
+  78aabe5, fences disjoint by derivation (2026-08-29, T-153-s2
+  checkpoint). Since T-154, dispatch
   also writes the lane's fence manifest (`brief.mjs --task T-NNN
   --write-fence <worktree>`) — a lane without one is blocked at its
   first write. Before ANY dispatch run `brief.mjs --task T-NNN`;
@@ -63,22 +65,24 @@ Order re-ruled 2026-08-29 at the pre-dispatch review; derive each
 card's status and fence with `brief.mjs --task` at dispatch, never
 from this list.
 
-1. `T-153-s2` — executor done (ubuntu cargo green 3x on draft PR #2,
-   each run stopping at the checkpoint-owned graph regen), verifier
-   running. On APPROVED it merges and THE PUSH-HOLD LIFTS: main
-   pushes, CI runs end to end, draft PRs #1 and #2 close. CI steps
-   19-26 have NEVER executed on Linux — watch the first push as a
-   first run, not a formality.
-2. `T-155` method evals ∥ `T-156` health bands (fences disjoint —
-   derive at dispatch), then `T-157` session economics.
+1. `T-153-s2` is DONE and merged — the E2BIG bound is a property of
+   every env pair, its production arms killed by the verdict's
+   assigned body (M5/M6 red). Main is pushed from this checkpoint;
+   draft PRs #1 and #2 close when GitHub sees their tips on main.
+2. `T-155` ∥ `T-156` — executors running; on their verdicts, merge
+   with ceremony (verifier briefs: attack set from the card ALONE
+   first, and never instruct the verifier to read ROADMAP — the role
+   file excludes it). Then `T-157` session economics.
 3. `T-159` — method v0.1.8, the metabolism release; `blocked_by:
    [T-154]` is satisfied. Twelve parked riders point at it; `T-152`
    is marked TAKE FIRST (the one method-text finding with a measured,
    repeated cost). Also owed: the DISCHARGED-NOT-DECLINED archive
    wording, two-phase verifier blindness.
 4. `T-154-s2` (fenceless-seat class — needs every-lane manifests and
-   a ruling) and `T-153-s3` (the drill target dir inside the graph
-   walk — the silent side is the one that commits).
+   a ruling), `T-153-s3` (the drill target dir inside the graph
+   walk — the silent side is the one that commits; found by TWO seats
+   in one day), and `T-153-s4` (the two spawn sites that inherit the
+   parent env whole — theoretical doors, on the board as suggested).
 5. @human's own items: `T-025-s2` (one real, timed genesis), `T-151`
    (the graph budget number), and the standing D3 ruling (may the app
    write into docs/?).
@@ -139,7 +143,7 @@ from this list.
   generator from depending on the directory's contents — and since
   2026-08-29 the gate REDS when a record is committed newer than this
   file, so step 2 cannot be skipped silently). The current record is
-  2026-08-29-amnesty-triage.md.
+  2026-08-29-T-153-s2.md.
 - docs/rooms/governing-docs.md and ADR-019 — this file's contract and
   the ruling behind it.
 - The pre-compaction STATE, all 1,125 lines of it:

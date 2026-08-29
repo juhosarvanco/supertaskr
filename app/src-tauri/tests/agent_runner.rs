@@ -87,6 +87,11 @@ struct Options<'a> {
     /// a claim when the grace is comfortably larger than the scheduling
     /// noise of the machine measuring it.
     kill_grace: Duration,
+    /// T-153-s2 (the verdict's assigned correction): a body that drives
+    /// the production PATH arm of `apply_child_env` against the execve
+    /// element bound sets its own. `None` keeps the harness's standard
+    /// two-entry test PATH, which other bodies assert byte for byte.
+    path_override: Option<String>,
 }
 
 impl Default for Options<'_> {
@@ -101,6 +106,7 @@ impl Default for Options<'_> {
             session_id: None,
             model: None,
             kill_grace: Duration::from_millis(300),
+            path_override: None,
         }
     }
 }
@@ -138,8 +144,12 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
 
     let cfg = RunnerConfig {
         binary_override: Some(opts.binary.unwrap_or_else(fake_agent_bin)),
-        // A PATH the child can be asserted against, byte for byte.
-        path_override: Some("/nputer-test-path/bin:/nputer-test-path/sbin".into()),
+        // A PATH the child can be asserted against, byte for byte — or
+        // the body's own, when it drives the PATH arm (T-153-s2).
+        path_override: Some(
+            opts.path_override
+                .unwrap_or_else(|| "/nputer-test-path/bin:/nputer-test-path/sbin".into()),
+        ),
         extra_env,
         probe_login_shell: false,
         start_timeout: opts.start_timeout,
@@ -4543,6 +4553,105 @@ fn an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands() {
         Some("fake-model-1"),
         "the fake should have fallen back to its default, which proves the pair was refused \
          whole rather than coerced into something acceptable"
+    );
+}
+
+/// **T-153-s2, THE VERDICT'S ASSIGNED CORRECTION (performed by the
+/// integrator at merge): the bound proven on channels PRODUCTION
+/// actually walks.** The sibling above drives `NPUTER_FAKE_MODEL`,
+/// which travels through `RunnerConfig.extra_env` — a documented test
+/// seam whose only production construction is an empty Vec. The
+/// verifier's mutants M5 and M6 (the allowlist loop and the PATH chain
+/// each handed straight to `command.env`, bypassing `set_child_env`)
+/// left the whole suite green: the guard's two production arms were
+/// killed by nothing in the tree. This body is the kill, and its
+/// acceptance was mechanical — with it in place, both mutants red.
+///
+/// Same discipline as the sibling: every refusal carries a positive
+/// control one byte (or one placement) away, because a refusal that
+/// cannot be told from an absence is not evidence of a refusal.
+#[test]
+fn an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels() {
+    // `PATH=` + value + NUL is the one string execve copies for the
+    // pair; the arithmetic itself belongs to
+    // `adapter::child_env_pair_fits`, and is spelled here only to name
+    // the boundary the arms straddle.
+    let widest = adapter::SPAWN_ELEMENT_MAX_LEN - "PATH".len() - "=".len() - 1;
+
+    // ---- THE PATH CHAIN, positive control: the widest PATH that fits
+    // arrives WHOLE, through `path_override` — the FIRST branch of
+    // `apply_child_env`'s PATH chain and a real product field.
+    let h = harness(
+        "path-at-bound",
+        Options { path_override: Some("P".repeat(widest)), ..Options::default() },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+    let env = read_env(&h.dump, 1);
+    assert_eq!(
+        env.get("PATH").map(String::len),
+        Some(widest),
+        "the widest PATH that fits must reach the child WHOLE - None means the bound refuses \
+         in the fitting direction, a smaller number means truncation, and this runner does \
+         neither"
+    );
+
+    // ---- ONE BYTE WIDER: the pair is dropped whole and the turn
+    // STANDS. A child with no PATH at all is the documented cost of the
+    // drop (the spawn itself resolves through `binary_override`, an
+    // absolute path); a turn that never starts was the regression.
+    let h = harness(
+        "path-over-bound",
+        Options { path_override: Some("P".repeat(widest + 1)), ..Options::default() },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    let status = settle(&h.agent);
+    assert_eq!(
+        status.native_session_id.as_deref(),
+        Some("fake-session-0001"),
+        "the turn must stand without its PATH - dropping the one pair is the bound's whole \
+         contract, and failing the spawn over it was the E2BIG regression itself"
+    );
+    let env = read_env(&h.dump, 1);
+    assert!(
+        !env.contains_key("PATH"),
+        "an oversized PATH must not be handed to execve at all; the child saw {:?} bytes",
+        env.get("PATH").map(String::len)
+    );
+
+    // ---- THE ALLOWLIST LOOP: `HTTPS_PROXY` is a real `ENV_ALLOWLIST`
+    // member read from THIS process's environment — the other
+    // production arm. Planted small it rides; planted past the bound it
+    // is dropped by the same one function. The plant is process-global
+    // for a moment, and that is safe by construction: no body in this
+    // suite asserts proxy keys, and while oversized the value is
+    // dropped before any concurrent child could see it.
+    std::env::set_var("HTTPS_PROXY", "https://proxy.invalid:8080");
+    let h = harness("proxy-at-bound", Options::default());
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+    let env = read_env(&h.dump, 1);
+    assert_eq!(
+        env.get("HTTPS_PROXY").map(String::as_str),
+        Some("https://proxy.invalid:8080"),
+        "the fitting allowlist pair is this arm's positive control and must ride"
+    );
+
+    std::env::set_var("HTTPS_PROXY", "H".repeat(adapter::SPAWN_ELEMENT_MAX_LEN));
+    let h = harness("proxy-over-bound", Options::default());
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+    std::env::remove_var("HTTPS_PROXY");
+    let env = read_env(&h.dump, 1);
+    assert!(
+        !env.contains_key("HTTPS_PROXY"),
+        "an allowlist value past the bound must be dropped by set_child_env, never handed to \
+         execve; the child saw {:?} bytes",
+        env.get("HTTPS_PROXY").map(String::len)
     );
 }
 

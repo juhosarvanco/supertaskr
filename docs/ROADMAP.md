@@ -54,7 +54,11 @@ opens with the card id that still holds its story.
   CLI-less kickoff all exist (T-029); the runner is hardened —
   validated session ids (T-039), probe-only CLI resolution (T-060),
   fast honest cancel (T-043), typed failures that never cost a user an
-  affordance (T-069/T-101/T-102/T-107/T-113). THE GATE THAT REMAINS is
+  affordance (T-069/T-101/T-102/T-107/T-113). Since T-153-s2
+  (2026-08-29) nothing the runner hands execve is unbounded: every
+  child env pair passes one function, an oversized pair costs the
+  value and never the turn — the fix CI's Linux runner demanded,
+  proven on the production channels. THE GATE THAT REMAINS is
   not a card: no planner turn has ever run against a real model —
   every stream ever seen is a fixture. `T-025-s2`, @human's, one real
   timed genesis on an authenticated machine. The archaeology variant
