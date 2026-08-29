@@ -78,7 +78,9 @@ ADR-001..017.
 ## Addendum (2026-08-27, at the compaction run's close)
 
 Gate values derived at each landing, per §Budgets, measured with
-`wc -c` and enforced in docs-gate.mjs's DOC_BUDGETS:
+`wc -c` and enforced in docs-gate.mjs's DOC_BUDGETS [the table's home
+since T-156 (2026-08-29) is docs-scan.mjs — one table, the gate
+enforces it from there and the health bands read it]:
 
     document             landed     warn      fail    target   note
     docs/STATE.md         6,772     8,465    10,158   12,288   under

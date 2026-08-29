@@ -36,7 +36,8 @@ Integrator at the amnesty merge (2026-08-29, cc5389b): `blocked_by:
 between the two) re-landed docs/CONVENTIONS.md at 110,342 bytes and
 re-derived warn to 137,928; headroom re-derived here is 27,586 bytes
 (`wc -c docs/CONVENTIONS.md` against DOC_BUDGETS in
-tools/e2e/scripts/docs-gate.mjs). The seat is no longer the constraint;
+tools/e2e/scripts/docs-gate.mjs [the table's home since T-156 is
+docs-scan.mjs]). The seat is no longer the constraint;
 T-092-s2 is discharged in rejected/ with the full citation.
 
 **PROMOTED at the amnesty triage, 2026-08-29, as the owner of its class.**

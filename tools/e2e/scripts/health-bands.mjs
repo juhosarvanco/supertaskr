@@ -351,14 +351,18 @@ export function suggestionFlow(sinceHash, root = repoRoot) {
 /**
  * Every tree-authority band's reading, keyed by band id.
  *
- * @param {{ root?: string, parseYaml: (s: string) => unknown, now?: number }} opts
+ * @param {{ root?: string, parseYaml: (s: string) => unknown, now?: number, budgets?: typeof DOC_BUDGETS }} opts
  * @returns {Map<string, Reading>}
  */
-export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now() }) {
+export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now(), budgets = DOC_BUDGETS }) {
   /** @type {Map<string, Reading>} */
   const out = new Map();
 
-  for (const [rel, b] of Object.entries(DOC_BUDGETS)) {
+  // `budgets` is a seam with one purpose: the real table carries no
+  // null entry, so the guard below was unfalsifiable against it — the
+  // fixture that kills the guard's deletion needs a table that has one
+  // (T-156's verdict, drill 6).
+  for (const [rel, b] of Object.entries(budgets)) {
     if (b === null) continue;
     const size = statSync(path.join(root, rel)).size;
     const headroom = b.warn - size;
@@ -556,6 +560,13 @@ export function findingCard(result, stamp) {
   const title =
     `The health band ${b.id} is breached at ${value} ${b.unit} — ` +
     `${b.metric}, against a breach line of ${fmt(b.breach ?? 0)}`;
+  // The title is interpolated from band fields, and an unquoted YAML
+  // plain scalar makes the WRITER the parse hazard: a ": " in a metric
+  // turns the line into a nested map, a " #" truncates it to a comment
+  // (T-156's verdict, measured both ways). A double-quoted scalar with
+  // backslash and quote escaped carries any printable title; control
+  // characters cannot reach here — the token scan reds them tree-wide.
+  const yamlTitle = `"${title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
   const slug = b.id
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
@@ -563,7 +574,7 @@ export function findingCard(result, stamp) {
   const body = [
     "---",
     `id: ${stamp.id}`,
-    `title: ${title}`,
+    `title: ${yamlTitle}`,
     "status: suggested",
     "suggested_by: health-bands (tools/e2e/scripts/health-bands.mjs)",
     "blocked_by: []",

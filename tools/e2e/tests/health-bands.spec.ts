@@ -17,6 +17,7 @@ import {
   parseGraphHeadroom,
   parseLibSuiteSeconds,
   readingsFromOutput,
+  readingsFromTree,
   renderReport,
   validateBands,
 } from "../scripts/health-bands.mjs";
@@ -366,6 +367,42 @@ test("a breach's finding is a LEGAL suggestion card — frontmatter the parser a
   expect(card.body).toContain("**derivation**");
   // ...and the marker that makes filing idempotent at the next checkpoint.
   expect(card.body).toContain(`Health band: ${band.id}`);
+
+  // T-156's VERDICT, assigned correction one (integrator at merge): the
+  // title is interpolated from band fields, and an UNQUOTED plain
+  // scalar made the writer itself the parse hazard — a ": " in a
+  // metric turned the line into a nested map (unparseable card), a
+  // " #" truncated it to a comment (silently wrong card). Both
+  // measured. The hostile band below carries both indicators and the
+  // title must round-trip through YAML EXACTLY.
+  const hostile = { ...band, metric: "bytes: left # before the line", unit: "x: y" };
+  const hostileCard = findingCard(
+    evaluateBand(hostile, { value: 1000, derivation: "planted breach" }),
+    { id: "T-156-s9", ref: "abc1234", when: "2026-08-29T00:00:00Z" },
+  );
+  const hostileBlock = /^---\n([\s\S]*?)\n---\n/.exec(hostileCard.body);
+  expect(hostileBlock).not.toBeNull();
+  const hostileFm = parseYaml(hostileBlock![1]!) as Record<string, unknown>;
+  expect(hostileFm.title, "the quoted scalar carries every printable indicator whole").toBe(
+    hostileCard.title,
+  );
+});
+
+test("a null budget entry yields no band and no reading — the gated-entry guard has a keeper", () => {
+  // T-156's VERDICT, assigned correction two (integrator at merge): the
+  // gated-entry filter was pinned only against the real DOC_BUDGETS,
+  // which holds no null — both sides of that equality derive from the
+  // same object, so DELETING the guard changed nothing any body read
+  // (the drill's one survivor). This table has the null the real one
+  // lacks; without the guard, deriving from it throws on both paths.
+  const budgets = {
+    "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
+    "docs/never-landed.md": null,
+  };
+  expect(docHeadroomBands(budgets).map((b) => b.id)).toEqual(["docs-headroom/docs/STATE.md"]);
+  const readings = readingsFromTree({ parseYaml, budgets });
+  expect(readings.has("docs-headroom/docs/STATE.md")).toBe(true);
+  expect(readings.has("docs-headroom/docs/never-landed.md")).toBe(false);
 });
 
 test("suggestion ids are derived from the tree, so a dispositioned card's id is never reused", () => {

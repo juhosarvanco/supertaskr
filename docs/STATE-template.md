@@ -8,7 +8,7 @@ STATE holds what is live, what to run, the standing hazards and
 pointers — the checkpoint's narrative goes to the record, where the
 INSTANCE is stamped and this file keeps only the MECHANISM. A figure
 appears here only with its derive command or a ref+date stamp. The
-byte budget is enforced by `npm run lint:docs` (docs-gate.mjs,
+byte budget is enforced by `npm run lint:docs` (docs-scan.mjs's
 DOC_BUDGETS); when it warns, move content to the record or a card —
 never delete a hazard to fit.
 
