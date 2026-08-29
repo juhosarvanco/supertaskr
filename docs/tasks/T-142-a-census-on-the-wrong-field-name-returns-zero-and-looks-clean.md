@@ -5,11 +5,58 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+Absorbs: T-111-s6 (Amnesty triage 2026-08-29 (triage seat)) — the fullest worked instance of this card's own instance 3, re-derived on disk by matching ^id: rather than a filename glob, and it retracts its own headline word after main overturned the framing: the counts are an inventory of declarations naming a blocker that has since landed, not an indictment. What was wrong was a QUERY — a shell loop reading a non-empty blocked_by as "blocked" without resolving the ids — which is exactly the positive-control gap this card exists to close, and it cost four accurate declarations being cleared and a card filed against a defect that did not exist.
+
+Absorbs: T-093-s2 (Amnesty triage 2026-08-29 (triage seat)) — the triage recommendation this promotion takes, argued rather than asserted: T-093's anchor (a search that finds nothing is not a refutation) and this card's (a census on a field the data lacks returns zero) are one class — a query ran, produced no error, returned an answer shaped exactly like the one you wanted, and answered a different question. It also supplies a further instance measured at bc2d82a: T-093's own card cites a needle that no longer finds the sentence it was recorded for, because ADR-019's compaction reflowed the line — a remedy needle without a ref, stale in four days, in the card whose subject is that this happens.
+
+**PROMOTED at the amnesty triage, 2026-08-29, as the owner of the
+false-empty class.** `T-093-s2` recommended exactly this and said which
+way the absorption runs: T-093 is DONE and its content has landed, so
+what is left over is the arm this card calls the one that generalises.
+Two further findings are absorbed below, taking the instance count to
+six across four seats.
+
+Absorbs: T-093-s2, T-111-s6.
+
+## Acceptance criteria
+
+- THE positive-control rule SHALL be extended to CENSUSES in the same
+  place it is already stated for test bodies (arm 1). Before a count is
+  written into a card, a brief or STATE, the query SHALL have been shown
+  capable of returning something else — pointed at a ref where the
+  answer is known non-zero, or run once against a planted instance.
+- THE layer boundary SHALL be named once (arm 2): frontmatter keys are
+  snake_case and model properties are camelCase, so a census of the
+  PARSED model for `blocked_by` and a census of FRONTMATTER for
+  `blockedBy` both return zero and both read clean. `docs/STATE.md`
+  carries this as a live-hazard line today, and a hazard that recurs
+  belongs in CONVENTIONS.
+- THE fix SHALL NOT be a lint that greps for known-bad field names.
+  That is a census about censuses with the same failure mode — it
+  returns zero on the day someone invents a new wrong spelling. The
+  property worth pinning is *the query was demonstrated able to answer
+  non-trivially*.
+- ARM 3 (a helper that queries the parsed model and so cannot be asked
+  for a field the model lacks) SHALL NOT be folded in. It keeps its own
+  `tools/e2e` seat: it covers only queries that go through the model,
+  and this card's sharpest instance went through `graph.json` directly.
+  IF it is wanted THEN it SHALL be routed as its own card.
+- THE fence on this card was CORRECTED once already (from `method/` to
+  `docs/CONVENTIONS.md`, by T-093's lane, because a lane cut to
+  `method/` cannot write the sentence the card is about). The lane SHALL
+  re-derive that the fence still reaches the sentence it intends to
+  write before it starts.
 
 **Three instances in one working day, two of them mine.** Each is a
 query that ran without error, returned a number, and answered a

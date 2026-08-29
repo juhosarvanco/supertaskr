@@ -1,10 +1,14 @@
 ---
 id: T-111-s8
 title: A docs site behind a loop variable is invisible to the DOCS GATE's scanner — the same read, written two ways, is a derived reader one way and an unargued root anchor the other
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-111
 touches: [tools/e2e]
 ---
+
+Absorbs: T-139-s4 (Amnesty triage 2026-08-29 (triage seat)) — the third axis of the same reader census: suiteFor answers where a file LIVES and the gate reports it as which suite READS the doc, which are the same thing only for files that package's runner executes. T-139 added the first two files in this tree where they come apart, and both are its measurement harnesses — a standalone node script vitest never matches, and an #[ignore]d cargo body. It over-fires, which is the safe direction, and it is filed because a line reading [cargo test from app/src-tauri/] docs/architecture/graph.json invites an integrator to conclude that cargo test exercised the graph. Its good side must survive the repair: graph.json used to be added to the gate's list BY HAND at three consecutive checkpoints.
+
+Absorbs: T-091-s2 (Amnesty triage 2026-08-29 (triage seat)) — the same scanner blind spot stated first and from the other direction — only the zero-argument spelling is seen, so a reader that passes the repository root as a variable is invisible. This card is the survivor because it carries the measured cost: four bodies red in docs-input-gate.spec.ts and the hand-run gate exiting 1 on a CODE-ONLY path list, which is the one thing three of those bodies exist to forbid.
 
 **MEASURED IN THIS LANE, BY WALKING INTO IT.** Two spellings of the same
 read, in the same file, on the same tree, at `59fb69a` and `88d4b7a`.
@@ -91,3 +95,5 @@ is for the package-relative class, applied to this one.
 
 Fence `[tools/e2e]`. Read beside `T-085`, whose retraction is the other
 half of the same residual.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the INSTANCE is discharged — T-111's lane rewrote the read in the visible form and the gate went to exit 0 with the reader count rising by one, because that suite is a real reader and the gate now says so. The SCANNER GAP is untouched: the same read, written two ways, is a derived reader one way and an unargued root anchor the other, and the literals are right there in the source. The card's refusal of the obvious repair is the part worth keeping — a ROOT_ANCHOR_LEDGER entry would have been a lie by placement, arguing a real reader into a list of non-readers and converting a scanner gap into a permanent exception. RESURFACES: the next tools/e2e dispatch. T-139-s4 names a third axis of the same census (a reader attributed to the suite that owns its DIRECTORY rather than to one that runs it) and should be read with it.

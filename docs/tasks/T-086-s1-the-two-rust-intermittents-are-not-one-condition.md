@@ -1,9 +1,11 @@
 ---
 id: T-086-s1
 title: The two Rust intermittents are not one condition — the hostile-session-id body reds in a FAST checkout while the watcher body stays green
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-086
 ---
+
+Absorbs: T-102-s3 (Amnesty triage 2026-08-29 (triage seat)) — the same body in the same place, from a second independent seat: T-102's drill saw a_hostile_session_id... red in a detached worktree with its own small CARGO_TARGET_DIR — the configuration the target-dir hypothesis calls green — with a same-mutant re-run minutes later as the control. It argues the same conclusion this card derives and adds the cheap arm nobody has run: hold the target dir small and vary --test-threads.
 
 `docs/STATE.md` files
 `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
@@ -70,3 +72,5 @@ Fence: `app-agent` (`app/src-tauri/src/agent/**` plus
 `tests/agent_runner.rs` under T-010's registry settlement). Out of
 T-086's `[docs/CONVENTIONS.md]` fence entirely, which is why this is a
 suggestion and not an edit.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the separation stands and docs/STATE.md already carries it as a standing hazard with the right reading instruction (run the body alone before attributing anything). What the card asks for is an EXPERIMENT, not a fix — hold the target dir small and vary --test-threads — and no verdict or merge has yet been harmed by this body, which is the trigger T-088-s4's own parking note taught this board to wait for. RESURFACES: the next app-agent dispatch — the experiment is one flag on a suite that lane runs anyway; or the first time this body costs a verifier a false REJECTED or an integrator a false red at a checkpoint, which is the T-088-s4 trigger and it is armed here too.

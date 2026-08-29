@@ -1,7 +1,7 @@
 ---
 id: T-132-s5
 title: Ruling thirteen sorts defects by WHEN they became false and never by WHO may write the fix — and it has no answer at all for a citation the merge introduces already false
-status: suggested
+status: parked
 suggested_by: architect claude-opus-5
 ---
 
@@ -80,3 +80,5 @@ and said so.
 - **Both declining checkpoints named T-108's protocol-write clause as the
   reason.** That convergence is the evidence; neither hand had read the
   other's reasoning when it wrote its own.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — a property of the rule rather than a preference of one hand, and the evidence is the convergence: two consecutive checkpoints declined ruling thirteen's repair half on the same ground, neither having read the other's reasoning, and the ground was AUTHORITY rather than timing. The rule as landed can also license the reverse — a checkpoint that reads only the headline, finds a defect its own merge introduced, and repairs it with a lane write it has no standing to make — and nothing in the sentence stops that. Its fix is a clause, not a rewrite: order the two tests, ask WHO may write the fix first and WHEN it became false second, and the already-false-on-arrival case falls out for free. RESURFACES: the next method/ dispatch — T-159. The positive control it owes is awkward and should be argued rather than executed: the rule's own text materialises into repositories this project cannot run a suite against, which T-132-s4 hit from the other side.

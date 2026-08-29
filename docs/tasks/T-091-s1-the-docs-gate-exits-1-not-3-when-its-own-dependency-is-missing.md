@@ -1,9 +1,11 @@
 ---
 id: T-091-s1
 title: The DOCS GATE exits 1 rather than 3 when its own dependency is missing, and 1 is the code it reserves for a verdict
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-091
 ---
+
+Absorbs: T-132-s1 (Amnesty triage 2026-08-29 (triage seat)) — the same defect measured a second time by a second seat, in a fresh lane worktree running the spelling CONVENTIONS prints, and it names the mechanism this card left implicit: exit 3 is UNREACHABLE, because the failure is in node's ESM resolver before the module body runs, so process.exit(3) is never reached and node's own uncaught-exception 1 is what the caller reads. Its fix shape is marked UNVERIFIED and carries the positive control the launcher would owe.
 
 **MEASURED AT `d2bba71` IN A DETACHED DRILL WORKTREE, NOT REASONED
 FROM.** T-091's reader executes the DOCS GATE's printed recipe end to
@@ -65,3 +67,5 @@ T-091's reader now DISCRIMINATES the two rather than reporting a wrong
 code: when the gate's process never links, it says *"the DOCS GATE never
 LINKED in <root> … the code observed is node's and not the gate's"*. That
 removes the reader's blind spot and does nothing about the gate's.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and this sitting reproduced it: a fresh worktree of this repository answers ERR_MODULE_NOT_FOUND at exit 1 from docs-gate.mjs until npm ci is run in tools/e2e. The exposure is LOCAL — CI installs before it lints — and T-091's own reader now discriminates the case in words ("the DOCS GATE never LINKED"), so what is left is the gate's own legend, which the token lint already carries for its identical hole (T-080-s4). RESURFACES: the next docs/CONVENTIONS.md dispatch (disposition 1, one clause beside the four codes) or the next tools/e2e dispatch (disposition 2, the dynamic import behind a try that exits 3). This card is the owner of the gate's exit-code-honesty class; T-132-s1 states the same defect from the other side.

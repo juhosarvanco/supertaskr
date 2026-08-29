@@ -1,9 +1,11 @@
 ---
 id: T-033-s11
 title: The Rust reader cannot see `non_code`, so `arch drift --fail-on any` can never go green — and this is the FIRST LIVE two-engine divergence ADR-015 names as its own revisit trigger
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-033-verify
 ---
+
+Absorbs: T-141-s1 (Amnesty triage 2026-08-29 (triage seat)) — the same engine and the same asymmetry from the other side: the CYCLE census has an exact-set both-directions ratchet in cargo and the DRIFT census has none, so unmapped opens and closes with cargo test byte-identical and the only tripwire is two React fixtures. Read with this card's own finding — the Rust reader cannot see non_code — the picture is one engine that neither sees the registry's opt-in flag nor ratchets its own answer, which is why one crate-index lane should take both.
 
 T-033 added `non_code:` to the component-file format and taught the
 TypeScript derivation to downgrade a `non_code` component's D3 to
@@ -94,3 +96,5 @@ boolean is then nearly free, and arm (a) above becomes the cheap arm
 rather than the expensive one. **That card does not mention `non_code`,
 `informational` or `--fail-on any`**, so this is a second gap in the same
 crate and not a duplicate of it.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live — grep for non_code across the crate returns nothing while app/src/lib/architecture/derive.ts reads the flag — so the two engines really do disagree, but the consequence is bounded: CONVENTIONS records arch drift --fail-on as LOCAL ONLY and no gate in this repository runs it, so the divergence costs a hand-run command and nothing else today. RESURFACES: the next crate-index dispatch, or the moment arch drift becomes a gate — ADR-015 names a live two-engine divergence as its own revisit trigger and this is it.

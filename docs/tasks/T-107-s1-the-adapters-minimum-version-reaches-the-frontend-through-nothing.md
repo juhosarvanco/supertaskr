@@ -1,7 +1,7 @@
 ---
 id: T-107-s1
 title: The adapter's minimum version reaches the frontend through nothing, so the notice can refuse to transcribe it and cannot name it either
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-107
 ---
 
@@ -71,3 +71,5 @@ this finding is closed by ruling rather than by code — and the ruling
 should be written beside `noticeRoutesToHandDriven` in
 `app/src/genesis/interview-model.ts`, which is where the refusal to
 transcribe is already recorded.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE TAKES THE RULING THE CARD ASKED FOR: the notice names no number. T-107's shipped sentence — "older than this app can drive" — is the honest one, criterion 3 forbids the transcription, and a major-version integer on a user-facing screen is a fact about nputer's internals rather than about the user's machine. The plumbing this card designs (min_major on the payload, one field at three construction sites) is correct and is not owed until the ruling changes. RESURFACES: the arrival of a SECOND adapter with a different min_major, at which point the floor must reach the frontend from its authority rather than from a sentence; or the next app-agent dispatch, if the ruling above is to be written down beside noticeRoutesToHandDriven where the refusal to transcribe already lives.

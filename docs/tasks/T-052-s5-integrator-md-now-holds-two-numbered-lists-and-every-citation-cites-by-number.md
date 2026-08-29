@@ -1,7 +1,7 @@
 ---
 id: T-052-s5
 title: integrator.md now holds two 1-4 lists and every citation in the tree cites by number
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-052-verify
 ---
 
@@ -63,3 +63,5 @@ citations all resolve today and the file is internally consistent. It is
 filed because the ambiguity was created by a change that was otherwise
 careful NOT to break those citations — the renumbering hazard was seen
 and closed, and this is the half of it that stayed open.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the ambiguity is live (method/roles/integrator.md still carries two numbered lists and the tree's citations still cite by ordinal), and the cheapest arm is one sentence of method text — which is exactly the seat T-159 holds. RESURFACES: the next method/ dispatch — T-159, the v0.1.8 metabolism release, is that dispatch; take arm 1 (the top-level list is STEPS, a list inside a section is RULES) as a rider there.

@@ -15,6 +15,8 @@ verified_by: claude-opus-5
 review: same-model
 ---
 
+Absorbs: T-010-s3 (Amnesty triage 2026-08-29 (triage seat)) — this card built both arms it asked for. Arm 1 is CheckReport::budget_bytes (b4fa434), whose doc comment restates the finding verbatim — "the number that would have warned anybody was the one it did not print: bytes · files · symbols · edges, and never how much room was left"; arm 2 is the pair of re-runnable benches (graph_budget_bench.rs / graph-budget-bench.mjs) plus the cross-crate invariant test. Arm 3 (raise nothing) was overtaken by @human's ruling and now rides T-151.
+
 **@human, 2026-08-26**: *"measure the parse cost and set both limits with
 a reason."*
 

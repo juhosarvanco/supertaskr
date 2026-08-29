@@ -1,7 +1,7 @@
 ---
 id: T-149-s4
 title: The fence answers disjoint for a glob whose star sits inside a filename — `app/test/map-*` normalises to a prefix that matches nothing, while the derivation matcher calls the same file ambiguous
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-149-verify
 ---
 
@@ -78,3 +78,5 @@ editor of that list will reach for. T-149 wrote the warning into
    back, and it reds today.
 
 Fence: `[lib-parser]`.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — a real fence-correctness defect, reproduced through BOTH layers over one tree, and the answer it gives is the dangerous one: normalizeFenceToken strips only a TRAILING star run, so app/test/map-* becomes app/test/map- which matches nothing at all — compareFences says disjoint with no witness while arch drift calls the same file ambiguous. disjoint is the answer that lets two lanes hold one file, which is the exact failure a fence exists to prevent. It is NOT LIVE TODAY and that is why it is parked rather than promoted: no token on the board has this shape, and T-149's design — exact paths rather than mid-name globs — is what avoids it. RESURFACES: the merge of T-154, whose write-time fence enforcement makes a wrong disjoint verdict enforceable rather than advisory, or the next lib-parser dispatch, or the first mid-name glob written into any touch_slugs: or touches: — whichever comes first.

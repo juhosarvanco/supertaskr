@@ -1,7 +1,7 @@
 ---
 id: T-111-s9
 title: token-scan.spec.ts asserts WHOLE-CORPUS totals from bodies that plant ONE violation, so any unrelated control character reds three at once — and one of the three is character-perfect camouflage for T-120-s3's known mtime flake
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-111
 touches: [tools/e2e]
 ---
@@ -94,3 +94,5 @@ a drill by. It was caught because the count was demanded a second time,
 not because anything failed. Worth a sentence wherever the drill's
 positive-control rule is written: **a log that answers `Binary file
 matches` is a measurement that did not happen.**
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — docs/STATE.md already carries the reading instruction this finding earned — read the assertion, not the body's name — so every session is briefed, and the underlying mechanism is untouched: a body plants ONE violation in a scratch tree and then asserts a count over the WHOLE tracked corpus, so any unrelated control character anywhere reds three bodies under titles naming something else. The second row is the dangerous one and it is why the briefing is not enough: it is character-perfect camouflage for a known mtime flake whose remedy (run it again) also makes a real violation disappear once somebody happens to fix the byte. RESURFACES: the next tools/e2e dispatch, after T-120-s2 — that card restructures the same package and should not be raced. The repair is to make each body assert a DELTA it caused rather than a global total, which is the same local-fixture-global-total shape stated once and fixable once.

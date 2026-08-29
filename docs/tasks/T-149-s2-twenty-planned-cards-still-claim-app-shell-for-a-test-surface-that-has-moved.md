@@ -1,7 +1,7 @@
 ---
 id: T-149-s2
 title: T-149's own success measurement is a census over card TEXT and cannot move from inside T-149's fence — twenty planned cards still claim app-shell for a test surface that is no longer the shell's
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-149
 ---
 
@@ -79,3 +79,5 @@ T-128's re-fence note in STATE.
 2. **This is triage's call, not an executor's.** Re-fencing is a change
    to what a card may dispatch against, which is the orchestrator's
    question.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the census is CORRECT and its non-movement is expected — no registry edit can move a token a card has already typed — and the card says so plainly with a T-142 positive control proving the query can return a different number. The throughput gain T-149 was for DID land, by the other route: the app/test files app-shell reserves went 49 of 49 to 20 of 49, with the rest distributed to app-map, app-interview, app-board and app-agent. What is left is per-card ARCHITECT judgement — whether each of the twenty still needs the slug at all — and that is a placement field, so it is the single-writer seat's and no lane's. RESURFACES: the next planning or re-fencing pass, or the next time app-shell is measurably the board's binding constraint (derive it). Read it with T-127-s2, parked at the same seat, which asks whether C-10 should have a slug word of its own — the same pass can answer both.

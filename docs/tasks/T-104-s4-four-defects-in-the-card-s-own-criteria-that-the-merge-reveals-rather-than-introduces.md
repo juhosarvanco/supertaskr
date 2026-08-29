@@ -1,7 +1,7 @@
 ---
 id: T-104-s4
 title: Four defects in T-104's own criteria and prose — a false uniqueness premise, a stale numeral, a citation that means two different criteria, and a phrase-match sold as an absence test
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-104
 ---
 
@@ -103,3 +103,5 @@ found only words.
 reason this is filed rather than fixed: **both are cases where the card
 is right in what it required and wrong in why**, and that is a
 distinction a triage should draw, not an integrator.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE RULES ON ALL FOUR, which is what the card asked for. Items 1 and 3 (an ordinal cited for two different criteria, and "each of the five" where there are nine) STAY AS RECORDED on a done card: correcting a criterion after its verdict changes what an adversarial verifier approved, with no verifier watching, and the card's own reasoning for filing rather than fixing applies with equal force to triage. Item 4 is discharged — T-093 landed "a search that finds nothing is not a refutation" in CONVENTIONS at a8d6df6, which is the rule this item said the method did not support. Item 2 alone survives as work: method/tasks/TASK-FORMAT.md:15 still restates the status vocabulary in the same file that now says a gate READS the vocabulary rather than restating it. RESURFACES: the next method/ dispatch — T-159 owns method text, and item 2 is one line there (make TASK-FORMAT's listing a pointer, or say why the file keeps a copy).

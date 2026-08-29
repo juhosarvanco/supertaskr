@@ -1,7 +1,7 @@
 ---
 id: T-145-s2
 title: T-145 changed a file that ships inside the compiled kit under a fence that could not bump the method version, and T-104 already ruled that question belongs to triage BEFORE dispatch
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-145
 touches: [method/interview/plan-interview.md, docs/CONVENTIONS.md, app-agent]
 ---
@@ -52,3 +52,5 @@ recorded in `docs/STATE.md` as the pattern for `T-105`, `T-128` and
 agree with each other, so `snapshot_version_matches_the_live_method_stamps`
 stays green and no gate will ask this question for you. That is precisely
 why it needs a card rather than a suite.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE RULES IT, WHICH IS WHAT T-104 SAID THIS QUESTION NEEDED. The INSTANCE is moot: the method has since gone to v0.1.7 at ADR-019's phase-7 commit, and that same commit edited the adapter template — so no shipped kit.json now stamps a version that lies about the adapter bytes beside it. The GENERAL question survives and is genuinely two-sided: the gotcha says FORMATS are version-bumped, and whether a scaffolded ARTIFACT like an adapter is a format is a wording question about the gotcha itself, not a fact anyone can derive. The card's second half stands as a recorded cost of the T-145 narrowing that STATE now names as the pattern for T-105, T-128 and T-131 to copy: re-fencing to method/adapters/ dropped the three-file-bump half its own predecessor T-138-s2 carried. RESURFACES: the next method/ dispatch — T-159 — which should settle the gotcha's wording rather than leaving each lane to re-derive it, and which is itself a bump and so the cheapest place to say what a bump is owed for.

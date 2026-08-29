@@ -1,9 +1,67 @@
 ---
 id: T-079-s2
-title: The shipped sheet's two ungated motion rules are MINTED BY TEST FILES, and the comment explaining them names the wrong mechanism
-status: suggested
+title: Two test files mint ungated motion rules into the SHIPPED stylesheet, and the comment that explains them names the wrong mechanism
+feature: F-02
+milestone: 4
+priority: 36
+size: S
+status: planned
+blocked_by: []
+touches: [app-shell, app-interview]
 suggested_by: executor claude-opus-5 @T-079
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29.** This is the rare
+suggestion whose defect reaches a USER: two animation rules sit in the
+production stylesheet OUTSIDE
+`@media(prefers-reduced-motion:no-preference)`, and they are there
+because two test files wrote the bare literal where Tailwind's source
+scanner could see it. The repository already practises the idiom that
+prevents it — `map-view-dom.test.tsx` assembles
+`"animate-status" + "-pulse"` with a comment saying why, and
+`crescendo-dom.test.tsx` joins `["board","rain"]` for the same stated
+reason — so this is the idiom being defeated two doors down, not a
+missing convention.
+
+The card carries its own control, which is what makes it a finding
+rather than a guess: `animate-map-teal-wipe` is declared like
+`animate-status-pulse`, gated like it, and has NO bare rule, because no
+file writes its name unprefixed.
+
+The fence follows the component files rather than this card's prose:
+`genesis-pane-dom.test.tsx` is C-13's (`app-interview`),
+`genesis-mount.test.tsx` and `crescendo-dom.test.tsx` are C-05's
+(`app-shell`).
+
+## Acceptance criteria
+
+- WHEN a test file needs to name a motion utility THE literal SHALL be
+  assembled rather than spelled, in the form the two sibling files
+  already use — the four `genesis-pane-dom.test.tsx` selector strings
+  and the `genesis-mount.test.tsx` bundle probe.
+- WHEN the change lands THE lane SHALL re-derive the shipped sheet and
+  report that neither bare rule survives, by the same measurement this
+  card used (the built `app/dist/assets/index-*.css`, with
+  `animate-map-teal-wipe` as the negative control).
+- THE `crescendo-dom.test.tsx` comment SHALL state the measured
+  mechanism — a bare rule comes from a SCANNED CANDIDATE, never from
+  the `@utility` declaration — and SHALL do so without spelling either
+  name bare, since the comment is itself one of the scanned candidates.
+- THE body's conclusion SHALL be preserved: "only the source can prove
+  this, not the sheet" survives its reason, and for a better one — an
+  ungated use mints its own bare rule on the spot, so the sheet is
+  downstream of the thing being checked.
+- IF "no bare motion-utility literal reaches the built sheet" is worth
+  a gate THEN the card SHALL say so and route it; it is a DIFFERENT
+  property from T-079's P6, which asks whether an ELEMENT gets an
+  ungated class and correctly does not fire on either site here.
+
+## The record, kept verbatim
 
 **TAILWIND v4 EMITS UTILITIES STRICTLY ON DEMAND, AND A DECLARATION
 ALONE EMITS NOTHING.** Measured at `25a9e2c` on a freshly built
@@ -88,3 +146,8 @@ file above is `app/test/**`, which is `[app-shell]`, held LIVE by T-123
 at `25a9e2c`. Nothing reds today: the token lint, its selftest, the E2E
 lane and the app suite are all green, and the two extra rules are inert
 until something applies them.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: suggested
+status: parked
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [method/roles/]
@@ -96,3 +96,5 @@ night, all from one architect session, and **that is a small and biased
 sample**. It is enough to file a card and not enough to justify
 restructuring the standing documents. Per `T-142`, prove the measurement
 can come out the other way before believing it.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — THE MEASUREMENT THIS CARD RESTS ON HAS BEEN LARGELY ANSWERED AND MUST BE RE-DERIVED BEFORE ANYTHING IS BUILT. It cites STATE at 1055 lines, ROADMAP at 1181 and ARCHITECTURE at 1202; at this base they are 140, 157 and 142, under gated byte budgets, because ADR-019's compaction is exactly this card's remedy arriving by another route. What is NOT answered is the other row: docs/tasks/T-*.md was 291 files and is 342, and the three rediscovery incidents it measures all found their answer in a CARD or a rejected card rather than in a standing document. So the finding survives with its subject moved — the retrieval problem is the card corpus, not the governing set — and the fence on this card was always marked a PROPOSAL by its own author. RESURFACES: the next planning pass, or T-156's health bands, which are ADR-020's machine for noticing exactly this class going quiet or getting worse. Whoever takes it re-derives the table first and re-fences it, as the card instructs.

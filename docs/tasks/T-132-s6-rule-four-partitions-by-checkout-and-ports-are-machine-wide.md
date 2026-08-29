@@ -1,7 +1,7 @@
 ---
 id: T-132-s6
 title: Rule 4 partitions by CHECKOUT and a default port is machine-wide — two lanes obeying it perfectly still collided, and the guard that caught it is the only reason anyone knows
-status: suggested
+status: parked
 suggested_by: architect claude-opus-5
 ---
 
@@ -84,3 +84,7 @@ unchanged, and it comes with its positive-control requirement: prove the
 check lets the ordinary case through as well as stopping the collision.
 And **`lsof` only**: never connect, never bind to test, because taking a
 port for a microsecond is still taking it.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — docs/STATE.md already carries this as a standing hazard with the discipline attached — pass an explicit port and lsof-read it at zero rows immediately before binding, because a probe reserves nothing — so every session is briefed and the guard that caught the live collision behaved perfectly. What is missing is the CONSTRUCTION: arm 2, deriving the port from the lane so two lanes cannot pick the same number, which is this project's own stated preference and has precedent in how scratch worktree names are already derived. It is held rather than promoted because T-120-s2 is now planned over the same file and its criteria explicitly forbid moving the port probe. RESURFACES: the merge of T-120-s2, after which resolveLanePort's neighbourhood is free and arm 2 is a small construction; arm 1 (naming the port space beside the other five shared surfaces) rides T-159. The caution stands whoever takes it: lsof only, never connect and never bind to test, and the check owes a positive control.
+
+CORROBORATION (Amnesty triage 2026-08-29, triage seat) — T-137-s9 is a SECOND instance of this card's class, in a different file and diagnosed from scratch weeks apart: tools/e2e/tests/brief.spec.ts joined the MACHINE-wide `git worktree list` to the CHECKOUT's card index, so the body reddened in every older lane the moment a newer lane was cut, with a positive control in the same tree (204/204 at 19:21, 204/1 at 19:53, nothing changed but a sibling worktree). A port number and a worktree list are machine-scoped; a card index, a fence and a graph are checkout-scoped. NOTHING NAMES THE CLASS, and a convention bullet that did would have made both diagnoses a lookup — which is why the residual belongs at this seat rather than on either instance.

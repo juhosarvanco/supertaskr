@@ -1,9 +1,15 @@
 ---
 id: T-108-s1
 title: The fourth stale citation — T-081's verifier notes enumerate "exactly three files, all prose" and one of the three no longer exists, in the same section that exists to catch citations of things that do not exist
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-108
 ---
+
+Absorbs: T-149-s5 (Amnesty triage 2026-08-29 (triage seat)) — the same class with the separation this class needs done well: each hit was READ to divide a HISTORICAL record (correctly left standing with its ref) from a PRESENT-TENSE claim about how the registry works today, and only the four present-tense ones are the finding. Two are inside reachable fences, one is in docs/ARCHITECTURE.md which no T-149 fence could contain, and the fourth is a test TITLE saying 185 where the tree has 189 and was already false at the base — which is the same it-is-a-title-so-nothing-reds shape this class keeps meeting.
+
+Absorbs: T-138-s5 (Amnesty triage 2026-08-29 (triage seat)) — the same class on a second card, filed by the same rule for the same reason: a claim written by the architect before dispatch, true at the ref it was written at, false at the merge, and left rather than rewritten because a criterion is the contract an adversarial verifier attacked. Its first item is the sharper one — the card opens with every claim below is a command anyone can re-run, and the command it states returns 3 where the card says 0, at three of the four refs it was re-run at. Together with T-104-s4's four this makes the class three cards wide, which is the argument for a periodic sweep.
+
+Absorbs: T-108-s4 (Amnesty triage 2026-08-29 (triage seat)) — same file, same passage, same path-granularity fence, and the two corrections belong in one dated block: this card corrects the census beside criterion 7, that one corrects the RULE stated beside it. Its finding stands at this base — the rule as landed carries the pathspec clause and not the ROOT clause, and its stronger spelling (git -C "$(git rev-parse --show-toplevel)" grep) removes the working-directory dependency the sentence cannot.
 
 Found by T-108's executor, deliberately NOT taken (outside the card's
 criteria and outside its three-path fence's licence to rewrite), and
@@ -63,3 +69,5 @@ reader can re-run (`git grep -- .` **from the ROOT**) rather than a digit.
 Fence: `[docs/tasks/T-081-denial-reaches-the-screen.md]`, at path
 granularity — never the `docs/tasks/` directory, per T-108's architect
 ruling. Nothing holds that file today.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both needles are live: docs/tasks/T-081-...md:673 still says the string occurs in "exactly three files" and names T-081-s8, which does not exist. The finding's own lesson is why it is not urgent — a census that still totals three is the hardest stale claim to notice, and nothing acts on this passage today. The repair is a dated in-place correction carrying a re-runnable derivation, never a fresh digit. RESURFACES: the next session that cites T-081's criterion 7 or greps that pin's name; or a periodic docs/tasks/ correction sweep, which is the shape this class now argues for — T-108 corrected three, this is the fourth and fifth, and one card per instance is the wrong unit.

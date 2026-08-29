@@ -1,7 +1,7 @@
 ---
 id: T-132-s4
 title: The staged-state rule two shipped files cite does not exist — the incident that opened this whole thread is prohibited by nothing, and rule 4 never could have prohibited it
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-132
 touches: [method/lane-protocol.md, method/tasks/TASK-FORMAT.md]
 ---
@@ -97,3 +97,5 @@ blesses — still passes.**
 Absorbs (eleventh triage, 2026-08-26): T-120-s1 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — live and measured: grep -rn -i 'staged|staging' method/ returns exactly two rows and neither is a rule — one is the violation, the other is TASK-FORMAT.md leaning on a 'separate rule' that is cited twice and written nowhere, then asserting that two rules exist when one does. Rule 4 never reached the act in either spelling, before or after its scope was corrected, so the incident that opened the whole thread is prohibited by nothing. The supporting clause 'a commit does not contend; it is atomic' is true of a completed commit and false of the staging step, with the counterexample thirty-six lines below it in the same rule. RESURFACES: the next method/ dispatch — T-159 owns method text, and this belongs beside T-126-s5's own-card exemption residual and T-132-s5's ordering clause: all three are lane-protocol / TASK-FORMAT sentences about who may write what.

@@ -1,7 +1,7 @@
 ---
 id: T-096-s1
 title: A third parser body TITLES the layer order and carries one issue, so it cannot check it
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-096
 ---
 
@@ -46,3 +46,5 @@ fixture change.
 survived precisely because a reader looking for "is the layer order
 pinned?" could find a body whose TITLE said yes. This is the third such
 title in one suite, and a title is what a reader greps.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and the finding is right: a one-element list has no order, so the body titled "component issues surface in the project model after task and roadmap issues" checks that a component issue REACHES the model, not the order its title claims. The fix is deliberately the TITLE and not the fixture — widening the fixture would build the second place to remember an order that T-096's own ruling forbids. RESURFACES: the next lib-parser dispatch — one line of test title, no source and no fixture change.

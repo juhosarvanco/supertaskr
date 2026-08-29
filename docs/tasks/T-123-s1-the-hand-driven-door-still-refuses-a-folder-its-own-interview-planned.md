@@ -1,7 +1,7 @@
 ---
 id: T-123-s1
 title: The hand-driven door still refuses a folder its own registered interview planned — the one class of user who reaches nothing else
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-123
 ---
 
@@ -55,3 +55,5 @@ with it.
 Absorbs (eleventh triage, 2026-08-26): T-123-s4 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and the user it strands is the one the fallback exists for: kickoff still opens with a bare probe_plan + has_plan guard, and ARCHITECTURE's own words make it the universal fallback BECAUSE IT RESOLVES NO CLI — so a user whose CLI was uninstalled or renamed reaches this door and nothing else. It is not built because it is a RULING, not a follow-through: whether a registered session may open the destructive-adjacent door at all, and if so which of kickoff's two prompts, and assemble_kickoff_for's resume text was written for a folder mid-interview rather than one whose stage 0 is complete. RESURFACES: the next app-agent dispatch, or @human's T-025-s2 — the first real, timed genesis — whichever comes first; that run is the only thing that will tell anyone which prompt is right.

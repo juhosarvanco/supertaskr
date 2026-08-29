@@ -1,7 +1,7 @@
 ---
 id: T-133-s2
 title: STATE can now drop four sections to the command and must keep the rest — the list, measured rather than argued
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-133
 ---
 
@@ -74,3 +74,5 @@ directly at @human's direction per docs/rooms/governing-docs.md's
 override; budget gate landed in the same commit at warn 8474 / fail
 10169 over a landed 6779 bytes, poison-drilled with unpiped exits
 (clean 0, poisoned 1, restored 0).
+
+Amnesty triage 2026-08-29 (triage seat): REJECTED — DISCHARGED, NOT DECLINED — the card carries its own closed_by line and the work landed. Verified at this base: docs/STATE-template.md exists, docs/STATE.md is regenerated from it at every checkpoint under a byte budget the docs gate enforces, and the four sections this card measured as droppable (lane list, fence ledger, board census, slug map) are now derive-commands pointing at brief.mjs while the narrative, the standing hazards and the owed @human looks survive in place. Recorded here rather than as an absorption because the resolver is ADR-019's phase-3 commit and no card exists to carry the Absorbs line.

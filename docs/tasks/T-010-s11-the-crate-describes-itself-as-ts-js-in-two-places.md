@@ -1,7 +1,7 @@
 ---
 id: T-010-s11
 title: The nputer-index crate describes itself as a TS/JS indexer in two places and T-010 makes both stale
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-010-integrate
 ---
 
@@ -33,3 +33,5 @@ carry that slug.
 
 **Not blocking, and it moves no gate**: `Cargo.toml` is not a walked
 extension, so no graph, no fixture and no suite reads either string.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both needles are live at this base (Cargo.toml lines 2 and 13 still say "tree-sitter TS/JS indexer"), and the card's own finding stands: no graph, fixture or suite reads either string, so this is a two-line correction with no carrier of its own. RESURFACES: the next crate-index dispatch — any lane holding that slug should take both lines with it.

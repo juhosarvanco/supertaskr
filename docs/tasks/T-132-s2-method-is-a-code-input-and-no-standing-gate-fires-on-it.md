@@ -1,7 +1,7 @@
 ---
 id: T-132-s2
 title: method/ is a code input exactly the way docs/ is, and a method-only diff matches NO standing gate — the argument that created the DOCS GATE, one directory over
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-132
 touches: [docs/CONVENTIONS.md, tools/e2e]
 ---
@@ -92,3 +92,5 @@ from the directory name, which is the whole finding.**
 sentence in the DOCS GATE bullet naming `method/` as a code input the gate
 cannot see, with `kit.rs` as the reader — which is prose, and prose is
 what this project just spent a whole card proving does not bind.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the gap is real and the derivation is the good kind — the three standing gates were RUN on a method-only diff rather than predicted, and all three answered NOT OWED while fourteen method/ files include_str! into the shipped binary. Its sharpest finding is the one that also makes it hard: method/ is not a category, the boundary runs THROUGH it, and neither lane-protocol.md nor roles/integrator.md is among the fourteen. The repair is MARKED UNVERIFIED by its own author, who warns not to widen the gate's trigger without re-running the reader census and re-asserting the ROOT_ANCHOR_LEDGER equality — the two halves this gate's design rests on. RESURFACES: the next tools/e2e dispatch. T-159 is the second trigger and the better one: it is a method-only diff carrying a Rust file, so it will walk into this gap by construction and can measure it rather than reason about it.

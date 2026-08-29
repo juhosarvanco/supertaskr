@@ -1,10 +1,14 @@
 ---
 id: T-137-s3
 title: The committed graph was already stale on main before T-137's lane was cut, and docs/STATE.md says it is current
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-137
 touches: [docs/architecture/graph.json]
 ---
+
+Absorbs: T-150-s3 (Amnesty triage 2026-08-29 (triage seat)) — the third lane, and the one that names the mechanism most precisely: the checkpoint that made index --check exit 1 is the one that regenerated the graph, because the two dogfood fixtures moved AFTER the regen inside the same commit. That is the shape the template's graph re-ask slot now exists to prevent, and it is why the checkpoint half of this class is discharged while the general half is not.
+
+Absorbs: T-149-s3 (Amnesty triage 2026-08-29 (triage seat)) — the second lane to spend a measurement discovering the red was not its own: index --check exits 1 on an UNTOUCHED checkout of the dispatch commit both T-149 and T-150 were cut from. Same class, same cost, different week.
 
 **DERIVED, NOT NOTICED IN PASSING.** `T-137`'s lane ran its own built
 indexer against a DETACHED worktree at its base commit `00e133a`, holding
@@ -41,3 +45,5 @@ not fire on a commit that is not a merge. `6dc5757` was the architect's
 own commit, it edited a `.ts` file, and no gate ran behind it — so the
 staleness was invisible until a lane cut from it asked, and that lane had
 to spend a measurement to learn the red was not its own.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — THE CHECKPOINT HALF IS DISCHARGED: the graph re-ask is now a slot the gated record must fill (docs/STATE-template.md carries GRAPH: index --check, asked never predicted), so a checkpoint can no longer regenerate, write, and never re-ask. THE GENERAL HALF IS NOT — the GRAPH REGEN gate does not fire on a commit that is not a merge, and the staleness this card measured was written by a non-merge commit that edited a .ts file with no gate behind it. Owner of its class: T-149-s3 and T-150-s3 are the same finding from two later lanes, each of which spent its own measurement discovering the red was not its own. RESURFACES: the merge of T-154 — a hook mechanism is the natural vehicle for a check that fires on a commit rather than on a merge — or the next tools/e2e dispatch. Whoever takes it SHALL re-derive the staleness at their own ref with THEIR OWN indexer: max_graph_bytes has moved once inside a single lane's lifetime, and a check run with an older binary reports a FALSE stale on a tree sitting between the two ceilings.

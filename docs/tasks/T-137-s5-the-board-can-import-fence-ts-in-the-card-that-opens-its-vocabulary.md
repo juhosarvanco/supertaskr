@@ -1,7 +1,7 @@
 ---
 id: T-137-s5
 title: The board CAN import `fence.ts` now — one of T-111's three reasons is discharged, and the remaining two are both criteria changes, so they need one card that makes both
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-137
 touches: [app-board]
 ---
@@ -59,3 +59,5 @@ overlaps and never remove one**: `disjoint` is 7 751 both ways,
 identically, and all 34 pairs it resolves move `unusable -> overlapping`.
 **Supplying it cannot turn a real collision into a green light**, which is
 the safety argument the board's version of this change needs.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — one of T-111's three reasons is discharged and this card re-measured it: a witness names its two RAW tokens and a token knows the components it resolved through, so witnessComponents supplies the provenance importing was thought to delete. The remaining two are both CRITERIA changes, which is why this is a sentence to act on rather than an edit: import fence.ts into board-model.ts ONLY in the same card that opens the disposition vocabulary to a seventh value (unfenceable) AND gives selectDispositions a knownPaths parameter its caller can fill. Either alone leaves the board answering worse than it does today. Its two safety properties are the reason this is safe when it happens: over the set a dispatch can REACH, unusable is ZERO either way, and the oracle can only ADD overlaps — disjoint is 7 751 both ways, identically. RESURFACES: the next app-board dispatch that also opens the disposition vocabulary — T-112. It SHALL NOT be taken as a bare import.

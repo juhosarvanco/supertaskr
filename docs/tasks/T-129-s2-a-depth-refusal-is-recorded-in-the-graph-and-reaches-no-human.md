@@ -1,7 +1,7 @@
 ---
 id: T-129-s2
 title: A depth refusal is recorded in graph.json and reaches no human — and `skipped` has had the same silence since T-009
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-129
 ---
 
@@ -56,3 +56,5 @@ mode that claim cannot survive.
 
 **Arm 1 and arm 2 are the same sentence in two places and should be
 taken together or not at all**; arm 3 is a separate card.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — live and correctly reasoned: depth_refused and depth_limited are written into graph.json and read by no CLI surface, no app payload and no gate — and skipped has had the identical silence since T-009, which is why it is one card. The severity argument is the good one: a skip is mechanical (the file could not be read), while a depth refusal is a file that WAS read, DID parse, and sits in the map with part of its content missing, which is the one failure mode the map's claim to show reality cannot survive. RESURFACES: the next crate-index dispatch for arm 1, which SHALL be taken together with arm 2 (app-shell) or not at all — they are the same sentence in two places. Arm 3 (the map drawing a partial file differently) has real design content and is a separate card.

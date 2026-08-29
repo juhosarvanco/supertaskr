@@ -1,9 +1,79 @@
 ---
 id: T-123-s3
-title: The routing read WRITES — picking a planned folder with an unparseable registry renames the user's file before the router decides not to route there
-status: suggested
+title: The routing question performs a WRITE — opening a planned folder with an unparseable registry renames a file inside it, and the rename is not confined to that folder by construction
+feature: F-03
+milestone: 4
+priority: 16
+size: M
+status: planned
+blocked_by: []
+touches: [app-agent]
 suggested_by: verifier claude-opus-5 @T-123-verify
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29.** The routing ANSWER is
+correct in every case the card measures, and that is not what this is
+about. Before T-123, the decision for a plan-holding folder was a pure
+stat sweep whose own header promises it never reads file contents —
+*"which is what makes it safe to point at a folder a user just chose"*.
+T-123 put a registry read into that decision, and the read renames.
+
+**Three properties are new and none of them was argued in the lane. The
+second is the one that promotes this card:**
+
+1. A read-shaped question performs a write. A reader of
+   `routes_to_genesis` cannot see that asking it can modify the disk.
+2. **The write is not confined to the picked folder by construction.**
+   `apply_genesis_folder` canonicalizes and symlink-checks the ROOT, and
+   then `sessions_path` appends `.nputer/sessions.json` and `fs::rename`
+   resolves through any symlink on that INTERIOR path — so a `.nputer`
+   symlinked at a directory outside the tree moves a file there instead.
+   Before T-123 this was reachable only for folders with no plan, which
+   route to genesis anyway; now it is reachable for **every plan-holding
+   folder a user opens**, which is the common case for a cloned
+   repository.
+3. `fs::rename` clobbers an existing `sessions.json.corrupt`, so the
+   "never silently destroyed" promise holds only for the first
+   corruption.
+
+A fourth, same site and same containment argument:
+`fs::read_to_string` on that path blocks indefinitely if
+`.nputer/sessions.json` is a FIFO, which hangs the pick.
+
+**What this card is NOT.** It is not a claim that data is lost —
+`.nputer/` is nputer's own runtime directory and losable by charter
+(ADR-017 clause 4), the rename is loud on stdout, and the original bytes
+survive beside the new name. It is that the app performs an unargued,
+unconfined write on a folder it is in the act of DECLINING to route to.
+
+## Acceptance criteria
+
+- WHEN the routing question reads the registry THE read SHALL be
+  side-effect-free — the shape the card names is a `load` variant
+  returning the default on a parse error WITHOUT the rename, leaving the
+  rename on the paths already committing to act on the registry
+  (`start_genesis`, `resume_genesis`, `upsert`). ONE owner for the read
+  is criterion 2 of T-123 and SHALL be preserved.
+- THE write, wherever it survives, SHALL be confined to the canonicalized
+  project root by construction rather than by the caller's care — a
+  symlink on the interior path SHALL NOT move a file outside the tree.
+  The pin SHALL be a fixture with a `.nputer` symlinked out of the tree,
+  and it SHALL fail before the fix.
+- WHEN an aside already exists THE second corruption SHALL NOT clobber
+  the first, or the card SHALL rule that it may and say why.
+- THE FIFO case SHALL be answered — bounded, refused, or ruled
+  acceptable with the reason recorded at the read site.
+- THE lane SHALL re-derive the measurement this card carries at its own
+  ref: `original_still_there=false  aside_created=true
+  outcome_kind=Picked`, driven through the real `apply_genesis_pick`
+  with a six-byte unparseable registry.
+
+## The record, kept verbatim
 
 Not a failure against any T-123 criterion, and not a blocker: the routing
 ANSWER is correct in every case below. This is about a side effect the
@@ -90,3 +160,8 @@ containment argument, same suggested fix site.
 Absorbs (eleventh triage, 2026-08-26): T-123-s9 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

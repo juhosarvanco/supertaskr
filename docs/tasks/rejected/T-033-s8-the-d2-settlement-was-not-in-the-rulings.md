@@ -1,7 +1,7 @@
 ---
 id: T-033-s8
 title: C-15 claims tests/dispatch_lanes.rs — a registry settlement T-033's rulings could not have covered, because the file did not exist when they were made
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-033
 ---
 
@@ -52,3 +52,5 @@ honest not-yet-built set"* criterion stops being met, so something else
 must own the file. `T-110-s9` is the finding that first named it and
 should be triaged in the same breath — it predates this settlement and
 proposes the same fix among others.
+
+Amnesty triage 2026-08-29 (triage seat): REJECTED — the needle is gone and the question is answered in the file the card asked to have edited. app/src-tauri/tests/dispatch_lanes.rs does not exist at this base: T-126 (0fa83da) declared the module in lib.rs, the shim compiled the same code twice, and it was deleted with its paths: entry. C-15-dispatch.md now carries the settlement's own obituary in place, which is the record this card wanted kept. Nothing is left to confirm or reverse.

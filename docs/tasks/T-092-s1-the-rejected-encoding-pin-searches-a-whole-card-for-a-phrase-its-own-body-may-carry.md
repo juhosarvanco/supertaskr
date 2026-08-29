@@ -1,7 +1,7 @@
 ---
 id: T-092-s1
 title: The rejected-encoding pin searches a WHOLE card for a phrase that card's own body may carry, so poison shape eight is live in lib/parser
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-092
 ---
 
@@ -68,3 +68,5 @@ whoever owns C-06's:
 
 Fence it needs: `lib-parser`. The pin is not currently wrong about the
 tree — it is unfalsifiable in one direction, which is the finding.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — poison shape EIGHT, live, in the pin that guards the very encoding this triage sitting uses — and it is one planted copy away, on plausible copies: cards under docs/tasks/rejected/ are prose ABOUT triage and the phrase status: rejected is the thing triage is about. The pin is not wrong about the tree; it is unfalsifiable in one direction, which is the finding. The remedy is the stronger of the two CONVENTIONS offers and it is available for free: this package already owns a frontmatter reader, so assert the STATUS FIELD rather than searching the whole card, which pins what the comment already says the body means. RESURFACES: the next lib-parser dispatch. This sitting added two files to docs/tasks/rejected/ and both carry the phrase in their frontmatter AND in triage prose, so the corpus that could plant the counterexample has just grown.

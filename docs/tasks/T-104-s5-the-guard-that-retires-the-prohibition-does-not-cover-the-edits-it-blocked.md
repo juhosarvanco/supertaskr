@@ -1,9 +1,15 @@
 ---
 id: T-104-s5
 title: The guard whose arrival retires T-104's RANGE RULE prohibition does not actually cover either edit the prohibition blocked — and the five CONVENTIONS edits queued at that seat sit in exactly two bullets
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-104
 ---
+
+Absorbs: T-092-s7 (Amnesty triage 2026-08-29 (triage seat)) — a queue member for the RANGE RULE bullet, and the instance behind it needs nothing in the tree — the answer was right because main never moved during that lane, so the banned pair and the prescribed one collapsed onto each other. What survives is the arm: the two banned forms are currently disclaimed in DIFFERENT VOICES (merge-base..tip by name, <main>..HEAD in a later paragraph), so a session quoting one ban can land in the other, which is exactly what happened here with a compliance label attached.
+
+Absorbs: T-091-s3 (Amnesty triage 2026-08-29 (triage seat)) — queue member, needle re-checked live at this base: docs/CONVENTIONS.md still states the flip figures "Derived at ddcc8bb" with no sentence naming the trigger they were matched against, and GRAPH REGEN's trigger has since gained *.rs. Its own instruction is preserved — name the trigger, do NOT replace the figures, because the older larger sample is the better evidence for the mechanism the paragraph argues.
+
+Absorbs: T-104-s3 (Amnesty triage 2026-08-29 (triage seat)) — the first statement of this queue, and this card exists to correct its closing argument: s3 concluded the two RANGE RULE edits were safe once T-091's reader landed, and the reader is a regression guard on the FIGURES that would report 25 of 25 whether the new prose is right or wrong. Its general finding — a fence names paths and this project writes prohibitions at paragraph grain — is kept here as the reason the queue formed at all.
 
 **T-104's fence is released by its merge, so FIVE earned
 `docs/CONVENTIONS.md` edits are now takeable and none of them is taken in
@@ -154,3 +160,5 @@ that s3 is a real class and not one card's accident.
 The file is **free** after T-104's merge. All three edits sit outside any
 other live lane's fence (`app-shell` T-126, `crate-index` T-129,
 `tools/e2e` T-130).
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the queue is real and its routing lesson is durable — five edits, five seats of origin, two paragraphs — but the card's own two named homes have since MERGED (T-093 at 91413c8, T-092 at 162b5ed) and took part of it, so the list on this card is a transcribed census and must not be read as one. Re-derived at this base: T-091-s3's trigger clause is still absent from the RANGE RULE bullet, and the POISON DRILL bullet has gained "A RESTORE CANNOT TELL ITSELF FROM A REVERT" and the scratch-snapshot cmp proof without gaining what restoring MEANS. RESURFACES: the next docs/CONVENTIONS.md dispatch, which SHALL re-derive the queue rather than quote this card — that is this card's own lesson turned on itself. The surviving members at this base are T-091-s3 (absorbed here) and the drill-restoration class owned by T-092-s4.

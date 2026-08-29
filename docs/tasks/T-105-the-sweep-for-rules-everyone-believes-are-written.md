@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs: T-150-s1 (Amnesty triage 2026-08-29 (triage seat)) — two more instances for this card's own sweep, and the second is stronger than unwritten — the repository CONTRADICTS it. "no real model call in any test" and "no CLI spawn from a test" appear nowhere in docs/CONVENTIONS.md or method/, while brief.spec.ts spawns the brief CLI twice and boot-check-guard.spec.ts spawns the boot check, both green and both deliberate, one of them the proof of the boot gate's own refusal path. So the rule is either new, or has unwritten exceptions, or means only NEW tests — all three legitimate, and a session reading the brief cannot tell which.
+
 Absorbs (seventh triage, 2026-08-24): T-101-s4 — files removed in this commit.
 
 > **DRAFTER'S NOTE — remove before landing.** Two things. **(1) THE

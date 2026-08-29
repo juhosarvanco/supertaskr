@@ -1,9 +1,73 @@
 ---
 id: T-092-s2
-title: CONVENTIONS has 919 bytes of warn headroom left and the next card at its seat spends them, so ADR-019's budget is now the scheduler for that seat
-status: suggested
+title: The CONVENTIONS seat has 280 bytes of warn headroom at this base, so the budget is now the scheduler for every card queued behind it
+feature: F-01
+milestone: 4
+priority: 7
+size: S
+status: planned
+blocked_by: []
+touches: [docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-092
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29, with the figure
+RE-DERIVED — and it has got worse, not better, since it was filed.**
+
+    wc -c docs/CONVENTIONS.md                    107,687
+    DOC_BUDGETS warn (tools/e2e/scripts/docs-gate.mjs)  107,967
+    headroom                                         280 bytes
+
+The card measured 919 bytes at T-092's tip. ADR-019's phase-5 compaction
+cut the file from 99,212 to 86,373 and the budget lines were re-derived
+from that landing; the file has since grown back past the compaction's
+own target and now sits **280 bytes** under the WARN line. Derive it
+again at your own ref rather than quoting this: the gate is the
+authority and it is the thing that will announce it.
+
+**THIS IS NOW A BLOCKER, NOT AN OBSERVATION.** `T-111-s10` is planned
+against this seat and carries SIX earned sentences for one bullet — the
+walked target directory, what restoring a fixture MEANS, the Date-versus-
+seconds measurement, the self-healing property, the demoted empty-diff
+proof, and two poison-shape corrections. It cannot land under this
+headroom, and it is `blocked_by: [T-092-s2]` for that reason. `T-104-s5`
+(parked) catalogues the rest of the queue at the same seat and warns that
+its own list is a transcribed census.
+
+**AND THE FINDING BEHIND IT STILL STANDS**: one card consumed 93% of the
+headroom that was supposed to serve every card at that seat, and the
+additions were MECHANISM, which ADR-019's own rule forbids deleting to
+fit — *a hazard is never deleted to fit*. The instance measurements
+already moved out to the cards that own them; that lever is spent.
+
+## Acceptance criteria
+
+- THE lane SHALL re-derive `wc -c docs/CONVENTIONS.md` against
+  `DOC_BUDGETS` at its own ref and report both, before and after.
+- THE lane SHALL take ARM 1 — a second compaction pass on ADR-019's own
+  terms: per-merge instance detail accumulated since the first pass
+  moves to `docs/checkpoints/` and to the cards that own it, and the
+  `landed` figure is re-measured so `warn`/`fail` re-derive from it.
+  NO HAZARD SHALL BE DELETED TO FIT; a hazard that cannot be compressed
+  is moved with its mechanism intact.
+- IF compaction cannot reach a headroom that admits the queued edits
+  THEN the lane SHALL STOP and route ARM 2 — an ADR-019 addendum raising
+  the line with a measured reason — to the architect, rather than
+  raising a budget from inside a lane. Raising a budget line is not a
+  thing a lane widens its own fence to do.
+- THE lane SHALL NOT take ARM 3 (rule that the warn line is doing its
+  job and each card compacts before it adds) silently. It is a
+  legitimate outcome and it is a RULING: if it is taken, it is written
+  down, and the queued cards are told.
+- WHEN the pass lands THE queue at this seat SHALL be re-derived, not
+  read off `T-104-s5` — that card says so about itself.
+
+## The record, kept verbatim
 
 **ROUTED, NOT TAKEN.** Raising a budget line is an ADR-019 addendum with
 a measured reason, and re-compacting `docs/CONVENTIONS.md` is a card of
@@ -53,3 +117,8 @@ Any one of these, and the choice belongs to whoever owns ADR-019:
   this seat is expected to compact before it adds — the option that
   changes nothing and records the decision, which is the shape this
   project has taken before.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

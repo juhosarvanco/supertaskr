@@ -1,7 +1,7 @@
 ---
 id: T-135-s4
 title: A card dispatched in halves has no `status:` that is true, and `roles/executor.md` says in as many words that a brief telling the executor to skip the stamp is wrong
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-135
 touches: [method/tasks/TASK-FORMAT.md, method/roles/executor.md]
 ---
@@ -54,3 +54,5 @@ resolves it the other way.
 as a named case**, beside the bullet that already documents `verifying`
 as a lane state with a one-commit window. One sentence, no bump, and it
 turns a judgement call into a rule.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — a genuine conflict between two method files and one dispatch, recorded rather than resolved by the seat that met it — which is what roles/executor.md asks for. Its recommendation is the right one and needs no bump: write repair 3 into TASK-FORMAT.md's lifecycle rules as a NAMED CASE, beside the bullet that already documents verifying as a lane state with a one-commit window. Repair 1 (a new status) is refused on sight by the file's own ADDING A STATUS IS A METHOD CHANGE rule; repair 2 (never dispatch in halves) was considered by T-135's own planning pass and rejected on ceremony cost, which does not answer the status question. RESURFACES: the next method/ dispatch — T-159. It joins T-052-s5, T-091-s4, T-104-s4 item 2, T-126-s5's residual, T-126-s6, T-132-s4, T-132-s5, T-133-s3 and T-124-s1 at that seat; the vehicle now carries nine parked riders and the bump is where they are ruled.
