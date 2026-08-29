@@ -91,4 +91,33 @@ marker first).
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### Understanding, confirmed before touching anything
+
+I am building the two halves of the redesigned mechanism and nothing
+else. At DISPATCH, a new named arm of `brief.mjs` — the step the
+dispatcher already runs, in a checkout where `lib/parser/dist` exists by
+definition — expands the card's `touches:` through the parser's ONE
+fence implementation (`fence.ts`'s `expandFence`, with
+`dispatch-order.mjs`'s `knownPathOracle` closing the bare-word gap) and
+writes `.nputer/lane-fence.json` into the lane worktree, stamped with
+the RAW `touches:` line it expanded. At the WRITE, a PreToolUse hook on
+the file-writing tools, wired in the repo-versioned
+`.claude/settings.json` and depending on nothing but node builtins,
+reads that manifest and answers four ways: a checkout whose HEAD is not
+on a `task/T-NNN-…` branch is NOT A LANE and is ALLOWED (the positive
+control — integrator, architect and detached-drill contexts, so a
+refusal is distinguishable from an absence); a lane branch with no
+manifest BLOCKS, because dispatch skipped its step; a path inside the
+manifest's expanded paths or under the unfenceable `docs/tasks/` is
+ALLOWED; anything else BLOCKS, naming the fence, the path and the route.
+A card whose current `touches:` line no longer matches the manifest's
+stamp BLOCKS with "re-expand" rather than guessing which side is right.
+My fence is `[.claude/, tools/e2e, method/lane-protocol.md,
+docs/CONVENTIONS.md]` and the card's own criterion removes
+`method/lane-protocol.md` from it in practice — the rule-5 text rides
+`T-159`'s shared v0.1.8 bump, so I do not edit `method/` here and route
+the sentence instead. `docs/tasks/` is writable for these notes and for
+the suggestions I file. The CONVENTIONS edit is expected to meet that
+file's warn line; the warn is the gate working.
+
 ## Verdicts

@@ -3,12 +3,15 @@
  * THE BRIEF COMMAND (T-133) — the runnable half of `dispatch-brief.mjs`.
  *
  * THE ONE SPELLING, run from the repo ROOT and by a dispatcher with no
- * lane. It writes nothing; every call it makes is a read.
+ * lane. Every arm but one is a read, and the one that writes writes
+ * SOMEWHERE ELSE — into the lane worktree it is handed, never into the
+ * checkout it runs in.
  *
  *   node tools/e2e/scripts/brief.mjs --task T-133
  *   node tools/e2e/scripts/brief.mjs --state
  *   node tools/e2e/scripts/brief.mjs --task T-133 --state --full
  *   node tools/e2e/scripts/brief.mjs --card T-150
+ *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../nputer-T-154
  *
  * ARM ONE (`--task`) emits the row set of `method/roles/<role>.md`'s
  * normative contract table, each row derived from the source that row
@@ -16,6 +19,16 @@
  * command can answer — the lane list first, because it is the row both
  * consumers got wrong. They are one command because the lane list is the
  * shared row.
+ *
+ * ARM FIVE (`--write-fence`, T-154) is the ONE arm that writes, and the
+ * DISPATCH STEP the whole T-154 mechanism rests on. It expands the card's
+ * `touches:` through the parser's one fence implementation and leaves
+ * `.nputer/lane-fence.json` in the LANE WORKTREE, so the PreToolUse hook
+ * in `.claude/` can enforce the fence at the moment of the write with no
+ * `node_modules` and no built parser — which a worktree cut ninety
+ * seconds ago has neither of. It is a NAMED arm and requires `--task`, so
+ * the read arms above are still exactly reads and the body pinning that
+ * (`"THE COMMAND IS A READ"`) drives the same invocation it always did.
  *
  * ARM FOUR (`--card`, T-150) points arm one's machinery ONE SEAT OVER, at
  * the card AUTHOR. It answers the figures an author would otherwise type
@@ -37,8 +50,9 @@
  *   0  assembled, and nothing is owed.
  *   1  assembled and FOUND something: a contract row with no deriver, a
  *      deriver whose row the table no longer carries, two live fences
- *      that are not disjoint, a lane whose card cannot be read, or the
- *      slug map's two copies disagreeing. Read the message.
+ *      that are not disjoint, a lane whose card cannot be read, the
+ *      slug map's two copies disagreeing, or a fence `--write-fence`
+ *      could not expand and therefore did not write. Read the message.
  *   2  called wrong: an unknown flag, or neither arm asked for.
  *   3  the command COULD NOT RUN, so this run is not a claim about the
  *      repository at all. Every throw out of the derivation lands here,
@@ -55,7 +69,9 @@ import {
 import {
   EXIT,
   assembleBrief,
+  blank,
   context,
+  liveProv,
   note,
   render,
   stateReport,
@@ -63,6 +79,7 @@ import {
   value,
 } from "./dispatch-brief.mjs";
 import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
+import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -72,6 +89,7 @@ const FLAGS = Object.freeze([
   "--dispatch",
   "--card",
   "--audit",
+  "--write-fence",
   "--full",
   "--help",
 ]);
@@ -100,7 +118,8 @@ async function main(argv) {
     if (a === "--help") {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
-          "[--dispatch] [--card <T-NNN>] [--audit <path>] [--full] [--root <path>]",
+          "[--dispatch] [--card <T-NNN>] [--audit <path>] [--write-fence <worktree>] [--full] " +
+          "[--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -127,6 +146,14 @@ async function main(argv) {
   const taskId = opts["task"] ?? "";
   const cardId = opts["card"] ?? "";
   const auditPath = opts["audit"] ?? "";
+  const fenceWorktree = opts["write-fence"] ?? "";
+  if (fenceWorktree !== "" && taskId === "") {
+    console.error(
+      "brief: --write-fence needs --task <T-NNN> — the manifest is one card's expanded fence, and " +
+        "which card it is comes from the card, never from the worktree's directory name.",
+    );
+    return EXIT.USAGE;
+  }
   if (taskId === "" && cardId === "" && auditPath === "" && !wantsState && !wantsDispatch) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
@@ -171,6 +198,62 @@ async function main(argv) {
         ),
       ),
     );
+  }
+
+  /**
+   * ARM FIVE — the dispatch-time expansion. It runs LAST of the arms that
+   * derive, so a dispatcher asking for the brief and the manifest in one
+   * invocation reads the brief first and the write's own stamped receipt
+   * under it.
+   *
+   * A `LaneFenceFinding` is a fact about the REPOSITORY — an unresolvable
+   * `touches:` token, a worktree on the wrong branch — so it joins the
+   * findings and answers 1. Anything else propagates to the outer catch
+   * and answers 3, because a missing `lib/parser/dist` is this command
+   * being unable to run rather than a claim about the board.
+   *
+   * @type {string[]}
+   */
+  const fenceFindings = [];
+  if (fenceWorktree !== "") {
+    if (taskId !== "" || wantsState || wantsDispatch) console.log("");
+    const worktree = path.resolve(ctx.root, fenceWorktree);
+    try {
+      const manifest = await buildLaneFence(taskId, worktree, { root: ctx.root });
+      const written = writeLaneFence(manifest);
+      console.log(
+        render([
+          note("THE LANE FENCE MANIFEST — expanded ONCE, here, where a built parser exists"),
+          value(
+            `wrote: ${written.manifestFile}`,
+            liveProv(ctx.at, ctx.host, "the lane worktree handed to --write-fence"),
+          ),
+          value(
+            `lane: ${manifest.taskId} on ${manifest.branch}`,
+            liveProv(ctx.at, ctx.host, "git symbolic-ref HEAD, read in that worktree"),
+          ),
+          value(
+            `stamped from: ${manifest.card}`,
+            treeProv(ctx.ref, "the card's own frontmatter, verbatim"),
+          ),
+          value(
+            `the fence expands to: ${manifest.paths.join(", ")}`,
+            treeProv(ctx.ref, "the parser's expandFence over the component registry"),
+          ),
+          value(
+            `always writable: ${manifest.alwaysWritable.join(", ")}`,
+            treeProv(ctx.ref, "the parser's UNFENCEABLE_PATHS, copied rather than restated"),
+          ),
+          blank(),
+          note("The hook in .claude/ reads that file and nothing else. It is a runtime file, so"),
+          note("a self-ignoring .gitignore goes beside it — a manifest that reached the"),
+          note("integration branch would hand every checkout one lane's fence, permanently stale."),
+        ]),
+      );
+    } catch (err) {
+      if (!(err instanceof LaneFenceFinding)) throw err;
+      fenceFindings.push(err.message);
+    }
   }
 
   /** @type {string[]} */
@@ -251,7 +334,7 @@ async function main(argv) {
     }
   }
 
-  const findings = [...ctx.findings, ...cardFindings, ...auditFindings];
+  const findings = [...ctx.findings, ...fenceFindings, ...cardFindings, ...auditFindings];
   if (findings.length > 0) {
     console.error("");
     console.error(`brief: FOUND ${findings.length} thing(s) the assembler could not settle:`);
