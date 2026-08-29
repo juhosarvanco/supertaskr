@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint:tokens": "node scripts/lint-tokens.mjs",
     "lint:docs": "node scripts/docs-gate.mjs --census",
+    "health": "node scripts/health-bands-run.mjs",
     "capabilities": "node scripts/capabilities.mjs",
     "capabilities:check": "node scripts/capabilities.mjs --check",
     "boot:check": "node scripts/tauri-boot-check.mjs",
