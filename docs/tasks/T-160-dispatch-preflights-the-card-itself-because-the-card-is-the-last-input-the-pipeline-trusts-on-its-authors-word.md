@@ -166,16 +166,17 @@ readings would have made this gate the thing nobody runs.
 
 ### The drill
 
-Seventeen producer-side mutants, each derived from an acceptance-criteria
+Nineteen producer-side mutants, each derived from an acceptance-criteria
 clause with the spec file closed, run in a DETACHED scratch worktree at a
-named commit whose stem was derived from the lane. **17 for 17 red**, one
+named commit whose stem was derived from the lane. **19 for 19 red**, one
 side only, every mutation read back off `git diff` before its suite ran,
 every restoration proved by sha256 against `git show HEAD:` plus an empty
-`git status`. Fifteen kill exactly one body; `paths-never-missing` kills
+`git status`. Seventeen kill exactly one body; `paths-never-missing` kills
 six and `owners-keep-the-glob` two, both being whole-arm mutants. The two
 that live in `brief.mjs` were additionally run against the WHOLE lane, and
 each came back **1 failed / 299 passed** naming one body — the
-non-duplication count.
+non-duplication count. The last two were run at `924067d` against the
+refusal for a card the schedule does not draw.
 
 **THE DRILL FOUND A CLAUSE NO PIN COVERED** (poison shape SEVEN, and the
 procedure that bullet prescribes is what found it): the mutant that makes
