@@ -1,6 +1,6 @@
 ---
 id: T-153-s7
-title: A poison over a clock-restore assertion can be killed by the PREVIOUS run, because `utimesSync` leaves the target's mtime a fixed point of itself — and T-111-s10's clock sentence now owes a Linux half
+title: A poison over a clock-restore assertion can be killed by the PREVIOUS run, because `utimesSync` leaves the target's mtime a fixed point of itself — and T-111-s10's clock sentence now owes a libuv-version half
 feature: F-06
 milestone: 4
 priority: 6
@@ -28,11 +28,13 @@ paragraph. Filed separately only because `T-153-s5`'s fence is
 ## Half one — the sentence T-130-s1's measurement is missing
 
 The absorbed measurement is a DARWIN measurement and does not say so.
-`T-153-s5` measured the same round-trip on Linux, where it does not
-hold: `utimesSync` takes SECONDS AS A DOUBLE, and libuv's
-`uv__fs_to_timespec` truncates the nanosecond field to a whole
-MICROSECOND before `utimensat` sees it, while the Darwin path carries
-the nanoseconds through. The seconds form is still the RIGHT form; what
+`T-153-s5` measured the same round-trip under libuv v1.51.0 (the CI
+runner), where it does not hold: `utimesSync` takes SECONDS AS A
+DOUBLE, and v1.51.0's `uv__fs_to_timespec` truncates the nanosecond
+field to a whole MICROSECOND before the syscall sees it — on macOS AND
+Linux alike, one `#if` naming both — while v1.52.0 (the measuring Mac)
+deletes the hack, so the axis is the libuv VERSION, not the platform
+(T-153-s5's verdict, correction 1). The seconds form is still the RIGHT form; what
 was wrong is the inference from *"round-trips 50 of 50 here"* to
 *"round-trips exactly"*. The sentence the bullet wants is the one that
 survives a second platform: a clock restore round-trips at MICROSECOND

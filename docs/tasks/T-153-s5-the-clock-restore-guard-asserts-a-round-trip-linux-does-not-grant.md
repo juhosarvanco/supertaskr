@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 2
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: integrator nputer-4e @T-153-s2 checkpoint
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -171,17 +171,25 @@ shipped on one sample it would have carried a sentence the very next run
 disproved, which is this repository's own *a figure needs a keeper*
 arriving as a near miss.
 
-**AND THE TWO PLATFORMS STILL DIFFER IN SHAPE.** Darwin's eight are
-bounded by **170 ns** and never approach the quantum; Linux's sixteen
-reach **1016** and cluster near it. That gap is the whole finding, and it
-is the gap an exact-equality assertion sat on.
+**AND THE TWO TOOLCHAINS STILL DIFFER IN SHAPE** (corrected at merge —
+the axis is the libuv VERSION, not the platform: v1.51.0 truncates
+under one `#if` naming `__APPLE__` and `__linux__` together, v1.52.0
+deletes the hack; verdict, correction 1). The uv-1.52.0 Mac samples
+are bounded by **170 ns** and never approach the quantum; the
+uv-1.51.0 CI samples — 24 over three runs, the third stamped in run
+33266566174 — reach **1016** and cluster near it (correction 3). That
+gap is the whole finding, and it is the gap an exact-equality
+assertion sat on — and a runner-image bump moves it with no platform
+changing, which is why `process.versions.uv` prints on every run.
 
 **THE MECHANISM.** `utimesSync` takes SECONDS AS A DOUBLE and hands it to
-libuv. On Linux `uv__fs_to_timespec` truncates the nanosecond field to a
-whole MICROSECOND (`ts.tv_nsec -= ts.tv_nsec % 1000`, a deliberate
-cross-platform compatibility hack carrying its own `TODO` in libuv)
-before `utimensat` sees it; the Darwin path carries nanoseconds through.
-So Linux stores a clock up to one microsecond BELOW the captured one, and
+libuv. In libuv v1.51.0 `uv__fs_to_timespec` truncates the nanosecond
+field to a whole MICROSECOND (`ts.tv_nsec -= ts.tv_nsec % 1000`, a
+deliberate compat hack carrying its own `TODO`) before the syscall sees
+it — under ONE `#if` naming `__APPLE__` and `__linux__` together;
+v1.52.0 deletes the hack (verdict, correction 1 — the axis is the
+VERSION, and the CI runner ships 1.51.0 while the measuring Mac ships
+1.52.0). So a 1.51.0 host stores a clock up to one microsecond BELOW the captured one, and
 `mtimeMs` — whose own double steps in 244 ns at this epoch — cannot spell
 that away. The old assertion was not measuring the restore; it was
 measuring the measuring platform.
@@ -197,8 +205,12 @@ form is still the right form. What was wrong was the inference from
 ### THE CHANGE
 
 One bound, one implementation, both bodies, at NANOSECOND precision
-rather than at `mtimeMs`'s — which makes the guard STRICTLY TIGHTER than
-the delta it replaces was able to express, not looser:
+rather than at `mtimeMs`'s. CORRECTED AT MERGE (verdict, correction
+2): only the INSTRUMENT is tighter — the read-back is nanosecond and
+stamped — while the acceptance BAND is ~6x wider than the exact
+equality it replaces (measured: deltas of 173-1296 ns pass the new
+bound and failed the old). The widening is deliberate: the old
+equality was green only where one toolchain round-trips exactly.
 
 - `CLOCK_QUANTUM_NS` (1000) + two ULPs of the captured `mtimeMs`, and the
   ULP is COMPUTED from the value by `ulpOf` rather than typed, because it
@@ -415,7 +427,7 @@ None of the three was built. Each names the fence it needs.
 **The bound's margin is a factor of 1.5, not a factor of 10, and the
 sample that would have made me overconfident arrived one cycle before the
 sample that corrected it.** 1489 ns computed, 1241 ns worst case
-reasoned, **1016 ns** the largest of sixteen Linux observations. Cycle 1
+reasoned, **1016 ns** the largest of 24 Linux observations over three cycles (correction 3). Cycle 1
 alone said 999 and looked like a clean law; cycle 2 said -1016 and +109
 and turned it back into a distribution. Sixteen samples on one runner
 image is not a lot of evidence about a bound, and the term I have least

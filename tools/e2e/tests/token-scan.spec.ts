@@ -35,12 +35,17 @@ const sha256 = (raw: Buffer): string => createHash("sha256").update(raw).digest(
  * each reporting a received value a few ten-thousandths of a millisecond
  * BELOW the expected one.
  *
- * THE ASYMMETRY IS libuv'S, NOT THE FILESYSTEM'S. `utimesSync` hands
- * libuv a DOUBLE of seconds. On Linux `uv__fs_to_timespec` truncates the
- * nanosecond field to a whole MICROSECOND before `utimensat` ever sees it
- * — a deliberate cross-platform compatibility hack, carrying its own
- * `TODO` in libuv — while the Darwin path carries the nanoseconds
- * through. So Linux writes back a clock about a microsecond off the
+ * THE ASYMMETRY IS libuv'S, NOT THE FILESYSTEM'S — AND ITS AXIS IS THE
+ * libuv VERSION, NOT THE PLATFORM (T-153-s5's verdict, correction 1,
+ * read from fs.c at both tags). `utimesSync` hands libuv a DOUBLE of
+ * seconds. In libuv v1.51.0, `uv__fs_to_timespec` truncates the
+ * nanosecond field to a whole MICROSECOND before the syscall sees it —
+ * ONE `#if` naming `__APPLE__` and `__linux__` together, a deliberate
+ * compat hack carrying its own `TODO` — and v1.52.0 DELETES the
+ * truncation. The CI runner ships 1.51.0 and the measuring Mac 1.52.0,
+ * so the first samples differed in both variables and read as a
+ * platform split until the source settled it. A 1.51.0 host writes
+ * back a clock about a microsecond off the
  * captured one, and `mtimeMs`, whose own double holds finer steps than
  * that at this epoch, cannot spell the difference away. NOT "up to one
  * microsecond below", which is what one CI sample looked like and what

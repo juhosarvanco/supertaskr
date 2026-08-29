@@ -1,10 +1,10 @@
 # State
 
-Updated: 2026-08-29 at the T-127-s6 checkpoint — `arch cycles`
-answers ACYCLIC, exit 0, on main for the FIRST TIME: the last
-declared cycle is genuinely broken (C-17/C-18 minted, three files
-re-owned, no import severed). Current record:
-docs/checkpoints/2026-08-29-T-127-s6.md. Pre-compaction narrative:
+Updated: 2026-08-29 at the T-153-s5 checkpoint — the clock-restore
+guard asserts a computed toolchain bound (libuv-version-shaped, uv
+stamped per run), and two of main's four carded Linux reds die here.
+Current record: docs/checkpoints/2026-08-29-T-153-s5.md.
+Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -24,8 +24,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: ONE lane — T-153-s5 (verifier running; executor done,
-  its two bodies PASS on Linux 3x). Dispatch writes the fence manifest
+  this rewrite: NO lanes — T-153-s6 dispatches next (the last card
+  between main and its green-run attempt). Dispatch writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
   `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
@@ -49,12 +49,11 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-153-s5` — verifier running (its bodies already PASS on Linux;
-   PR runs also carry the T-153-s9 class, 29 reds that are the PR
-   checkout's, green on main pushes). On its merge, `T-153-s6`
-   dispatches (same fence) — THEN main pushes: every main-run red is
-   carded to s5/s6, so the push should be the FIRST GREEN Linux run.
-   Watch it as a first run regardless.
+1. `T-153-s5` is DONE and merged. `T-153-s6` (the xargs-dialect
+   pair) dispatches now — THEN main pushes: its only remaining
+   carded reds are s6's two bodies, so the push should be the FIRST
+   GREEN Linux run. Watch it as a first run regardless. PR runs
+   additionally carry `T-153-s9`'s 29 (the checkout's, not main's).
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release
