@@ -222,18 +222,65 @@ Two paths: `README.md` and this card.
   merge answers for it. The result of running it in this lane is in
   the next section.
 
-### What was NOT run, and why
+### What was not triggered, and why
 
-`npm run lint:docs` and the DOCS GATE's diff half both import `yaml`,
-so they need `npm ci` in `tools/e2e/`, and the app, parser and e2e
-suites need installs in their own packages. Whether I ran them is
-recorded in the run ledger appended at the end of these notes rather
-than promised here. Nothing in this lane touches shipped code, a
+Nothing in this lane touches shipped code, a
 manifest, a lockfile, a spec body or a test assertion, so the POISON
 DRILL is not triggered: there is no new or changed assertion to
 mutate. That is stated as a derivation, not as an excuse — the trigger
 is *"any task that ADDS OR CHANGES a test body"*, and this diff adds
 one markdown file and one card's notes.
+
+### The run ledger — every suite the gate named, run, with its exit code
+
+The DOCS GATE fires, so the three suites it names were installed and
+run IN THIS WORKTREE (never in the integration checkout —
+lane-protocol rule 4). All at lane commit `2dadf27`; the only change
+after it is this ledger, which is card prose and moves no frontmatter
+field.
+
+    lib/parser/   npm ci                              exit 0
+    lib/parser/   npm run build                       exit 0
+    lib/parser/   npx vitest run                      exit 0   314/314, 15 files
+    lib/parser/   npx tsc --noEmit                    exit 0
+    app/          npm install                         exit 0
+    app/          npm run build                       exit 0
+    app/          npm test                            exit 0   1013/1013, 47 files
+    tools/e2e/    npm ci                              exit 0
+    tools/e2e/    NPUTER_E2E_PORT=14733 npm test      exit 0   233/233
+    tools/e2e/    npm run typecheck                   exit 0
+    tools/e2e/    npm run lint:docs                   exit 0
+    tools/e2e/    npm run lint:tokens -- --selftest   exit 0
+    tools/e2e/    npm run lint:tokens                 exit 0
+    (root)        node tools/e2e/scripts/brief.mjs --card T-158   exit 0
+
+The DOCS GATE's diff half, run in the one spelling the doc and the
+script share, exit **1** read unpiped, which is the code that means
+the gate HAS a verdict:
+
+    TREE=$(git merge-tree --write-tree 3607a94 HEAD)   # exit 0 read FIRST
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 3607a94 "$TREE")
+
+It named one path under `docs/` as a code input — this card — and NOT
+`README.md`, which is the mechanical confirmation of the reasoning in
+the gate section above. The three suites it printed are the three run
+in the ledger. It also reported that every live task card's
+frontmatter parses with a legal status, and that the ADR-019 budgets
+hold.
+
+PORT DISCIPLINE, because the lane binds one: `14733`, read at zero
+rows with `lsof -nP -iTCP:14733 -sTCP:LISTEN` AND unfiltered
+immediately before the run, both exit 1. `1420` was never probed,
+bound, connected to or signalled. The lane plants a control byte into
+seven tracked files while it runs and restores them; `git status
+--porcelain` in this worktree is EMPTY after the run, and the run
+happened in a worktree rather than the main checkout precisely so the
+human's live app never saw the write.
+
+`brief.mjs --card T-158` is the card-figures audit pointed at this
+card: *"no figure in this card claims a provenance and no census claim
+is made"*, exit 0. These notes carry figures with their commands and
+no stamp they cannot back.
 
 ### Checked and found to be a non-issue
 
