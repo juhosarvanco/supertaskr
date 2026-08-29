@@ -318,9 +318,19 @@ event collects from B and is suppressed by equality."*
   79 passed / 1 failed. Deterministic, as `T-153-s2` derives: 200 000
   bytes in one argv element against a 131 072-byte per-element cap
   cannot vary.
-- **Cycles 3–5 were not spent.** Both remaining reds are outside what
-  this lane may change, and a third run would reproduce them at the same
-  cost. Stopping is the report, not a shortfall.
+- **Cycle 3 — run `33253342892`** (commit `c5b63ea`), auto-triggered by
+  pushing the cycle-2 record. Same again: **198 passed; 0 failed**, and
+  `a_hostile_init_line_model…` 79 passed / 1 failed on the same
+  `SpawnFailed`. **Three for three on the lib binary and three for three
+  on the E2BIG.** The sentinel family's convergence and `T-153-s2`'s
+  determinism are each now measured three times.
+- **No further cycle was spent FOR ITS RESULT, and the wording is
+  deliberate**: pushing a record of a run triggers a run, so "no more
+  were run" is a sentence its own push falsifies — cycle 3 is that
+  regress caught once. Both remaining reds are outside what this lane
+  may change and reproduce identically, so anything after `c5b63ea` on
+  this branch is the same two facts a fourth time; read the newest run
+  if you want them re-derived rather than quoted.
 
 **SO THE THIRD CRITERION IS NOT MET AND CANNOT BE MET FROM INSIDE THIS
 FENCE, WHICH IS THE FINDING RATHER THAN A FAILURE TO REPORT.** Two
