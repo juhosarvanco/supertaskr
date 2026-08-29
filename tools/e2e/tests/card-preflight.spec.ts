@@ -374,6 +374,38 @@ test("a planted UNCOVERED CRITERION PATH reds, and only when a component owns it
  * THE OTHER CLAIM CLASSES THE CRITERIA NAME
  * ──────────────────────────────────────────────────────────────────── */
 
+test("a missing path INSIDE the card's own fence is a creation target, not a refusal", async () => {
+  // THE CLAUSE THIS PINS WAS FOUND BY THE DRILL AND NOT BY THE PINS.
+  // The criterion reads "every repository path the card names EXISTS, or
+  // is explicitly a creation target", and the mutant that makes a
+  // creation target refuse was killed by nothing — poison shape SEVEN,
+  // a mutant no body kills because the mutant set came from the pins
+  // rather than from the criteria. This is the body it was missing.
+  const inside = await run(
+    makeFixture({
+      criteria: [`- THE work SHALL create ${SLUG_PATH}/arrives-here.ts, which does not exist yet.`],
+    }),
+  );
+  expect(inside.findings, `a creation target was refused:\n${joined(inside.findings)}`).toEqual([]);
+  expect(inside.text).toContain("creation target");
+  expect(inside.text).toContain("arrives-here.ts");
+
+  // THE DISCRIMINATING HALF, ONE TOKEN AWAY: the same absent file under a
+  // directory the fence does NOT reserve cannot be created by this lane
+  // either, so it is a stale claim and refuses. Without this pair, "a
+  // creation target is not refused" is satisfied by a preflight that
+  // refuses no absent path at all.
+  const outside = await run(
+    makeFixture({
+      criteria: [
+        `- THE work SHALL create ${OTHER_SLUG_PATH}/arrives-here.ts, which does not exist yet.`,
+      ],
+    }),
+  );
+  expect(joined(outside.findings)).toContain("STALE PATH");
+  expect(joined(outside.findings)).toContain("arrives-here.ts");
+});
+
 test("a DEAD fence entry reds — an entry true at writing that reserves nothing now", async () => {
   const fx = makeFixture({ touches: `touches: [${SLUG}, docs/architecture/decisions]` });
   const { findings } = await run(fx);
