@@ -27,6 +27,13 @@ GRAPH REGEN · BOOT GATE · DOCS GATE — each trigger derived on the
 merge's own paths, verdicts and exits read unpiped, a skipped gate
 named loudly with its reason.
 
+GRAPH, asked LAST: `index --check` run AFTER this record's final
+write and after every fixture reconciliation — paste its verdict and
+budget line here verbatim. A checkpoint once regenerated the graph,
+kept writing, never re-asked, and left main at exit 1 (T-150-s3);
+this slot exists so that sequence cannot complete quietly. An empty
+slot is a skipped gate, and a skipped gate is news, never silence.
+
 ## Suites
 
 Every run declared with COUNT and EXIT, including the ones that
