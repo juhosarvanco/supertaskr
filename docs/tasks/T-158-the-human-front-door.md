@@ -9,7 +9,7 @@ status: building
 blocked_by: []
 touches: [README.md]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
@@ -346,3 +346,316 @@ residual too deep for a front page — but it is a real caveat and it is
 recorded here rather than left unsaid.
 
 ## Verdicts
+
+### 2026-08-29 — REJECTED (claude-opus-5@subagent, review: same-model)
+
+Verified from a detached scratch worktree at `/tmp/v158`, cut with
+`git worktree add --detach /tmp/v158 487186e`. Every figure below is
+stamped at `487186e` unless it names another ref. The lane's own files
+were never edited from the scratch; `1420` was never probed, bound,
+connected to or signalled.
+
+**One sentence on the front door is false against this repository's
+own record, and it is the sentence that describes the guarantee the
+whole page is selling.** Everything else attacked survived: the fence
+holds at two paths, the adapters are byte-identical blobs, all twelve
+link targets exist and are tracked, the five tour links each
+substantiate the sentence beside them, the page states no figure at
+all, the marketing sweep is empty against a gate proved capable of
+firing, and the three suites the DOCS GATE names are green at exit 0.
+The defect is not a missing check — it is a claim the executor's own
+verification ledger never tested, because the ledger tested the LINKS
+and this claim carries none.
+
+#### DEFECT 1, BLOCKING — "the session that builds a change never verifies it"
+
+`README.md`'s terminology table, the `seat` row, third column:
+
+> the session that builds a change never verifies it, and the verifier
+> is handed the card and the diff rather than the builder's reasoning
+
+The first clause is false, and the record says so twice.
+
+**The method PERMITS what the sentence forbids.**
+`method/tasks/TASK-FORMAT.md`, "Session syntax": *"Verifier may be any
+model or session, including the builder's — the `review:` field records
+which guarantee actually held"*, and, in the paragraph below it,
+*"`self-verified` is the one value that names a MISSING guarantee,
+because there the informational constraint was never applied at all —
+the builder read its own reasoning by construction."* The README states
+as a property of the practice the exact thing the method's format file
+prices as an available, recorded weakening.
+
+**The board CARRIES what the sentence forbids.** Derive it at your own
+ref from the repository root:
+
+    grep -h '^review:' docs/tasks/T-*.md | sort | uniq -c | sort -rn
+    grep -l '^review: self-verified' docs/tasks/T-*.md
+
+At `487186e`: **83** `same-model`, **20** `self-verified`, **5**
+`independent`, **43** blank — and every one of the 20 `self-verified`
+cards reads `status: done`, so these are merged changes, not
+abandoned lanes. `T-097` closes the question without needing the
+`review:` field at all: its frontmatter stamps `built_by:
+claude-opus-5 @T-097` and `verified_by: claude-opus-5 @T-097` — one
+session id on both lines.
+
+**Why this is blocking rather than a note.** The README's own rule is
+*"where this file and the record disagree the record wins"*, and here
+they disagree. The page's thesis is that a stranger should check it;
+one `grep` over `docs/tasks/` is the check, and it returns twenty
+counterexamples and a method file that authorises them. Under
+NORTH_STAR's bar — work that SURVIVES the scrutiny of masters — a
+front-door sentence that fails a one-command check by the audience it
+names is a stop-the-line defect, and it fails in the direction that
+flatters the project, which is the applause-metrics exclusion arriving
+as a fact rather than as an adjective. It is also the one row in the
+table carrying no citation, which is how it got here: the
+link-verification ledger above is thorough about the five tour links
+and silent about the seven table rows, because only the links have
+targets to check.
+
+**The correction is available and is STRONGER than what it replaces.**
+`TASK-FORMAT.md`'s same paragraph gives the true and sharper claim:
+*"THE INDEPENDENCE THAT PAYS IS INFORMATIONAL, NOT MODEL DIVERSITY"*,
+and *"`same-model` is not a weaker verdict than `independent`; it is
+the same blindness with a different provenance, and the sharpest
+rejections a pipeline records are routinely same-model."* The second
+clause of the README's own row already says this correctly. The fix is
+to drop the false first clause and keep the true one — the guarantee
+is the verifier's blindness to the builder's reasoning, and where a
+session held both seats the card stamps `self-verified` and the
+guarantee is recorded as missing. That is a more impressive sentence
+than the one on the page, because it survives the grep.
+
+The executor named this row as its second least-confident judgment and
+identified a DIFFERENT residual (the executor appending reasoning to
+the file the verifier reads). That residual is real — this very
+verification was dispatched with an instruction to read the
+Implementation notes — and it is a second reason the first clause
+overstates. Neither residual is the defect above, which is about
+session identity and is settled by the frontmatter.
+
+#### DEFECT 2, BLOCKING — "every house term is mapped to its standard name in the table below"
+
+Same class, same page, one section earlier:
+
+> The vocabulary here is local, and none of it has to be learned in
+> advance: every house term is mapped to its standard name in the table
+> below.
+
+The table maps seven terms: card, lane, fence, seat, room, poison
+drill, checkpoint record. The README's own body uses at least seven
+more house terms that the table does not map — **verdict** (in the
+T-083 tour line and in "lanes, fences, verdicts, checkpoints"),
+**standing gate** ("each standing gate fired or ruled not-owed"),
+**byte budget** ("how much of a document's byte budget the card
+spent"), **governing document**, **dispatch brief**, **read-first
+set**, and **integration branch** (used inside the `lane` row's own
+description). A stranger meeting *"each standing gate fired or ruled
+not-owed"* does have to learn something not in the table, so the
+promise directly above it is not kept. Derive it:
+
+    sed -n '83,89p' README.md | cut -d'|' -f2      # the seven mapped terms
+    grep -n -iE 'verdict|standing gate|byte budget|governing document|dispatch brief|read-first set|integration branch' README.md
+
+Either soften the promise to what the table delivers, or add the rows.
+This is one line either way, and it is blocking for the same reason as
+defect 1: it is an absolute the page's own body falsifies, on the page
+whose whole claim is that its sentences hold.
+
+#### What was attacked and SURVIVED
+
+Named individually, because a rejection that lists only what broke
+tells the next executor nothing about what it may leave alone.
+
+- **THE FENCE.** `git diff 3607a94..487186e --name-only` returns
+  exactly **2** paths — `README.md` and this card — exit **0**. The
+  card is outside every fence by `method/lane-protocol.md`'s *"OWN CARD
+  IS NOT A FENCE BREACH"*. No breach.
+- **THE ADAPTERS.** `git diff 3607a94..487186e --name-only -- CLAUDE.md
+  AGENTS.md` returns **0** paths, exit **0**. Stronger, by blob:
+  `git rev-parse 3607a94:CLAUDE.md` and `487186e:CLAUDE.md` are both
+  `03bbe073`, and both spellings of the adapter are that same blob at
+  both refs. Byte-untouched, confirmed twice.
+- **EVERY LINK TARGET.** All **12** unique markdown targets extracted
+  mechanically (`perl -0777` over the anchor form), each tested with
+  `[ -e ]` and `git ls-files --error-unmatch`: **12** exist, **12**
+  tracked, **0** missing, **0** untracked. Independent of the
+  executor's ledger and agreeing with it.
+- **THE FIVE TOUR LINKS, opened and read.** Each substantiates the
+  sentence beside it: `T-083` is `status: done` with `REJECTED` at its
+  `## Verdicts` head, a `SECOND EXECUTOR … closing the rejection`
+  section, an independent re-derivation and a closing `APPROVED`, all
+  beneath its `## Acceptance criteria`; the T-092 checkpoint carries
+  `## Merge` (parents and the merge-tree forecast), `## Gates`
+  (four, each dispositioned), `## Suites` (five with exit codes) and
+  the ADR-019 budget spend, and `git log -- <path>` returns exactly
+  **1** commit, which is the "written down once and never edited"
+  claim measured rather than asserted; `governing-docs.md`'s own
+  H1 IS the question quoted, its opening paragraph records the
+  amendment and the ruling, and ADR-019's `Provenance:` line names it
+  back; `CAPABILITIES.md` carries the generated header naming
+  generator and currency check and closes with a section literally
+  titled *"Not extracted — named rather than dropped"*; and
+  `docs/decisions/` holds **19** files, every one with `Status:` and
+  `Date:`, `008` carrying `Amends: ADR-007`, and the `018` gap
+  explained inside `019` by name.
+- **THE VISION PARAGRAPH IS VERBATIM, not paraphrased.**
+  `diff <(sed -n '3,7p' README.md) <(sed -n '4,8p' docs/NORTH_STAR.md)`
+  exits **0** — byte-identical, which is what "quoted rather than
+  re-worded" claims.
+- **ZERO FIGURES.** `grep -n '[0-9]' README.md` returns **5** lines and
+  every digit on them is an identifier: `Milestone 3`, `T-083` (twice),
+  the date inside a checkpoint FILENAME, `ADR-019`, `ADR-018`. No
+  count, size, hash, percentage or range anywhere on the page, and no
+  spelled-out quantity making a claim about the tree. ADR-019 Law 2 is
+  discharged by subtraction, exactly as claimed. The sweep was proved
+  capable of firing by concatenating a planted `233` and re-running.
+- **NO MARKETING VOICE.** A 30-term sweep (`best|finest|world-class|
+  powerful|seamless|revolution|effortless|amazing|gold standard|unique|
+  robust|elegant|ultimate|game-changing|production-ready|!|emoji|…`)
+  returns **0** hits, exit **1**. **Proved capable**: the same pattern
+  against the file plus one planted line reading *"This is the best,
+  most seamless tool!"* returns that line at exit **0**. The page also
+  does the harder thing — *"What has never happened is stated in the
+  plan rather than omitted from it"* puts the unrun genesis on the
+  front door, which is anti-marketing rather than merely non-marketing.
+- **THE TERMINOLOGY ROWS I COULD FALSIFY, I could not.** `lane` is
+  verbatim `method/lane-protocol.md`'s opening ("One task, one branch,
+  one worktree, one session — and the integration branch is none of
+  them"); `fence` restates that file's rule 5 accurately including the
+  token-comparison failure; `poison drill` matches CONVENTIONS' POISON
+  DRILL bullet, and its "prove the restoration with a hash rather than
+  with a clean `git status`" is CONSERVATIVE relative to the source,
+  which is the safe direction; `checkpoint record`'s "no gate, suite or
+  generator is permitted to depend on the directory's contents" matches
+  ADR-019 as STATE restates it. The two unlinked non-table claims check
+  out too: *"Nothing here is the only copy of itself … the rule the
+  method applies to its own dispatch briefs"* is
+  `method/roles/executor.md`'s *"Nothing in the brief may be the only
+  copy of itself"*, and the *"one home per fact"* and *"derive it,
+  never quote it"* glosses are Laws 1 and 2 of `governing-docs.md`,
+  the second one exact on all three of its exemptions.
+- **THE EXECUTOR'S OWN LEDGER CLAIMS, re-run rather than read.**
+  `README.md` is NOT among `token-scan.spec.ts`'s seven plant targets
+  (the list carries `AGENTS.md` and `method/README.md`); GRAPH REGEN is
+  genuinely not owed — `Lang::for_extension` in
+  `crates/nputer-index/src/graph.rs` matches `ts|tsx|mts|cts|js|jsx|rs`
+  and returns `None` for everything else; `git grep README -- app lib
+  tools .github` returns **12** hits, every one a test fixture, a
+  design-handoff citation or the `method/README.md` plant target, so no
+  program reads the root file; and `brief.mjs --card T-158` is a real
+  invocation (`--card` is in that script's own flag set) that exits
+  **0** and expands this fence to **1** tracked file.
+
+#### Suites — every count and exit read unpiped from `$?`
+
+Run in `/tmp/v158` at `487186e`, in the scratch worktree and never in
+the integration checkout. The DOCS GATE named three suites; all three
+were installed and run there.
+
+    (root)      node tools/e2e/scripts/docs-gate.mjs README.md \
+                  docs/tasks/T-158-the-human-front-door.md   exit 1  FIRES
+    lib/parser  npm ci                                        exit 0
+    lib/parser  npm run build                                 exit 0
+    lib/parser  npx vitest run                                exit 0  314/314, 15 files
+    app         npm install                                   exit 0
+    app         npm run build                                 exit 0
+    app         npm test                                      exit 0  1013/1013, 47 files
+    tools/e2e   npm ci                                        exit 0
+    tools/e2e   NPUTER_E2E_PORT=16113 npm test                exit 0  233/233
+    tools/e2e   npm run lint:tokens -- --selftest             exit 0
+    tools/e2e   npm run lint:tokens                           exit 0  TOKEN 144, CONTROL 846
+    tools/e2e   npm run lint:docs                             exit 0
+    (root)      node tools/e2e/scripts/brief.mjs --card T-158 exit 0
+
+Exit **1** on the DOCS GATE is the code that means the gate HAS a
+verdict, not a failure; it named this card (never `README.md`) and the
+three suites above, which is the mechanical confirmation of the
+executor's reasoning about which gates this diff owes. `cargo test` was
+NOT run: the gate does not name it, no `.rs` or `.md`-under-a-Rust-
+reader path is in the diff, and STATE's cargo cache cliff makes an
+unowed cargo run a source of false reds rather than of evidence.
+
+PORT DISCIPLINE: `16113` read at zero rows with
+`lsof -nP -iTCP:16113 -sTCP:LISTEN` AND unfiltered immediately before
+the run — both exit **1** — and at zero rows again after. `1420` was
+read zero times, because nothing in this verification had a question
+about it.
+
+POISON DRILL: not triggered. This diff adds one markdown file and one
+card's prose and changes no test body, so there is no new or changed
+assertion to mutate. The two SEARCH-based checks I rested a zero on
+were each run once against a planted hit before their zeros were
+written down, per CONVENTIONS' *"A COMMAND QUOTED AS PROOF IS SHOWN
+CAPABLE OF FAILING"*: the marketing sweep and the digit sweep, both
+recorded above.
+
+SECURITY SWEEP: clean and shallow by construction. The diff adds no
+input path, no endpoint, no query, no dependency and no executable
+code — one root markdown file and card prose. No secret, key, token or
+credential appears in either file; every link is repo-relative and
+none leaves the repository. The only supply-chain surface touched was
+my own scratch installs, which are outside the deliverable.
+
+#### The executor's two least-confident items, ruled
+
+- **Tour-link SELECTION — ACCEPTED, with reasons, and I decline the
+  offered swap.** `T-083` over `T-024` is the right call and the
+  argument for it is the one the executor made: a stranger can follow
+  "one figure did not survive the card's own prescribed derivation"
+  without knowing this repository, and the card then carries the fix
+  and the approval, so the tour shows a closed loop. Cross-model review
+  is a weaker thing to demonstrate here anyway — `TASK-FORMAT.md` rules
+  in as many words that model diversity is not the guarantee that pays,
+  so a tour entry advertising it would sit crosswise to the method's
+  own position. The checkpoint pick is also right for a reason the
+  notes do not claim: it is the record STATE names as current, it is
+  immutable so the link cannot rot, and the README makes NO currency
+  claim about it, so it needs no keeper. `docs/decisions/` as a bare
+  directory is accepted because there is no index file to link — `ls
+  docs/decisions/` shows 19 ADRs and no `README.md` — and the `018` gap
+  is visible in the listing itself.
+- **The `seat` row — CONTESTED, and it is defect 1 above.** The
+  residual the executor named is real and I agree it is too deep for a
+  front page. The residual it did not name is not deep at all: it is
+  `grep -c '^review: self-verified' docs/tasks/T-*.md`.
+
+#### Not blocking — do not hold the re-verification for these
+
+1. *"They name the read-first set and stop."* The adapters also carry
+   an operating rule (check CAPABILITIES before concluding a feature is
+   missing), a command, the T-138 anecdote and the method pointers.
+   "and stop" undersells them. One word fixes it and nothing depends on
+   it.
+2. The terminology table carries no citations, while the section above
+   it promises *"Every claim below links to the record that holds it or
+   names the command that derives it."* Every row I checked was
+   accurate and traceable, and `method/` and `docs/CONVENTIONS.md` are
+   both linked one section below — but a per-row source (`fence —
+   method/lane-protocol.md rule 5`) would make the table self-certifying
+   and would have caught defect 1 during the build. Recommended, not
+   required.
+3. `app/src/architecture/MapView.tsx`'s comment *"the README's
+   pane-header order"* names no path and now reads ambiguously against
+   a root `README.md` that did not exist when it was written. Adjacent,
+   pre-existing, outside this fence; filed here rather than as a card
+   because the board already carries **140** `suggested` entries
+   awaiting the amnesty triage (derived at `487186e` with `brief.mjs
+   --card T-158`).
+4. The STATUS conflict the executor names as open is not mine to
+   resolve and does not affect this verdict: `building` is the correct
+   value at a rejection either way, and the stamping question belongs
+   to the merge-time seat.
+
+#### What a re-verification will be measured against
+
+Two edits, both one line, both inside the existing fence
+`[README.md]`. Fix the `seat` row so the guarantee it states is the
+informational one the method actually charters, and make the
+"every house term" sentence true against the table it introduces. The
+three suites above are green and nothing else in this diff was found
+wanting, so a re-verification is the DOCS GATE plus its three suites
+at the new tip, plus the two greps in defects 1 and 2 returning
+nothing.
