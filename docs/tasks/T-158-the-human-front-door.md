@@ -659,3 +659,28 @@ three suites above are green and nothing else in this diff was found
 wanting, so a re-verification is the DOCS GATE plus its three suites
 at the new tip, plus the two greps in defects 1 and 2 returning
 nothing.
+
+#### The verdict's own tip, gated
+
+This verdict is a WRITE, so it owes the gates it could move
+(`roles/verifier.md` step 7). Re-run in `/tmp/v158` moved to my own
+verdict commit `77ca368`, on the range `3607a94..77ca368`:
+
+    (root)      node tools/e2e/scripts/docs-gate.mjs \
+                  $(git diff --name-only 3607a94 77ca368)   exit 1  FIRES
+    lib/parser  npx vitest run                               exit 0  314/314
+    app         npm test                                     exit 0  1013/1013
+    tools/e2e   NPUTER_E2E_PORT=16113 npm test               exit 0  233/233
+    tools/e2e   npm run lint:tokens                          exit 0  TOKEN 144, CONTROL 846
+    tools/e2e   npm run lint:docs                            exit 0
+
+The gate names the same three suites and reports that every live card's
+frontmatter parses with a legal status, which is the check the
+`verifier:` stamp above could have broken. `git status --porcelain` in
+the scratch is empty after the lane's plant-and-restore. Port `16113`
+read at zero rows on both `lsof` forms before the bind and after the
+run; `1420` untouched throughout.
+
+The only change after `77ca368` is this ledger — card prose, no
+frontmatter field moved — and the counts above are stamped at
+`77ca368` rather than left to read as current.
