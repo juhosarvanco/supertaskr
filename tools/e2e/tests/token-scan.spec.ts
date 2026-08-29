@@ -74,8 +74,13 @@ const ulpOf = (value: number): number => 2 ** (Math.floor(Math.log2(Math.abs(val
  * takes seconds as a double, so `clock.mtimeMs / 1000` is already up to
  * half an ULP away from the captured reading before libuv sees it, and the
  * captured reading is itself a double over a nanosecond counter. Two ULPs
- * covers both roundings; at this epoch the whole bound is 1489 ns, against
- * a worst case the mechanism puts at ~1180 ns.
+ * covers both roundings with margin. THE WORST CASE, in nanoseconds and
+ * with every term named: half an ULP of `mtimeMs` at this epoch (122) plus
+ * half an ULP of the seconds double (119) plus libuv's truncation (1000)
+ * is 1241, against a bound of 1489. The two float terms DOUBLE at the next
+ * binade and the quantum does not, so the bound has to be computed from the
+ * value rather than transcribed — which is the whole reason `ulpOf` exists
+ * and the reason this paragraph states its terms instead of its total.
  */
 const clockRestoreToleranceNs = (capturedMs: number): number =>
   CLOCK_QUANTUM_NS + Math.ceil(2 * ulpOf(capturedMs) * 1e6);
