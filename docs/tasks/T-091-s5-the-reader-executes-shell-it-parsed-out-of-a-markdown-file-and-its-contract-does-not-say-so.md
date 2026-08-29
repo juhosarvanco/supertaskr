@@ -1,9 +1,11 @@
 ---
 id: T-091-s5
 title: The range-rule reader executes shell it parsed out of a markdown file, and the contract at the head of that file does not name the boundary
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-091-verify
 ---
+
+Absorbs: T-091-s6 (Amnesty triage 2026-08-29 (triage seat)) — same file, same seat, same size, same non-blocking status: both ask range-rule.mjs's numbered contract header for a note it does not carry — an eighth rule naming the trust boundary, and a DRILLING NOTES block recording the three proved-equivalent mutants so the next drill does not re-derive them. Its disposition 1 (put the equivalences in the CONVENTIONS bullet instead) is the arm this card's own reasoning argues against, since a verifier mutating the document may never open the reader.
 
 **NOT A DEFECT IN THIS CARD AND NOT A REASON TO BLOCK IT.** The card's
 ninth criterion REQUIRES the executed form — *"THE PRINTED RECIPE SHALL
@@ -58,3 +60,5 @@ reader is one more constant that can go stale while the sentence cannot.
 Fence `[tools/e2e]`. Size XS. **Do not fold this into a card that also
 changes what the reader computes** — it is a comment and, at most, one
 guard.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both halves are comments on one file's header, both explicitly non-blocking, and neither changes behaviour. The trust boundary is real and correctly reasoned — the reader grants no privilege the test runner does not already grant, and the sentence that matters is the one saying WHY, so the shape is not copied to a document this repository does not own. RESURFACES: the next tools/e2e dispatch — the file is range-rule.mjs's own header and any lane holding that slug can carry both notes.

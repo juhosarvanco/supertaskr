@@ -1,9 +1,13 @@
 ---
 id: T-107-s4
 title: A card fenced to app-interview alone cannot pin anything it builds, and T-107's fifth criterion is the first to notice
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-107
 ---
+
+Absorbs: T-107-s3 (Amnesty triage 2026-08-29 (triage seat)) — the second arm of the same enumeration, and the one carrying an open boundary question: staleProject knows the other project's path as a typed field and offers neither way back to it nor a way forward here. The cheap half ("start a fresh session here") is already a button this pane renders elsewhere; the folder-opening half would make a genesis notice the second place in the app that changes which project is open, and wants a ruling.
+
+Absorbs: T-107-s2 (Amnesty triage 2026-08-29 (triage seat)) — same pane, same enumeration: T-107's criterion 6 sweep found two arms that name a fix and offer no way to take it, and this is the first. noSession is a SendOutcome and nothing about it implies phase === idle, so the sentence can land with no button under it and no route out of the pane. Its shape 2 warning is kept: notStarted also gates the auto-start effect, so widening the expression widens a process spawn.
 
 **THIS IS A DISPATCH DEFECT, NOT A BUILD DEFECT, AND IT IS FILED WITH THE
 BODY IT COULD NOT SHIP — VERIFIED GREEN AND VERIFIED TO RED.** T-107's
@@ -138,3 +142,5 @@ arm. **What is unpinned is the `unsupportedVersion` arm's own answer**,
 and only that. Deleting the arm is a compile error (the `never` guard);
 flipping it from `true` to `false` is the one mutation nothing on this
 tree catches.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the FENCE half is discharged by T-149 — C-13's paths: now carries app/test/interview-chat-dom.test.tsx and six sibling bodies, so an [app-interview]-fenced card CAN pin what it builds and arm 2 is built, not owed. What survives is content, not a defect: T-107's unbuilt criterion 5 body, verified green and verified to red and ready to paste, plus the two dead-end notices its criterion 6 enumeration found (absorbed here). None of it is reachable by a user until a planner turn runs against a real model. RESURFACES: the next app-interview dispatch, or @human's T-025-s2 — the first real, timed genesis — whichever comes first; that run is what turns these three from paper into observations.

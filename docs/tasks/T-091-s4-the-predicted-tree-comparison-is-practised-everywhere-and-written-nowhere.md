@@ -1,7 +1,7 @@
 ---
 id: T-091-s4
 title: The integrator's predicted-tree comparison is practised in every checkpoint and written in no governing file
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-091
 ---
 
@@ -62,3 +62,5 @@ Fence: `method/` (the integrator's steps) and/or `docs/CONVENTIONS.md`
 sentence short of the instruction). **Read it together with `T-052-s5`**,
 which is about `integrator.md` already holding two 1–4 lists — whichever
 list this joins needs to say which.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the absence is live — git grep -n merge-tree method/ still returns zero — and the evidence is unusually good: 29 of 30 forecastable merges match their prediction exactly and the single mismatch is precisely the case the rule exists to name. It is two lines of METHOD text, which is one seat and one bump. RESURFACES: the next method/ dispatch — T-159, the v0.1.8 metabolism release, is that dispatch. Read it with T-052-s5, which is about which of integrator.md's two numbered lists a new rule joins.

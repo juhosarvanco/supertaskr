@@ -1,7 +1,7 @@
 ---
 id: T-091-s1
 title: The DOCS GATE exits 1 rather than 3 when its own dependency is missing, and 1 is the code it reserves for a verdict
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-091
 ---
 
@@ -65,3 +65,5 @@ T-091's reader now DISCRIMINATES the two rather than reporting a wrong
 code: when the gate's process never links, it says *"the DOCS GATE never
 LINKED in <root> … the code observed is node's and not the gate's"*. That
 removes the reader's blind spot and does nothing about the gate's.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live and this sitting reproduced it: a fresh worktree of this repository answers ERR_MODULE_NOT_FOUND at exit 1 from docs-gate.mjs until npm ci is run in tools/e2e. The exposure is LOCAL — CI installs before it lints — and T-091's own reader now discriminates the case in words ("the DOCS GATE never LINKED"), so what is left is the gate's own legend, which the token lint already carries for its identical hole (T-080-s4). RESURFACES: the next docs/CONVENTIONS.md dispatch (disposition 1, one clause beside the four codes) or the next tools/e2e dispatch (disposition 2, the dynamic import behind a try that exits 3). This card is the owner of the gate's exit-code-honesty class; T-132-s1 states the same defect from the other side.
