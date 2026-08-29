@@ -19,12 +19,7 @@ import {
 import { repoRoot } from "../preflight";
 import { conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
 import { laneSpellings } from "../scripts/dispatch-brief.mjs";
-import {
-  LANE_FENCE_CONTRACT,
-  MANIFEST_DIR_IGNORE,
-  buildLaneFence,
-  writeLaneFence,
-} from "../scripts/lane-fence.mjs";
+import { MANIFEST_DIR_IGNORE, buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
 
 /**
  * THE FENCE AT THE MOMENT OF THE WRITE (T-154) — no browser.
@@ -542,13 +537,32 @@ test("the hook's lane-branch spelling is the one docs/CONVENTIONS.md publishes",
     expect(LANE_BRANCH_RE.test(near), `${near} is read as a lane and is not one`).toBe(false);
     expect(published.branchRe.test(near)).toBe(false);
   }
-  expect(LANE_FENCE_CONTRACT.laneBranchRe.source).toBe(LANE_BRANCH_RE.source);
 });
 
-test("the writer and the hook name ONE manifest, at one version", () => {
-  expect(LANE_FENCE_CONTRACT.manifestRelPath).toBe(MANIFEST_REL_PATH);
-  expect(LANE_FENCE_CONTRACT.manifestVersion).toBe(MANIFEST_VERSION);
+test("the writer puts the manifest exactly where the reader opens it, at one version", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // BEHAVIOURAL, not an identity. An earlier draft of this body compared
+  // two constants the writer IMPORTS from the hook — one fact wearing a
+  // cross-check's costume, which no one-sided mutation could red. What
+  // is checkable is that the file this writer produced is the file that
+  // reader opens, and that the reader accepts its stamped version.
+  const onDisk = path.join(fx.lane, MANIFEST_REL_PATH);
+  expect(existsSync(onDisk), "the writer wrote somewhere the reader does not look").toBe(true);
+  expect(JSON.parse(readFileSync(onDisk, "utf8")).version).toBe(MANIFEST_VERSION);
+  expect(ask(fx.lane, path.join(fx.lane, "tools/e2e/x.ts")).code).toBe("inside-the-fence");
   expect(MANIFEST_REL_PATH, "the manifest left the runtime directory").toMatch(/^\.nputer\//);
+
+  // AND THE SOURCE PIN THAT MAKES IT ONE FACT: the writer must not hold
+  // its own spelling of either constant, it must take the reader's.
+  const writer = readFileSync(path.join(repoRoot, "tools/e2e/scripts/lane-fence.mjs"), "utf8");
+  expect(writer, "the writer defines a second manifest constant").not.toMatch(
+    /^export const MANIFEST_(REL_PATH|VERSION)\b/m,
+  );
+  expect(writer, "the writer stopped importing the reader's constants").toMatch(
+    /MANIFEST_REL_PATH,[\s\S]{0,200}from "\.\.\/\.\.\/\.\.\/\.claude\/hooks\/lane-fence\.mjs"/,
+  );
 });
 
 test("ONE `touches:` extraction, and it agrees with `yaml` on every live card", () => {

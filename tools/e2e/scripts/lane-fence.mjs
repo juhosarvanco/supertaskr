@@ -256,14 +256,18 @@ export function writeLaneFence(manifest) {
 }
 
 /**
- * The two constants the hook holds and this side can check.
+ * THERE IS NO `LANE_FENCE_CONTRACT` OBJECT HERE, AND ITS ABSENCE IS THE
+ * POINT — this file held one for exactly one commit before its own drill
+ * killed it. It re-exported `MANIFEST_REL_PATH`, `MANIFEST_VERSION` and
+ * `LANE_BRANCH_RE` so the spec could "compare the two copies", and there
+ * are no two copies: this module IMPORTS all three from the hook, so the
+ * comparison was an identity and no mutation of either side could red it.
+ * A vacuous assertion is indistinguishable from a passing one
+ * (docs/CONVENTIONS.md, POISON DRILL), and dressing an import up as a
+ * cross-check is how one gets written.
  *
- * Exported so `lane-fence.spec.ts` compares the guard's copy against the
- * authority rather than trusting it — the treatment docs/ARCHITECTURE.md
- * gives its own slug block, one layer over.
+ * What replaced it is in `lane-fence.spec.ts`: a SOURCE pin that this
+ * file defines neither constant and imports both, and a BEHAVIOURAL pin
+ * that the file the writer produced is the file the reader opens. Both
+ * red under a one-sided mutation; the object could not.
  */
-export const LANE_FENCE_CONTRACT = Object.freeze({
-  manifestRelPath: MANIFEST_REL_PATH,
-  manifestVersion: MANIFEST_VERSION,
-  laneBranchRe: LANE_BRANCH_RE,
-});
