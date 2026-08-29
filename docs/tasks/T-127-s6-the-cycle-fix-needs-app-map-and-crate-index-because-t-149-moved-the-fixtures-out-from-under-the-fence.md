@@ -875,3 +875,27 @@ and `select-board.test.ts` (all inside app/'s green 1013).
 Status left at `verifying`. This verdict is a WRITE, so the gates my own
 commit can move were re-run at MY tip and are recorded beneath this
 section rather than assumed.
+
+#### THE GATES AT THIS VERDICT'S OWN TIP — a role that writes to the tree owes the tree's gates, even when what it wrote was prose
+
+Measured at **`84a4dd7`**, the commit that appended everything above, so
+these figures carry their ref rather than a promise. The verdict's write
+is a flat `docs/tasks/T-*.md`, which the DOCS GATE's own derivation names
+four suites for; all four were re-run and none moved:
+
+| command | where | result at `84a4dd7` |
+|---|---|---|
+| `cargo test --no-fail-fast` | app/src-tauri | **522 passed / 0 failed / 4 ignored, exit 0**; lib suite 200 in **4.13s** |
+| `npx vitest run` | lib/parser | **314 passed, exit 0** |
+| `npm test` | app | **47 files, 1013 passed, exit 0** |
+| `NPUTER_E2E_PORT=14533 npm test` | tools/e2e | **280 passed / 1 failed of 281, exit 1** — `brief.spec.ts:439` and nothing else |
+| `npm run lint:docs` | tools/e2e | exit 0 — every live card parses, budgets hold |
+| `npm run lint:tokens` | tools/e2e | exit 0 |
+
+**The failing-body set is IDENTICAL to the one measured at `c10595f`**,
+which is what this re-run exists to establish: no card was broken by
+this verdict, no board count moved, and the one red is still the routed
+`docs/ARCHITECTURE.md` line and not a new one. The commit that appends
+THIS section adds prose only and is of the same class; its own re-run is
+in the report handed to the integrator, at its own ref, for the same
+reason this table names `84a4dd7`.
