@@ -1212,9 +1212,10 @@
   THE BSD COLUMNS ARE MEASURED HERE AND THE GNU PIPED ONE ON CI, AND
   SAYING WHICH IS THE POINT OF THE COLUMN. This machine has no GNU
   `xargs` and no container runtime to borrow one from (probed at
-  `9b03ae6`, re-probed at `c9e6a3d`), so that column stood as GNU
-  findutils' DOCUMENTED mapping — utility exits 1–125 become 123 — until
-  the ubuntu runner ran it. **IT CLOSED AS A FAILURE, AND NOT WHERE THIS
+  `9b03ae6`; re-probed 2026-08-29 — one `/usr/bin/xargs` still, and
+  Docker's CLI installed with no daemon listening), so that column stood
+  as GNU findutils' DOCUMENTED mapping — utility exits 1–125 become 123 —
+  until the ubuntu runner ran it. **IT CLOSED AS A FAILURE, AND NOT WHERE THIS
   BULLET SAID IT WOULD** (T-153-s6). The sentence here promised the
   closure at CI's `npm run lint:docs` step, which invokes the gate
   DIRECTLY and has no `xargs` in it at all — nothing in that step could
@@ -1236,8 +1237,8 @@
   that execute this table's piped column read the column for the dialect
   they measured, and an `xargs` matching neither row reds instead of
   taking a branch by default.
-  The `$(…)` column needs no second measurement to be honest
-  about: it has no `xargs` process in it, so nothing platform-dependent
+  The `$(…)` column needs no second measurement to be honest about: it
+  has no `xargs` process in it, so nothing platform-dependent
   stands between this gate's `process.exit` and the shell that reads it.
   **THAT ASYMMETRY IS THE ARGUMENT.** A spelling whose correctness has to
   be re-measured per platform is one nobody will re-measure.
