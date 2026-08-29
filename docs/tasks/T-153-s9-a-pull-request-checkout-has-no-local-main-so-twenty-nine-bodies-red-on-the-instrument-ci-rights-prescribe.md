@@ -628,3 +628,44 @@ this verdict does not resolve it. Gates owed for THIS seat's own writes —
 this Verdicts section plus three suggestion cards, all flat
 `docs/tasks/T-*.md`, which the DOCS GATE answers with three suites — are
 run at the tip these commits create and recorded immediately below.
+
+### The gates THIS seat's own writes owe — run at `97fc33b`
+
+**A ROLE THAT WRITES TO THE TREE OWES THE TREE'S GATES, EVEN WHEN WHAT IT
+WROTE WAS PROSE**, and this seat's first attempt at them found a defect
+in its own writing. The DOCS GATE's diff half, fed the RANGE RULE's own
+path list —
+
+    TREE=$(git merge-tree --write-tree $(git rev-parse main) HEAD)   # exit 0
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only $(git rev-parse main) "$TREE")
+
+— reported at the first verdict commit `910f31d`: **1 task card the
+parser will refuse**. `T-153-s17`'s title carried a SECOND colon-space
+inside a plain YAML scalar, so that card did not parse, and the board
+would simply have got shorter — `9c64cd8`'s failure exactly, arriving in
+the commit that quotes it. Fixed at `97fc33b` by rewording the title;
+the gate now says *"every live task card's frontmatter parses, with a
+legal status"*. It is recorded rather than quietly repaired because the
+gate case is only worth writing about when somebody walks into it.
+
+At `97fc33b`, the merge's diff is **9 paths** — six flat
+`docs/tasks/T-*.md` and the three `tools/e2e` files of the executor's
+work, nothing else — and the gate FIRES naming three suites, all three
+run here:
+
+| gate / suite | exit | figures |
+|---|---|---|
+| `docs-gate.mjs` diff half | **1** (FIRES, has a verdict) | 6 docs paths are code inputs; 0 cards the parser will refuse |
+| `npm run lint:docs` (whole-tree half) | **0** | 22 readers / 4 suites, 0 frontmatter issues, 4 budgets held |
+| `npm test` from app/ | **0** | **1013 passed** / 47 files |
+| `npx vitest run` from lib/parser/ | **0** | **314 passed** / 15 files |
+| `npm test` from tools/e2e/ (`NPUTER_E2E_PORT=14533`, zero rows first) | **0** | **283 passed**, 2.7m |
+
+GRAPH REGEN, BOOT GATE and the METHOD EVAL GATE are all NOT owed by this
+seat's own diff: it is `docs/tasks/**` only, which matches no code
+suffix, no `app/**` path, no manifest and no `method/**` path. The
+commit that appends THIS table is prose under `docs/tasks/` again and
+therefore owes the same three suites at its own tip; the figures above
+carry the ref they were measured at, which is what
+`method/roles/verifier.md`'s figure case asks for in place of a regress
+nobody can end.
