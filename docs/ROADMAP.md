@@ -25,15 +25,12 @@ opens with the card id that still holds its story.
   at the moment of the write (T-154), a method that measures itself
   (T-155), health bands over its own numbers (T-156) — org-scale by
   construction, nothing org-shaped built before a second team exists.
-  ADR-018 stays owed to T-135 Half B. Since T-158 (2026-08-29) the
-  repository has a human front door: a root README whose every tour
-  link is verified against the record and whose every digit is an
-  identifier — approved after a rejection that itself proved the
-  pipeline it describes. Since the amnesty sitting (2026-08-29) the
-  suggestion backlog is metabolized rather than accumulated: one
-  dispatched architect seat dispositioned all 140 suggested cards —
-  73 promoted, 62 parked with resurfacing conditions, 5 rejected —
-  and arrivals since queue for T-159's standing rules.
+  ADR-018 stays owed to T-135 Half B. The repository has a human
+  front door (T-158 — a README whose every link is verified against
+  the record), and since the amnesty sitting (2026-08-29) the
+  backlog is metabolized: all 140 suggested cards dispositioned (73
+  promoted, 62 parked with resurfacing conditions, 5 rejected),
+  arrivals queue for T-159's rules.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -55,10 +52,9 @@ opens with the card id that still holds its story.
   validated session ids (T-039), probe-only CLI resolution (T-060),
   fast honest cancel (T-043), typed failures that never cost a user an
   affordance (T-069/T-101/T-102/T-107/T-113). Since T-153-s2
-  (2026-08-29) nothing the runner hands execve is unbounded: every
-  child env pair passes one function, an oversized pair costs the
-  value and never the turn — the fix CI's Linux runner demanded,
-  proven on the production channels. THE GATE THAT REMAINS is
+  (2026-08-29) nothing the runner hands execve is unbounded — an
+  oversized env pair costs the value, never the turn, proven on the
+  production channels. THE GATE THAT REMAINS is
   not a card: no planner turn has ever run against a real model —
   every stream ever seen is a fixture. `T-025-s2`, @human's, one real
   timed genesis on an authenticated machine. The archaeology variant
@@ -99,7 +95,11 @@ opens with the card id that still holds its story.
   hazards are written rules — a query that runs clean is not yet an
   answer. Next: T-140 (the ~802 bytes-per-file floor caps the map at
   ~1,000 files — the real constraint on pointing nputer at a big
-  codebase), and the budget VALUE call now rides `T-151`.
+  codebase), and the budget VALUE call now rides `T-151`. Since
+  T-156 (2026-08-29) the method watches its own health: fourteen
+  control bands as data with measured reasons, doc-headroom bands
+  derived from the budgets themselves, and the first official
+  reading caught STATE breached while the merge was still landing.
 
 ## Milestones
 

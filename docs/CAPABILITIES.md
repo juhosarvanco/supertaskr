@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **258 behaviours** — 256 extracted sentences + 2 named-not-extracted (listed at the end) — across 26 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **280 behaviours** — 278 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -173,6 +173,31 @@ Census: **258 behaviours** — 256 extracted sentences + 2 named-not-extracted (
 - T-024's streak tree renders through the lens, inside the slot
 - the pane is laid out and painted by the real sheet, inside the slot
 - the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720
+
+## health-bands
+
+- a band whose authority was not read is UNREAD at exit 3 and is never counted as holding
+- EXIT 3 TAKES PRECEDENCE OVER A BREACH — a partial run is not a claim about the tree
+- a band with no keeper at all is UNKEPT, is named on every run, and costs the run exit 3
+- every band carries its measured reason, and the config REFUSES to load without one
+- THE CONFIG'S REFUSAL REACHES THE COMMAND AS EXIT 3, not as a silent skip
+- --list is the TUNER's view: every band's measured reason, in full
+- a band whose drift and breach lines are ordered wrong can never say DRIFTING, and is refused
+- a doc-headroom band exists for every gated DOC_BUDGETS entry, derived and not listed
+- DOC_BUDGETS HAS ONE HOME — the gate and the bands read the same table
+- the graph headroom is READ OUT OF index --check's own budget line, in both of its shapes
+- THE PARSER IS PINNED TO THE SOURCE THAT PRODUCES THE LINE, not to a remembered format
+- the lib suite's duration is taken from the lib.rs binary BY NAME, never by position or size
+- Playwright's summary unit is READ, never assumed — 2.6m is not 2.6 seconds
+- a readings file yields exactly the three readings-authority bands, and no more
+- inside is SILENT, drifting prints its derivation, breached emits the four things the criterion names
+- a breach's finding is a LEGAL suggestion card — frontmatter the parser accepts
+- a null budget entry yields no band and no reading — the gated-entry guard has a keeper
+- suggestion ids are derived from the tree, so a dispositioned card's id is never reused
+- the command is a READ: it files nothing without --file
+- the command refuses what it cannot answer rather than answering it
+- every band this project watches is present, and each names an authority
+- the tree-authority bands are read at the running ref, not remembered
 
 ## interview
 

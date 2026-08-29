@@ -5,13 +5,13 @@ feature: F-06
 milestone: 4
 priority: 34
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 

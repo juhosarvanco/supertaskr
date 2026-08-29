@@ -1,151 +1,117 @@
 # State
 
-Updated: 2026-08-29 at the T-153-s2 checkpoint — THE PUSH-HOLD IS
-LIFTED: every local blocker CI named is merged, main pushes from this
-commit, and CI steps 19–26 meet Linux for the FIRST time (watch that
-run as a first run, never a formality). Current record:
-docs/checkpoints/2026-08-29-T-153-s2.md. The pre-compaction narrative
-remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 at the T-156 checkpoint — the method now watches
+its own health (`npm run health` from tools/e2e; this file's warn
+headroom is a WATCHED BAND, and the first official reading caught it
+breached — this regen is the remedy). Current record:
+docs/checkpoints/2026-08-29-T-156.md. Pre-compaction narrative:
+docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
 design — the declared cycle `C-08 -> C-09 -> C-08` stands until
-`T-127-s1` lands (now a PLANNED card, promoted at the amnesty); the
-ENFORCING copy is `cargo test`, which is green. Its report is on
-stderr: `arch cycles > out.txt` on a red yields an empty file.
+`T-127-s1` lands; the ENFORCING copy is `cargo test`, green. Its
+report is on stderr. Also BY DESIGN: `npm run health` exits 3 while
+four bands await keepers (T-156-s1/s2).
 
 ## The contract this file is under
 
-This file is REPLACED at every checkpoint from docs/STATE-template.md,
-after the checkpoint's record is written to docs/checkpoints/ — the
-record keeps the INSTANCE, this file keeps the MECHANISM
-(docs/rooms/governing-docs.md, ADR-019). A figure appears here only
-with its derive command or a ref stamp: derive at your own ref, never
-quote this page. The byte budget is `npm run lint:docs`'s to enforce;
-when it warns, content moves to the record or a card — a hazard is
-never deleted to fit.
+REPLACED at every checkpoint from docs/STATE-template.md, after the
+record is written — the record keeps the INSTANCE, this file the
+MECHANISM (ADR-019). A figure appears here only with its derive
+command or a ref stamp. The byte budget is `npm run lint:docs`'s to
+enforce; when it warns, content moves to the record or a card — a
+hazard is never deleted to fit.
 
 ## Live right now — derive, never quote
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
-  — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
-  --state`, which stamps the reading. Read at this rewrite: TWO
-  `task/` lanes — T-155 and T-156, executors running, cut from
-  78aabe5, fences disjoint by derivation (2026-08-29, T-153-s2
-  checkpoint). Since T-154, dispatch
-  also writes the lane's fence manifest (`brief.mjs --task T-NNN
-  --write-fence <worktree>`) — a lane without one is blocked at its
-  first write. Before ANY dispatch run `brief.mjs --task T-NNN`;
-  never read the ledger's FREE column as a verdict — seen live at
-  this checkpoint: the `--state` join read branch `task/T-153-s2-...`
-  as card T-153 and printed `app-agent: FREE` while the lane held it
-  (the class is T-143's card).
+  — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
+  this rewrite: ONE lane — T-155, verdict in (approved with
+  corrections), merge next. Dispatch writes the fence manifest
+  (`brief.mjs --task T-NNN --write-fence <worktree>`); run
+  `brief.mjs --task` before ANY dispatch; never read the ledger's
+  FREE column as a verdict (the `--state` join misreads suffixed
+  branch slugs — T-143's card).
 - THE HUMAN'S APP: port 1420 is read with
   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else — never
-  bind-probe, never connect (CONVENTIONS, PORT RULE; the vite listens
-  on IPv6 loopback, so an IPv4-only probe answers FREE while the app
-  runs). Its checkout `../nputer-app` is detached ON PURPOSE (@human's
-  ruling 2026-08-25): not a lane, never removed after a merge.
-- BOARD CENSUS: derived from flat `docs/tasks/T-*.md` frontmatter —
-  `brief.mjs --state` prints it per status. The parser's field is
-  `blockedBy`, NOT `blocked_by`: a census against the frontmatter
-  spelling returns zero and reads clean. The suggested column now
-  holds ONLY post-amnesty arrivals — they queue for T-159's rules,
-  never for a second amnesty.
+  bind-probe, never connect (the vite listens on IPv6 loopback; an
+  IPv4-only probe answers FREE while the app runs). `../nputer-app`
+  is detached ON PURPOSE (@human 2026-08-25): not a lane.
+- BOARD CENSUS: `brief.mjs --state` prints it per status; the
+  parser's field is `blockedBy`, NOT `blocked_by`. The suggested
+  column holds only post-amnesty arrivals — they queue for T-159's
+  rules, never a second amnesty.
+- E2E PORT: the variable is `NPUTER_E2E_PORT` (preflight.ts) — an
+  `E2E_PORT` export binds NOTHING and the suite silently uses its
+  default. lsof the port to zero rows first.
 - GRAPH: `cargo run -p nputer-index -- index --check --root ../..`
-  from app/src-tauri/ — ASK IT, never predict, and ask AGAIN after
-  every write; it prints the headroom beside the size. A byte count is
-  not a content check. A drill worktree's own CARGO_TARGET_DIR sits
-  INSIDE the walk (T-153-s3): never regen or trust CURRENT from
-  inside a drill.
+  from app/src-tauri/ — ASK IT, never predict, ask AGAIN after every
+  write. Never regen or trust CURRENT from inside a drill worktree
+  (T-153-s3: a non-`target` target dir is inside the walk).
 
 ## Next up — hooks only; statuses are the board's
 
-Order re-ruled 2026-08-29 at the pre-dispatch review; derive each
-card's status and fence with `brief.mjs --task` at dispatch, never
-from this list.
-
-1. `T-153-s2` is DONE and merged — the E2BIG bound is a property of
-   every env pair, its production arms killed by the verdict's
-   assigned body (M5/M6 red). Main is pushed from this checkpoint;
-   draft PRs #1 and #2 close when GitHub sees their tips on main.
-2. `T-155` ∥ `T-156` — executors running; on their verdicts, merge
-   with ceremony (verifier briefs: attack set from the card ALONE
-   first, and never instruct the verifier to read ROADMAP — the role
-   file excludes it). Then `T-157` session economics.
-3. `T-159` — method v0.1.8, the metabolism release; `blocked_by:
-   [T-154]` is satisfied. Twelve parked riders point at it; `T-152`
-   is marked TAKE FIRST (the one method-text finding with a measured,
-   repeated cost). Also owed: the DISCHARGED-NOT-DECLINED archive
-   wording, two-phase verifier blindness.
-4. `T-154-s2` (fenceless-seat class — needs every-lane manifests and
-   a ruling), `T-153-s3` (the drill target dir inside the graph
-   walk — the silent side is the one that commits; found by TWO seats
-   in one day), and `T-153-s4` (the two spawn sites that inherit the
-   parent env whole — theoretical doors, on the board as suggested).
-5. @human's own items: `T-025-s2` (one real, timed genesis), `T-151`
-   (the graph budget number), and the standing D3 ruling (may the app
-   write into docs/?).
-6. Standing board hooks: `T-135` Half B (owns ADR-018; never
-   re-dispatch whole), `T-112` (most colliding — derive the flip
-   pairs), `T-140` (the file-ceiling gate), `T-139-s2` (wants a
-   room), `T-127-s1` (the headline's own card), `T-144` (owner of the
-   adapter family, absorbing T-138-s3).
+1. `T-155` merges (one prose correction rides the checkpoint). Then
+   `T-153-s5` dispatches (tools/e2e freed), then `T-153-s6` (needs
+   CONVENTIONS freed too) — THEN main pushes: the two CI runs so far
+   red on four bodies, ALL carded to s5/s6, so the next push should
+   be the repository's FIRST GREEN Linux run. Watch it as a first
+   run regardless.
+2. `T-157` session economics — six arc datapoints already stamped in
+   the records.
+3. `T-159` — method v0.1.8, the metabolism release
+   (`blocked_by: [T-154]` satisfied): twelve parked riders, `T-152`
+   TAKE FIRST; owes the DISCHARGED-NOT-DECLINED wording, two-phase
+   verifier blindness + the brief-format flaw both verifiers
+   disclosed (executor facts below the marker, ALWAYS).
+4. Board arrivals awaiting T-159 rules: `T-154-s2` (needs a ruling),
+   `T-153-s3`/`s4`, `T-155-s1..s7`, `T-156-s1..s4`.
+5. @human's items: `T-025-s2` (one real genesis), `T-151` (graph
+   budget number), D3 (may the app write docs/?).
+6. Standing hooks: `T-135` Half B (never re-dispatch whole), `T-112`
+   (most colliding), `T-140`, `T-139-s2` (wants a room), `T-127-s1`,
+   `T-144`, `T-111-s10`, `T-147`.
 
 ## Standing hazards — the section that saves the hour
 
 - **The cargo cache cliff** (`T-088-s4`): `startup_arm_watches_the_initial_root`
-  reds when `app/src-tauri/target/` is large and ~never when small.
-  Read the lib suite's own time FIRST — every green under 9.5s, every
-  red over 14.6s, nothing ever between. Do not `cargo clean`
-  reflexively; lanes may be building against this checkout — `lsof`
-  first.
+  reds when `app/src-tauri/target/` is large. Read the lib suite's
+  own time FIRST — green under 9.5s, red over 14.6s, never between.
+  No reflexive `cargo clean`; lanes may be building — `lsof` first.
 - **`a_hostile_session_id…` is live at ~1-in-22 clean-cache**
-  (`T-086-s1`): a red is not news about your diff — run it alone
-  (historically 5-in-5 green) before attributing anything.
+  (`T-086-s1`): run it alone before attributing anything to a diff.
 - **Read the assertion, not the body's name** (`T-111-s9`):
-  `token-scan.spec.ts`'s whole-corpus totals can red for any control
-  character anywhere in the tracked corpus, under a title naming
-  something else, with a remedy that looks the same either way.
+  token-scan's whole-corpus totals red for any control character
+  anywhere in the tracked corpus, under an unrelated title.
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
-  build artifact no merge updates, so the app compiles against
-  pre-merge types. One command clears it — `npm run build` from
-  lib/parser/, FIRST. Separately, an UNBUILT app tree fails `npm test`
-  about a missing `app/dist`, not about your tree: build, then test.
+  build artifact no merge updates — `npm run build` from lib/parser/
+  FIRST. An UNBUILT app tree fails `npm test` about `app/dist`.
 - **`npm run typecheck` from app/ DOES NOT EXIST** — exit 1 `Missing
-  script` reads exactly like a type error. The app's typecheck is the
-  TWO `tsc` calls inside `npm run build`, and the second is
-  load-bearing (T-073).
-- **This session's `grep` is a `ugrep` shim carrying `-I`** — a
-  NUL-bearing file answers "no matches" with no error. Use
+  script` reads like a type error; the app's typecheck is the two
+  `tsc` calls inside `npm run build` (T-073). The same trap holds
+  for EVERY tools/e2e script run from the wrong cwd.
+- **This session's `grep` is a `ugrep` shim carrying `-I`** — use
   `command grep` when it matters; sweep NULs with `perl -0777`.
-- **Cut scratch and drill worktrees at SHORT roots** (`T-133-s5`): a
-  116–128-character root steals the board's standing region with two
-  pixels of margin at 800×600.
-- **Ports are machine-wide while rule 4 partitions by checkout**
-  (`T-132-s6`): pass an explicit port and `lsof`-read it at zero rows
-  immediately before binding, every time — a probe reserves nothing.
+- **Cut scratch worktrees at SHORT roots** (`T-133-s5`): a 116-char
+  root steals the board's standing region at 800×600.
+- **Ports are machine-wide** (`T-132-s6`): explicit port, lsof-read
+  at zero rows immediately before binding — a probe reserves nothing.
 - **The RANGE RULE decides which two commits "the merge's diff"
-  means** (CONVENTIONS' bullet, spec-kept figures): the integrator's
-  pair and the executor's pair are different pairs, never
-  `merge-base..tip`, and the pre-merge two-dot form hands your lane
-  main's work.
+  means** (CONVENTIONS): integrator's pair and executor's pair are
+  different pairs; the pre-merge two-dot form hands your lane main's
+  work.
 - **Drill in a detached scratch worktree with its OWN
-  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL): a shared target
-  directory replays drill-path binaries into the parent afterwards,
-  and the pollution runs both ways — and that drill target dir is
-  inside the GRAPH WALK too (`T-153-s3`).
+  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) — and that dir is
+  inside the GRAPH WALK (`T-153-s3`). A lane with uncommitted edits
+  to a token-scan plant target reds the restoration proof
+  (`T-156-s3`).
 
 ## The records
 
-- docs/checkpoints/ — one append-only record per integration
-  (TEMPLATE.md sits there; ADR-019 forbids any suite, gate or
-  generator from depending on the directory's contents — and since
-  2026-08-29 the gate REDS when a record is committed newer than this
-  file, so step 2 cannot be skipped silently). The current record is
-  2026-08-29-T-153-s2.md.
-- docs/rooms/governing-docs.md and ADR-019 — this file's contract and
-  the ruling behind it.
-- The pre-compaction STATE, all 1,125 lines of it:
-  docs/checkpoints/2026-08-27-backfill-STATE.md — and every earlier
-  version at `git log -- docs/STATE.md`.
+- docs/checkpoints/ — append-only, one per integration; no suite may
+  depend on the directory, and the gate REDS when a record commits
+  newer than this file. Current record: 2026-08-29-T-156.md.
+- docs/rooms/governing-docs.md + ADR-019 — this file's contract.
+- Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
+  every earlier version at `git log -- docs/STATE.md`.
