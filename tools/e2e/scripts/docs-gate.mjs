@@ -25,7 +25,9 @@
  * so "called wrong" and "GATE COULD NOT RUN" both arrive as "has a
  * verdict". GNU `xargs` on CI's ubuntu runner breaks it the OTHER way
  * (1–125 map to 123). A MAPPING QUOTED WITHOUT ITS PLATFORM IS WRONG ON
- * ONE OF THEM. The `$(…)` form above has no such layer: the shell reports
+ * ONE OF THEM — and so is the SILENCE: GNU runs this gate once on an
+ * empty list, so the refusal below FIRES there and arrives as 123, where
+ * BSD hides the same failed range at 0 (T-153-s6, CI 33260414204). The `$(…)` form above has no such layer: the shell reports
  * this process's own status, and a FAILED range substitutes to nothing,
  * which is zero arguments, which is EXIT 2 below.
  *
