@@ -16678,8 +16678,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:4457ba4b71f3f381b815675a77229795f919f0b6361a3c648f9646ccfd266aa3",
-      "loc": 2563,
+      "hash": "blake3:d18162c736c773ce4ecd21d47d31f9cb9757543a4bcc79658f05ea5c67a730fa",
+      "loc": 2568,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
