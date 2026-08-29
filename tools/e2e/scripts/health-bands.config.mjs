@@ -178,23 +178,25 @@ export const STANDING_BANDS = [
     metric: "wall time of the tools/e2e Playwright lane",
     unit: "seconds",
     healthy: "below",
-    drift: 232,
-    breach: 310,
+    drift: 234,
+    breach: 312,
     authority: {
       kind: "readings",
       name: "npm test (from tools/e2e/)",
       marker: "the list reporter's `N passed (Xs)` summary",
     },
     measured: {
-      at: "0dd3f11 on this lane, Apple M-series / macOS, one worker, 259 specs in 155.0s",
+      at: "353bcd8 on task/T-156-health-bands, macOS, NPUTER_E2E_PORT=14538, 278 passed in 2.6m (156s)",
       reason:
         "NO CLIFF IS KNOWN FOR THIS SUITE, so this band is a RELAPSE tripwire and says so " +
-        "rather than pretending to a mechanism. The landed measurement is this lane's own " +
-        "full run; the multiples are DOC_BUDGETS' 1.5x/2.0x shape, chosen because it is " +
-        "the ratio pattern this repository already tunes by triage. The lane runs " +
-        "`workers: 1, retries: 0` by design, so wall time is close to linear in spec count " +
-        "— which means this band moves at every suite growth and is EXPECTED to be re-landed " +
-        "by triage rather than defended. Re-land it with the run that measured it.",
+        "rather than pretending to a mechanism — unlike suite/lib-seconds, whose limits are " +
+        "an observed gap between two populations. The landed measurement is this lane's own " +
+        "full run, 278 specs at 156 seconds; the multiples are 1.5x and 2.0x, the ratio " +
+        "shape DOC_BUDGETS already uses for warn and fail, chosen because it is the pattern " +
+        "this repository tunes by triage. The lane runs `workers: 1, retries: 0` by design, " +
+        "so wall time is close to linear in spec count — which means THIS BAND MOVES AT " +
+        "EVERY SUITE GROWTH and is expected to be re-landed rather than defended. Re-land " +
+        "it with the run that measured it, and say which run that was.",
     },
   },
   {
