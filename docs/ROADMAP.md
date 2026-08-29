@@ -37,7 +37,10 @@ opens with the card id that still holds its story.
   screen (T-062), a declared window minimum (T-051), diagnostics that
   stay reachable (T-066). Hardening continues as inherited backlog —
   the F-02 cards riding milestone 4 — with `app-shell`'s
-  umbrella-fence cost just cut by T-149. Next: T-149-s1…s5.
+  umbrella-fence cost just cut by T-149. Since T-153 (2026-08-29) the
+  docs watcher's live tests await the CONVERGED state across
+  platforms — the first fix CI's Linux activation demanded, green
+  198/0 on ubuntu. Next: T-149-s1…s5.
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer

@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 40
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
-review:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
+review: same-model
 ---
 
 Filed 2026-08-29 from the repository's FIRST CI run (`33246335429`,

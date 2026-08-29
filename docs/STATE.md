@@ -1,10 +1,8 @@
 # State
 
-Updated: 2026-08-29 at the T-158 checkpoint — the first merge through
-the resumed pipeline (REJECTED → fixed → APPROVED, the arc on the
-card). Current record: docs/checkpoints/2026-08-29-T-158.md. The
-pre-compaction narrative remains verbatim in
-docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 at the T-153 checkpoint. Current record:
+docs/checkpoints/2026-08-29-T-153.md. The pre-compaction narrative
+remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
@@ -28,9 +26,10 @@ never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
-  --state`, which stamps the reading. Read at this rewrite: TWO
-  `task/` lanes live — T-153 and T-154, verdicts pending (2026-08-29,
-  at the T-158 checkpoint). Before ANY dispatch run
+  --state`, which stamps the reading. Read at this rewrite: ONE
+  `task/` lane live — T-154, verdict pending — plus the triage
+  worktree on its own branch (2026-08-29, T-153 checkpoint). Before
+  ANY dispatch run
   `brief.mjs --task T-NNN`; never read the ledger's FREE column as a
   verdict — it is keyed by slug and two slugs can name one component.
 - THE HUMAN'S APP: port 1420 is read with
@@ -54,8 +53,10 @@ Order re-ruled 2026-08-29 at the pre-dispatch review; derive each
 card's status and fence with `brief.mjs --task` at dispatch, never
 from this list.
 
-1. `T-153` FIRST — the inotify red; pushes are HELD behind it, and
-   every card after it gets CI's Linux verification for free.
+1. `T-153` is DONE and merged (198/0 on ubuntu ×4 runs). The
+   push-hold now stands behind `T-153-s2` alone — the E2BIG argv
+   fixture, C-14's fence, dispatched next — and lifts when it lands:
+   main pushes, CI runs green end to end, draft PR #1 closes.
 2. `T-154` — the fence hook, THROUGH THE PIPELINE with an
    independent verifier: the builder of the cage is not its
    inspector. Mechanism redesigned pre-dispatch (dispatch-time
