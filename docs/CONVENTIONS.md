@@ -363,6 +363,25 @@
   reaches the three pinned places and this file's own references, and
   does NOT reach docs/ARCHITECTURE.md, the component file or the app
   suites. Route what you cannot reach.
+  **A BUMP NOW OWES A FOURTH THING, AND IT IS NOT A FILE** (T-155,
+  ADR-020 decision 2). The METHOD EVAL GATE below is RUN against the new
+  method text and its result is RECORDED IN THE BUMP'S OWN COMMIT
+  MESSAGE; `node tools/method-evals/run.mjs --bump` prints the block and
+  names the runner that produced it. WHY A FOURTH THING AT ALL: the three
+  files above are a version STAMP, and a stamp proves the three moved
+  together and nothing else — it is satisfied perfectly by a rewrite that
+  degrades every session the method produces, which is the gap ADR-020
+  decision 2 exists to close. **WHY NOT A FOURTH FILE**, since the
+  symmetry is tempting: a file would have to be regenerated, would go
+  stale between the bump and the merge, and would then be a figure with
+  no keeper — ADR-019's Law 2, arrived at by adding a keeper. A commit
+  message is stamped at the ref it was measured at and cannot drift from
+  it. **AND THE MODEL-IN-LOOP HALF IS THE HALF THAT ONLY RUNS HERE**: it
+  is token-expensive and nondeterministic, so it is deliberately not on
+  the per-merge trigger, which leaves the bump as the ONE moment it is
+  owed. A bump whose commit records no eval result and a bump whose evals
+  were skipped read exactly the same afterwards, so the `--bump` block
+  says which happened rather than omitting the line.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - THE MERGE INTO MAIN IS @human'S GATE, BY DESIGN AND NOT BY ACCIDENT
@@ -1318,6 +1337,69 @@
   would neither have caught either incident nor been correct. The
   exclusion is asserted in the spec so "we decided" cannot be mistaken
   for "we forgot".
+- METHOD EVAL GATE (T-155, ADR-020 decision 2 — the FOURTH standing gate,
+  and the one the three above exclude BY CONSTRUCTION): at any merge whose
+  diff touches `method/**`, run the model-free eval set and RECORD its
+  exit in the checkpoint. **"The merge's diff" is the PAIR OF COMMITS THE
+  RANGE RULE names**, the same pair all three gates above take, and a
+  different pair before the merge exists than at it.
+  DERIVE THE HOLE RATHER THAN TAKING IT ON FAITH — match a
+  `method/**`-only diff against the three triggers: GRAPH REGEN wants a
+  code suffix OUTSIDE docs/, BOOT GATE wants `app/src/**`,
+  `app/src-tauri/**` or a manifest, the DOCS GATE wants a path under
+  `docs/`. A method-only diff matches NONE of them, so until this bullet
+  the method files were the one code input in this tree that no trigger
+  named. They ARE pinned — `app/src-tauri/src/agent/kit.rs` compiles a
+  subset of method/ into the genesis kit and reds on a byte drift, and
+  DERIVE which files rather than quoting a list here. **A BYTE PIN AND A
+  TESTED EFFECT ARE DIFFERENT CLAIMS**, which is the whole of why this
+  gate exists: a rewrite of a role file satisfies the pin by being
+  committed, and changes what every session produces.
+  RUN IT — from the repo root, and this is THE ONE SPELLING, character
+  for character the same string `tools/method-evals/run.mjs`'s own header
+  prints:
+
+      node tools/method-evals/run.mjs
+
+  Exit 0 nothing owed · 1 the suite HAS a verdict · 2 called wrong · 3 the
+  suite COULD NOT RUN — the same four codes `index --check`, `boot:check`,
+  the token lint, the DOCS GATE and `brief.mjs` use. The AUTHORITY is the
+  frozen `EXIT` object in tools/method-evals/lib/exit.mjs, which the
+  runner IMPORTS rather than re-typing the numbers.
+  ZERO DEPENDENCIES AND NO INSTALL, which is what makes it runnable where
+  it is needed: like the token lint it reads no `node_modules` anywhere,
+  so it answers against a bare checkout and cannot be silenced by the
+  install being what broke.
+  THE TWO SETS ARE TWO COSTS, NOT TWO STYLES. `--set model-free` is
+  deterministic, spends no tokens, and is the half THIS trigger owes.
+  `--set model-in-loop` samples a nondeterministic process, so its verdict
+  is a PASS RATE against a declared threshold and never a single
+  pass/fail; it is owed at a METHOD VERSION BUMP and on schedule, never
+  per-commit, and the bump obligation is in the first gotcha of this
+  section. **A REPLAYED MODEL-IN-LOOP RUN IS NOT A MEASUREMENT**: the
+  suite ships a replay runner so the expensive path is exercised for free,
+  and its pass rate is 1.00 by construction. Every result line and the
+  `--bump` block name the RUNNER for exactly that reason — read it before
+  quoting a rate.
+  THE POSITIVE CONTROL IS PART OF THE SUITE AND IS RUN, NEVER ASSUMED:
+  `--selftest` degrades each eval's own contract on a COPY and requires
+  the eval to detect it. That is what separates "the method text is
+  intact" from "these checks cannot fail", and it is this file's own
+  A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL applied to the checker —
+  cited there rather than restated here.
+  IT IS NOT IN "Build & test" ABOVE, DELIBERATELY, AND THE REASON IS
+  MECHANICAL: `deriveExpectedSteps` in
+  tools/e2e/tests/workflow-parity.spec.ts reads EXACTLY the
+  `run from <dir>/:` bullets that section carries and reds by name on a
+  fifth, so exposing the command there is a two-package edit — that spec
+  plus ci.yml — which T-155's fence reached neither of. The command
+  therefore lives beside the gate it serves, which is where GRAPH REGEN's
+  own regen command already lives. Wiring it into CI is `T-155-s1`, and
+  until that lands this gate is a written ritual with one tripwire, not a
+  gate CI holds — the same honesty GRAPH REGEN's bullet keeps about its
+  own CI step.
+  IF the suite cannot run THEN say so LOUDLY in the checkpoint, naming the
+  reason and the exit code — a skipped gate is news, never silence.
 - POISON DRILL (ratified at T-054; until then it was pure oral
   tradition — "poison", "vacuous" and "mutation" appeared nowhere in
   this file or in method/roles/, verified at the 2026-08-17 triage): at

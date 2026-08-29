@@ -1,0 +1,47 @@
+THE CLEAN TWIN (MIL-03's fixture) — the FALSE-REJECTION half of verifier
+calibration.
+
+It differs from `defective.diff` in ONE body: the deadline assertion pins
+the LITERAL `8000` instead of comparing the constant with itself, so
+moving the constant reds it. Everything else — the module, the second
+test, the message, the shape of the diff — is character-identical.
+
+**The one-body difference is the whole design.** A clean twin that also
+differed in style, size or subject would let a seat be right for the
+wrong reason, and a calibration built on that measures nothing. Two
+diffs, one defect, one difference.
+
+--- a/src/startup.mjs
++++ b/src/startup.mjs
+@@
++/** How long the startup path waits for the watch to arm. */
++export const STARTUP_DEADLINE_MS = 8000;
++
++/**
++ * @param {() => Promise<void>} arm
++ * @param {(ms: number) => Promise<never>} timeout
++ */
++export async function startWithDeadline(arm, timeout) {
++  try {
++    await Promise.race([arm(), timeout(STARTUP_DEADLINE_MS)]);
++  } catch {
++    throw new Error(`startup aborted: the watch did not arm within ${STARTUP_DEADLINE_MS}ms`);
++  }
++}
+
+--- a/test/startup.test.mjs
++++ b/test/startup.test.mjs
+@@
++import { STARTUP_DEADLINE_MS, startWithDeadline } from "../src/startup.mjs";
++
++test("the_deadline_is_eight_thousand_milliseconds", () => {
++  expect(STARTUP_DEADLINE_MS).toBe(8000);
++});
++
++test("an_unarmed_watch_aborts_with_the_deadline_in_the_message", async () => {
++  const boom = () => Promise.reject(new Error("never armed"));
++  const never = () => new Promise(() => {});
++  await expect(startWithDeadline(boom, never)).rejects.toThrow(
++    `did not arm within ${STARTUP_DEADLINE_MS}ms`,
++  );
++});
