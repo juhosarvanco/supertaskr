@@ -406,3 +406,31 @@ worktree with that tree's own `brief.mjs`: **5 refReads, 2 not
 live-stamped, both `T-153-s9` lines**. This lane adds no path containing
 `main` and touches nothing under `tools/e2e`, which is `T-153-s9`'s fence
 — so it is filed and routed, never fixed from here.
+
+### Final verification round, at `0e78f20` — every exit read unpiped
+
+    lib/parser  npx vitest run                    exit 0    15 files / 314 tests
+    lib/parser  npx tsc --noEmit                  exit 0
+    app         npm run build                     exit 0
+    app         npm test                          exit 0    47 files / 1014 tests
+    app/src-tauri  cargo test --no-fail-fast      exit 0    525 passed / 0 failed / 4 ignored
+    app/src-tauri  index --check --root ../..     exit 1    STALE — this lane's own .rs edits
+    tools/e2e   npm run lint:tokens -- --selftest exit 0
+    tools/e2e   npm run lint:tokens               exit 0
+    tools/e2e   npm run typecheck                 exit 0
+    tools/e2e   npm run lint:docs                 exit 0
+    tools/e2e   npm test                          exit 1    280 passed / 281 — the inherited
+                                                            brief.spec.ts failure, T-140-s2
+    tools/e2e   NPUTER_BOOT_PORT=14531 npm run boot:check   exit 0, both [nputer] lines
+    tools/e2e   node scripts/brief.mjs --card T-140          exit 0, no figure finding
+
+`index --check` at this tip also prints what this card added, and the
+figure moved between the base and the tip exactly as a derived figure
+should — 213,914 bytes, 1,132 bytes/file, about 918 files, against the
+base's 213,712 / 1,131 / 919. Two source files grew; the projection
+followed. That is the property the card asked for.
+
+**Ports, all read with `lsof -nP -iTCP:<port> -sTCP:LISTEN` at zero rows
+immediately before binding:** boot check 14531, e2e runs 14561/14562/
+14563/14564. Port 1420 was READ once and never bound, probed or
+connected: `node` pid 19746 on `[::1]:1420`, the human's app, untouched.
