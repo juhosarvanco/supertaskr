@@ -5,10 +5,10 @@ feature: F-06
 milestone: 5
 priority: 6
 size: L
-status: planned
+status: building
 blocked_by: [T-139]
 touches: [crate-index, app-map, app-shell]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
