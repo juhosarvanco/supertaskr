@@ -5,10 +5,10 @@ feature: F-01
 milestone: 4
 priority: 44
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [README.md]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

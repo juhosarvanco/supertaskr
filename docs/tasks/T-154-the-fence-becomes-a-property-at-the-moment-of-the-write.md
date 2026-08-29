@@ -5,10 +5,10 @@ feature: F-04
 milestone: 4
 priority: 30
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [.claude/, tools/e2e, method/lane-protocol.md, docs/CONVENTIONS.md]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
