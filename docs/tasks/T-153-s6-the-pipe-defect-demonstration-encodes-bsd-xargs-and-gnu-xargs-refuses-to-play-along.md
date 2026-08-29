@@ -129,8 +129,13 @@ story — gained the same one-sentence correction.
 | cycle | run | head | the two bodies | other reds |
 |---|---|---|---|---|
 | 1 | 33271000696 | `3639d01` (PR merge ref `28a5a34`) | BOTH GREEN | 29, and they are `T-153-s9`'s set line for line |
+| 2 | 33272004368 | `24f96cd` (PR merge ref `4c76707`) | BOTH GREEN | 29, the same set, re-enumerated |
 
-Cycle 1's disclosure line, printed by the runner:
+Cycle 2 carries the notes commit; a THIRD run fires on the push that
+adds this row and carries nothing but this card's own text — it is left
+for whoever integrates, and the verdict above does not wait on it.
+
+Each cycle's disclosure line, printed by the runner:
 `xargs at /usr/bin/xargs: empty input RUNS the utility; a utility exit of
 7 arrives as 123 — the gnu row; the matrix's gnu column is the one
 compared`. That line IS the GNU measurement the bullet now cites. The 29
@@ -139,6 +144,16 @@ at :255, :291, :313, :630, :656, :679, :706; `card-figures.spec.ts` at
 :121…:438 (twenty-one); `dispatch-order.spec.ts` at :200. Nothing outside
 that set redded, and s9's own card predicted the remaining two would be
 this card's.
+
+### Local, at `24f96cd` on Darwin 25.6.0
+
+`npm test` from tools/e2e/ 281 passed exit 0 (twice: at `3639d01` and at
+this tree, `NPUTER_E2E_PORT=14733`, lsof zero rows before binding);
+`npm run typecheck` exit 0; `npm run lint:tokens` exit 0; `npm run
+lint:docs` exit 0 (CONVENTIONS 117399 bytes against a warn of 137928);
+`cargo test` from app/src-tauri/ exit 0, 522 passed, 4 ignored — owed
+because the DOCS GATE fires on this diff and names `cargo test from
+app/src-tauri/` and `npm test from tools/e2e/` for `docs/CONVENTIONS.md`.
 
 ### Drills — one side only, restoration proved
 
