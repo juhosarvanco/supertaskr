@@ -104,6 +104,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
+  DOC_BUDGETS,
   ROOT_ANCHOR_LEDGER,
   docsGate,
   docsReaders,
@@ -122,24 +123,11 @@ import {
 
 const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
-/**
- * ADR-019: byte budgets for the governing documents. The compaction
- * TARGETS live in docs/rooms/governing-docs.md (12/24/20/48 KB); the
- * GATE values here are DERIVED at each document's compaction landing —
- * warn at landed size × 1.25, fail at landed size × 1.5 — and recorded
- * by addendum to ADR-019 with the measurement. A null entry is a
- * document whose compaction has not landed: no check runs, because
- * nothing may hard-fail until a compacted document exists to measure.
- * The budget is a tripwire against RELAPSE, not the instrument of the
- * cut: when it warns, content moves to docs/checkpoints/ or a card —
- * a hazard is never deleted to fit.
- */
-const DOC_BUDGETS = Object.freeze({
-  "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
-  "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
-  "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  "docs/CONVENTIONS.md": { landed: 110342, warn: 137928, fail: 165513 },
-});
+// DOC_BUDGETS MOVED TO `docs-scan.mjs` (T-156) and is imported above. The
+// gate reads the `fail` line; the health bands read the HEADROOM under
+// the `warn` line. This file executes at import by design, so the second
+// reader could not import it from here — and a budget table written
+// twice is two chances to disagree (T-057).
 
 const CENSUS_FLAG = "--census";
 

@@ -2644,6 +2644,35 @@ export function conventionsBullet(md, phrase) {
   return bullets[0];
 }
 
+/**
+ * ADR-019: byte budgets for the governing documents. The compaction
+ * TARGETS live in docs/rooms/governing-docs.md (12/24/20/48 KB); the
+ * GATE values here are DERIVED at each document's compaction landing —
+ * warn at landed size × 1.25, fail at landed size × 1.5 — and recorded
+ * by addendum to ADR-019 with the measurement. A null entry is a
+ * document whose compaction has not landed: no check runs, because
+ * nothing may hard-fail until a compacted document exists to measure.
+ * The budget is a tripwire against RELAPSE, not the instrument of the
+ * cut: when it warns, content moves to docs/checkpoints/ or a card —
+ * a hazard is never deleted to fit.
+ *
+ * IT LIVES IN THIS MODULE RATHER THAN IN `docs-gate.mjs` (T-156). Two
+ * readers now need it — the gate, which HARD-FAILS on the `fail` line,
+ * and the health bands, which watch the HEADROOM under the `warn` line
+ * long before either fires. `docs-gate.mjs` executes at import by
+ * design, so a second reader cannot import it; this module is the
+ * side-effect-free half and the budgets are data, not execution. One
+ * copy, per T-057.
+ *
+ * @type {Readonly<Record<string, { landed: number, warn: number, fail: number } | null>>}
+ */
+export const DOC_BUDGETS = Object.freeze({
+  "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
+  "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
+  "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
+  "docs/CONVENTIONS.md": { landed: 110342, warn: 137928, fail: 165513 },
+});
+
 /** Every live task card as a `{path, content}` entry, read off the tree
  *  the same way the parser's own walk does: FLAT and non-recursive. */
 export function liveTaskCards(root = repoRoot) {
