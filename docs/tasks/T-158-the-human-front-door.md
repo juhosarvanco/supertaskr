@@ -1124,3 +1124,24 @@ now derived from the method's own ruling, phrase by phrase, and the
 mechanism that fixed it caught a third instance nobody had found. The
 page is better than the one I rejected, and it is better in the way
 NORTH_STAR's bar asks for: it now survives the grep it invites.
+
+#### This approval's own tip, gated
+
+An approval is a write like a rejection is. Re-run in `/tmp/v158b`
+moved to my own commit `0f1c183`, over `3607a94..0f1c183`:
+
+    (root)      node tools/e2e/scripts/docs-gate.mjs \
+                  $(git diff --name-only 3607a94 0f1c183)   exit 1  FIRES
+    lib/parser  npx vitest run                               exit 0  314/314
+    app         npm test                                     exit 0  1013/1013
+    tools/e2e   NPUTER_E2E_PORT=16113 npm test               exit 0  233/233
+    tools/e2e   npm run lint:tokens                          exit 0
+    tools/e2e   npm run lint:docs                            exit 0
+
+`git diff 635552a..0f1c183 --numstat` is `265 0` — a pure append,
+zero deletions, so the fix pass's notes and every earlier verdict are
+untouched by this one. The gate reports every live card's frontmatter
+parsing with a legal status. Port `16113` at zero rows before the bind
+and after; scratch `git status --porcelain` empty; `1420` never read.
+The counts above are stamped at `0f1c183`, and the only change after it
+is this paragraph.
