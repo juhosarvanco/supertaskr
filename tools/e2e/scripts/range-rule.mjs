@@ -67,6 +67,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { conventionsBullet, conventionsText, repoRoot } from "./docs-scan.mjs";
+import { XARGS_DIALECTS, probeXargs } from "./xargs-dialect.mjs";
 
 /** The phrase that names the RANGE RULE bullet and only it. The other
  *  four occurrences of "THE RANGE RULE" in the file are cross-references
@@ -990,10 +991,19 @@ export function deriveRangeRule(root) {
 /* ────────────── the ninth item: an exit code the pipeline eats ───────── */
 
 /**
+ * @typedef {object} DocsGateRow
+ * @property {string} meaning
+ * @property {Record<string, number>} substitution        the `$(…)` cell, per dialect
+ * @property {Record<string, number>} piped               the piped cell, per dialect
+ * @property {Record<string, number | null>} pipedEmpty   what that cell says "on an empty list", where it says so
+ */
+
+/**
  * @typedef {object} DocsGateRecipe
  * @property {string} treeLine   the printed `TREE=$(…)` line
  * @property {string} gateLine   the printed `node …docs-gate.mjs $(…)` line
- * @property {Record<number, {meaning: string, substitution: number, piped: number, pipedEmpty: number | null}>} matrix
+ * @property {string[]} dialects the matrix's OWN dialect columns, lowercased, sorted
+ * @property {Record<number, DocsGateRow>} matrix
  */
 
 /**
@@ -1018,18 +1028,82 @@ export function parseDocsGateRecipe(md) {
     /^ +(node tools\/e2e\/scripts\/docs-gate\.mjs .+)$/m,
     "the DOCS GATE's printed invocation",
   );
-  /** @type {Record<number, {meaning: string, substitution: number, piped: number, pipedEmpty: number | null}>} */
+  // THE COLUMNS ARE READ FROM THE HEADER, NEVER COUNTED OFF BY POSITION
+  // (T-153-s6). This parser used to take column 3 as "the `$(…)` cell"
+  // and column 5 as "the piped cell" and call both of them BSD, so the
+  // GNU half of a matrix that already had one was parsed and discarded —
+  // which is how a reader that executes the piped spelling came to
+  // compare a Linux measurement against a Darwin column. Each header cell
+  // now names its FORM and its DIALECT, and the dialect a caller wants is
+  // looked up by name.
+  const lines = raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("|"));
+  if (lines.length < 3) {
+    throw new Error(
+      "range-rule: the DOCS GATE bullet no longer carries an exit-code table (header, " +
+        "separator and at least one row). An empty expectation passes everything.",
+    );
+  }
+  /** @param {string} line @returns {string[]} */
+  const cellsOf = (line) =>
+    line
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((c) => c.trim());
+
+  /** @type {{form: "substitution" | "piped", dialect: string, label: string}[]} */
+  const columns = cellsOf(/** @type {string} */ (lines[0])).slice(1).map((label, i) => {
+    const m = label.match(/^(.*?),\s*([A-Za-z]+)$/);
+    const head = m?.[1];
+    const dialect = m?.[2];
+    if (head === undefined || dialect === undefined) {
+      throw new Error(
+        `range-rule: the DOCS GATE matrix's column ${i + 2} is headed ${JSON.stringify(label)}, ` +
+          'which names no "<form>, <DIALECT>" pair. A mapping quoted without its platform is ' +
+          "wrong on one of them (the bullet's own words), so this is a throw.",
+      );
+    }
+    const form = head.includes("piped") ? "piped" : head.includes("$(") ? "substitution" : undefined;
+    if (form === undefined) {
+      throw new Error(
+        `range-rule: the DOCS GATE matrix's column ${i + 2} (${JSON.stringify(label)}) names ` +
+          "neither the `$(…)` form nor the piped one",
+      );
+    }
+    return { form, dialect: dialect.toLowerCase(), label };
+  });
+
+  /** @type {Record<number, DocsGateRow>} */
   const matrix = {};
-  for (const row of raw.matchAll(/^ *\| (\d) ([a-z ]+?) \|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|\s*$/gm)) {
-    const code = num(row, 1, "an exit-code row's code");
-    const substitution = first(str(row, 3, "the `$(…)` BSD cell"), "the `$(…)` BSD cell");
-    const pipedCell = str(row, 5, "the piped BSD cell");
-    matrix[code] = {
-      meaning: str(row, 2, "an exit-code row's meaning").trim(),
-      substitution,
-      piped: first(pipedCell, "the piped BSD cell"),
-      pipedEmpty: onEmptyList(pipedCell),
-    };
+  for (const line of lines.slice(1)) {
+    const cells = cellsOf(line);
+    const label = /** @type {string} */ (cells[0] ?? "");
+    if (/^:?-{2,}:?$/.test(label)) continue; // the separator row
+    const m = label.match(/^(\d+) (.+)$/);
+    const code = m?.[1];
+    const meaning = m?.[2];
+    if (code === undefined || meaning === undefined) continue;
+    if (cells.length !== columns.length + 1) {
+      throw new Error(
+        `range-rule: the DOCS GATE matrix's row ${JSON.stringify(label)} has ` +
+          `${cells.length - 1} value cells against ${columns.length} column headers`,
+      );
+    }
+    /** @type {DocsGateRow} */
+    const row = { meaning: meaning.trim(), substitution: {}, piped: {}, pipedEmpty: {} };
+    columns.forEach((col, i) => {
+      const cell = /** @type {string} */ (cells[i + 1] ?? "");
+      const what = `the ${col.label} cell of row ${code}`;
+      if (col.form === "substitution") row.substitution[col.dialect] = first(cell, what);
+      else {
+        row.piped[col.dialect] = first(cell, what);
+        row.pipedEmpty[col.dialect] = onEmptyList(cell);
+      }
+    });
+    matrix[Number(code)] = row;
   }
   if (Object.keys(matrix).length === 0) {
     throw new Error(
@@ -1037,7 +1111,24 @@ export function parseDocsGateRecipe(md) {
         "An empty expectation passes everything.",
     );
   }
-  return { treeLine: str(tree, 1, "the TREE line"), gateLine: str(gate, 1, "the gate line"), matrix };
+  const dialects = [...new Set(columns.filter((c) => c.form === "piped").map((c) => c.dialect))].sort();
+  const substituted = [
+    ...new Set(columns.filter((c) => c.form === "substitution").map((c) => c.dialect)),
+  ].sort();
+  if (dialects.length === 0 || key(dialects) !== key(substituted)) {
+    throw new Error(
+      `range-rule: the DOCS GATE matrix scores the \`$(…)\` form on [${substituted.join(", ")}] ` +
+        `and the piped form on [${dialects.join(", ")}]. The whole argument of that table is a ` +
+        "COMPARISON between the two forms on one platform, and it cannot be made where only " +
+        "one of them is measured there.",
+    );
+  }
+  return {
+    treeLine: str(tree, 1, "the TREE line"),
+    gateLine: str(gate, 1, "the gate line"),
+    dialects,
+    matrix,
+  };
 }
 
 /** @param {string} cell @param {string} what @returns {number} */
@@ -1798,8 +1889,11 @@ export function rangeRuleChecks(d) {
   {
     /** @type {string[]} */
     const f = [];
+    /** @type {string[]} */
+    const n = [];
     const md = conventionsText(root);
     const recipe = parseDocsGateRecipe(md);
+    const probe = probeXargs();
     const calledWrong = Object.entries(recipe.matrix).find(([, v]) => v.meaning.includes("called wrong"));
     const hasVerdict = Object.entries(recipe.matrix).find(([, v]) => v.meaning.includes("verdict"));
     if (calledWrong === undefined || hasVerdict === undefined) {
@@ -1816,17 +1910,84 @@ export function rangeRuleChecks(d) {
         `${recipe.treeLine.replaceAll("<main tip>", left).replace(/\bHEAD\b/, right)}\n` +
         `${pipedThroughXargs(recipe.gateLine).replaceAll("<main tip>", left)}`;
 
+      // THE MATRIX IS SCORED PER DIALECT AND SO IS THIS READER
+      // (T-153-s6). The piped columns were parsed and then compared
+      // against the BSD one whatever machine was running, so this check
+      // redded on Linux for being right: CI runs 33259394002 and
+      // 33260414204 observed GNU's 123 against a Darwin-measured 0. The
+      // dialect is PROBED — `scripts/xargs-dialect.mjs`, two observables,
+      // never `process.platform` — and an `xargs` matching no measured
+      // row is a finding, not a branch taken by default.
+      const known = Object.keys(XARGS_DIALECTS).sort();
+      if (key(recipe.dialects) !== key(known)) {
+        f.push(
+          `the DOCS GATE matrix scores [${recipe.dialects.join(", ")}] and this lane's prober ` +
+            `knows [${known.join(", ")}]: a dialect one side has measured and the other does ` +
+            "not name is a column nobody compares. Both sides move together or neither does",
+        );
+      }
+      // THE TWO-SIDED PIN, ON THE DOCUMENT ITSELF. The empty-list cell is
+      // the whole hazard, and the platforms DISAGREE there — BSD never
+      // runs the gate (0), GNU runs it and the gate's own refusal comes
+      // back mapped. A matrix that gave one number for both dialects
+      // would make this reader unable to tell which one it measured, and
+      // that collapse reds here before any code is run.
+      const emptyCells = recipe.dialects.map((dd) => wrong.pipedEmpty[dd]);
+      if (emptyCells.some((v) => v === undefined || v === null)) {
+        f.push(
+          `the DOCS GATE matrix's "${wrong.meaning}" row does not say what the piped spelling ` +
+            `gives ON AN EMPTY LIST for every dialect it scores (` +
+            `${recipe.dialects.map((dd, i) => `${dd}=${String(emptyCells[i])}`).join(", ")}) — ` +
+            "that cell is the failure the `$(…)` spelling exists to avoid",
+        );
+      } else if (new Set(emptyCells).size !== emptyCells.length) {
+        f.push(
+          "the DOCS GATE matrix now gives the SAME empty-list code for every dialect " +
+            `(${emptyCells.join(", ")}). The divergence is the finding — normalise it away in ` +
+            "the document and no reader can tell a platform it has measured from one it has not",
+        );
+      }
+      // AND THE `$(…)` FORM MUST STAY PLATFORM-INDEPENDENT, because that
+      // asymmetry IS the bullet's argument for printing it.
+      for (const r of [wrong, verdict]) {
+        const cells = recipe.dialects.map((dd) => r.substitution[dd]);
+        if (new Set(cells).size !== 1) {
+          f.push(
+            `the DOCS GATE matrix's "${r.meaning}" row now scores the \`$(…)\` form differently ` +
+              `by dialect (${recipe.dialects.map((dd, i) => `${dd}=${String(cells[i])}`).join(", ")}). ` +
+              "That form has no `xargs` process in it; if it has become platform-dependent, the " +
+              "bullet's whole argument for printing it needs re-making rather than re-scoring",
+          );
+        }
+      }
+
       // A ref that cannot resolve, so the range command FAILS and the
       // substitution yields nothing. Not a figure — a fixture.
       const BROKEN = "no-such-ref-T-091";
       const emptyRun = sh(root, printed(BROKEN, "HEAD"));
-      const emptyPipedRun = sh(root, piped(BROKEN, "HEAD"));
       const realRun = sh(root, printed(c.t078MainBefore, c.t078Tip));
-      const realPipedRun = sh(root, piped(c.t078MainBefore, c.t078Tip));
       const emptyPrinted = emptyRun.status;
-      const emptyPiped = emptyPipedRun.status;
       const realPrinted = realRun.status;
-      const realPiped = realPipedRun.status;
+
+      // The piped spelling is measured only where there is an `xargs` to
+      // measure, and only where the probe knows which column to read.
+      const measurePiped = probe.present && probe.name !== "unknown";
+      if (!probe.present) {
+        n.push(`the piped column was NOT measured here: ${probe.evidence}`);
+      } else if (probe.name === "unknown") {
+        f.push(
+          `this machine's \`xargs\` matches no dialect this repository has measured — ` +
+            `${probe.evidence}. Measure it, add its row to XARGS_DIALECTS and its column to ` +
+            "the DOCS GATE bullet's matrix. A third dialect reds here rather than silently " +
+            "taking whichever branch was written first, which is the defect T-153-s6 repaired",
+        );
+      } else {
+        n.push(`${probe.evidence}; the matrix's ${probe.name} column is the one compared`);
+      }
+      const emptyPipedRun = measurePiped ? sh(root, piped(BROKEN, "HEAD")) : undefined;
+      const realPipedRun = measurePiped ? sh(root, piped(c.t078MainBefore, c.t078Tip)) : undefined;
+      const emptyPiped = emptyPipedRun?.status;
+      const realPiped = realPipedRun?.status;
 
       // A CODE THE GATE NEVER PRODUCED IS NOT THE GATE'S ANSWER, and the
       // whole point of this criterion is that a code you cannot attribute
@@ -1837,15 +1998,17 @@ export function rangeRuleChecks(d) {
       // T-080-s4 already names for the token lint, undocumented here, and
       // filed as `T-091-s1`. Without this arm the reader would report a
       // wrong code where the honest answer is "the gate never ran".
-      const neverLinked = [
+      /** @type {[string, {stdout: string, stderr: string, status: number}][]} */
+      const runsMade = [
         ["on a failed range, printed", emptyRun],
-        ["on a failed range, piped", emptyPipedRun],
         ["on a real range, printed", realRun],
-        ["on a real range, piped", realPipedRun],
-      ].filter(([, run]) => {
-        const r = /** @type {{stdout: string, stderr: string, status: number}} */ (run);
-        return r.stderr.includes("ERR_MODULE_NOT_FOUND") || r.stderr.includes("Cannot find package");
-      });
+      ];
+      if (emptyPipedRun !== undefined) runsMade.push(["on a failed range, piped", emptyPipedRun]);
+      if (realPipedRun !== undefined) runsMade.push(["on a real range, piped", realPipedRun]);
+      const neverLinked = runsMade.filter(
+        ([, r]) =>
+          r.stderr.includes("ERR_MODULE_NOT_FOUND") || r.stderr.includes("Cannot find package"),
+      );
       if (neverLinked.length > 0) {
         f.push(
           `the DOCS GATE never LINKED in ${JSON.stringify(root)} ` +
@@ -1855,53 +2018,78 @@ export function rangeRuleChecks(d) {
             "because a code you cannot attribute is exactly what this criterion exists to reject",
         );
       } else {
-        if (emptyPrinted !== wrong.substitution) {
+        // THE `$(…)` FORM IS SCORED AGAINST THE ONE VALUE ITS COLUMNS
+        // AGREE ON — the check above is what makes "the one value" safe
+        // to speak of, and this reads the DETECTED dialect's cell so the
+        // two halves cannot drift apart.
+        const column = probe.name;
+        const printedEmptyWanted = wrong.substitution[column] ?? wrong.substitution[recipe.dialects[0] ?? ""];
+        const printedRealWanted = verdict.substitution[column] ?? verdict.substitution[recipe.dialects[0] ?? ""];
+        if (printedEmptyWanted !== undefined && emptyPrinted !== printedEmptyWanted) {
           f.push(
             `the DOCS GATE's PRINTED spelling on a failed range: the doc promises ` +
-              `${wrong.substitution} ("${wrong.meaning}"), this machine observes ${emptyPrinted}`,
+              `${printedEmptyWanted} ("${wrong.meaning}"), this machine observes ${emptyPrinted}`,
           );
         }
-        if (realPrinted !== verdict.substitution) {
+        if (printedRealWanted !== undefined && realPrinted !== printedRealWanted) {
           f.push(
             `the DOCS GATE's PRINTED spelling on a real range: the doc promises ` +
-              `${verdict.substitution} ("${verdict.meaning}"), this machine observes ${realPrinted}`,
+              `${printedRealWanted} ("${verdict.meaning}"), this machine observes ${realPrinted}`,
           );
         }
-        if (wrong.pipedEmpty !== null && emptyPiped !== wrong.pipedEmpty) {
-          f.push(
-            `the FORBIDDEN piped spelling on a failed range: the doc's measured matrix says ` +
-              `${wrong.pipedEmpty} on an empty list, this machine observes ${emptyPiped}`,
+        if (measurePiped) {
+          const pipedEmptyWanted = wrong.pipedEmpty[column];
+          const pipedRealWanted = verdict.piped[column];
+          if (pipedEmptyWanted !== null && pipedEmptyWanted !== undefined && emptyPiped !== pipedEmptyWanted) {
+            f.push(
+              `the FORBIDDEN piped spelling on a failed range, under ${column} \`xargs\`: the ` +
+                `doc's measured matrix says ${pipedEmptyWanted} on an empty list, this machine ` +
+                `observes ${String(emptyPiped)} (${probe.evidence})`,
+            );
+          }
+          if (pipedRealWanted !== undefined && realPiped !== pipedRealWanted) {
+            f.push(
+              `the FORBIDDEN piped spelling on a real range, under ${column} \`xargs\`: the doc's ` +
+                `measured matrix says ${pipedRealWanted}, this machine observes ${String(realPiped)}`,
+            );
+          }
+          // POSITIVE CONTROL. "The observed codes match the promised ones"
+          // is satisfied equally by a matrix that discriminates and by one
+          // where every cell holds the same number. The doc's whole argument
+          // is that the pipe EATS a code, so require the two spellings to
+          // disagree where the failure lives. THE EMPTY-LIST ROW IS THAT
+          // PLACE ON BOTH DIALECTS, and it is the one the old "they agree
+          // on a real range" control could not be: that agreement is BSD's
+          // alone, and asserting it universally is what redded on Linux.
+          if (emptyPrinted === emptyPiped) {
+            f.push(
+              "the printed and the piped spellings return the SAME code on a failed range, so this " +
+                "check cannot tell a recipe whose exit code survives from one the pipeline eats — " +
+                "which is the only thing it exists to tell",
+            );
+          }
+          // AND THE PROBE IS CHECKED AGAINST THE REAL PIPELINE. The
+          // dialect was classified from two synthetic probes; whether the
+          // GATE ITSELF ran on the empty list is readable from its own
+          // output, and the two must agree or the classification is a
+          // guess wearing a measurement's clothes.
+          const dialect = XARGS_DIALECTS[column];
+          const gateSpoke = `${emptyPipedRun?.stdout ?? ""}${emptyPipedRun?.stderr ?? ""}`.includes(
+            "docs-gate:",
           );
-        }
-        if (realPiped !== verdict.piped) {
-          f.push(
-            `the FORBIDDEN piped spelling on a real range: the doc's measured matrix says ` +
-              `${verdict.piped}, this machine observes ${realPiped}`,
-          );
-        }
-        // POSITIVE CONTROL. "The observed codes match the promised ones"
-        // is satisfied equally by a matrix that discriminates and by one
-        // where every cell holds the same number. The doc's whole argument
-        // is that the pipe EATS a code, so require the two spellings to
-        // disagree somewhere and to agree somewhere.
-        if (emptyPrinted === emptyPiped) {
-          f.push(
-            "the printed and the piped spellings return the SAME code on a failed range, so this " +
-              "check cannot tell a recipe whose exit code survives from one the pipeline eats — " +
-              "which is the only thing it exists to tell",
-          );
-        }
-        if (realPrinted !== realPiped) {
-          f.push(
-            `the printed and the piped spellings disagree on a REAL range (${realPrinted} against ` +
-              `${realPiped}); the doc's matrix says the verdict row is where BSD's two spellings ` +
-              "agree, and that agreement is what makes the empty-list row's disagreement mean " +
-              "something",
-          );
+          if (dialect !== undefined && gateSpoke !== dialect.runsUtilityOnEmptyInput) {
+            f.push(
+              `the probe calls this \`xargs\` ${column}, which ` +
+                `${dialect.runsUtilityOnEmptyInput ? "RUNS" : "does NOT run"} the utility on an ` +
+                `empty list, but piping a FAILED range into the real gate ` +
+                `${gateSpoke ? "did" : "did not"} produce the gate's own output. One of the two ` +
+                "measurements is wrong and neither may be trusted until it is settled",
+            );
+          }
         }
       }
     }
-    add("docs-gate-recipe-exit-codes", [], f);
+    add("docs-gate-recipe-exit-codes", [], f, n);
   }
 
   return checks;

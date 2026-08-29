@@ -1190,30 +1190,55 @@
   wrong, 3 the gate could not run — the same four codes `index --check`
   and `boot:check` use.
   **THERE IS NO `xargs` IN THAT SPELLING AND THAT IS THE POINT** (T-090,
-  absorbing T-061-s3; every figure below measured at `9b03ae6` on Darwin
-  25.6.0 against `/usr/bin/xargs`, which `which -a xargs` confirms is the
-  only one on this machine's PATH). A pipe through `xargs` destroys two
-  of the four codes, in the direction the codes exist to prevent, and it
-  destroys them DIFFERENTLY on the two platforms — so the doc prints a
-  spelling that has no `xargs` layer at all rather than one that is wrong
-  on one platform. THE MATRIX, each code produced deliberately and each
-  observed code read from `$?` on an unpiped command:
+  absorbing T-061-s3; every BSD figure below measured at `9b03ae6` on
+  Darwin 25.6.0 against `/usr/bin/xargs`, which `which -a xargs` confirms
+  is the only one on this machine's PATH, and the GNU piped column on
+  ubuntu-24.04 at `8de9de4` and `8f7b58c` — CI runs 33259394002 and
+  33260414204, read into this table by T-153-s6). A pipe through `xargs`
+  destroys two of the four codes, in the direction the codes exist to
+  prevent, and it destroys them DIFFERENTLY on the two platforms — so the
+  doc prints a spelling that has no `xargs` layer at all rather than one
+  that is wrong on one platform. THE MATRIX, each code produced
+  deliberately and each observed code read from `$?` on an unpiped
+  command:
 
   | the gate means | `$(…)` form, BSD | `$(…)` form, GNU | piped, BSD | piped, GNU |
   |---|---|---|---|---|
   | 0 nothing owed | **0** | **0** | 0 | 0 |
   | 1 has a verdict | **1** | **1** | 1 | **123** |
-  | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, or **0** |
+  | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
 
-  THE BSD COLUMNS ARE MEASURED HERE; THE GNU ONES ARE NOT, AND SAYING SO
-  IS THE POINT OF THE COLUMN. This machine has no GNU `xargs` and no
-  container runtime to borrow one from (both probed at `9b03ae6`), so the
-  GNU piped column is GNU findutils' DOCUMENTED mapping — utility exits
-  1–125 become 123 — and it closes for real at the repo's first push,
-  when the ubuntu runner executes the `npm run lint:docs` step for the
-  first time. The `$(…)` column needs no second measurement to be honest
-  about: it has no `xargs` process in it, so nothing platform-dependent
+  THE BSD COLUMNS ARE MEASURED HERE AND THE GNU PIPED ONE ON CI, AND
+  SAYING WHICH IS THE POINT OF THE COLUMN. This machine has no GNU
+  `xargs` and no container runtime to borrow one from (probed at
+  `9b03ae6`; re-probed 2026-08-29 — one `/usr/bin/xargs` still, and
+  Docker's CLI installed with no daemon listening), so that column stood
+  as GNU findutils' DOCUMENTED mapping — utility exits 1–125 become 123 —
+  until the ubuntu runner ran it. **IT CLOSED AS A FAILURE, AND NOT WHERE THIS
+  BULLET SAID IT WOULD** (T-153-s6). The sentence here promised the
+  closure at CI's `npm run lint:docs` step, which invokes the gate
+  DIRECTLY and has no `xargs` in it at all — nothing in that step could
+  ever have closed it. What closed it is the e2e lane, whose two bodies
+  EXECUTE the forbidden spelling: both runs above observed **123** on an
+  empty list where this table, filled in from BSD's behaviour rather than
+  measured, predicted **0**. GNU `xargs` RUNS the utility once on empty
+  input (BSD's silence is GNU's `--no-run-if-empty`), so the gate reaches
+  its OWN empty-list refusal at 2 and GNU maps that to 123.
+  **THE HAZARD IS THEREFORE PLATFORM-SCOPED, AND IT IS NOT THE SAME
+  HAZARD ON THE TWO PLATFORMS.** Under BSD the pipe HIDES a failed range
+  as a clean gate. Under GNU nothing is hidden — the gate runs and
+  refuses — and what is destroyed instead is the IDENTITY of the codes,
+  since 1, 2 and 3 all arrive as 123. Both are disqualifying and the
+  reasons differ, which is why the printed spelling drops `xargs`
+  altogether rather than adding a flag that makes one platform imitate
+  the other. `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect at
+  run time — two observables, never `process.platform` — so the bodies
+  that execute this table's piped column read the column for the dialect
+  they measured, and an `xargs` matching neither row reds instead of
+  taking a branch by default.
+  The `$(…)` column needs no second measurement to be honest about: it
+  has no `xargs` process in it, so nothing platform-dependent
   stands between this gate's `process.exit` and the shell that reads it.
   **THAT ASYMMETRY IS THE ARGUMENT.** A spelling whose correctness has to
   be re-measured per platform is one nobody will re-measure.

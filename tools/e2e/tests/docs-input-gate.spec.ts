@@ -39,6 +39,7 @@ import {
   unlinkedFiles,
   unlinkedSites,
 } from "../scripts/docs-scan.mjs";
+import { XARGS_DIALECTS, dialectsDiverge, probeXargs } from "../scripts/xargs-dialect.mjs";
 
 /**
  * THE DOCS GATE (T-084) — no browser.
@@ -957,17 +958,71 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   expect(codeOnly.code, "0 is still reachable, or the gate is just a red light").toBe(0);
   expect(codeOnly.out).toContain("this gate is not owed");
 
-  // THE PIPE, MEASURED ONCE, so the doc's claim is held by a body and not
-  // only by a paragraph: through `xargs` the SAME failed range reaches
-  // the reader as a clean gate. Skipped where `xargs` is absent rather
-  // than asserted blind.
-  const hasXargs = sh("command -v xargs").code === 0;
-  if (hasXargs) {
+  // THE PIPE, MEASURED ONCE PER DIALECT, so the doc's claim is held by a
+  // body and not only by a paragraph — and so that the body says which
+  // `xargs` it measured.
+  //
+  // THIS ARM USED TO ENCODE BSD AND RED ON LINUX (T-153-s6; CI runs
+  // 33259394002 and 33260414204, where it observed 123 against a written
+  // 0). The finding was better than a broken test: the documented hazard
+  // is PLATFORM-SCOPED. Under BSD `xargs` the pipe really does report a
+  // clean gate for a failed range, because the utility is never invoked
+  // on empty input. Under GNU `xargs` the utility IS invoked, so the
+  // gate's own empty-list refusal — the trap this very test celebrates —
+  // fires, and the pipeline reports its exit through GNU's 1–125 → 123
+  // mapping. The pipe is still the wrong spelling on both: one hides the
+  // failure, the other destroys the code's identity.
+  //
+  // The dialect is PROBED (`scripts/xargs-dialect.mjs`), never inferred
+  // from `process.platform`, because the question is what the `xargs` on
+  // this PATH does. Skipped where `xargs` is absent rather than asserted
+  // blind.
+  const probe = probeXargs();
+  if (probe.present) {
+    // THE TWO EXPECTATIONS, WRITTEN SIDE BY SIDE, because the DIVERGENCE
+    // is the thing being pinned. `gateRan` is the substantive half: it is
+    // what makes "the pipe hides a failed range" a claim about BSD rather
+    // than about pipes.
+    const EXPECTED: Record<string, { code: number; gateRan: boolean; says: string }> = {
+      bsd: { code: 0, gateRan: false, says: "the pipe reports a clean gate for a failed range" },
+      gnu: {
+        code: 123,
+        gateRan: true,
+        says: "the gate RUNS on the empty list, refuses it, and 2 arrives as GNU's 123",
+      },
+    };
+
+    // TWO-SIDED, so normalising the platforms away cannot pass quietly:
+    // the two rows must disagree on BOTH observables, and the table must
+    // name exactly the dialects the prober knows. Collapse either side
+    // and this reds before any measurement is taken.
+    expect(dialectsDiverge((d) => d.runsUtilityOnEmptyInput), "the dialects must differ").toBe(true);
+    expect(new Set(Object.keys(EXPECTED))).toEqual(new Set(Object.keys(XARGS_DIALECTS)));
+    expect(new Set(Object.values(EXPECTED).map((e) => e.code)).size, "the codes differ").toBe(2);
+    expect(new Set(Object.values(EXPECTED).map((e) => e.gateRan)).size, "and so does whether the gate ran").toBe(2);
+
+    // A THIRD DIALECT REDS RATHER THAN TAKING WHICHEVER BRANCH WAS
+    // WRITTEN FIRST — the failure this body is a repair of.
+    const want = EXPECTED[probe.name];
+    expect(
+      want,
+      `this machine's xargs matches no dialect this spec has measured — ${probe.evidence}. ` +
+        "Measure it, add its row to XARGS_DIALECTS and its column to the DOCS GATE " +
+        "bullet's matrix; do not widen an expectation until it fits.",
+    ).toBeDefined();
+    if (want === undefined) return;
+
     const piped = sh(`git diff --name-only no-such-rev-90 HEAD 2>/dev/null | xargs ${gate}`);
-    expect(piped.code, "THE DEFECT: the pipe reports a clean gate for a failed range").toBe(0);
-    expect(piped.out, "and it reports it by never running the gate at all").not.toContain(
-      "docs-gate:",
-    );
+    expect(piped.code, `${probe.name}: ${want.says} (${probe.evidence})`).toBe(want.code);
+    expect(
+      piped.out.includes("docs-gate:"),
+      `${probe.name}: whether the gate RAN at all is the mechanism, not the code`,
+    ).toBe(want.gateRan);
+    if (want.gateRan) {
+      expect(piped.out, "and what it says is its own empty-list refusal").toContain(
+        "NO PATHS GIVEN",
+      );
+    }
   }
 });
 
