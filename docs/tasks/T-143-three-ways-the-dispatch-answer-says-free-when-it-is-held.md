@@ -230,3 +230,18 @@ measured — and mechanism 2 was reasoned to *by the architect and then
 handed to an executor as a suggestion*, which is how an unmeasured claim
 acquires the authority of a dispatch. `T-142` is the general shape and
 this is a second instance of it.
+
+Integrator at the T-153-s5 dispatch (2026-08-29): TWO MORE MEASURED
+INSTANCES, both the suffixed-id truncation. (4) `brief.mjs --task
+T-153-s5` resolved card T-153 and `--write-fence` stamped T-153's
+app-shell fence into the s5 lane — caught by reading the manifest back
+before dispatch. (5) Retroactive: the T-153-s2 lane ran its WHOLE arc
+under its parent's manifest for the same reason — the armed hook was
+enforcing a fence nobody dispatched (no damage: the work was
+independently verified and its paths happened to lie inside the wrong
+fence's expansion). Root cause: `normaliseTaskId`'s path fallback and
+`laneSpellings`' branch matcher both preferred the unsuffixed reading
+of `task/T-NNN-<slug>`. Fixed at the seat in dispatch-brief.mjs with a
+pinning body in lane-fence.spec.ts (the suffixed-id round-trip); this
+card keeps the CLASS — the `--state` join and ledger display still
+carry it, and the pinned pair is the floor, not the sweep.

@@ -18,8 +18,8 @@ import {
 } from "../../../.claude/hooks/lane-fence.mjs";
 import { repoRoot } from "../preflight";
 import { conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
-import { laneSpellings } from "../scripts/dispatch-brief.mjs";
-import { MANIFEST_DIR_IGNORE, buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
+import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
+import { MANIFEST_DIR_IGNORE, buildLaneFence, laneIdOf, writeLaneFence } from "../scripts/lane-fence.mjs";
 
 /**
  * THE FENCE AT THE MOMENT OF THE WRITE (T-154) — no browser.
@@ -714,4 +714,26 @@ test("an unreadable request costs an integrator nothing and buys an executor not
   // the fallback lands on a lane branch with no readable path.
   expect(garbage(fx.repo).status, garbage(fx.repo).stderr).toBe(0);
   expect(garbage(fx.lane).status).toBe(2);
+});
+
+test("a suffixed card id survives every derivation that once truncated it — the id is not the slug's prefix", () => {
+  // T-143's class, fourth measured instance (2026-08-29, integrator at
+  // the T-153-s5 dispatch): `brief.mjs --task T-153-s5` resolved card
+  // T-153, and `--write-fence` stamped T-153's app-shell fence into the
+  // s5 lane — and the T-153-s2 lane before it ran its WHOLE arc under
+  // its parent's manifest, enforcing a fence nobody dispatched. The
+  // board's id vocabulary (tasks/TASK-FORMAT.md) makes suffixed ids
+  // real cards, and `task/T-153-s5-clock-...` is ambiguous under the
+  // published `task/T-NNN-<slug>` spelling; every reader below must
+  // prefer the suffixed reading, because the other one hands back a
+  // DIFFERENT card and calls it yours.
+  expect(normaliseTaskId("T-153-s5")).toBe("T-153-s5");
+  expect(normaliseTaskId("153")).toBe("T-153");
+  expect(normaliseTaskId("docs/tasks/T-111-s10-the-drills-own.md")).toBe("T-111-s10");
+  expect(normaliseTaskId("docs/tasks/T-153-the-first-ci-run.md")).toBe("T-153");
+  const { branchRe } = laneSpellings(conventionsText(repoRoot));
+  expect(laneIdOf("refs/heads/task/T-153-s5-clock-restore-guard", branchRe)).toBe("T-153-s5");
+  expect(laneIdOf("refs/heads/task/T-153-inotify-sentinels", branchRe)).toBe("T-153");
+  // And the armed hook still reads a suffixed branch as a lane at all.
+  expect(LANE_BRANCH_RE.test("refs/heads/task/T-153-s5-clock-restore-guard")).toBe(true);
 });

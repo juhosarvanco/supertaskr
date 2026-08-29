@@ -554,8 +554,16 @@ export function laneSpellings(conventionsMd) {
   // placeholders the document uses and escaping everything else. The
   // filter is therefore the published spelling, not a copy of it.
   const escaped = branchPattern.replace(/[.*+?^${}()|\\]/g, "\\$&");
+  // `task/T-153-s5-clock-...` is ambiguous under the published
+  // `task/T-NNN-<slug>`: id T-153 with slug `s5-clock-...`, or id
+  // T-153-s5 with slug `clock-...`. The board's id vocabulary
+  // (tasks/TASK-FORMAT.md) makes suffixed ids real cards, so the
+  // matcher prefers the suffixed reading — the unsuffixed one joined a
+  // lane to its PARENT card and printed the parent's fence as the
+  // lane's (T-143's class, seen live at the T-153-s2 lane, whose
+  // manifest carried T-153's fence for its whole run).
   const source = `^refs/heads/${escaped
-    .replace(idToken, "T-(\\d+)")
+    .replace(idToken, "T-(\\d+(?:-s\\d+)?)")
     .replace("<slug>", ".+")}$`;
   return {
     integrationBranch,
@@ -1726,9 +1734,14 @@ export function worktreePorcelain(root) {
 
 /** @param {string} id @returns {string} */
 export function normaliseTaskId(id) {
-  const m = /^(?:T-?)?(\d+)$/i.exec(id.trim());
-  if (m !== null) return `T-${/** @type {string} */ (m[1]).padStart(3, "0")}`;
-  const fromPath = /(T-\d+)/.exec(id);
+  // The suffix is part of the id, not the slug: T-153-s5 is a CARD, and
+  // truncating it hands back a DIFFERENT card — measured at the
+  // T-153-s5 dispatch (T-143's class, fourth instance), where
+  // `--write-fence` stamped T-153's app-shell fence into an s5 lane.
+  const m = /^(?:T-?)?(\d+)(-s\d+)?$/i.exec(id.trim());
+  if (m !== null)
+    return `T-${/** @type {string} */ (m[1]).padStart(3, "0")}${m[2] ?? ""}`;
+  const fromPath = /(T-\d+(?:-s\d+)?)/.exec(id);
   if (fromPath !== null) return /** @type {string} */ (fromPath[1]);
   throw new Error(
     `dispatch-brief: ${JSON.stringify(id)} is not a task id — give the id (T-133), its number, or ` +
