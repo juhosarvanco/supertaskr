@@ -16,6 +16,8 @@ verified_by:
 review:
 ---
 
+Absorbs: T-137-s8 (Amnesty triage 2026-08-29 (triage seat)) — the second half of this card's own claim, observed live with both commands: the gate printed "every live task card's frontmatter parses" moments before the parser's smoke test refused the same file for a title beginning with a reserved character. It supplies the cheapest real repair — teach the minimal reader that a leading backtick, @, %, &, * or ! in an unquoted scalar is a YAML error — and the rule that option 1 (soften the sentence to name the reader) is owed regardless of which deeper fix lands.
+
 **PROMOTED at the amnesty triage, 2026-08-29, as the owner of its
 class.** Two independent findings say the same sentence is wrong in two
 different directions, and both needles are live at this base:

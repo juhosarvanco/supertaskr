@@ -5,11 +5,71 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: suggested
+status: planned
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [lib-parser, tools/e2e]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+Absorbs: T-137-s12 (Amnesty triage 2026-08-29 (triage seat)) — the same file, the same reason sentence, and the same class of reader: a human choosing whether to override a COARSE-fence warning. Its measurement is the reason it cannot be left to a rewrite — the mutation from "no card for it" to "no card for them" kills ZERO bodies, while the nearest existing arm pins the clause's PRESENCE and neither of its numbers, so the fix owes a second body with two blind lanes or the plural half ships as unpinned as it is today.
+
+Absorbs: T-137-s11 (Amnesty triage 2026-08-29 (triage seat)) — mechanism 1 alive in the second implementation, found only because a seat was checking somebody else's claim. It carries the measurement that makes the row actionable — supplying the missing card off main moves 15 cards from startable to fenced through the same fence module — and the distinction worth keeping: this is not R1's silent false green but a verdict word its own report contradicts four lines above, which is the DOCS GATE bullet's "three layers from its cause" at a distance of four lines.
+
+**PROMOTED at the amnesty triage, 2026-08-29, as the owner of the
+answers-toward-FREE class — and its census has MOVED since it was
+written, in both directions.** Re-derived at this base:
+
+- **MECHANISM 1 IS CLOSED IN `lanes.ts` AND ALIVE IN THE SECOND
+  IMPLEMENTATION.** T-137's merge fixed `lib/parser/src/lanes.ts:293`;
+  `T-137-s11` (absorbed) then found the same sentence about the same
+  join in `dispatch-brief.mjs`'s `fenceLedger`, where a lane whose card
+  this checkout cannot read contributes no holder and every slug it
+  reserves reports `FREE` — four lines below the report's own
+  "no live card — board says unknown" warning. Supplying the missing
+  card off main moved **15 cards from `startable` to `fenced`** through
+  the same fence module, so those FREE rows are about ground a live lane
+  demonstrably reserves.
+- **MECHANISM 2 is REFUSED by this card's own correction** and stays
+  refused.
+- **MECHANISM 3 stands as a DISPLAY trap**, not a wrong answer: the
+  `--task` half answers correctly with the witness paths named, and
+  `docs/STATE.md` now warns every session never to read the ledger's
+  FREE column as a verdict. It nearly took a lane once.
+
+Absorbs: T-137-s11, T-137-s12.
+
+## Acceptance criteria
+
+- WHEN any lane's card cannot be resolved in this checkout THE fence
+  ledger SHALL NOT print `FREE` for a row that is not explicitly held.
+  The vocabulary is already correct and already shipped in
+  `lib/parser/src/lanes.ts` — `unusable`, "no overlap PROVED and none
+  ruled out" — and the row SHALL read `UNKNOWN` naming the ids whose
+  fences could not be read. It SHALL NOT be folded into `FREE` and the
+  row SHALL NOT be dropped.
+- `FREE` SHALL be treated as the same class of word as `disjoint`: a
+  claim about the whole world, unreachable when part of the world could
+  not be read.
+- THE per-slug ledger SHALL say what it is answering, since two slugs
+  can share a component (C-11 declares `[app-shell, app-board]`) and a
+  reader who takes the FREE column for a verdict is misled by a display
+  rather than by a wrong answer. Either the display carries the
+  qualifier or it points at the `--task` half that answers properly.
+- THE `fenced` reason's residual clause SHALL agree in NUMBER with the
+  list it names (`T-137-s12`): the sibling `unfenceable` branch already
+  carries a `many` flag with two dedicated poison arms pinning both
+  directions, and the `fenced` branch was written in the same commit
+  without it. A mutation from "no card for it" to "no card for them"
+  kills ZERO bodies today, so the fix owes a SECOND body with two blind
+  lanes — without it the plural half stays exactly as unpinned.
+- WHERE this card's own three mechanisms are quoted THEY SHALL be
+  re-derived first. This card has already been wrong about two of its
+  three claims and says so in its own body.
 
 **Found in one sitting, deriving one night's dispatch.** Three separate
 mechanisms, three different files, one shared property:

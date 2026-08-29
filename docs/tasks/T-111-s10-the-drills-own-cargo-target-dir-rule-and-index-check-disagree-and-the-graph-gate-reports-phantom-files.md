@@ -3,7 +3,7 @@ id: T-111-s10
 title: The POISON DRILL bullet gets ONE edit for its four earned sentences — the target directory the walk can see, what restoring a fixture MEANS, a clock restored through a Date, and a restoration proof that passes on a failed restore
 feature: F-06
 milestone: 4
-priority: 4
+priority: 6
 size: S
 status: planned
 blocked_by: []

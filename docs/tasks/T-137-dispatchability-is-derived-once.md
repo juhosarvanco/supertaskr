@@ -15,6 +15,12 @@ verified_by: claude-opus-5
 review: same-model
 ---
 
+Absorbs: T-137-s9 (Amnesty triage 2026-08-29 (triage seat)) — TAKEN AND FIXED inside this card's own lane, with the disposition deliberately left to triage: the brief.spec body now partitions ctx.lanes, asserts the partition TOTAL, drives the unresolvable branch off the porcelain fixture so it is pinned whether or not a newer lane exists, and both poison arms kill uniquely. Its surviving residual is a CLASS rather than a defect — a MACHINE-scoped fact joined to a CHECKOUT-scoped one with nothing marking the seam, two instances now with T-132-s6 — and that residual is recorded on T-132-s6, which is parked at the CONVENTIONS seat where it belongs.
+
+Absorbs: T-137-s1 (Amnesty triage 2026-08-29 (triage seat)) — the fixture reconciliation this card's merge owed, measured rather than forecast, and the integrator made it: app/test/map-dogfood-render.test.tsx now reads "committed graph · 189 files" and architecture-dogfood.test.ts records the 183 -> 185 step at the T-139 regen, so the three assertions moved and have moved again since under later merges.
+
+Absorbs: T-111-s5 (Amnesty triage 2026-08-29 (triage seat)) — written to feed this card and nothing else — "THIS CARD IS SUBORDINATE TO T-137 AND EXISTS ONLY TO FEED IT" — and this card has landed, so its move list is spent. The ONE decision it named as unsettled (where the column order lives) survives on T-137-s4, which is parked with its own measurement.
+
 **@human, 2026-08-26:** *"'what is dispatchable, in what order, given the
 live lanes' — this is a core feature of our product. The architect session
 needs precise knowledge of the technical roadmap, task list, task priority

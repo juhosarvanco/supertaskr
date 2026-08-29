@@ -16,6 +16,8 @@ verified_by:
 review:
 ---
 
+Absorbs: T-137-s7 (Amnesty triage 2026-08-29 (triage seat)) — the same observation from the other end: tools/e2e is two things wearing one package. Its option 3 — move the repo-wide TOOLS (docs-scan, token-scan, range-rule, dispatch-brief, brief, dispatch-order) out of the E2E package, since ADR-011's argument for a standalone E2E package does not apply to a tool that reads the repository — is the alternative answer to this card's project split, and the lane SHALL state which of the two it is taking and why.
+
 **PROMOTED at the amnesty triage, 2026-08-29.** This is the card that
 makes a standing discipline affordable, and the argument for it is the
 second-order one the finding states plainly: *a discipline whose setup

@@ -1,7 +1,7 @@
 ---
 id: T-137-s2
 title: Crossing the graph budget makes the byte count go DOWN, so the percentage every checkpoint quotes cannot see an overflow — measured on the lane that crossed it, and T-139's raise landed in between
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-137
 touches: [crate-index]
 ---
@@ -75,3 +75,5 @@ is the one that cannot see this.**
    **27 944 bytes of the new one remain after this lane** — so the raise
    buys about one more module of that size, not a generation. `T-140`'s
    per-file floor is the structural answer; this is the interim figure.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the INSTANCE is closed — T-139's raise to 1_040_000 absorbed the overflow while this lane ran, with 27 944 bytes of headroom left after it — and the MECHANISM is not. Crossing the budget takes the byte count from 992 929 DOWN to 968 081, so a reader watching usage as a percentage sees 96.8% and concludes there is headroom; the overflow is visible only in stats.truncated_files, which index --check prints and arch does not. Arm 2 is discharged: STATE now says GRAPH means ask index --check, never predict, and a byte count is not a content check. Arm 1 is live — grep for truncated in arch/mod.rs returns only test literals. RESURFACES: the next crate-index dispatch, where arm 1 (arch printing truncated_files / truncated_symbols) is a format string on the reporter every checkpoint reads. T-151 is that lane and is blocked on T-135; T-140's per-file floor is the structural answer and this card is the interim figure for it.

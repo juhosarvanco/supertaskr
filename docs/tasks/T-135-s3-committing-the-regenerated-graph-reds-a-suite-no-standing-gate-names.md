@@ -1,7 +1,7 @@
 ---
 id: T-135-s3
 title: Committing T-135's regenerated graph.json reds `app/test/architecture-dogfood.test.ts`, and the lane that produces the regen is fenced out of the file that has to move with it
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-135
 touches: [app-shell, docs/architecture/components/]
 ---
@@ -59,3 +59,5 @@ and belongs to whoever takes it.
 Absorbs (eleventh triage, 2026-08-26): T-129-s4 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — a read-this-before-you-run-the-suites note for the seat that commits the regen after T-135 Half A lands, and it is still owed because T-135 is still open. It is measured on both sides — arch goes edges 36 -> 37, findings 3 -> 4, drift_components 3 -> 4 — and it names the fence problem plainly: the lane that PRODUCES the regen is fenced out of the fixture file that has to move with it. Its item 4 twin lives on T-126-s3 (C-05's depends_on does not declare C-15, now visible to arch drift). RESURFACES: the dispatch of T-135 Half B, or whichever seat next commits a regenerated docs/architecture/graph.json — whichever comes first. STATE names T-135 Half B as a standing board hook that is never re-dispatched whole.
