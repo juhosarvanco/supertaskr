@@ -23,6 +23,110 @@ const wrapper = path.join(repoRoot, "tools", "e2e", "scripts", "lint-tokens.mjs"
 
 const sha256 = (raw: Buffer): string => createHash("sha256").update(raw).digest("hex");
 
+/**
+ * ── THE CLOCK RESTORE IS A MICROSECOND ROUND-TRIP, NEVER AN EXACT ONE ─
+ * (T-153-s5, measured on the platform where it first mattered.)
+ *
+ * Both plant-and-restore bodies below put the file's clock back with
+ * `utimesSync` and then PROVE the restore. Until this card the proof was
+ * `toBe(clock.mtimeMs)` — exact float equality — which is green on every
+ * macOS run this repository has ever made and RED on ubuntu-24.04 on
+ * first contact: CI 33259394002 and 33260414204, both bodies, both runs,
+ * each reporting a received value a few ten-thousandths of a millisecond
+ * BELOW the expected one.
+ *
+ * THE ASYMMETRY IS libuv'S, NOT THE FILESYSTEM'S. `utimesSync` hands
+ * libuv a DOUBLE of seconds. On Linux `uv__fs_to_timespec` truncates the
+ * nanosecond field to a whole MICROSECOND before `utimensat` ever sees it
+ * — a deliberate cross-platform compatibility hack, carrying its own
+ * `TODO` in libuv — while the Darwin path carries the nanoseconds
+ * through. So Linux writes back a clock up to one microsecond BELOW the
+ * captured one, and `mtimeMs`, whose own double holds finer steps than
+ * that at this epoch, cannot spell the difference away.
+ *
+ * THIS IS THE T-130-s1 FAMILY, IN ITS FOURTH SPELLING. That finding —
+ * absorbed by `T-111-s10`, whose `Absorbs:` line carries the measurement
+ * — found the same fragility one layer up: 50 of 50 fresh writes land on
+ * a sub-millisecond mtime, the `Date` form round-trips 0 of 50 and the
+ * seconds form 50 of 50. The seconds form is still the right form; what
+ * was wrong is the inference that a form which round-trips EXACTLY on the
+ * measuring platform round-trips exactly on every platform.
+ *
+ * WHAT SURVIVES IS THE PURPOSE, AT A PRECISION BOTH PLATFORMS GRANT. The
+ * defect this guard exists to catch is a restore that leaves the clock on
+ * the moment of the plant, which T-079's integration measured as a gap of
+ * THREE MINUTES FORTY (`dist/` at 03:50:54 against a plant target at
+ * 03:54:34, `app/test/map-t1-t2-dom.test.tsx` red at 957/958). The bound
+ * below is under two MICROSECONDS — eight orders of magnitude tighter
+ * than the defect and still wider than the platform's own quantisation.
+ */
+const CLOCK_QUANTUM_NS = 1000;
+
+/**
+ * One ULP of a double at `value`'s magnitude, in `value`'s own unit. It is
+ * a function of the EPOCH — 2**-12 ms today, twice that after 2039 — so it
+ * is computed here and never typed as a literal.
+ */
+const ulpOf = (value: number): number => 2 ** (Math.floor(Math.log2(Math.abs(value))) - 52);
+
+/**
+ * The quantum above, plus what the SECONDS ARGUMENT costs. `utimesSync`
+ * takes seconds as a double, so `clock.mtimeMs / 1000` is already up to
+ * half an ULP away from the captured reading before libuv sees it, and the
+ * captured reading is itself a double over a nanosecond counter. Two ULPs
+ * covers both roundings; at this epoch the whole bound is 1489 ns, against
+ * a worst case the mechanism puts at ~1180 ns.
+ */
+const clockRestoreToleranceNs = (capturedMs: number): number =>
+  CLOCK_QUANTUM_NS + Math.ceil(2 * ulpOf(capturedMs) * 1e6);
+
+/** The mtime at the precision the filesystem actually keeps — the reading
+ *  that makes a platform divergence a NUMBER rather than an inference from
+ *  two rounded doubles. */
+const mtimeNs = (absolute: string): bigint => statSync(absolute, { bigint: true }).mtimeNs;
+
+type CapturedClock = {
+  relative: string;
+  absolute: string;
+  capturedMs: number;
+  capturedNs: bigint;
+};
+
+/**
+ * Asserts the clock restore for every target of one body, and STAMPS the
+ * read-back into the run log FIRST — so the measurement is on the record
+ * whether the guard passes or fails, and whether or not the first target
+ * is the one that diverges. One implementation for both bodies: a rule
+ * written twice is two chances to disagree (T-057).
+ */
+const expectClocksRestored = (body: string, captured: CapturedClock[]): void => {
+  const stamped = captured.map((row) => {
+    const restoredNs = mtimeNs(row.absolute);
+    return {
+      relative: row.relative,
+      capturedNs: row.capturedNs,
+      restoredNs,
+      // BigInt first, Number after: the difference is a handful of
+      // nanoseconds, exact in a double, while the readings themselves are
+      // nineteen digits and are not.
+      deltaNs: Number(restoredNs - row.capturedNs),
+      toleranceNs: clockRestoreToleranceNs(row.capturedMs),
+    };
+  });
+  console.log(
+    `T-153-s5 clock restore, ${body}, on ${process.platform} node ${process.version} uv ${process.versions.uv}: ` +
+      stamped
+        .map((row) => `${row.relative} ${row.deltaNs}ns of ${row.toleranceNs}`)
+        .join(" | "),
+  );
+  for (const row of stamped) {
+    expect(
+      Math.abs(row.deltaNs),
+      `${row.relative} restored its MTIME too — a content-exact restore that moves the clock reds an mtime guard (captured ${row.capturedNs}ns, restored ${row.restoredNs}ns)`,
+    ).toBeLessThanOrEqual(row.toleranceNs);
+  }
+};
+
 test("token-scan is side-effect-free on direct import", () => {
   const result = spawnSync(
     process.execPath,
@@ -122,8 +226,15 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
   // means. A CONTENT-EXACT RESTORE IS NOT A RESTORE: this body plants into
   // seven tracked files across four packages, and until T-130 it put every
   // byte back and left all seven clocks on the moment of the plant.
+  // T-153-s5. Two readings of the same file in the same moment: the `Stats`
+  // the restore is DRIVEN from, and the nanosecond reading the guard below is
+  // MEASURED against — see the clock-restore block at the top of this file
+  // for why the two are not the same number on every platform.
   const clocks = new Map(
-    targets.map((relative) => [relative, statSync(path.join(repoRoot, relative))] as const),
+    targets.map((relative) => {
+      const absolute = path.join(repoRoot, relative);
+      return [relative, { absolute, stats: statSync(absolute), capturedNs: mtimeNs(absolute) }] as const;
+    }),
   );
   const prefix = Buffer.from("\nT-058 runtime plant é ", "utf8");
   const poison = Buffer.from([0x00]);
@@ -145,10 +256,10 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     for (const [relative, original] of originals) {
       const absolute = path.join(repoRoot, relative);
       writeFileSync(absolute, original);
-      const clock = clocks.get(relative)!;
+      const { stats } = clocks.get(relative)!;
       // SECONDS AS A NUMBER, never `clock.atime, clock.mtime`: a `Date` holds
       // whole milliseconds, so the Date form rounds the restore (T-130).
-      utimesSync(absolute, clock.atimeMs / 1000, clock.mtimeMs / 1000);
+      utimesSync(absolute, stats.atimeMs / 1000, stats.mtimeMs / 1000);
     }
   }
 
@@ -157,12 +268,15 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
       expectedHash,
     );
   }
-  for (const [relative, clock] of clocks) {
-    expect(
-      statSync(path.join(repoRoot, relative)).mtimeMs,
-      `${relative} restored its MTIME too — a content-exact restore that moves the clock reds an mtime guard`,
-    ).toBe(clock.mtimeMs);
-  }
+  expectClocksRestored(
+    "seven first-party roots",
+    [...clocks].map(([relative, { absolute, stats, capturedNs }]) => ({
+      relative,
+      absolute,
+      capturedMs: stats.mtimeMs,
+      capturedNs,
+    })),
+  );
   // The clock restore above does NOT put this proof at risk, which was
   // measured rather than assumed (T-130): `git diff --quiet` answers from the
   // index's cached stat info and `utimesSync` cannot restore `ctime`, so the
@@ -230,6 +344,7 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
   const original = readFileSync(target);
   const before = sha256(original);
   const clock = statSync(target);
+  const clockNs = mtimeNs(target);
   // Assembled, never written whole: a literal here would be the very
   // ungated candidate this file forbids, minted into a TOKEN-walked
   // source by the test that guards against it (T-028's scanner-hygiene
@@ -251,10 +366,13 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
     writeFileSync(target, original);
     // T-130. NOT `clock.atime, clock.mtime`: `Stats.mtime` is a `Date` and a
     // `Date` holds WHOLE MILLISECONDS, so a Date-valued restore writes back a
-    // ROUNDED timestamp while the assertion below compares the unrounded float
-    // the capture holds. `utimesSync` takes SECONDS as a number and carries the
-    // fraction into the timespec, so this round-trips exactly (50 of 50 fresh
-    // writes on APFS/Darwin/node 22; the Date form: 0 of 50).
+    // ROUNDED timestamp while the guard below compares against the unrounded
+    // capture. `utimesSync` takes SECONDS as a number and carries the fraction
+    // into the timespec, which is the right form and was measured as one (50
+    // of 50 fresh writes on APFS/Darwin/node 22; the Date form: 0 of 50).
+    // T-153-s5: right form, wrong PRECISION CLAIM — "round-trips exactly" was
+    // true of Darwin and false of Linux, and the clock-restore block at the
+    // top of this file carries the mechanism and the bound that replaced it.
     utimesSync(target, clock.atimeMs / 1000, clock.mtimeMs / 1000);
   }
 
@@ -267,10 +385,9 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
   // docs/CONVENTIONS.md already prefers the hash for this reason —
   // "restoration proved by hash rather than by a clean `git status`".
   expect(sha256(readFileSync(target)), `${relative} restored byte-exact`).toBe(before);
-  expect(
-    statSync(target).mtimeMs,
-    `${relative} restored its MTIME too — a content-exact restore that moves the clock reds an mtime guard`,
-  ).toBe(clock.mtimeMs);
+  expectClocksRestored("P6 plant target", [
+    { relative, absolute: target, capturedMs: clock.mtimeMs, capturedNs: clockNs },
+  ]);
 
   expect(result).toBeDefined();
   expect(result!.status, result!.stdout + result!.stderr).toBe(1);
