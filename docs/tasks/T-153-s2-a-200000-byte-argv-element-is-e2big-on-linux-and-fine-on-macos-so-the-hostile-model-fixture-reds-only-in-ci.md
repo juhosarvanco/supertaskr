@@ -1,7 +1,18 @@
 ---
 id: T-153-s2
 title: A 200 000-byte argv element is E2BIG on Linux and fine on macOS, so the hostile-model fixture reds only in CI — and the product hands that string to execve unbounded
-status: suggested
+feature: F-03
+milestone: 4
+priority: 20
+size: S
+status: building
+blocked_by: []
+touches: [app-agent]
+builder: claude-opus-5@subagent
+verifier:
+built_by:
+verified_by:
+review:
 suggested_by: executor claude-opus-5 @T-153
 ---
 
