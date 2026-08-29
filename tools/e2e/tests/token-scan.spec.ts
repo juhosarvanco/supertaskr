@@ -40,9 +40,14 @@ const sha256 = (raw: Buffer): string => createHash("sha256").update(raw).digest(
  * nanosecond field to a whole MICROSECOND before `utimensat` ever sees it
  * — a deliberate cross-platform compatibility hack, carrying its own
  * `TODO` in libuv — while the Darwin path carries the nanoseconds
- * through. So Linux writes back a clock up to one microsecond BELOW the
+ * through. So Linux writes back a clock about a microsecond off the
  * captured one, and `mtimeMs`, whose own double holds finer steps than
- * that at this epoch, cannot spell the difference away.
+ * that at this epoch, cannot spell the difference away. NOT "up to one
+ * microsecond below", which is what one CI sample looked like and what
+ * the next one falsified: the quantum is only the largest of three terms
+ * and the other two are signed, so the total has been observed at -1016
+ * and at +109 ns on the same runner image. The bound below is computed
+ * from all three for that reason.
  *
  * THIS IS THE T-130-s1 FAMILY, IN ITS FOURTH SPELLING. That finding —
  * absorbed by `T-111-s10`, whose `Absorbs:` line carries the measurement

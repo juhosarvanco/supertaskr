@@ -136,15 +136,45 @@ eight**, because the first run's restore already wrote those mtimes
 through `utimesSync` and a value that came out of `utimesSync` is a fixed
 point of it — measured again on this lane's final tree, 281 passed, all
 eight at 0ns. The CI figures do not have this problem: a runner checks
-out fresh every time, which is why cycle 1 caught the quantum at its
-worst case. It is also the whole of why drill mutant M3 missed below.
+out fresh every time, which is why both CI cycles measure a real restore
+and a re-run in a warm worktree measures nothing at all. It is also the
+whole of why drill mutant M3 missed below.
 
-**THE TWO SHAPES ARE DIFFERENT AND THAT IS THE WHOLE FINDING.** Every
-Linux delta is NEGATIVE and every one is strictly inside one microsecond,
-the largest being **-999 ns** — one nanosecond short of the quantum,
-which is what a truncation looks like when you catch it at its worst
-case. The Darwin deltas are signed BOTH ways and bounded by **170 ns**,
-which is what float noise looks like with no truncation under it.
+A SECOND Linux sample, CI run **33265405734** (cycle 2, at `cb216a1`),
+same runner image, same eight targets:
+
+    T-153-s5 clock restore, seven first-party roots, on linux
+    node v22.23.2 uv 1.51.0:
+      app/package.json         -1005ns of 1489
+      docs/NORTH_STAR.md         -44ns of 1489
+      lib/parser/package.json   -944ns of 1489
+      tools/e2e/package.json    -316ns of 1489
+      method/README.md          +109ns of 1489
+      AGENTS.md                -1016ns of 1489
+      .github/workflows/ci.yml -1016ns of 1489
+    T-153-s5 clock restore, P6 plant target, on linux
+    node v22.23.2 uv 1.51.0:
+      tools/e2e/fixtures/shell.ts -316ns of 1489
+
+**THE SECOND SAMPLE CORRECTS THE FIRST, AND THE CORRECTION IS THE
+INTERESTING HALF.** From cycle 1 alone the honest reading looked like
+*every Linux delta is negative and strictly inside one microsecond, the
+largest -999 — one nanosecond short of the quantum*. **That reading is
+FALSE**, and cycle 2 falsified it three ways at once: **-1005**, **-1016**
+twice, and a POSITIVE **+109**. Sixteen samples in, the true statement is
+the one the bound was computed from rather than the one the first sample
+suggested — the error is the microsecond truncation PLUS two float terms
+that are real, are signed, and can carry the total past the quantum in
+either direction. Max |Δ| over both Linux cycles: **1016 ns**, against a
+computed bound of 1489 and a computed worst case of 1241. Had this card
+shipped on one sample it would have carried a sentence the very next run
+disproved, which is this repository's own *a figure needs a keeper*
+arriving as a near miss.
+
+**AND THE TWO PLATFORMS STILL DIFFER IN SHAPE.** Darwin's eight are
+bounded by **170 ns** and never approach the quantum; Linux's sixteen
+reach **1016** and cluster near it. That gap is the whole finding, and it
+is the gap an exact-equality assertion sat on.
 
 **THE MECHANISM.** `utimesSync` takes SECONDS AS A DOUBLE and hands it to
 libuv. On Linux `uv__fs_to_timespec` truncates the nanosecond field to a
@@ -251,10 +281,19 @@ Every earlier step green, including `graph currency (index --check)`,
 `docs gate (whole-tree half)`, `e2e types`, the cargo suite and
 `cargo audit`.
 
-**Cycle 2 — the run this commit triggers**, on the tip below. Its
-verdict is in this lane's report rather than in this file, because a
-commit cannot record the id of the run it causes. One cycle of the cap is
-left unspent.
+**Cycle 2 — run 33265405734**, `pull_request` on PR #3 at `cb216a1`.
+Same verdict shape and the same arithmetic: `token-scan.spec.ts:215` and
+`:346` — the same two bodies, moved by two lines of comment — both
+**PASSED**, all ten bodies in the file green, e2e lane **31 failed / 250
+passed of 281**, and the failing set is byte-for-byte the same thirty-one
+as cycle 1: twenty-nine `pull_request`-checkout, two `T-153-s6`. Its stamp
+is the second Linux sample above and it is the reason a sentence in this
+card was rewritten rather than shipped.
+
+**Cycle 3 — the run this commit triggers**, on the tip below, whose only
+difference from `cb216a1` is this card's prose. Its verdict is in this
+lane's report rather than in this file, because a commit cannot record the
+id of the run it causes. The cap is 3 and this is the third.
 
 **THE 31 ARE THREE CLASSES AND NONE OF THEM IS THIS CARD'S.**
 Two are `T-153-s6`'s, exactly as the dispatch predicted:
@@ -304,10 +343,25 @@ read in this checkout, one commit AHEAD of this lane's base.
   `.nputerignore`d). No regen owed.
 - **BOOT GATE — NOT OWED.** No path under `app/src-tauri/**` or
   `app/src/**`, and neither manifest.
-- **DOCS GATE — FIRES**, on this commit's `docs/tasks/*.md`. The
-  whole-tree half is `npm run lint:docs`, exit **0** (every live card's
-  frontmatter parses with a legal status; four budgets hold). CI runs the
-  same step and it was green in cycle 1.
+- **DOCS GATE — FIRES**, on four `docs/tasks/*.md`. Both halves were run,
+  not one. WHOLE-TREE: `npm run lint:docs` from tools/e2e, exit **0**
+  (every live card's frontmatter parses with a legal status; four budgets
+  hold) — CI runs the same step and it was green in both cycles. DIFF
+  HALF, the one spelling, fed the RANGE RULE's own path list:
+  `node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 95cf2d0 "$TREE")`
+  exits **1 — FIRES**, naming 22 derived readers across 4 suites and
+  owing THREE commands. All three RUN and GREEN at this tip:
+
+  | owed | result | exit |
+  |---|---|---|
+  | `npm test` from app/ (after `npm run build`, exit 0) | 1013 passed, 47 files | 0 |
+  | `npx vitest run` from lib/parser/ | 314 passed, 15 files | 0 |
+  | `npm test` from tools/e2e/ | 281 passed | 0 |
+
+  The app and parser suites are the ones a card-only diff has twice taken
+  red in this repository (`9c64cd8`, `fede266`), and three cards landed
+  here — so this is the gate doing the job it was written for rather than
+  a formality.
 - **METHOD EVAL GATE — NOT OWED.** No path under `method/**`.
 
 ### WHERE THE BRIEF WAS WRONG, plainly
@@ -358,18 +412,21 @@ None of the three was built. Each names the fence it needs.
 
 ### LEAST-CONFIDENT POINT
 
-**The bound's margin is a factor of 1.2, not a factor of 10, and one of
-its three terms is read off libuv's source rather than measured here.**
-1489 ns against a worst case of 1241, of which 1000 is the microsecond
-quantum. Eight Linux samples came in at or under 999 ns, which is exactly
-what the quantum predicts and is therefore consistent with the model
-rather than an independent test of it — the two float terms (122 + 119)
-have never been observed at their maximum on Linux, only reasoned. If a
-platform ever truncated at a coarser grain, or if `mtimeNs` and `mtimeMs`
-were derived from different clocks on some filesystem, this bound would
-be the wrong size and the stamp would be the thing that told you so.
-That is why the stamp is permanent and prints on every run: I would
-rather the next surprise arrive as a number in a log than as a red
-somebody has to reproduce.
+**The bound's margin is a factor of 1.5, not a factor of 10, and the
+sample that would have made me overconfident arrived one cycle before the
+sample that corrected it.** 1489 ns computed, 1241 ns worst case
+reasoned, **1016 ns** the largest of sixteen Linux observations. Cycle 1
+alone said 999 and looked like a clean law; cycle 2 said -1016 and +109
+and turned it back into a distribution. Sixteen samples on one runner
+image is not a lot of evidence about a bound, and the term I have least
+purchase on is the one I did not measure: libuv's quantum is READ OFF ITS
+SOURCE, not observed in isolation, so a platform that quantised at a
+coarser grain — or a filesystem where `mtimeNs` and `mtimeMs` came from
+different clocks — would put the bound on the wrong side of the truth. I
+did not widen it to buy comfort, because a bound wide enough to be
+certainly safe stops being a guard. **That is the whole reason the stamp
+is permanent and prints on every run**: the next surprise should arrive
+as a number in a log rather than as a red somebody has to reproduce, and
+this card has already had one.
 
 ## Verdicts
