@@ -1,17 +1,17 @@
 # State
 
-Updated: 2026-08-29 at the T-154 checkpoint — THE FENCE HOOK IS ARMED
-REPO-WIDE from this merge (lanes fenced at the write; non-lane
-checkouts allow silently). Current record:
-docs/checkpoints/2026-08-29-T-154.md. The pre-compaction narrative
-remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 at the amnesty-triage checkpoint — the suggested
+backlog is ZERO for the first time since the board existed; arrivals
+now queue for T-159's metabolism rules. Current record:
+docs/checkpoints/2026-08-29-amnesty-triage.md. The pre-compaction
+narrative remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
 design — the declared cycle `C-08 -> C-09 -> C-08` stands until
-`T-127-s1` lands; the ENFORCING copy is `cargo test`, which is green.
-Its report is on stderr: `arch cycles > out.txt` on a red yields an
-empty file.
+`T-127-s1` lands (now a PLANNED card, promoted at the amnesty); the
+ENFORCING copy is `cargo test`, which is green. Its report is on
+stderr: `arch cycles > out.txt` on a red yields an empty file.
 
 ## The contract this file is under
 
@@ -29,13 +29,15 @@ never deleted to fit.
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
   --state`, which stamps the reading. Read at this rewrite: ONE
-  `task/` lane live — T-153-s2, executor running — plus the triage
-  worktree on its own branch (2026-08-29, T-154 checkpoint). Since
-  T-154, dispatch also writes the lane's fence manifest
-  (`brief.mjs --task T-NNN --write-fence <worktree>`) — a lane
-  without one is blocked at its first write. Before ANY dispatch run
-  `brief.mjs --task T-NNN`; never read the ledger's FREE column as a
-  verdict — it is keyed by slug and two slugs can name one component.
+  `task/` lane — T-153-s2, executor DONE at tip 5622db9, verifier
+  RUNNING (2026-08-29, amnesty checkpoint). Since T-154, dispatch
+  also writes the lane's fence manifest (`brief.mjs --task T-NNN
+  --write-fence <worktree>`) — a lane without one is blocked at its
+  first write. Before ANY dispatch run `brief.mjs --task T-NNN`;
+  never read the ledger's FREE column as a verdict — seen live at
+  this checkpoint: the `--state` join read branch `task/T-153-s2-...`
+  as card T-153 and printed `app-agent: FREE` while the lane held it
+  (the class is T-143's card).
 - THE HUMAN'S APP: port 1420 is read with
   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else — never
   bind-probe, never connect (CONVENTIONS, PORT RULE; the vite listens
@@ -45,11 +47,15 @@ never deleted to fit.
 - BOARD CENSUS: derived from flat `docs/tasks/T-*.md` frontmatter —
   `brief.mjs --state` prints it per status. The parser's field is
   `blockedBy`, NOT `blocked_by`: a census against the frontmatter
-  spelling returns zero and reads clean.
+  spelling returns zero and reads clean. The suggested column now
+  holds ONLY post-amnesty arrivals — they queue for T-159's rules,
+  never for a second amnesty.
 - GRAPH: `cargo run -p nputer-index -- index --check --root ../..`
   from app/src-tauri/ — ASK IT, never predict, and ask AGAIN after
   every write; it prints the headroom beside the size. A byte count is
-  not a content check.
+  not a content check. A drill worktree's own CARGO_TARGET_DIR sits
+  INSIDE the walk (T-153-s3): never regen or trust CURRENT from
+  inside a drill.
 
 ## Next up — hooks only; statuses are the board's
 
@@ -57,34 +63,30 @@ Order re-ruled 2026-08-29 at the pre-dispatch review; derive each
 card's status and fence with `brief.mjs --task` at dispatch, never
 from this list.
 
-1. `T-153` is DONE and merged (198/0 on ubuntu ×4 runs). The
-   push-hold now stands behind `T-153-s2` alone — the E2BIG argv
-   fixture, C-14's fence, dispatched next — and lifts when it lands:
-   main pushes, CI runs green end to end, draft PR #1 closes.
-2. `T-154` is DONE and merged — the fence is a PROPERTY now, armed
-   repo-wide, verified with hostile payloads. Its live follow-up:
-   `T-154-s2`, the fenceless-seat-reaching-in class (needs every-lane
-   manifests and a ruling).
-3. `T-155` method evals → `T-156` health bands (now also keeper of
-   NORTH_STAR's own never-derived indicators) → `T-157` session
-   economics. `T-158` is DONE and merged — the front door exists,
-   with its rejection arc on the card.
-4. `T-159` — method v0.1.8, the metabolism release: ONE bump owning
-   all method text (fence property, session hygiene, revert play,
-   guard-class independence, suggestion metabolism, retirement
-   conditions, the trust sentence, review reconciliation).
-   `blocked_by: [T-154]`.
-5. THE AMNESTY TRIAGE — one architect sitting over the ~140
-   suggested cards (derive the count), before the metabolism rules
-   take over arrivals.
-6. @human's own items: `T-025-s2` (one real, timed genesis — the
-   product's first credibility act), `T-151` (the budget number),
-   and the standing D3 ruling (may the app write into docs/?).
-7. Standing board hooks, unchanged: `T-135` Half B (owns ADR-018;
-   never re-dispatch whole), `T-138-s3`, `T-112` (most colliding —
-   derive the flip pairs), `T-140` (the file-ceiling gate the bar
-   names), `T-139-s2` (wants a room), `T-149-s1…s5`, `T-092-s4`
-   (the drill's vacuous restoration proof), `T-150`'s trains.
+1. `T-153-s2` — executor done (ubuntu cargo green 3x on draft PR #2,
+   each run stopping at the checkpoint-owned graph regen), verifier
+   running. On APPROVED it merges and THE PUSH-HOLD LIFTS: main
+   pushes, CI runs end to end, draft PRs #1 and #2 close. CI steps
+   19-26 have NEVER executed on Linux — watch the first push as a
+   first run, not a formality.
+2. `T-155` method evals ∥ `T-156` health bands (fences disjoint —
+   derive at dispatch), then `T-157` session economics.
+3. `T-159` — method v0.1.8, the metabolism release; `blocked_by:
+   [T-154]` is satisfied. Twelve parked riders point at it; `T-152`
+   is marked TAKE FIRST (the one method-text finding with a measured,
+   repeated cost). Also owed: the DISCHARGED-NOT-DECLINED archive
+   wording, two-phase verifier blindness.
+4. `T-154-s2` (fenceless-seat class — needs every-lane manifests and
+   a ruling) and `T-153-s3` (the drill target dir inside the graph
+   walk — the silent side is the one that commits).
+5. @human's own items: `T-025-s2` (one real, timed genesis), `T-151`
+   (the graph budget number), and the standing D3 ruling (may the app
+   write into docs/?).
+6. Standing board hooks: `T-135` Half B (owns ADR-018; never
+   re-dispatch whole), `T-112` (most colliding — derive the flip
+   pairs), `T-140` (the file-ceiling gate), `T-139-s2` (wants a
+   room), `T-127-s1` (the headline's own card), `T-144` (owner of the
+   adapter family, absorbing T-138-s3).
 
 ## Standing hazards — the section that saves the hour
 
@@ -95,8 +97,8 @@ from this list.
   reflexively; lanes may be building against this checkout — `lsof`
   first.
 - **`a_hostile_session_id…` is live at ~1-in-22 clean-cache**
-  (`T-086-s1`, `T-102-s3`): a red is not news about your diff — run it
-  alone (historically 5-in-5 green) before attributing anything.
+  (`T-086-s1`): a red is not news about your diff — run it alone
+  (historically 5-in-5 green) before attributing anything.
 - **Read the assertion, not the body's name** (`T-111-s9`):
   `token-scan.spec.ts`'s whole-corpus totals can red for any control
   character anywhere in the tracked corpus, under a title naming
@@ -127,7 +129,8 @@ from this list.
 - **Drill in a detached scratch worktree with its OWN
   `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL): a shared target
   directory replays drill-path binaries into the parent afterwards,
-  and the pollution runs both ways.
+  and the pollution runs both ways — and that drill target dir is
+  inside the GRAPH WALK too (`T-153-s3`).
 
 ## The records
 
@@ -136,7 +139,7 @@ from this list.
   generator from depending on the directory's contents — and since
   2026-08-29 the gate REDS when a record is committed newer than this
   file, so step 2 cannot be skipped silently). The current record is
-  2026-08-27-T-092.md.
+  2026-08-29-amnesty-triage.md.
 - docs/rooms/governing-docs.md and ADR-019 — this file's contract and
   the ruling behind it.
 - The pre-compaction STATE, all 1,125 lines of it:

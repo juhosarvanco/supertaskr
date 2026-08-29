@@ -29,7 +29,11 @@ opens with the card id that still holds its story.
   repository has a human front door: a root README whose every tour
   link is verified against the record and whose every digit is an
   identifier — approved after a rejection that itself proved the
-  pipeline it describes.
+  pipeline it describes. Since the amnesty sitting (2026-08-29) the
+  suggestion backlog is metabolized rather than accumulated: one
+  dispatched architect seat dispositioned all 140 suggested cards —
+  73 promoted, 62 parked with resurfacing conditions, 5 rejected —
+  and arrivals since queue for T-159's standing rules.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own

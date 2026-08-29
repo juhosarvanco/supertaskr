@@ -3,7 +3,7 @@ id: T-144
 title: The root adapter is the first document every session reads, it exists in two copies that must agree, and nothing in the repository asserts they do
 feature: F-06
 milestone: 4
-priority: 7
+priority: 9
 size: S
 status: planned
 suggested_by: architect claude-opus-5
@@ -19,6 +19,13 @@ review:
 Absorbs: T-138-s3 (Amnesty triage 2026-08-29 (triage seat)) — the same set read by a third consumer, and wrong in BOTH directions today — verified live at this base: brief.mjs --task still lists docs/NORTH_STAR.md, which the adapter names only as a routing pointer, and still omits the product pointer entirely because tools/e2e/tests/ is not a docs/*.md path. Its repair (a) is the structural one this card's criteria carry: mark the set rather than pattern-match it, so a routing mention and a read-first entry differ by a boundary instead of by a regex's guess.
 
 Absorbs: T-145-s1 (Amnesty triage 2026-08-29 (triage seat)) — the same family one directory over, with the measurement that turns the argument into a fact: the exact pre-T-145 defect restored on purpose passes a full green cargo suite, 18 result lines, zero failures. It supplies both properties this card's criteria adopt — the derived name-set comparison that catches omission AND invention, and the byte-identity of every file under method/adapters/ from line 2 on — and the reason a new file in that directory is not an escape.
+
+Integrator at the amnesty merge (2026-08-29, cc5389b): priority 7 -> 9.
+The triage's own collision fix (0a37448, 4 -> 7) checked the planned
+column and landed on `building` T-135's slot; 9 is the first free
+integer in F-06 milestone 4 derived over ALL live statuses (planned,
+building, verifying) — a collision census that excludes building cards
+misses exactly the card most likely to be holding its number.
 
 **PROMOTED at the amnesty triage, 2026-08-29, as the owner of the
 adapter-family class.** Three findings from three seats say the same

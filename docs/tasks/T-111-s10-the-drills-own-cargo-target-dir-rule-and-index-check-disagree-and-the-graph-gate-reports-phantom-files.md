@@ -6,7 +6,7 @@ milestone: 4
 priority: 6
 size: S
 status: planned
-blocked_by: [T-092-s2]
+blocked_by: []
 touches: [docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-111
 builder:
@@ -29,6 +29,15 @@ Absorbs: T-079-s3 (Amnesty triage 2026-08-29 (triage seat)) — the same gap fou
 Absorbs: T-092-s4 (Amnesty triage 2026-08-29 (triage seat)) — the sharpest member of the restoration class and the one docs/STATE.md carries as a standing board hook. It shows the prescribed empty-diff proof passing on the WRONG FILE with the work already committed, which the bullet's own DRILL AT A COMMIT clause was written to prevent and does not — two mechanisms defeat one proof and committing first closes only one. Its remedy is a criterion here.
 
 Absorbs: T-110-s4 (Amnesty triage 2026-08-29 (triage seat)) — the same collision measured first, in a different drill with a different directory name (.drilltarget rather than .fctarget) and a different phantom file (a tauri build-script __global-api-script.js carrying zero symbols and zero edges, so only the FILE count moved). It reached the same recommendation — arm (a) plus a sentence in the POISON DRILL bullet — and it adds the consequence this card's criteria keep: the two dogfood fixtures reported six moved assertions where five are real, including an unmapped bucket that the merge will not produce.
+
+Integrator at the amnesty merge (2026-08-29, cc5389b): `blocked_by:
+[T-092-s2]` LIFTED. The 280-byte headroom was true at the triage's base
+(47979ee) and false at the merge ref — ADR-019 Addendum 3 (0d82a60,
+between the two) re-landed docs/CONVENTIONS.md at 110,342 bytes and
+re-derived warn to 137,928; headroom re-derived here is 27,586 bytes
+(`wc -c docs/CONVENTIONS.md` against DOC_BUDGETS in
+tools/e2e/scripts/docs-gate.mjs). The seat is no longer the constraint;
+T-092-s2 is discharged in rejected/ with the full citation.
 
 **PROMOTED at the amnesty triage, 2026-08-29, as the owner of its class.**
 Two lanes, two seats, two different target-directory names, one defect:

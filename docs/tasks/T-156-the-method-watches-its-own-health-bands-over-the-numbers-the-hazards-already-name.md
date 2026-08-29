@@ -23,6 +23,13 @@ band read by eyeball for twenty-plus checkpoints), graph budget
 headroom (98.1% at this filing, the number nothing reports), the four
 doc budgets (gated hard/warn but trend-blind), e2e wall time.
 
+Rider (2026-08-29, integrator at the amnesty merge, from T-092-s2's
+discharge): governed-doc warn HEADROOM is a band candidate, not just
+the budgets themselves — docs/CONVENTIONS.md's headroom moved 12,323 ->
+919 -> 280 -> 27,586 bytes across four refs in three days, each
+excursion discovered by a card rather than a report. A number that
+moves like that wants a band.
+
 ## The shape
 
 1. One deterministic script: read each metric from its existing

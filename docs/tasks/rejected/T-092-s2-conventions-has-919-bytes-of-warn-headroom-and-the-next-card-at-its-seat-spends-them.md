@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 7
 size: S
-status: planned
+status: rejected
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-092
@@ -15,6 +15,22 @@ built_by:
 verified_by:
 review:
 ---
+
+**DISCHARGED AT THE AMNESTY MERGE, NOT DECLINED (2026-08-29,
+integrator, cc5389b).** This card's own "What would close it" names
+three routes and says the choice belongs to whoever owns ADR-019.
+Route two — an addendum raising the line with a measured reason — was
+taken at the T-154 checkpoint, AFTER this triage's base (47979ee) and
+BEFORE its merge: ADR-019 Addendum 3 (commit 0d82a60) re-landed
+docs/CONVENTIONS.md at 110,342 bytes, ruled all growth rule text, and
+re-derived warn 137,928 / fail 165,513 into DOC_BUDGETS in the same
+commit. Re-derived at the merge ref: **headroom is 27,586 bytes, not
+280** — the promotion below was correct at its base and closed by work
+it could not see. The two cards this blocked (T-111-s10, T-147) are
+unblocked with this citation on their bodies. What survives is the
+CLASS — headroom that moved 12,323 -> 919 -> 280 -> 27,586 across four
+refs wants a standing band, not a fresh card per excursion — routed to
+T-156 as a dated rider.
 
 **PROMOTED at the amnesty triage, 2026-08-29, with the figure
 RE-DERIVED — and it has got worse, not better, since it was filed.**

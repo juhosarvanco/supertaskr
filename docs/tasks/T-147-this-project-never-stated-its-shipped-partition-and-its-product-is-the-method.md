@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: planned
 suggested_by: architect claude-opus-5
-blocked_by: [T-092-s2]
+blocked_by: []
 touches: [docs/CONVENTIONS.md]
 builder:
 verifier:
@@ -29,6 +29,12 @@ Absorbs: T-104-s2.
 `blocked_by: [T-092-s2]` because the sentence lands in
 `docs/CONVENTIONS.md`, which has **280 bytes** of warn headroom at this
 base. The seat is the constraint, not the writing.
+
+Integrator at the amnesty merge (2026-08-29, cc5389b): the block above
+is LIFTED — the 280-byte figure was true at the triage's base and false
+at the merge ref. ADR-019 Addendum 3 (0d82a60) re-landed the file at
+110,342 bytes with warn 137,928; headroom re-derived here is 27,586
+bytes. T-092-s2 is discharged in rejected/ with the full citation.
 
 **THE ABSORBED CARD SUPPLIES THE DERIVATION AND IT COSTS NOTHING.**
 `T-104-s2`'s integrator note found the partition already derivable from
