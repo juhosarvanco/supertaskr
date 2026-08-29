@@ -225,9 +225,10 @@ At tip `ce2fffd` in `/Users/ujju/Projects/nputer-T-153` unless noted.
 | `cargo run -p nputer-index -- index --check --root ../..` | app/src-tauri/ | **STALE**, and a REAL red not the `--root` false one: both count sets printed, `files +0 -0 ~1`, `~ app/src-tauri/src/docs_watch.rs (content, loc 4059 -> 4100)` | **1** |
 | `node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 3607a94 "$TREE")` | repo root | **FIRES**, 2 paths, 3 suites owed — all three above | **1** |
 
-The cargo figures were measured at `259250e` (the code commit); the two
-commits after it add only `docs/tasks/*.md`, which the DOCS GATE's own
-verdict does not name any cargo suite as a reader of.
+Every row was re-run at the final tip after the notes landed and gave
+the same counts and the same exits; the `cargo test` lib timing moved
+4.07 s → 4.18 s, which is the only figure that differed and is nowhere
+near the T-088-s4 cliff either way.
 
 ### Standing gates, derived from the merge's diff
 
@@ -308,6 +309,18 @@ event collects from B and is suppressed by equality."*
   `a_hostile_init_line_model_is_refused_and_a_real_one_round_trips`,
   `SpawnFailed { os: "Argument list too long (os error 7)" }`, 79
   passed / 1 failed. That is `T-153-s2`, `touches: [app-agent]`.
+- **Cycle 2 — run `33252985112`** (commit `723d88c`, the notes). Same
+  conclusion, 6 m 53 s, and it is the point of running it: the lib
+  binary is **198 passed; 0 failed** again, 9.92 s, so the convergence
+  is not one run's luck — two independent ubuntu runs, and the body the
+  card was filed for passes in both. `a_hostile_init_line_model…` fails
+  identically, `SpawnFailed { os: "Argument list too long (os error 7)" }`,
+  79 passed / 1 failed. Deterministic, as `T-153-s2` derives: 200 000
+  bytes in one argv element against a 131 072-byte per-element cap
+  cannot vary.
+- **Cycles 3–5 were not spent.** Both remaining reds are outside what
+  this lane may change, and a third run would reproduce them at the same
+  cost. Stopping is the report, not a shortfall.
 
 **SO THE THIRD CRITERION IS NOT MET AND CANNOT BE MET FROM INSIDE THIS
 FENCE, WHICH IS THE FINDING RATHER THAN A FAILURE TO REPORT.** Two
