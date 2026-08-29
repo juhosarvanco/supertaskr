@@ -1,9 +1,63 @@
 ---
 id: T-133-s5
-title: A long project path steals the board's standing region, so a poison drill cut in a deep scratch directory reds a layout body that has nothing to do with the drill
-status: suggested
+title: A deep project path shrinks the board below the standing floor it committed to, and every poison drill cut in a scratch directory inherits the red
+feature: F-02
+milestone: 4
+priority: 37
+size: S
+status: planned
+blocked_by: []
+touches: [app-shell, tools/e2e]
 suggested_by: executor claude-opus-5 @T-133
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the amnesty triage, 2026-08-29.** Two reasons, and the
+first one is a user:
+
+1. **A user with a deep checkout gets a smaller board than the floor
+   this project committed to.** At 800x600 the board region falls to
+   **234** against a floor of **250** — measured, with `scrollHeight`
+   and the capped error strip byte-identical between the two worktrees,
+   so only the chrome above the board differs. The deficit GROWS as the
+   viewport narrows (14px at 1280, 26px at 1024, 50px at 800), which is
+   the signature of text WRAPPING rather than of a fixed-height
+   difference. Nothing about a drill is special except that it found it.
+2. **It is a standing trap for the POISON DRILL**, which is mandatory
+   for every card that adds or changes a test body. The drill discipline
+   says to cut the scratch worktree outside the repository, session
+   scratch roots are deep, and any drill running the full `tools/e2e`
+   suite from there inherits a red that belongs to its working
+   directory. This card's own drill measured it in the CONTROL and
+   subtracted it. `docs/STATE.md` now warns every session to cut at
+   SHORT roots — a workaround in the first document a session reads,
+   standing in for the fix.
+
+## Acceptance criteria
+
+- THE board's standing region SHALL NOT be a function of how deep the
+  user's checkout sits. The lane SHALL take one of the three arms and
+  say which: bound the rendered path in the chrome (truncate,
+  middle-ellipsis, or one line with `overflow-hidden`); assert the floor
+  against the chrome's own height so a legitimate long path fails on the
+  property it violates; or RULE that the floor is owed only at a bounded
+  path length and record the decision in the spec.
+- IF the path is bounded in the chrome THEN the full value SHALL remain
+  reachable (a `title=` or equivalent), on this repository's own
+  precedent for every other bounded display string.
+- WHEN the change lands THE lane SHALL reproduce this card's measurement
+  at BOTH roots — a short one and a >=128-character one — at 1280x840,
+  1024x700 and 800x600, and report `board.clientHeight` at each. A run
+  at one root cannot tell a fix from a coincidence of path length.
+- WHEN it is fixed THE `docs/STATE.md` hazard bullet telling sessions to
+  cut scratch worktrees at short roots SHALL be retired in the same
+  integration, and the retirement SHALL name this card.
+
+## The record, kept verbatim
 
 **ROUTED, NOT TAKEN.** T-133's fence is `touches: [tools/e2e]`. The body
 that reds lives inside that fence and **it is not the thing that is
@@ -79,3 +133,8 @@ shell:
 - Or rule that the floor is only owed at a bounded path length, and say
   so in the spec — the one option that changes nothing and records the
   decision.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

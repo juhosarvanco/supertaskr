@@ -1,7 +1,7 @@
 ---
 id: T-127-s2
 title: The docs watcher is the fence word worth cutting and the shared primitives are not — two of the eight app-shell-only cards touch nothing but C-10, and none of them touches C-16
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-127
 ---
 
@@ -90,3 +90,5 @@ ARCHITECT's (single-writer rule, tasks/TASK-FORMAT.md). **Do not dispatch
 it while any lane holds `app-shell`**: none did at `afe23c1` (the live
 lanes were `T-130` on `[tools/e2e]` and `T-132` on three `method/`
 files), and that is a live-environment fact to re-read, not to quote.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the analysis is sound and its own honest accounting is why this waits: a dedicated app-watcher slug frees TWO of the eight app-shell-only cards outright and makes two more honest — 2 of 8, not 8 of 8 — while re-drawing twenty live cards' fences in one commit that NOTHING WOULD RED. T-149 has since taken the larger bite out of the same ceiling by routing app/test/** to the components those tests exercise, so the marginal benefit here is smaller than when it was measured. Every figure on this card is a transcribed census and must be re-derived. RESURFACES: the next time app-shell is measurably the board's binding constraint (derive it, do not quote this card), or the next docs/architecture/components/ dispatch. It is the ARCHITECT's — touches: on a planned card is a placement field — and it SHALL NOT be dispatched while any lane holds app-shell.

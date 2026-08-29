@@ -1,6 +1,6 @@
 ---
 id: T-111-s10
-title: The POISON DRILL tells a drill to put its CARGO_TARGET_DIR inside its own worktree and the graph walk indexes it, so the gate every checkpoint reads answers confidently and wrongly
+title: The POISON DRILL bullet gets ONE edit for its four earned sentences — the target directory the walk can see, what restoring a fixture MEANS, a clock restored through a Date, and a restoration proof that passes on a failed restore
 feature: F-06
 milestone: 4
 priority: 4
@@ -16,6 +16,12 @@ verified_by:
 review:
 ---
 
+Absorbs: T-130-s1 (Amnesty triage 2026-08-29 (triage seat)) — asks by name to be taken in ONE edit with T-079-s3 rather than as a fourth pass over the same bullet, and carries the measurement that makes the rule writable: 50 of 50 fresh writes land on a sub-millisecond mtime, the Date form round-trips 0 of 50 and the seconds form 50 of 50. It also corrects T-079-s3's own ctime caveat downward, which is why the two must land together rather than in sequence.
+
+Absorbs: T-079-s3 (Amnesty triage 2026-08-29 (triage seat)) — the same gap found by paying it at an integration: a body that planted into a tracked file wrote the original bytes back, sha256-identical and git diff clean, and still cost a red — because seven sibling bodies read the CLOCK. Items 2 and 3 are the CONVENTIONS sentences it routed, and they have sat at this seat since.
+
+Absorbs: T-092-s4 (Amnesty triage 2026-08-29 (triage seat)) — the sharpest member of the restoration class and the one docs/STATE.md carries as a standing board hook. It shows the prescribed empty-diff proof passing on the WRONG FILE with the work already committed, which the bullet's own DRILL AT A COMMIT clause was written to prevent and does not — two mechanisms defeat one proof and committing first closes only one. Its remedy is a criterion here.
+
 Absorbs: T-110-s4 (Amnesty triage 2026-08-29 (triage seat)) — the same collision measured first, in a different drill with a different directory name (.drilltarget rather than .fctarget) and a different phantom file (a tauri build-script __global-api-script.js carrying zero symbols and zero edges, so only the FILE count moved). It reached the same recommendation — arm (a) plus a sentence in the POISON DRILL bullet — and it adds the consequence this card's criteria keep: the two dogfood fixtures reported six moved assertions where five are real, including an unmapped bucket that the merge will not produce.
 
 **PROMOTED at the amnesty triage, 2026-08-29, as the owner of its class.**
@@ -24,7 +30,21 @@ the directory the POISON DRILL bullet tells you to create is INSIDE the
 tree the graph walk indexes, and `.gitignore` excludes `target/` and
 nothing else.
 
-Absorbs: T-110-s4 (see the corroboration line below).
+Absorbs: T-110-s4, T-079-s3, T-092-s4, T-130-s1 (see the corroboration
+lines below).
+
+**FOUR SEATS, FOUR SENTENCES, ONE PARAGRAPH — AND THAT IS THE POINT.**
+`T-104-s5` derived the routing fact this card is built on: edits queued
+at the `docs/CONVENTIONS.md` seat land in a small number of bullets, and
+*take them together or the bullet gets patched three times and still does
+not say it.* `T-130-s1` asks for exactly that in its own words. Three of
+the four absorbed findings are the same gap seen from three angles —
+**the bullet rules how a restoration is PROVED and never says what
+restoring MEANS** — and the fourth is the walk collision this card was
+filed for. `T-092-s4` is the sharpest of the three, because it shows one
+of the two prescribed proofs passing on the wrong file with the work
+already committed, which is the case the bullet's own newest clause was
+written to close and does not.
 
 Needle re-checked at this base: `docs/CONVENTIONS.md` still says
 *"GIVE IT ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF"* with
@@ -57,6 +77,33 @@ two different drills, and they agree.
   card rather than taken here — it is code, it is a different fence, and
   the doc edit must not wait on it. Arm (a) and arm (c) are not
   alternatives.
+- THE empty-`git diff` restoration proof SHALL be demoted from an
+  ALTERNATIVE to a companion. `git checkout <commit> -- <path>` writes
+  the INDEX as well as the worktree, so a following bare
+  `git checkout -- <path>` restores FROM THE MUTATION'S OWN SOURCE and
+  the prescribed empty-diff proof reports success on the wrong file —
+  measured, with the work committed, so the bullet's DRILL AT A COMMIT
+  clause does not close it. The sha256-against-HEAD arm is the proof; the
+  diff is a convenience, and `git diff` alone cannot see a staged index.
+  The safe spelling SHALL be named beside the trap
+  (`git restore --source=<commit> --staged --worktree -- <path>`).
+- THE bullet SHALL say what restoring a fixture MEANS: a body that plants
+  into a tracked file restores its BYTES **and** its CLOCK, and **a clock
+  restored through a `Date` is lossy below the millisecond** —
+  `utimesSync(target, stats.atime, stats.mtime)` writes back a rounded
+  timestamp where `utimesSync(target, stats.atimeMs / 1000,
+  stats.mtimeMs / 1000)` carries the fraction. Measured 50 of 50 both
+  ways on APFS.
+- THE self-healing property SHALL land with it, because it is what makes
+  the rule necessary rather than nice: **the lossy restore leaves the
+  file on a whole millisecond, so the next run rounds to a no-op and
+  passes.** Red once, green forever after, in that checkout — re-running
+  until green is the defect's own healing mechanism, not evidence.
+- THE `ctime` caveat SHALL be written at the strength the evidence
+  supports and no higher: seen once, and NOT reproduced in 24 further
+  cycles across two checkouts, one of them a freshly cut worktree. It is
+  an observation, not a mechanism, and the standing advice is unchanged —
+  prove restoration by HASH, which is immune either way.
 - THE lane SHALL re-derive the `docs/CONVENTIONS.md` edit queue at its
   own ref before writing (`T-104-s5` catalogues one, and that catalogue
   is itself a transcribed census two of whose named homes have since

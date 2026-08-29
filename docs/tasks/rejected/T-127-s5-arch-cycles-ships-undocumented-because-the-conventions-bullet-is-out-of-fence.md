@@ -1,7 +1,7 @@
 ---
 id: T-127-s5
 title: The arch cycles gate ships undocumented because the CONVENTIONS command bullet is outside T-127's fence — the command exists, the section that lists commands does not know it
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-127
 ---
 
@@ -64,3 +64,5 @@ matching LOCAL_ONLY entries in workflow-parity.spec.ts — find it with
 `git log -S "arch cycles --root" -- docs/CONVENTIONS.md`. Executed
 directly at @human's direction per docs/rooms/governing-docs.md's
 override.
+
+Amnesty triage 2026-08-29 (triage seat): REJECTED — DISCHARGED, NOT DECLINED — the card carries its own closed_by line and the work landed. Verified at this base: docs/CONVENTIONS.md's app/src-tauri bullet now carries `cargo run -p nputer-index -- arch cycles --root ../..` with the exit legend this card specifies (line 35), the command appears twice more in the file's own reasoning, and tools/e2e/tests/workflow-parity.spec.ts carries the matching LOCAL_ONLY entry, so the parity trap this card warns about was avoided. The absorbed T-133-s1 went with it. Recorded here rather than as an absorption because the resolver is an ADR-019 phase commit executed at @human's direction and no card exists to carry the Absorbs line.

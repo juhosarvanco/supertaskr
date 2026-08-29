@@ -1,7 +1,7 @@
 ---
 id: T-130-s2
 title: Nothing catches the THIRD lossy restore, because the only guards are the two bodies that happen to assert their own
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-130
 ---
 
@@ -56,3 +56,5 @@ answer:
    a size-S card whose criteria were all about two specific bodies.
 
 **Fence:** `[tools/e2e]` — FREE once T-130 lands.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — the class half of the restoration finding, and the only member of it whose fence is tools/e2e rather than docs/CONVENTIONS.md — which is why it is parked here while the other three ride T-111-s10's single POISON DRILL edit. The derivation stands: the whole guard surface is two bodies that happen to assert their own restore, so a third plant-and-restore body written tomorrow is lossy on arrival, green in its own suite because the defect erases its own precondition, and reds somebody else's mtime guard weeks later detached from its cause. RESURFACES: the next tools/e2e dispatch, which SHALL answer this card's two open questions first — whether one pattern is enough (futimesSync and lutimesSync cost nothing to include) and whether it belongs to the token lint at all or to an enumerating body on the range-rule.spec.ts precedent, which cannot be evaded by spelling.

@@ -1,7 +1,7 @@
 ---
 id: T-132-s6
 title: Rule 4 partitions by CHECKOUT and a default port is machine-wide — two lanes obeying it perfectly still collided, and the guard that caught it is the only reason anyone knows
-status: suggested
+status: parked
 suggested_by: architect claude-opus-5
 ---
 
@@ -84,3 +84,5 @@ unchanged, and it comes with its positive-control requirement: prove the
 check lets the ordinary case through as well as stopping the collision.
 And **`lsof` only**: never connect, never bind to test, because taking a
 port for a microsecond is still taking it.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — docs/STATE.md already carries this as a standing hazard with the discipline attached — pass an explicit port and lsof-read it at zero rows immediately before binding, because a probe reserves nothing — so every session is briefed and the guard that caught the live collision behaved perfectly. What is missing is the CONSTRUCTION: arm 2, deriving the port from the lane so two lanes cannot pick the same number, which is this project's own stated preference and has precedent in how scratch worktree names are already derived. It is held rather than promoted because T-120-s2 is now planned over the same file and its criteria explicitly forbid moving the port probe. RESURFACES: the merge of T-120-s2, after which resolveLanePort's neighbourhood is free and arm 2 is a small construction; arm 1 (naming the port space beside the other five shared surfaces) rides T-159. The caution stands whoever takes it: lsof only, never connect and never bind to test, and the check owes a positive control.

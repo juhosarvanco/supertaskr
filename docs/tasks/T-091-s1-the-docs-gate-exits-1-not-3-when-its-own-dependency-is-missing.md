@@ -5,6 +5,8 @@ status: parked
 suggested_by: executor claude-opus-5 @T-091
 ---
 
+Absorbs: T-132-s1 (Amnesty triage 2026-08-29 (triage seat)) — the same defect measured a second time by a second seat, in a fresh lane worktree running the spelling CONVENTIONS prints, and it names the mechanism this card left implicit: exit 3 is UNREACHABLE, because the failure is in node's ESM resolver before the module body runs, so process.exit(3) is never reached and node's own uncaught-exception 1 is what the caller reads. Its fix shape is marked UNVERIFIED and carries the positive control the launcher would owe.
+
 **MEASURED AT `d2bba71` IN A DETACHED DRILL WORKTREE, NOT REASONED
 FROM.** T-091's reader executes the DOCS GATE's printed recipe end to
 end and compares the observed exit code with the code the bullet's own

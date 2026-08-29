@@ -1,7 +1,7 @@
 ---
 id: T-133-s3
 title: Orchestrator step 5b requires the brief contract and names no way to obey it — one clause closes the gap the command was built for
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-133
 ---
 
@@ -57,3 +57,5 @@ open card about `method/roles/` under a path-granular fence.
 Absorbs (eleventh triage, 2026-08-26): T-132-s3 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — live and exactly argued: step 5b already says the brief is assembled to the contract in roles/executor.md, every dispatch brief written on 2026-08-25 obeyed the first clause and broke the second, and the prose was read closely enough to be QUOTED and still did not bind. The remedy is a construction rather than more prose about care — name the command, since brief.mjs already refuses to emit a bare figure. The card's own first question is the one that must be answered before it is written: whether naming an nputer path inside a product-agnostic role file is a FORMAT change, and its honest resolution is that the clause belongs in docs/CONVENTIONS.md with step 5b gaining only a pointer, the same split lane-protocol.md already takes for every lane spelling. RESURFACES: the next method/ dispatch — T-159 — which owns both sides of that split and can rule it in one place. The absorbed T-132-s3 rides with it.

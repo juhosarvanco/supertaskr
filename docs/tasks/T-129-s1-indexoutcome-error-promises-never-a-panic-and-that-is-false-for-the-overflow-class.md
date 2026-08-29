@@ -1,9 +1,11 @@
 ---
 id: T-129-s1
 title: IndexOutcome::Error's doc comment promises "never a panic" and that is false for the stack-overflow class — T-129 removed the cause and cannot reach the sentence
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-129
 ---
+
+Absorbs: T-129-s5 (Amnesty triage 2026-08-29 (triage seat)) — the same class from the same lane's other side — T-129's prose outran its code — and both are ready-to-paste text with no assertion moving. Here the depth.rs comment describes the REJECTED MAX_DEPTH = 256 fixture (256 mods / 128 groups / 257 segments), every number exactly double the literal beneath it, and the input it names is one the body would REFUSE. Its fence is crate-index where this card's is app-shell, which is why one card wants both.
 
 **THIS IS T-129's ARM 3, ROUTED RATHER THAN REACHED FOR, and it is filed
 with the exact one-line correction.** T-129's fence is
@@ -84,3 +86,5 @@ reasons, and both are why this is worth a card rather than a shrug:
 rides any `app-shell` card cheaply — and the two things it says are worth
 saying beside each other: what the variant DOES carry, and where the
 no-abort property actually lives.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — both halves are ready-to-paste prose with no behaviour, no IPC and no grant, and both are live at this base. The sentence is a guarantee about a whole variant defended by nothing — no test on this tree asserts that run_index cannot abort, nor could one, since an abort is not a test failure and would take the test binary with it. T-129 removed the CAUSE and could not reach the SENTENCE, which is the shape this card exists to record. RESURFACES: the next app-shell dispatch for the index_cmd.rs doc comment, paired with crate-index for the depth.rs comment absorbed here; both ride any such card cheaply and neither moves an assertion.

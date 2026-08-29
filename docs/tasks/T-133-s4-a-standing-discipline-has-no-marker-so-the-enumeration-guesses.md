@@ -1,7 +1,7 @@
 ---
 id: T-133-s4
 title: A standing discipline has no marker in CONVENTIONS, so row 9 is enumerated by TYPOGRAPHY and is deliberately too wide
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-133
 ---
 
@@ -44,3 +44,5 @@ that cannot silently widen; it buys no figure.
 
 Fence: `[docs/CONVENTIONS.md]`. Cheap, and it makes one row of every
 future brief exact instead of generous.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — live and correctly scoped: brief.mjs enumerates row 9's handoff disciplines by the file's own TYPOGRAPHY, which is a signpost derivation in a repository that has a bullet about what happens to those. The fourteen it returns are the right fourteen and three of them are not handoff disciplines at all. Over-inclusion is the safe direction and the command says so in its own header, but safe is not derived. Its rejected-in-advance arm should stay rejected: a LIST of discipline bullets is the defect the whole card exists to remove, and the count must not be pinned either way. RESURFACES: the next docs/CONVENTIONS.md dispatch — the remedy is a marker the enumeration can read, in the parenthetical form the file already uses to ratify things, and it buys a derivation that cannot silently widen rather than a figure.
