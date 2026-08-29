@@ -56,6 +56,14 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history, not depth 1: three e2e specs READ the repository's
+          # own git history as their input (brief.spec's two-Checkpoint read,
+          # range-rule's `<hash>^` parent walks, docs-input-gate's range
+          # scenarios), and a shallow clone hands them a repository that has
+          # exactly one commit — CI run 33259394002, the e2e lane's first
+          # Linux contact, redded all three exactly this way.
+          fetch-depth: 0
 
       - name: Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
