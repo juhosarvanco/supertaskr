@@ -381,3 +381,28 @@ was verified clean throughout and never carried a mutant.
   with sparser imports reaches further and a monorepo of small heavily
   cross-importing modules reaches less far. The line says "at this tree's
   density" for that reason; the ORDER of magnitude is the claim.
+
+### The DOCS GATE, run on the merge-tree diff
+
+    MAIN=$(git rev-parse main)                     # eecc83e at this run
+    TREE=$(git merge-tree --write-tree "$MAIN" HEAD)   # exit 0, a tree not a conflict
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only "$MAIN" "$TREE")
+
+**exit 1 — it HAS a verdict**: 2 paths under `docs/` are code inputs
+(this card and the suggestions), owing three suites. All three run and
+all three green at the tip:
+
+    npm test from app/           exit 0
+    npx vitest run from lib/parser/   exit 0
+    npm test from tools/e2e/     exit 1 — ONE failure, INHERITED, filed as T-140-s2
+
+**The e2e failure is not this lane's** and was proved so rather than
+asserted: `brief.spec.ts`'s provenance rule classifies a line as "read
+from the integration branch" by regexing `\bmain\b` against the whole
+SOURCE string, and `T-153-s9`'s card FILENAME contains `-local-main-so-`.
+Re-run alone at the tip — same single failure, so not a concurrency
+artifact — then reproduced at this lane's BASE `a533a4d` in a detached
+worktree with that tree's own `brief.mjs`: **5 refReads, 2 not
+live-stamped, both `T-153-s9` lines**. This lane adds no path containing
+`main` and touches nothing under `tools/e2e`, which is `T-153-s9`'s fence
+— so it is filed and routed, never fixed from here.
