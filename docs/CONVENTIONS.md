@@ -947,6 +947,38 @@
     suite growth (12-of-840-in-five when measured at `4d2f03c`). CI
     never sees it because ci.yml orders app build before app suite; a
     hand-run lane does.
+  - **THE FENCE IS A PROPERTY AT THE MOMENT OF THE WRITE, NOT ONLY A
+    DISCIPLINE AT THE HANDOFF** (T-154, ADR-020 decision 1). After
+    cutting the lane and before briefing the session, the dispatcher
+    runs `node tools/e2e/scripts/brief.mjs --task T-NNN --write-fence
+    <the lane worktree>`: it expands the card's `touches:` through the
+    parser's ONE fence implementation and leaves the answer in the lane
+    as `.nputer/lane-fence.json`. A PreToolUse hook wired in
+    `.claude/settings.json` then reads that file at every Edit/Write
+    with no dependency a freshly cut worktree lacks. FOUR ANSWERS, AND
+    THE AUTHORITY IS `decide` IN `.claude/hooks/lane-fence.mjs` RATHER
+    THAN THIS PAGE: a checkout not on a lane branch is ALLOWED — the
+    integrator, the architect and every detached drill, which is the
+    positive control that keeps a refusal distinguishable from an
+    absence; a lane branch with NO manifest is REFUSED, because that is
+    a dispatch that skipped its step; a path inside the manifest or
+    under the unfenceable `docs/tasks/` is allowed; anything else is
+    refused, naming the fence, the path and the route. A card whose
+    `touches:` no longer matches the manifest's stamp refuses with
+    `re-expand`, so a fence cannot be widened from inside the lane it
+    fences — `method/lane-protocol.md` rule 5, made mechanical.
+    **THREE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
+    IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
+    `>` redirect, a checkout — reaches disk without an Edit or a Write
+    and stays protocol-covered. A path OUTSIDE the lane's own checkout
+    is allowed, the manifest's domains being repository-relative: the
+    scratchpad and a drill tree are reachable, and so is a sibling
+    lane's. And the guard is armed by the WRITING session's own branch,
+    so a seat in this checkout editing a file a live lane holds is not
+    seen — the shape of two of the three incidents the card cites.
+    The manifest is a RUNTIME file carrying a self-ignoring `.gitignore`
+    beside it: one that reached the integration branch would hand every
+    checkout one lane's permanently stale fence.
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052). Nine instances across
   2026-08-16/17 escalating from cosmetic to fatal, plus a tenth on
