@@ -572,6 +572,30 @@ test("a card with no acceptance-criteria section SAYS SO rather than reporting a
   expect(findings).toEqual([]);
 });
 
+test("a card the board's schedule does not draw is REFUSED, naming its status", async () => {
+  // A `suggested` finding is not a dispatch candidate, so the parser's
+  // order carries no ruling for it — and this command takes both the
+  // fence and the blocker verdict from that ruling. It refuses rather
+  // than reporting the other four classes as though they were the whole
+  // answer, which is the house split between "I found something" and "I
+  // could not tell you".
+  const fx = makeFixture();
+  writeFixtureFile(
+    fx.repo,
+    CARD,
+    cardText({}).replace("status: planned", "status: suggested"),
+  );
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", "Checkpoint: the card is a suggestion now", "--quiet"]);
+
+  const ctx = context({ root: fx.repo, taskId: FIXTURE_ID });
+  await expect(preflight(ctx)).rejects.toThrow(/"suggested"/);
+  // THE DISCRIMINATING HALF: the same card as a dispatch candidate is
+  // preflighted normally, so this refusal is about the status and not
+  // about the fixture.
+  expect((await run(makeFixture())).findings).toEqual([]);
+});
+
 /* ────────────────────────────────────────────────────────────────────
  * THE PURE HALVES, DRIVEN DIRECTLY
  * ──────────────────────────────────────────────────────────────────── */

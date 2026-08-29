@@ -155,7 +155,9 @@ export const CLAIM_CLASSES = Object.freeze([
     refuses: "a blocker with no live card, and a card the parser rules blocked or waiting",
     cannot:
       "a blocking reason stated as prose with no machine form; the one exception is the claim that " +
-      "another card's LIVE LANE holds a fence, which is read against the live lane list",
+      "another card's LIVE LANE holds a fence, which is read against the live lane list. A card the " +
+      "board's schedule does not draw at all has no ruling here, and this command REFUSES rather " +
+      "than reporting the other classes as though they were the whole answer",
   },
   {
     key: "refs",
@@ -640,10 +642,21 @@ export async function preflight(ctx, options = {}) {
     ).order;
   const ruling = order.all.find(/** @param {{ id: string }} r */ (r) => r.id === card.id);
   if (ruling === undefined) {
+    // A CARD THE SCHEDULE DOES NOT DRAW CANNOT BE PREFLIGHTED, AND THIS
+    // REFUSAL NAMES THE REASON RATHER THAN THE SYMPTOM. The board's
+    // schedule draws the statuses it draws — an untriaged `suggested`
+    // finding is not a dispatch candidate — and this command takes its
+    // fence and its blocker verdict from that ruling rather than
+    // re-spelling either (T-057). Answering 3 is the point: "I could not
+    // check this card" and "this card's claims hold" are different
+    // sentences and must never share a number.
     throw new CardPreflightError(
-      `card-preflight: the parser's dispatch order carries no ruling for ${card.id}, so this ` +
-        "command has neither its fence nor its blocker verdict. Both are the parser's own — this " +
-        "module will not re-spell either (T-057).",
+      `card-preflight: the parser's dispatch order carries no ruling for ${card.id}, whose status ` +
+        `is ${JSON.stringify(fieldScalar(card.fields, "status"))} — the schedule draws dispatch ` +
+        "candidates, so a card outside that set has no expanded fence and no blocker verdict here. " +
+        "Both are the parser's own and this module will not re-spell either (T-057). Preflight the " +
+        "card when it is a dispatch candidate; until then this run is a claim about the command " +
+        "and not about the card.",
     );
   }
   const fence = ruling.fence;
