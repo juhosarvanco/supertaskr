@@ -71,3 +71,27 @@ truth-maintenance features exist.
 - Solo-founder maintainable: thin stack, shell-out architecture.
 - The succession guarantee is non-negotiable: swap the architect
   model/session at any time with zero capability loss.
+
+## The bar (@human, 2026-08-29)
+
+Quoted verbatim, because the criteria decide which arguments count:
+*"I need everything to be gold standard in a way that will highly
+impress even the worlds best veteran software developers, ai
+developers and the best experts and masters in the field. I need
+nputer to be the product everyone will praise and need in their
+workflow. I need nputer to be the finest example of the perfect, most
+efficient, bug free, highest quality work producing AI native SDLC
+tool ever created."*
+
+Read WITH the applause-metrics exclusion above, never against it: the
+bar is not praise collected — it is work that SURVIVES the scrutiny
+of masters, and "need in their workflow" is success criterion 3's
+"acted, not liked" at world scale. Operationally the bar is a BAND,
+not an adjective (ADR-019/020): a known-vacuous keeper is a
+stop-the-line defect, the guard-integrity queue trends to zero, and a
+quality regression reds before it ships. The three gates it makes
+urgent are `T-025-s2` (no real genesis has ever run — the product's
+first credibility question), `T-140` (the map's ~1,000-file ceiling
+keeps nputer out of the workflows it must live in), and `T-112` (the
+dispatch loop people would use daily). The repository itself remains
+the proof: the finest example is the one whose own record shows it.
