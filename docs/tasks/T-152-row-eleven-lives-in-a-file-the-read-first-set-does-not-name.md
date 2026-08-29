@@ -5,11 +5,13 @@ feature: F-01
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: parked
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [method/roles/]
 ---
+
+Absorbs: T-138-s4 (Amnesty triage 2026-08-29 (triage seat)) — the same reading list from the other end, and @human has already ruled on its ask — keep the reading list the same for now — so what it contributes here is evidence rather than a request: executor.md step 1 is the ONLY reading list in any role file (the verifier, integrator and planner have no reading step at all), its three entries are byte-for-byte the shared list as it stood before 6a6bc87, and its omission of ROADMAP has no stated reason anywhere. That makes it the single place in the method where a second copy of the read-first set lives, which is a T-057 instance by construction — and this card is the one showing what the list's CONTENTS cost when they are wrong.
 
 ## The error, twice, identically
 
@@ -66,3 +68,5 @@ how this gap would have announced itself the first time.
 right for every tier but one, and a lane that merges when it should not
 is worse than a lane that stops when it could have merged. The fix is to
 make the exception *derivable*, not to remove the rule.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — TAKE THIS FIRST AMONG T-159's RIDERS. It is the only parked method-text finding with a MEASURED, REPEATED cost: the same dispatch error twice, six hours apart, by different hands, each lane correctly stopping rather than guessing upward against an explicit restriction. The cause was reported BETWEEN the two and not acted on. T-148 worked for every contract row whose source the reading list names; row 11's source is method/tasks/TASK-FORMAT.md, which the root adapter's read-first set does not name — verified at this base, grep returns no hit in CLAUDE.md — so the executor cannot read its own ceremony tier and cannot tell a mistaken restriction from a deliberate one. RESURFACES: the next method/ dispatch — T-159. The absorbed T-138-s4 is the same reading list from the other end and carries @human's standing ruling on its contents.

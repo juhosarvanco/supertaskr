@@ -5,6 +5,8 @@ status: parked
 suggested_by: executor claude-opus-5 @T-126
 ---
 
+Absorbs: T-149-s1 (Amnesty triage 2026-08-29 (triage seat)) — the same file's same field from the other direction: C-05's depends_on carries C-09 with observed=0 after T-149 routed all three of its file edges to the component they exercise, so a planned row now asserts an intent that was never there — the shell never meant to import the drawer, it meant to import the board, and both hops of C-05 -> C-08 -> C-09 are declared and observed. The precedent is exact and already in this registry: C-12 dropped C-05 for the identical reason at T-033.
+
 T-126 declares `pub mod dispatch;` in `lib.rs`, registers
 `dispatch_lanes`, and deletes `app/src-tauri/tests/dispatch_lanes.rs`.
 **Four written statements about C-15 became false in that commit**, none

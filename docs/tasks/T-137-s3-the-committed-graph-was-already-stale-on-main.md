@@ -6,6 +6,10 @@ suggested_by: executor claude-opus-5 @T-137
 touches: [docs/architecture/graph.json]
 ---
 
+Absorbs: T-150-s3 (Amnesty triage 2026-08-29 (triage seat)) — the third lane, and the one that names the mechanism most precisely: the checkpoint that made index --check exit 1 is the one that regenerated the graph, because the two dogfood fixtures moved AFTER the regen inside the same commit. That is the shape the template's graph re-ask slot now exists to prevent, and it is why the checkpoint half of this class is discharged while the general half is not.
+
+Absorbs: T-149-s3 (Amnesty triage 2026-08-29 (triage seat)) — the second lane to spend a measurement discovering the red was not its own: index --check exits 1 on an UNTOUCHED checkout of the dispatch commit both T-149 and T-150 were cut from. Same class, same cost, different week.
+
 **DERIVED, NOT NOTICED IN PASSING.** `T-137`'s lane ran its own built
 indexer against a DETACHED worktree at its base commit `00e133a`, holding
 none of the lane's files:
