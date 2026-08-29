@@ -6,7 +6,7 @@ milestone: 4
 priority: 6
 size: S
 status: planned
-blocked_by: []
+blocked_by: [T-092-s2]
 touches: [docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-111
 builder:
@@ -15,6 +15,10 @@ built_by:
 verified_by:
 review:
 ---
+
+Absorbs: T-092-s6 (Amnesty triage 2026-08-29 (triage seat)) — a sixth sentence for the same bullet and the cheapest of them all — six words, or a deletion. The shape-six paragraph transcribes 1 failed / 832 passed of 833 with no ref; the tree is 1013 across 47 files, the 833 is T-072's suite size, and nothing on the page says so. It is the class this file has already paid for twice: ADR-019's compaction deleted two transcribed denominators from this same file for exactly this. Stamp it or drop the fraction and keep the property, which is the only load-bearing half.
+
+Absorbs: T-092-s5 (Amnesty triage 2026-08-29 (triage seat)) — a fifth sentence for the same bullet, and its cheapest arm costs almost nothing: the catalogue claims THE CATALOGUE IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED HERE and then says Cards CITE these numbers, while shapes ONE to FOUR have no entry anywhere — grep returns nothing at T-092's tip and at its base, so it is inherited, not introduced. Soften the claim to what is true (closed at eleven, FIVE through ELEVEN carry entries, ONE to FOUR are the matcher-moved-value-fixed family whose histories live in the cards) rather than writing 3.9 KB this seat does not have.
 
 Absorbs: T-130-s1 (Amnesty triage 2026-08-29 (triage seat)) — asks by name to be taken in ONE edit with T-079-s3 rather than as a fourth pass over the same bullet, and carries the measurement that makes the rule writable: 50 of 50 fresh writes land on a sub-millisecond mtime, the Date form round-trips 0 of 50 and the seconds form 50 of 50. It also corrects T-079-s3's own ctime caveat downward, which is why the two must land together rather than in sequence.
 

@@ -1,7 +1,7 @@
 ---
 id: T-138-s1
 title: The product-shaped read-first entry is a GENERATED capabilities document assembled from the e2e spec names — 163 sentences, 11 808 bytes, 3.24% on the read-first set
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-138
 touches: [tools/e2e, docs/CAPABILITIES.md, CLAUDE.md, AGENTS.md]
 ---
@@ -103,3 +103,5 @@ behaviours) is NAMED in the document per this card's honest-omission
 rule. Census 233 = the runner's own count. `npm run capabilities:check`
 is the currency gate, poison-drilled both ways at landing. Both root
 adapters moved together and are cmp-identical, per this card's hazard.
+
+Amnesty triage 2026-08-29 (triage seat): REJECTED — DISCHARGED, NOT DECLINED — the card carries its own closed_by line and the work landed. Verified at this base: docs/CAPABILITIES.md and tools/e2e/scripts/capabilities.mjs both exist, CLAUDE.md's read-first set now names CAPABILITIES as the exact behaviour census generated from the spec names, and the gate lists capabilities.mjs among its derived docs readers. The source-vs-run choice this card left open was settled the way T-138's checkpoint predicted. Recorded here rather than as an absorption because the resolver is ADR-019's phase-2 commit and no card exists to carry the Absorbs line.

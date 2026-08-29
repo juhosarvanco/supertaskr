@@ -6,6 +6,8 @@ suggested_by: executor claude-opus-5 @T-111
 touches: [tools/e2e]
 ---
 
+Absorbs: T-139-s4 (Amnesty triage 2026-08-29 (triage seat)) — the third axis of the same reader census: suiteFor answers where a file LIVES and the gate reports it as which suite READS the doc, which are the same thing only for files that package's runner executes. T-139 added the first two files in this tree where they come apart, and both are its measurement harnesses — a standalone node script vitest never matches, and an #[ignore]d cargo body. It over-fires, which is the safe direction, and it is filed because a line reading [cargo test from app/src-tauri/] docs/architecture/graph.json invites an integrator to conclude that cargo test exercised the graph. Its good side must survive the repair: graph.json used to be added to the gate's list BY HAND at three consecutive checkpoints.
+
 Absorbs: T-091-s2 (Amnesty triage 2026-08-29 (triage seat)) — the same scanner blind spot stated first and from the other direction — only the zero-argument spelling is seen, so a reader that passes the repository root as a variable is invisible. This card is the survivor because it carries the measured cost: four bodies red in docs-input-gate.spec.ts and the hand-run gate exiting 1 on a CODE-ONLY path list, which is the one thing three of those bodies exist to forbid.
 
 **MEASURED IN THIS LANE, BY WALKING INTO IT.** Two spellings of the same

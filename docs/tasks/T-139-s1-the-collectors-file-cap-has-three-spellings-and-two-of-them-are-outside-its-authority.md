@@ -1,7 +1,7 @@
 ---
 id: T-139-s1
 title: The collector's per-file cap has THREE spellings and only one of them is the authority — raising it in docs_watch.rs leaves the pane warning about a cap that no longer exists
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-139
 ---
 
@@ -51,3 +51,5 @@ route to TypeScript. Three options, cheapest first:
 
 **Fence: `[app-shell, app-map]`** for 1 and 3; option 2 additionally
 touches the snapshot shape, which is `app-shell`'s.
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — a T-057 duplication that SPANS A FENCE, which is why it survived T-139: docs_watch.rs is C-10 (app-shell) and MapView.tsx is C-12 (app-map), and the pin T-139 did build deliberately joins the two RUST constants and says nothing about the TS one. Both directions of the divergence are user-visible — raising MAX_FILE_BYTES leaves the pane warning about a cap that was raised out from under it, lowering it leaves the pane silent about a graph now being dropped — and neither reds anything, because nothing joins the two. RESURFACES: the next dispatch holding app-map and app-shell together. Option 2 (ship maxFileBytes in the DocsSnapshot, which already crosses IPC on every change) is the one that makes the pane's warning a function of the collector that produced the payload rather than of a number compiled into the webview months earlier; option 1 is a tripwire and honest about being one.

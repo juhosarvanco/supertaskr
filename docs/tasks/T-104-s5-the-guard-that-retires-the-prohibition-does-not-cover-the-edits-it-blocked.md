@@ -5,6 +5,8 @@ status: parked
 suggested_by: integrator claude-opus-5 @T-104
 ---
 
+Absorbs: T-092-s7 (Amnesty triage 2026-08-29 (triage seat)) — a queue member for the RANGE RULE bullet, and the instance behind it needs nothing in the tree — the answer was right because main never moved during that lane, so the banned pair and the prescribed one collapsed onto each other. What survives is the arm: the two banned forms are currently disclaimed in DIFFERENT VOICES (merge-base..tip by name, <main>..HEAD in a later paragraph), so a session quoting one ban can land in the other, which is exactly what happened here with a compliance label attached.
+
 Absorbs: T-091-s3 (Amnesty triage 2026-08-29 (triage seat)) — queue member, needle re-checked live at this base: docs/CONVENTIONS.md still states the flip figures "Derived at ddcc8bb" with no sentence naming the trigger they were matched against, and GRAPH REGEN's trigger has since gained *.rs. Its own instruction is preserved — name the trigger, do NOT replace the figures, because the older larger sample is the better evidence for the mechanism the paragraph argues.
 
 Absorbs: T-104-s3 (Amnesty triage 2026-08-29 (triage seat)) — the first statement of this queue, and this card exists to correct its closing argument: s3 concluded the two RANGE RULE edits were safe once T-091's reader landed, and the reader is a regression guard on the FIGURES that would report 25 of 25 whether the new prose is right or wrong. Its general finding — a fence names paths and this project writes prohibitions at paragraph grain — is kept here as the reason the queue formed at all.

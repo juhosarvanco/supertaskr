@@ -1,7 +1,7 @@
 ---
 id: T-092-s3
 title: The stamp pin is now LINE-scoped, so a reflow that leaves the document correct reds it — and the message names the wrong remedy
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-092
 ---
 
@@ -66,3 +66,5 @@ Cheapest first; any one of them:
   discusses anchor-vs-count but does not mention wrap sensitivity.
 
 Fence it needs: `app-agent` (+ `docs/CONVENTIONS.md` for the third arm).
+
+Amnesty triage 2026-08-29 (triage seat): PARKED — not a defect in T-092's fix but the measured cost of the choice it made, and the cost is a MISDIRECTION rather than a false green: a reflow at the ~70-column wrap leaves the document completely correct and reds the suite with a message telling the reader to bump METHOD_SNAPSHOT_VERSION, which would not fix a reflow and would break the plan-interview arm and the doc stamps. It is live rather than theoretical — CONVENTIONS' own A MISS IS NOT A REFUTATION bullet carries hard-wrap-across-the-phrase as cause THREE and says the wrap point MOVES, and this anchor line is 70 columns of prose in the most-edited gotcha in the document. RESURFACES: the next app-agent dispatch. The cheapest arm is probably the whole fix and needs no mechanism: have the stamp asserts say what else could be true — or the sentence was reflowed and the stamp left the anchor's line, check the wrap before touching the const.

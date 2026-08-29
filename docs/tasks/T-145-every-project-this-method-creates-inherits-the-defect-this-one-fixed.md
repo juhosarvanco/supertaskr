@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs: T-138-s2 (Amnesty triage 2026-08-29 (triage seat)) — this card fixed the class's core and its own closed_by line says so: the template names docs/ROADMAP.md with the check-first placeholder, and ADR-019's phase-7 commit completed the product-document half — the template now names docs/CAPABILITIES.md as a MARKED placeholder, on this card's own rule that a template shipping a nonexistent path is worse than one shipping nothing, and points at method/docs-protocol.md.
+
 **Promotion of `T-138-s2`, which named this as a class while `6a6bc87`
 fixed only the instance.** Verified still true at `f22332b`.
 
