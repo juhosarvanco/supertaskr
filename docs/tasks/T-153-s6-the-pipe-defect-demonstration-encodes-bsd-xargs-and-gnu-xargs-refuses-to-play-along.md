@@ -5,11 +5,11 @@ feature: F-01
 milestone: 4
 priority: 4
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: integrator nputer-4e @T-153-s2 checkpoint, CI run 33260414204
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
