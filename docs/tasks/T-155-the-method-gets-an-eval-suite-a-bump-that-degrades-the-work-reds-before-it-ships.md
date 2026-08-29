@@ -39,9 +39,28 @@ this card makes that class of measurement a gate.
 3. A method version bump's three-file commit gains a fourth
    obligation: the eval suite ran and its result is recorded in the
    bump's own commit message.
-4. Every method-process incident (the architect's report is a
-   backlog of eight) becomes a candidate eval, the way every code
-   incident already becomes a pin.
+4. Every method-process incident becomes a candidate eval, the way
+   every code incident already becomes a pin. The founding corpus is
+   the best-attested failure class on record — "a query that runs
+   clean and answers a different question" — with FOUR stamped
+   instances across three hands in one week: the architect's
+   `git log -15 -- <path>` cap-after-filter and its unlabeled-KiB
+   review divisor, this session's stale figure transcribed hours
+   after measuring the fresh one, and an external review's
+   Unix-convention claim that `diff(1)` refutes. Review-claim
+   verification is therefore an eval fixture family of its own, and
+   verifier CALIBRATION (false-rejection vs missed-defect rates, at
+   ~1.2M tokens per rejection) is in scope.
+
+## Token economics (ADR-020 + the session-economics comparison)
+
+Model-in-loop evals are the method's most token-expensive machinery,
+so the economics are design inputs, not afterthoughts: each eval
+declares the CHEAPEST model that discriminates (a `model:` line per
+eval, never the session default); output runs quiet (dot-reporters,
+bounded logs); and tokens-per-eval-run is recorded so the suite's own
+cost has a band from day one. An eval suite nobody can afford to run
+is a ritual with extra steps.
 
 ## Acceptance criteria
 

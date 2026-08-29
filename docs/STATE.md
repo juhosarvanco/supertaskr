@@ -50,40 +50,35 @@ never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-Hooks written 2026-08-27; derive each card's status and fence with
-`brief.mjs --task` at dispatch, never from this list.
+Order re-ruled 2026-08-29 at the pre-dispatch review; derive each
+card's status and fence with `brief.mjs --task` at dispatch, never
+from this list.
 
-1. ADR-019 phases 2–7 COMPLETE
-   (docs/checkpoints/2026-08-27-adr019-compaction.md; gate values in
-   the ADR's addenda). T-092 and T-093 are DONE at CONVENTIONS' seat,
-   their records beside it. Live from their wake: `T-092-s4` — the
-   drill's restoration proof passes on a failed restore — and the
-   suggestion trains of `T-150`.
-2. `T-135` Half B — @human's look owed on its §6/§7; owns ADR-018.
-   Must NOT be re-dispatched whole: Half A is on main, criteria 1–3
-   discharged.
-3. `T-138-s3` — `deriveReadFirst` row 3 over-reports NORTH_STAR and
-   drops the product pointer; also owns `brief.spec.ts:706`'s
-   machine-wide-joined-to-per-checkout shape.
-4. `T-112` — the obvious next F-04 card AND the board's most colliding
-   (the `app/src/assets` + `app/src/styles` flip pairs): sequence
-   deliberately, derive the pairs.
-5. `T-140` — the graph's floor is ~802 bytes per file, so the map
-   stops working at about a thousand files; the budget bounds what the
-   map may know, the floor bounds what it can reach.
-6. `T-139-s2` — the snapshot crosses IPC as JS source that is
-   EVALUATED; wants a room before a lane.
-7. `T-149-s1`…`s5` — the app-shell-umbrella follow-ups.
-8. `T-025-s2` — @human: one real, timed, end-to-end genesis on an
-   authenticated machine is milestone 3's whole remaining gate.
-9. The graph-budget VALUE call now rides `T-151` (planned): a raise
-   of 8,575 bytes maximum, the margin it would eat being the design —
-   @human's number, on the T-139 pattern.
-10. ADR-020's three cards (ratified 2026-08-29, from the AI-native
-    SDLC comparison): `T-154` the fence hook — the property at the
-    moment of the write; `T-155` method evals; `T-156` health bands.
-11. `T-153` — the first CI run's inotify red; pushes are HELD until
-    it lands, because every push re-runs CI into the known red.
+1. `T-153` FIRST — the inotify red; pushes are HELD behind it, and
+   every card after it gets CI's Linux verification for free.
+2. `T-154` — the fence hook, THROUGH THE PIPELINE with an
+   independent verifier: the builder of the cage is not its
+   inspector. Mechanism redesigned pre-dispatch (dispatch-time
+   manifest; the card carries it).
+3. `T-155` method evals → `T-156` health bands (now also keeper of
+   NORTH_STAR's own never-derived indicators) → `T-157` session
+   economics → `T-158` the human front door.
+4. `T-159` — method v0.1.8, the metabolism release: ONE bump owning
+   all method text (fence property, session hygiene, revert play,
+   guard-class independence, suggestion metabolism, retirement
+   conditions, the trust sentence, review reconciliation).
+   `blocked_by: [T-154]`.
+5. THE AMNESTY TRIAGE — one architect sitting over the ~140
+   suggested cards (derive the count), before the metabolism rules
+   take over arrivals.
+6. @human's own items: `T-025-s2` (one real, timed genesis — the
+   product's first credibility act), `T-151` (the budget number),
+   and the standing D3 ruling (may the app write into docs/?).
+7. Standing board hooks, unchanged: `T-135` Half B (owns ADR-018;
+   never re-dispatch whole), `T-138-s3`, `T-112` (most colliding —
+   derive the flip pairs), `T-140` (the file-ceiling gate the bar
+   names), `T-139-s2` (wants a room), `T-149-s1…s5`, `T-092-s4`
+   (the drill's vacuous restoration proof), `T-150`'s trains.
 
 ## Standing hazards — the section that saves the hour
 

@@ -28,13 +28,34 @@ doc budgets (gated hard/warn but trend-blind), e2e wall time.
 1. One deterministic script: read each metric from its existing
    authority (`index --check`'s budget line, the suites' own timing
    output, `wc -c` against DOC_BUDGETS), compare against a
-   version-controlled bands config.
+   version-controlled bands config. The config has a named home
+   beside the script and a named tuner: TRIAGE — dismissals tune
+   bands, the playbook's own loop.
 2. Tiered response, all three tiers cheap: inside the band — silent;
    drifting — print the trend with its derivation; breached — FILE
    the finding as a suggestion card, which re-enters the board the
    way every finding already does. No tier acts on anything.
 3. Run at checkpoints (a line in the record template's Gates section)
    and on CI's schedule once the pipeline is green (behind `T-153`).
+
+## The widened band set (2026-08-29, pre-dispatch)
+
+- **TRIAGE DEBT** (ADR-020's metabolism): suggested-card count (140
+  at this writing), age of the oldest untriaged suggestion, and
+  arrivals-versus-dispositions per checkpoint window. A parked card
+  re-enters the report when its fence's component is next dispatched.
+- **THE CONSTITUTION'S OWN INDICATORS** — the criticism's accidental
+  gift: NORTH_STAR defined cold-start pass rate, drift-incident
+  count, and rejection-rate trend by task size on day one, and
+  nothing has ever derived one. They are figures without keepers in
+  the one document nobody audited; this card gives them their
+  keeper.
+- **THE MACHINERY'S OWN COST**: total gate runtime per checkpoint,
+  stamped — the enforcement layer is subject to the same budget
+  discipline as the documents, said out loud.
+- Token bands DEFER to telemetry export (org-scale; a token reading
+  is a live-environment fact, stamped in records, never derived from
+  the tree).
 
 ## Acceptance criteria
 

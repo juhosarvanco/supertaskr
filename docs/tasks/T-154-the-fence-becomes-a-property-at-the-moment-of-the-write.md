@@ -24,40 +24,56 @@ discipline today; this card makes it a property — the ADR-019
 promote-if-it-slips trajectory applied one layer earlier, to the
 moment of the write.
 
-## The mechanism
+## The mechanism — expand at dispatch, read at the write
 
-A PreToolUse hook on Edit/Write (checked into the repo's
-`.claude/settings.json`, so every lane worktree inherits it):
+**REDESIGNED 2026-08-29 before dispatch** (pre-execution review): the
+first draft expanded the fence AT HOOK TIME through `@nputer/parser`,
+which has a bootstrap contradiction — a fresh lane worktree has
+nothing installed and nothing built (CONVENTIONS' own bold sentence),
+so a fail-closed hook needing `lib/parser/dist` blocks the executor's
+first LEGAL write, and every escape hatch is worse (fail-open guts
+the guard; a parser-free re-implementation is the T-057 sin). The
+correct shape:
 
-1. Derive the seat from the checkout: a branch matching
-   `task/T-NNN-*` names the card; the main checkout and detached
-   scratch worktrees match nothing and the hook ALLOWS (integrator,
-   architect and drill contexts are not lanes).
-2. Read the card's `touches:` and expand it through the ONE fence
-   implementation — `fence.ts` via `@nputer/parser` — never a second
-   copy of the rule (T-057, T-134).
-3. A write inside the expanded fence, or to the unfenceable
+1. AT DISPATCH: the `brief.mjs --task` step the dispatcher already
+   runs — which has a built parser by definition — writes the
+   EXPANDED fence to `.nputer/lane-fence.json` in the worktree,
+   stamped with the raw `touches:` line it expanded. One
+   implementation (`fence.ts`), run once, where it can run.
+2. AT THE WRITE: a PreToolUse hook on Edit/Write (repo-versioned in
+   `.claude/settings.json`, inherited by every worktree) reads the
+   manifest with ZERO dependencies. No manifest + no `task/T-NNN-*`
+   branch = not a lane = ALLOW (integrator, architect and drill
+   contexts; a positive control — refusal distinguishable from
+   absence). A lane branch with no manifest = BLOCK: dispatch skipped
+   its step.
+3. Inside the manifest's paths, or under the unfenceable
    `docs/tasks/`: ALLOW. Outside: BLOCK, printing the fence, the
-   offending path, and the route (file a suggestion; or the card's
-   fence is wrong — triage's call, never the hook's).
-4. Fail CLOSED in a lane the hook cannot judge (unparseable card,
-   unbuilt parser dist), with the reason printed — a guard that
-   cannot judge is not a guard that waves through.
+   path, and the route (file a suggestion, or the fence is wrong —
+   triage's call, never the hook's).
+4. STALENESS: the hook cheaply compares the card's current `touches:`
+   line against the manifest's stamp; a mismatch BLOCKS with
+   "re-expand", never guesses.
 
 ## Acceptance criteria
 
-- WHEN a session in a lane worktree writes a file its expanded fence
-  does not contain THE hook SHALL block the write, naming the fence,
-  the path, and the route.
+- WHEN a session in a lane worktree writes a file outside its
+  manifest THE hook SHALL block the write, naming the fence, the
+  path, and the route.
 - WHEN the same write occurs in the main checkout or a detached
-  worktree THE hook SHALL allow it (a positive control — refusal must
-  be distinguishable from absence, CONVENTIONS' own rule).
-- IF the hook cannot derive or expand the fence in a lane THEN it
-  SHALL block with the reason, never allow silently.
+  worktree THE hook SHALL allow it, and the allow SHALL be proven by
+  a positive control.
+- IF a lane branch has no manifest, or the card's `touches:` no
+  longer matches the manifest's stamp THEN the hook SHALL block with
+  the reason, never allow silently.
 - WHEN the hook lands THE lane-protocol rule-5 text SHALL say the
-  property exists and name its honest limit: Bash-mediated writes
-  remain protocol-covered in v1 (disclosed, not hidden), and the
-  method text change rides its own version bump.
+  property exists and name its honest limit — Bash-mediated writes
+  remain protocol-covered in v1 — with that method text riding the
+  shared v0.1.8 bump (`T-159`), not a bump of its own.
+- The card's own CONVENTIONS documentation edit is EXPECTED to meet
+  that file's warn line (280 bytes of headroom at filing); the warn
+  is the tripwire working, and the executor moves content to a
+  record rather than being startled.
 
 ## Org-scale note (ADR-020 decision 6)
 
