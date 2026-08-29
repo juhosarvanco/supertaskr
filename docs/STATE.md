@@ -1,8 +1,11 @@
 # State
 
-Updated: 2026-08-27, at the ADR-019 cutover — the first STATE under the
-three-tier contract. The narrative this file used to carry is preserved
-verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 — the deferred step-2 regeneration for the T-092
+and T-093 checkpoints, performed at @human's direction after the
+architect's own report named the skip; the gate that now reds on that
+skip landed in the same commit. Current record:
+docs/checkpoints/2026-08-27-T-092.md. The pre-compaction narrative
+remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
@@ -27,7 +30,7 @@ never deleted to fit.
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
   --state`, which stamps the reading. Read at this rewrite: ZERO
-  `task/` lanes (ref `43560f5`). Before ANY dispatch run
+  `task/` lanes (2026-08-29, ref `958be8a`). Before ANY dispatch run
   `brief.mjs --task T-NNN`; never read the ledger's FREE column as a
   verdict — it is keyed by slug and two slugs can name one component.
 - THE HUMAN'S APP: port 1420 is read with
@@ -50,10 +53,12 @@ never deleted to fit.
 Hooks written 2026-08-27; derive each card's status and fence with
 `brief.mjs --task` at dispatch, never from this list.
 
-1. ADR-019 phases 2–7 COMPLETE (record:
-   docs/checkpoints/2026-08-27-adr019-compaction.md; gate values in
-   ADR-019's addendum). T-092 and T-093 continue as ordinary cards at
-   CONVENTIONS' seat.
+1. ADR-019 phases 2–7 COMPLETE
+   (docs/checkpoints/2026-08-27-adr019-compaction.md; gate values in
+   the ADR's addenda). T-092 and T-093 are DONE at CONVENTIONS' seat,
+   their records beside it. Live from their wake: `T-092-s4` — the
+   drill's restoration proof passes on a failed restore — and the
+   suggestion trains of `T-150`.
 2. `T-135` Half B — @human's look owed on its §6/§7; owns ADR-018.
    Must NOT be re-dispatched whole: Half A is on main, criteria 1–3
    discharged.
@@ -71,8 +76,9 @@ Hooks written 2026-08-27; derive each card's status and fence with
 7. `T-149-s1`…`s5` — the app-shell-umbrella follow-ups.
 8. `T-025-s2` — @human: one real, timed, end-to-end genesis on an
    authenticated machine is milestone 3's whole remaining gate.
-9. @human's look on T-139's graph-budget VALUE is still owed: any
-   number in (989 181, 1 048 576) is equally defensible.
+9. The graph-budget VALUE call now rides `T-151` (planned): a raise
+   of 8,575 bytes maximum, the margin it would eat being the design —
+   @human's number, on the T-139 pattern.
 
 ## Standing hazards — the section that saves the hour
 
@@ -121,8 +127,10 @@ Hooks written 2026-08-27; derive each card's status and fence with
 
 - docs/checkpoints/ — one append-only record per integration
   (TEMPLATE.md sits there; ADR-019 forbids any suite, gate or
-  generator from depending on the directory's contents). The current
-  record is 2026-08-27-adr019-compaction.md.
+  generator from depending on the directory's contents — and since
+  2026-08-29 the gate REDS when a record is committed newer than this
+  file, so step 2 cannot be skipped silently). The current record is
+  2026-08-27-T-092.md.
 - docs/rooms/governing-docs.md and ADR-019 — this file's contract and
   the ruling behind it.
 - The pre-compaction STATE, all 1,125 lines of it:

@@ -97,3 +97,19 @@ is spec-kept by range-rule's own CHECK_IDS — so the RANGE RULE bullet
 stayed whole, which the ruling's primary clause already required.
 
 Record of execution: docs/checkpoints/2026-08-27-adr019-compaction.md.
+
+## Addendum 2 (2026-08-29): the ritual slipped, and the gate is the answer
+
+The record-first checkpoint ritual slipped in its first two live
+checkpoints — T-092's and T-093's records were written and STATE was
+never regenerated, ROADMAP never ticked; the architect session's own
+report named the skip. The room's promote-if-it-slips clause fires:
+docs-gate now FAILS whenever a checkpoint record's last commit is
+newer than docs/STATE.md's last commit. Committed history only, so the
+correct one-commit checkpoint ties and passes, and a mid-ritual
+working tree never false-reds. The check's positive control was the
+live defect itself: added against the stale tree, it redded naming
+exactly the two records, exit 1 read unpiped, before the repair
+landed. ROADMAP ticking stays a ritual — judgment is not mechanically
+checkable — but STATE, the file every session reads first, can no
+longer be forgotten silently.

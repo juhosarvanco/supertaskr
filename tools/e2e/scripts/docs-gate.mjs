@@ -99,7 +99,8 @@
  * It is the SAME package lib/parser depends on, so a block either
  * parses for both or for neither (T-057: one implementation, not two).
  */
-import { statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
@@ -366,6 +367,45 @@ function main(argv) {
       `docs-gate: governing-document budgets hold — ${gated.length} gated, ` +
         `${Object.keys(DOC_BUDGETS).length - gated.length} awaiting their compaction landing (ADR-019).`,
     );
+  }
+
+  // ADR-019 §Records, PROMOTED from ritual to gate after the ritual
+  // slipped twice in its first two checkpoints (records written, STATE
+  // never regenerated — the 2026-08-29 addendum). A checkpoint record
+  // whose last COMMIT is newer than docs/STATE.md's last commit is step
+  // 1 without step 2. Committed history only, so a mid-ritual working
+  // tree (untracked record, unstaged STATE) never false-reds, and the
+  // correct flow — record and regenerated STATE in ONE checkpoint
+  // commit — ties and passes.
+  /** @param {string} rel @returns {number | null} */
+  const lastCommitSec = (rel) => {
+    const out = execFileSync("git", ["log", "-1", "--format=%ct", "--", rel], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    }).trim();
+    return out === "" ? null : Number(out);
+  };
+  const checkpointsDir = path.join(repoRoot, "docs/checkpoints");
+  if (existsSync(checkpointsDir)) {
+    const stateAt = lastCommitSec("docs/STATE.md");
+    /** @type {string[]} */
+    const staleAgainst = [];
+    if (stateAt !== null) {
+      for (const rec of readdirSync(checkpointsDir)) {
+        if (!rec.endsWith(".md") || rec === "TEMPLATE.md") continue;
+        const recAt = lastCommitSec(`docs/checkpoints/${rec}`);
+        if (recAt !== null && recAt > stateAt) staleAgainst.push(rec);
+      }
+    }
+    if (staleAgainst.length > 0) {
+      console.error(
+        `\ndocs-gate: docs/STATE.md is STALE against ${staleAgainst.length} newer checkpoint ` +
+          "record(s) — the record was committed and STATE was never regenerated " +
+          "(docs-protocol.md rule 4; the integrator's step 2):",
+      );
+      for (const r of staleAgainst) console.error(`  ${r}`);
+      found += staleAgainst.length;
+    }
   }
 
   return found > 0 ? EXIT.FOUND : EXIT.CLEAN;

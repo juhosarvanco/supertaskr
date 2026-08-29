@@ -72,10 +72,12 @@ opens with the card id that still holds its story.
   the indexer degrades instead of aborting on hostile input (T-129),
   and the graph budget carries a measured reason — 1,040,000 bytes,
   T-139 — whose HEADROOM is the number nothing reports: derive it
-  with `index --check`, never quote it. Next: T-140 (the ~802
-  bytes-per-file floor caps the map at ~1,000 files — the real
-  constraint on pointing nputer at a big codebase), and @human's look
-  on the budget VALUE is still owed.
+  with `index --check`, never quote it. Since T-092 and T-093
+  (2026-08-27) the poison-drill taxonomy and the hand's measurement
+  hazards are written rules — a query that runs clean is not yet an
+  answer. Next: T-140 (the ~802 bytes-per-file floor caps the map at
+  ~1,000 files — the real constraint on pointing nputer at a big
+  codebase), and the budget VALUE call now rides `T-151`.
 
 ## Milestones
 
