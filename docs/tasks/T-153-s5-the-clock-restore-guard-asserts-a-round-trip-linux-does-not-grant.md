@@ -430,3 +430,307 @@ as a number in a log rather than as a red somebody has to reproduce, and
 this card has already had one.
 
 ## Verdicts
+
+### 2026-08-29 — APPROVED WITH ASSIGNED CORRECTIONS
+
+**verifier claude-opus-5@subagent, independent hand.** Base
+`09504e8`, tip `2eaa8f0`, pair `git diff 09504e8..2eaa8f0`. Every figure
+below is my own measurement at the ref it names; nothing is transcribed
+from the executor's notes. Battery run in the lane worktree at `2eaa8f0`
+with `NPUTER_E2E_PORT=14577` (lsof zero rows first); drill run in a
+DETACHED scratch worktree at `2eaa8f0`, root `/private/tmp/nvt153s5`,
+one stem `nvt153s5` on the worktree, its `CARGO_TARGET_DIR`, the driver
+and the results file; CI read-only via `gh`, nothing pushed, no run
+triggered.
+
+**THE GUARD IS RIGHT AND I COULD NOT FALSIFY THE BOUND.** The three
+corrections below are all PROSE, and each one is a sentence about the
+MECHANISM that my own reading of the source says is false. They change
+no behaviour, and I have assigned rather than rejected because the
+assertion the lane ships is correct under both readings.
+
+#### CORRECTION 1 — the axis is the libuv VERSION, not the platform
+
+`tools/e2e/tests/token-scan.spec.ts` (the block headed *THE ASYMMETRY IS
+libuv'S, NOT THE FILESYSTEM'S*), this card's *THE MECHANISM* paragraph,
+and `T-153-s7`'s body and title all say the truncation is a LINUX path
+and that *"the Darwin path carries the nanoseconds through"*. I read
+libuv's own source rather than inferring it, via `gh api
+repos/libuv/libuv/contents/src/unix/fs.c?ref=<tag>`:
+
+- In **v1.51.0** — the version the CI stamp names — `uv__fs_utime` calls
+  `uv__fs_to_timespec` under ONE `#if` whose condition names
+  `__APPLE__` **and** `__linux__` in the same list (with the BSDs,
+  `__sun`, `_AIX71`), ending `return utimensat(AT_FDCWD, req->path, ts,
+  0);`. There is no second branch for Darwin: `uv__fs_to_timeval` does
+  not exist in the file. **The truncation is not platform-conditional.**
+- In **v1.52.0** the two truncation lines and their `TODO` are GONE:
+  `diff` of `uv__fs_to_timespec` between the tags is exactly the removal
+  of the `TODO(bnoordhuis)` comment and `ts.tv_nsec -= ts.tv_nsec %
+  1000;`. Nothing else in the function changed.
+
+The two samples the card contrasts differ in BOTH variables and the card
+attributed the difference to the wrong one: CI is **node v22.23.2 / uv
+1.51.0** (truncating) and this machine is **node v22.22.0 / uv 1.52.0**
+(not), and the uv version is NOT monotonic in the node version. My own
+Darwin probe writes sub-microsecond mtimes through `utimesSync` and reads
+them back intact — `1700000000.000000123` stores as `mtimeNs
+1700000000000000238`, residue 238, not 0 — which is what a reader will
+find if they go looking for the Darwin exception the comment promises,
+and will not find on a Darwin machine running uv 1.51.0.
+
+**Assigned:** rewrite those three passages to say the quantum is present
+in libuv **≤ 1.51.0 on every utimensat platform, Darwin included**, and
+removed in **1.52.0**; that `CLOCK_QUANTUM_NS` is therefore an UPPER
+bound that stays valid under both and unconditional in the code is
+correct; and that the discriminating variable is the one the guard's own
+stamp already prints, `process.versions.uv`. `T-153-s7` matters most
+here: it is the card that will write this sentence into
+`docs/CONVENTIONS.md`, and its title currently promises *"a Linux half"*.
+
+#### CORRECTION 2 — the band WIDENED; only the instrument got tighter
+
+*THE CHANGE* says the new form is *"STRICTLY TIGHTER than the delta it
+replaces was able to express, not looser"*. The instrument half is true
+and worth keeping. The band half is false, and measured false:
+
+| achieved delta | old `toBe(clock.mtimeMs)` | new bound (1489 ns) |
+|---|---|---|
+| 81 ns | PASS | PASS |
+| 173 ns | **FAIL** | PASS |
+| 244 ns | **FAIL** | PASS |
+| 526 ns | **FAIL** | PASS |
+| 1107 ns | **FAIL** | PASS |
+| 1296 ns | **FAIL** | PASS |
+| 1504, 1556, 1946 ns | FAIL | FAIL |
+
+Nine offsets driven through the real pipeline on darwin/APFS: **five
+deltas are accepted by the new bound that the old assertion rejected,
+and none the other way**. The largest divergence two equal `mtimeMs`
+doubles can hide is ONE ULP of `mtimeMs`, **244.140625 ns** at this
+epoch, so the accepted band went from under a quarter-microsecond to
+1489 ns — about **six times wider**. That widening is what criterion two
+REQUIRED, since 244 ns is not round-trippable under a 1000 ns quantum;
+the honest sentence is *the instrument became exact and the band had to
+widen*, and a reader who takes "strictly tighter" at face value will
+derive the next bound wrong.
+
+#### CORRECTION 3 — cycle 3 is knowable now, and the census moved
+
+The card's *"sixteen Linux observations"* and *"cap 3, two spent"* are
+true at the ref they were written at, and its cycle-3 row is a
+placeholder because a commit cannot record the run it causes. Run
+**33266566174** at `2eaa8f0` now exists. Folding it in, from the logs
+themselves: **24 stamped samples over three runs**, min **-1016**, max
+**+109**, max |Δ| **1016 ns** — the headline figure is UNCHANGED at the
+larger sample. **Assigned:** stamp the third cycle's id and its eight
+readings and correct the two figures, or ref-stamp the sixteen.
+
+#### THE BOUND, ADVERSARIALLY — every term re-derived
+
+- **The quantum.** `ts.tv_nsec -= ts.tv_nsec % 1000` truncates toward
+  zero, so its contribution lies in `(-1000, 0]` — one-sided and
+  negative, which is exactly the shape of the CI data: **23 of 24
+  samples negative**, one `+109`.
+- **The ULP terms.** `ulpOf` is CORRECT and it does double at the binade.
+  Checked against a `nextafter` computed by bit manipulation: exact
+  agreement at today's `mtimeMs`, at today's seconds, at `2**40`,
+  `2**41 - 1`, `2**41`, `2**41 + 1`, `2**30` and `2**31 - 1`; the ratio
+  `ulpOf(2**41) / ulpOf(2**41 - 1)` is **exactly 2**, 244.140625 ns
+  becoming 488.28125 ns, and the tolerance a 2040 timestamp produces is
+  **1977 ns**. It is not a typed constant and it must not become one.
+  Its one imprecision is safe by direction: within the last ULP below a
+  power of two `Math.log2` rounds up and `ulpOf` returns TWICE the true
+  ULP — it never under-reports.
+- **The arithmetic.** `2 * ulpOf(capturedMs)` = 488.28 ns covers the two
+  half-ULP roundings (122.07 of `mtimeMs`, 119.21 of the seconds double)
+  with room; and it stays covering at the worst binade alignment, where
+  the seconds ULP can reach 1.95x the `mtimeMs` ULP and the pair sums to
+  360 ns against the allowance of 488.
+- **THE TWO-ULP TERM IS LOAD-BEARING, NOT DECORATION**, and the CI data
+  proves it: **3 of the 24 samples exceed the bare quantum** (-1016,
+  -1016, -1005). A bound of exactly 1000 would have REDDED CI.
+- **The float terms are corroborated by their own extreme.** Across 64
+  darwin/uv-1.52.0 samples of my own — one suite run's eight, two
+  mutant runs' eight each, a 40-sample synthetic probe — the widest
+  delta is **240 ns**, against a reasoned two-half-ULP worst case of
+  241.3. Observed and reasoned agree to a nanosecond.
+- **The stamp is a real instrument.** It reads every target BEFORE the
+  first assertion, and I confirmed it reaches the log on FAILURE as well
+  as on success: M1a, M1b and M3-fresh all printed their stamps while
+  redding. In CI it is present in all three runs, complete, unwrapped.
+
+#### THE DRILL — my own mutants, at `2eaa8f0`, `/private/tmp/nvt153s5`
+
+Committed first (detached at a named commit), every mutation READ BACK
+with `git diff -U0` before its suite ran, every restoration proved by
+`git show HEAD:… | shasum -a 256` against the working file —
+`63a765c0a0d693c679d818349760cc19fbc2510ab674e06976ac3c61aac73688`,
+matched after each of the eleven. No graph regen inside the worktree.
+
+| mutant | one side | observed |
+|---|---|---|
+| B0 baseline | — | **281 passed, exit 0** |
+| M1a restore removed, seven-roots body only | code | **1 failed / 280 passed of 281** — failing-body count exactly ONE, delta stamped at 322 701 430 804 ns |
+| M1b restore removed, P6 body only | code | **1 failed / 280 of 281** — exactly ONE, delta 482 441 606 683 ns |
+| M2a restore 900 ns late (achieved 953–1030) | code | GREEN, 10 passed |
+| M2b restore 1400 ns late (achieved **1430–1431**) | code | GREEN — the bound exercised to 96% of itself |
+| M2c restore 1600 ns late (achieved 1669) | code | **2 failed / 8** |
+| M2d restore 2000 ns late (achieved 1907–1908) | code | **2 failed / 279 of 281** |
+| M2e restore 2000 ns EARLY (achieved -1907/-1908) | code | **2 failed / 279 of 281** — the negative side is guarded |
+| M3-trap tolerance forced to 0, targets left as B0 restored them | assertion | **SURVIVED — 281 passed, exit 0**, every stamp reading `0ns of 0` |
+| M3-fresh the identical mutant, all eight `touch`ed first | assertion | **2 failed / 279 of 281** |
+| M4b two-ULP term dropped, targets touched fresh | assertion | GREEN (deltas -240..+172 of 1000) |
+| M5b `Math.abs` removed, targets touched fresh | assertion | GREEN (deltas -200..+79) |
+
+**M2b/M2c is the discriminating pair, and it is sharper than one
+quantum.** 1431 ns green, 1669 ns red: the guard discriminates at the
+scale of the bound itself, not merely at the microsecond.
+
+**THE FIXED-POINT TRAP REPRODUCED, AND IT CAUGHT ME TOO.** M3-trap is a
+cleaner isolation than the executor's: it follows a CLEAN BASELINE rather
+than a prior mutant, so the fixed point is the only available
+explanation, and the surviving run stamps `0ns` for all eight targets in
+its own log. Then I walked into it a second time — M4 and M5 were first
+run without touching, came back green with every stamp reading `0ns`,
+and those greens were worthless; M4b and M5b are the informative
+re-runs. **The corrected discipline is: an ASSERTION-side mutant of this
+guard must be preceded by a `touch` of all eight targets, because the
+previous run of the same suite wrote the state the assertion reads.**
+That is `T-153-s7`'s subject and it is right to route it.
+
+#### WHAT NO BODY KILLS — filed, not blocking
+
+M4b and M5b are green with real deltas: on the measuring platform NO
+BODY kills the two-ULP term (the Linux runner does — 3 of 24 samples)
+and NO BODY kills `Math.abs` (a code-side early restore does — M2e).
+`expectClocksRestored` also has no non-empty floor, shape TEN's one-line
+remedy, though both callers are pinned today by `toHaveLength(7)` and by
+a one-element literal. All three are improvements, not failures; filed as
+`T-153-s10`.
+
+#### THE BATTERY — lane worktree at `2eaa8f0`, exits read unpiped
+
+| command | cwd | exit |
+|---|---|---|
+| `npm run build` | lib/parser | 0 |
+| `npx vitest run` | lib/parser | 0 — **314 passed** |
+| `npx tsc --noEmit` | lib/parser | 0 |
+| `npm run build` | app | 0 |
+| `npm test` | app | 0 — **1013 passed, 47 files** |
+| `npm run typecheck` | tools/e2e | 0 |
+| `npm run lint:tokens -- --selftest` | tools/e2e | 0 |
+| `npm run lint:tokens` | tools/e2e | 0 — TOKEN 150, CONTROL **852** |
+| `npm run lint:docs` | tools/e2e | 0 |
+| `npm test` | tools/e2e | 0 — **281 passed**, 2.9m |
+| `npm run capabilities:check` | tools/e2e | **1 — STALE** |
+
+CONTROL is **852** here and the notes say 849 at `5970bf6`: the lane's
+own three suggestion cards moved it, which is this file's FIGURE CASE
+arriving inside the very card that documents it. Derive it at your ref.
+
+**The staleness is not this lane's, measured rather than argued.** Same
+scratch worktree, same `node_modules`, `git checkout --detach` to each
+ref in turn: `capabilities:check` exits **1** at `09504e8` and **1** at
+`2eaa8f0` with a BYTE-IDENTICAL message, *committed 21886 bytes, a fresh
+generation is 21992*. Independently: the `test("` census over
+`tools/e2e/tests/` is **255 lines, identical** at both refs, and
+`docs/CAPABILITIES.md` is untouched by the pair — so the check's two
+inputs did not move and its verdict could not. `T-153-s8` owns it; the
+regen is the integrator's at merge.
+
+#### CI, READ-ONLY — the two bodies pass, the 31 are not this card's
+
+| run | ref | the two bodies | lane |
+|---|---|---|---|
+| 33264083542 | `5970bf6` | PASS at `:210` and `:341` | 31 failed / 250 passed |
+| 33265405734 | `cb216a1` | PASS at `:215` and `:346` | 31 / 250 |
+| 33266566174 | `2eaa8f0` | PASS at `:220` and `:351` | 31 / 250 |
+
+I classified the 31 at `2eaa8f0` from the failure blocks rather than
+from the summary: **28 quote `fatal: ambiguous argument 'main'` inside
+their own block**; a **29th**, `brief.spec.ts:679`, is the SAME call site
+wearing a different face — `dispatch-brief.mjs --task T-133` returns
+**exit 3** where the body expects `[0, 1]`, because the script CATCHES
+the throw the other 28 let escape. **`T-153-s9`'s fix has to cover both
+surfaces**, and a reader grepping for the fatal will find 28 of 29.
+The remaining **2** are `T-153-s6`'s.
+
+The cross-check is the strong one: against main's own `push` run
+**33260414204** (`8f7b58c`, 4 failed / 254 passed of 258), **all 31
+failing titles exist, 29 are GREEN there, and exactly 2 are RED** — the
+`docs-input-gate.spec.ts:906` / `range-rule.spec.ts:91` pair. Title-keyed,
+so no line number is doing the work.
+
+**On criterion four.** It asks for *"a full-suite CI run green on
+Linux"*, and no run is green. I judge it met in substance and unmeetable
+in letter from this seat: the two bodies this card owns pass on
+ubuntu-24.04 in all three cycles, the cap of 3 was respected, every cycle
+stamped its read, and the 31 reds are two other cards' — one of which the
+fence forbids this lane to touch. The residual is the INTEGRATOR's to
+carry, not this lane's: main's first green Linux run now needs `T-153-s6`
+AND `T-153-s9`.
+
+#### THE REST OF THE ATTACK SET
+
+- **Load-bearing halves.** Untouched, proved by ABSENCE from the pair:
+  every hunk in `git diff 09504e8..2eaa8f0 -- tools/e2e/tests/token-scan.spec.ts`
+  is clock-related, and the sha256 loop, the `git diff --quiet` over the
+  seven targets, P6's `[P6:` `toHaveLength(1)` and its two line
+  assertions, `toHaveLength(7)` and `(0 TOKEN, 7 CONTROL)` are outside
+  all of them.
+- **The class sweep, re-run by me.** At the tip the pattern finds **no
+  exact fs-timestamp equality**: four `toBeGreaterThanOrEqual` ordering
+  sites under `app/test/` and one hit inside the new comment. Shown
+  capable of failing: the same pattern at `09504e8` returns both pre-fix
+  sites, `token-scan.spec.ts:164` and `:273`.
+- **Security.** No new dependency, no manifest or lockfile in the pair,
+  no new input path, no endpoint, no secret, no network, no shell
+  interpolation. The added `console.log` emits relative paths and
+  integers.
+- **Adjacent features.** 281 passed locally and 250 of the same 281 on
+  Linux with the 31 accounted for; the four sibling mtime readers are
+  ordering comparisons and were not touched.
+- **Vacuity.** Neither guard can pass without running: M1a and M1b each
+  red exactly one body, so neither is a duplicate of anything else in the
+  suite (shape six, answered the way `T-072-s2` prescribes).
+
+#### ASSESSMENT for the integrator — the 1.5x margin on 24 samples
+
+I could not falsify it and I would not widen it. The executor's own
+framing is the right one and its arithmetic survives an independent
+derivation: 1489 computed, 1241 reasoned, 1016 observed — 1.47x over the
+extreme and 1.20x over the reasoning, which is thin only if the reasoning
+is wrong, and the reasoning is a sum of three terms I re-derived from
+libuv's source and from IEEE-754 rather than from the samples. That is
+the part that makes 24 samples enough: the bound is not an extrapolation
+from a distribution, it is a closed-form worst case that the distribution
+happens to sit inside, and the samples are corroboration rather than
+evidence. My own 64 darwin samples land at 240 ns against a reasoned
+241.3 — the same agreement one binade down. **The residual risk is not
+the sample count; it is the assumption that the quantum is 1000 and not
+something coarser**, and Correction 1 makes that risk BIGGER than the
+executor thought, not smaller: the truncation is a property of a libuv
+version rather than of a kernel, so a runner image change moves it
+without any platform changing. The right answer to that is the one
+already shipped — the bound is an upper bound over both known libuv
+behaviours, and the stamp prints `process.versions.uv` on every run, so
+the next surprise arrives as a number beside the version that caused it.
+A guard that reds is what a bound is FOR; a bound widened to stop redding
+is a comment.
+
+#### DISCLOSURE — the two-phase blindness was not enforceable
+
+My brief carried the executor's report below a marker in the same
+message, so phase-1 blindness was a discipline and not a guarantee. My
+attack set was derived from the card at its base ref and from the raw
+diff, and the three findings above are things the report does not say —
+Correction 1 contradicts it. But I cannot claim I was blind, and the
+integrator should read this verdict knowing that. `T-159` already owes
+this; recorded here as a second sighting rather than a fourth card.
+
+#### GATES AT MY OWN TIP — a role that writes owes the tree's gates
+
+Re-derived after this verdict and `T-153-s10` were committed; the figures
+and exits are in the report accompanying this pass, at the ref my own
+commits created.
