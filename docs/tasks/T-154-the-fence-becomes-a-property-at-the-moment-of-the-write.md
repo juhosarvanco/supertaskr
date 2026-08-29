@@ -771,3 +771,42 @@ one implementation and follows the field, its own drill is honest and its
 counts reproduce, and the hole it admits is a property of the harness's
 hook contract rather than a choice this diff made — declared in the code,
 on the card, and now in this verdict.
+
+#### THE GATES RE-RUN AT MY OWN TIP — a verdict is a write
+
+The table above is stamped at `8ccdfc1`, the commit I was sent. The
+verdict commit `f554cbd` created a tip nobody had tested, and prose is a
+code input here, so the DOCS GATE was taken again over the range at that
+tip. Main had moved a second time during the pass (`26d912d` →
+`e9c2bf2`); `merge-tree` exit **0**, the path list is still the same
+**11**, and the gate FIRES on the same 5 docs paths and names the same
+4 suites. All figures below are measured at **`f554cbd`**.
+
+| command | where | result at `f554cbd` |
+|---|---|---|
+| `npm test` (`NPUTER_E2E_PORT=16112`) | tools/e2e | **258 passed**, exit **0** |
+| `npm test` | app | **1013 passed** of 1013, 47 files; exit **0** |
+| `npx vitest run` | lib/parser | **314 passed** of 314, 15 files; exit **0** |
+| `cargo test --no-fail-fast` | app/src-tauri | **518 passed / 0 failed / 4 ignored**, 18 blocks; exit **0** |
+| `npm run typecheck` | tools/e2e | exit **0** |
+| `npm run lint:tokens` | tools/e2e | clean — TOKEN 146, CONTROL 853; exit **0** |
+| `npm run lint:docs` | tools/e2e | exit **0**, the same budget WARN on stderr |
+| `index --check --root ../..` | app/src-tauri | **CURRENT**, 19977 bytes left; exit **0** |
+
+`docs-gate` also reports *"every live task card's frontmatter parses,
+with a legal status"* at this tip, which is the specific gate a verdict's
+own prose can break.
+
+**ONE MORE HAZARD MEASURED, AND IT IS THE POISON DRILL'S OWN CLASS IN A
+NEW SHAPE.** Between the two cargo runs I MOVED the scratch's
+`CARGO_TARGET_DIR` (out of the tree, to fix the false STALE recorded
+above). The next `cargo test` went **498 passed / 20 failed, exit 101**,
+every failure a `spawn binary: Os { code: 2, kind: NotFound }` from
+`crates/nputer-index/tests/cli.rs` — the binary path is baked into the
+test at COMPILE time and cargo does not fingerprint it, so the tests were
+still spawning the directory's old name. `cargo clean -p nputer-index`
+(2736 files, 579.7 MiB) and a rebuild was the whole fix: **518 / 0 / 4,
+exit 0**. Nothing about the diff, and the main checkout's own `target/`
+was never involved — but a MOVED target directory reds the same way a
+SHARED one does, and CONVENTIONS' bullet names only the shared case.
+Folded into routed item 5.
