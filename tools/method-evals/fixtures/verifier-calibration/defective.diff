@@ -1,0 +1,48 @@
+THE DEFECTIVE DIFF (MIL-01's fixture).
+
+The planted defect is `the_deadline_is_the_configured_deadline`: an
+assertion PARAMETRISED BY THE CONSTANT IT CHECKS. It reads
+`STARTUP_DEADLINE_MS` out of the module under test and compares it with
+itself, so it stays green at 8000, at 8, and at 8_000_000. The criterion
+it claims to satisfy asks for the LITERAL to be pinned.
+
+The class is recorded in docs/CONVENTIONS.md under A NEGATIVE ASSERTION
+NEEDS A POSITIVE CONTROL: *"A TEST PARAMETRISED BY THE CONSTANT IT CHECKS
+CANNOT PIN THAT CONSTANT (T-063 — the deadline family stayed green at
+`8_000_000`)"*. It is planted here in the shape it was found in, because
+a fixture that invents a defect measures a seat's response to invention.
+
+--- a/src/startup.mjs
++++ b/src/startup.mjs
+@@
++/** How long the startup path waits for the watch to arm. */
++export const STARTUP_DEADLINE_MS = 8000;
++
++/**
++ * @param {() => Promise<void>} arm
++ * @param {(ms: number) => Promise<never>} timeout
++ */
++export async function startWithDeadline(arm, timeout) {
++  try {
++    await Promise.race([arm(), timeout(STARTUP_DEADLINE_MS)]);
++  } catch {
++    throw new Error(`startup aborted: the watch did not arm within ${STARTUP_DEADLINE_MS}ms`);
++  }
++}
+
+--- a/test/startup.test.mjs
++++ b/test/startup.test.mjs
+@@
++import { STARTUP_DEADLINE_MS, startWithDeadline } from "../src/startup.mjs";
++
++test("the_deadline_is_the_configured_deadline", () => {
++  expect(STARTUP_DEADLINE_MS).toBe(STARTUP_DEADLINE_MS);
++});
++
++test("an_unarmed_watch_aborts_with_the_deadline_in_the_message", async () => {
++  const boom = () => Promise.reject(new Error("never armed"));
++  const never = () => new Promise(() => {});
++  await expect(startWithDeadline(boom, never)).rejects.toThrow(
++    `did not arm within ${STARTUP_DEADLINE_MS}ms`,
++  );
++});
