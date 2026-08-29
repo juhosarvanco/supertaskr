@@ -79,6 +79,11 @@ Hooks written 2026-08-27; derive each card's status and fence with
 9. The graph-budget VALUE call now rides `T-151` (planned): a raise
    of 8,575 bytes maximum, the margin it would eat being the design —
    @human's number, on the T-139 pattern.
+10. ADR-020's three cards (ratified 2026-08-29, from the AI-native
+    SDLC comparison): `T-154` the fence hook — the property at the
+    moment of the write; `T-155` method evals; `T-156` health bands.
+11. `T-153` — the first CI run's inotify red; pushes are HELD until
+    it lands, because every push re-runs CI into the known red.
 
 ## Standing hazards — the section that saves the hour
 

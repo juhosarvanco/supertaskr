@@ -1,0 +1,59 @@
+---
+id: T-155
+title: The method gets an eval suite — a version bump that degrades the work reds before it ships, the way a code change already does
+feature: F-01
+milestone: 4
+priority: 32
+size: L
+status: planned
+blocked_by: []
+touches: [tools/method-evals, docs/CONVENTIONS.md]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
+---
+
+ADR-020 decision 2, and `T-093-s1`'s class ("the hand rules have no
+mechanical reader") given the playbook's mechanism: the method files —
+roles, lane protocol, docs protocol, brief assembly — are byte-pinned
+into the kit but never TESTED FOR EFFECT. A rewrite of `executor.md`
+or a model swap changes what sessions produce, and nothing reds.
+T-148 already measured brief sizes moving under a role-file edit;
+this card makes that class of measurement a gate.
+
+## The shape (small first, honest about cost)
+
+1. Five to ten CANNED TASKS with derived acceptance checks — e.g.: a
+   fixture card dispatched headless against the current method
+   produces notes in the card's own sections; a verifier run on a
+   planted-defect fixture produces a REJECT with the defect named; a
+   brief assembled at a fixture ref carries every row the contract
+   requires (this one is pure `dispatch-brief.mjs`, no model call).
+2. Split MODEL-FREE evals (brief assembly, fence expansion, kit
+   materialization — cheap, run in CI) from MODEL-IN-LOOP evals
+   (headless role runs — expensive and nondeterministic; run at
+   method version bumps and on schedule, never per-commit; pass-rate
+   threshold, not single-run pass/fail).
+3. A method version bump's three-file commit gains a fourth
+   obligation: the eval suite ran and its result is recorded in the
+   bump's own commit message.
+4. Every method-process incident (the architect's report is a
+   backlog of eight) becomes a candidate eval, the way every code
+   incident already becomes a pin.
+
+## Acceptance criteria
+
+- WHEN any method file changes THE model-free eval set SHALL run and
+  red on a contract the change breaks.
+- WHEN a method version bump is prepared THE model-in-loop set SHALL
+  have a recorded run against the new method text, with its pass rate
+  in the bump commit.
+- IF an eval cannot run THEN it SHALL say so loudly with the house
+  exit codes — a skipped gate is news, never silence.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -18,10 +18,14 @@ opens with the card id that still holds its story.
   this file itself is under. The corrected read-first set reaches new
   projects (T-145) and the behaviour census is GENERATED rather than
   written (docs/CAPABILITIES.md, T-138-s1) — @human's T-138 ruling
-  delivered. What the set costs and why is the room's ledger. Next:
-  the docs-protocol lands in method/ (ADR-019 phase 7) so every
-  future genesis inherits the contract; ADR-018 stays owed to T-135
-  Half B.
+  delivered. What the set costs and why is the room's ledger; the
+  docs-protocol is in method/ at v0.1.7, so every future genesis
+  inherits the contract. Since ADR-020 (2026-08-29, from the
+  AI-native-SDLC comparison) the next layer is ratified: determinism
+  at the moment of the write (T-154), a method that measures itself
+  (T-155), health bands over its own numbers (T-156) — org-scale by
+  construction, nothing org-shaped built before a second team exists.
+  ADR-018 stays owed to T-135 Half B.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own

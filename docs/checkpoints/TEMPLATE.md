@@ -55,6 +55,14 @@ stamped here and re-derived never.
 Facts · predictions · arguments · staleness — the standing section
 every integrator brief so far has earned.
 
+## Metrics (ADR-020)
+
+Leading, derived at this checkpoint: rework cycles this card
+(dispatch → verdict count), suites re-run before green (count per
+suite), dispatch-to-merge elapsed. Lagging, pointers only: the trend
+lives across records — derive it over docs/checkpoints/, never
+transcribe it here.
+
 ## Dispositions
 
 Cards stamped, suggestions filed, rules applied by name.

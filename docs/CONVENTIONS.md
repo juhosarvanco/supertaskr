@@ -365,6 +365,16 @@
   suites. Route what you cannot reach.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
+- THE MERGE INTO MAIN IS @human'S GATE, BY DESIGN AND NOT BY ACCIDENT
+  (ADR-020 decision 4, ratifying what T-145's denial discovered). A
+  session's `git merge` into the integration branch is EXPECTED to be
+  refused by the permission layer; the refusal is the gate working,
+  and the route is @human performs the merge. No workaround is
+  legitimate — `commit-tree`/`update-ref` bypass the gate's intent —
+  and the rule is the T-145 executor's own sentence: a coordinator's
+  authorization is not the permission system's consent. Ordinary
+  commits at @human's explicit direction are not merges and do not
+  contend with this gate.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19):
   line numbers drift downward under later merges while the finding's
   substance reproduces, so a stale line reads as "this was fixed". Cite
