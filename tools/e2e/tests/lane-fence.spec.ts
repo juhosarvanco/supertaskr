@@ -514,7 +514,12 @@ test("`--write-fence` is a NAMED arm of the brief command, and needs its task", 
  * ──────────────────────────────────────────────────────────────────── */
 
 test("the hook's lane-branch spelling is the one docs/CONVENTIONS.md publishes", () => {
-  const published = laneSpellings(conventionsText(repoRoot));
+  // UNNESTED ON PURPOSE. `docs-scan.mjs`'s call arm follows ONE hop and
+  // says so — `f(g(root))` is named in its own WHAT IT CANNOT SEE — so
+  // a nested spelling here would hide this file from the DOCS GATE's
+  // reader derivation while it really does read docs/CONVENTIONS.md.
+  const conventions = conventionsText(repoRoot);
+  const published = laneSpellings(conventions);
   expect(published.branchPattern, "the lane bullet's branch spelling moved").toContain("T-NNN");
 
   // The two matchers are compared by BEHAVIOUR over samples built from
