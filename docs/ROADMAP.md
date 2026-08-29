@@ -25,7 +25,11 @@ opens with the card id that still holds its story.
   at the moment of the write (T-154), a method that measures itself
   (T-155), health bands over its own numbers (T-156) — org-scale by
   construction, nothing org-shaped built before a second team exists.
-  ADR-018 stays owed to T-135 Half B.
+  ADR-018 stays owed to T-135 Half B. Since T-158 (2026-08-29) the
+  repository has a human front door: a root README whose every tour
+  link is verified against the record and whose every digit is an
+  identifier — approved after a rejection that itself proved the
+  pipeline it describes.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own

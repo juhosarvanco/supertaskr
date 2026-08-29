@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 44
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [README.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
-review:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
+review: same-model
 ---
 
 NORTH_STAR's bar (2026-08-29) names the audience — the world's best

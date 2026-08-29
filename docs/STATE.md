@@ -1,11 +1,10 @@
 # State
 
-Updated: 2026-08-29 — the deferred step-2 regeneration for the T-092
-and T-093 checkpoints, performed at @human's direction after the
-architect's own report named the skip; the gate that now reds on that
-skip landed in the same commit. Current record:
-docs/checkpoints/2026-08-27-T-092.md. The pre-compaction narrative
-remains verbatim in docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-29 at the T-158 checkpoint — the first merge through
+the resumed pipeline (REJECTED → fixed → APPROVED, the arc on the
+card). Current record: docs/checkpoints/2026-08-29-T-158.md. The
+pre-compaction narrative remains verbatim in
+docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN. ONE COMMAND ON MAIN EXITS 1 ON PURPOSE:**
 `cargo run -p nputer-index -- arch cycles --root ../..` is exit 1 by
@@ -29,8 +28,9 @@ never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `node tools/e2e/scripts/brief.mjs
-  --state`, which stamps the reading. Read at this rewrite: ZERO
-  `task/` lanes (2026-08-29, ref `958be8a`). Before ANY dispatch run
+  --state`, which stamps the reading. Read at this rewrite: TWO
+  `task/` lanes live — T-153 and T-154, verdicts pending (2026-08-29,
+  at the T-158 checkpoint). Before ANY dispatch run
   `brief.mjs --task T-NNN`; never read the ledger's FREE column as a
   verdict — it is keyed by slug and two slugs can name one component.
 - THE HUMAN'S APP: port 1420 is read with
@@ -62,7 +62,8 @@ from this list.
    manifest; the card carries it).
 3. `T-155` method evals → `T-156` health bands (now also keeper of
    NORTH_STAR's own never-derived indicators) → `T-157` session
-   economics → `T-158` the human front door.
+   economics. `T-158` is DONE and merged — the front door exists,
+   with its rejection arc on the card.
 4. `T-159` — method v0.1.8, the metabolism release: ONE bump owning
    all method text (fence property, session hygiene, revert play,
    guard-class independence, suggestion metabolism, retirement
