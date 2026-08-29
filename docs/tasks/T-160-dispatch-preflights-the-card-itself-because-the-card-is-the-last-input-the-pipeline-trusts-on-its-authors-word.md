@@ -97,6 +97,16 @@ is queued for the same seat on the CI-green path — dispatch this
 card AFTER both land; the lane list is the authority, and the
 CI-green sequence outranks priority 3 by @human's standing runbook.
 
+PREFLIGHT RULING (2026-08-30): the note's "HELD by T-153-s5" is CARRIED
+rather than corrected. That lane landed before this card was dispatched,
+so the sentence above is false at HEAD — which is exactly the claim class
+this card exists to surface, and the tool it builds refuses its own card
+on it. It is not rewritten because the note is the founding evidence: the
+condition it states was satisfied before dispatch, and destroying the only
+copy of what the card was filed against to make a gate green is the shape
+docs/CONVENTIONS.md refuses under "an unexplained file found here is
+RECORDED and LEFT". This is the mechanism's own first worked example.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
