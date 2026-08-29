@@ -337,11 +337,21 @@ test("a figure read from the MOVING integration ref is a LIVE fact — two reads
   // branch moving does to this log.
   const lines = ctx.integrationLog.split("\n").filter((l) => l.trim() !== "");
   const cut = lines.findIndex((l) => l.slice(41).startsWith("Checkpoint:"));
-  expect(cut, `${branch} carries no Checkpoint, so this body has no subject`).toBeGreaterThanOrEqual(0);
+  const checkpoints = lines.filter((l) => l.slice(41).startsWith("Checkpoint:")).length;
+  // THE PRECONDITION NAMES WHAT IT SAW (T-153-s9). This body's subject is
+  // the SHAPE of one read of a mutable ref, and which ref that is now
+  // depends on the checkout: a `pull_request` runner holds no local
+  // branch and answers through a remote-tracking spelling. A precondition
+  // that fails without naming the ref, the length and the count sends the
+  // reader to guess which of the three moved.
+  const seen =
+    `${branch} -> ${ctx.integrationRef}: ${lines.length} first-parent line(s), ` +
+    `${checkpoints} Checkpoint(s), newest at index ${cut}, head ${lines[0]?.slice(0, 60) ?? "(none)"}`;
+  expect(cut, `${branch} carries no Checkpoint, so this body has no subject — ${seen}`).toBeGreaterThanOrEqual(0);
   const older = lines.slice(cut + 1);
   expect(
     older.some((l) => l.slice(41).startsWith("Checkpoint:")),
-    `${branch} carries only one Checkpoint here, so a second read cannot be built out of it`,
+    `${branch} carries only one Checkpoint here, so a second read cannot be built out of it — ${seen}`,
   ).toBe(true);
 
   // ONE VARIABLE. The same ctx object: the same ref, the same clock, the
