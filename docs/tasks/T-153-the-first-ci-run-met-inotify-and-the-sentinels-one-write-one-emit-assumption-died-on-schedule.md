@@ -379,7 +379,7 @@ below is a genuine green and the two 10 s drill reds are the
 
 | command | where | result | exit |
 |---|---|---|---|
-| `cargo test` | `/tmp/v153/app/src-tauri` | 18 `test result:` lines; **lib binary 198 passed / 0 failed in 4.02 s**; workspace total **518 passed / 0 failed / 5 ignored** | **0** |
+| `cargo test` | `/tmp/v153/app/src-tauri` | 18 `test result:` lines; **lib binary 198 passed / 0 failed in 4.02 s**; workspace total **518 passed / 0 failed / 4 ignored** | **0** |
 | `node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 3607a94 "$TREE")` | lane worktree, `TREE` from the RANGE RULE | **FIRES**, 3 docs paths, 3 suites owed; *"every live task card's frontmatter parses, with a legal status"*, **0 frontmatter issues** — so both new suggestion cards parse | **1** |
 | `npx vitest run` | `lib/parser/` | 314 passed, 15 files | **0** |
 | `npm test` | `app/` | 1013 passed, 47 files | **0** |
@@ -396,8 +396,9 @@ and the `verifier:` stamp were committed. `cargo test` is quoted at
 `git diff 3607a94..fada695 -- app/src-tauri/src/docs_watch.rs`, each
 site paired with its base text.
 
-- **The thirteen `loop { recv_emit; if pred { break } }` sites (nine
-  bodies) are EXACT**: predicate for predicate, `==` to `content_is`
+- **The thirteen `loop { recv_emit; if pred { break } }` sites (EIGHT
+  bodies — see the figure defects) are EXACT**: predicate for
+  predicate, `==` to `content_is`
   and `contains` to `content_has`, no widening in either direction. The
   two helpers being kept apart is load-bearing and it held.
 - **Two sites genuinely moved an assertion from "the NEXT emit" to "the
@@ -573,13 +574,24 @@ accurate at this ref.
 
 #### WHAT DID NOT SURVIVE — three record-level figure defects, all in the notes, none in the code
 
-1. **"All seventeen call sites become waits for a STATE" — there are
-   TWENTY.** Counted twice, independently: `3607a94` has 20 `recv_emit`
-   call sites (13 inside `loop` blocks, 7 bare) and `fada695` has 20
-   `recv_until` call sites across 11 bodies. The CONCLUSION is
-   untouched — every site was converted and the sweep is complete — but
-   the cardinal is wrong, and a checkpoint that quotes it inherits the
-   error. ("the nine `loop { … }` bodies" IS right, as a body count.)
+1. **The conversion census is wrong TWICE, in the same paragraph.**
+   *"All seventeen call sites become waits for a STATE"* — there are
+   **TWENTY**; and *"the nine `loop { recv_emit; if pred { break } }`
+   bodies"* — there are **EIGHT**. Derived at both refs and reproducible
+   in one pass over each file: `3607a94` holds 20 `recv_emit` call
+   sites, **13 of them loop-form across 8 bodies**
+   (`startup_arm_watches_the_initial_root`,
+   `docs_created_after_a_docsless_startup_arms_and_emits`,
+   `docs_replaced_wholesale_rearms_and_sees_in_place_edits`,
+   `docs_deleted_emits_empty_then_recreated_emits_again`,
+   `docs_appearing_under_a_genesis_project_lights_the_pipeline_with_no_repick`,
+   `a_failed_genesis_pick_leaves_the_open_project_untouched`,
+   `a_genesis_folder_that_already_has_an_empty_docs_dir_arms_the_docs_watch`,
+   `a_genesis_switch_onto_a_folder_whose_docs_holds_files_carries_that_tree`)
+   and 7 bare across 3; `fada695` holds 20 `recv_until` call sites
+   across 11 bodies. The CONCLUSION is untouched — every site was
+   converted and the sweep is complete — but both cardinals are wrong,
+   and a checkpoint that quotes them inherits the error.
 2. **"after this change `docs_watch.rs` has exactly one waiting
    primitive" — read literally, false.** Seven raw
    `recv_timeout`/`try_recv` waits remain (2298, 2319, 2714, 2750, 3220,
@@ -605,3 +617,12 @@ correctly deferred:
 disagreement rather than deciding it, which is the right move for an
 executor. This seat does not rule it either: `status:` is left at
 `building` and only `verifier:` is stamped.
+
+**AND THIS VERDICT'S OWN FIRST PASS CARRIED TWO OF THE THING IT IS
+REJECTING FIGURES FOR**, recorded here rather than quietly amended:
+`b72b99c` said *"5 ignored"* where `cargo test`'s eighteen result lines
+sum to **4**, and endorsed the notes' *"nine"* loop bodies as correct
+before counting them, where the answer is **eight**. Both were caught
+by summing the log instead of reading it, both are corrected above, and
+the correction is its own commit for the same reason the ledger keeps
+D4: an unrecorded miss and an unrun check are indistinguishable.
