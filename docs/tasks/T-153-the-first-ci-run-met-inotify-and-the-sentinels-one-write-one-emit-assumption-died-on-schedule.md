@@ -9,7 +9,7 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
@@ -359,3 +359,249 @@ this tip.
    decided, and stamping is a one-line move for whoever rules it.
 
 ## Verdicts
+
+### T-153 VERDICT: APPROVED — verifier claude-opus-5@subagent, 2026-08-29. Every measurable claim reproduced, including three of the seven mutants to the digit and the retracted premise re-derived from the runner's own log; three record-level figure defects are named below and none of them is in the code
+
+**Verified from a detached scratch worktree at `/tmp/v153`
+(`git worktree add --detach /tmp/v153 fada695`) with
+`CARGO_TARGET_DIR=/tmp/v153/.target` inside itself — the main checkout
+and the lane were never built in and never edited.** Subject:
+`task/T-153-inotify-sentinels` at `fada695`, base `3607a94`. CI read
+strictly read-only via `gh run view`.
+
+**THE CACHE CLIFF WAS READ BEFORE ANY WATCHER RED WAS JUDGED**
+(`T-088-s4`): the lib suite's own time on a cold, private target dir is
+**4.02 s**, less than half the 9.5 s green ceiling — so every green
+below is a genuine green and the two 10 s drill reds are the
+`recv_until` budget being spent, not the cliff.
+
+#### SUITES — unpiped, counts and exits read from the run
+
+| command | where | result | exit |
+|---|---|---|---|
+| `cargo test` | `/tmp/v153/app/src-tauri` | 18 `test result:` lines; **lib binary 198 passed / 0 failed in 4.02 s**; workspace total **518 passed / 0 failed / 5 ignored** | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 3607a94 "$TREE")` | lane worktree, `TREE` from the RANGE RULE | **FIRES**, 3 docs paths, 3 suites owed; *"every live task card's frontmatter parses, with a legal status"*, **0 frontmatter issues** — so both new suggestion cards parse | **1** |
+| `npx vitest run` | `lib/parser/` | 314 passed, 15 files | **0** |
+| `npm test` | `app/` | 1013 passed, 47 files | **0** |
+| `NPUTER_E2E_PORT=16111 npm test` | `tools/e2e/` | 233 passed | **0** |
+
+The last three are the suites the docs gate names, re-run **at the tip
+this verdict itself creates** (the role's GATE CASE), after this entry
+and the `verifier:` stamp were committed. `cargo test` is quoted at
+`fada695`: this verdict changes no `.rs`, and the lib binary reads no
+`docs/tasks/`.
+
+#### ATTACK 1 — could `recv_until` mask a regression? Every one of the conversions read against its pre-conversion form
+
+`git diff 3607a94..fada695 -- app/src-tauri/src/docs_watch.rs`, each
+site paired with its base text.
+
+- **The thirteen `loop { recv_emit; if pred { break } }` sites (nine
+  bodies) are EXACT**: predicate for predicate, `==` to `content_is`
+  and `contains` to `content_has`, no widening in either direction. The
+  two helpers being kept apart is load-bearing and it held.
+- **Two sites genuinely moved an assertion from "the NEXT emit" to "the
+  emit that converged"** — `from_b.project_dir` / `from_b.seq`, and
+  `still_a.seq`, in `picker_rearms_the_watcher_onto_the_new_root`. That
+  is the relaxation the card asks for, and the coverage it costs is
+  unproducible anyway: a residual A event collects from `target.root`
+  (= B) and is suppressed by equality, so an A-stamped emit cannot
+  reach that channel to be skipped past. The same body's LAST wait went
+  strictly the other way — its two clauses now run on every emit in the
+  window instead of on whichever arrived first.
+- **The "must NOT arrive" class was not touched**, which is the
+  conversion that would have silently deleted a property:
+  `docs_watch.rs:3658` still holds
+  `emits.recv_timeout(Duration::from_millis(1200)).is_err()`, and the
+  `try_recv().is_err()` no-echo assertions at 2709, 2754, 3212, 3234
+  and 3248 are all intact.
+- **The sweep's class boundary is correct.** The seven raw
+  `recv_timeout`/`try_recv` waits left in the file are on channels fed
+  by DIRECT `handle_fs_batch` calls (2714, 2750, 3220, 3241) or on a
+  control rendezvous (2298, 2319) — one call, at most one emit, no
+  backend in the loop — plus the deliberate negative at 3658. Nothing
+  in the file that awaits a live snapshot was left on the old shape.
+
+**Residual risk, named because it is the same family and not a
+defect:** the converted pattern is *wait for P, then assert Q on the
+emit that satisfied P*, so Q now runs on the FIRST emit satisfying P
+rather than at quiescence. The only Qs this diff ADDS are in the
+size-line body (`["docs/a.md", "docs/b.md"]` and `!back.truncated`), and
+`docs/a.md` is written once at setup and never touched again, so it
+cannot transiently vanish from a split emit. Four ubuntu runs agree.
+
+#### ATTACK 2 — the retracted premise, re-derived from the log rather than read from the notes
+
+`gh run view 33246335429 --log-failed`. The block is verbatim what the
+notes quote, and the retraction survives on three independent legs:
+
+1. **Order.** `seq=4 files=0 skipped=0 … at_ms=1787997196874` is printed
+   AFTER `panicked at src/docs_watch.rs:2494:9` and after the
+   `RUST_BACKTRACE` note, in the single captured buffer libtest uses for
+   both streams.
+2. **Arithmetic.** `1787997196874 − 1787997196624 = 250 ms`, exactly one
+   `DEBOUNCE`, after the emit that failed. `seq=2` and `seq=3` share
+   `at_ms=…624`, so the failing emit is `seq=3`, not `seq=4`.
+3. **Mechanism.** `TempTree::drop` (`docs_watch.rs:1657`) is
+   `fs::remove_dir_all`, and it runs during the unwind — `seq=4` is the
+   watcher correctly reporting a root that has gone.
+
+**So the received emit was `seq=3 files=2 skipped=0` and the artifact is
+a CONTENT one.** `skipped=0` proves `b.md` was under the cap at that
+collection, which it can only be after the `O_TRUNC` of
+`fs::write("b is back")` — so the collector read `b.md` between the
+truncate and the write. The card's own account is right.
+
+**The unproducibility claim, checked against `collect_docs_tree`
+(688–798) rather than accepted.** `out` starts at
+`CollectOutcome::default()`, only ever pushes, and `skipped_total =
+skips.len()` — so `files == 0 && skipped_total == 0` cannot be reached
+while an eligible, readable plain file sits under `docs/`. The three
+early returns (691, 695, 699), the `read_dir` NotFound `continue` (724,
+which the notes count as a fourth "early return" — it is a `continue`)
+and the `ErrorKind::NotFound` read arm (785) are the whole set, and each
+means the file was not there when the collector looked. **Where the
+absolute wording overshoots, for the record:** entries dropped by the
+silent `continue`s — symlinks (737), non-`is_collected_docs_path` files
+(760), failed `symlink_metadata` (734) or `canonicalize` (751) — also
+yield `files=0 skipped=0` with directory entries present. That is
+by design, is not a mid-write artifact, and does not change the
+criterion's answer.
+
+**Criterion 2's app half re-derived too**, because it is the half that
+would cost a user a blank board. `applySnapshot`
+(`app/src/lib/docs-model.ts:350`) builds `effective` from
+`payload.files` plus the skip fallbacks only, so a zero-file payload
+does blank. What bounds the wholesale-swap window is real:
+`ensure_docs_watch` returns `target.docs.is_some() != was_armed`
+(1375), and `handle_fs_batch` emits when `watch_state_changed` even
+against an equal baseline (1409). All three pin tests the notes name
+exist by those names, as does `a_vanished_root_never_panics_the_batch_handler`
+for the residual.
+
+#### ATTACK 3 — three of the seven mutants re-run in the scratch, one-sided, read back with `git diff` before each suite, restored and proved
+
+Suite `cargo test -p nputer --lib`; baseline **198 / 0, exit 0**.
+
+| # | mutation (production side, read back before running) | my result | card's result |
+|---|---|---|---|
+| D1 | `if len > MAX_FILE_BYTES` → `if len > u64::MAX` | **192 / 6, exit 101**; target dies at `docs_watch.rs:1736`: `waited 10s … where the collector reports a skip; emits seen meanwhile: [seq=2 files=2 skipped=0 truncated=false]` | identical, to the message |
+| D3 | `eligible.sort_by(\|a,b\| a.0.cmp(&b.0))` → `b.0.cmp(&a.0)` | **192 / 6, exit 101**; target reds at **2569**, `left: ["docs/b.md", "docs/a.md"]` | identical |
+| D6 | `snapshot_from`'s `project_dir` → `String::new()` | **193 / 5, exit 101**; `picker_rearms_the_watcher_onto_the_new_root` reds at **2186** | identical |
+
+Restoration after each: `git diff -- app/src-tauri/src/docs_watch.rs`
+**0 bytes**, and `shasum -a 256` of the working file equal to
+`git show HEAD:…` —
+`df3ee41e36cf383d614be6e1c48fd774fdf72408e7e4f9966b8f10b706e5b0b1`, the
+same digest the ledger records, which also confirms the drilled file at
+`259250e` and the reviewed file at `fada695` are byte-identical.
+
+**THE TWO RECORDED MISSES, JUDGED.**
+
+- **The shape-SIX claim is CORRECT in substance.** D6 reds
+  `picker_rearms…` at 2186 — `assert_eq!(picked.project_dir, …)` on the
+  PICK snapshot — which is upstream of `from_b.project_dir` and far
+  upstream of the new inline clause, so the clause kills no mutant an
+  existing assertion does not already kill. That is the shape's tell,
+  and T-092 requires citing the closed catalogue rather than minting.
+  One nuance for the record: CONVENTIONS words SIX as "killing no mutant
+  **another test** does not already kill", and here the masking
+  assertions are in the SAME body; the ordinal still fits better than
+  any of the other ten.
+- **"INHERITED rather than introduced" is TRUE**, checked at the base
+  ref directly and not inferred: `git show 3607a94:app/src-tauri/src/docs_watch.rs`
+  already carried `assert_eq!(after.project_dir, canon_b…)` duplicating
+  `assert_eq!(from_b.project_dir, canon_b…)` in exactly the same way.
+  The conversion preserved a redundancy; it did not create one.
+- **D4/D5 not re-run**, and they need no defence: D4 is recorded as a
+  drill that reds at a PRE-EXISTING clause and therefore proved the
+  wrong thing, and D5 (`out.truncated = out.skipped.is_empty() &&
+  out.files.len() == 2`) is one-sided and aimed at exactly the clause D4
+  missed. Recording a miss is the behaviour the rule asks for.
+
+#### ATTACK 4 — the fence, and the two new cards
+
+`git diff 3607a94..fada695 --name-only` returns **exactly the four
+claimed paths**: `app/src-tauri/src/docs_watch.rs` plus three
+`docs/tasks/*.md`. `docs_watch.rs` is C-10's, and `app-shell` maps to
+C-05, C-10, C-11, C-16 — inside the declared `touches:`. Nothing under
+`app/src/`, nothing under `app/src-tauri/tests/`, no dependency change,
+no new input path, no secret: the security sweep has no surface to work
+on, the diff being test-module-only inside one file. Both suggestion
+cards parse — the docs gate reports 0 frontmatter issues and a legal
+status for every live card — and `suggested_by: executor claude-opus-5
+@T-153` matches the spelling 100-odd sibling cards already use.
+
+#### ATTACK 5 — CI, read at four commits rather than three
+
+| run | commit | lib binary | `a_hostile_init_line_model…` |
+|---|---|---|---|
+| `33252279564` | `259250e` | **198 passed; 0 failed**, 10.00 s | FAILED, `SpawnFailed { os: "Argument list too long (os error 7)" }`, 79/1/1 |
+| `33252985112` | `723d88c` | **198 passed; 0 failed**, 9.92 s | identical |
+| `33253342892` | `c5b63ea` | **198 passed; 0 failed**, 9.95 s | identical |
+| `33253673074` | **`fada695` — the tip under review** | **198 passed; 0 failed**, 9.90 s | identical |
+
+The fourth run is the one the notes predicted would exist and declined
+to spend, and it is the only one measured AT the reviewed commit, which
+is why it is read here. `gh run view 33253673074` also settles criterion
+3 mechanically: every step through `app suite` is green, `cargo suite`
+is the X, and `graph currency`, `cargo audit`, `docs gate (whole-tree
+half)`, `e2e lane` and `xvfb tauri boot` are all **skipped** — so their
+first Linux contact is still owed, exactly as the notes say.
+
+#### ATTACK 6 — was `T-153-s2` routed or dodged? ROUTED, and the fence is not this lane's
+
+The fixture is `("oversize", "M".repeat(200_000))` at
+`app/src-tauri/tests/agent_runner.rs:4368`, and the `--model` argv
+element is built at `app/src-tauri/src/agent/adapter.rs:669`. **Both
+paths are C-14's by that component's own `paths:` field**
+(`docs/architecture/components/C-14-agent-runner.md` claims
+`app/src-tauri/src/agent/**` and `app/src-tauri/tests/agent_runner.rs`
+by name, `touch_slugs: [app-agent]`). Neither arm (a) nor arm (b) is
+reachable from `touches: [app-shell]`. And fixing it would not have
+bought a green run either: the `cargo suite` step runs BEFORE `graph
+currency`, and the graph is deliberately stale under CONVENTIONS' GRAPH
+REGEN bullet, which puts the regen **with the CHECKPOINT** — the right
+call with three lanes live on one 1 MB file.
+
+`T-153-s1` is inside the fence (`index_cmd.rs` is C-05's) and was still
+routed. Examined and accepted: the card's sweep instruction is "sweep
+the sibling live bodies **while in the file**", `index_cmd`'s
+one-emit-ness is the asserted PROPERTY rather than an incidental, and
+converting it deletes what the body is about. Its quoted code is
+accurate at this ref.
+
+#### WHAT DID NOT SURVIVE — three record-level figure defects, all in the notes, none in the code
+
+1. **"All seventeen call sites become waits for a STATE" — there are
+   TWENTY.** Counted twice, independently: `3607a94` has 20 `recv_emit`
+   call sites (13 inside `loop` blocks, 7 bare) and `fada695` has 20
+   `recv_until` call sites across 11 bodies. The CONCLUSION is
+   untouched — every site was converted and the sweep is complete — but
+   the cardinal is wrong, and a checkpoint that quotes it inherits the
+   error. ("the nine `loop { … }` bodies" IS right, as a body count.)
+2. **"after this change `docs_watch.rs` has exactly one waiting
+   primitive" — read literally, false.** Seven raw
+   `recv_timeout`/`try_recv` waits remain (2298, 2319, 2714, 2750, 3220,
+   3241, 3658). They are correctly OUTSIDE the sweep's class, which the
+   preceding sentence defines; the sentence itself claims more than the
+   file supports.
+3. **The RANGE RULE row is stale at the tip it is filed under.** It
+   records `TREE=68e2598` and **3 paths**, measured at `ce2fffd`; at
+   `fada695` `git merge-tree --write-tree 3607a94 fada695` gives
+   `6f3a7f2` and **4 paths**, because the notes commit put the card
+   itself into the diff. The docs gate's own row inherits it: 2 paths
+   became 3. The claim "every row was re-run at the final tip" does not
+   hold for this row — the FIGURE CASE, in the file that warns about it.
+
+**None of the three is a defect in the delivered behaviour, none moves
+a gate, and none changes a disposition** — which is why this is an
+approval and not a rejection. **The integrator owes the corrections
+before the checkpoint quotes them**, and owes the graph regen the notes
+correctly deferred:
+`NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph -- --ignored`.
+
+**On the untouched `status:`** — the notes record the brief/repository
+disagreement rather than deciding it, which is the right move for an
+executor. This seat does not rule it either: `status:` is left at
+`building` and only `verifier:` is stamped.
