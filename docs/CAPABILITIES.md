@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **320 behaviours** — 318 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **321 behaviours** — 319 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -147,6 +147,7 @@ Census: **320 behaviours** — 318 extracted sentences + 2 named-not-extracted (
 - the STARTABLE set is exactly the ready set minus what the live lanes hold
 - a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the CALL SITE
 - A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold
+- the in-flight section's POPULATED arm, on an injected board that cannot evaporate
 
 ## docs-input-gate
 
