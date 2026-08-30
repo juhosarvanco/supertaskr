@@ -22,10 +22,11 @@ for exactly the audience whose workflow nputer is built for.
 - docs/research/competitors.md — the four-ring competitive map — AND
   the 2026-08-25 addendum artifact ("Four missing competitors":
   Linear, Jira/Rovo Dev, Plane, agentplane; the fifth-ring argument).
-  ROUTED 2026-08-30: the ⚠ claims are re-verified and a merged draft
-  awaits @human's ruling — competitors-merge-proposal.md (the
-  verification record + asks M1–M4) and competitors-merged-draft.md
-  (the ready-to-land text).
+  ROUTED AND LANDED 2026-08-30: the ⚠ claims re-verified
+  (competitors-merge-proposal.md is the record), the merged five-ring
+  map landed on main by the engineering seat on @human's M1 ruling;
+  competitors-merged-draft.md is now historical (the landed copy is
+  authoritative).
 - docs/research/ai-native-sdlc-playbook-review.md — the positioning
   evidence: where nputer meets or exceeds the reference playbook.
 - The Beyond-the-Playbook charter artifact (32 features, 4 rings,
@@ -42,142 +43,106 @@ version-planning room's standing rule. Vendor claims carry their
 source and date. Pricing/business-model decisions are @human's;
 this session drafts and routes.
 
-PROPOSED HOUSE RULE (needs @human's yes): **marketing material may
-only claim behaviour the census proves** — every capability sentence
-in outward material quotes docs/CAPABILITIES.md at a named commit.
-The census is generated from passing tests, so marketing copy
-inherits the same honesty gate the code lives under. No competitor
-can say that about their own site, which makes the rule itself a
-marketing asset.
+H1 RULED 2026-08-30 (@human, via the engineering session, overriding
+this session's census-quoting proposal): **"Marketing writes freely
+and uses the real artifacts and v1 plan."** No mechanical
+CAPABILITIES-quoting constraint; the real artifacts and the v1 plan
+are the source material. The version-planning room's standing rule
+still governs feature PROMISES — freely-written copy still may not
+promise what lacks a version ruling.
 
-## The positioning spine (drafted 2026-08-30, pending M1–M4)
+## The positioning spine (ruled 2026-08-30, M3)
 
-The lead pitch is the narrowed claim from the verified competitive
-map — a conjunction where every clause excludes a named competitor:
+M3 RULED with @human's own answer, overriding the verdict-first
+recommendation: **"We lead with the full nputer SDLC approach."**
+The lead story is the WHOLE loop — genesis → board → dispatch →
+blind verification → records — with the verdict as the strongest
+proof point INSIDE that story.
 
-> A **different model**, given only the criteria and the diff and
-> **denied the builder's reasoning**, returns a **binding verdict**
-> that stops the merge — and the whole exchange is **a file in your
-> repo**.
+> One interview turns your idea into a fenced, criteria-bearing
+> board; agents build it in parallel lanes that cannot collide; a
+> different model — denied the builder's reasoning — returns a
+> binding verdict on every card; and the whole history lands as
+> records in your repo. nputer runs the entire AI-native SDLC, and
+> built itself with it.
 
-Supporting clauses, in order: the self-hosted proof (nputer built by
-its own loop, records readable), safe parallelism (fences — no
-competitor knows what files an issue touches), never in the
-inference billing path (all three Ring-1.5 trackers meter AI —
-a price comparison now, not a principle), and data ownership
-(demoted from lead; Plane owns that argument with AGPL).
+Proof points inside the story, in order: the binding verdict (the
+narrowed claim — every clause excludes a named competitor, see the
+landed map's conclusion 1), the self-hosted proof (every feature
+forged by the loop it describes, records readable), safe parallelism
+(fences — no competitor knows what files an issue touches), never in
+the inference billing path (all three Ring-1.5 trackers meter AI — a
+price comparison now, not a principle), and data ownership
+(supporting clause; Plane owns that argument with AGPL).
 
-## The access-pass program — draft v0 (2026-08-30, @human's idea)
+## The access-pass program — RULED DESIGN (2026-08-30)
 
-Design goal: the pass is a **scarce, earned artifact** for exactly
-the audience nputer is built for, and the feedback it buys arrives
-as suggestion cards the board already knows how to metabolize. No
-feature promises anywhere in it — the pass sells what CAPABILITIES
-proves on grant day.
+All rulings @human's, delivered via the engineering session
+2026-08-30; the option analysis they ruled over is in this file's
+git history. The full terms + application template:
+[access-pass.md](access-pass.md).
 
-**P0 — the trigger ("test-user readiness").** Options:
-- T1: now — one completed real planner turn exists (T-025-s2).
-- T2: the full Q1–Q7 genesis walk closes milestone 3 AND the board
-  hands out briefs (T-112) — the loop is walkable end to end.
-- T3: the full v1 cut line (needs the version sitting first).
-**Recommendation: T2.** T1 is a demo, not a product experience; T3
-delays real-user evidence the riskiest-assumption tracking needs.
-The program can be BUILT now and armed at T2.
+- **P0 — trigger: T3.** Access starts at FULL v1 (not the
+  genesis-walk trigger this session recommended). Read with P1/P2 as
+  one coherent design: the WAITLIST opens early and collects
+  interest now; access itself begins at v1.
+- **P1 — qualification: OPEN WAITLIST.** No evidence gate. The
+  application still collects setup facts (agent CLI, project) — for
+  program metrics and prioritized support, never for gating.
+- **P2 — admission: ROLLING**, with the engineering caveat honored:
+  the waves-of-15 recommendation was grounded in real board-triage
+  capacity, so rolling admission throttles the INTAKE RATE instead
+  of the cohort size — feedback arriving faster than sittings can
+  triage it burns goodwill. Default proposed: ~5 admissions/week,
+  tuned against the suggestion-backlog watchdog band; @human can
+  turn the dial any week.
+- **P3 — window: 30 days**, one renewal earned by feedback that
+  produces a promoted card (+30 days).
+- **P4a — intake: REPO.** Markdown issues in a dedicated feedback
+  repo; this session converts each item into a standalone
+  suggestion-card draft stamped with the pass-holder id and hands
+  batches to the architect seat, where they enter docs/tasks/ at
+  `suggested` under the standing metabolism rules. Program metrics
+  stay north-star metrics (acted-not-liked): % dispatching ≥1 task
+  within a week, median interview→board minutes, cold-start
+  confirmations. Not collected: NPS, stars,
+  testimonials-as-metrics.
+- **P5 — conversion: FOUNDING PRICE + TEAM-TIER PRIORITY, no
+  credit.** @human asked whether a credit system is needed; ruled
+  no — a credit ledger is a whole product surface nputer doesn't
+  need at v1. The offer is a locked price and a queue position,
+  never a roadmap.
+- **P6 — the pass is a signed markdown file: YES**, with mechanics
+  @human approved: offline signature (`ssh-keygen -Y` or minisign,
+  public key published) over {holder, cohort, issued, expires}; the
+  app checks signature + expiry at startup — no license server;
+  renewal is a freshly signed file with a later date. At cohort
+  scale enforcement is light-technical + social; the file's real
+  job is identity, provenance, shareability. (The app-side check is
+  an engineering card that routes through a version sitting like
+  everything else; the program design assumes it, does not mint
+  it.)
 
-**P1 — who qualifies as "serious AI-native".** Options:
-- A (evidence): applicant shows a repo they work in with an agent
-  adapter file (CLAUDE.md/AGENTS.md) and agent-driven commit
-  history — thirty seconds to check, impossible to fake casually,
-  and exactly NORTH_STAR's first user (agent CLI + a real project).
-- B (invitation): hand-picked practitioners from @human's and the
-  project's orbit.
-- C (open waitlist + screening questions).
-**Recommendation: A, with B as seasoning** (a few hand-picked
-anchors per cohort). C collects applause, not users — the
-applause-metrics exclusion applies to program design too.
+**Risks, named:** intake outrunning the triage seat (mitigated by
+the P2 throttle + the backlog watchdog band); solo-founder support
+burden (support is files-first — an FAQ grown from friction
+reports, office hours batched); waitlist going stale before v1
+(mitigated: dated expectations in the application — no launch date
+promised, position number given; occasional build-in-public notes
+keep the list warm).
 
-**P2 — grant mechanics.** Options: rolling admissions / fixed
-cohorts of ~10 / fixed cohorts of ~20.
-**Recommendation: cohorts of 15±5, one wave at a time.** Each cohort
-is a sitting: its feedback is triaged as a batch, the suggestion
-queue's watchdog band protects the board from flooding, and wave N+1
-does not open until wave N's cards are metabolized. Scarcity is real
-because capacity is real: the constraint IS the triage seat, and
-saying so publicly is honest marketing.
+## The rulings record
 
-**P3 — the time limit.** Options: 14 / 30 / 60 days.
-**Recommendation: 30 days.** Success criterion 3 measures dispatch
-within a WEEK of interview; 30 days holds the whole arc (genesis →
-board → dispatched tasks → lived-with records) with slack, while
-keeping the pass a limited thing rather than a lapsed subscription.
-One renewal, earned: a pass-holder whose feedback produced a
-promoted card gets +30 days. Feedback that moves the board is the
-program's currency.
+2026-08-30, @human via the engineering session: M1 yes (landed on
+main same day) · M2 yes (Ring 1.5 adopted) · M3 @human's own
+answer — lead with the full nputer SDLC approach · M4 yes
+(strategy-room.md opened, business-side) · P0 T3 · P1 open
+waitlist · P2 rolling, intake-throttled · P3 30 days · P4a repo ·
+P5 price + priority, no credit · P6 yes, signed markdown ·
+H1 @human's own answer — marketing writes freely from the real
+artifacts and v1 plan.
 
-**P4 — what feedback is collected, and how it reaches the board.**
-Collected: (1) the two timed numbers the north star already owes —
-interview→dispatchable-board minutes (criterion 2) and days to first
-real dispatch (criterion 3); (2) friction reports in a lightweight
-template (what you tried, what happened, what you expected); (3) one
-exit interview per pass-holder, run by this session's process.
-Routing: raw feedback lands in a dedicated intake (a repo or form —
-@human's pick, P4a below); the marketing session converts each item
-into a standalone suggestion-card draft stamped with the pass-holder
-id, and hands the batch to the architect seat, where it enters
-docs/tasks/ at `suggested` and queues under the standing metabolism
-rules like every other arrival. No new machinery, no product
-promises: the feedback program is a PROCESS wrapped around the
-board's existing metabolism. Program metrics are north-star metrics
-(acted-not-liked): % of cohort dispatching ≥1 task within a week,
-median interview→board minutes, cold-start confirmations. Explicitly
-not collected: NPS, stars, testimonials-as-metrics.
-
-**P5 — what converts a pass-holder afterwards.** Options:
-- Founding price: a locked discount on the first paid tier,
-  whenever @human rules one exists (the map's norm: free single-user
-  core, paid collaboration/interview layer, ~$15–20/mo ceiling —
-  under pressure from Plane at $6/seat). No feature promises
-  attached; the offer is a price, not a roadmap.
-- Founding credit: named in the repo's record as a founding tester
-  (the records are public and permanent — cheap for us, real to
-  them).
-- Team-tier priority: first in line when a team offering exists —
-  phrased as position, never as a date.
-**Recommendation: all three stacked, anchored on founding price.**
-They cost nothing today, promise nothing undelivered, and each one
-converts a different motivation.
-
-**P6 — the pass itself is a file.** A signed markdown certificate —
-issued in its own commit, carrying the cohort, the window, and the
-holder's name; revoked or renewed the same way. The pass program
-runs on the product's own discipline (files, commits, records), and
-that is the marketing: even our access passes have provenance.
-Recommendation: yes.
-
-**Risks, named:** cohort feedback outrunning the triage seat
-(mitigated by P2's wave gating + the backlog watchdog band); the
-solo-founder support burden (mitigated: support is files-first — an
-FAQ grown from friction reports, office-hours batched per cohort);
-pass-holders arriving before the walk is smooth (mitigated by P0=T2:
-arm only when the loop is walkable); a cohort of 15 telling nobody
-(accepted: the program buys evidence first, reach second — reach is
-the launch post's job, and the pass program feeds it the numbers).
-
-## The decision queue for @human — one word each
-
-Competitive map: **M1** land the merged draft? **M2** adopt Ring
-1.5? **M3** verdict-first lead? **M4** open the integration room?
-(details in competitors-merge-proposal.md; recommended yes ×4)
-
-Pass program: **P0** trigger = T1/T2/T3? (rec: T2) · **P1**
-qualify = evidence/invite/open? (rec: evidence) · **P2** cohort =
-rolling/10/20? (rec: ~15 waves) · **P3** window = 14/30/60? (rec:
-30) · **P4a** intake = repo/form? · **P5** conversion =
-price/credit/priority/all? (rec: all) · **P6** pass-as-file? (rec:
-yes) · **H1** the census-only marketing rule? (rec: yes)
-
-Next after rulings: fold answers into this plan, draft the pass
-terms + application template, and open docs/business/plan.md (the
-business-plan skeleton: positioning, segments, pricing frames for
-@human, channel plan built on conclusion 5's register-against-their-
-protocols move).
+Open work this file owes next: grow plan.md's pricing frames into
+decision-ready options once the v1 version sitting rules the cut
+line; the launch-post outline under the M3 lead; the comparison-page
+plan (the steal list's one-person distribution engine).
