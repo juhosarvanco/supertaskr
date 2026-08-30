@@ -128,6 +128,37 @@ fence does not reserve **0**, unrunnable figures **0**, `blocked_by`
 nothing, ref stamps **1 of 1 resolving**, and each fence entry reserving
 exactly the one tracked file it names.
 
+## CORROBORATED, and the gap WIDENED — `T-140-s4`'s executor, 2026-08-30
+
+Not a second filing: the same card, a second instance, recorded here
+because a corroboration on the card beats a duplicate beside it.
+
+`T-140-s4` re-derived the statistic at its own base `5073db6` — the mean
+of the positive single-commit growths of `docs/architecture/graph.json`,
+by this card's own subject command — and moved
+`check::WARN_HEADROOM_BYTES` from **14 914 (61 growths)** to **13 921
+(68 growths)**. The band's breach line still reads **15 751**, T-139's
+reading. **So the divergence is now 1 830 bytes across three
+re-measurements** (15 751 -> 14 914 -> 13 921), and every one of them has
+been the crate moving while the band stood still — which is this card's
+own thesis, measured a third time. The card's three-copy claim needs
+one amendment at that base: `max_graph_bytes`'s doc comment no longer
+carries `15 751`, because `T-140-s4` rewrote it. Two sites now, not
+three, and the join is still missing.
+
+**AND ONE OF THE BAND'S TWO ARMS MAY HAVE STOPPED DISCRIMINATING, WHICH
+IS NEW.** The same card raised `IndexOptions::max_graph_bytes` from
+1 040 000 to a derived 2 145 959, so the headroom this band measures went
+from **410 bytes** to **1 011 549**. The breach arm at 15 751 still means
+what it meant; the DRIFT arm at **63 004** is now sixteen times inside a
+healthy reading and will stay there for dozens of merges. A band whose
+drift arm cannot fire reports one state where it was built to report
+two, so whoever takes this card should ask whether that arm wants
+re-deriving against the new budget rather than only re-stamping the
+breach. `T-140-s4`'s fence (`app-shell`, `app-map`, `crate-index`) does
+not reach `tools/e2e`, which is why this is a paragraph here and not a
+commit there.
+
 ## Implementation notes
 
 ## Verdicts

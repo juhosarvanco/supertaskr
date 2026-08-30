@@ -5,10 +5,11 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: building
+status: verifying
 blocked_by: []
 suggested_by: executor claude-opus-5 @T-140-s1
 touches: [app-shell, app-map, crate-index]
+built_by: claude-opus-5@subagent
 ---
 
 PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
@@ -214,3 +215,371 @@ alarm, both of which report DEGRADATION; what disappears with the banner
 is the report of a CLIFF that can no longer happen. Say that, at the
 place the banner used to be, or the next reader inherits a silence with
 no note.
+
+## Implementation notes — executor `claude-opus-5@subagent`, 2026-08-30
+
+Lane `/Users/ujju/Projects/nputer-T-140-s4`, branch
+`task/T-140-s4-graph-leaves-collector`, base `5073db6`, work commit
+`656511f`. Fence: `app-shell`, `app-map`, `crate-index` (64 paths);
+nothing outside it is committed.
+
+### 1. The removal, and the two decisions the card asked to be STATED
+
+`is_collected_docs_path` (docs_watch.rs) now answers `Some("md")` and
+nothing else. `MAX_FILE_BYTES`'s doc block, which was mostly a
+census of the graph's share of the collected payload, is rewritten to
+say what it now governs; the T-139/T-140 figures are kept as STAMPS and
+marked history. The collected census is **re-derived at this lane's own
+ref**: `530 files · 8 441 726 content bytes`, largest member
+`docs/tasks/T-110-a-lane-is-a-fact-on-disk.md` at `145 078` bytes,
+**13.8%** of the 1 MiB cap
+(`find docs -name '*.md' -type f -exec wc -c {} +`). T-015's
+`layout.json` loses its free ride deliberately — `git ls-files
+'docs/architecture/*.json'` answers `graph.json` alone at this ref, so
+nothing exists to break.
+
+**`docs-model.ts`'s `GRAPH_FILE` passthrough STAYS.** Argued at its own
+site. The fold is the SNAPSHOT's, not the collector's, and the snapshot
+has a second producer: `window.__nputerDocsHarness.apply` hands
+`applyDocsPayload` whatever a caller composes (watcher-store.ts, DEV +
+`!isTauri`). That is the supply line for `MapView`'s documented
+`graphContent` fallback, which `rollup-source.ts` promises for exactly
+the case its channel cannot serve (`unavailable: notTauri`).
+
+**`MapView`'s `graphContent` prop STAYS**, same reason, and the card is
+right that these are two decisions: removing the prop would remove the
+browser fallback, which nobody ruled on.
+`app/test/map-dogfood-render.test.tsx` drives that path against the live
+repository's graph on every `npm test`, so it is not a hypothetical
+reader.
+
+**What did NOT stay, and was not in the card's list:** `graphSkip` (the
+prop, and App.tsx's `skipped.find(s => s.path === GRAPH_FILE)` lookup)
+and `COLLECTOR_CAP_BYTES`. The eligibility gate in `collect_docs_tree`
+runs BEFORE the size gate, so a file that is not collected is never
+reported as skipped — `graphSkip` became a `find` over a list that
+cannot contain its needle. `COLLECTOR_CAP_BYTES` was worse than
+unreachable: a transcribed copy of `MAX_FILE_BYTES` that would have gone
+on printing `· over the snapshot cap` for every index of this repository
+once the budget passed 1 MiB, which is now a FALSE sentence on screen.
+
+### 2. The cross-crate invariant — RETIRED, with its reason at the site
+
+`the_emit_budget_stays_below_the_collectors_file_cap` is gone and a
+block of prose stands where it was, in `docs_watch.rs`'s test module. It
+was **not re-aimed**, and the reason is not a judgement call: the new
+channel carries no limit to aim it at, and `arch_cmd`'s module doc says
+so in writing — *"The read is deliberately UNCAPPED and this is not an
+oversight"*. A test re-aimed at a limit that does not exist is a body
+that cannot red.
+
+Two other bodies lost their premise with it and are reconciled rather
+than deleted:
+
+- `index_cmd::tests::reindex_emits_once_then_never_again` → renamed
+  `reindex_is_snapshot_silent_because_the_graph_left_the_collector`. It
+  asserted that the graph write emits exactly ONE snapshot; the write is
+  now invisible to the collector, so the loop it guarded cannot start
+  rather than terminating after one turn. **It gained a POSITIVE CONTROL
+  it did not have**, because the re-aimed body is two silences: after
+  them it writes one ordinary `.md` into the same watched tree and
+  REQUIRES the emit, proving the watcher, channel and debounce were
+  alive throughout.
+- `symlinked_architecture_json_is_never_followed` →
+  `symlinked_docs_file_in_a_subdirectory_is_never_followed`, re-aimed to
+  `.md` so it does not go vacuous. What it still covers that
+  `symlinks_are_never_followed` does not is the RECURSION arm.
+
+`is_collected_docs_path_accepts_md_anywhere_and_json_only_under_architecture`
+and `collects_architecture_json_alongside_md` are replaced by
+`is_collected_docs_path_accepts_md_and_nothing_else` and
+`collects_no_json_at_all` — the rule INVERTED rather than deleted, so
+reinstating the branch reds by name.
+`oversized_architecture_json_is_skipped_like_oversized_md` is retired
+(its subject cannot exist; `oversized_files_are_skipped` keeps the `.md`
+case). `skips_report_only_would_be_collected_files` gains the new rule's
+consequence asserted where it bites: an oversized `graph.json` produces
+NO skip row at all.
+
+### 3. THE NEW BUDGET: `2_145_959`, and the arithmetic
+
+Everything measured at base `5073db6` with this card's own diff in the
+tree, on Darwin 25.6.0.
+
+| term | value | how |
+|---|---|---|
+| natural untruncated size | **1 134 406** | budget set to 100 000 000, `index --check` asked: `fresh index: 1134406 bytes · 199 files · 2418 symbols · 2331 edges`, `truncated_*` absent |
+| first graph.json ever committed | **122 853** | first blob of the `git log --reverse -- docs/architecture/graph.json` size series |
+| lifetime growth | **1 011 553** | 1 134 406 − 122 853 |
+| **budget** | **2 145 959** | natural + lifetime growth |
+
+**The horizon this states, in one sentence:** the budget binds again when
+the graph has grown by everything it has grown since it first existed.
+One measured quantity, no free coefficient to argue about — which is why
+it is this rule and not `k × mean`.
+
+**Cross-checked in the unit the alarm speaks.** One ordinary merge's
+growth, re-derived here, is **13 921** bytes (mean of the **68** positive
+single-commit growths; median 4 501, max 241 980 at T-010). So the room
+is `1 011 553 / 13 921 = 72.7` ordinary merges, against **68** growths on
+the entire record. Two independent framings — "double the lifetime" and
+"one more lifetime of merges" — agree to within 7%. That is the reason
+the number is stated rather than rounded to 2 MiB (2 097 152), which
+would have meant nothing.
+
+**What it costs the only consumer left, measured rather than assumed.**
+The graph is now read on a DRILL only — `arch_cmd::load`: `fs::read` plus
+`serde_json::from_slice::<Graph>`, Rust-side, never crossing IPC.
+`app/src-tauri/tests/graph_budget_bench.rs` gained that stage (the two
+collector stages it owned are the ones this card removed, so a harness
+left as it was would have been measuring a dead path). Release build,
+min of 9 trials after a discarded warm-up:
+
+| graph bytes | D read | D deserialize | total |
+|---|---|---|---|
+| 1 039 590 (LIVE, pre-raise) | 31 us | 1 017 us | **1.05 ms** |
+| 1 997 524 | 51 us | 1 849 us | 1.90 ms |
+| 3 993 948 | 91 us | 3 628 us | 3.72 ms |
+| 7 997 517 | 211 us | 7 357 us | 7.57 ms |
+| 25 839 104 | 1 206 us | 23 581 us | 24.79 ms |
+
+Linear, no knee, ~0.93 us/KB. **At the new ceiling a drill costs about
+2.0 ms, paid on a click.** The same harness measures the docs snapshot
+this app ships on EVERY push at **9 830 us to collect and 4 094 us to
+encode**, so the drill is an order of magnitude off the stage that binds.
+**Term 2 therefore does not set the number — it proves term 3
+affordable**, which is the honest way round.
+
+**THE SELF-REFERENCE, NAMED AT THE SITE.** The regen at the finished
+tree answers **1 134 409**, three bytes above the 1 134 406 the
+derivation used: the derivation is written into `.rs` files that are
+themselves inside the walk (this doc comment and the bench's drill
+stage). The constant is deliberately NOT chased to a fixed point — each
+correction is also indexed. It is a ceiling; three bytes against
+1 011 549 of headroom.
+
+**THE ALARM RE-ARMED.** `check::WARN_HEADROOM_BYTES` 14 914 → **13 921**,
+by its own stated derivation at this lane's ref (the series to date:
+15 751/55 at `13c736e`, 14 914/61 at `9ed2b7f`, 13 921/68 here). Two
+things are written at the site that were not there before: that the last
+seven growths were measured under a BINDING budget and so bias this mean
+DOWNWARD — the safe direction, it fires early — and that the constant no
+longer sits under a second limit, so what it warns about is now exactly
+one thing.
+
+**Post-raise, from `index --check` (exit 0, CURRENT):**
+`budget: 1134410 of 2145959 bytes (52.9%) - 1011549 left`;
+`floor: 230079 of 2145959 (10.7%) - 1156 bytes/file … about 1856 files`.
+Graceful degradation now ends at ~1 856 files where it ended at ~898.
+That is a FACTOR and not a new curve — exactly what T-140 said a raise
+would buy — so this constant still is not the answer to "how large a
+project can the map hold". It is the answer to "how long before the map
+stops answering what is in a file".
+
+### 4. `map-too-large` RETIRED, and the sentence it owes
+
+@human's ruling of 2026-08-30 applied. The banner is gone from
+`MapView.tsx` and a comment stands in its place carrying the obligation
+in as many words: **what speaks now is `truncated_files` /
+`truncated_symbols` in the emitted graph and `nputer_index::check`'s
+headroom alarm at `index --check`, both of which report DEGRADATION —
+symbols thinned, files and import edges kept. What vanishes with the
+banner is the report of a CLIFF that can no longer happen**, because
+`is_collected_docs_path` no longer carries the graph at any size and a
+file that is never collected is never `SkipReason::Oversize`. What the
+banner said, and why T-140 built it, is preserved in the same comment.
+
+`map-view-dom`'s pair-assertion collapses to its control arm and is
+re-aimed rather than deleted: the retirement is PINNED (a re-introduced
+`map-too-large` under any condition reds), and the retired
+`· over the snapshot cap` arm is pinned by asserting that a graph far
+past the old constant now reads like any other.
+`map-shell-dom`'s shell-wiring body is retired with T-140's verdict
+correction 2 recorded at the site — the lesson it taught is still paid
+for by the neighbouring body, which drives the real App through the
+harness with a real graph and so still kills a cut `graphContent` wire.
+
+### 5. The regen and the pins
+
+`NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph --
+--ignored`, then `index --check`: **CURRENT, exit 0**, `1134410 bytes ·
+199 files · 2418 symbols · 2331 edges` (from `1039590 · 199 · 2067 ·
+2334`, `truncated_symbols: true, truncated_files: 4`). The four
+truncated files get their symbols back: `agent/runner.rs` 0→71,
+`dispatch/brief.rs` 0→81, `docs_watch.rs` 0→55,
+`tests/agent_runner.rs` 0→145.
+
+**Exactly ONE pin moved**, and it moved with the story:
+`["C-12","C-10","confirmed",7]` → `6` in
+`app/test/architecture-dogfood.test.ts`. Established as an IDENTITY, not
+inferred from a count: the pre-regen graph carried exactly one
+`app/src/architecture/** -> docs-model.ts` edge —
+`f:app/src/architecture/MapView.tsx -> f:app/src/lib/docs-model.ts`,
+kind `import`, the `import type { SkipReason }` that fed the retired
+prop — and the regenerated graph carries none. The pair stays
+`confirmed` because `churn-source.ts` and `rollup-source.ts` still read
+the watcher store. `map-dogfood-render.test.tsx` did **not** move: no
+component node changed, and the vanished edge was already folded into a
+pair that survives. `lib/parser`'s registry pin did not move either —
+the registry is untouched.
+
+**AND THE GRAPH ITSELF IS NOT COMMITTED**, because
+`docs/architecture/graph.json` is outside this lane's fence (the hook
+refuses it by name, exit 2) and CONVENTIONS gives the regen to the
+integrator's checkpoint. **So the branch at `656511f` carries the new
+pin and the old graph**: a fresh checkout reds `architecture-dogfood` by
+one row and reds `index --check` as STALE, while this worktree is green
+because it holds the regenerated file uncommitted. Both are true and
+neither is a defect in the work. Routed as `T-140-s8` with three
+dispositions and a recommendation. **Verifier: reproduce in this
+worktree, which lane-protocol rule 6 preserves for exactly this reason.**
+
+### Gates — every command with its exit
+
+Run in the lane worktree unless stated.
+
+| command | from | result |
+|---|---|---|
+| `npm ci` | lib/parser | 0 |
+| `npm run build` | lib/parser | 0 |
+| `npm install` | app | 0 |
+| `npm run build` | app | **0** (the app's typecheck; `npm run typecheck` does not exist here) |
+| `npm test` | app | **0** — 49 files, **1059 passed** |
+| `cargo test` | app/src-tauri | **0** — 18 result lines all `ok`, **588 passed**, 0 failed |
+| `cargo run -p nputer-index -- index --check --root ../..` | app/src-tauri | **0**, CURRENT — `1134410 bytes · 199 files · 2418 symbols · 2331 edges`; `budget: 1134410 of 2145959 (52.9%) - 1011549 left` |
+| `npx vitest run` | lib/parser | **0** — 16 files, **336 passed** (the DOCS GATE's reader: this lane's four `docs/tasks/` files parse) |
+| `npx tsc --noEmit` | lib/parser | **0** |
+| `cargo test --release … graph_budget_bench -- --ignored` | app/src-tauri | 0 (measurement, not an assertion) |
+
+**RANGE RULE, run rather than quoted.** `main` had advanced five
+docs-only commits past this lane's base by the time the notes were
+written (`5073db6` → `c745f9c`, none of them inside this fence).
+`TREE=$(git merge-tree --write-tree $(git rev-parse main) HEAD)` exits
+**0** — a tree, not a conflict report, which is the exit this rule says
+to read — and `git diff --name-only main "$TREE"` returns **15 paths**:
+the eleven source files above plus the four `docs/tasks/` files. Never
+`main..HEAD`.
+
+**One warning observed and NOT mine**, said so nobody attributes it to
+this diff: `cargo test` prints `unused import: Path` at
+`app/src-tauri/src/arch_cmd.rs:2`. `git diff 5073db6 HEAD --
+app/src-tauri/src/arch_cmd.rs` is **0 lines**, and the same warning
+builds at the base in the drill worktree. It is inside this fence and
+out of this card's scope; left alone deliberately rather than swept.
+
+Standing gates DERIVED from this lane's own diff, via the RANGE RULE's
+pre-merge form (`git merge-tree --write-tree main HEAD`, then
+`git diff --name-only main $TREE`), never `main..HEAD`:
+
+- **GRAPH REGEN — FIRES.** The diff touches `.rs` and `.tsx` outside
+  docs/. Regenerated; `index --check` exit 0 CURRENT in this worktree.
+  The COMMIT of `graph.json` is the checkpoint's (see above).
+- **BOOT GATE — FIRES.** The diff touches `app/src-tauri/**` and
+  `app/src/**`. NOT RUN, and stated rather than implied: it spawns
+  `tauri dev` and opens a real window, the human's app holds 1420
+  (`lsof -nP -iTCP:1420 -sTCP:LISTEN`, read live in this session), and
+  the executor's honest position is that the desktop half was not
+  exercised. Recommend `NPUTER_BOOT_PORT=<derived> npm run boot:check`
+  at verification.
+- **DOCS GATE — FIRES.** The diff touches `docs/tasks/**` (this card,
+  `T-140-s8`, `T-140-s9`, and a corroboration on `T-167-s6`), which
+  `lib/parser` reads. `npx vitest run` from lib/parser covers it.
+- **METHOD EVAL GATE — NOT OWED.** No path under `method/**`.
+
+### THE DRILL LEDGER
+
+Detached worktree `/tmp/nd-T-140-s4` at `656511f` (short root, T-133-s5),
+`CARGO_TARGET_DIR=/tmp/nd-T-140-s4/target` — inside itself, the
+walk-safe form (T-111-s10). One stem for the worktree, its target dir,
+its driver and its logs. The regenerated `graph.json` was staged into it
+by hand, because the drilled dogfood pin has no evidence without it.
+Baseline before mutating: cargo **588 passed**, app **1059 passed**.
+Every mutation READ BACK by `git diff` before its suite ran.
+
+| # | side | mutation | result |
+|---|---|---|---|
+| A | code | `Some("md")` → `Some("md") \| Some("json")` in `is_collected_docs_path` | **RED, 4 bodies**: `collects_no_json_at_all`, `is_collected_docs_path_accepts_md_and_nothing_else`, `skips_report_only_would_be_collected_files`, `reindex_is_snapshot_silent_because_the_graph_left_the_collector` |
+| A2 | code | same mutation, bench harness | **RED** at `graph_budget_bench.rs:381` with its own message |
+| A3 | code | `Some("md")` → `Some("mdx")` (collector blinded to markdown, graph still out) | **RED at the POSITIVE CONTROL's own assertion**: *"an ordinary .md write must still emit — the two silences above are the collector's rule, not a dead watcher: Timeout"* |
+| B | code | lift `is_symlink → continue` (`&& false`) | **GREEN — a finding**, see below |
+| B2 | code | lift `is_symlink` AND `!canon.starts_with` | **GREEN — a bigger finding** |
+| B3 | assertion | expected paths gain `docs/architecture/link.md` | **RED, exactly 1 body**: `symlinked_docs_file_in_a_subdirectory_is_never_followed` |
+| C | code | `len > MAX_FILE_BYTES` → `* 4` | **RED, 4 bodies** incl. `skips_carry_paths_and_reasons_for_oversize_and_non_utf8` |
+| D | code | re-introduce the `· over the snapshot cap` suffix in `indexHint` | **RED**, the header-hint body |
+| E | code | resurrect a `map-too-large` `<p>` under `derived.indexNotRun` | **RED**, *"expected 'too large to map…' not to contain 'too large to map'"* |
+| F | assertion | the moved pin `6` → `7` | **RED**, the dogfood relation table |
+
+**B AND B2 ARE THE FINDING AND ARE ROUTED AS `T-140-s9`.** The
+collector's symlink refusal is guarded THREE times — `is_symlink`, the
+canonical prefix check, and `relative_posix`'s own `strip_prefix`, the
+last being the second predicate written a second time — so neither
+symlink body can be poisoned by lifting fewer than three, and the two
+tests report coverage of layer 1 that they do not have. B3 proves the
+re-aimed body is not vacuous. **Not caused by this card**: the same
+three layers exist at `5073db6`.
+
+**RESTORATION PROVED BY sha256** against `git show 656511f:<path>` for
+all ELEVEN changed files, every one identical:
+
+    a0cc4122…  app/src-tauri/src/docs_watch.rs
+    a8d14bdd…  app/src-tauri/src/index_cmd.rs
+    49a05f33…  app/src-tauri/tests/graph_budget_bench.rs
+    33615b3f…  app/src/architecture/MapView.tsx
+    5c981ea0…  app/src/App.tsx
+    0740950d…  app/test/architecture-dogfood.test.ts
+    8bef7641…  app/test/map-view-dom.test.tsx
+    4ef54435…  app/test/map-shell-dom.test.tsx
+    36e25c70…  app/src/lib/docs-model.ts
+    dd6a9782…  app/src-tauri/crates/nputer-index/src/lib.rs
+    bd9b8caf…  app/src-tauri/crates/nputer-index/src/check.rs
+
+Restored suites: cargo **588 passed / 0 failed**. The app suite first
+answered **2 failed** — both the stale-build mtime guard
+(*"dist/ predates src/architecture/MapView.tsx"*), which is CONVENTIONS'
+own *"restoring a fixture means its bytes AND its clock"* arriving from
+the `git restore` side rather than a plant's. The BYTES were already
+proved identical by hash; `npm run build` then **1059 passed**. Recorded
+rather than quietly rebuilt, because a reader who sees two reds after a
+restore should know which kind they are.
+
+### Routed, not built
+
+- **`T-140-s8`** (new): a card that moves the emit budget cannot commit
+  the graph its own change regenerates.
+- **`T-140-s9`** (new): the triple-guarded symlink refusal, from drills
+  B/B2.
+- **`T-167-s6`** (existing, CORROBORATED not re-filed): the health band
+  `graph/budget-headroom-bytes` still carries T-139's `15 751` while
+  `WARN_HEADROOM_BYTES` is now `13 921` — a third re-measurement, the
+  crate moving while the band stands still. Added: the band's DRIFT arm
+  at `63 004` is now sixteen times inside a healthy reading and may have
+  stopped discriminating. `tools/e2e` is outside this fence.
+
+### Where the brief was wrong
+
+Both defects were pre-declared by the dispatcher and are confirmed here
+at this lane's own ref, not taken on its word.
+
+1. **ROW 4's worktree path** reads
+   `/Users/ujju/Projects/nputer/.claude/worktrees/nputer-T-140-s4` — a
+   path INSIDE the repository, which lane-protocol rule 3 forbids. The
+   real lane is the sibling `/Users/ujju/Projects/nputer-T-140-s4`, which
+   is also what `.nputer/lane-fence.json` and `git worktree list` say.
+   Already filed as `T-179`; not re-filed.
+2. **ROW 3's read-first list** names `docs/ROADMAP.md`, which
+   `method/roles/executor.md` step 1 subtracts. Not read. Already filed
+   as `T-112-s3`, in flight; not re-filed.
+
+Two further corrections, mine:
+
+3. **The card's own step 3** asks for a re-measured collected census via
+   `graph_budget_bench.rs` + `app/test/graph-budget-bench.mjs`. After
+   step 1 the census is one extension and the harness is the wrong
+   instrument for it: `find docs -name '*.md' -type f -exec wc -c {} +`
+   is the whole derivation, and it is what the constant's doc now names.
+   The harness was still updated, for the drill stage.
+4. **The dispatch's step 5** says to regenerate the graph and reconcile
+   the pins. The pins are in the fence and the graph is not, so half of
+   that instruction cannot be committed from inside this lane. Done as
+   far as the fence allows and routed as `T-140-s8` — not widened from
+   inside, per lane-protocol rule 5.
