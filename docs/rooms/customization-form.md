@@ -348,12 +348,13 @@ it."** If the app may not write, then every actual customization act is
 still: open a file, type prose, commit. The lens explains a system the
 user still has to author by hand — so the "simple for everyone" clause
 is not served at all, it is answered with a better manual. A newcomer
-who wanted a setup screen gets a diagram of one. And the honest version
-of this position goes further: the schema'd, form-renderable part of
-nputer's loop is small (a handful of slots), while the part that
-carries the real customization is prose, so a writing surface would be
-a text editor with a save button — which the user's own editor already
-is, and better.
+who wanted a setup screen gets a diagram of one. And the position goes
+further, in its own words: the schema'd, form-renderable part of
+nputer's loop is CLAIMED to be small, while the part carrying the real
+customization is prose — so a writing surface would be a text editor
+with a save button, which the user's own editor already is, and better.
+That claim is asserted here, not established; the paragraph below says
+what would establish it.
 
 If that is right, the correct answer is form (a) plus the explain
 command, no app surface at all, and the design budget goes into the
