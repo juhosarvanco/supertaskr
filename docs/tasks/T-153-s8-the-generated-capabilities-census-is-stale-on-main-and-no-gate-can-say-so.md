@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 4
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md, docs/CAPABILITIES.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s5
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@integration-seat
 review:
 ---
 
@@ -443,3 +443,28 @@ run; re-read it rather than trusting this sentence. Nothing in this lane
 was affected — the two trees, indexes and runners are separate, and this
 lane's port was derived from its card id — but the overlap is the
 dispatcher's to adjudicate, not a lane's.
+
+## INTEGRATOR REVIEW (2026-08-31) — no verifier owed by this row
+
+Every path in this diff is on the NOT-SHIPPED side of CONVENTIONS' SHIPPED
+PARTITION (`docs/**`, `.github/`, `tools/e2e`), so TASK-FORMAT's row is
+*S, diff outside shipped code* and no verifier is owed. **The executor
+flagged that it had stamped `verifying` only because the dispatch told it
+to, rather than because the table asked — correct, and the flag is why
+this is decided rather than inherited.** Closed `done`, with this review
+in a verdict's place.
+
+**Verified at the merge rather than accepted**: `command grep -n
+capabilities .github/workflows/ci.yml` names the step at line 267 running
+`npm run capabilities:check` from `tools/e2e`, and the CONVENTIONS bullet
+carries seven `capabilities` mentions including both the check and the
+generator as separately `·`-separated backticked segments. The parity
+spec derives cleanly in both directions — `npm test` from tools/e2e is
+**335 passed, exit 0**, unchanged, which is itself the evidence that the
+lane added DATA and not bodies.
+
+**Its correction to its own card is accepted and is better than the
+card**: the placement reason the card gave (needs `npm ci`) is false and
+was measured false; the real constraint belongs to the spec tree, not the
+script. Recorded here because a future reader of the CI bullet will meet
+the placement and not the reasoning.

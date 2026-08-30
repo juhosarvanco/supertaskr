@@ -1,9 +1,8 @@
 # State
 
-Updated: 2026-08-31 at standing triage sitting #5 — record:
-docs/checkpoints/2026-08-31-standing-triage-5-called-by-a-band.md; the
-four lanes' own records are beside it. FOUR LANES LANDED tonight and the
-suggested column is 0.
+Updated: 2026-08-31 at T-153-s8's close — record:
+docs/checkpoints/2026-08-31-T-153-s8-the-census-gets-a-keeper.md; the
+other five records are beside it. FIVE LANES LANDED tonight.
 **THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
 budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
 bytes (derive: `index --check`). Every fence is dispatchable again.
@@ -49,15 +48,16 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s1` and `T-153-s8` (executors). LANDED tonight:
-   `T-140-s4`, `T-112-s3`, `T-177`, `T-172`.
-   Sitting #5 DONE — the suggested column is 0, called by
-   `triage/net-arrivals-per-window` at DRIFT rather than by a cadence.
+1. IN FLIGHT: `T-112-s1` (blind verifier out), `T-171` (executor).
+   LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`, `T-172`, `T-153-s8`.
+   Sitting #5 DONE — called by a band at DRIFT rather than by a cadence.
 2. THEN, no blocker left: `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
    OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
    `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
 3. STANDING REDS worth a lane: `T-161`, `T-178`, `T-167-s8` (the
-   pre-push graph guard — four local strikes, one CI confirmation).
+   pre-push graph guard, now ALSO carrying T-181's record trigger).
+   **`capabilities:check` IS A CI STEP since `T-153-s8`** — the census
+   is no longer kept by a hand remembering.
 4. THE NEXT METHOD RELEASE has five riders and wants a carrier card:
    `T-112-s2`, `T-154-s3`, `T-159-s6`; `T-173` and `T-176` owe a bump;
    `T-154-s4`'s sentence joins them.
@@ -124,6 +124,10 @@ it.
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-standing-triage-5-called-by-a-band.md.
+  2026-08-31-T-153-s8-the-census-gets-a-keeper.md.
+  **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
+  health band's window and CONVENTIONS' dispatch base BOTH read that
+  marker, and a seat dropped it for six records before a band noticed
+  (`T-182`).
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
