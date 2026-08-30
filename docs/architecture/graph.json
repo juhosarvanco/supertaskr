@@ -5296,8 +5296,8 @@
       "id": "f:app/src-tauri/src/agent/sessions.rs",
       "path": "app/src-tauri/src/agent/sessions.rs",
       "lang": "rust",
-      "hash": "blake3:098ac503a9f283e1368765255c941674aec0a8970d2998030362c5064a19d1d0",
-      "loc": 1197,
+      "hash": "blake3:75042a362f03d01e5a7c14ab367e8a65af2ba0daf1c2a08bd7322d14d8e32391",
+      "loc": 1358,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/sessions.rs#DAYS_IN_MONTH",
@@ -5305,8 +5305,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            601,
-            601
+            615,
+            615
           ]
         },
         {
@@ -5315,8 +5315,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            305,
-            323
+            319,
+            337
           ]
         },
         {
@@ -5325,8 +5325,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            243,
-            261
+            257,
+            275
           ]
         },
         {
@@ -5335,8 +5335,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            22,
-            22
+            30,
+            30
           ]
         },
         {
@@ -5345,8 +5345,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            31,
-            74
+            39,
+            88
           ]
         },
         {
@@ -5355,8 +5355,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            143,
-            146
+            157,
+            160
           ]
         },
         {
@@ -5365,8 +5365,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            453,
-            453
+            467,
+            467
           ]
         },
         {
@@ -5375,8 +5375,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            24,
-            24
+            32,
+            32
           ]
         },
         {
@@ -5385,8 +5385,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            26,
-            26
+            34,
+            34
           ]
         },
         {
@@ -5395,8 +5395,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            374,
-            396
+            388,
+            410
           ]
         },
         {
@@ -5405,8 +5405,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            401,
-            415
+            415,
+            429
           ]
         },
         {
@@ -5415,8 +5415,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            221,
-            225
+            235,
+            239
           ]
         },
         {
@@ -5425,8 +5425,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            343,
-            345
+            357,
+            359
           ]
         },
         {
@@ -5435,8 +5435,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            265,
-            281
+            279,
+            295
           ]
         },
         {
@@ -5445,8 +5445,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            76,
-            140
+            90,
+            154
           ]
         },
         {
@@ -5455,8 +5455,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            603,
-            605
+            617,
+            619
           ]
         },
         {
@@ -5465,8 +5465,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            613,
-            647
+            627,
+            661
           ]
         },
         {
@@ -5475,8 +5475,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            168,
-            191
+            182,
+            205
           ]
         },
         {
@@ -5485,8 +5485,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            354,
-            369
+            368,
+            383
           ]
         },
         {
@@ -5495,8 +5495,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            194,
-            202
+            208,
+            216
           ]
         },
         {
@@ -5505,8 +5505,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            330,
-            336
+            344,
+            350
           ]
         },
         {
@@ -5515,8 +5515,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            433,
-            441
+            447,
+            455
           ]
         },
         {
@@ -5525,8 +5525,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            577,
-            585
+            591,
+            599
           ]
         },
         {
@@ -5535,8 +5535,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            156,
-            162
+            170,
+            176
           ]
         },
         {
@@ -5545,8 +5545,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            148,
-            150
+            162,
+            164
           ]
         },
         {
@@ -5555,8 +5555,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            473,
-            475
+            487,
+            489
           ]
         },
         {
@@ -5565,8 +5565,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            505,
-            554
+            519,
+            568
           ]
         },
         {
@@ -5575,8 +5575,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            650,
-            1197
+            664,
+            1358
           ]
         },
         {
@@ -5585,8 +5585,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            152,
-            154
+            166,
+            168
           ]
         },
         {
@@ -5595,8 +5595,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            588,
-            597
+            602,
+            611
           ]
         },
         {
@@ -5605,8 +5605,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            208,
-            217
+            222,
+            231
           ]
         }
       ]
@@ -7863,8 +7863,8 @@
       "id": "f:app/src-tauri/tests/agent_runner.rs",
       "path": "app/src-tauri/tests/agent_runner.rs",
       "lang": "rust",
-      "hash": "blake3:33c2ba7be824c90822f37660d510643842b144bd224097f470c331f7145f7bf4",
-      "loc": 5830,
+      "hash": "blake3:b3d9f7f262bc8107249d9cbe6f64301329c4d374ac103fe575bc8f619e9132b6",
+      "loc": 5838,
       "symbols": []
     },
     {
@@ -24260,6 +24260,14 @@
     },
     {
       "from": "f:app/src-tauri/src/agent/sessions.rs",
+      "to": "f:app/src-tauri/src/agent/skills.rs",
+      "kind": "import",
+      "symbols": [
+        "SkillPack"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/agent/sessions.rs",
       "to": "p:cargo:serde",
       "kind": "import",
       "symbols": [
@@ -39541,7 +39549,7 @@
   "stats": {
     "files": 198,
     "symbols": 2095,
-    "edges": 2292,
+    "edges": 2293,
     "truncated_symbols": true,
     "truncated_files": 2
   }
