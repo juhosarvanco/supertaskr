@@ -453,7 +453,24 @@ pub fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
-/// Join path components with `/` regardless of platform.
+/// Join path components with `/` regardless of platform — and, at
+/// `collect_docs_tree`'s third caller, THE CONTAINMENT LAYER THAT IS
+/// ACTUALLY LOAD-BEARING (T-140-s9).
+///
+/// The `strip_prefix` below is not part of the formatting: it is the last
+/// of that walk's containment checks and the only one a fixture can ever
+/// reach on its own, so `None` means *this path escaped the project* and
+/// every caller treats it as a refusal rather than a formatting hiccup.
+/// The `starts_with` on the line above that caller is the SAME predicate
+/// — `strip_prefix` is documented to succeed exactly when `starts_with`
+/// holds, both matching whole COMPONENTS — so lifting that one changes
+/// nothing observable and lifting this one removes the boundary, and
+/// `the_prefix_check_and_relative_posix_are_one_predicate` checks that
+/// rather than trusting it.
+/// `relative_posix_is_the_containment_predicate_the_walk_relies_on`
+/// pins it where it is the whole behaviour; softening the `.ok()?` to a
+/// lossy join reds there BY NAME, which is a thing no walk-level body in
+/// this module could ever do.
 fn relative_posix(path: &Path, base: &Path) -> Option<String> {
     let rel = path.strip_prefix(base).ok()?;
     let parts: Vec<String> = rel
@@ -799,6 +816,18 @@ pub fn collect_docs_tree(project_dir: &Path) -> CollectOutcome {
             let Ok(meta) = fs::symlink_metadata(&path) else {
                 continue;
             };
+            // LAYER 1 — the named refusal, and the one the two
+            // `*_never_followed` bodies are named after. **NO TEST CAN
+            // DETECT ITS REMOVAL, AND THAT IS A FACT ABOUT THIS CODE
+            // RATHER THAN ABOUT THOSE TESTS** (T-140-s9): `meta` comes
+            // from `symlink_metadata`, under which a link is neither
+            // `is_file()` nor `is_dir()`, so a lifted guard here falls
+            // into the `!meta.is_file()` arm below and the entry is
+            // dropped there instead — same outcome, nothing observable
+            // moved. The two shadow each other, so the strongest body
+            // that can exist pins them JOINTLY, against the one fixture
+            // containment cannot rescue:
+            // `a_symlink_to_a_file_inside_docs_is_refused_by_the_link_checks_alone`.
             if meta.file_type().is_symlink() {
                 continue; // never follow links out of the tree; never report them
             }
@@ -807,12 +836,34 @@ pub fn collect_docs_tree(project_dir: &Path) -> CollectOutcome {
                 continue;
             }
             if !meta.is_file() {
+                // Sockets, fifos, devices — and, if layer 1 were ever
+                // lifted, every symlink: see above.
                 continue;
             }
-            // Belt to the symlink-skip's suspenders: canonical prefix
-            // check, and the collected-set predicate runs on the
-            // canonical RELATIVE path (containment first, classification
-            // second — T-012).
+            // LAYERS 2 AND 3 — containment after canonicalization, for
+            // the entry whose parent chain stopped being link-free AFTER
+            // its stack push (the swap this module refuses at every
+            // other door: `is_plain_dir`, T-026's arm-time check). The
+            // collected-set predicate then runs on the canonical
+            // RELATIVE path — containment first, classification second
+            // (T-012), so no link or traversal can reclassify a path
+            // into the set.
+            //
+            // **THE TWO ARE ONE PREDICATE WRITTEN TWICE, NOT TWO
+            // LAYERS** (T-140-s9, correcting this site's own
+            // "belt to the symlink-skip's suspenders"): `strip_prefix`
+            // is documented to succeed exactly when `starts_with` holds,
+            // both over whole path COMPONENTS, so they cannot disagree
+            // about any path and lifting the `starts_with` is
+            // undetectable by construction. It stays —
+            // a provably behaviour-neutral line cannot make any test
+            // sharper by leaving, and the boundary belongs in sight at
+            // the site where the ADR-010 argument is made — but it is
+            // named here as restatement rather than left to read as
+            // depth. `the_prefix_check_and_relative_posix_are_one_predicate`
+            // pins the equivalence, so the edit that would silently
+            // promote this line from restatement to sole containment
+            // reds instead of arriving quietly.
             let Ok(canon) = path.canonicalize() else {
                 continue;
             };
@@ -820,7 +871,7 @@ pub fn collect_docs_tree(project_dir: &Path) -> CollectOutcome {
                 continue;
             }
             let Some(rel) = relative_posix(&canon, &canon_project) else {
-                continue;
+                continue; // escaped the project — the load-bearing layer
             };
             if !is_collected_docs_path(&rel) {
                 continue;
@@ -1955,6 +2006,8 @@ mod tests {
         // does not is the RECURSION arm: that body plants its link
         // directly in `docs/`, this one a level down, so a walk that
         // resolved symlinks only below depth 1 reds here and nowhere else.
+        // Like its sibling it asserts the OUTCOME and not the layer, and
+        // its fixture points OUTSIDE — see the T-140-s9 section below.
         use std::os::unix::fs::symlink;
         let t = TempTree::new("subdir-symlink");
         t.write("docs/architecture/real.md", "real");
@@ -1993,6 +2046,14 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn symlinks_are_never_followed() {
+        // WHAT THIS BODY ACTUALLY ASSERTS, said here because its name
+        // promises more than it can deliver (T-140-s9): the OUTCOME —
+        // nothing outside the tree is collected, however it was reached.
+        // Its fixtures point OUTSIDE, so the walk's containment layers
+        // would produce this same green with the symlink checks gone;
+        // the body cannot say WHICH layer refused. The section below
+        // carries the layer-by-layer pins and the reason two of them can
+        // never be pinned at all.
         use std::os::unix::fs::symlink;
         let t = TempTree::new("symlink");
         t.write("docs/real.md", "real");
@@ -2008,6 +2069,163 @@ mod tests {
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
         assert_eq!(paths, vec!["docs/real.md"]);
         assert!(files.iter().all(|f| !f.content.contains("secret")));
+    }
+
+    // ---- T-140-s9: which layer of the refusal is pinned, and by what ----
+    //
+    // `collect_docs_tree`'s walk refuses to collect a link FOUR times, and
+    // `T-140-s4`'s drill measured that neither body above can be poisoned
+    // by lifting fewer than three of them. **THE CAUSE IS THE CODE'S
+    // SHAPE, NOT WEAK BODIES.** Two of the four are SHADOWED BY
+    // CONSTRUCTION, so no fixture can exist that detects their removal:
+    // `is_symlink` by the `!meta.is_file()` classification that follows it
+    // (both read `symlink_metadata`, under which a link is neither file
+    // nor dir), and `starts_with` by `relative_posix`'s own
+    // `strip_prefix` (documented to succeed exactly when `starts_with`
+    // holds, and checked below rather than taken on trust). A test
+    // suite cannot fix that; only deleting a layer could, and the ruling
+    // at T-140-s9 was to keep all four — a provably behaviour-neutral
+    // line cannot make any test sharper by leaving, and it is a guard on
+    // an ADR-010 boundary. What was wrong was the EVIDENCE, so the
+    // evidence is what changed: each layer is named at its site for what
+    // it is, and the three bodies below pin everything that CAN be
+    // pinned.
+    //
+    // **AND THE WALK-LEVEL FIXTURE IS SHADOWED ONE DEEPER THAN EVEN THE
+    // CARD KNEW.** Lifting all FOUR containment checks at once still
+    // leaves both `*_never_followed` bodies green, because an escaped
+    // path formats to something that is not under `docs/` and
+    // `is_collected_docs_path` drops it — classification catching what
+    // containment was asked about. Only when that fifth line is lifted
+    // too does the fixture's secret reach the snapshot. An
+    // OUTSIDE-pointing link is refused five deep, which is why no
+    // subset-of-three lift could ever have reddened those two.
+    //
+    // The measured lift ledger, `cargo test -p nputer` per arm, drilled
+    // in a detached worktree at `ddefda4` — this file at that commit and
+    // at this one differ by this comment block and nothing else. It is
+    // the thing the card owed, and every row was RUN, not reasoned:
+    //   is_symlink alone            -> 259/0, NOTHING reds (shadowed)
+    //   !meta.is_file() alone       -> 259/0, NOTHING reds (shadowed)
+    //   both link checks            -> 1 red: the INSIDE-pointing body
+    //   starts_with alone           -> 259/0, NOTHING reds (shadowed)
+    //   relative_posix's ok()?      -> 2 red: the predicate body and the
+    //                                  one-predicate body
+    //   the first three together    -> 1 red: the INSIDE-pointing body
+    //   all four                    -> 3 red, all of them new here; both
+    //                                  `*_never_followed` bodies GREEN
+    //   all four + the docs/ prefix -> 7 red, the two named bodies among
+    //                                  them at last
+
+    #[cfg(unix)]
+    #[test]
+    fn a_symlink_to_a_file_inside_docs_is_refused_by_the_link_checks_alone() {
+        // The fixture neither body above can be: the link's target is
+        // INSIDE the project, so both containment layers pass it happily
+        // and the only thing that can refuse it is the link
+        // classification. That halves the shadow — this body reds when
+        // the two link checks are lifted, where theirs need all four —
+        // and it is the only body here that would notice the collector
+        // shipping one file twice under one path.
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("inside-symlink");
+        t.write("docs/real.md", "real");
+        let link = t.root().join("docs/alias.md");
+        symlink(t.root().join("docs/real.md"), &link).expect("file symlink");
+
+        // The guard's STATE before anything is exercised (CONVENTIONS,
+        // LIFTING A SAFETY GUARD TO DISCRIMINATE). This is the fact the
+        // shadowing argument at the site rests on, and it is the OS's
+        // rather than ours: `symlink_metadata` describes the LINK.
+        let meta = fs::symlink_metadata(&link).expect("lstat the link");
+        assert!(meta.file_type().is_symlink(), "the fixture is not a link");
+        assert!(!meta.is_file(), "lstat must not call a link a file");
+        assert!(!meta.is_dir(), "lstat must not call a link a dir");
+
+        let refused: Vec<String> = collect_docs_files(t.root())
+            .into_iter()
+            .map(|f| f.path)
+            .collect();
+        assert_eq!(refused, vec!["docs/real.md"]);
+
+        // POSITIVE CONTROL, built the way the producer builds it — a real
+        // `.md` at the same name, in the same place, in the same tree.
+        // Without it "expected one path, got one path" is equally
+        // satisfied by a collector that refused for the wrong reason, or
+        // that cannot see `docs/alias.md` at all.
+        fs::remove_file(&link).expect("rm link");
+        t.write("docs/alias.md", "a real file at the refused name");
+        let accepted: Vec<String> = collect_docs_files(t.root())
+            .into_iter()
+            .map(|f| f.path)
+            .collect();
+        assert_eq!(accepted, vec!["docs/alias.md", "docs/real.md"]);
+    }
+
+    #[test]
+    fn relative_posix_is_the_containment_predicate_the_walk_relies_on() {
+        // The unit body T-140-s9's card asked for: the walk's last
+        // containment layer, exercised where it IS the whole behaviour,
+        // so softening `strip_prefix(base).ok()?` to a lossy join reds
+        // here by name instead of nowhere at all. No walk-level fixture
+        // can reach this layer while the two link checks stand.
+        let base = Path::new("/tmp/proj");
+
+        // Positive control first, and not merely "is_some": a contained
+        // path formats to the exact relative POSIX string that
+        // `is_collected_docs_path` is then run against.
+        assert_eq!(
+            relative_posix(Path::new("/tmp/proj/docs/tasks/T-001-a.md"), base),
+            Some("docs/tasks/T-001-a.md".to_string())
+        );
+        assert_eq!(relative_posix(base, base), Some(String::new()));
+
+        // The refusals, one per way out of the tree.
+        assert_eq!(relative_posix(Path::new("/tmp/other/secret.md"), base), None);
+        assert_eq!(relative_posix(Path::new("/tmp"), base), None);
+        // And the one a byte-prefix check gets WRONG — the reason both
+        // containment layers are spelled with path primitives rather than
+        // with string ones: a sibling whose NAME starts with the
+        // project's is not inside the project.
+        assert_eq!(
+            relative_posix(Path::new("/tmp/proj-evil/docs/x.md"), base),
+            None
+        );
+    }
+
+    #[test]
+    fn the_prefix_check_and_relative_posix_are_one_predicate() {
+        // Why the walk's `starts_with` cannot be poisoned, stated as a
+        // CHECK rather than as a comment. It is not that the check is
+        // weak: `Path::strip_prefix` is documented to succeed exactly
+        // when `Path::starts_with` holds, both over whole components, so
+        // the two adjacent lines in `collect_docs_tree` cannot disagree
+        // about any path and no fixture can distinguish them. Documented
+        // is not the same as measured here, which is why the table below
+        // measures it. This body is what reds if that
+        // ever stops holding — the edit that would silently promote a
+        // line documented as restatement into the only containment left.
+        let base = Path::new("/tmp/proj");
+        for path in [
+            "/tmp/proj/docs/a.md",
+            "/tmp/proj",
+            "/tmp/other/secret.md",
+            "/tmp/proj-evil/docs/x.md",
+            "/tmp",
+            "/",
+        ] {
+            let p = Path::new(path);
+            assert_eq!(
+                p.starts_with(base),
+                relative_posix(p, base).is_some(),
+                "the walk's two containment layers disagreed about {path}"
+            );
+        }
+        // The loop is a comparison, so its expected side is asserted
+        // non-empty: both answers occur above, or the equivalence is
+        // being read off a table that only ever says one thing.
+        assert!(Path::new("/tmp/proj/docs/a.md").starts_with(base));
+        assert!(!Path::new("/tmp/proj-evil/docs/x.md").starts_with(base));
     }
 
     #[test]
