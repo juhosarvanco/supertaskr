@@ -1,9 +1,14 @@
 ---
 id: T-140-s4
 title: The graph can now LEAVE the docs collector, because since T-140-s1 nothing reads it from there at rest — the last step of T-140's own ruling, and it needs a value call this lane refused to make
-status: parked
+feature: F-06
+milestone: 4
+priority: 1
+size: M
+status: planned
+blocked_by: []
 suggested_by: executor claude-opus-5 @T-140-s1
-touches: [app-shell, app-map]
+touches: [app-shell, app-map, crate-index]
 ---
 
 PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
@@ -106,3 +111,85 @@ a consumer that no longer needs it at rest.
 collector tests. **`T-139-s3` holds the general form of the
 graph-specific-cap question** and should be read first if the ruling goes
 the other way.
+
+
+## PROMOTED AND RULED (2026-08-30, standing triage sitting #4's seat) — @human ruled RAISE THE BUDGET
+
+**@human's ruling, taken FIRST-HAND in this seat's own session
+(2026-08-30): "yes, raise the budget — go ahead".** It was relayed
+beforehand by the outgoing integrator session, which recorded the
+rationale offered with it and accepted: the 1 MB cap protected the
+RESTING map's payload, `T-140-s1` moved the resting map to a rollup so
+the full graph is read on DRILL only, and the cap's original pressure is
+therefore gone. The relay was treated as context; the word above is the
+authority.
+
+**THIS RULING REVERSES `T-151`'s REJECTION, AND THE REVERSAL IS HONEST
+RATHER THAN A CONTRADICTION.** `docs/tasks/rejected/T-151-*.md` carries
+@human's rejection of "raise the graph budget" from the same day. What
+changed is not the argument but a FACT the argument rested on: T-151 was
+right that the raise was capped and that spending the gap removed the
+early warning — and it was arguing about a graph that was still a
+COLLECTED FILE. This card removes it from the collector, which is the
+step that dissolves T-151's constraint rather than overruling it.
+
+## THE SEQUENCING FINDING — the raise is capped at 8,575 bytes unless step 1 lands first
+
+Derived at `2370144`, and it is the reason this card carries the budget
+constant at all:
+
+    app/src-tauri/crates/nputer-index/src/lib.rs:160   max_graph_bytes: 1_040_000
+    app/src-tauri/src/docs_watch.rs:158                MAX_FILE_BYTES: u64 = 1_048_576
+    app/src-tauri/src/docs_watch.rs:1908               the_emit_budget_stays_below_the_collectors_file_cap
+
+`graph.json` is subject to BOTH limits, and `lib.rs`'s own doc comment
+says why: *"the collector accepts `.json` only under
+`docs/architecture/`, a rule written for this file"*. So raising
+`max_graph_bytes` ALONE buys at most **8,575 bytes** — about ten files at
+T-140's measured floor — and spends the gap that keeps DEGRADATION
+(symbols thin, files and import edges survive) in front of the CLIFF
+(`SkipReason::Oversize`, the pane receives nothing). **That is exactly
+what `T-151` was rejected for.**
+
+**Remove the collector branch — this card's own step 1 — and
+`MAX_FILE_BYTES` stops applying to the graph at all**, at which point the
+budget is free to rise to a derived number. So the ruling and the removal
+are ONE lane in ONE order, which is why the fence now carries
+`crate-index` beside `app-shell` and `app-map`.
+
+**AND THE INVARIANT TEST GOES WITH IT.**
+`the_emit_budget_stays_below_the_collectors_file_cap` asserts a coupling
+whose premise this card deletes. It is RECONCILED — retired with its
+reason recorded at the assertion site, or re-aimed at whatever limit the
+new channel carries — and never merely deleted to make a suite pass.
+
+## THE ONE SUB-DECISION STILL OPEN, AND IT IS @human's
+
+Step 2 of this card's own list: with the graph out of the collector,
+`map-too-large` (`app/src/architecture/MapView.tsx:822`) can never fire,
+because the state it names stops existing. The card says retiring it is a
+legitimate answer but must be RULED rather than deleted, since `T-140`
+built it as the answer to a measured silence. **The seat's recommendation,
+routed rather than taken: RETIRE it, and have the lane write one sentence
+naming what speaks in its place** — `truncated_files` / `truncated_symbols`
+and the crate's own headroom alarm are the live keepers of the signal that
+still exists. **DO NOT DISPATCH THIS CARD UNTIL THAT WORD IS GIVEN**; the
+rest of the card is ready.
+
+## Derive, do not pick — the new number
+
+The budget's value is the point of the ruling, so it is DERIVED at the
+lane's own ref and never rounded to something that looks tidy:
+
+- the graph's NATURAL untruncated size today (regenerate with the budget
+  raised high enough not to bind, and read what it wants to be);
+- what that costs to read at DRILL, which is the only consumer left;
+- growth room proportional to this repository's measured per-merge
+  growth — `check::WARN_HEADROOM_BYTES`'s own one-ordinary-merge
+  derivation is the pattern to copy, and the alarm should be re-armed
+  against the new headroom rather than left pointing at the old one.
+
+Expect a LARGE `graph.json` diff: four files are truncated at this ref and
+get their symbols back, `docs_watch.rs` among them at 0 symbols today. The
+dogfood pins that count symbols and edges move with it and are re-derived
+WITH THE STORY, never loosened.
