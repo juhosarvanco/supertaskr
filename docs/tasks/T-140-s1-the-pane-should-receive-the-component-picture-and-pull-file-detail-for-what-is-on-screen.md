@@ -393,8 +393,28 @@ All three print `incomplete stats.truncated_files=1 / truncated_symbols=true`
 over the committed graph, so every count is a FLOOR. The L row governs the
 ceremony regardless: executor -> verifier -> integrator.
 
+### Two of the five new files are UNCLAIMED, and this lane could not fix it
+
+Three of the five land inside an existing glob and are claimed —
+`rollup.rs` by C-07's `crates/nputer-index/**`, `rollup.ts` and
+`rollup-source.ts` by C-12's two `architecture/**` globs. **Two do not**:
+
+    app/src-tauri/src/arch_cmd.rs   — C-05 names app/src-tauri/src/*.rs one by one
+    app/test/map-rollup.test.ts     — C-12 names its app/test/map-* files one by one
+
+Both enumerations are deliberate and carry their reasons in their own
+component files (C-05's "WHY THE TEST DIRECTORY IS NOT A GLOB HERE",
+T-149). **`docs/architecture/components/**` is in no lane's fence**, so
+this lane predicted the consequence rather than fixing it: the next regen
+reports a **D2 with two files** on a tree whose
+`architecture-dogfood.test.ts` currently pins "THE D2 IS GONE". That
+movement is expected and is `T-140-s7`, which carries the two lines to add
+and the three-fixture reconciliation they owe.
+
 ### Suggestions filed
 
 `T-140-s4` (the graph leaves the docs collector — needs the limit ruling
 first), `T-140-s5` (the inherited `app/` build red), `T-140-s6` (search
-cannot reach an unopened file once the pane rests on the rollup).
+cannot reach an unopened file once the pane rests on the rollup),
+`T-140-s7` (the two unclaimed files, predicted before the regen reports
+them).
