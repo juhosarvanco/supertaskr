@@ -194,7 +194,7 @@ export function lanesFrom(porcelain, conventionsMd) {
  * rejected once for stamping reads of a mutable ref as tree facts, so the
  * two never share a constructor below.
  *
- * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string }} opts
+ * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string, files?: {path: string, content: string}[] }} opts
  * @returns {Promise<DispatchCtx>}
  */
 export async function dispatchContext(opts = {}) {
