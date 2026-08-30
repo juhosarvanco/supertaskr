@@ -774,6 +774,17 @@ body, which already builds the two-blind-lane fixture and needs no new
 one. A FIX NAMES ITS CLASS AND ITS SWEEP — and this sweep did not reach
 the sentences the fix itself wrote.
 
+**AND THE REPOSITORY HAD ALREADY WRITTEN THE OBJECTION DOWN, IN THE FILE
+THIS LANE WAS FIXING.** `lanes.ts`'s `unfenceable` branch — the sibling
+this card's criterion 4 holds up as the correct one — carries a comment
+that reads: *"NUMBER AGREEMENT IS NOT DECORATION HERE. Three lanes went
+live on this machine while the sentence was being written, and a reason
+a human is meant to ARGUE with cannot read 'T-141, T-145 has no card …
+disjoint from it'."* That is character-for-character the shape of the
+new clause, one package over, written by the seat that had just read it.
+The class does not need re-arguing; it needs the fourth copy, and then
+it needs the helper `T-143-s3` proposes so there is no fifth.
+
 **CORRECTION 2 — same file, `stateReport`'s `shared.length === 0`
 branch, which asserts a universal its premise does not support.** It
 prints *"no component is claimed by two slugs today, so no row here is
@@ -864,9 +875,30 @@ committed; every figure at the ref it names. This seat's commits are
   `npm run capabilities:check` exits **1 — committed 24849 bytes, a
   fresh generation is 25444**, the seven new spec bodies. `read, don't
   regen` observed: `docs/CAPABILITIES.md` is outside this fence.
-- **DOCS GATE — fires on my paths and I ran what it named.**
-- **BOOT GATE / METHOD EVAL GATE — NOT OWED**, derived over the whole
-  forecast path list: nothing under `app/src/**`, `app/src-tauri/**`,
+- **DOCS GATE — FIRES, and all three suites it named were run at the tip
+  this seat created.** The forecast is the RANGE RULE's own pre-merge
+  pair: `TREE=$(git merge-tree --write-tree main HEAD)` **exit 0, read
+  before it was spent**, tree `fe913192ed93`, then
+  `git diff --name-only main "$TREE"` — **TWELVE paths**, four under
+  `docs/tasks/` (this card, `T-143-s1`, and the two filed here) and
+  eight under `lib/parser/` and `tools/e2e/`. Fed that list unpiped,
+  `node tools/e2e/scripts/docs-gate.mjs` exits **1** and names
+  `npm test from app/`, `npm test from tools/e2e/` and
+  `npx vitest run from lib/parser/`. **All three, at the verdict tip
+  `0f4b67c`: parser exit 0 — 315 passed; app exit 0 — 1015 passed;
+  tools/e2e exit 1 — 2 failed / 318 passed**, the SAME two
+  `session-economics` bodies and no others, so this seat's prose moved
+  nothing. The gate also reported **23 derived readers across 4 suites,
+  0 frontmatter issues in the live tree**, *"every live task card's
+  frontmatter parses, with a legal status"* — which is what clears the
+  two cards filed here — and *"governing-document budgets hold — 4
+  gated"*. `npm run lint:docs` from tools/e2e is **exit 0** at that tip.
+  The FIGURE-CASE hazard, named rather than left: the board census in
+  section THREE is stamped at `14075ac2ddd6` and this seat's own two
+  cards take it to 323 with 7 suggested — a figure with its ref stays
+  true, and this one carries the ref of the tree it was counted in.
+- **BOOT GATE / METHOD EVAL GATE — NOT OWED**, derived over all TWELVE
+  forecast paths: nothing under `app/src/**`, `app/src-tauri/**`,
   either manifest, or `method/**`.
 
 ## TEN — verdict
