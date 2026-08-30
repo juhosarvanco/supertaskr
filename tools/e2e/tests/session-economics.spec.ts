@@ -15,6 +15,7 @@ import {
   DECOMPOSITION_FILE,
   EARS_ANCHOR,
   KNOW,
+  SEAT_PHRASE,
   TRY,
   acceptanceCriteria,
   earsKeywords,
@@ -273,8 +274,22 @@ test("the recommendation names a seat strength and never a model, because this p
   // ADR-003: the operator's own CLI default IS the model, and the
   // `model@session` question (D5) is deliberately held. A tool that
   // printed a vendor's name would answer it.
+  //
+  // ASSERTED OVER THE WHOLE VOCABULARY, NOT OVER TODAY'S BRANCH. The
+  // first version of this body read the rendered line for a live card
+  // and stopped there — and a drill mutant that put a model name in the
+  // TRY phrase SURVIVED it, because the card it read is a KNOW card and
+  // the other branch never rendered. A rule about every recommendation
+  // has to be checked against every recommendation.
   const vendors = /\b(opus|sonnet|haiku|gpt|gemini|llama|mistral|codex)\b/i;
+  const phrases = Object.values(SEAT_PHRASE);
+  expect(phrases.length).toBeGreaterThan(1);
+  for (const phrase of phrases) expect(phrase).not.toMatch(vendors);
   expect(seatLine[0]).not.toMatch(vendors);
+  // …and the rendered line really does come out of that vocabulary,
+  // whichever arm this card takes today — so the check above is about
+  // the line a reader gets and not only about two unused constants.
+  expect(phrases.some((p) => (seatLine[0] ?? "").includes(p))).toBe(true);
 
   // POSITIVE CONTROL for the detector, so "no vendor name" is a claim
   // about the line rather than about a regex that matches nothing.

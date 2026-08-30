@@ -87,6 +87,24 @@ export const KNOW = "KNOW";
 export const TRY = "TRY";
 
 /**
+ * WHAT EACH ARM RECOMMENDS, as named constants rather than as a ternary
+ * inside the renderer.
+ *
+ * They are constants because of a drill. A mutant that pushed a vendor's
+ * model name into the TRY phrase SURVIVED the body written to forbid
+ * exactly that: the body read the recommendation off a live card, that
+ * card is a KNOW card, and the TRY branch it never rendered was never
+ * inspected. The rule an ADR states about EVERY recommendation cannot be
+ * checked through whichever branch today's board happens to take. Here
+ * the whole vocabulary is one value, and a body can assert over all of
+ * it at once.
+ */
+export const SEAT_PHRASE = Object.freeze({
+  [TRY]: "the STRONGEST seat available to this operator",
+  [KNOW]: "a STANDARD seat is sufficient",
+});
+
+/**
  * The document that owns the EARS patterns. READ, never transcribed:
  * the five patterns live in one place and a sixth added there is
  * honoured here with no edit — and a renamed step is a throw by name
@@ -236,15 +254,23 @@ export function lightestTier(taskFormatMd) {
 }
 
 /**
+ * The closed arm vocabulary, as a type: a verdict is one of two words
+ * and never an arbitrary string, so `SEAT_PHRASE[verdict]` is a total
+ * lookup rather than a hope.
+ *
+ * @typedef {"KNOW" | "TRY"} SeatArm
+ */
+
+/**
  * @typedef {object} Signal
  * @property {string} id
- * @property {string} verdict  KNOW or TRY
+ * @property {SeatArm} verdict
  * @property {string} detail   what was read, in the reader's own words
  */
 
 /**
  * @typedef {object} SeatVerdict
- * @property {string} verdict
+ * @property {SeatArm} verdict
  * @property {Signal[]} signals
  * @property {number} tries
  */
@@ -401,11 +427,7 @@ export function seatRecs(ctx) {
 
   recs.push(
     value(
-      `RECOMMENDED SEAT: ${
-        verdict === TRY
-          ? "the STRONGEST seat available to this operator"
-          : "a STANDARD seat is sufficient"
-      } — ${tries} of ${signals.length} signals say ${TRY}`,
+      `RECOMMENDED SEAT: ${SEAT_PHRASE[verdict]} — ${tries} of ${signals.length} signals say ${TRY}`,
       tree(
         "the signals above, combined by session-economics.mjs's rule: KNOW needs a majority, and a tie goes to TRY",
       ),
