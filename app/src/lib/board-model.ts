@@ -138,7 +138,71 @@ export interface BoardCard {
    * this card have something to disclose".
    */
   issues?: string[];
+  /**
+   * The assignment violations the PARSER found on this card (T-169,
+   * enforcing @human's D5 ruling that assignment is BINDING) — the model
+   * the human assigned is not among the models the execution stamp
+   * names. Both raw values ride along, because the whole point is that
+   * the reader sees what the card says on both sides rather than the
+   * board quietly showing one of them.
+   *
+   * ABSENT, never `[]`, on a card with none — the same absence
+   * discipline `issues` and `rejectedCount` take (T-017).
+   *
+   * These sentences are ALSO in `issues`: the violation is a parse issue
+   * and joins by file like every other, which is exactly criterion 2's
+   * "the way it surfaces a parse error". This field adds no second
+   * opinion about WHICH card is flagged — it reads the same issues, and
+   * carries the two values structurally so the panel can print them side
+   * by side instead of only inside a sentence.
+   */
+  assignment?: AssignmentDisclosure[];
   file: string;
+}
+
+/**
+ * One flagged pair, as the board shows it. Straight off the parser's
+ * `assignment-violation` issue — the board does NOT re-derive the
+ * comparison rule (the `featureAliasIndex` precedent, T-057: one rule
+ * with two implementations is two chances to disagree). The consequence
+ * is the correct coupling: if the parser stops reporting a violation,
+ * the board stops disclosing it.
+ */
+export interface AssignmentDisclosure {
+  /** `builder` or `verifier` — which pair disagrees. */
+  role: string;
+  /** Frontmatter field names, as they read on the card. */
+  assignedField: string;
+  executedField: string;
+  /** The two values, VERBATIM. Neither is presented as the right one. */
+  assigned: string;
+  executed: string;
+}
+
+/**
+ * The parser's assignment violations, indexed by the file each names
+ * (the `issuesByFile` shape, one field further in).
+ *
+ * ADR-009: keyed by a path read off disk — a Map, never an object literal.
+ */
+export function assignmentByFile(
+  issues: readonly ParseIssue[],
+): Map<string, AssignmentDisclosure[]> {
+  const byFile = new Map<string, AssignmentDisclosure[]>();
+  for (const issue of issues) {
+    if (issue.kind !== "assignment-violation") continue;
+    const entry: AssignmentDisclosure = {
+      role: issue.role,
+      assignedField: issue.assignedField,
+      executedField: issue.executedField,
+      assigned: issue.assigned,
+      executed: issue.executed,
+    };
+    const existing = byFile.get(issue.file);
+    if (existing === undefined) byFile.set(issue.file, [entry]);
+    else existing.push(entry);
+  }
+  return byFile;
 }
 
 export interface BoardColumn {
@@ -244,10 +308,23 @@ function modelBadge(task: TaskRecord): ModelBadgeInfo | undefined {
   return { short: shortModelName(chosen.model), full: chosen.raw };
 }
 
-function toCard(task: TaskRecord, issues: Map<string, string[]>): BoardCard {
+/** `{ assignment }` when the card has one, `{}` when it does not — the
+ * `spreadIssues` shape, so a clean card never grows the key at all. */
+function spreadAssignment(entries: AssignmentDisclosure[] | undefined): {
+  assignment?: AssignmentDisclosure[];
+} {
+  return entries === undefined || entries.length === 0 ? {} : { assignment: entries };
+}
+
+function toCard(
+  task: TaskRecord,
+  issues: Map<string, string[]>,
+  assignment: Map<string, AssignmentDisclosure[]>,
+): BoardCard {
   const rejections = rejectedVerdictCount(task.sections.verdicts);
   return {
     ...spreadIssues(issues.get(task.file)),
+    ...spreadAssignment(assignment.get(task.file)),
     key: task.file,
     id: task.id,
     title: task.title,
@@ -363,6 +440,9 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   const aliasedWith = featureAliasIndex(model.issues);
   // T-019-s1: one pass over the issues, joined to cards below by file.
   const issuesByPath = issuesByFile(model.issues);
+  // T-169: the same one pass over the issues, one field further in — the
+  // board reads the parser's ANSWER about assignment, never the rule.
+  const assignmentByPath = assignmentByFile(model.issues);
 
   for (const feature of model.features) {
     if (byFeature.has(feature.id)) continue; // duplicate backbone id: first wins, issue already flagged
@@ -432,7 +512,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
     // `app/test/board-truth.test.tsx`.
     const column =
       (task.feature !== undefined ? byFeature.get(task.feature) : undefined) ?? unmapped;
-    const card = toCard(task, issuesByPath);
+    const card = toCard(task, issuesByPath, assignmentByPath);
     if (task.status === "parked") {
       column.parked.push(card);
     } else if (task.status === "suggested") {

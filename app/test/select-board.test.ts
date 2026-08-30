@@ -9,6 +9,7 @@ import {
   type TaskStatus,
 } from "@nputer/parser/pure";
 import {
+  assignmentByFile,
   CONCURRENCY_CEILING,
   DISPOSITIONS,
   expandTouch,
@@ -1920,5 +1921,111 @@ describe("THE LIVE BOARD — the frontier run on this repository (verification l
         (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
       ),
     ).toEqual([]);
+  });
+});
+
+describe("selectBoard — the assignment flag (T-169, @human's D5 ruling)", () => {
+  const stamped = (id: string, extras: Field[]): string =>
+    task(id, "F-01", 1, "done", [["review", "independent"], ...extras]);
+
+  it("a mismatched builder pair reaches the card, with BOTH values", () => {
+    const board = selectBoard(
+      withRoadmap([
+        [
+          path("T-010"),
+          stamped("T-010", [
+            ["builder", "claude-opus-5@subagent"],
+            ["built_by", "codex/gpt-5.2 @S3"],
+          ]),
+        ],
+      ]),
+    );
+    const card = board.columns[0]?.cards[0];
+    expect(card?.assignment).toEqual([
+      {
+        role: "builder",
+        assignedField: "builder",
+        executedField: "built_by",
+        assigned: "claude-opus-5@subagent",
+        executed: "codex/gpt-5.2 @S3",
+      },
+    ]);
+    // And it reaches the card the way a parse error does — the same
+    // `issues` list the face's mark and the panel's verbatim section
+    // already read, so the flag needs no second channel to be seen.
+    expect(card?.issues?.some((m) => m.includes("the fields disagree"))).toBe(true);
+  });
+
+  it("a matching pair and a same-model-different-vehicle pair do NOT flag", () => {
+    const board = selectBoard(
+      withRoadmap([
+        [
+          path("T-010"),
+          stamped("T-010", [
+            ["builder", "claude-opus-5"],
+            ["built_by", "claude-opus-5"],
+          ]),
+        ],
+        [
+          path("T-011"),
+          stamped("T-011", [
+            ["builder", "claude-opus-5@subagent"],
+            ["built_by", "claude-opus-5 @T-011 — code commit abc1234"],
+            ["verifier", "claude-fable-5 @fresh"],
+            ["verified_by", "claude-fable-5 @T-011-verify"],
+          ]),
+        ],
+      ]),
+    );
+    const cards = board.columns[0]?.cards ?? [];
+    expect(cards.map((c) => c.id)).toEqual(["T-010", "T-011"]);
+    // ABSENT, never [] — the T-017 discipline, so a consumer asking
+    // `card.assignment !== undefined` is asking exactly "is this flagged".
+    expect(cards.map((c) => c.assignment)).toEqual([undefined, undefined]);
+  });
+
+  it("assignmentByFile joins on the file, and says nothing about a clean one", () => {
+    const model = withRoadmap([
+      [
+        path("T-010"),
+        stamped("T-010", [
+          ["builder", "claude-opus-5"],
+          ["built_by", "codex/gpt-5.2 @S3"],
+          ["verifier", "claude-opus-5"],
+          ["verified_by", "codex/gpt-5.6"],
+        ]),
+      ],
+      [path("T-011"), task("T-011", "F-01", 2)],
+    ]);
+    const index = assignmentByFile(model.issues);
+    expect(index.get(path("T-010"))?.map((e) => e.role)).toEqual(["builder", "verifier"]);
+    expect(index.get(path("T-011"))).toBeUndefined();
+  });
+
+  it("THE LIVE BOARD CENSUSES CLEAN — zero cards disagree with their own assignment", () => {
+    // Criterion 3, derived at whatever ref this runs on and never
+    // assumed. A failure prints the card and both values, so the reader
+    // learns WHICH card and WHAT it says without a second command.
+    const flagged: string[] = [];
+    for (const column of selectBoard(liveBoard()).columns) {
+      for (const card of [...column.cards, ...column.ghosts, ...column.parked]) {
+        for (const entry of card.assignment ?? []) {
+          flagged.push(
+            `${card.id ?? card.file}: ${entry.assignedField}=${entry.assigned} / ` +
+              `${entry.executedField}=${entry.executed}`,
+          );
+        }
+      }
+    }
+    expect(flagged).toEqual([]);
+  });
+
+  it("and that census is not vacuous — the live board really does stamp both halves", () => {
+    let constrained = 0;
+    for (const t of liveBoard().tasks) {
+      if (t.builder !== undefined && t.builtBy !== undefined) constrained++;
+      if (t.verifier !== undefined && t.verifiedBy !== undefined) constrained++;
+    }
+    expect(constrained).toBeGreaterThan(100);
   });
 });

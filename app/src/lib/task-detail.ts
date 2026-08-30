@@ -5,7 +5,14 @@ import type {
   TaskSize,
   TaskStatus,
 } from "@nputer/parser/pure";
-import { issuesByFile, statusVisual, type BoardCard, type StatusVisual } from "./board-model";
+import {
+  assignmentByFile,
+  issuesByFile,
+  statusVisual,
+  type AssignmentDisclosure,
+  type BoardCard,
+  type StatusVisual,
+} from "./board-model";
 
 /**
  * Card detail model (T-005): a pure function of the T-003 store's
@@ -103,6 +110,17 @@ export interface TaskDetail {
    * length, and every other list here is always present.
    */
   issues: string[];
+  /**
+   * The assignment violations the parser found on this card (T-169) —
+   * `builder:` naming a model `built_by:` does not, or the same for the
+   * verifier pair. The panel prints BOTH values side by side in the
+   * provenance block, so the assignment is visible next to the execution
+   * instead of the board showing one of them and calling it the model.
+   *
+   * `[]` rather than absent, matching `issues`/`blockedBy`/`touches`
+   * here: the panel decides whether to render from the length.
+   */
+  assignment: AssignmentDisclosure[];
   /** Raw `built_by` / `verified_by` stamp values (e.g. `codex/gpt-5.2
    * @S3`); undefined renders as a visibly empty stamp. */
   builtBy?: string;
@@ -210,6 +228,10 @@ export function selectTaskDetail(model: ProjectParseResult, ref: TaskRef): TaskD
     blockedBy,
     touches: task.touches,
     issues: issuesByFile(model.issues).get(task.file) ?? [],
+    // T-169: the parser's own answer, joined by file exactly like the
+    // sentences above — the panel and the card face can never disagree
+    // about which card the assignment flag belongs to.
+    assignment: assignmentByFile(model.issues).get(task.file) ?? [],
     builtBy: task.builtBy?.raw,
     verifiedBy: task.verifiedBy?.raw,
     review: task.review,

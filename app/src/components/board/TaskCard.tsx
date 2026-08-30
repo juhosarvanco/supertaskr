@@ -106,6 +106,15 @@ const DOT_CLASSES: Partial<Record<StatusToken, string>> = {
  * a disclosure that disappears when the board gets busy is not a
  * disclosure. The mark says only THAT there is something; the messages
  * are in the panel, one click away, verbatim.
+ *
+ * T-169 (D5): an ASSIGNMENT VIOLATION reaches the face through that SAME
+ * mark and deliberately invents no second visual language — it IS a
+ * parser issue, so it joins `card.issues` by file like every other and
+ * the mark is already the card's answer to "surface it the way a parse
+ * error is surfaced". What the face adds is `data-assignment-violations`,
+ * a count for censuses and probes, so nobody has to read a glyph or grep
+ * a sentence to ask the board how many cards disagree with their own
+ * assignment. Absent, never 0, on a clean card (the T-017 discipline).
  */
 /**
  * The soft-issue mark (T-031, T-019-s1): present exactly when the card's
@@ -195,6 +204,7 @@ export function TaskCard({
       data-status={card.status}
       data-pulse={card.visual.pulse ? "true" : undefined}
       data-rejected-count={card.rejectedCount}
+      data-assignment-violations={card.assignment?.length}
       className={cn(
         "group relative rounded-lg border shadow-card hover:-translate-y-px hover:shadow-card-hover active:translate-y-0 active:shadow-none",
         STATUS_CLASSES[token],

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
 import { cn } from "@/lib/utils";
+import type { AssignmentDisclosure } from "@/lib/board-model";
 import {
   criterionLines,
   refLabel,
@@ -340,6 +341,15 @@ export function TaskDetailPanel({
           {!detail.suggested && (
             <Section title="provenance" testid="detail-stamps">
               <dl className="flex flex-col gap-1.75 text-sm">
+                {/* T-169 (D5, assignment is BINDING): when the parser found
+                    the assignment and the execution naming different
+                    models, the ASSIGNMENT is printed here beside the stamp
+                    that departed from it. Its absence on a clean card is
+                    deliberate — an unflagged pair says nothing new, and a
+                    row that appears on every card stops being read. */}
+                {detail.assignment.map((entry) => (
+                  <AssignmentRow key={entry.role} entry={entry} />
+                ))}
                 <Stamp label="built_by" testid="stamp-built-by" value={detail.builtBy} />
                 <Stamp label="verified_by" testid="stamp-verified-by" value={detail.verifiedBy} />
                 <div className="flex items-center gap-2">
@@ -516,6 +526,62 @@ function Empty({ label = "(empty)" }: { label?: string }) {
     <p data-testid="detail-empty" className="text-xs text-muted-foreground italic">
       {label}
     </p>
+  );
+}
+
+/**
+ * One flagged assignment pair, BOTH VALUES SHOWN (T-169).
+ *
+ * The card's second criterion is that a violation is never a silent
+ * substitution, and the substitution this repairs is a real one: the
+ * model badge shows `built_by` on a done card and `builder` on every
+ * other, so on a card where the two disagree the assignment was simply
+ * not on screen anywhere. Here they sit on one row, verbatim, with the
+ * frontmatter field names the reader will find on the card.
+ *
+ * THE WORD IS "DISAGREE" AND NOTHING STRONGER. The panel knows the two
+ * fields name different models; it does not know which is right, and the
+ * parser's own sentence — already listed verbatim in the issues section
+ * above — says the same. Why they disagree is a human question, and the
+ * row's job is to put the question in front of a human, not answer it.
+ *
+ * `text-warning` is the sanctioned stroke (tokens.css: warning is a
+ * STROKE, never a fill), the same ink the card face's IssueMark uses, so
+ * the face's mark and this row read as one disclosure.
+ */
+function AssignmentRow({ entry }: { entry: AssignmentDisclosure }) {
+  return (
+    <div
+      data-testid="stamp-assignment"
+      data-assignment-role={entry.role}
+      className="flex flex-col gap-0.75 rounded-lg border border-warning-chip-border bg-warning-chip px-3.75 py-2.5"
+    >
+      <span className="font-mono text-xs text-warning">
+        {entry.assignedField} and {entry.executedField} disagree
+      </span>
+      <div className="flex items-baseline gap-2">
+        <dt className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
+          {entry.assignedField}
+        </dt>
+        <dd
+          data-testid="assignment-assigned"
+          className="min-w-0 font-mono text-sm break-words"
+        >
+          {entry.assigned}
+        </dd>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <dt className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
+          {entry.executedField}
+        </dt>
+        <dd
+          data-testid="assignment-executed"
+          className="min-w-0 font-mono text-sm break-words"
+        >
+          {entry.executed}
+        </dd>
+      </div>
+    </div>
   );
 }
 
