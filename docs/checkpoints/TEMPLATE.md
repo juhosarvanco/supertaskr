@@ -63,6 +63,45 @@ suite), dispatch-to-merge elapsed. Lagging, pointers only: the trend
 lives across records — derive it over docs/checkpoints/, never
 transcribe it here.
 
+**THREE STAMPED LINES, AND SILENCE IS NOT ONE OF THE ANSWERS** (T-157).
+Write each of them, in this order, every time:
+
+- `Rework cycles:` — dispatch → verdict count for this card, derived
+  on the card's own Verdicts section at this ref.
+- `Tokens:` — spent this card, **per seat and summed**: executor, any
+  fix pass, verifier, any re-verification, and the integrating seat
+  where it was a separate one. Read off the session usage meters.
+- `Gate runtime:` — the wall clock of the gates this merge OWED, per
+  gate and summed, each named with the trigger that owed it. Read off
+  a timer around the gate command itself, not around the checkpoint.
+
+**THE LAST TWO ARE LIVE-ENVIRONMENT FACTS AND CARRY A CLOCK, NEVER A
+COMMIT.** A meter reading and a wall clock are not functions of a tree
+— `roles/executor.md`'s figure rule names that exception in as many
+words — so they are STAMPED here with what they were read off and
+when, and re-derived never. Every other figure in this record carries
+the ref it was measured at; these two carry the reading instead, and a
+token count wearing a commit ref is wrong in a way no later reader can
+detect.
+
+**A LINE THIS CHECKPOINT COULD NOT MEASURE SAYS SO AND SAYS WHY.**
+Write `not derivable here` followed by the reason — the meter was not
+readable from this seat, the gate was not owed, the arc crossed a
+session boundary and the earlier half is unrecoverable. Never drop the
+line, and never write the phrase bare: an empty metrics line is the
+empty GRAPH slot above, and a skipped measurement is news rather than
+silence. `not derivable here` with no reason is silence wearing a
+sentence — and the bare form is already in the record three times, each
+deferring to this card, which is the debt this section closes.
+
+**NOTHING MAY READ THESE LINES BACK.** ADR-019's Records clause holds
+in full: no suite, gate or generator may depend on this directory's
+contents, so the shape above is a WRITING instruction and not a schema
+anything parses. A reporter a human or a checkpointing integrator runs
+BY HAND over the records is fine; a gate is not. That is why the trend
+is derived by whoever asks for it, at the moment they ask — and why
+nothing here promises that a machine will notice a line gone missing.
+
 ## Dispositions
 
 Cards stamped, suggestions filed, rules applied by name.
