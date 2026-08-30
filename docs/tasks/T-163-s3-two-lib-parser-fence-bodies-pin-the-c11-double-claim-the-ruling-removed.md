@@ -306,23 +306,32 @@ territory but makes no slug claim and needed nothing.
   compaction landing"*. docs/CONVENTIONS.md **137,350 → 140,380 bytes**
   (`wc -c`), +3,030 against the 164,393-byte warn line — **24,013 bytes
   of headroom left**.
-- DOCS GATE, derived not assumed:
-  `node tools/e2e/scripts/docs-gate.mjs docs/CONVENTIONS.md` → **FIRES**,
-  owing `cargo test` from app/src-tauri/ and `npm test` from tools/e2e/
-  (readers: `app/src-tauri/src/agent/kit.rs` plus eight tools/e2e
-  specs). Both were run. GRAPH REGEN, BOOT GATE and METHOD EVAL GATE do
-  not fire: the diff is two files under docs/ and nothing else.
+- DOCS GATE, derived not assumed, and derived TWICE because the owed
+  set GREW when the cards landed. On the fence alone
+  (`docs-gate.mjs docs/CONVENTIONS.md`) it FIRES for **2** suites. On
+  the whole lane diff (`docs-gate.mjs $(git diff --name-only
+  bf274ed..HEAD)`, three paths) it FIRES for **4**, because a new flat
+  `docs/tasks/T-*.md` is a live-registry input to the parser and the two
+  app dogfood fixtures. **ALL FOUR WERE RUN**; had the gate been run
+  once at the start, two of them would have been missed.
 - `cargo test` from app/src-tauri/ — **exit 0**, 548 passed / 0 failed /
-  4 ignored across 18 result lines, on a target/ built from nothing in
+  4 ignored across 18 result lines, on a `target/` built from nothing in
   this lane. kit.rs's CONVENTIONS assertion is on the *"formats are
   version-bumped"* line, which this diff does not touch.
+- `npx vitest run` from lib/parser/ — **exit 0**, 15 files, **315
+  passed**.
+- `npm test` from app/ — **exit 0**, 47 files, **1015 passed**.
 - `NPUTER_E2E_PORT=41633 npm test` from tools/e2e/ (port derived from
   the lane's card number; `lsof -nP -iTCP:41633 -sTCP:LISTEN` = **0
-  rows** immediately before binding) — **1 failed / 319 passed, exit 1**.
+  rows** immediately before each bind) — run TWICE, before and after the
+  cards landed: **1 failed / 319 passed, exit 1** both times, the same
+  body. The cards moved nothing.
   **THE ONE RED IS PRE-EXISTING AT THE BASE AND IS NOT THIS DIFF'S** —
   see below. **Every reader of this document is GREEN**: brief,
   dispatch-order, docs-input-gate, lane-fence, range-rule,
   workflow-parity, shell-frame, window-contract.
+- GRAPH REGEN, BOOT GATE and METHOD EVAL GATE do not fire: the diff is
+  three files under docs/ and nothing else.
 
 ### The one red, and the proof it is not mine
 
