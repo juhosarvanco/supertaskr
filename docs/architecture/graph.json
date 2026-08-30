@@ -16624,6 +16624,65 @@
       ]
     },
     {
+      "id": "f:app/test/detail-assignment.test.tsx",
+      "path": "app/test/detail-assignment.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:9be7304d6d6ebf2b2c30dcdbacc0a7dd364a216aa722de4863d41c1746801177",
+      "loc": 91,
+      "symbols": [
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#ROADMAP_SRC",
+          "name": "ROADMAP_SRC",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            26
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            14,
+            14
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#panelModel",
+          "name": "panelModel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            28,
+            38
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#renderPanel",
+          "name": "renderPanel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            40,
+            52
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            15,
+            15
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/detail-presentation.test.ts",
       "path": "app/test/detail-presentation.test.ts",
       "lang": "ts",
@@ -19196,8 +19255,8 @@
       "id": "f:app/test/review-badge.test.tsx",
       "path": "app/test/review-badge.test.tsx",
       "lang": "ts",
-      "hash": "blake3:5f00c5450cce55ee4da6cdadcbe39007d5aa85f52e94fecdf5be0121a05bb086",
-      "loc": 199,
+      "hash": "blake3:83f443af0021ca928b1f4428be671874588ed76dadde48585a37162ea54e85d7",
+      "loc": 134,
       "symbols": [
         {
           "id": "s:app/test/review-badge.test.tsx#ROADMAP_SRC",
@@ -19205,8 +19264,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            99,
-            99
+            98,
+            98
           ]
         },
         {
@@ -19215,18 +19274,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            22,
-            22
-          ]
-        },
-        {
-          "id": "s:app/test/review-badge.test.tsx#panelModel",
-          "name": "panelModel",
-          "kind": "function",
-          "exported": false,
-          "range": [
-            101,
-            111
+            21,
+            21
           ]
         },
         {
@@ -19235,18 +19284,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            36,
-            41
-          ]
-        },
-        {
-          "id": "s:app/test/review-badge.test.tsx#renderPanel",
-          "name": "renderPanel",
-          "kind": "function",
-          "exported": false,
-          "range": [
-            113,
-            125
+            35,
+            40
           ]
         },
         {
@@ -19255,8 +19294,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            23,
-            23
+            22,
+            22
           ]
         }
       ]
@@ -26635,6 +26674,52 @@
       ]
     },
     {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskDetailPanel"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/detail-presentation.test.ts",
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
@@ -28075,14 +28160,6 @@
       "kind": "import",
       "symbols": [
         "TaskCard"
-      ]
-    },
-    {
-      "from": "f:app/test/review-badge.test.tsx",
-      "to": "f:app/src/components/board/TaskDetailPanel.tsx",
-      "kind": "import",
-      "symbols": [
-        "TaskDetailPanel"
       ]
     },
     {
@@ -38448,9 +38525,9 @@
     }
   ],
   "stats": {
-    "files": 192,
-    "symbols": 2084,
-    "edges": 2159,
+    "files": 193,
+    "symbols": 2087,
+    "edges": 2163,
     "truncated_symbols": true,
     "truncated_files": 1
   }

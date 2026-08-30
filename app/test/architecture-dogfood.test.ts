@@ -1365,7 +1365,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // loader, landing under C-14's globs, so unmapped stays 0 and the
     // bucket stays closed. Derived from the regen line (190 files) and
     // arch after it, the same way as the row above.
-    expect(derived.fileComponent.size).toBe(190);
+    // 190 -> 193 AT THE T-169 MERGE REGEN (2026-08-30): assignment.ts
+    // and assignment.test.ts join under C-06, and
+    // detail-assignment.test.tsx joins under C-09 (the panel test moved
+    // out of C-08's review-badge file, killing the undeclared
+    // C-08 -> C-09 edge arch drift caught at the regen). All mapped,
+    // the bucket stays closed.
+    expect(derived.fileComponent.size).toBe(193);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1555,7 +1561,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // app-map, so a rise anywhere but C-06 would mean it had not landed where
       // the card claimed. Derived from a set difference over the two graph.json
       // revisions, not from the failure output.
-      ["C-06", 31],
+      // 31 -> 33 at the T-169 merge regen: assignment.ts and its test
+      // join the parser component.
+      ["C-06", 33],
       // C-07 JOINS THE MAPPING AT THE T-010 MERGE REGEN WITH THIRTY-TWO
       // FILES AND NO NEW FILE ON DISK — the row this whole card exists to
       // create, and the inverse of every C-05 entry above. Its D3 clears
@@ -1612,7 +1620,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // while the two lived in different components each owned a file the
       // other needed. The drawer keeps its three tests and its two source
       // files and now DECLARES C-17 instead of owning half of it.
-      ["C-09", 5],
+      // 5 -> 6 at the T-169 merge regen: detail-assignment.test.tsx,
+      // the panel test moved here from C-08 at integration.
+      ["C-09", 6],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has
       // claimed by name since T-003 and which no walk could see.
       // 3 → 7 at T-149: `docs-model.test.ts`, `shell-harness.test.ts`,
@@ -2154,7 +2164,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // observed edges before, two after — nothing was added to the graph.
       ["C-05", "C-18", "confirmed", 2],
       ["C-06", "C-01", "planned", 0],
-      ["C-08", "C-06", "confirmed", 3],   // T-149: 4 -> 5; T-127-s6: 5 -> 3
+      ["C-08", "C-06", "confirmed", 4],   // T-149: 4 -> 5; T-127-s6: 5 -> 3; T-169: 3 -> 4 (review-badge.test.tsx gains a parser/pure import)
       // `["C-08","C-09","confirmed",6]` IS GONE, AND THIS IS THE ROW THE
       // WHOLE CARD EXISTS TO REMOVE. It was half of `C-08 -> C-09 -> C-08`,
       // the registry's last declared cycle and the reason
@@ -2182,8 +2192,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // app/test/select-board.test.ts — a test file, not a card face) and
       // FOUR imports of `task-detail.ts`, which was C-09's file — so six
       // were internal to C-08 before the split and four were C-08 -> C-09.
-      ["C-08", "C-17", "confirmed", 10],
-      ["C-09", "C-06", "confirmed", 2],   // T-149: 2 -> 3; T-127-s6: 3 -> 2
+      ["C-08", "C-17", "confirmed", 11],  // T-169: 10 -> 11 (the card-face assignment tests read board-model)
+      ["C-09", "C-06", "confirmed", 3],   // T-149: 2 -> 3; T-127-s6: 3 -> 2; T-169: 2 -> 3 (detail-assignment.test.tsx, the moved panel test)
       ["C-09", "C-08", "confirmed", 2],   // T-127-s6: 3 -> 2
       ["C-09", "C-11", "planned", 0],
       // NEW at T-033, replacing `["C-09","C-05","undeclared",2]`: `cn` and
@@ -2195,7 +2205,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-08's, so C-09 owned a file that depended on C-08 while C-08 owned
       // a file that depended on C-09. Splitting both into C-17 leaves each
       // component declaring a leaf instead of owning half of one.
-      ["C-09", "C-17", "confirmed", 3],
+      ["C-09", "C-17", "confirmed", 4],   // T-169: 3 -> 4 (the panel assignment row reads task-detail)
       ["C-10", "C-06", "confirmed", 1],
       // THE ONE UNDECLARED ROW LEFT IN THIS REPOSITORY, and it is left on
       // purpose: declaring it would write this registry's first cycle
@@ -2362,9 +2372,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       { from: "app/src/components/board/badges/SizeBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
       // 4 -> 5 at T-149: `select-board.test.ts` arrives from C-05's
       // dissolved test umbrella and consumes the parser through the same
-      // seam. `review-badge.test.tsx` arrives too and does NOT appear here
-      // — it imports react and one component, no parser — which is what
-      // makes this list a check on the ROUTING rather than on the count.
+      // seam. `review-badge.test.tsx` joined at T-169 — its card-face
+      // assignment tests build fixtures with parseProjectFromFiles (it
+      // had no parser import before, which this list recorded; the
+      // routing check survives the count moving).
+      { from: "app/test/review-badge.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c09 = derived.edges.find((e) => e.from === "C-09" && e.to === "C-06");
@@ -2374,7 +2386,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 3 -> 2 at T-127-s6: `task-detail.ts` leaves for C-17 and reappears
       // in the C-17 body below.
       // 2 -> 3 at T-149: `select-task-detail.test.ts`. Of the three tests
-      // routed here, it is the only parser consumer.
+      // routed here, it is the only parser consumer — until T-169's
+      // panel-assignment test (moved here from C-08 at integration)
+      // joined with its own fixture builds.
+      { from: "app/test/detail-assignment.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     // THE TWO CONSUMERS T-127-s6 CREATES, and they hold the three file

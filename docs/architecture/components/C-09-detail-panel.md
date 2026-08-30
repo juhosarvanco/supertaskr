@@ -11,6 +11,10 @@ paths:
   # component already declares.
   - app/test/detail-presentation.test.ts
   - app/test/panel-dismissal.test.ts
+  # The panel's assignment row (T-169, D5), moved here at the T-169
+  # integration: its TaskDetailPanel import from C-08's review-badge
+  # file was the undeclared C-08 -> C-09 edge arch drift caught.
+  - app/test/detail-assignment.test.tsx
   - app/test/select-task-detail.test.ts
 depends_on: [C-06, C-08, C-11, C-16, C-17]
 decisions: [ADR-016]

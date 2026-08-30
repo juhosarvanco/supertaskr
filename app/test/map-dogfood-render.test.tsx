@@ -790,8 +790,10 @@ describe("the nputer repo on its own map", () => {
       // the entry above this one moves the count WITHOUT moving findings.
       // 189 -> 190 at the T-167 merge regen (2026-08-30) - skills.rs under
       // C-14, mapped, findings unmoved.
+      // 190 -> 193 at the T-169 merge regen (2026-08-30) - the assignment
+      // module, its test, and the moved panel test, all mapped.
       // Derived from arch after the regen, not from the failure output.
-      "committed graph · 190 files",
+      "committed graph · 193 files",
     );
   });
 });
