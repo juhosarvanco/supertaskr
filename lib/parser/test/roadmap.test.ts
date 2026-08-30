@@ -452,6 +452,29 @@ describe('parseRoadmap — an emphasis-wrapped feature id is REPORTED, never dro
     expect(issues).toHaveLength(1);
     expect(issues[0]?.message).toContain(`${FILE}:4:`);
   });
+
+  // ASSIGNED BY T-177's BLIND VERIFIER, performed at the merge. The
+  // reporter's backbone scoping is CORRECT and was UNPINNED: hoisting the
+  // detector past `if (!inBackbone) continue;` left the suite green at
+  // 343/343, and no existing gate could have caught it — an awk over every
+  // tracked *.md finds ZERO decorated F- bullets outside a backbone in this
+  // repository, so the live-tree smoke test is vacuous against this
+  // mutation by construction. A reporter that fired in every section would
+  // turn one silence into a page of badges, and would arrive silently under
+  // any future refactor of the scan loop.
+  it('the reporter is backbone-scoped: a decorated F- bullet under another heading is not an issue', () => {
+    const content = [
+      '## Backbone',
+      '- F-01: Real — the only feature here',
+      '',
+      '## Parked',
+      '- **F-02: Deferred — bold, and none of the backbone scan business**',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((f) => f.id)).toEqual(['F-01']);
+  });
 });
 
 describe('parseRoadmap — numerically aliased feature ids (T-053, promoting T-030-s3)', () => {
