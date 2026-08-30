@@ -254,7 +254,16 @@ export function MapPanel({
                     : "no indexed files"}
               </Placeholder>
             ) : (
-              <FileGroups files={component.files} onOpenFile={onOpenFile} />
+              <>
+                <FileGroups files={component.files} onOpenFile={onOpenFile} />
+                {component.pulledTruncated !== undefined && (
+                  <Placeholder data-testid="pulled-truncated">
+                    …and {component.pulledTruncated.total - component.pulledTruncated.shown} more —
+                    the pull answers {component.pulledTruncated.shown} of{" "}
+                    {component.pulledTruncated.total} files
+                  </Placeholder>
+                )}
+              </>
             )}
           </Section>
 

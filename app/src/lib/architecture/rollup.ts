@@ -405,7 +405,16 @@ export function parseDetail(value: unknown): DetailParseResult {
  * are the whole reason the answer was pulled. What a stub must never do
  * is out-rank a real entry, so a pulled file always overwrites one.
  */
-export function partialGraph(details: Iterable<ArchDetail>): GraphParseResult | undefined {
+export function partialGraph(
+  details: Iterable<ArchDetail>,
+  // T-140-s1 verifier, correction 1: when the rollup says the emitter
+  // dropped symbols, the sliced graph must SAY so — otherwise the
+  // oversize mode (the exact mode this module exists for) renders "no
+  // symbols declared" for every truncated file and the truncation note
+  // never fires. The rollup carries stats.truncatedSymbols; this is its
+  // first reader.
+  truncatedSymbols = false,
+): GraphParseResult | undefined {
   const files = new Map<string, Record<string, unknown>>();
   const stubSymbols = new Map<string, Map<string, Record<string, unknown>>>();
   const packages = new Map<string, unknown>();
@@ -495,6 +504,7 @@ export function partialGraph(details: Iterable<ArchDetail>): GraphParseResult | 
       packages: [...packages.values()],
       edges,
       unresolved,
+      ...(truncatedSymbols ? { stats: { truncated_symbols: true } } : {}),
     }),
     "the map channel",
   );

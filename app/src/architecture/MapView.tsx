@@ -206,8 +206,15 @@ export function MapView({
     [graphContent],
   );
   const slice: GraphParseResult | undefined = useMemo(
-    () => partialGraph(pulled.values()),
-    [pulled],
+    // T-140-s1 verifier, correction 1: the sliced graph carries the
+    // rollup's own truncation flag, so the oversize mode tells the
+    // truth about symbols the emitter dropped.
+    () =>
+      partialGraph(
+        pulled.values(),
+        rollupState.kind === "ready" && rollupState.rollup.stats.truncatedSymbols,
+      ),
+    [pulled, rollupState],
   );
   /**
    * WHICH GRAPH THE T1/T2 RENDERERS READ. The committed file when it
@@ -244,12 +251,23 @@ export function MapView({
     let touched = false;
     const components = base.components.map((component) => {
       const answer = pulled.get(componentTarget(component.id));
-      const files =
-        answer?.kind === "component" || answer?.kind === "unmapped" ? answer.files : undefined;
-      if (files === undefined || component.files.length > 0) return component;
+      const listAnswer =
+        answer?.kind === "component" || answer?.kind === "unmapped" ? answer : undefined;
+      const files = listAnswer?.files;
+      if (listAnswer === undefined || files === undefined || component.files.length > 0)
+        return component;
       touched = true;
       for (const path of files) fileComponent.set(path, component.id);
-      return { ...component, files: [...files] };
+      // T-140-s1 verifier, correction 2: the channel clips at its cap
+      // and says so (`total`, `truncated`); the derived component now
+      // carries that honesty instead of dropping it here.
+      return {
+        ...component,
+        files: [...files],
+        ...(listAnswer.truncated
+          ? { pulledTruncated: { shown: files.length, total: listAnswer.total } }
+          : {}),
+      };
     });
     if (!touched) return base;
     return {

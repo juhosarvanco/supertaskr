@@ -132,6 +132,12 @@ export interface DerivedComponent {
    * a graph, and comes from the rollup otherwise.
    */
   fileCount: number;
+  /**
+   * Present only when a PULL's file list was clipped at the channel's
+   * cap (T-140-s1 verifier, correction 2): `shown` paths arrived of
+   * `total` — the panel owes the reader the difference in words.
+   */
+  pulledTruncated?: { shown: number; total: number };
   /** Declared component whose globs match no indexed file (full mode). */
   declaredOnly: boolean;
   /**

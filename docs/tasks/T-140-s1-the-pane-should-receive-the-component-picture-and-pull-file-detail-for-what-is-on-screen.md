@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 2
 size: L
-status: verifying
+status: done
 blocked_by: [T-135]
 touches: [crate-index, app-map, app-shell]
 suggested_by: executor claude-opus-5 @T-140
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -418,3 +418,5 @@ first), `T-140-s5` (the inherited `app/` build red), `T-140-s6` (search
 cannot reach an unopened file once the pane rests on the rollup),
 `T-140-s7` (the two unclaimed files, predicted before the regen reports
 them).
+
+VERDICT (2026-08-30, blind verifier claude-opus-5@subagent, factless spawn): **APPROVED WITH ASSIGNED CORRECTIONS** — all four SHALLs met, the flatness re-measured by the verifier itself across four adversarial tree shapes (mapped / no-registry / edge-blowup / ambiguous: 464→468 bytes over a 14× file spread), the pull's 22-target traversal battery refused 22-for-22 with a planted canary appearing in no answer, ADR-015's boundary verified unmoved, and the lane's +30,612-byte graph cost isolated by the verifier's own base-worktree measurement and judged honest. Three corrections, performed at merge by the integration seat: (1) `partialGraph` now carries the rollup's `truncatedSymbols` into the sliced graph's stats, so the oversize mode — this card's whole subject — renders the truncation note instead of "no symbols declared" for files the emitter dropped; (2) the pull's clip is spoken: the derived component carries `pulledTruncated {shown, total}` and the panel renders the "…and N more" row (the channel computed both honestly; nothing read them); (3) THE DISCLOSURE OWED: ADR-015's boundary did not move, but the Rust reader's answer is now WHAT THE USER SEES AT REST while every live-tree pin of the map's picture still exercises only `deriveDeclared` over the graph — this lane made T-059 (blocked_by T-033) LOAD-BEARING, and the three latent divergence classes ADR-015's T-014 addendum names (a YAML escape, a duplicate paths: key, a tab-indented item) are now user-visible divergence classes until T-059 lands.
