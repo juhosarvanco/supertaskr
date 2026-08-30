@@ -1,14 +1,13 @@
 # State
 
-Updated: 2026-08-30 at the T-140-s1 checkpoint — THE WALL IS
-REMOVED: the map rests on the flat rollup (verifier-measured, four
-adversarial shapes), file detail is a hardened pull, an over-budget
-graph degrades the drill and never the map, and the pane speaks every
-truncation. The graph reads 2,212 bytes of headroom with the alarm
-printing — SURVIVABLE now by design. The walk is immunized against
-nested session worktrees (/.claude/ root-anchored in .nputerignore
-after the double-index incident). Current record:
-docs/checkpoints/2026-08-30-T-140-s1.md.
+Updated: 2026-08-30 at standing sitting #3 — suggested 14 -> 0
+again: eight promotions (five held only by T-154-s2's live lane, clean
+at their next preflight), T-167-s7 absorbed, two discharged-archived,
+three parks (two @human's). T-031-s1 RULED SEQUENCED behind T-112 —
+absorbing would re-widen the fence the C-11 split narrowed. T-112
+dispatches when T-143-s3's app-board lane lands. FOUR lanes live +
+one blind verifier; the walk needs none of them. Current record:
+docs/checkpoints/2026-08-30-standing-triage-3.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -55,17 +54,16 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-112` is dispatchable (ONE collider, T-031-s1 ruled or
-   absorbed at dispatch) — the last named slice clause. Standing
-   sitting #3 is NEAR (the day's suggestion arrivals — derive with
-   `git grep -l "^status: suggested" docs/tasks/`, never list).
-   `T-154-s2` dispatchable. Customization UI cards wait on a VERSION
-   sitting. `T-140-s4` (the graph limit ruling) is @human's when the
-   alarm's number matters again.
-2. @human's open items: THE GENESIS WALK (closes milestone 3); the
-   v1/v2/v3 partition markup; `T-162-s1`; `T-169-s2` (one word);
-   the M4 strategy question (docs/business/strategy-room.md). All
-   unhurried.
+1. IN FLIGHT: T-154-s2 (guard), T-159-s1 (method debt), T-167-s1
+   (schema), T-143-s3 (verifying, blind verifier out). THEN: T-112
+   (after T-143-s3 lands — the sitting's sequencing ruling), the
+   e2e-seat train (T-163-s4 p1, T-167-s8 p2, T-167-s6, T-164-s2 —
+   the sitting suggests one lane for the adjacent-sentence pair
+   T-164-s2/T-156-s5). HELD for the walk: T-025-s4 only.
+2. @human's open items: THE GENESIS WALK; the v1/v2/v3 markup;
+   `T-162-s1`; `T-169-s2` (one word); `T-140-s4` (the graph limit —
+   live again, the graph truncates today); the M4 strategy question.
+   All unhurried.
 3. `T-154-s2` (promoted, `review: independent`) is dispatchable —
    the e2e seat is free. Watch-list on any push: `T-161`
    (stderr-drain intermittent), `T-018-s2` (picker-rearm, one
