@@ -129,3 +129,19 @@ sha256. The DOCS GATE fires; run what it owes. **@human, and it is the
 slice's closing evidence: one hand-driven dispatch of a real card using
 only this brief, into any agent — the measured proof that the pasted
 brief and a spawned one are indistinguishable to the repository.**
+
+PLANNING PREP (2026-08-30, integrator, @human's ruled night order —
+derivation only, no dispatch): the flip pairs at 558d660. Direct slug
+sharers among planned cards: ONE — T-031-s1 (app-board). But the slug
+map shares C-11 between app-board (C-08,C-09,C-11,C-17,C-18) and
+app-shell (C-05,C-10,C-11,C-16), so T-112's expansion overlaps EVERY
+app-shell card's through C-11 — nineteen planned cards flip with it
+(derive: the awk-over-touches sweep in this note's checkpoint record).
+Consequence for the dispatch decision: T-112 runs alone against the
+whole shell train; its natural slot is a quiet-shell window right
+after a checkpoint, and T-031-s1 (the double sharer) should be ruled
+before or absorbed into it. The C-11 sharing itself is the lever — if
+design tokens moved to their own never-fenced slug, app-board and
+app-shell would decouple and T-112's collision surface would drop
+from ~19 to 1. That is an architecture ruling, not a lane's act:
+@human decides dispatch timing, or the C-11 split first.
