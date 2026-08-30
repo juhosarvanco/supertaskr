@@ -327,6 +327,42 @@ never probed.
 the delta from the base; the base's own count was not separately
 measured in this lane.
 
+### THE STANDING GATES, DERIVED from this lane's own merge forecast
+
+Main moved during the lane, from the dispatch base `f96f609` to
+`cdde033`. The gate set below is derived against the tree the merge
+WOULD have — `git merge-tree --write-tree cdde033 HEAD`, exit 0, no
+conflict — which is the forecast the RANGE RULE prescribes and which
+does not move when this notes commit lands, because that commit only
+touches a `docs/tasks/` path the list already holds.
+
+    the merge's diff: 7 paths
+      docs/tasks/T-178-...-enotempty.md
+      tools/e2e/tests/brief.spec.ts
+      tools/e2e/tests/card-preflight.spec.ts
+      tools/e2e/tests/docs-input-gate.spec.ts
+      tools/e2e/tests/git-fixture.spec.ts
+      tools/e2e/tests/git-fixture.ts
+      tools/e2e/tests/lane-fence.spec.ts
+
+    GRAPH REGEN       FIRES      6 of 7 paths are *.ts outside docs/
+    BOOT GATE         NOT OWED   0 paths under app/src-tauri/**, app/src/**,
+                                 and neither manifest is touched
+    DOCS GATE         FIRES      1 path under docs/ is a code input
+    METHOD EVAL GATE  NOT OWED   0 paths under method/**
+
+THE DOCS GATE, run in its one spelling from the repo root and fed the
+RANGE RULE's own path list (under `bash`, because zsh does not split an
+unquoted command substitution and the gate would have read all seven
+paths as one), answered **exit 1 — FIRES**, naming this card as a code
+input to ten readers across three suites. All three were run and all
+three are green:
+
+    npx vitest run  from lib/parser/   exit 0   344 passed, 16 files
+    npm run build   from app/          exit 0   (order-dependent, run first)
+    npm test        from app/          exit 0   1059 passed, 49 files
+    npm test        from tools/e2e/    exit 0   339 passed
+
 ### ROUTED, not silently omitted
 
 **`docs/CAPABILITIES.md` IS STALE AND IS OUTSIDE THIS FENCE**
