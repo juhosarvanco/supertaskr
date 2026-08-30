@@ -1,5 +1,5 @@
 ---
-id: T-018-s1
+id: T-018-s2
 title: The picker-rearm test races its own sequence counter on a Linux runner — one sighting, on a docs-only diff, in the suite that owns the watcher
 status: suggested
 suggested_by: integrator nputer-4e @loop-sitting stamps push, CI run 33304351040 (2026-08-30)
