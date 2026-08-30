@@ -441,6 +441,23 @@ test("a manifest the hook cannot read is a refusal, never a shrug", async () => 
     ["not an object", "[]"],
     ["a version this reader does not know", JSON.stringify({ version: MANIFEST_VERSION + 1 })],
     ["missing a field", JSON.stringify({ version: MANIFEST_VERSION, taskId: FIXTURE_ID })],
+    // `excluded` joined the fields this reader requires at T-154-s2: the
+    // lane-less arm carves a card's own file out of a fence it does not
+    // hold, and it can only do that from a manifest that carries the
+    // carve-out. The writer has stamped it since T-154; requiring it is
+    // the reader catching up with the schema, not a new demand.
+    [
+      "missing the excluded field the carve-outs are read from",
+      JSON.stringify({
+        version: MANIFEST_VERSION,
+        taskId: FIXTURE_ID,
+        branch: "refs/heads/task/T-901-guard-fixture",
+        card: FIXTURE_CARD,
+        touchesLine: FIXTURE_TOUCHES,
+        paths: ["tools/e2e"],
+        alwaysWritable: ["docs/tasks"],
+      }),
+    ],
   ] as const) {
     writeFileSync(file, content, "utf8");
     const verdict = ask(fx.lane, path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts"));
@@ -1013,13 +1030,22 @@ test("a lane whose worktree is gone fences nothing, and a stray manifest still l
   expect(ask(fx.repo, held).code).toBe("held-by-a-live-lane");
 
   // A STRAY MANIFEST IS READ BY NOBODY — v1's load-bearing property, in
-  // the shape the widening could have broken. The drill is detached, so
-  // it is not a lane however armed it looks, and this manifest reserves
-  // a path nothing else does.
+  // the shape the widening could have broken. BOTH non-lane shapes carry
+  // one here, and they fail the filter for different reasons: the drill
+  // is DETACHED (its HEAD names no branch at all) and the review seat is
+  // on a branch that is simply not a lane. A walk that read manifests
+  // instead of branches would hand this repository two fences nobody
+  // holds — and the second worktree is why "filtered on the branch,
+  // never the path" is a measurement here and not a slogan.
   const stray = JSON.parse(readFileSync(path.join(fx.lane, MANIFEST_REL_PATH), "utf8"));
   stray.paths = ["app/src"];
-  mkdirSync(path.join(fx.drill, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
-  writeFileSync(path.join(fx.drill, MANIFEST_REL_PATH), JSON.stringify(stray), "utf8");
+  const review = path.join(path.dirname(fx.lane), "nputer-review-stray");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-stray", review]);
+  for (const home of [fx.drill, review]) {
+    mkdirSync(path.join(home, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
+    writeFileSync(path.join(home, MANIFEST_REL_PATH), JSON.stringify(stray), "utf8");
+  }
+  expect(readHeadRef(review)).toBe("refs/heads/review/T-901-stray");
   // REALPATH BOTH SIDES, and the reason is a platform fact this project
   // already walks into: git's `gitdir` file records the RESOLVED path,
   // while `mkdtemp` under `os.tmpdir()` hands back the symlinked one
@@ -1029,7 +1055,7 @@ test("a lane whose worktree is gone fences nothing, and a stray manifest still l
   // the fixture's business and not the guard's.
   expect(
     liveLanes(fx.repo).map((l) => realpathSync(l.worktree)),
-    "a detached tree was read as a lane",
+    "a checkout that is not on a lane branch was read as a lane",
   ).toEqual([realpathSync(fx.lane)]);
   expect(ask(fx.repo, path.join(fx.repo, "app/src/main.tsx")).verdict).toBe("allow");
 
