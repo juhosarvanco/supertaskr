@@ -561,6 +561,20 @@
   holds unless the REGISTRY itself changed. The knowledge used to live
   only in a T-008 commit message and behind a task fence reading "zero
   diff under lib/parser/**".
+  **MOVING A `touch_slugs:` FIELD IS A DIFFERENT EDIT AND MOVES A
+  DIFFERENT SET, AND THIS BULLET DID NOT SAY SO UNTIL `T-163-s3`.**
+  DERIVE that set, never transcribe it — a transcribed set goes stale
+  exactly the way the SHIPPED PARTITION's C-11 clause did:
+  `node tools/e2e/scripts/docs-gate.mjs docs/architecture/components/C-NN-*.md`
+  names the owed SUITES at your own ref, and it names more suites than
+  the two the three fixtures above live in. **The three above can all
+  be GREEN while other bodies in those same suites red**, which is what
+  T-163 measured moving exactly one field — so run each suite the gate
+  names IN FULL; the gate answers at suite granularity and the file
+  list it prints is not the set of bodies that move. One consumer sits
+  outside every suite: docs/ARCHITECTURE.md's prose slug BLOCK copies
+  this field and must move with it — `brief.mjs --task` compares the
+  two and says in one line whether they agree at your ref.
 - THE SHIPPED PARTITION, IN SLUGS (T-147 — the sentence
   method/tasks/TASK-FORMAT.md's ceremony boundary asks each project to
   state beside its slug map, so a size-S card's ROW is read off
@@ -568,8 +582,16 @@
   block and its authority is each component's own `touch_slugs:`).
   **SHIPPED — every registry SLUG, and no list of them here**:
   `git grep -h '^touch_slugs:' docs/architecture/components/` prints
-  the set at your own ref, and the one EMPTY line in it (C-01,
-  `method/`) is why the next clause exists.
+  the set at your own ref. **EVERY EMPTY LINE IN IT IS A COMPONENT NO
+  SLUG CAN FENCE**, and each is why the SHIPPED clauses below do not
+  stop at the slug set —
+  `git grep -l '^touch_slugs: \[\]' docs/architecture/components/`
+  names those components at your own ref, and THE COUNT IS NOT WRITTEN
+  HERE because it has already moved once: this clause read *"the one
+  EMPTY line in it (C-01, `method/`)"* until T-163 added a second, and
+  the sentence was false from that ruling until `T-163-s3`. A slug is
+  the usual SPELLING of "does it ship?", never the question itself —
+  the question is whether the bytes REACH the product.
   **SHIPPED — any bare `method/` path that REACHES a `KIT_FILES` entry**
   (`git grep -h 'rel: "' app/src-tauri/src/agent/kit.rs`), because the
   kit materializes those bytes VERBATIM into every project this system
@@ -582,12 +604,36 @@
   fence is a blast radius, so `[method/roles/]` ships (it may write
   `planner.md`) and `[method/roles/executor.md]` does not; narrow the
   fence and the ceremony narrows with it.
-  **NOT SHIPPED — every other bare path**: `docs/**`, `.github/`,
+  **SHIPPED — a bare path into the `paths:` of a SLUGLESS component
+  whose bytes REACH the built app** (T-163, @human's architecture
+  ruling of 2026-08-30, which took C-11's `touch_slugs:` from
+  `[app-shell, app-board]` to `[]`; the FIELD is the authority, so
+  derive it — `grep -h '^touch_slugs:'
+  docs/architecture/components/C-11-design-tokens.md`). A design-tokens
+  change now enters a lane as `touches: [app/src/styles]` or
+  `[app/src/assets]` — its own bare PATH, in the spelling C-11's own
+  body publishes — and it SHIPS, by the same REACHES test the clause
+  above uses for the kit: `app/src/index.css` (C-05, slug `app-shell`)
+  `@import`s `./styles/tokens.css` and `./styles/fonts.css`, and
+  `fonts.css` `url()`s `../assets/fonts/*.woff2`, so those bytes are
+  compiled into every build. **READING AN EMPTY `touch_slugs:` AS "NOT
+  SHIPPED" IS THE TRAP THIS CLAUSE CLOSES**: the ruling removed a fence
+  SPELLING, not a byte from the bundle. And it does NOT generalise to
+  every empty line — C-01 is slugless too, and its `method/**` ships
+  only as far as the clause above says it does. Ask each slugless
+  component's territory the REACHES question separately.
+  **NOT SHIPPED — every bare path no SHIPPED clause above reaches**:
+  `docs/**`, `.github/`,
   `tools/e2e` (YES to "is it code?", NO to "does it ship?" — the case
   this rule exists to settle), and the `method/` files the kit leaves
   behind, `lane-protocol.md` and `roles/integrator.md` among them.
   **`non_code:` IS A DIFFERENT AXIS AND IS NEVER SUBSTITUTED**: C-11 is
-  `non_code: true`, carries two slugs, and ships.
+  `non_code: true`, claims NO slug since T-163 (2026-08-30), and ships
+  anyway. The example SURVIVES the ruling that falsified its middle
+  clause and is stronger for it: it now carries two flags that both
+  look like "not product" and is shipped under the clause above
+  regardless, which is the whole point — neither field is the
+  shipped-ness test.
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see

@@ -174,6 +174,195 @@ body above, measured at that lane.
   assumed.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+**BUILT 2026-08-30, lane `/Users/ujju/Projects/nputer-T-163-s3`, branch
+`task/T-163-s3-false-clause`, cut from `bf274ed`. Fence:
+`docs/CONVENTIONS.md`. Nothing else in the repository was written — the
+component file, the specs and the suites were left exactly as the
+discharge left them, as criterion five requires.**
+
+### The clause the card sent me for, before and after
+
+BEFORE (`docs/CONVENTIONS.md`, THE SHIPPED PARTITION's last line, at
+`bf274ed`):
+
+> **`non_code:` IS A DIFFERENT AXIS AND IS NEVER SUBSTITUTED**: C-11 is
+> `non_code: true`, carries two slugs, and ships.
+
+AFTER:
+
+> **`non_code:` IS A DIFFERENT AXIS AND IS NEVER SUBSTITUTED**: C-11 is
+> `non_code: true`, claims NO slug since T-163 (2026-08-30), and ships
+> anyway. The example SURVIVES the ruling that falsified its middle
+> clause and is stronger for it: it now carries two flags that both look
+> like "not product" and is shipped under the clause above regardless,
+> which is the whole point — neither field is the shipped-ness test.
+
+Criterion two asked whether the ruling had cost the bullet its example.
+**It had not — it improved it.** The bullet's point is that `non_code:`
+is a different axis from shipped-ness; C-11 now carries TWO fields that
+both read like "not product" (`non_code: true` and an empty
+`touch_slugs:`) and ships regardless, so the example makes the point
+twice over. No replacement example was needed and none was invented.
+
+### A SECOND false clause in the same bullet, found by the sweep
+
+The card named one. The sweep found the ruling had falsified a second
+sentence four lines above it, by the same arithmetic:
+
+BEFORE: *"…prints the set at your own ref, and the one EMPTY line in it
+(C-01, `method/`) is why the next clause exists."*
+
+DERIVED at `bf274ed`: `git grep -l '^touch_slugs: \[\]'
+docs/architecture/components/` → **2 files**, `C-01-method.md` and
+`C-11-design-tokens.md`. "The one EMPTY line" had been false since the
+ruling landed. AFTER, the count is derived rather than written, the
+derive command is published, and the sentence records its own former
+wording so the next reader can see what went stale and why.
+
+### What carries "ships" once the slug is gone — DERIVED, not asserted
+
+This was the card's real ask. A third SHIPPED clause was added:
+
+> **SHIPPED — a bare path into the `paths:` of a SLUGLESS component
+> whose bytes REACH the built app**
+
+The reasoning, from the bullet's own logic plus the registry and the
+build, not from the card's paragraph:
+
+1. The bullet's first clause makes a registry SLUG the test. C-11 claims
+   none, so a tokens change enters a lane by its own bare PATH —
+   `touches: [app/src/styles]` or `[app/src/assets]`, the spelling
+   C-11's own body publishes and the fence expander already accepts.
+2. Left alone, the NOT SHIPPED clause (*"every other bare path"*) would
+   have swallowed that path and made a tokens change ceremony-free. That
+   is the trap, and it was one sentence away from being live.
+3. The bullet already owns the right test for exactly this situation:
+   **REACHES**, which it uses for `method/` against `KIT_FILES`
+   (`git grep -h 'rel: "' app/src-tauri/src/agent/kit.rs` → **14
+   entries at `bf274ed`**, every one under `method/`, so that clause has
+   nothing to say about `app/`). C-11 needed the same question asked of
+   its own territory.
+4. Asked and answered by derivation: `app/src/index.css` — C-05's file,
+   slug `app-shell`, a SHIPPED slug — `@import`s `./styles/tokens.css`
+   and `./styles/fonts.css`, and `app/src/styles/fonts.css` `url()`s
+   `../assets/fonts/Geist-Variable.woff2` and
+   `GeistMono-Variable.woff2`. **CONFIRMED AT THE BUILD, not only in the
+   source**: `npm run build` from app/ in this lane emitted
+   `dist/assets/index-D41xl3Gz.css` (45.18 kB),
+   `dist/assets/Geist-Variable-Bj2R_7yk.woff2` (69.65 kB) and
+   `dist/assets/GeistMono-Variable-Dispecij.woff2` (71.37 kB). C-11's
+   bytes are in the shipped bundle.
+5. The clause says explicitly that it does **NOT** generalise to every
+   empty line: C-01 is slugless too, and its `method/**` ships only as
+   far as its own clause says. Each slugless component's territory is
+   asked the REACHES question separately. Without that sentence the new
+   clause would have quietly made all of `method/` shipped.
+
+`**NOT SHIPPED — every other bare path**` was reworded to
+`**NOT SHIPPED — every bare path no SHIPPED clause above reaches**` so
+the new clause is not swallowed by the one after it. The enumeration
+(`docs/**`, `.github/`, `tools/e2e`, the kit's leftovers) is untouched.
+
+### Criterion three — the DECLARING A COMPONENT bullet
+
+Added, and DERIVED rather than transcribed exactly as the criterion
+demands (this card's own measured four-place list is deliberately NOT
+copied into the document — that is the transcription that goes stale):
+
+    node tools/e2e/scripts/docs-gate.mjs docs/architecture/components/C-NN-*.md
+
+Run at `bf274ed` it names **4 suites** — `cargo test` from
+app/src-tauri/, `npm test` from app/, `npm test` from tools/e2e/,
+`npx vitest run` from lib/parser/ — against the **2** the bullet's three
+named fixtures live in. The bullet now says the three can all be GREEN
+while other bodies in those same suites red (what T-163 measured moving
+one field), says the gate answers at SUITE granularity so each named
+suite is run in full rather than the files it happens to print, and
+names the one consumer no suite covers: docs/ARCHITECTURE.md's prose
+slug BLOCK, which `brief.mjs --task` compares against the fields and
+reports in one line.
+
+### Criterion four — the negative sweep, recorded
+
+Swept `docs/CONVENTIONS.md` at `0f41aef` for every clause that could
+still assume a doubly-claimed component:
+
+    two slugs · doubly · double-claim · double claim · both slugs
+    more than one slug · shares its paths · C-11 · app-shell · app-board
+    app/src/styles · app/src/assets · touch_slugs
+
+**ANSWER: NONE REMAIN.** The two repaired above were the only ones. The
+surviving `[app-shell, app-board]` occurrence is the ruling's BEFORE
+state, stamped as history inside the new clause; the surviving bare
+`app-shell` occurrence is C-05's live slug, derived and true at this
+ref. `- UI work adds tokens to app/src/styles/tokens.css…` mentions the
+territory but makes no slug claim and needed nothing.
+
+### Gates, every exit unpiped
+
+- `npm run lint:docs` from tools/e2e/ — **exit 0**. Budget line:
+  *"governing-document budgets hold — 4 gated, 0 awaiting their
+  compaction landing"*. docs/CONVENTIONS.md **137,350 → 140,380 bytes**
+  (`wc -c`), +3,030 against the 164,393-byte warn line — **24,013 bytes
+  of headroom left**.
+- DOCS GATE, derived not assumed, and derived TWICE because the owed
+  set GREW when the cards landed. On the fence alone
+  (`docs-gate.mjs docs/CONVENTIONS.md`) it FIRES for **2** suites. On
+  the whole lane diff (`docs-gate.mjs $(git diff --name-only
+  bf274ed..HEAD)`, three paths) it FIRES for **4**, because a new flat
+  `docs/tasks/T-*.md` is a live-registry input to the parser and the two
+  app dogfood fixtures. **ALL FOUR WERE RUN**; had the gate been run
+  once at the start, two of them would have been missed.
+- `cargo test` from app/src-tauri/ — **exit 0**, 548 passed / 0 failed /
+  4 ignored across 18 result lines, on a `target/` built from nothing in
+  this lane. kit.rs's CONVENTIONS assertion is on the *"formats are
+  version-bumped"* line, which this diff does not touch.
+- `npx vitest run` from lib/parser/ — **exit 0**, 15 files, **315
+  passed**.
+- `npm test` from app/ — **exit 0**, 47 files, **1015 passed**.
+- `NPUTER_E2E_PORT=41633 npm test` from tools/e2e/ (port derived from
+  the lane's card number; `lsof -nP -iTCP:41633 -sTCP:LISTEN` = **0
+  rows** immediately before each bind) — run TWICE, before and after the
+  cards landed: **1 failed / 319 passed, exit 1** both times, the same
+  body. The cards moved nothing.
+  **THE ONE RED IS PRE-EXISTING AT THE BASE AND IS NOT THIS DIFF'S** —
+  see below. **Every reader of this document is GREEN**: brief,
+  dispatch-order, docs-input-gate, lane-fence, range-rule,
+  workflow-parity, shell-frame, window-contract.
+- GRAPH REGEN, BOOT GATE and METHOD EVAL GATE do not fire: the diff is
+  three files under docs/ and nothing else.
+
+### The one red, and the proof it is not mine
+
+`tests/session-economics.spec.ts:73` fails at line 113 because its
+POSITIVE CONTROL spawns `dispatch-brief.mjs --task T-112` and asserts
+exit 0, while the brief now refuses: *"fences are not disjoint: T-169
+app-board against T-112 app-board"*. T-169 (`touches: [lib-parser,
+app-board]`) was stamped `building` at **`bf274ed`** — the commit this
+lane was cut from — and T-112 is `touches: [app-dispatch, app-board]`.
+
+Positive control run both ways in this lane:
+`git checkout bf274ed -- docs/CONVENTIONS.md` then `brief.mjs --task
+T-112` → **exit 1**; restore this lane's own file, re-run → **exit 1**.
+A docs/CONVENTIONS.md edit cannot move fence disjointness, which is
+computed from cards' `touches:` and the component registry.
+
+**tools/e2e IS OUTSIDE THIS FENCE, SO IT WAS RECORDED RATHER THAN
+REACHED FOR** — filed as `T-163-s4`, which carries the full measurement,
+the reason the control exists and must not simply be deleted, and
+criteria for a board-independent replacement.
+
+### What this lane did NOT do
+
+- No component file, spec or suite was touched (criterion five).
+- This card's measured four-place list was not transcribed into
+  docs/CONVENTIONS.md; only the derivation that reproduces it was.
+- No reader pin had to move, so the `tools/e2e` STOP-and-record rule was
+  not triggered by the edit itself — checked BEFORE writing, by grepping
+  tools/e2e for `SHIPPED PARTITION`, `non_code`, `two slugs` and
+  `DECLARING A COMPONENT`: **no spec pins any sentence in either
+  repaired bullet.** The only tools/e2e matter that arose is
+  `T-163-s4`, a pre-existing red rather than a pin this diff moved.
 
 ## Verdicts
