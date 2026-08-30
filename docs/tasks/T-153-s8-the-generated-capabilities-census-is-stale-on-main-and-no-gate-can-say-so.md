@@ -373,15 +373,32 @@ The diff is `.github/workflows/ci.yml`, `docs/CONVENTIONS.md`,
   silently skipped.
 - **BOOT GATE** — NOT OWED. No path under `app/src-tauri/**`,
   `app/src/**` or either manifest.
-- **DOCS GATE** — FIRES, run in the executor's pair per the RANGE RULE
-  (`TREE=$(git merge-tree --write-tree $MAIN HEAD)`, main at `629adea`),
-  in the one printed spelling. Exit **1**, meaning it HAS a verdict:
-  *1 path(s) under docs/ are code inputs*, naming `docs/CONVENTIONS.md`
-  and owing two suites — `npm test` from tools/e2e (run, exit 0) and
-  `cargo test` from app/src-tauri (run, attributed above). The Rust
-  reader is `agent/kit.rs`, and what it reads is the single line carrying
-  *"formats are version-bumped"*: still exactly one such line, still
-  stamped, and NOT in this lane's diff.
+- **DOCS GATE** — FIRES. Run twice in the executor's pair per the RANGE
+  RULE (`TREE=$(git merge-tree --write-tree $MAIN HEAD)`), in the one
+  printed spelling, exit **1** both times — meaning it HAS a verdict,
+  which is the designed answer and not a red.
+  - At the work commit `f705baa`, main at `629adea`: *1 path(s) under
+    docs/ are code inputs*, naming `docs/CONVENTIONS.md` and owing
+    `npm test` from tools/e2e and `cargo test` from app/src-tauri.
+  - **Re-asked at the notes commit `f440204`, main at `31b08c02`, because
+    this card's own notes are a `docs/tasks/` file and that is the
+    gate's founding failure class**: now *2 path(s)*, and the owed set
+    GREW to four suites. A card commit is a code-input commit.
+
+  All four run at `f440204`, exits read UNPIPED:
+  `npm test` from tools/e2e **0**;
+  `npx vitest run` from lib/parser **0**;
+  `npm run build` then `npm test` from app/ **0** and **0** (the build is
+  ordering, not a gate: an unbuilt app tree fails its own suite about
+  `app/dist`);
+  `cargo test` from app/src-tauri **101** on `T-161`'s standing
+  intermittent, then **0** on that body alone.
+
+  The Rust reader of `docs/CONVENTIONS.md` is `agent/kit.rs`, and what it
+  reads is the single line carrying *"formats are version-bumped"*:
+  still exactly one such line, still stamped, and NOT in this lane's
+  diff — derived, so the cargo result is attributable rather than hoped
+  for.
 - **METHOD EVAL GATE** — NOT OWED. Nothing under `method/**`.
 
 ## The honest residual, and what only a real CI run can settle
