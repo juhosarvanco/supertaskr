@@ -206,8 +206,25 @@ and the worktree was removed.
 - `npm run lint:docs` from tools/e2e/ — **exit 0** (every live card's
   frontmatter parses with a legal status, including the new T-143-s6;
   governing-document budgets hold).
-- DOCS GATE, diff half, run in the RANGE RULE's own spelling against
-  `main` and this branch's tip — see the line below this table's commit.
+- DOCS GATE, diff half, run at `a8a7441` in the ONE SPELLING, unpiped,
+  against `main` = `51fa31c0964c` (`git merge-tree --write-tree` exit 0,
+  tree `7a85cae1`) — **exit 1, which is the gate HAVING a verdict**: the
+  two cards this lane writes are code inputs, so it names three suites.
+  Two of the three are green above, at the tip that carries the cards.
+  The third is the e2e lane, below.
+- `npm test` from tools/e2e/ (`NPUTER_E2E_PORT=14543`, lsof-read at ZERO
+  rows immediately before binding; 1420 left to the human's app) —
+  **exit 1: 319 passed, 2 failed**, and both failures are the LIVE-LANE
+  class, not this diff. Both are in `tests/session-economics.spec.ts`
+  and both carry the same assembler refusal: *"fences are not disjoint:
+  T-154-s2 tools/e2e against T-157 tools/e2e — the same entry"*. That is
+  a fact about the live worktree list and two OTHER cards — the sibling
+  lane T-154-s2 holds `tools/e2e` while T-157 declares it — reproduced
+  outside the suite by `node tools/e2e/scripts/brief.mjs --task T-157`
+  from this checkout. `git diff --name-only main HEAD` at `a8a7441` is
+  four paths, none under `tools/e2e/` and none a card either message
+  names. This is the class `T-143-s1` was filed for; nothing in
+  `tools/e2e` was touched, that tree being a sibling lane's today.
 - NOT RUN, and owed at the merge rather than here: GRAPH REGEN
   (`index --check`) and the BOOT GATE — this diff touches `app/src/**`
   and `*.ts` outside docs/, so both fire, and both are the integrator's
