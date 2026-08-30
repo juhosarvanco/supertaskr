@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { repoRoot } from "../preflight";
 import {
   FIXTURE_RM_MAX_WAIT_MS,
   FIXTURE_RM_RETRY,
@@ -109,7 +110,10 @@ test("a fixture's git commit DETACHES a background maintenance process, and the 
         "free to write inside the tree the teardown is about to remove",
     ).not.toContain("maintenance run");
   } finally {
-    rmSync(root, { recursive: true, force: true, ...FIXTURE_RM_RETRY });
+    // This body's own probe repo is a git-built fixture like any other, and
+    // it takes the same teardown — which is also what keeps this file inside
+    // the census below rather than needing an exemption from it.
+    removeGitFixture(root, "git-fixture probe");
   }
 });
 
@@ -194,4 +198,63 @@ test("the git fixture teardown's removal is BOUNDED, and the bound is the one wr
   expect(FIXTURE_RM_MAX_WAIT_MS, "the stated worst-case wait no longer matches the bound").toBe(750);
   expect(FIXTURE_RM_RETRY.maxRetries).toBe(5);
   expect(FIXTURE_RM_RETRY.retryDelay).toBe(50);
+});
+
+/**
+ * THE CLASS, as a predicate over a spec's SOURCE: a file that commits into a
+ * repository it builds and later removes a directory. That pair is what
+ * carries this defect — the commit detaches the writer, and the removal is
+ * what races it.
+ */
+function commitsIntoAFixtureItRemoves(source: string): boolean {
+  return /"commit"/.test(source) && /\brmSync\(|\bremoveGitFixture\(/.test(source);
+}
+
+test("every spec that commits into a fixture it removes carries the protection, and the census saying so is DERIVED", () => {
+  // KILLED BY: dropping the config or the teardown from any spec in the
+  // class, and by a NEW spec joining the class without either. This is
+  // docs/CONVENTIONS.md's A FIX NAMES ITS CLASS AND ITS SWEEP turned into a
+  // standing check: T-178's sweep found two siblings of the reported site,
+  // and a sweep run once is a sweep that goes stale the next time somebody
+  // writes a git fixture.
+  const dir = path.join(repoRoot, "tools", "e2e", "tests");
+  const specs = readdirSync(dir)
+    .filter((f) => f.endsWith(".spec.ts"))
+    .map((file) => ({ file, source: readFileSync(path.join(dir, file), "utf8") }));
+
+  // THE DETECTOR IS SHOWN CAPABLE OF BOTH ANSWERS before its census is
+  // spent on anything (the POISON DRILL's proof clause: a search that finds
+  // nothing is also what a broken search looks like).
+  expect(
+    commitsIntoAFixtureItRemoves('git(repo, ["commit", "-m", "x"]);\nrmSync(dir);'),
+    "the detector does not recognise the shape it exists to find",
+  ).toBe(true);
+  expect(
+    commitsIntoAFixtureItRemoves('await page.goto("/");\nexpect(1).toBe(1);'),
+    "the detector answers yes to a spec that neither commits nor removes",
+  ).toBe(false);
+
+  const inClass = specs.filter((s) => commitsIntoAFixtureItRemoves(s.source));
+  expect(
+    inClass.length,
+    "the census is EMPTY, so every assertion below is vacuous — the walk found no " +
+      "spec that commits into a fixture it removes, which cannot be true while " +
+      "brief.spec.ts, card-preflight.spec.ts and lane-fence.spec.ts are in this tree",
+  ).toBeGreaterThanOrEqual(3);
+  expect(specs.length, "the walk read no specs at all").toBeGreaterThan(inClass.length);
+
+  for (const { file, source } of inClass) {
+    expect(
+      source,
+      `${file} commits into a fixture it removes and does NOT carry ` +
+        `NO_BACKGROUND_MAINTENANCE, so its commits detach a writer into the tree ` +
+        `its teardown is about to walk (T-178)`,
+    ).toContain("NO_BACKGROUND_MAINTENANCE");
+    expect(
+      source,
+      `${file} commits into a fixture it removes and tears it down without ` +
+        `removeGitFixture, so a removal that cannot finish will red whichever body ` +
+        `it happens to follow instead of reporting itself (T-178)`,
+    ).toContain("removeGitFixture");
+  }
 });
