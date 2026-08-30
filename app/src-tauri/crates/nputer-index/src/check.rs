@@ -317,10 +317,10 @@ fn floor_line(report: &CheckReport) -> String {
 /// has.
 ///
 /// **THE NUMBER IS ONE ORDINARY MERGE'S GROWTH OF THIS GRAPH, MEASURED.**
-/// `14_914` is the MEAN of the 61 single-commit growths in this
+/// `13_921` is the MEAN of the 68 positive single-commit growths in this
 /// repository's own history of `docs/architecture/graph.json` — median
-/// `5_230`, max `241_980` at T-010 — re-derived at
-/// `9ed2b7fa430d5088c6b5cbefe8c4f4cbac906803` from successive blob sizes:
+/// `4_501`, max `241_980` at T-010 — re-derived at `5073db6` (T-140-s4)
+/// from successive blob sizes:
 ///
 /// ```text
 /// git log --reverse --format=%H -- docs/architecture/graph.json \
@@ -335,12 +335,32 @@ fn floor_line(report: &CheckReport) -> String {
 /// and would have called that state healthy).
 ///
 /// **IT IS A STAMP, SO RE-DERIVE IT RATHER THAN TRUSTING THIS LINE.**
-/// [`crate::IndexOptions::max_graph_bytes`] states the same statistic
-/// measured at `13c736e` — `15_751` over 55 growths — and rejected a
-/// 10_819-byte headroom in the words "one ordinary merge from
-/// truncating". Six growths later the same measurement is 837 bytes
-/// lower. A threshold that moves by a re-measurement is not news; a
+/// The series to date, each reading at its own ref: `15_751` over 55
+/// growths at `13c736e` (T-139, which rejected a 10 819-byte headroom in
+/// the words "one ordinary merge from truncating"), `14_914` over 61 at
+/// `9ed2b7fa430d5088c6b5cbefe8c4f4cbac906803` (T-167-s2), `13_921` over
+/// 68 here. A threshold that moves by a re-measurement is not news; a
 /// threshold that moves without one is.
+///
+/// **THE LAST SEVEN GROWTHS WERE MEASURED UNDER A BINDING BUDGET AND
+/// THAT PULLS THIS MEAN DOWN — SAID HERE BECAUSE THE NEXT
+/// RE-DERIVATION WILL SEE IT MOVE BACK UP.** From `791ab39`
+/// (2026-08-30) the committed graph carried `truncated_symbols: true`,
+/// so its size was clamped near `1_040_000` and its recorded growths
+/// are the clamp's rather than the tree's — the four smallest entries
+/// in this series sit in that window. T-140-s4 raised the budget to
+/// 2 145 959, which unclamps it; expect the mean to rise at the next
+/// re-derivation, and read that rise as the clamp lifting rather than
+/// as the repository accelerating. This is a downward-biased estimate
+/// of an alarm threshold, which is the SAFE direction: it fires early.
+///
+/// **AND IT NO LONGER SITS UNDER A SECOND LIMIT** (T-140-s4). Until
+/// that card the budget it watches was pinned below the docs
+/// collector's per-file cap, so this alarm was the early warning for a
+/// CLIFF as well as for degradation. The graph has left the collector,
+/// so what it warns about now is exactly one thing: symbols about to be
+/// dropped. The wording below never claimed more than that, which is
+/// why it needed no repair.
 ///
 /// **AND IT IS DELIBERATELY THE SAME NUMBER A HEALTH BAND ALREADY
 /// CARRIES, said twice because the two cannot see each other.**
@@ -350,8 +370,12 @@ fn floor_line(report: &CheckReport) -> String {
 /// whoever spends the byte, at the moment they spend it. Neither
 /// substitutes for the other, and a divergence between them is a
 /// re-measurement until somebody shows it is a disagreement about
-/// meaning.
-pub const WARN_HEADROOM_BYTES: usize = 14_914;
+/// meaning. **THE TWO NOW DIVERGE BY 1 830 BYTES AND IT IS THAT
+/// BENIGN KIND**: the band still carries T-139's `15_751` while this
+/// line is at T-140-s4's `13_921`, because the band lives in `tools/e2e`
+/// and this card's fence does not reach it. Routed as a suggestion card
+/// rather than left to be discovered.
+pub const WARN_HEADROOM_BYTES: usize = 13_921;
 
 /// THE TRIPWIRE (T-167-s2): the number [`budget_line`] already prints,
 /// in a shape a reader cannot skip, and only when it matters.

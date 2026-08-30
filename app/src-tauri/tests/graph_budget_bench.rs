@@ -2,20 +2,37 @@
 //! map pane, measured per stage so the two size limits can be set on the
 //! stage that binds instead of on a round number.
 //!
-//! THE GRAPH CROSSES THREE STAGES AND THIS FILE OWNS TWO OF THEM:
+//! **T-140-s4 CHANGED WHAT THIS HARNESS MEASURES, AND THE OLD ROWS STAY
+//! BECAUSE THE COMPARISON IS THE POINT.** The graph no longer rides the
+//! docs snapshot at all — `is_collected_docs_path` stopped admitting
+//! `.json` — so S1/S2a below describe a pipeline the graph has LEFT, and
+//! the collector's answer is now "not carried" at every size rather than
+//! "carried until the cliff". The stage that actually runs is the DRILL:
+//! `arch_cmd::load`, which reads the committed file from disk and
+//! deserializes it Rust-side, so it never crosses IPC. That is the only
+//! consumer of `IndexOptions::max_graph_bytes` left, and it is the stage
+//! that budget is now set on.
 //!
+//!   D   DRILL    `fs::read` + `serde_json::from_slice::<Graph>` —
+//!                `arch_cmd::load`'s two size-dependent steps, paid once
+//!                per rollup and once per detail pull. THE LIVE STAGE.
 //!   S1  READ     `docs_watch::collect_docs_tree` — the production walk,
-//!                canonicalize, size gate and `read_to_string`.
+//!                canonicalize, size gate and `read_to_string`. HISTORY
+//!                for the graph; still the real cost of the markdown
+//!                snapshot beside it, which is why the rows stay.
 //!   S2a ENCODE   `serde_json::to_string(&DocsSnapshot)` — the Rust half
-//!                of the IPC hop. The graph rides as a JSON *string
-//!                field*, so it is escape-encoded a second time; this
-//!                stage also reports the AMPLIFICATION that costs.
+//!                of the IPC hop. The graph USED to ride as a JSON
+//!                *string field*, escape-encoded a second time; the `amp`
+//!                column is what that cost, and is now a measurement of
+//!                the road not taken.
 //!
 //! The other two — S2b DECODE (`JSON.parse` of the IPC envelope) and
 //! S3 PARSE (`JSON.parse` of the graph text plus `parseGraph`'s model
 //! construction) — run in the webview's JS engine and live in
-//! `app/test/graph-budget-bench.mjs`. Run both and read them together;
-//! neither half answers "which stage binds" alone.
+//! `app/test/graph-budget-bench.mjs`. They now describe the BROWSER
+//! fallback (`MapView`'s `graphContent`) rather than the desktop app.
+//! Run both and read them together; neither half answers "which stage
+//! binds" alone.
 //!
 //! RUN IT (release — a debug serde_json is not the number a limit is set
 //! on, and a module that measures itself in debug is measuring rustc):
@@ -23,12 +40,15 @@
 //!   cargo test --release -p nputer --test graph_budget_bench \
 //!     -- --ignored --nocapture
 //!
-//! `#[ignore]`d on purpose: it is a measurement, not an assertion. It
-//! asserts only that every stage ran, so it cannot red on a slow machine
-//! — the numbers are READ, never gated. The pins this measurement
-//! JUSTIFIES are elsewhere and they do run by default:
-//! `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`
-//! and `crates/nputer-index/tests/budget.rs`.
+//! `#[ignore]`d on purpose: it is a measurement, not an assertion. Its
+//! only assertions are that every stage ran and that the collector is
+//! not carrying the graph, neither of which is a timing, so it cannot
+//! red on a slow machine — the numbers are READ, never gated. The pins
+//! this measurement JUSTIFIES are elsewhere and they do run by default:
+//! `crates/nputer-index/tests/budget.rs`, and — until T-140-s4 retired
+//! it with the coupling it enforced —
+//! `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`,
+//! whose reason is recorded at its own site.
 //!
 //! WHICH POINTS ARE REAL AND WHICH ARE SYNTHETIC. Exactly one row is the
 //! live artifact — the committed `docs/architecture/graph.json` at the
@@ -315,8 +335,15 @@ fn graph_delivery_cost_by_stage() {
     targets.sort_unstable();
 
     println!(
-        "{:>10} {:>6} {:>11} {:>7} {:>14} {:>14} {:>14} {:>14}",
-        "graph B", "kind", "payload B", "amp", "S1 collect", "S1 raw read", "S2a collect", "S2a raw"
+        "{:>10} {:>6} {:>14} {:>14} {:>11} {:>7} {:>14} {:>14}",
+        "graph B",
+        "kind",
+        "D read",
+        "D deserialize",
+        "payload B",
+        "amp",
+        "S1 collect",
+        "S2a raw"
     );
 
     let mut measured = 0usize;
@@ -338,19 +365,27 @@ fn graph_delivery_cost_by_stage() {
         let graph_path = scratch.root().join("docs/architecture/graph.json");
         fs::write(&graph_path, &doc).expect("write graph");
 
-        // S1, production: the whole collector.
+        // D, THE LIVE STAGE (T-140-s4): what one drill pays. Both steps
+        // are `arch_cmd::load`'s and both are linear in the document.
+        let (dread_min, dread_max) = timed(|| fs::read(&graph_path).expect("drill read"));
+        let doc_bytes = fs::read(&graph_path).expect("drill read");
+        let (dparse_min, dparse_max) = timed(|| {
+            serde_json::from_slice::<Graph>(&doc_bytes).expect("drill deserialize")
+        });
+
+        // S1, production: the whole collector. HISTORY for the graph —
+        // it is not in the set at any size — and still the markdown cost.
         let (collect_min, collect_max) = timed(|| snapshot_of(scratch.root()));
-        // S1, raw: the read alone, which does not consult the cap.
-        let (read_min, read_max) = timed(|| fs::read_to_string(&graph_path).expect("read"));
 
         let collected = snapshot_of(scratch.root());
-        let shipped = collected
-            .files
-            .iter()
-            .any(|f| f.path == "docs/architecture/graph.json");
-        let (enc_min, enc_max) =
-            timed(|| serde_json::to_string(&collected).expect("encode collected"));
-        let collected_payload = serde_json::to_string(&collected).expect("encode collected");
+        assert!(
+            !collected
+                .files
+                .iter()
+                .any(|f| f.path == "docs/architecture/graph.json"),
+            "T-140-s4: the collector must not carry the graph at ANY size — this row would \
+             otherwise be measuring a pipeline the card removed"
+        );
 
         let raw = snapshot_raw(scratch.root(), doc.clone());
         let (raw_enc_min, raw_enc_max) =
@@ -359,24 +394,15 @@ fn graph_delivery_cost_by_stage() {
 
         let amp = raw_payload.len() as f64 / doc.len() as f64;
         println!(
-            "{:>10} {:>6} {:>11} {:>7} {:>14} {:>14} {:>14} {:>14}{}",
+            "{:>10} {:>6} {:>14} {:>14} {:>11} {:>7} {:>14} {:>14}",
             doc.len(),
             label,
-            if shipped {
-                collected_payload.len()
-            } else {
-                raw_payload.len()
-            },
+            format!("{dread_min} [{dread_max}]"),
+            format!("{dparse_min} [{dparse_max}]"),
+            raw_payload.len(),
             format!("{amp:.4}x"),
             format!("{collect_min} [{collect_max}]"),
-            format!("{read_min} [{read_max}]"),
-            format!("{enc_min} [{enc_max}]"),
             format!("{raw_enc_min} [{raw_enc_max}]"),
-            if shipped {
-                ""
-            } else {
-                "   <- CLIFF: collector DROPPED it (SkipReason::Oversize); payload column is the raw path"
-            }
         );
 
         // Hand the JS half the same bytes, so both halves of the
@@ -411,19 +437,31 @@ fn graph_delivery_cost_by_stage() {
         real_payload.len()
     );
     println!(
-        "  graph.json is {graph_share} of those {content} content bytes = {:.1}% — the other {:.1}% is markdown",
-        100.0 * graph_share as f64 / content as f64,
-        100.0 * (content - graph_share) as f64 / content as f64
+        "  graph.json is {graph_share} of those {content} content bytes = {:.1}% — since T-140-s4 that share is ZERO by construction and the rest is markdown",
+        100.0 * graph_share as f64 / content as f64
     );
     println!(
         "  S1 collect {real_min} [{real_max}] us · S2a encode {real_enc_min} [{real_enc_max}] us · skipped {} of {}",
         real.skipped.len(),
         real.skipped_total
     );
-    println!("\nS1 collect  = collect_docs_tree: walk + canonicalize + size gate + read_to_string");
-    println!("S1 raw read = fs::read_to_string of the graph alone (ignores the cap, so it continues past the cliff)");
-    println!("S2a collect = serde_json::to_string of the COLLECTED snapshot (empty of the graph past the cliff)");
-    println!("S2a raw     = serde_json::to_string of a hand-built snapshot carrying the graph at every size");
+
+    // THE DRILL, ONCE, AGAINST THE LIVE ARTIFACT — the one figure the
+    // budget is now set on. Two steps, both linear, both paid per pull.
+    let (live_read_min, live_read_max) = timed(|| fs::read(&live_path).expect("live drill read"));
+    let live_bytes = fs::read(&live_path).expect("live drill read");
+    let (live_parse_min, live_parse_max) = timed(|| {
+        serde_json::from_slice::<Graph>(&live_bytes).expect("live drill deserialize")
+    });
+    println!(
+        "\nTHE DRILL at this ref, on the committed {} bytes: read {live_read_min} [{live_read_max}] us · deserialize {live_parse_min} [{live_parse_max}] us",
+        live_bytes.len()
+    );
+
+    println!("\nD read      = fs::read of the committed graph — arch_cmd::load's first size-dependent step");
+    println!("D deserial. = serde_json::from_slice::<Graph> — its second, and the larger of the two");
+    println!("S1 collect  = collect_docs_tree: walk + canonicalize + size gate + read_to_string (markdown only since T-140-s4)");
+    println!("S2a raw     = serde_json::to_string of a hand-built snapshot carrying the graph — the road not taken");
     println!("amp         = IPC payload bytes / graph bytes — the cost of shipping JSON inside a JSON string");
     println!("\nDocuments written to {}/nputer-t139-doc-*.json", std::env::temp_dir().display());
     println!("Now run the JS half:  node app/test/graph-budget-bench.mjs\n");

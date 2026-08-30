@@ -251,15 +251,36 @@ mod tests {
         );
     }
 
-    /// THE LOOP-TERMINATION INTEGRATION TEST (plan §4): graph.json lives
-    /// inside the watched docs/ tree, so an in-app index emits exactly
-    /// one snapshot when the graph changes — and NONE when it does not.
-    /// Three independent brakes (byte-determinism, write_graph's
-    /// read-compare-skip, the collector's content-equality suppression)
-    /// make re-index on an unchanged tree produce no write, no event, no
-    /// snapshot.
+    /// THE LOOP-TERMINATION INTEGRATION TEST (plan §4), RE-AIMED AT
+    /// T-140-s4 BECAUSE THE PROPERTY GOT STRONGER RATHER THAN WEAKER.
+    ///
+    /// **WHAT IT USED TO ASSERT.** `graph.json` lived inside the watched
+    /// docs/ tree AND inside the collected set, so an in-app index emitted
+    /// exactly ONE snapshot when the graph changed — the emit carrying the
+    /// new graph — and NONE when it did not. Three brakes stopped that one
+    /// emit becoming a loop: byte-determinism, `write_graph`'s
+    /// read-compare-skip, and the collector's content-equality
+    /// suppression. It was the third brake that this body's first
+    /// assertion actually exercised.
+    ///
+    /// **WHAT CHANGED.** `is_collected_docs_path` no longer admits
+    /// `.json`, so the graph write is INVISIBLE to the collector: the
+    /// watcher still sees the filesystem event, collects, and finds the
+    /// snapshot content unchanged, so the emit is suppressed one brake
+    /// earlier than before. The first index is now snapshot-silent too,
+    /// and the loop it was written against cannot start at all rather than
+    /// terminating after one turn. Asserting the OLD shape here would
+    /// assert a delivery this repository deliberately removed.
+    ///
+    /// **THE THIRD BLOCK IS THE POSITIVE CONTROL AND IS WHY THIS IS NOT
+    /// TWO VACUOUS SILENCES.** Two `recv_timeout` failures prove nothing
+    /// on their own — an unarmed watcher, a dead channel and a working
+    /// suppression are indistinguishable from a timeout. So after the
+    /// silences it writes ONE ordinary `.md` into the same watched tree
+    /// and REQUIRES the emit, which is the same channel, the same watcher
+    /// and the same debounce answering that it was alive throughout.
     #[test]
-    fn reindex_emits_once_then_never_again() {
+    fn reindex_is_snapshot_silent_because_the_graph_left_the_collector() {
         let t = TempTree::new("loop");
         t.write("docs/tasks/T-001-x.md", "doc");
         t.write("src/a.ts", "export const a = 1;\n");
@@ -278,35 +299,44 @@ mod tests {
             other => panic!("expected Picked, got {other:?}"),
         }
 
-        // First index: one write → one debounced batch → ONE snapshot
-        // carrying the new graph.json.
+        // First index: a real write of a real graph...
         let first = run_index(&state, None);
         assert!(matches!(first, IndexOutcome::Indexed { changed: true, .. }), "{first:?}");
-        let emit = emits
-            .recv_timeout(Duration::from_secs(10))
-            .expect("the graph write must emit exactly one snapshot");
-        let graph_file = emit
-            .files
-            .iter()
-            .find(|f| f.path == "docs/architecture/graph.json")
-            .expect("snapshot carries the graph");
-        assert!(graph_file.content.contains("\"schema\": 1"));
-
-        // Drain any residual batch from the same write (content-equal →
-        // suppressed, so nothing should arrive; a straggler carrying the
-        // SAME content would be a duplicate-emit bug).
+        assert!(
+            t.root().join("docs/architecture/graph.json").exists(),
+            "the index really wrote the file this body then proves is invisible"
+        );
+        // ...and NO snapshot, because the file it wrote is not collected.
         assert!(
             emits.recv_timeout(DEBOUNCE * 6).is_err(),
-            "one write, one emit — no echo"
+            "the graph write must not reach the docs snapshot at all (T-140-s4)"
         );
 
-        // Second index on the unchanged tree: no write, no event, no
-        // snapshot — provably none within many debounce windows.
+        // Second index on the unchanged tree: no write either, so nothing
+        // could arrive even under the old rule.
         let second = run_index(&state, None);
         assert!(matches!(second, IndexOutcome::Indexed { changed: false, .. }), "{second:?}");
         assert!(
             emits.recv_timeout(DEBOUNCE * 6).is_err(),
             "unchanged tree re-index must be snapshot-silent"
+        );
+
+        // THE POSITIVE CONTROL: the pipeline both silences above were
+        // measured on is live, and answers for a file that IS collected.
+        t.write("docs/tasks/T-002-y.md", "a second doc");
+        let emit = emits
+            .recv_timeout(Duration::from_secs(10))
+            .expect("an ordinary .md write must still emit — the two silences above are the \
+                     collector's rule, not a dead watcher");
+        assert!(
+            emit.files.iter().any(|f| f.path == "docs/tasks/T-002-y.md"),
+            "the control's own file must be in the snapshot it triggered: {:?}",
+            emit.files.iter().map(|f| &f.path).collect::<Vec<_>>()
+        );
+        assert!(
+            !emit.files.iter().any(|f| f.path.ends_with("graph.json")),
+            "and the graph is still absent from a snapshot that DID arrive, \
+             which is the removal asserted where a delivery could have hidden it"
         );
     }
 }

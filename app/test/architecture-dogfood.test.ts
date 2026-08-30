@@ -2268,7 +2268,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // lane's own battery ran against the pre-regen graph (the regen
       // is the integrator's), so the sixth edge appears here, at the
       // regen that landed it.
-      ["C-12", "C-10", "confirmed", 7],   // T-149: 2 -> 5; T-140: 5 -> 6; T-140-s1: 6 -> 7 (rollup.ts reads the watcher store)
+      // 7 -> 6 AT T-140-s4, AND IT IS THAT SAME EDGE LEAVING AGAIN.
+      // @human ruled `map-too-large` retired, so the `graphSkip` prop it
+      // read went with it and `MapView.tsx` no longer imports ANYTHING
+      // from `docs-model.ts`. Verified as an IDENTITY rather than
+      // inferred from the count: the pre-regen graph carried exactly one
+      // `app/src/architecture/** -> docs-model.ts` edge —
+      // `f:app/src/architecture/MapView.tsx -> f:app/src/lib/docs-model.ts`,
+      // kind `import` — and the regenerated graph carries none. The row
+      // is MOVED with the story, not loosened to fit; the pair stays
+      // `confirmed` because `churn-source.ts` and `rollup-source.ts`
+      // still read the watcher store, which is what the six are.
+      ["C-12", "C-10", "confirmed", 6],   // T-149: 2 -> 5; T-140: 5 -> 6; T-140-s1: 6 -> 7; T-140-s4: 7 -> 6
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.

@@ -6,12 +6,7 @@ import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
 import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
-import {
-  GRAPH_FILE,
-  modelIssueRows,
-  skipReasonPhrase,
-  type ModelIssueRow,
-} from "@/lib/docs-model";
+import { modelIssueRows, skipReasonPhrase, type ModelIssueRow } from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
   getShellState,
@@ -526,13 +521,16 @@ function App() {
   // T-077: derived at render from the two fields already in hand — no
   // new store state, and nothing to keep in sync with the count above.
   const issueRows = modelIssueRows(model.issues, failures);
-  // T-140: the map's own copy of one row of the skip list. The shell has
-  // reported "N skipped files" in the chip strip since T-018, and the
-  // map — the one pane that is USELESS without that particular file —
-  // was never told which file it was, so it rendered "index not run"
-  // over a project whose index had run. This reads the list already in
-  // hand rather than adding store state.
-  const graphSkip = skipped.find((s) => s.path === GRAPH_FILE)?.reason;
+  // T-140-s4 RETIRED THE `graphSkip` LOOKUP THAT STOOD HERE. It read one
+  // row out of the skip list — `SkipReason` for `docs/architecture/
+  // graph.json` — so the map could tell a graph WITHHELD by the
+  // collector's cap from one that was never written, which the shell's
+  // "N skipped files" chip knew and the pane did not. The collector no
+  // longer carries the graph at any size (`is_collected_docs_path`), and
+  // its eligibility gate runs BEFORE its size gate, so that row can never
+  // exist: the lookup would have been a `find` over a list that cannot
+  // contain its needle. `MapView.tsx` carries the sentence naming what
+  // still reports a graph that could not fully arrive.
   const screen = selectScreen(shell);
 
   // T-049 gave the app ONE keydown listener at the root so ⌘O and ⌘N
@@ -817,12 +815,17 @@ function App() {
       )}
 
       {screen.screen === "board" && pane === "map" && (
+        // `graphContent` STAYS and is now always absent in the desktop
+        // app: the collector supplies no graph, so this spread is the
+        // BROWSER fallback's supply line and nothing else (the prop's own
+        // doc in MapView.tsx carries the argument). Spreading rather than
+        // passing keeps it OPTIONAL rather than `string | undefined`,
+        // which `exactOptionalPropertyTypes` requires.
         <MapView
           model={model}
           {...(shell.docs.graphContent !== undefined
             ? { graphContent: shell.docs.graphContent }
             : {})}
-          {...(graphSkip !== undefined ? { graphSkip } : {})}
           indexing={shell.indexing}
           indexOutcome={shell.indexOutcome}
           onRunIndex={() => void runIndexRepo()}

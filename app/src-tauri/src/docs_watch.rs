@@ -96,65 +96,54 @@ const TASKS_SUBDIR: &str = "tasks";
 ///    `is_collected_docs_path` — a new refusal surface, and a card of its
 ///    own — not a wider general one.
 ///
-/// AND IT IS THE HARD ONE OF THE PAIR. `nputer-index`'s
-/// `IndexOptions::max_graph_bytes` governs the same file and DEGRADES at
-/// its limit (symbol arrays dropped, files and `import` edges kept,
-/// `truncated_*` set); this cap does not degrade at all — over it, the
-/// file becomes a `SkipReason::Oversize` row and the pane stops receiving
-/// the graph. `max_graph_bytes < MAX_FILE_BYTES` is what keeps the first
-/// failure in front of the second, and
-/// `tests::the_emit_budget_stays_below_the_collectors_file_cap` enforces
-/// it across the two crates.
-///
 /// ─────────────────────────────────────────────────────────────────────
-/// T-140's RULING: THE GRAPH LEAVES THIS PIPELINE. IT DOES NOT GET A
-/// CAP OF ITS OWN HERE.
+/// T-140-s4: THE GRAPH HAS LEFT THIS PIPELINE, SO THIS CAP NO LONGER
+/// GOVERNS IT AT ALL — AND EVERY FIGURE ABOVE THAT COUNTS `graph.json`
+/// AMONG THIS CAP'S SUBJECTS IS HISTORY.
 ///
-/// T-139 left two shapes open — the graph gets a channel with its own
-/// limit, or the `.json` branch of `is_collected_docs_path` gets a
-/// graph-specific cap (`T-139-s3` holds the general form). This is the
-/// answer and the reasons, written beside the constant because that is
-/// where the next person to reach for the second shape will be standing.
+/// T-140 ruled here that the graph leaves; `T-140-s1` built the channel
+/// (`arch_cmd`'s `arch_rollup` / `arch_detail`, which read the file
+/// Rust-side so it never crosses IPC); this card removed the
+/// `.json`-under-`docs/architecture/` branch of `is_collected_docs_path`,
+/// which is the step that actually took it out. The three reasons T-140
+/// wrote beside this constant for preferring a channel to a bigger cap —
+/// a graph-specific cap only moves a cliff whose driver is LINEAR IN FILE
+/// COUNT; a broadcast cannot express "detail for what is on screen"; the
+/// measured cost is the channel's SHAPE rather than its size — are
+/// discharged rather than deleted, and they are readable in full at
+/// `git show 5073db6:app/src-tauri/src/docs_watch.rs` and restated where
+/// they are still load-bearing, in `arch_cmd`'s own module doc.
 ///
-/// 1. **A GRAPH-SPECIFIC CAP ONLY MOVES THE CLIFF.** What binds is not
-///    this number but the emitter's FLOOR — files plus `import` edges,
-///    which nothing may drop — and that floor is LINEAR IN FILE COUNT
-///    (`nputer-index`'s `check::floor_line` prints it and the implied
-///    file count at every gate run). Any constant is passed by a large
-///    enough project, so a second cap buys a factor and leaves the curve
-///    alone. `T-151` costs that trade for this very cap and reaches the
-///    same conclusion from the other side.
-/// 2. **THIS PIPELINE IS A BROADCAST, AND THE FIX NEEDS A CONVERSATION.**
-///    `collect_docs_tree` ships the whole docs tree on every change. The
-///    map's real need is a component-level picture at rest and
-///    file-level detail only for what is on screen — a request, an
-///    answer — and a broadcast cannot express "only for what is on
-///    screen" at any cap. The channel is the shape that can.
-/// 3. **THE MEASURED COST IS THE CHANNEL'S SHAPE, NOT ITS SIZE.** The
-///    graph rides as a JSON string field which tauri's `emit_js_script`
-///    splices into JS SOURCE for the webview to `eval`, so it is parsed
-///    by the general JS parser rather than the JSON fast path
-///    (`T-139-s2`, re-measured at T-140 — the harness is
-///    `app/src-tauri/tests/graph_budget_bench.rs` plus
-///    `app/test/graph-budget-bench.mjs`, and the finding reproduced). A
-///    cap cannot touch that; a channel of its own is where a
-///    `JSON.parse`-shaped delivery is even choosable.
+/// **WHAT THIS CHANGES ABOUT THIS CONSTANT: NOTHING, AND THAT IS THE
+/// POINT.** 1 MiB still governs every `.md` the collector ships, for
+/// finding 2's reason — the blast radius is every doc, `MAX_FILES` is
+/// 2 000 and nothing caps the aggregate. What changed is that the ONE
+/// file within 7x of it is no longer in the set, so this cap is now a
+/// long way from binding on anything.
 ///
-/// **THE 372/13.7% CENSUS ABOVE IS T-139'S, AT T-139'S REF, AND THE
-/// TREE HAS MOVED.** Re-derived by the same harness at `a533a4d` on
-/// Darwin 25.6.0: **421 files · 8 215 112 content bytes, of which
-/// graph.json is 12.4%**. The direction of the argument is unchanged and
-/// stronger — the blast radius grew — but read the old figures as dated
-/// rather than current, and re-run the harness rather than quoting
-/// either pair.
+/// **THE CENSUS, RE-DERIVED AT THIS CARD'S OWN REF (`5073db6`) RATHER
+/// THAN QUOTED.** The collected set is now **530 files ·  8 441 726
+/// content bytes**, and its largest member is markdown —
+/// `docs/tasks/T-110-a-lane-is-a-fact-on-disk.md` at **145 078 bytes,
+/// 13.8%** of this cap. That is the same file and the same number T-139
+/// measured; what moved is everything around it. The two earlier
+/// readings are kept as STAMPS and neither is current: `372 files ·
+/// 7.5 MB · graph.json 13.7%` (T-139) and `421 files · 8 215 112 bytes ·
+/// graph.json 12.4%` (T-140, at `a533a4d`). Re-run the harness rather
+/// than quoting any of the three —
+/// `find docs -name '*.md' -type f -exec wc -c {} +` is the whole
+/// derivation now that the set is one extension.
 ///
-/// **AND THE INTERIM IS REFUSED, NOT MERELY UNBUILT.** A graph-specific
-/// cap added "for now" is a number with no keeper guarding a second
-/// refusal surface, postponing the same wall — and it would have to be
-/// set, which is the decision `T-151` reserves to @human. Nothing here
-/// moves until the channel does; until then the honest behaviour is the
-/// one T-140 built, which is that the pane SAYS the project is too large
-/// instead of reporting it as an index that never ran.
+/// **AND THE CROSS-CRATE INVARIANT IS RETIRED, NOT SILENTLY DROPPED.**
+/// `max_graph_bytes < MAX_FILE_BYTES` used to be what kept the emitter's
+/// graceful DEGRADATION in front of this collector's CLIFF, and
+/// `tests::the_emit_budget_stays_below_the_collectors_file_cap` enforced
+/// it across the two crates. Its premise was that both limits govern one
+/// file. They no longer do: this cap governs markdown, and
+/// `nputer_index::IndexOptions::max_graph_bytes` governs the graph, with
+/// nothing between them. The retirement is recorded at that test's own
+/// site with the reason, and the cliff it protected against cannot occur
+/// — a file that is never eligible is never `Oversize`.
 const MAX_FILE_BYTES: u64 = 1_048_576; // 1 MiB per file
 const MAX_FILES: usize = 2_000;
 const MAX_DEPTH: usize = 16;
@@ -699,21 +688,47 @@ fn has_any_task_file(tasks_dir: &Path) -> bool {
 }
 
 /// Which files ride the docs snapshot: every `.md` under docs/ (T-003),
-/// plus `.json` whose project-relative path sits under
-/// `docs/architecture/` (T-012, ADR-014 — the committed graph rides the
-/// existing pipeline; subdirectories included, so T-015's layout.json
-/// rides free later). The predicate runs on the POST-CANONICALIZE
+/// and nothing else. The predicate runs on the POST-CANONICALIZE
 /// relative POSIX path: containment first, classification second — no
 /// symlink or traversal trick can reclassify a path into the set.
+///
+/// **THE `.json`-UNDER-`docs/architecture/` BRANCH WAS REMOVED HERE
+/// (T-140-s4), AND THAT IS THE WHOLE OF T-140's RULING LANDING.** T-012
+/// added it under ADR-014 so the committed graph could ride the existing
+/// pipeline; T-140 measured that pipeline's wall and ruled at
+/// `MAX_FILE_BYTES`'s own definition site that the graph leaves it;
+/// `T-140-s1` built the channel that made leaving possible
+/// (`arch_cmd::arch_rollup` / `arch_detail`, which read
+/// `docs/architecture/graph.json` Rust-side, so the file never crosses
+/// IPC at all); and since that card NOTHING has read the graph from the
+/// snapshot at rest. This is the deletion that follows.
+///
+/// **WHAT LEAVES WITH IT.** `graph.json` stops being counted against
+/// `MAX_FILES`, stops being weighed against `MAX_FILE_BYTES`, and stops
+/// riding every docs push for a consumer that no longer needs it — and,
+/// because a file that is never ELIGIBLE is never reported as skipped
+/// (the eligibility gate in `collect_docs_tree` runs before the size
+/// gate), `SkipReason::Oversize` on the graph becomes unreachable. That
+/// is what retires the pane's `map-too-large` banner and the frontend's
+/// `graphSkip` prop; `MapView.tsx` carries the sentence naming what
+/// still speaks.
+///
+/// **AND T-015's `layout.json` LOSES ITS FREE RIDE, DELIBERATELY.** The
+/// old branch admitted subdirectories so a future persisted layout could
+/// arrive without a code change. No such file exists at this ref
+/// (`git ls-files 'docs/architecture/*.json'` answers `graph.json`
+/// alone). A card that wants one must choose its channel on its own
+/// merits rather than inherit a pipeline this card just proved the wrong
+/// shape for a large artifact — which is a better position than the
+/// silent inheritance it replaces.
 pub fn is_collected_docs_path(rel: &str) -> bool {
     if !rel.starts_with("docs/") {
         return false;
     }
-    match Path::new(rel).extension().and_then(|e| e.to_str()) {
-        Some("md") => true,
-        Some("json") => rel.starts_with("docs/architecture/"),
-        _ => false,
-    }
+    matches!(
+        Path::new(rel).extension().and_then(|e| e.to_str()),
+        Some("md")
+    )
 }
 
 /// Collect every snapshot-eligible file under `<project_dir>/docs`,
@@ -1829,141 +1844,131 @@ mod tests {
         assert_eq!(files[0].content, "roadmap");
     }
 
-    // ---- T-012: the collector's .json rule (ADR-014 delivery) ----------
+    // ---- T-140-s4: the collector is MARKDOWN, and the graph is gone ----
+    //
+    // This block replaces T-012's `.json` rule (ADR-014 delivery). Three
+    // bodies used to live here; two of them asserted that
+    // `docs/architecture/*.json` ARRIVES, and their subject no longer
+    // exists. The rule they pinned is inverted rather than deleted, so a
+    // reinstatement of the branch reds by name instead of passing
+    // silently: `collects_no_json_at_all` is the positive control that
+    // stops `is_collected_docs_path_accepts_md_and_nothing_else` from
+    // being arithmetic about a `match` arm nobody drives.
 
     #[test]
-    fn is_collected_docs_path_accepts_md_anywhere_and_json_only_under_architecture() {
+    fn is_collected_docs_path_accepts_md_and_nothing_else() {
         // .md anywhere under docs/ (unchanged T-003 behavior).
         assert!(is_collected_docs_path("docs/ROADMAP.md"));
         assert!(is_collected_docs_path("docs/tasks/T-001-a.md"));
-        // .json only under docs/architecture/, subdirectories included
-        // (T-015's layout.json rides free later).
-        assert!(is_collected_docs_path("docs/architecture/graph.json"));
-        assert!(is_collected_docs_path("docs/architecture/deep/layout.json"));
+        assert!(is_collected_docs_path("docs/architecture/components/C-01-x.md"));
+        // The branch T-140-s4 removed, asserted from the other side: the
+        // graph the whole pipeline was widened for in T-012 is OUT, and
+        // so is every path the old rule admitted with it.
+        assert!(!is_collected_docs_path("docs/architecture/graph.json"));
+        assert!(!is_collected_docs_path("docs/architecture/deep/layout.json"));
         assert!(!is_collected_docs_path("docs/foo.json"));
         assert!(!is_collected_docs_path("docs/tasks/data.json"));
-        // Prefix trickery: "docs/architecture.json" is NOT under the dir.
         assert!(!is_collected_docs_path("docs/architecture.json"));
         // Other extensions stay out; nothing outside docs/ ever enters.
         assert!(!is_collected_docs_path("docs/architecture/notes.txt"));
         assert!(!is_collected_docs_path("src/architecture/graph.json"));
         assert!(!is_collected_docs_path("architecture/graph.json"));
+        assert!(!is_collected_docs_path("docs/ROADMAP.md.bak"));
     }
 
     #[test]
-    fn collects_architecture_json_alongside_md() {
-        let t = TempTree::new("json-collect");
+    fn collects_no_json_at_all() {
+        let t = TempTree::new("json-gone");
         t.write("docs/ROADMAP.md", "roadmap");
         t.write("docs/architecture/graph.json", "{\"schema\":1}");
         t.write("docs/architecture/sub/layout.json", "{}");
-        t.write("docs/tasks/data.json", "excluded - json outside architecture");
-        t.write("docs/architecture/readme.txt", "excluded - not md/json");
+        t.write("docs/tasks/data.json", "excluded - json is not collected");
+        t.write("docs/architecture/readme.txt", "excluded - not md");
+        t.write("docs/architecture/components/C-01-x.md", "component");
 
         let files = collect_docs_files(t.root());
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
         assert_eq!(
             paths,
-            vec![
-                "docs/ROADMAP.md",
-                "docs/architecture/graph.json",
-                "docs/architecture/sub/layout.json",
-            ]
-        );
-        assert_eq!(files[1].content, "{\"schema\":1}");
-    }
-
-    #[test]
-    fn oversized_architecture_json_is_skipped_like_oversized_md() {
-        let t = TempTree::new("json-big");
-        t.write("docs/architecture/graph.json", "{}");
-        let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
-        t.write("docs/architecture/huge.json", &big);
-        let paths: Vec<String> = collect_docs_files(t.root()).into_iter().map(|f| f.path).collect();
-        assert_eq!(paths, vec!["docs/architecture/graph.json"]);
-    }
-
-    /// T-139 — THE INVARIANT BETWEEN THE TWO SIZE LIMITS, ENFORCED RATHER
-    /// THAN ASSUMED. It is the only test in this repository that reads
-    /// both, and it exists because they live in different crates with
-    /// nothing between them: `nputer-index` decides how big a
-    /// `graph.json` it will emit, this module decides how big a file it
-    /// will ship, and the two had agreed only by coincidence and a
-    /// comment. Raise the emitter's budget to or above this cap and every
-    /// suite in the repository stays green while the map pane silently
-    /// stops receiving the graph — an `Oversize` skip, no truncation
-    /// flag, no error path, nothing on screen but "index not run".
-    ///
-    /// IT IS DELIBERATELY PARAMETRISED BY BOTH CONSTANTS AND RESTATES
-    /// NEITHER. A copy of `1_040_000` here would move with the thing it
-    /// checks and pin nothing (`T-010-s3` arm 2's own trap). What is
-    /// pinned is the RELATION, so the mutation that reds it is an edit to
-    /// either definition site.
-    ///
-    /// THE THIRD ASSERTION IS THE POSITIVE CONTROL and the reason this is
-    /// not arithmetic about two integers: it drives the real collector
-    /// with a file of exactly the emitter's budget and shows it ARRIVING.
-    /// Without it, `budget < cap` would still pass in a world where the
-    /// collector had stopped shipping `.json` at all.
-    #[test]
-    fn the_emit_budget_stays_below_the_collectors_file_cap() {
-        let budget = nputer_index::IndexOptions::default().max_graph_bytes;
-        assert!(
-            (budget as u64) < MAX_FILE_BYTES,
-            "T-139: nputer-index emits up to {budget} bytes and this collector drops anything over \
-             {MAX_FILE_BYTES}. At or above the cap the emitter's own graceful degradation \
-             (symbols dropped, files and import edges kept, truncated_* set) is unreachable, \
-             because the file never arrives at all. Lower IndexOptions::max_graph_bytes, or \
-             raise MAX_FILE_BYTES and answer for every other doc it governs."
-        );
-
-        // The relation, exercised: a graph at exactly the emitter's
-        // ceiling rides the snapshot, and one byte past this collector's
-        // cap does not.
-        let t = TempTree::new("budget-under-cap");
-        t.write("docs/architecture/graph.json", &"x".repeat(budget));
-        t.write(
-            "docs/architecture/over.json",
-            &"y".repeat((MAX_FILE_BYTES + 1) as usize),
-        );
-        let outcome = collect_docs_tree(t.root());
-        let shipped: Vec<&str> = outcome.files.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(
-            shipped,
-            vec!["docs/architecture/graph.json"],
-            "a graph AT the emitter's budget must arrive; a file over the cap must not"
-        );
-        assert_eq!(
-            outcome.files[0].content.len(),
-            budget,
-            "and it must arrive whole, not truncated"
+            vec!["docs/ROADMAP.md", "docs/architecture/components/C-01-x.md"],
+            "the collector ships markdown; docs/architecture/ is walked for its \
+             .md registry and no longer for the graph"
         );
         assert!(
-            outcome.skipped.contains(&SkippedFile {
-                path: "docs/architecture/over.json".to_string(),
-                reason: SkipReason::Oversize,
-            }),
-            "the cap is live at the value the assertion above names: {:?}",
-            outcome.skipped
+            files.iter().all(|f| !f.content.contains("schema")),
+            "and no .json content rides the snapshot: {paths:?}"
         );
     }
+
+    // ---- RETIRED: `the_emit_budget_stays_below_the_collectors_file_cap`
+    //
+    // T-139 wrote it as THE INVARIANT BETWEEN THE TWO SIZE LIMITS,
+    // ENFORCED RATHER THAN ASSUMED — the only body in this repository
+    // that read both, asserting
+    // `IndexOptions::max_graph_bytes < MAX_FILE_BYTES` and then driving
+    // the real collector with a graph of exactly the emitter's budget to
+    // show it ARRIVING. It is RETIRED at T-140-s4, and the reason is
+    // recorded here rather than in a commit message because a deleted
+    // assertion is invisible afterwards.
+    //
+    // **ITS PREMISE WAS DELETED, NOT ITS CONCLUSION WEAKENED.** The test
+    // asserted a relation between two limits BECAUSE BOTH GOVERNED ONE
+    // FILE: `nputer-index` decided how big a `graph.json` it would emit,
+    // this module decided how big a file it would ship, and an emitter
+    // budget at or above this cap turned the emitter's graceful
+    // DEGRADATION (symbols dropped, files and import edges kept,
+    // `truncated_*` set) into this collector's CLIFF (`Oversize`, no
+    // graph at all, "index not run" on screen). Removing the
+    // `.json`-under-`docs/architecture/` branch of
+    // `is_collected_docs_path` means this cap no longer governs the graph
+    // at any size, so the two numbers are no longer two measurements of
+    // one thing and `<` between them asserts nothing.
+    //
+    // **IT WAS NOT RE-AIMED, BECAUSE THE NEW CHANNEL CARRIES NO LIMIT TO
+    // AIM IT AT — AND THAT IS WRITTEN DOWN, NOT ASSUMED.** `arch_cmd`'s
+    // module doc says so in as many words: *"The read is deliberately
+    // UNCAPPED and this is not an oversight"*, because a cap there would
+    // reinstate one layer down exactly the cliff T-140 removed. A test
+    // re-aimed at a limit that does not exist would be a body that cannot
+    // red, which is the failure the POISON DRILL exists to find.
+    //
+    // **WHAT STILL KEEPS THE PROPERTY THIS ONE KEPT.** The half worth
+    // keeping was "the emitter's degradation must stay reachable". It now
+    // holds by CONSTRUCTION rather than by comparison — nothing between
+    // the emitter and the pane discards the file for being large — and
+    // the degradation itself stays observable through
+    // `stats.truncated_symbols` / `truncated_files` in the emitted graph
+    // and through `nputer_index::check::WARN_HEADROOM_BYTES`'s alarm at
+    // `index --check`. The collector's own cap keeps its own tests
+    // (`oversized_files_are_skipped`,
+    // `skips_carry_paths_and_reasons_for_oversize_and_non_utf8`), which
+    // is all it is still owed now that it governs markdown alone.
 
     #[cfg(unix)]
     #[test]
-    fn symlinked_architecture_json_is_never_followed() {
+    fn symlinked_docs_file_in_a_subdirectory_is_never_followed() {
+        // T-012 wrote this as `symlinked_architecture_json_is_never_followed`
+        // and T-140-s4 re-aimed it to `.md`: the `.json` it planted is no
+        // longer collected, so the body would have gone VACUOUS — passing
+        // because nothing is collected rather than because the symlink is
+        // refused. What it still covers that `symlinks_are_never_followed`
+        // does not is the RECURSION arm: that body plants its link
+        // directly in `docs/`, this one a level down, so a walk that
+        // resolved symlinks only below depth 1 reds here and nowhere else.
         use std::os::unix::fs::symlink;
-        let t = TempTree::new("json-symlink");
-        t.write("docs/architecture/real.json", "{}");
-        let outside = TempTree::new("json-symlink-outside");
-        outside.write("secret.json", "{\"secret\":true}");
+        let t = TempTree::new("subdir-symlink");
+        t.write("docs/architecture/real.md", "real");
+        let outside = TempTree::new("subdir-symlink-outside");
+        outside.write("secret.md", "secret contents");
         symlink(
-            outside.root().join("secret.json"),
-            t.root().join("docs/architecture/link.json"),
+            outside.root().join("secret.md"),
+            t.root().join("docs/architecture/link.md"),
         )
         .expect("file symlink");
 
         let files = collect_docs_files(t.root());
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(paths, vec!["docs/architecture/real.json"]);
+        assert_eq!(paths, vec!["docs/architecture/real.md"]);
         assert!(files.iter().all(|f| !f.content.contains("secret")));
     }
 
@@ -2440,19 +2445,24 @@ mod tests {
     fn skips_carry_paths_and_reasons_for_oversize_and_non_utf8() {
         let t = TempTree::new("skip-report");
         t.write("docs/ok.md", "fine");
-        t.write("docs/architecture/graph.json", "{}");
+        t.write("docs/architecture/kept.md", "also fine");
         let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
         t.write("docs/big.md", &big);
-        t.write("docs/architecture/huge.json", &big);
+        // T-140-s4: this second oversize plant used to be
+        // `docs/architecture/huge.json` — a `.json` is no longer eligible,
+        // so it would have stopped being REPORTED and the count below
+        // would have moved for a reason that has nothing to do with skips.
+        // A nested `.md` keeps the same two-reason, two-file shape.
+        t.write("docs/architecture/huge.md", &big);
         fs::write(t.root().join("docs/binary.md"), [0xFFu8, 0xFE, 0x00, 0x9C]).expect("bin");
 
         let outcome = collect_docs_tree(t.root());
         let paths: Vec<&str> = outcome.files.iter().map(|f| f.path.as_str()).collect();
         // Skips never subtract readable files (additive-only).
-        assert_eq!(paths, vec!["docs/architecture/graph.json", "docs/ok.md"]);
+        assert_eq!(paths, vec!["docs/architecture/kept.md", "docs/ok.md"]);
         assert_eq!(skip_of(&outcome, "docs/big.md"), Some(SkipReason::Oversize));
         assert_eq!(
-            skip_of(&outcome, "docs/architecture/huge.json"),
+            skip_of(&outcome, "docs/architecture/huge.md"),
             Some(SkipReason::Oversize)
         );
         assert_eq!(skip_of(&outcome, "docs/binary.md"), Some(SkipReason::NonUtf8));
@@ -2471,7 +2481,14 @@ mod tests {
         let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
         // Oversized files OUTSIDE the collected set: never reported.
         t.write("docs/notes.txt", &big);
-        t.write("docs/tasks/data.json", &big); // .json outside architecture/
+        t.write("docs/tasks/data.json", &big);
+        // T-140-s4 — THE NEW RULE'S CONSEQUENCE, ASSERTED WHERE IT BITES.
+        // An oversized graph used to be an `Oversize` SKIP ROW, which is
+        // what `MapView`'s retired `map-too-large` banner read. The
+        // eligibility gate runs before the size gate, so a graph that is
+        // not collected is not skipped either: the pane can no longer be
+        // told the graph was withheld, because it never was.
+        t.write("docs/architecture/graph.json", &big);
         let outcome = collect_docs_tree(t.root());
         assert_eq!(outcome.skipped, vec![]);
         assert_eq!(outcome.skipped_total, 0);
