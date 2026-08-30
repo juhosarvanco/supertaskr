@@ -60,7 +60,7 @@ once, inside a comment, and never stated as a rule. A planner that
 writes markdown emphasis into a heading-like bullet is doing the
 ordinary thing.
 
-## Three arms, and the first is this project's own doctrine
+## Three arms, of which arm 1 matches this project's own doctrine
 
 1. **REPORT IT.** Widen the malformed detector so an emphasis-wrapped
    `F-NN:` bullet is a NAMED issue instead of a silent drop. This is the
