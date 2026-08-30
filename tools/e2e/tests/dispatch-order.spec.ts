@@ -305,6 +305,53 @@ test("a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the
   ).toBeGreaterThan(0);
 });
 
+/**
+ * THE IN FLIGHT SECTION'S ROWS — its own three note lines dropped, and
+ * the section closed at the blank line that ends it.
+ *
+ * A SECTION BOUNDARY IS STRUCTURE AND NEVER A CHARACTER COUNT
+ * (T-143-s4). The body below used to read a fixed 600-character window
+ * out of the rendered report; every rendered line ends in a provenance
+ * stamp and every stamp carries the card's FULL PATH, so the window a
+ * row actually got shrank with its own filename. `render` writes a note
+ * as `# `, a blank record as the empty string, and nothing else — so
+ * both edges here are the renderer's own shape, which moves with the
+ * report instead of against it.
+ */
+function inFlightRows(rendered: string): string[] {
+  const lines = rendered.split("\n");
+  const headerAt = lines.findIndex((l) => l.includes("IN FLIGHT ON THE BOARD"));
+  if (headerAt === -1) return [];
+  let first = headerAt;
+  while (first < lines.length && (lines[first] ?? "").startsWith("# ")) first += 1;
+  const end = lines.indexOf("", first);
+  return lines.slice(first, end === -1 ? lines.length : end);
+}
+
+/**
+ * ONE card's BLOCK inside those rows: its own row, plus every line under
+ * it, up to the next row that starts a DIFFERENT card id — or the
+ * section's end, for the last card. A card's row starts at column 0; its
+ * continuation rows are indented, which is `dispatchReport`'s own shape
+ * for a ruling and not a fact re-spelled here.
+ *
+ * The ` [` is load-bearing: `T-143` is a prefix of `T-143-s4` and the
+ * bracket is what separates the id from the roadmap cell behind it.
+ */
+function blockFor(rows: string[], id: string): string[] {
+  const start = rows.findIndex((l) => l.startsWith(`${id} [`));
+  if (start === -1) return [];
+  let end = rows.length;
+  for (let i = start + 1; i < rows.length; i += 1) {
+    const row = rows[i] ?? "";
+    if (/^\S/.test(row) && !row.startsWith(`${id} [`)) {
+      end = i;
+      break;
+    }
+  }
+  return rows.slice(start, end);
+}
+
 test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold", async () => {
   // T-137-s10, absorbed by T-143. `readDispatchOrder` computes seven
   // states and this report emitted six: a card at `status: building`
@@ -353,15 +400,49 @@ test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is no
   // row here says which of the two it is, and a card with no lane says
   // it holds nothing.
   expect(section).toContain("is NOT a fence hold");
+
+  // THE WINDOW EACH ROW IS READ IN IS DERIVED FROM STRUCTURE, NOT FROM A
+  // CONSTANT (T-143-s4). This loop used to assert the sentence inside
+  // `after.slice(0, 600)`, and a card's block is not 600 characters
+  // wide: it is three stamped lines, each carrying the card's own FULL
+  // PATH, so the room left for the sentence is a function of the
+  // filename and the title. `T-025-s5`'s 119-character path redded CI
+  // run #376 on a report that printed exactly the right thing, while
+  // every local run of the same body stayed GREEN — locally that card
+  // HAD a lane and took the shorter "HAS a lane above" arm, and the
+  // no-lane arm only ever executes where no worktrees exist, which is CI
+  // and nowhere else this project runs. Re-measured at `4d3dd8f` in a
+  // clone with no sibling worktrees: this card's own row put the phrase
+  // at offsets 581..617 against the 600 cliff, truncated mid-word.
+  //
+  // WIDENING THE CONSTANT IS NOT THE FIX — the next filename beats any
+  // number, and the failure mode is silent everywhere but CI.
+  const rows = inFlightRows(rendered);
   for (const r of inFlight) {
     const hasLane = ctx.order.lanes.some((l: { taskId: string }) => l.taskId === r.id);
-    const line = section
-      .split("\n")
-      .find((l: string) => l.startsWith(`${r.id} [`));
-    expect(line, `${r.id} is in flight and is not listed`).toBeDefined();
-    const after = section.slice(section.indexOf(`${r.id} [`));
-    expect(after.slice(0, 600)).toContain(
+    const block = blockFor(rows, r.id);
+    expect(block.length, `${r.id} is in flight and is not listed`).toBeGreaterThan(0);
+    // AND THE BLOCK IS THIS CARD'S AND NO OTHER'S, which is what keeps a
+    // structural window from quietly becoming a bigger net: exactly one
+    // line in it starts at column 0, and it is this card's row. Without
+    // this, a boundary that failed to close would satisfy every
+    // assertion below out of some other card's rows.
+    const head = block[0] ?? "";
+    expect(block.filter((l) => /^\S/.test(l)), `${r.id}'s block holds another card's row`).toEqual([
+      head,
+    ]);
+    expect(head.startsWith(`${r.id} [`), `${r.id}'s block does not open on its own row`).toBe(true);
+    // The RULING rows only — the title row is dropped, because a card's
+    // title is the other data-length contributor and is not where this
+    // sentence prints.
+    const ruling = block.slice(1).join("\n");
+    expect(ruling, `${r.id} is in flight and its lane sentence is not in its own block`).toContain(
       hasLane ? "it HAS a lane above" : "it has NO lane, so it holds no fence",
+    );
+    // ...and the OTHER arm is absent from it, so the row SAYS which of
+    // the two it is rather than merely containing a sentence somewhere.
+    expect(ruling, `${r.id}'s block carries both arms`).not.toContain(
+      hasLane ? "it has NO lane, so it holds no fence" : "it HAS a lane above",
     );
   }
 });
