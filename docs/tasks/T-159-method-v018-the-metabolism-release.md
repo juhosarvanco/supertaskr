@@ -15,6 +15,7 @@ verified_by: claude-opus-5@subagent
 review:
 ---
 
+Absorbs: T-157-s1 (Standing triage 2026-08-30 (architect seat)) — DISCHARGED, NOT DECLINED. T-157 could not reach `method/**` from `touches: [docs/checkpoints/, tools/e2e]`, so the per-seat run-hygiene text was routed rather than built, and the brief's advisory line was already written to cite it the day it landed. This release landed it: re-derived at this ref, all five role files carry a `## Run hygiene` section (executor, verifier, integrator, orchestrator, planner), added at `9c0da79`, and `tools/e2e/scripts/session-economics.mjs` cites that text as outranking its own advisory line — including the honest fallback at :454 when a role file carries none. Suggestion file removed in this commit.
 The pre-execution review found T-154 and T-157 each carrying
 method-text riders that would collide into two rapid bumps; this card
 is the resolution — ONE bump, one coherent release, one three-file

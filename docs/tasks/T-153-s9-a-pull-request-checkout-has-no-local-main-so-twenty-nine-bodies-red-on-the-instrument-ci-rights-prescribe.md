@@ -16,6 +16,7 @@ verified_by: claude-opus-5@subagent
 review:
 ---
 
+Absorbs: T-153-s15 (Standing triage 2026-08-30 (architect seat)) — DISCHARGED, NOT DECLINED. The guard this card's fix required left `.github/workflows/ci.yml` step 19 no longer VERBATIM against the two readers that derive from it, reding `workflow-parity.spec.ts` at two bodies for every lane. The mechanism was a fence that reached `.github/workflows/` alone while the fix needed `docs/CONVENTIONS.md` and `tools/e2e` as well. The three-copy alignment landed with this card's own checkpoint: ci.yml:176, CONVENTIONS:150 and :252, and the spec's CI_SEQUENCE:262 plus fixture expectation:735 all now carry `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`. Re-derived at this ref: `npx playwright test tests/workflow-parity.spec.ts` -> 17 passed, exit 0. Suggestion file removed in this commit.
 ## The measurement — two runs, one repository, one difference
 
 | run | event | checkout | e2e lane |
