@@ -1327,13 +1327,29 @@ export function selectDispositions(
         " of " +
         CONCURRENCY_CEILING.max +
         " lanes are in flight." +
+        // AND THE CAVEAT AGREES IN NUMBER WITH THE LIST IT NAMES (T-143's
+        // class, third live instance — T-143-s3). The clause four lines
+        // above already derives " live lane"/" live lanes" from a count and
+        // this one did not: it said "is claimed … its fence" about a list of
+        // any length, so two blind lanes read as one. The reader is the
+        // human weighing whether to OVERRIDE a coarse-fence warning, here in
+        // the GUI rather than the terminal, and that is the LAST sentence
+        // that can afford to read as though one lane were unreadable when
+        // two are. The count is the LANE count, not the id count — two
+        // worktrees on one branch are two live writers. The NOUN follows the
+        // pronoun, the way `lanes.ts`'s `unfenceable` branch does it
+        // ("those fences"/"that fence"): each lane has its OWN fence, so
+        // "their fences" and never "their fence".
         (blindLanes.length === 0
           ? ""
           : " CAVEAT: " +
             blindLanes.length +
             " of those lanes (" +
             joinIds(blindLanes.map((l) => l.branch)) +
-            ") is claimed by no card, so its fence could not be READ — unknown is not empty."),
+            (blindLanes.length === 1
+              ? ") is claimed by no card, so its fence could not be READ"
+              : ") are claimed by no card, so their fences could not be READ") +
+            " — unknown is not empty."),
     });
   }
 

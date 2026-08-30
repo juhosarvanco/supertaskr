@@ -1507,6 +1507,16 @@ describe("the lane set joined with status:, and their DISAGREEMENT visible (crit
     expect(got?.disposition).toBe("dispatchable");
     expect(got?.reason).toContain("CAVEAT");
     expect(got?.reason).toContain("task/T-800-a");
+    // AND IT IS READ IN THE SINGULAR, VERB AND PRONOUN BOTH (T-143-s3).
+    // This body asserted only that the caveat APPEARS, so the mutation
+    // between the two spellings had nothing to fail against — which is the
+    // exact state T-143 measured on the parser's copy before it fixed it.
+    expect(got?.reason).toContain(
+      "CAVEAT: 1 of those lanes (task/T-800-a) is claimed by no card, so its fence could not be " +
+        "READ — unknown is not empty.",
+    );
+    expect(got?.reason).not.toContain("are claimed by no card");
+    expect(got?.reason).not.toContain("their fences");
     // POSITIVE CONTROL: the SAME lane, once a card claims it, reads
     // fenceKnown and the caveat disappears.
     const claimed = withRoadmap([
@@ -1520,6 +1530,54 @@ describe("the lane set joined with status:, and their DISAGREEMENT visible (crit
     if (d2.kind !== "derived") throw new Error("unreachable");
     expect(d2.inFlight[0]?.fenceKnown).toBe(true);
     expect(dispositionOf(d2, "T-900")?.reason).not.toContain("CAVEAT");
+  });
+
+  it("TWO lanes no card claims: the caveat says ARE and THEIR FENCES", () => {
+    // THE OTHER DIRECTION OF THE SAME SENTENCE (T-143-s3). The caveat is
+    // read by the human deciding whether to override a coarse-fence
+    // warning, and "2 of those lanes (X, Y) is claimed by no card, so its
+    // fence could not be READ" tells that reader one lane is unreadable
+    // when two are. The count is the LANE count.
+    const m = withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]);
+    const d = selectDispositions(
+      m,
+      reading(
+        { taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] },
+        { taskId: "T-801", state: "stampSkipped", lanes: [laneHold("T-801", "task/T-801-a")] },
+      ),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.inFlight.map((l) => l.fenceKnown)).toEqual([false, false]);
+    const got = dispositionOf(d, "T-900");
+    expect(got?.disposition).toBe("dispatchable");
+    expect(got?.reason).toContain(
+      "CAVEAT: 2 of those lanes (task/T-800-a, task/T-801-a) are claimed by no card, so their " +
+        "fences could not be READ — unknown is not empty.",
+    );
+    expect(got?.reason).not.toContain("is claimed by no card");
+    expect(got?.reason).not.toContain("its fence");
+    // POSITIVE CONTROL, AND IT IS THE PIN'S OTHER HALF: the SAME reading
+    // with one of the two lanes claimed leaves ONE blind lane, and the
+    // sentence goes back to the singular — so the number is derived from
+    // `blindLanes.length` rather than from anything constant in this body.
+    const oneClaimed = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1)],
+      ["docs/tasks/T-801.md", task("T-801", "F-02", 1, "planned")],
+    ]);
+    const d2 = selectDispositions(
+      oneClaimed,
+      reading(
+        { taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] },
+        { taskId: "T-801", state: "stampSkipped", lanes: [laneHold("T-801", "task/T-801-a")] },
+      ),
+    );
+    if (d2.kind !== "derived") throw new Error("unreachable");
+    expect(d2.inFlight.map((l) => l.fenceKnown)).toEqual([false, true]);
+    expect(dispositionOf(d2, "T-900")?.reason).toContain(
+      "CAVEAT: 1 of those lanes (task/T-800-a) is claimed by no card, so its fence could not be " +
+        "READ — unknown is not empty.",
+    );
+    expect(dispositionOf(d2, "T-900")?.reason).not.toContain("are claimed by no card");
   });
 });
 
