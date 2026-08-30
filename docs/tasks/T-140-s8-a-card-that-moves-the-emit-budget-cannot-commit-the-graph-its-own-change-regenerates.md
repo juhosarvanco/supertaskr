@@ -3,9 +3,9 @@ id: T-140-s8
 title: A card that moves the emit budget cannot commit the graph its own change regenerates — the dogfood pins are inside the fence and docs/architecture/graph.json is outside it, so the branch is green only against an uncommitted file
 feature: F-06
 milestone: 4
-priority: 12
+priority: 24
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/lane-protocol.md]
@@ -76,3 +76,31 @@ new mechanism, and a mechanism should wait until the clause leaks.
 paths one by one) is the same family one level down: a fence derived
 from `touches:` cannot see a file nobody assigned. This one is a file
 everybody assigned to the checkpoint.
+
+## TRIAGE (2026-08-31, standing triage sitting #5 — called by a BAND) — PROMOTED F-06, priority 12 -> 24, and DISPOSITION 3 RULED
+
+**THE CARD'S OWN THIRD DISPOSITION IS TAKEN: NAME THE STATE.** Widening
+the fence (1) reintroduces the T-050 staleness for every budget-moving
+lane; forbidding the lane to move its pins (2) hands the integrator a
+pin whose story it did not live through, which is what *"re-derived and
+explained, never loosened"* exists to prevent. Naming the state costs a
+clause and changes no mechanism.
+
+**AND THIS SEAT CAN ATTEST THE INSTANCE RATHER THAN TAKING IT ON THE
+CARD'S WORD, because it lived it hours later.** At `T-140-s4`'s
+integration the branch carried the new pins and the old graph exactly as
+described; this seat regenerated at the merge and committed the graph
+with the checkpoint, and the lane's own worktree had been green the
+whole time against an uncommitted file. Both halves true at once, and
+the handoff — not the work — was what needed writing down.
+
+**PRIORITY MOVED, AND NOT FOR VALUE**: F-06's planned column already
+holds 2 through 23; 12 was taken. 24 was free.
+
+**THE BUMP QUESTION IS THE DISPATCHER'S AND IS NOT RULED HERE.** The
+fence carries `method/lane-protocol.md`, which is NOT a `KIT_FILES`
+entry (test 1 fails), and a handoff clause is not card/room/brief/role
+grammar (test 2 probably fails) — but *probably* is not a derivation.
+Re-derive both at the lane's own ref. **IF a bump turns out to be owed,
+the clause becomes a rider for the next method release rather than a
+reason to widen this fence** — `T-154-s3`'s standing shape.

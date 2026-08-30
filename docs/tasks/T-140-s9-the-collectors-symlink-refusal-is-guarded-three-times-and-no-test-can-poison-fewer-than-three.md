@@ -3,9 +3,9 @@ id: T-140-s9
 title: The collector's symlink refusal is guarded three times and neither symlink test can be poisoned by lifting fewer than three — both bodies survive the removal of the guard they are named after
 feature: F-06
 milestone: 4
-priority: 18
+priority: 25
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
 touches: [app/src-tauri/src/docs_watch.rs]
@@ -69,3 +69,21 @@ different name than the ones they carry.
 **NOT CAUSED BY `T-140-s4`.** The same three layers, and the same
 un-poisonable pair, exist at `5073db6` before that card. It re-aimed one
 of the two bodies and drilled it, which is how the property was seen.
+
+## TRIAGE (2026-08-31, standing triage sitting #5 — called by a BAND) — PROMOTED F-06, priority 18 -> 25, as filed
+
+A genuine vacuity finding and the strongest kind: **the executor's own
+drill produced it and it disclosed the survivors rather than reporting a
+clean sheet.** Lifting the `is_symlink` guard leaves both symlink bodies
+passing; lifting the canonical-prefix check as well STILL leaves them
+passing, because `relative_posix`'s own `strip_prefix` is a third
+containment layer. Neither test can detect the loss of the guard it is
+named after.
+
+That is the same class `T-177`'s verifier found in the parser hours
+later — a property that is correct, load-bearing, and pinned by nothing
+that could notice its removal. Two independent sightings in one night
+argue the class is worth a standing look, and the two cards should be
+read together by whoever takes either.
+
+Priority moved off a collision (18 was taken); no value judgement.

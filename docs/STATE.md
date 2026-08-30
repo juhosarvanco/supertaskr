@@ -1,8 +1,9 @@
 # State
 
-Updated: 2026-08-31 at T-172's close — record:
-docs/checkpoints/2026-08-31-T-172-the-chrome-rulings-land.md; T-177's,
-T-112-s3's and T-140-s4's are beside it. FOUR LANES LANDED tonight.
+Updated: 2026-08-31 at standing triage sitting #5 — record:
+docs/checkpoints/2026-08-31-standing-triage-5-called-by-a-band.md; the
+four lanes' own records are beside it. FOUR LANES LANDED tonight and the
+suggested column is 0.
 **THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
 budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
 bytes (derive: `index --check`). Every fence is dispatchable again.
@@ -50,10 +51,8 @@ it.
 
 1. IN FLIGHT: `T-112-s1` and `T-153-s8` (executors). LANDED tonight:
    `T-140-s4`, `T-112-s3`, `T-177`, `T-172`.
-   **A TRIAGE SITTING IS CALLED BY A BAND, not a cadence**:
-   `triage/net-arrivals-per-window` reads 10 against a drift line of 9
-   — `T-140-s8`, `T-140-s9`, `T-172-s1`, `T-179`, `T-181` and more,
-   none dispositioned.
+   Sitting #5 DONE — the suggested column is 0, called by
+   `triage/net-arrivals-per-window` at DRIFT rather than by a cadence.
 2. THEN, no blocker left: `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
    OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
    `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
@@ -125,6 +124,6 @@ it.
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-172-the-chrome-rulings-land.md.
+  2026-08-31-standing-triage-5-called-by-a-band.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.

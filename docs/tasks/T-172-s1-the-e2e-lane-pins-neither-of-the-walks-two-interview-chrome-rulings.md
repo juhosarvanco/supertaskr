@@ -1,9 +1,19 @@
 ---
 id: T-172-s1
 title: The e2e lane pins neither of the walk's two interview-chrome rulings — T-172's acceptance asks for an e2e pin, and satisfying it is a NEW assertion in a package that card's fence cannot reach
-status: suggested
+feature: F-03
+milestone: 4
+priority: 8
+size: S
+status: planned
+blocked_by: []
 suggested_by: claude-opus-5@subagent, T-172's executor (2026-08-31) — routed from inside the lane rather than widening its fence
 touches: [tools/e2e]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 **CLASS PARENT: none found.** `command grep -rli "interview.spec.ts"
@@ -82,3 +92,20 @@ of the two safely mergeable fences meanwhile.
 
 **It should land AFTER T-172 merges**, because it asserts T-172's
 behaviour; run against main today it would red honestly.
+
+## TRIAGE (2026-08-31, standing triage sitting #5 — called by a BAND) — PROMOTED F-03 p8, as filed
+
+`T-172` landed both of @human's chrome rulings and **no browser pins
+either of them** — its verifier narrowed that gap by walking
+`interview.spec.ts` in real Chromium (6/6, which rules out adjacent
+breakage) but the spec asserts nothing about the retired line or the new
+label. This card is the remaining half, and it is the half that would
+catch a revert.
+
+**IT IS ALSO THE CARD THAT REMOVES A KNOWN FRAGILITY.** The verifier
+recorded that `has("Bank answer") === false` currently passes partly
+because the production build strips comments — that string survives
+twice in `InterviewChat.tsx`'s comments, and that file is bundled. The
+failure mode is a FALSE RED, which is loud rather than silent, so it was
+correctly not treated as a defect; a real browser assertion on the
+rendered label does not depend on comment stripping at all.

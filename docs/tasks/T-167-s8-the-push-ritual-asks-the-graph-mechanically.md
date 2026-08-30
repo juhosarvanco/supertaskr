@@ -125,3 +125,63 @@ are printed in this sitting's record.
 ## Verdicts
 
 FOURTH STRIKE (2026-08-30, run on 2e4b76f's rerun): T-143-s3's merged code files pushed without their regen — masked in the original run because the cargo intermittent redded BEFORE the graph step ran, and revealed only when the rerun cleared cargo. A guard at the push would have caught it regardless of step order.
+
+Absorbs: T-181
+
+## ABSORBED AT STANDING TRIAGE SITTING #5 (2026-08-31): T-181 — the same argument, a second trigger
+
+**T-181 was filed by the outgoing seat's observation and the incoming
+seat's self-audit, and its own filer recommended this fold.** It shares
+this card's fence exactly (`.claude`, `tools/e2e`) and its whole
+argument; what it adds is a SECOND TRIGGER and the measurement that
+earns it.
+
+**THE MEASUREMENT, over two seats and one night (2026-08-30/31).** Split
+the checkpoint's obligations by whether something mechanical fires them
+and compliance separates completely. **Mechanically triggered — met
+every time, by both seats**: the DOCS GATE, `index --check`, the
+lane-fence hook, the governing-document budgets. Two of them caught real
+defects in the seats' own work. **Memory-held — decayed inside one
+session and then INHERITED**: the health bands were run zero times
+across five records, the boot gate was leaned on second-hand from
+in-lane runs, and the decay replicated because the outgoing seat's
+records taught the incoming seat a checklist with the holes already in
+it. **The first health run that was finally performed found
+`docs-headroom/docs/STATE.md` BREACHED** — by the seat that had noticed
+its warning twice that evening and deferred it twice.
+
+**WHAT THE SECOND TRIGGER IS.** This card's own trigger is the PUSH.
+The absorbed one is the COMMIT THAT ADDS A RECORD under
+`docs/checkpoints/` — already the event the DOCS GATE's staleness rule
+keys on — and what it demands is that the record CARRIES the readings:
+a health-band census line and its exit, plus, where the merge's diff
+meets BOOT GATE's own trigger, the boot check's exit and both `[nputer]`
+lines.
+
+**AND IT MUST DEMAND THE READING, NEVER THE VERDICT.** `npm run health`
+exits 3 by design while four bands lack keepers, so a guard requiring
+exit 0 would refuse every checkpoint forever — the same trap the AUDIT
+GATE POLICY names about `--deny warnings`. Demand that the gate RAN and
+was RECORDED.
+
+**ADDITIONAL ACCEPTANCE, from the absorbed card:**
+
+- WHEN a commit adds a record under `docs/checkpoints/`, THE guard SHALL
+  refuse it unless that record carries a health-band census line and its
+  exit, and — where the diff meets BOOT GATE's trigger — the boot
+  check's exit and both `[nputer]` lines.
+- THE guard SHALL demand that a gate RAN and was RECORDED, never that it
+  PASSED.
+- THE guard SHALL take BOOT GATE's trigger from the same place the
+  written gate does rather than restating it, so the two cannot drift.
+- IF the guard cannot run THEN it SHALL say so and ALLOW, never refuse
+  silently — the lane-fence hook's own fail-open shape, for the same
+  reason.
+- THE lane SHALL state the second trigger's measured wall-clock cost
+  against the frequency of a checkpoint, as this card's existing
+  criteria already require for the push.
+
+**WHAT THE FOLD DELIBERATELY KEEPS**: `cargo audit` was NOT absorbed. It
+is already a CI step (`command grep -c "cargo audit" .github/workflows/ci.yml`
+answers 2 at `1e886c0`), so it needs no guard — a fact the absorbed
+card's own filer got wrong at first and corrected by checking.
