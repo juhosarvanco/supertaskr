@@ -10,10 +10,10 @@ blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
 touches: [app-interview]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
-verified_by:
-review:
+verified_by: claude-opus-5@subagent
+review: same-model
 ---
 
 **WHAT @HUMAN SAW, at the end of a complete and otherwise successful
@@ -461,3 +461,231 @@ source file's mtime after the last build reds it — it fired once in this
 lane immediately after the drill's final restore, and `npm run build`
 followed by `npm test` returned **1074/1074, exit 0**. **Build before you
 test in this lane**; the message names the build, not the tree.
+
+## Verdicts
+
+2026-08-31 — `claude-opus-5@subagent` (blind verifier, same-model as
+builder; lane `task/T-171-interview-terminal-state`, reviewed at
+`9a25ebd`, base `629adea`):
+**APPROVED WITH ASSIGNED CORRECTIONS** — one correction, on a sentence,
+found by a poison mutant that no body kills.
+
+### Phase 1 was kept, and the disclosure the role requires
+
+The attack set was written to
+`…/scratchpad/T-171-V-attack-set.md` **before** the diff, the three
+commits or the implementation notes were opened — **26 attacks** plus a
+ten-mutant set derived from the card's clauses with the test files
+closed. The card was verified byte-identical between `629adea` and main
+`e263585` first, so the card read was the card at its base ref.
+**CONTAMINATION, DISCLOSED (roles/verifier.md ll. 36–48):** the dispatch
+brief named three executor-derived specifics above the line — the
+executor's boot port `14171`, "the executor reports a large mutant
+count" (no number), and "its three commits". None seeded an attack; the
+brief did separate the two phases explicitly, so the structural failure
+the role warns about did not occur. Recorded rather than pretended
+otherwise.
+
+### What survived contact: 1 of 26
+
+**The central question is genuinely answered, and not with a fourth
+flag.** Derived at base: the footer read one boolean,
+`interviewBusy = ui.busy || state.sending || state.phase === "running"`,
+and the same boolean fed every `disabled` AND `completionOf`'s
+`inFlight`. The lane does not add a term to that disjunction — it
+**inverts the authority**: `flightOf` reads the runner's own per-turn
+`status` FIRST and treats the three flags as claims a settled turn is
+allowed to refuse (`stranded`). Then it **splits the question in two**:
+`interviewBusy` is the FACT (hint, completion, ending) and
+`interviewLocked` is the MACHINERY (every `disabled`, the focus-return
+effect) — because a control enabled against a store that will refuse the
+send is the same lie with the arrow reversed. That split is the fix's
+real content and it is correct.
+
+**The diagnosis was verified independently, not accepted.** Read at
+`/Users/ujju/Projects/first-walk`: `.nputer/sessions.json` says
+`turns: 10, status: "idle"`; `.nputer/genesis/transcript.jsonl` holds 20
+lines, a user AND a planner half for every turn 1–10, and no eleventh of
+either half; `docs/tasks/` holds four cards. **The last turn had landed
+and the session was idle while the screen claimed a turn was running** —
+so the strand was in the flags, not in a turn stuck at `status:
+"running"`, and `stranded` is the right reading for the state @human
+actually hit. This was attack A1 and it was the one most likely to sink
+the lane; it does not.
+
+Also attacked and clean: **the ending renders in the CHAT column**
+(`interview-turns.tsx#ClosingBlock`, called from `InterviewChat` inside
+the transcript region) — the chat carries no `hidden` class and takes
+the frame below `lg`, where `genesis-pane-slot` is `hidden … lg:flex`
+and the board half is not rendered at all, so the ending is where
+@human was reading (C14/C15). **Completion gained no second source of
+truth** — `completionSafely` is `completionOf` in a `try`, the exact
+sibling of `showsBoard`, and nothing new reads turn text, `activity`
+labels or a model-emitted marker (B9/B10, T-028/ADR-017 intact). **No
+affordance it cannot honour** — `ClosingBlock` contains zero `button`
+elements, pinned; the cold-start test is named as an offer that "does
+not require it", per the ruling on `T-175` (D18/E23). **The second
+renderer of the same sentence** (`interview-turns.tsx:241`,
+`running = planner.status === "running"`) was correctly left alone: it
+was already fed by the runner's measurement, which is the very evidence
+this card elevates (A3). **`unlanded` cannot strand**: `run_turn` emits
+`failed` before its two early returns and `started` otherwise, so every
+accepted turn lands (A-series probe, verified in `agent/runner.rs`).
+**Reversibility** holds — the ending stands down on the next send.
+
+### THE CORRECTION (one, specific, in-fence)
+
+**`app/src/genesis/interview-turns.tsx:460` — the ending says
+*"The board beside this is the product of the walk"*, and below `lg`
+there is no board beside it.** `GenesisScreen` renders the pane slot
+`hidden … lg:flex`; `tools/e2e/tests/interview.spec.ts` asserts exactly
+that at 1023 and at 800 (`slot` hidden, chat visible). The block's own
+doc comment claims the narrow window as its reason for existing — *"it
+is the only one a narrow window ever gets"* — so in the one case the
+block was written for, its first clause names something not on screen.
+At the app's configured window (1280×840) the sentence is true, which is
+why this is a correction and not a rejection.
+
+**It is a SHAPE SEVEN sighting, measured.** Mutating that clause
+(`"The board beside this is the product of the walk;"` → `"Zzz nothing
+at all;"`) ran the whole app suite and killed **zero** bodies —
+`exit=1` from the build-mtime artifact alone. The neighbouring pin
+asserts `cold-start test`, `docs/`, `does not require it` and
+`cannot be that session`; it never mentions the board. The mutant aims
+at a clause the pins do not name, which is the shape's definition.
+
+**PERFORM:** reword that clause so it does not assert a board is beside
+the reader — e.g. lead with the record (`docs/` in your own repository,
+the cards under `docs/tasks/`) and let the board be named as a place
+rather than a neighbour — **and add one assertion** to
+`app/test/interview-chat-dom.test.tsx`'s *"the ending NAMES the
+cold-start test…"* body (or a sibling) that pins whatever the new clause
+claims, so the mutant above stops surviving. Re-run
+`npm run build` then `npm test` from `app/` (build first: the staleness
+body names the build, not the tree).
+
+### Gates, every one run by this seat and read UNPIPED
+
+Measured at `9a25ebd`; the figures below are re-derived at this seat's
+own tip in the amendment under them.
+
+- `npm ci` + `npm run build` + `npx vitest run` + `npx tsc --noEmit`
+  from `lib/parser/`: **0 / 0 / 0 / 0** — 344 passed (344), 16 files.
+- `npm install` + `npm run build` + `npm test` from `app/`:
+  **0 / 0 / 0** — **1074 passed (1074)**, 49 files.
+- **BASELINE MEASURED, NOT ACCEPTED**: the same suite at `629adea` in
+  this seat's own bench — **1059 passed (1059)**, exit 0. Net **+15**
+  bodies, and base is green, so no pre-existing red is attributed here.
+- **BOOT GATE (fires, `app/src/**`)** — port **15171**, derived from the
+  card id and deliberately NOT the executor's 14171.
+  `lsof -nP -iTCP:15171 -sTCP:LISTEN` immediately before binding: **zero
+  rows (exit 1)**. `NPUTER_BOOT_PORT=15171 npm run boot:check` from
+  `tools/e2e/`: **exit 0**, both lines —
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-171` and
+  `[nputer] window "main" created`.
+- **PORT RULE**: `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else —
+  **zero rows (exit 1)**; @human's app was not running. Never
+  bind-probed, never connected.
+- **GRAPH — ASKED, NOT REGENERATED.**
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  `app/src-tauri/`: **exit 1, `graph.json is STALE`**, and a REAL stale,
+  not the `committed: MISSING` false red — committed 1,134,163 bytes ·
+  199 files · 2,418 symbols · 2,330 edges against a fresh 1,139,673 ·
+  199 · 2,425 · 2,348; `files +0 -0 ~8`, naming exactly this lane's
+  eight files; `edges +27 -9`; no new file, no component moved. Budget
+  **1,139,673 of 2,145,959 (53.1%) — 1,006,286 left**.
+  `docs/architecture/graph.json` is untouched and uncommitted; it is
+  outside this fence and is the integrator's to clear.
+
+### The mutant ledger — this seat's own, in its own bench
+
+Bench: `/private/tmp/nd-T-171v`, **cut fresh and detached at `9a25ebd`**
+by this seat, short root, own `CARGO_TARGET_DIR`. **The executor's bench
+was NOT reused** — no bench of the executor's was touched, read or
+inherited, so these numbers are independent of theirs. Mutants were
+applied ONE SIDE ONLY (source; the test files were never mutated), each
+read back with `git diff --stat` before running, and **every restoration
+proved by sha256 against the committed blob** (`restored=True`, 14/14).
+The pre-existing build-mtime bodies (*"is not stale: the build is at
+least as new as…"*) red mechanically under any source mutation and are
+excluded from every count below.
+
+| # | mutation (derived from the CARD, tests closed) | bodies |
+|---|---|---|
+| V1 | the stranded claim is BELIEVED again — pre-fix behaviour | 2 |
+| V2 | turn evidence never read (`running` loop deleted) | 3 |
+| V3 | completion ignores in-flight (reversibility gone) | 3 |
+| V4 | an empty board is celebrated (planning theater) | 6 |
+| V5 | **the ending deleted from the CHAT column** | 3 |
+| V6 | the cold-start test becomes a REQUIREMENT | 1 |
+| V7 | a failed/cancelled tail is celebrated as an ending | 2 |
+| V8 | `inputHint` back to two states — the ending unreachable | 2 |
+| V9 | `unreadable` collapses into `noBoard` | 1 |
+| V10 | the invitation ignores `canAnswer` | 1 |
+| V11 | the `unlanded` clause neutralised | 2 |
+| V12 | `data-flight` hardcoded — are the DOM values load-bearing | 3 |
+| V14 | the ending's `next` testid renamed | 1 |
+| **V13** | **the ending's "board beside this" clause rewritten** | **0 — SURVIVOR** |
+
+13 killed, **one survivor, and it is the correction above**. V5's three
+reds are what make C14 a pin rather than a coincidence: the ending is
+genuinely required in the half @human was reading.
+
+### Security sweep (mandatory, roles/verifier.md step 3)
+
+Clean. **No dependency additions** — `package.json`, the lockfiles and
+`Cargo.*` are 0-byte diffs. No new input path, no new IPC: the diff adds
+no `invoke(`, no `spawn`, no `Command`, no Tauri command; the only
+`genesis_*` strings are test-harness fixtures. No raw-markup sink
+(`dangerouslySetInnerHTML`/`innerHTML`/`eval`/`new Function` all absent).
+No secrets or keys. No authz surface is touched.
+
+### Binding exclusions, and the routed items verified independently
+
+- **`BANKING_MAP` is a 0-byte diff** — `app/src/genesis/genesis-derive.ts`
+  is not in the diff at all, and neither is `method/`. The nine-row table
+  is unmoved; `T-173`'s bump is not encroached (E21).
+- **Nothing spawns** (E22), and **`app/src-tauri/**` is a 0-byte diff** —
+  `T-175`'s fence is untouched.
+- **Completion is not gated on the cold-start test**; the block says
+  "does not require it", pinned, and mutating it to a requirement reds
+  (V6).
+- **FENCE (E24), checked against `.nputer/lane-fence.json` rather than
+  against the claim**: the manifest carries `app/src/genesis` and seven
+  named `app/test` files, `alwaysWritable: ["docs/tasks"]`. All nine
+  changed paths fall inside it. The fence was never widened.
+- **THE ROUTED ITEMS ARE GENUINELY OUT-OF-FENCE — verified, not taken on
+  the excuse.** All three live in `app/src/lib/agent-store.ts`
+  (`cancelGenesis` resetting nothing on `{kind:"idle"}`;
+  `reduceGenesisOutcome`/`applyGenesisStatus` arming flight with no seq
+  guard) or in the Rust runner (a command that never answers). The
+  manifest carries neither path, so the fence genuinely does not reach
+  them. **Finding 2 is the load-bearing one** and it is the mechanism the
+  lane's own DOM fixture reproduces through the shipped store; it should
+  be carded, because this card makes the SCREEN honest while leaving the
+  STORE permanently stranded, and the next reader of that store will meet
+  it again.
+
+### What this seat could NOT verify, and why
+
+- **That the stranded claim on @human's machine arrived by
+  `applyGenesisStatus` specifically.** The walk's files prove the turn
+  landed and the session was idle; which of the two unguarded arming
+  paths fired is not recoverable from disk, and the lane says so itself
+  rather than guessing. It does not change the verdict: the screen is
+  fixed against the class, not against one path.
+- **The rendered appearance at any width.** Verification here is
+  headless; jsdom applies no breakpoint, so the below-`lg` claim above is
+  derived from the class list plus the e2e spec's own 1023/800
+  assertions, not from a rendered pixel. A human eye still owes this
+  screen a look.
+- **`tools/e2e`'s own suite was not run** — it is outside this fence and
+  no e2e spec changed; `npm ci` there succeeded (exit 0) and was used
+  only for the boot gate.
+
+### Gates re-run at THIS seat's own tip (roles/verifier.md step 7)
+
+Appending a verdict is a commit, and prose is a code input. Re-derived
+after this verdict landed, at the commit this seat created — the figures
+in the ledger and gate lists above are stated at `9a25ebd` and the ones
+below at this tip:
