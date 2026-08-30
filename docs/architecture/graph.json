@@ -8298,1448 +8298,7 @@
       "lang": "rust",
       "hash": "blake3:33c2ba7be824c90822f37660d510643842b144bd224097f470c331f7145f7bf4",
       "loc": 5830,
-      "symbols": [
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#BRAND_PACK",
-          "name": "BRAND_PACK",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4769,
-            4769
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY",
-          "name": "CANARY",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            40,
-            40
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY_VALUE",
-          "name": "CANARY_VALUE",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            41,
-            41
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#FIXTURE_DEADLINE",
-          "name": "FIXTURE_DEADLINE",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            179,
-            179
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#GroupGuard",
-          "name": "GroupGuard",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            874,
-            874
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#Harness",
-          "name": "Harness",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            53,
-            61
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#Options",
-          "name": "Options",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            69,
-            95
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#OwnedGroup",
-          "name": "OwnedGroup",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            762,
-            768
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_COMPLETED",
-          "name": "PREMISE_COMPLETED",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            5006,
-            5008
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_SESSION_ID",
-          "name": "PREMISE_SESSION_ID",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4994,
-            4996
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_STARTED",
-          "name": "PREMISE_STARTED",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4984,
-            4986
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_TEXT_DELTA",
-          "name": "PREMISE_TEXT_DELTA",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            5000,
-            5002
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#REAL_CLI_DEADLINE",
-          "name": "REAL_CLI_DEADLINE",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            225,
-            225
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#Reboot",
-          "name": "Reboot",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            5280,
-            5285
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#SECURITY_PACK",
-          "name": "SECURITY_PACK",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4771,
-            4771
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_ARM_VAR",
-          "name": "T060_ARM_VAR",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4126,
-            4126
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_ROOT_VAR",
-          "name": "T060_ROOT_VAR",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4128,
-            4128
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_TEST_NAME",
-          "name": "T060_TEST_NAME",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            4132,
-            4133
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cancel_releases_the_turn_latch_well_inside_the_grace",
-          "name": "a_cancel_releases_the_turn_latch_well_inside_the_grace",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1136,
-            1180
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_project",
-          "name": "a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_project",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5513,
-            5546
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cli_below_the_minimum_major_is_refused_loudly",
-          "name": "a_cli_below_the_minimum_major_is_refused_loudly",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3141,
-            3149
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
-          "name": "a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            964,
-            984
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped",
-          "name": "a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1998,
-            2032
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds",
-          "name": "a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1623,
-            1672
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit",
-          "name": "a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2413,
-            2454
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed",
-          "name": "a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2368,
-            2384
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool",
-          "name": "a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2476,
-            2513
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_first_turn_with_no_init_line_is_malformed",
-          "name": "a_first_turn_with_no_init_line_is_malformed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3031,
-            3039
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
-          "name": "a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4908,
-            4958
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
-          "name": "a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1400,
-            1464
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_init_line_model_is_refused_and_a_real_one_round_trips",
-          "name": "a_hostile_init_line_model_is_refused_and_a_real_one_round_trips",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4471,
-            4557
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing",
-          "name": "a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3586,
-            3662
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded",
-          "name": "a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3408,
-            3468
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary",
-          "name": "a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3524,
-            3578
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs",
-          "name": "a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5397,
-            5434
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
-          "name": "a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4853,
-            4894
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_missing_binary_is_a_typed_spawn_failure_not_a_panic",
-          "name": "a_missing_binary_is_a_typed_spawn_failure_not_a_panic",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3106,
-            3120
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_missing_cli_is_a_typed_not_found_never_a_dead_end",
-          "name": "a_missing_cli_is_a_typed_not_found_never_a_dead_end",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3152,
-            3173
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_non_json_flood_with_no_anchors_is_malformed",
-          "name": "a_non_json_flood_with_no_anchors_is_malformed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3042,
-            3050
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail",
-          "name": "a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1479,
-            1494
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_planted_skill_pack_reaches_the_child_and_the_session_record",
-          "name": "a_planted_skill_pack_reaches_the_child_and_the_session_record",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4782,
-            4844
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write",
-          "name": "a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3207,
-            3232
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial",
-          "name": "a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2329,
-            2343
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor",
-          "name": "a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            998,
-            1034
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failure",
-          "name": "a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failure",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2252,
-            2277
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error",
-          "name": "a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2305,
-            2323
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure",
-          "name": "a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2948,
-            2995
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure",
-          "name": "a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2811,
-            2836
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_relative_search_path_element_reaches_no_process",
-          "name": "a_relative_search_path_element_reaches_no_process",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3892,
-            3965
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps",
-          "name": "a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1041,
-            1068
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail",
-          "name": "a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1919,
-            1978
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_result_only_denial_with_no_in_band_line_is_still_reported",
-          "name": "a_result_only_denial_with_no_in_band_line_is_still_reported",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1831,
-            1871
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure",
-          "name": "a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2852,
-            2865
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first",
-          "name": "a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1770,
-            1817
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_start_offers_the_recorded_session_rather_than_auto_resuming",
-          "name": "a_second_start_offers_the_recorded_session_rather_than_auto_resuming",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3176,
-            3193
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs",
-          "name": "a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5440,
-            5505
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_in_flight_refuses_a_second_one",
-          "name": "a_turn_in_flight_refuses_a_second_one",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3196,
-            3204
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code",
-          "name": "a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1546,
-            1585
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie",
-          "name": "a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1279,
-            1333
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs",
-          "name": "a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            919,
-            955
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail",
-          "name": "an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2564,
-            2656
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_app_restart_mid_interview_resumes_the_recorded_session_off_disk",
-          "name": "an_app_restart_mid_interview_resumes_the_recorded_session_off_disk",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5324,
-            5387
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_auth_failure_that_streamed_text_before_it_failed_is_still_typed",
-          "name": "an_auth_failure_that_streamed_text_before_it_failed_is_still_typed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2774,
-            2791
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
-          "name": "an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4589,
-            4652
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code",
-          "name": "an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1511,
-            1536
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_oversize_stream_line_is_malformed_not_an_out_of_memory",
-          "name": "an_oversize_stream_line_is_malformed_not_an_out_of_memory",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3053,
-            3061
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
-          "name": "an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4669,
-            4751
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume",
-          "name": "an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5780,
-            5830
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#assert_real_turn_observed",
-          "name": "assert_real_turn_observed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5049,
-            5056
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#assert_settled_error_is",
-          "name": "assert_settled_error_is",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            395,
-            405
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#cancel_kills_the_whole_process_group_including_a_grandchild",
-          "name": "cancel_kills_the_whole_process_group_including_a_grandchild",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            638,
-            690
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#collect_turn",
-          "name": "collect_turn",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            284,
-            286
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#collect_turn_within",
-          "name": "collect_turn_within",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            293,
-            314
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#concurrent_cancel_exit_and_drop_observations_stay_idempotent",
-          "name": "concurrent_cancel_exit_and_drop_observations_stay_idempotent",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1340,
-            1379
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#denied_events",
-          "name": "denied_events",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            318,
-            327
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#every_hostile_id_class_fails_the_turn_at_capture",
-          "name": "every_hostile_id_class_fails_the_turn_at_capture",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3476,
-            3516
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#exit_zero_without_a_result_line_is_malformed",
-          "name": "exit_zero_without_a_result_line_is_malformed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3064,
-            3072
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#fake_agent_bin",
-          "name": "fake_agent_bin",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            47,
-            49
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#find_named",
-          "name": "find_named",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3853,
-            3864
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#harness",
-          "name": "harness",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            114,
-            170
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Default for Options<'_>",
-          "name": "impl Default for Options<'_>",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            97,
-            112
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for GroupGuard",
-          "name": "impl Drop for GroupGuard",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            898,
-            907
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for Harness",
-          "name": "impl Drop for Harness",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            63,
-            67
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for OwnedGroup",
-          "name": "impl Drop for OwnedGroup",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            850,
-            854
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl GroupGuard",
-          "name": "impl GroupGuard",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            877,
-            888
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#impl OwnedGroup",
-          "name": "impl OwnedGroup",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            771,
-            847
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#missing_real_turn_premises",
-          "name": "missing_real_turn_premises",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5018,
-            5044
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#no_login_path_ever_comes_from_a_file",
-          "name": "no_login_path_ever_comes_from_a_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3982,
-            4076
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#no_source_in_the_agent_module_builds_a_shell_command_line",
-          "name": "no_source_in_the_agent_module_builds_a_shell_command_line",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3358,
-            3389
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#now_ms",
-          "name": "now_ms",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            43,
-            45
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#one_denial_on_each_channel_is_reported_once_each",
-          "name": "one_denial_on_each_channel_is_reported_once_each",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1697,
-            1737
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_agent_paths",
-          "name": "plant_agent_paths",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3680,
-            3688
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_binary",
-          "name": "plant_binary",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3694,
-            3697
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_pack",
-          "name": "plant_pack",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4763,
-            4767
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#read_argv",
-          "name": "read_argv",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            421,
-            425
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#read_dump",
-          "name": "read_dump",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            432,
-            435
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#read_env",
-          "name": "read_env",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            427,
-            430
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#real_cli_smoke_records_the_stream_schema",
-          "name": "real_cli_smoke_records_the_stream_schema",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5066,
-            5124
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#reboot",
-          "name": "reboot",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5291,
-            5314
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#resolving_cfg",
-          "name": "resolving_cfg",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3701,
-            3713
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#settle",
-          "name": "settle",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            341,
-            353
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#sig",
-          "name": "sig",
-          "kind": "mod",
-          "exported": false,
-          "range": [
-            749,
-            756
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#silence_before_the_first_line_is_a_start_timeout",
-          "name": "silence_before_the_first_line_is_a_start_timeout",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3075,
-            3087
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#silence_mid_turn_is_a_stall",
-          "name": "silence_mid_turn_is_a_stall",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3090,
-            3103
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#spawn_turn_resume_round_trip_with_the_prompt_on_stdin",
-          "name": "spawn_turn_resume_round_trip_with_the_prompt_on_stdin",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            456,
-            523
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_guarded_arm",
-          "name": "t060_child_guarded_arm",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4353,
-            4407
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_lifted_arm",
-          "name": "t060_child_lifted_arm",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4413,
-            4456
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_root",
-          "name": "t060_child_root",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4221,
-            4223
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_parent_drives_both_arms",
-          "name": "t060_parent_drives_both_arms",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4225,
-            4349
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_run_arm",
-          "name": "t060_run_arm",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4187,
-            4219
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#terminal_error",
-          "name": "terminal_error",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            410,
-            415
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture",
-          "name": "the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2164,
-            2229
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file",
-          "name": "the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5654,
-            5719
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_bundle_declares_no_external_binaries",
-          "name": "the_bundle_declares_no_external_binaries",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3334,
-            3352
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_child_gets_the_allowlist_and_never_a_secret",
-          "name": "the_child_gets_the_allowlist_and_never_a_secret",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            527,
-            564
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found",
-          "name": "the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4176,
-            4183
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them",
-          "name": "the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2686,
-            2715
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_hook_reaps_the_turns_process_group",
-          "name": "the_exit_hook_reaps_the_turns_process_group",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            697,
-            727
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists",
-          "name": "the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1230,
-            1271
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group",
-          "name": "the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1187,
-            1222
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_fact_that_an_interview_ran_here_lives_in_exactly_one_file",
-          "name": "the_fact_that_an_interview_ran_here_lives_in_exactly_one_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5556,
-            5584
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_hand_driven_kickoff_carries_what_was_banked",
-          "name": "the_hand_driven_kickoff_carries_what_was_banked",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5729,
-            5774
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_hand_driven_kickoff_materializes_a_real_kit_and_names_it",
-          "name": "the_hand_driven_kickoff_materializes_a_real_kit_and_names_it",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5590,
-            5632
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_kit_lands_inside_the_project_and_the_kickoff_points_at_it",
-          "name": "the_kit_lands_inside_the_project_and_the_kickoff_points_at_it",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            615,
-            632
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_no_real_cli_guard_is_on_without_anything_being_set",
-          "name": "the_no_real_cli_guard_is_on_without_anything_being_set",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            4100,
-            4121
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group",
-          "name": "the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1085,
-            1129
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_production_kill_grace_is_five_seconds",
-          "name": "the_production_kill_grace_is_five_seconds",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1472,
-            1474
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_real_smokes_verdict_names_which_premise_was_missing",
-          "name": "the_real_smokes_verdict_names_which_premise_was_missing",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            5138,
-            5267
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_registry_and_transcript_record_the_exchange",
-          "name": "the_registry_and_transcript_record_the_exchange",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            568,
-            610
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not",
-          "name": "the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3240,
-            3327
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay",
-          "name": "the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2881,
-            2900
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_stream_without_the_retry_line_classifies_the_same_way",
-          "name": "the_same_stream_without_the_retry_line_classifies_the_same_way",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2285,
-            2299
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay",
-          "name": "the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3009,
-            3028
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_tool_denied_fixture_is_a_transcription_not_a_construction",
-          "name": "the_tool_denied_fixture_is_a_transcription_not_a_construction",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2055,
-            2139
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#the_transcribed_auth_shape_carries_its_status_on_its_own_result_line",
-          "name": "the_transcribed_auth_shape_carries_its_status_on_its_own_result_line",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2734,
-            2756
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#there_is_no_agent_paths_json_to_poison_at_any_door",
-          "name": "there_is_no_agent_paths_json_to_poison_at_any_door",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3743,
-            3848
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#turn_dump",
-          "name": "turn_dump",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            417,
-            419
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_completed",
-          "name": "wait_completed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            264,
-            266
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_failed",
-          "name": "wait_failed",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            268,
-            273
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for",
-          "name": "wait_for",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            227,
-            233
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for_file",
-          "name": "wait_for_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            437,
-            448
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for_within",
-          "name": "wait_for_within",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            238,
-            262
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#warnings_and_unknown_event_types_do_not_fail_the_turn",
-          "name": "warnings_and_unknown_event_types_do_not_fail_the_turn",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3125,
-            3136
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/tests/agent_runner.rs#wired",
-          "name": "wired",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            3715,
-            3724
-          ]
-        }
-      ]
+      "symbols": []
     },
     {
       "id": "f:app/src-tauri/tests/graph_budget_bench.rs",
@@ -12024,8 +10583,8 @@
       "id": "f:app/src/components/board/TaskCard.tsx",
       "path": "app/src/components/board/TaskCard.tsx",
       "lang": "ts",
-      "hash": "blake3:add4abd1f4431b0a3e1900622faa939ad47c9d4ffd6b9d480e3f49113d12f046",
-      "loc": 267,
+      "hash": "blake3:2b75f7bef6d5c2eca4da201bd1c01ceba1bfe31efa8922699b735acf5b0c24c9",
+      "loc": 277,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
@@ -12063,8 +10622,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            124,
-            137
+            133,
+            146
           ]
         },
         {
@@ -12103,8 +10662,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            139,
-            267
+            148,
+            277
           ]
         }
       ]
@@ -12113,17 +10672,27 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:b4683cbf299dd2c38502aa8a441d2860d555735dec3c9aeb92068cb933a129d1",
-      "loc": 531,
+      "hash": "blake3:ad89cbee3d4ca58b770603da3b0e1f424fd9e7cb9368d633610356c12724546b",
+      "loc": 597,
       "symbols": [
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
+          "name": "AssignmentRow",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            552,
+            586
+          ]
+        },
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#Empty",
           "name": "Empty",
           "kind": "function",
           "exported": false,
           "range": [
-            514,
-            520
+            524,
+            530
           ]
         },
         {
@@ -12132,8 +10701,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            388,
-            394
+            398,
+            404
           ]
         },
         {
@@ -12142,8 +10711,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            403,
-            431
+            413,
+            441
           ]
         },
         {
@@ -12152,8 +10721,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            486,
-            510
+            496,
+            520
           ]
         },
         {
@@ -12162,8 +10731,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            522,
-            531
+            588,
+            597
           ]
         },
         {
@@ -12172,8 +10741,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            61,
-            385
+            62,
+            395
           ]
         },
         {
@@ -12182,8 +10751,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            449,
-            484
+            459,
+            494
           ]
         }
       ]
@@ -15201,17 +13770,27 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:31a16c09788d798f53e541bfd6376cd28a05a317a186398630f69df7a5544c30",
-      "loc": 1284,
+      "hash": "blake3:a2d9d812fb92bf02017e172ed2a3ee3be6e7d6a5ede316df9a2d4bca6657d251",
+      "loc": 1364,
       "symbols": [
+        {
+          "id": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
+          "name": "AssignmentDisclosure",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            171,
+            180
+          ]
+        },
         {
           "id": "s:app/src/lib/board-model.ts#BlockerBinding",
           "name": "BlockerBinding",
           "kind": "type",
           "exported": true,
           "range": [
-            623,
-            623
+            703,
+            703
           ]
         },
         {
@@ -15221,7 +13800,7 @@
           "exported": true,
           "range": [
             105,
-            142
+            161
           ]
         },
         {
@@ -15230,8 +13809,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            144,
-            180
+            208,
+            244
           ]
         },
         {
@@ -15240,8 +13819,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            182,
-            188
+            246,
+            252
           ]
         },
         {
@@ -15250,8 +13829,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            595,
-            598
+            675,
+            678
           ]
         },
         {
@@ -15260,8 +13839,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            656,
-            674
+            736,
+            754
           ]
         },
         {
@@ -15270,8 +13849,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            601,
-            608
+            681,
+            688
           ]
         },
         {
@@ -15280,8 +13859,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            580,
-            582
+            660,
+            662
           ]
         },
         {
@@ -15290,8 +13869,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            563,
-            567
+            643,
+            647
           ]
         },
         {
@@ -15300,8 +13879,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            610,
-            610
+            690,
+            690
           ]
         },
         {
@@ -15310,8 +13889,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            697,
-            713
+            777,
+            793
           ]
         },
         {
@@ -15320,8 +13899,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            640,
-            653
+            720,
+            733
           ]
         },
         {
@@ -15330,8 +13909,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            677,
-            695
+            757,
+            775
           ]
         },
         {
@@ -15340,8 +13919,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            552,
-            559
+            632,
+            639
           ]
         },
         {
@@ -15350,8 +13929,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            548,
-            548
+            628,
+            628
           ]
         },
         {
@@ -15370,8 +13949,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            289,
-            298
+            366,
+            375
           ]
         },
         {
@@ -15380,8 +13959,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            867,
-            867
+            947,
+            947
           ]
         },
         {
@@ -15410,8 +13989,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            950,
-            954
+            1030,
+            1034
           ]
         },
         {
@@ -15420,8 +13999,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            774,
-            781
+            854,
+            861
           ]
         },
         {
@@ -15430,8 +14009,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            337,
-            337
+            414,
+            414
           ]
         },
         {
@@ -15440,8 +14019,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            625,
-            636
+            705,
+            716
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#assignmentByFile",
+          "name": "assignmentByFile",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            188,
+            206
           ]
         },
         {
@@ -15450,8 +14039,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            872,
-            877
+            952,
+            957
           ]
         },
         {
@@ -15460,8 +14049,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            914,
-            943
+            994,
+            1023
           ]
         },
         {
@@ -15470,8 +14059,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            283,
-            287
+            360,
+            364
           ]
         },
         {
@@ -15480,8 +14069,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            273,
-            280
+            350,
+            357
           ]
         },
         {
@@ -15490,8 +14079,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            270,
-            270
+            347,
+            347
           ]
         },
         {
@@ -15500,8 +14089,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            881,
-            889
+            961,
+            969
           ]
         },
         {
@@ -15510,8 +14099,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            799,
-            818
+            879,
+            898
           ]
         },
         {
@@ -15520,8 +14109,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            317,
-            328
+            394,
+            405
           ]
         },
         {
@@ -15530,8 +14119,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            828,
-            859
+            908,
+            939
           ]
         },
         {
@@ -15540,8 +14129,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            237,
-            237
+            301,
+            301
           ]
         },
         {
@@ -15550,8 +14139,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            217,
-            229
+            281,
+            293
           ]
         },
         {
@@ -15560,8 +14149,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            891,
-            891
+            971,
+            971
           ]
         },
         {
@@ -15570,8 +14159,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            239,
-            245
+            303,
+            309
           ]
         },
         {
@@ -15580,8 +14169,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            749,
-            754
+            829,
+            834
           ]
         },
         {
@@ -15590,8 +14179,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            359,
-            466
+            436,
+            546
           ]
         },
         {
@@ -15600,8 +14189,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1013,
-            1284
+            1093,
+            1364
           ]
         },
         {
@@ -15620,8 +14209,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            332,
-            334
+            409,
+            411
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#spreadAssignment",
+          "name": "spreadAssignment",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            313,
+            317
           ]
         },
         {
@@ -15630,8 +14229,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            233,
-            235
+            297,
+            299
           ]
         },
         {
@@ -15650,8 +14249,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            247,
-            267
+            319,
+            344
           ]
         },
         {
@@ -15660,8 +14259,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            978,
-            993
+            1058,
+            1073
           ]
         },
         {
@@ -15670,8 +14269,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            765,
-            771
+            845,
+            851
           ]
         }
       ]
@@ -16048,8 +14647,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:1754f48c4744f832c93324a4fef822810657a3196889b003cebb1843957315e5",
-      "loc": 218,
+      "hash": "blake3:3c5fe9cb8b0b8d94ba3431d033871f754a8d75549e78c819b39e8bb87ba432b9",
+      "loc": 240,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -16057,8 +14656,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            45,
-            56
+            52,
+            63
           ]
         },
         {
@@ -16067,8 +14666,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            123,
-            128
+            141,
+            146
           ]
         },
         {
@@ -16077,8 +14676,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            63,
-            112
+            70,
+            130
           ]
         },
         {
@@ -16087,8 +14686,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            31,
-            31
+            38,
+            38
           ]
         },
         {
@@ -16097,8 +14696,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            34,
-            36
+            41,
+            43
           ]
         },
         {
@@ -16107,8 +14706,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            135,
-            159
+            153,
+            177
           ]
         },
         {
@@ -16117,8 +14716,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            161,
-            166
+            179,
+            184
           ]
         },
         {
@@ -16127,8 +14726,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            40,
-            42
+            47,
+            49
           ]
         },
         {
@@ -16137,8 +14736,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            116,
-            118
+            134,
+            136
           ]
         },
         {
@@ -16147,8 +14746,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            174,
-            218
+            192,
+            240
           ]
         }
       ]
@@ -20597,17 +19196,37 @@
       "id": "f:app/test/review-badge.test.tsx",
       "path": "app/test/review-badge.test.tsx",
       "lang": "ts",
-      "hash": "blake3:814c2a2df81b9bc6e775a889671263e23f76ce3efe1f5b74f2ab5006f3780638",
-      "loc": 82,
+      "hash": "blake3:5f00c5450cce55ee4da6cdadcbe39007d5aa85f52e94fecdf5be0121a05bb086",
+      "loc": 199,
       "symbols": [
+        {
+          "id": "s:app/test/review-badge.test.tsx#ROADMAP_SRC",
+          "name": "ROADMAP_SRC",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            99,
+            99
+          ]
+        },
         {
           "id": "s:app/test/review-badge.test.tsx#container",
           "name": "container",
           "kind": "const",
           "exported": false,
           "range": [
-            18,
-            18
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:app/test/review-badge.test.tsx#panelModel",
+          "name": "panelModel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            101,
+            111
           ]
         },
         {
@@ -20616,8 +19235,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            32,
-            37
+            36,
+            41
+          ]
+        },
+        {
+          "id": "s:app/test/review-badge.test.tsx#renderPanel",
+          "name": "renderPanel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            113,
+            125
           ]
         },
         {
@@ -20626,8 +19255,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            19,
-            19
+            23,
+            23
           ]
         }
       ]
@@ -20636,8 +19265,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:8fc2dd0680a951da8fb092b6e16ad8ac59dc58b5076dadd33f0d24a339e99e7b",
-      "loc": 1924,
+      "hash": "blake3:4862639841016ff36cdbc39f6065d02280660a787304f42b52d114cdec247069",
+      "loc": 2031,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -20645,8 +19274,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            274,
-            282
+            275,
+            283
           ]
         },
         {
@@ -20655,8 +19284,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            52,
-            52
+            53,
+            53
           ]
         },
         {
@@ -20665,8 +19294,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            873,
-            873
+            874,
+            874
           ]
         },
         {
@@ -20675,8 +19304,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            796,
-            796
+            797,
+            797
           ]
         },
         {
@@ -20685,8 +19314,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            791,
-            791
+            792,
+            792
           ]
         },
         {
@@ -20695,8 +19324,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            42,
-            50
+            43,
+            51
           ]
         },
         {
@@ -20705,8 +19334,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            284,
-            285
+            285,
+            286
           ]
         },
         {
@@ -20715,8 +19344,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            879,
-            893
+            880,
+            894
           ]
         },
         {
@@ -20725,8 +19354,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            875,
-            876
+            876,
+            877
           ]
         },
         {
@@ -20735,8 +19364,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            55,
-            56
+            56,
+            57
           ]
         },
         {
@@ -20745,8 +19374,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            851,
-            858
+            852,
+            859
           ]
         },
         {
@@ -20755,8 +19384,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            860,
-            865
+            861,
+            866
           ]
         },
         {
@@ -20765,8 +19394,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            817,
-            834
+            818,
+            835
           ]
         },
         {
@@ -20775,8 +19404,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            839,
-            849
+            840,
+            850
           ]
         },
         {
@@ -20785,8 +19414,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            84,
-            84
+            85,
+            85
           ]
         },
         {
@@ -20795,8 +19424,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            78,
-            79
+            79,
+            80
           ]
         },
         {
@@ -20805,8 +19434,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            793,
-            793
+            794,
+            794
           ]
         },
         {
@@ -20815,8 +19444,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            868,
-            871
+            869,
+            872
           ]
         },
         {
@@ -20825,8 +19454,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            59,
-            76
+            60,
+            77
           ]
         },
         {
@@ -20835,8 +19464,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            81,
-            82
+            82,
+            83
           ]
         }
       ]
@@ -20845,8 +19474,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:f87ea776405f31a6fe5dc084f53af6aeae5e6bf20856a70f927b9b14e178c19f",
-      "loc": 361,
+      "hash": "blake3:41a19b731d581a94171235d8d7639d2c65abe7912655e5091b87ea45113a7c2b",
+      "loc": 422,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -21681,6 +20310,75 @@
       "symbols": []
     },
     {
+      "id": "f:lib/parser/src/assignment.ts",
+      "path": "lib/parser/src/assignment.ts",
+      "lang": "ts",
+      "hash": "blake3:af7ff115523c59a2521094d73f68c25c89f07fa63323a617d66d610518a3c906",
+      "loc": 302,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/assignment.ts#ASSIGNMENT_PAIRS",
+          "name": "ASSIGNMENT_PAIRS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            190,
+            197
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/assignment.ts#MODEL_ID",
+          "name": "MODEL_ID",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            117,
+            117
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/assignment.ts#assignmentIssues",
+          "name": "assignmentIssues",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            275,
+            302
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/assignment.ts#readAssignment",
+          "name": "readAssignment",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            205,
+            254
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/assignment.ts#satisfiesAssignment",
+          "name": "satisfiesAssignment",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            181,
+            183
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/assignment.ts#stampModels",
+          "name": "stampModels",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            154,
+            174
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/component.ts",
       "path": "lib/parser/src/component.ts",
       "lang": "ts",
@@ -22179,8 +20877,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:a87e80304349609fb36de422d83bc325929326398f4a5b808bb007cfbffdbd61",
-      "loc": 108,
+      "hash": "blake3:ba3bd2e991538261ed68bea9f7497a8f18f76c8fdd2283d7bb29e98a8d56c0cf",
+      "loc": 118,
       "symbols": []
     },
     {
@@ -22553,8 +21251,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:bce21aecf5d6e815f5ded9831e2d668d20e2ec76d9a361fd5e9dc8c7f98303d8",
-      "loc": 101,
+      "hash": "blake3:ed68c2d343daeba70cafead216fc6383192537340bd95e10e1c246410b95b9c8",
+      "loc": 111,
       "symbols": []
     },
     {
@@ -22888,9 +21586,39 @@
       "id": "f:lib/parser/src/types.ts",
       "path": "lib/parser/src/types.ts",
       "lang": "ts",
-      "hash": "blake3:0afe021d0f4c7df36ee63d45d5d59c424718b44dd388af76515efd89971954e4",
-      "loc": 403,
+      "hash": "blake3:ae277acae47b357966109cc79384a83d3aae854ce3cec562734e745ee04a427f",
+      "loc": 475,
       "symbols": [
+        {
+          "id": "s:lib/parser/src/types.ts#AssignmentReading",
+          "name": "AssignmentReading",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            237,
+            253
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#AssignmentRole",
+          "name": "AssignmentRole",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            222,
+            222
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#AssignmentVerdict",
+          "name": "AssignmentVerdict",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            232,
+            232
+          ]
+        },
         {
           "id": "s:lib/parser/src/types.ts#COMPONENT_STATUSES",
           "name": "COMPONENT_STATUSES",
@@ -22907,8 +21635,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            379,
-            382
+            451,
+            454
           ]
         },
         {
@@ -22927,8 +21655,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            385,
-            388
+            457,
+            460
           ]
         },
         {
@@ -22977,8 +21705,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            222,
-            360
+            259,
+            432
           ]
         },
         {
@@ -22987,8 +21715,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            392,
-            403
+            464,
+            475
           ]
         },
         {
@@ -23017,8 +21745,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            371,
-            374
+            443,
+            446
           ]
         },
         {
@@ -23057,8 +21785,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            365,
-            368
+            437,
+            440
           ]
         },
         {
@@ -23107,8 +21835,8 @@
       "id": "f:lib/parser/src/validate.ts",
       "path": "lib/parser/src/validate.ts",
       "lang": "ts",
-      "hash": "blake3:09142caf662eb79cb72d2c0f07d1299d03005ae28ce7fdae302984c1dbfc281f",
-      "loc": 343,
+      "hash": "blake3:decfd65a35191cd5f429cb0f8a7f71bb9ae20347630ecd91db12bd50dd61f361",
+      "loc": 361,
       "symbols": [
         {
           "id": "s:lib/parser/src/validate.ts#ValidateProjectOptions",
@@ -23116,8 +21844,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            89,
-            102
+            97,
+            110
           ]
         },
         {
@@ -23126,8 +21854,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            224,
-            327
+            242,
+            345
           ]
         },
         {
@@ -23136,8 +21864,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            339,
-            343
+            357,
+            361
           ]
         },
         {
@@ -23146,8 +21874,87 @@
           "kind": "function",
           "exported": true,
           "range": [
-            104,
-            205
+            112,
+            223
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/assignment.test.ts",
+      "path": "lib/parser/test/assignment.test.ts",
+      "lang": "ts",
+      "hash": "blake3:c97775f45907e96587a6d98644aba007c324387f4a0ae030ce3fd934c3d779bb",
+      "loc": 293,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#board",
+          "name": "board",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            25,
+            25
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#card",
+          "name": "card",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            29,
+            33
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#fixture",
+          "name": "fixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            37,
+            46
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#project",
+          "name": "project",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#reading",
+          "name": "reading",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            48,
+            52
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#repoRoot",
+          "name": "repoRoot",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/assignment.test.ts#violations",
+          "name": "violations",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            55,
+            57
           ]
         }
       ]
@@ -23225,8 +22032,8 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:bf41605d6cebf3bd3af988f3faaa56441105593533d421f42659c8f1e2d5552e",
-      "loc": 454,
+      "hash": "blake3:ef4b7a86121ac846abe4f4c763df9d4dbb773926e716bb5640e8d26cd721a272",
+      "loc": 459,
       "symbols": [
         {
           "id": "s:lib/parser/test/fence.test.ts#board",
@@ -26605,6 +25412,14 @@
     },
     {
       "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "AssignmentDisclosure"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
       "symbols": [
@@ -27207,8 +26022,10 @@
       "to": "f:app/src/lib/board-model.ts",
       "kind": "import",
       "symbols": [
+        "AssignmentDisclosure",
         "BoardCard",
         "StatusVisual",
+        "assignmentByFile",
         "issuesByFile",
         "statusVisual"
       ]
@@ -29254,10 +28071,43 @@
     },
     {
       "from": "f:app/test/review-badge.test.tsx",
+      "to": "f:app/src/components/board/TaskCard.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskCard"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskDetailPanel"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
       "to": "f:app/src/components/board/badges/ReviewBadge.tsx",
       "kind": "import",
       "symbols": [
         "ReviewBadge"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardCard"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
       ]
     },
     {
@@ -29306,6 +28156,7 @@
         "LaneHold",
         "TopmostCard",
         "UNMAPPED_KEY",
+        "assignmentByFile",
         "expandTouch",
         "fenceClashes",
         "issuesByFile",
@@ -29731,6 +28582,17 @@
       ]
     },
     {
+      "from": "f:lib/parser/src/assignment.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "AssignmentReading",
+        "AssignmentRole",
+        "ParseIssue",
+        "TaskRecord"
+      ]
+    },
+    {
       "from": "f:lib/parser/src/component.ts",
       "to": "f:lib/parser/src/frontmatter.ts",
       "kind": "import",
@@ -29831,6 +28693,19 @@
       "symbols": [
         "parse"
       ]
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/assignment.ts",
+      "kind": "import",
+      "symbols": [
+        "ASSIGNMENT_PAIRS",
+        "assignmentIssues",
+        "readAssignment",
+        "satisfiesAssignment",
+        "stampModels"
+      ],
+      "reexport": true
     },
     {
       "from": "f:lib/parser/src/index.ts",
@@ -29984,6 +28859,9 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "AssignmentReading",
+        "AssignmentRole",
+        "AssignmentVerdict",
         "COMPONENT_STATUSES",
         "ComponentParseResult",
         "ComponentRecord",
@@ -30125,6 +29003,19 @@
     },
     {
       "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/assignment.ts",
+      "kind": "import",
+      "symbols": [
+        "ASSIGNMENT_PAIRS",
+        "assignmentIssues",
+        "readAssignment",
+        "satisfiesAssignment",
+        "stampModels"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
       "to": "f:lib/parser/src/component.ts",
       "kind": "import",
       "symbols": [
@@ -30261,6 +29152,9 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "AssignmentReading",
+        "AssignmentRole",
+        "AssignmentVerdict",
         "COMPONENT_STATUSES",
         "ComponentParseResult",
         "ComponentRecord",
@@ -30376,6 +29270,14 @@
     },
     {
       "from": "f:lib/parser/src/validate.ts",
+      "to": "f:lib/parser/src/assignment.ts",
+      "kind": "import",
+      "symbols": [
+        "assignmentIssues"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/validate.ts",
       "to": "f:lib/parser/src/id-slot.ts",
       "kind": "import",
       "symbols": [
@@ -30393,6 +29295,55 @@
         "ParseIssue",
         "ProjectParseResult",
         "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/assignment.test.ts",
+      "to": "f:lib/parser/src/assignment.ts",
+      "kind": "import",
+      "symbols": [
+        "ASSIGNMENT_PAIRS",
+        "readAssignment",
+        "satisfiesAssignment",
+        "stampModels"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/assignment.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProject",
+        "parseTaskFile",
+        "validateProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/assignment.test.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "AssignmentReading",
+        "ParseIssue",
+        "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/assignment.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/assignment.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
       ]
     },
     {
@@ -32622,6 +31573,12 @@
       "from": "s:app/src/components/board/TaskCard.tsx#TaskCard",
       "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -34972,6 +33929,12 @@
     },
     {
       "from": "s:app/src/lib/board-model.ts#BoardCard",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#BoardCard",
       "to": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -35057,6 +34020,12 @@
     {
       "from": "s:app/src/lib/board-model.ts#UnmetBlocker",
       "to": "s:app/src/lib/board-model.ts#BlockerBinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#assignmentByFile",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -35176,6 +34145,12 @@
     },
     {
       "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#assignmentByFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
       "to": "s:app/src/lib/board-model.ts#featureAliasIndex",
       "kind": "call",
       "confidence": "resolved"
@@ -35283,8 +34258,20 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/board-model.ts#spreadAssignment",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/board-model.ts#statusVisual",
       "to": "s:app/src/lib/board-model.ts#StatusVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -35297,6 +34284,12 @@
     {
       "from": "s:app/src/lib/board-model.ts#toCard",
       "to": "s:app/src/lib/board-model.ts#modelBadge",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#spreadAssignment",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -35584,6 +34577,12 @@
     },
     {
       "from": "s:app/src/lib/task-detail.ts#TaskDetail",
+      "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#TaskDetail",
       "to": "s:app/src/lib/board-model.ts#StatusVisual",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -35622,6 +34621,12 @@
       "from": "s:app/src/lib/task-detail.ts#refLabel",
       "to": "s:app/src/lib/task-detail.ts#TaskRef",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/board-model.ts#assignmentByFile",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -37749,6 +36754,54 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/assignment.ts#ASSIGNMENT_PAIRS",
+      "to": "s:lib/parser/src/types.ts#AssignmentRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#assignmentIssues",
+      "to": "s:lib/parser/src/assignment.ts#readAssignment",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#assignmentIssues",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#assignmentIssues",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#readAssignment",
+      "to": "s:lib/parser/src/assignment.ts#satisfiesAssignment",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#readAssignment",
+      "to": "s:lib/parser/src/assignment.ts#stampModels",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#readAssignment",
+      "to": "s:lib/parser/src/types.ts#AssignmentReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/assignment.ts#readAssignment",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/component.ts#compareComponentIds",
       "to": "s:lib/parser/src/id-slot.ts#compareDigitRuns",
       "kind": "call",
@@ -39003,6 +38056,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/types.ts#AssignmentReading",
+      "to": "s:lib/parser/src/types.ts#AssignmentRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#AssignmentReading",
+      "to": "s:lib/parser/src/types.ts#AssignmentVerdict",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/types.ts#ComponentParseResult",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
@@ -39035,6 +38100,12 @@
     {
       "from": "s:lib/parser/src/types.ts#ModelSession",
       "to": "s:lib/parser/src/types.ts#SessionPolicy",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ParseIssue",
+      "to": "s:lib/parser/src/types.ts#AssignmentRole",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -39136,6 +38207,12 @@
     },
     {
       "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/assignment.ts#assignmentIssues",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
       "to": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
       "kind": "call",
       "confidence": "resolved"
@@ -39186,6 +38263,48 @@
       "from": "s:lib/parser/src/validate.ts#validateProject",
       "to": "s:lib/parser/src/validate.ts#filenameId",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#board",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#card",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#fixture",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#reading",
+      "to": "s:lib/parser/src/assignment.ts#readAssignment",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#reading",
+      "to": "s:lib/parser/src/types.ts#AssignmentReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#reading",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/assignment.test.ts#violations",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -39329,8 +38448,10 @@
     }
   ],
   "stats": {
-    "files": 190,
-    "symbols": 2205,
-    "edges": 2117
+    "files": 192,
+    "symbols": 2084,
+    "edges": 2159,
+    "truncated_symbols": true,
+    "truncated_files": 1
   }
 }
