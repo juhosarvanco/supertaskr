@@ -61,6 +61,14 @@ These are not arguments in this room. They are the walls it is in.
    and the hook refuses writes outside it (T-154, T-160). Any
    customization artifact is inside somebody's fence or it is not
    writable at all.
+   **AND NPUTER ALREADY SHIPS ITS STRONGEST GUARANTEE AS A CHECKED-IN
+   CONFIG FILE.** `.claude/settings.json` in this repository registers
+   the fence as a `PreToolUse` hook on `Edit|Write|NotebookEdit`,
+   pointing at `.claude/hooks/lane-fence-hook.mjs`. That is the
+   config-file school in production here today, carrying the one rule
+   nobody may bypass — read in the tree at this lane's base commit. Any
+   form chosen below inherits a working existence proof that files are
+   a sufficient enforcement surface for this project.
 5. **D3, ruled narrow 2026-08-30 (rooms/cockpit-or-mirror.md).** The
    app may write card frontmatter stamps (`builder:`, `verifier:`,
    `status:`) and APPEND to record-class locations. NORTH_STAR,
@@ -308,7 +316,13 @@ The reasoning, in the order the arguments actually carry:
    lane may hold. A customization change enters the tree the way every
    other change does: a card, a `touches:` line, a fence, a diff, a
    verdict.
-6. **It is the cheapest thing that is also the most complete**, because
+6. **The existence proof is already in the tree.** The fence — the one
+   rule in this project that nothing may bypass — is delivered as a
+   committed `.claude/settings.json` hook. The config-file school is
+   not a hypothesis here; it is how nputer's hardest guarantee already
+   ships, and the benchmark's enforcement lesson (L-2: settings
+   enforce, instructions guide, hooks block) is already obeyed.
+7. **It is the cheapest thing that is also the most complete**, because
    the disk layout it implies is identical to form (a)'s. Choosing c2
    is choosing form (a) PLUS a lens and a proposal route — so form (a)
    is not foregone, it is the substrate, and if the app half is never
