@@ -1639,6 +1639,32 @@ describe("the ending, and the footer that used to lie about it (T-171)", () => {
     expect(q("[data-testid=interview-complete]"), "an open turn is not an ending").toBeNull();
   });
 
+  it("NO BOARD, NO ENDING — a settled conversation over an empty docs/ is not a finished plan", async () => {
+    // T-028's rule, held one layer over: "an empty board is never
+    // celebrated". The ending follows `completionOf`, which wants a
+    // PARSEABLE BOARD and not merely a quiet conversation — so a screen
+    // that ended the interview because nothing was in flight would be
+    // celebrating planning theater, the failure mode NORTH_STAR names.
+    //
+    // WRITTEN BECAUSE THE DRILL FOUND IT (poison shape SEVEN): a mutant
+    // that gated the ending on `!busy` instead of on completion survived
+    // the whole suite. Nothing pinned that the ending requires a board.
+    ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
+    await withStatus();
+    render(docsWith(1, { "docs/NORTH_STAR.md": "# North star\n\n## Vision\nA thing.\n" }));
+    await flush(() => Promise.resolve());
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: "Q2?", truncatedRelay: false },
+    );
+
+    const chat = q("[data-testid=interview-chat]")!;
+    expect(chat.getAttribute("data-flight"), "nothing is in flight").toBe("idle");
+    expect(chat.getAttribute("data-complete"), "…and nothing is complete either").toBe("false");
+    expect(q("[data-testid=interview-complete]")).toBeNull();
+    expect(q("[data-testid=interview-hint]")?.textContent).not.toContain("complete");
+  });
+
   it("the ending stands down when the user answers again — it is not a latch", async () => {
     await walkedToTheEnd();
     expect(q("[data-testid=interview-complete]"), "the ending is on screen").not.toBeNull();

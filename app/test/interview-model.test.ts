@@ -746,12 +746,18 @@ describe("inputHint — three states, and thinking is not a resting one (T-171)"
     expect(hint).toContain(String.fromCharCode(0x23ce) + " send");
   });
 
-  it("is the plain send hint mid-interview — no ending claimed before there is one", () => {
-    expect(inputHint(false, false)).toBe(
-      String.fromCharCode(0x23ce) + " send " + String.fromCharCode(0x00b7) + " " +
-        String.fromCharCode(0x21e7) + String.fromCharCode(0x23ce) + " newline",
-    );
-  });
+  /* THE THIRD ARM'S OWN BODY IS DELIBERATELY ABSENT — `inputHint(false,
+     false)` returns the design's plain send hint, and an equality on it
+     here is POISON SHAPE SIX: measured, not assumed. Every mutant it
+     kills is already killed by `interview-chat-dom.test.tsx`'s "carries
+     the design's placeholder verbatim, and the send hint", which asserts
+     the same string through the REAL component in the same state — the
+     drill's M8 (`if (!complete)`) killed the two together and no mutant
+     was found that kills only this one. The rule's answer to that is to
+     name it rather than keep it: a body that kills no unique mutant costs
+     a reader's attention and buys nothing. The pre-T-171 arm was already
+     pinned; what needed pinning is the two arms this task ADDED, and both
+     are above. */
 });
 
 describe("stageOf degrades instead of taking the conversation down", () => {
