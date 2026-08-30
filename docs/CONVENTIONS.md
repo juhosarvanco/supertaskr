@@ -1145,8 +1145,9 @@
     it serves, and wiring it into CI is a routed suggestion.
     A PreToolUse hook wired in
     `.claude/settings.json` then reads that file at every Edit/Write
-    with no dependency a freshly cut worktree lacks. FOUR ANSWERS, AND
-    THE AUTHORITY IS `decide` IN `.claude/hooks/lane-fence.mjs` RATHER
+    with no dependency a freshly cut worktree lacks. FOUR ANSWERS FOR A
+    LANE, AND THE AUTHORITY IS `decide` IN
+    `.claude/hooks/lane-fence.mjs` RATHER
     THAN THIS PAGE: a checkout not on a lane branch is ALLOWED — the
     integrator, the architect and every detached drill, which is the
     positive control that keeps a refusal distinguishable from an
@@ -1157,16 +1158,42 @@
     `touches:` no longer matches the manifest's stamp refuses with
     `re-expand`, so a fence cannot be widened from inside the lane it
     fences — `method/lane-protocol.md` rule 5, made mechanical.
-    **FOUR LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
+    **AND THE SEAT WITH NO LANE IS SEEN TOO, WHICH IS THE SHAPE OF TWO
+    OF THE THREE INCIDENTS T-154 CITES** (`T-154-s2`; @human ruled those
+    writes IN SCOPE on 2026-08-30, and v1 allowed them because it armed
+    on the writing session's own branch). A checkout that is NOT on a
+    lane branch — this one above all — is now refused a write to any
+    repository-relative path some LIVE lane's manifest reserves. Every
+    live lane's fence is read off git's own worktree administration with
+    no subprocess: measured at `T-154-s2`, the whole walk costs a fifth
+    of a millisecond where `git worktree list` alone costs eleven, and
+    the runner is unchanged end to end at ~40 ms because node's startup
+    dominates both. **THE CARVE-OUTS ARE CRITERIA AND NEVER THE HOOK'S
+    JUDGEMENT**: `docs/tasks/` stays unfenceable (every manifest carries
+    it, as `alwaysWritable`, so the dispatch and closing stamps are
+    safe), a card's own file is outside every fence (its `excluded`),
+    and this seat's own standing writes are never a lane's to veto —
+    exactly `docs/STATE.md` and `docs/checkpoints`, no more. ONE
+    CRITERION IS THE HOOK'S OWN AND IS NOT IN THE RULING'S LIST: a
+    checkout git itself records as mid-merge, mid-rebase, mid-revert or
+    mid-cherry-pick is free, because resolving a lane's merge is an Edit
+    inside that lane's fence by construction, and a guard forbidding the
+    act that CONSUMES a fence is a guard somebody turns off.
+    **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write
-    and stays protocol-covered. A path OUTSIDE the lane's own checkout
-    is allowed, the manifest's domains being repository-relative: the
-    scratchpad and a drill tree are reachable, and so is a sibling
-    lane's. The guard is armed by the WRITING session's own branch,
-    so a seat in this checkout editing a file a live lane holds is not
-    seen — the shape of two of the three incidents the card cites.
-    And the hook FAILS OPEN in exactly one shape, proven at
+    and stays protocol-covered. A path OUTSIDE the writing checkout is
+    allowed in BOTH seats, the manifest's domains being
+    repository-relative: the scratchpad and a drill tree are reachable,
+    and so is a sibling lane's own tree — that last one deliberately,
+    because nothing separates an architect reaching into a lane from
+    THAT LANE'S OWN EXECUTOR writing into it from a shell parked
+    elsewhere. A DETACHED checkout is not judged at all, so the poison
+    drill may go on mutating the very files a live lane holds and the
+    human's app checkout stays free. A live lane whose manifest this
+    seat cannot read reserves nothing here — that refusal belongs to
+    the lane's own arm, at its own first write, where there is a session
+    to tell. And the hook FAILS OPEN in exactly one shape, proven at
     verification to be the harness's own contract rather than this
     guard's choice: a command hook whose script cannot be LOCATED
     never starts, and a process that never starts cannot exit 2 — it

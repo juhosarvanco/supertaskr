@@ -1,23 +1,36 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import {
+  INTEGRATION_SEAT_PATHS,
   LANE_BRANCH_RE,
   MANIFEST_REL_PATH,
   MANIFEST_VERSION,
   ROUTE,
+  ROUTE_LANE_LESS,
   WRITE_TOOL_PATH_FIELDS,
   decide,
   findCheckoutRoot,
+  liveLanes,
   readHeadRef,
   touchesLineOf,
   within,
 } from "../../../.claude/hooks/lane-fence.mjs";
 import { repoRoot } from "../preflight";
-import { conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
+import { conventionsBullet, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
 import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
 import { MANIFEST_DIR_IGNORE, buildLaneFence, laneIdOf, writeLaneFence } from "../scripts/lane-fence.mjs";
 
@@ -195,6 +208,55 @@ async function arm(fx: Fixture): Promise<Awaited<ReturnType<typeof buildLaneFenc
   const manifest = await buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" });
   writeLaneFence(manifest);
   return manifest;
+}
+
+/**
+ * A SECOND live lane beside the first — a real sibling, cut and armed
+ * the way dispatch cuts one.
+ *
+ * The lane-less arm reads EVERY live lane, and a fixture with one lane
+ * cannot tell "every" from "the first": a hook that stopped at
+ * `lanes[0]` would pass every body a single-lane world can write. So the
+ * card is committed into the fixture repository (the board is
+ * `git ls-files`, so an uncommitted card is not on it), its worktree is
+ * cut, and the real writer arms it.
+ */
+async function addLane(
+  fx: Fixture,
+  id: string,
+  touchesLine: string,
+): Promise<{ lane: string; manifest: Awaited<ReturnType<typeof buildLaneFence>> }> {
+  const card = `docs/tasks/${id}-a-sibling-lane.md`;
+  writeFixtureFile(
+    fx.repo,
+    card,
+    [
+      "---",
+      `id: ${id}`,
+      "title: A sibling lane the guard must also see",
+      "feature: F-04",
+      "milestone: 4",
+      "priority: 30",
+      "size: M",
+      "status: building",
+      "blocked_by: []",
+      touchesLine,
+      "builder:",
+      "verifier:",
+      "built_by:",
+      "verified_by:",
+      "review:",
+      "---",
+      "",
+    ].join("\n"),
+  );
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", `fixture lane ${id}`, "--quiet"]);
+  const lane = path.join(path.dirname(fx.lane), `nputer-${id}`);
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", `task/${id}-sibling`, lane]);
+  const manifest = await buildLaneFence(id, lane, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" });
+  writeLaneFence(manifest);
+  return { lane, manifest };
 }
 
 /** One PreToolUse request, as the harness shapes it. */
@@ -379,6 +441,23 @@ test("a manifest the hook cannot read is a refusal, never a shrug", async () => 
     ["not an object", "[]"],
     ["a version this reader does not know", JSON.stringify({ version: MANIFEST_VERSION + 1 })],
     ["missing a field", JSON.stringify({ version: MANIFEST_VERSION, taskId: FIXTURE_ID })],
+    // `excluded` joined the fields this reader requires at T-154-s2: the
+    // lane-less arm carves a card's own file out of a fence it does not
+    // hold, and it can only do that from a manifest that carries the
+    // carve-out. The writer has stamped it since T-154; requiring it is
+    // the reader catching up with the schema, not a new demand.
+    [
+      "missing the excluded field the carve-outs are read from",
+      JSON.stringify({
+        version: MANIFEST_VERSION,
+        taskId: FIXTURE_ID,
+        branch: "refs/heads/task/T-901-guard-fixture",
+        card: FIXTURE_CARD,
+        touchesLine: FIXTURE_TOUCHES,
+        paths: ["tools/e2e"],
+        alwaysWritable: ["docs/tasks"],
+      }),
+    ],
   ] as const) {
     writeFileSync(file, content, "utf8");
     const verdict = ask(fx.lane, path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts"));
@@ -714,6 +793,355 @@ test("an unreadable request costs an integrator nothing and buys an executor not
   // the fallback lands on a lane branch with no readable path.
   expect(garbage(fx.repo).status, garbage(fx.repo).stderr).toBe(0);
   expect(garbage(fx.lane).status).toBe(2);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE SEAT WITH NO LANE (T-154-s2, @human's ruling of 2026-08-30)
+ *
+ * v1 armed on the WRITING session's own branch, so it saw a lane
+ * reaching OUT and never a seat with no lane reaching IN — two of the
+ * three incidents T-154 cites. Everything below drives the second seat,
+ * and every allow in it is a discriminating one: the same fixture, in
+ * the same run, refuses a neighbouring write.
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("a lane-less seat is refused a path a LIVE lane holds, and that lane may still write it", async () => {
+  const fx = makeFixture();
+  const manifest = await arm(fx);
+
+  // THE GUARD'S STATE FIRST. The integration fixture is on a branch that
+  // is not a lane, it holds no manifest of its own, and the lane beside
+  // it is live and armed — so the refusal below cannot be a manifest
+  // this checkout read about itself.
+  expect(readHeadRef(fx.repo)).toBe("refs/heads/main");
+  expect(existsSync(path.join(fx.repo, MANIFEST_REL_PATH))).toBe(false);
+  expect(liveLanes(fx.repo).map((l) => l.manifest.taskId)).toEqual([FIXTURE_ID]);
+
+  const held = "tools/e2e/tests/fixture.spec.ts";
+  const refused = ask(fx.repo, path.join(fx.repo, held));
+  expect(refused.verdict, refused.reason).toBe("block");
+  expect(refused.code).toBe("held-by-a-live-lane");
+  expect(refused.reason, "the lane is not named").toContain(FIXTURE_ID);
+  expect(refused.reason, "the lane's worktree is not named").toContain(fx.lane);
+  expect(refused.reason, "the fence is not named").toContain(manifest.touchesLine);
+  expect(refused.reason, "the path is not named").toContain(held);
+  expect(refused.reason, "the route is not named").toContain(ROUTE_LANE_LESS);
+
+  // THE DISCRIMINATING HALF, BOTH WAYS. The lane whose fence this is may
+  // write the same path, and the same seat may write a path no lane
+  // holds — so this is a reservation being enforced, not a hook that
+  // refuses whatever it is shown.
+  expect(ask(fx.lane, path.join(fx.lane, held)).code).toBe("inside-the-fence");
+  expect(ask(fx.repo, path.join(fx.repo, "app/src/main.tsx")).code).toBe("not-a-lane");
+});
+
+test("EVERY live lane is read, not the first one the walk finds", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const second = await addLane(fx, "T-902", "touches: [app/src/main.tsx]");
+
+  const ids = liveLanes(fx.repo).map((l) => l.manifest.taskId).sort();
+  expect(ids, "the second lane is invisible to the walk").toEqual([FIXTURE_ID, "T-902"]);
+  expect(second.manifest.paths).toEqual(["app/src/main.tsx"]);
+
+  // A path ONLY THE SECOND lane holds. Under a hook that stopped at the
+  // first lane this is an allow, and every other body here still passes.
+  const refused = ask(fx.repo, path.join(fx.repo, "app/src/main.tsx"));
+  expect(refused.verdict, refused.reason).toBe("block");
+  expect(refused.code).toBe("held-by-a-live-lane");
+  expect(refused.reason, "the refusal names the wrong lane").toContain("T-902");
+  // And the first lane is still enforced in the same world.
+  expect(ask(fx.repo, path.join(fx.repo, "tools/e2e/x.ts")).reason).toContain(FIXTURE_ID);
+});
+
+test("a DETACHED checkout is not judged, so the poison drill may mutate what a lane holds", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  expect(readHeadRef(fx.drill), "the drill fixture is not detached").toBeUndefined();
+
+  // The drill's whole job is mutating the lane's own files
+  // (docs/CONVENTIONS.md, POISON DRILL), so the arm that refuses this
+  // path to the integration checkout must not reach a detached tree.
+  const inDrill = ask(fx.drill, path.join(fx.drill, "tools/e2e/tests/fixture.spec.ts"));
+  expect(inDrill.verdict, inDrill.reason).toBe("allow");
+  expect(inDrill.code).toBe("not-a-lane");
+  expect(inDrill.reason, "the detached limit is not named in the answer").toContain("detached");
+  // The discriminating half: the SAME path, the SAME repository, from
+  // the checkout that holds a branch — refused.
+  expect(ask(fx.repo, path.join(fx.repo, "tools/e2e/tests/fixture.spec.ts")).code).toBe(
+    "held-by-a-live-lane",
+  );
+});
+
+test("the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // A linked worktree on a branch that is not a lane: the `arch-verify`
+  // shape, and a session worktree's. Its own git directory is a POINTER,
+  // so the walk has to follow `commondir` to reach the administration at
+  // all — from the main checkout that file does not exist and this whole
+  // hop is unexercised.
+  const seat = path.join(path.dirname(fx.lane), "nputer-review");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-check", seat]);
+  expect(readHeadRef(seat)).toBe("refs/heads/review/T-901-check");
+  expect(liveLanes(seat).map((l) => l.manifest.taskId), "the walk lost the lane list").toEqual([
+    FIXTURE_ID,
+  ]);
+  const refused = ask(seat, path.join(seat, "tools/e2e/tests/fixture.spec.ts"));
+  expect(refused.verdict, refused.reason).toBe("block");
+  expect(refused.code).toBe("held-by-a-live-lane");
+  // Discriminating in the same tree: a path no lane holds is allowed.
+  expect(ask(seat, path.join(seat, "app/src/main.tsx")).verdict).toBe("allow");
+
+  // AND THE MAIN CHECKOUT IS A CANDIDATE LIKE ANY OTHER. Git keeps its
+  // HEAD in the common directory rather than under `worktrees/`, so a
+  // walk that only read the linked entries would miss an integration
+  // checkout parked on a task branch — rare, and exactly the kind of
+  // state a guard should not be blind to.
+  writeFixtureFile(fx.repo, "docs/tasks/T-905-the-main-checkout-holds-a-lane.md", [
+    "---",
+    "id: T-905",
+    "title: The main checkout holds a lane",
+    "feature: F-04",
+    "milestone: 4",
+    "priority: 30",
+    "size: M",
+    "status: building",
+    "blocked_by: []",
+    "touches: [app/src/main.tsx]",
+    "builder:",
+    "verifier:",
+    "built_by:",
+    "verified_by:",
+    "review:",
+    "---",
+    "",
+  ].join("\n"));
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", "fixture T-905", "--quiet"]);
+  git(fx.repo, ["checkout", "--quiet", "-b", "task/T-905-main-as-lane"]);
+  writeLaneFence(await buildLaneFence("T-905", fx.repo, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" }));
+
+  expect(liveLanes(seat).map((l) => l.manifest.taskId).sort()).toEqual([FIXTURE_ID, "T-905"]);
+  const held = ask(seat, path.join(seat, "app/src/main.tsx"));
+  expect(held.verdict, held.reason).toBe("block");
+  expect(held.reason).toContain("T-905");
+});
+
+test("the three carve-outs each free a DIFFERENT write, and the fence still holds around them", async () => {
+  // A lane fencing `docs` is what makes this measurable: the domain
+  // contains the card, the stamps and this seat's own standing writes,
+  // so all three carve-outs and the refusal are one fixture apart.
+  const fx = makeFixture("touches: [tools/e2e, docs]");
+  const manifest = await arm(fx);
+  expect(manifest.paths).toContain("docs");
+  expect(manifest.excluded, "the card's own file was not carved out at dispatch").toEqual([
+    FIXTURE_CARD,
+  ]);
+  expect(manifest.alwaysWritable).toEqual(["docs/tasks"]);
+
+  const ownCard = ask(fx.repo, path.join(fx.repo, FIXTURE_CARD));
+  expect(ownCard.verdict, ownCard.reason).toBe("allow");
+  expect(ownCard.code).toBe("protocol-carve-out");
+  expect(ownCard.reason, "the own-file carve-out is not the one named").toContain("own card file");
+
+  const otherCard = ask(fx.repo, path.join(fx.repo, "docs/tasks/T-903-a-suggestion.md"));
+  expect(otherCard.verdict, otherCard.reason).toBe("allow");
+  expect(otherCard.code).toBe("protocol-carve-out");
+  expect(otherCard.reason, "the unfenceable-directory carve-out is not the one named").toContain(
+    "no card may fence it",
+  );
+
+  for (const seatPath of ["docs/STATE.md", "docs/checkpoints/2026-01-01-T-901.md"]) {
+    const seat = ask(fx.repo, path.join(fx.repo, seatPath));
+    expect(seat.verdict, seat.reason).toBe("allow");
+    expect(seat.code, seatPath).toBe("protocol-carve-out");
+    expect(seat.reason, seatPath).toContain("standing write");
+  }
+
+  // THE DISCRIMINATING HALF: a path under the SAME fenced domain that no
+  // carve-out names is refused, in the same run. Without it every line
+  // above is satisfied by a hook that stopped enforcing `docs`.
+  const refused = ask(fx.repo, path.join(fx.repo, "docs/ROADMAP.md"));
+  expect(refused.verdict, refused.reason).toBe("block");
+  expect(refused.code).toBe("held-by-a-live-lane");
+  // And inside the lane the carve-outs are NOT the lane's: the fence
+  // question and the seat question are different questions.
+  expect(ask(fx.lane, path.join(fx.lane, "docs/STATE.md")).code).toBe("inside-the-fence");
+});
+
+test("the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes", () => {
+  // UNNESTED, for the reason the branch-spelling body gives: a nested
+  // `f(g(root))` hides this file from the DOCS GATE's reader derivation
+  // while it really does read the document.
+  const conventions = conventionsText(repoRoot);
+  const bullet = String(conventionsBullet(conventions, "THE LANE PROTOCOL"));
+  const sentence = /never a lane's to veto — exactly (.*?), no more/.exec(bullet);
+  expect(sentence, "the lane bullet no longer publishes this seat's standing writes").not.toBeNull();
+  const published = [...((sentence as RegExpExecArray)[1] ?? "").matchAll(/`([^`]+)`/g)].map(
+    (m) => m[1] as string,
+  );
+
+  // The constant and the page are two copies the design could not avoid
+  // — the hook cannot parse a document on every keystroke — so they are
+  // COMPARED rather than trusted, exactly as the lane-branch spelling is.
+  // A red here names both sides and says which is which, not which is right.
+  expect(published, "the hook's carve-outs and the page's have drifted").toEqual([
+    ...INTEGRATION_SEAT_PATHS,
+  ]);
+  expect(INTEGRATION_SEAT_PATHS.length, "the published set is empty, so this proves nothing").toBe(2);
+});
+
+test("the merge that CONSUMES a fence is not refused by it", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const held = path.join(fx.repo, "tools/e2e/tests/fixture.spec.ts");
+
+  // Refused first, so the allow below is a state change and not a
+  // mechanism that never armed.
+  expect(ask(fx.repo, held).code).toBe("held-by-a-live-lane");
+
+  // git's own record of a conflicted merge. Resolving one is an Edit
+  // into the merging lane's fence BY CONSTRUCTION, so a guard without
+  // this criterion forbids the act that ends lanes.
+  const gitDir = path.join(fx.repo, ".git");
+  writeFileSync(path.join(gitDir, "MERGE_HEAD"), `${"0".repeat(40)}\n`, "utf8");
+  const merging = ask(fx.repo, held);
+  expect(merging.verdict, merging.reason).toBe("allow");
+  expect(merging.code).toBe("mid-integration");
+  expect(merging.reason).toContain("MERGE_HEAD");
+  rmSync(path.join(gitDir, "MERGE_HEAD"));
+
+  // The revert play is the same shape and rides the same criterion.
+  writeFileSync(path.join(gitDir, "REVERT_HEAD"), `${"0".repeat(40)}\n`, "utf8");
+  expect(ask(fx.repo, held).code).toBe("mid-integration");
+  rmSync(path.join(gitDir, "REVERT_HEAD"));
+
+  // AND IT CLOSES AGAIN. A carve-out that outlived the merge would be a
+  // permanently open gate, which is worse than none.
+  expect(ask(fx.repo, held).code).toBe("held-by-a-live-lane");
+});
+
+test("a lane whose worktree is gone fences nothing, and a stray manifest still locks nobody out", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const held = path.join(fx.repo, "tools/e2e/tests/fixture.spec.ts");
+  expect(ask(fx.repo, held).code).toBe("held-by-a-live-lane");
+
+  // A STRAY MANIFEST IS READ BY NOBODY — v1's load-bearing property, in
+  // the shape the widening could have broken. BOTH non-lane shapes carry
+  // one here, and they fail the filter for different reasons: the drill
+  // is DETACHED (its HEAD names no branch at all) and the review seat is
+  // on a branch that is simply not a lane. A walk that read manifests
+  // instead of branches would hand this repository two fences nobody
+  // holds — and the second worktree is why "filtered on the branch,
+  // never the path" is a measurement here and not a slogan.
+  const stray = JSON.parse(readFileSync(path.join(fx.lane, MANIFEST_REL_PATH), "utf8"));
+  stray.paths = ["app/src"];
+  const review = path.join(path.dirname(fx.lane), "nputer-review-stray");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-stray", review]);
+  for (const home of [fx.drill, review]) {
+    mkdirSync(path.join(home, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
+    writeFileSync(path.join(home, MANIFEST_REL_PATH), JSON.stringify(stray), "utf8");
+  }
+  expect(readHeadRef(review)).toBe("refs/heads/review/T-901-stray");
+  // REALPATH BOTH SIDES, and the reason is a platform fact this project
+  // already walks into: git's `gitdir` file records the RESOLVED path,
+  // while `mkdtemp` under `os.tmpdir()` hands back the symlinked one
+  // (`/var` → `/private/var` here, as `/tmp` → `/private/tmp`, which is
+  // where STATE sends every scratch worktree). The VERDICT never compares
+  // these strings — it compares repository-relative paths — so this is
+  // the fixture's business and not the guard's.
+  expect(
+    liveLanes(fx.repo).map((l) => realpathSync(l.worktree)),
+    "a checkout that is not on a lane branch was read as a lane",
+  ).toEqual([realpathSync(fx.lane)]);
+  expect(ask(fx.repo, path.join(fx.repo, "app/src/main.tsx")).verdict).toBe("allow");
+
+  // AND A LANE THAT IS GONE STOPS FENCING. `git worktree remove` prunes
+  // the administration, but a crash or an `rm -rf` does not — and an
+  // entry pointing at a tree nobody is working in must never hold the
+  // integration seat out of the repository.
+  const admin = path.join(fx.repo, ".git", "worktrees");
+  expect(existsSync(admin), "the fixture has no worktree administration to read").toBe(true);
+  rmSync(fx.lane, { recursive: true, force: true });
+  expect(readdirSync(admin).length, "the administration was pruned, so this proves nothing").toBeGreaterThan(0);
+  expect(liveLanes(fx.repo)).toEqual([]);
+  const afterward = ask(fx.repo, held);
+  expect(afterward.verdict, afterward.reason).toBe("allow");
+  expect(afterward.code).toBe("not-a-lane");
+});
+
+test("a live lane with no readable manifest reserves nothing here, and is still refused in its own arm", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const held = "tools/e2e/tests/fixture.spec.ts";
+  expect(ask(fx.repo, path.join(fx.repo, held)).code).toBe("held-by-a-live-lane");
+
+  rmSync(path.join(fx.lane, MANIFEST_REL_PATH));
+  // Limit 4: this seat cannot be told to stop, so a fence it cannot read
+  // reserves nothing — the refusal belongs to the lane's own first write.
+  const third = ask(fx.repo, path.join(fx.repo, held));
+  expect(third.verdict, third.reason).toBe("allow");
+  expect(third.code).toBe("not-a-lane");
+  expect(ask(fx.lane, path.join(fx.lane, held)).code).toBe("no-manifest");
+});
+
+test("what the lane-less seat may write, a LANE still may not — the two seats are two rules", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // docs/STATE.md is this seat's standing write and is outside the
+  // lane's fence, so the same path answers oppositely in the two seats.
+  // A hook that fed the seat's carve-outs to the lane arm would widen
+  // every fence in the repository by this constant.
+  expect(ask(fx.repo, path.join(fx.repo, "docs/STATE.md")).verdict).toBe("allow");
+  const inLane = ask(fx.lane, path.join(fx.lane, "docs/STATE.md"));
+  expect(inLane.verdict, inLane.reason).toBe("block");
+  expect(inLane.code).toBe("outside-the-fence");
+  expect(inLane.reason).toContain(ROUTE);
+
+  // AND WHAT THE TWO SEATS SHARE, because docs/CONVENTIONS.md now claims
+  // it of both: a path outside the writing checkout is unjudged in
+  // either. The lane-less side of that sentence had no body until this
+  // line, and an undriven arm is a claim nothing checks.
+  const elsewhere = path.join(scratchRoot(), "notes.md");
+  expect(ask(fx.repo, elsewhere).code, "limit 2 does not hold for the seat with no lane").toBe(
+    "outside-the-checkout",
+  );
+  expect(ask(fx.lane, elsewhere).code).toBe("outside-the-checkout");
+  // Discriminating: the same seat, a path INSIDE it that a lane holds.
+  expect(ask(fx.repo, path.join(fx.repo, "tools/e2e/x.ts")).code).toBe("held-by-a-live-lane");
+});
+
+test("the runner carries the lane-less refusal as an exit code too", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const hook = path.join(repoRoot, ".claude/hooks/lane-fence-hook.mjs");
+  const call = (cwd: string, filePath: string) =>
+    spawnSync(process.execPath, [hook], {
+      input: JSON.stringify({
+        hook_event_name: "PreToolUse",
+        tool_name: "Write",
+        cwd,
+        tool_input: { file_path: filePath },
+      }),
+      encoding: "utf8",
+    });
+
+  const blocked = call(fx.repo, path.join(fx.repo, "tools/e2e/tests/fixture.spec.ts"));
+  expect(blocked.status, "the lane-less refusal did not cross the process boundary").toBe(2);
+  expect(blocked.stderr).toContain("LANE FENCE");
+  expect(blocked.stderr).toContain(FIXTURE_ID);
+  expect(blocked.stdout, "a refusal that prints on stdout depends on being parsed").toBe("");
+
+  // The same seat, a path no lane holds: silent, exit 0. An allow that
+  // spoke would short-circuit the harness's own permission flow.
+  const allowed = call(fx.repo, path.join(fx.repo, "app/src/main.tsx"));
+  expect(allowed.status, allowed.stderr).toBe(0);
+  expect(allowed.stdout).toBe("");
+  expect(allowed.stderr).toBe("");
 });
 
 test("a suffixed card id survives every derivation that once truncated it — the id is not the slug's prefix", () => {
