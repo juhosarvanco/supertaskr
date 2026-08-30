@@ -70,6 +70,18 @@ invisible at dispatch: the card parses, the preflight passes, the
 manifest is written, and the lane discovers it only when a suite in a
 third package reds. T-163 discovered it exactly that way.
 
+**CLASS PARENT, CORROBORATED RATHER THAN DUPLICATED**: `T-160-s4` —
+*"T-059's fence cannot reach a file its own criteria order it to
+write"* — is the same shape found by a different lane on a different
+card, and it in turn cites `T-127-s1`. This is a THIRD instance, and
+the one that differs in a way worth filing separately: T-059's is a
+fence that misses a file its own criteria NAME, while this one is a
+fence that misses a file no criterion names at all — the obligation is
+created by a suite in a third package, so a card author reading only
+their own criteria cannot see it coming. Triage may prefer to absorb
+this into whatever rules `T-160-s4`; the two arguments are different
+and the repairs are in different files.
+
 Dispositions, so triage has something to rule on rather than a
 complaint:
 

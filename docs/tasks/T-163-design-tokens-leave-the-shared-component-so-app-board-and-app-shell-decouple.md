@@ -9,9 +9,9 @@ status: verifying
 blocked_by: []
 touches: [docs/architecture, app/test]
 suggested_by: "@human ruling (2026-08-30, rulings sitting): split C-11 first, over dispatching T-112 as-is"
-builder:
+builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---
@@ -169,6 +169,34 @@ is a file beside it. Asked rather than assumed — `decide` in
 
 The two names differ only in case and in one suffix, which is exactly
 the shape a fence author reads past. Nothing was written there.
+
+### A FOURTH AND FIFTH RED, IN A THIRD PACKAGE, THAT NO CRITERION NAMED
+
+`npx vitest run` from lib/parser/ at `cec6cde`: **2 failed / 313
+passed, exit 1**, both in `test/fence.test.ts` and both the same
+lost-subject class — *"C-11 carries two slugs, so app-board and
+app-shell share its paths"* (`doubleClaimed` Received `[]`) and *"PIN
+TWO (a): two live planned cards whose slugs differ and whose paths meet
+at C-11"* (T-112 against T-114, `Received 'disjoint'` where
+`'overlapping'` was expected — which is the ruling working, not the
+comparator failing). `lib/parser` is outside this fence; asked of the
+hook, `lib/parser/test/fence.test.ts` answers
+`block / outside-the-fence`. Filed as `T-163-s3`. The parser's SMOKE
+test over the live docs/ tree is green, so nothing here is a parse
+problem.
+
+**AND THAT MAKES A STANDING GOTCHA WRONG BY OMISSION.** CONVENTIONS'
+**DECLARING A COMPONENT** bullet says such a change moves THREE
+live-registry fixtures. **Moving a `touch_slugs:` FIELD is a different
+edit and moves a different set** — measured here, on a diff that moved
+exactly one field: all three fixtures that bullet names were GREEN and
+needed nothing, while four other places moved —
+`lib/parser/test/fence.test.ts`, `app/test/select-board.test.ts`,
+`tools/e2e/tests/brief.spec.ts` and `docs/ARCHITECTURE.md`, in three
+packages plus a governing doc. **No card fence in this repo's
+vocabulary reaches all four.** That belongs beside the existing gotcha;
+this fence reaches neither `docs/CONVENTIONS.md` nor three of the four
+files, so it is routed on `T-163-s3` rather than written here.
 
 ### Criterion 2 — re-derived, and the card named the wrong two files
 
