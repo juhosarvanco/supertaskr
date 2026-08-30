@@ -142,11 +142,41 @@ redded the parser census (3 bodies) and the board census (1), so neither
 zero is a search that was never shown capable of failing. Results:
 `/tmp/T-169-drill-results.json`; worktree removed, lane tree clean.
 
-**GATES.** `npx vitest run` from lib/parser/ exit 0 (334 tests, 16
-files). `npm test` from app/ exit 0 (1026 tests, 47 files). `npm run
-lint:docs` from tools/e2e/ exit 0. `npm run build` green in both
-packages. Graph verdict REPORTED below, not regenerated — that is the
-integrator's.
+**GATES**, every exit read from `$?` on an UNPIPED command at `200e957`.
+`npx vitest run` from lib/parser/ **exit 0** (334 tests, 16 files).
+`npm test` from app/ **exit 0** (1026 tests, 47 files). `npm run
+lint:docs` from tools/e2e/ **exit 0**. `npm run build` green in both
+packages. The DOCS GATE **FIRES** on this diff (exit 1 = it has a
+verdict) — the two `docs/tasks/` cards are code inputs — and names three
+suites: app/, tools/e2e/ and lib/parser/. All three were run.
+
+**THE E2E SUITE IS RED, AND THE RED IS THIS LANE'S EXISTENCE RATHER
+THAN ITS DIFF.** `NPUTER_E2E_PORT=14169 npm test` from tools/e2e/ (port
+lsof'd to zero rows immediately before binding) exits 1: **319 passed, 1
+failed** — `session-economics.spec.ts:73`, at its POSITIVE CONTROL,
+where `brief.mjs --task T-112` is expected to exit 0 and exits 1
+instead. The reason the brief prints is this card's own filing note come
+true: *"fences are not disjoint: T-169 app-board against T-112 app-board
+— the same entry (lane-protocol rule five)"*. **Attribution derived, not
+argued**: the identical command run from the pristine main checkout at
+`bf274ed`, carrying not one line of this diff, exits 1 with the same
+sentence. The suite was 320/320 at zero lanes (STATE); it is 319/320
+while a lane holding `app-board` is live, and it returns to 320 when
+this lane lands or is removed. **Nothing here is fixed by a change to
+this diff, and nothing in this diff should be changed to make it
+green.**
+
+**GRAPH VERDICT — REPORTED, NOT REGENERATED** (regen is the
+integrator's). `cargo run -p nputer-index -- index --check --root ../..`
+from app/src-tauri/ exits **1: `graph.json is STALE`** — correctly, and
+predictably: this diff adds `lib/parser/src/assignment.ts` and its
+import/type edges. The added edges the check enumerates are exactly the
+new module's (four importers of `assignment.ts`, the widened `types.ts`
+re-export lists, and the `AssignmentDisclosure` type refs from
+`TaskDetailPanel` and `BoardCard`). **BUDGET AT THIS TIP, measured:
+1,005,840 of 1,040,000 bytes (96.7%), 34,160 left** — the figure T-139
+says to derive and never quote, derived here at `200e957`; the
+integrator regenerating should read it again rather than take this one.
 
 **WHAT I DID NOT DO.** The rendering pin lives in
 `app/test/review-badge.test.tsx` because the board's general DOM file,
