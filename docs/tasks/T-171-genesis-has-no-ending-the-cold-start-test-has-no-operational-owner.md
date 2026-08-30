@@ -5,13 +5,13 @@ feature: F-03
 milestone: 4
 priority: 1
 size: M
-status: building
+status: verifying
 blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
 touches: [app-interview]
 builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---
@@ -130,3 +130,334 @@ The graph sits at **410 bytes** of headroom at `b60b06d`
 (`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
 1,040,000 budget), and this card's fence reaches indexed source. The
 sitting records the block rather than lowering the priority.
+
+## IMPLEMENTATION NOTES (executor, claude-opus-5@subagent, lane
+`task/T-171-interview-terminal-state` at `/Users/ujju/Projects/nputer-T-171`,
+base `629adea`, commits `714c72d` + `bf14a60`)
+
+Built as TRIAGE NARROWED IT — item 1 only. Nothing spawns, no runner,
+no `BANKING_MAP` cell moved (that file is a 0-byte diff), and the "the
+test is offered, never gated" ruling is obeyed rather than revisited.
+
+### WHAT THE FOOTER'S LIVE STATE WAS ACTUALLY DERIVED FROM (derived at
+`629adea`, the card's question one)
+
+`InterviewChat.tsx`'s hint slot read ONE boolean, `interviewBusy`, which
+was `ui.busy || isTurnInFlight(genesis)` — expanding to
+`ui.busy || state.sending || state.phase === "running"`. **Three flags,
+not one of which is a fact about a turn**, and each can outlive the turn
+it describes:
+
+- `state.phase` returns to `idle` only on a `completed`/`failed` EVENT
+  (`reduceGenesisEvent`), so an event that never arrives, or arrives at a
+  seq the store has already passed, leaves it armed forever;
+- `applyGenesisStatus` re-arms it (`sending: status.phase === "running"`)
+  from the mount-time status pull **with no seq guard at all**;
+- `reduceGenesisOutcome` arms it on any `started`/`accepted`, also with no
+  seq guard;
+- `ui.busy` is released in a `finally`, so it survives only a command that
+  never answers.
+
+**IT COULD NOT DISTINGUISH "a turn is running" FROM "the last turn ended
+and nothing follows", AND THAT GAP IS THE DEFECT** — stated as the card
+asked. Worse, the same boolean was the ONLY source for three different
+things: the footer hint, every `disabled` on the screen, and
+`completionOf`'s `inFlight` argument (`BoardCrescendo.tsx:64`). So one
+stranded flag produced all three of @human's symptoms at once — the
+thinking line, the dead button, and a completion panel that could not
+render because `completionOf` answered `blocker: "turnInFlight"`.
+
+**THE EVIDENCE WAS ON THE SAME SCREEN AND UNCONSULTED.** `PlannerTurn`
+already draws its streaming dot from the runner's own per-turn
+`status === "running"` (`interview-turns.tsx`), and `rehydrate` already
+states the principle in as many words — *"a rehydrated planner turn is
+`completed`, never `running`… giving it a live status would put a pulse
+dot on a turn nothing is generating"*. The footer simply did not ask.
+
+### WHAT "THE LAST BANK" MEANS TO THE CODE (the card's question two)
+
+Two different things, and only one of them is the completion signal:
+
+- `BANKING_MAP` (`genesis-derive.ts`) is the 9-row stage table, stages
+  0–8 with 8 = decomposition. It feeds `approxStage`/`stageStep`, i.e.
+  the stage strip and the lens's readout. **READ ONLY — untouched**; the
+  verbatim assertion in `genesis-derive.test.ts` is green and that file
+  is a 0-byte diff.
+- **Completion is NOT read off that table.** `completionOf`
+  (`crescendo.ts`, T-028) derives it from typed state plus file evidence:
+  at least one turn, nothing in flight, the HIGHEST-numbered turn settled
+  as `completed`, and a PARSEABLE board on disk (`parsedTasks > 0`, not
+  files on disk). ADR-017/T-028 forbid a model-emitted marker, and
+  `crescendo.ts`'s own header records that "T-023's completion signal"
+  the card cited does not exist in the method.
+
+### COMPLETION HAS ONE DERIVATION AND STILL DOES (the card's question three)
+
+This card **reuses `completionOf` and adds no second answer**. What it
+adds is `completionSafely` — the same call inside a `try`, the exact
+sibling of `showsBoard`, because the CHAT renders outside T-037's error
+boundary exactly as `stageOf` does, and a torn tree that throws on
+`docs.effective` would otherwise take the conversation down with it. Its
+degradation is `blocker: "unreadable"`, kept distinguishable from
+`noBoard` because "there is no plan" and "we cannot see whether there is
+a plan" are different situations.
+
+### WHAT WAS BUILT
+
+1. **`flightOf(turns, latched, awaiting, claimed)`** (`crescendo.ts`) —
+   pure, no clock, no store read. The runner's per-turn `status` is read
+   FIRST; the flags are claims a turn is allowed to contradict. Six named
+   readings — `running` / `latched` / `unlanded` / `claimed` (in flight)
+   and `stranded` / `idle` (not). `stranded` is precisely the state that
+   used to render as "planner is thinking…" for ever, and naming it is
+   what makes it assertable as a positive claim rather than an absence
+   (the `CompletionBlocker` precedent).
+2. **`InterviewUiState.awaiting`** (`interview-source.ts`) — the turn
+   number of the last start/send a command ACCEPTED, taken from the
+   outcome's own typed field. It is what lets a claim about a turn that
+   has since settled be refused **without** flickering the footer to
+   "⏎ send" for a frame after every answer: the runner spawns each turn
+   on a THREAD, so `started` genuinely races the command's return.
+3. **THE SPLIT, which is the fix's real content**: `interviewBusy` is now
+   the FACT (is a turn in flight — feeds the hint, the completion, the
+   ending, and `BoardCrescendo` unchanged), and **`interviewLocked` is the
+   MACHINERY** (the OLD disjunction verbatim, feeding every `disabled` and
+   the focus-return effect). The controls must agree with the guard that
+   will actually answer a send — `sendGenesisTurn`'s own `isTurnInFlight`
+   — because **a control enabled against a store that is going to refuse
+   is the same lie with the arrow reversed**. The first draft of this
+   build enabled the box on a stranded claim and reached for a
+   `{kind: "busy"}` notice to cover it; that notice's own sentence is
+   *"a turn is already running"*, which in the stranded case is the very
+   lie this card exists to delete, in a smaller box. Recorded because the
+   wrong version was written before the right one.
+4. **`inputHint(inFlight, complete)`** (`interview-model.ts`) — three
+   states where an inline ternary on one flag had two, so the third (the
+   ending) was unreachable by construction.
+5. **`ClosingBlock`** (`interview-turns.tsx`) — the ending, **in the chat
+   column**, which is where @human was reading and, below `lg`, the only
+   half rendered at all. It says genesis is done, names the method's
+   cold-start test as an OFFER that is not required, states that this
+   conversation is disqualified from being the cold session because it
+   has the interview in context (the blindness IS the test), and **offers
+   no affordance to run it** — spawning is `T-175` behind an `app-agent`
+   fence. Its closing sentence follows `canAnswer` (`!locked`), so it
+   never invites an answer nothing would take.
+
+`BoardCrescendo.tsx` is a **0-byte diff** and its panel — "interview
+complete / The board is ready. / Open the board" — starts rendering again
+purely because its `inFlight` argument stopped lying. That was deliberate:
+`app/test/crescendo-dom.test.tsx` and `tools/e2e/tests/crescendo.spec.ts`
+pin that panel to exactly one button and forbid dispatch vocabulary, and
+**both are outside this fence**, so the ending was put where it could be
+proved in-fence instead.
+
+### THE SWEEP (a fix names its class)
+
+**CLASS: a rendered claim about a live process derived from a flag that
+can outlive the fact, while per-fact evidence exists and is unconsulted.**
+
+`command grep -rn "interviewBusy\|interviewFlight\|isTurnInFlight" app/src/`
+and `command grep -rn "thinking\|is running\|running\"" app/src/genesis/`
+(this shell's `grep` is a shim; `command grep` per CONVENTIONS). Both
+searches were shown capable of failing — they return the live sites, and
+the second returns the very line this card changed.
+
+- **Two rendered-claim sites exist, and both are now fed by one
+  derivation**: the chat footer (fixed here) and `BoardCrescendo`'s
+  completion panel (fixed by the same change, no edit).
+- `agent-store.ts`'s three `isTurnInFlight` call sites are GUARDS, not
+  rendered claims. A guard that errs toward refusing costs an action, not
+  a lie — not this class, and out of fence.
+- `interview-turns.tsx`'s per-turn streaming line already reads the
+  evidence. **No sibling defect**; it is what the footer was aligned to.
+- `GenesisPane`'s `writing` status is a TIME WINDOW with a one-shot
+  re-derivation timer (`nextTransitionMs`), so it closes itself. Not the
+  class.
+- **Sweep result: zero further instances**, recorded because an unrecorded
+  sweep and an unrun one are indistinguishable.
+
+### POISON DRILL — 23 mutants, 23 REDs, 23 restorations proved by sha256
+
+Committed FIRST (`714c72d`, then `bf14a60` for the drill's own findings);
+every mutation was applied to the CODE UNDER TEST ONLY, never to a literal
+an assertion shares; each mutation was **read back with `git diff`** (the
+added line is in the ledger, not a substitution count); the WHOLE app suite
+was run under each; restoration was `git restore --source=<commit> --staged
+--worktree -- <path>` with **both sides named**, proved by
+`sha256(worktree) == sha256(git show <commit>:<path>)`, never by an empty
+`git diff`.
+
+**DRILL ARTIFACT, NAMED**: two pre-existing bodies compare `app/dist`'s
+mtime to source mtime ("is not stale: the build is at least as new as …").
+Mutating a source file without rebuilding reds them mechanically, so they
+are excluded from every kill count below and named here rather than
+counted as evidence.
+
+Round one — 15 mutants, one per clause added, all exit 1:
+
+| # | mutation | non-artifact kills |
+|---|---|---|
+| M1 | `flightOf` reads `running` off the TAIL only | 1 |
+| M2 | the stranded claim is BELIEVED (pre-fix behaviour) | 2 |
+| M3 | the latch clause inverted | 11 |
+| M4 | the unlanded clause inverted | 8 |
+| M5 | `turns.length === 0` → `=== 1` | 2 |
+| M6 | `completionSafely` CELEBRATES an unreadable tree | 1 |
+| M7 | `completionSafely` hardcodes `inFlight: true` | 5 |
+| M8 | `inputHint`'s complete branch inverted | 4 |
+| M9 | `inputHint` checks completion BEFORE flight | 1 |
+| M10 | the cold-start test becomes a REQUIREMENT | 1 |
+| M11 | the ending renders unconditionally | 2 |
+| M12 | the invitation ignores `canAnswer` | 1 |
+| M13 | the controls go back to reading the FACT (the conflation) | 1 |
+| M14 | the accepted turn number is never recorded | 1 |
+| M15 | the store's claim is never passed to `flightOf` | 1 |
+
+Round two — **SHAPE SIX's question asked properly** ("name a mutation this
+body kills, run the WHOLE suite, require the failing-body count to be
+ONE"). Six further mutants, each aimed at one body that round one had not
+isolated; **every one answered exactly 1**:
+
+- R1 the latch's LABEL moves → `the latch covers the command's own round trip`
+- R2 the empty-list claim is checked before `awaiting` → `an ACCEPTED turn with no event yet`
+- R3 a null `awaiting` lets the claim stand → `THE STRANDED CLAIM IS REFUSED` (pure)
+- R4 `turns.length < 0` → `an empty turn list contradicts nothing`
+- R5 a `cancelled` turn reads as running → `a settled tail … is idle, not stranded`
+- R7 the ending stops saying what ⏎ does → `SAYS THE INTERVIEW IS COMPLETE`
+
+**TWO BODIES HAVE NO UNIQUE MUTANT AND ARE KEPT ANYWAY, on the rule that
+requires them** — A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL:
+`completionSafely > agrees with completionOf on a readable tree` (the
+guard has to be shown passing a real reading through before its
+degradation means anything) and the DOM `THE POSITIVE CONTROL: a turn that
+really is running still says so` (without it, "the footer does not say
+thinking" is satisfied by a screen that never says it). The unique-mutant
+search for both was RUN and came back empty; that is recorded rather than
+hidden.
+
+**THE DRILL FOUND TWO OF ITS OWN, and both landed (`bf14a60`):**
+
+- **SHAPE SEVEN — a mutant no body killed.** Gating the ending on `!busy`
+  instead of on `completionSafely(...)` survived the entire suite:
+  **nothing pinned that the ending requires a PARSEABLE BOARD**, which is
+  T-028's "an empty board is never celebrated" and NORTH_STAR's
+  planning-theater tripwire. `NO BOARD, NO ENDING` closes it; re-drilled
+  as S7 → exit 1, kill count **1**.
+- **SHAPE SIX — a body killing no unique mutant.** The `inputHint(false,
+  false)` equality died under M8 together with the pre-existing
+  `carries the design's placeholder verbatim, and the send hint`, which
+  asserts the same string through the real component in the same state,
+  and no mutant kills only it. **Removed**, with the measurement recorded
+  in its place (the `questionFooter` precedent one file over).
+
+### GATES — every command with its exit
+
+- `npm ci` + `npm run build` from `lib/parser/`: **exit 0** (fresh worktree,
+  parser before app, per the fresh-clone ORDER).
+- `npm install` from `app/`: **exit 0**.
+- `npm run build` from `app/`: **exit 0** — this is the typecheck; there is
+  no `npm run typecheck` in `app/`.
+- `npm test` from `app/`: **exit 0**, **1074 passed / 1074**, 49 files.
+  Baseline at `629adea` measured in this lane: **1059 / 1059**. Net +15
+  bodies (+16 added, −1 removed as the shape-SIX duplicate).
+- **BOOT GATE — OWED and RUN.** Fires: the diff touches `app/src/**`.
+  Port DERIVED from the card id (`14000 + 171 = 14171`), never defaulted;
+  `lsof -nP -iTCP:14171 -sTCP:LISTEN` immediately before binding returned
+  **zero rows (exit 1)**. `NPUTER_BOOT_PORT=14171 npm run boot:check` from
+  `tools/e2e/`: **exit 0**, both startup lines detected —
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-171` and
+  `[nputer] window "main" created`.
+- **PORT RULE**: `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else —
+  **zero rows**; @human's app was not running. Never bind-probed, never
+  connected.
+- **GRAPH REGEN — fires (`*.ts`/`*.tsx` outside `docs/`), and the graph was
+  ASKED, not regenerated.** `cargo run -p nputer-index -- index --check
+  --root ../..` from `app/src-tauri/`: **exit 1 — `graph.json is STALE`**,
+  which is the expected and correct answer for an un-regenerated TS diff
+  and is the integrator's to clear at the merge. What it reports:
+  `files +0 -0 ~8` (exactly this lane's eight files), `edges +27 -9`, no
+  new files, no component moved, no cycle. Budget at the fresh index:
+  **1,139,673 of 2,145,959 bytes (53.1%) — 1,006,286 left**; floor
+  230,459 (10.7%). `docs/architecture/graph.json` is OUTSIDE this fence and
+  is **untouched and uncommitted** (`git status` clean).
+- **DOCS GATE — NOT OWED**: the diff touches no path under `docs/` that a
+  code suite reads. The only `docs/` file in it is this card, and the card
+  parses (frontmatter unchanged in shape).
+- **METHOD EVAL GATE — NOT OWED**: `method/**` is a 0-byte diff.
+- Suite chains were run from GUARDED SCRIPT FILES (`cd <abs> || exit N`)
+  and every gate exit above was read UNPIPED.
+
+### FENCE
+
+Eight files, every one inside `app-interview`: five under
+`app/src/genesis/`, three of the seven fenced `app/test` files, plus this
+card. Nothing outside was written; `app/src/lib/agent-store.ts`,
+`app/src-tauri/**`, `app/test/crescendo-dom.test.tsx` and `tools/e2e/**`
+were READ only. The fence was never widened.
+
+### ROUTED — THREE FINDINGS OUTSIDE THIS FENCE (`app-agent` / C-14,
+`app/src/lib/agent-store.ts`), for triage to card
+
+Ids are deliberately not assigned here: two other lanes are live and id
+assignment is triage's.
+
+1. **⌘. CANNOT CLEAR THE STATE ITS OWN LABEL ADVERTISES.**
+   `cancelGenesis` resets `sending`/`phase` **only** when the outcome is
+   `{kind: "cancelled"}`. When Rust has no live turn it answers
+   `{kind: "idle"}` and **nothing is reset** — so on @human's screen the
+   escape the footer was advertising did nothing at all. This card makes
+   it moot for the footer; the store is still stuck.
+2. **`reduceGenesisOutcome` ARMS FLIGHT WITH NO SEQ GUARD.** Any
+   `started`/`accepted` sets `sending: true, phase: "running"`
+   unconditionally, so an outcome that resolves AFTER its turn's own
+   events strands the store permanently. **Measured, not theorised**: the
+   first draft of this card's DOM fixture was accidentally stranded by
+   exactly this path, which is how it was found. `applyGenesisStatus` has
+   the same hole from the status pull.
+3. **A COMMAND THAT NEVER ANSWERS LEAVES THE UI LATCH TRUE FOR EVER.**
+   `flightOf` deliberately keeps believing `latched`, because nothing on
+   this side can know a pending `invoke` is dead — that is a runner
+   liveness question. Stated on `flightOf` in as many words rather than
+   guessed at.
+
+### WHAT THE WALK'S OWN FILES SAY (evidence, read at
+`/Users/ujju/Projects/first-walk`, 2026-08-31)
+
+`.nputer/genesis/transcript.jsonl` holds **ten complete turns**, the last
+a planner half — and the runner appends a planner line only when the turn
+produced text. `.nputer/sessions.json` reads `turns: 10, status: "idle"`.
+`docs/tasks/` holds four cards. **So the last turn had LANDED and the
+session was idle while the screen said a turn was running** — which is the
+state this card deletes. The 11th exchange the card quotes has no
+transcript line of either half, and the user half is appended BEFORE the
+spawn, so no 11th turn was ever accepted; that points at finding 3 above
+and is why it is routed rather than guessed at.
+
+### WHERE THE BRIEF WAS WRONG
+
+- **ROW 4's worktree path is wrong**, as the dispatch said:
+  `/Users/ujju/Projects/nputer/.claude/worktrees/nputer-T-171` is INSIDE
+  the repository and violates lane-protocol rule three. The real lane is
+  the sibling `/Users/ujju/Projects/nputer-T-171` (filed as T-179).
+- **ROW 4's base is wrong too, and harmlessly**: it names
+  `4e08d293b0fcd14ce437840dc93cf9cff80d4635` (the newest checkpoint at
+  assembly). The lane was actually cut at **`629adea`**, the dispatch stamp
+  itself, which is a non-merge commit later than that checkpoint with green
+  gates — the case the CONVENTIONS dispatch bullet explicitly blesses.
+- **ROW 10's live facts were re-read** rather than trusted: port 1420 still
+  holds nothing, on Mac.lan at the time of this run.
+- Everything else in the brief matched the repository at `629adea`,
+  including ROW 3's read-first set, which listed exactly what was read.
+
+status → `verifying`; `built_by: claude-opus-5@subagent`. Verifier fields
+left empty. The worktree stays until the verdict.
+
+**ONE FURTHER NOTE FOR THE VERIFIER, so a red is not mistaken for a
+defect.** `genesis-mount.test.tsx`'s *"is not stale: the build is at least
+as new as the mount and the lens"* compares `app/dist`'s mtime to the
+genesis sources. Any drill, any `git restore`, any checkout that moves a
+source file's mtime after the last build reds it — it fired once in this
+lane immediately after the drill's final restore, and `npm run build`
+followed by `npm test` returned **1074/1074, exit 0**. **Build before you
+test in this lane**; the message names the build, not the tree.
