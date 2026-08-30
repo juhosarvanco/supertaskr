@@ -583,6 +583,33 @@
   holds unless the REGISTRY itself changed. The knowledge used to live
   only in a T-008 commit message and behind a task fence reading "zero
   diff under lib/parser/**".
+- THE SHIPPED PARTITION, IN SLUGS (T-147 — the sentence
+  method/tasks/TASK-FORMAT.md's ceremony boundary asks each project to
+  state beside its slug map, so a size-S card's ROW is read off
+  `touches:` rather than judged; the map is docs/ARCHITECTURE.md's
+  block and its authority is each component's own `touch_slugs:`).
+  **SHIPPED — every registry SLUG, and no list of them here**:
+  `git grep -h '^touch_slugs:' docs/architecture/components/` prints
+  the set at your own ref, and the one EMPTY line in it (C-01,
+  `method/`) is why the next clause exists.
+  **SHIPPED — any bare `method/` path that REACHES a `KIT_FILES` entry**
+  (`git grep -h 'rel: "' app/src-tauri/src/agent/kit.rs`), because the
+  kit materializes those bytes VERBATIM into every project this system
+  creates. Here the METHOD is the product, so the rule of thumb's
+  premise — "`method/` is product-agnostic" — is false, and its
+  conclusion drops the verifier from the highest-blast-radius bytes we
+  ship. Not hypothetical: T-145 repaired the adapter every new project
+  inherits, took no verifier under the fallback, and its drill measured
+  `cargo test` GREEN with the defect restored. REACHES, not equals — a
+  fence is a blast radius, so `[method/roles/]` ships (it may write
+  `planner.md`) and `[method/roles/executor.md]` does not; narrow the
+  fence and the ceremony narrows with it.
+  **NOT SHIPPED — every other bare path**: `docs/**`, `.github/`,
+  `tools/e2e` (YES to "is it code?", NO to "does it ship?" — the case
+  this rule exists to settle), and the `method/` files the kit leaves
+  behind, `lane-protocol.md` and `roles/integrator.md` among them.
+  **`non_code:` IS A DIFFERENT AXIS AND IS NEVER SUBSTITUTED**: C-11 is
+  `non_code: true`, carries two slugs, and ships.
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
