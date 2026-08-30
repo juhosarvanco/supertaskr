@@ -16,7 +16,14 @@
  *
  * ARM ONE (`--task`) emits the row set of `method/roles/<role>.md`'s
  * normative contract table, each row derived from the source that row
- * names. ARM TWO (`--state`) emits the sections of docs/STATE.md a
+ * names — and then, BELOW the rows and labelled as not being one of
+ * them, the ADVISORY recommended-seat line (T-157, ADR-020's companion
+ * adoption). That line is derived from the card's own `size:`, fence
+ * kind and criteria shape, never from this session's dials; it names a
+ * seat strength rather than a model, because ADR-003 settles that this
+ * project passes no `--model`; and both the card's `builder:` field and
+ * the role file's own run-hygiene text outrank it, which it says on
+ * every run. ARM TWO (`--state`) emits the sections of docs/STATE.md a
  * command can answer — the lane list first, because it is the row both
  * consumers got wrong. They are one command because the lane list is the
  * shared row.
@@ -93,6 +100,7 @@ import {
 } from "./dispatch-brief.mjs";
 import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
+import { seatRecs } from "./session-economics.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -215,6 +223,13 @@ async function main(argv) {
     }
     const { recs } = assembleBrief(ctx);
     console.log(render(recs));
+    // THE ADVISORY LINE, PRINTED AFTER THE ROWS AND OUTSIDE THEM (T-157).
+    // It is not a contract row and must never look like one: the row set
+    // is read from the role file, and a fourteenth row this command
+    // invented would be exactly the second row set that `assembleBrief`
+    // reports as a finding. It sits here rather than inside that function
+    // so the contract half stays exactly the contract.
+    console.log(render(seatRecs(ctx)));
   }
 
   if (wantsState) {
