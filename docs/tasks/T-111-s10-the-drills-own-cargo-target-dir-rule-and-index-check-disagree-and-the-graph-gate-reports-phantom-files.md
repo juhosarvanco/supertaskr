@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 6
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-111
@@ -217,6 +217,282 @@ word, (c) fixes the class. The doc edit should not wait on the code one.
 the parent's cache, and only one of those two is currently written down.*
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+**CONFIRMATION OF UNDERSTANDING, written before anything was touched.**
+One card, one fence (`docs/CONVENTIONS.md`), one bullet: the POISON
+DRILL bullet gains eight seats' earned sentences in a single coherent
+edit rather than in four passes — arm (c)'s target directory named
+`<scratch>/target` because the graph walk excludes only `target/`
+(T-111-s10 + T-110-s4 + T-153-s3); the `cargo clean`-prohibited recovery
+and its nine-failure trap (T-145-s3); the empty-`git diff` proof demoted
+from ALTERNATIVE to companion, with the staged-index mechanism and the
+`git restore` safe spelling (T-092-s4); what restoring a fixture MEANS —
+bytes and clock, the seconds form over the `Date` form, the self-healing
+property, and the `ctime` caveat at the strength of its evidence
+(T-079-s3 + T-130-s1) — carrying the libuv-version rider (T-153-s7 half
+one, from T-153-s5's verdict correction 1); the shape-catalogue
+softening (T-092-s5); and the unstamped denominator dropped (T-092-s6).
+The CACHEDIR.TAG class fix is ROUTED, never taken. **The card and the
+standing docs did not conflict anywhere**, and no criterion needed a
+path the fence does not hold.
+
+### THE BYTE COST, and every figure here is at its own ref
+
+| | `39f2302` (base) | `e967701` (the edit) | delta |
+|---|---|---|---|
+| `docs/CONVENTIONS.md` | 126 280 B | 132 382 B | **+6 102** |
+| the POISON DRILL bullet | 18 453 B | 24 555 B | **+6 102** |
+| headroom to `DOC_BUDGETS` warn (137 928) | 11 648 | **5 546** | −6 102 |
+
+Every byte the document gained is inside the bullet: nothing else in the
+file moved. `npm run lint:docs` exit **0** and its own line reads
+*"governing-document budgets hold — 4 gated, 0 awaiting their compaction
+landing"*, which is the criterion's answer rather than an assumption.
+
+### EACH ABSORBED FINDING — landed, or parked back with its reason
+
+- **T-111-s10 (own) + T-110-s4 — the walk-visible target dir. LANDED.**
+  Arm (c)'s heading now reads *"AT `<scratch>/target`, NOT AT A NAME YOU
+  CHOSE"*, and a new paragraph carries the reason (`.gitignore` excludes
+  `target/` and nothing else), the two measurements (`files +3 -0 ~2`
+  inside under a chosen name against `files +0 -0 ~2` beside, with the
+  three build-script `out/private.rs` files and the phantom
+  `p:cargo:serde_core` node named), the second lane's corroboration, and
+  why `files +0 -0` is the sentence a checkpoint decides on in BOTH
+  directions. **Needle re-derived at this base rather than trusted**:
+  `.gitignore` at `39f2302` is exactly `.DS_Store`, `node_modules/`,
+  `dist/`, `target/`, and `.nputerignore` adds only `docs/`, the
+  indexer's own fixtures and `tools/` — neither mentions `.drilltarget`,
+  `.fctarget` or any other name.
+- **CACHEDIR.TAG class fix — ROUTED, not taken**, as
+  `docs/tasks/T-111-s11-…md`, `touches: [crate-index]`,
+  `status: suggested`. Code never rides a doc lane; the bullet now names
+  the class fix in one clause and says the doc does not wait on it.
+- **T-092-s4 — the vacuous restoration proof. LANDED**, and it took the
+  falsified sentence with it. The bullet used to say *"Committing first
+  makes both proofs correct by construction, which beats adding a
+  third"*; that is false and T-092-s4 is why, so it now reads
+  *"Committing first closes THAT mechanism by construction; it does not
+  close the staged-index one above, which is why the hash is the
+  proof."* The empty diff is stated as a COMPANION, the index-writing
+  mechanism is spelled out, and `git restore --source=<commit> --staged
+  --worktree -- <path>` is named beside the trap.
+- **T-079-s3 items 2–3 + T-130-s1 — what restoring MEANS. LANDED**, all
+  three halves: bytes AND clock with the `git diff --quiet`
+  cached-stat-info reason; the seconds form against the `Date` form with
+  the 50/50 · 0/50 · 50/50 measurement; the self-healing property with
+  *"re-running until green is the defect's own healing mechanism, not
+  evidence"* in the bullet's own voice; and the `ctime` caveat written at
+  seen-once-and-not-reproduced-in-24-cycles, explicitly an observation
+  and not a mechanism.
+- **T-153-s7 half one — the libuv-version scoping. LANDED as the rider.**
+  The T-130-s1 measurement is now stamped `(APFS, libuv v1.52.0)` and a
+  following paragraph carries T-153-s5's verdict correction 1: the axis
+  is the libuv VERSION, not the platform — v1.51.0's
+  `uv__fs_to_timespec` truncates to a whole microsecond under one `#if`
+  naming `__APPLE__` and `__linux__` together, v1.52.0 deletes the hack,
+  24 uv-1.51.0 samples reach 1016 ns in both signs against uv-1.52.0's
+  170 ns — and the rule the reader needs: **a clock restore round-trips
+  at MICROSECOND precision, and an assertion demanding more is measuring
+  the measuring host.** The criteria admit it: criterion 7 orders a
+  caveat written at the strength of its evidence and no higher, and
+  shipping *"round-trips 50 of 50"* unscoped is the same defect one
+  sentence earlier.
+- **T-153-s7 half two — the poison shape. PROCEDURE LANDED, ORDINAL NOT
+  MINTED.** The `utimesSync` fixed point rides criterion 6's sentence,
+  because it IS the self-healing property seen from the drill's side, and
+  the durable half is one clause: *"before poisoning an assertion over
+  PERSISTENT state, put that state back to a condition the suite did not
+  create."* Whether that is a TWELFTH shape or a second face of TEN is
+  deliberately NOT decided here — T-153-s7 says its own seat should not
+  decide it, the catalogue is closed at eleven, and minting a wrong
+  ordinal is the defect the catalogue exists to prevent. T-153-s7 stays
+  `suggested` with that question live and both its halves' text landed.
+- **T-092-s5 — the shape-catalogue softening. LANDED.** Verified at this
+  base first: `SHAPE ONE`–`SHAPE FOUR` return nothing anywhere under
+  `docs/`, so the claim was inherited rather than introduced. The
+  catalogue now says entries live here for FIVE through ELEVEN, names
+  ONE–FOUR as the *matcher moved, value fixed* family whose histories
+  live in the cards, and keeps the load-bearing half: *"every ordinal is
+  minted here"* governs NEW numbers.
+- **T-092-s6 — the transcribed denominator. DROPPED, which is the arm the
+  card called cheapest.** *"1 failed / 832 passed of 833"* is now *"a
+  failing-body count of exactly one, naming that body and nothing else"*,
+  with a half-sentence saying the total was T-072's and unstamped so the
+  next reader does not helpfully restore it. **The drop was the right
+  arm and this lane can prove it**: the app suite at `e967701` is
+  **1015 passed across 47 files**, so the 833 was wrong by 182 and the
+  card's own re-derivation (1013) was already stale by 2.
+- **T-145-s3 — the cache-recovery trap. LANDED.** The `cargo clean -p`
+  sentence now carries what to do where `cargo clean` is prohibited
+  (`touch` every workspace `.rs`, mtime only, and rebuild) and the trap
+  that costs the second red (touching only the file the panic named:
+  nine failures, because each integration-test binary bakes its own
+  copy). The *"bitten three agents"* tally is now four, with the
+  instances named rather than only the count.
+- **T-104-s5's queue — RE-DERIVED at this ref, and one member PARKED
+  BACK.** The live queue at `39f2302` is sixteen cards holding
+  `docs/CONVENTIONS.md` (T-087, T-094, T-105, T-117, T-121, T-128,
+  T-131, T-132-s2, T-142, T-145-s2, T-147, T-153-s7, T-153-s8,
+  T-153-s11, T-153-s15, T-160-s1); T-104-s5 itself is `parked` and its
+  own note names two survivors. `T-091-s3`'s trigger clause is the one
+  still owed at this seat, and it is **parked back rather than taken**:
+  it belongs to the RANGE RULE bullet, not this bullet family, and that
+  bullet is `rawBullet`-parsed with spec-kept figures — a second bullet
+  in this edit buys risk the card did not ask for. T-104-s5's resurface
+  hook stands for the next `docs/CONVENTIONS.md` dispatch.
+
+### THE SWEEP — A FIX NAMES ITS CLASS
+
+Class: **a live instruction naming a drill target directory the graph
+walk does not exclude.** Search at `39f2302`, from the repo root:
+`git grep -n 'drilltarget\|fctarget\|CACHEDIR'` and
+`git grep -n 'CARGO_TARGET_DIR' -- method/ docs/ tools/ .github/`.
+**Two live instruction sites, both in `docs/CONVENTIONS.md`**: arm (c)
+itself (fixed here) and line 903's forecast paragraph, which says *"with
+its own `CARGO_TARGET_DIR` (POISON DRILL below says why)"* and names no
+directory, so it inherits the fix. `method/` carries none. Every other
+hit is a RECORD of a past measurement — `T-010`, `T-033`, `T-110`,
+`docs/rooms/t110-second-rejection.md` — not an instruction, and outside
+this fence. **The sweep is shown capable of failing**: the same pattern
+returns the pre-fix arm (c) at `git show 39f2302:docs/CONVENTIONS.md`.
+`docs/STATE.md`'s standing-hazard line still warns that a non-`target`
+target dir is inside the walk; it is outside this fence, it is now
+redundant rather than wrong, and STATE is replaced at every checkpoint —
+**flagged for the integrator rather than carded.**
+
+### THE DRILL — three mutants, ONE SIDE ONLY, and two false kills
+
+The bullet's own trigger does NOT fire on this diff (no test body is
+added or changed), so this drill is discretionary: it exists to show the
+green suites above are evidence rather than a document nobody reads.
+Committed FIRST at `e967701`, then drilled in a DETACHED scratch
+worktree at that commit, `/Users/ujju/Projects/t111s10drill` — a SHORT
+root, one stem (`t111s10drill`) spent on the worktree and every artefact,
+`git status --porcelain` empty at every step. Each mutation was applied
+by exact-string replacement REFUSING any count but 1 and read back with
+`git diff` before its run. **Every restore used the NEW spelling this
+edit lands** — `git restore --source=e967701 --staged --worktree --
+docs/CONVENTIONS.md` — and was proved sha256-identical against HEAD at
+`f5189fb91c9c9c09cc0fe557ee9c14711ef55d55901eb27aae0442321578a2eb`,
+three times.
+
+| mutant | one side | observed |
+|---|---|---|
+| **M1** `- POISON DRILL (` -> `- POISON RITUAL (` | the document | **KILLED** — `brief.mjs` ROW 9 loses `POISON DRILL`, gains `POISON RITUAL`. The document is genuinely read. |
+| **M2b** `- THE RANGE RULE: WHICH TWO COMMITS` -> `- THE RANGE GUIDE: …` | the document | **KILLED** — `rawBullet` throws *"has 0 bullets containing \"THE RANGE RULE:\", expected exactly one"*. The opener guard the brief warned about is live. |
+| **M3b** two spaces -> `- ` at column zero INSIDE this bullet | the document | **SURVIVED** `lint:docs` (exit 0) and `brief.mjs` ROW 9 (15 named bullets before and after). Routed as `T-111-s12`. |
+
+**BOTH FALSE KILLS ARE RECORDED BECAUSE THE CONTROL IS WHAT CAUGHT
+THEM.** M2's first form called `rangeRuleBullet()` with no argument, so
+it threw `undefined.split` under the mutant AND under the clean tree; and
+an attempt to detect M3 through `conventionsBullet(md, "POISON DRILL")`
+throws at EVERY ref, because that phrase sits in three bullets — **3 at
+`39f2302` and 3 at `e967701`, so my edit moved it by zero.** Two greens
+built out of two failures, inside a drill of the very file that
+catalogues that as SHAPE TEN. Neither reached a conclusion only because
+the positive control was re-run on the restored tree each time.
+
+**AND ONE THING THE DRILL COULD NOT SEE, said rather than left to be
+found:** none of the ~6.1 KB this edit adds is pinned by any assertion
+in any suite, so no mutant of the NEW prose can red. That is the
+bullet's own *"IF a body cannot be poisoned, say so and name it"* clause
+applied to a document: the suites prove the file is READ and that its
+openers and budgets hold, not that any sentence in it is true.
+
+### THE IRONY BUDGET, since the brief asked for it
+
+The drill obeyed the NEW text and there was no disagreement to resolve,
+because the drill worktree was cut at `e967701` — the commit that
+carries the new text. The restoration used `git restore --staged
+--worktree` (new) rather than a bare `git checkout --` (the trap the new
+text names), and proved by hash (both texts agree). The one place the
+old text would have led differently is M2b's restore: under the old
+"or an empty `git diff -- <path>`" alternative, a bare
+`git checkout -- docs/CONVENTIONS.md` after an index-writing restore
+would have reported clean on the wrong file. It was not used.
+
+### COMMANDS, in the order run, each read from `$?` unpiped
+
+| command | cwd | exit | count |
+|---|---|---|---|
+| `npm ci` then `npm run build` | lib/parser | 0 | — |
+| `npm ci` | tools/e2e | 0 | — |
+| `npm install` then `npm run build` | app | 0 | — |
+| `npm run typecheck` | tools/e2e | 0 | — |
+| `npm run lint:docs` | tools/e2e | 0 | budgets hold, 4 gated |
+| `npx vitest run` | lib/parser | 0 | **314 passed**, 15 files |
+| `npm test` | app | 0 | **1015 passed**, 47 files |
+| `cargo test` | app/src-tauri | 0 | **525 passed, 0 failed, 4 ignored**, 18 binaries |
+| `NPUTER_E2E_PORT=14111 npm test` | tools/e2e | 0 | **313 passed**, 3.0m |
+| `npm run lint:tokens` | tools/e2e | 0 | TOKEN 155 files; CONTROL 899 tracked text files |
+| `cargo run -q -p nputer-index -- index --check --root ../..` | app/src-tauri | 0 | CURRENT — 1 022 964 B, 189 files, 2160 symbols, 2114 edges |
+| `node tools/method-evals/run.mjs` | repo root | 0 | 6 model-free evals |
+| `node tools/e2e/scripts/docs-gate.mjs $(…)` | repo root | **1** | FIRES — four suites owed |
+
+Every figure above is at `e967701` unless it names another ref. Ports
+were DERIVED from the lane, not defaulted (`14111` for the lane's suite,
+`14112` reserved for the drill's), each `lsof`-read at **zero rows**
+immediately before use; port **1420** was read holding `node 19746` —
+the human's app — and never touched, `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+being the only command spent on it (read 2026-08-30 on Mac.lan).
+
+### STANDING GATES, derived from the FORECAST tree rather than my ref
+
+Derived by the RANGE RULE's **executor pair** —
+`TREE=$(git merge-tree --write-tree 39f2302 HEAD)` (exit 0) then
+`git diff --name-only 39f2302 "$TREE"` — extended with the two paths this
+notes commit adds, so the answer does not move when it lands. **Four
+paths, all under `docs/`**: `docs/CONVENTIONS.md`, this card, and the two
+routed cards.
+
+- **GRAPH REGEN — NOT OWED.** Trigger is `*.ts/*.tsx/*.js/*.jsx` or
+  `*.rs` OUTSIDE `docs/`; 0 of 4 paths match. `index --check` was run
+  anyway and reads CURRENT.
+- **BOOT GATE — NOT OWED.** Trigger is `app/src-tauri/**`, `app/src/**`
+  or either manifest; 0 of 4 paths match.
+- **DOCS GATE — FIRES** (exit 1), on all four paths. Owed and RUN:
+  `cargo test` from app/src-tauri/, `npm test` from app/, `npm test`
+  from tools/e2e/, `npx vitest run` from lib/parser/ — all four green
+  above, all four re-run at the final tree.
+- **METHOD EVAL GATE — NOT OWED.** Trigger is `method/**`; 0 of 4 paths
+  match. The model-free set was run anyway (exit 0, 6 evals).
+- **AUDIT GATE** declares no merge-diff trigger, so it is not one of
+  these.
+
+### WHERE THE BRIEF WAS WRONG
+
+1. **The T-153-s5 mechanism is not at the path the brief gave.** The
+   brief cites `docs/checkpoints/2026-08-29-T-153-s5.md`; no such file
+   exists at `39f2302`. The mechanism is on the CARD,
+   `docs/tasks/T-153-s5-…md`, under *"THE MECHANISM"* and the verdict's
+   correction 1, and that is what was read.
+2. **The ceremony row and the stamp.** The table's row for an S card
+   whose diff is outside shipped code gives NO verifier and makes the
+   executor its own integrator; the rule of thumb beside it is *"docs,
+   method and tooling self-integrate"*, and this diff is four `docs/`
+   paths. The brief nonetheless instructs `verifying` and does not
+   instruct a merge. **The brief is obeyed** — the table hands the row
+   assignment to the dispatcher in as many words (*"State which it is
+   when you dispatch"*), so this is discretion exercised rather than a
+   contradiction, and a verifier over an eight-seat edit to a
+   machine-read document is the cheaper error. `status: verifying`, no
+   merge, worktree kept for the verdict (lane-protocol rule 6).
+3. **Everything else in the brief held**, including the `~11.6K` warn
+   headroom (11 648 exactly), the 313-body base suite, the `ugrep` shim,
+   and the live sibling triage worktree at
+   `/Users/ujju/Projects/nputer-triage2` on `triage/standing-2026-08-30`
+   — disjoint from this fence, and the machine load it warned about did
+   not produce a single flake.
+
+### SUGGESTIONS FILED
+
+- **`T-111-s11`** `[crate-index]` — teach the walk to skip a directory
+  carrying cargo's own `CACHEDIR.TAG`. The class fix criterion 3 orders
+  routed; arm (a) landed here, arm (c) is code.
+- **`T-111-s12`** `[tools/e2e]` — a column-zero `- ` inside a bullet
+  splits it silently unless some reader happens to pass that bullet's
+  phrase to `conventionsBullet`; M3b above is the measurement, and the
+  card is explicit about what was NOT established.
 
 ## Verdicts

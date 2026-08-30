@@ -1571,7 +1571,18 @@
   the mutated TEXT is what you intended rather than only that a
   substitution COUNT was non-zero. Then restore, and PROVE the
   restoration rather than asserting it: `git show HEAD:<path> | shasum
-  -a 256` against the working file, or an empty `git diff -- <path>`.
+  -a 256` against the working file.
+  **THE SHA256 IS THE PROOF AND AN EMPTY `git diff -- <path>` IS A
+  COMPANION, NEVER AN ALTERNATIVE** (T-092-s4) — it was written as an
+  alternative and it PASSES ON A FAILED RESTORE. `git checkout <commit>
+  -- <path>` writes the INDEX as well as the worktree, so a following
+  bare `git checkout -- <path>` restores FROM THE MUTATION'S OWN SOURCE,
+  and `git diff` with no range compares the worktree to that index —
+  0 bytes, on the wrong file. Measured with the work already COMMITTED,
+  so the clause below does not close it: two mechanisms defeat one proof
+  and committing first closes only one. Name both sides when you
+  restore — `git restore --source=<commit> --staged --worktree --
+  <path>` — and keep the hash, which is immune to either.
   **DRILL AT A COMMIT** (T-072-s1) — commit the work FIRST, then mutate,
   because **A RESTORE CANNOT TELL ITSELF FROM A REVERT**: both proofs
   above are satisfied perfectly by a restore that threw away work HEAD
@@ -1579,10 +1590,51 @@
   was still an uncommitted working-tree change reverted it to the branch
   point; the sha256 matched and `git diff --stat` was empty AT THE MOMENT
   THE WORK WAS LOST, and the harness echoing the file back is what caught
-  it. Committing first makes both proofs correct by construction, which
-  beats adding a third. The scratch-SNAPSHOT alternative — copy aside,
-  mutate, copy back — works too and needs its OWN proof, `cmp` against
-  the snapshot, because `git show HEAD:` cannot see it.
+  it. Committing first closes THAT mechanism by construction; it does not
+  close the staged-index one above, which is why the hash is the proof.
+  The scratch-SNAPSHOT alternative — copy aside, mutate, copy back —
+  works too and needs its OWN proof, `cmp` against the snapshot, because
+  `git show HEAD:` cannot see it.
+  **AND RESTORING A FIXTURE MEANS ITS BYTES AND ITS CLOCK** (T-079-s3,
+  T-130-s1). A body that plants into a tracked file and writes the
+  original bytes back can be sha256-identical and `git diff` clean and
+  still cost a red, because sibling bodies read the MTIME — `git diff
+  --quiet` itself answers from the index's cached stat info. So restore
+  the clock too, and **through the SECONDS form, never through a
+  `Date`**: `utimesSync(target, stats.atime, stats.mtime)` writes back a
+  ROUNDED timestamp, where `utimesSync(target, stats.atimeMs / 1000,
+  stats.mtimeMs / 1000)` carries the fraction — 50 of 50 fresh writes
+  land on a sub-millisecond mtime, the `Date` form round-trips 0 of 50
+  and the seconds form 50 of 50 (APFS, libuv v1.52.0).
+  **THE LOSSY FORM SELF-HEALS, WHICH IS WHY THIS IS A RULE AND NOT A
+  PREFERENCE**: it leaves the file on a whole millisecond, so the next
+  run rounds to a no-op and passes. Red once, green forever after in
+  that checkout — **re-running until green is the defect's own healing
+  mechanism, not evidence.** The same fixed point defeats a POISON of a
+  clock assertion: a value that came out of `utimesSync` is a FIXED
+  POINT of it, so a zero-tolerance mutant is killed by the PREVIOUS RUN
+  rather than by the body (T-153-s5's M3 redded one body of two; with
+  the targets `touch`ed kernel-fresh first, the identical mutant redded
+  both). **Before poisoning an assertion over PERSISTENT state, put that
+  state back to a condition the suite did not create.**
+  **AND THE ROUND-TRIP'S PRECISION IS SCOPED BY THE libuv VERSION, NOT
+  BY THE PLATFORM** (T-153-s5, verdict correction 1): v1.51.0's
+  `uv__fs_to_timespec` truncates the nanosecond field to a whole
+  MICROSECOND before the syscall sees it, under ONE `#if` naming
+  `__APPLE__` and `__linux__` together, and v1.52.0 deletes the hack.
+  The seconds form is still the RIGHT form; what was wrong was the
+  inference from *"round-trips 50 of 50 here"* to *"round-trips
+  exactly"* — 24 samples on uv-1.51.0 reach **1016 ns** of error in
+  BOTH signs while uv-1.52.0 stays inside **170 ns**. **A CLOCK RESTORE
+  ROUND-TRIPS AT MICROSECOND PRECISION, AND AN ASSERTION DEMANDING MORE
+  IS MEASURING THE MEASURING HOST** — print `process.versions.uv`
+  beside any such figure, because a runner-image bump moves it with no
+  platform changing.
+  **THE `ctime` CAVEAT AT THE STRENGTH OF ITS EVIDENCE AND NO HIGHER**:
+  a `ctime` move after a byte-exact restore was seen ONCE and NOT
+  reproduced in 24 further cycles across two checkouts, one of them
+  freshly cut. It is an observation, not a mechanism, and it changes no
+  advice — prove restoration BY HASH, which is immune either way.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
@@ -1599,10 +1651,12 @@
   bytes, 0 lines). The claim was TRUE under an explicit range; the
   evidence offered for it was not evidence.
   **DRILL IN A DETACHED SCRATCH WORKTREE AT A NAMED COMMIT, AND GIVE IT
-  ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF** (T-013-s7 arm (c), taken at
-  T-013's merge — the standing advice above CREATES this hazard, and it
-  has now bitten three agents). A scratch worktree has no `target/`, so
-  the obvious economy is to symlink or share the parent's — and that is
+  ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF — AT `<scratch>/target`, NOT
+  AT A NAME YOU CHOSE** (T-013-s7 arm (c), taken at T-013's merge — the
+  standing advice above CREATES this hazard, and it has now bitten four
+  agents: T-013-s7's three, plus T-145-s3). A scratch worktree has no
+  `target/`, so the obvious economy is to symlink or share the parent's
+  — and that is
   a trap that stays silent until after the drill is over. Several Rust
   bodies here resolve the repository from `env!("CARGO_MANIFEST_DIR")`,
   which is baked in at COMPILE time and which cargo does not fingerprint
@@ -1611,15 +1665,46 @@
   bare `cargo test --no-fail-fast` went **336 passed / 33 failed, exit
   101** with the drill worktree deleted, every failure naming a
   directory that no longer exists, and `cargo clean -p` plus a rebuild
-  (12 704 files, 3.0 GiB) was the whole fix. **AND THE POLLUTION RUNS
-  THE OTHER WAY TOO**, which is the half that matters to a drill: a
+  (12 704 files, 3.0 GiB) was the whole fix. **AND WHERE `cargo clean`
+  IS PROHIBITED — it is, here, whenever another lane may be building —
+  THE RECOVERY IS TO `touch` EVERY WORKSPACE `.rs` (MTIME ONLY) AND
+  REBUILD** (T-145-s3: back to exit 0 at the same count the lane
+  measured before the drill). **Touching only the source file the panic
+  NAMED is the trap** — it produced a SECOND red at nine failures,
+  because each integration-test binary bakes its own copy of the path.
+  **AND THE POLLUTION RUNS THE OTHER WAY TOO**, which is the half that
+  matters to a drill: a
   mutant can look DEAD against a stale binary that never saw the
   mutation. Arm (c) costs one environment variable and one cold build,
   and it is the only arm that leaves the parent's cache untouched
   without a `cargo clean` to remember: measured at T-013's merge, the
   main checkout's `target/` mtime was **byte-identical before and after
-  three mutants and four suite runs** in a drill rooted at
-  `<scratch>/.drilltarget`. **DRILLING IN PLACE IS NOT THE REMEDY** —
+  three mutants and four suite runs** in a drill carrying its own target
+  directory.
+  **AND THE DIRECTORY'S NAME IS NOT FREE, BECAUSE THE GRAPH WALK CAN SEE
+  IT** (T-111-s10, corroborated at T-110-s4 and T-153-s3). Arm (c) used
+  to leave the name to the reader, and `.gitignore` excludes `target/`
+  and NOTHING ELSE — so a target dir under any other name is INDEXED,
+  and `index --check` answers confidently and wrongly rather than
+  erroring, exactly as the `--root` paragraph above describes for a
+  different cause. Same tree, same commit, same command, differing only
+  in where `CARGO_TARGET_DIR` sat: INSIDE under a chosen name,
+  **`files +3 -0 ~2`** — three cargo build-script `out/private.rs`
+  files, plus a phantom `p:cargo:serde_core` package node and its import
+  edge; BESIDE the worktree, **`files +0 -0 ~2`**. A second lane
+  reproduced it with a different name and a different phantom.
+  **`files +0 -0` IS THE SENTENCE A CHECKPOINT DECIDES ON** — it is the
+  whole argument for *"the checkpoint owes NO fixture reconciliation"* —
+  so a phantom `+3` buys a reconciliation nobody owes, and the expensive
+  reading is equally available: a REAL `+1` hidden among build artefacts
+  a reader has learned to discount. `<scratch>/target` costs one word
+  and the walk already excludes it; the hazard arm (c) exists for is not
+  sharing the PARENT's cache, never the directory's name, so naming it
+  changes nothing about the property. Teaching the walk to skip any
+  directory carrying cargo's own `CACHEDIR.TAG` is the CLASS fix, it is
+  `crate-index`'s code rather than this bullet's, and the two are not
+  alternatives — the doc does not wait on the code.
+  **DRILLING IN PLACE IS NOT THE REMEDY** —
   the in-place argument ("one manifest path throughout, so the hazard is
   absent by construction") is true of the INSTANCE and not of the CLASS,
   the mechanism being a compile-time constant cargo does not track
@@ -1727,8 +1812,10 @@
   the failing-body count to be ONE.** A count of one IS the
   non-duplication, mechanically; a count above one names the bodies that
   already cover you, in the reporter's own output. Worked on the file the
-  shape was found in: two mutants each gave **1 failed / 832 passed of
-  833**, naming that body and nothing else. **The honest failure mode is
+  shape was found in: two mutants each gave a failing-body count of
+  exactly **one**, naming that body and nothing else — the suite total
+  that used to stand here was T-072's and carried no ref, and the COUNT
+  is the whole property (T-092-s6). **The honest failure mode is
   the point** — if no such mutant exists, THAT is the finding, and a
   reader holding only "the drill has to ASK" has no way to say it. Both
   are DISTINCT from the four already
@@ -1737,8 +1824,13 @@
   **THE CATALOGUE IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED HERE**
   (T-092). Cards CITE these numbers; minting a second one for a shape
   that already has one is the defect the catalogue exists to prevent.
-  Each entry carries its TELL and whether it has a MECHANICAL REMEDY,
-  because that distinction is what a reader acts on.
+  **ENTRIES LIVE HERE FOR FIVE THROUGH ELEVEN ONLY** (T-092-s5): ONE to
+  FOUR are the *matcher moved, value fixed* family, named before this
+  catalogue existed, and their histories live in the cards rather than
+  on this page — so *"every ordinal is minted here"* governs NEW numbers
+  and does not promise an entry for an old one. Each entry below carries
+  its TELL and whether it has a MECHANICAL REMEDY, because that
+  distinction is what a reader acts on.
   **SHAPE SEVEN — a mutant NO BODY KILLS, because the mutant set was
   derived from the PINS rather than from the CRITERIA.** The exact dual
   of six — six is a body that kills no unique mutant, seven is a mutant
