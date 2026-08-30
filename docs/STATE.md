@@ -1,12 +1,12 @@
 # State
 
-Updated: 2026-08-30 at the T-025-s5 checkpoint — the real smoke waits
-at real cadence, and the first COMPLETE real planner turn closed
-T-025-s2 (Milestone 3's last observed-evidence gap): Completed in
-72.21 s, stage-0 scaffold + a real Q1, one allowlist denial in band
-and recovered. The stamps push broke the CI streak at nine (T-143-s4,
-a fixed spec window vs a long filename — CI-only); the fix waits on
-T-162's fence. Current record: docs/checkpoints/2026-08-30-T-025-s5.md.
+Updated: 2026-08-30 at the T-162 checkpoint — the ADR-019 budgets are
+RE-LANDED (both docs-headroom bands INSIDE; the CONVENTIONS seat has
+runway again) and milestone 3's gate text caught up with the morning's
+completed real turn; whether one turn closes the milestone is @human's
+call, queued. The push stays HELD for T-143-s4 (dispatching next onto
+the freed e2e seat). Current record:
+docs/checkpoints/2026-08-30-T-162.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -26,9 +26,10 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. At this
-  rewrite: TWO live — `T-162` (ALONE on the e2e seat; while it lives,
-  both session-economics e2e bodies red in every other checkout, the
-  T-143-s1 class) and `T-163`. `T-025-s5` LANDED. Dispatch
+  rewrite: ONE live — `T-163` (verifying; its landing FLIPS five pins
+  in three fences it could not reach — land it WITH its complements
+  s1/s2/s3 in one checkpoint, never alone). `T-162`, `T-025-s5`
+  LANDED. Dispatch
   derives the brief, PREFLIGHTS the card (T-160 — a failed preflight
   refuses the manifest), then writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
@@ -54,14 +55,16 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-162` (ADR-019 re-landing) lands next on the e2e seat;
-   `T-156-s1`, `T-160-s4` AND `T-143-s4` (the CI-only spec-window
-   red — the streak does not resume until it lands or the in-flight
-   set carries only short-named cards) queue directly behind it.
-2. WHEN `T-163` lands: re-derive T-112's flip pairs (its card orders
-   the stamp), then T-112 is dispatchable per @human's ruling.
-   `T-025-s2` is CLOSED — the real turn completed; `T-025-s4` now
-   carries its gating measurement and queues for the next sitting.
+1. `T-143-s4` dispatches NEXT (e2e seat, freed by T-162's landing) —
+   the push and the CI streak resume only when it merges. Behind it:
+   the `T-163` flip-set landing (merge + s1 ARCHITECTURE slug block +
+   s2 positive controls + s3 parser fixtures, ONE checkpoint), then
+   `T-156-s1`, `T-160-s4`, `T-162-s2`.
+2. AFTER the T-163 landing: T-112 is dispatchable per @human's ruling
+   (its correction stamp carries the re-derived pairs: ONE standing
+   collider). `T-025-s2` is CLOSED; `T-025-s4` carries its gating
+   measurement and queues for the next sitting; the milestone-3
+   completion ruling is @human's, stated on ROADMAP.
 3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
    the preflight refuses it until then, correctly. `T-154-s2`
    (promoted, `review: independent`) is dispatchable after the e2e
