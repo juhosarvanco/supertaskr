@@ -5,13 +5,13 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: building
+status: done
 blocked_by: []
 suggested_by: integrator nputer-4e @T-025-s5 merge, CI run on 8e6b18b (2026-08-30)
 builder: claude-opus-5@subagent
 verifier:
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: nputer-4e@integration-seat
 review:
 touches: [tools/e2e]
 ---
