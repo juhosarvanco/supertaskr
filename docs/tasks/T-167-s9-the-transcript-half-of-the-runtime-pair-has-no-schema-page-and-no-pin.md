@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [method/runtime, app-agent]
 suggested_by: executor claude-opus-5@subagent @T-167-s1
@@ -94,3 +94,34 @@ key by substring and says nothing about the set.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-03 p4, and BOTH triage questions RULED
+
+The card names two calls as triage's. Both are taken here so the lane
+inherits decisions rather than re-deriving them.
+
+**RULING 1 — A PAGE OF ITS OWN, `method/runtime/transcript-schema.md`,
+not a second section.** `ls method/runtime/` at `b60b06d` answers
+`nputer.yaml` and `sessions-schema.md`: the existing layout is one file
+per FORMAT, and the existing file's own NAME scopes it to the registry.
+A transcript section inside `sessions-schema.md` makes that name false,
+and a reader looking for the transcript's contract has no reason to open
+a file named for the sessions one. The cheaper option is cheaper by one
+file and costs the naming property this directory already keeps.
+
+**RULING 2 — NO METHOD VERSION BUMP IS OWED, derived at `b60b06d`
+rather than taken from `T-167-s1`'s answer.** Test 1, SHIPPED BYTES:
+`git grep -h 'rel: "' app/src-tauri/src/agent/kit.rs` prints fourteen
+entries and the only `runtime/` one is `runtime/nputer.yaml`, so a NEW
+file under `method/runtime/` is not shipped and does not reach a
+`KIT_FILES` entry. Test 2, GRAMMAR: a runtime file's key set is not what
+a card, a room, a brief or a role may SAY. Both fail, so no bump. **The
+lane SHALL still re-derive both at its own ref** — the card asks for it
+and `KIT_FILES` is exactly the kind of table that moves under somebody
+else's merge.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

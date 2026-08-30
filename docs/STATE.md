@@ -1,28 +1,22 @@
 # State
 
-Updated: 2026-08-30 at the SESSION'S CLOSE — T-163-s4 and T-025-s4
-both landed (the live-lane e2e red class is ENDED: graded spawns
-derive fence-disjoint ids; and the effective Bash grant is three
-named tables in adapter::EFFECTIVE_GRANT_TABLES, the six patterns
-ruled to stay, dated). ZERO LANES; battery whole: cargo 590, app
-1060, e2e 332* (*minus three docs-input-gate bodies that redded on
-THIS seat's own STATE staleness, repaired in this commit — the gate
-caught the record-append class mechanically, third sighting).
-**GRAPH AT 410 BYTES HEADROOM (1,039,590/1,040,000) — T-140-s4's
-@human ruling BLOCKS the next code merge in practice.** THE GENESIS
-WALK IS DONE; F-04 IS WHOLE. **HANDOVER: the takeover signal for the
-new architect session is FIRED** (no task/ worktrees, all cards done
-on pulled main). Its queue: the triage sitting (T-171..T-174,
-T-112-s1..s4, T-154-s3/s4, T-163-s5), then T-112-s1 first dispatch.
-@human holds: milestone-3 word, T-140-s4 (URGENT), the brief's
-closing evidence, v1/v2/v3 markup, T-162-s1, T-169-s2, M4, and
-T-025-s4's four routed questions. Current record:
-docs/checkpoints/2026-08-30-T-025-s4-the-three-tables-and-the-ledger-closes.md.
+Updated: 2026-08-30 by the standing-triage-4 seat — the ARCHITECT/
+INTEGRATOR SEAT CHANGED HANDS today and this is the incoming seat's
+first record: docs/checkpoints/2026-08-30-standing-triage-4.md.
+**The suggested column is 0** (14 dispositioned: 10 promoted, 4 parked;
+4 cards filed; T-161 corroborated). ZERO LANES.
+**GRAPH AT 410 BYTES HEADROOM (1,039,590/1,040,000 by `wc -c`) — AND
+THAT NOW BLOCKS THE QUEUE**: eight of the ten promotions reach indexed
+source and cannot be dispatched until @human rules T-140-s4. The two
+that CAN go are `[tools/e2e]`, outside the walk: T-112-s3 and T-163-s5,
+which contend with each other on that one package.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
 meet: `npm run health` exits 3 while four bands await keepers
-(T-156-s1/s2) — never read that 3 as clean, and never "fix" it.
+(T-156-s1/s2) — never read that 3 as clean, and never "fix" it. The
+DOCS GATE answering exit 1 on a diff is also designed: 1 means it HAS a
+verdict (suites owed), not that something is wrong.
 
 ## The contract this file is under
 
@@ -31,18 +25,18 @@ record is written — the record keeps the INSTANCE, this file the
 MECHANISM (ADR-019). A figure appears here only with its derive
 command or a ref stamp. The byte budget is `npm run lint:docs`'s to
 enforce; when it warns, content moves to the record or a card — a
-hazard is never deleted to fit.
+hazard is never deleted to fit. **Never commit a record without
+regenerating this file in the SAME commit** — the gate reds when a
+record's commit is newer, and it caught the previous seat doing it.
 
 ## Live right now — derive, never quote
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. At this
-  rewrite: NO lanes — every dispatch of the day is landed and the
-  battery is whole at zero lanes (e2e 320/320). Dispatch
-  derives the brief, PREFLIGHTS the card (T-160 — a failed preflight
-  refuses the manifest), then writes the fence manifest
-  (`brief.mjs --task T-NNN --write-fence <worktree>`); run
-  `brief.mjs --task` before ANY dispatch; never read the ledger's
+  rewrite: NO lanes. Dispatch derives the brief, PREFLIGHTS the card
+  (T-160 — a failed preflight refuses the manifest), then writes the
+  fence manifest (`brief.mjs --task T-NNN --write-fence <worktree>`);
+  run `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
   branch slugs — T-143's card).
 - THE HUMAN'S APP: port 1420 is read with
@@ -64,23 +58,25 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. IN FLIGHT: T-112 (the slice's last act — its lane wires
-   selectDispositions' first consumer), T-154-s2 (guard), T-167-s1
-   (verifying, blind verifier out). LANDED this hour: T-143-s3,
-   T-159-s1 (fourteen riders disposed). THEN: the e2e-seat train
-   (T-163-s4 p1, T-167-s8 p2, T-167-s6, T-164-s2+T-156-s5 as one
-   lane per the sitting's note). HELD for the walk: T-025-s4 only.
-2. @human's open items: THE GENESIS WALK; the v1/v2/v3 markup;
-   `T-162-s1`; `T-169-s2` (one word); `T-140-s4` (the graph limit —
-   live again, the graph truncates today); the M4 strategy question.
-   All unhurried.
-3. `T-154-s2` (promoted, `review: independent`) is dispatchable —
-   the e2e seat is free. Watch-list on any push: `T-161`
-   (stderr-drain intermittent), `T-018-s2` (picker-rearm, one
-   sighting), `T-153-s14` (one PR run answers it).
-4. Standing hooks: `T-139-s2` (wants a room), `T-144`,
-   `T-127-s8/s9`, `T-149-s1…s5`, `T-143-s1/s2/s3`, `T-156-s2`.
-   D3 and D5 are both RULED (rooms/cockpit-or-mirror.md).
+1. **BLOCKED ON @human, and it is the whole code queue**: `T-140-s4`
+   (the graph limit). At 410 bytes any indexed diff can cross the
+   budget. Until it is ruled, dispatch only fences outside the walk.
+2. DISPATCHABLE TODAY, and they contend on one package: `T-112-s3`
+   (row 3 APPLIES the role file's reading step) and `T-163-s5` (two
+   live-checkout bodies grade an exit they accept either way). One
+   lane at a time — the second refuses at `--write-fence`.
+3. FIRST AFTER THE RULING: `T-112-s1` (registration — until it lands
+   the drawer's brief block never renders), then the e2e train
+   (`T-167-s8` p2, `T-167-s6`, `T-164-s2`+`T-156-s5` as one lane).
+4. THE NEXT METHOD RELEASE HAS FIVE RIDERS and is worth cutting as a
+   card: `T-112-s2`, `T-154-s3`, `T-159-s6` name it as their
+   resurfacing condition; `T-173` and `T-176` owe a bump when they
+   land. Watch-list on any push: `T-161` (stderr-drain, TWO CI
+   sightings), `T-178` (fixture-teardown ENOTEMPTY, one), `T-018-s2`.
+5. @human's open items: `T-140-s4` (blocking), `T-154-s4` (one word),
+   milestone-3's closing word, the v1/v2/v3 markup, `T-162-s1`,
+   `T-169-s2`, M4, `T-025-s4`'s four routed questions, and `T-112`'s
+   closing evidence. D3 and D5 are RULED (rooms/cockpit-or-mirror.md).
 
 ## Standing hazards — the section that saves the hour
 
@@ -99,12 +95,22 @@ hazard is never deleted to fit.
 - **`npm run typecheck` from app/ DOES NOT EXIST** — exit 1 `Missing
   script` reads like a type error; the app's typecheck is the two
   `tsc` calls inside `npm run build` (T-073). The same trap holds
-  for EVERY tools/e2e script run from the wrong cwd — and the
-  persisted-cwd chain defect recurred THREE TIMES at this sitting
-  before moving into a guarded script (the record has the story;
-  suite chains go in script files now, never pasted).
+  for EVERY tools/e2e script run from the wrong cwd — suite chains go
+  in guarded script files with `cd || exit N`, never pasted.
+- **THE ONE SPELLING IS ONE SPELLING BECAUSE EVERY VARIANT BREAKS
+  DIFFERENTLY** — and this shell adds a variant CONVENTIONS does not
+  name. The DOCS GATE's printed recipe passes an unquoted COMMAND
+  SUBSTITUTION, which zsh word-splits correctly. Route it through a
+  variable instead (`P=$(…)`, then `docs-gate.mjs $P`) and **zsh does
+  NOT split unquoted parameter expansions**: the gate takes the whole
+  list as ONE path and answers "1 path(s)" — plausible, wrong, exit 1
+  either way. Measured at sitting #4 on its own diff (19 paths). Type
+  the printed spelling, or build a real array.
 - **This session's `grep` is a `ugrep` shim carrying `-I`** — use
   `command grep` when it matters; sweep NULs with `perl -0777`.
+- **An edit script's success is a GATE, not a step** (`18d8166`): never
+  chain `commit` after a scripted edit — read the diff first, or let
+  the script's own non-zero exit stop the chain.
 - **Cut scratch worktrees at SHORT roots** (`T-133-s5`): a 116-char
   root steals the board's standing region at 800×600.
 - **Ports are machine-wide** (`T-132-s6`): explicit port, lsof-read
@@ -114,16 +120,20 @@ hazard is never deleted to fit.
   different pairs; the pre-merge two-dot form hands your lane main's
   work.
 - **Drill in a detached scratch worktree with its OWN
-  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) (the bullet now names
-  `<scratch>/target`, the walk-safe form — T-111-s10). A lane with uncommitted edits
-  to a token-scan plant target reds the restoration proof
-  (`T-156-s3`).
+  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) at `<scratch>/target`,
+  the walk-safe form (T-111-s10). A lane with uncommitted edits to a
+  token-scan plant target reds the restoration proof (`T-156-s3`).
+- **After merging a lane, REMOVE ITS WORKTREE BEFORE the verdict
+  corrections** — the lane-fence guard's limit 6: git drops its
+  mid-merge marker at the merge commit while the worktree keeps the
+  fence, so corrections into it are refused for that window.
 
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record: 2026-08-30-T-135.md.
+  newer than this file. Current record:
+  2026-08-30-standing-triage-4.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.

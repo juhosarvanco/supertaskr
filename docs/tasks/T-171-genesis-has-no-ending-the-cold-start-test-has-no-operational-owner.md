@@ -1,9 +1,14 @@
 ---
 id: T-171
 title: Genesis has no ending — stage 7 banks, the method's cold-start test has no operational owner, and the screen rests on "planner is thinking…"
-status: suggested
+feature: F-03
+milestone: 4
+priority: 1
+size: M
+status: planned
+blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
-touches: [app-interview, app-agent]
+touches: [app-interview]
 ---
 
 **WHAT @HUMAN SAW, at the end of a complete and otherwise successful
@@ -87,3 +92,36 @@ survive, in the new project's `.nputer/` — gitignored and outside
 docs/, so the cold reader was right that docs/ alone cannot resolve
 them; whether the transcript belongs somewhere docs-visible is a
 question for this card's fix (the `[?]` marks all hedge against it).
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-03 p1, NARROWED to the terminal state, and SPLIT
+
+**THIS CARD IS NOW ITEM 1 ONLY: the interview concludes visibly, and
+"planner is thinking…" is never a resting state.** Items 2 and 3 left
+this card at the sitting:
+
+- **Item 2 (the cold-start test operationalized) is `T-175`**, filed at
+  this sitting and promoted F-03 p5. The split is on FENCE and SIZE:
+  item 1 is an interview-pane state (`app-interview`) and item 2 is a
+  restricted SPAWN (`app-agent`). One card carrying both hands one lane
+  the union of two fences for two unrelated contracts.
+- **Item 3 is RULED on `T-175`**: completion is at the last bank; the
+  cold-start test is offered, never gated. The reasoning is written
+  there because that is the card it constrains.
+
+**WHAT THIS CARD KEEPS IS THE BUG @HUMAN HIT**, and it is worth stating
+narrowly: after the last bank the footer held *"planner is thinking… ·
+⌘. to stop"* with a disabled bank button and no turn in flight. A
+footer that claims a turn nobody is running is a lie the screen tells
+about its own state, and it is fixable without spawning anything.
+
+**AND THIS CARD DOES NOT GATE MILESTONE 3.** Its milestone is 4
+deliberately. Milestone 3's closing word is @human's open item; a
+genesis defect found DURING the walk is ordinary F-03 work and the
+sitting refuses to convert it into a hold on a decision that is not the
+sitting's to make.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

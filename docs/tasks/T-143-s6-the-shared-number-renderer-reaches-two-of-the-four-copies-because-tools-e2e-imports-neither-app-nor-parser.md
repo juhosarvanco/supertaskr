@@ -1,7 +1,13 @@
 ---
 id: T-143-s6
 title: The shared number-agreement renderer T-143-s3 was told not to build reaches TWO of the four copies, not four — tools/e2e imports neither app nor parser by its own manifest, and the four copies do not share a sentence
-status: suggested
+feature: F-06
+milestone: 4
+priority: 22
+size: S
+status: planned
+blocked_by: []
+touches: [lib-parser, app-board]
 suggested_by: executor claude-opus-5@subagent @T-143-s3
 ---
 
@@ -88,3 +94,37 @@ sitting the same question has reached.
 
 
 CORROBORATION (2026-08-30, T-143-s3's blind verifier, routed at the merge): the frozen-number class survives twice inside the very string T-143-s3 fixed — board-model.ts's `" of " + CONCURRENCY_CEILING.max + " lanes are in flight."` ("1 of 5 lanes ARE in flight", same sentence as the corrected caveat) and the NOTHING-IS-DISPATCHABLE headline's "1 of 5 lanes are live". Both belong to whichever card takes this class next; the pair-picker proposal here is their natural vehicle.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-06 p22, and the RULING the card asked for
+
+**THE RULING: BUILD THE PAIR-PICKER, IN `lib-parser`, REACHING THE
+SITES IT CAN REACH — and say in code why the fourth copy stays a copy.**
+This is the second sitting the question has reached, and the card asked
+for a written ruling either way; here it is, with the fact that decided
+it.
+
+**WHAT CHANGED THE DISPOSITION IS THE REACH, RE-DERIVED AT `b60b06d`.**
+The card's own case against itself is *"two call sites is the threshold
+where a shared abstraction is a coin-flip"*. That was measured before
+its own corroboration landed. Counting again at this ref,
+`command grep -n "lanes are in flight\|lanes are live" app/src/lib/board-model.ts`
+returns **four** further frozen-number sites (lines 1307, 1329, 1359,
+1370) beside the caveat the card names — every one of them in
+`board-model.ts`, which is `C-17`'s and therefore inside `app-board`,
+and every one reachable from `lib-parser` through the `file:../lib/parser`
+dependency the card already derives. **So the helper reaches five or six
+sites in two packages, not two of four**, and the coin-flip argument is
+the one thing that does not survive the re-derivation.
+
+**THE NARROWING STANDS EXACTLY AS THE CARD PROPOSES IT**: a NUMBER
+helper the call site spends on its own words, never a sentence factory —
+the three deliberate wordings stay three. `tools/e2e` keeps its copy,
+with the reason in the code, because giving that package a dependency on
+`lib-parser` is an ADR-scale call about a package boundary and is not
+this card's to make.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 20
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [tools/e2e]
@@ -63,3 +63,17 @@ positive control that keeps the derivation from being a constant.
   can see WHICH document the role file removed and which it added.
 - A body SHALL prove the derivation is not vacuous: a role file with no
   subtraction clause leaves the adapter's list unchanged.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-04 p20, as filed
+
+Re-derived at `b60b06d`: `deriveReadFirst` in
+`tools/e2e/scripts/dispatch-brief.mjs` still emits one `value(...)` row
+per root adapter (`${rel} names: ${docs.join(" ")}`) and applies no
+subtraction from the role file — the card's claim holds unchanged, and
+`method/roles/executor.md:9` still carries the subtraction it ignores.
+
+**AND THIS ONE IS DISPATCHABLE TODAY.** Its fence is `[tools/e2e]`,
+which `.nputerignore` excludes from the graph walk, so it cannot move
+the 410-byte headroom. With the code queue held behind `T-140-s4`, this
+card and `T-163-s5` are the two F-04/F-06 promotions a lane can take
+right now.

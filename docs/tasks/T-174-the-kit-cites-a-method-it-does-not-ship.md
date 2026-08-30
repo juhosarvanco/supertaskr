@@ -1,7 +1,12 @@
 ---
 id: T-174
 title: The kit cites a method it does not ship — a genesis project's TASK-FORMAT and STATE name role files, lane-protocol and docs-protocol that KIT_FILES never materializes
-status: suggested
+feature: F-01
+milestone: 4
+priority: 12
+size: M
+status: planned
+blocked_by: []
 suggested_by: "the first-walk cold-start test (2026-08-30), finding B-1 — surfaced by the walk, confirmed against kit.rs"
 touches: [app-agent]
 ---
@@ -41,3 +46,45 @@ normative citation those docs make, or the citation names where it
 lives. The walk's capture
 (docs/research/captures/cold-start-first-walk-2026-08-30.md) is the
 evidence file.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-01 p12, and SHAPE 1 RULED
+
+**THE RULING: SHIP WHAT THE SHIPPED DOCUMENTS CITE (shape 1). Shape 2 is
+declined, and the reason is this repository's own standing law.** Shape 2
+forks TASK-FORMAT — one normative document with two implementations,
+which `docs/CONVENTIONS.md` names as a defect class in as many words
+(*"a rule with two implementations is two chances to disagree"*, T-057)
+and which this project has already paid for twice. A fork also makes
+every future edit to the method's own TASK-FORMAT a two-file edit
+forever, with no test holding the two together.
+
+**THE SET IS ENUMERABLE, WHICH IS WHAT MAKES SHAPE 1 A CARD RATHER THAN
+A PROJECT.** Derived at `b60b06d` over the two shipped documents that
+carry normative citations:
+
+    command grep -oE "roles/[a-z]+\.md|lane-protocol\.md|docs-protocol\.md" \
+      method/tasks/TASK-FORMAT.md method/docs-templates/STATE.md
+
+answers `lane-protocol.md` (4 citations), `roles/orchestrator.md` (2),
+`roles/verifier.md` (1), `roles/executor.md` (1) and `docs-protocol.md`
+(1) — **five files**, against a `KIT_FILES` table that currently holds
+fourteen entries. `interview/decomposition.md` is cited twice and is
+ALREADY shipped, so it is not part of the gap.
+
+**THE COST IS NAMED RATHER THAN WAVED AWAY**: those five files become
+shipped bytes, so every future edit to them takes test 1 and owes a
+bump. That is the honest price of a kit whose documents can be read to
+the end, and it is smaller than the price of a forked normative
+document.
+
+**WHAT THE LANE STILL DECIDES**: whether the five ship as-is or whether
+any of them needs a project-agnostic pass first — `roles/integrator.md`
+and `lane-protocol.md` are deliberately outside the kit today and the
+card SHALL re-derive `KIT_FILES` at its own ref before assuming this
+count.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

@@ -69,3 +69,31 @@ rather than a timing guess.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## CORROBORATION (2026-08-30, standing triage sitting #4) — the SECOND CI sighting
+
+CI run **33328885168**, main at `27f609d` (the T-163-s4 close tip),
+cargo step: `a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail`
+**FAILED**, `85 passed; 1 failed; 1 ignored` in
+`tests/agent_runner.rs`, panicking at `tests/agent_runner.rs:1485` with
+`ExitNonZero { code: Some(3), stderr_tail: "" }` — **the tail EMPTY
+again**, the same shape as the first sighting at run 33274798983.
+
+Two facts that sharpen the card and are recorded rather than inferred:
+
+- **It is still INTERMITTENT, confirmed on the successor run.** The same
+  body is green at `b60b06d` (run 33329824890, full battery, the session
+  close tip) with nothing in the diff touching the capture path. Read
+  with `gh run view <id> --log-failed`; the attribution was made at this
+  seat and the successor run was reported independently by the outgoing
+  integrator session.
+- **The line number moved and the mechanism did not** — 1393 at the
+  first sighting, 1485 here. The card's own citation rule applies to its
+  own evidence: cite
+  `a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail`, never the
+  line.
+
+**The cost is now measured rather than predicted**: this red skipped
+every step behind cargo, including the e2e lane and the boot gate, so
+one intermittent hides a whole battery's worth of signal from the push
+it lands on.

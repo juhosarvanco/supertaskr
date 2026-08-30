@@ -1,7 +1,7 @@
 ---
 id: T-159-s6
 title: The needle that checks a resurfacing condition is a substring of every suggestion the vehicle itself spawns, so the rider census over-matched 17-for-14 one day after it was written down as exact
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-159-s1
 ---
 
@@ -106,3 +106,25 @@ method version bump and should be decided there, beside the other
 grammar questions, rather than promoted on its own.** Do not take arm 2
 inside a lane whose fence cannot reach all three bump stamps — that is
 `T-145-s2`'s whole lesson and it was settled at v0.1.8.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PARKED, riding the next method version bump — and arm 1 is free to ride any docs card meanwhile
+
+**THE SITTING TOOK THE CARD'S OWN DISPOSITION HINT.** Arm 2 (a
+machine-readable `resurfaces_on:` field) is the arm with the payoff and
+is a TASK-FORMAT grammar change, therefore a method version bump whose
+third file is Rust. It is decided at the release, beside the other
+grammar questions, and not promoted alone.
+
+**ARM 1 IS NOT PROMOTED EITHER, AND THE REASON IS A FENCE FACT RATHER
+THAN A JUDGEMENT ABOUT ITS VALUE.** Arm 1 is a sentence added *"wherever
+a parking note publishes the needle"* — which is `docs/tasks/**`, the one
+region every lane fence carries as `alwaysWritable`. A card whose
+`touches:` is `[docs/tasks]` reserves nothing, and the preflight's
+DEAD-fence-entry arm would be right to say so. Arm 1 has no durable
+home of its own: it rides whichever docs card next edits a parking note,
+and this paragraph is where a reader learns that.
+
+**RESURFACING CONDITION: the next method version release card is cut.**
+The card's measurement stands unchallenged — the needle over-matched
+17-for-14 at `51fa31c`, and the population that breaks it is the
+suggestion train the metabolism rules guarantee.
