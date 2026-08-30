@@ -1384,11 +1384,16 @@ function deriveFence(ctx) {
     // whose card this checkout cannot read it is false in the one
     // direction a fence exists to prevent: there ARE two lanes, and one
     // of them could not be expanded.
+    // NUMBER AGREEMENT IS NOT DECORATION HERE (T-143's verdict,
+    // correction one — the sibling in lanes.ts carries the same rule
+    // in the same words): "T-901, T-902 is live … about it" reads as
+    // a claim about one lane while naming two.
     overlapLines.push(
       blind.length === 0
         ? "fewer than two fences to compare"
-        : `fewer than two READABLE fences to compare — ${blind.join(", ")} is live and could not ` +
-          "be expanded at all, so nothing below is a claim about it",
+        : `fewer than two READABLE fences to compare — ${blind.join(", ")} ` +
+          `${blind.length === 1 ? "is" : "are"} live and could not be expanded at all, ` +
+          `so nothing below is a claim about ${blind.length === 1 ? "it" : "them"}`,
     );
   }
   // `DISJOINT` IS THE SAME CLASS OF WORD AS `FREE` — a claim about the
@@ -2190,7 +2195,9 @@ export function stateReport(ctx) {
     blank(),
     note("THE FENCE LEDGER — held or free, derived from the lanes above"),
     note("IT IS KEYED BY SLUG NAME AND IS NOT A DISPATCH VERDICT. Two slugs can expand through one"),
-    note("component, so one can read FREE while the other is HELD over the same files. Never read a"),
+    note("component, so one can read FREE while the other is HELD over the same files — and a lane"),
+    note("declaring a bare PATH can contain a slug's region without naming it, so a row can read"),
+    note("FREE while a lane holds its files by containment (the ledger card's own verdict). Never read a"),
     note("FREE row here as an answer to \"may I dispatch this card\" — this is what answers it:"),
     value(
       "`brief.mjs --task T-NNN`, the fence row, which compares EXPANDED fences and names the witness paths",
@@ -2201,7 +2208,7 @@ export function stateReport(ctx) {
   if (shared.length === 0) {
     recs.push(
       value(
-        "no component is claimed by two slugs today, so no row here is free-as-a-name and held-as-a-region",
+        "no component is claimed by two slugs today",
         tree(ctx, "docs/architecture/components/C-*.md field touch_slugs"),
       ),
     );

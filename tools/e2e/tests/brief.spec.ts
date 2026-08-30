@@ -1234,6 +1234,17 @@ test("`DISJOINT` is the same class of word as `FREE` — ROW 5's verdicts carry 
   // three lanes here and two of them could not be expanded.
   expect(rendered).toContain("fewer than two READABLE fences to compare");
   expect(rendered).not.toContain("fewer than two fences to compare");
+  // T-143's VERDICT, correction one: the clause agrees in NUMBER with
+  // the list it names — the mutant "is live" over two lanes killed
+  // nothing before these two pins existed, and lanes.ts's sibling
+  // carries the same rule in the same words.
+  expect(rendered).toContain("T-901, T-902 are live");
+  expect(rendered).toContain("a claim about them");
+  const oneBlind = render(
+    assembleBrief(context({ taskId: real.id, porcelain: BLIND_PORCELAIN(["T-901"], real.id) })).recs,
+  );
+  expect(oneBlind).toContain("T-901 is live");
+  expect(oneBlind).toContain("a claim about it");
 
   // POSITIVE CONTROL: with no blind lane the residual is gone and the
   // plain sentence is back, so the clause is a function of the fixture
