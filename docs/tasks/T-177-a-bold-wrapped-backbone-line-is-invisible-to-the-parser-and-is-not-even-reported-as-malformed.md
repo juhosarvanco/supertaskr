@@ -12,8 +12,8 @@ suggested_by: standing triage sitting #4 (2026-08-30), from @human's first-walk 
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
-review:
+verified_by: claude-opus-5@subagent
+review: same-model
 ---
 
 **MEASURED AT `b60b06d` AGAINST THE REAL FILE AND THE REAL REGEXES**,
@@ -383,3 +383,231 @@ what was measured. Nothing was installed or run in
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+**2026-08-31 · claude-opus-5@subagent · blind verifier seat ·
+APPROVED WITH ASSIGNED CORRECTIONS.**
+
+Measured at `966ff56` (lane `task/T-177-backbone-reported`, base
+`fbeac77`). One correction assigned, from a drill survivor; two
+follow-ups and one accuracy note recorded below, none blocking.
+
+**The two follow-ups are written out here rather than filed as
+`status: suggested` cards** (roles/verifier.md step 6). Deliberate, and
+named so it is a choice and not an omission: this seat's brief scoped
+it to the verdict, and adding two new frontmatter blocks to a tip whose
+live-tree parse I have just measured at ZERO issues buys a re-
+verification for no gain. Both are specified below in enough detail to
+file without re-deriving them; the integrator owns whether they become
+cards.
+
+### The blindness, stated so it is auditable
+
+Phase 1 read ONLY: this card at `fbeac77`, `docs/CONVENTIONS.md`,
+`docs/STATE.md`, `method/roles/verifier.md`, `roadmap.ts` +
+`inert-spans.ts` at `fbeac77`, and @human's real
+`first-walk/docs/ROADMAP.md` (read-only; not edited, not staged). The
+diff, the commits and the Implementation notes were opened only after
+the attack set was written to disk and hashed: **55 binding attacks**
+(48 in classes A–H, plus seven mutants derived from the criteria with
+the test file closed), `sha256
+a7a510cd50c36295e35d866ae8e6cea0e58f526fe64bdb59abb258053efb3394`,
+written 2026-08-31 00:34 local, before the first `git diff`. **The
+brief kept the two phases separate and named no executor-derived
+figure**, so nothing above the line had to be disclosed as broken.
+
+### Gates, run by this seat, exits read UNPIPED from guarded scripts
+
+| from | command | exit | result |
+|---|---|---|---|
+| `lib/parser/` | `npm ci` | 0 | fresh lane install, 0 vulnerabilities |
+| `lib/parser/` | `npx vitest run` | **0** | **16 files, 343/343** |
+| `lib/parser/` | `npx tsc --noEmit` | **0** | clean |
+| `lib/parser/` | `npm run build` | **0** | dist/ emitted |
+| `app/` | `npm install` | **0** | 0 vulnerabilities |
+| `app/` | `npm run build` | **0** | typecheck + frontend build |
+| `app/` | `npm test` | **0** | **49 files, 1060/1060** |
+
+**THE APP SUITE WAS THE GAP AND IT IS CLOSED.** `app/` consumes this
+parser through `file:../lib/parser`; the executor named the risk
+honestly and left the suite unrun because it sat outside its fence.
+This seat is not fenced, so it ran it: **1060/1060, exit 0.** The
+parser change moves no app behaviour. Neither named intermittent
+(`T-161`, `T-178`) appeared; no cargo was built, port 1420 untouched.
+
+### What survived contact — the three that matter
+
+**1. ASSIGNED CORRECTION — the reporter's backbone scoping is CORRECT
+but UNPINNED.** My mutant M5 hoists the new detector past the section
+guard:
+
+    -    if (!inBackbone) continue;
+    +    if (!inBackbone && !/^-\s+[*_~]+\s*(?=F-)/.test(line)) continue;
+
+**The suite stays 343/343, exit 0. No body notices.** The shipped
+behaviour is right — I measured it directly: a `- **F-02: Deferred —
+later**` under `## Parked` yields zero issues, and so do @human's real
+Parked bullets. But nothing pins it, and **no existing gate could
+catch it**: the live-tree smoke test cannot, because an `awk` over
+every tracked `*.md` finds ZERO decorated `F-` bullets outside a
+backbone section anywhere in this repository. A reporter that fires in
+every section instead of the backbone is the failure mode that turns
+one silence into a page of badges, and it would arrive silently under
+any future refactor of the scan loop.
+
+CORRECTION, performable without re-deriving anything — add one body to
+`lib/parser/test/roadmap.test.ts`, in the T-177 describe block:
+
+    it('the reporter is backbone-scoped: a decorated F- bullet under another heading is not an issue', () => {
+      const content = [
+        '## Backbone',
+        '- F-01: Real — the only feature here',
+        '',
+        '## Parked',
+        '- **F-02: Deferred — bold, and none of the backbone scan business**',
+        '',
+      ].join('\n');
+      const { features, issues } = parseRoadmap(content, FILE);
+      expect(issues).toEqual([]);
+      expect(features.map((f) => f.id)).toEqual(['F-01']);
+    });
+
+Re-run `npx vitest run` from `lib/parser/` (expect 344/344) and confirm
+the body reds under the M5 edit above. No source change is owed — the
+code is already correct.
+
+**2. SUGGESTED, not blocking — the class stops where the dash anchor
+does.** `[*_~]+` genuinely covers the class it claims: `*`, `**`,
+`***`, `_`, `__`, `~~` and every mixture I threw at it, including
+nonsense runs like `~*_`, each reported with its own run named back.
+But five neighbours stay silent drops: `- <b>F-01:` (HTML emphasis),
+`* F-01:` and `+ F-01:` (other list markers), `* **F-01:` (both axes),
+and `  - **F-01:` (indented). Criterion 1's floor is *"at least the
+emphasis wrap this card measured"* and that floor is cleared, and
+`roadmap.ts`'s header states its set precisely rather than overclaiming
+— so this is a follow-up, not a failure. The last three were already
+silent on `fbeac77`; the lane did not regress them, it declined to
+widen past its own stated set. Worth a card because a project that
+writes `*` list markers throughout still gets total silence.
+
+**3. SUGGESTED, not blocking — the echoed line is the inert-BLANKED
+one.** The message ends `: ${line.trim()}`, and `line` comes from the
+blanked view, so @human's own F-01 reports as
+
+    … description: - **F-01: Open — one command puts the cursor in today's note.** Run       ;
+
+where the file says ``Run `note`;``. Inherited from the base malformed
+arm rather than introduced here — but T-177's fixture is the first case
+where it actually bites, because a real planner's line carries inline
+code. A card should echo the raw line.
+
+### The criteria, attacked one at a time
+
+- **C1 (report the class, cover at least the emphasis wrap): MET,
+  beyond the floor.** Nine decoration shapes I constructed that the
+  card never names all report, each naming its own run.
+  Over-reporting holds too: `- **bold prose**` is silent, `-**F-01:`
+  (not a list item) is silent, and `- **F-eature**` reports exactly as
+  the plain arm already did for `- F-eature` — symmetric with base, not
+  a new looseness.
+- **C2 (arm 2's clause): NOT OWED, arm 2 declined — and the decline is
+  MEASURED, not asserted.** Both candidate strippings were run against
+  the real F-01 line, and the reasons are concrete: the emphasis wraps
+  the first *sentence*, not the bullet, so a leading-run strip maroons a
+  literal `**` mid-description and a strip-all deletes the writer's own
+  prose emphasis, and either way the four-line paragraph is swallowed
+  into `description`. **T-030's property was pinned anyway, which was
+  the right call**: I confirmed a decorated example row inside an HTML
+  comment (multi-line and one-line), inside a ``` fence, and inside an
+  inline code span all yield no feature AND no issue, and an
+  unterminated comment yields exactly one issue, not two. My mutant M6
+  points the detector at the raw line and that body reds — the property
+  is measured, not assumed.
+- **C3 (real fixture + positive control): MET, both halves, proved
+  independently.** I re-read
+  `/Users/ujju/Projects/first-walk/docs/ROADMAP.md` and confirmed
+  `real.startsWith(fixture)` — **861 bytes byte-identical**, em dashes,
+  straight apostrophes and inline code spans intact, with the three
+  declarations at lines 5, 9 and 13 exactly as the body asserts. The
+  positive control I re-derived myself: my M1 reverts the detector to
+  `/^-\s+F-/` and **four bodies red**.
+- **C4 (do not edit `method/docs-templates/ROADMAP.md`): MET.**
+  `git diff --stat fbeac77..HEAD -- method/` is **empty**. Arm 3
+  untouched and still routed.
+- **C5 (headless `npx vitest run`): MET.** Nothing launched, no port
+  bound.
+
+### My poison drill — 6 killed, 1 survivor
+
+Seven mutants of my own, derived from the criteria before the test file
+was open; one side only, each read back with `git diff` before running,
+each restored with `git restore --source=966ff56 --staged --worktree`
+and proved by `sha256 1937d4320c049253855d72aa72d309bacc0be409ab20c994a0aa2bdd18b1effb`
+against the committed blob — identical at all seven cycles. Drilled in
+a DETACHED scratch worktree at `/private/tmp/nv-T-177` with its own
+`node_modules`; baseline 343/343 exit 0, and 343/343 exit 0 after the
+last restore.
+
+| # | mutation (code side) | exit | red | verdict |
+|---|---|---|---|---|
+| M1 | detector deleted — base behaviour restored | 1 | 4 | KILLED |
+| M2 | class narrowed to the one quoted spelling `**` | 1 | 1 | KILLED |
+| M3 | `close()` removed from the reporting arm | 1 | 1 | KILLED |
+| M4 | named run replaced by a constant `'**'` | 1 | 1 | KILLED |
+| M5 | detector hoisted past the backbone guard | **0** | **0** | **SURVIVED** |
+| M6 | detector reads the RAW line, not the blanked view | 1 | 1 | KILLED |
+| M7 | reported line number off by one | 1 | 4 | KILLED |
+
+Six of the seven new bodies are killed by a mutant I chose without
+reading them, and the distribution is not degenerate — M2, M3, M4, M6
+each kill a DIFFERENT single body, so the seven are not seven spellings
+of one assertion. M7 also reds a pre-existing body, which is the right
+coupling. The one survivor is finding 1 above. The executor's own drill
+was 7-for-7 on a different seven and its claims are accurate as stated;
+the scoping property is simply one none of its mutants probed, which is
+what a blind second set is for.
+
+### Security sweep
+
+- **ReDoS: CLEAR, measured.** `/^-\s+([*_~]+)\s*(?=F-)/` has no nested
+  quantifier and `\s` is disjoint from `[*_~]`, so backtracking is
+  linear. A backbone line of 60,000 `*` with no `F-` — worst case for
+  the lookahead — parses in **1.67 ms** (1,000 → 0.06 ms; 5,000 → 0.38
+  ms; 20,000 → 0.92 ms: linear, not quadratic).
+- **No dependency added**, no lockfile or `package.json` churn: the
+  whole lane is three files.
+- **No new `ParseIssue` kind, field or shape** — a `roadmap-error` with
+  a longer message, which every consumer already handles. Verified by
+  the app suite rather than by reading: 1060/1060.
+- No secrets, no new input path beyond file content already parsed, no
+  unsafe default: a non-matching line yields `undefined` through `?.`
+  and the arm simply does not fire.
+
+### Scope
+
+Three files, all inside the fence: `lib/parser/src/roadmap.ts`,
+`lib/parser/test/roadmap.test.ts`, this card. Zero bytes under
+`method/`. This repository's own `docs/ROADMAP.md` untouched — its
+backbone is six plain bullets, `F-01`…`F-06`, so the smoke test's zero
+is genuine and not a dodge. I re-ran the executor's sweep myself with
+an `awk` first shown capable of finding a PLANTED decorated row:
+**zero decorated backbone bullets in the whole tracked tree.**
+
+One accuracy note, the figure case rather than a defect: the notes'
+SWEEP C quotes `git grep -n -- '- \*\*F-' -- app tools lib` → ZERO,
+which at the tip returns **8** — every one of them the lane's own new
+bytes in `lib/parser`. Restricted to the sweep's actual subject,
+`-- app tools`, it is zero, which I confirmed. The claim's substance
+holds; the number went stale the moment the fixture was committed.
+
+### Gate re-run at MY OWN tip
+
+This verdict and the two frontmatter stamps are prose that the parser's
+own smoke test reads, so `npx vitest run` from `lib/parser/` was re-run
+AFTER writing them: exit and count recorded in the report accompanying
+this verdict. `verified_by` and `review: same-model` stamped;
+`status: verifying` left for the integrator; `verifier:` left as
+dispatch wrote it. **NOT merged, NOT pushed, no worktree removed** —
+the drill scratch at `/private/tmp/nv-T-177` is detached (STATE: a
+detached entry is not a lane) and left standing for audit; the
+integrator may clear it with
+`git worktree remove /private/tmp/nv-T-177`.
