@@ -18,6 +18,7 @@ paths:                    # decided location (plan §6.1 as revised by §0.0-3);
   - app/test/architecture-glob.test.ts
   - app/test/architecture-graph.test.ts
   - app/test/architecture-store.test.ts
+  - app/test/map-rollup.test.ts   # T-140-s1's suite, claimed with arch_cmd.rs
   - app/test/map-churn-age.test.tsx
   - app/test/map-churn.test.ts
   - app/test/map-dogfood-render.test.tsx

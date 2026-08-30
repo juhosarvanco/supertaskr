@@ -158,7 +158,7 @@ describe("the nputer repo on its own map", () => {
     expect(c01.textContent).toContain("pin");
   });
 
-  it("C-07 is a REAL face at last: thirty-six Rust files match its globs", () => {
+  it("C-07 is a REAL face at last: thirty-seven Rust files match its globs", () => {
     // THE ASSERTION THAT INVERTS AT THE T-010 MERGE REGEN (2026-08-25),
     // and the one this whole card exists to invert. This body read
     // "C-07 is declared-only: zero TS files match its globs" from T-012
@@ -203,7 +203,10 @@ describe("the nputer repo on its own map", () => {
     // BUCKET rather than here, which is why this row moves by one while
     // the merge added two indexed files. Derived from `arch` over the
     // regenerated graph before the suite was run.
-    expect(c07.textContent).toContain("36 files");
+    // 36 → 37 at the T-140-s1 merge regen (2026-08-30), the same shape
+    // a fifth time: `crates/nputer-index/src/rollup.rs`, the resting
+    // payload the whole card ships. THE TITLE MOVED WITH THE DIGIT.
+    expect(c07.textContent).toContain("37 files");
     // The D3 ring is gone with the finding that drew it — the visible
     // half of architecture-dogfood's declaredOnly list losing C-07.
     expect(c07.className).not.toContain("map-drift-ring");
@@ -792,8 +795,12 @@ describe("the nputer repo on its own map", () => {
       // C-14, mapped, findings unmoved.
       // 190 -> 193 at the T-169 merge regen (2026-08-30) - the assignment
       // module, its test, and the moved panel test, all mapped.
+      // 193 -> 198 at the T-140-s1 merge regen - the rollup, its channel
+      // commands, and its suite (claimed in the regen's own commit),
+      // plus the two bin/ files an unanchored ignore line briefly ate
+      // and the anchor gave back.
       // Derived from arch after the regen, not from the failure output.
-      "committed graph · 193 files",
+      "committed graph · 198 files",
     );
   });
 });

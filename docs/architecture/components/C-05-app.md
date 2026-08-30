@@ -42,6 +42,9 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/src-tauri/src/acl_pin.rs      # T-010 settlement, see below
   - app/src-tauri/src/churn.rs        # T-010 settlement, see below
   - app/src-tauri/src/index_cmd.rs    # T-010 settlement, see below
+  - app/src-tauri/src/arch_cmd.rs     # T-140-s1's rollup/detail commands,
+                                      # claimed at the merge regen so the
+                                      # verifier's predicted D2 never opens
   - app/src-tauri/build.rs
   - app/src-tauri/tauri.conf.json
   - app/src-tauri/capabilities/**

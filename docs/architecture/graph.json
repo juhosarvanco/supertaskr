@@ -1862,8 +1862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
       "path": "app/src-tauri/crates/nputer-index/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:43843b4c5f6b9ccaace43d0b11dd913b09f9d69d6c69cc673c9137041121e939",
-      "loc": 432,
+      "hash": "blake3:04005d5a08463c93aecf29498a0930344f856af6eb9820ec7f98e1eae355de22",
+      "loc": 437,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/lib.rs#GRAPH_REL_PATH",
@@ -1871,8 +1871,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            46,
-            46
+            51,
+            51
           ]
         },
         {
@@ -1881,8 +1881,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            56,
-            144
+            61,
+            149
           ]
         },
         {
@@ -1891,8 +1891,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            50,
-            50
+            55,
+            55
           ]
         },
         {
@@ -2001,8 +2001,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            146,
-            158
+            151,
+            163
           ]
         },
         {
@@ -2011,8 +2011,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            162,
-            304
+            167,
+            309
           ]
         },
         {
@@ -2036,13 +2036,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/nputer-index/src/lib.rs#rollup",
+          "name": "rollup",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            33,
+            33
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/nputer-index/src/lib.rs#stable_json",
           "name": "stable_json",
           "kind": "fn",
           "exported": true,
           "range": [
-            309,
-            314
+            314,
+            319
           ]
         },
         {
@@ -2051,8 +2061,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            336,
-            432
+            341,
+            437
           ]
         },
         {
@@ -2061,8 +2071,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            34,
-            34
+            38,
+            38
           ]
         },
         {
@@ -2071,8 +2081,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            323,
-            333
+            328,
+            338
           ]
         },
         {
@@ -2081,8 +2091,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            30,
-            30
+            34,
+            34
           ]
         },
         {
@@ -2091,8 +2101,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            31,
-            31
+            35,
+            35
           ]
         },
         {
@@ -2101,8 +2111,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            319,
-            321
+            324,
+            326
           ]
         }
       ]
@@ -2753,6 +2763,145 @@
       ]
     },
     {
+      "id": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "path": "app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "lang": "rust",
+      "hash": "blake3:ca4d1b2d25348110ecbc08dc5d262021bc0701e92a3f213d2fd405b84faacd05",
+      "loc": 790,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#Detail",
+          "name": "Detail",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            283,
+            326
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#MAX_DETAIL_FILES",
+          "name": "MAX_DETAIL_FILES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            69,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#Rollup",
+          "name": "Rollup",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            73,
+            86
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#RollupComponent",
+          "name": "RollupComponent",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            89,
+            94
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#RollupEdge",
+          "name": "RollupEdge",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            97,
+            105
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#RollupFinding",
+          "name": "RollupFinding",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            116,
+            132
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#RollupStats",
+          "name": "RollupStats",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            136,
+            152
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#detail",
+          "name": "detail",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            338,
+            467
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#rollup",
+          "name": "rollup",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            158,
+            262
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#stable_detail_json",
+          "name": "stable_detail_json",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            478,
+            480
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#stable_rollup_json",
+          "name": "stable_rollup_json",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            473,
+            475
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#stable_string",
+          "name": "stable_string",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            482,
+            491
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/rollup.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            494,
+            790
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src-tauri/crates/nputer-index/src/testutil.rs",
       "path": "app/src-tauri/crates/nputer-index/src/testutil.rs",
       "lang": "rust",
@@ -3102,8 +3251,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/budget.rs",
       "lang": "rust",
-      "hash": "blake3:855146369a18a694f7f90296689e0e2739b92c516f1767aa08d458d2b0b9dc57",
-      "loc": 304,
+      "hash": "blake3:fefbd2f2c3cbe58b9dd8ebaffb28ec021ce2ac1aae7b7320612d261ae72db4d1",
+      "loc": 382,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#a_graph_driven_over_the_budget_keeps_its_files_and_its_import_edges",
@@ -3111,8 +3260,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            72,
-            164
+            74,
+            166
           ]
         },
         {
@@ -3131,8 +3280,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            31,
-            54
+            33,
+            56
           ]
         },
         {
@@ -3141,8 +3290,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            56,
-            62
+            58,
+            64
           ]
         },
         {
@@ -3151,18 +3300,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            290,
-            304
+            368,
+            382
           ]
         },
         {
-          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#the_undroppable_floor_grows_with_the_file_count",
-          "name": "the_undroppable_floor_grows_with_the_file_count",
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#the_resting_rollup_does_not_grow_with_the_file_count",
+          "name": "the_resting_rollup_does_not_grow_with_the_file_count",
           "kind": "fn",
           "exported": false,
           "range": [
-            223,
-            283
+            231,
+            361
           ]
         },
         {
@@ -3171,8 +3320,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            172,
-            198
+            174,
+            200
           ]
         }
       ]
@@ -4113,8 +4262,8 @@
       "id": "f:app/src-tauri/src/acl_pin.rs",
       "path": "app/src-tauri/src/acl_pin.rs",
       "lang": "rust",
-      "hash": "blake3:fd2cc970b3f2ae026ade9cdd322a26bfe87bdcd54df1859485db327db0699c7c",
-      "loc": 737,
+      "hash": "blake3:de40e40853509d5745d2bef51f8e8eb293c21ce2f59c8459070d820d1aa6fdaf",
+      "loc": 753,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/acl_pin.rs#EXPECTED_GRANTS",
@@ -4222,8 +4371,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            660,
-            729
+            676,
+            745
           ]
         },
         {
@@ -4242,8 +4391,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            735,
-            737
+            751,
+            753
           ]
         },
         {
@@ -4253,7 +4402,7 @@
           "exported": false,
           "range": [
             388,
-            566
+            582
           ]
         },
         {
@@ -4272,8 +4421,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            583,
-            652
+            599,
+            668
           ]
         }
       ]
@@ -5141,718 +5290,7 @@
       "lang": "rust",
       "hash": "blake3:b59ae606ba394170d53a659c3ffaf8c0bd249b6bb0180def34faac450026041e",
       "loc": 3577,
-      "symbols": [
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ChildHandle",
-          "name": "ChildHandle",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            1288,
-            1295
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ENV_ALLOWLIST",
-          "name": "ENV_ALLOWLIST",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            1085,
-            1104
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ENV_ALLOWLIST_LINUX",
-          "name": "ENV_ALLOWLIST_LINUX",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            1107,
-            1108
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#Emitter",
-          "name": "Emitter",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            300,
-            303
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#GroupExit",
-          "name": "GroupExit",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            1314,
-            1326
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#LineMsg",
-          "name": "LineMsg",
-          "kind": "enum",
-          "exported": false,
-          "range": [
-            2606,
-            2610
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_AUTH_MESSAGE_BYTES",
-          "name": "MAX_AUTH_MESSAGE_BYTES",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            167,
-            167
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIALS",
-          "name": "MAX_DENIALS",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            106,
-            106
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIAL_BYTES",
-          "name": "MAX_DENIAL_BYTES",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            114,
-            114
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIAL_MESSAGE_BYTES",
-          "name": "MAX_DENIAL_MESSAGE_BYTES",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            142,
-            142
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_EVENT_TEXT",
-          "name": "MAX_EVENT_TEXT",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            98,
-            98
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_LINE_BYTES",
-          "name": "MAX_LINE_BYTES",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            96,
-            96
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_RELAY_BYTES",
-          "name": "MAX_RELAY_BYTES",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            101,
-            101
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_STDERR_RING",
-          "name": "MAX_STDERR_RING",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            103,
-            103
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#NOT_UNIX",
-          "name": "NOT_UNIX",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            1487,
-            1492
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#NO_REAL_CLI_VAR",
-          "name": "NO_REAL_CLI_VAR",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            444,
-            444
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#POLL_INTERVAL",
-          "name": "POLL_INTERVAL",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            1402,
-            1402
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ResolveError",
-          "name": "ResolveError",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            420,
-            427
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ResolvedCli",
-          "name": "ResolvedCli",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            430,
-            438
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ResolvedPathRejection",
-          "name": "ResolvedPathRejection",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            599,
-            613
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#ResultDenial",
-          "name": "ResultDenial",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            1512,
-            1515
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#Ring",
-          "name": "Ring",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            2658,
-            2661
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#RunEvent",
-          "name": "RunEvent",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            242,
-            281
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#RunnerConfig",
-          "name": "RunnerConfig",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            367,
-            399
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#SimpleOutput",
-          "name": "SimpleOutput",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            1010,
-            1013
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#StreamLine",
-          "name": "StreamLine",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            1518,
-            1574
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#TurnError",
-          "name": "TurnError",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            182,
-            234
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#TurnOutcome",
-          "name": "TurnOutcome",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            1809,
-            1816
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#TurnRequest",
-          "name": "TurnRequest",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            1798,
-            1804
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#apply_child_env",
-          "name": "apply_child_env",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1152,
-            1183
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#as_status_u32",
-          "name": "as_status_u32",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1716,
-            1723
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#bounded_stream_string",
-          "name": "bounded_stream_string",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1731,
-            1733
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#cap_text",
-          "name": "cap_text",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2602,
-            2604
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#classify_line",
-          "name": "classify_line",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1577,
-            1711
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#denial_entries",
-          "name": "denial_entries",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1756,
-            1779
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#denial_field",
-          "name": "denial_field",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1737,
-            1744
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#denial_names",
-          "name": "denial_names",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1790,
-            1792
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#finish",
-          "name": "finish",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            888,
-            906
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#flush_pending",
-          "name": "flush_pending",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2585,
-            2600
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#group_has_members",
-          "name": "group_has_members",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1254,
-            1260
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#guard_decision",
-          "name": "guard_decision",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            528,
-            534
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl ChildHandle",
-          "name": "impl ChildHandle",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            1297,
-            1309
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl Default for RunnerConfig",
-          "name": "impl Default for RunnerConfig",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            401,
-            415
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl Emitter",
-          "name": "impl Emitter",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            305,
-            339
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl Ring",
-          "name": "impl Ring",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            2663,
-            2679
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl RunEvent",
-          "name": "impl RunEvent",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            283,
-            295
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#impl std::fmt::Display for ResolvedPathRejection",
-          "name": "impl std::fmt::Display for ResolvedPathRejection",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            615,
-            627
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#is_test_harness_dir",
-          "name": "is_test_harness_dir",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            591,
-            593
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#kill_group_now",
-          "name": "kill_group_now",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1262,
-            1267
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#login_shell",
-          "name": "login_shell",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            859,
-            873
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#login_shell_probe",
-          "name": "login_shell_probe",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            918,
-            958
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#now_ms",
-          "name": "now_ms",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            169,
-            174
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#pid_alive",
-          "name": "pid_alive",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1242,
-            1248
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#probe_version",
-          "name": "probe_version",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            991,
-            1008
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#read_lines_capped",
-          "name": "read_lines_capped",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            2616,
-            2655
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#real_cli_arms_forbidden",
-          "name": "real_cli_arms_forbidden",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            507,
-            512
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#resolve_cli",
-          "name": "resolve_cli",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            746,
-            811
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#run_turn",
-          "name": "run_turn",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1825,
-            2583
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#run_with_timeout",
-          "name": "run_with_timeout",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1017,
-            1052
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#running_as_cargo_test_binary",
-          "name": "running_as_cargo_test_binary",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            549,
-            560
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#set_child_env",
-          "name": "set_child_env",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1132,
-            1143
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#signals",
-          "name": "signals",
-          "kind": "mod",
-          "exported": false,
-          "range": [
-            1188,
-            1234
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_async",
-          "name": "terminate_group_async",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1470,
-            1482
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_observing",
-          "name": "terminate_group_observing",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1452,
-            1462
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_owning",
-          "name": "terminate_group_owning",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1410,
-            1441
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_polling",
-          "name": "terminate_group_polling",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1363,
-            1397
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#tests",
-          "name": "tests",
-          "kind": "mod",
-          "exported": false,
-          "range": [
-            2682,
-            3577
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#validate_resolved_binary",
-          "name": "validate_resolved_binary",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            660,
-            665
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#validate_resolved_program",
-          "name": "validate_resolved_program",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            674,
-            708
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#which_in",
-          "name": "which_in",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            985,
-            989
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/agent/runner.rs#which_on_path",
-          "name": "which_on_path",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            971,
-            976
-          ]
-        }
-      ]
+      "symbols": []
     },
     {
       "id": "f:app/src-tauri/src/agent/sessions.rs",
@@ -6378,6 +5816,105 @@
           "range": [
             367,
             377
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/arch_cmd.rs",
+      "path": "app/src-tauri/src/arch_cmd.rs",
+      "lang": "rust",
+      "hash": "blake3:ea1d8330bdd36a1c6346996021d9238e9d2c4736889aa1ee5dba4a80ebb5cd06",
+      "loc": 443,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#DetailOutcome",
+          "name": "DetailOutcome",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            85,
+            91
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#Loaded",
+          "name": "Loaded",
+          "kind": "enum",
+          "exported": false,
+          "range": [
+            94,
+            100
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#MAX_TARGET_CHARS",
+          "name": "MAX_TARGET_CHARS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            194,
+            194
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#RollupOutcome",
+          "name": "RollupOutcome",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            56,
+            75
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#load",
+          "name": "load",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            102,
+            152
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#run_detail",
+          "name": "run_detail",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            172,
+            185
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#run_rollup",
+          "name": "run_rollup",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            155,
+            169
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#target_within_bounds",
+          "name": "target_within_bounds",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            198,
+            200
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/arch_cmd.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            203,
+            443
           ]
         }
       ]
@@ -7968,8 +7505,8 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:464ca6b6419912615eb9bf0b76093661b2a1125bbb07a60b8fe15615b4bd2363",
-      "loc": 947,
+      "hash": "blake3:7e53f7b292b5ab0eb6df69699ce5c3599c1b8529332792f25570afc6797b450e",
+      "loc": 1033,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/lib.rs#DispatchLanesOutcome",
@@ -7977,8 +7514,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            403,
-            409
+            481,
+            487
           ]
         },
         {
@@ -7987,8 +7524,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            122,
-            122
+            130,
+            130
           ]
         },
         {
@@ -7997,8 +7534,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            51,
-            51
+            58,
+            58
           ]
         },
         {
@@ -8012,13 +7549,43 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/lib.rs#arch_cmd",
+          "name": "arch_cmd",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            52,
+            52
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#arch_detail",
+          "name": "arch_detail",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            402,
+            421
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#arch_rollup",
+          "name": "arch_rollup",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            373,
+            383
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/lib.rs#canonical_or",
           "name": "canonical_or",
           "kind": "fn",
           "exported": false,
           "range": [
-            113,
-            115
+            121,
+            123
           ]
         },
         {
@@ -8047,8 +7614,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            455,
-            457
+            533,
+            535
           ]
         },
         {
@@ -8057,8 +7624,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            419,
-            426
+            497,
+            504
           ]
         },
         {
@@ -8067,8 +7634,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            157,
-            159
+            165,
+            167
           ]
         },
         {
@@ -8087,8 +7654,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            504,
-            506
+            582,
+            584
           ]
         },
         {
@@ -8097,8 +7664,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            524,
-            529
+            602,
+            607
           ]
         },
         {
@@ -8107,8 +7674,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            544,
-            546
+            622,
+            624
           ]
         },
         {
@@ -8117,8 +7684,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            513,
-            518
+            591,
+            596
           ]
         },
         {
@@ -8127,8 +7694,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            484,
-            490
+            562,
+            568
           ]
         },
         {
@@ -8137,8 +7704,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            471,
-            476
+            549,
+            554
           ]
         },
         {
@@ -8147,8 +7714,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            496,
-            498
+            574,
+            576
           ]
         },
         {
@@ -8157,8 +7724,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            535,
-            537
+            613,
+            615
           ]
         },
         {
@@ -8167,8 +7734,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            67,
-            77
+            75,
+            85
           ]
         },
         {
@@ -8177,8 +7744,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            46,
-            46
+            53,
+            53
           ]
         },
         {
@@ -8187,8 +7754,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            322,
-            343
+            330,
+            351
           ]
         },
         {
@@ -8197,8 +7764,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            235,
-            272
+            243,
+            280
           ]
         },
         {
@@ -8207,8 +7774,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            176,
-            219
+            184,
+            227
           ]
         },
         {
@@ -8217,8 +7784,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            368,
-            383
+            446,
+            461
           ]
         },
         {
@@ -8227,8 +7794,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            93,
-            109
+            101,
+            117
           ]
         },
         {
@@ -8237,8 +7804,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            549,
-            702
+            627,
+            788
           ]
         },
         {
@@ -8247,8 +7814,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            283,
-            310
+            291,
+            318
           ]
         },
         {
@@ -8257,8 +7824,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            143,
-            148
+            151,
+            156
           ]
         },
         {
@@ -8267,8 +7834,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            705,
-            947
+            791,
+            1033
           ]
         }
       ]
@@ -8640,7 +8207,7 @@
       "id": "f:app/src/architecture/MapNode.tsx",
       "path": "app/src/architecture/MapNode.tsx",
       "lang": "ts",
-      "hash": "blake3:be31adb3cc12a917ce8eeec4587006e279388e926fe4ea182f94e2443a3f0b45",
+      "hash": "blake3:f7a2aa0e448a20e211b286abbf483e072c5180eeedeb0d63084bfbb1b58c2016",
       "loc": 247,
       "symbols": [
         {
@@ -8669,8 +8236,8 @@
       "id": "f:app/src/architecture/MapPanel.tsx",
       "path": "app/src/architecture/MapPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:585f0231bb984db8188bf600912482d8b5096e668039a20d628eb938c95e0971",
-      "loc": 707,
+      "hash": "blake3:2ad1201ac21cf78d46124489db6e7abd3b968b87056fcd42c8870148e05fceba",
+      "loc": 716,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
@@ -8678,8 +8245,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            408,
-            437
+            417,
+            446
           ]
         },
         {
@@ -8688,8 +8255,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            288,
-            349
+            297,
+            358
           ]
         },
         {
@@ -8698,8 +8265,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            685,
-            707
+            694,
+            716
           ]
         },
         {
@@ -8708,8 +8275,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            355,
-            397
+            364,
+            406
           ]
         },
         {
@@ -8718,8 +8285,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            537,
-            683
+            546,
+            692
           ]
         },
         {
@@ -8729,7 +8296,7 @@
           "exported": true,
           "range": [
             34,
-            268
+            277
           ]
         },
         {
@@ -8738,8 +8305,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            281,
-            283
+            290,
+            292
           ]
         },
         {
@@ -8748,8 +8315,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            270,
-            279
+            279,
+            288
           ]
         },
         {
@@ -8758,8 +8325,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            462,
-            514
+            471,
+            523
           ]
         },
         {
@@ -8768,8 +8335,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            401,
-            403
+            410,
+            412
           ]
         },
         {
@@ -8778,8 +8345,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            444,
-            457
+            453,
+            466
           ]
         }
       ]
@@ -8807,8 +8374,8 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:23aefb20246a2862be4a6ef1e297c6ec12ac30ad7f705e478fdeadfe673b586e",
-      "loc": 1071,
+      "hash": "blake3:d6686d04183a6b5d7549ed62e847f15a874f2f7a7f398388587f326fed00aa91",
+      "loc": 1195,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
@@ -8816,8 +8383,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            71,
-            71
+            83,
+            83
           ]
         },
         {
@@ -8826,8 +8393,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1064,
-            1071
+            1188,
+            1195
           ]
         },
         {
@@ -8836,8 +8403,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            59,
-            59
+            71,
+            71
           ]
         },
         {
@@ -8846,8 +8413,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            58,
-            58
+            70,
+            70
           ]
         },
         {
@@ -8856,8 +8423,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            141,
-            1062
+            153,
+            1186
           ]
         },
         {
@@ -8866,8 +8433,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            79,
-            84
+            91,
+            96
           ]
         },
         {
@@ -8876,8 +8443,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            73,
-            77
+            85,
+            89
           ]
         },
         {
@@ -8886,8 +8453,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            88,
-            100
+            100,
+            112
           ]
         },
         {
@@ -8896,8 +8463,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            122,
-            139
+            134,
+            151
           ]
         },
         {
@@ -8906,8 +8473,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            103,
-            111
+            115,
+            123
           ]
         }
       ]
@@ -9531,8 +9098,8 @@
       "id": "f:app/src/architecture/map-visuals.ts",
       "path": "app/src/architecture/map-visuals.ts",
       "lang": "ts",
-      "hash": "blake3:2288f3c11b97dd2f495f2167f45d048bcaabcc1776b6563743259ce852652806",
-      "loc": 650,
+      "hash": "blake3:964c031d50c3e99cb6ea3347c0d342e1fed40b26ebf2b3341d4713f52b4dbb6b",
+      "loc": 683,
       "symbols": [
         {
           "id": "s:app/src/architecture/map-visuals.ts#CHURN_BAR",
@@ -9540,8 +9107,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            586,
-            586
+            619,
+            619
           ]
         },
         {
@@ -9550,8 +9117,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            587,
-            587
+            620,
+            620
           ]
         },
         {
@@ -9560,8 +9127,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            571,
-            571
+            604,
+            604
           ]
         },
         {
@@ -9570,8 +9137,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            573,
-            584
+            606,
+            617
           ]
         },
         {
@@ -9740,8 +9307,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            643,
-            650
+            676,
+            683
           ]
         },
         {
@@ -9750,8 +9317,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            620,
-            639
+            653,
+            672
           ]
         },
         {
@@ -9760,8 +9327,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            594,
-            616
+            627,
+            649
           ]
         },
         {
@@ -9780,8 +9347,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            536,
-            557
+            569,
+            590
           ]
         },
         {
@@ -9820,8 +9387,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            493,
-            533
+            506,
+            562
           ]
         },
         {
@@ -10231,6 +9798,285 @@
           "range": [
             322,
             325
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/rollup-source.ts",
+      "path": "app/src/architecture/rollup-source.ts",
+      "lang": "ts",
+      "hash": "blake3:710fcd86f0b649cd629753eef7e681107909e834e40f5e69302531679ce9f9ec",
+      "loc": 343,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#DetailState",
+          "name": "DetailState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            136,
+            139
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#LOADING",
+          "name": "LOADING",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            67,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#RollupState",
+          "name": "RollupState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            53,
+            65
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#RollupUnavailableReason",
+          "name": "RollupUnavailableReason",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            43,
+            51
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#__resetRollupForTests",
+          "name": "__resetRollupForTests",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            335,
+            343
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#applyRollupPayload",
+          "name": "applyRollupPayload",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            190,
+            192
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#cachedDetail",
+          "name": "cachedDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            261,
+            263
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#detailCache",
+          "name": "detailCache",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            256,
+            256
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#detailInFlight",
+          "name": "detailInFlight",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            257,
+            257
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#generation",
+          "name": "generation",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            210,
+            210
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#getRollupState",
+          "name": "getRollupState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            183,
+            185
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#hasTauriRuntime",
+          "name": "hasTauriRuntime",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            197,
+            199
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#inFlight",
+          "name": "inFlight",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            201,
+            201
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#isCount",
+          "name": "isCount",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            76,
+            77
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#isRecord",
+          "name": "isRecord",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            69,
+            70
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#listeners",
+          "name": "listeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            170,
+            170
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#loadDetail",
+          "name": "loadDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            272,
+            297
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#loadRollup",
+          "name": "loadRollup",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            218,
+            242
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#measuredFor",
+          "name": "measuredFor",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            310,
+            310
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#onProjectMaybeChanged",
+          "name": "onProjectMaybeChanged",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            312,
+            330
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#own",
+          "name": "own",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            73,
+            74
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+          "name": "parseDetailOutcome",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            145,
+            165
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+          "name": "parseRollupOutcome",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            83,
+            112
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#rollupUnavailableSentence",
+          "name": "rollupUnavailableSentence",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            117,
+            132
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#set",
+          "name": "set",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            172,
+            176
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#state",
+          "name": "state",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            169,
+            169
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/rollup-source.ts#subscribeRollup",
+          "name": "subscribeRollup",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            178,
+            181
           ]
         }
       ]
@@ -13123,8 +12969,8 @@
       "id": "f:app/src/lib/architecture/derive.ts",
       "path": "app/src/lib/architecture/derive.ts",
       "lang": "ts",
-      "hash": "blake3:d11f5580b7a30e521225115d85c9313537037820c1f7e924ccc1645304984e6c",
-      "loc": 721,
+      "hash": "blake3:5949b0aa2db2c4ac51797db436937d03e3c2f6abb0a0244574379a1a13f10358",
+      "loc": 1008,
       "symbols": [
         {
           "id": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
@@ -13132,8 +12978,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            195,
-            202
+            249,
+            266
           ]
         },
         {
@@ -13142,8 +12988,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            169,
-            193
+            212,
+            247
           ]
         },
         {
@@ -13152,8 +12998,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            103,
-            135
+            104,
+            158
           ]
         },
         {
@@ -13162,8 +13008,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            77,
-            85
+            78,
+            86
           ]
         },
         {
@@ -13172,8 +13018,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            66,
-            75
+            67,
+            76
           ]
         },
         {
@@ -13182,8 +13028,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            167,
-            167
+            210,
+            210
           ]
         },
         {
@@ -13192,8 +13038,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            44,
-            44
+            45,
+            45
           ]
         },
         {
@@ -13202,8 +13048,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            34,
-            34
+            35,
+            35
           ]
         },
         {
@@ -13212,8 +13058,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            88,
-            101
+            89,
+            102
           ]
         },
         {
@@ -13222,8 +13068,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            157,
-            165
+            189,
+            208
           ]
         },
         {
@@ -13232,8 +13078,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            54,
-            54
+            55,
+            55
           ]
         },
         {
@@ -13242,8 +13088,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            210,
-            215
+            274,
+            279
           ]
         },
         {
@@ -13252,8 +13098,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            300,
-            305
+            364,
+            369
           ]
         },
         {
@@ -13262,8 +13108,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            57,
-            64
+            58,
+            65
           ]
         },
         {
@@ -13272,8 +13118,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            238,
-            243
+            302,
+            307
           ]
         },
         {
@@ -13282,8 +13128,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            218,
-            225
+            282,
+            289
           ]
         },
         {
@@ -13292,8 +13138,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            31,
-            31
+            32,
+            32
           ]
         },
         {
@@ -13302,8 +13148,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            269,
-            273
+            333,
+            337
           ]
         },
         {
@@ -13312,8 +13158,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            208,
-            208
+            272,
+            272
           ]
         },
         {
@@ -13322,8 +13168,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            205,
-            205
+            269,
+            269
           ]
         },
         {
@@ -13332,8 +13178,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            309,
-            310
+            373,
+            374
           ]
         },
         {
@@ -13342,8 +13188,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            312,
-            313
+            376,
+            377
           ]
         },
         {
@@ -13352,8 +13198,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            259,
-            266
+            323,
+            330
           ]
         },
         {
@@ -13362,8 +13208,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            319,
-            339
+            383,
+            410
           ]
         },
         {
@@ -13372,8 +13218,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            342,
-            623
+            413,
+            705
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+          "name": "deriveFromRollup",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            731,
+            907
           ]
         },
         {
@@ -13382,8 +13238,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            633,
-            721
+            917,
+            1008
           ]
         },
         {
@@ -13392,8 +13248,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            307,
-            307
+            371,
+            371
           ]
         },
         {
@@ -13402,8 +13258,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            152,
-            154
+            175,
+            177
           ]
         },
         {
@@ -13412,8 +13268,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            246,
-            256
+            310,
+            320
           ]
         },
         {
@@ -13422,8 +13278,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            228,
-            236
+            292,
+            300
           ]
         },
         {
@@ -13432,8 +13288,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            288,
-            298
+            352,
+            362
           ]
         },
         {
@@ -13442,8 +13298,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            275,
-            285
+            339,
+            349
           ]
         }
       ]
@@ -13762,6 +13618,245 @@
           "range": [
             138,
             139
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/architecture/rollup.ts",
+      "path": "app/src/lib/architecture/rollup.ts",
+      "lang": "ts",
+      "hash": "blake3:457ea4b8b3ab584efc43689bd9e49351972fa90eb9a7dc620e89822504513d62",
+      "loc": 516,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+          "name": "ArchDetail",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            107,
+            145
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+          "name": "ArchRollup",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            72,
+            80
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#DetailParseResult",
+          "name": "DetailParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            147,
+            150
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#ROLLUP_RELATIONS",
+          "name": "ROLLUP_RELATIONS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            33,
+            33
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupComponent",
+          "name": "RollupComponent",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            36,
+            41
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupEdge",
+          "name": "RollupEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            43,
+            50
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupFinding",
+          "name": "RollupFinding",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            53,
+            60
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+          "name": "RollupIssue",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            83,
+            85
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupParseResult",
+          "name": "RollupParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            87,
+            90
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupRelation",
+          "name": "RollupRelation",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#RollupStats",
+          "name": "RollupStats",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            62,
+            70
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#componentTarget",
+          "name": "componentTarget",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            515,
+            515
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#fileTarget",
+          "name": "fileTarget",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            516,
+            516
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#isCount",
+          "name": "isCount",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            157,
+            158
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#isRecord",
+          "name": "isRecord",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            152,
+            153
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#isString",
+          "name": "isString",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            155,
+            155
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#own",
+          "name": "own",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            163,
+            164
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#pairList",
+          "name": "pairList",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            298,
+            316
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+          "name": "parseDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            319,
+            385
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+          "name": "parseRollup",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            172,
+            274
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+          "name": "partialGraph",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            408,
+            511
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#rawRows",
+          "name": "rawRows",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            291,
+            295
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/rollup.ts#stringList",
+          "name": "stringList",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            276,
+            287
           ]
         }
       ]
@@ -15637,8 +15732,8 @@
       "id": "f:app/test/architecture-derive.test.ts",
       "path": "app/test/architecture-derive.test.ts",
       "lang": "ts",
-      "hash": "blake3:a74e6bd4d89588bedab13b904f8d47c5b1bf3622ab7ff7d40b2e36f655fc6455",
-      "loc": 778,
+      "hash": "blake3:6c27e25b067d516123a34dc99193c6b9562890c73f512b67637866fc28bf1ace",
+      "loc": 781,
       "symbols": [
         {
           "id": "s:app/test/architecture-derive.test.ts#ComponentSpec",
@@ -15736,8 +15831,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:cd4d61823c9ac8472cd234e3f231fd69716cf359754db36b2e216cbc956e0c66",
-      "loc": 2590,
+      "hash": "blake3:f32230cc644d07b9b080f96d54d431f8cf81169a988e51fa2d2d15e8d6f27298",
+      "loc": 2620,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -16160,8 +16255,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9f8d4437379b98373a3b51a4b9d40a769bd10cd7080acac90b68ab5f48e7f38b",
-      "loc": 726,
+      "hash": "blake3:a61042a0d45d3730d8601001168768832240c57de9ee3c9a2d0014abc2f45d7d",
+      "loc": 744,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
@@ -18391,8 +18486,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:85140971fe3dead806061d8c8cbb0fdfbf2c7e9044c1bdc4c9b90733471f2f45",
-      "loc": 799,
+      "hash": "blake3:e1dd29798d1ce7d3469f2de2cf1fef6a17e9c8ff6cd392388bbf9736f2058f5f",
+      "loc": 806,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -18491,6 +18586,45 @@
           "range": [
             25,
             25
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-rollup.test.ts",
+      "path": "app/test/map-rollup.test.ts",
+      "lang": "ts",
+      "hash": "blake3:398ac97aabcdff3044b6e8de787fc3f0057a0be1ee5c4546260268f253031994",
+      "loc": 494,
+      "symbols": [
+        {
+          "id": "s:app/test/map-rollup.test.ts#componentsOf",
+          "name": "componentsOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            44,
+            67
+          ]
+        },
+        {
+          "id": "s:app/test/map-rollup.test.ts#fileAnswer",
+          "name": "fileAnswer",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            304,
+            336
+          ]
+        },
+        {
+          "id": "s:app/test/map-rollup.test.ts#rollupPayload",
+          "name": "rollupPayload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            70,
+            100
           ]
         }
       ]
@@ -19013,8 +19147,8 @@
       "id": "f:app/test/map-visuals.test.ts",
       "path": "app/test/map-visuals.test.ts",
       "lang": "ts",
-      "hash": "blake3:1d28efbed9fc4eb34b04c84a25873f42d843a3cdef8ff9a007722c458917ddbc",
-      "loc": 455,
+      "hash": "blake3:8b36a73e33f9812d1094abcff1306cf85f75da6d2e15d9c72f1cf420c49d779e",
+      "loc": 462,
       "symbols": [
         {
           "id": "s:app/test/map-visuals.test.ts#base",
@@ -19022,8 +19156,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            42,
-            48
+            48,
+            54
           ]
         },
         {
@@ -19033,7 +19167,7 @@
           "exported": false,
           "range": [
             25,
-            40
+            46
           ]
         }
       ]
@@ -23279,6 +23413,20 @@
     },
     {
       "from": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "kind": "import",
+      "symbols": [
+        "Detail",
+        "Rollup",
+        "detail",
+        "rollup",
+        "stable_detail_json",
+        "stable_rollup_json"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
       "to": "f:app/src-tauri/crates/nputer-index/src/testutil.rs",
       "kind": "import"
     },
@@ -23487,6 +23635,64 @@
       ]
     },
     {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "ArchModel",
+        "Finding",
+        "UNMAPPED_ID",
+        "join"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/registry.rs",
+      "kind": "import",
+      "symbols": [
+        "Component"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/error.rs",
+      "kind": "import",
+      "symbols": [
+        "IndexError"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/graph.rs",
+      "kind": "import",
+      "symbols": [
+        "Edge",
+        "FileEntry",
+        "Graph",
+        "Package",
+        "Stats",
+        "Symbol",
+        "Unresolved"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap",
+        "BTreeSet"
+      ]
+    },
+    {
       "from": "f:app/src-tauri/crates/nputer-index/src/testutil.rs",
       "to": "p:cargo:std",
       "kind": "import",
@@ -23618,12 +23824,37 @@
     },
     {
       "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/registry.rs",
+      "kind": "import",
+      "symbols": [
+        "Component"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
       "to": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
       "kind": "import",
       "symbols": [
         "IndexOptions",
         "index",
-        "stable_json"
+        "stable_json",
+        "stable_rollup_json"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
       ]
     },
     {
@@ -24063,6 +24294,63 @@
       ]
     },
     {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "GRAPH_REL_PATH",
+        "Graph"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/rollup.rs",
+      "kind": "import",
+      "symbols": [
+        "Detail",
+        "Rollup",
+        "detail",
+        "rollup"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "f:app/src-tauri/src/docs_watch.rs",
+      "kind": "import",
+      "symbols": [
+        "WatchCtl",
+        "WatchState",
+        "has_plain_docs_dir",
+        "now_ms"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/arch_cmd.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "Path",
+        "PathBuf",
+        "fs"
+      ]
+    },
+    {
       "from": "f:app/src-tauri/src/bin/fake_agent.rs",
       "to": "p:cargo:std",
       "kind": "import",
@@ -24318,6 +24606,15 @@
         "GenesisStatus",
         "SendOutcome",
         "StartOutcome"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/lib.rs",
+      "to": "f:app/src-tauri/src/arch_cmd.rs",
+      "kind": "import",
+      "symbols": [
+        "DetailOutcome",
+        "RollupOutcome"
       ]
     },
     {
@@ -24940,6 +25237,17 @@
     },
     {
       "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/rollup-source.ts",
+      "kind": "import",
+      "symbols": [
+        "getRollupState",
+        "loadDetail",
+        "loadRollup",
+        "subscribeRollup"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
       "to": "f:app/src/components/board/TaskDetailPanel.tsx",
       "kind": "import",
       "symbols": [
@@ -24980,6 +25288,17 @@
       "symbols": [
         "GraphParseResult",
         "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/architecture/rollup.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchDetail",
+        "componentTarget",
+        "fileTarget",
+        "partialGraph"
       ]
     },
     {
@@ -25183,6 +25502,34 @@
       "symbols": [
         "ArchGraph",
         "GraphFile"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/rollup-source.ts",
+      "to": "f:app/src/lib/architecture/rollup.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchDetail",
+        "ArchRollup",
+        "parseDetail",
+        "parseRollup"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/rollup-source.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "getShellState",
+        "subscribeShell"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/rollup-source.ts",
+      "to": "p:@tauri-apps/api",
+      "kind": "import",
+      "symbols": [
+        "invoke"
       ]
     },
     {
@@ -25997,6 +26344,14 @@
     },
     {
       "from": "f:app/src/lib/architecture/derive.ts",
+      "to": "f:app/src/lib/architecture/rollup.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchRollup"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/derive.ts",
       "to": "p:@nputer/parser",
       "kind": "import",
       "symbols": [
@@ -26007,6 +26362,15 @@
         "TaskRecord",
         "TaskStatus",
         "compareComponentIds"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/rollup.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "GraphParseResult",
+        "parseGraph"
       ]
     },
     {
@@ -27620,6 +27984,81 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "findingText"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "f:app/src/architecture/map-zoom.ts",
+      "kind": "import",
+      "symbols": [
+        "expansionFor",
+        "fileDetail",
+        "intraEdges"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "f:app/src/architecture/rollup-source.ts",
+      "kind": "import",
+      "symbols": [
+        "__resetRollupForTests",
+        "applyRollupPayload",
+        "getRollupState",
+        "loadDetail",
+        "loadRollup",
+        "parseDetailOutcome",
+        "parseRollupOutcome",
+        "rollupUnavailableSentence"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "UNMAPPED_ID",
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "f:app/src/lib/architecture/rollup.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchDetail",
+        "componentTarget",
+        "fileTarget",
+        "parseDetail",
+        "parseRollup",
+        "partialGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "parseComponentsFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-rollup.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "beforeEach",
         "describe",
         "expect",
         "it"
@@ -30579,6 +31018,18 @@
     },
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/rollup-source.ts#loadDetail",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -30587,6 +31038,12 @@
       "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/lib/architecture/churn.ts#attributeChurn",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -30610,6 +31067,30 @@
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/rollup.ts#componentTarget",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/rollup.ts#fileTarget",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/rollup.ts#partialGraph",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -31432,6 +31913,228 @@
     {
       "from": "s:app/src/architecture/map-zoom.ts#intraEdges",
       "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#DetailState",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupUnavailableReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#DetailState",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#LOADING",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupUnavailableReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#__resetRollupForTests",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#applyRollupPayload",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#applyRollupPayload",
+      "to": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#applyRollupPayload",
+      "to": "s:app/src/architecture/rollup-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#cachedDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#detailCache",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#detailInFlight",
+      "to": "s:app/src/architecture/rollup-source.ts#DetailState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#getRollupState",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#inFlight",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadDetail",
+      "to": "s:app/src/architecture/rollup-source.ts#DetailState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadDetail",
+      "to": "s:app/src/architecture/rollup-source.ts#hasTauriRuntime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadDetail",
+      "to": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "to": "s:app/src/architecture/rollup-source.ts#applyRollupPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "to": "s:app/src/architecture/rollup-source.ts#hasTauriRuntime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "to": "s:app/src/architecture/rollup-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#measuredFor",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/architecture/rollup-source.ts#loadRollup",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/architecture/rollup-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#DetailState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseDetailOutcome",
+      "to": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#isCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "to": "s:app/src/architecture/rollup-source.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#parseRollupOutcome",
+      "to": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#rollupUnavailableSentence",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupUnavailableReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#set",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/rollup-source.ts#state",
+      "to": "s:app/src/architecture/rollup-source.ts#RollupState",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -33404,6 +34107,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
       "kind": "type_ref",
@@ -33537,6 +34246,12 @@
     },
     {
       "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
       "to": "s:app/src/lib/architecture/derive.ts#deriveInferred",
       "kind": "call",
       "confidence": "resolved"
@@ -33640,6 +34355,78 @@
     {
       "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
       "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#EdgeRelation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#isDriftFinding",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#rollupProvenance",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#rollupStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveFromRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -33982,6 +34769,246 @@
     {
       "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
       "to": "s:app/src/lib/architecture/graph.ts#stringArray",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupStats",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#DetailParseResult",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#DetailParseResult",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#RollupEdge",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupRelation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#RollupParseResult",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchRollup",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#RollupParseResult",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#pairList",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#pairList",
+      "to": "s:app/src/lib/architecture/rollup.ts#isString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#DetailParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#isCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#isString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#pairList",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#rawRows",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseDetail",
+      "to": "s:app/src/lib/architecture/rollup.ts#stringList",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupRelation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupStats",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#isCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#isString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#parseRollup",
+      "to": "s:app/src/lib/architecture/rollup.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/rollup.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/rollup.ts#isString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#partialGraph",
+      "to": "s:app/src/lib/architecture/rollup.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#rawRows",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#stringList",
+      "to": "s:app/src/lib/architecture/rollup.ts#RollupIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/rollup.ts#stringList",
+      "to": "s:app/src/lib/architecture/rollup.ts#isString",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -36350,6 +37377,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/map-rollup.test.ts#fileAnswer",
+      "to": "s:app/src/lib/architecture/rollup.ts#ArchDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/map-search.test.ts#derived",
       "to": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
       "kind": "type_ref",
@@ -38506,10 +39539,10 @@
     }
   ],
   "stats": {
-    "files": 193,
-    "symbols": 2086,
-    "edges": 2162,
+    "files": 198,
+    "symbols": 2095,
+    "edges": 2292,
     "truncated_symbols": true,
-    "truncated_files": 1
+    "truncated_files": 2
   }
 }

@@ -1371,7 +1371,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // out of C-08's review-badge file, killing the undeclared
     // C-08 -> C-09 edge arch drift caught at the regen). All mapped,
     // the bucket stays closed.
-    expect(derived.fileComponent.size).toBe(193);
+    // 193 -> 198 AT THE T-140-s1 MERGE REGEN (2026-08-30): rollup.rs
+    // under C-07, arch_cmd.rs under C-05 and map-rollup.test.ts under
+    // C-12 — the last two CLAIMED in the same commit as the regen,
+    // exactly as the blind verifier's integrator hazard ordered, so
+    // the predicted two-file D2 never existed — plus fake_agent.rs and
+    // the index's own binary, which an unanchored `bin/` ignore line
+    // briefly swallowed until the anchor gave them back. The bucket
+    // stays closed; .nputerignore gained /.claude/ this commit after a
+    // nested session worktree doubled the walk (the T-153-s3 class).
+    expect(derived.fileComponent.size).toBe(198);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1528,7 +1537,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `component … files=` lines at the edited registry, cross-checked
       // against a per-file simulation over `graph.json` run BEFORE the
       // registry was touched, never off the failure output.
-      ["C-05", 31],
+      // 31 -> 32 at the T-140-s1 merge regen: arch_cmd.rs, claimed in
+      // the regen's own commit.
+      ["C-05", 32],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1592,7 +1603,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // first in the series that also adds a file NO component claims, so
       // the bucket row at the bottom of this table is new. Derived from
       // `arch` over the regenerated graph before the suite was run.
-      ["C-07", 36],
+      // 36 -> 37 at the T-140-s1 merge regen: rollup.rs, the resting
+      // payload itself.
+      ["C-07", 37],
       // 10 → 12 at T-149: `review-badge.test.tsx` and `select-board.test.ts`
       // arrive from C-05's dissolved test umbrella. Both drive only this
       // component's own files plus the parser it already declares, so the
@@ -1652,7 +1665,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `[lib-parser, app-map, tools/e2e]` and the assertions its own regen
       // moved lived in `app/test/**`, which was C-05's — the defect this
       // card exists to remove, recorded at the number that proves it.
-      ["C-12", 34],
+      // 34 -> 37 at the T-140-s1 merge regen: rollup.ts, rollup-source.ts
+      // and map-rollup.test.ts — the channel's TypeScript half.
+      ["C-12", 37],
       // The genesis pane joined the index at the T-024 merge regen, and
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
@@ -1890,11 +1905,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "app/src/architecture/map-search.ts",
       "app/src/architecture/map-visuals.ts",
       "app/src/architecture/map-zoom.ts",
+      // T-140-s1: the channel's source-of-rollup module sorts here.
+      "app/src/architecture/rollup-source.ts",
       "app/src/architecture/task-waves.ts",
       "app/src/lib/architecture/churn.ts",
       "app/src/lib/architecture/derive.ts",
       "app/src/lib/architecture/glob.ts",
       "app/src/lib/architecture/graph.ts",
+      // T-140-s1: the rollup reader.
+      "app/src/lib/architecture/rollup.ts",
       // T-149: 18 → 34. The sixteen tests that exercise this pane arrive
       // from C-05's dissolved `app/test/**` umbrella. They sort AFTER every
       // `app/src/**` entry because the order is the graph's own, a plain
@@ -1911,6 +1930,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "app/test/map-churn.test.ts",
       "app/test/map-dogfood-render.test.tsx",
       "app/test/map-layout.test.ts",
+      // T-140-s1: the channel suite, claimed in the regen's commit.
+      "app/test/map-rollup.test.ts",
       "app/test/map-search.test.ts",
       "app/test/map-t1-t2-dom.test.tsx",
       "app/test/map-task-waves.test.ts",
@@ -2111,7 +2132,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // this already-CONFIRMED row. That fold is the whole reason the table
       // gets SHORTER instead of longer: nothing new is observed, one
       // endpoint is renamed.
-      ["C-05", "C-07", "confirmed", 2],
+      // 2 -> 5 at the T-140-s1 merge regen: arch_cmd.rs consumes the
+      // index crate's rollup/arch/graph modules — the channel's spine.
+      ["C-05", "C-07", "confirmed", 5],
       // `["C-05","C-08","confirmed",2]` (T-149: 4 -> 2) IS GONE AT
       // T-127-s6. Both observed edges were `App.tsx -> Board.tsx` and its
       // sibling, and `Board.tsx` is C-18's now — so the row is RENAMED to
@@ -2126,7 +2149,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // and for the harness's OTHER import, `docs_watch`. The two folds are
       // one file's two imports, which is why the D2 was one finding and not
       // three, and why retiring it retires both shadow rows at once.
-      ["C-05", "C-10", "confirmed", 24],  // T-149: 40 -> 24
+      ["C-05", "C-10", "confirmed", 25],  // T-149: 40 -> 24; T-140-s1: 24 -> 25 (arch_cmd reads the watcher's root)
       ["C-05", "C-11", "planned", 0],
       // *** DISCHARGED AT T-033's CHECKPOINT: 32 -> 33. *** The lane left
       // this row at 32 because the file tracks the COMMITTED graph (the
@@ -2223,7 +2246,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `verdicts`, so the extraction took the row to `planned 0` and the
       // registry dropped the declaration rather than assert an intent that
       // is not there — which also closed C-05 <-> C-12.
-      ["C-12", "C-06", "confirmed", 17],  // T-149: 6 -> 17
+      ["C-12", "C-06", "confirmed", 18],  // T-149: 6 -> 17; T-140-s1: 17 -> 18 (map-rollup.test.ts builds parser fixtures)
       ["C-12", "C-07", "planned", 0],
       ["C-12", "C-09", "confirmed", 2],   // T-127-s6: 5 -> 2
       // 1 -> 2 at the T-116 merge regen, and this is the card's own
@@ -2238,7 +2261,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // lane's own battery ran against the pre-regen graph (the regen
       // is the integrator's), so the sixth edge appears here, at the
       // regen that landed it.
-      ["C-12", "C-10", "confirmed", 6],   // T-149: 2 -> 5; T-140: 5 -> 6
+      ["C-12", "C-10", "confirmed", 7],   // T-149: 2 -> 5; T-140: 5 -> 6; T-140-s1: 6 -> 7 (rollup.ts reads the watcher store)
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.
