@@ -438,3 +438,58 @@ this reason; what survives is plumbing that has nowhere testable to go.
    intersected* was performed and the census did not move**, because the
    half that would have moved it is routed. Reported rather than
    silently satisfied.
+
+### The standing gates, derived at the tree this tip WILL have
+
+Derived through the RANGE RULE's executor form —
+`TREE=$(git merge-tree --write-tree 4e08d293b0fcd14c HEAD)` (exit **0**,
+tree `6a8efca345d0`) then `git diff --name-only 4e08d293b0fcd14c "$TREE"`
+— which is the forecast that does not move when this notes commit lands.
+**13 paths**: eight under `app/`, five flat `docs/tasks/T-112*`. The
+pre-merge two-dot form against the same left-hand ref returns 44 and
+carries main's own newer work in reverse, which is exactly the lie that
+rule exists to prevent; it is named here because it was run and
+discarded.
+
+| gate | trigger matched? | result |
+|---|---|---|
+| GRAPH REGEN | **FIRES** — `.rs` and `.ts`/`.tsx` outside docs/ | verdict REPORTED below; the regen is the integrator's |
+| BOOT GATE | **FIRES** — `app/src-tauri/**` and `app/src/**` | `NPUTER_BOOT_PORT=14112 npm run boot:check` from tools/e2e/, **exit 0**, both `[nputer]` lines seen (`project folder:` and `window "main" created`). Port read with `lsof -nP -iTCP:14112 -sTCP:LISTEN` at zero rows immediately before spawning; 1420 was READ and never probed, and its holder is `node` pid 59723 on `[::1]:1420` |
+| DOCS GATE | **FIRES** — 5 paths under `docs/` are code inputs | `node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only …)` **exit 1** (has a verdict), owing three suites; all three run below at exit 0. `npm run lint:docs` from tools/e2e/ (the whole-tree half) **exit 0** |
+| METHOD EVAL GATE | **NOT OWED** — no `method/**` path in the forecast | — |
+| AUDIT GATE | declares no merge-diff trigger, so it is not one of these | — |
+
+Suites the DOCS GATE named, all re-run AFTER the cards landed:
+`npm test` from app/ **exit 0** (49 files / 1060 tests), `npx vitest run`
+from lib/parser/ **exit 0** (16 files / 336 tests), and `npm test` from
+tools/e2e/ **exit 0 — 321 passed** on `NPUTER_E2E_PORT=14512` (read at
+zero rows first). **The live-lane class did not fire**: `T-154-s2` holds
+`tools/e2e` and no body redded on it. The lane restored all seven of its
+control-byte plant targets — `git status --porcelain` is empty after the
+run.
+
+**GRAPH REGEN's VERDICT, REPORTED RATHER THAN ACTED ON.**
+`cargo run -p nputer-index -- index --check --root ../..` from
+app/src-tauri/ exits **1** and it is a REAL red, not the `--root`
+false one: the second line prints both sides rather than
+`committed: MISSING`. Committed `1037788 bytes · 198 files · 2095
+symbols · 2292 edges`; fresh `1038884 bytes · 199 files · 2065 symbols ·
+2333 edges`. `files +1 -0 ~10`, `edges +47 -6`.
+
+**AND THE REGEN IS NEWS BEYOND ITS OWN GATE, SO IT IS SAID LOUDLY.** The
+fresh index lands at **1038884 of 1040000 bytes — 1116 left**, and
+`stats.truncated_files` moves `Some(2) -> Some(4)`. One of the newly
+truncated files is `app/src-tauri/src/docs_watch.rs`, whose symbols go
+**55 -> 0** in the fresh index. That is the budget hazard `docs/STATE.md`
+already names as live (`T-140-s4`, `T-140-s1`, @human's) arriving at this
+merge rather than a new defect, and nothing is filed for it here because
+the class is already held — but the integrator should read those two
+numbers before regenerating.
+
+**ONE INHERITED RED, ATTRIBUTED.** `npm run capabilities:check` from
+tools/e2e/ exits **1** — *committed 25444 bytes, a fresh generation is
+25528*. It is not this lane's: the generator's inputs are
+`tools/e2e/tests/*.spec.ts` and the merge forecast above contains no
+`tools/e2e` path and no `docs/CAPABILITIES.md`. It is
+`T-153-s8`'s card by name — *the generated capabilities census is stale
+on main and no gate can say so*.
