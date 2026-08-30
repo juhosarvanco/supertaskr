@@ -255,3 +255,92 @@ pair, because the old note bet everything on one card surviving triage.
 - **No merge, no push, no branch but this one**, per the dispatching
   instruction — which overrides the size-S self-integration this card's
   ceremony row would otherwise give it. The worktree is left standing.
+
+### The gates, derived over the FORECAST path set
+
+Derived against the tree the tip WILL have — `git merge-tree
+--write-tree main HEAD` → `43f7c5b`, **18 paths**, exit 0 read before the
+substitution was used. This lane obeying the clause it just absorbed
+(`T-126-s6`: a gate derivation is not a figure, and the earlier
+derivation over 16 paths WENT STALE when the notes commit and `T-159-s6`
+landed — measured, not anticipated, and re-run).
+
+- **GRAPH REGEN — NOT OWED.** Zero `.ts/.tsx/.js/.jsx/.rs` paths in the
+  forecast set.
+- **BOOT GATE — NOT OWED.** Zero paths under `app/src/**`,
+  `app/src-tauri/**` or either manifest.
+- **METHOD EVAL GATE — NOT OWED.** Zero paths under `method/`. **This is
+  the one worth saying out loud on this card**: fourteen riders' worth of
+  method text was DISPOSED of here and not one byte of `method/` moved,
+  which is the whole point of the frontmatter/reasoning split the card
+  exists to close.
+- **DOCS GATE — FIRES**, exit 1, over **17 paths under `docs/` that are
+  code inputs**, naming three suites. All three run below.
+- `npm run lint:docs` **exit 0**, read UNPIPED — 24 derived docs readers
+  across 4 suites, 0 frontmatter issues in the live tree, every live
+  card's frontmatter parsing with a legal status (which is the check that
+  matters most for a diff that changes one status and archives another),
+  and the governing-document budgets holding, 4 gated.
+
+### The battery, exits read UNPIPED
+
+Fresh-worktree order kept: `lib/parser` `npm ci` + `npm run build`, then
+`app` `npm install` + `npm run build`, all exit 0, then the suites.
+
+- `npx vitest run` from lib/parser — **336/336, exit 0** (re-run at the
+  final tip: **336/336, exit 0**).
+- `npm test` from app/ — **1047/1047, exit 0** (re-run at the final tip:
+  **1047/1047, exit 0**).
+- `npm test` from tools/e2e at `NPUTER_E2E_PORT=21591` — the port DERIVED
+  from the lane id rather than defaulted, and `lsof -nP -iTCP:21591
+  -sTCP:LISTEN` read at **zero rows** immediately before binding —
+  header *"Running 331 tests using 1 worker"*, **319 passed / 2 failed,
+  exit 1**.
+
+**THE TWO REDS ARE THE LIVE-LANE CLASS AND THE ATTRIBUTION IS PROVED, NOT
+CLAIMED.** Both are in `tests/session-economics.spec.ts` (`:73` and
+`:247`) and both fail on the same stderr, quoted exactly:
+
+    brief: FOUND 1 thing(s) the assembler could not settle:
+      fences are not disjoint: T-154-s2 tools/e2e against T-157 tools/e2e — the same entry (lane-protocol rule five).
+
+Both bodies shell out to `brief.mjs --task T-157`, and `T-157`'s
+`touches: [docs/checkpoints/, tools/e2e]` overlaps the LIVE lane
+`T-154-s2`'s `touches: [.claude, tools/e2e, docs/CONVENTIONS.md]` on the
+entry `tools/e2e`. **THE POSITIVE CONTROL, because a negative assertion
+needs one**: the same command was run in a DETACHED scratch worktree cut
+at `51fa31c` — the unmodified base, carrying none of this lane's edits
+and no `node_modules` at all — and **exited 1 with byte-identical
+stderr**. The discriminating half was run too: `--task T-167-s1` in that
+same control tree **exits 0**, so the refusal is a judgement about one
+fence pair and not a tree that cannot answer. The control worktree was
+removed. And this lane's 18-path diff contains no `tools/e2e` path, no
+`T-157` card and no `T-154-s2` card — `git diff --name-only` piped
+through a grep for those three tokens exits 1. **The failing surface is
+the MACHINE-scoped live worktree list joined to a CHECKOUT-scoped card
+index, which is the exact class `T-137-s9` corroborated onto `T-132-s6`
+— the card this lane re-parked an hour earlier.** Nothing here is fixable
+from this fence and `tools/e2e` was not touched.
+
+### Two findings routed rather than taken
+
+- **`T-159-s6` FILED** (the next free suffix — `T-159-s5` existed and was
+  absorbed into `T-155-s6` at `a640471`, so it is not reusable): the
+  resurfacing needle this card publishes over-matches, 29 files and 17
+  parked at `51fa31c` against the 25-and-14 written on the card, and two
+  of the three false positives survive every id-shaped filter because
+  they match on PROSE. Class parent named, disposition hint carried,
+  remedies MARKED UNVERIFIED, and the genus relation to `T-092-s1`
+  written down rather than silently merged.
+- **`T-153-s8` CORROBORATED, not duplicated** — SEARCH BEFORE FILING, the
+  rule this release landed, applied to this lane's own findings. `npm run
+  capabilities:check` from tools/e2e **exits 1 at `51fa31c`** (*"STALE —
+  committed 25444 bytes, a fresh generation is 25528"*) and the runner's
+  own header says **331** where `docs/CAPABILITIES.md` claims **320** —
+  an 11-behaviour gap, with `docs/STATE.md` carrying the same stale
+  figure. `T-153-s8` already owns that class and is `planned` with the
+  fence the fix needs, so this is a dated evidence line appended there
+  and NO sibling file. It is not this lane's: the diff is entirely under
+  `docs/tasks/`, so the generator's input and output are byte-identical
+  at base and tip and the check's answer cannot have moved. Regenerating
+  is the integrator's — `docs/CAPABILITIES.md` is outside this fence.
