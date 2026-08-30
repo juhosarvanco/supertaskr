@@ -26,6 +26,7 @@ import {
 } from "@nputer/parser/pure";
 import { claimingPattern, claimsDirContents, claimsPath } from "./glob";
 import type { ArchGraph } from "./graph";
+import type { ArchRollup } from "./rollup";
 
 /** The synthetic catch-all node for files no component claims (plan §4.1). */
 export const UNMAPPED_ID = "unmapped";
@@ -113,8 +114,24 @@ export interface DerivedComponent {
   autoStatus: DerivedStatus;
   /** §4.4 rollup; absent when the component has no done tasks. */
   provenance?: DerivedProvenance;
-  /** Matched graph file paths (graph order = path-sorted). */
+  /**
+   * Matched graph file paths (graph order = path-sorted).
+   *
+   * **EMPTY AT REST SINCE T-140-s1, AND THAT IS THE SHAPE.** When the
+   * reality side comes from the rollup channel this array is empty and
+   * [`fileCount`] carries the number; the paths arrive on a PULL, for the
+   * one component the user opened. Read `fileCount` for a count and never
+   * `files.length` — the two agree only in the graph-derived mode, and a
+   * renderer that reads the length is a renderer that reports zero files
+   * for a component that has hundreds.
+   */
   files: string[];
+  /**
+   * How many indexed files this component claims — the count that is true
+   * in EVERY mode. Equals `files.length` when the model was derived from
+   * a graph, and comes from the rollup otherwise.
+   */
+  fileCount: number;
   /** Declared component whose globs match no indexed file (full mode). */
   declaredOnly: boolean;
   /**
@@ -153,15 +170,35 @@ export function isDriftFinding(finding: DriftFinding): boolean {
   return !(finding.rule === "D3" && finding.informational);
 }
 
-/** Drift findings (§4.5), each with a stable content-derived id. */
+/**
+ * Drift findings (§4.5), each with a stable content-derived id.
+ *
+ * **THE FILE-KEYED MEMBERS CARRY A COUNT SINCE T-140-s1.** D1's
+ * `fileEdges`, D2's `files` and D4's `path`/`ids` are file-level detail:
+ * they are populated in the graph-derived mode and EMPTY in the rollup
+ * mode, where the count travels instead. Every renderer reads the count
+ * and falls back to the list — `map-visuals.ts`'s `findingText` is the
+ * one place that decides how each degrades, and it does so per rule.
+ */
 export type DriftFinding =
-  | { rule: "D1"; id: string; from: string; to: string; fileEdges: ObservedFileEdge[] }
-  | { rule: "D2"; id: string; files: string[] }
+  | {
+      rule: "D1";
+      id: string;
+      from: string;
+      to: string;
+      fileEdges: ObservedFileEdge[];
+      /** File-level import edges behind it — true in both modes. */
+      observedCount: number;
+    }
+  | { rule: "D2"; id: string; files: string[]; count: number }
   /** D3 declared-only. `informational` is set from the component file's
    * opt-in `non_code:` flag: the finding is still REPORTED (the fact is
    * true and explainable) but stops counting as drift. */
   | { rule: "D3"; id: string; component: string; informational: boolean }
-  | { rule: "D4"; id: string; path: string; ids: string[] }
+  /** D4 ambiguous mapping. One finding per path in the graph-derived
+   * mode; ONE TALLY (`path: ""`, `ids: []`) in the rollup mode, where the
+   * per-path bodies are the pull's. */
+  | { rule: "D4"; id: string; path: string; ids: string[]; count: number }
   | { rule: "D5"; id: string; from: string; to: string };
 
 export type DerivedMode = "full" | "no-graph" | "no-components" | "empty";
@@ -175,14 +212,25 @@ export interface DerivedArchitecture {
   components: DerivedComponent[];
   edges: DerivedEdge[];
   findings: DriftFinding[];
-  /** Every indexed file path → owning component id (ADR-009 Map). */
+  /**
+   * Every indexed file path → owning component id (ADR-009 Map).
+   *
+   * EMPTY in the rollup mode — the join happened in Rust and the paths
+   * did not travel. Read [`indexedFileCount`] for "how many files", never
+   * `fileComponent.size`.
+   */
   fileComponent: ReadonlyMap<string, string>;
+  /** Indexed files the reality layer knows about, true in every mode. */
+  indexedFileCount: number;
   /**
    * Unclaimed territory, byte-sorted (grouped by the D2 finding): file
    * paths no component claims, plus repo-internal package paths (the
-   * §6.6 file:-dep seam) no component owns.
+   * §6.6 file:-dep seam) no component owns. EMPTY in the rollup mode —
+   * see [`unmappedCount`], which is true in both.
    */
   unmappedFiles: string[];
+  /** How many paths no component claims, true in every mode. */
+  unmappedCount: number;
   /**
    * Derivation-level issues in lib-parser's ParseIssue shape — file-level
    * `ambiguous-mapping` lands here (the T-008 charter: parse time flags
@@ -197,6 +245,16 @@ export interface DeriveInputs {
   components: readonly ComponentRecord[];
   /** Parsed graph, or undefined when absent/unreadable. */
   graph?: ArchGraph;
+  /**
+   * The RESTING payload from the map channel (T-140-s1), when it
+   * answered. **It wins over `graph`**: it is the reality side computed
+   * where the file list already lives, it is flat in project size, and it
+   * is available for projects whose graph is too large to deliver over
+   * the docs watcher — which is the whole wall this shape removes. The
+   * graph stays as the fallback for a browser bundle, which has no
+   * channel, and for the dev harness.
+   */
+  rollup?: ArchRollup;
   /** Parsed task model (the board's same input). */
   tasks: readonly TaskRecord[];
 }
@@ -317,12 +375,17 @@ const compareFileEdges = (a: ObservedFileEdge, b: ObservedFileEdge): number =>
  * of absent layers degrades per plan §6.5 — never a crash, never a blank.
  */
 export function deriveArchitecture(inputs: DeriveInputs): DerivedArchitecture {
-  const { graph, tasks } = inputs;
+  const { graph, rollup, tasks } = inputs;
   const hasComponents = inputs.components.length > 0;
   const hasGraph = graph !== undefined;
 
   if (hasComponents) {
-    return deriveDeclared([...inputs.components].sort((a, b) => compareComponentIds(a.id, b.id)), graph, tasks);
+    const components = [...inputs.components].sort((a, b) => compareComponentIds(a.id, b.id));
+    // The channel wins when it answered: it is the reality side computed
+    // where the file list lives, and it is available for trees whose
+    // graph cannot ride the docs watcher.
+    if (rollup !== undefined) return deriveFromRollup(components, rollup, tasks);
+    return deriveDeclared(components, graph, tasks);
   }
   if (hasGraph) return deriveInferred(graph);
   return {
@@ -333,7 +396,9 @@ export function deriveArchitecture(inputs: DeriveInputs): DerivedArchitecture {
     edges: [],
     findings: [],
     fileComponent: new Map(),
+    indexedFileCount: 0,
     unmappedFiles: [],
+    unmappedCount: 0,
     issues: [],
   };
 }
@@ -375,7 +440,7 @@ function deriveDeclared(
 
   const byId = new Map(components.map((component) => [component.id, component]));
   for (const { path, ids } of ambiguous) {
-    findings.push({ rule: "D4", id: `D4:${path}`, path, ids });
+    findings.push({ rule: "D4", id: `D4:${path}`, path, ids, count: 1 });
     const winner = byId.get(ids[0] as string) as ComponentRecord;
     for (const loserId of ids.slice(1)) {
       const loser = byId.get(loserId) as ComponentRecord;
@@ -508,13 +573,19 @@ function deriveDeclared(
       from: edge.from,
       to: edge.to,
       fileEdges: edge.fileEdges,
+      observedCount: edge.fileEdges.length,
     });
   }
 
   // --- D2 (unclaimed territory, one grouped finding) and D3 (declared-only).
   const unmappedFiles = [...unclaimed].sort(byPath);
   if (unmappedFiles.length > 0) {
-    findings.push({ rule: "D2", id: `D2:${UNMAPPED_ID}`, files: [...unmappedFiles] });
+    findings.push({
+      rule: "D2",
+      id: `D2:${UNMAPPED_ID}`,
+      files: [...unmappedFiles],
+      count: unmappedFiles.length,
+    });
   }
   if (graph !== undefined) {
     for (const component of components) {
@@ -558,6 +629,7 @@ function deriveDeclared(
       pinned,
       autoStatus,
       files: filesPerComponent.get(component.id) ?? [],
+      fileCount: filesPerComponent.get(component.id)?.length ?? 0,
       declaredOnly: graph !== undefined && !filesPerComponent.has(component.id),
       nonCode: component.nonCode,
       hasDrift: driftSources.has(component.id),
@@ -582,6 +654,7 @@ function deriveDeclared(
       pinned: false,
       autoStatus: "planned",
       files: [],
+      fileCount: 0,
       declaredOnly: false,
       nonCode: false,
       hasDrift: false,
@@ -598,6 +671,7 @@ function deriveDeclared(
       pinned: false,
       autoStatus: "planned",
       files: [...unmappedFiles],
+      fileCount: unmappedFiles.length,
       declaredOnly: false,
       nonCode: false,
       hasDrift: true,
@@ -617,8 +691,212 @@ function deriveDeclared(
     edges,
     findings,
     fileComponent,
+    indexedFileCount: fileComponent.size,
     unmappedFiles,
+    unmappedCount: unmappedFiles.length,
     issues,
+  };
+}
+
+/**
+ * T-140-s1 — the resting derivation, from the CHANNEL rather than from
+ * the graph.
+ *
+ * **WHAT MOVED AND WHAT DID NOT.** The reality side — file→component
+ * mapping, observed component edges with counts, the relation table, the
+ * findings — was computed in Rust by `nputer-index`'s `arch` module,
+ * which has reproduced this file's answer on this repository's live tree
+ * row for row since T-014. What did NOT move, and must not, is
+ * everything ADR-015 assigns to TypeScript: the status rollup, the
+ * provenance rollup, the task join, the `component:` field, ADR-016's
+ * marks and the `non_code:` downgrade. Those are computed HERE, over the
+ * same registry records and task records `deriveDeclared` uses, from the
+ * same functions — `tasksForComponent`, `rollupStatus`,
+ * `rollupProvenance`, `isDriftFinding`. There is one implementation of
+ * each, and this path calls it.
+ *
+ * **WHAT IS ABSENT AND WHY THAT IS THE POINT.** No file paths. `files` is
+ * empty on every component, `fileComponent` is empty, `unmappedFiles` is
+ * empty — and the corresponding COUNTS are exact. A pane that wants the
+ * paths asks for them, for the one thing on screen (`loadDetail`), which
+ * is the trade the whole card is: the resting payload stops growing with
+ * the project, and the price is a request when somebody drills in.
+ */
+function deriveFromRollup(
+  components: ComponentRecord[],
+  rollup: ArchRollup,
+  tasks: readonly TaskRecord[],
+): DerivedArchitecture {
+  const declaredIds = new Set(components.map((component) => component.id));
+  const byId = new Map(components.map((component) => [component.id, component]));
+
+  const edges: DerivedEdge[] = rollup.edges
+    .map((edge) => ({
+      from: edge.from,
+      to: edge.to,
+      // The relation is Rust's, not recomputed: two implementations of
+      // one rule is T-057's disease, and this is the side that owns it.
+      relation: edge.relation as EdgeRelation,
+      declared: edge.declared,
+      observedCount: edge.observed,
+      fileEdges: [] as ObservedFileEdge[],
+    }))
+    .sort(compareEdges);
+
+  const findings: DriftFinding[] = [];
+  const placeholderIds = new Set<string>();
+  for (const finding of rollup.findings) {
+    switch (finding.rule) {
+      case "D1":
+        if (finding.from !== undefined && finding.to !== undefined) {
+          findings.push({
+            rule: "D1",
+            id: finding.id,
+            from: finding.from,
+            to: finding.to,
+            fileEdges: [],
+            observedCount:
+              rollup.edges.find((e) => e.from === finding.from && e.to === finding.to)?.observed ?? 0,
+          });
+        }
+        break;
+      case "D2":
+        findings.push({
+          rule: "D2",
+          id: finding.id,
+          files: [],
+          count: finding.count ?? 0,
+        });
+        break;
+      case "D3":
+        if (finding.component !== undefined) {
+          findings.push({
+            rule: "D3",
+            id: finding.id,
+            component: finding.component,
+            // READ from the component file, never inferred from the
+            // count — the exact rule `deriveDeclared` states, and the
+            // reason the intent side stays TypeScript's.
+            informational: byId.get(finding.component)?.nonCode ?? false,
+          });
+        }
+        break;
+      case "D4":
+        findings.push({
+          rule: "D4",
+          id: finding.id,
+          path: "",
+          ids: [],
+          count: finding.count ?? 0,
+        });
+        break;
+      case "D5":
+        if (finding.from !== undefined && finding.to !== undefined) {
+          findings.push({ rule: "D5", id: finding.id, from: finding.from, to: finding.to });
+          if (!declaredIds.has(finding.to)) placeholderIds.add(finding.to);
+        }
+        break;
+      default:
+        break; // a rule this build has not learned is dropped, never guessed
+    }
+  }
+  findings.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const driftSources = new Set<string>();
+  for (const finding of findings) {
+    if (finding.rule === "D1" || finding.rule === "D5") driftSources.add(finding.from);
+    else if (finding.rule === "D3" && isDriftFinding(finding)) driftSources.add(finding.component);
+    else if (finding.rule === "D2") driftSources.add(UNMAPPED_ID);
+  }
+
+  const derivedComponents: DerivedComponent[] = components.map((component) => {
+    const componentTasks = tasksForComponent(component, tasks);
+    const autoStatus = rollupStatus(
+      componentTasks.filter((task) => task.inRollup).map((task) => task.status),
+    );
+    const pinned = component.status !== "auto";
+    const fileCount = rollup.filesByComponent.get(component.id) ?? 0;
+    const derived: DerivedComponent = {
+      id: component.id,
+      name: component.name,
+      kind: "declared",
+      status: pinned ? (component.status as DerivedStatus) : autoStatus,
+      pinned,
+      autoStatus,
+      files: [],
+      fileCount,
+      declaredOnly: fileCount === 0,
+      nonCode: component.nonCode,
+      hasDrift: driftSources.has(component.id),
+      tasks: componentTasks,
+      record: component,
+    };
+    if (component.layer !== undefined) derived.layer = component.layer;
+    const provenance = rollupProvenance(componentTasks);
+    if (provenance !== undefined) derived.provenance = provenance;
+    return derived;
+  });
+
+  const unmappedCount = rollup.stats.unmapped;
+  for (const id of [...placeholderIds].sort(compareComponentIds)) {
+    if (id === UNMAPPED_ID && unmappedCount > 0) continue;
+    derivedComponents.push({
+      id,
+      name: id,
+      kind: "placeholder",
+      status: "planned",
+      pinned: false,
+      autoStatus: "planned",
+      files: [],
+      fileCount: 0,
+      declaredOnly: false,
+      nonCode: false,
+      hasDrift: false,
+      tasks: [],
+    });
+  }
+
+  if (unmappedCount > 0) {
+    derivedComponents.push({
+      id: UNMAPPED_ID,
+      name: UNMAPPED_ID,
+      kind: "unmapped",
+      status: "planned",
+      pinned: false,
+      autoStatus: "planned",
+      files: [],
+      fileCount: unmappedCount,
+      declaredOnly: false,
+      nonCode: false,
+      hasDrift: true,
+      tasks: [],
+    });
+  }
+
+  derivedComponents.sort(
+    (a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || compareComponentIds(a.id, b.id),
+  );
+
+  return {
+    // `full` is right: the map has its intent layer AND its reality
+    // layer. WHERE the reality came from is not a degradation, and
+    // reporting it as one would put the pane's own banner over a map that
+    // is complete.
+    mode: "full",
+    indexNotRun: false,
+    inferred: false,
+    components: derivedComponents,
+    edges,
+    findings,
+    fileComponent: new Map(),
+    indexedFileCount: rollup.stats.files,
+    unmappedFiles: [],
+    unmappedCount,
+    // `ambiguous-mapping` is a per-path issue and the paths did not
+    // travel; the D4 TALLY above carries the fact, and the paths are one
+    // pull away. Inventing an issue with no file to name would be worse
+    // than the honest absence.
+    issues: [],
   };
 }
 
@@ -690,6 +968,7 @@ function deriveInferred(graph: ArchGraph): DerivedArchitecture {
       pinned: false,
       autoStatus: "planned" as const,
       files,
+      fileCount: files.length,
       declaredOnly: false,
       nonCode: false,
       hasDrift: false,
@@ -715,7 +994,9 @@ function deriveInferred(graph: ArchGraph): DerivedArchitecture {
     edges,
     findings: [],
     fileComponent,
+    indexedFileCount: fileComponent.size,
     unmappedFiles: [],
+    unmappedCount: 0,
     issues: [],
   };
 }

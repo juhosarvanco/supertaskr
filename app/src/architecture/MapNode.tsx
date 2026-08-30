@@ -76,7 +76,7 @@ export function MapNode({
         data-testid="map-drift-count"
         className="font-mono text-map-meta text-warning"
       >
-        {ui.overlay === "drift" ? component.files.length : (attributed[0]?.rule ?? "D2")}
+        {ui.overlay === "drift" ? component.fileCount : (attributed[0]?.rule ?? "D2")}
       </span>
     ) : (
       <span
@@ -94,7 +94,7 @@ export function MapNode({
   // visuals — pulsing statuses carry it beside the dot instead).
   const meta =
     component.kind === "unmapped"
-      ? `${component.files.length} file${component.files.length === 1 ? "" : "s"} no component claims`
+      ? `${component.fileCount} file${component.fileCount === 1 ? "" : "s"} no component claims`
       : // T-033: a non-code component is not "no files YET" — the word
         // "yet" is a promise its territory will never keep, and reading it
         // on C-01 or C-11 is what made the permanent amber look like a
@@ -106,7 +106,7 @@ export function MapNode({
           ? "declared · no files yet"
           : [
             component.layer,
-            `${component.files.length} file${component.files.length === 1 ? "" : "s"}`,
+            `${component.fileCount} file${component.fileCount === 1 ? "" : "s"}`,
             visual.metaStatusWord,
           ]
             .filter(Boolean)

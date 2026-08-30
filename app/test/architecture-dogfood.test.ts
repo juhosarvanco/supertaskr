@@ -1983,6 +1983,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
             to: "app/src-tauri/src/dispatch/mod.rs",
           },
         ],
+        // T-140-s1: `observedCount` travels beside `fileEdges` because in
+        // the rollup mode it travels INSTEAD of it — the resting payload
+        // carries the number and the list is one pull away. Here, in the
+        // graph-derived mode, the two must AGREE, which is what pinning
+        // both in the same row checks.
+        observedCount: 1,
       },
       {
         rule: "D1",
@@ -1995,6 +2001,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
             to: "app/src-tauri/src/agent/sessions.rs",
           },
         ],
+        observedCount: 1,
       },
       // AND THE D2 ROW THAT STOOD HERE FOR EXACTLY ONE MERGE — KEPT AS A
       // COMMENT AFTER THE ROW ITSELF LEFT, BECAUSE THE ROW'S DEPARTURE IS

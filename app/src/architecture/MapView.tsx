@@ -13,6 +13,18 @@ import {
 } from "@/lib/architecture/derive";
 import { parseGraph, type GraphParseResult } from "@/lib/architecture/graph";
 import {
+  componentTarget,
+  fileTarget,
+  partialGraph,
+  type ArchDetail,
+} from "@/lib/architecture/rollup";
+import {
+  getRollupState,
+  loadDetail,
+  loadRollup,
+  subscribeRollup,
+} from "./rollup-source";
+import {
   layoutKey,
   layoutMap,
   type LayoutComponentInput,
@@ -135,7 +147,7 @@ export function indexHint(
     return graphSkip === "oversize" ? "graph too large to deliver" : "graph not delivered";
   }
   if (derived.indexNotRun) return "index not run";
-  return `committed graph · ${derived.fileComponent.size} files`;
+  return `committed graph · ${derived.indexedFileCount} files`;
 }
 
 export function MapView({
@@ -160,21 +172,96 @@ export function MapView({
   indexOutcome: IndexOutcomePayload | null;
   onRunIndex: () => void;
 }) {
+  // --- the map channel (T-140-s1): the RESTING picture, and the pulled
+  // slices of the graph the user has opened ------------------------------
+  //
+  // The rollup is asked for once per mount and re-asked on a project
+  // switch by the store itself; `pulled` accumulates one detail answer
+  // per target the user opened, and `partialGraph` assembles those into
+  // the slice of the graph this pane is actually looking at. Everything
+  // below then runs over an `ArchGraph` exactly as it did when the whole
+  // file arrived over the docs watcher — one set of renderers, two
+  // sources.
+  const rollupState = useSyncExternalStore(subscribeRollup, getRollupState, getRollupState);
+  useEffect(() => {
+    void loadRollup();
+  }, []);
+  const [pulled, setPulled] = useState<ReadonlyMap<string, ArchDetail>>(new Map());
+  const pull = (target: string): void => {
+    void loadDetail(target).then((answer) => {
+      if (answer.kind !== "answered") return;
+      setPulled((prev) => {
+        if (prev.get(target) === answer.detail) return prev;
+        const next = new Map(prev);
+        next.set(target, answer.detail);
+        return next;
+      });
+    });
+  };
+
   // --- derivation (pure over the docs snapshot; memo hits on value-
   // stable graph bytes) -------------------------------------------------
-  const parsed: GraphParseResult = useMemo(
+  const committed: GraphParseResult = useMemo(
     () => (graphContent === undefined ? { issues: [] } : parseGraph(graphContent)),
     [graphContent],
   );
-  const derived = useMemo(
+  const slice: GraphParseResult | undefined = useMemo(
+    () => partialGraph(pulled.values()),
+    [pulled],
+  );
+  /**
+   * WHICH GRAPH THE T1/T2 RENDERERS READ. The committed file when it
+   * arrived; otherwise the slice assembled from what has been pulled.
+   * Never both: a half-committed, half-pulled graph would attribute file
+   * edges against two different file sets, and the pane would draw an
+   * edge between two components neither of which claims the file.
+   */
+  const parsed: GraphParseResult = committed.graph !== undefined ? committed : (slice ?? { issues: [] });
+  const base = useMemo(
     () =>
       deriveArchitecture({
         components: model.components ?? [],
         tasks: model.tasks,
-        ...(parsed.graph !== undefined ? { graph: parsed.graph } : {}),
+        ...(committed.graph !== undefined ? { graph: committed.graph } : {}),
+        ...(rollupState.kind === "ready" ? { rollup: rollupState.rollup } : {}),
       }),
-    [model, parsed],
+    [model, committed, rollupState],
   );
+  /**
+   * THE RESTING MODEL, HYDRATED WITH WHAT HAS BEEN PULLED (T-140-s1).
+   *
+   * `deriveFromRollup` leaves every `files` array empty and every count
+   * exact — that is the shape. This memo patches the pulled paths back
+   * in for the components the user has actually opened, so every
+   * downstream reader (`expansionFor`, the panel's file list,
+   * `searchMap`, `fileComponent` attribution) works from one model and
+   * needs no idea where the paths came from. In the graph-derived mode
+   * there is nothing to patch and this is the identity.
+   */
+  const derived = useMemo<DerivedArchitecture>(() => {
+    if (pulled.size === 0 || base.mode !== "full") return base;
+    const fileComponent = new Map(base.fileComponent);
+    let touched = false;
+    const components = base.components.map((component) => {
+      const answer = pulled.get(componentTarget(component.id));
+      const files =
+        answer?.kind === "component" || answer?.kind === "unmapped" ? answer.files : undefined;
+      if (files === undefined || component.files.length > 0) return component;
+      touched = true;
+      for (const path of files) fileComponent.set(path, component.id);
+      return { ...component, files: [...files] };
+    });
+    if (!touched) return base;
+    return {
+      ...base,
+      components,
+      fileComponent,
+      unmappedFiles:
+        base.unmappedFiles.length > 0
+          ? base.unmappedFiles
+          : (components.find((c) => c.kind === "unmapped")?.files ?? base.unmappedFiles),
+    };
+  }, [base, pulled]);
 
   // --- T1: which components are open, and how tall each container is --
   // The heights are a pure function of the file lists, so they belong in
@@ -309,9 +396,24 @@ export function MapView({
   }, [churnAvailable]);
 
   // --- interactions ----------------------------------------------------
+  //
+  // T-140-s1: OPENING SOMETHING IS THE PULL'S TRIGGER, and it is wired at
+  // exactly the three places that open something — selecting a component
+  // (the panel lists its files), expanding one (T1 draws them as rows),
+  // and opening a file (T2's symbols and edges). `loadDetail` is
+  // single-flight per target and caches, so a second click on the same
+  // node is free; when the pane already has the whole committed graph
+  // these calls are answered from the cache-miss path and simply
+  // overwrite nothing, because the hydration memo leaves a component that
+  // already has its files alone.
   const select = (id: string): void => {
     setSelected(id);
     setPanel({ kind: "component", id });
+    pull(componentTarget(id));
+  };
+  const openFile = (path: string): void => {
+    setPanel({ kind: "file", path });
+    pull(fileTarget(path));
   };
   const closePanel = (): void => {
     setPanel(null);
@@ -323,10 +425,14 @@ export function MapView({
    * the panel's own placeholder. */
   const expandable = (id: string): boolean => {
     const component = derived.components.find((c) => c.id === id);
-    return component !== undefined && component.files.length > 0;
+    // The COUNT, not the list: since T-140-s1 the list may be one pull
+    // away, and a component with three hundred files must not read as
+    // unexpandable because the paths have not arrived yet.
+    return component !== undefined && component.fileCount > 0;
   };
   const expand = (id: string): void => {
     if (!expandable(id)) return;
+    pull(componentTarget(id));
     setExpanded((prev) => {
       if (prev.has(id)) return prev;
       const next = new Set(prev);
@@ -824,7 +930,7 @@ export function MapView({
                     {...(churnFace !== undefined ? { churn: churnFace } : {})}
                     selectedFile={panel?.kind === "file" ? panel.path : null}
                     onCollapse={collapse}
-                    onSelectFile={(path) => setPanel({ kind: "file", path })}
+                    onSelectFile={openFile}
                     onSelectComponent={select}
                     containerRef={(el) => {
                       if (el === null) nodeRefs.current.delete(component.id);
@@ -844,7 +950,7 @@ export function MapView({
                   node={node}
                   findings={derived.findings}
                   {...(churnFace !== undefined ? { churn: churnFace } : {})}
-                  expandable={component.files.length > 0}
+                  expandable={component.fileCount > 0}
                   onExpand={expand}
                   ui={{
                     hovered: hoveredNode === component.id,
@@ -962,7 +1068,7 @@ export function MapView({
         )}
         {overlay === "drift" && (
           <span data-testid="map-drift-footer" className="font-mono text-xs text-secondary-foreground">
-            {driftFooter(derived.findings, derived.unmappedFiles)}
+            {driftFooter(derived.findings, derived.unmappedCount)}
           </span>
         )}
         {overlay === "churn" && (
@@ -1036,7 +1142,7 @@ export function MapView({
           churn={churn}
           churnState={churnState}
           onOpenTask={(ref) => setPanel({ kind: "task", ref })}
-          onOpenFile={(path) => setPanel({ kind: "file", path })}
+          onOpenFile={openFile}
           onClose={closePanel}
         />
       )}

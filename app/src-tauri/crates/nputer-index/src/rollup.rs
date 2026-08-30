@@ -41,6 +41,8 @@
 //! inside it. What travels here is the REALITY side, which is the side
 //! this crate already computes.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde::Serialize;
 
 use crate::arch::{ArchModel, Finding, UNMAPPED_ID};
@@ -259,35 +261,38 @@ pub fn rollup(model: &ArchModel, graph: &Graph) -> Rollup {
     }
 }
 
-/// One file-level import edge, as a detail answer carries it.
-#[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct DetailEdge {
-    /// Source file path.
-    pub from: String,
-    /// Target file path, or the repo-internal package directory.
-    pub to: String,
-    /// Present when the edge went through a package node (`p:` id).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub package: Option<String>,
-}
-
 /// The pull's answer (T-140-s1 criterion 2).
 ///
-/// `Unknown` IS AN ANSWER AND NOT AN ERROR, and that is deliberate. The
-/// target names something the caller believes is on screen; a target the
-/// document does not carry is a stale view or a hostile payload, and
-/// either way the honest reply is "I do not have that", named, rather
-/// than an empty list that reads as "that component has no files".
+/// **THE ANSWER IS A SLICE OF THE GRAPH, NOT A SUMMARY OF IT.** Both
+/// populated arms carry the raw rows a consumer would have read out of
+/// `graph.json` for that one target — file paths and their internal
+/// import edges for a component, symbols and every touching edge for a
+/// file. That is deliberate: it lets the pane REBUILD the slice of the
+/// graph the user is looking at and run its existing T1/T2 machinery over
+/// it unchanged, instead of growing a second, rollup-shaped renderer for
+/// the same screens. One implementation of "what a file's panel shows",
+/// fed from two sources.
+///
+/// `Unknown` IS AN ANSWER AND NOT AN ERROR. The target names something
+/// the caller believes is on screen; a target the document does not carry
+/// is a stale view or a hostile payload, and either way the honest reply
+/// is "I do not have that", named, rather than an empty list that reads
+/// as "that component has no files".
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum Detail {
-    /// `c:<component-id>` — that component's claimed file paths.
+    /// `c:<component-id>` — that component's claimed file paths, plus the
+    /// import edges BETWEEN them (what T1's expanded container draws).
     Component {
         id: String,
         files: Vec<String>,
         /// The honest total even when `files` is clipped.
         total: usize,
         truncated: bool,
+        /// File→file import edges with both ends inside this component.
+        intra: Vec<[String; 2]>,
+        /// True when `intra` was clipped at [`MAX_DETAIL_FILES`] too.
+        intra_truncated: bool,
     },
     /// `c:unmapped` — the D2 body.
     Unmapped {
@@ -296,17 +301,23 @@ pub enum Detail {
         truncated: bool,
     },
     /// `f:<path>` — that file's own detail: the T2 half T-140 measured as
-    /// already drill-only.
+    /// already drill-only, plus every edge that touches it so the caller
+    /// can count references and name targets without the whole graph.
     File {
         path: String,
         lang: String,
         loc: usize,
         hash: String,
         symbols: Vec<Symbol>,
-        /// Import edges this file is the SOURCE of.
-        imports: Vec<DetailEdge>,
-        /// Import edges naming this file as the target.
-        importers: Vec<DetailEdge>,
+        /// Every graph edge, ANY kind, EITHER direction, whose endpoint
+        /// is this file or one of its symbols — the raw rows.
+        edges: Vec<crate::graph::Edge>,
+        /// Package nodes those edges name, so `p:` targets resolve
+        /// without a second request.
+        packages: Vec<crate::graph::Package>,
+        /// Files those edges name, path-only, so a target can be
+        /// displayed and attributed. Bounded by this file's degree.
+        neighbours: Vec<String>,
         /// Specifiers this file names that resolved to nothing.
         unresolved: Vec<Unresolved>,
     },
@@ -349,51 +360,89 @@ pub fn detail(model: &ArchModel, graph: &Graph, target: &str) -> Detail {
         let files: Vec<String> = all
             .map(|paths| paths.iter().take(MAX_DETAIL_FILES).cloned().collect())
             .unwrap_or_default();
+        // The import edges with BOTH ends inside this component — what
+        // T1's expanded container draws between its rows. Derived from
+        // the same `file_component` mapping the caller's attribution
+        // reads, so the three can never disagree about who owns a file.
+        let mut intra: Vec<[String; 2]> = Vec::new();
+        let mut intra_truncated = false;
+        let files_by_id: BTreeMap<&str, &str> = graph
+            .files
+            .iter()
+            .map(|f| (f.id.as_str(), f.path.as_str()))
+            .collect();
+        for edge in &graph.edges {
+            if edge.kind != "import" {
+                continue;
+            }
+            let (Some(from), Some(to)) = (
+                files_by_id.get(edge.from.as_str()),
+                files_by_id.get(edge.to.as_str()),
+            ) else {
+                continue;
+            };
+            if from == to {
+                continue;
+            }
+            if model.file_component.get(*from).map(String::as_str) != Some(id) {
+                continue;
+            }
+            if model.file_component.get(*to).map(String::as_str) != Some(id) {
+                continue;
+            }
+            if intra.len() == MAX_DETAIL_FILES {
+                intra_truncated = true;
+                break;
+            }
+            intra.push([(*from).to_string(), (*to).to_string()]);
+        }
         return Detail::Component {
             id: id.to_string(),
             truncated: files.len() < total,
             files,
             total,
+            intra,
+            intra_truncated,
         };
     }
     if target.starts_with("f:") {
         let Some(file) = graph.files.iter().find(|f| f.id == target) else {
             return unknown();
         };
-        let path_of = |id: &str| -> Option<String> {
-            if let Some(rest) = id.strip_prefix("f:") {
-                return Some(rest.to_string());
-            }
-            if id.starts_with("p:") {
-                return graph
-                    .packages
-                    .iter()
-                    .find(|p| p.id == id)
-                    .map(|p| p.path.clone().unwrap_or_else(|| p.name.clone()));
-            }
-            None
-        };
-        let mut imports: Vec<DetailEdge> = Vec::new();
-        let mut importers: Vec<DetailEdge> = Vec::new();
+        // An endpoint belongs to this file when it IS the file or is one
+        // of its symbols. Symbol ids are `s:<path>#<name>` and paths may
+        // contain `#`, so the membership test is over the file's OWN
+        // symbol ids rather than a string split (the graph.rs grammar
+        // note, obeyed rather than re-derived).
+        let own_ids: BTreeSet<&str> = std::iter::once(file.id.as_str())
+            .chain(file.symbols.iter().map(|s| s.id.as_str()))
+            .collect();
+        let mut edges: Vec<crate::graph::Edge> = Vec::new();
+        let mut named: BTreeSet<&str> = BTreeSet::new();
         for edge in &graph.edges {
-            if edge.kind != "import" {
+            if !own_ids.contains(edge.from.as_str()) && !own_ids.contains(edge.to.as_str()) {
                 continue;
             }
-            if edge.from == file.id {
-                if let Some(to) = path_of(&edge.to) {
-                    imports.push(DetailEdge {
-                        from: file.path.clone(),
-                        to,
-                        package: edge.to.starts_with("p:").then(|| edge.to.clone()),
-                    });
-                }
-            } else if edge.to == file.id {
-                if let Some(from) = path_of(&edge.from) {
-                    importers.push(DetailEdge {
-                        from,
-                        to: file.path.clone(),
-                        package: None,
-                    });
+            named.insert(edge.from.as_str());
+            named.insert(edge.to.as_str());
+            edges.push(edge.clone());
+        }
+        let packages: Vec<crate::graph::Package> = graph
+            .packages
+            .iter()
+            .filter(|p| named.contains(p.id.as_str()))
+            .cloned()
+            .collect();
+        // Every FILE those edges name, so a target row can be labelled
+        // and attributed without the whole file list. A symbol endpoint
+        // is attributed through the file its id names.
+        let mut neighbours: BTreeSet<String> = BTreeSet::new();
+        for id in &named {
+            if let Some(rest) = id.strip_prefix("f:") {
+                neighbours.insert(rest.to_string());
+            } else if let Some(rest) = id.strip_prefix("s:") {
+                if let Some(hash) = rest.rfind('#') {
+                    neighbours.insert(rest[..hash].to_string());
                 }
             }
         }
@@ -403,8 +452,9 @@ pub fn detail(model: &ArchModel, graph: &Graph, target: &str) -> Detail {
             loc: file.loc,
             hash: file.hash.clone(),
             symbols: file.symbols.clone(),
-            imports,
-            importers,
+            edges,
+            packages,
+            neighbours: neighbours.into_iter().collect(),
             unresolved: graph
                 .unresolved
                 .iter()
@@ -605,6 +655,8 @@ mod tests {
 
     #[test]
     fn the_pull_answers_a_component_a_file_and_the_unclaimed_group() {
+        let mut call = import("s:a/y.ts#thing", "s:a/x.ts#thing");
+        call.kind = "call".to_string();
         let g = graph(
             vec![file("a/x.ts"), file("a/y.ts"), file("b/z.ts"), file("orphan.ts")],
             vec![Package {
@@ -617,6 +669,7 @@ mod tests {
                 import("f:a/x.ts", "f:b/z.ts"),
                 import("f:a/y.ts", "f:a/x.ts"),
                 import("f:a/x.ts", "p:@nputer/parser"),
+                call,
             ],
         );
         let m = join(
@@ -625,11 +678,17 @@ mod tests {
         );
 
         match detail(&m, &g, "c:C-01") {
-            Detail::Component { id, files, total, truncated } => {
+            Detail::Component { id, files, total, truncated, intra, intra_truncated } => {
                 assert_eq!(id, "C-01");
                 assert_eq!(files, vec!["a/x.ts".to_string(), "a/y.ts".to_string()]);
                 assert_eq!(total, 2);
                 assert!(!truncated);
+                assert_eq!(
+                    intra,
+                    vec![["a/y.ts".to_string(), "a/x.ts".to_string()]],
+                    "the component's INTERNAL import edges ride its answer"
+                );
+                assert!(!intra_truncated);
             }
             other => panic!("expected Component, got {other:?}"),
         }
@@ -643,23 +702,34 @@ mod tests {
         }
 
         match detail(&m, &g, "f:a/x.ts") {
-            Detail::File { path, lang, loc, symbols, imports, importers, .. } => {
+            Detail::File { path, lang, loc, symbols, edges, packages, neighbours, .. } => {
                 assert_eq!(path, "a/x.ts");
                 assert_eq!(lang, "ts");
                 assert_eq!(loc, 3);
                 assert_eq!(symbols.len(), 1, "the T2 half arrives on the pull");
                 assert_eq!(
-                    imports
+                    edges
                         .iter()
-                        .map(|e| (e.to.as_str(), e.package.as_deref()))
+                        .map(|e| (e.from.as_str(), e.to.as_str(), e.kind.as_str()))
                         .collect::<Vec<_>>(),
-                    vec![("b/z.ts", None), ("lib/parser", Some("p:@nputer/parser"))],
-                    "package edges resolve to their repo-internal directory"
+                    vec![
+                        ("f:a/x.ts", "f:b/z.ts", "import"),
+                        ("f:a/y.ts", "f:a/x.ts", "import"),
+                        ("f:a/x.ts", "p:@nputer/parser", "import"),
+                        ("s:a/y.ts#thing", "s:a/x.ts#thing", "call"),
+                    ],
+                    "every edge touching the file OR one of its symbols, both directions, \
+                     every kind — the raw rows, so a consumer can rebuild the slice"
                 );
                 assert_eq!(
-                    importers.iter().map(|e| e.from.as_str()).collect::<Vec<_>>(),
-                    vec!["a/y.ts"],
-                    "the reverse direction is answered too"
+                    packages.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
+                    vec!["p:@nputer/parser"],
+                    "package nodes those edges name ride along"
+                );
+                assert_eq!(
+                    neighbours,
+                    vec!["a/x.ts".to_string(), "a/y.ts".to_string(), "b/z.ts".to_string()],
+                    "every FILE the edges name, symbol endpoints attributed to their file"
                 );
             }
             other => panic!("expected File, got {other:?}"),

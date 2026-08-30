@@ -323,7 +323,7 @@ describe("file→component mapping", () => {
     const model = deriveArchitecture({ components, graph, tasks: [] });
     expect(model.unmappedFiles).toEqual(["stray/a.ts", "stray/b.ts"]);
     expect(model.findings).toEqual([
-      { rule: "D2", id: "D2:unmapped", files: ["stray/a.ts", "stray/b.ts"] },
+      { rule: "D2", id: "D2:unmapped", files: ["stray/a.ts", "stray/b.ts"], count: 2 },
     ]);
     const unmapped = model.components.find((c) => c.id === UNMAPPED_ID);
     expect(unmapped?.kind).toBe("unmapped");
@@ -344,7 +344,7 @@ describe("file→component mapping", () => {
       // D3 is about ownership after first-by-id assignment (§4.1), and
       // the D4 beside it explains exactly why the claim was lost.
       { rule: "D3", id: "D3:C-02", component: "C-02", informational: false },
-      { rule: "D4", id: "D4:src/x.ts", path: "src/x.ts", ids: ["C-01", "C-02"] },
+      { rule: "D4", id: "D4:src/x.ts", path: "src/x.ts", ids: ["C-01", "C-02"], count: 1 },
     ]);
     expect(model.issues).toEqual([
       {
@@ -444,6 +444,9 @@ describe("component edges (§4.2 relation table)", () => {
       from: "C-02",
       to: "C-03",
       fileEdges: [{ from: "b/x.ts", to: "c/z.ts" }],
+      // T-140-s1: the count travels beside the list, because in the
+      // rollup mode it travels INSTEAD of it.
+      observedCount: 1,
     });
     const c2 = model.components.find((c) => c.id === "C-02");
     expect(c2?.hasDrift).toBe(true); // source of a D1
@@ -539,7 +542,7 @@ describe("the package.path join (T-009 §6.6 seam, consumed here)", () => {
       { from: "app/model.ts", to: "lib/parser", package: "p:@nputer/parser" },
     ]);
     expect(model.findings).toEqual([
-      { rule: "D2", id: "D2:unmapped", files: ["lib/parser"] },
+      { rule: "D2", id: "D2:unmapped", files: ["lib/parser"], count: 1 },
     ]);
     expect(model.components.find((c) => c.id === UNMAPPED_ID)).toBeDefined();
   });

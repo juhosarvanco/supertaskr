@@ -341,7 +341,7 @@ mod tests {
             panic!("expected Answered");
         };
         match detail {
-            Detail::Component { id, files, total, truncated } => {
+            Detail::Component { id, files, total, truncated, .. } => {
                 assert_eq!(id, "C-01");
                 assert_eq!(files, vec!["app/main.ts".to_string()]);
                 assert_eq!(total, 1);
@@ -353,12 +353,18 @@ mod tests {
             panic!("expected Answered");
         };
         match detail {
-            Detail::File { path, symbols, imports, .. } => {
+            Detail::File { path, symbols, edges, neighbours, .. } => {
                 assert_eq!(path, "app/main.ts");
                 assert!(!symbols.is_empty(), "the T2 half arrives on the pull");
-                assert_eq!(
-                    imports.iter().map(|e| e.to.as_str()).collect::<Vec<_>>(),
-                    vec!["lib/base.ts"]
+                assert!(
+                    edges
+                        .iter()
+                        .any(|e| e.from == "f:app/main.ts" && e.to == "f:lib/base.ts"),
+                    "the file's own edges ride its answer: {edges:?}"
+                );
+                assert!(
+                    neighbours.contains(&"lib/base.ts".to_string()),
+                    "and every file they name: {neighbours:?}"
                 );
             }
             other => panic!("expected File, got {other:?}"),
