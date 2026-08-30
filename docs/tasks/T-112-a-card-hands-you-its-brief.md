@@ -145,3 +145,50 @@ design tokens moved to their own never-fenced slug, app-board and
 app-shell would decouple and T-112's collision surface would drop
 from ~19 to 1. That is an architecture ruling, not a lane's act:
 @human decides dispatch timing, or the C-11 split first.
+
+CORRECTION 2026-08-30 (T-163's lane, at `71ce2422089c` — the note above
+is STALE from this ref forward and is kept rather than rewritten,
+because a retraction that erases what it retracts leaves nobody able to
+check it). **THE C-11 SPLIT HAPPENED**: @human ruled it, T-163 executed
+it, and `docs/architecture/components/C-11-design-tokens.md` now carries
+`touch_slugs: []` — design tokens claim NO slug at all rather than a
+never-fenced one, for the reason argued at that field. The lever the
+note describes has been pulled, so the figure it stamps no longer holds.
+
+**RE-DERIVED AT `71ce2422089c`, BOTH SIDES AT ONE REF**, by sweeping
+every flat `docs/tasks/T-*.md` at `status: planned` through
+`fenceOverlaps` in tools/e2e/scripts/dispatch-brief.mjs — the SAME
+comparator the dispatch brief's row 5 uses, rather than the note's own
+awk-over-touches sweep, which is why the before-figure below is not the
+note's **~19** either. 325 flat cards read, 67 of them planned;
+T-112's `touches:` is `[app-dispatch, app-board]`, unchanged.
+
+| C-11's `touch_slugs:` | planned cards whose fence overlaps T-112's |
+|---|---|
+| `[app-shell, app-board]` (before) | **27** |
+| `[]` (after) | **2** |
+
+**AND THE TWO SURVIVORS ARE NOT THE SAME KIND OF SURVIVOR**, which the
+bare count hides. `T-031-s1` overlaps on `the same entry` — it declares
+`app-board` itself, and it is the ONE direct sharer the note already
+named; that row is exactly what the note predicted would remain.
+`T-163` overlaps on `app/test`, through `app-board`'s own expansion, and
+it is a LANE that stops existing the moment this correction merges — so
+the standing answer to "what still flips with T-112" is **ONE card,
+T-031-s1**, which is the note's own prediction met. Of the 25 rows that
+left, every one left for the same reason and the comparator said so in
+as many words: `both reserve app/src/assets/**` — C-11's own territory,
+reached from an `app-shell` fence that never meant to reserve it.
+
+**THE BEFORE-FIGURE DISAGREES WITH THE NOTE AND THAT IS RECORDED RATHER
+THAN RECONCILED AWAY**: 27 against ~19, two sweeps of the same question
+at two refs (`558d660` then, `71ce2422089c` now) through two different
+comparators. The note routes its reader to its checkpoint record for its
+sweep; this correction routes to `fenceOverlaps`. Where they differ, the
+comparator the FENCE is actually computed with is the one a dispatch
+decision has to trust.
+
+**WHAT THIS DOES NOT DECIDE**: T-112's dispatchability. The note's
+advice to rule or absorb `T-031-s1` before dispatching stands unchanged
+— the split removed the C-11 train, not the direct sharer — and @human
+still owns the timing.
