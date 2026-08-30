@@ -34,7 +34,7 @@ inference, kit packaging); a change here is a method version bump.
 
 | Stage | Interview step | Banks into |
 |-------|----------------|------------|
-| 0 | scaffold (pre-Q1) | docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.nputer/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage); git run bare in the cwd, files written with the write tool (roles/planner.md step 1) |
+| 0 | scaffold (pre-Q1) | docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.nputer/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage) |
 | 1 | Q1 problem & person | docs/NORTH_STAR.md § Vision + § Users |
 | 2 | Q2 success | docs/NORTH_STAR.md § Success criteria |
 | 3 | Q3 non-goals | docs/NORTH_STAR.md § Non-goals |

@@ -418,6 +418,22 @@
   reaches the three pinned places and this file's own references, and
   does NOT reach docs/ARCHITECTURE.md, the component file or the app
   suites. Route what you cannot reach.
+  **AND THE VERSION STAMP IS NOT THE ONLY THING PINNED IN THAT FILE —
+  ITS BANKING TABLE IS TRANSCRIBED INTO TYPESCRIPT AND ASSERTED CELL BY
+  CELL** (found by T-159 walking into it). `BANKING_MAP` in
+  app/src/genesis/genesis-derive.ts is a verbatim copy of
+  method/interview/plan-interview.md's stage table, and
+  `every_cell_of_the_9_row_table_matches_plan_interview_md_verbatim` in
+  app/test/genesis-derive.test.ts reds on ANY change to ANY cell. **So
+  the canonical bump fence can move the file's version stamp and CANNOT
+  move a row of its table** — the two live in one file and answer to
+  different fences, which is the same per-path lesson `method/` teaches
+  about `KIT_FILES`. Measured at T-159: appending one clause to the
+  stage-0 cell took the app suite to **1 failed / 1014 passed, exit 1**,
+  and the clause was withdrawn and routed rather than the fence widened.
+  **The reader is in `app/`, so a `method/`-only lane will not run it by
+  reflex** — run `npm test` from app/ whenever your diff touches that
+  table, and read the assertion rather than the count.
   **A BUMP NOW OWES A FOURTH THING, AND IT IS NOT A FILE** (T-155,
   ADR-020 decision 2). The METHOD EVAL GATE below is RUN against the new
   method text and its result is RECORDED IN THE BUMP'S OWN COMMIT
