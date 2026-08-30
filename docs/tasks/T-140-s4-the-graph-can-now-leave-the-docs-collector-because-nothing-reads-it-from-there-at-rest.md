@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 suggested_by: executor claude-opus-5 @T-140-s1
 touches: [app-shell, app-map, crate-index]
@@ -193,3 +193,24 @@ Expect a LARGE `graph.json` diff: four files are truncated at this ref and
 get their symbols back, `docs_watch.rs` among them at 0 symbols today. The
 dogfood pins that count symbols and edges move with it and are re-derived
 WITH THE STORY, never loosened.
+
+## THE SUB-DECISION IS RULED — @human, 2026-08-30, in session: RETIRE `map-too-large`
+
+The hold above is DISCHARGED. @human's word, given first-hand to this
+seat when the seat routed the question with its recommendation:
+**"retire it"**.
+
+So step 2 of this card's list is settled: `map-too-large`
+(`app/src/architecture/MapView.tsx:822`) is RETIRED rather than
+re-sourced, because once the graph leaves the collector the state that
+banner names cannot occur.
+
+**AND THE OBLIGATION THAT COMES WITH RETIRING IT IS NOT DISCHARGED BY
+THE RULING** — `T-140` built that banner as the answer to a silence it
+MEASURED, so removing it owes one written sentence, at the site, naming
+what speaks now. The live keepers are `truncated_files` /
+`truncated_symbols` in the emitted graph and `check.rs`'s headroom
+alarm, both of which report DEGRADATION; what disappears with the banner
+is the report of a CLIFF that can no longer happen. Say that, at the
+place the banner used to be, or the next reader inherits a silence with
+no note.
