@@ -1,8 +1,19 @@
 ---
 id: T-140-s6
 title: The map's search cannot reach a file nobody has opened once the pane rests on the rollup — the one capability the resting payload genuinely gives up, named rather than discovered
-status: suggested
+feature: F-06
+milestone: 4
+priority: 18
+size: M
+status: planned
+blocked_by: []
+touches: [app-map, app-shell, crate-index]
 suggested_by: executor claude-opus-5 @T-140-s1
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 **The honest residual of `T-140-s1`, disclosed by the lane that created
@@ -67,3 +78,70 @@ served over the shell's IPC surface, and rendered by the pane. Adding a
 command moves `app/test/crescendo-dom.test.tsx`'s two census bodies and
 `app/src-tauri/src/acl_pin.rs`'s remote-denial roster, and moves NO
 webview grant (ADR-012 — an app command is not a grant).
+
+## Triage — standing sitting #3, 2026-08-30 (architect seat)
+
+**PROMOTED F-06 p18, size M**, at `@ 51fa31c0964c`. This is the one card
+of the `T-140-s1` family that names a capability the SHIPPED app lost
+today, so it is promoted rather than parked; it sits below the sitting's
+instrument cards because a user can still find a component and open it,
+which is the path the pane leads with.
+
+**THE MECHANISM IS RE-DERIVED AT THIS BASE AND IT HOLDS — the card is
+right about the cause and wrong about the file.** The search lives in
+`app/src/architecture/map-search.ts`; the card's prose puts it under
+`app/src/lib/architecture/`, which is `rollup.ts`'s directory. Corrected
+here rather than ruled, because a lane opening the named path finds
+nothing there. And the reason the arrays are empty at rest is stronger
+than "unpulled": the rollup's per-component `files` field is **a number,
+not a list** — its own doc says *"A COUNT — the list is the pull's, and
+that is the whole point of the shape."* So there is no file list to
+search at rest by CONSTRUCTION, not by timing, and no amount of waiting
+produces one.
+
+**SIZE RAISED S -> M**, because the card's own three steps are a new IPC
+command, a new refusal surface, a pane change and a spoken-honesty
+requirement, and the two census bodies plus the ACL roster move with any
+added command. `T-140-s1` is the precedent for what that costs.
+
+**SHAPE 1 STAYS REFUSED and the refusal is now cheap to check:** pulling
+every component's file list at mount restores search by making the
+resting payload the file list again, which is `T-140-s1` undone. Nothing
+in this promotion reopens it.
+
+## Acceptance criteria
+
+- THE crate SHALL answer a bounded file-search query with the matching
+  paths and their owning component ids, computed from the document the
+  process already holds and never by opening a path the query names —
+  the same containment argument `arch_detail` carries.
+- WHERE the answer is clipped, THE response SHALL carry the total it was
+  clipped from, and the pane SHALL say so — the clip-and-say-the-total
+  discipline, not a shorter list.
+- THE pane's search SHALL state what it searched. WHERE file search is
+  unavailable or partial, IT SHALL say which, in words a user can act on
+  — **an absence rendered as an answer is the defect `T-140` fixed on
+  the other side of this pane**, and a shorter result list with no
+  explanation is that same defect.
+- THE graph-derived path SHALL behave identically to today: in the
+  browser bundle and the dev harness there is no channel, `searchMap`
+  reads real file lists, and the pane's own search suite SHALL NOT move.
+- THE command SHALL be argument-narrow — ADR-012's "narrowness lives in
+  the command's own signature" — and SHALL refuse a query it cannot
+  bound rather than answering it.
+- THE IPC census SHALL be corrected at BOTH ends and never widened, and
+  the webview grant roster SHALL be a 0-file diff: an app command is not
+  a grant.
+- Verification: headless — crate tests for the search answer and its
+  refusals, one app-side DOM test for the spoken state, and the
+  graph-derived path proven unmoved.
+
+**PREFLIGHT AT PROMOTION.** `node scripts/brief.mjs --task T-140-s6
+--preflight`, run from the e2e package at `@ 51fa31c0964c`: **exit 0**,
+the card ruled `startable` — all three slugs held by no lane at this
+base.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

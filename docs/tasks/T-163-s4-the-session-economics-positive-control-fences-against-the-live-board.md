@@ -3,9 +3,9 @@ id: T-163-s4
 title: session-economics.spec.ts's positive control spawns `brief.mjs --task T-112` and asserts exit 0 — so any live card sharing a fence entry with T-112 reds the e2e suite, and one has since `bf274ed`
 feature: F-06
 milestone: 4
-priority: 12
+priority: 1
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-163-s3
@@ -86,6 +86,76 @@ MECHANISM onto a synthetic fixture that still carries the shape.
   an exit code accepted as "either" is the assertion deleted.
 - Verification: headless. `npm test` from tools/e2e/ exits 0 with the
   body still red when the advisory block is stubbed to a constant.
+
+## Triage — standing sitting #3, 2026-08-30 (architect seat)
+
+**PROMOTED F-06 p1**, at `@ 51fa31c0964c`, with the day's second
+instance measured at this seat rather than quoted from the filing. The
+priority is the evidence: this is the only card on the board whose
+defect is RED AT THE MOMENT OF ITS OWN PROMOTION.
+
+**THE THIRD INSTANCE, MEASURED HERE.** The board moved under this
+sitting — four lanes were dispatched while it sat — and the body redded
+again immediately, on a different card than the one it was filed
+against:
+
+    cd tools/e2e && node scripts/brief.mjs --task T-112   # exit 1
+    brief: FOUND 1 thing(s) the assembler could not settle:
+      fences are not disjoint: T-143-s3 app-board against T-112 app-board
+      — the same entry (lane-protocol rule five).
+
+Filed against `T-169` holding `app-board` at `bf274ed`; red again here
+against `T-143-s3` holding `app-board` at `51fa31c`. **Two different
+lanes, one control, same red** — which is the card's own claim promoted
+from "any live card sharing a fence entry" to a measured pair. The
+brief is behaving correctly both times; the spec is not.
+
+**CORRECTION 1 — THE CARD NAMES THE WRONG SCRIPT IN ITS BODY, and a
+lane following it would measure a green.** The measurement block above
+says the subprocess is `node scripts/dispatch-brief.mjs --task T-112`.
+It is not. `tools/e2e/tests/session-economics.spec.ts:54` reads
+
+    const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
+
+and line 109 spawns `[CLI, "--task", "T-112"]`. `dispatch-brief.mjs` is
+the MODULE — its own header says *"the runnable half is `brief.mjs`
+beside this file; this module holds the derivation and executes
+nothing"* — so `node scripts/dispatch-brief.mjs --task T-112` exits **0**
+with no output at this base, measured. The card's TITLE had it right
+(`brief.mjs`) and its body did not; the body is corrected rather than
+ruled, because a reproduction command that exits 0 on a live defect is
+the one error that costs a lane its whole first hour.
+
+**CORRECTION 2 — THE `bf274ed` STAMP IS KEPT AND IS NO LONGER THE LIVE
+CAUSE.** `T-169` is `done` at this base, so the filing-time collider is
+gone and the card's "and one has since `bf274ed`" is history rather than
+a current reading. It stays on the card because a retraction that erases
+what it retracts leaves nobody able to check it; the live cause at this
+ref is named above.
+
+**THE FENCE IS AS FILED AND THE COLLISION IS NAMED.** `touches:
+[tools/e2e]` is correct and unchanged. At this base `T-154-s2` is a LIVE
+LANE holding `.claude, tools/e2e, docs/CONVENTIONS.md`, so this card's
+preflight reports a fence collision against it — a DISPATCH-TIMING fact,
+not a defect in this card, ruled here so no dispatcher re-derives it.
+Two other cards promoted at this sitting also fence `tools/e2e`
+(`T-167-s8`, `T-167-s6`) and one more reaches it (`T-164-s2`): the four
+serialize against each other, and this one is p1 of the four.
+
+**PREFLIGHT AT PROMOTION, AND WHY IT IS NOT GREEN.**
+`node scripts/brief.mjs --task T-163-s4 --preflight` from tools/e2e at
+`@ 51fa31c0964c` exits **1** with exactly ONE finding, and it is the
+live-lane hold above: *"the parser rules this card: fenced — T-154-s2
+(refs/heads/task/T-154-s2-laneless-guard) holds tools/e2e"*. Every other
+claim class ran clean: paths missing **0**, criteria naming paths the
+fence does not reserve **0**, unrunnable figures **0**, `blocked_by`
+nothing, ref stamps **1 of 1 resolving**, fence expanding to 59 tracked
+files. **THIS IS NOT DISCHARGEABLE BY A CARD LINE AND SHOULD NOT BE** —
+a `PREFLIGHT RULING` binds a finding about the CARD, and a live lane is
+a fact about the clock; the tool says so in as many words when one is
+tried against it ("discharges nothing at this ref"). The card is
+correct and unstartable, and it becomes startable the moment that lane
+lands, with nothing to re-edit.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

@@ -1,9 +1,40 @@
 ---
 id: T-140-s7
 title: Two files T-140-s1 added are unclaimed territory, because C-05 and C-12 name their paths ONE BY ONE and the registry is outside that lane's fence — a D2 the next regen will report, predicted rather than discovered
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-140-s1
+closed_by: da4d28b
 ---
+
+Standing triage sitting #3, 2026-08-30 (architect seat): **REJECTED —
+DISCHARGED, NOT DECLINED**, and it is the good kind: the card PREDICTED
+a D2 before the regen that would report it, and the integrator claimed
+both files in that same regen's own commit so the D2 never arrived.
+`da4d28b` — *"…the verifier's predicted D2 pre-empted by claiming both
+files in the regen's own commit, and eleven dogfood pins re-derived with
+their reasons"*.
+
+**VERIFIED AT THIS SITTING'S BASE `@ 51fa31c0964c` RATHER THAN TAKEN ON
+THE STAMP'S WORD**, one command, both files:
+
+    command grep -rn 'arch_cmd\|map-rollup' docs/architecture/components/
+
+    C-05-app.md:45   - app/src-tauri/src/arch_cmd.rs   # T-140-s1's rollup/detail commands,
+    C-12-map-pane.md:21 - app/test/map-rollup.test.ts  # T-140-s1's suite, claimed with arch_cmd.rs
+
+Both lines carry the one-line reason this card asked for, in the style
+of their neighbours, and both went in as ADDITIONS to the existing
+enumerations — so the routing question the card left open ("or route
+them differently and say why") was answered the way the card's own
+C-05/C-12 precedent recommended, with `arch_cmd.rs` staying on the IPC
+surface beside `churn.rs`. The three live-registry fixtures moved with
+them in the same commit, which is the part the card warned would be the
+expensive half.
+
+Recorded here rather than as an absorption because the resolver is the
+integration commit that regenerated the graph and no task card exists to
+carry an `Absorbs:` line — the case TASK-FORMAT names as forcing this
+wording.
 
 **PREDICTED BY THE LANE THAT CAUSES IT, before the regen that reports
 it.** `T-140-s1` adds five indexed files. Three land inside an existing

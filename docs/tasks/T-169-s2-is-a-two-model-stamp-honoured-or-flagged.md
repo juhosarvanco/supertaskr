@@ -1,10 +1,32 @@
 ---
 id: T-169-s2
 title: A stamp naming the assigned model AND a second model — honoured or flagged? A lane interpreted @human's D5 ruling and the question belongs to @human
-status: suggested
+status: parked
 suggested_by: "T-169's blind verifier (2026-08-30), correction 3: route the T-020/T-024 judgement to @human"
 touches: [lib-parser]
 ---
+
+PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
+`@ 51fa31c0964c` — **THE SEAT DOES NOT RULE THIS ONE AND WILL NOT.**
+The card is a question about @human's own D5 ruling ("the models the
+human assigns do those tasks as assigned"), and a triage seat answering
+it would repeat the exact move the blind verifier routed rather than
+took: a lane interpreting a human's ruling. One word is owed and it is
+not this seat's word. STATE already carries it among @human's open
+items ("`T-169-s2` (one word)").
+
+**RE-DERIVED AT THIS BASE:** the two stamps the question hangs on are
+still live and still read HONOURED by the landed rule —
+`git grep -n 'built_by: claude-fable-5 @fresh' docs/tasks/T-020-*.md
+docs/tasks/T-024-*.md` finds them, and `assignment.ts`'s rule 4 (every
+assigned model satisfied by SOME executed model) is unchanged at this
+ref. So the card's premise holds and nothing has decided it under us.
+
+**RESURFACES:** @human answers, here or in session. The answer lands as
+a dated ruling on this card and, if **flagged**, promotes it as the
+one-clause card its own body specifies — which is the card's own
+condition, kept verbatim rather than replaced. Nothing else brings it
+back: no lane, no sitting, and no seat may substitute for the word.
 
 `T-020` and `T-024` stamp `built_by: claude-fable-5 @fresh (WIP …) +
 claude-opus-5 @fresh (completion)` against `builder: claude-fable-5`.

@@ -3,11 +3,11 @@ id: T-025-s7
 title: A slug fence buys a verifier for a diff that moves no shipped byte — the same file, the same change, two ceremony rows, decided by how the fence was spelled
 feature: F-04
 milestone: 4
-priority: 3
+priority: 8
 size: S
-status: suggested
+status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/ARCHITECTURE.md]
 suggested_by: executor claude-opus-5@subagent @T-025-s6
 builder:
 verifier:
@@ -93,11 +93,98 @@ readings of one bullet disagree about the same diff, which is the class
 `T-145-s2` named: a question a lane cannot decide from inside its own
 fence.
 
+## Triage — standing sitting #3, 2026-08-30 (architect seat)
+
+**PROMOTED F-04 p8, WITH SHAPE 1 RULED AT THE SEAT.** Ruled at
+`@ 51fa31c0964c`. The card asked for a ruling and offered three shapes;
+taking one is what makes this a card a lane can build instead of a
+question a lane would have to answer.
+
+**THE RULING: SHAPE 1. THE FENCE IS THE BLAST RADIUS AND THE CEREMONY
+ROW IS READ OFF `touches:`, EVEN WHEN THE DIFF MOVES NO SHIPPED BYTE.**
+The reason is not that shape 1 is the least work; it is that the other
+two break a property this method rests on. `method/tasks/TASK-FORMAT.md`
+opens by stating that *"the story map, the dispatch order, and the model
+assignment are all pure functions of this frontmatter — no layout or
+state is stored anywhere else"*, and `T-104` ruled that pricing the
+ceremony belongs to TRIAGE, before dispatch. A row that is a pure
+function of `touches:` satisfies both. A row read off "the shipped paths
+the diff actually reaches" does not: at triage time there is no diff,
+so the row would become a judgement about work not yet done — checkable
+by nobody, and stored nowhere the parser can see it.
+
+**SHAPE 2 IS DECLINED, WITH ITS REASON KEPT.** It is the intellectually
+tidier answer and it is the one that costs the property above. It also
+needs a second field or a second reading, and a second place where one
+rule lives is T-057's shape.
+
+**SHAPE 3 IS DECLINED, AND IT IS THE CLOSE ONE.** "The row is read off
+`touches:` except where the diff is confined to the slug's own declared
+test paths" would have made this card's own pair agree, and the card is
+right that the tree leans that way. It is declined because **no
+component declares which of its paths are tests.** `C-14`'s `paths:` is
+a flat list of five entries at this base; nothing in it distinguishes
+`app/src-tauri/src/agent/**` from `app/src-tauri/tests/agent_runner.rs`.
+Shape 3 therefore is not a rule change, it is a registry feature —
+a new per-path kind, three live-registry fixtures, and a parser that
+reads it — proposed as a one-line exception. If somebody wants it, it
+is a card of its own and it should be argued as the registry change it
+is, not as a footnote to the ceremony table.
+
+**AND THE RULING MAKES `T-025-s5` THE UNDER-CEREMONIED ONE, said out
+loud because the card asked which of the pair was wrong.** Under shape 1
+a bare `app/src-tauri/tests` fence took row 1 while the identical diff
+under `app-agent` took row 2. That is the bare-path spelling being
+imprecise about a blast radius, not the slug spelling being harsh. No
+retrospective ceremony is owed — `T-025-s5` is `done` and re-opening a
+landed card to buy a verifier for a test-file diff would be ceremony for
+its own sake — but the direction of the error belongs in the record.
+
+**THE SECOND HALF OF THIS CARD IS A LIVE DISAGREEMENT, RE-DERIVED HERE
+RATHER THAN QUOTED**, and it survives whichever shape had won:
+
+    grep -n 'C-14 owns' docs/ARCHITECTURE.md
+    -> line 111: "C-14 owns `app/src-tauri/src/agent/**` + `agent-store.ts`"
+
+    grep -n -A9 '^paths:' docs/architecture/components/C-14-*.md
+    -> five entries, including app/src-tauri/tests/agent_runner.rs
+       and app/test/agent-store.test.ts
+
+Two documents describing one component's territory, one with two entries
+and one with five, and the SHIPPED reading rests entirely on the second.
+`docs/ARCHITECTURE.md` is added to this card's fence for that reason —
+the prose is a signpost by ARCHITECTURE's own statement, and a signpost
+that omits three of five paths is a signpost pointing somewhere else.
+
 ## Acceptance criteria
 
-- THE ceremony row for a size-S card SHALL be derivable from written rule
-  without reading the diff twice and getting two answers.
-- WHERE a fence is narrowed or re-spelled for a disjointness reason, THE
-  rule SHALL say whether the ceremony row moves with it.
-- THE ruling SHALL be recorded with its reason even where shape 1 wins, so
-  the next reader inherits the decision rather than re-deriving it.
+- THE SHIPPED PARTITION bullet SHALL state the ceremony consequence
+  beside the disjointness one: narrowing or re-spelling a fence to a
+  registry slug moves the card to the shipped row, and the verifier is
+  priced against what the fence PERMITS rather than what the diff did.
+- THE bullet SHALL carry the reason (the row is a pure function of the
+  frontmatter, priced by triage before a diff exists), so the next
+  reader inherits the ruling rather than re-deriving it.
+- THE ceremony row for a size-S card SHALL be derivable from written
+  rule without reading the diff twice and getting two answers.
+- THE ARCHITECTURE prose describing a component's ownership SHALL agree
+  with that component's own `paths:`, or SHALL say in the sentence that
+  it is naming a subset and where the whole list lives. The lane SHALL
+  fix the C-14 sentence at minimum and SHALL report whether other
+  ownership sentences in the same bullet have the same gap.
+- THE lane SHALL NOT edit `method/tasks/TASK-FORMAT.md`'s ceremony
+  table: shape 1 changes nothing in the table, and a method edit would
+  carry a version bump this card is not sized for.
+- Verification: headless, through the docs gate that already reads these
+  two documents; no suite body asserts the ceremony prose and none is
+  added.
+
+**PREFLIGHT AT PROMOTION, AND WHY IT IS NOT GREEN.**
+`node scripts/brief.mjs --task T-025-s7 --preflight`, run from the e2e
+package at `@ 51fa31c0964c`: **exit 1**, one finding, and it is the live
+lane `T-154-s2` holding `docs/CONVENTIONS.md`. A fact about the clock.
+Everything else ran clean: paths missing **0**, unrunnable figures **0**,
+`blocked_by` nothing, ref stamps **1 of 1 resolving**. One path is
+REPORTED and not refused — `method/tasks/TASK-FORMAT.md`, named by the
+criterion that FORBIDS editing it; a prohibition has to name its subject,
+the path is under no component, and the tool never refuses on that class.

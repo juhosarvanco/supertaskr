@@ -1,9 +1,40 @@
 ---
 id: T-140-s5
 title: npm run build from app/ exits 2 at main on two unused locals in review-badge.test.tsx — the second tsc is the load-bearing gate T-073 named, and it has been red since T-169's merge
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-140-s1
+closed_by: 51c3dfe
 ---
+
+Standing triage sitting #3, 2026-08-30 (architect seat): **REJECTED —
+DISCHARGED, NOT DECLINED.** The finding was real, it was inherited
+exactly as the card proved, and the work landed at `51c3dfe` — *"CI's
+tsc catch: review-badge's orphaned parser import and fixture leave with
+the tests that used them…"*, whose own subject names this defect and
+whose diff is four deleted lines in `app/test/review-badge.test.tsx`
+(`git show --stat 51c3dfe`).
+
+**VERIFIED AT THIS SITTING'S BASE `@ 51fa31c0964c` RATHER THAN TAKEN ON
+THE STAMP'S WORD**, and by reading the two named declarations rather
+than by re-running the gate this seat may not run:
+
+    command grep -c ROADMAP_SRC app/test/review-badge.test.tsx   -> 0
+    head -7 app/test/review-badge.test.tsx                       -> three imports,
+      ReviewBadge / TaskCard / BoardCard, each used in the file (3 / 2 / 3 hits)
+
+`TS6133 'ROADMAP_SRC' is declared but its value is never read` cannot
+fire on a symbol the file no longer contains, and `TS6192 All imports in
+import declaration are unused` cannot fire on a declaration whose every
+name is used. Both of the card's two errors are unreachable at this ref.
+The card's DEEPER point — that the second `tsc` is load-bearing and its
+exit had gone unread — is not lost either: the same commit's subject
+records the battery script gaining an echoed build exit, *"the
+swallowed-exit defect owned"*.
+
+Recorded here rather than as an absorption because the resolver is a
+direct integration commit answering a CI red and no task card exists to
+carry an `Absorbs:` line — the case TASK-FORMAT names as forcing this
+wording.
 
 **FOUND BY `T-140-s1`'s LANE AND PROVEN INHERITED, not caused by that
 lane's diff.** Measured both ways at the lane's base `ed42c44` — the

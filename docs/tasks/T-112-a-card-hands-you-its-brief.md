@@ -192,3 +192,35 @@ decision has to trust.
 advice to rule or absorb `T-031-s1` before dispatching stands unchanged
 — the split removed the C-11 train, not the direct sharer — and @human
 still owns the timing.
+
+THE COLLIDER RULING, 2026-08-30 (standing triage sitting #3, architect
+seat, `@ 51fa31c0964c`): **`T-031-s1` IS SEQUENCED BEHIND THIS CARD,
+NOT ABSORBED INTO IT. THIS CARD DISPATCHES FIRST.** The note above asks
+for exactly this ruling and it is now taken; the reasoning is written in
+full on `T-031-s1` and summarised here so a dispatcher reading only this
+card gets the answer.
+
+Absorption was weighed and refused on the merits. The two contracts are
+unrelated — this card assembles a brief from files and renders it; that
+card is the board's containment pass, anchoring the verdict splitter at
+column 0 in the shell-owned module that card names, giving two surfaces
+`break-words`, and replacing a class pin with a property assertion.
+**Read the surfaces on `T-031-s1` and not here**: naming that module's
+path in this card's body is itself a fence claim this card cannot make,
+which the preflight refused on when this note first tried it. And
+absorption would have made this card WORSE OFF: `T-031-s1`'s fence is
+`[app-board,
+app-shell, tools/e2e]`, so folding it in would push this card's
+`[app-dispatch, app-board]` to include `app-shell` — re-acquiring the
+whole shell train that the C-11 split removed, and undoing the
+27-to-1 improvement the correction above measured. Clearing the last
+collider by widening the fence is not clearing it.
+
+**SO THIS CARD'S COLLISION SURFACE IS UNCHANGED AND ITS LAST NAMED
+COLLIDER NOW HAS A WRITTEN ORDER.** What remains before dispatch is
+@human's timing call, which this seat does not take, and the ordinary
+`brief.mjs --task T-112` fence check against whatever lanes are live at
+that moment — which at this base is not empty: `T-143-s3` holds
+`app-board` right now, and `node scripts/brief.mjs --task T-112` from
+the e2e package exits 1 naming it. That is a lane, not a card, and it
+clears when the lane lands.

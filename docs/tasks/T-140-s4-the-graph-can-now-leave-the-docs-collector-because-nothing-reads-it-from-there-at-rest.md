@@ -1,9 +1,41 @@
 ---
 id: T-140-s4
 title: The graph can now LEAVE the docs collector, because since T-140-s1 nothing reads it from there at rest — the last step of T-140's own ruling, and it needs a value call this lane refused to make
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-140-s1
+touches: [app-shell, app-map]
 ---
+
+PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
+`@ 51fa31c0964c` — **NOT DECLINED, AND NOT RULED HERE, BECAUSE THE
+RULING IS @HUMAN'S.** The card's own precondition says so and this seat
+agrees with it: removing the `.json`-under-`docs/architecture/` branch
+makes `map-too-large` unreachable unless the new channel is given a
+size limit of its own, and a size limit is a VALUE — the class `T-151`
+reserves to @human and that `T-140` refused in writing at
+`MAX_FILE_BYTES`'s own definition site. A seat that promoted this card
+would be handing a lane either an invented number or a deletion of the
+banner `T-140` built as the answer to a silence it measured. STATE
+already routes it the same way: *"`T-140-s4` (the graph limit ruling)
+is @human's when the alarm's number matters again."*
+
+**RE-DERIVED AT THIS BASE RATHER THAN TAKEN ON THE CARD'S WORD**, and
+one half of the card's premise has MOVED: the committed graph is now
+**TRUNCATING**. `perl -0777 -ne 'print $1 if /"stats"\s*:\s*(\{[^}]*\})/'
+docs/architecture/graph.json` answers `truncated_symbols: true,
+truncated_files: 2` at `files: 198, symbols: 2095`, and
+`wc -c docs/architecture/graph.json` is 1037788 against the crate's
+1040000. So "the alarm's number matters again" is closer than the card's
+own measurement suggests, and the value question is live rather than
+theoretical. That is a reason to route it, not a licence to answer it.
+
+**RESURFACES:** @human rules the graph size-limit question — here, in
+`docs/rooms/`, or in session — OR `T-140-s3` (F-06 p13, the sibling
+still on the board) is dispatched, whichever is first. Either event is
+checkable by the seat that meets it without remembering this card. A
+resurfaced card is RE-DERIVED, never trusted: the census figures in the
+body below are stamped at refs that have moved and the card says so
+itself.
 
 **T-140 RULED, at `MAX_FILE_BYTES`'s own definition site in
 `docs_watch.rs`, that "THE GRAPH LEAVES THIS PIPELINE".** `T-140-s1` built

@@ -130,6 +130,61 @@ INDENTED mints a phantom terracotta block and inflates the face count;
 the blockquote form (`> 2026-…`) is already safe because `>` survives
 `trim()`.
 
+## THE T-112 COLLIDER RULING — 2026-08-30, standing sitting #3 (architect seat)
+
+**RULED: SEQUENCED, NOT ABSORBED.** `T-112` dispatches FIRST; this card
+waits for its landing. Ruled at `@ 51fa31c0964c`, at the sitting that
+`T-112`'s own planning-prep note asks for ("`T-031-s1` … should be ruled
+before or absorbed into it"). The matching note is on `T-112`.
+
+**THE FACT THAT MAKES THIS THE ONLY LIVE QUESTION.** `T-112`'s
+correction of 2026-08-30 re-derived its collision surface through
+`fenceOverlaps` — the same comparator the dispatch brief uses — and
+found the C-11 split had taken it from 27 planned cards to 2, of which
+one was a lane that has since landed. This card is the other: it
+declares `app-board`, `T-112` declares `app-board`, and the overlap is
+`the same entry` rather than an expansion accident.
+
+**WHY NOT ABSORBED — three reasons, and the second one is decisive.**
+
+1. **The contracts are unrelated.** `T-112` is one command that
+   assembles an executor brief from files, plus a copyable block in the
+   detail panel. This card is the board's containment pass: a splitter
+   anchored at column 0 in `app/src/lib/verdicts.ts`, two surfaces given
+   `break-words`, and a class pin replaced by a property assertion. They
+   share a slug, not a surface. Folding one into the other produces a
+   card whose title promises a brief and whose criteria include a
+   flexbox mechanism — the grab-bag shape the decomposition rules exist
+   to prevent.
+2. **ABSORPTION WOULD MAKE `T-112` HARDER TO DISPATCH, WHICH IS THE
+   OPPOSITE OF THE POINT.** `T-112`'s fence is `[app-dispatch,
+   app-board]`. This card's is `[app-board, app-shell, tools/e2e]`.
+   Absorbing forces the union onto `T-112` and hands it `app-shell` —
+   the biggest train on the board, and precisely the slug whose sharing
+   with `app-board` through C-11 the split was performed to remove.
+   The ruling that shrank `T-112`'s collision surface from 27 to 1 would
+   be undone by the act meant to clear its last collider.
+3. **This card is a whole card, not a residual.** It already carries two
+   absorptions (`T-031-s3`, `T-031-s5`), five acceptance criteria, and a
+   derivation of its own fence that took a lane to produce. Residuals
+   get absorbed; cards get sequenced.
+
+**WHY `T-112` GOES FIRST.** It is F-04 p5 against this card's F-02 p35;
+it is the named closing act of its slice and @human's genesis walk is
+its downstream customer; and the dependency is one-directional in the
+only sense that matters — nothing in this card's content needs `T-112`,
+and nothing in `T-112`'s content needs this card. Only the fence
+serializes them, so the order is decided on value, and the value is on
+`T-112`'s side.
+
+**THE CONDITION THIS CARD NOW WAITS ON, in a form a dispatcher can
+check without remembering this note:** `T-112` is `done`. Until then
+`node scripts/brief.mjs --task T-031-s1` will name the collision itself
+whenever `T-112` is live. `blocked_by:` is deliberately NOT set — a
+fence collision is not a content blocker, the board's own comparator
+already answers it, and a false `blocked_by` would make this card
+undispatchable even in a window where `T-112` is not running.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
