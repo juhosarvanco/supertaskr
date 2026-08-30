@@ -269,7 +269,13 @@ the membership change is the ruling working as intended.
 ### The gates, every exit read from `$?` on an UNPIPED command
 
 Run from a script file rather than pasted, per the persisted-cwd rule.
-Branch tip `cec6cde` unless noted.
+First measured at `cec6cde` and **re-run WHOLE at `e85d55d`**, the tip
+this table describes, because three suggestion cards and a status stamp
+landed between the two and the board is a code input: identical exits
+and identical counts both times, on a fresh port
+(`NPUTER_E2E_PORT=14753`, read to zero rows first). `npm run
+capabilities:check` from tools/e2e/ also answers CURRENT at exit 0 — no
+spec file was added or renamed, so the census owes nothing.
 
 | gate | cwd | exit |
 |---|---|---|
