@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 7
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [lib-parser]
 suggested_by: standing triage sitting #4 (2026-08-30), from @human's first-walk board session relayed by the outgoing integrator seat
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

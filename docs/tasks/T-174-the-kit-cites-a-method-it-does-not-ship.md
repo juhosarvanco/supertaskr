@@ -9,6 +9,11 @@ status: planned
 blocked_by: []
 suggested_by: "the first-walk cold-start test (2026-08-30), finding B-1 — surfaced by the walk, confirmed against kit.rs"
 touches: [app-agent]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 **CONFIRMED at the walk's project:** `/Users/ujju/Projects/first-walk`

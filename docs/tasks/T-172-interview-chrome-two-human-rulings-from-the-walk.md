@@ -5,10 +5,15 @@ feature: F-03
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30) — both rulings verbatim in the walk debrief"
 touches: [app-interview]
+builder: claude-opus-5@subagent
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 Two rulings from @human's milestone-3 genesis walk, both about the

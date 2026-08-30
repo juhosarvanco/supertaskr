@@ -9,6 +9,11 @@ status: planned
 blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
 touches: [app-interview]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 **WHAT @HUMAN SAW, at the end of a complete and otherwise successful
