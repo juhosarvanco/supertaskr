@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [docs/tasks/T-059-the-two-joins-cannot-quietly-disagree.md]
 suggested_by: verifier claude-opus-5@subagent @T-160
@@ -139,3 +139,126 @@ whoever picks this class up starts from them:
 
 Nothing above changes this card's own acceptance criterion, which stays
 exactly the one line it was promoted with.
+
+## Implementation notes
+
+**THE FENCE WAS THE WRONG SIDE, AND IT WAS DERIVED FROM `T-059`'S OWN
+INTENT RATHER THAN CHOSEN.** `method/tasks/TASK-FORMAT.md` offers two
+repairs and this card's body left the choice to the lane in writing;
+here they are not interchangeable, and four things on `T-059` point the
+same way. Its title is *one pin across both engines* and the line-74
+assertion IS that pin — the Rust refusals are only the other half. Its
+`Verification:` line already owes `npx vitest run` from app/, which
+nothing else on the card would owe. The criterion immediately after it
+exists for no purpose except to price that assertion (a built binary on
+PATH, a loud skip when it is missing, and whether the fixture count
+becomes four). And `T-014-s2`, which the card ABSORBS in its first line,
+IS that assertion — so the ROUTE repair would have discharged an
+absorbed suggestion back into a suggestion, undoing a triage decision
+from the outside. The criterion is the card; the fence was the omission.
+
+The ownership was asked of the registry rather than taken from the
+preflight's message: `app/test/architecture-dogfood.test.ts` is listed
+by name in `docs/architecture/components/C-12-map-pane.md`'s own
+`paths:`, whose `touch_slugs:` is `[app-map]` — routed out of C-05's
+test umbrella at T-149, and that file's own comment names T-137 failing
+on this same fixture. `app-shell` was KEPT rather than traded for
+`app-map`: the assertion spawns a child process, and
+`app/test/node-builtins.d.ts` — the shim the app's second tsc PROGRAM
+needs for a `node:` import, the app shipping no `@types/node` — is
+`app-shell`'s, not the map pane's. So the repair is one added slug and
+nothing removed.
+
+**THE PROOF, BOTH RUNS UNPIPED.** `node scripts/brief.mjs --task T-059
+--preflight` from tools/e2e/, in this lane:
+
+    before, at 9ed2b7fa430d  -> exit 1, FOUND 2: UNCOVERED CRITERION
+                                PATH at line 74, plus a live-lane
+                                fence-disjointness finding
+    after,  at 6904dacf2180  -> exit 1, FOUND 1: the live-lane finding
+                                ALONE; the UNCOVERED CRITERION PATH is
+                                gone and the preflight's own five claim
+                                classes are clean
+
+**AND THE COUNTERFACTUAL IS REALIZED RATHER THAN ARGUED**, because the
+residue is a machine-scoped fact and this lane cannot remove it. The
+same command was run against a DETACHED clone of this lane whose
+worktree list holds no task branch (`git clone --local`, then
+`git checkout --detach`), so the lane list the assembler joins is empty
+while the tree is byte-identical:
+
+    --root <detached clone> at 9ed2b7fa430d  -> exit 1, the UNCOVERED
+                                                CRITERION PATH alone
+    --root <detached clone> at 6904dacf2180  -> exit 0, no findings
+
+**THE ACCEPTANCE CRITERION IS THEREFORE MET AT THE TREE AND UNMET AT
+THE MACHINE, AND THIS IS RECORDED RATHER THAN RULED.** The single
+surviving finding is `fences are not disjoint: T-167-s2 crate-index
+against T-059 crate-index` — correct, and about a sibling lane this
+sitting dispatched in parallel with this one (docs/STATE.md's "Next up"
+names the pair). It is not a claim `T-059` makes: it is present with
+`--preflight` absent too (`brief.mjs --task T-059` alone, exit 1, same
+one finding), so no change to any card can clear it. `T-059` carries no
+`PREFLIGHT RULING` for it BY CHOICE — a ruling would discharge a real
+future collision to make this lane's own gate green, which is the
+suppression the preflight's ruling arm warns about in its own printout.
+**Re-run the command once `T-167-s2`'s worktree is gone; exit 0 is what
+it will answer, and that is the counterfactual above.**
+
+**THE CARD'S OTHER CLAUSE — *no other card's preflight SHALL change* —
+WAS MEASURED, NOT ASSUMED.** Every card at a status a dispatch can pick
+from was swept at both refs inside the same detached lane-free clone,
+and the two runs compared after normalising the ref stamp:
+
+    for each card with status planned|building|verifying|merging:
+      node scripts/brief.mjs --task <id> --preflight --root <clone>
+    77 cards swept per ref; diff of the normalised pair -> ONE hunk
+
+The one hunk is `T-059`: `exit=1` plus its UNCOVERED CRITERION PATH line
+becomes `exit=0`. The other 76 are byte-identical.
+
+**GATES AND SUITES, every exit read from `$?` on an unpiped command.**
+The diff is one path under `docs/` that code suites read, so the DOCS
+GATE fires; it was asked rather than predicted, in its one spelling from
+the repository root, and it named three suites:
+
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only $MAIN $TREE)
+                                                     -> exit 1, FIRES
+    npm run lint:docs      from tools/e2e/            -> exit 0
+    npm run build          from lib/parser/           -> exit 0
+    npx vitest run         from lib/parser/           -> exit 0  (15 files, 315 tests)
+    npm run build          from app/                  -> exit 0
+    npm test               from app/                  -> exit 0  (47 files, 1015 tests)
+    npm test               from tools/e2e/            -> exit 0  (320 passed, 3.3m)
+
+GRAPH REGEN, BOOT GATE and the METHOD EVAL GATE are NOT owed: the diff
+holds no `*.ts/*.tsx/*.js/*.jsx` or `*.rs` outside docs/, nothing under
+`app/**` or either manifest, and nothing under `method/**` — derived
+from `git diff --name-only`, not from the brief. The e2e lane was run on
+`NPUTER_E2E_PORT=15164`, DERIVED from this lane id rather than defaulted
+(lane-protocol rule four's machine-scoped surface: two sibling lanes are
+live and 14520 is the default both would take), `lsof`-read to zero rows
+immediately before binding. 1420 was only ever READ, never probed, and
+it is held by the human's app. `git status` is empty after the run, so
+token-scan restored all seven plant targets.
+
+**ONE FINDING ROUTED, AS A CORROBORATION AND NOT A SIBLING FILE.**
+`method/tasks/TASK-FORMAT.md`'s search-before-filing clause sends a
+second instance to the card that owns its class, and `T-143-s1` owns
+this one exactly: *bodies that assert exit 0 from a brief the live lane
+list can correctly refuse*. The new instance is the same mechanism with
+a different consumer — an ACCEPTANCE CRITERION rather than a spec body,
+namely this card's own — and the exit code is where the card-claim
+verdict and the live-schedule verdict are welded together. Appended to
+`T-143-s1` with the measurement above and a disposition hint; that
+card's own preflight is exit 0 before and after the append, its only
+change being `ref stamps: 0 -> 1` on a stamp that resolves.
+
+**STATUS, SAID PLAINLY BECAUSE THE TABLE AND THE TREE DISAGREE.** The
+ceremony row for size S with a diff outside shipped code gives this card
+no verifier, so the table's stamp is `done` and the executor would be
+its own integrator. Stamped `verifying` instead: one acceptance clause
+is unmet for a cause outside every card, and the dispatching seat
+retained the merge, so `done` would claim both a discharge this lane did
+not earn and an integration it did not perform. No merge, no push, no
+branch but this one.

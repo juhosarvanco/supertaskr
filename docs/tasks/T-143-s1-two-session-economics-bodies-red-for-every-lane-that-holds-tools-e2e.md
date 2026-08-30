@@ -156,3 +156,55 @@ about model dials and advisory lines, layers from its cause.
 - Verification: headless, and the run is the proof. Run the suite while
   a scratch worktree holds a lane whose card overlaps the fixture card's
   fence, and again with no such lane; both runs answer the same.
+
+## Corroboration (2026-08-30, `T-160-s4`'s lane) — the same refusal reaching a CARD'S ACCEPTANCE CRITERION, not a spec body
+
+Appended rather than filed beside, per `method/tasks/TASK-FORMAT.md`'s
+search-before-filing clause: this card owns the class. **The instance
+differs in its CONSUMER and that is why it is worth attaching.** Every
+instance above is a spec BODY asserting exit 0 from `brief.mjs` against
+the live repository — something a lane can fix in code. `T-160-s4`'s
+instance is an ACCEPTANCE CRITERION doing it, written by the standing
+triage seat, promoted at the top of its column, and unsatisfiable from
+inside the lane it was dispatched to for exactly the reason stated
+above.
+
+That criterion reads *`node scripts/brief.mjs --task T-059 --preflight`
+SHALL exit 0*. Measured in that lane at `@ 6904dacf2180453cb20c7488b98d11146238008a`,
+which is the commit carrying the repair the criterion's own preflight
+arm demanded:
+
+    node scripts/brief.mjs --task T-059 --preflight          -> exit 1
+      the only finding: fences are not disjoint — T-167-s2 crate-index
+      against T-059 crate-index
+
+    the same command over the same tree, with --root pointing at a
+    DETACHED clone of that commit whose worktree list holds no task
+    branch                                                   -> exit 0
+
+`T-059` has no lane of its own. The refusal is CORRECT and it is about
+`T-167-s2`, a sibling lane dispatched into the same window by the same
+sitting — `docs/STATE.md`'s "Next up" names the two as parallel at that
+rewrite. So the criterion's verdict is a function of which OTHER lanes
+are live when it is read, which is `method/lane-protocol.md` rule four's
+machine-scoped surface arriving in the one place nothing has looked at
+yet: the acceptance criteria a lane is graded against. `T-168-s1`'s
+absorption already established that the collision is not `tools/e2e`
+specific; this establishes that it is not SPEC specific either.
+
+**AND THE EXIT CODE IS WHERE THE TWO ANSWERS ARE WELDED TOGETHER.**
+After the repair the preflight's own claim classes carry no finding at
+all — paths, fence, figures, blockers and refs are all clean — and then
+the assembler's live-lane finding takes the process to exit 1 under one
+`brief: FOUND` heading. A reader of the exit code alone cannot tell *this
+card's claims fell* from *another lane is holding a slug right now*, and
+the first is a defect while the second is a schedule.
+
+DISPOSITION HINT, the filer's and advisory: fold this into whichever of
+the three arms this card takes rather than promoting it separately — the
+spec bodies and the criterion want the same distinction, and repairing
+only the bodies leaves the sharper instance live on the board. If the
+answer is the third arm (publish the precondition), then it is owed to
+the CARD-WRITING seat as well as to the suite-running one, because a
+criterion is briefed to a lane that cannot see the schedule that will
+refuse it.
