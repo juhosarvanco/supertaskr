@@ -282,7 +282,16 @@ fn wait_failed(events: &mpsc::Receiver<RunEvent>) -> TurnError {
 /// T-081 exists to fix, and telling that apart from a denial that reached
 /// it live is an ORDER question.
 fn collect_turn(events: &mpsc::Receiver<RunEvent>) -> Vec<RunEvent> {
-    let deadline = Instant::now() + FIXTURE_DEADLINE;
+    collect_turn_within(events, FIXTURE_DEADLINE)
+}
+
+/// `collect_turn` with the deadline named by the caller — the same split
+/// `wait_for`/`wait_for_within` already carries, and for the same one
+/// reason (T-025-s6): the real smoke is the only caller in this file that
+/// is waiting on a MODEL, so it is the only caller that may pass anything
+/// but `FIXTURE_DEADLINE`. Every fake-driven call site above is unchanged.
+fn collect_turn_within(events: &mpsc::Receiver<RunEvent>, within: Duration) -> Vec<RunEvent> {
+    let deadline = Instant::now() + within;
     let mut seen = Vec::new();
     while Instant::now() < deadline {
         match events.recv_timeout(Duration::from_millis(200)) {
@@ -298,7 +307,10 @@ fn collect_turn(events: &mpsc::Receiver<RunEvent>) -> Vec<RunEvent> {
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         }
     }
-    panic!("the turn never reached a terminal event; saw: {seen:#?}");
+    panic!(
+        "the turn never reached a terminal event after {}s; saw: {seen:#?}",
+        within.as_secs()
+    );
 }
 
 /// The `Denied` events out of a collected turn, with their seq, so both
@@ -4947,6 +4959,102 @@ docs/ path resolves inside the project directory. Turns are plain text. Method v
 
 // ---- the one env-gated real smoke (§7) ---------------------------------
 
+// **THE PREMISE, NEVER THE CONTENT (T-025-s6, shape 1, ruled at standing
+// triage sitting #2).** The smoke below is a RECORDER: it exists to print
+// the real stream's line shapes as the fake fixtures' provenance, and a
+// recorder that reds on an unexpected real-CLI behaviour destroys the
+// recording it was run for. So the four constants below assert that there
+// was a real turn TO record, and nothing whatever about what it said.
+// Every line SHAPE stays printed and unasserted; only "there was nothing
+// to record" fails.
+//
+// WHY EACH FAILURE NAMES ITSELF: the two answers a reader needs told
+// apart are "no turn was observed" and "the CLI refused at auth", and
+// before this they were the same green exit. A `Failed { AuthFailed }`
+// 400 ms in — what this machine produced for the whole of 2026-08-16 ->
+// 2026-08-29 — now names premises 2, 3 and 4; a `cliNotFound` names
+// premise 1 and names it BEFORE the wait rather than after fifteen
+// minutes of it.
+
+/// Premise 1 of four. Judged BEFORE the wait, because a start that never
+/// reached `Started` spawns no child, so no event can ever arrive and the
+/// body would otherwise run out `REAL_CLI_DEADLINE` and report a TIMEOUT
+/// for a resolution failure (the cost T-025-s5's notes stated and routed
+/// here).
+const PREMISE_STARTED: &str =
+    "1. the start outcome reached `Started` - no turn was spawned at all; the \
+     `[real-smoke] start:` line above names which outcome it was";
+/// Premise 2 of four: the runner registered a native session, which is the
+/// cheapest evidence that the CLI accepted the conversation. An auth
+/// refusal never gets this far. Judged as PRESENT-or-absent only — the id
+/// itself is a line shape and stays unasserted. An empty or hostile id
+/// cannot arrive here as `Some`: the runner rejects it and fails the turn
+/// (`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`),
+/// which premise 4 then catches.
+const PREMISE_SESSION_ID: &str =
+    "2. the settled status carries a native session id - the CLI never \
+     registered a session, which is where an auth refusal lands";
+/// Premise 3 of four: the stream carried assistant text. A turn that
+/// registered a session and then produced nothing has no schema to record.
+/// The TEXT is not asserted, only that some arrived.
+const PREMISE_TEXT_DELTA: &str =
+    "3. at least one text delta arrived - the stream carried no assistant \
+     text, so there was no real turn to record";
+/// Premise 4 of four: the turn ENDED well. `Failed { AuthFailed }`,
+/// `Failed { StartTimeout }` and `Failed { Stall }` are the three paths
+/// this body used to exit 0 on.
+const PREMISE_COMPLETED: &str =
+    "4. the terminal event is `Completed` - the turn ended in `Failed`; the \
+     `[real-smoke] terminal event:` block above names the TurnError";
+
+/// The four premises, judged. Returns the ones NOT observed, in premise
+/// order, so the panic names WHICH was missing rather than only that
+/// something was.
+///
+/// `observed` is `None` at the pre-wait stage, where only premise 1 can be
+/// judged: with no child spawned there are no events and no settled status
+/// to judge the other three against, and reporting them as "missing" would
+/// bury the one answer the reader needs.
+fn missing_real_turn_premises(
+    start: &StartOutcome,
+    observed: Option<(&[RunEvent], &GenesisStatus)>,
+) -> Vec<&'static str> {
+    let mut missing = Vec::new();
+    if !matches!(start, StartOutcome::Started { .. }) {
+        missing.push(PREMISE_STARTED);
+    }
+    if let Some((events, status)) = observed {
+        if status.native_session_id.is_none() {
+            missing.push(PREMISE_SESSION_ID);
+        }
+        if !events.iter().any(|e| matches!(e, RunEvent::TextDelta { .. })) {
+            missing.push(PREMISE_TEXT_DELTA);
+        }
+        // The TERMINAL event, found rather than assumed to be last, so
+        // this judgement does not depend on `collect_turn_within`'s
+        // stopping rule.
+        let terminal = events
+            .iter()
+            .find(|e| matches!(e, RunEvent::Completed { .. } | RunEvent::Failed { .. }));
+        if !matches!(terminal, Some(RunEvent::Completed { .. })) {
+            missing.push(PREMISE_COMPLETED);
+        }
+    }
+    missing
+}
+
+/// The verdict, in the smoke's own exit status. Green says a real planner
+/// turn was observed and its shapes are printed above; red says this run
+/// recorded nothing, and names what was missing.
+fn assert_real_turn_observed(missing: Vec<&'static str>) {
+    assert!(
+        missing.is_empty(),
+        "[real-smoke] NO REAL TURN WAS OBSERVED - this run recorded nothing. \
+         Missing premises:\n  {}",
+        missing.join("\n  ")
+    );
+}
+
 /// THE ONLY TEST IN THE REPO THAT MAY CALL A REAL MODEL. `#[ignore]`d and
 /// additionally env-gated, so neither `cargo test` nor CI can reach it;
 /// it is run ONCE, by hand, to record the real stream's line shapes as
@@ -4980,21 +5088,147 @@ fn real_cli_smoke_records_the_stream_schema() {
     let (ctl, _rx) = mpsc::channel();
     let watch = WatchState::new(Some(project.clone()), Arc::new(AtomicU64::new(0)), ctl);
 
-    println!("[real-smoke] start: {:?}", agent::start_genesis(&watch, &agent));
+    let start = agent::start_genesis(&watch, &agent);
+    println!("[real-smoke] start: {start:?}");
+    // PREMISE 1, JUDGED HERE AND NOT WITH THE OTHER THREE. See
+    // `PREMISE_STARTED`: nothing was spawned, so nothing will arrive, and
+    // waiting the full deadline out would report a timeout for a
+    // resolution failure.
+    assert_real_turn_observed(missing_real_turn_premises(&start, None));
+
     // T-025-s5: REAL CADENCE, not the fixtures'. A real stage-0 scaffold
     // runs minutes; every other stream this file has ever seen lands in
     // milliseconds. `REAL_CLI_DEADLINE` carries the derivation and the
     // 2026-08-30 run that this line exists because of.
-    let event = wait_for_within(&events, REAL_CLI_DEADLINE, "completed or failed", |e| {
-        matches!(e, RunEvent::Completed { .. } | RunEvent::Failed { .. })
-    });
-    println!("[real-smoke] terminal event: {event:#?}");
-    println!("[real-smoke] status: {:#?}", settle(&agent));
+    //
+    // T-025-s6: COLLECTED rather than filtered, because premise 3 is a
+    // question about the whole stream. Every event is already printed as
+    // it arrives by the emitter above, so this changes what the body can
+    // JUDGE and nothing about what it RECORDS.
+    let seen = collect_turn_within(&events, REAL_CLI_DEADLINE);
+    let terminal = seen
+        .iter()
+        .find(|e| matches!(e, RunEvent::Completed { .. } | RunEvent::Failed { .. }));
+    println!("[real-smoke] terminal event: {terminal:#?}");
+    let status = settle(&agent);
+    println!("[real-smoke] status: {status:#?}");
     println!(
         "[real-smoke] registry: {}",
         fs::read_to_string(sessions::sessions_path(&project)).unwrap_or_default()
     );
+    // The temp tree goes BEFORE the verdict, so a red leaves nothing
+    // behind: everything the verdict reads is already in hand, and
+    // everything the run exists to record is already on stdout.
     let _ = fs::remove_dir_all(&root);
+    assert_real_turn_observed(missing_real_turn_premises(&start, Some((&seen, &status))));
+}
+
+/// **THE VERDICT'S OWN TEST, AND IT DRIVES NO CLI AT ALL** (T-025-s6). The
+/// body above is `#[ignore]`d and env-gated twice over, so its assertions
+/// can never be exercised by `cargo test` — which is exactly the shape
+/// that let it assert nothing for as long as it did. This body drives the
+/// judgement directly, off synthetic events, and pins that each of the
+/// four premises names ITSELF when it is the one missing.
+///
+/// The three cases the card names are here by construction: the healthy
+/// turn (the only green), the 400 ms `AuthFailed` this machine produced
+/// for a fortnight, and the `cliNotFound` that used to wait out the whole
+/// deadline and then report a timeout.
+#[test]
+fn the_real_smokes_verdict_names_which_premise_was_missing() {
+    fn status(native_session_id: Option<&str>) -> GenesisStatus {
+        GenesisStatus {
+            phase: Phase::Idle,
+            project_dir: Some("/tmp/nputer-premise".into()),
+            turn: 1,
+            native_session_id: native_session_id.map(str::to_string),
+            cli_version: Some("2.1.226 (Claude Code)".into()),
+            method_version: nputer_lib::agent::kit::METHOD_SNAPSHOT_VERSION.to_string(),
+            last_error: None,
+            last_event_at_ms: Some(1),
+        }
+    }
+    let started = StartOutcome::Started { turn: 1 };
+    let delta =
+        RunEvent::TextDelta { seq: 2, turn: 1, text: "I'll start by reading".into() };
+    let completed =
+        RunEvent::Completed { seq: 3, turn: 1, text: "done".into(), truncated_relay: false };
+    let healthy = vec![RunEvent::Started { seq: 1, turn: 1 }, delta.clone(), completed.clone()];
+
+    // A REAL TURN: all four observed, and the verdict is silent.
+    assert!(
+        missing_real_turn_premises(&started, Some((&healthy, &status(Some("677664de"))))).is_empty()
+    );
+
+    // PREMISE 1 — the start never reached `Started`, judged at the
+    // pre-wait stage where the other three cannot be judged at all.
+    assert_eq!(
+        missing_real_turn_premises(
+            &StartOutcome::CliNotFound { probed: vec!["/usr/bin/claude".into()] },
+            None,
+        ),
+        vec![PREMISE_STARTED],
+        "a cliNotFound names its own premise, and names it before the wait"
+    );
+    // ...and a start that DID reach `Started` is silent at that stage,
+    // which is what makes the line above a judgement rather than a
+    // constant.
+    assert!(missing_real_turn_premises(&started, None).is_empty());
+
+    // PREMISE 2 — a turn that completed with text but registered no
+    // session. Only 2 is named: 3 and 4 were observed.
+    assert_eq!(
+        missing_real_turn_premises(&started, Some((&healthy, &status(None)))),
+        vec![PREMISE_SESSION_ID]
+    );
+
+    // PREMISE 3 — a session and a `Completed`, and no assistant text.
+    let textless = vec![RunEvent::Started { seq: 1, turn: 1 }, completed.clone()];
+    assert_eq!(
+        missing_real_turn_premises(&started, Some((&textless, &status(Some("677664de"))))),
+        vec![PREMISE_TEXT_DELTA]
+    );
+
+    // PREMISE 4 — the turn ran and ended in `Failed`. A `Stall` after real
+    // text is the case where ONLY 4 is missing, and it is the one this
+    // body has to tell apart from the auth refusal below.
+    let stalled = vec![
+        RunEvent::Started { seq: 1, turn: 1 },
+        delta.clone(),
+        RunEvent::Failed { seq: 3, turn: 1, error: TurnError::Stall },
+    ];
+    assert_eq!(
+        missing_real_turn_premises(&started, Some((&stalled, &status(Some("677664de"))))),
+        vec![PREMISE_COMPLETED]
+    );
+
+    // THE 400 MS AUTH REFUSAL, whole: started, no session, no text, and a
+    // `Failed` terminal. Three premises named, in premise order — this is
+    // the run that used to exit 0 and read as a recording.
+    let auth_refused = vec![
+        RunEvent::Started { seq: 1, turn: 1 },
+        RunEvent::Failed {
+            seq: 2,
+            turn: 1,
+            error: TurnError::AuthFailed { status: Some(401), message: "invalid".into() },
+        },
+    ];
+    assert_eq!(
+        missing_real_turn_premises(&started, Some((&auth_refused, &status(None)))),
+        vec![PREMISE_SESSION_ID, PREMISE_TEXT_DELTA, PREMISE_COMPLETED]
+    );
+
+    // THE NAMING ITSELF: each premise string opens with its own ordinal,
+    // so a reader of the panic can tell them apart without counting, and
+    // no two of the four are the same sentence.
+    let all = [PREMISE_STARTED, PREMISE_SESSION_ID, PREMISE_TEXT_DELTA, PREMISE_COMPLETED];
+    for (i, text) in all.iter().enumerate() {
+        assert!(text.starts_with(&format!("{}. ", i + 1)), "{text}");
+    }
+    let mut sorted = all.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+    assert_eq!(sorted.len(), 4, "four distinct premises");
 }
 
 // ==== T-029: the restart simulation =====================================
