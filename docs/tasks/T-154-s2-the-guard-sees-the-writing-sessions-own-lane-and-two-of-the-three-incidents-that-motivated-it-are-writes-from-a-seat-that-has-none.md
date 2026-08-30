@@ -186,14 +186,27 @@ removed only after the merge. It is mechanical — git writes the marker,
 the hook stats it — but mechanical is not ruled, so it is declared at
 the definition site, in CONVENTIONS, and on its own card.
 
-**WHAT THE RULING'S CARVE-OUTS COST, MEASURED ON THE LIVE BOARD.**
-`T-159-s1` fences fourteen individual card files. Every one of them is
-under `docs/tasks/`, so this seat may write all fourteen — the carve-out
-working exactly as ruled, and worth saying plainly because it means a
-lane fencing card files gets no third-party protection for them. Read
-against the live repository from the integration checkout, this lane's
-own fence refuses `docs/CONVENTIONS.md` and `tools/e2e/…`, and
-`T-167-s1`'s refuses `method/runtime/sessions-schema.md`.
+**WHAT THE RULING'S CARVE-OUTS COST, MEASURED ON THE LIVE BOARD** —
+read 2026-08-30 on `Mac.lan`, and stamped that way because a lane list
+is a live-environment fact like a pid or a port holder, never a
+function of a tree. At that reading four lanes were live: `T-143-s3`,
+this one, `T-159-s1` and `T-167-s1`. From the integration checkout the
+arm refused `docs/CONVENTIONS.md` and `tools/e2e/…` (this lane's fence)
+and `method/runtime/sessions-schema.md` (`T-167-s1`'s), and freed
+`docs/STATE.md`, `docs/checkpoints/` and `docs/tasks/`. **`T-159-s1`
+fenced fourteen individual card files and this seat may write all
+fourteen** — the carve-out working exactly as ruled, and worth saying
+plainly because it means a lane fencing card files gets no third-party
+protection for them.
+
+**AND THE READING WENT STALE INSIDE THIS LANE, WHICH IS THE BEST
+ILLUSTRATION OF WHAT THE ARM READS.** By the time these notes were
+committed `T-143-s3` and `T-159-s1` had merged and their worktrees were
+gone, and `T-112` had been dispatched. Nothing about the guard changed:
+it re-reads the administration at every write, a removed lane fences
+nothing the moment its tree goes, and a new one fences from the moment
+its manifest lands. Anyone re-deriving the paragraph above will get a
+different list and the same behaviour.
 
 **WHAT I DID NOT BUILD, AND WHY IT IS THE INTERESTING ONE.** A write
 into a live lane's OWN TREE from a lane-less seat is still allowed
