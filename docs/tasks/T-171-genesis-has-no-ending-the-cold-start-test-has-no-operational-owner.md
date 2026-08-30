@@ -689,3 +689,33 @@ Appending a verdict is a commit, and prose is a code input. Re-derived
 after this verdict landed, at the commit this seat created — the figures
 in the ledger and gate lists above are stated at `9a25ebd` and the ones
 below at this tip:
+
+Re-run at `3e108db` — the commit this verdict created — with the counts
+read as well as the exits, because an exit 0 over zero bodies is a
+harness failure wearing a pass:
+
+- `npx vitest run` from `lib/parser/`: **exit 0** — 344 passed (344), 16
+  files. Its smoke test parses this tree's live `docs/`, so it is the
+  body that would have caught a card this verdict broke.
+- `npm run build` then `npm test` from `app/`: **exit 0 / exit 0** —
+  **1074 passed (1074)**, 49 files. Unmoved by this commit, as prose
+  should be.
+- `npm run lint:docs` from `tools/e2e/`: **exit 0** — *"every live task
+  card's frontmatter parses, with a legal status"*, and the ADR-019
+  budgets hold (4 gated, 0 awaiting compaction). This is the gate the
+  `review: same-model` and `verified_by:` stamps above could have
+  broken.
+- `npm run lint:tokens`: **exit 0** — clean over 159 TOKEN files and
+  1,005 CONTROL text files, so the verdict's own glyphs cost nothing.
+- `npm run capabilities:check`: **exit 0 — CURRENT** (26,693 bytes); no
+  e2e test name moved, so the census is unchanged.
+- `npm run typecheck` from `tools/e2e/`: **exit 0**.
+- **GRAPH re-ASKED at this tip** (STATE: ask again after every write):
+  **exit 1, STALE, byte-identical to the reading above** — committed
+  1,134,163 against fresh 1,139,673, `files +0 -0 ~8`, budget 53.1% with
+  1,006,286 left. A prose commit moves no indexed symbol, which is the
+  expected answer and is why it is stated rather than assumed. Still not
+  regenerated; still the integrator's to clear.
+
+Working tree clean at `3e108db`. `status` stays `verifying`; the
+correction above is the integrator's or a follow-up seat's to take.
