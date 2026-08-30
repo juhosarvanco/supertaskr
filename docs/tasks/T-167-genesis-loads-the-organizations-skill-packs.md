@@ -273,11 +273,65 @@ siblings, and the fix is committed at `1c797df` before M18 ran and died.
   **1032605 of 1040000 bytes (99.3 %) — 7395 bytes left**, down from
   16270 before this lane. Filed as `T-167-s2`.
 
+### THE MERGE CONFLICTS, AND THE RESOLUTION IS LOSS-FREE — recorded so it is not a surprise
+
+`git merge-tree --write-tree <main tip> HEAD` exits **1** on
+`docs/tasks/T-167-genesis-loads-the-organizations-skill-packs.md`. **READ
+THE EXIT CODE BEFORE FEEDING THE PATH LIST ANYWHERE** — the RANGE RULE's
+own instruction, and the reason the DOCS GATE's first run in this lane
+reported "none under docs/" from a range that had produced nothing.
+
+The mechanism is an add/add at the END OF FILE and it is not caused by
+the lane's card sync. At the merge base `1d297c9` the card ends with the
+fence note; main appended the PREFLIGHT RULING at `1bcdb4c`; this lane
+appended the SAME ruling and then these notes. Two insertions at one
+point.
+
+**The resolution is "take the lane's file whole" and it loses nothing
+from either side**, proved rather than asserted: main's card is a
+BYTE-EXACT PREFIX of this one —
+
+    git show main:docs/tasks/T-167-genesis-…md > /tmp/a
+    head -c $(wc -c < /tmp/a) docs/tasks/T-167-genesis-…md > /tmp/b
+    cmp /tmp/a /tmp/b          # exit 0
+
+so the frontmatter stamp and the ruling are already present, verbatim,
+above the `## Implementation notes` heading.
+
+### DOCS GATE — it FIRES, and all three owed suites are green
+
+Run with the RANGE RULE's own command, with the conflict resolved to this
+lane's side (`git merge-tree --write-tree -X ours HEAD <main tip>`, exit
+0, tree `8e76e51`) so the path list is derivable at all:
+
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
+
+**exit 1 — it has a verdict**: five paths under `docs/` are code inputs
+(this card plus the four suggestions), owed to `npm test` from app/,
+`npm test` from tools/e2e/ and `npx vitest run` from lib/parser/. All
+three were run in this lane, all UNPIPED:
+
+- `npx vitest run` from `lib/parser/` — **exit 0**, 15 files / 315 tests.
+- `npm run build` then `npm test` from `app/` — **exit 0** each, 47 files
+  / 1015 tests. (The build first: an unbuilt worktree fails bodies that
+  read `app/dist`.)
+- `NPUTER_E2E_PORT=14741 npm test` from `tools/e2e/` — **exit 0, 320
+  passed** in 3.5 m. Port read to zero rows with `lsof -nP -iTCP:14741
+  -sTCP:LISTEN` first; run in this WORKTREE, never the main checkout, and
+  `git status --short` is empty afterwards, so the lane's seven planted
+  control bytes all came back.
+
+Also run, though it is a CI step rather than a merge-diff gate, because
+this lane adds a tracked `.rs` file to the CONTROL corpus:
+`npm run lint:tokens` from `tools/e2e/` — **exit 0**, clean (TOKEN 155
+files, CONTROL 925 tracked text files).
+
 ### Not touched
 
-`app/src/lib/agent-store.ts` and `app/test/` are unchanged, so the
-lib/parser build, the app `npm run build` and app `npm test` are not
-owed. No UI exists for this card, per the room's FORM-FIRST ruling.
+`app/src/lib/agent-store.ts` and `app/test/` are unchanged — the app and
+parser suites above were run because the DOCS GATE fired on the card
+edits, not because the TypeScript fence moved. No UI exists for this
+card, per the room's FORM-FIRST ruling.
 `resume_genesis`'s short nudge does not re-name the packs and does not
 re-stamp; the stamp survives a resume because the completion path
 carries it forward. Whether a resumed session should be re-briefed on
