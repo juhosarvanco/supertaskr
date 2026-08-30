@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 4
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [lib-parser, app-board]
 suggested_by: "@human's D5 ruling (2026-08-30): of course the models the human assigns to different tasks do those tasks as assigned — recorded in rooms/cockpit-or-mirror.md"
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -188,3 +188,5 @@ filed as T-169-s1 rather than moved by a lane that may not move it.
 `touches: [lib-parser, app-board]` — collides with T-112
 (app-dispatch, app-board) if both dispatch at once; the lane list is
 the authority at dispatch time.
+
+VERDICT (2026-08-30, blind verifier claude-opus-5@subagent, factless spawn — structural blindness): **APPROVED WITH ASSIGNED CORRECTIONS**, all three performed at merge by the integration seat, committed-first, drilled one-sided with sha256-proved restoration (73d323ac…f36d): (1) `@human` matches the WORD, not the prefix — `@human-driven` keeps its model (pinned; the reverted regex reds exactly the new body); (2) an execution stamp naming no readable model VIOLATES a binding assignment instead of landing `unconstrained` (pinned; the reverted comparable reds exactly the new body) — the three false definition-site sentences rewritten to the measured truth; (3) the T-020/T-024 two-model-stamp judgement routed to @human as T-169-s2. The verifier independently re-derived the census zero through two comparison rules, confirmed the executor's 24-for-24 drill artifact, verified the e2e red lane-caused by running the probe itself, and its four blind predictions about prose-stamp false-positives matched the executor's findings card for card.
