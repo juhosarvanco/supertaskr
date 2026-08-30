@@ -16,7 +16,9 @@ import {
   components,
   contractRows,
   context,
+  fenceLedger,
   fenceOverlaps,
+  fieldList,
   frontmatterFields,
   integrationRefCandidates,
   laneSpellings,
@@ -32,6 +34,7 @@ import {
   roleText,
   slugMapFromFields,
   slugMapFromProse,
+  slugsSharingComponents,
   standingGates,
   stateReport,
   treeProv,
@@ -1067,5 +1070,237 @@ test("the WHOLE brief assembles on a pull_request-shaped checkout, and names the
     expect(orphan.stdout).not.toContain("base commit:");
   } finally {
     rmSync(fx.dir, { recursive: true, force: true });
+  }
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-143 — THE ANSWER MAY NOT SAY `FREE` ABOUT GROUND IT COULD NOT READ.
+ *
+ * One mechanism, two implementations. The parser's half was fixed at
+ * `62a4364` (`lanes.ts`, `if (other === undefined) continue`); the
+ * identical sentence survived here in `fenceLedger`, was filed as
+ * `T-137-s11`, and was deliberately left as this card's ground. The
+ * bodies below drive the PRODUCER — `fenceLedger`, `stateReport`,
+ * `deriveFence` — over a porcelain fixture, so nothing here is a fence
+ * this repository has to keep live for the pins to mean anything.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A porcelain with a lane whose card THIS CHECKOUT CANNOT READ. `T-901`
+ * and `T-902` name no card here, and the check below proves it rather
+ * than trusting it — a fixture that accidentally named a real card would
+ * turn every assertion into a green about the wrong thing. */
+const BLIND_PORCELAIN = (ids: string[], real: string): string =>
+  [
+    "worktree /Users/x/nputer",
+    "HEAD 1111111111111111111111111111111111111111",
+    "branch refs/heads/main",
+    "",
+    ...ids.flatMap((id, i) => [
+      `worktree /Users/x/nputer-${id}`,
+      `HEAD ${String(i + 2).repeat(40)}`,
+      `branch refs/heads/task/${id}-a-card-this-checkout-cannot-read`,
+      "",
+    ]),
+    `worktree /Users/x/nputer-${real}`,
+    "HEAD 9999999999999999999999999999999999999999",
+    `branch refs/heads/task/${real}-a-real-lane`,
+    "",
+  ].join("\n");
+
+/** The card this repository is asked to use as its READABLE lane, with
+ * its fence read off the board rather than typed into a body. */
+function readableLane(): { id: string; touches: string[] } {
+  const ctx = context({});
+  for (const [id, card] of ctx.cards) {
+    const touches = fieldList(card.fields, "touches");
+    if (touches.length > 0) return { id, touches };
+  }
+  throw new Error("no card on this board declares a fence — the fixture below would prove nothing");
+}
+
+test("THE FENCE LEDGER SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT READ", () => {
+  // KILLED BY: `if (card === undefined) continue` in `fenceLedger` —
+  // the sentence this module shipped, and the second implementation of
+  // the one `lanes.ts` was rejected for. Dropping the lane makes every
+  // slug it reserves come back FREE, four lines below the same report's
+  // own lane list saying "no live card — board says unknown" about it.
+  const blind = ["T-901"];
+  const real = readableLane();
+  const ctx = context({ porcelain: BLIND_PORCELAIN(blind, real.id) });
+
+  // THE FIXTURE IS PROVED BEFORE IT IS SPENT: the blind id really is
+  // unreadable here and the real one really is readable, or the two
+  // halves below are both vacuous.
+  expect(ctx.cards.has("T-901"), "T-901 names a card, so this fixture is not blind").toBe(false);
+  expect(ctx.lanes.map((l) => l.taskId).sort()).toEqual([...blind, real.id].sort());
+
+  const rows = fenceLedger(ctx);
+  const held = rows.filter((r) => r.heldBy.startsWith(real.id));
+  const unknown = rows.filter((r) => r.heldBy.startsWith("UNKNOWN"));
+
+  // POSITIVE CONTROL FIRST: the readable lane's own slugs ARE reported
+  // held and are named. Without this, "nothing says FREE" is satisfied
+  // by a ledger that answers nothing at all.
+  expect(
+    held.map((r) => r.slug).sort(),
+    "the readable lane holds nothing, so every absence below proves nothing",
+  ).toEqual(real.touches.filter((t) => rows.some((r) => r.slug === t)).sort());
+
+  // THE CARD'S FIRST CRITERION: no row that is not explicitly held may
+  // read FREE, no row is dropped, and the word is the parser's.
+  expect(unknown.length, "no row says UNKNOWN, so the blind lane vanished again").toBeGreaterThan(0);
+  expect(rows.map((r) => r.heldBy)).not.toContain("FREE");
+  for (const row of rows) {
+    expect(row.unknownFrom).toEqual(blind);
+    expect(row.heldBy, `${row.slug} does not name the lane it could not read`).toContain("T-901");
+  }
+  expect(unknown[0]?.heldBy).toContain("cannot be ruled free");
+  // AND THE HELD ROWS CARRY THE RESIDUAL TOO — the parser's `fenced`
+  // reason names the blind lane beside a proved overlap for the same
+  // reason: a true HELD is still a partial answer.
+  expect(held[0]?.heldBy).toContain("and UNKNOWN besides");
+
+  // THE NEGATIVE CONTROL THE CARD DEMANDS BY NAME: "construct the held
+  // state, see the tool say HELD, then remove the hold and see it say
+  // FREE. A fix that only ever prints HELD passes every test written
+  // from this card's text." One lane removed, nothing else changed.
+  const sighted = fenceLedger(context({ porcelain: BLIND_PORCELAIN([], real.id) }));
+  expect(sighted.map((r) => r.heldBy)).toContain("FREE");
+  expect(sighted.filter((r) => r.heldBy.startsWith("UNKNOWN"))).toEqual([]);
+  for (const row of sighted) expect(row.unknownFrom).toEqual([]);
+});
+
+test("and the UNKNOWN clause agrees in number with the lanes it names", () => {
+  // KILLED BY: hard-coding either form. The sibling defect this card
+  // also fixes is exactly this, in `lanes.ts`'s `fenced` residual, where
+  // the mutation from "it" to "them" killed zero bodies.
+  const real = readableLane();
+  const one = fenceLedger(context({ porcelain: BLIND_PORCELAIN(["T-901"], real.id) }));
+  const two = fenceLedger(context({ porcelain: BLIND_PORCELAIN(["T-901", "T-902"], real.id) }));
+
+  const oneRow = one.find((r) => r.heldBy.startsWith("UNKNOWN"))?.heldBy ?? "";
+  const twoRow = two.find((r) => r.heldBy.startsWith("UNKNOWN"))?.heldBy ?? "";
+  expect(oneRow).toContain("that fence could not be expanded");
+  expect(oneRow).not.toContain("those fences");
+  expect(twoRow).toContain("those fences could not be expanded");
+  expect(twoRow).not.toContain("that fence");
+  expect(twoRow).toContain("T-901, T-902");
+});
+
+test("the LEDGER SAYS WHAT IT IS ANSWERING, and the slugs that are not independent are DERIVED", () => {
+  // KILLED BY: dropping the qualifier, or hard-coding `C-11`. The
+  // architect took a FREE column here for a dispatch verdict on
+  // 2026-08-26 and nearly put T-112 on ground the live T-141 held; the
+  // display is what misled, and the `--task` half answers correctly.
+  const ctx = context({});
+  const rendered = render(stateReport(ctx));
+  expect(rendered).toContain("IT IS KEYED BY SLUG NAME AND IS NOT A DISPATCH VERDICT");
+  expect(rendered).toContain("`brief.mjs --task T-NNN`");
+  expect(unstampedLines(rendered)).toEqual([]);
+
+  // THE SHARED-COMPONENT FACT IS A JOIN OVER THE REGISTRY, not a
+  // sentence about C-11. Two sides that share no constant: the
+  // derivation walks `touch_slugs`, and this body re-walks the
+  // component files independently.
+  const shared = slugsSharingComponents(ctx.slugs);
+  const expected = new Map<string, string[]>();
+  for (const comp of components(repoRoot)) {
+    for (const slug of comp.slugs) {
+      expected.set(comp.id, [...(expected.get(comp.id) ?? []), slug].sort());
+    }
+  }
+  const wanted = [...expected].filter(([, s]) => s.length > 1).map(([c]) => c).sort();
+  expect(shared.map((s) => s.component).sort()).toEqual(wanted);
+  // POSITIVE CONTROL: this repository HAS such a component today, so the
+  // agreement above is not two empty lists agreeing.
+  expect(wanted.length, "no component is shared, so the join proves nothing here").toBeGreaterThan(0);
+  for (const s of shared) expect(rendered).toContain(`both expand through ${s.component}`);
+});
+
+test("`DISJOINT` is the same class of word as `FREE` — ROW 5's verdicts carry the blind lane", () => {
+  // KILLED BY: leaving `deriveFence`'s pairwise verdict lines alone.
+  // The row already printed "no live card, fence UNKNOWN" for the lane
+  // and then printed DISJOINT verdicts underneath it that had never
+  // been compared against it — the card's second criterion, applied to
+  // the word the parser's own module refuses to fold `unusable` into.
+  const real = readableLane();
+  const ctx = context({ taskId: real.id, porcelain: BLIND_PORCELAIN(["T-901", "T-902"], real.id) });
+  const { recs } = assembleBrief(ctx);
+  const rendered = render(recs);
+  expect(rendered).toContain("T-901: no live card, fence UNKNOWN");
+  expect(rendered).toContain("EVERY VERDICT ABOVE IS PARTIAL");
+  expect(rendered).toContain("no line above rules out an overlap with those lanes");
+  // AND THE "FEWER THAN TWO" LINE SAYS WHICH FEWER IT IS: there ARE
+  // three lanes here and two of them could not be expanded.
+  expect(rendered).toContain("fewer than two READABLE fences to compare");
+  expect(rendered).not.toContain("fewer than two fences to compare");
+
+  // POSITIVE CONTROL: with no blind lane the residual is gone and the
+  // plain sentence is back, so the clause is a function of the fixture
+  // and not a constant this command always prints.
+  const sighted = render(assembleBrief(context({ taskId: real.id, porcelain: BLIND_PORCELAIN([], real.id) })).recs);
+  expect(sighted).not.toContain("EVERY VERDICT ABOVE IS PARTIAL");
+  expect(sighted).toContain("fewer than two fences to compare");
+});
+
+test("A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, NOT ITS PARENT'S", () => {
+  // T-143's class, instances FOUR and FIVE (2026-08-29): `--write-fence`
+  // stamped T-153's `app-shell` fence into the T-153-s5 lane, and the
+  // T-153-s2 lane before it ran its WHOLE arc under its parent's
+  // manifest — the armed hook enforcing a fence nobody dispatched.
+  // `laneSpellings` and `normaliseTaskId` were fixed at that seat and
+  // pinned in `lane-fence.spec.ts`; THIS body is the half that pin does
+  // not reach. `laneWorktrees` carries its OWN copy of `T-${m[1]}` — the
+  // second implementation of the id join, and the one the `--state`
+  // ledger is derived from — and no body drove it with a suffixed branch.
+  //
+  // KILLED BY: truncating the id in `laneWorktrees` (the unsuffixed
+  // reading `T-${m[1].split("-")[0]}`), which hands the ledger the
+  // PARENT's fence and prints FREE for every slug the child reserves and
+  // HELD for every slug the parent does.
+  const spellings = laneSpellings(conventions());
+  const suffixed = [
+    "worktree /Users/x/nputer",
+    "HEAD 1111111111111111111111111111111111111111",
+    "branch refs/heads/main",
+    "",
+    "worktree /Users/x/nputer-T-153-s2",
+    "HEAD 2222222222222222222222222222222222222222",
+    "branch refs/heads/task/T-153-s2-clock-restore-guard",
+    "",
+  ].join("\n");
+  const lanes = laneWorktrees(suffixed, spellings);
+  expect(lanes.map((l) => l.taskId)).toEqual(["T-153-s2"]);
+
+  // POSITIVE CONTROL: the unsuffixed spelling of the SAME parent still
+  // reads as the parent, so this is a preference for the suffixed
+  // reading and not a function that appends `-s2` to everything.
+  const plain = laneWorktrees(
+    suffixed.replace("T-153-s2-clock-restore-guard", "T-153-inotify-sentinels"),
+    spellings,
+  );
+  expect(plain.map((l) => l.taskId)).toEqual(["T-153"]);
+
+  // AND THE LEDGER IS DERIVED OFF THAT JOIN, which is where the cost
+  // landed: the two cards declare DIFFERENT fences, so a truncated id
+  // prints the parent's holdings over the child's ground.
+  const ctx = context({ porcelain: suffixed });
+  const child = ctx.cards.get("T-153-s2");
+  const parent = ctx.cards.get("T-153");
+  expect(child, "T-153-s2 names no card here, so this body proves nothing").toBeDefined();
+  expect(parent, "T-153 names no card here, so this body proves nothing").toBeDefined();
+  const childFence = fieldList(child?.fields ?? {}, "touches");
+  const parentFence = fieldList(parent?.fields ?? {}, "touches");
+  expect(
+    childFence,
+    "the two cards declare the SAME fence, so a truncated id would be invisible here",
+  ).not.toEqual(parentFence);
+  const heldBy = new Map(fenceLedger(ctx).map((r) => [r.slug, r.heldBy]));
+  for (const slug of childFence) expect(heldBy.get(slug)).toBe("T-153-s2");
+  for (const slug of parentFence) {
+    if (childFence.includes(slug)) continue;
+    expect(heldBy.get(slug), `${slug} is the PARENT's ground and the child is not holding it`).toBe(
+      "FREE",
+    );
   }
 });

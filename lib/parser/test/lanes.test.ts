@@ -380,6 +380,47 @@ describe('a lane whose id names no card RULES on every card, and is never merely
     expect(order.fenced[0]?.holds.map((h) => h.lane.taskId)).toEqual(['T-002', 'T-777']);
     expect(order.fenced[0]?.reason).toContain('docs/CONVENTIONS.md');
     expect(order.fenced[0]?.reason).toContain('could not be compared at all');
+    // AND THE SINGULAR HALF OF THE RESIDUAL, pinned here so that the
+    // plural body below has something to be the other side OF. Before
+    // T-143 this clause was `no card for it` unconditionally and the
+    // mutation to `no card for them` killed ZERO bodies — the whole
+    // sentence was pinned by its PRESENCE and by neither of its numbers.
+    expect(order.fenced[0]?.reason).toContain('no card for it in this checkout');
+    expect(order.fenced[0]?.reason).not.toContain('no cards for them');
+  });
+
+  it('and with TWO unreadable lanes the same residual is PLURAL — the fenced branch, not only the unfenceable one', () => {
+    // KILLED BY: the clause this repository shipped until T-143 —
+    // `no card for it in this checkout`, with no `many` flag, in the
+    // `fenced` branch. Its sibling `unfenceable` branch was written in
+    // the SAME commit WITH the flag and with two dedicated bodies
+    // pinning both directions, so the mutation from "it" to "them"
+    // killed nothing here while being caught instantly ten lines away.
+    //
+    // WHY THIS SENTENCE AND NOT ANOTHER: it is the one a human reads
+    // while deciding whether to OVERRIDE a coarse-fence warning, which
+    // is the moment the count of what could not be read is the whole
+    // question. Two blind lanes reading as one is an understatement of
+    // the unknown in the one direction a fence exists to prevent.
+    //
+    // THE COUNT IS THE LANE COUNT, NOT THE ID COUNT — the two blind
+    // lanes below carry two DIFFERENT ids, and the sibling body above
+    // ('deduped by task id') is the case where one id is two lanes.
+    const model = parseProjectFromFiles([
+      ...board,
+      card('T-002', 'Holder', { status: 'building', touches: ['docs/CONVENTIONS.md'] }),
+    ]);
+    const order = readDispatchOrder(model, [lane('T-002'), lane('T-777'), lane('T-888')]);
+    expect(order.fenced.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.fenced[0]?.reason ?? '';
+    // The PROVED overlap still leads — the lattice is unchanged.
+    expect(reason).toContain('docs/CONVENTIONS.md');
+    // Both unreadable lanes are NAMED, and the clause agrees with them.
+    expect(reason).toContain('refs/heads/task/T-777-lane');
+    expect(reason).toContain('refs/heads/task/T-888-lane');
+    expect(reason).toContain('no cards for them in this checkout');
+    expect(reason).not.toContain('no card for it');
+    expect(order.lanesWithNoCard).toEqual(['T-777', 'T-888']);
   });
 
   it('and the REPORTED list is deduped by task id, because two worktrees can hold one branch', () => {

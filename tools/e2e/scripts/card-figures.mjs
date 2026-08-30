@@ -372,6 +372,27 @@ export const CARD_DERIVERS = new Map([
         const via = "git worktree list --porcelain, filtered on the branch, joined to each card";
         /** @type {import("./dispatch-brief.mjs").Rec[]} */
         const recs = [];
+        // THE THIRD IMPLEMENTATION OF ONE DEFECT, found by T-143's sweep
+        // rather than by a report. `lanes.ts` was fixed at `62a4364`,
+        // `fenceLedger` at T-143, and this join carried the identical
+        // `if (other === undefined) continue` with the identical `FREE`
+        // four lines below it — unpinned in BOTH directions, with no
+        // body in `card-figures.spec.ts` naming `contention` at all.
+        //
+        // A LANE WHOSE CARD THIS CHECKOUT CANNOT READ HOLDS AN UNKNOWN
+        // FENCE, NEVER AN EMPTY ONE. `continue` here answers *"which
+        // live lane holds each entry of this card's fence right now"*
+        // with `FREE` about ground nobody compared, and the reader of
+        // this line is a session deciding whether to take the card.
+        /** @type {string[]} */
+        const blind = [];
+        for (const lane of ctx.lanes) {
+          if (lane.taskId === ctx.card.id) continue;
+          if (ctx.cards.get(lane.taskId) === undefined && !blind.includes(lane.taskId)) {
+            blind.push(lane.taskId);
+          }
+        }
+        const many = blind.length > 1;
         for (const entry of fieldList(ctx.card.fields, "touches")) {
           /** @type {string[]} */
           const holders = [];
@@ -381,12 +402,20 @@ export const CARD_DERIVERS = new Map([
             if (other === undefined) continue;
             if (fieldList(other.fields, "touches").includes(entry)) holders.push(lane.taskId);
           }
-          recs.push(
-            value(
-              `contention ${entry}: ${holders.length === 0 ? "FREE" : holders.sort().join(", ")}`,
-              live(ctx, via),
-            ),
-          );
+          const held = holders.length === 0 ? "" : holders.sort().join(", ");
+          const unknown =
+            blind.length === 0
+              ? ""
+              : `this checkout has no card for ${blind.join(", ")}, so ` +
+                `${many ? "those fences" : "that fence"} could not be expanded at all`;
+          let answer = held === "" ? "FREE" : held;
+          if (unknown !== "") {
+            answer =
+              held === ""
+                ? `UNKNOWN — ${unknown} and this entry cannot be ruled free`
+                : `${held} — and UNKNOWN besides: ${unknown}`;
+          }
+          recs.push(value(`contention ${entry}: ${answer}`, live(ctx, via)));
         }
         return recs;
       },
