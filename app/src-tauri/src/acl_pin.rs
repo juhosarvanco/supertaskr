@@ -552,6 +552,22 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
         "genesis_send_turn",
         "genesis_status",
         "genesis_cancel",
+        // T-140-s1's pair — the map's own channel. They join the roster
+        // for the same ADR-012 reason as every addition above: an app
+        // command is not a grant, so EXPECTED_GRANTS is a 0-line diff
+        // across that card and this loop is where the addition shows.
+        //
+        // `arch_detail` is the FIRST app command in this list that takes
+        // an argument, and that is exactly why it belongs here: the
+        // denial proven below happens BEFORE dispatch, so it holds
+        // whatever the argument would have been. The argument's own
+        // safety is a SEPARATE property with its own pins — it is a key
+        // into a document this process already holds, never a path it
+        // opens (`rollup::tests::the_pull_refuses_by_name…` and
+        // `arch_cmd::tests::the_pull_refuses_an_unknown_target…`) — and
+        // neither proof substitutes for the other.
+        "arch_rollup",
+        "arch_detail",
         "plugin:event|listen",
         "plugin:dialog|open",
     ] {
