@@ -35,3 +35,5 @@ observation-side, neither a product defect on any evidence so far.
 2. **`app-shell` is next dispatched.** That lane holds the watcher and its suite, so the ordering question — whether `picked.seq` may legitimately tie or lead when the pick lands inside an in-flight debounce — is one it can answer at no extra cost. The lane re-derives rather than trusting this body.
 
 Joins `T-161` on the push watch-list until then: named intermittents, observation-side, no product defect on any evidence so far.
+
+SECOND SIGHTING (2026-08-30, CI run on 2e4b76f — a docs-only diff again): same assertion, `from_b.seq > picked.seq`, same body. THE RESURFACING CONDITION IS MET. Promoted at this sighting: feature F-02, milestone 4, priority 5, size S, touches [app-shell] — the ask stands as filed (derive the ordering the watcher actually promises and pin THAT, or wait for the CONVERGED state). Two sightings, both on diffs that cannot touch the watcher; rerun-as-measurement pending on the second.
