@@ -1101,6 +1101,18 @@ test("what the lane-less seat may write, a LANE still may not — the two seats 
   expect(inLane.verdict, inLane.reason).toBe("block");
   expect(inLane.code).toBe("outside-the-fence");
   expect(inLane.reason).toContain(ROUTE);
+
+  // AND WHAT THE TWO SEATS SHARE, because docs/CONVENTIONS.md now claims
+  // it of both: a path outside the writing checkout is unjudged in
+  // either. The lane-less side of that sentence had no body until this
+  // line, and an undriven arm is a claim nothing checks.
+  const elsewhere = path.join(scratchRoot(), "notes.md");
+  expect(ask(fx.repo, elsewhere).code, "limit 2 does not hold for the seat with no lane").toBe(
+    "outside-the-checkout",
+  );
+  expect(ask(fx.lane, elsewhere).code).toBe("outside-the-checkout");
+  // Discriminating: the same seat, a path INSIDE it that a lane holds.
+  expect(ask(fx.repo, path.join(fx.repo, "tools/e2e/x.ts")).code).toBe("held-by-a-live-lane");
 });
 
 test("the runner carries the lane-less refusal as an exit code too", async () => {
