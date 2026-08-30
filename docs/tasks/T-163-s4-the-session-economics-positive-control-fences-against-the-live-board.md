@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-163-s3
 builder: claude-opus-5@subagent
 verifier:
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: claude-fable-5@integration-seat
 review:
 ---
 
@@ -376,3 +376,20 @@ lane reaches them — a different class, argued on the new card and left
 alone.
 
 ## Verdicts
+
+INTEGRATED (2026-08-30, integration seat, per the ceremony row the
+executor correctly re-read: "S, diff outside shipped code — no
+verifier, executor is its own integrator"; the verifying stamp was
+the dispatch's caution, honoured then closed here). Integrator
+review: all four graded exits remain strict toBe(0) — nothing
+tolerates a non-zero; every surviving `T-157` literal is an
+in-process READ (a read is not a dispatch question — the spec header
+now states the rule); spawned-and-graded invocations derive their
+ids through the same fenceOverlaps the command compares with. The
+executor's headline correction stands recorded: the card was filed
+against `--task T-112` and the live red was on `--task T-157` — the
+card's own prescription was unsatisfiable, and the collider was the
+lane fixing the defect. Measured green on that very lane: 10/10 spec
+bodies and e2e 332/332 with two lanes live. Merged at the battery
+whole; T-163-s5 (the brief.spec.ts [CLEAN, FOUND] sites) rides to
+the next sitting.
