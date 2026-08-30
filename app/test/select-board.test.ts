@@ -953,18 +953,44 @@ describe("normalisation is ONE function and it states its own ceiling (criterion
 });
 
 describe("a fence is compared over EXPANDED components, never slug strings (T-111-s1)", () => {
-  it("app-board and app-shell are different strings claiming ONE component", () => {
+  it("app-board and app-shell claim NO component in common since T-163 — the EXPANSION says so", () => {
+    // RE-DERIVED AT T-163 (@human's architecture ruling, 2026-08-30).
+    // This body used to assert the opposite — `.toEqual(["C-11"])` —
+    // because design tokens carried `touch_slugs: [app-shell, app-board]`
+    // and were the ONE component two slugs expanded through. The ruling
+    // took that field to `[]`, so the live fact inverted; the body is
+    // re-derived rather than deleted, because the live half is worth
+    // exactly as much pointing the other way. **THE MECHANISM IT USED TO
+    // CARRY MOVED, IT DID NOT LEAVE**: "two different slug strings that
+    // reserve one component overlap" now has no live subject on this
+    // board, so it is pinned on a synthetic registry in the clash body
+    // below — a pin driven from a fact the tree no longer carries is a
+    // pin against nothing, which is this section's own header rule.
     const comps = liveBoard().components ?? [];
     const board = expandTouch("app-board", comps);
     const shell = expandTouch("app-shell", comps);
     expect(board.kind).toBe("slug");
     expect(shell.kind).toBe("slug");
-    // STRING equality says disjoint…
+    // STRING equality said disjoint before the ruling and says it still…
     expect(normaliseTouchToken("app-board") === normaliseTouchToken("app-shell")).toBe(false);
-    // …and the registry says they share C-11, whose paths are real.
-    expect(board.componentIds.filter((id) => shell.componentIds.includes(id))).toEqual(["C-11"]);
-    expect(board.paths).toContain("app/src/styles");
-    expect(shell.paths).toContain("app/src/styles");
+    // …and now the EXPANSION agrees, which is the whole point of T-163.
+    expect(board.componentIds.filter((id) => shell.componentIds.includes(id))).toEqual([]);
+    expect(board.componentIds).not.toContain("C-11");
+    expect(shell.componentIds).not.toContain("C-11");
+    // POSITIVE CONTROL: both slugs still expand to real components, so
+    // the empty intersection above is a DISJOINTNESS and not two
+    // expansions that found nothing.
+    expect(board.componentIds.length).toBeGreaterThan(1);
+    expect(shell.componentIds.length).toBeGreaterThan(1);
+    // AND THE ROUTE THE RULING LEFT OPEN IS ASSERTED HERE rather than
+    // described: C-11 is still in the registry with its paths intact, and
+    // a bare PATH token still fences that territory exactly.
+    const c11 = comps.find((c) => c.id === "C-11");
+    expect(c11?.touchSlugs).toEqual([]);
+    expect(c11?.paths).toContain("app/src/styles/**");
+    const byPath = expandTouch("app/src/styles", comps);
+    expect(byPath.kind).toBe("path");
+    expect(byPath.paths).toEqual(["app/src/styles"]);
   });
 
   it("a token naming no slug is a literal path and expands to itself", () => {
@@ -976,19 +1002,46 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
   });
 
   it("the clash names both faces AND the component, which is the coarse-fence tell", () => {
-    const comps = liveBoard().components ?? [];
+    // RE-DERIVED AT T-163. This body ran on the LIVE registry until
+    // 2026-08-30, driven by `app-board` against `app-shell` through
+    // C-11; @human's ruling took C-11's `touch_slugs:` to `[]` and no
+    // two slugs on this board reserve one component any more, so the
+    // live pair has no clash left to name. THE PROPERTY IS THE ONE
+    // T-111-s1 exists for and it is NOT weakened — it moves onto a
+    // synthetic registry that still has the shape, and the live half is
+    // asserted below as the NEGATIVE it has become.
+    const synthetic =
+      withRoadmap([
+        [path("T-901"), task("T-901", "F-02", 1)],
+        component("C-70", ["alpha", "beta"], ["app/src/shared/**"]),
+      ]).components ?? [];
     const clashes = fenceClashes(
-      { taskId: "T-111", touches: ["app-board"] },
-      lane("T-033", "task/T-033-zero-drift", ["app-shell"]),
-      comps,
+      { taskId: "T-111", touches: ["alpha"] },
+      lane("T-033", "task/T-033-zero-drift", ["beta"]),
+      synthetic,
     );
     expect(clashes.length).toBeGreaterThan(0);
     const first = clashes[0];
-    expect(first?.token).toBe("app-board");
-    expect(first?.laneToken).toBe("app-shell");
+    expect(first?.token).toBe("alpha");
+    expect(first?.laneToken).toBe("beta");
     expect(first?.laneTaskId).toBe("T-033");
-    expect(first?.viaComponents).toContain("C-11");
-    expect(first?.sharedPaths).toContain("app/src/styles");
+    expect(first?.viaComponents).toContain("C-70");
+    expect(first?.sharedPaths).toContain("app/src/shared");
+    // POSITIVE CONTROL ON THE SYNTHETIC: the two tokens really are
+    // different strings reserving one component, which is the case a
+    // string compare cannot see.
+    expect(normaliseTouchToken("alpha") === normaliseTouchToken("beta")).toBe(false);
+
+    // AND THE LIVE HALF, WHICH IS NOW T-163's OWN RESULT: the pair that
+    // used to drive this body comes back with nothing.
+    const comps = liveBoard().components ?? [];
+    expect(
+      fenceClashes(
+        { taskId: "T-111", touches: ["app-board"] },
+        lane("T-033", "task/T-033-zero-drift", ["app-shell"]),
+        comps,
+      ),
+    ).toEqual([]);
   });
 
   it("the shared ground is the NARROWER domain, and it is the SAME in both orders", () => {
@@ -1054,15 +1107,33 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     expect(forward.componentIds).toEqual(backward.componentIds);
     expect(forward.componentIds).toEqual([...forward.componentIds].sort());
     // The same for the clash record, which carries its own second sort.
+    // RE-DERIVED AT T-163: this half ran `app-board` against `app-shell`
+    // on the LIVE registry, and after @human's ruling took C-11's
+    // `touch_slugs:` to `[]` that pair returns no clash at all — so the
+    // second sort had nothing left to sort and its own positive control
+    // (`length > 1`) had lost its subject. The registry moves to a
+    // synthetic one carrying the shape; the expansion half above stays
+    // LIVE, because four components still hold `app-board` and that is
+    // what makes the reversal observable.
+    const clashRegistry =
+      withRoadmap([
+        [path("T-901"), task("T-901", "F-02", 1)],
+        component("C-70", ["alpha", "beta"], ["app/src/shared/**"]),
+        component("C-71", ["alpha", "beta"], ["app/src/shared/**"]),
+      ]).components ?? [];
     const clashOf = (cs: typeof comps): readonly string[] =>
       fenceClashes(
-        { taskId: "T-111", touches: ["app-board"] },
-        lane("T-033", "task/T-033-zero-drift", ["app-shell"]),
+        { taskId: "T-111", touches: ["alpha"] },
+        lane("T-033", "task/T-033-zero-drift", ["beta"]),
         cs,
       )[0]?.viaComponents ?? [];
-    expect(clashOf(reversed)).toEqual(clashOf(comps));
-    expect(clashOf(comps)).toEqual([...clashOf(comps)].sort());
-    expect(clashOf(comps).length).toBeGreaterThan(1);
+    const clashReversed = [...clashRegistry].reverse();
+    // POSITIVE CONTROL, the same one the expansion half takes: the
+    // reversed registry really does present these records the other way.
+    expect(clashRegistry.map((c) => c.id)).not.toEqual(clashReversed.map((c) => c.id));
+    expect(clashOf(clashReversed)).toEqual(clashOf(clashRegistry));
+    expect(clashOf(clashRegistry)).toEqual([...clashOf(clashRegistry)].sort());
+    expect(clashOf(clashRegistry).length).toBeGreaterThan(1);
   });
 
   it("T-111's OWN FENCE AND T-134's ARE DISJOINT, derived rather than asserted", () => {
