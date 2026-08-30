@@ -302,7 +302,11 @@ above the `## Implementation notes` heading.
 
 Run with the RANGE RULE's own command, with the conflict resolved to this
 lane's side (`git merge-tree --write-tree -X ours HEAD <main tip>`, exit
-0, tree `8e76e51`) so the path list is derivable at all:
+0) so the path list is derivable at all. **MAIN MOVED TWICE UNDER THIS
+LANE, so both endpoints are ref-bound and the INVARIANT is the path
+count**: 10 paths, measured at main `03f4fef` (tree `8e76e51`) and again
+at main `bd3ad6e`, with the conflict reproducing at both. Re-derive at
+your own ref: 
 
     node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
 
