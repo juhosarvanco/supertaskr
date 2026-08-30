@@ -18,6 +18,7 @@ import {
   failureAction,
   failureDetail,
   failureHeadline,
+  inputHint,
   listOf,
   MAX_CHIP_PATHS,
   mergeRehydrated,
@@ -723,6 +724,40 @@ describe("the seven-segment strip maps the derivation's 0-8 scale", () => {
      model).toBe(false)`: that would pin a dead producer rather than the
      ruling, and kill no mutant the two pins above do not already kill
      (POISON DRILL, shape SIX). */
+});
+
+describe("inputHint — three states, and thinking is not a resting one (T-171)", () => {
+  it("says the planner is thinking ONLY while a turn is in flight", () => {
+    expect(inputHint(true, false)).toBe("planner is thinking… · ⌘. to stop");
+    // …and the flight reading wins over completion: a turn back in flight
+    // over a finished plan is the user talking again, which is a live
+    // conversation and not an ending.
+    expect(inputHint(true, true)).toBe("planner is thinking… · ⌘. to stop");
+  });
+
+  it("SAYS THE INTERVIEW IS COMPLETE, and how to carry on anyway", () => {
+    // The state @human's walk could never reach: nothing in flight, a
+    // plan on disk. The slot used to advertise "⏎ send" here as though
+    // nothing had happened — an interview with no ending.
+    const hint = inputHint(false, true);
+    expect(hint).toContain("interview complete");
+    // `completionOf` is not a latch, so the ending must not read as a
+    // closed door: the slot still says what ⏎ does.
+    expect(hint).toContain(String.fromCharCode(0x23ce) + " send");
+  });
+
+  /* THE THIRD ARM'S OWN BODY IS DELIBERATELY ABSENT — `inputHint(false,
+     false)` returns the design's plain send hint, and an equality on it
+     here is POISON SHAPE SIX: measured, not assumed. Every mutant it
+     kills is already killed by `interview-chat-dom.test.tsx`'s "carries
+     the design's placeholder verbatim, and the send hint", which asserts
+     the same string through the REAL component in the same state — the
+     drill's M8 (`if (!complete)`) killed the two together and no mutant
+     was found that kills only this one. The rule's answer to that is to
+     name it rather than keep it: a body that kills no unique mutant costs
+     a reader's attention and buys nothing. The pre-T-171 arm was already
+     pinned; what needed pinning is the two arms this task ADDED, and both
+     are above. */
 });
 
 describe("stageOf degrades instead of taking the conversation down", () => {

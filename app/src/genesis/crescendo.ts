@@ -118,6 +118,111 @@ export function showsBoard(docs: DocsModelState): boolean {
   }
 }
 
+// ---- is a turn actually in flight? --------------------------------------
+
+/**
+ * WHY THE SCREEN BELIEVES A TURN IS OR IS NOT RUNNING (T-171).
+ *
+ * Named for the same reason `CompletionBlocker` is named: a reading that
+ * says only `true`/`false` is testable as an absence, and the whole defect
+ * this type exists for is a `true` that nobody could interrogate.
+ */
+export type FlightReading =
+  /** A turn the runner OPENED has not settled. The strongest evidence
+   * there is, and the only one that earns "planner is thinking…". */
+  | { inFlight: true; because: "running" }
+  /** This side issued a command and no answer has come back. A turn is in
+   * flight as far as anything here can know. */
+  | { inFlight: true; because: "latched" }
+  /** A start or send was ACCEPTED for a turn whose `started` event has not
+   * arrived yet — the gap between the command's answer and the first
+   * event, which is real and is milliseconds wide. */
+  | { inFlight: true; because: "unlanded" }
+  /** The store claims flight and nothing has landed that could contradict
+   * it: the mount-time status pull over a session this webview has seen
+   * no events for. */
+  | { inFlight: true; because: "claimed" }
+  /** The store claims flight and the turn evidence CONTRADICTS it — the
+   * turn the claim is about has landed and settled. This is the state the
+   * screen used to render as "planner is thinking…", indefinitely. */
+  | { inFlight: false; because: "stranded" }
+  /** Nothing claims flight and nothing is running. */
+  | { inFlight: false; because: "idle" };
+
+/**
+ * IS A TURN IN FLIGHT — from the turn's own status, with the flags as
+ * CLAIMS that turn evidence is allowed to outlive (T-171).
+ *
+ * THE DEFECT THIS REPLACES, stated exactly, because the shape of the fix
+ * only makes sense against it. `interviewBusy` was
+ * `ui.busy || state.sending || state.phase === "running"` — three flags,
+ * not one of which is a fact about a turn, and every one of which can
+ * survive the turn it describes: the store's `phase` returns to `idle`
+ * only on a `completed`/`failed` event, and `applyGenesisStatus` re-arms
+ * it from a status pull with no seq guard at all. That boolean was the
+ * SINGLE source for the footer hint, for every `disabled` on the screen,
+ * and for `completionOf`'s `inFlight` — so when it stranded, the footer
+ * claimed a turn nobody was running, the answer box refused input, and a
+ * finished genesis could not be celebrated, all from one flag. @human's
+ * 2026-08-30 walk ended in exactly that state: ten turns banked, the
+ * board on disk, and *"planner is thinking… · ⌘. to stop"* with a
+ * disabled button, indefinitely (T-171's card).
+ *
+ * THE RULE IS THE ONE `rehydrate` ALREADY STATES ONE LAYER OVER — "a
+ * rehydrated planner turn is `completed`, never `running`… giving it a
+ * live status would put a pulse dot on a turn nothing is generating". A
+ * flag is a claim; the turn's `status` is what the runner actually
+ * measured. Where they disagree, the measurement wins.
+ *
+ * WHY THE CLAIMS ARE NOT SIMPLY DROPPED — each of the three `true` cases
+ * below covers a window where a turn genuinely is in flight and no turn
+ * evidence exists yet, and dropping it would flicker the footer to
+ * "⏎ send" and re-enable the answer box for a frame after every single
+ * answer. `latched` covers the command's own round trip; `unlanded`
+ * covers the gap between an accepted answer and its `started` event (the
+ * runner spawns the turn on a THREAD, so that event races the command's
+ * return); `claimed` covers a webview that arrived after the turn did,
+ * which is the mount-time status pull's whole purpose.
+ *
+ * WHAT IT CANNOT DO, said rather than left to be discovered: a command
+ * that never answers leaves `latched` true forever, and this function
+ * will keep saying a turn is in flight — correctly, because nothing here
+ * can know otherwise. That is a runner-side liveness question and it is
+ * outside this fence (`app-agent`); it is routed rather than guessed at.
+ *
+ * Pure: no clock, no store read, no IO. Every input is handed in.
+ */
+export function flightOf(
+  turns: readonly GenesisTurn[],
+  /** A start or send is latched from THIS side (`InterviewUiState.busy`). */
+  latched: boolean,
+  /** The turn number of the last start/send this side had ACCEPTED, or
+   * null when none has been. */
+  awaiting: number | null,
+  /** The store's own claim (`isTurnInFlight`): `sending` or `phase`. */
+  claimed: boolean,
+): FlightReading {
+  for (const turn of turns) {
+    if (turn.status === "running") return { inFlight: true, because: "running" };
+  }
+  if (latched) return { inFlight: true, because: "latched" };
+  if (awaiting !== null) {
+    const landed = turns.find((turn) => turn.turn === awaiting);
+    // Accepted, and its first event has not arrived. `landed` being
+    // present and settled falls THROUGH — that is the whole point: an
+    // accepted turn that has since completed is not a reason to believe a
+    // claim about it.
+    if (landed === undefined) return { inFlight: true, because: "unlanded" };
+  }
+  if (claimed) {
+    // An empty turn list contradicts nothing: there is no measurement to
+    // set against the claim, so the claim stands.
+    if (turns.length === 0) return { inFlight: true, because: "claimed" };
+    return { inFlight: false, because: "stranded" };
+  }
+  return { inFlight: false, because: "idle" };
+}
+
 // ---- the completion signal ---------------------------------------------
 
 /** Why the completion state is NOT rendering. Rendered nowhere and
@@ -132,7 +237,12 @@ export type CompletionBlocker =
    * the failure block is on screen with its own way forward. */
   | "lastTurnUnsettled"
   /** No parseable board on disk (no tasks, or all parse-failing). */
-  | "noBoard";
+  | "noBoard"
+  /** The docs tree could not be read at all — `completionSafely`'s
+   * degradation, kept distinguishable from `noBoard` because "there is no
+   * plan" and "we cannot see whether there is a plan" are different
+   * situations and only one of them is about the project. */
+  | "unreadable";
 
 export type CompletionReading =
   | { complete: true; turns: number }
@@ -171,6 +281,36 @@ export function completionOf(
   }
   if (!boardReadiness(docs).showBoard) return { complete: false, blocker: "noBoard" };
   return { complete: true, turns: turns.length };
+}
+
+/**
+ * `completionOf`, and it CANNOT TAKE THE CONVERSATION DOWN (T-171).
+ *
+ * The exact sibling of `showsBoard` above, and it exists for the exact
+ * reason `stageOf` exists: the CHAT reads this, and the chat renders
+ * OUTSIDE T-037's error boundary — the boundary wraps the right half's
+ * contents, not the left half. `completionOf` reaches `boardReadiness`,
+ * which walks `docs.effective`, and a docs tree torn badly enough to
+ * throw on a read (T-037's probe builds exactly that) would otherwise
+ * take the whole React tree down and leave the user a blank window with
+ * their interview in it.
+ *
+ * An unreadable tree degrades to NOT COMPLETE, deliberately and in the
+ * same direction `showsBoard` degrades: a tree we cannot read is not a
+ * tree we can claim has a finished plan on it. The blocker says which,
+ * so the honest state is distinguishable from `noBoard` rather than
+ * collapsing into it.
+ */
+export function completionSafely(
+  docs: DocsModelState,
+  turns: readonly GenesisTurn[],
+  inFlight: boolean,
+): CompletionReading {
+  try {
+    return completionOf(docs, turns, inFlight);
+  } catch {
+    return { complete: false, blocker: "unreadable" };
+  }
 }
 
 // ---- the whole right-half decision --------------------------------------
