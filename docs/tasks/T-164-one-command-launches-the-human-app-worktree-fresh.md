@@ -5,11 +5,11 @@ feature: F-02
 milestone: 4
 priority: 8
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [bin]
 suggested_by: "@human (2026-08-30): file the launcher script card — a one-command launcher for the separate app worktree"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

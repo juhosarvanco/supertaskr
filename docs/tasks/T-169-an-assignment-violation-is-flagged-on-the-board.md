@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 4
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [lib-parser, app-board]
 suggested_by: "@human's D5 ruling (2026-08-30): of course the models the human assigns to different tasks do those tasks as assigned — recorded in rooms/cockpit-or-mirror.md"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
