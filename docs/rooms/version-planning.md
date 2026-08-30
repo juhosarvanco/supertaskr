@@ -51,3 +51,16 @@ Until that sitting, the standing rule holds and the in-flight work
 
 RESOLUTION: none yet — the partition above is a DRAFT awaiting
 @human's markup at a sitting of their choosing.
+
+ADDENDUM (2026-08-30, @human's idea, reviewed and adopted): **THE
+VERSION TABLE** — a selector surface in nputer where charter entries
+and feature-shaped cards are dragged between version columns. Reviewed
+GOOD with one improvement: versions ARE milestones (card frontmatter
+since birth), so the surface needs no new storage — a drag is a
+PROPOSAL committed as milestone stamps (the Q2 propose-only pen; the
+Q4 stampable-field ruling), and each planning sitting lands as one
+record listing its moves (the Q8 audit rule applied to planning).
+Charter entry 22; builds under this room's own standing rule, at a
+version sitting, like everything else on that page. The draft
+partition markup @human owes could be its first customer — until the
+surface exists, the markup happens in prose or widgets.
