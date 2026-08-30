@@ -7,7 +7,7 @@ priority: 19
 size: M
 status: planned
 blocked_by: [T-033]
-touches: [crate-index, app-shell]
+touches: [crate-index, app-shell, app-map]
 builder:
 verifier:
 built_by:
@@ -42,6 +42,30 @@ Not live today — all eleven component files were checked mechanically
 and the two engines agree on 252 fact lines byte-for-byte. The
 divergence is latent, which is precisely why a pin over the LIVE
 registry would never catch it, and why T-014-s6 ranks above T-014-s2.
+
+FENCE CORRECTED 2026-08-30 (T-160-s4, the card this defect was filed
+on): `touches:` gained `app-map`. The criterion below that orders ONE
+assertion into `app/test/architecture-dogfood.test.ts` is a WRITE
+instruction, and that file is listed by name in
+`docs/architecture/components/C-12-map-pane.md`'s own `paths:` — routed
+out of C-05's test umbrella at T-149 — so `app-map` reserves it and the
+filed fence could reach neither it nor any repair of it.
+**WHICH SIDE WAS WRONG WAS DERIVED FROM THIS CARD'S OWN INTENT RATHER
+THAN CHOSEN**, because `method/tasks/TASK-FORMAT.md` offers two repairs
+and they are not interchangeable here. This card's title is *one pin
+across both engines* and that assertion IS the pin; its Verification
+line already owes `npx vitest run` from app/, which nothing else on the
+card would owe; and the criterion immediately after it exists only to
+price that assertion's built binary and its loud skip. So the criterion
+is the card and the fence was the omission. The other repair — rewriting
+the criterion as a ROUTE — would have discharged T-014-s2 back into a
+suggestion, and T-014-s2 is one of the two suggestions this card ABSORBS
+in its first line.
+`app-shell` is KEPT rather than traded for `app-map`: that assertion
+spawns a child process, and `app/test/node-builtins.d.ts` — the shim the
+app's second tsc PROGRAM needs for a `node:` import, the app shipping no
+`@types/node` (docs/ARCHITECTURE.md, Interfaces) — is `app-shell`'s and
+not the map pane's.
 
 ## Acceptance criteria
 - `unquote` SHALL REFUSE rather than guess: if the scalar was quoted
