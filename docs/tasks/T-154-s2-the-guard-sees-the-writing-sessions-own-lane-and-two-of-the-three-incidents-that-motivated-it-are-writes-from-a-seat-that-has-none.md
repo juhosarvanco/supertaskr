@@ -83,5 +83,38 @@ deciding it.
 Filed rather than built: T-154's fence reached `.claude/` and
 `tools/e2e`, so the code was reachable and the RULING was not.
 
+## Implementation notes
+<!-- executor appends before finishing -->
+
+### Understanding, confirmed before touching anything
+
+I am extending `.claude/hooks/lane-fence.mjs` so that the seat with NO
+lane is seen: after `decide` settles that the writing checkout is not on
+a `task/T-NNN-…` branch — the arm that today allows unconditionally —
+the hook learns EVERY LIVE LANE'S fence and refuses a write to a
+repository-relative path some live lane's manifest reserves, with the
+ruling's carve-outs applied as stated criteria and never as the hook's
+judgement: `docs/tasks/` (taken from each manifest's own
+`alwaysWritable`, which is the parser's `UNFENCEABLE_PATHS`), a card's
+own file (each manifest's `excluded`), and the integration seat's
+standing writes, `docs/STATE.md` and `docs/checkpoints`. The lane arm
+is left BYTE-IDENTICAL — a checkout on a task branch keeps exactly its
+current behaviour, which is the card's own condition — and v1's
+positive control is preserved in both directions: a manifest is only
+ever consulted for a checkout whose own HEAD is a lane branch, so a
+stray manifest still locks nobody out, and every refusal in the new arm
+rests on a POSITIVE, readable reservation. The learning is a
+zero-dependency walk of git's own worktree administration
+(`<common>/worktrees/*/HEAD` + `gitdir`) rather than a `git worktree
+list` subprocess, and I measure both rather than asserting either,
+because the cost question is this card's to answer honestly and a guard
+too slow to keep on is the gate nobody runs. My fence is
+`[.claude, tools/e2e, docs/CONVENTIONS.md]`; `method/lane-protocol.md`
+rule 5's own sentence about a lane-less seat is OUTSIDE it and is
+routed rather than edited, exactly as T-154 routed its rule-5 text.
+`docs/tasks/` is writable for these notes and the suggestions I file. I
+do not stamp `done`: `review: independent`, so this lane stops at
+`verifying`.
+
 Standing triage 2026-08-30 (architect seat): PARKED — NOT RULED. docs/STATE.md states in as many words that "`T-154-s2` still needs a ruling", and that ruling is @human's; this card questions whether a guard should see the writing session's own lane, which is a policy call about what the method permits rather than a defect with a derivable answer. Two of the three incidents that motivated the guard are writes from a seat that HAS no lane, so the card is arguing the guard's premise, not its implementation — exactly the class a triage seat may route but not settle.
 RESURFACES: @human rules the question STATE has queued. IF the ruling says a lane-less seat's writes are in scope THEN this promotes as a guard-class card and dispatches `review: independent` (TASK-FORMAT: the builder of a cage is not its inspector); IF it says the guard's current premise stands THEN this is DECLINED with the ruling named as the reason.

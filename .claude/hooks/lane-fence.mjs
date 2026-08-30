@@ -8,6 +8,27 @@
  * the file-writing tools asks this function, and the answer is what the
  * tool call is allowed to do.
  *
+ * ── TWO SEATS, AND THE SECOND ONE ARRIVED WITH A RULING ──────────────
+ * v1 armed on the WRITING session's own branch, so it blocked a lane
+ * reaching OUT and never saw a seat with no lane reaching IN — which is
+ * the shape of two of the three incidents T-154 cites. @human ruled on
+ * 2026-08-30 that those writes are IN SCOPE (`T-154-s2`), so `decide` now
+ * answers for two seats and the two are NOT the same rule:
+ *
+ *   A LANE answers from its OWN manifest, and every uncertainty is a
+ *   REFUSAL. That half is v1, unchanged to the byte.
+ *   A SEAT WITH NO LANE answers from EVERY LIVE LANE'S manifest, and
+ *   every uncertainty is an ALLOW. A refusal here rests on a POSITIVE,
+ *   readable reservation — never on a file this hook could not read.
+ *
+ * THE ASYMMETRY IS THE DESIGN AND NOT AN INCONSISTENCY. A lane can be
+ * told to stop; the integration seat cannot, because stopping it stops
+ * every dispatch, every merge and every checkpoint at once. So the seat
+ * that may be refused fails closed and the seat that may not fails open,
+ * and v1's load-bearing property survives in a wider form: a manifest is
+ * consulted only for a checkout whose OWN HEAD is a lane branch, so a
+ * stray manifest still locks nobody out of anything.
+ *
  * ── ZERO DEPENDENCIES, AND THAT IS THE WHOLE DESIGN ──────────────────
  * The first draft of this card expanded the fence AT HOOK TIME through
  * `@nputer/parser`, which cannot work: a fresh lane worktree has nothing
@@ -22,6 +43,32 @@
  * ever READS the result. Nothing here imports anything but node builtins:
  * no `node_modules`, no build step, no `lib/parser/dist`, no `git`
  * subprocess. It runs against a checkout that was cut ninety seconds ago.
+ *
+ * THE LANE LIST IS READ THE SAME WAY, AND THAT WAS A COST DECISION WITH
+ * A MEASUREMENT BEHIND IT. `T-154-s2`'s own design note offered two
+ * routes to every live lane's fence — a `git worktree list --porcelain`
+ * subprocess, or walking git's worktree administration by hand — and this
+ * file walks it (`liveLanes`), and the choice was MEASURED rather than
+ * assumed — `Mac.lan`, node v22.22.0, 2026-08-30, against the live
+ * repository (seven worktree entries, FOUR of them lanes), 200 calls per
+ * figure, two runs on a host with those four lanes and a sitting live:
+ *
+ *   the whole walk, every lane's manifest read   0.19 – 0.50 ms
+ *   `git worktree list --porcelain` ALONE       11.06 – 23.66 ms
+ *   `decide` INSIDE a lane, v1 vs this file     0.054 → 0.048 ms
+ *   the runner end to end, integration seat     38.5 → 39.3 ms (MISS)
+ *                                               38.4 → 41.4 ms (refusal)
+ *
+ * SO THE ANSWER TO THE CARD'S COST QUESTION IS: the guard is cheap
+ * enough to keep on, and the design that would not have been is the one
+ * this file did not take. The walk costs a fifth of a millisecond and
+ * the subprocess costs FIFTY TIMES the whole walk; end to end a session
+ * pays 1–3 ms on a ~39 ms hook invocation, because node's own startup
+ * dominates both and always did. A LANE PAYS NOTHING — its arm never
+ * reaches the walk, which is why the two figures for it are the same
+ * number twice. The variance in the second run is the honest half: this
+ * host had four lanes and a sitting on it, and a busy machine moves both
+ * columns together.
  *
  * ── WHAT THIS FILE DELIBERATELY DOES NOT RE-SPELL ────────────────────
  * The fence VOCABULARY — slug expansion, the unfenceable directory, the
@@ -55,23 +102,41 @@
  *    means parsing shell to find a write target, which answers
  *    confidently and wrongly — the failure `fence.ts` refuses one layer
  *    up.
- * 2. A PATH OUTSIDE THE LANE'S OWN CHECKOUT IS ALLOWED. The scratchpad,
- *    `/tmp`, a drill worktree and a SIBLING LANE'S TREE all sit outside,
- *    and the manifest's domains are repository-relative, so there is
- *    nothing to judge them against. Blocking every out-of-tree write
- *    would break the poison drill this project requires.
- * 3. IT PROTECTS THE LANE, NOT THE FENCE. The guard is armed by the
- *    WRITING session's own branch, so a session in the integration
- *    checkout editing a file some other live lane holds is not seen —
- *    which is the shape of two of the three incidents the card cites.
- *    Answering that needs every live lane's manifest, not this one's.
- * 4. IT IS ADVICE TO A COOPERATING HARNESS. A session that can edit
+ * 2. A PATH OUTSIDE THE LANE'S OWN CHECKOUT IS ALLOWED — and so is one
+ *    outside the LANE-LESS seat's own checkout, by the same rule. The
+ *    scratchpad, `/tmp`, a drill worktree and a SIBLING LANE'S TREE all
+ *    sit outside, and a manifest's domains are repository-relative, so
+ *    there is nothing to judge them against. Blocking every out-of-tree
+ *    write would break the poison drill this project requires.
+ *    **AND THE SIBLING-LANE HALF IS DELIBERATE NOW THAT THE LANE LIST IS
+ *    IN HAND**: `liveLanes` knows every lane's worktree path, so mapping
+ *    an absolute write INTO a lane's tree onto that lane's fence would
+ *    be four lines. It is not taken, because the hook has no term that
+ *    separates an architect reaching into a lane from THE LANE'S OWN
+ *    EXECUTOR writing into it from a shell parked elsewhere — a live
+ *    shape, and the one this very card was built in. A guard that
+ *    refuses the executor it exists to serve is worse than the hole.
+ * 3. A DETACHED CHECKOUT IS NOT JUDGED AT ALL. The lane-less arm reads
+ *    the writing checkout's branch, and a detached HEAD names none: the
+ *    poison drill is REQUIRED to be run in a detached scratch worktree
+ *    (docs/CONVENTIONS.md, POISON DRILL) and its whole job is mutating
+ *    the very files a live lane holds, so judging a detached checkout
+ *    would forbid the drill this project proves its guards with. The
+ *    human's app checkout is detached on purpose (T-052) and rides the
+ *    same rule. The seat this arm answers for is the one holding a
+ *    branch that is not a lane — the integration checkout above all.
+ * 4. A LANE WHOSE MANIFEST THIS SEAT CANNOT READ RESERVES NOTHING HERE.
+ *    A live lane with no manifest, or a damaged one, is refused by its
+ *    OWN arm at its own first write, which is where that failure has a
+ *    seat to tell; treating it as reserving the repository would lock
+ *    the integration seat out of the tree over a file it cannot read.
+ * 5. IT IS ADVICE TO A COOPERATING HARNESS. A session that can edit
  *    `.claude/settings.json` can disarm it; the fence forbids exactly
  *    that for every lane whose `touches:` does not carry `.claude/`,
  *    which is the property this file has and not a proof.
  */
 
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 /**
@@ -109,6 +174,50 @@ export const MANIFEST_VERSION = 1;
  * guarded, which is the pre-T-154 state and not a regression.
  */
 export const LANE_BRANCH_RE = /^refs\/heads\/task\/T-(\d+)-.+$/;
+
+/**
+ * The paths a live lane may never veto for a seat that holds no lane.
+ *
+ * THESE ARE @HUMAN'S RULING WRITTEN AS CRITERIA, NOT THE HOOK'S
+ * JUDGEMENT (`T-154-s2`, 2026-08-30). The ruling names three carve-outs
+ * and two of them are already IN THE MANIFEST — `docs/tasks/` arrives as
+ * every manifest's `alwaysWritable` (the parser's `UNFENCEABLE_PATHS`)
+ * and a card's own file as its `excluded` — so this constant holds only
+ * the third: the writes the integration seat makes constantly and
+ * legitimately, which no lane's fence may stop. `docs/tasks/` is where
+ * the dispatch and closing stamps land, so the ruling's fourth item
+ * needs no entry here; a second copy of it would be a second fact.
+ *
+ * THE AUTHORITY IS docs/CONVENTIONS.md's own lane bullet, which
+ * publishes this set in as many words, and `lane-fence.spec.ts` COMPARES
+ * the two rather than trusting this one — the treatment `LANE_BRANCH_RE`
+ * already gets, and for the same reason: this file cannot parse a
+ * document on every keystroke, and a guard whose carve-outs drift from
+ * the page that documents them is a guard nobody can predict.
+ */
+export const INTEGRATION_SEAT_PATHS = Object.freeze(["docs/STATE.md", "docs/checkpoints"]);
+
+/**
+ * git's own on-disk record that a checkout is mid-integration.
+ *
+ * ONE CARVE-OUT THE RULING DOES NOT NAME, DECLARED RATHER THAN SLIPPED
+ * IN. Resolving a conflict is an Edit, and the conflicted paths of a
+ * lane's merge are BY CONSTRUCTION inside that lane's fence — so a
+ * lane-less arm without this criterion refuses the integrator the one
+ * act that consumes lanes, and a guard that forbids merging is a guard
+ * somebody turns off. It is still a criterion and not a judgement: the
+ * question asked is git's, answered by a file git writes and removes
+ * itself, and the merge play and the revert play (method/lane-protocol,
+ * "The revert play") are the two shapes it covers. A verifier should
+ * rule on whether the ruling's list wanted it; it is named on the card.
+ */
+export const INTEGRATION_IN_PROGRESS_MARKERS = Object.freeze([
+  "MERGE_HEAD",
+  "CHERRY_PICK_HEAD",
+  "REVERT_HEAD",
+  "rebase-merge",
+  "rebase-apply",
+]);
 
 /**
  * Where a file-writing tool puts its target path.
@@ -180,48 +289,100 @@ export function findCheckoutRoot(start) {
 }
 
 /**
- * The full symbolic ref this checkout's HEAD names, read off disk.
+ * This checkout's own git directory, resolved through both shapes.
  *
- * NO `git` SUBPROCESS, for the reason at the top of this file: the hook
- * runs on every write and a spawn per keystroke is a tax the guard has to
- * justify. `HEAD` is one small file in both shapes — a `.git` DIRECTORY
- * in an ordinary checkout, and the `gitdir:` pointer a worktree carries.
- *
- * Returns `undefined` for a DETACHED head (the content is a bare object
- * id, not a `ref:` line) and for anything unreadable. Both mean the same
- * thing to the caller: this checkout names no branch, so it is not a lane.
+ * A LANE WORKTREE'S `.git` IS A FILE holding a `gitdir:` pointer, and an
+ * ordinary checkout's is a directory. One function answers for both, and
+ * it is ONE function because three callers below need it — the HEAD read,
+ * the lane list and the mid-integration check — and three copies of a
+ * pointer-following rule are three chances to follow it differently.
  *
  * @param {string} root
- * @returns {string | undefined}
+ * @returns {string | undefined} the git directory, or `undefined` when
+ *   `root` carries no `.git` this reader can follow
  */
-export function readHeadRef(root) {
-  let gitPath = path.join(root, ".git");
+export function gitDirOf(root) {
+  const gitPath = path.join(root, ".git");
   let stat;
   try {
     stat = statSync(gitPath);
   } catch {
     return undefined;
   }
-  if (!stat.isDirectory()) {
-    let pointer;
-    try {
-      pointer = readFileSync(gitPath, "utf8");
-    } catch {
-      return undefined;
-    }
-    const m = /^gitdir:\s*(.+?)\s*$/m.exec(pointer);
-    if (m === null) return undefined;
-    const target = /** @type {string} */ (m[1]);
-    gitPath = path.isAbsolute(target) ? target : path.resolve(root, target);
+  if (stat.isDirectory()) return gitPath;
+  let pointer;
+  try {
+    pointer = readFileSync(gitPath, "utf8");
+  } catch {
+    return undefined;
   }
+  const m = /^gitdir:\s*(.+?)\s*$/m.exec(pointer);
+  if (m === null) return undefined;
+  const target = /** @type {string} */ (m[1]);
+  return path.isAbsolute(target) ? target : path.resolve(root, target);
+}
+
+/**
+ * The COMMON git directory — the one every worktree of a repository
+ * shares, and the only place the whole lane list exists.
+ *
+ * A linked worktree's git directory is `<common>/worktrees/<name>` and
+ * carries a `commondir` file pointing back (`../..` in practice, and
+ * resolved relative to the directory holding it, which is git's own
+ * rule). An ordinary checkout has no such file and IS the common
+ * directory. Nothing here is a guess about layout: both files are git's
+ * documented worktree administration and both are one line long.
+ *
+ * @param {string} gitDir
+ * @returns {string}
+ */
+export function gitCommonDirOf(gitDir) {
+  let raw;
+  try {
+    raw = readFileSync(path.join(gitDir, "commondir"), "utf8").trim();
+  } catch {
+    return gitDir;
+  }
+  if (raw === "") return gitDir;
+  return path.isAbsolute(raw) ? raw : path.resolve(gitDir, raw);
+}
+
+/**
+ * The full symbolic ref a git directory's HEAD names, read off disk.
+ *
+ * NO `git` SUBPROCESS, for the reason at the top of this file: the hook
+ * runs on every write and a spawn per keystroke is a tax the guard has to
+ * justify. `HEAD` is one small file, in a checkout's own git directory
+ * and in every linked worktree's administration alike — which is why the
+ * lane list can read a SIBLING'S branch without entering its tree.
+ *
+ * Returns `undefined` for a DETACHED head (the content is a bare object
+ * id, not a `ref:` line) and for anything unreadable. Both mean the same
+ * thing to the caller: this checkout names no branch, so it is not a lane.
+ *
+ * @param {string} gitDir
+ * @returns {string | undefined}
+ */
+export function headRefIn(gitDir) {
   let head;
   try {
-    head = readFileSync(path.join(gitPath, "HEAD"), "utf8");
+    head = readFileSync(path.join(gitDir, "HEAD"), "utf8");
   } catch {
     return undefined;
   }
   const ref = /^ref:\s*(\S+)\s*$/m.exec(head);
   return ref === null ? undefined : /** @type {string} */ (ref[1]);
+}
+
+/**
+ * The full symbolic ref this CHECKOUT's HEAD names.
+ *
+ * @param {string} root
+ * @returns {string | undefined}
+ */
+export function readHeadRef(root) {
+  const gitDir = gitDirOf(root);
+  return gitDir === undefined ? undefined : headRefIn(gitDir);
 }
 
 /**
@@ -277,6 +438,7 @@ export function within(rel, domain) {
  * @property {string} card
  * @property {string} touchesLine
  * @property {string[]} paths
+ * @property {string[]} excluded
  * @property {string[]} alwaysWritable
  */
 
@@ -323,23 +485,200 @@ export function readManifest(root) {
   }
   /** @param {unknown} v @returns {v is string[]} */
   const isStrings = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
-  const { taskId, branch, card, touchesLine, paths, alwaysWritable } = obj;
+  const { taskId, branch, card, touchesLine, paths, excluded, alwaysWritable } = obj;
   if (
     typeof taskId !== "string" ||
     typeof branch !== "string" ||
     typeof card !== "string" ||
     typeof touchesLine !== "string" ||
     !isStrings(paths) ||
+    !isStrings(excluded) ||
     !isStrings(alwaysWritable)
   ) {
     return {
       problem:
         `the fence manifest at ${MANIFEST_REL_PATH} is missing a field this hook needs ` +
-        "(taskId, branch, card, touchesLine, paths, alwaysWritable)",
+        "(taskId, branch, card, touchesLine, paths, excluded, alwaysWritable)",
     };
   }
-  return { manifest: { version: MANIFEST_VERSION, taskId, branch, card, touchesLine, paths, alwaysWritable } };
+  return {
+    manifest: {
+      version: MANIFEST_VERSION,
+      taskId,
+      branch,
+      card,
+      touchesLine,
+      paths,
+      excluded,
+      alwaysWritable,
+    },
+  };
 }
+
+/**
+ * EVERY LIVE LANE of the repository `root` belongs to, with the fence
+ * each one holds — the question v1 could not ask.
+ *
+ * READ OFF GIT'S OWN WORKTREE ADMINISTRATION, NOT OFF A SUBPROCESS, for
+ * the cost measured in this file's header. Every linked worktree has a
+ * directory under `<common>/worktrees/`, carrying that worktree's own
+ * `HEAD` and a `gitdir` file naming its `.git`; the MAIN worktree's HEAD
+ * is the common directory's own. That is the same pair
+ * `git worktree list --porcelain` prints, and the branch is what decides
+ * lane-ness here exactly as it does for the writing checkout — a
+ * DETACHED entry is not a lane (docs/CONVENTIONS.md's lane bullet, which
+ * measured six entries and one lane).
+ *
+ * A LANE IS SKIPPED WHEN ITS MANIFEST CANNOT BE READ, and that is limit 4
+ * rather than an oversight: a removed lane leaves its administration
+ * behind until somebody prunes it, and a lane dispatched without its
+ * fence step has no manifest at all — treating either as reserving
+ * anything would let a directory nobody is working in lock the
+ * integration seat out of the repository. The refusal for THAT lane
+ * belongs to that lane's own arm, at its own first write.
+ *
+ * NO SELF-SKIP, and it is not missing: `decide` reaches this only from a
+ * checkout that is NOT on a lane branch, so the caller can never be in
+ * the list it gets back. Called from a lane — as a spec may — it lists
+ * that lane too, because "every live lane" is what it says.
+ *
+ * @param {string} root
+ * @returns {{ branch: string, worktree: string, manifest: Manifest }[]}
+ */
+export function liveLanes(root) {
+  const gitDir = gitDirOf(root);
+  if (gitDir === undefined) return [];
+  const common = gitCommonDirOf(gitDir);
+
+  /** @type {{ adminDir: string, worktree: string }[]} */
+  const candidates = [];
+  // The main worktree: git keeps its administration AT the common
+  // directory, so the checkout holding it is the directory above.
+  if (path.basename(common) === ".git") {
+    candidates.push({ adminDir: common, worktree: path.dirname(common) });
+  }
+  /** @type {import("node:fs").Dirent[]} */
+  let entries = [];
+  try {
+    entries = readdirSync(path.join(common, "worktrees"), { withFileTypes: true });
+  } catch {
+    /* a repository with no linked worktree has no such directory */
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const adminDir = path.join(common, "worktrees", entry.name);
+    let pointer;
+    try {
+      pointer = readFileSync(path.join(adminDir, "gitdir"), "utf8").trim();
+    } catch {
+      continue;
+    }
+    if (pointer === "") continue;
+    // `gitdir` names the worktree's own `.git`, so the tree is its parent.
+    candidates.push({ adminDir, worktree: path.dirname(pointer) });
+  }
+
+  /** @type {{ branch: string, worktree: string, manifest: Manifest }[]} */
+  const lanes = [];
+  for (const candidate of candidates) {
+    const branch = headRefIn(candidate.adminDir);
+    if (branch === undefined || !LANE_BRANCH_RE.test(branch)) continue;
+    const read = readManifest(candidate.worktree);
+    if ("problem" in read) continue;
+    lanes.push({ branch, worktree: candidate.worktree, manifest: read.manifest });
+  }
+  return lanes;
+}
+
+/**
+ * Is this checkout in the middle of an integration git itself records?
+ *
+ * @param {string} root
+ * @returns {string | undefined} the marker git left, or `undefined`
+ */
+export function integrationInProgress(root) {
+  const gitDir = gitDirOf(root);
+  if (gitDir === undefined) return undefined;
+  for (const marker of INTEGRATION_IN_PROGRESS_MARKERS) {
+    try {
+      statSync(path.join(gitDir, marker));
+      return marker;
+    } catch {
+      /* not this one */
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Why a path a lane reserves is nonetheless the lane-less seat's to
+ * write — or `undefined`, which is the refusal.
+ *
+ * THE ORDER IS THE RULING'S AND THE FIRST TWO COME OUT OF THE MANIFEST,
+ * so the two carve-outs the method already computes are READ rather than
+ * re-spelled here: `alwaysWritable` is the parser's `UNFENCEABLE_PATHS`
+ * and `excluded` is the card's own file, both stamped at dispatch by the
+ * one implementation. Only the third is this file's constant, and even
+ * that one is compared against the document that publishes it.
+ *
+ * NOT USED BY THE LANE ARM, and that is deliberate rather than an
+ * oversight: these are the carve-outs of a seat holding NO fence, and a
+ * lane writing `docs/STATE.md` is still outside its own fence and still
+ * refused — the behaviour v1 pins.
+ *
+ * THE OWN-FILE TEST COMES FIRST THOUGH `docs/tasks` WOULD CATCH IT
+ * ANYWAY, for two reasons that agree. Every card lives under the
+ * unfenceable directory, so ordered the other way this branch would
+ * answer for nothing that reaches it — an arm no write can select is an
+ * arm no mutation can kill, and the ruling names it as a criterion in
+ * its own right. This way each branch owns a distinct write: the card of
+ * the lane that holds the domain, any OTHER path under `docs/tasks`, and
+ * this seat's standing writes.
+ *
+ * @param {string} rel a path relative to the writing checkout's root
+ * @param {Manifest} manifest
+ * @returns {{ domain: string, why: string } | undefined}
+ */
+export function carveOutFor(rel, manifest) {
+  for (const domain of manifest.excluded) {
+    if (within(rel, domain)) {
+      return {
+        domain,
+        why: `it is ${manifest.taskId}'s own card file, which is outside every fence including its own`,
+      };
+    }
+  }
+  for (const domain of manifest.alwaysWritable) {
+    if (within(rel, domain)) {
+      return { domain, why: "no card may fence it and every card's protocol writes there" };
+    }
+  }
+  for (const domain of INTEGRATION_SEAT_PATHS) {
+    if (within(rel, domain)) {
+      return { domain, why: "it is a standing write of the seat that holds no lane" };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The route a blocked LANE-LESS seat takes, quoted in every refusal of
+ * the second kind.
+ *
+ * A DIFFERENT ROUTE FROM `ROUTE`, BECAUSE IT IS A DIFFERENT ERROR. A
+ * lane outside its fence has found a dispatch error; a seat with no lane
+ * inside somebody else's fence has found a live lane, which is an
+ * ordinary, correct state of the board and needs no triage at all — it
+ * needs the write to go where the work is.
+ */
+export const ROUTE_LANE_LESS =
+  "A live lane's fence is not overridden by the seat that dispatched it " +
+  "(method/lane-protocol.md rule 5, and @human's ruling of 2026-08-30 on T-154-s2). Either the " +
+  "write belongs to that lane — hand it to the session holding it, or file it as a " +
+  "`status: suggested` card under docs/tasks/ with `suggested_by:` set — or it waits for the " +
+  "merge, after which the worktree is removed and the fence is gone with it. Editing here while " +
+  "the lane is live is the incident this guard exists for: the lane's own diff and this write " +
+  "are two answers to one file, and the merge is where they collide.";
 
 /** The route a blocked session takes, quoted in every fence refusal. */
 export const ROUTE =
@@ -357,21 +696,143 @@ export const ROUTE =
  */
 
 /**
+ * The path a file-writing tool was called with, first spelling present.
+ *
+ * ONE EXTRACTION FOR BOTH SEATS. It was inline in the lane arm while
+ * there was one seat; a second copy in the lane-less arm would be two
+ * chances to disagree about which field the harness sends — and the two
+ * seats answer a request with NO readable path in OPPOSITE directions,
+ * so the disagreement would be invisible in every test that only drives
+ * one of them.
+ *
+ * @param {Record<string, unknown> | undefined} toolInput
+ * @returns {string | undefined}
+ */
+export function targetOf(toolInput) {
+  for (const field of WRITE_TOOL_PATH_FIELDS) {
+    const v = toolInput?.[field];
+    if (typeof v === "string" && v !== "") return v;
+  }
+  return undefined;
+}
+
+/**
+ * The lane-less seat's verdict: does any LIVE lane hold this path?
+ *
+ * EVERY REFUSAL HERE RESTS ON SOMETHING READ, AND EVERY UNCERTAINTY IS
+ * AN ALLOW — the inverse of the lane arm, for the reason in this file's
+ * header. A detached checkout is not judged at all (limit 3), a path
+ * outside this checkout is not judged (limit 2), a lane whose manifest
+ * cannot be read reserves nothing (limit 4), and a checkout git itself
+ * records as mid-merge is free (`INTEGRATION_IN_PROGRESS_MARKERS`).
+ *
+ * @param {Request} request
+ * @param {string} root
+ * @param {string | undefined} headRef
+ * @returns {Decision}
+ */
+function laneLessVerdict(request, root, headRef) {
+  if (headRef === undefined) {
+    return allow(
+      "not-a-lane",
+      `${root} names no branch, so it is a detached checkout — a drill, a scratch tree or the ` +
+        "human's app — and limit 3 leaves it unjudged",
+    );
+  }
+  const seat = `${root} is on ${headRef}, which is not a ${"task/T-NNN-<slug>"} lane branch`;
+
+  const target = targetOf(request.toolInput);
+  if (target === undefined) {
+    return allow(
+      "no-path-to-judge",
+      `${seat}, and ${request.toolName ?? "this tool"} was called with no path this hook can read ` +
+        `(it looks for ${WRITE_TOOL_PATH_FIELDS.join(", ")}). Outside a lane that is an allow and ` +
+        "inside one it is a refusal: the seat that may be stopped fails closed, and the seat that " +
+        "may not fails open.",
+    );
+  }
+  const abs = path.resolve(root, target);
+  const rel = path.relative(root, abs).split(path.sep).join("/");
+  if (rel === "" || rel.startsWith("../")) {
+    return allow("outside-the-checkout", `${abs} is outside ${root} (limit 2 in this file's header)`);
+  }
+
+  /** @type {{ lane: { branch: string, worktree: string, manifest: Manifest }, domain: string, carve: { domain: string, why: string } } | undefined} */
+  let carved;
+  /** @type {{ branch: string, worktree: string, manifest: Manifest }[]} */
+  let lanes;
+  try {
+    lanes = liveLanes(root);
+  } catch {
+    // The lane list is a read of a live environment and this seat is the
+    // one that may not be stopped: an administration directory this hook
+    // cannot walk is an allow, never a repository-wide refusal.
+    return allow("not-a-lane", `${seat}, and its lane list could not be read`);
+  }
+  for (const lane of lanes) {
+    const domain = lane.manifest.paths.find((d) => within(rel, d));
+    if (domain === undefined) continue;
+    const carve = carveOutFor(rel, lane.manifest);
+    if (carve !== undefined) {
+      carved = { lane, domain, carve };
+      continue;
+    }
+    const merging = integrationInProgress(root);
+    if (merging !== undefined) {
+      return allow(
+        "mid-integration",
+        `${rel} is inside ${lane.manifest.taskId}'s fence (${domain}), and this checkout is ` +
+          `mid-integration — git's own ${merging} is on disk. Resolving a lane's merge is an ` +
+          "Edit into that lane's own fence by construction, so the act that CONSUMES a fence is " +
+          "not refused by it.",
+      );
+    }
+    return block(
+      "held-by-a-live-lane",
+      `LANE FENCE: ${rel} is inside ${lane.manifest.taskId}'s fence, and this seat holds no lane.\n` +
+        `  ${seat}\n` +
+        `  the lane: ${lane.manifest.taskId} on ${lane.branch}\n` +
+        `  its worktree: ${lane.worktree}\n` +
+        `  its fence (${lane.manifest.touchesLine}) expands to:\n` +
+        lane.manifest.paths.map((p) => `    ${p}\n`).join("") +
+        `  the domain that holds this path: ${domain}\n` +
+        `  the path refused: ${rel}\n` +
+        `  carve-outs checked and none matched: ${lane.manifest.alwaysWritable.join(", ")} ` +
+        `(unfenceable), ${lane.manifest.excluded.length > 0 ? lane.manifest.excluded.join(", ") : "the card's own file"} ` +
+        `(outside every fence), ${INTEGRATION_SEAT_PATHS.join(", ")} (this seat's standing writes)\n` +
+        `  ${ROUTE_LANE_LESS}`,
+    );
+  }
+  if (carved !== undefined) {
+    return allow(
+      "protocol-carve-out",
+      `${rel} is inside ${carved.lane.manifest.taskId}'s fence (${carved.domain}) and is written ` +
+        `anyway: ${carved.carve.domain} is carved out because ${carved.carve.why} (T-154-s2, ` +
+        "@human's ruling of 2026-08-30)",
+    );
+  }
+  return allow("not-a-lane", `${seat}, and no live lane's manifest reserves ${rel}`);
+}
+
+/**
  * The whole decision.
  *
  * READ THE ORDER, IT IS THE MECHANISM. Lane-ness is settled FIRST and
- * from the BRANCH alone, so every non-lane context — the integration
- * checkout, a detached drill worktree, the human's own app checkout,
- * a directory that is not a repository at all — is answered before a
- * manifest is looked for. That is the positive control the card asks
- * for: an allow here is a decision this function made, not a mechanism
- * that failed to arm.
+ * from the BRANCH alone, so which of the two seats is writing is decided
+ * before any manifest is opened — the lane's own below, every live
+ * lane's in `laneLessVerdict`. That is the positive control the card
+ * asks for, and it is why the arms below never had to change when the
+ * second seat arrived: an allow is a decision this function made, not a
+ * mechanism that failed to arm.
  *
- * IT IS ALSO WHY A STRAY MANIFEST CANNOT LOCK ANYONE OUT. A manifest
- * sitting in a non-lane checkout is never consulted, so the worst a
- * misplaced file can do is nothing — and the guard is still tight,
- * because a lane cannot escape by deleting its own manifest (that is the
- * second arm) and cannot rewrite it either (the manifest is outside every
+ * IT IS ALSO WHY A STRAY MANIFEST CANNOT LOCK ANYONE OUT, WHICH SURVIVED
+ * THE WIDENING. A manifest is read for a checkout only when THAT
+ * checkout's own HEAD is on a lane branch — its own below, a sibling's
+ * from that sibling's administration — so a manifest sitting in a
+ * non-lane tree is still consulted by nobody and the worst a misplaced
+ * file can do is nothing. The guard is still tight in the lane, because
+ * a lane cannot escape by deleting its own manifest (that is the second
+ * arm) and cannot rewrite it either (the manifest is outside every
  * fence, so writing to it is the fourth arm).
  *
  * @param {Request} request
@@ -385,10 +846,7 @@ export function decide(request) {
   }
   const headRef = readHeadRef(root);
   if (headRef === undefined || !LANE_BRANCH_RE.test(headRef)) {
-    return allow(
-      "not-a-lane",
-      `${root} is on ${headRef ?? "a detached HEAD"}, which is not a ${"task/T-NNN-<slug>"} lane branch`,
-    );
+    return laneLessVerdict(request, root, headRef);
   }
   const branch = headRef.replace(/^refs\/heads\//, "");
 
@@ -431,15 +889,7 @@ export function decide(request) {
     );
   }
 
-  /** @type {string | undefined} */
-  let target;
-  for (const field of WRITE_TOOL_PATH_FIELDS) {
-    const v = request.toolInput?.[field];
-    if (typeof v === "string" && v !== "") {
-      target = v;
-      break;
-    }
-  }
+  const target = targetOf(request.toolInput);
   if (target === undefined) {
     return block(
       "unreadable-request",
