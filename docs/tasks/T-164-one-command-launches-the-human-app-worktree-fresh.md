@@ -12,7 +12,7 @@ suggested_by: "@human (2026-08-30): file the launcher script card — a one-comm
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: nputer-4e@integration-seat
 review:
 ---
 
