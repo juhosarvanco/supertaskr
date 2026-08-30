@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [app-shell, app-dispatch, app-board]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
