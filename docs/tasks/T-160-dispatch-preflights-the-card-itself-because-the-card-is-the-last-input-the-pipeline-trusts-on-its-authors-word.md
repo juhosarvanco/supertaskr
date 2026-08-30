@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: "@human (2026-08-29): is there a step when a task is started that makes sure the task is doing work we want it to do — that the task and its description is up to date and makes sense?"
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 

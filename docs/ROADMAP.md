@@ -30,9 +30,9 @@ opens with the card id that still holds its story.
   the record), and since the amnesty sitting (2026-08-29) the
   backlog is metabolized — 140 cards dispositioned (73 promoted, 62
   parked, 5 rejected), arrivals queue for T-159's rules. The e2e
-  recipes probe the xargs dialect at run time (T-153-s6) and every
-  seat RESOLVES the integration branch instead of assuming the name
-  exists (T-153-s9) — the first fully green CI run followed.
+  recipes probe the xargs dialect at run time (T-153-s6) and every seat
+  RESOLVES the integration branch rather than assuming it
+  (T-153-s9) — the first fully green run followed.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -64,14 +64,15 @@ opens with the card id that still holds its story.
   The board reads its own lanes off git's files with no subprocess
   (T-110, made real by T-126), derives per-card dispositions with
   REASONS a human can argue with (T-111), and the brief is a written
-  contract (T-089) a program assembles (dispatch-brief.mjs). The
-  named slice — "dispatch without writing the prompt" — deliberately
-  spawns nothing. Since T-154 (2026-08-29) the fence is a PROPERTY at
-  the moment of the write: dispatch stamps an expanded manifest into
-  the lane and a zero-dependency hook blocks what the fence forbids,
-  verified with hostile payloads. Next: T-112 hands you the brief and lane commands
-  from the board (the slice's third clause); it is also the board's
-  most colliding card — derive the flip pairs first. Open rulings:
+  contract (T-089) a program assembles (dispatch-brief.mjs); the
+  named slice deliberately spawns nothing. The fence is a PROPERTY at
+  the write (T-154 — a dispatch-stamped manifest, a zero-dependency
+  hook, hostile-payload verified), and dispatch PREFLIGHTS the card
+  itself (T-160, @human's — five claim classes re-derived at HEAD, a
+  failed preflight refusing the manifest, a live board defect found
+  on its first pass). Next: T-112 hands you the brief and lane
+  commands from the board (the slice's third clause); it is also the
+  board's most colliding card — derive the flip pairs first. Open rulings:
   D3 (may the app write into docs/?) and D5 (`model@session`
   per-adapter, from the cockpit-or-mirror room).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
@@ -103,7 +104,7 @@ opens with the card id that still holds its story.
   the first time, with C-17/C-18 minted and no import severed. The
   file ceiling PRINTS from `index --check` every run (T-140: ~918
   files at this tree's density), an oversize graph tells the map the
-  truth, and the payload's shape rides T-140-s1, @human's.
+  truth (payload shape: T-140-s1, @human's).
 
 ## Milestones
 

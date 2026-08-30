@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **283 behaviours** — 281 extracted sentences + 2 named-not-extracted (listed at the end) — across 27 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **303 behaviours** — 301 extracted sentences + 2 named-not-extracted (listed at the end) — across 28 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -94,6 +94,29 @@ Census: **283 behaviours** — 281 extracted sentences + 2 named-not-extracted (
 - a census claim is NOT inferred from a transcript, because it is inferred and not declared
 - the stamp is anchored at end of line, so a quoted stamp does not inherit a verdict
 - frontmatter is not prose, so its fields are never audited as figures
+
+## card-preflight
+
+- the clean twin PASSES, and the run is proved to have looked at something
+- a planted STALE PATH reds, and the same card without it is green
+- a planted STALE FIGURE reds — the deriver is re-run, not the marker looked for
+- a planted UNCOVERED CRITERION PATH reds, and only when a component owns it
+- a missing path INSIDE the card's own fence is a creation target, not a refusal
+- a DEAD fence entry reds — an entry true at writing that reserves nothing now
+- a DANGLING REF stamp reds, and a ref this checkout holds does not
+- a blocked_by entry with no live card reds, and the parser's own ruling is reported
+- a stated blocking reason about a LIVE LANE is read against the lane list
+- a dated ruling discharges the finding that NAMES its subject, and no other
+- an UNDATED ruling is not a ruling, and a ruling that binds to nothing is reported
+- every run prints which claim classes it checked and which it cannot
+- a card with no acceptance-criteria section SAYS SO rather than reporting a clean class
+- a card the board's schedule does not draw is REFUSED, naming its status
+- the ref arm reads the published stamp form and not every hex-shaped word
+- ownership comes from the slug map, and a path under no component has no owner
+- `--preflight` is a NAMED arm of the brief command and needs its task
+- a discrepancy answers ONE and a preflight that could not run answers THREE
+- a failed preflight GATES the fence write — no manifest for a card whose claims fell
+- a ruling discharges at a token boundary — suffixes and .map twins stay refused
 
 ## crescendo
 
