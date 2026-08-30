@@ -518,3 +518,370 @@ was re-measured at the tip.
   card's fence but outside its class. Filed rather than fixed: greening
   another card's assertion to make one's own lane look clean is exactly
   the move a verifier should distrust.
+
+---
+
+## Verdicts
+
+### 2026-08-30 — verifier claude-opus-5@subagent — **APPROVED WITH ASSIGNED CORRECTIONS**
+
+Independent hand, lane `task/T-143-free-when-held`, pair
+`c74890a89e96..14075ac2ddd6`. Every figure below was measured by this
+seat at the ref it names; nothing is relayed from the executor's report.
+
+**PROVENANCE OF THE BLINDNESS, DISCLOSED RATHER THAN CLAIMED**
+(`method/roles/verifier.md` step 0). The dispatch brief's DUTIES section
+named executor-derived specifics ABOVE its own marker — the expected
+suite counts, the two session-economics reds with their cause, "the
+executor's eight" drills, the five-instance containment history — so
+phase 1 was broken above the line by the brief, and the executor's
+report travelled in the same message. What this seat could still keep,
+and did: the attack set was written from the card at its BASE REF
+`c74890a89e96` and committed to a file before the diff was opened, and
+the card's Implementation notes were not read until every measurement
+below had been taken. The attack set is reproduced verbatim in section
+ONE so the blindness is auditable rather than asserted.
+
+## ONE — the phase-1 attack set, as written, before the diff
+
+A. **Criterion 1.** A1 plant a lane whose card cannot be resolved,
+require no row prints FREE. A2 require the row is neither dropped nor
+folded into FREE. A3 the card's own caution as a POSITIVE CONTROL — held
+-> HELD, hold removed -> FREE; a fix that can only print UNKNOWN is a
+reject. A4 the row NAMES the ids, plural and singular. A5 a zero-lane
+world still answers FREE.
+B. **Criterion 2.** A6 a DISJOINT verdict over an unreadable lane is the
+same lie; require it withheld. A7 any cardinality sentence must count
+what it could not read.
+C. **Criterion 3.** A8 is the qualifier on the REAL path, and can it
+vanish under a branch. A9 NAME vs REGION — a lane declaring a bare PATH
+containing a slug's region; the design question.
+D. **Criterion 4.** A10 mutate the residual's number word, require a
+red. A11 the owed second body must kill a mutant no other body kills
+(failing-body count exactly ONE). A12 the 1-versus-2 boundary, both
+directions.
+E. **Criterion 5.** A13 re-derive mechanism 1 in EVERY implementation and
+look for a third. A14 re-derive the suffixed-branch claim; a pin for an
+already-fixed defect risks shape SEVEN.
+F. **Mine, from the class.** A15 IN_FLIGHT — a done card must not print
+underway, a building card with a fence must. A16 poison one side only,
+producer side, committed first, sha256-proved. A17 shape EIGHT
+haystacks. A18 shape TEN empty comparisons. A19 security on the
+lane-id input path. A20 adjacency — preflight, board-model, brief.spec,
+the ARCHITECTURE prose block, the census. A21 determinism of row and id
+order. A22 `brief.mjs`'s four exit codes unmoved. A23 no legitimate
+dispatch newly REFUSED. A24 my own enumeration of every consumer.
+
+## TWO — the owed battery, re-run by this seat, exits unpiped
+
+At tip `14075ac2ddd6`, in the lane worktree. `NPUTER_E2E_PORT=14537`;
+`lsof -nP -iTCP:14537 -sTCP:LISTEN` returned ZERO ROWS immediately
+before binding. Port 1420 was never probed, bound or connected to.
+
+| command | cwd | result |
+|---|---|---|
+| `npx vitest run` | lib/parser/ | **exit 0 — 315 passed / 15 files** |
+| `npx tsc --noEmit` | lib/parser/ | **exit 0** |
+| `npm run build` | lib/parser/ | **exit 0** |
+| `npm run build` | app/ | **exit 0** |
+| `npm test` | app/ | **exit 0 — 1015 passed / 47 files** |
+| `npm run typecheck` | tools/e2e/ | **exit 0** |
+| `npm run lint:docs` | tools/e2e/ | **exit 0** |
+| `npm run lint:tokens` | tools/e2e/ | **exit 0** — TOKEN 155 files, CONTROL 890 tracked text files |
+| `npm test` | tools/e2e/ | **exit 1 — 2 failed / 318 passed (3.0m)** |
+
+Arithmetic checked by this seat rather than accepted: the diff adds
+FIVE bodies to `brief.spec.ts`, ONE to `card-figures.spec.ts` and ONE to
+`dispatch-order.spec.ts` — seven — against the census's 313, and
+318 + 2 = 320. The parser's 315 is 314 + the one new `lanes.test.ts`
+body.
+
+**THE TWO REDS ARE PRE-EXISTING AND LANE-CAUSED — VERIFIED, NOT
+ACCEPTED, AND THE COUNTERFACTUAL IS MEASURED.** This seat cut a DETACHED
+scratch worktree at the dispatch commit — `git worktree add --detach
+/tmp/v143-base c74890a`, `git status` empty, NO edit of this lane's in
+the tree — and ran the command the two bodies assert on:
+
+    node tools/e2e/scripts/brief.mjs --task T-157   ->  exit 1
+    brief: FOUND 1 thing(s) the assembler could not settle:
+      fences are not disjoint: T-143 tools/e2e against T-157 tools/e2e
+        — the same entry (lane-protocol rule five).
+
+EXACTLY ONE finding, and it is the HELD-FENCE ANSWER: correct behaviour
+by a command whose honest answer is FOUND while a lane holds
+`tools/e2e`. **The greening is proved rather than reasoned** — the same
+assembler at the same commit, handed a porcelain with the lane removed:
+`lanes=[] findings=0`, against `lanes=[T-143] findings=1` on the live
+list. So the two bodies go green the moment this lane's worktree is
+removed, and they will red again for the NEXT lane that holds
+`tools/e2e`. `T-143-s1` is the right disposition and the integrator owes
+it nothing at this merge.
+
+## THREE — the drills, this seat's own, producer-side, one side each
+
+Work already COMMITTED at `14075ac2ddd6`; every mutant moves a PRODUCER
+and never an assertion; every mutation was read back with `git diff -U0`
+before its suite ran; every restoration is `git restore --source=HEAD
+--staged --worktree --` PROVED by sha256 against `git show HEAD:<path>`,
+with `git status --short` empty after each. **THIRTEEN mutants, twelve
+kills and one deliberate ZERO which is the finding.** Six of the twelve
+are directions the executor's own table does not carry.
+
+| # | producer | mutation | suite | bodies red |
+|---|---|---|---|---|
+| V-M9a | `lanes.ts` | `blindMany` -> `false` | parser lanes | **1 failed / 16 passed** |
+| V-M9b | `lanes.ts` | `blindMany` -> `true` | parser lanes | **1 failed / 16 passed** |
+| V-M1 | `dispatch-brief.mjs` | `fenceLedger` drops the unreadable lane again | e2e ×3 | **2 failed / 69 passed** |
+| V-M2 † | `dispatch-brief.mjs` | ledger's `blind.length === 0` -> `false`: it can ONLY say UNKNOWN | e2e ×3 | **2 failed / 69 passed** |
+| V-M3 † | `dispatch-brief.mjs` | `named` -> `"a live lane"`: the ids are not named | e2e brief | **2 failed / 28 passed** |
+| V-M4a † | `dispatch-brief.mjs` | ledger `many` -> `false` | e2e brief | **1 failed / 29 passed** |
+| V-M6a | `card-figures.mjs` | `contention` drops the unreadable lane again | e2e ×3 | **1 failed / 70 passed** |
+| V-M6b † | `card-figures.mjs` | `contention` `many` -> `true` (a DIVERGENCE from the other two) | e2e card-figures | **1 failed / 27 passed** |
+| V-M7b † | `dispatch-brief.mjs` | ROW 5's residual gated `if (true)` — printed ALWAYS | e2e brief | **1 failed / 29 passed** |
+| V-M8a | `dispatch-order.mjs` | IN FLIGHT widened back to the whole `underway` set | e2e dispatch-order | **2 failed / 11 passed** |
+| V-M8b † | `dispatch-order.mjs` | IN FLIGHT emptied (`= []`) | e2e dispatch-order | **1 failed / 12 passed** |
+| V-M10 | `dispatch-brief.mjs` | `laneWorktrees` truncates the suffixed id | e2e brief + lane-fence | **1 failed / 55 passed** |
+| V-M11 | `dispatch-brief.mjs` | `slugsSharingComponents` filter `> 1` -> `> 99` | e2e brief | **1 failed / 29 passed** |
+| **V-M13** | `dispatch-brief.mjs` | *"is live"* -> *"are live"* in the new fewer-than-two clause | e2e ×3 | **0 failed / 71 passed — THE FINDING** |
+
+† not a direction the executor drilled.
+
+**Baseline for the ×3 column, measured before any mutant: 71 passed,
+exit 0, 14.3s** over `brief.spec.ts`, `card-figures.spec.ts`,
+`dispatch-order.spec.ts`.
+
+**A9/A11 answered mechanically rather than by opinion.** V-M10 kills
+exactly ONE body and `lane-fence.spec.ts` stays green under it — so the
+new suffixed-branch body kills a mutant no other body kills, which is
+`T-072-s2`'s test for shape SIX, and the "pinned anyway" decision is
+vindicated even though the brief's item (a) was wrong about the
+truncation being live. V-M4a, V-M6b, V-M7b, V-M8b and V-M11 each give a
+failing-body count of exactly one.
+
+**The card's own caution is MET.** V-M2 is the mutant the caution
+describes — *"a fix that only ever prints HELD passes every test written
+from this card's text"* — and it does NOT pass here: the ledger body's
+negative-control half reds, along with the suffixed-branch body.
+
+**A15, observed live rather than only mutated.** `node
+tools/e2e/scripts/brief.mjs --dispatch` at `14075ac2ddd6` prints exactly
+TWO rows under IN FLIGHT ON THE BOARD: T-143 (`verifying`, 2 paths,
+*"it HAS a lane above, so that fence is held for real"*) and T-135
+(`building`, 2 paths, *"it has NO lane, so it holds no fence — the board
+stamp is all there is"*). No `done` and no `parked` card appears.
+Board census re-derived by this seat at `14075ac2ddd6`: **done 127,
+parked 124, planned 63, suggested 5, building 1, verifying 1 — 321
+cards**, and the parser's exported `IN_FLIGHT` is
+`{building, verifying, merging}`. Unfiltered, that section would print
+258 rows.
+
+## FOUR — the sweep, enumerated by this seat rather than checked against a claim
+
+`git grep` from the repository ROOT over `tools/e2e/scripts`,
+`lib/parser/src` and `app/src` for `.lanes`, `heldBy`, `laneWorktrees`,
+`readDispatchOrder`, the `FREE` literal and `undefined) continue`.
+**Every consumer of the lane list or of a fence token, with its
+disposition:**
+
+| consumer | disposition |
+|---|---|
+| `lanes.ts` `rule()` / `readDispatchOrder` | fixed at `62a4364`; number agreement added here, both directions pinned |
+| `dispatch-brief.mjs` `fenceLedger` | FIXED here — UNKNOWN, ids named, held rows carry the residual |
+| `dispatch-brief.mjs` `deriveFence` (ROW 5) | FIXED here — see correction 1 |
+| `dispatch-brief.mjs` `stateReport` lane list | already correct — prints `no live card` / `board says unknown` per lane |
+| `dispatch-brief.mjs` `stateReport` "not a lane" block | no world-claim; detached entries only |
+| `dispatch-brief.mjs` `laneWorktrees` | the id join, now pinned on a suffixed branch |
+| `card-figures.mjs` `contention` | FIXED here — the third implementation |
+| `card-preflight.mjs` `heldClaims` join | already correct — reports `no live card` explicitly and defers the ruling to `readDispatchOrder` |
+| `dispatch-order.mjs` `dispatchReport` | lane list + the new IN FLIGHT section |
+| `.claude/hooks/lane-fence.mjs` | reads the manifest, never the lane list — out of the class |
+| `app/src/lib/board-model.ts` | already correct — `fenceKnown`, `blindLanes`, and an `undecidable` refusal; the CAVEAT is genuinely consumed at the dispatchable sentence, not merely computed. **But see routed `T-143-s3`.** |
+| `app/src/lib/dispatch-store.ts` | carries `DispatchRow.lanes`; no fence claim of its own |
+
+**No consumer the sweep missed.** Nothing under `app/` calls
+`readDispatchOrder` — confirmed by this seat's own grep, not relayed.
+
+## FIVE — the ruling on the NAME-versus-REGION join
+
+**The disclosure SATISFIES criterion 3, and the criterion is narrower
+than the defect. Region-joining the ledger is a ROUTED card, not an
+assigned correction — but the qualifier's stated CAUSE is wrong on this
+tree today, and that half is assigned.**
+
+**The containment history, re-derived at `14075ac2ddd6` rather than
+quoted.** `git grep 'by containment\|containment is overlap\|CONTAINMENT'
+-- docs/ method/`: `method/lane-protocol.md` rule 5 states the principle;
+`T-111` added separator-anchored containment to `touchTokensOverlap` and
+censused ELEVEN new tokens that were a containment family the previous
+census did not have; `T-085` ruled its own reader exclusion a property of
+containment; `T-138` refused a `method/roles/orchestrator.md` release
+because `T-135` holds `method/tasks/TASK-FORMAT.md` — *"Name the file"*;
+`T-137` was handed three `method/` cards that overlap `T-135` by
+containment; and this card's own night is the fifth, where `method/`
+contains `method/tasks/TASK-FORMAT.md`. Five instances, in the fence
+domain, and `expandFence`/`sharedDomain` already implement the rule.
+
+**The hole is LIVE and this seat measured it, with no unreadable card
+anywhere in the fixture.** A census over the whole board at
+`14075ac2ddd6`: **63 distinct `touches:` tokens, 55 of them not a slug
+name, and 2 of those 55 overlap a slug's region by containment** — both
+on `T-159-s4`, both against `app-interview`. Constructed:
+
+    lane task/T-159-s4-…  (card READABLE — blind lanes: none)
+    --state ledger  ->  app-interview: FREE
+    --task fenceOverlaps against T-027
+      ->  OVERLAP — T-159-s4 app/src/genesis/genesis-derive.ts
+          against T-027 app-interview, both reserve
+          app/src/genesis/genesis-derive.ts and app/src/genesis/**
+
+One command, two halves, opposite answers about one set of files, and
+the ledger's half is the one that says FREE.
+
+**Why it is nonetheless not a failed criterion.** Criterion 1's own
+EARS clause opens *"WHEN any lane's card cannot be resolved in this
+checkout"*, and so does criterion 2's *"unreachable when part of the
+world could not be read"*. The instance above has nothing unreadable in
+it, so it falls outside both. Criterion 3 offers TWO arms — *"Either the
+display carries the qualifier or it points at the `--task` half"* — and
+this diff takes BOTH. The criterion is met.
+
+**What is NOT met is the accuracy of the words chosen**, and that is
+assigned below: the qualifier explains itself with the slug-sharing
+cause, which is the cause this tree does NOT have a live instance of,
+and omits the containment cause, which is the cause it does.
+
+## SIX — ASSIGNED CORRECTIONS (the integrator performs; none blocks the merge)
+
+**CORRECTION 1 — `tools/e2e/scripts/dispatch-brief.mjs`, `deriveFence`'s
+new *"fewer than two READABLE fences to compare"* clause: it disagrees
+in NUMBER with the list it names, which is CRITERION 4's own class, in a
+sentence THIS DIFF wrote, four lines from the sentence that gets it
+right.** Rendered by this seat at `14075ac2ddd6` with one, two and three
+unreadable lanes live:
+
+    fewer than two READABLE fences to compare — T-901, T-902, T-903
+      is live and could not be expanded at all, so nothing below is a
+      claim about it
+
+**And it is unpinned in BOTH directions**, exactly as the `fenced`
+residual was before this lane: drill **V-M13** mutated `is live` to
+`are live` and the three specs came back **71 passed, 0 killed**. The
+ROW-5 body asserts only the clause's PREFIX. Fix: make the verb and the
+trailing pronoun functions of `blind.length`, the way the two clauses
+beside it already are, and add the two assertions to
+`brief.spec.ts`'s *"`DISJOINT` is the same class of word as `FREE`"*
+body, which already builds the two-blind-lane fixture and needs no new
+one. A FIX NAMES ITS CLASS AND ITS SWEEP — and this sweep did not reach
+the sentences the fix itself wrote.
+
+**CORRECTION 2 — same file, `stateReport`'s `shared.length === 0`
+branch, which asserts a universal its premise does not support.** It
+prints *"no component is claimed by two slugs today, so no row here is
+free-as-a-name and held-as-a-region"*. The clause after *"so"* is FALSE
+independently of the clause before it: the `T-159-s4` instance in
+section FIVE is a row that is free as a name and held as a region with
+NO component shared by two slugs. The branch is unreachable today
+(`C-11` exists, and V-M11 proves the derivation is pinned), which is
+precisely why it will be believed on the day it fires. Fix: end the
+sentence at *"today"*, or state the containment cause in the same
+breath.
+
+**CORRECTION 3 — same file, the three `note(...)` lines above the
+ledger: add the containment cause.** The Implementation notes claim the
+qualifier *"tells the reader that in as many words"*; the rendered text
+says only *"Two slugs can expand through one component"*. A lane
+declaring a bare PATH inside a slug's region is not two slugs and not
+one component — it is the other cause, and it is the one with a live
+instance. One line, beside the two already there.
+
+All three are single-sentence edits inside `tools/e2e`, which this lane
+already holds; they are assigned rather than required before merge
+because none of them changes an ANSWER — correction 1 changes a word in
+a sentence that is already reaching the reader, and 2 and 3 change what
+a reader is told about a display that already points at the half that
+answers properly.
+
+## SEVEN — routed, not assigned
+
+- **`T-143-s2`** — the ledger and `contention` are NAME joins and a
+  fence is a REGION; make them expand through `fence.ts`. Filed with the
+  live census (2 of 55 path tokens today) and the two-halves-disagree
+  measurement above, so the next seat starts from data rather than from
+  the card's `C-11` example.
+- **`T-143-s3`** — `app/src/lib/board-model.ts`'s blind-lane CAVEAT is a
+  THIRD live instance of correction 1's number-agreement class
+  (*"2 of those lanes (X, Y) is claimed by no card, so its fence could
+  not be READ"*), and it is OUTSIDE this card's fence, so it is routed
+  rather than corrected.
+
+## EIGHT — the rest of the attack set, answered
+
+- **A5** a zero-lane world still answers `FREE`, and every `unknownFrom`
+  is empty — the ledger body's own negative control, re-run under V-M2.
+- **A17 / A18** no new assertion searches a whole-file haystack for a
+  needle it also owns, and every comparison in the new bodies asserts
+  its expected side NON-EMPTY first (`readableLane()` throws rather than
+  returning nothing; the shared-component body asserts `wanted.length >
+  0`; the contention body asserts `entries.length > 0`; the IN FLIGHT
+  body asserts both `inFlight.length > 0` and `doneOnes.length > 0`).
+  Shapes EIGHT and TEN: clear.
+- **A19 SECURITY.** No dependency was added — the diff touches no
+  manifest. The only new input path is the lane id, which comes from
+  `spellings.branchRe` over `git worktree list --porcelain` and is spent
+  on `Array.prototype.join` into display text; nothing is interpolated
+  into a shell, a path, a regex or a filesystem read. No new endpoint, no
+  secret, no key. **Clear.**
+- **A21** determinism holds: `blind` is push-ordered over
+  `laneWorktrees`' own `taskId` sort and deduped; the ledger's rows are
+  `[...all].sort()`.
+- **A22 / A23** `brief.mjs` is untouched by the diff, so its four exit
+  codes are unmoved, and nothing new REFUSES: the ledger's answer widened
+  from two words to a sentence and no code path gained a throw.
+- **A20 ADJACENCY, the one real consequence.** `fenceLedger`'s `heldBy`
+  is now a SENTENCE rather than an id list whenever a blind lane is live.
+  This seat checked every reader: the only two are `stateReport`'s own
+  render and `brief.spec.ts`. Nothing parses the field. Safe — and the
+  new `unknownFrom: string[]` is the machine-readable half for whoever
+  needs one next.
+
+## NINE — the gates at MY OWN TIP, because prose is a code input
+
+Re-derived after this verdict and the two suggestion cards were
+committed; every figure at the ref it names. This seat's commits are
+`docs/tasks/` ONLY.
+
+- **GRAPH REGEN — fires for the LANE and cannot be moved by me.** Asked
+  rather than predicted, at `14075ac2ddd6` from `app/src-tauri/`:
+  `index --check --root ../..` exits **1 STALE**, content-only —
+  **`files +0 -0 ~2`, 0 symbols, 0 edges**, `lib/parser/src/lanes.ts`
+  loc 527 -> 538 and `lib/parser/test/lanes.test.ts` loc 415 -> 456,
+  committed and fresh both **1022964 bytes**. `docs/` is
+  `.nputerignore`d, so my own prose commits cannot move it. **The regen
+  is the INTEGRATOR's, at the checkpoint.** Noted in passing and not
+  raised: the budget reads **1022964 of 1040000 (98.4%), 17036 left** —
+  @human's standing `T-151` item.
+- **CAPABILITIES — STALE, and the regen is the integrator's.**
+  `npm run capabilities:check` exits **1 — committed 24849 bytes, a
+  fresh generation is 25444**, the seven new spec bodies. `read, don't
+  regen` observed: `docs/CAPABILITIES.md` is outside this fence.
+- **DOCS GATE — fires on my paths and I ran what it named.**
+- **BOOT GATE / METHOD EVAL GATE — NOT OWED**, derived over the whole
+  forecast path list: nothing under `app/src/**`, `app/src-tauri/**`,
+  either manifest, or `method/**`.
+
+## TEN — verdict
+
+**APPROVED WITH ASSIGNED CORRECTIONS.** The refusal-to-lie property is
+real and it is pinned in three implementations plus the parser's: a lane
+whose card this checkout cannot read now yields `UNKNOWN` naming the
+ids, and `FREE`, `DISJOINT` and *"fewer than two"* have each stopped
+being claims about a world nobody read. The card's own caution — that a
+fix which can only print HELD passes every test written from its text —
+was drilled directly and does not pass. The sweep found a THIRD
+implementation nobody had reported and pinned it in both directions. The
+two e2e reds are pre-existing, lane-caused, and this seat proved the
+counterfactual rather than reasoning it. The three corrections are
+single sentences, and every one of them is about what a reader is TOLD
+rather than about what the tool ANSWERS — which is the right shape for a
+card whose whole subject is that a cheap display gets consulted instead
+of an expensive verdict.
