@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 23
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: standing triage sitting #4 (2026-08-30) — CI run 33327281402, diagnosed at this seat
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
@@ -67,10 +67,12 @@ It is **noise that lands on somebody else's lane**. The body reds after
 passing, in a spec about ref shapes, on a commit whose diff has nothing
 to do with either — the same attribution problem the DOCS GATE exists to
 prevent, arriving through a fixture instead. The next session to see it
-will spend the same twenty minutes deciding whether main is broken. It
-is also the second class of CI-only intermittent live on this repository
-(`T-161` is the first), which is the fact that argues for writing both
-down rather than re-running until green — the POISON DRILL bullet's own
+will spend the same twenty minutes deciding whether main is broken. It is
+also not alone: `T-161` is a CI-only intermittent of a different
+mechanism (a stderr drain race in the app crate) live on this
+repository at the same time, and **that PAIR — enumerated, not
+counted** — is the fact that argues for writing both down rather than
+re-running until green — the POISON DRILL bullet's own
 warning that re-running until green is a defect's healing mechanism, not
 evidence.
 
