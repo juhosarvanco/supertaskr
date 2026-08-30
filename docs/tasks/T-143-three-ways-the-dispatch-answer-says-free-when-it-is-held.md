@@ -465,6 +465,15 @@ eight under `lib/parser/` and `tools/e2e/`.
 - **METHOD EVAL GATE - NOT OWED.** No path in the forecast is under
   `method/**`. Derived on all 10 paths.
 
+**AND ONE REGENERATION THIS LANE MAY NOT TAKE.** Seven spec bodies were
+added under `tools/e2e/tests/`, so the behaviour census moved:
+`npm run capabilities:check` from tools/e2e/ exits **1 STALE - committed
+24849 bytes, a fresh generation is 25444 bytes**. `docs/CAPABILITIES.md`
+is outside this card's fence, so the `npm run capabilities` regen is
+**owed to the integrator**, with that byte pair as the expected delta.
+The two standalone lints are clean at this tip: `npm run lint:docs`
+exit **0**, `npm run lint:tokens` exit **0**.
+
 **These decisions were derived at `445e02e3`, one commit BEHIND the tip
 that carries this table.** The last commit adds only prose to these two
 `docs/tasks/` files: it cannot move GRAPH REGEN - the graph walk does
