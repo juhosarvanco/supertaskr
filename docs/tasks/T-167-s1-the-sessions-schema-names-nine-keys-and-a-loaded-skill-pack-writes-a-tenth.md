@@ -175,8 +175,8 @@ first.
 `the_written_registry_matches_the_sessions_schema_field_for_field` keeps
 its name (it is a rustdoc link target) and is rebuilt:
 
-- **The key set is DERIVED from the document**, by parsing its own
-  ```json example, rather than transcribed beside it. A transcription is
+- **The key set is DERIVED from the document**, by parsing its own fenced
+  `json` example, rather than transcribed beside it. A transcription is
   a second implementation of the field set and the two disagree in
   silence — which is this card. The document is now the one authority and
   the pin is a reader of it.
@@ -281,8 +281,9 @@ thrown away the work would not have been. The scratch worktree is removed.
 - **DOCS GATE on this lane's own RANGE RULE pair** — `git merge-tree
   --write-tree` off `main` at `51fa31c`, `$?` read first, no `xargs` in
   the spelling. Before this card edit: **exit 0, not owed** (3 changed
-  paths, none under docs/). This edit puts `docs/tasks/` in the diff, so
-  the re-run below is the binding one.
+  paths, none under docs/). After it: **exit 1, FIRES** — 2 paths under
+  docs/ are code inputs, and it names three suites. See the next section:
+  **it caught a real red, and the red was in this card's own prose.**
 - **METHOD EVAL GATE — exit 0**, 6 model-free evals. It FIRES: the diff
   touches `method/**`.
 - **GRAPH REGEN fires** (`*.rs` outside docs/) and the regen is the
@@ -299,6 +300,33 @@ thrown away the work would not have been. The scratch worktree is removed.
   tripwire — the standing alarm STATE calls SURVIVABLE by design, not a
   new condition. Derived with `cargo run -p nputer-index -- index --check
   --root ../..` from app/src-tauri at `9fdc4d4`.
+
+### THE DOCS GATE EARNED ITSELF ON THIS LANE — a red in these notes
+
+The suites it named were run, and `npx vitest run` from lib/parser/ came
+back **1 failed / 335 passed, exit 1**:
+
+    FAIL test/task.test.ts > splitSections — shared inert-span view (T-055)
+         > keeps every live task section split byte-identical to the pre-pass result
+    AssertionError: expected [ { …(3) } ] to deeply equal []
+
+**THE CAUSE WAS ONE LINE OF THIS CARD.** Describing the pin, these notes
+wrote the phrase *"by parsing its own"* followed by a bare triple-backtick
+`json` INLINE — which opens a fenced block that never closes.
+`blankInertSpans` treats a top-level unclosed fence as inert through EOF
+(`src/inert-spans.ts` says so in as many words), so every `##` heading
+after that point was blanked; the post-T-055 splitter found fewer sections
+than the pre-pass one, and the equivalence body reported this file. Fixed
+by spelling it as an inline `json` code span instead. Re-run: **336/336,
+exit 0.**
+
+This is the CONVENTIONS bullet's own failure mode reproduced exactly — a
+commit whose docs/ diff is one markdown file reddening a code suite three
+layers away, under a title about section splitting — except that it was
+caught by the author at the gate rather than by the next executor. Worth
+recording because the trap is invisible while writing: the fence looks
+like prose, the card renders acceptably, and nothing about the error
+message points at the sentence that caused it.
 
 ### The bump question — re-derived here, and it agrees with the sitting
 
