@@ -10,6 +10,7 @@ blocked_by: []
 suggested_by: executor claude-opus-5 @T-140-s1
 touches: [app-shell, app-map, crate-index]
 built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 ---
 
 PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
@@ -583,3 +584,162 @@ Two further corrections, mine:
    that instruction cannot be committed from inside this lane. Done as
    far as the fence allows and routed as `T-140-s8` — not widened from
    inside, per lane-protocol rule 5.
+
+## Verdicts
+
+### 2026-08-31 — `claude-opus-5@subagent` — APPROVED WITH ASSIGNED CORRECTIONS
+
+Verified in the lane worktree `/Users/ujju/Projects/nputer-T-140-s4` at
+`2170fa8`, not a fresh checkout — the regenerated `graph.json` is
+uncommitted by design and the worktree is where the true state lives.
+
+**PHASE 1 WAS KEPT.** The attack set — **54 attacks** — was written from
+the card at its base ref `5073db6`, plus CONVENTIONS, ARCHITECTURE,
+`method/roles/verifier.md` and the base-commit code, BEFORE the diff,
+the commits or the implementation notes were opened. It is on disk at
+`…/scratchpad/T-140-s4-attack-set.md` with its sources enumerated. The
+dispatching brief named no executor-derived specifics, so the two phases
+were separable. **51 attacks found the work sound; 3 landed.**
+
+**GATES, RUN IN THIS SEAT, EXITS READ UNPIPED.**
+
+| gate | exit |
+|---|---|
+| `cargo test` (app/src-tauri) | **0** — 251 + 87 + 197 + 10/4/16/3/3/9/4/1 passed, 0 failed |
+| `cargo run -p nputer-index -- index --check --root ../..` | **0** — CURRENT, 1 134 410 bytes · 199 files · 2418 symbols · 2331 edges |
+| `npm run build` (app) | **0** |
+| `npm test` (app) | **0** — 49 files, 1059 tests |
+| `npx vitest run` (lib/parser) | **0** — 16 files, 336 tests |
+| `npm run lint:tokens` (tools/e2e) | **0** |
+| `npm run lint:docs` (tools/e2e) | **0** |
+| **`NPUTER_BOOT_PORT=14144 npm run boot:check`** | **0** |
+
+**THE BOOT GATE FIRED ON THIS DIFF AND HAD NOT BEEN RUN. IT IS RUN NOW
+AND IT PASSES.** Both startup lines observed:
+`[nputer] project folder: /Users/ujju/Projects/nputer-T-140-s4` and
+`[nputer] window "main" created`. Port 14144 was derived (14000 + card
+140 + sub-lane 4) and `lsof`-ed to zero rows before and after; 1420 was
+READ ONLY, with `lsof -nP -iTCP:1420 -sTCP:LISTEN`, before and after —
+zero rows both times, never probed.
+
+**MUTANT LEDGER** — derived from the acceptance criteria with the test
+files closed, drilled in the detached scratch worktree
+`/private/tmp/nd-T-140-s4` under its own `CARGO_TARGET_DIR`, each
+mutation read back with `git diff` before running and every restoration
+proven by sha256 against the committed blob. **5 killed, 2 explained
+survivors.**
+
+| # | mutation | result |
+|---|---|---|
+| M1 | restore the `.json`-under-`docs/architecture/` branch | **KILLED** by 4 bodies — `is_collected_docs_path_accepts_md_and_nothing_else`, `collects_no_json_at_all`, `skips_report_only_would_be_collected_files`, `reindex_is_snapshot_silent_because_the_graph_left_the_collector` |
+| M2 | `max_graph_bytes` → `1_040_000` | **KILLED** — `index --check` exit 1 STALE, delta naming `stats.truncated_symbols None -> Some(true)`, `truncated_files None -> Some(4)` |
+| M3 | `max_graph_bytes` → round `2_097_152` | **SURVIVED, explained** — no body restates the literal, which is this project's own doctrine (`T-010-s3` arm 2's trap). The STALE seen was my own edit to an indexed file (`~1 … lib.rs (content)`), identical for any edit |
+| M4 | re-introduce a `map-too-large` banner | **KILLED** — `map-view-dom.test.tsx` |
+| M6 | delete App.tsx's `graphContent` spread | **KILLED** — `map-shell-dom.test.tsx`, confirming the deleted shell body's coverage is genuinely picked up by its neighbour |
+| M7 | re-introduce `· over the snapshot cap` | **KILLED** — `map-view-dom.test.tsx` |
+| M8 | `WARN_HEADROOM_BYTES` → `14_914` | **SURVIVED, explained** — the alarm's tests are relative (`> WARN_HEADROOM_BYTES`); restating the threshold would pin nothing |
+
+**WHAT I RE-DERIVED RATHER THAN ACCEPTED, ALL AT MY OWN REF.** Every
+figure the lane states reproduces exactly. The blob series gives **68**
+positive growths, mean **13 921**, median **4 501**, max **241 980**,
+first blob **122 853** — so `WARN_HEADROOM_BYTES` is genuinely re-armed
+rather than scaled. `1_134_406 + (1_134_406 − 122_853) = 2_145_959`
+holds. The census reproduces at **530 files · 8 441 726 bytes**. The
+regenerated graph is untruncated and its symbol delta is an identity:
+all four previously-truncated files restored (`runner.rs` +71,
+`brief.rs` +81, `docs_watch.rs` +55, `agent_runner.rs` +145 = +352)
+less MapView's deleted constant (−1) = **+351**. The single moved
+dogfood pin is likewise an identity — my own edge-set diff of the two
+graphs returns exactly three losses and no gains: one `import` edge
+`MapView.tsx → docs-model.ts` (the `C-12 → C-10` decrement) and two
+`type_ref` edges to `SkipReason`. **The pin was moved with the story,
+not loosened.** `git status` shows `docs/architecture/graph.json` as the
+ONLY uncommitted path, and `index --check` proves it byte-exact to a
+fresh index, so the account of it is confirmed and nothing hides behind
+it.
+
+**WHAT THE HARDEST ATTACKS FOUND.** The retirement of the cross-crate
+invariant is a premise deletion, not a convenience: its reason stands at
+its own site, its two `.json`-arrival siblings are INVERTED rather than
+deleted, and the symlink body was re-aimed to `.md` precisely so it
+would not pass vacuously. The banner's obligation is paid AT THE SITE
+and pays both halves — what speaks now (`truncated_files` /
+`truncated_symbols`, the headroom alarm, both DEGRADATION) and what
+disappears (the report of a CLIFF that can no longer happen) — and I
+confirmed the named keeper really renders (`MapView.tsx`, *"symbols
+truncated for N files"*). The two-decisions rule was respected: both the
+`GRAPH_FILE` passthrough and the `graphContent` prop STAY with written
+reasons, and M6 proves the fallback is pinned rather than merely
+described. `COLLECTOR_CAP_BYTES` was found and removed as a transcribed
+constant that would have become *reachable and WRONG* — a defect the
+card did not name and the lane caught itself.
+
+#### Correction 1 — the budget's cross-check is presented as independent corroboration and is an algebraic near-identity
+
+In `IndexOptions::max_graph_bytes`'s doc comment (and restated in
+section 3 of the notes above): *"Two independent framings — 'double the
+lifetime' and 'one more lifetime of merges' — agreeing to within 7% is
+the reason this number is stated rather than rounded."*
+
+They are not independent. Writing `L` for lifetime growth, `P` for the
+sum of positive growths, `N` for the sum of shrinks and `T` for the
+truncation the raise recovers, the merge figure is
+`L / (P/68) = 68 × (1 − N/P + T/P)` — the count 68 is a FACTOR of the
+left-hand side, so the comparison is 68 against 68 × 1.069 and cannot
+come out anywhere else unless shrinkage or recovered truncation
+approached the whole growth history. Measured here: `N/P = 3.2%`,
+`T/P = 10.0%`, and the "7% agreement" is exactly that residue. It has no
+power to disconfirm, so it is not evidence.
+
+**This does not make the number wrong** — the chain is two honestly
+measured quantities with no free coefficient, and every term reproduced
+at my ref. What is wrong is one sentence of justification a later reader
+will rely on. **The correction:** delete the "two independent framings /
+agree to within 7%" claim, and state the merges figure for what it is —
+a RESTATEMENT of the same growth series in the alarm's unit, useful for
+intuition and not a second measurement. The "why not 2 MiB" sentence
+stands on its own without it: the number is derived and a round one
+would not be.
+
+#### Correction 2 — the finished-tree figure is one byte stale and carries no ref
+
+The same doc comment says the regen at the finished tree answers
+`1_134_409`, *"three bytes"* above term 1. At the lane tip `2170fa8`
+both `wc -c` and `index --check` answer **1 134 410** — four bytes.
+The comment already explains the self-referential mechanism and names
+`index --check`'s `budget:` line as the authority, which is why this is
+a nit and not a defect; but the sentence states a figure for "the
+finished tree" with no ref, which is the shape `method/roles/verifier.md`
+warns goes wrong the moment anyone writes again. **The correction:**
+either stamp it (`1_134_410 at 2170fa8`) or drop the specific number and
+keep the mechanism sentence.
+
+#### Correction 3 — `T-167-s6` is filed `status: planned` by an executor
+
+`docs/tasks/T-167-s6-…md` carries `status: planned`.
+`method/tasks/TASK-FORMAT.md` is explicit: *"Only the ARCHITECT
+(planner/orchestrator role) creates tasks with status: planned …
+Everyone else suggests."* Its two siblings from this same lane
+(`T-140-s8`, `T-140-s9`) correctly carry `status: suggested`, so this is
+an isolated slip. It is NOT a gate failure — `npm run lint:docs` exits 0
+and `planned` is legal vocabulary; the gate checks the status is legal,
+not who wrote it. **The correction:** set `status: suggested`, and
+change `suggested_by: executor claude-opus-5@subagent @T-167-s2` to
+`@T-140-s4`, which is the lane that actually found it.
+
+#### Not corrections
+
+The health-band divergence (`15_751` vs `13_921`) is correctly NAMED at
+`check.rs`'s own site and routed rather than reached for across the
+fence; `tools/e2e` is outside `touches` and was rightly not touched. The
+uncommitted `graph.json` is the lane-protocol arrangement working, and
+the lane disclosed the underlying fence problem itself as `T-140-s8`
+rather than leaving it to be found. `T-140-s9` files a POISON DRILL
+survivor the lane was under no pressure to report. Security sweep: no
+dependency changes, no `unsafe` added, no new input path — the diff
+REMOVES a collection surface. `arch_cmd`'s uncapped read predates this
+card and carries its own written argument.
+
+`status:` left at `verifying` for the integrator, per the dispatch.
+Gates above were re-run at the tip this verdict was written against; the
+three corrections are prose-and-frontmatter only and move no gate.
