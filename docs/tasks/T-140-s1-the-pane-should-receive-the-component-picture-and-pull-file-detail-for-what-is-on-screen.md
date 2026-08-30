@@ -1,7 +1,7 @@
 ---
 id: T-140-s1
 title: The pane should receive the component picture and pull file detail only for what is on screen — the shape T-140 measured, and the one it could not build inside its own fence
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-140
 ---
 
@@ -94,3 +94,6 @@ to it: a rollup-at-rest map is a different pane from today's, and
 **And `T-151` is a different card, not a smaller version of this one.**
 It raises the budget by at most 8 575 bytes — about seven files at the
 floor re-derived here — and its own honest framing already says so.
+
+Standing triage 2026-08-30 (architect seat): PARKED — NOT RULED, because this one is not triage's to rule. docs/STATE.md's "@human's items" names `T-140-s1` (the payload shape, with the verifier's density numbers attached) as awaiting @human, and a triage seat that promoted or declined it would be spending a decision that was explicitly reserved. The finding itself is not in doubt: it is the shape T-140 MEASURED and could not build inside its own fence, and the measurement travels with the card.
+RESURFACES: @human rules the payload shape. The ruling is already queued on STATE's @human list, so the event is checkable by whoever next reads that list rather than by whoever remembers this card. IF the ruling lands in favour of the component-picture-plus-on-screen-detail shape THEN this promotes to a planned card carrying the density numbers as its acceptance evidence; IF it does not, this is DECLINED and says so with the ruling named.
