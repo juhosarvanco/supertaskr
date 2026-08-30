@@ -1,13 +1,13 @@
 # State
 
-Updated: 2026-08-30 at the T-163 checkpoint — THE MORNING'S RULINGS
-ARE ALL LANDED: the C-11 split is whole (merge + three complements in
-one window, suggestion cards discharged), app-board and app-shell
-expand disjoint, T-112 stands at ONE collider, e2e 320/320 with zero
-lanes. @human's filings on the board: T-164 (launcher), T-165 (F-05
-hook), T-166 (loop-customization hook), the team-enablement and
-loop-customization rooms, the playbook review in docs/research/.
-Current record: docs/checkpoints/2026-08-30-T-163.md.
+Updated: 2026-08-30 at the loop-customization sitting — TEN @human
+rulings landed in one day. Afternoon: milestone 3 HELD for @human's
+own genesis walk; the customization sitting approved TWO-TRACK,
+FORM-FIRST (no UI before the form ruling — T-168's brief); D5 ruled
+in @human's words (assignment BINDING; mismatch flagged — T-169).
+Cut: T-167/T-168/T-169; T-166 done same-day. Dispatching
+T-167 ∥ T-168 ∥ T-156-s1. Current record:
+docs/checkpoints/2026-08-30-loop-sitting.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -54,15 +54,15 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. The e2e seat is FREE: `T-156-s1`, `T-160-s4`, `T-162-s2` queue on
-   it by derived priority. `T-112` is dispatchable per @human's
-   ruling at ONE collider (T-031-s1 ruled or absorbed at dispatch).
-   `T-164` (bin creation target) collides with nothing.
-2. @human's open items: the milestone-3 completion ruling (one turn
-   or the full Q1–Q7 walk — stated on ROADMAP); the
-   loop-customization layering ruling (rooms/loop-customization.md →
-   T-166's sitting); D5 (unhurried). `T-025-s4` carries its gating
-   measurement for the next sitting.
+1. Dispatching from this checkpoint: `T-167` (app-agent) ∥ `T-168`
+   (docs/research + docs/rooms) ∥ `T-156-s1` (docs/checkpoints/,
+   CONVENTIONS, .github). Queued after: `T-160-s4`, `T-162-s2`
+   (e2e seat), `T-169` (board seat), `T-112` (ONE collider —
+   T-031-s1 ruled or absorbed at dispatch), `T-164` (nothing).
+2. @human's open items: THE GENESIS WALK (closes milestone 3 —
+   "genesis walk now" preps it in minutes); the FORM ruling when
+   T-168's brief lands (gates all customization UI). `T-025-s4`
+   queues for the next sitting.
 3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
    the preflight refuses it until then, correctly. `T-154-s2`
    (promoted, `review: independent`) is dispatchable after the e2e

@@ -77,3 +77,19 @@ a PR. This is the playbook's own model (managed settings → repo
 RESOLUTION: none yet. Decomposes at its own sitting (T-166's hook);
 the smallest-first-slice question above is the sitting's opening
 item.
+
+## @HUMAN'S RULING ON THE SITTING (2026-08-30): two tracks, FORM FIRST
+
+The two-track sitting is APPROVED with one binding condition: **before
+any UI visual design work, the FORM of the customization UX is decided
+from the ground up** — is it a config system (files a developer edits,
+the `.claude/`-directory shape) or a setup area inside nputer where
+you write the rules (an in-app surface), or a designed hybrid? "The
+whole way of customization needs to be well designed and thought from
+ground up" (@human, verbatim). Consequence for the tracks: Track 1
+(wire skills into genesis) is engineering and proceeds — it is
+form-independent plumbing. Track 2 begins with the industry benchmark
+sweep and produces THE FORM DECISION BRIEF for @human — options
+analyzed against the benchmark and nputer's own architecture, with a
+recommendation — and only after @human rules the form do mockups or
+UI cards exist. Cards: T-167 (track 1), T-168 (the sweep + brief).

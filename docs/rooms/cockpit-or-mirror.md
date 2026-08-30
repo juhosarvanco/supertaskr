@@ -79,3 +79,16 @@ pen for them. The earlier partial ruling in this room is this rule's
 special case, not a separate grant. Same gates bind the app as bind
 any seat — the DOCS GATE and the budget bands read an app write
 exactly as they read a session's.
+
+## D5 RULED (2026-08-30, @human, in @human's own words)
+
+**"Of course the models the human assigns to different tasks do those
+tasks as assigned."** Assignment is BINDING, not advisory. The
+mechanics that serve the ruling: the card's `builder:`/`verifier:`
+fields carry the assignment; every adapter ENFORCES it where its CLI
+can be told (per-adapter, in the adapter's own entry); where a spawn
+path cannot force it or a human pastes a brief by hand, nputer
+VERIFIES instead — `built_by:`/`verified_by:` record what actually
+ran, and any mismatch between assignment and execution is a
+VIOLATION FLAGGED ON THE BOARD, never a silently accepted
+substitution. The flag's card: T-169.
