@@ -708,15 +708,21 @@ mod tests {
         }
     }
 
-    /// The repository root, from this crate's own manifest — the same
-    /// two-parent walk `kit.rs`'s method-file pins use.
-    fn repo_root() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .and_then(Path::parent)
-            .expect("app/src-tauri has two ancestors")
-            .to_path_buf()
-    }
+    /// **THE SCHEMA DOCUMENT ITSELF, COMPILED IN** — the same mechanism
+    /// [`super::super::kit`] uses for every method file it pins, and for
+    /// the same two reasons: `include_str!` recompiles when the file
+    /// changes, so this can never read a stale copy, and it needs no
+    /// working directory, so the pin answers the same in a lane, a drill
+    /// worktree and CI.
+    ///
+    /// **IT IS DELIBERATELY NOT A RUNTIME CLIMB TO THE REPOSITORY ROOT.**
+    /// The first pass here formed the path from `CARGO_MANIFEST_DIR` and
+    /// two `parent()` hops, and `npm run lint:docs` refused it by name —
+    /// a file that holds the repository root can reach `docs/`, so the
+    /// DOCS GATE requires every one to be argued in `ROOT_ANCHOR_LEDGER`.
+    /// A fixed relative path resolved by the compiler holds no root and
+    /// can reach exactly one file, so the question does not arise.
+    const SCHEMA_DOC: &str = include_str!("../../../../method/runtime/sessions-schema.md");
 
     /// One fenced ```json block out of a markdown file, parsed.
     fn json_example(doc: &str, whose: &str) -> serde_json::Value {
@@ -750,10 +756,7 @@ mod tests {
     /// emptied this set would make every containment assertion below
     /// vacuously true — which is this pin's own failure mode, one level up.
     fn schema_entry_keys() -> (BTreeSet<String>, BTreeSet<String>) {
-        let path = repo_root().join("method").join("runtime").join("sessions-schema.md");
-        let doc = fs::read_to_string(&path)
-            .unwrap_or_else(|err| panic!("{} must be readable: {err}", path.display()));
-        let example = json_example(&doc, "method/runtime/sessions-schema.md");
+        let example = json_example(SCHEMA_DOC, "method/runtime/sessions-schema.md");
         let entry = example["sessions"][0]
             .as_object()
             .expect("the schema's example carries one session entry");
