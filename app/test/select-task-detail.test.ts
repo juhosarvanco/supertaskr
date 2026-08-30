@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
-import { cardRef, refLabel, selectTaskDetail, type TaskRef } from "../src/lib/task-detail";
+import type { DispatchReading } from "../src/lib/board-model";
+import {
+  cardRef,
+  refLabel,
+  selectBriefPanel,
+  selectTaskDetail,
+  type BriefOutcomeView,
+  type TaskRef,
+} from "../src/lib/task-detail";
 
 // Pure-selector tests for the card detail panel (T-005). Fixtures run
 // through the real parser (parseProjectFromFiles) so these pin the
@@ -418,5 +426,259 @@ describe("selectTaskDetail — the assignment flag (T-169, @human's D5 ruling)",
       "codex/gpt-5.2 @S3",
       "codex/gpt-5.6 @fresh",
     ]);
+  });
+});
+
+// ---- the dispatch brief block (T-112) --------------------------------
+//
+// **THIS IS `selectDispositions`' FIRST CONSUMER IN `app/src`, AND THESE
+// BODIES ARE WHAT MAKE IT ONE.** The judgement lives in `task-detail.ts`
+// rather than in the component precisely so a suite can reach it: T-110
+// measured four one-side-only mutants surviving `npm test` at exit 0 when
+// the rule sat in a module no test imports.
+
+describe("selectBriefPanel — the copyable block is gated on T-111's disposition", () => {
+  const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+
+  /** A lane the reader saw, as the frontier consumes it. The FENCE it
+   * holds is read from that lane's own card, so nothing here says it. */
+  const laneReading = (taskId: string): DispatchReading => ({
+    kind: "joined",
+    rows: new Map([
+      [
+        taskId,
+        {
+          taskId,
+          state: "live" as const,
+          lanes: [
+            {
+              taskId,
+              branch: `task/${taskId}-x`,
+              worktreePath: `/tmp/nputer-${taskId}`,
+              existsOnDisk: true,
+            },
+          ],
+        },
+      ],
+    ]),
+  });
+
+  /** An assembled outcome carrying one row, so the render is checkable. */
+  const assembled = (taskId: string): BriefOutcomeView => ({
+    kind: "assembled",
+    brief: {
+      role: "executor",
+      roleFile: "method/roles/executor.md",
+      taskId,
+      cardPath: path(taskId),
+      rows: [
+        {
+          number: 1,
+          carries: "**Role** — which role this session takes",
+          assembledFrom: "`roles/<role>.md`",
+          ifAbsent: "the session invents its own obligations",
+          lines: [
+            {
+              label: "one line",
+              text: "You build exactly one task, then you end.",
+              provenance: { kind: "tree", source: "method/roles/executor.md" },
+            },
+          ],
+          residual: null,
+        },
+        {
+          number: 9,
+          carries: "**Standing disciplines**",
+          assembledFrom: "the project's CONVENTIONS",
+          ifAbsent: "the discipline decays",
+          lines: [
+            {
+              label: "named bullet",
+              text: "POISON DRILL",
+              provenance: { kind: "tree", source: "docs/CONVENTIONS.md" },
+            },
+            {
+              label: "lanes live right now",
+              text: "none",
+              provenance: { kind: "live", source: ".git/worktrees" },
+            },
+          ],
+          residual: "row 9 is row 8's untwinned twin",
+        },
+      ],
+      marker: null,
+    },
+  });
+
+  const dispatchableModel = withRoadmap([
+    [path("T-500"), task("T-500", [["status", "planned"], ["touches", "[app-board]"]])],
+  ]);
+
+  it("hands over the brief for a card T-111 calls dispatchable", () => {
+    const panel = selectBriefPanel(
+      dispatchableModel,
+      byId("T-500"),
+      NO_LANES,
+      assembled("T-500"),
+    );
+    expect(panel.kind).toBe("copyable");
+    if (panel.kind !== "copyable") throw new Error("not copyable");
+    expect(panel.taskId).toBe("T-500");
+    // Every row the assembler produced is in the block, with its own
+    // source column — a brief that dropped a row would be one whose
+    // missing row the session fills in by guessing.
+    expect(panel.text).toContain("ROW 1 —");
+    expect(panel.text).toContain("ROW 9 —");
+    expect(panel.text).toContain("assembled from: `roles/<role>.md`");
+    // And every LINE carries where it came from, which is what keeps a
+    // pasted brief checkable against the repository.
+    expect(panel.text).toContain("<- method/roles/executor.md");
+    expect(panel.text).toContain("<- LIVE at dispatch, re-read it: .git/worktrees");
+    // An open residual is surfaced rather than papered over.
+    expect(panel.text).toContain("OPEN RESIDUAL: row 9 is row 8's untwinned twin");
+  });
+
+  /** A component file, so a synthetic model carries a registry — without
+   * one the frontier REFUSES to expand a slug rather than comparing slug
+   * strings, which is T-111-s1's own lesson and not this card's to
+   * relitigate. */
+  const component = (id: string, slugs: string[], paths: string[]): [string, string] => [
+    `docs/architecture/components/${id}-x.md`,
+    [
+      "---",
+      `id: ${id}`,
+      `name: ${id}`,
+      "layer: app",
+      "paths:",
+      ...paths.map((p) => `  - ${p}`),
+      "depends_on: []",
+      "decisions: []",
+      "status: auto",
+      `touch_slugs: [${slugs.join(", ")}]`,
+      "---",
+      "",
+      "A component.",
+      "",
+    ].join("\n"),
+  ];
+
+  it("renders the disposition's REASON, and no brief, for a fenced card", () => {
+    // A live lane holds `app-board`; T-500 reserves it. A brief for a
+    // card you must not dispatch is an invitation to break the fence.
+    const model = withRoadmap([
+      component("C-90", ["app-board"], ["app/src/components/board/**"]),
+      [path("T-500"), task("T-500", [["status", "planned"], ["touches", "[app-board]"]])],
+      [path("T-501"), task("T-501", [["status", "building"], ["touches", "[app-board]"], ["feature", "F-02"]])],
+    ]);
+    const panel = selectBriefPanel(
+      model,
+      byId("T-500"),
+      laneReading("T-501"),
+      assembled("T-500"),
+    );
+    expect(panel.kind).toBe("withheld");
+    if (panel.kind !== "withheld") throw new Error("not withheld");
+    expect(panel.disposition).toBe("fenced");
+    expect(panel.reason).toContain("T-501");
+    expect(panel.reason).toContain("app-board");
+    // The positive control: the SAME card with no lane live is copyable,
+    // so the withholding is the fence's doing and not the fixture's.
+    expect(selectBriefPanel(model, byId("T-500"), NO_LANES, assembled("T-500")).kind).toBe(
+      "copyable",
+    );
+  });
+
+  it("renders the reason for a BLOCKED card too — every non-dispatchable answer is a sentence", () => {
+    const model = withRoadmap([
+      [path("T-500"), task("T-500", [["status", "planned"], ["blocked_by", "[T-502]"]])],
+      [path("T-502"), task("T-502", [["status", "planned"], ["feature", "F-02"]])],
+    ]);
+    const panel = selectBriefPanel(model, byId("T-500"), NO_LANES, assembled("T-500"));
+    expect(panel.kind).toBe("withheld");
+    if (panel.kind !== "withheld") throw new Error("not withheld");
+    expect(panel.disposition).toBe("blocked");
+    expect(panel.reason).toContain("T-502");
+  });
+
+  it("refuses to answer at all when the lane reader refused — never a free board", () => {
+    const panel = selectBriefPanel(
+      dispatchableModel,
+      byId("T-500"),
+      { kind: "unavailable", sentence: "this folder has no .git." },
+      assembled("T-500"),
+    );
+    expect(panel.kind).toBe("unavailable");
+    if (panel.kind !== "unavailable") throw new Error("not unavailable");
+    expect(panel.sentence).toContain("no card can be called dispatchable");
+    expect(panel.sentence).toContain("this folder has no .git.");
+  });
+
+  it("shows the typed refusal rather than a partial brief when a row could not be assembled", () => {
+    const panel = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, {
+      kind: "unassemblable",
+      rows: [
+        { number: 8, source: "the project's CONVENTIONS", path: "docs/CONVENTIONS.md" },
+        { number: 9, source: "the project's CONVENTIONS", path: "docs/CONVENTIONS.md" },
+      ],
+    });
+    expect(panel.kind).toBe("unavailable");
+    if (panel.kind !== "unavailable") throw new Error("not unavailable");
+    // WHICH ROW and WHICH SOURCE, for every one of them — a brief with a
+    // silently missing gate list is worse than no brief.
+    expect(panel.sentence).toContain("row 8 could not be assembled from docs/CONVENTIONS.md");
+    expect(panel.sentence).toContain("row 9 could not be assembled from docs/CONVENTIONS.md");
+    expect(panel.sentence).not.toContain("ROW 1 —");
+  });
+
+  it("names the contract itself when the table could not be read", () => {
+    const missing = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, {
+      kind: "contractMissing",
+      source: "method/roles/executor.md",
+    });
+    expect(missing.kind === "unavailable" && missing.sentence).toContain(
+      "method/roles/executor.md is missing",
+    );
+    const unreadable = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, {
+      kind: "contractUnreadable",
+      source: "method/roles/executor.md",
+    });
+    expect(unreadable.kind === "unavailable" && unreadable.sentence).toContain(
+      "the row set is unknown",
+    );
+  });
+
+  it("says so when no brief has been asked for, rather than showing an empty one", () => {
+    const panel = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, undefined);
+    expect(panel.kind).toBe("unavailable");
+  });
+
+  it("a verifier's brief carries the marker and nothing below it", () => {
+    // The marker's whole job is to keep executor-derived facts out of the
+    // half a verifier reads first. This assembler puts none there, so the
+    // block ENDS at the marker — and that emptiness is the guarantee.
+    const outcome = assembled("T-500");
+    if (outcome.kind !== "assembled") throw new Error("fixture");
+    const withMarker: BriefOutcomeView = {
+      kind: "assembled",
+      brief: { ...outcome.brief, role: "verifier", marker: "---- MARKER ----" },
+    };
+    const panel = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, withMarker);
+    if (panel.kind !== "copyable") throw new Error("not copyable");
+    expect(panel.text.trimEnd().endsWith("---- MARKER ----")).toBe(true);
+  });
+
+  it("an id-less suggestion has no frontier answer, and says which fact is missing", () => {
+    const model = withRoadmap([
+      ["docs/tasks/T-500-s1-a-thought.md", "---\nstatus: suggested\nsuggested_by: executor\n---\n\nA thought.\n"],
+    ]);
+    const panel = selectBriefPanel(
+      model,
+      { kind: "file", file: "docs/tasks/T-500-s1-a-thought.md" },
+      NO_LANES,
+      undefined,
+    );
+    expect(panel.kind).toBe("unavailable");
+    if (panel.kind !== "unavailable") throw new Error("not unavailable");
+    expect(panel.sentence).toContain("carries no id");
   });
 });

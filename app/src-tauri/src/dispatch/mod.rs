@@ -51,6 +51,7 @@
 //! warning in every build that compiles this file through the test entry
 //! point.
 
+pub mod brief;
 pub mod join;
 pub mod lanes;
 

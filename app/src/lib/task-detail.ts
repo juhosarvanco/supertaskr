@@ -8,9 +8,12 @@ import type {
 import {
   assignmentByFile,
   issuesByFile,
+  selectDispositions,
   statusVisual,
   type AssignmentDisclosure,
   type BoardCard,
+  type DispatchReading,
+  type Disposition,
   type StatusVisual,
 } from "./board-model";
 
@@ -174,6 +177,207 @@ export function criterionLines(raw: string, status: TaskStatus): CriterionLine[]
   }
   flush();
   return rows;
+}
+
+// ---- the dispatch brief (T-112) --------------------------------------
+//
+// **THE PANEL RENDERS A BRIEF ONLY FOR A CARD YOU MAY ACTUALLY
+// DISPATCH.** A brief for a card whose fence a live lane holds is an
+// invitation to break that fence, so the gate is T-111's disposition and
+// the alternative is the disposition's own REASON — the sentence a human
+// can argue with — rather than a blank space that says nothing.
+//
+// **THIS IS `selectDispositions`' FIRST CONSUMER IN `app/src`**, which
+// is why the judgement is TAKEN here and not re-derived: a second
+// implementation of "is this dispatchable" is two chances to disagree
+// (T-057), and the frontier's own module is where that question is
+// already answered with a pin under every arm.
+//
+// The brief itself is assembled Rust-side (C-15,
+// `app/src-tauri/src/dispatch/brief.rs`) because it reads `method/`,
+// the root adapter and CONVENTIONS — files the app's watched `docs/`
+// snapshot does not carry. What arrives here is that answer, mirrored
+// STRUCTURALLY: importing `dispatch-store.ts` would declare a C-17 ->
+// C-15 component edge the registry does not carry, for a type, which is
+// the same trade `board-model.ts` refuses one module over.
+
+/** Where one brief line came from. Structurally satisfied by C-15's
+ * `BriefProvenanceWire`. */
+export type BriefProvenance =
+  | { readonly kind: "tree"; readonly source: string }
+  | { readonly kind: "live"; readonly source: string }
+  | { readonly kind: "composed"; readonly from: readonly string[] };
+
+/** One line of one row. */
+export interface BriefLineView {
+  readonly label: string;
+  readonly text: string;
+  readonly provenance: BriefProvenance;
+}
+
+/** One row: the contract's own three columns, plus content. */
+export interface BriefRowView {
+  readonly number: number;
+  readonly carries: string;
+  readonly assembledFrom: string;
+  readonly ifAbsent: string;
+  readonly lines: readonly BriefLineView[];
+  /** A residual the CONTRACT carries, surfaced rather than papered over. */
+  readonly residual: string | null;
+}
+
+/** The assembler's typed answer, as this layer consumes it. */
+export type BriefOutcomeView =
+  | {
+      readonly kind: "assembled";
+      readonly brief: {
+        readonly role: string;
+        readonly roleFile: string;
+        readonly taskId: string;
+        readonly cardPath: string;
+        readonly rows: readonly BriefRowView[];
+        readonly marker: string | null;
+      };
+    }
+  | { readonly kind: "contractUnreadable"; readonly source: string }
+  | { readonly kind: "contractMissing"; readonly source: string }
+  | {
+      readonly kind: "unassemblable";
+      readonly rows: readonly { readonly number: number; readonly source: string; readonly path: string }[];
+    }
+  | { readonly kind: "noSuchCard"; readonly taskId: string };
+
+/**
+ * What the panel puts on screen.
+ *
+ * Three answers and no two of them are the same silence: a brief you may
+ * copy, a REASON you may not, and an assembler that could not tell you.
+ */
+export type BriefPanel =
+  | { readonly kind: "copyable"; readonly taskId: string; readonly text: string }
+  | {
+      readonly kind: "withheld";
+      readonly disposition: Disposition;
+      readonly reason: string;
+    }
+  | { readonly kind: "unavailable"; readonly sentence: string };
+
+/** One provenance, rendered as the suffix a reader can check. */
+function provenanceSuffix(provenance: BriefProvenance): string {
+  switch (provenance.kind) {
+    case "tree":
+      return `<- ${provenance.source}`;
+    case "live":
+      return `<- LIVE at dispatch, re-read it: ${provenance.source}`;
+    case "composed":
+      return `<- composed from: ${provenance.from.join(", ")}`;
+  }
+}
+
+/**
+ * The brief as the block a human copies into whatever agent they have.
+ *
+ * **EVERY LINE CARRIES WHERE IT CAME FROM**, which is what makes the
+ * pasted brief and a spawned one indistinguishable: nothing here is the
+ * only copy of itself, so the session reading it can check every line
+ * against the repository. The rows are the assembler's — this function
+ * chooses no content and drops none.
+ */
+export function renderBrief(outcome: Extract<BriefOutcomeView, { kind: "assembled" }>): string {
+  const { brief } = outcome;
+  const out: string[] = [
+    `# THE DISPATCH BRIEF — ${brief.taskId}, for the ${brief.role}`,
+    `# role file: ${brief.roleFile}`,
+    `# card: ${brief.cardPath} — READ IT IN FULL`,
+    "# every row below is assembled from the source that row itself names;",
+    "# no figure is stamped here, so re-derive at your own ref (row 13).",
+  ];
+  for (const row of brief.rows) {
+    out.push("", `ROW ${row.number} — ${row.carries}`, `  assembled from: ${row.assembledFrom}`);
+    for (const line of row.lines) {
+      out.push(`  ${line.label}: ${line.text}  ${provenanceSuffix(line.provenance)}`);
+    }
+    if (row.residual !== null) out.push(`  OPEN RESIDUAL: ${row.residual}`);
+  }
+  if (brief.marker !== null) out.push("", brief.marker);
+  return out.join("\n");
+}
+
+/** The sentence a typed refusal reaches the reader as. */
+function refusalSentence(outcome: BriefOutcomeView): string {
+  switch (outcome.kind) {
+    case "assembled":
+      return "";
+    case "contractMissing":
+      return `the brief's own contract could not be read: ${outcome.source} is missing, so no row can be transcribed from it`;
+    case "contractUnreadable":
+      return `the normative table in ${outcome.source} could not be parsed, so the row set is unknown — a shorter brief would be a brief whose missing rows the session fills in by guessing`;
+    case "noSuchCard":
+      return `no card on this board carries the id ${outcome.taskId}`;
+    case "unassemblable":
+      return (
+        "the brief is incomplete and is therefore not shown — a brief with a silently missing row is worse than no brief. " +
+        outcome.rows
+          .map((r) => `row ${r.number} could not be assembled from ${r.path === "" ? r.source : r.path}`)
+          .join("; ")
+      );
+  }
+}
+
+/**
+ * What the detail panel shows in its dispatch block for one card.
+ *
+ * `reading` is the lane reader's answer and `outcome` the assembler's.
+ * Both come from C-15 through the board root; neither is derived here.
+ */
+export function selectBriefPanel(
+  model: ProjectParseResult,
+  ref: TaskRef,
+  reading: DispatchReading,
+  outcome: BriefOutcomeView | undefined,
+): BriefPanel {
+  const dispositions = selectDispositions(model, reading);
+  if (dispositions.kind === "undecidable") {
+    // The frontier refused to classify, so no card may be called
+    // dispatchable and no brief may be offered. Its sentence says why.
+    return { kind: "unavailable", sentence: dispositions.sentence };
+  }
+  const task = findTask(model, ref);
+  const id = task?.id;
+  if (id === undefined) {
+    return {
+      kind: "unavailable",
+      sentence:
+        "this card carries no id, so the dispatch frontier has no answer for it — a suggestion is triaged into a card before it is dispatched",
+    };
+  }
+  const card = dispositions.cards.get(id);
+  if (card === undefined) {
+    return {
+      kind: "unavailable",
+      sentence: `the dispatch frontier returned no answer for ${id}`,
+    };
+  }
+  if (card.disposition !== "dispatchable") {
+    return {
+      kind: "withheld",
+      disposition: card.disposition,
+      reason:
+        card.reason ??
+        `${id} is ${card.disposition}, and this disposition deliberately carries no reason`,
+    };
+  }
+  if (outcome === undefined) {
+    return {
+      kind: "unavailable",
+      sentence:
+        "the assembler has not answered for this card yet — the brief is assembled from files the app reads Rust-side",
+    };
+  }
+  if (outcome.kind !== "assembled") {
+    return { kind: "unavailable", sentence: refusalSentence(outcome) };
+  }
+  return { kind: "copyable", taskId: id, text: renderBrief(outcome) };
 }
 
 function findTask(model: ProjectParseResult, ref: TaskRef): TaskRecord | undefined {
