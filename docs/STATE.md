@@ -4,9 +4,12 @@ Updated: 2026-08-30 at the T-162 checkpoint — the ADR-019 budgets are
 RE-LANDED (both docs-headroom bands INSIDE; the CONVENTIONS seat has
 runway again) and milestone 3's gate text caught up with the morning's
 completed real turn; whether one turn closes the milestone is @human's
-call, queued. The push stays HELD for T-143-s4 (dispatching next onto
-the freed e2e seat). Current record:
-docs/checkpoints/2026-08-30-T-162.md.
+call, queued. The push stays HELD for T-143-s4 (lane LIVE on the e2e
+seat). @human's morning filings: T-164 (app launcher, planned), T-165
+(the parked F-05 decomposition hook), and the team-enablement room
+(docs/rooms/team-enablement.md — the authority-inversion question).
+Current record: docs/checkpoints/2026-08-30-T-162.md (battery line
+appended post-checkpoint; this rewrite restores currency).
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
