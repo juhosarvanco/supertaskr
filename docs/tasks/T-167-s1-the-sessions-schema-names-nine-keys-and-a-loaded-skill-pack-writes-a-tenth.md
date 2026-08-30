@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 3
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [method/runtime/sessions-schema.md, app-agent]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -168,7 +168,8 @@ returns three hits on `SessionEntry` — `model` (line 38),
 never said so, so the ordinary mid-flight entry — written before the
 CLI's init line reports either — has always been legal and undocumented.
 The page now names all three under one rule (*there was nothing to
-record*) and says the other six are always written. Naming only `skills`
+record*) and says every other key above is always written. Naming only
+`skills`
 would have written a second false sentence in the act of repairing the
 first.
 
@@ -355,10 +356,15 @@ cause, and the cause is a brief refusal:
     fences are not disjoint: T-154-s2 tools/e2e against T-157 tools/e2e
       — the same entry (lane-protocol rule five).
 
-Those bodies shell out to `brief.mjs --task T-157`, and `T-157-s2`
-(`status: parked`, `touches: [tools/e2e]`) collides with the LIVE LANE
-`T-154-s2` (`status: building`, `touches: [.claude, tools/e2e,
-docs/CONVENTIONS.md]`). Neither card is in this lane's diff. **Reproduced
+Those bodies shell out to `brief.mjs --task T-157`, and `T-157` itself
+(`status: done`, `touches: [docs/checkpoints/, tools/e2e]`) collides
+with the LIVE LANE `T-154-s2` (`status: building`, `touches: [.claude,
+tools/e2e, docs/CONVENTIONS.md]`). [CORRECTED AT VERIFICATION
+(2026-08-30): this sentence originally named `T-157-s2` as the
+collider; that card never enters the brief's comparison set. The real
+collider is the probed card `T-157` itself, frontmatter as now stated;
+measured by the verifier at three main tips. The conclusion below —
+live-lane class, clears when T-154-s2 lands — stood and stands.] Neither card is in this lane's diff. **Reproduced
 at main's own tip in a detached worktree with not one line of this diff
 present — `exit 1`, same refusal, at `16f4821`.** It is a live-environment
 condition of the board — the spec hard-codes `--task T-157`, so it reds
@@ -419,3 +425,31 @@ None. All five acceptance criteria are met.
 document has no schema page and no pin at all.
 
 ## Verdicts
+
+## VERDICT (2026-08-30, blind factless verifier claude-opus-5@subagent)
+
+**APPROVED WITH ASSIGNED CORRECTIONS** — both prose, both performed at
+merge. (1) The schema page's hand-kept tally ("the other six") was
+wrong on its first outing — seven keys remain beside the three
+omissible ones at the page's own example. Per the assigned edit the
+count is REMOVED rather than repaired: "**Every other key above is
+always written.**" — the cite-the-shape rule applied to the very
+document this card fixed; the same wording corrected at this card's
+own line 171. (2) The dispatch-brief collider named in the notes was
+mis-identified as `T-157-s2`; the real collider is `T-157` itself
+(`status: done`, `touches: [docs/checkpoints/, tools/e2e]`), corrected
+in place above with the original conclusion left standing. The
+verifier's seven own mutants killed all four subset directions
+uniquely (count 1 each), proved the include_str pin non-stale via
+cargo's own recompile, re-derived the bump question at the lane's ref
+in both directions (no bump owed), and reproduced every figure the
+lane published. Fence clean across three main tips.
+
+INTEGRATION NOTE, against this seat: commit `18d8166`'s message claims
+"both verdict corrections performed" — that commit contains ONLY the
+graph regeneration (+1 edge, sessions.rs→skills.rs). The correction
+script died on an unmatched needle (the page wraps at column ~72 with
+two-space indents) before touching either file, and the commit was
+made without checking what it contained. The corrections were actually
+performed in THIS commit. The false message is pushed history and
+stays; this note is the repair.

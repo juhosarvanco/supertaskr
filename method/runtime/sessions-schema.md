@@ -52,7 +52,7 @@ loses nothing about the project.
   packs were loaded, `model` and `native_session_id` before the agent
   CLI's own init line has reported them (the shape every entry has
   between its first write and its first turn). An absent key means *not
-  recorded*, never *empty*, and a reader treats the two alike. **The
-  other six are always written.** So an entry carrying the nine keys
-  above and no tenth means *no packs*, and one written before `skills`
-  existed reads back unchanged.
+  recorded*, never *empty*, and a reader treats the two alike. **Every
+  other key above is always written.** So an entry carrying the nine
+  keys above and no tenth means *no packs*, and one written before
+  `skills` existed reads back unchanged.
