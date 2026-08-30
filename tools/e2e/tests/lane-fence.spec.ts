@@ -30,6 +30,7 @@ import {
   within,
 } from "../../../.claude/hooks/lane-fence.mjs";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
 import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
 import { MANIFEST_DIR_IGNORE, buildLaneFence, laneIdOf, writeLaneFence } from "../scripts/lane-fence.mjs";
@@ -69,7 +70,11 @@ import { MANIFEST_DIR_IGNORE, buildLaneFence, laneIdOf, writeLaneFence } from ".
 const SCRATCH: string[] = [];
 
 test.afterAll(() => {
-  for (const dir of SCRATCH.splice(0)) rmSync(dir, { recursive: true, force: true });
+  // T-178: these roots hold repositories this file COMMITTED into, and a
+  // commit detaches `git maintenance run --auto` behind it. The removal is
+  // bounded-retried, and one that still cannot finish is the FIXTURE's
+  // finding rather than a red on whichever body happened to run last.
+  for (const dir of SCRATCH.splice(0)) removeGitFixture(dir, "lane-fence scratch");
 });
 
 /**
@@ -91,7 +96,16 @@ function scratchRoot(): string {
 function git(cwd: string, args: string[]): string {
   return execFileSync(
     "git",
-    ["-C", cwd, "-c", "user.email=t154@example.invalid", "-c", "user.name=T-154 fixture", ...args],
+    [
+      "-C",
+      cwd,
+      "-c",
+      "user.email=t154@example.invalid",
+      "-c",
+      "user.name=T-154 fixture",
+      ...NO_BACKGROUND_MAINTENANCE,
+      ...args,
+    ],
     { encoding: "utf8" },
   );
 }
