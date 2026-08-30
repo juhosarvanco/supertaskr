@@ -169,12 +169,79 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
     Harness { project, dump, watch, _ctl_rx: ctl_rx, agent, events, root }
 }
 
+/// **THE FIXTURE DEADLINE, AND IT IS AN ALARM RATHER THAN A BUDGET.**
+/// Every body in this file but one drives `CARGO_BIN_EXE_fake_agent`,
+/// whose whole canned stream lands in milliseconds; nothing here is
+/// waiting on a network or a model. So twenty seconds is not "long
+/// enough for a fixture", it is *far* longer than any fixture may take —
+/// a fixture that needs more than this has a defect, and this deadline
+/// is what says so. **Do not raise it to make a body pass.**
+const FIXTURE_DEADLINE: Duration = Duration::from_secs(20);
+
+/// **THE REAL-CLI DEADLINE — the one wait in this file that is measuring
+/// a MODEL rather than a fixture, and the only one that may be minutes.**
+/// Used by `real_cli_smoke_records_the_stream_schema` and by nothing
+/// else.
+///
+/// **THE CITATION (T-025-s5).** On 2026-08-30 the real smoke ran against
+/// a real model for the first time in this project's life (this machine,
+/// claude 2.1.226, `NPUTER_REAL_CLI=1 cargo test --test agent_runner
+/// real_cli_smoke -- --ignored --nocapture`). The 2026-08-16 park reason
+/// — a revoked OAuth token — was stale: auth passed, the runner
+/// registered native session `677664de-…`, real text streamed ("I'll
+/// start by reading the planner role definition."), and `Read`, `Bash`,
+/// `Read` ran through the allowlist with no denial. Then this body's
+/// wait — `FIXTURE_DEADLINE`, shared with every fake-driven body in the
+/// file — expired MID-TURN and panicked, and the harness reaped a
+/// healthy turn. It reaped it cleanly, too: process group gone in 550 ms,
+/// no SIGKILL, which is the failure path passing a test it was never
+/// given. **The deadline was measuring the fixture, not the turn.**
+///
+/// **WHY FIFTEEN MINUTES, derived rather than picked.**
+/// 1. It must sit ABOVE the production runner's own bounds, so that a
+///    genuinely stuck real turn is ended by the RUNNER — as a typed
+///    `StartTimeout` or `Stall` this smoke then records, which is the
+///    whole point of the body — instead of being destroyed by a harness
+///    panic that records nothing. `RunnerConfig::default()` (the config
+///    this smoke uses, `agent/runner.rs`) worst-cases at
+///    `start_timeout` 30 s + `stall_timeout` 300 s + `kill_grace` 5 s =
+///    335 s. That is a FLOOR for this number, not the number.
+/// 2. `stall_timeout` is idle-since-the-last-line, so it never bounds a
+///    healthy turn's WALL CLOCK: every delta resets it, and a stage-0
+///    scaffold that streams steadily for ten minutes trips nothing in
+///    the runner. This deadline is therefore the only wall clock over a
+///    real turn, and it has to be a real turn's budget — minutes — not
+///    a stall detector wearing one.
+/// 3. Fifteen minutes is ~2.7x the floor in (1), so the runner's own
+///    typed failure arrives first in every mode the runner can see, and
+///    a panic HERE means only "the runner failed to bound itself" —
+///    which is a finding, not noise.
+/// 4. The two errors are not symmetric, and that is what buys the slack.
+///    Too small destroys the evidence the run exists to collect, and
+///    2026-08-30 is the worked example. Too large costs one human,
+///    hand-running an `#[ignore]`d body with `--nocapture` in front of
+///    them, a wait they can end with ^C. No suite and no CI can reach
+///    this constant: `#[ignore]` and `NPUTER_REAL_CLI=1` both stand.
+const REAL_CLI_DEADLINE: Duration = Duration::from_secs(15 * 60);
+
 fn wait_for(
     events: &mpsc::Receiver<RunEvent>,
     label: &str,
     pred: impl Fn(&RunEvent) -> bool,
 ) -> RunEvent {
-    let deadline = Instant::now() + Duration::from_secs(20);
+    wait_for_within(events, FIXTURE_DEADLINE, label, pred)
+}
+
+/// `wait_for` with the deadline named by the caller. Only the real smoke
+/// passes anything but `FIXTURE_DEADLINE`, and `wait_for` above keeps
+/// every fake-driven call site unchanged.
+fn wait_for_within(
+    events: &mpsc::Receiver<RunEvent>,
+    within: Duration,
+    label: &str,
+    pred: impl Fn(&RunEvent) -> bool,
+) -> RunEvent {
+    let deadline = Instant::now() + within;
     let mut seen = Vec::new();
     while Instant::now() < deadline {
         match events.recv_timeout(Duration::from_millis(200)) {
@@ -188,7 +255,10 @@ fn wait_for(
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         }
     }
-    panic!("timed out waiting for {label}; saw: {seen:#?}");
+    panic!(
+        "timed out waiting for {label} after {}s; saw: {seen:#?}",
+        within.as_secs()
+    );
 }
 
 fn wait_completed(events: &mpsc::Receiver<RunEvent>) -> RunEvent {
@@ -212,7 +282,7 @@ fn wait_failed(events: &mpsc::Receiver<RunEvent>) -> TurnError {
 /// T-081 exists to fix, and telling that apart from a denial that reached
 /// it live is an ORDER question.
 fn collect_turn(events: &mpsc::Receiver<RunEvent>) -> Vec<RunEvent> {
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
     let mut seen = Vec::new();
     while Instant::now() < deadline {
         match events.recv_timeout(Duration::from_millis(200)) {
@@ -246,8 +316,18 @@ fn denied_events(seen: &[RunEvent]) -> Vec<(u64, Option<String>, Option<String>,
 
 /// Block until the turn thread has finished settling (phase leaves
 /// Running), so registry/transcript assertions are not racing it.
+///
+/// **THIS ONE KEEPS `FIXTURE_DEADLINE` EVEN FOR THE REAL SMOKE, and the
+/// reason is in `run_turn`'s order** (T-025-s5's sweep): the child is
+/// reaped and the group terminated BEFORE the terminal event is
+/// classified and emitted, so by the time any caller's `wait_for` has
+/// returned, everything left for this poll to wait on is
+/// `agent/mod.rs`'s post-turn bookkeeping — a transcript append and a
+/// session-registry upsert, both local disk. No model is on this side of
+/// the terminal event, so twenty seconds is the same alarm here that it
+/// is everywhere else in this file.
 fn settle(agent: &agent::AgentState) -> GenesisStatus {
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
     loop {
         let status = agent::status(agent);
         if status.phase != Phase::Running {
@@ -343,7 +423,7 @@ fn read_dump(dump: &Path, turn: usize, name: &str) -> String {
 }
 
 fn wait_for_file(path: &Path) -> String {
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
     while Instant::now() < deadline {
         if let Ok(text) = fs::read_to_string(path) {
             if !text.trim().is_empty() {
@@ -3316,7 +3396,7 @@ fn a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded() 
 
     // Every event up to the failure, so ABSENCE is assertable too.
     let mut seen: Vec<RunEvent> = Vec::new();
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
     let error = loop {
         match h.events.recv_timeout(Duration::from_millis(200)) {
             Ok(RunEvent::Failed { error, .. }) => break error,
@@ -4691,7 +4771,11 @@ fn real_cli_smoke_records_the_stream_schema() {
     let watch = WatchState::new(Some(project.clone()), Arc::new(AtomicU64::new(0)), ctl);
 
     println!("[real-smoke] start: {:?}", agent::start_genesis(&watch, &agent));
-    let event = wait_for(&events, "completed or failed", |e| {
+    // T-025-s5: REAL CADENCE, not the fixtures'. A real stage-0 scaffold
+    // runs minutes; every other stream this file has ever seen lands in
+    // milliseconds. `REAL_CLI_DEADLINE` carries the derivation and the
+    // 2026-08-30 run that this line exists because of.
+    let event = wait_for_within(&events, REAL_CLI_DEADLINE, "completed or failed", |e| {
         matches!(e, RunEvent::Completed { .. } | RunEvent::Failed { .. })
     });
     println!("[real-smoke] terminal event: {event:#?}");
