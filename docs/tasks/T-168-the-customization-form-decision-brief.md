@@ -171,6 +171,12 @@ rather than by any sampling frame, one reading on one day.
   and two bodies read the correct refusal as a failure.
   **The lane could not fix it: `tools/e2e` is outside this fence.** It
   is filed as `T-168-s1` with the measurement attached.
+  RUN TWICE, because the first run predated the card files: against the
+  FINAL tree the suite answers **exit 1 unpiped, 318 passed, the same
+  two bodies**, with the sibling lane still live and
+  `brief.mjs --task T-157` still exiting 1 at the moment of the run.
+  Same failure, same cause, reproduced — which is what makes it a
+  diagnosis rather than a guess.
 
 **Suite-run notes.** A fresh worktree has nothing installed or built,
 so the owed suite needed the fresh-clone ORDER in front of it
