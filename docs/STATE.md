@@ -1,14 +1,12 @@
 # State
 
-Updated: 2026-08-30 at the T-167-s2 checkpoint — THE GRAPH HEADROOM
-ALARM IS LIVE and fired on its first breath (6,865 left under the
-14,914 tripwire; every gate run now shouts it until T-140-s1's
-rollup lands — fix chain T-135 Half B -> T-140-s1). T-160-s4 landed
-beside it: T-059's fence defect fixed, proven red-before/green-after
-in a lane-free clone, the sibling-lane finding re-checked gone at
-this checkpoint. T-025-s6 is VERIFYING under a blind verifier seat
-(the slug-fence ceremony row — its T-025-s7 carries the policy
-question). Current record: docs/checkpoints/2026-08-30-T-167-s2.md.
+Updated: 2026-08-30 at the T-025-s6 checkpoint — THE SECOND WAVE IS
+FULLY LANDED: the smoke has a verdict (blind-verified; the verifier's
+two surviving mutants became the merge's proven corrections), the
+headroom alarm reads **4,693 left** and rises in urgency with every
+merge (fix chain: T-135 Half B -> T-140-s1, now the board's most
+urgent), T-059's defect is fixed and re-proven, the tripwire is live.
+No lanes. Current record: docs/checkpoints/2026-08-30-T-025-s6.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -55,16 +53,15 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. Dispatch by the board's derived order: `T-167-s2` (F-06 p1, the
-   graph tripwire, crate-index) ∥ `T-160-s4` (F-04 p1, tools/e2e) ∥
-   `T-025-s6` (F-03 p2, app-agent) — fences disjoint at this
-   rewrite; derive at dispatch. Behind them: `T-163-s3` (the false
-   clause, CONVENTIONS), `T-135` Half B (unblocks T-140-s1),
-   `T-169`, `T-112` (ONE collider), `T-164`. Customization UI cards
-   wait on a VERSION sitting (the standing rule).
+1. THE GRAPH CHAIN OUTRANKS EVERYTHING: read T-135's card, finish
+   Half B (its building status is the stale stamp STATE has carried
+   for days), then dispatch `T-140-s1` (the rollup — shape RULED).
+   Around it, disjoint: `T-163-s3` (the false clause, CONVENTIONS),
+   `T-169` (lib-parser+app-board), `T-164` (bin). Then `T-112` (ONE
+   collider). Customization UI cards wait on a VERSION sitting.
 2. @human's open items: THE GENESIS WALK (closes milestone 3); the
-   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling
-   (floor vs per-merge delta — routed by sitting #2). All unhurried.
+   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling.
+   All unhurried.
 3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
    the preflight refuses it until then, correctly. `T-154-s2`
    (promoted, `review: independent`) is dispatchable after the e2e
