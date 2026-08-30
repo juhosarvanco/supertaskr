@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 6
 size: S
-status: verifying
+status: done
 suggested_by: verifier claude-opus-5@subagent @T-143
 blocked_by: []
 touches: [app-board]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -236,7 +236,12 @@ All four buildable criteria are met and the fifth (verification) is the
 drill above. **Nothing is unmet.** The third criterion was obeyed by
 NOT acting: the caveat's other half — whether the clause is consumed —
 was left alone, and this lane confirmed only that it still is (the string
-is appended to `reason` at the `dispatchable` arm, which the app renders).
+is appended to `reason` at the `dispatchable` arm — and the verifier
+MEASURED the consumer: `selectDispositions` has no caller in app/src at
+this ref, the built bundle holds 0 occurrences of the clause, so the
+sentence reaches no screen YET; its consumer is T-112's own
+deliverable, dispatching next, which turns this card's GUI premise
+from false-today into sequenced).
 
 ### The routing the fourth criterion orders
 
@@ -254,3 +259,6 @@ length), not the prose. The card proposes the dull pair-picker and writes
 down the case against it too.
 
 ## Verdicts
+
+
+VERDICT (2026-08-30, blind verifier claude-opus-5@subagent, factless): **APPROVED WITH ASSIGNED CORRECTIONS**, both performed at merge: (1) the notes' consumer claim corrected to the measured fact above; (2) THE IN-FENCE SWEEP RECORDED — the class survives twice in the very string this lane edited: `" of " + CONCURRENCY_CEILING.max + " lanes are in flight."` renders "1 of 5 lanes ARE in flight" beside the fixed caveat, and the NOTHING-IS-DISPATCHABLE headline carries "1 of 5 lanes are live" — both outside this card's closed criteria, RECORDED AND ROUTED as a dated corroboration on T-143-s6 rather than taken here. The verifier's four own mutants killed one-sided with uniqueness measured; restoration hashes matched the executor's.

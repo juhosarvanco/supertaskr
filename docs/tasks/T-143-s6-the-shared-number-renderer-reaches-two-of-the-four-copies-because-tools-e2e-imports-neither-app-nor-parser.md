@@ -85,3 +85,6 @@ not close the class — it closes half of it and leaves a reader believing
 it closed. **If triage rules NO, the ruling is worth writing on this card
 rather than leaving the class open**, because this is now the second
 sitting the same question has reached.
+
+
+CORROBORATION (2026-08-30, T-143-s3's blind verifier, routed at the merge): the frozen-number class survives twice inside the very string T-143-s3 fixed — board-model.ts's `" of " + CONCURRENCY_CEILING.max + " lanes are in flight."` ("1 of 5 lanes ARE in flight", same sentence as the corrected caveat) and the NOTHING-IS-DISPATCHABLE headline's "1 of 5 lanes are live". Both belong to whichever card takes this class next; the pair-picker proposal here is their natural vehicle.
