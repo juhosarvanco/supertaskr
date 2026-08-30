@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 20
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@integration-seat
 review:
 ---
 
@@ -326,3 +326,60 @@ carries.
 - The brief's ROW 2 read `status: planned`; at the base commit `2370144`
   the card already read `building`. The dispatch stamp landed between the
   brief's ref (`4efd5a7`) and the base.
+
+## INTEGRATOR REVIEW (2026-08-31) — this row owes no verifier, so the review is recorded here
+
+**THE CEREMONY QUESTION THE EXECUTOR RAISED IS RULED, and it was right to
+raise it rather than guess upward.** `method/tasks/TASK-FORMAT.md`'s
+table gives *S, diff outside shipped code* an executor who is its own
+integrator. `docs/CONVENTIONS.md`'s SHIPPED PARTITION names `tools/e2e`
+explicitly on the NOT-SHIPPED side — *"YES to 'is it code?', NO to 'does
+it ship?' — the case this rule exists to settle"* — so no verifier is
+owed. The dispatch nonetheless reserved merge and checkpoint to this
+seat, which is a restriction the dispatcher may impose and the executor
+obeyed. **The stamp that survives is `done`, integrated by this seat,
+with the review below standing in the verifier's place** — the same
+disposition `T-163-s4` took on 2026-08-30, and for the same reason.
+
+**THE CENTRAL CLAIM IS VERIFIED AT THE MERGE, not accepted.** The
+executor claims no document name is written into the tool — only the
+grammar of two sentences. Read at the merge:
+
+- `readSubtractions` matches the literal `do NOT read ` and hands the
+  REMAINDER of that line to `docsNamed`;
+- `readAdditions` matches `ADDITION TO THAT SET IS ` and hands its
+  remainder to `backtickRuns`;
+- `docsNamed` is `/\bdocs\/[A-Za-z0-9_./-]*\.md\b/g` — a shape, not a
+  name.
+
+No subtracted or added document is spelled anywhere in the derivation.
+The `TASK-FORMAT.md` and `STATE.md` literals elsewhere in that file
+belong to row 11's ceremony reader and arm two's STATE reader and predate
+this diff.
+
+**ONE ASYMMETRY, RECORDED FOR THE NEXT SITTING RATHER THAN CORRECTED
+HERE.** The two arms do not share a vocabulary: subtractions are read
+with `docsNamed`, which matches **only `docs/**.md`**, while additions
+are read with `backtickRuns`, which matches any backticked run. That is
+correct for today's role files — the subtraction names `docs/ROADMAP.md`
+and the addition names `tasks/TASK-FORMAT.md`, which is not under
+`docs/` — but it means **a future role file subtracting a non-`docs/`
+document would silently subtract nothing**, in a tool whose entire
+purpose is that a silent difference between the adapter and the role file
+cost every brief its correctness. The failure would be quiet and the
+tool's own subject is quiet failures. Not a rework: the card asked for
+the two sentences to be applied and they are. Routed as an observation
+for triage.
+
+**THE EXECUTOR'S OWN DISCLOSED DEVIATION, accepted:** it completed the
+ramp-up reading and found no conflict, but did not write the
+one-paragraph confirmation `method/roles/executor.md` step 1 asks for
+before touching code. Disclosed unprompted in its report. Recorded rather
+than waved through — the value of that paragraph is that it surfaces a
+misreading BEFORE the work, and a lane that skips it has spent its own
+safety net; that it went well here is luck rather than evidence.
+
+**And its sweep found the class had TWO members, not one** — row 3 (this
+defect) and row 5, whose two rankings `deriveFence` already applies,
+checked rather than assumed. A sweep that reports two where the card
+predicted one is the sweep rule working.

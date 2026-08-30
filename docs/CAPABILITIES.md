@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **332 behaviours** — 330 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **335 behaviours** — 333 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -42,6 +42,9 @@ Census: **332 behaviours** — 330 extracted sentences + 2 named-not-extracted (
 - the ROW SET is read from the role file, and the coverage runs both ways
 - the row set FOLLOWS the document — it is not pinned here
 - a contract table this command cannot read THROWS, never yields an empty contract
+- ROW 3 APPLIES the role file's reading step, and still shows what the adapter itself named
+- the subtraction and the addition FOLLOW the role file — no clause leaves the adapter's list unchanged
+- a `do NOT read` sentence that names no document subtracts nothing
 - THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH
 - the branch filter is DERIVED from the spelling CONVENTIONS publishes
 - the lane spellings refuse a near-miss rather than answering with it

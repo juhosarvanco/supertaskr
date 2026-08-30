@@ -1,7 +1,8 @@
 # State
 
-Updated: 2026-08-31 at T-140-s4's close — record:
-docs/checkpoints/2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
+Updated: 2026-08-31 at T-112-s3's close — records:
+docs/checkpoints/2026-08-31-T-112-s3-the-brief-applies-its-own-reading-step.md
+and 2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
 **THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
 budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
 bytes (derive: `index --check`). Every fence is dispatchable again.
@@ -47,12 +48,13 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s3`, `T-172` (building); `T-177` (BUILT, awaiting
-   the integrator pass).
-2. THEN, no blocker left: `T-112-s1` (until it lands the drawer's brief
-   block never renders), `T-178`, `T-171`, `T-162-s1` (byte floor —
-   its `DOC_BUDGETS` half is OUTSIDE its fence; decide at dispatch),
-   `T-174`, `T-112-s4`, `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`.
+1. IN FLIGHT: `T-112-s1` (executor); `T-172` and `T-177` (blind
+   verifiers out). LANDED tonight: `T-140-s4`, `T-112-s3`.
+2. THEN, no blocker left: `T-153-s8` (the capabilities census has no
+   keeper — three by-hand regenerations now; `tools/e2e` is free again),
+   `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
+   OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
+   `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
 3. STANDING REDS worth a lane: `T-153-s8` (capabilities census),
    `T-161`, `T-178`, `T-167-s8` (the pre-push graph guard — four local
    strikes, one CI confirmation).
@@ -119,6 +121,6 @@ it.
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
+  2026-08-31-T-112-s3-the-brief-applies-its-own-reading-step.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
