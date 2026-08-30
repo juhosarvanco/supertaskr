@@ -7152,8 +7152,8 @@
       "id": "f:app/src-tauri/src/dispatch/brief.rs",
       "path": "app/src-tauri/src/dispatch/brief.rs",
       "lang": "rust",
-      "hash": "blake3:df88883ae80b955dcd8b44d394a13ca0c5b70c8c60373bbb1a10560496ee053e",
-      "loc": 2895,
+      "hash": "blake3:e56505009d430c171c9904fae72919d0e8788afd98defb844a1f71d1e1fc63dc",
+      "loc": 3004,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/brief.rs#ADAPTER_FILES",
@@ -7161,8 +7161,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            118,
-            118
+            126,
+            126
           ]
         },
         {
@@ -7171,8 +7171,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            554,
-            568
+            593,
+            607
           ]
         },
         {
@@ -7181,8 +7181,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            482,
-            486
+            521,
+            525
           ]
         },
         {
@@ -7191,8 +7191,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            577,
-            591
+            627,
+            641
           ]
         },
         {
@@ -7201,8 +7201,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            523,
-            536
+            562,
+            575
           ]
         },
         {
@@ -7211,8 +7211,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1134,
-            1134
+            1184,
+            1184
           ]
         },
         {
@@ -7221,8 +7221,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            110,
-            110
+            118,
+            118
           ]
         },
         {
@@ -7231,8 +7231,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1044,
-            1044
+            1094,
+            1094
           ]
         },
         {
@@ -7241,8 +7241,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            304,
-            320
+            343,
+            359
           ]
         },
         {
@@ -7251,8 +7251,8 @@
           "kind": "trait",
           "exported": true,
           "range": [
-            348,
-            353
+            387,
+            392
           ]
         },
         {
@@ -7261,8 +7261,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1261,
-            1264
+            1311,
+            1314
           ]
         },
         {
@@ -7271,8 +7271,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            140,
-            147
+            179,
+            186
           ]
         },
         {
@@ -7281,8 +7281,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            127,
-            135
+            160,
+            168
           ]
         },
         {
@@ -7291,8 +7291,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            626,
-            634
+            676,
+            684
           ]
         },
         {
@@ -7301,8 +7301,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            245,
-            247
+            284,
+            286
           ]
         },
         {
@@ -7311,8 +7311,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            331,
-            340
+            370,
+            379
           ]
         },
         {
@@ -7321,8 +7321,8 @@
           "kind": "trait",
           "exported": true,
           "range": [
-            236,
-            242
+            275,
+            281
           ]
         },
         {
@@ -7331,8 +7331,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            362,
-            365
+            401,
+            404
           ]
         },
         {
@@ -7341,8 +7341,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1045,
-            1045
+            1095,
+            1095
           ]
         },
         {
@@ -7351,8 +7351,18 @@
           "kind": "const",
           "exported": true,
           "range": [
-            746,
-            747
+            796,
+            797
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#MAX_TASK_ID_CHARS",
+          "name": "MAX_TASK_ID_CHARS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            142,
+            142
           ]
         },
         {
@@ -7361,8 +7371,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            541,
-            549
+            580,
+            588
           ]
         },
         {
@@ -7371,8 +7381,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            598,
-            598
+            648,
+            648
           ]
         },
         {
@@ -7381,8 +7391,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            468,
-            477
+            507,
+            516
           ]
         },
         {
@@ -7391,8 +7401,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            88,
-            91
+            96,
+            99
           ]
         },
         {
@@ -7401,8 +7411,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            766,
-            766
+            816,
+            816
           ]
         },
         {
@@ -7411,8 +7421,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            225,
-            228
+            264,
+            267
           ]
         },
         {
@@ -7421,8 +7431,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1564,
-            1564
+            1614,
+            1614
           ]
         },
         {
@@ -7431,8 +7441,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            644,
-            743
+            694,
+            793
           ]
         },
         {
@@ -7441,8 +7451,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            768,
-            785
+            818,
+            835
           ]
         },
         {
@@ -7451,8 +7461,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1022,
-            1039
+            1072,
+            1089
           ]
         },
         {
@@ -7461,8 +7471,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1859,
-            1882
+            1918,
+            1941
           ]
         },
         {
@@ -7471,8 +7481,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1696,
-            1700
+            1746,
+            1750
           ]
         },
         {
@@ -7481,8 +7491,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1605,
-            1627
+            1655,
+            1677
           ]
         },
         {
@@ -7491,8 +7501,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1346,
-            1348
+            1396,
+            1398
           ]
         },
         {
@@ -7501,8 +7511,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            952,
-            980
+            1002,
+            1030
           ]
         },
         {
@@ -7511,8 +7521,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            798,
-            807
+            848,
+            857
           ]
         },
         {
@@ -7521,8 +7531,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            343,
-            345
+            382,
+            384
           ]
         },
         {
@@ -7531,8 +7541,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1297,
-            1307
+            1347,
+            1357
           ]
         },
         {
@@ -7541,8 +7551,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1815,
-            1844
+            1865,
+            1894
           ]
         },
         {
@@ -7551,8 +7561,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1797,
-            1812
+            1847,
+            1862
           ]
         },
         {
@@ -7561,8 +7571,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            488,
-            518
+            527,
+            557
           ]
         },
         {
@@ -7571,8 +7581,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            415,
-            441
+            454,
+            480
           ]
         },
         {
@@ -7581,8 +7591,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            249,
-            255
+            288,
+            294
           ]
         },
         {
@@ -7591,8 +7601,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            257,
-            291
+            296,
+            330
           ]
         },
         {
@@ -7601,8 +7611,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            367,
-            405
+            406,
+            444
           ]
         },
         {
@@ -7611,8 +7621,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            93,
-            101
+            101,
+            109
           ]
         },
         {
@@ -7621,8 +7631,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1351,
-            1363
+            1401,
+            1413
           ]
         },
         {
@@ -7631,8 +7641,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1703,
-            1717
+            1753,
+            1767
           ]
         },
         {
@@ -7641,8 +7651,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1721,
-            1730
+            1771,
+            1780
           ]
         },
         {
@@ -7651,8 +7661,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            788,
-            795
+            838,
+            845
           ]
         },
         {
@@ -7661,8 +7671,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1310,
-            1317
+            1360,
+            1367
           ]
         },
         {
@@ -7671,8 +7681,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            613,
-            619
+            663,
+            669
           ]
         },
         {
@@ -7681,8 +7691,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1733,
-            1755
+            1783,
+            1805
           ]
         },
         {
@@ -7691,8 +7701,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1407,
-            1431
+            1457,
+            1481
           ]
         },
         {
@@ -7701,8 +7711,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            444,
-            452
+            483,
+            491
           ]
         },
         {
@@ -7711,8 +7721,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1006,
-            1019
+            1056,
+            1069
           ]
         },
         {
@@ -7721,8 +7731,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            160,
-            208
+            199,
+            247
           ]
         },
         {
@@ -7731,8 +7741,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            987,
-            1000
+            1037,
+            1050
           ]
         },
         {
@@ -7741,8 +7751,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1382,
-            1396
+            1432,
+            1446
           ]
         },
         {
@@ -7751,8 +7761,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1644,
-            1662
+            1694,
+            1712
           ]
         },
         {
@@ -7761,8 +7771,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1566,
-            1602
+            1616,
+            1652
           ]
         },
         {
@@ -7771,8 +7781,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1477,
-            1500
+            1527,
+            1550
           ]
         },
         {
@@ -7781,8 +7791,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1136,
-            1257
+            1186,
+            1307
           ]
         },
         {
@@ -7791,8 +7801,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1433,
-            1449
+            1483,
+            1499
           ]
         },
         {
@@ -7801,8 +7811,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1047,
-            1130
+            1097,
+            1180
           ]
         },
         {
@@ -7811,8 +7821,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1502,
-            1560
+            1552,
+            1610
           ]
         },
         {
@@ -7821,8 +7831,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            891,
-            949
+            941,
+            999
           ]
         },
         {
@@ -7831,8 +7841,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1629,
-            1642
+            1679,
+            1692
           ]
         },
         {
@@ -7841,8 +7851,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            811,
-            837
+            861,
+            887
           ]
         },
         {
@@ -7851,8 +7861,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1367,
-            1380
+            1417,
+            1430
           ]
         },
         {
@@ -7861,8 +7871,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            841,
-            887
+            891,
+            937
           ]
         },
         {
@@ -7871,8 +7881,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1758,
-            1778
+            1808,
+            1828
           ]
         },
         {
@@ -7881,8 +7891,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1781,
-            1794
+            1831,
+            1844
           ]
         },
         {
@@ -7891,8 +7901,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1323,
-            1343
+            1373,
+            1393
           ]
         },
         {
@@ -7901,8 +7911,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1271,
-            1294
+            1321,
+            1344
           ]
         },
         {
@@ -7911,8 +7921,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1456,
-            1475
+            1506,
+            1525
           ]
         },
         {
@@ -7921,8 +7931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            408,
-            413
+            447,
+            452
           ]
         },
         {
@@ -7931,8 +7941,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            213,
-            216
+            252,
+            255
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#task_id_within_bounds",
+          "name": "task_id_within_bounds",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            149,
+            151
           ]
         },
         {
@@ -7941,8 +7961,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1889,
-            2895
+            1948,
+            3004
           ]
         },
         {
@@ -7951,8 +7971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1669,
-            1693
+            1719,
+            1743
           ]
         },
         {
@@ -7961,8 +7981,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            755,
-            764
+            805,
+            814
           ]
         }
       ]
@@ -9065,9 +9085,19 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:7e53f7b292b5ab0eb6df69699ce5c3599c1b8529332792f25570afc6797b450e",
-      "loc": 1033,
+      "hash": "blake3:6494cd2f68cdaeecff2483a6b1cb5ccf9032b6fb9baa28c0fd289f13b2d4cf7f",
+      "loc": 1375,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/src/lib.rs#DispatchBriefOutcome",
+          "name": "DispatchBriefOutcome",
+          "kind": "enum",
+          "exported": false,
+          "range": [
+            556,
+            562
+          ]
+        },
         {
           "id": "s:app/src-tauri/src/lib.rs#DispatchLanesOutcome",
           "name": "DispatchLanesOutcome",
@@ -9169,6 +9199,26 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/lib.rs#dispatch_brief",
+          "name": "dispatch_brief",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            634,
+            667
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#dispatch_brief_at",
+          "name": "dispatch_brief_at",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            570,
+            595
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/lib.rs#dispatch_lanes",
           "name": "dispatch_lanes",
           "kind": "fn",
@@ -9214,8 +9264,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            582,
-            584
+            714,
+            716
           ]
         },
         {
@@ -9224,8 +9274,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            602,
-            607
+            734,
+            739
           ]
         },
         {
@@ -9234,8 +9284,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            622,
-            624
+            754,
+            756
           ]
         },
         {
@@ -9244,8 +9294,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            591,
-            596
+            723,
+            728
           ]
         },
         {
@@ -9254,8 +9304,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            562,
-            568
+            694,
+            700
           ]
         },
         {
@@ -9264,8 +9314,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            549,
-            554
+            681,
+            686
           ]
         },
         {
@@ -9274,8 +9324,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            574,
-            576
+            706,
+            708
           ]
         },
         {
@@ -9284,8 +9334,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            613,
-            615
+            745,
+            747
           ]
         },
         {
@@ -9364,8 +9414,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            627,
-            788
+            759,
+            927
           ]
         },
         {
@@ -9394,8 +9444,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            791,
-            1033
+            930,
+            1375
           ]
         }
       ]
@@ -13325,8 +13375,8 @@
       "id": "f:app/src/components/board/Board.tsx",
       "path": "app/src/components/board/Board.tsx",
       "lang": "ts",
-      "hash": "blake3:ae2770b6175780d62e6642bddda69c88f731dffb632245818d81a22d22826971",
-      "loc": 82,
+      "hash": "blake3:6d2fc28f33c8500d7f25174aaf05dcdbe829c22ce58da7c52f9a9fb552fd1127",
+      "loc": 96,
       "symbols": [
         {
           "id": "s:app/src/components/board/Board.tsx#Board",
@@ -13334,8 +13384,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            37,
-            82
+            51,
+            96
           ]
         },
         {
@@ -13519,8 +13569,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:5fb0f29bebd74d7bff41220a50478116f8589ff193a9ce2e30a8344a95449acd",
-      "loc": 700,
+      "hash": "blake3:bd0cb2bfcaf853b5ec9ea1dcfd7efa6ab315f5647c521266fd6b2736eca33e5a",
+      "loc": 708,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
@@ -13528,8 +13578,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            655,
-            689
+            663,
+            697
           ]
         },
         {
@@ -13538,8 +13588,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            443,
-            498
+            451,
+            506
           ]
         },
         {
@@ -13548,8 +13598,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            627,
-            633
+            635,
+            641
           ]
         },
         {
@@ -13558,8 +13608,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            501,
-            507
+            509,
+            515
           ]
         },
         {
@@ -13568,8 +13618,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            516,
-            544
+            524,
+            552
           ]
         },
         {
@@ -13578,8 +13628,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            599,
-            623
+            607,
+            631
           ]
         },
         {
@@ -13588,8 +13638,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            691,
-            700
+            699,
+            708
           ]
         },
         {
@@ -13599,7 +13649,7 @@
           "exported": true,
           "range": [
             67,
-            424
+            432
           ]
         },
         {
@@ -13608,8 +13658,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            562,
-            597
+            570,
+            605
           ]
         }
       ]
@@ -17375,8 +17425,8 @@
       "id": "f:app/src/lib/dispatch-store.ts",
       "path": "app/src/lib/dispatch-store.ts",
       "lang": "ts",
-      "hash": "blake3:a5010f262c7fc79796bcd2339ccf00f4ca83c2bd1e66f6c5cb0fb142d7b85ec5",
-      "loc": 423,
+      "hash": "blake3:5eec6b3128e9f53859c21adef1603e110df47ba82de48d16c3f77f3c93957f2b",
+      "loc": 484,
       "symbols": [
         {
           "id": "s:app/src/lib/dispatch-store.ts#BoardStamp",
@@ -17384,8 +17434,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            160,
-            164
+            169,
+            173
           ]
         },
         {
@@ -17394,8 +17444,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            346,
-            350
+            356,
+            360
           ]
         },
         {
@@ -17404,8 +17454,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            396,
-            409
+            406,
+            419
           ]
         },
         {
@@ -17414,8 +17464,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            341,
-            344
+            351,
+            354
           ]
         },
         {
@@ -17424,8 +17474,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            354,
-            363
+            364,
+            373
           ]
         },
         {
@@ -17434,8 +17484,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            365,
-            378
+            375,
+            388
           ]
         },
         {
@@ -17444,8 +17494,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            197,
-            199
+            206,
+            208
           ]
         },
         {
@@ -17454,8 +17504,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            190,
-            195
+            199,
+            204
           ]
         },
         {
@@ -17464,8 +17514,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            106,
-            111
+            115,
+            120
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DispatchBriefWire",
+          "name": "DispatchBriefWire",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            460,
+            462
           ]
         },
         {
@@ -17474,8 +17534,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            258,
-            272
+            267,
+            281
           ]
         },
         {
@@ -17484,8 +17544,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            227,
-            246
+            236,
+            255
           ]
         },
         {
@@ -17494,8 +17554,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            202,
-            219
+            211,
+            228
           ]
         },
         {
@@ -17504,8 +17564,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            171,
-            179
+            180,
+            188
           ]
         },
         {
@@ -17514,8 +17574,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            80,
-            93
+            89,
+            102
           ]
         },
         {
@@ -17524,8 +17584,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            131,
-            133
+            140,
+            142
           ]
         },
         {
@@ -17534,8 +17594,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            140,
-            144
+            149,
+            153
           ]
         },
         {
@@ -17544,8 +17604,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            381,
-            386
+            391,
+            396
           ]
         },
         {
@@ -17554,8 +17614,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            96,
-            103
+            105,
+            112
           ]
         },
         {
@@ -17564,8 +17624,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            114,
-            118
+            123,
+            127
           ]
         },
         {
@@ -17574,8 +17634,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            120,
-            124
+            129,
+            133
           ]
         },
         {
@@ -17584,8 +17644,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            421,
-            423
+            431,
+            433
           ]
         },
         {
@@ -17594,8 +17654,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            289,
-            308
+            298,
+            317
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#readBrief",
+          "name": "readBrief",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            479,
+            484
           ]
         }
       ]
@@ -19147,8 +19217,8 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:6c07b758fe8a5f6b951f8660ca3b1aebd4d6f7898ab7028221eb252f0dd317d8",
-      "loc": 837,
+      "hash": "blake3:70dbf2693c22f98d9e3b3d48a89aa96f7e91575b963e546f47662a5169f0e263",
+      "loc": 950,
       "symbols": [
         {
           "id": "s:app/test/board-truth.test.tsx#CLAMPING",
@@ -19406,8 +19476,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:a61042a0d45d3730d8601001168768832240c57de9ee3c9a2d0014abc2f45d7d",
-      "loc": 744,
+      "hash": "blake3:ac11455da6851a87627a5c02430bb5108727db0e74e80976639fec64baea67af",
+      "loc": 763,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
@@ -27675,6 +27745,7 @@
       "to": "p:cargo:serde",
       "kind": "import",
       "symbols": [
+        "Deserialize",
         "Serialize"
       ]
     },
@@ -29679,6 +29750,14 @@
         "TaskRecord",
         "TaskSize",
         "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/dispatch-store.ts",
+      "to": "p:@tauri-apps/api",
+      "kind": "import",
+      "symbols": [
+        "invoke"
       ]
     },
     {
@@ -38795,6 +38874,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchBriefWire",
+      "to": "s:app/src/lib/dispatch-store.ts#BriefOutcomeWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
       "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
       "kind": "type_ref",
@@ -38906,6 +38991,12 @@
       "from": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
       "to": "s:app/src/lib/dispatch-store.ts#assertNever",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#readBrief",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchBriefWire",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -43034,7 +43125,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2418,
-    "edges": 2330
+    "symbols": 2425,
+    "edges": 2333
   }
 }

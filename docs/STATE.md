@@ -48,10 +48,15 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s1` (blind verifier out), `T-171` (executor).
-   LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`, `T-172`, `T-153-s8`.
+1. IN FLIGHT: `T-171` (blind verifier out), `T-178` (executor).
+   LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`, `T-172`,
+   `T-153-s8`, `T-112-s1` — SIX lanes.
    Sitting #5 DONE — called by a band at DRIFT rather than by a cadence.
-2. THEN, no blocker left: `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
+2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED** — it wants a RULING
+   before a fence, and it is what stands between the registered command
+   and a rendered brief. Registration (`T-112-s1`) was necessary and is
+   NOT sufficient; this file said otherwise three times and was wrong.
+   THEN, no blocker left: `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
    OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
    `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
 3. STANDING REDS worth a lane: `T-161`, `T-178`, `T-167-s8` (the
@@ -124,7 +129,7 @@ it.
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-153-s8-the-census-gets-a-keeper.md.
+  2026-08-31-T-112-s1-the-assembler-is-reachable.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
   health band's window and CONVENTIONS' dispatch base BOTH read that
   marker, and a seat dropped it for six records before a band noticed

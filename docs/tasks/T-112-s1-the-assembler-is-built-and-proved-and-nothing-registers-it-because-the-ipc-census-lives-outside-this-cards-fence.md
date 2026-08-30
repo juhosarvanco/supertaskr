@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [app-shell, app-dispatch, app-board]
@@ -13,7 +13,7 @@ builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
 verified_by: claude-opus-5@subagent
-review:
+review: independent
 ---
 
 **T-112's CRITERION 1 ORDERS WORK OUTSIDE ITS OWN CARD'S `touches:`,
