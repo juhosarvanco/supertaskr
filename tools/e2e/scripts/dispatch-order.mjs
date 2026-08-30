@@ -203,7 +203,12 @@ export async function dispatchContext(opts = {}) {
   const conventionsMd = opts.conventions ?? conventionsText(root);
   const porcelain = opts.porcelain ?? worktreePorcelain(root);
   const lanes = lanesFrom(porcelain, conventionsMd);
-  const model = parser.parseProjectFromFiles(boardFiles(root));
+  // `opts.files` is the spec-injection seam, symmetric with
+  // `opts.porcelain` and `opts.conventions` above: the board the parser
+  // rules on can be a fixture. Added at T-135's close, when the live
+  // board's in-flight column emptied for the first time and the
+  // in-flight section's populated arm lost its only live fixture.
+  const model = parser.parseProjectFromFiles(opts.files ?? boardFiles(root));
   const order = parser.readDispatchOrder(model, lanes, { knownPaths: knownPathOracle(root) });
   return {
     root,

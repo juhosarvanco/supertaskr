@@ -372,13 +372,20 @@ test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is no
   const inFlight = ctx.order.underway.filter((r: { card: { status: string } }) =>
     parser.IN_FLIGHT.has(r.card.status),
   );
-  // POSITIVE CONTROL FIRST: this repository HAS such a card right now —
-  // its own lane's, at minimum — so every assertion below is about a
-  // populated section rather than an empty one agreeing with itself.
-  expect(
-    inFlight.length,
-    "no card is in flight on this board, so this body proves nothing about the section",
-  ).toBeGreaterThan(0);
+  // BOTH ARMS OF THE LIVE BOARD ARE ASSERTED, NEITHER VACUOUSLY. This
+  // body used to demand a populated in-flight column as its positive
+  // control — and T-135's close (2026-08-30) emptied that column for
+  // the FIRST TIME IN THE BOARD'S HISTORY: the control refused to pass
+  // vacuously, exactly as built, and revealed that a permanently
+  // `building` card had been this body's unnamed fixture. The live half
+  // now asserts whichever state the board is in (the empty arm is the
+  // report's own honest line, stamped like everything else), and the
+  // POPULATED mechanism is pinned on an injected board in the body
+  // below — the select-board/T-163 pattern: the live half states the
+  // fact, the mechanism keeps a fixture that cannot evaporate.
+  if (inFlight.length === 0) {
+    expect(rendered).toContain("no card is in flight on the board");
+  }
   for (const r of inFlight) expect(rendered).toContain(r.id);
 
   // AND THE SECTION IS NARROWER THAN `underway`, through the PARSER'S
@@ -390,7 +397,7 @@ test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is no
   expect(
     doneOnes.length,
     "nothing is underway-but-not-in-flight, so the narrowing is untested here",
-  ).toBeGreaterThan(0);
+  ).toBeGreaterThan(0); // done cards exist on any real board; this one keeps teeth
   const section = rendered.slice(rendered.indexOf("IN FLIGHT ON THE BOARD"));
   for (const r of doneOnes.slice(0, 20)) expect(section).not.toContain(`${r.id} [`);
 
@@ -445,4 +452,43 @@ test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is no
       hasLane ? "it has NO lane, so it holds no fence" : "it HAS a lane above",
     );
   }
+});
+
+test("the in-flight section's POPULATED arm, on an injected board that cannot evaporate", async () => {
+  // The fixture the live body lost at T-135's close, rebuilt where no
+  // merge can empty it: two injected cards — one building with a
+  // declared bare-path fence, one done — plus the porcelain fixture's
+  // lanes. KILLED BY: the report dropping building cards, widening back
+  // to `underway`, or the lane-or-no-lane sentence leaving the row.
+  const files = [
+    { path: "docs/ROADMAP.md", content: "# R\n\n## Backbone\n- F-01: Method — the convention\n" },
+    {
+      path: "docs/tasks/T-940-in-flight-fixture.md",
+      content:
+        "---\nid: T-940\ntitle: In-flight fixture\nfeature: F-01\nmilestone: 1\npriority: 1\n" +
+        "size: S\nstatus: building\nblocked_by: []\ntouches: [tools/e2e]\nbuilder: m@x\n---\n\nbody\n",
+    },
+    {
+      path: "docs/tasks/T-941-done-fixture.md",
+      content:
+        "---\nid: T-941\ntitle: Done fixture\nfeature: F-01\nmilestone: 1\npriority: 1\n" +
+        "size: S\nstatus: done\nblocked_by: []\ntouches: [tools/e2e]\nbuilder: m@x\n" +
+        "verifier: m@x\nbuilt_by: m@x\nverified_by: m@x\n---\n\nbody\n",
+    },
+  ];
+  const ctx = await dispatchContext({ files, porcelain: PORCELAIN_FIXTURE });
+  const rendered = render(dispatchReport(ctx));
+  expect(unstampedLines(rendered)).toEqual([]);
+  const section = rendered.slice(rendered.indexOf("IN FLIGHT ON THE BOARD"));
+  const rows = inFlightRows(rendered);
+  const block = blockFor(rows, "T-940");
+  expect(block.length, "the building card is not listed").toBeGreaterThan(0);
+  expect((block[0] ?? "").startsWith("T-940 [")).toBe(true);
+  // No lane in the porcelain fixture is T-940's, so the no-lane arm:
+  const ruling = block.slice(1).join("\n");
+  expect(ruling).toContain("it has NO lane, so it holds no fence");
+  expect(ruling).not.toContain("it HAS a lane above");
+  // ...and the narrowing: the done card must not appear as a row.
+  expect(section).not.toContain("T-941 [");
+  expect(section).toContain("is NOT a fence hold");
 });
