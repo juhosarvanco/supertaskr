@@ -110,3 +110,38 @@ make.
 `[docs/CONVENTIONS.md, docs/checkpoints, .github, tools/e2e]` — the last
 one because of the `workflow-parity.spec.ts` coupling above, which no
 smaller fence can honour.
+
+## Implementation notes
+
+**CONFIRMATION, WRITTEN BEFORE ANYTHING WAS TOUCHED** (executor
+claude-opus-5, lane `/Users/ujju/Projects/nputer-T-156-s1`, branch
+`task/T-156-s1-bands-into-checkpoints`, cut from `1d297c9`, fence
+`[.github/workflows, docs/CONVENTIONS.md, docs/checkpoints]` with
+`docs/tasks/` always writable). I read docs/STATE.md, docs/ROADMAP.md,
+docs/ARCHITECTURE.md, docs/CONVENTIONS.md, docs/CAPABILITIES.md,
+docs/NORTH_STAR.md and this card in full, plus the three mechanisms the
+card names — `tools/e2e/scripts/health-bands.config.mjs`,
+`tools/e2e/tests/workflow-parity.spec.ts` and
+`docs/checkpoints/TEMPLATE.md`. My task is the recording half T-156
+could not build: the health bands have no way into a checkpoint record,
+so the three readings-authority bands are UNREAD at every ref and
+`machinery/gate-seconds` has no keeper at all — and the four things owed
+are a Gates line in the record template that runs `npm run health` with
+the checkpoint's own captured output as `--readings`, the CONVENTIONS
+ceremony sentence that makes writing it part of the ritual, a WRITTEN
+disposition for `.github/workflows/ci.yml` (step, scheduled reporter, or
+local-only with the reason), and the statement — beside the command,
+where people meet it — that the graph band's reading can only come from
+the INTEGRATOR's checkout because a lane that has built with cargo has
+its own `target/` inside the graph walk. The hard half is the MARKER and
+not a scanner, and the sampling trap is a criterion rather than a note:
+a marker owed by whoever noticed a problem collects only successes, so
+every marker here is owed by the SESSION, every time, with
+`not derivable here` plus a reason when it cannot be measured. **I know
+before starting that this card's own suggested fence names `tools/e2e`
+and mine does not**, and that item 2 is a PAIR — the command in the
+`Build & test` bullet AND its `CI_SEQUENCE`/`LOCAL_ONLY` entry in
+`workflow-parity.spec.ts` — that has to land in one commit; I will
+measure that red rather than predict it, build every half that is inside
+the fence, and route the rest rather than widen anything or quietly
+write the command in a shape the derivation cannot see.
