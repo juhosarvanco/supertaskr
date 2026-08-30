@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 6
 size: S
-status: building
+status: verifying
 suggested_by: verifier claude-opus-5@subagent @T-143
 blocked_by: []
 touches: [app-board]
