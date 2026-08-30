@@ -835,3 +835,116 @@ describe("soft issues reach the affected card (T-019-s1)", () => {
     expect(ISSUE_MODEL.issues.length).toBe(3);
   });
 });
+
+// ---- the board root's dispatch threading (T-112-s1, closing T-112-s4) ---
+//
+// **THE MUTANT T-112's DRILL COULD NOT KILL.** Deleting the two lines that
+// thread `dispatch` and `brief` out of `Board.tsx` into the drawer left
+// `npm test` from app/ GREEN — 49 files, exit 0 — because
+// `C-18-board-root.md` declares `Board.tsx` and no `app/test/**` path at
+// all, and every other board test file belongs to C-08 or C-09, so
+// importing `Board` from one of them would be an undeclared component
+// edge (the defect `arch drift` caught at T-169). T-112-s4 carries the
+// measurement and reads the cause as a REGISTRY gap.
+//
+// **THIS FILE IS WHERE THE PIN GOES WITHOUT TOUCHING THE REGISTRY.** It is
+// C-05's, it has imported `Board` since T-017, and the C-05 → C-18 edge is
+// already declared in `C-05-app.md`'s `depends_on`. So the pin adds no
+// import, no edge and no registry line — which is why `T-112-s1` could
+// build it from inside `[app-shell, app-dispatch, app-board]` while a
+// `[app-board]` lane still cannot. T-112-s4's first criterion — C-18
+// declaring a test path of its own, or the registry saying why it does not
+// — is UNTOUCHED by this and stays that card's.
+//
+// **THE PROPS ARE WRITTEN AS STRUCTURAL LITERALS, NEVER IMPORTED.**
+// `DispatchReading` lives in `board-model.ts` and `BriefOutcomeView` in
+// `task-detail.ts`, both C-17, which C-05 does NOT declare — importing
+// either for a type would buy exactly the undeclared edge this section
+// exists to avoid. TypeScript checks them against `Board`'s own prop types
+// contextually, which is the same guarantee without the edge.
+describe("the board root threads the dispatch channel into the drawer (T-112-s1)", () => {
+  const DISPATCH_MODEL = parseProjectFromFiles([
+    { path: "docs/ROADMAP.md", content: ROADMAP },
+    { path: "docs/tasks/T-400.md", content: task("T-400", [["priority", 1]]) },
+  ]);
+
+  /** A scanned repository holding no lane — the ordinary quiet state, and
+   * the one that leaves T-400 dispatchable. */
+  const NO_LANES = { kind: "joined", rows: new Map() } as const;
+
+  /** One assembled brief, with a line whose text nothing else in this file
+   * produces, so the assertion below proves the brief's VALUE arrived and
+   * not merely that some brief did. */
+  const ASSEMBLED = {
+    kind: "assembled",
+    brief: {
+      role: "executor",
+      roleFile: "method/roles/executor.md",
+      taskId: "T-400",
+      cardPath: "docs/tasks/T-400.md",
+      rows: [
+        {
+          number: 1,
+          carries: "Role",
+          assembledFrom: "roles/<role>.md",
+          ifAbsent: "the session guesses which seat it is in",
+          lines: [
+            {
+              label: "one line",
+              text: "you build exactly one task, then you end",
+              provenance: { kind: "tree", source: "method/roles/executor.md" },
+            },
+          ],
+          residual: null,
+        },
+      ],
+      marker: null,
+    },
+  } as const;
+
+  it("a card opened with both props renders the drawer's copyable brief, and neither prop alone will do", () => {
+    render(<Board model={DISPATCH_MODEL} dispatch={NO_LANES} brief={ASSEMBLED} />);
+    press(q('[data-testid="task-card"][data-task-id="T-400"] button') as Element);
+
+    // The block exists…
+    const block = q('[data-testid="detail-brief"]');
+    expect(block, "the drawer's dispatch block did not render").not.toBeNull();
+    // …as the COPYABLE arm, which is the arm that needs BOTH props: with
+    // `dispatch` threaded and `brief` dropped, `selectBriefPanel` answers
+    // `unavailable` instead and this line reds.
+    const copyable = q('[data-testid="detail-brief-copyable"]');
+    expect(copyable, "the brief prop did not reach selectBriefPanel").not.toBeNull();
+    expect(copyable?.getAttribute("data-task-id")).toBe("T-400");
+    // The VALUE travelled, not just the shape: this sentence is in the
+    // fixture brief and nowhere else in the rendered tree.
+    expect(copyable?.textContent).toContain("you build exactly one task, then you end");
+    expect(copyable?.textContent).toContain("method/roles/executor.md");
+    expect(q('[data-testid="detail-brief-copy"]')).not.toBeNull();
+  });
+
+  it("with the props absent the block does not render at all — the state before this card, kept honest", () => {
+    // THE POSITIVE CONTROL FOR THE BODY ABOVE, and the behaviour
+    // `TaskDetailPanel`'s own header promises: absent means the app has no
+    // lane channel, and a section that says nothing on every open is a
+    // section nobody reads. Without this half, "the block rendered" is
+    // satisfied by a block that renders unconditionally.
+    render(<Board model={DISPATCH_MODEL} />);
+    press(q('[data-testid="task-card"][data-task-id="T-400"] button') as Element);
+    expect(panel(), "the drawer itself must still open").not.toBeNull();
+    expect(q('[data-testid="detail-brief"]')).toBeNull();
+  });
+
+  it("the dispatch prop alone renders the block, and it is the UNAVAILABLE arm rather than a brief", () => {
+    // The third arm, and it is what separates the two threading lines
+    // from each other: `dispatch` decides whether the block exists at all
+    // and `brief` decides which arm it takes. A pin that only asserted
+    // "the block appeared" would survive the `brief` line being deleted.
+    render(<Board model={DISPATCH_MODEL} dispatch={NO_LANES} />);
+    press(q('[data-testid="task-card"][data-task-id="T-400"] button') as Element);
+    expect(q('[data-testid="detail-brief"]')).not.toBeNull();
+    expect(q('[data-testid="detail-brief-copyable"]')).toBeNull();
+    expect(q('[data-testid="detail-brief-unavailable"]')?.textContent).toContain(
+      "the assembler has not answered for this card yet",
+    );
+  });
+});

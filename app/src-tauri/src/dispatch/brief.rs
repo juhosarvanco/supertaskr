@@ -47,27 +47,27 @@
 //! forbids — so the assembler emits none, and row 13's standing
 //! instruction to re-derive at the session's own ref carries the rest.
 //!
-//! **WHAT IS NOT HERE, AND WHY — READ THIS BEFORE CONCLUDING THE CARD IS
-//! HALF-BUILT.** No `#[tauri::command]` wraps [`brief_for_card`] and
-//! `lib.rs` does not register it. Registration lives in
-//! `app/src-tauri/src/lib.rs` and the IPC census that would have to move
-//! with it lives in `app/test/crescendo-dom.test.tsx`; both are C-05's
-//! `app-shell`, outside this card's `[app-dispatch, app-board]` fence.
-//! **Widening the fence from inside the lane is the one repair an
-//! executor may never make**, so the wiring is routed as `T-112-s1` and
-//! this module is compiled through `lib.rs`'s existing `pub mod dispatch;`
-//! and proved by the bodies at the foot of this file. It is the same
-//! disposition `lanes.rs` took at T-110 and `T-126` later discharged.
-//! Because nothing is registered, the IPC census does NOT move and
-//! `acl_pin.rs` is a 0-file diff — which is what that criterion's own
-//! second clause requires either way: an app command is not a webview
-//! grant.
+//! **THE REGISTRATION LANDED AT `T-112-s1`, AND WHAT STANDS HERE IS THE
+//! RECORD OF WHY IT ARRIVED ONE CARD LATE.** Until that card,
+//! no `#[tauri::command]` wrapped [`brief_for_card`] and `lib.rs` did not
+//! register it: registration lives in `app/src-tauri/src/lib.rs` and the
+//! IPC census that had to move with it lives in
+//! `app/test/crescendo-dom.test.tsx`; both are C-05's `app-shell`, outside
+//! T-112's `[app-dispatch, app-board]` fence. **Widening the fence from
+//! inside the lane is the one repair an executor may never make**, so the
+//! wiring was routed and this module was compiled through `lib.rs`'s
+//! existing `pub mod dispatch;` and proved by the bodies at the foot of
+//! this file. It is the same disposition `lanes.rs` took at T-110 and
+//! `T-126` later discharged. `dispatch_brief` in `lib.rs` is the door now;
+//! `acl_pin.rs` was a 0-file diff across that change, which is what its
+//! criterion required either way: **an app command is not a webview
+//! grant.**
 
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::lanes::{LaneScan, WorktreeEntry};
 
@@ -83,7 +83,15 @@ use super::lanes::{LaneScan, WorktreeEntry};
 /// in the source column as 'the brief's own role file'"*. So the TABLE is
 /// read from [`CONTRACT_FILE`] whatever the role, and every row whose
 /// source column says *this role file* is read against [`Role::file`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+///
+/// **`Deserialize` SINCE `T-112-s1`, AND IT IS THE NARROWNESS RATHER THAN
+/// A CONVENIENCE.** This is the one non-string thing that crosses the IPC
+/// boundary inbound, and a closed enum is narrower than the `String` the
+/// command would otherwise take: serde refuses anything that is not one of
+/// these two spellings before a single file is read, so the command's own
+/// signature carries the constraint (ADR-012, *"narrowness lives in the app
+/// commands' own signatures"*).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Role {
     Executor,
@@ -117,6 +125,31 @@ pub const CONTRACT_FILE: &str = "method/roles/executor.md";
 /// compared so a brief cannot quietly prefer a stale copy.
 pub const ADAPTER_FILES: [&str; 2] = ["CLAUDE.md", "AGENTS.md"];
 
+/// The ceiling on a task id arriving from outside this process
+/// (`T-112-s1`).
+///
+/// **THE `arch_detail` PRECEDENT, AND IT IS OWED FOR THE SAME REASON.**
+/// A miss ECHOES the id back — [`BriefOutcome::NoSuchCard`] carries it, so
+/// the caller can say what could not be served — and an outcome that
+/// echoes an argument is an outcome an unbounded argument can inflate. The
+/// bound is on CHARACTERS rather than bytes, so a multi-byte id is judged
+/// by what it is rather than by how it is encoded.
+///
+/// 64 because the longest id this board has ever carried is a suffixed
+/// card (`T-112-s1`), and this leaves room for a spelling nobody has used
+/// yet while staying far under [`super::lanes::BRANCH_MAX_LEN`], which is
+/// git's own ceiling on the string an id is recovered FROM.
+pub const MAX_TASK_ID_CHARS: usize = 64;
+
+/// Whether a task id is short enough to be looked up and echoed.
+///
+/// Counts at most `MAX_TASK_ID_CHARS + 1` characters, so a hostile
+/// megabyte costs the length of the bound rather than the length of the
+/// argument.
+pub fn task_id_within_bounds(task_id: &str) -> bool {
+    task_id.chars().take(MAX_TASK_ID_CHARS + 1).count() <= MAX_TASK_ID_CHARS
+}
+
 // ---------------------------------------------------------------------
 // The contract, READ from the role file.
 // ---------------------------------------------------------------------
@@ -135,8 +168,14 @@ pub struct ContractRow {
 }
 
 /// A table this module could not read. **Never an empty contract.**
+///
+/// `rename_all_fields` since `T-112-s1` — see [`BriefOutcome`], which is
+/// where the missing attribute was actually costing a field name. It is
+/// added on all four of this module's tagged enums rather than on the one
+/// that was wrong, so the next inline field with two words in it is right
+/// by construction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum ContractDefect {
     /// No `| # | ... |` header row was found at all.
     NoTable,
@@ -221,7 +260,7 @@ fn table_cells(line: &str) -> Vec<String> {
 
 /// Why a source the brief requires could not be read.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum SourceMiss {
     NotFound,
     Unreadable { because: String },
@@ -464,7 +503,7 @@ fn parse_flow_list(raw: &str) -> Vec<String> {
 /// no ref — see the header — so a `Tree` provenance names the FILE and
 /// row 13 carries the instruction to re-derive.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum Provenance {
     /// Quoted out of a file in the tree.
     Tree { source: String },
@@ -572,8 +611,19 @@ pub struct Brief {
 /// A brief with a silently missing gate list is worse than no brief, so a
 /// row that cannot be assembled takes the WHOLE answer to
 /// [`BriefOutcome::Unassemblable`] rather than shortening the output.
+///
+/// **`rename_all_fields` SINCE `T-112-s1`, AND ITS ABSENCE WAS A LIVE
+/// DEFECT RATHER THAN AN OMISSION OF STYLE.** `rename_all` on an enum
+/// renames the VARIANTS; the fields a variant carries inline need
+/// `rename_all_fields`, which `DispatchJoin` and `LaneScan` one module
+/// over have always had. So [`BriefOutcome::NoSuchCard`] emitted
+/// `task_id` while `app/src/lib/dispatch-store.ts`'s `BriefOutcomeWire`
+/// declared `taskId` — the two sides of one boundary disagreeing, with
+/// nothing red, because the pin below asserted the variant TAG and never a
+/// field name. Registering the command is what made the disagreement
+/// reachable; the pin now reads the field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum BriefOutcome {
     Assembled { brief: Brief },
     /// The contract table itself could not be read. Nothing downstream is
@@ -1849,13 +1899,22 @@ fn frontmatter_block_list(text: &str, key: &str) -> Vec<String> {
 
 /// Assemble a brief for one card in one project.
 ///
-/// **THIS IS THE COMMAND'S SHAPE.** One task id and one role cross the
-/// boundary — both are strings the board already holds — and the project
-/// root is the app's own, never the webview's, which is what keeps the
+/// **THIS IS THE COMMAND'S SHAPE, AND SINCE `T-112-s1` IT IS THE
+/// COMMAND'S BODY.** One task id and one role cross the boundary — the id
+/// is a key into the listing this function itself takes, and the role is a
+/// closed enum serde refuses a third spelling for — and the project root
+/// is the app's own, never the webview's, which is what keeps the
 /// registered command a zero-path one under ADR-012.
 ///
-/// The registration itself is `app-shell`'s and is routed (`T-112-s1`);
-/// see this module's header.
+/// The registration is `dispatch_brief` in `app/src-tauri/src/lib.rs`; see
+/// this module's header for why it arrived one card later than this
+/// function did.
+///
+/// **THE ID IS BOUNDED BEFORE IT IS LOOKED UP** — see
+/// [`task_id_within_bounds`] — because [`BriefOutcome::NoSuchCard`] echoes
+/// it back. The bound is applied at the command rather than here, the
+/// `arch_detail` shape, so a Rust caller with an id it authored itself is
+/// not made to pay for a boundary it never crossed.
 pub fn brief_for_card(project_root: &Path, task_id: &str, role: Role) -> BriefOutcome {
     let files = DiskFiles::new(project_root);
     let path = match files.list_dir("docs/tasks") {
@@ -2873,6 +2932,27 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    // ---- T-112-s1: the bound on the one argument that is echoed -------
+
+    /// **THE `arch_detail` BOUND, ON THE ONE ARGUMENT THIS MODULE ECHOES.**
+    /// [`BriefOutcome::NoSuchCard`] carries the id back so a caller can say
+    /// what it could not serve, so an unbounded id is an unbounded outcome.
+    /// Counted in CHARACTERS, and the ceiling is asserted from BOTH sides
+    /// — a predicate that answered `true` for everything would pass a
+    /// one-sided version of this body.
+    #[test]
+    fn a_task_id_is_bounded_in_characters_and_the_ceiling_is_asserted_both_ways() {
+        assert!(task_id_within_bounds("T-112-s1"));
+        assert!(task_id_within_bounds(""));
+        assert!(task_id_within_bounds(&"x".repeat(MAX_TASK_ID_CHARS)));
+        assert!(!task_id_within_bounds(&"x".repeat(MAX_TASK_ID_CHARS + 1)));
+        // CHARACTERS, not bytes: a multi-byte id is judged by what it is
+        // rather than by how it is encoded, which is the half a
+        // `str::len()` spelling gets wrong.
+        assert!(task_id_within_bounds(&"é".repeat(MAX_TASK_ID_CHARS)));
+        assert!(!task_id_within_bounds(&"é".repeat(MAX_TASK_ID_CHARS + 1)));
+    }
+
     // ---- the serialized shape the TS half mirrors ---------------------
 
     #[test]
@@ -2887,9 +2967,18 @@ mod tests {
         let refused = BriefOutcome::NoSuchCard {
             task_id: "T-1".to_string(),
         };
-        assert_eq!(
-            serde_json::to_value(&refused).expect("serializable")["kind"],
-            "noSuchCard"
+        let refused = serde_json::to_value(&refused).expect("serializable");
+        assert_eq!(refused["kind"], "noSuchCard");
+        // **THE FIELD, NOT ONLY THE TAG** (`T-112-s1`). This body asserted
+        // the variant tag alone and was green over a wire form that spelled
+        // this field `task_id` while the TS mirror declared `taskId`. A tag
+        // is what serde's `rename_all` renames; an inline field needs
+        // `rename_all_fields`, and only reading the field can tell the two
+        // apart.
+        assert_eq!(refused["taskId"], "T-1");
+        assert!(
+            refused.get("task_id").is_none(),
+            "the snake_case spelling is still on the wire: {refused}"
         );
     }
 }

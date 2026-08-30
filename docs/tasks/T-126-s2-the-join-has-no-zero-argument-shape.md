@@ -55,3 +55,46 @@ to Rust. It wants a ruling before it wants a fence.
 ## PARKED — eleventh triage, 2026-08-26
 
 Real and still true; not now. **UN-PARK WHEN:** a consumer needs to render the four lane states — i.e. `T-111`/`T-112`. Its own text says it wants a ruling before it wants a fence, and nothing is broken: `join_lanes` is compiled and webview-unreachable.
+
+## CORROBORATION — 2026-08-31, `T-112-s1`'s executor, at `82f5722` + that lane's diff
+
+**THE UN-PARK CONDITION ABOVE HAS FIRED, AND THIS CARD IS NOW THE ONLY
+THING BETWEEN THE APP AND A RENDERED DISPATCH BLOCK.** Filed as a
+corroboration rather than a sibling card, because this card already owns
+the class (tasks/TASK-FORMAT.md, *search before filing*).
+
+`T-112-s1`'s criterion 3 reads *"THE board root SHALL fill `Board.tsx`'s
+`dispatch` and `brief` props from the store, so the drawer's dispatch
+block reaches a real card."* Its `brief` half landed: `dispatch_brief` is
+registered in `lib.rs` and reached by `dispatch-store.ts`'s `readBrief`.
+Its `dispatch` half **cannot be built by any card that respects this
+one's ruling**, and the chain is mechanical rather than a matter of
+taste:
+
+- `TaskDetailPanel.tsx` computes `briefPanel` as
+  `dispatch === undefined ? undefined : selectBriefPanel(...)`, so the
+  block does not render at all without a `DispatchReading`;
+- `DispatchReading` is `joined | unavailable`, and `selectDispositions`
+  in `board-model.ts` reads `row.state` and `row.lanes` off every joined
+  row — the join's own classification;
+- the only honest producers of that are `join_lanes`, whose three
+  shapes this card refuses, or a `joined` reading over an EMPTY map,
+  which is the exact lie the frontier's `unavailable` arm exists to
+  prevent (*an empty lane set and an unread one are not the same fact*).
+
+`T-112-s1` held `app-shell` AND `app-dispatch`, so its fence reached
+both `lib.rs` and `join.rs` — **it could have registered a joining
+command and deliberately did not.** This card says it wants a RULING
+before it wants a fence, and an executor may not make an unruled
+architecture decision from inside a lane. What is owed is the ruling,
+not a lane.
+
+**WHAT THE RULING NOW COSTS, STATED SO THE TRIAGE CAN PRICE IT.** Every
+piece of F-04's dispatch block is built, proved and reachable except
+this: the assembler (T-112, 29 bodies), its command (`T-112-s1`), the
+lane reader (T-110/T-126), the join itself (`join.rs`, one pin per
+state), the frontier (`selectDispositions`), the presentation
+(`selectBriefPanel`) and the board root's threading — which `T-112-s1`
+pinned in `app/test/board-truth.test.tsx`, killing the mutant `T-112-s4`
+measured. The drawer's dispatch block renders correctly under that pin
+and cannot render in the shipped app.
