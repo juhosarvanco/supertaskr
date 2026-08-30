@@ -259,11 +259,15 @@ pair, because the old note bet everything on one card surviving triage.
 ### The gates, derived over the FORECAST path set
 
 Derived against the tree the tip WILL have — `git merge-tree
---write-tree main HEAD` → `43f7c5b`, **18 paths**, exit 0 read before the
-substitution was used. This lane obeying the clause it just absorbed
-(`T-126-s6`: a gate derivation is not a figure, and the earlier
-derivation over 16 paths WENT STALE when the notes commit and `T-159-s6`
-landed — measured, not anticipated, and re-run).
+--write-tree main HEAD` → `5f54b84`, **18 paths**, exit 0 read before the
+substitution was used. **This lane obeying the clause it just absorbed,
+and being caught by it twice.** `T-126-s6`'s ask is that a gate
+derivation is not a figure and goes stale at a lane's own last commit;
+this one's DOCS GATE answer moved **16 → 17 → 18 paths** across three
+successive commits of notes and findings, exactly as that card predicts,
+and was re-derived at each. The forecast is what makes the answer stable:
+the last commit adds text to cards already IN the set, so the path set
+and the reader set no longer move.
 
 - **GRAPH REGEN — NOT OWED.** Zero `.ts/.tsx/.js/.jsx/.rs` paths in the
   forecast set.
@@ -274,8 +278,10 @@ landed — measured, not anticipated, and re-run).
   method text was DISPOSED of here and not one byte of `method/` moved,
   which is the whole point of the frontmatter/reasoning split the card
   exists to close.
-- **DOCS GATE — FIRES**, exit 1, over **17 paths under `docs/` that are
-  code inputs**, naming three suites. All three run below.
+- **DOCS GATE — FIRES**, exit 1, over **18 paths under `docs/` that are
+  code inputs**, naming three suites: `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/`. All
+  three run below.
 - `npm run lint:docs` **exit 0**, read UNPIPED — 24 derived docs readers
   across 4 suites, 0 frontmatter issues in the live tree, every live
   card's frontmatter parsing with a legal status (which is the check that
@@ -287,15 +293,27 @@ landed — measured, not anticipated, and re-run).
 Fresh-worktree order kept: `lib/parser` `npm ci` + `npm run build`, then
 `app` `npm install` + `npm run build`, all exit 0, then the suites.
 
-- `npx vitest run` from lib/parser — **336/336, exit 0** (re-run at the
-  final tip: **336/336, exit 0**).
-- `npm test` from app/ — **1047/1047, exit 0** (re-run at the final tip:
-  **1047/1047, exit 0**).
+- `npx vitest run` from lib/parser — **336/336 over 16 files, exit 0**,
+  re-run at the final stamped tip and read unpiped: **336/336, exit 0**.
+  The body that matters most to this diff is
+  `rejected-exclusion.test.ts`'s *"live tree — docs/tasks/rejected/ is
+  excluded from the model"*, green with `T-126-s5` newly inside that
+  directory.
+- `npm test` from app/ — **1047/1047 over 49 files, exit 0**, re-run at
+  the final stamped tip and read unpiped: **1047/1047, exit 0**. The
+  three live-tree board readers (`architecture-dogfood`,
+  `map-dogfood-render`, `select-board`) are green over a corpus eleven
+  cards smaller.
 - `npm test` from tools/e2e at `NPUTER_E2E_PORT=21591` — the port DERIVED
-  from the lane id rather than defaulted, and `lsof -nP -iTCP:21591
-  -sTCP:LISTEN` read at **zero rows** immediately before binding —
-  header *"Running 331 tests using 1 worker"*, **319 passed / 2 failed,
-  exit 1**.
+  from the lane id rather than defaulted (`20000 + NNN*10 + s`, which two
+  lanes cannot collide on by construction — `T-132-s6`'s arm 2 applied by
+  hand at the one seat that could), `lsof -nP -iTCP:21591 -sTCP:LISTEN`
+  read at **zero rows** immediately before each bind. Run at the final
+  stamped tip, exit read unpiped: header *"Running 321 tests using 1
+  worker"*, **319 passed / 2 failed, exit 1**, in 3.7m. An earlier run
+  three commits back printed **331** in its header for the same 29 spec
+  files, which is the instability recorded above; `npx playwright test
+  --list` is the stable form and answers **321 in 29 files, exit 0**.
 
 **THE TWO REDS ARE THE LIVE-LANE CLASS AND THE ATTRIBUTION IS PROVED, NOT
 CLAIMED.** Both are in `tests/session-economics.spec.ts` (`:73` and
@@ -335,15 +353,34 @@ from this fence and `tools/e2e` was not touched.
 - **`T-153-s8` CORROBORATED, not duplicated** — SEARCH BEFORE FILING, the
   rule this release landed, applied to this lane's own findings. `npm run
   capabilities:check` from tools/e2e **exits 1 at `51fa31c`** (*"STALE —
-  committed 25444 bytes, a fresh generation is 25528"*) and the runner's
-  own header says **331** where `docs/CAPABILITIES.md` claims **320** —
-  an 11-behaviour gap, with `docs/STATE.md` carrying the same stale
-  figure. `T-153-s8` already owns that class and is `planned` with the
-  fence the fix needs, so this is a dated evidence line appended there
-  and NO sibling file. It is not this lane's: the diff is entirely under
+  committed 25444 bytes, a fresh generation is 25528"*), and
+  `docs/STATE.md` carries a stale companion figure in the same direction.
+  `T-153-s8` already owns that class and is `planned` with the fence the
+  fix needs, so this is a dated evidence line appended there and NO
+  sibling file. It is not this lane's: the diff is entirely under
   `docs/tasks/`, so the generator's input and output are byte-identical
   at base and tip and the check's answer cannot have moved. Regenerating
   is the integrator's — `docs/CAPABILITIES.md` is outside this fence.
+
+### One figure this lane published wrong and corrected, said plainly
+
+**A first draft of the note above claimed an "11-behaviour gap" between
+`docs/CAPABILITIES.md`'s census of 320 and the e2e runner's header. It
+was wrong and it is retracted here rather than quietly edited.** The
+runner's `Running N tests` header — the very cross-check that generated
+file instructs its reader to use — is not stable: **two full runs in this
+lane, on trees differing only in `docs/tasks/` prose, printed 331 and
+321.** The stable instrument is `npx playwright test --list`, which
+answers **"Total: 321 tests in 29 files", exit 0** at this tip, so the
+real gap against the census is **ONE**. The 331 is left UNEXPLAINED
+rather than guessed at: every module-scope test generator in the suite
+iterates a constant (`CHECK_IDS`, `VIEWPORTS`, two key pairs, one size
+pair) and no spec file changed between the runs. This is recorded because
+the card's own second criterion is not to transcribe a figure, and the
+failure mode here was worse than transcription — it was arithmetic on a
+number that had moved underneath it, which is the class this project
+files under *"a query that runs clean and answers a different
+question"*.
 
 ### The stamp, and the half of its ceremony row this lane did NOT perform
 

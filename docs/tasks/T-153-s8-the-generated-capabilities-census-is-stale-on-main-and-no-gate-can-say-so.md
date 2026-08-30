@@ -122,22 +122,31 @@ above is the fence the work needs, not one this lane held.
 CORROBORATION (2026-08-30, executor `@T-159-s1`) — **the census is stale
 on main again, at `51fa31c`, and again nothing said so.** Measured in the
 T-159-s1 lane: `npm run capabilities:check` from tools/e2e/ **exits 1** —
-*"STALE — committed 25444 bytes, a fresh generation is 25528 bytes"* —
-while the full e2e run at the same ref printed *"Running 331 tests using
-1 worker"* against `docs/CAPABILITIES.md`'s own census header of **320
-behaviours**: an **11-behaviour gap**, on exactly the cross-check that
-generated file instructs its reader to perform. `docs/STATE.md` carries
-the same stale figure (*"the battery is whole at zero lanes (e2e
-320/320)"*). **It is not this lane's, and the proof is structural rather
-than an assurance**: this lane's 17-path diff is entirely under
-`docs/tasks/`, so both the generator's INPUT (`tools/e2e/tests/*.spec.ts`)
-and its OUTPUT (`docs/CAPABILITIES.md`) are byte-identical at the base and
-at the tip, and the check's answer cannot have moved between them.
+*"STALE — committed 25444 bytes, a fresh generation is 25528 bytes"*.
+`docs/STATE.md` carries a stale companion figure in the same direction
+(*"the battery is whole at zero lanes (e2e 320/320)"*). **It is not this
+lane's, and the proof is structural rather than an assurance**: this
+lane's 18-path diff is entirely under `docs/tasks/`, so both the
+generator's INPUT (`tools/e2e/tests/*.spec.ts`) and its OUTPUT
+(`docs/CAPABILITIES.md`) are byte-identical at the base and at the tip,
+and the check's answer cannot have moved between them.
 **What this instance adds is the INTERVAL.** The card's own title records
 the previous staleness as discharged at `cc82dc2`; so the figure went
-stale, was repaired, and went stale again — by eleven behaviours this
-time rather than one — with no gate anywhere in between. That is the
-no-keeper argument observed twice rather than argued once, and the second
-observation is the larger of the two. The remedy still needs
-`.github/workflows/` and is still nobody's by accident; the regen itself
-is one command and is the integrator's at a checkpoint.
+stale, was repaired, and went stale again with no gate anywhere in
+between — the no-keeper argument observed twice rather than argued once.
+
+**AND A CAUTION ABOUT THE CROSS-CHECK THIS CARD'S SUBJECT PRESCRIBES,
+BECAUSE THIS SEAT GOT IT WRONG FIRST AND CORRECTED IT.**
+`docs/CAPABILITIES.md`'s header tells the reader to *"Cross-check against
+the runner's own `Running N tests` header"*. That header is not stable
+run to run: two full e2e runs in this lane, on trees differing only by
+`docs/tasks/` text, printed **331** and **321**. The stable instrument is
+`npx playwright test --list`, which at this tip answers **"Total: 321
+tests in 29 files", exit 0**, against the census's **320 across 29 spec
+files** — **a gap of one, not of eleven**, and the eleven was this seat
+reading a header that had moved. The cause of the 331 is NOT explained
+here and is deliberately not guessed at: every module-scope generator in
+the suite iterates a constant, and no spec file changed between the two
+runs. Recorded as an observation, because a keeper built on the header
+this file names would inherit exactly this instability, while one built
+on `--check`'s byte comparison or on `--list` would not.
