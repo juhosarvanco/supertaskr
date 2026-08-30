@@ -159,9 +159,13 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
     let Some(stale) = &report.stale else {
         out.push_str(&format!(
             "[nputer-index] graph.json is CURRENT - {} matches a fresh index \
-             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n{}{}",
+             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n{}{}{}",
             rel_display(&report.graph_path, root_label),
             report.committed_bytes,
+            // ABOVE the stat lines, not among them (T-167-s2): the
+            // reader of a green gate stops at the headline, and this is
+            // the one line that must reach them anyway.
+            headroom_alarm(report),
             budget_line(report),
             floor_line(report),
         ));
@@ -169,6 +173,7 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
     };
 
     out.push_str("[nputer-index] graph.json is STALE - the committed graph does not match a fresh index of this tree\n");
+    out.push_str(&headroom_alarm(report));
     match stale {
         Staleness::Missing => {
             out.push_str(&format!(
@@ -295,6 +300,112 @@ fn floor_line(report: &CheckReport) -> String {
         "[nputer-index]   floor:       {floor} of {budget} bytes ({percent:.1}%) - \
          {per_file:.0} bytes/file truncation can never reclaim, so at this tree's density \
          the budget stops degrading gracefully at about {ceiling} files\n"
+    )
+}
+
+/// THE HEADROOM AT WHICH THIS REPORT STOPS BEING A STAT LINE AND SHOUTS
+/// (T-167-s2).
+///
+/// [`budget_line`] has printed the room left since T-139, on every run
+/// INCLUDING the ones that exit 0 — and that is precisely why it does not
+/// arrive: it is an indented stat between two other indented stats, and
+/// the reader of a green gate stops at the headline. So the first anybody
+/// learns that the budget ran out is a `truncated_symbols` flag inside
+/// somebody else's merge, on a diff that did not cause it and behind a
+/// fence that forbids fixing it. Under this many bytes the report prints
+/// an unindented block, above the stats, in a shape nothing else here
+/// has.
+///
+/// **THE NUMBER IS ONE ORDINARY MERGE'S GROWTH OF THIS GRAPH, MEASURED.**
+/// `14_914` is the MEAN of the 61 single-commit growths in this
+/// repository's own history of `docs/architecture/graph.json` — median
+/// `5_230`, max `241_980` at T-010 — re-derived at
+/// `9ed2b7fa430d5088c6b5cbefe8c4f4cbac906803` from successive blob sizes:
+///
+/// ```text
+/// git log --reverse --format=%H -- docs/architecture/graph.json \
+///   | while read -r c; do git cat-file -s "$(git rev-parse "$c:docs/architecture/graph.json")"; done
+/// ```
+///
+/// — then the positive deltas of that series, and their mean. THE MEAN
+/// AND NOT THE MEDIAN, because the question this answers is "can the next
+/// ordinary merge spend the rest", and the merges that spend a graph
+/// budget are exactly the large ones a median hides (the median growth
+/// here is a third of the room the tree had left when this was written,
+/// and would have called that state healthy).
+///
+/// **IT IS A STAMP, SO RE-DERIVE IT RATHER THAN TRUSTING THIS LINE.**
+/// [`crate::IndexOptions::max_graph_bytes`] states the same statistic
+/// measured at `13c736e` — `15_751` over 55 growths — and rejected a
+/// 10_819-byte headroom in the words "one ordinary merge from
+/// truncating". Six growths later the same measurement is 837 bytes
+/// lower. A threshold that moves by a re-measurement is not news; a
+/// threshold that moves without one is.
+///
+/// **AND IT IS DELIBERATELY THE SAME NUMBER A HEALTH BAND ALREADY
+/// CARRIES, said twice because the two cannot see each other.**
+/// `graph/budget-headroom-bytes` (tools/e2e, `health-bands.config.mjs`)
+/// breaches at `15_751` — T-139's reading of this same statistic — and is
+/// read when somebody runs the health report. This one is read by
+/// whoever spends the byte, at the moment they spend it. Neither
+/// substitutes for the other, and a divergence between them is a
+/// re-measurement until somebody shows it is a disagreement about
+/// meaning.
+pub const WARN_HEADROOM_BYTES: usize = 14_914;
+
+/// THE TRIPWIRE (T-167-s2): the number [`budget_line`] already prints,
+/// in a shape a reader cannot skip, and only when it matters.
+///
+/// Silent above [`WARN_HEADROOM_BYTES`] on purpose. A block that printed
+/// on every run would be a banner, and a banner is read exactly as well
+/// as the stat line this exists to escape.
+///
+/// IT DOES NOT TOUCH THE EXIT CODE, and that is a decision rather than an
+/// omission. Exit 1 means the gate's own negative verdict — the committed
+/// graph is stale (`crate::cli`'s exit-code contract) — and a graph with
+/// little headroom is not stale; it is current, and correct, and about to
+/// become expensive. A gate that redded here would hand every later lane
+/// a red it did not cause and cannot fix, which is the same failure this
+/// card is about with the sign flipped. Loudness is the whole mechanism;
+/// the verdict above stays the verdict.
+fn headroom_alarm(report: &CheckReport) -> String {
+    if report.budget_bytes == 0 {
+        return String::new();
+    }
+    let used = report.fresh_bytes;
+    let budget = report.budget_bytes;
+    // Over budget FIRST: the headroom is negative there, and on unsigned
+    // bytes the subtraction below would either underflow or be skipped.
+    // The state past the ceiling must be the loudest, never the quietest.
+    if used > budget {
+        return format!(
+            "[nputer-index]\n\
+             [nputer-index] !! GRAPH HEADROOM ALARM - there is none left: this index is {} bytes past the\n\
+             [nputer-index] !! ceiling and the emitter is ALREADY dropping symbol arrays to fit\n\
+             [nputer-index] !! (stats.truncated_symbols / truncated_files carry the count). Nothing is red\n\
+             [nputer-index] !! because nothing failed - the graph is valid, and smaller than the tree it\n\
+             [nputer-index] !! describes. THE VERDICT ABOVE IS UNAFFECTED: this is the room left, not the\n\
+             [nputer-index] !! answer. The threshold and what measured it: check::WARN_HEADROOM_BYTES.\n\
+             [nputer-index]\n",
+            used - budget
+        );
+    }
+    let left = budget - used;
+    if left >= WARN_HEADROOM_BYTES {
+        return String::new();
+    }
+    format!(
+        "[nputer-index]\n\
+         [nputer-index] !! GRAPH HEADROOM ALARM - {left} bytes left, under the {WARN_HEADROOM_BYTES}-byte tripwire.\n\
+         [nputer-index] !! That threshold is ONE ORDINARY MERGE's growth of this graph, measured over this\n\
+         [nputer-index] !! repository's own history - so the NEXT code lane can be the one that crosses,\n\
+         [nputer-index] !! and it will be somebody who did not cause it and whose fence cannot fix it.\n\
+         [nputer-index] !! Crossing does not fail: the emitter drops symbol arrays to fit and sets\n\
+         [nputer-index] !! stats.truncated_symbols, so the map quietly stops answering what is in a file.\n\
+         [nputer-index] !! THE VERDICT ABOVE IS UNAFFECTED: this is the room left, not the answer, and\n\
+         [nputer-index] !! moving either number to quiet it is a value call rather than a fix.\n\
+         [nputer-index] !! The threshold and what measured it: check::WARN_HEADROOM_BYTES.\n\
+         [nputer-index]\n"
     )
 }
 
@@ -692,6 +803,122 @@ mod tests {
         assert!(
             !text.contains("at about"),
             "no projection is honest once the floor is already over:\n{text}"
+        );
+    }
+
+    /// T-167-s2's POSITIVE CONTROL, and the acceptance criterion in one
+    /// body: a graph BELOW the threshold trips the tripwire and one above
+    /// it does not — on the SAME TREE, emitting the SAME document, so the
+    /// only thing that moved between the halves is the headroom itself. A
+    /// block that fired on tree size, on staleness, or on nothing at all
+    /// cannot pass both halves.
+    ///
+    /// BOTH HALVES SIT ON THE GREEN PATH deliberately. The card's whole
+    /// finding is that this number prints on the runs that exit 0 and is
+    /// skipped there; a control driven only through the STALE render
+    /// would prove the alarm exists without proving it reaches the reader
+    /// who needs it.
+    #[test]
+    fn the_headroom_tripwire_fires_below_its_threshold_and_is_silent_above_it() {
+        let t = TempTree::new("check-tripwire");
+        for i in 0..6 {
+            t.write(&format!("src/f{i}.ts"), "export const alpha = 1;\n");
+        }
+        let graph = index(&opts(t.root())).unwrap();
+        crate::write_graph(&graph, &t.root().join(GRAPH_REL_PATH)).unwrap();
+
+        // SILENT: the default budget leaves about a megabyte of room.
+        let roomy = check(&opts(t.root())).unwrap();
+        assert!(!roomy.is_stale(), "the silent half must be the green path: {roomy:?}");
+        assert!(
+            roomy.budget_bytes - roomy.fresh_bytes > WARN_HEADROOM_BYTES,
+            "the control must really be above the threshold: {roomy:?}"
+        );
+        let quiet = render(&roomy, ".");
+        assert!(
+            !quiet.contains("HEADROOM ALARM"),
+            "a healthy headroom must not print a banner:\n{quiet}"
+        );
+
+        // ARMED: the same tree, the same document, ten bytes of room.
+        let tight = IndexOptions {
+            max_graph_bytes: roomy.fresh_bytes + 10,
+            ..opts(t.root())
+        };
+        let armed = check(&tight).unwrap();
+        assert!(!armed.is_stale(), "the armed half must be the green path too: {armed:?}");
+        assert_eq!(
+            armed.fresh_bytes, roomy.fresh_bytes,
+            "only the budget moved: the emitted document is the same one"
+        );
+        let loud = render(&armed, ".");
+        assert!(loud.contains("GRAPH HEADROOM ALARM"), "the tripwire must fire:\n{loud}");
+        assert!(loud.contains("10 bytes left"), "it names the room it measured:\n{loud}");
+        assert!(
+            loud.contains(&format!("under the {WARN_HEADROOM_BYTES}-byte tripwire")),
+            "and the threshold it measured that against:\n{loud}"
+        );
+        assert!(
+            loud.contains("THE VERDICT ABOVE IS UNAFFECTED"),
+            "an alarm that reads as a verdict would be a false red:\n{loud}"
+        );
+
+        // LOUD IS A PLACEMENT, not only a wording: above the indented
+        // stats a reader skips, and below the headline they do read.
+        let alarm_at = loud.find("GRAPH HEADROOM ALARM").unwrap();
+        let budget_at = loud
+            .find("  budget:      ")
+            .unwrap_or_else(|| panic!("no budget line in:\n{loud}"));
+        assert!(
+            alarm_at < budget_at,
+            "the block must sit above the stat line it exists to escape:\n{loud}"
+        );
+        assert!(
+            loud.find("is CURRENT").unwrap() < alarm_at,
+            "and below the verdict, which is still the headline:\n{loud}"
+        );
+    }
+
+    /// The arm an unsigned comparison gets wrong by default, which is why
+    /// it is a body rather than a reading of the code: past the ceiling
+    /// the headroom is NEGATIVE, `budget - used` underflows, and a
+    /// `left < WARN` written the obvious way never runs at all — the
+    /// worst state would go the quietest. Driven through the real
+    /// `index()` with a budget below even the floor, the same way the
+    /// over-budget stat line is.
+    #[test]
+    fn the_headroom_tripwire_is_loudest_once_the_ceiling_is_already_crossed() {
+        let t = TempTree::new("check-tripwire-over");
+        for i in 0..8 {
+            t.write(
+                &format!("src/f{i}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 400,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+        assert!(
+            report.fresh_bytes > 400,
+            "the fixture must actually be over the budget: {report:?}"
+        );
+        let text = render(&report, ".");
+        assert!(
+            text.contains("GRAPH HEADROOM ALARM"),
+            "the spent state must still fire:\n{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "there is none left: this index is {} bytes past the",
+                report.fresh_bytes - 400
+            )),
+            "it names how far past, rather than an underflowed headroom:\n{text}"
+        );
+        assert!(
+            !text.contains("bytes left, under the"),
+            "the under-budget wording must not survive the budget being spent:\n{text}"
         );
     }
 
