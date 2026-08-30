@@ -570,8 +570,11 @@ thresholds actually belong. Discipline, not enforcement.
 **THE FLIP CONDITION IS A MEASUREMENT AND NOT A DATE.** These rungs
 BIND on the day a re-derivation shows the MIDDLE rung NON-EMPTY over
 the project's own live board — that is, at least one planned card
-whose fence resolves to rung 1 under the coverage classes above. It is
-one command, run against the board at that day's ref, and the project
+whose fence resolves to rung 1 under the coverage classes above — AND
+the floor rule's precondition above is closed (roots marked in the
+derivation's own output): a non-empty middle rung read over unmarked
+roots is the under-count this axis exists to refuse. It is one
+command, run against the board at that day's ref, and the project
 names that command in its own conventions.
 
 **WHY ADVISORY RATHER THAN SIMPLY ADOPTED, STATED HERE BECAUSE THE

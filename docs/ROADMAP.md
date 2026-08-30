@@ -23,16 +23,16 @@ opens with the card id that still holds its story.
   read-first set reaches new projects (T-145). ADR-020's layer is
   LANDED (2026-08-29) — determinism at the write (T-154), the method
   redding its own degradation (T-155: every bump owes the eval block),
-  health bands over its own metrics (T-156) — and ADR-018 stays owed
-  to T-135 Half B. Suggestion arrivals queue for T-159's metabolism
+  health bands over its own metrics (T-156) — and ADR-018 LANDED
+  (2026-08-30, T-135 Half B: blast-radius rungs ADVISORY, binding at
+  the measured flip). Suggestion arrivals queue for T-159's metabolism
   rules, never a second amnesty. **THE LIVE METHOD VERSION IS
   CONVENTIONS' FIRST-GOTCHA STAMP AND IS NEVER QUOTED HERE**; what a
   bump moved is on its release card and that card's checkpoint
   (v0.1.8: T-159). The rest of the ledger — T-158's human front door,
   the amnesty sitting's dispositions, T-153-s6/s9's CI first-contact
   classes and the first fully green run, T-157's derived seat-strength
-  row — is one record per merge in docs/checkpoints/. Next: T-135
-  Half B.
+  row — is one record per merge in docs/checkpoints/. Next: T-140-s1.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -90,7 +90,8 @@ opens with the card id that still holds its story.
   with `index --check`, never quote it. The drill taxonomy and the
   hand's measurement hazards are written rules (T-092/T-093 — a query
   that runs clean is not yet an answer), and the budget VALUE call
-  rides `T-151`. Since T-156 the method watches its own health
+  was RULED 2026-08-30 (T-151 rejected; T-140-s1 owns the rollup fix,
+  now unblocked). Since T-156 the method watches its own health
   (fourteen bands as data with measured reasons, doc-headroom bands
   derived from the budgets). `arch cycles` ANSWERS ACYCLIC on main
   since T-127-s6 (2026-08-29), with C-17/C-18 minted and no import

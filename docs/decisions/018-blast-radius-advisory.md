@@ -167,7 +167,12 @@ unimported files — in exactly the failure direction the whole axis
 exists to close. The gap was named in Half A's correction 8 and in the
 verdict's F3, and it lived nowhere a reader of the command would meet
 it. TASK-FORMAT's section now states it as a **precondition of the
-flip**; closing it in the output is a `crate-index` card, not this
+flip**. The same class, larger: `T-135-s1` (parked) — `arch blast`
+resolves the package seam at COMPONENT granularity, so a file inside
+a consumed package reads its own in-package dependents where the
+true cross-package count is many times larger, the same under-count in
+the same direction. Closing either in the output is a `crate-index`
+card, not this
 one's, because this half's fence is prose.
 
 ## What would falsify it — three named, cheap checks

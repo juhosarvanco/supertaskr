@@ -5,13 +5,13 @@ feature: F-06
 milestone: 4
 priority: 7
 size: L
-status: verifying
+status: done
 blocked_by: []
-touches: [crate-index, method/tasks/TASK-FORMAT.md]
+touches: [crate-index, method/tasks/TASK-FORMAT.md, docs/decisions]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -1402,9 +1402,17 @@ lane, `task/T-169-assignment-flag`, whose fence is disjoint from these
 three files. **`verifier:`, `built_by:`, `verified_by:` and `review:`
 stay EMPTY**: TASK-FORMAT stamps those on `done`, this is a size-L card
 whose row is executor -> verifier -> integrator, and Half B has had no
-verifier. `T-135-s4` is discharged by completion rather than by ruling
-— the card is no longer half-dispatched, so the vocabulary has a true
-value again.
+verifier. `T-135-s4`'s INSTANCE is mooted by completion — this card is
+no longer half-dispatched, so its vocabulary has a true value again —
+but the QUESTION survives (what `status:` may the NEXT half-dispatched
+card carry?); that card stays parked on it, the T-145-s2 precedent
+("whose instance went moot and whose question did not").
+CORRECTED AT VERIFICATION (C4, C5, C7, 2026-08-30): `touches:` gains
+`docs/decisions` — §11's mandated widening was skipped at dispatch and
+nothing could catch it (no lane, no manifest); and the reader count in
+the notes below is not three — the method-eval corpus walks every
+method/ markdown, so MF-01/MF-02/MF-04/MF-05 read this file too (run:
+`node tools/method-evals/run.mjs`, six evals, exit 0 at the verdict).
 
 **THE WHOLE POLICY IS ONE COMMIT, WHICH IS §2's REVERSIBLE BOUNDARY.**
 Footprint: the new `## Ceremony by blast radius — ADVISORY` section in
@@ -1640,3 +1648,5 @@ this diff. **BOOT GATE does not fire** — nothing under
 `app/src-tauri/**`. No manifest or lockfile moved, so no `cargo audit`.
 The method version bump this text is owed is recorded above and is not
 in this commit.
+
+VERDICT ON HALF B (2026-08-30, blind verifier claude-opus-5@subagent, factless spawn): **APPROVED WITH ASSIGNED CORRECTIONS** — every §6/§7/§8/§9 element present, nothing transcribed that must derive, ADR-018's number verified in all three reserving documents, all mechanical readers re-run green, both deviations (018-not-021; no command in shipped method prose) accepted with their reasoning verified. Seven corrections, all performed at verification by the integration seat, committed-first: C1 the bump rider is now a PARKED card the release mechanism can see (T-135-s5); C2 the flip paragraph names the floor-mechanisation precondition inline — so the middle rung measuring non-empty TODAY (genesis-derive.ts at three dependents, first asked 2026-08-30) does NOT fire the flip while roots are unmarked, which is the honest reading; C3 ADR-018 names T-135-s1's seam-granularity under-count beside the roots gap; C4 `touches:` gains docs/decisions; C5 T-135-s4's instance moot, question survives, card stays parked; C6 ROADMAP's two stale sentences replaced (ADR-018 LANDED; Next: T-140-s1) plus a third found in the same pass (T-151's rejected routing in F-06); C7 the reader count corrected — the method-eval corpus reads this file (six evals, exit 0).
