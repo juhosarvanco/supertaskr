@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **321 behaviours** — 319 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **332 behaviours** — 330 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -273,6 +273,17 @@ Census: **321 behaviours** — 319 extracted sentences + 2 named-not-extracted (
 - the PreToolUse hook is wired for the file-writing tools, and leaves room for a second source
 - the runner answers in EXIT CODES — block is 2 with the reason on stderr, allow is a silent 0
 - an unreadable request costs an integrator nothing and buys an executor nothing
+- a lane-less seat is refused a path a LIVE lane holds, and that lane may still write it
+- EVERY live lane is read, not the first one the walk finds
+- a DETACHED checkout is not judged, so the poison drill may mutate what a lane holds
+- the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane
+- the three carve-outs each free a DIFFERENT write, and the fence still holds around them
+- the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
+- the merge that CONSUMES a fence is not refused by it
+- a lane whose worktree is gone fences nothing, and a stray manifest still locks nobody out
+- a live lane with no readable manifest reserves nothing here, and is still refused in its own arm
+- what the lane-less seat may write, a LANE still may not — the two seats are two rules
+- the runner carries the lane-less refusal as an exit code too
 - a suffixed card id survives every derivation that once truncated it — the id is not the slug's prefix
 
 ## map-retarget

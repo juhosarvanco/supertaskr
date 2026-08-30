@@ -150,3 +150,31 @@ the suite iterates a constant, and no spec file changed between the two
 runs. Recorded as an observation, because a keeper built on the header
 this file names would inherit exactly this instability, while one built
 on `--check`'s byte comparison or on `--list` would not.
+
+## CORROBORATION (2026-08-31, integrator) — THE THIRD BY-HAND REGENERATION, and it is this card's own argument arriving again
+
+`npm run capabilities:check` from tools/e2e answered **STALE — committed
+25528 bytes, a fresh generation is 26427** at main `82f5722`. Regenerated
+by hand at this record: **CURRENT (26427 bytes)**, census 313 → **332
+behaviours** (330 extracted + 2 named-not-extracted) across 29 spec
+files.
+
+**THAT IS THE THIRD TIME THE FIGURE HAS BEEN FIXED BY A HAND AT A
+CHECKPOINT**, and the third time nothing on this repository could have
+told anyone it was wrong. Re-derived here rather than taken from the card:
+`command grep -c capabilities .github/workflows/ci.yml` answers **0**,
+while `cargo audit` answers 2, `boot:check` 1, `lint:docs` 1 and
+`index --check` 2. **Every other gate this seat believed it had skipped
+turns out to be CI-held; this one alone is not.** The card's ruling — the
+keeper is a CI STEP — is unchanged and now has a third instance behind it.
+
+**AND THE FIX APPLIED HERE IS THE DEFECT.** Regenerating by hand is
+exactly the act the card says no instrument observes, performed by the
+seat that had just read the card. It is recorded rather than presented as
+a repair: the census is true again at this ref and will go stale again
+the next time a spec name moves, which is the property only the CI step
+changes.
+
+**DISPATCH NOTE:** this card's fence carries `tools/e2e`, which
+`T-112-s3` holds right now, so it cannot be cut until that lane clears.
+It is next in that package after `T-178`.
