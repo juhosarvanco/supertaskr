@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-163-s3
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
