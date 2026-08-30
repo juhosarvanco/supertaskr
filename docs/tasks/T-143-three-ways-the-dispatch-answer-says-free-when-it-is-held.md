@@ -415,12 +415,64 @@ fixtures that differ in exactly one lane:
 - the shared-component body asserts the independent walk is NON-EMPTY
   before comparing, so two empty lists cannot agree.
 
-## Suites, with counts and unpiped exits
+## Suites and gates, with counts and unpiped exits
 
-Measured at `69bf790` plus these notes, in the lane, `NPUTER_E2E_PORT=14143`
-(lsof zero rows immediately before binding, read on Mac.lan).
+In the lane, `NPUTER_E2E_PORT=14143` — `lsof -nP -iTCP:14143 -sTCP:LISTEN`
+returned zero rows immediately before binding, read on Mac.lan. Port
+1420 was read once with the one permitted command and never touched.
 
-Recorded in the report accompanying this card.
+| Command | cwd | Result |
+|---|---|---|
+| `npx vitest run` | lib/parser/ | **exit 0 - 315 passed / 15 files** (314 at base) |
+| `npx tsc --noEmit` | lib/parser/ | **exit 0** |
+| `npm run build` | lib/parser/ | **exit 0** |
+| `npm run build` | app/ | **exit 0** |
+| `npm test` | app/ | **exit 0 - 1015 passed / 47 files** |
+| `npx tsc --noEmit` | tools/e2e/ | **exit 0** |
+| `npm test` | tools/e2e/ | **exit 1 - 2 failed / 318 passed** |
+
+**THE TWO REDS ARE PRE-EXISTING AND ARE NOT THIS DIFF'S.** Measured at
+the dispatch commit `c74890a89e96` with NO edit of mine in the tree:
+**2 failed / 311 passed, exit 1**, the same two bodies with the same
+message. They are `T-143-s1`, and the arithmetic closes: 313 bodies at
+base, seven added here, 320 total, 318 green.
+
+**GATES, derived from the merge-tree forecast the RANGE RULE prescribes**
+- `TREE=$(git merge-tree --write-tree main HEAD)` (exit 0), then
+`git diff --name-only main "$TREE"`: **10 paths** at tip
+`445e02e3a159904118a8eb04e6241d2944fe095e`, two under `docs/tasks/` and
+eight under `lib/parser/` and `tools/e2e/`.
+
+- **GRAPH REGEN - FIRES** (the diff carries `*.ts` outside `docs/`).
+  ASKED rather than predicted:
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  app/src-tauri/ exits **1 STALE**, and the movement is content-only -
+  **+0 -0 ~2 files, 0 symbols and 0 edges moved**, `lanes.ts` loc
+  527 -> 538 and `lanes.test.ts` loc 415 -> 456. **The regen is NOT
+  taken here**: `docs/architecture/graph.json` is outside this card's
+  fence, and the bullet commits it WITH THE CHECKPOINT. **Owed to the
+  integrator.** Noted in passing, not raised as a finding: the budget
+  reads **1022964 of 1040000 bytes (98.4%), 17036 left** - which is
+  @human's standing `T-151` item, not this lane's.
+- **BOOT GATE - NOT OWED.** No path in the forecast is under
+  `app/src-tauri/**` or `app/src/**`, and neither manifest moved.
+  Derived on all 10 paths.
+- **DOCS GATE - FIRES**, exit **1**, on the two `docs/tasks/` paths.
+  It named three suites and **all three were run**: `npm test` from
+  app/, `npm test` from tools/e2e/, `npx vitest run` from lib/parser/.
+  The gate also reported *"every live task card's frontmatter parses,
+  with a legal status"* and **0 frontmatter issues** in the live tree.
+- **METHOD EVAL GATE - NOT OWED.** No path in the forecast is under
+  `method/**`. Derived on all 10 paths.
+
+**These decisions were derived at `445e02e3`, one commit BEHIND the tip
+that carries this table.** The last commit adds only prose to these two
+`docs/tasks/` files: it cannot move GRAPH REGEN - the graph walk does
+not index `docs/`, which the check above demonstrates by naming only
+the two `lib/parser` files after a commit that had already edited a
+card - it cannot move BOOT GATE or the METHOD EVAL GATE, and it leaves
+the DOCS GATE firing on the same two paths. Every suite figure above
+was re-measured at the tip.
 
 ## What the class STILL hides after this card — the honest omission
 
