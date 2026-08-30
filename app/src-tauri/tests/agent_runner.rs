@@ -2228,6 +2228,94 @@ fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
     assert!(!ours.reason.contains('`'), "…and neither does the transcription: {:?}", ours.reason);
 }
 
+/// T-025-s4: TABLE TWO OF THE EFFECTIVE GRANT IS READ OFF REAL CAPTURED
+/// BYTES, BECAUSE IT IS THE TABLE NOBODY REVIEWS.
+///
+/// `adapter::EFFECTIVE_GRANT_TABLES`' second member claims what the CLI
+/// hands the spawned planner when this adapter says nothing — the
+/// measurement the 2026-08-19 observation said was missing and the card
+/// parked on. The claim is only worth what its source is worth, so this
+/// body compares it to the `system`/`init` line of
+/// `docs/research/captures/real-planner-turn-2026-08-19.jsonl`, captured
+/// under THIS adapter's own argv. A paraphrase reds against the file.
+///
+/// **THE TWO CONTROLS ARE THE POINT.** `--allowedTools` was passed with
+/// six Bash patterns on that very run, and the captured array is not six
+/// Bash patterns — which is what establishes that the flag is an
+/// AUTO-APPROVAL list and not a tool restriction, and therefore that the
+/// grant is a union rather than a table. And `--disallowedTools` names
+/// exactly the entries missing from it, which is the one measured lever
+/// this adapter has over a table it does not own.
+///
+/// This adds NO new docs reader: it is the same capture the two bodies
+/// above already read (CONVENTIONS, THE FOUR WALKS).
+#[test]
+fn the_cli_default_tool_table_is_read_off_the_2026_08_19_capture() {
+    use nputer_lib::agent::adapter::{CLAUDE_V1, EFFECTIVE_GRANT_TABLES};
+
+    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+    let raw = fs::read_to_string(&capture).unwrap_or_else(|err| {
+        panic!("{} is the source of table two: {err}", capture.display())
+    });
+    // Parse, never grep: the file is pretty-printed JSON, one object per
+    // line, and a substring match for a compact key finds nothing in it
+    // and reads exactly like an empty file.
+    let init = raw
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str::<serde_json::Value>(l).expect("every capture line is JSON"))
+        .find(|v| v.get("subtype").and_then(|t| t.as_str()) == Some("init"))
+        .expect("the capture opens with a system/init line");
+    let captured: Vec<&str> = init
+        .get("tools")
+        .and_then(|t| t.as_array())
+        .expect("the init line lists the tools the CLI handed that session")
+        .iter()
+        .map(|v| v.as_str().expect("every tool name is a string"))
+        .collect();
+    assert!(!captured.is_empty(), "an empty array would make every assertion below vacuous");
+
+    let cli = EFFECTIVE_GRANT_TABLES
+        .iter()
+        .find(|t| t.name.contains("CLI's own"))
+        .expect("the CLI's own defaults are one of the three tables");
+    assert_eq!(
+        cli.observed, captured,
+        "T-025-s4: table two is a TRANSCRIPTION of the capture's own tool array, in its own \
+         order. If these disagree, the const is a guess and the card's characterisation of the \
+         CLI's default grant rests on nothing"
+    );
+
+    // CONTROL ONE: the flag whose six patterns were passed on this very
+    // run did NOT produce this set, which is why the grant is a union.
+    for pattern in CLAUDE_V1.allowed_tools() {
+        assert!(
+            !captured.contains(pattern),
+            "`--allowedTools` is an auto-approval list, not a tool restriction: {pattern:?} is \
+             an approval pattern and the captured array is a set of TOOL NAMES"
+        );
+    }
+    assert!(
+        captured.contains(&"Bash"),
+        "…and the tool those patterns approve for is in the set regardless"
+    );
+
+    // CONTROL TWO: the one lever, measured. The denied names are read off
+    // the live argv rather than re-typed here.
+    let argv = CLAUDE_V1.argv(None).expect("the spawn template assembles");
+    let end = argv.iter().position(|a| a == "--disallowedTools").expect("denylist present");
+    let denied: Vec<&str> = argv[end + 1..].iter().map(String::as_str).collect();
+    assert!(!denied.is_empty(), "a denylist to check");
+    for name in &denied {
+        assert!(
+            !captured.contains(name),
+            "`--disallowedTools` bit on the real run: {name:?} must be absent from the captured \
+             set. If it is present, this adapter has NO lever over table two"
+        );
+    }
+}
+
 // ---- T-029-s6/s7: THE RECOVERED RETRY, AND THE DENIAL THAT WAS NOT THE
 //      CAUSE ---------------------------------------------------------
 //

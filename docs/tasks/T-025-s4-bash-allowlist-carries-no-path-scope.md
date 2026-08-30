@@ -190,4 +190,205 @@ this card now exists to make true or false in writing.
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+**Confirmation (executor, 2026-08-30, lane `task/T-025-s4-allowlist`, cut
+from `8ebbb08`), written before any other edit.** I read this card as
+asking me to make ONE SENTENCE true or false in writing — that the
+planner's effective grant is the union of three tables (the adapter's six
+`--allowedTools` Bash patterns, the CLI's own defaults, and whatever the
+user happens to have configured) of which only the first is reviewed — by
+characterising each table from the two landed captures
+(`docs/research/captures/real-planner-turn-2026-08-30.txt`,
+`docs/research/real-cli-observation.md` and the 2026-08-19 JSONL it
+preserves) plus `adapter.rs` itself, recording all three HERE with what
+each contributes and, for each, the question the captures CANNOT answer;
+and then closing the question this card has carried through three triages
+with either a narrowing of the adapter's imperative surface or a DATED
+ruling that it stays, with the reason. Where I narrow I move
+`allowed_tools_are_exactly_the_kits_imperative_surface` RECONCILED and
+never loosened, carrying the justification comment that pin demands. I
+record in one sentence whether `T-025` criterion 2's containment argument
+survives. I spawn NO real planner turn: the fixture suites green are the
+evidence, and any question only a real run can settle is RECORDED and
+ROUTED to @human rather than taken. My fence is C-14/app-agent's five
+paths plus `docs/tasks`; `method/`, `docs/research/` and
+`docs/architecture/` are OUTSIDE it, so any remedy landing there is a
+routed suggestion rather than a silent omission. Per
+`method/roles/executor.md` I did NOT read `docs/ROADMAP.md`, which my
+brief's read-first row named and which that role file explicitly
+subtracts — the role file wins, and the correction is in my report.
+
+---
+
+## THE EFFECTIVE GRANT, IN THREE NAMED TABLES (criterion 1)
+
+Characterised from `docs/research/captures/real-planner-turn-2026-08-19.jsonl`
+(the JSONL `docs/research/real-cli-observation.md` preserves),
+`docs/research/captures/real-planner-turn-2026-08-30.txt`, and
+`app/src-tauri/src/agent/adapter.rs` itself. **The tables are also
+LANDED IN CODE** as `adapter::EFFECTIVE_GRANT_TABLES`, beside the grants
+they are about, for the reason that file already states about T-124's
+classification: *a finding kept only in a task file is a finding the next
+author of this table will not meet* — which is exactly what happened to
+the 2026-08-19 observation, which sat here for eleven days beside a doc
+comment that contradicted it.
+
+### Table 1 — the adapter's own `--allowedTools` patterns — **REVIEWED**
+
+**Contributes:** auto-approval for a command whose TEXT begins with one
+of six fixed verbs. It carries no path scope, so `Bash(cp:*)` and
+`Bash(mkdir:*)` reach any path the user can write. Membership is not
+copied anywhere — it is `CLAUDE_V1.allowed_tools()`, pinned by
+`allowed_tools_are_exactly_the_kits_imperative_surface`.
+
+**The question the captures CANNOT answer:** whether the real CLI's
+matcher agrees with the word-boundary rule `granted_prefix_reached`
+models — i.e. whether `Bash(cp:*)` also admits `cpio`, the question this
+card raised in its own second paragraph and left open. The 2026-08-24
+refusal calibrates the PREFIX half; **nothing on disk tests the BOUNDARY
+half**, and only a real turn can. ROUTED to @human.
+
+### Table 2 — the CLI's own defaults — **NOT REVIEWED**
+
+**Contributes:** the TOOL SET itself, plus a read-only Bash class the CLI
+approves without asking. The set is measured, from the `system`/`init`
+line of the 2026-08-19 capture, taken under THIS adapter's own argv:
+`Task, Bash, CronCreate, CronDelete, CronList, DesignSync, Edit,
+EnterWorktree, ExitWorktree, ListAgents, Monitor, NotebookEdit,
+PushNotification, Read, RemoteTrigger, ReportFindings, ScheduleWakeup,
+SendMessage, Skill, TaskCreate, TaskGet, TaskList, TaskOutput, TaskStop,
+TaskUpdate, ToolSearch, Workflow, Write`. That list is not transcribed on
+trust: `the_cli_default_tool_table_is_read_off_the_2026_08_19_capture`
+in `tests/agent_runner.rs` asserts it against the file.
+
+**Two facts fall straight out of it, and both are new.**
+
+1. **`--allowedTools` is an AUTO-APPROVAL list, not a tool restriction.**
+   Six Bash patterns were passed on that very run and the array is not
+   six Bash patterns. This is what makes the grant a UNION rather than a
+   table, and it is the mechanism the card's sentence was asserting
+   without evidence.
+2. **`--disallowedTools` measurably bites, and it is the only lever this
+   adapter has here.** `WebFetch` and `WebSearch` are exactly the two
+   names the adapter denies and exactly the two missing from the array.
+   Both directions are asserted. **A denylist can never close the table**
+   — a CLI that gains a tool tomorrow grants it by default — so no
+   in-fence change can make the card's sentence false.
+
+**The question the captures CANNOT answer:** *which* Bash commands the
+CLI approves on its own. `ls -la` and `find … | head -100` ran unprompted
+on 2026-08-19 under a user config allowing neither, and the rule that
+admitted them is unstated. **The 2026-08-30 capture cannot narrow it and
+must not be read as though it could**: it carries tool LABELS only, and
+those labels are deduplicated against the previous label (`last_activity`
+in `runner.rs`), so it cannot say which commands ran, or even how many.
+Only a real turn moves this. ROUTED to @human.
+
+### Table 3 — whatever the user happens to have configured — **NOT REVIEWED**
+
+**Contributes:** every permission the user's own settings allow,
+inherited because the adapter deliberately passes no `--settings` and no
+`--setting-sources` (*"the user's CLI configuration is the user's; we
+ride it"*). It is not a fixed table — it is whatever that file says at
+spawn time.
+
+**READ, not assumed** — a live-environment fact, so it carries when and
+where it was read and never a commit ref: `~/.claude/settings.json` on
+`Mac.lan` at **2026-08-30T18:11:17Z** has `permissions.allow` =
+`Bash(git add:*)`, `Bash(git rm:*)`, `Bash(git mv:*)`,
+`Bash(git commit:*)`, `Bash(git merge:*)`. **The card is out of date here
+and the drift IS the finding**: the 2026-08-19 note recorded four of
+those; there are five today, and the one that arrived is `git merge` —
+the verb this project's own CONVENTIONS reserve to @human's gate. The
+table this card said drifts has drifted again, under observation, inside
+eleven days, for a reason that had nothing to do with genesis.
+
+**The question the captures CANNOT answer:** what this table contains for
+any user but this one, and what it contains here tomorrow. Nothing in
+this repository can keep a copy of it honest — which is why the third
+entry's `observed` field is empty ON PURPOSE and its own test asserts
+that emptiness rather than letting a stale literal accumulate.
+
+### The verdict on the sentence
+
+**TRUE — and it stays true under every arm reachable from inside this
+fence.** Table 1 is the only reviewed member; the adapter can subtract
+from table 2 only by name and only for names known when the binary was
+built, and can close table 3 only by refusing to ride the user's own
+configuration. None of those makes the sentence false.
+
+## THE RULING (criterion 2) — dated 2026-08-30: THE SIX STAY
+
+Arm taken: **record the ruling that the imperative surface stays.** Three
+reasons, none of them the one this card assumed, all landed in
+`adapter.rs` beside the patterns:
+
+- **(a) `mkdir` is NOT avoidable, and the card was wrong that it is.**
+  `Write` creates parent directories, but stage 0's `docs/decisions/`,
+  `docs/tasks/` and `docs/rooms/` are wanted EMPTY — the 2026-08-30
+  capture's own completion text says so — and no file write creates an
+  empty directory.
+- **(b) `cp` IS avoidable and the paired change is out of this fence.**
+  Every observed use copies inside the cwd, which `acceptEdits` already
+  covers through `Write`. But the change that makes dropping it safe is
+  the kit's own stage-0 instruction (`method/`), which is
+  `RefusalRemedy::PlannerInstruction`'s territory and not `app-agent`'s;
+  the one observed stage 0 needed **eight** separate `cp` calls, so
+  dropping the grant unpaired buys eight in-band denials on the first
+  genesis a user ever runs — and pricing that needs exactly the real turn
+  criterion 5 forbids.
+- **(c) It is the smallest member and the wrong lever.** Narrowing table
+  1 moves the union very little and moves tables 2 and 3 not at all.
+
+**Consequently criterion 3 does not fire.**
+`allowed_tools_are_exactly_the_kits_imperative_surface` is UNMOVED and
+its assertions are untouched — there is no narrowing to reconcile, and
+loosening it was never on the table.
+
+## Criterion 4 — does `T-025` criterion 2's containment argument survive?
+
+**In one sentence: it survives only as a claim about
+`--permission-mode acceptEdits`, whose cwd scoping is real and pinned by
+`permission_mode_is_accept_edits_and_scoped_to_cwd`, and it FAILS as a
+claim about the grant as a whole — `Bash(cp:*)` and `Bash(mkdir:*)` carry
+no path scope, and the CLI's own default Bash class was never in the
+argument at all.** The over-broad half of that sentence is now RETRACTED
+in `adapter.rs`'s own doc comment, where the next reader will meet it.
+
+## ROUTED to @human (criterion 5) — none of these taken here
+
+1. **Narrow table 2 by name.** `CronCreate`, `CronDelete`, `CronList`,
+   `ScheduleWakeup`, `RemoteTrigger`, `PushNotification`, `SendMessage`,
+   `EnterWorktree`, `ExitWorktree` are all measured present and a genesis
+   interview provably needs none of them — the same *"free ADR-010
+   narrowing"* argument that already justifies `WebFetch`/`WebSearch`.
+   **NOT TAKEN**: it is unknown whether the CLI validates unknown tool
+   names at argument-validation time, so an untested denylist risks
+   killing genesis at SPAWN, which is worse than the gap. Only a real run
+   prices it.
+2. **Close table 3 with `--setting-sources`**, given the measured drift.
+   **NOT TAKEN**: it also drops the user's hooks and project settings and
+   changes the auth posture ADR-003 fixes. A product decision plus a real
+   run.
+3. **The `cpio` boundary question** (table 1's own gap).
+4. **Drop `Bash(cp:*)` paired with the kit's stage-0 instruction.** The
+   only arm that actually narrows table 1; it needs `method/` in the
+   fence and one watched stage 0 to price the eight denials.
+
+## Where this card was wrong
+
+- *"both suspect verbs look avoidable (Read+Write IS cwd-scoped under
+  `acceptEdits`)"* — **false for `mkdir`**, per (a) above.
+- *"Narrowing the six patterns cannot narrow the effective grant"*
+  (2026-08-19, consequence 1) — **overstated**. It cannot narrow tables 2
+  and 3. It does narrow table 1, which is the only member that
+  auto-approves a WRITE outside the cwd. The true claim is the weaker one.
+- *"this machine's `~/.claude/settings.json` allows only
+  `Bash(git add|rm|mv|commit:*)`"* — no longer true at the time read.
+- *"the replacement question — what does the CLI grant when we say
+  nothing — is a measurement nobody has taken"* — **half of it had been
+  taken, and was sitting in the capture this card already cites.** The
+  init line's `tools` array is that measurement. What was genuinely
+  untaken is the Bash sub-class boundary, which is the gap table 2 now
+  names explicitly.
+
 ## Verdicts Queues for the next standing sitting with this evidence.

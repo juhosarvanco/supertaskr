@@ -63,11 +63,22 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   --output-format=stream-json requires --verbose`, exit 1, on stderr,
 ///   before any model call. Load-bearing, not vestigial.
 /// - `--permission-mode acceptEdits` — auto-accepts file writes INSIDE
-///   THE CWD, which is the project directory. That cwd scoping IS the
-///   project-dir scoping criterion 2 demands; there is no `--add-dir`
-///   anywhere, so no directory grant beyond the project exists. The
-///   materialized kit lives inside the project (`.nputer/genesis/kit/`,
-///   §3), so reading it needs no extra grant either.
+///   THE CWD, which is the project directory. There is no `--add-dir`
+///   anywhere, pinned by
+///   [`tests::permission_mode_is_accept_edits_and_scoped_to_cwd`], so
+///   this mode grants no directory beyond the project. The materialized
+///   kit lives inside the project (`.nputer/genesis/kit/`, §3), so
+///   reading it needs no extra grant either.
+///   **AND THE SENTENCE THAT USED TO FOLLOW — that cwd scoping IS the
+///   project-dir scoping T-025 criterion 2 demands — IS RETRACTED
+///   (T-025-s4, 2026-08-30).** It is true of THIS FLAG and false of the
+///   grant as a whole. `--allowedTools` matches a command's TEXT and
+///   carries no path scope, so `Bash(cp:*)` and `Bash(mkdir:*)` reach
+///   any path the user can write; and the CLI grants a read-only Bash
+///   class of its own on top. The scope of the retraction, the evidence
+///   for it and the questions the captures cannot answer are
+///   [`EFFECTIVE_GRANT_TABLES`], where the next reader of this table
+///   will meet them.
 /// - `--allowedTools` with exactly six Bash patterns — the kit's
 ///   imperative surface as the T-023 verdict recorded it: `git init`,
 ///   `git add`, `git commit`, `git status` (stage 0's repo work),
@@ -87,6 +98,22 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   THE GAP IS NOT CLOSED BY WIDENING, and that conclusion is recorded
 ///   with the evidence rather than left to the next reader — see that
 ///   const's own doc comment.
+///   **AND THE SIX STAY — RULED 2026-08-30 (T-025-s4), the card's third
+///   arm closed rather than parked a fourth time.** Three measured
+///   reasons, none of them the one the card assumed. (a) `mkdir` is NOT
+///   avoidable: `Write` creates parent directories, but stage 0's
+///   `docs/decisions/`, `docs/tasks/` and `docs/rooms/` are wanted
+///   EMPTY, and no file write creates an empty directory. (b) `cp` IS
+///   avoidable — every observed use copies inside the cwd, which
+///   `acceptEdits` already covers through `Write` — but the paired
+///   change is the kit's own stage-0 instruction, which is
+///   [`RefusalRemedy::PlannerInstruction`]'s fence and not this one; the
+///   one observed stage 0 needed eight separate `cp` calls, so dropping
+///   the grant unpaired buys eight in-band denials on the first genesis
+///   a user ever runs, and pricing that needs the real turn T-025-s4 is
+///   forbidden to spawn. (c) The six are the SMALLEST and only reviewed
+///   member of [`EFFECTIVE_GRANT_TABLES`], so narrowing them moves the
+///   union very little and the two tables it does not reach not at all.
 /// - `--disallowedTools WebFetch WebSearch` — free ADR-010 narrowing; a
 ///   genesis interview has zero web business, and denying loudly beats
 ///   discovering it later.
@@ -98,6 +125,13 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   the exact opposite of our auth posture.
 /// - `--settings` / `--setting-sources` / `--strict-mcp-config` — the
 ///   user's CLI configuration is the user's; we ride it.
+///   **RIDING IT MEANS INHERITING IT, AND THAT IS A GRANT (T-025-s4).**
+///   Whatever the user's own settings allow is in the spawned planner's
+///   surface, it is reviewed by nobody here, and it DRIFTS — table three
+///   of [`EFFECTIVE_GRANT_TABLES`] carries the measurement. Closing it
+///   would mean passing `--setting-sources`, which also drops the user's
+///   hooks and project settings and cannot be priced without a real
+///   turn: ROUTED to @human rather than taken.
 /// - `--no-session-persistence` — resume is the whole topology.
 /// - `--max-budget-usd` — silently capping the user's own session is not
 ///   ours to impose (named growth candidate, §10).
@@ -315,6 +349,148 @@ pub const OBSERVED_PLANNER_REFUSALS: &[ObservedRefusal] = &[
               1 above shows the same command meets a hook-safety guard our allowlist \
               cannot reach, so a widened pattern buys a wider grant and changes nothing. \
               The bare spelling is already granted; writing it is a planner instruction.",
+    },
+];
+
+// ---- T-025-s4: the effective grant, in three tables --------------------
+
+/// One member of the union that IS the spawned planner's grant.
+///
+/// The card this comes from exists because a sentence was written and
+/// never checked: *"the effective grant is the union of three tables —
+/// the adapter's six patterns, the CLI's own defaults, and whatever the
+/// user happens to have configured — and only the first is reviewed."*
+/// The type makes each member answer for itself, including for what
+/// nobody can answer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GrantTable {
+    /// Which table.
+    pub name: &'static str,
+    /// What it puts into the union.
+    pub contributes: &'static str,
+    /// Whether anything in THIS repository reviews it. Exactly one of
+    /// these is `true`, and that asymmetry is the whole finding.
+    pub reviewed: bool,
+    /// What this adapter's argv can do about it. `"none"` is a real
+    /// answer and is written as one rather than left blank.
+    pub lever: &'static str,
+    /// **The question the landed captures CANNOT answer about this
+    /// table.** Named per member, because a gap left implicit is a gap
+    /// the next reader mistakes for a measurement.
+    pub unanswered: &'static str,
+    /// Measured membership, where a capture on disk can keep it honest.
+    /// **EMPTY IS A CLAIM, NOT AN OMISSION**: either the membership is
+    /// derivable from live code (table one, which is
+    /// [`AgentAdapter::allowed_tools`] and is never copied here), or
+    /// nothing in this repository can keep it true (table three).
+    pub observed: &'static [&'static str],
+}
+
+/// **THE EFFECTIVE GRANT, CHARACTERISED FROM THE LANDED CAPTURES AND
+/// FROM THIS FILE — T-025-s4, 2026-08-30.**
+///
+/// # The verdict on the sentence
+///
+/// **TRUE, and it stays true.** Three tables, one reviewed. The adapter
+/// can narrow table one (it is this file), can SUBTRACT from table two
+/// by name through `--disallowedTools`, and can close table three only
+/// by refusing to ride the user's own configuration. None of those makes
+/// the sentence false: a denylist removes names known when this binary
+/// was built, so a CLI that gains a tool tomorrow grants it by default.
+///
+/// # Provenance
+///
+/// Table two's [`GrantTable::observed`] is transcribed from the `tools`
+/// array of the `system`/`init` line in
+/// `docs/research/captures/real-planner-turn-2026-08-19.jsonl`, captured
+/// under THIS adapter's own argv, and
+/// `the_cli_default_tool_table_is_read_off_the_2026_08_19_capture` in
+/// `tests/agent_runner.rs` asserts it against that file — so a
+/// paraphrase reds against real captured bytes rather than merely
+/// looking plausible. `real_cli_arms_forbidden` means no test can
+/// produce a fresh one (T-047-s6, T-060).
+///
+/// # What is NOT here, and why
+///
+/// Table three's membership is a fact about the user's machine at a
+/// moment, not a function of this tree. A literal here would be a figure
+/// with no possible keeper — so the field is empty ON PURPOSE and
+/// `unanswered` says what that costs.
+pub const EFFECTIVE_GRANT_TABLES: &[GrantTable] = &[
+    GrantTable {
+        name: "the adapter's own --allowedTools patterns",
+        contributes: "Auto-approval for a command whose TEXT begins with one of a fixed set of \
+                      verbs. Carries NO path scope: `cp` and `mkdir` reach any path the user can \
+                      write, which is precisely the capability the cwd-scoping argument was \
+                      meant to deny.",
+        reviewed: true,
+        lever: "this file - the patterns ARE the lever, pinned by \
+                `allowed_tools_are_exactly_the_kits_imperative_surface`",
+        unanswered: "Whether the real CLI's matcher agrees with the word-boundary rule \
+                     `granted_prefix_reached` models - i.e. whether `Bash(cp:*)` also admits \
+                     `cpio`. One refusal calibrates the prefix half; nothing on disk tests the \
+                     boundary half, and only a real turn can.",
+        observed: &[],
+    },
+    GrantTable {
+        name: "the CLI's own defaults",
+        contributes: "The TOOL SET itself, plus a read-only Bash class the CLI approves without \
+                      asking. `--allowedTools` does not restrict this set - the capture was taken \
+                      with six Bash patterns passed and carries the whole array below - so every \
+                      tool here is reachable unless it is denied by name.",
+        reviewed: false,
+        lever: "--disallowedTools, and it MEASURABLY bites: `WebFetch` and `WebSearch` are the \
+                two names this adapter denies and the two names missing from the array below. It \
+                is a denylist, so it can never close the table.",
+        unanswered: "WHICH Bash commands the CLI approves on its own. Two ran unprompted on \
+                     2026-08-19 (`ls`, `find`) and the rule that admitted them is unstated; the \
+                     2026-08-30 capture carries tool LABELS only - deduplicated against the \
+                     previous label - so it cannot even say which commands ran. The boundary of \
+                     that class is unmeasured and only a real turn moves it.",
+        observed: &[
+            "Task",
+            "Bash",
+            "CronCreate",
+            "CronDelete",
+            "CronList",
+            "DesignSync",
+            "Edit",
+            "EnterWorktree",
+            "ExitWorktree",
+            "ListAgents",
+            "Monitor",
+            "NotebookEdit",
+            "PushNotification",
+            "Read",
+            "RemoteTrigger",
+            "ReportFindings",
+            "ScheduleWakeup",
+            "SendMessage",
+            "Skill",
+            "TaskCreate",
+            "TaskGet",
+            "TaskList",
+            "TaskOutput",
+            "TaskStop",
+            "TaskUpdate",
+            "ToolSearch",
+            "Workflow",
+            "Write",
+        ],
+    },
+    GrantTable {
+        name: "whatever the user happens to have configured",
+        contributes: "Every permission the user's own settings allow, inherited because this \
+                      adapter deliberately passes no `--settings` and no `--setting-sources`. It \
+                      is not a fixed table: it is whatever that file says at spawn time.",
+        reviewed: false,
+        lever: "none that keeps the auth posture - `--setting-sources` would close it and would \
+                also drop the user's hooks and project settings. ROUTED to @human.",
+        unanswered: "What it contains for any user but this one, and what it will contain here \
+                     tomorrow. It has already drifted twice under observation, in both cases for \
+                     reasons that had nothing to do with genesis. Nothing in this repository can \
+                     keep a copy of it honest, which is why `observed` is empty.",
+        observed: &[],
     },
 ];
 
@@ -1519,6 +1695,106 @@ mod tests {
         }
         let denied: Vec<&str> = argv[end + 1..].iter().map(String::as_str).collect();
         assert_eq!(denied, vec!["WebFetch", "WebSearch"]);
+    }
+
+    /// T-025-s4: THE EFFECTIVE GRANT IS THREE TABLES AND EXACTLY ONE OF
+    /// THEM IS REVIEWED — the card's own sentence, asserted instead of
+    /// believed.
+    ///
+    /// The card had carried that sentence through three triages as
+    /// prose. Prose is what let the 2026-08-19 finding sit for eleven
+    /// days beside a doc comment that contradicted it. What this body
+    /// buys over a paragraph is the ASYMMETRY (one reviewed, two not)
+    /// and the GAPS: every table must still name the question the
+    /// captures cannot answer, so a later editor cannot quietly delete a
+    /// gap and leave a table looking measured.
+    #[test]
+    fn the_effective_grant_is_three_tables_and_exactly_one_is_reviewed() {
+        // A CARDINALITY FLOOR (poison shape five): dropping a table must
+        // not drop its own check. "Three" is the card's claim, not a
+        // convenience.
+        assert_eq!(
+            EFFECTIVE_GRANT_TABLES.len(),
+            3,
+            "the union is three tables; a fourth needs characterising and a missing one is a \
+             grant nobody is accounting for"
+        );
+        for (i, a) in EFFECTIVE_GRANT_TABLES.iter().enumerate() {
+            for b in &EFFECTIVE_GRANT_TABLES[i + 1..] {
+                assert_ne!(a.name, b.name, "three DIFFERENT tables, or the union is not a union");
+            }
+            assert!(!a.contributes.is_empty(), "{}: a table says what it contributes", a.name);
+            assert!(!a.lever.is_empty(), "{}: \"none\" is written out, never left blank", a.name);
+            assert!(
+                !a.unanswered.is_empty(),
+                "{}: T-025-s4 criterion 1 - every table NAMES the question the captures cannot \
+                 answer, rather than leaving the gap implicit",
+                a.name
+            );
+        }
+
+        // THE ASYMMETRY THAT IS THE WHOLE FINDING.
+        let reviewed: Vec<&GrantTable> =
+            EFFECTIVE_GRANT_TABLES.iter().filter(|t| t.reviewed).collect();
+        assert_eq!(
+            reviewed.len(),
+            1,
+            "exactly one table is reviewed - if this ever reads 3, the sentence this card exists \
+             for has become false and the doc comments above are owed the news"
+        );
+        assert!(
+            reviewed[0].name.contains("--allowedTools"),
+            "the reviewed one is OURS: {:?}",
+            reviewed[0].name
+        );
+
+        // TABLE ONE IS NOT COPIED HERE, AND THE CONTROL IS WHAT MAKES
+        // THAT A MEASUREMENT: an empty `observed` beside an empty
+        // `allowed_tools()` would prove nothing at all.
+        assert!(
+            reviewed[0].observed.is_empty(),
+            "table one's membership is `allowed_tools()` itself - a copy here is a second \
+             implementation that can disagree with the argv it describes"
+        );
+        assert!(!CLAUDE_V1.allowed_tools().is_empty(), "…and the live source is non-empty");
+
+        // TABLE TWO: the CLI's own set, with both controls. The denied
+        // names are READ OFF THE LIVE ARGV rather than re-typed, so
+        // changing the denylist moves this body with it.
+        let cli = EFFECTIVE_GRANT_TABLES
+            .iter()
+            .find(|t| t.name.contains("CLI's own"))
+            .expect("the CLI's own defaults are one of the three");
+        assert!(!cli.reviewed);
+        assert!(
+            cli.observed.contains(&"Bash"),
+            "the positive control: the tool the six patterns are about is in the CLI's set"
+        );
+        let argv = CLAUDE_V1.argv(None).expect("the spawn template assembles");
+        let end = argv.iter().position(|a| a == "--disallowedTools").expect("denylist present");
+        let denied: Vec<&str> = argv[end + 1..].iter().map(String::as_str).collect();
+        assert!(!denied.is_empty(), "a denylist we can check against");
+        for name in &denied {
+            assert!(
+                !cli.observed.contains(name),
+                "THE MEASURED LEVER: {name:?} is denied by this adapter and is absent from the \
+                 captured tool array. If it turns up there, `--disallowedTools` stopped biting \
+                 and table two has no lever at all"
+            );
+        }
+
+        // TABLE THREE IS UNPINNABLE BY CONSTRUCTION, and says so.
+        let user = EFFECTIVE_GRANT_TABLES
+            .iter()
+            .find(|t| t.name.contains("user"))
+            .expect("the user's own configuration is one of the three");
+        assert!(!user.reviewed);
+        assert!(
+            user.observed.is_empty(),
+            "a copy of the user's settings would be a figure with no possible keeper - it goes \
+             stale the next time they edit that file, and nothing here would notice"
+        );
+        assert!(user.lever.starts_with("none"), "the honest answer, written out: {:?}", user.lever);
     }
 
     /// T-124: THE GRANT COVERS A SPELLING, NOT AN OPERATION — and the
