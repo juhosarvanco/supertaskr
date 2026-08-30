@@ -16,7 +16,11 @@
  * answers for two seats and the two are NOT the same rule:
  *
  *   A LANE answers from its OWN manifest, and every uncertainty is a
- *   REFUSAL. That half is v1, unchanged to the byte.
+ *   REFUSAL. That half is v1 in every verdict but one: `readManifest`
+ *   now REQUIRES `excluded`, so a manifest predating this card blocks
+ *   with `no-manifest` where v1 allowed. No live manifest can hit it —
+ *   the writer has always stamped the field — and it is stated because
+ *   "unchanged to the byte" was the claim and is not quite true.
  *   A SEAT WITH NO LANE answers from EVERY LIVE LANE'S manifest, and
  *   every uncertainty is an ALLOW. A refusal here rests on a POSITIVE,
  *   readable reservation — never on a file this hook could not read.
@@ -134,6 +138,31 @@
  *    `.claude/settings.json` can disarm it; the fence forbids exactly
  *    that for every lane whose `touches:` does not carry `.claude/`,
  *    which is the property this file has and not a proof.
+ * 6. THE MID-INTEGRATION CRITERION CLOSES BEFORE THE LANE DOES. git
+ *    drops its marker at the merge COMMIT, and a merge with no conflict
+ *    never writes one at all — while lane-protocol rule 6 keeps the
+ *    lane's worktree, and so its manifest, until after the CHECKPOINT.
+ *    So every Edit into a JUST-MERGED lane's fence is refused
+ *    `held-by-a-live-lane` for that whole window, and this repository
+ *    performs verdict corrections there. Measured at T-154-s2's
+ *    verification, on this card: merging it and then editing
+ *    `.claude/hooks/lane-fence.mjs`, `tools/e2e/…` or
+ *    `docs/CONVENTIONS.md` from the integration checkout is refused
+ *    while `nputer-T-154-s2` stands. The route is to remove the
+ *    worktree before the reconciling writes; the guard has a term for
+ *    "on disk" and none for "merged".
+ * 7. CONTAINMENT IS CASE-SENSITIVE AND THIS PROJECT'S VOLUME IS NOT.
+ *    `within` compares bytes, so from a lane-less seat
+ *    `DOCS/ROADMAP.md` is ALLOWED where `docs/ROADMAP.md` is refused —
+ *    and on the default macOS APFS both write the same file (measured
+ *    at T-154-s2's verification: writing `<repo>/DOCS/ROADMAP.md`
+ *    landed in `docs/` and created no `DOCS` directory). The LANE arm
+ *    has no such escape, because there an unmatched path BLOCKS; it is
+ *    this arm's allow-by-default that converts a case difference into a
+ *    hole. It is NOT closed by comparing case-insensitively, which
+ *    would over-refuse the seat that may not be stopped on a
+ *    case-sensitive volume — so it is declared rather than papered
+ *    over, and the fix is a routed question.
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";

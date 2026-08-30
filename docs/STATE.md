@@ -1,15 +1,18 @@
 # State
 
-Updated: 2026-08-30 at T-167-s1's close. Verdict corrections
-performed FOR REAL in the second commit — `18d8166`'s message claims
-them and contains only the graph regen (the record names the rule:
-an edit script's success is a gate; never chain commit after a
-scripted edit without reading the diff). T-154-s2 executor OUT
-(guard built, 19 mutants killed, walk measured 0.19–0.50ms), its
-blind factless verifier RUNNING; T-112 executor still building.
-Graph: 2293 edges, headroom 2,022 — alarm prints, survivable.
-Current record:
-docs/checkpoints/2026-08-30-T-167-s1-close-and-the-false-commit-message.md.
+Updated: 2026-08-30 at T-154-s2's close. THE GUARD HAS ITS SECOND
+ARM: a lane-less seat's write into a live lane's fence is refused
+mechanically (@human's ruling, now code), limits 6 and 7 declared in
+the hook, and this very integration was the first one shaped by it
+(worktree removed BEFORE the correction edits — hook limit 6's own
+route). e2e WHOLE at 332/332 — the session-economics live-lane reds
+cleared with the card, as the class predicted. T-112 executor OUT
+(tip 96e3886), blind verifier RUNNING. **GRAPH KLAXON at T-112's
+merge: fresh index forecast 1,038,884/1,040,000 — 1,116 left,
+truncated_files 2→4, docs_watch.rs 55→0 symbols. T-140-s4's ruling
+(@human) is now urgent.** e2e-seat train unblocked (tools/e2e freed):
+T-163-s4 p1 first. Current record:
+docs/checkpoints/2026-08-30-T-154-s2-the-guard-grows-its-second-arm.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will

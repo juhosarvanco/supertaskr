@@ -1179,6 +1179,12 @@
     mid-cherry-pick is free, because resolving a lane's merge is an Edit
     inside that lane's fence by construction, and a guard forbidding the
     act that CONSUMES a fence is a guard somebody turns off.
+    **AND IT CLOSES BEFORE THE LANE DOES**: git drops the marker at the
+    merge COMMIT and a clean merge never writes one, while rule 6 keeps
+    the worktree until after the CHECKPOINT — so an Edit into a
+    just-merged fence is refused for that whole window, which is where
+    this project's verdict corrections land. Remove the worktree before
+    the reconciling writes (measured at `T-154-s2`'s verification).
     **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write

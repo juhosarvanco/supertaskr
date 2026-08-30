@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -98,8 +98,9 @@ judgement: `docs/tasks/` (taken from each manifest's own
 `alwaysWritable`, which is the parser's `UNFENCEABLE_PATHS`), a card's
 own file (each manifest's `excluded`), and the integration seat's
 standing writes, `docs/STATE.md` and `docs/checkpoints`. The lane arm
-is left BYTE-IDENTICAL — a checkout on a task branch keeps exactly its
-current behaviour, which is the card's own condition — and v1's
+keeps every v1 verdict but one (`readManifest` now requires `excluded`;
+see the hook header — corrected at verification, "BYTE-IDENTICAL" was
+the claim and is not quite true), and v1's
 positive control is preserved in both directions: a manifest is only
 ever consulted for a checkout whose own HEAD is a lane branch, so a
 stray manifest still locks nobody out, and every refusal in the new arm
@@ -121,9 +122,11 @@ do not stamp `done`: `review: independent`, so this lane stops at
 **ONE FUNCTION, TWO SEATS, AND THE TWO ARE NOT THE SAME RULE.**
 `decide` still settles lane-ness FIRST and from the branch alone; what
 changed is what happens on the other side of that test. A LANE answers
-from its own manifest and every uncertainty is a REFUSAL — v1, arm for
-arm, and the only edit inside it is that the path-field loop moved into
-`targetOf`, which both seats now call rather than spelling twice. A SEAT
+from its own manifest and every uncertainty is a REFUSAL — v1 arm for
+arm in every verdict but one (`readManifest` now requires `excluded`;
+see the hook header), and the only edit inside it is that the
+path-field loop moved into `targetOf`, which both seats now call rather
+than spelling twice. A SEAT
 WITH NO LANE answers from EVERY LIVE LANE'S manifest and every
 uncertainty is an ALLOW. The asymmetry is the design: a lane can be told
 to stop, and the integration seat cannot, because stopping it stops
@@ -393,3 +396,60 @@ to be told, but the window between the two is real.
 
 Standing triage 2026-08-30 (architect seat): PARKED — NOT RULED. docs/STATE.md states in as many words that "`T-154-s2` still needs a ruling", and that ruling is @human's; this card questions whether a guard should see the writing session's own lane, which is a policy call about what the method permits rather than a defect with a derivable answer. Two of the three incidents that motivated the guard are writes from a seat that HAS no lane, so the card is arguing the guard's premise, not its implementation — exactly the class a triage seat may route but not settle.
 RESURFACES: @human rules the question STATE has queued. IF the ruling says a lane-less seat's writes are in scope THEN this promotes as a guard-class card and dispatches `review: independent` (TASK-FORMAT: the builder of a cage is not its inspector); IF it says the guard's current premise stands THEN this is DECLINED with the ruling named as the reason.
+
+## VERDICT (2026-08-30, blind factless verifier claude-opus-5@subagent)
+
+**APPROVED WITH ASSIGNED CORRECTIONS** — three, all
+disclosure/accuracy, none changing a verdict the guard returns, all
+performed at merge. The verifier wrote an 11-class attack set from the
+contract before reading any fact; the mechanism survived every class
+but two, and those two became corrections rather than rejections
+because the ruling's criteria are met and the failures are in what the
+limits DECLARE:
+
+1. **The mid-integration criterion closes before the lane does.** git
+   drops its marker at the merge COMMIT (a clean merge never writes
+   one) while rule 6 keeps the worktree until after the checkpoint, so
+   every Edit into a just-merged fence is refused for that window —
+   which is exactly where this repository performs verdict
+   corrections. Now limit 6 in the hook, a paragraph in CONVENTIONS,
+   and a bullet on T-154-s4 (whose ruling must answer it). Measured on
+   this very card; this card's own corrections were performed by
+   removing the worktree FIRST, the route the limit names.
+2. **The case escape is new to the lane-less arm.** On this volume
+   `DOCS/ROADMAP.md` is allowed where `docs/ROADMAP.md` is refused and
+   both write the same file — the lane arm has no such hole because
+   there an unmatched path BLOCKS; it is this arm's allow-by-default
+   that converts case into an escape. Declared as limit 7, not
+   papered over (case-insensitive comparison would over-refuse on a
+   case-sensitive volume); the close is a routed question.
+3. **"BYTE-IDENTICAL" retracted.** `readManifest` now requires
+   `excluded`, so a manifest predating this card blocks `no-manifest`
+   where v1 allowed. No live manifest can hit it; stated in the hook
+   header and corrected in the notes above because the claim was made
+   and is not quite true. (Both anchors qualified: the
+   Understanding line and the "What landed" line — the second was first
+   missed by a grep the phrase's own line break defeated, and this
+   parenthetical originally said the anchor did not exist.)
+
+Independently re-derived: 37/37 lane-fence bodies; full e2e 330/2 with
+both reds reproduced at the merge-base WITHOUT the diff (the live-lane
+class, `brief.mjs --task T-157` refusing identically at f3f4671); walk
+0.152ms vs subprocess 9.404ms (62×, band with the executor's 47–62×);
+runner ~37–41ms end to end. Fifteen verifier-authored mutants: 14
+killed with the executor's ledger matched count-for-count; the one
+survivor (per-lane short-circuit) proved EQUIVALENT under the current
+manifest writer, with the condition that makes a body owed written
+down. Fence CLEAN, six files, zero breaches; 430 spec insertions, 2
+deletions, both widened imports. The live-observation gap RULED
+SUFFICIENT from the card's own words: "refused mechanically" asks for
+a program, not a transcript; the transport (hook wiring) is T-154's,
+untouched by this diff, and the observation is structurally
+unavailable before the merge. The verifier nevertheless drove the real
+runner as its own OS process against the live board and was refused
+with exit 2 naming T-112's lane — and at integration, the corrections
+above were themselves the new arm's first live ALLOWs from a lane-less
+seat. Observations (not corrections, left for triage): a sibling
+manifest is honoured at face value (no `re-expand` check on the
+lane-less arm); the session-economics attribution clears when the CARD
+leaves `building`, not when the worktree goes.

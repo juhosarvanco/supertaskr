@@ -59,3 +59,11 @@ protecting against.
 - The marker set is the narrow question inside the wide one: `MERGE_HEAD`
   alone would cover the merge play, and the four cover the revert play
   (`REVERT_HEAD`) and the two rebase directories as well.
+- AND THE WINDOW THE MARKER DOES NOT COVER. git clears it at the merge
+  COMMIT and a conflict-free merge never writes one, while rule 6 keeps
+  the worktree until after the checkpoint — so the criterion frees the
+  CONFLICT and not the reconciliation that follows it. A ruling that
+  keeps the criterion should say whether the integrator's post-merge
+  writes are freed too, by an earlier worktree removal, or not at all.
+  (Added at T-154-s2's verification, which measured the window on the
+  card itself.)
