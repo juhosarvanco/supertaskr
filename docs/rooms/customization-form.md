@@ -64,11 +64,14 @@ These are not arguments in this room. They are the walls it is in.
    **AND NPUTER ALREADY SHIPS ITS STRONGEST GUARANTEE AS A CHECKED-IN
    CONFIG FILE.** `.claude/settings.json` in this repository registers
    the fence as a `PreToolUse` hook on `Edit|Write|NotebookEdit`,
-   pointing at `.claude/hooks/lane-fence-hook.mjs`. That is the
-   config-file school in production here today, carrying the one rule
-   nobody may bypass — read in the tree at this lane's base commit. Any
-   form chosen below inherits a working existence proof that files are
-   a sufficient enforcement surface for this project.
+   pointing at `.claude/hooks/lane-fence-hook.mjs` — read in the tree
+   at this lane's base commit. That is the config-file school in
+   production here today, carrying this project's hardest rule, and any
+   form chosen below inherits it as a working existence proof that
+   files are a sufficient enforcement surface here. **Its residual,
+   named rather than implied (the benchmark's L-9 applied to
+   ourselves): the matcher is `Edit|Write|NotebookEdit`, so the guard
+   is on those write tools and not on every path a shell could take.**
 5. **D3, ruled narrow 2026-08-30 (rooms/cockpit-or-mirror.md).** The
    app may write card frontmatter stamps (`builder:`, `verifier:`,
    `status:`) and APPEND to record-class locations. NORTH_STAR,
