@@ -137,3 +137,17 @@ threshold this project usually treats as promotion-worthy. It is already
 `planned` and fenced `[tools/e2e]`; what it wants is to be NEXT in that
 package rather than to be re-argued. It contends with `T-112-s3`, which
 holds `tools/e2e` right now.
+
+**THE SECOND MEASUREMENT CAME BACK GREEN.** Run 33333142954 **attempt
+2** — the same failed job re-run on the SAME commit `2489b0f`, no code
+changed — completed **success**. So the failure is INTERMITTENT and not
+reproducible on demand, which is what separates this from a defect a
+lane can walk up to and fix.
+
+**AND THAT IS THE WARNING, NOT THE ALL-CLEAR** (the POISON DRILL
+bullet's own sentence, one layer up): re-running until green is a
+defect's healing mechanism, not evidence about it. Two reds and one
+green re-run mean the race is real and rare, not that it is closed. A
+lane taking this card SHALL NOT treat "I could not reproduce it" as the
+finding — it has to read what holds a handle inside the fixture's `.git`
+at teardown and show the mechanism.
