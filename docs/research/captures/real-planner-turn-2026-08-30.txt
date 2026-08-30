@@ -1,0 +1,77 @@
+   Compiling nputer v0.1.0 (/Users/ujju/Projects/nputer/app/src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.95s
+     Running tests/agent_runner.rs (target/debug/deps/agent_runner-1146621b1756ba79)
+
+running 1 test
+[real-smoke] start: Started { turn: 1 }
+[real-smoke] {"kind":"started","seq":1,"turn":1}
+[real-smoke] {"kind":"sessionRegistered","seq":2,"nativeSessionId":"a4c9961e-26e4-4720-85a3-94f450aa66aa"}
+[real-smoke] {"kind":"textDelta","seq":3,"turn":1,"text":"I"}
+[real-smoke] {"kind":"textDelta","seq":4,"turn":1,"text":"'ll start by reading the planner role file."}
+[real-smoke] {"kind":"activity","seq":5,"turn":1,"label":"Read"}
+[real-smoke] {"kind":"activity","seq":6,"turn":1,"label":"Bash"}
+[real-smoke] {"kind":"activity","seq":7,"turn":1,"label":"Read"}
+[real-smoke] {"kind":"textDelta","seq":8,"turn":1,"text":"Kit read. Running stage 0 scaffold now."}
+[real-smoke] {"kind":"activity","seq":9,"turn":1,"label":"Bash"}
+[real-smoke] {"kind":"denied","seq":10,"turn":1,"toolName":"Bash","toolUseId":"toolu_015pWoeBb8JrjRnuykLthXiA","message":"Contains shell syntax (string) that cannot be statically analyzed"}
+[real-smoke] {"kind":"activity","seq":11,"turn":1,"label":"Write"}
+[real-smoke] {"kind":"activity","seq":12,"turn":1,"label":"Bash"}
+test real_cli_smoke_records_the_stream_schema has been running for over 60 seconds
+[real-smoke] {"kind":"textDelta","seq":13,"turn":1,"text":"Now st"}
+[real-smoke] {"kind":"textDelta","seq":14,"turn":1,"text":"amping STATE.md."}
+[real-smoke] {"kind":"activity","seq":15,"turn":1,"label":"Write"}
+[real-smoke] {"kind":"textDelta","seq":16,"turn":1,"text":"Stage 0 scaffold is on disk:"}
+[real-smoke] {"kind":"textDelta","seq":17,"turn":1,"text":" `docs/` (NORTH_STAR, ROADMAP, ARCHITECTURE, CONVENTIONS, STATE + empty `decisions/`, `tasks/`, `rooms/`), `C"}
+[real-smoke] {"kind":"textDelta","seq":18,"turn":1,"text":"LAUDE.md` and `AGENTS.md` at the project root, `.gitignore` carrying `.nputer/`, git initialized, `.nputer/nputer.yaml` seeded. STATE.md is stamped and says the next stage is 1 ("}
+[real-smoke] {"kind":"textDelta","seq":19,"turn":1,"text":"Q1).\n\nNow the interview — one question at a time, seven questions, each banked to disk the moment you confirm it.\n\n**Q1 — Problem & person.**\n\nWhat probl"}
+[real-smoke] {"kind":"textDelta","seq":20,"turn":1,"text":"em are we building this for, for whom, and in what situation?\n\nDon't give me a market (\"developers who need better"}
+[real-smoke] {"kind":"textDelta","seq":21,"turn":1,"text":" tooling\"). Give me one concrete person in one concrete scene: who they are, what they're doing at the moment the problem bites, what they do today instead, and why that"}
+[real-smoke] {"kind":"textDelta","seq":22,"turn":1,"text":" current workaround is bad enough that they'd switch.\n\nIf you'd rather I make the call, say \"skip\" and I'"}
+[real-smoke] {"kind":"textDelta","seq":23,"turn":1,"text":"ll bank my own best assumption marked `[?]` — but this is the one answer everything downstream is derived from, so it's worth your words."}
+[real-smoke] {"kind":"completed","seq":24,"turn":1,"text":"Stage 0 scaffold is on disk: `docs/` (NORTH_STAR, ROADMAP, ARCHITECTURE, CONVENTIONS, STATE + empty `decisions/`, `tasks/`, `rooms/`), `CLAUDE.md` and `AGENTS.md` at the project root, `.gitignore` carrying `.nputer/`, git initialized, `.nputer/nputer.yaml` seeded. STATE.md is stamped and says the next stage is 1 (Q1).\n\nNow the interview — one question at a time, seven questions, each banked to disk the moment you confirm it.\n\n**Q1 — Problem & person.**\n\nWhat problem are we building this for, for whom, and in what situation?\n\nDon't give me a market (\"developers who need better tooling\"). Give me one concrete person in one concrete scene: who they are, what they're doing at the moment the problem bites, what they do today instead, and why that current workaround is bad enough that they'd switch.\n\nIf you'd rather I make the call, say \"skip\" and I'll bank my own best assumption marked `[?]` — but this is the one answer everything downstream is derived from, so it's worth your words.","truncatedRelay":false}
+[real-smoke] terminal event: Completed {
+    seq: 24,
+    turn: 1,
+    text: "Stage 0 scaffold is on disk: `docs/` (NORTH_STAR, ROADMAP, ARCHITECTURE, CONVENTIONS, STATE + empty `decisions/`, `tasks/`, `rooms/`), `CLAUDE.md` and `AGENTS.md` at the project root, `.gitignore` carrying `.nputer/`, git initialized, `.nputer/nputer.yaml` seeded. STATE.md is stamped and says the next stage is 1 (Q1).\n\nNow the interview — one question at a time, seven questions, each banked to disk the moment you confirm it.\n\n**Q1 — Problem & person.**\n\nWhat problem are we building this for, for whom, and in what situation?\n\nDon't give me a market (\"developers who need better tooling\"). Give me one concrete person in one concrete scene: who they are, what they're doing at the moment the problem bites, what they do today instead, and why that current workaround is bad enough that they'd switch.\n\nIf you'd rather I make the call, say \"skip\" and I'll bank my own best assumption marked `[?]` — but this is the one answer everything downstream is derived from, so it's worth your words.",
+    truncated_relay: false,
+}
+[nputer] agent: turn 1 completed
+[real-smoke] status: GenesisStatus {
+    phase: Idle,
+    project_dir: Some(
+        "/var/folders/8h/bknxwr1x63x8w2c4t7nk1p2c0000gp/T/nputer-t025-realsmoke-1788074914399/project",
+    ),
+    turn: 1,
+    native_session_id: Some(
+        "a4c9961e-26e4-4720-85a3-94f450aa66aa",
+    ),
+    cli_version: Some(
+        "2.1.226 (Claude Code)",
+    ),
+    method_version: "0.1.8",
+    last_error: None,
+    last_event_at_ms: Some(
+        1788074986573,
+    ),
+}
+[real-smoke] registry: {
+  "sessions": [
+    {
+      "id": "S1",
+      "agent": "claude",
+      "model": "claude-opus-5[1m]",
+      "native_session_id": "a4c9961e-26e4-4720-85a3-94f450aa66aa",
+      "created": "2026-08-30T07:28:34Z",
+      "turns": 1,
+      "tasks": [],
+      "roles": [
+        "planner"
+      ],
+      "status": "idle"
+    }
+  ]
+}
+test real_cli_smoke_records_the_stream_schema ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 82 filtered out; finished in 72.21s
+

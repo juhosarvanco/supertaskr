@@ -124,3 +124,5 @@ toward is disproved, and the replacement question — what does the CLI
 grant when we say nothing — is a measurement nobody has taken. UNPARK
 with that measurement, or with F-04's adapter card (T-086 in the
 2026-08-19 decomposition draft), whichever comes first.
+
+Measurement 2026-08-30 (integration seat, T-025-s2's closing run): the gating run this park waited on HAS HAPPENED. Observed: one compound Bash call denied in band ("Contains shell syntax (string) that cannot be statically analyzed"), typed `denied` event, planner recovered via Write + a simpler Bash and completed the scaffold. So the allowlist's narrowness is REAL and fails safe-and-loud, and the open question is now priced: one denial per genesis turn, zero turn failures. Queues for the next standing sitting with this evidence.

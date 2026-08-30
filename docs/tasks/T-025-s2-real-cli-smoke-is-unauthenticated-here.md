@@ -1,7 +1,7 @@
 ---
 id: T-025-s2
 title: The real-CLI smoke could not observe a model turn — this machine's claude login is revoked
-status: parked
+status: done
 suggested_by: executor claude-opus-5 @T-025
 ---
 
@@ -81,3 +81,5 @@ changes is that it is now the project's single highest-value @human
 item.
 
 Rulings sitting 2026-08-30 (@human ruled: run it now; integrator nputer-4e ran it): **THE PARK REASON IS STALE AND MORE THAN HALF THE GAP CLOSED.** Auth passed on this machine (claude 2.1.226). Observed first-hand: native session registered (`677664de-…`), real text deltas ("I'll start by reading the planner role definition."), and `Read`/`Bash`/`Read` executed through the allowlist with no denial — the first real planner turn this project has ever watched, and it was doing stage 0 correctly when the HARNESS hung up: `wait_for`'s fixture-calibrated twenty-second deadline panicked mid-turn (then cancelled cleanly — reaped in 550 ms, no SIGKILL, the failure path passing for free). Still unobserved: the turn's END — the scaffold and the first question. That distance is carded as `T-025-s5` (promoted at this sitting). RESURFACES: T-025-s5 lands; then the integration seat re-runs this smoke once to the terminal event on @human's standing authorization from this sitting, and this card closes on what it prints.
+
+CLOSED 2026-08-30 (integration seat, the run @human authorized at the rulings sitting, after T-025-s5's deadline landed at merge 5346d7c): **the smoke ran to its terminal event — Completed, 1 passed, 72.21s, exit 0 unpiped.** Observed end to end: session registered (`a4c9961e-…`), stage-0 scaffold written to the temp project (docs/ five + three empty dirs, CLAUDE.md, AGENTS.md, .gitignore carrying .nputer/, git initialized, nputer.yaml seeded), STATE stamped naming stage 1, and the interview OPENED with a real Q1 (problem-and-person, one concrete scene, the skip-and-bank-`[?]` escape) — a first question, not a wall. ONE Bash call was DENIED by the allowlist mid-turn ("Contains shell syntax (string) that cannot be statically analyzed") — the denial arrived IN BAND as a typed `denied` event (T-081's shape working against reality), the planner routed around it with Write plus a simpler Bash, and the turn completed anyway: the allowlist is narrow, and it fails LOUD and SAFE. That measurement is stamped on T-025-s4, which it gates. The registry held the session; the failure path was never entered. Full stream: the T-025-s5 checkpoint record names the capture.
