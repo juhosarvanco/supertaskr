@@ -1187,10 +1187,106 @@ function deriveTask(ctx) {
 }
 
 /**
+ * Every `docs/<NAME>.md` a text names, in order, first mention winning.
+ *
+ * ONE SPELLING, spent by the adapter read and by the subtraction reader
+ * below, because the two have to agree about what a document reference
+ * IS: a role file that writes the path backticked — verifier.md does —
+ * has to subtract the same string the adapter added.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function docsNamed(text) {
+  return [...new Set([...text.matchAll(/\bdocs\/[A-Za-z0-9_./-]*\.md\b/g)].map((m) => m[0]))];
+}
+
+/** Every backtick-delimited run in a line, in order. */
+/** @param {string} line @returns {string[]} */
+export function backtickRuns(line) {
+  return [...line.matchAll(/`([^`]+)`/g)].map((m) => /** @type {string} */ (m[1]));
+}
+
+/**
+ * The documents the brief's own role file REMOVES from the adapter's list.
+ *
+ * DERIVED from that file's own sentence, and the DOCUMENT is never
+ * written down in this module — only the grammar of the sentence is.
+ * executor.md writes *"You do NOT read <doc>"* bare; verifier.md writes
+ * the same subtraction with the path backticked, which is why the two
+ * readers below share one spelling of what a document reference is. **A
+ * role file carrying no such sentence subtracts nothing, and the
+ * adapter's list stands unchanged** — which is what keeps this from being
+ * a constant wearing a function's clothes, and is the positive control
+ * the card demands.
+ *
+ * WHOLE-FILE, not step one. The subtraction lives in step 1 of
+ * executor.md and in step 0 of verifier.md, so a scan bounded to a
+ * numbered step reads one role file and misses the other. The phrase is
+ * the grammar of the sentence; the DOCUMENT it names is never written
+ * down in this module.
+ *
+ * @param {string} roleMd
+ * @returns {string[]}
+ */
+export function readSubtractions(roleMd) {
+  /** @type {string[]} */
+  const out = [];
+  for (const line of roleMd.split(/\r?\n/)) {
+    const at = line.indexOf("do NOT read ");
+    if (at === -1) continue;
+    // FIRST MENTION ON THAT LINE ONLY. The sentence continues past the
+    // path it subtracts — *"and that is a deliberate subtraction"* — and a
+    // later line's document is a later line's business. A "do NOT read"
+    // naming no document at all subtracts nothing: verifier.md's second
+    // one forbids the executor's NOTES, which is not a path.
+    const [doc] = docsNamed(line.slice(at + "do NOT read ".length));
+    if (doc !== undefined && !out.includes(doc)) out.push(doc);
+  }
+  return out;
+}
+
+/**
+ * The documents the brief's own role file ADDS to the adapter's list.
+ *
+ * DERIVED the same way, from its *"ADDITION TO THAT SET IS ..."* sentence
+ * and that sentence's own backticked path. The addition is quoted in the
+ * role file's OWN spelling rather than resolved to a repository path: a
+ * brief is a transcription, and the file that requires the document is
+ * the file that gets to spell it.
+ *
+ * @param {string} roleMd
+ * @returns {string[]}
+ */
+export function readAdditions(roleMd) {
+  /** @type {string[]} */
+  const out = [];
+  for (const line of roleMd.split(/\r?\n/)) {
+    const at = line.indexOf("ADDITION TO THAT SET IS ");
+    if (at === -1) continue;
+    const [doc] = backtickRuns(line.slice(at + "ADDITION TO THAT SET IS ".length));
+    if (doc !== undefined && !out.includes(doc)) out.push(doc);
+  }
+  return out;
+}
+
+/**
  * Row 3's source is the project's OWN root adapter — the filled-in file
  * at the repository root, not the template it was copied from. Which
  * files those are is derived from the adapters template directory rather
  * than named here.
+ *
+ * **AND THE ROLE FILE'S READING STEP IS APPLIED TO THAT LIST, NOT PRINTED
+ * BESIDE IT** (T-112-s3). Row 3's source column says so in as many words,
+ * and the table's own rules give this row as the worked example of *"a
+ * brief that is internally inconsistent while every row is individually
+ * faithful to its source"*: the adapter is addressed to every seat and
+ * the role file to one, so where they differ the ROLE FILE WINS. Printed
+ * beside, every brief this command emitted told an executor to read the
+ * one document its role file subtracts, and never named the one it
+ * requires. The adapter's own list stays on the report — a reader has to
+ * be able to see WHICH document was removed and which was added — and
+ * both halves of the difference are derived from the role file's text.
  *
  * @param {Ctx} ctx
  * @returns {Rec[]}
@@ -1209,18 +1305,49 @@ function deriveReadFirst(ctx) {
         "invented from the template directory.",
     );
   }
+  const roleFile = `method/roles/${ctx.role}.md`;
+  const subtractions = readSubtractions(ctx.roleMd);
+  const additions = readAdditions(ctx.roleMd);
   /** @type {Rec[]} */
   const recs = [];
   /** @type {Map<string, string[]>} */
   const sets = new Map();
   for (const rel of roots) {
-    const docs = [
-      ...new Set(
-        [...readDoc(rel, ctx.root).matchAll(/\bdocs\/[A-Za-z0-9_./-]*\.md\b/g)].map((m) => m[0]),
-      ),
-    ];
+    const docs = docsNamed(readDoc(rel, ctx.root));
     sets.set(rel, docs);
     recs.push(value(`${rel} names: ${docs.join(" ")}`, tree(ctx, rel)));
+  }
+  for (const gone of subtractions) {
+    recs.push(value(`the role file SUBTRACTS: ${gone}`, tree(ctx, `${roleFile} reading step`)));
+  }
+  for (const gained of additions) {
+    recs.push(value(`the role file ADDS: ${gained}`, tree(ctx, `${roleFile} reading step`)));
+  }
+  // ONE APPLIED LINE PER DISTINCT ADAPTER SET, so the normal case — every
+  // root adapter naming the same documents — emits exactly one, and a
+  // repository whose adapters disagree gets the difference APPLIED on both
+  // sides rather than a union nobody wrote. The finding below still fires.
+  /** @type {Map<string, string[]>} */
+  const applied = new Map();
+  for (const [rel, docs] of sets) {
+    const kept = docs.filter((d) => !subtractions.includes(d));
+    const list = [...kept, ...additions.filter((a) => !kept.includes(a))].join(" ");
+    applied.set(list, [...(applied.get(list) ?? []), rel]);
+  }
+  for (const [list, from] of applied) {
+    recs.push(
+      value(
+        `READ FIRST, the role file's reading step APPLIED: ${list}`,
+        tree(ctx, `${from.join(" + ")}, with ${roleFile}'s reading step applied to it`),
+      ),
+    );
+  }
+  if (subtractions.length === 0 && additions.length === 0) {
+    recs.push(
+      note(
+        `${roleFile} states no subtraction and no addition, so the adapter's list stands unchanged`,
+      ),
+    );
   }
   const distinct = new Set([...sets.values()].map((v) => v.join(" ")));
   if (distinct.size > 1) {

@@ -16,6 +16,7 @@ import {
   components,
   contractRows,
   context,
+  docsNamed,
   fenceLedger,
   fenceOverlaps,
   fieldList,
@@ -28,7 +29,9 @@ import {
   note,
   packageCommands,
   parseWorktreePorcelain,
+  readAdditions,
   readDoc,
+  readSubtractions,
   render,
   resolveIntegrationRef,
   roleText,
@@ -181,6 +184,213 @@ test("a contract table this command cannot read THROWS, never yields an empty co
   const renumbered = md.replace(`| ${second?.n} | **${second?.label}**`, `| 9 | **${second?.label}**`);
   expect(renumbered).not.toBe(md);
   expect(() => contractRows(renumbered)).toThrow(/numbered consecutively/);
+});
+
+/**
+ * ROW 3 (T-112-s3) — the row the contract table itself gives as the worked
+ * example of *"a brief that is internally inconsistent while every row is
+ * individually faithful to its source"*. The adapter's list is addressed to
+ * every seat and the role file's reading step to one, so the source column
+ * says the step is APPLIED to that list rather than printed beside it.
+ *
+ * Printed beside — which is what this command did until this card — every
+ * brief it ever emitted told an executor to read the one document its role
+ * file subtracts, and named nowhere the one that file requires.
+ *
+ * ── HOW THESE THREE BODIES SPLIT ─────────────────────────────────────
+ * The first is the property; the second is the positive control that keeps
+ * the derivation from being a constant (the card's third criterion); the
+ * third drives the reader against the OTHER role file in this method, whose
+ * subtraction is spelled differently and whose second *"do NOT read"*
+ * sentence names no document at all.
+ */
+
+/** The document list off one row-3 line, with the stamp cut away. */
+function readFirstList(line: string, after: string): string[] {
+  const tail = line.split(after)[1] ?? "";
+  return tail
+    .replace(/ {2}<- .*$/, "")
+    .trim()
+    .split(" ")
+    .filter((d) => d !== "");
+}
+
+const APPLIED = "READ FIRST, the role file's reading step APPLIED: ";
+
+test("ROW 3 APPLIES the role file's reading step, and still shows what the adapter itself named", () => {
+  const md = roleText("executor");
+  const subtracted = readSubtractions(md);
+  const added = readAdditions(md);
+
+  // POSITIVE CONTROLS FIRST, both directions. "The subtracted document is
+  // absent from the applied set" is satisfied by a role file that subtracts
+  // nothing, and "the addition is present" by an adapter that already named
+  // it — neither of which is the property.
+  expect(
+    subtracted,
+    "this role file states no subtraction, so every absence below proves nothing",
+  ).not.toEqual([]);
+  expect(added, "this role file states no addition, so the presence below proves nothing").not.toEqual(
+    [],
+  );
+
+  const rendered = render(assembleBrief(context({})).recs).split("\n");
+  const adapterLines = rendered.filter((l) => / names: docs\//.test(l));
+  expect(adapterLines.length, "row 3 emitted no adapter line at all").toBeGreaterThan(0);
+  const appliedLines = rendered.filter((l) => l.includes(APPLIED));
+  expect(
+    appliedLines.length,
+    "row 3 emitted no APPLIED read-first set — the adapter's list printed beside the role file " +
+      "IS this card's defect",
+  ).toBe(1);
+  const applied = readFirstList(appliedLines[0] ?? "", APPLIED);
+
+  // THE CARD'S SECOND CRITERION: the adapter's own list survives on the
+  // report, unchanged and attributed to the adapter, so a reader can see
+  // WHICH document was removed and which was added.
+  for (const line of adapterLines) {
+    const rel = (/^\s*(\S+) names: /.exec(line) ?? [])[1] ?? "";
+    expect(rel, `an adapter line names no file: ${line}`).not.toBe("");
+    expect(
+      readFirstList(line, " names: "),
+      `${rel}'s own list was edited on the way out — row 3 shows what the adapter named AND what ` +
+        "the role file did to it, never the second in place of the first",
+    ).toEqual(docsNamed(readDoc(rel)));
+  }
+  for (const gone of subtracted) {
+    expect(
+      adapterLines.some((l) => l.includes(gone)),
+      `no adapter names ${gone}, so its absence from the applied set proves nothing`,
+    ).toBe(true);
+    expect(
+      rendered.some((l) => l.includes(`the role file SUBTRACTS: ${gone}`)),
+      `row 3 removed ${gone} without saying so — the difference has to be visible, not silent`,
+    ).toBe(true);
+    expect(
+      applied,
+      `the applied read-first set still carries ${gone}, which this role file subtracts in as many ` +
+        "words. That is the defect: a brief telling a session to read the one document its own " +
+        "role file four rows earlier forbids",
+    ).not.toContain(gone);
+  }
+  for (const gained of added) {
+    expect(
+      adapterLines.some((l) => l.includes(gained)),
+      `an adapter already names ${gained}, so the applied set carrying it proves nothing about the ` +
+        "role file's addition",
+    ).toBe(false);
+    expect(
+      rendered.some((l) => l.includes(`the role file ADDS: ${gained}`)),
+      `row 3 added ${gained} without saying so`,
+    ).toBe(true);
+    expect(
+      applied,
+      `the applied read-first set omits ${gained}, whose absence this role file says "cost the ` +
+        'same dispatch error twice"',
+    ).toContain(gained);
+  }
+
+  // AND EVERYTHING THE ADAPTER NAMED THAT THE ROLE FILE DID NOT TOUCH IS
+  // STILL THERE, or "apply the step" is satisfied by a row that drops the
+  // set on the floor.
+  for (const rel of adapterLines.map((l) => (/^\s*(\S+) names: /.exec(l) ?? [])[1] ?? "")) {
+    for (const doc of docsNamed(readDoc(rel))) {
+      if (subtracted.includes(doc)) continue;
+      expect(applied, `${doc} left the read-first set and no role-file sentence removed it`).toContain(
+        doc,
+      );
+    }
+  }
+});
+
+test("the subtraction and the addition FOLLOW the role file — no clause leaves the adapter's list unchanged", () => {
+  const ctx = context({});
+  const md = ctx.roleMd;
+  const subtracted = readSubtractions(md);
+  const added = readAdditions(md);
+  expect(subtracted[0], "this role file subtracts nothing, so this body has no subject").toBeDefined();
+  expect(added[0], "this role file adds nothing, so this body has no subject").toBeDefined();
+
+  // ONE SIDE ONLY: the DOCUMENT moves, in memory. Nothing in the module is
+  // touched. A subtraction typed into the tool would strike the same
+  // document out of a role file that has stopped asking for it — which is
+  // exactly the difference between reading a document and remembering one.
+  const plain = md
+    .split("\n")
+    .filter((l) => !l.includes("do NOT read ") && !l.includes("ADDITION TO THAT SET IS "))
+    .join("\n");
+  expect(plain).not.toBe(md);
+  expect(readSubtractions(plain)).toEqual([]);
+  expect(readAdditions(plain)).toEqual([]);
+
+  const renderedPlain = render(assembleBrief({ ...ctx, roleMd: plain, findings: [] }).recs).split("\n");
+  const appliedPlain = readFirstList(renderedPlain.find((l) => l.includes(APPLIED)) ?? "", APPLIED);
+  const adapterPlain = renderedPlain
+    .filter((l) => / names: docs\//.test(l))
+    .map((l) => readFirstList(l, " names: "));
+  expect(adapterPlain.length, "the plain render emitted no adapter line").toBeGreaterThan(0);
+  for (const list of adapterPlain) {
+    expect(
+      appliedPlain,
+      "a role file stating no subtraction and no addition still moved the adapter's list, so the " +
+        "difference this row applies is a constant in the tool rather than a reading of the role file",
+    ).toEqual(list);
+  }
+  expect(appliedPlain, "the subtracted document did not come back").toContain(subtracted[0]);
+  expect(appliedPlain, "the addition survived a role file that no longer asks for it").not.toContain(
+    added[0],
+  );
+  expect(
+    renderedPlain.some((l) => l.startsWith("# ") && l.includes("stands unchanged")),
+    "row 3 applied nothing and said nothing about it — a reader cannot tell that from a row that " +
+      "silently failed to read the role file",
+  ).toBe(true);
+
+  // THE OTHER HALF OF "NOT A CONSTANT": a role file subtracting a DIFFERENT
+  // document strikes THAT one instead. The replacement is DERIVED — the last
+  // document the adapter names that is not already subtracted — so this body
+  // holds no document name of its own either.
+  const adapterFirst = adapterPlain[0] ?? [];
+  const other = [...adapterFirst].reverse().find((d) => !subtracted.includes(d)) ?? "";
+  expect(other, "the adapter names only the subtracted document, so nothing can be swapped").not.toBe(
+    "",
+  );
+  const moved = md.split(subtracted[0] ?? "").join(other);
+  expect(moved).not.toBe(md);
+  expect(readSubtractions(moved)).toEqual([other]);
+  const renderedMoved = render(assembleBrief({ ...ctx, roleMd: moved, findings: [] }).recs).split("\n");
+  const appliedMoved = readFirstList(renderedMoved.find((l) => l.includes(APPLIED)) ?? "", APPLIED);
+  expect(
+    appliedMoved,
+    `the role file now subtracts ${other} and the applied set still carries it`,
+  ).not.toContain(other);
+  expect(
+    appliedMoved,
+    `the role file no longer subtracts ${subtracted[0]} and the applied set still drops it — that ` +
+      "is a document this module remembers rather than reads",
+  ).toContain(subtracted[0]);
+});
+
+test("a `do NOT read` sentence that names no document subtracts nothing", () => {
+  // THE SECOND ROLE FILE IN THIS METHOD, as the reader's other real input.
+  // It spells the same subtraction with the path BACKTICKED, and its second
+  // `do NOT read` forbids the executor's notes — prose, not a path. A reader
+  // that answered on the phrase alone would subtract a document nobody named.
+  const verifier = roleText("verifier");
+  const sentences = verifier.split("\n").filter((l) => l.includes("do NOT read "));
+  expect(
+    sentences.length,
+    "verifier.md carries fewer than two `do NOT read` sentences, so the discrimination below has " +
+      "no subject",
+  ).toBeGreaterThan(1);
+  const subtracted = readSubtractions(verifier);
+  expect(subtracted.length, "the backticked spelling was not read as a document").toBe(1);
+  expect(subtracted[0]).toBe(docsNamed(sentences[0] ?? "")[0]);
+  expect(
+    sentences.some((l) => docsNamed(l).length === 0),
+    "no `do NOT read` sentence here names a non-document, so this body proves nothing",
+  ).toBe(true);
+  expect(readAdditions(verifier), "verifier.md states no addition and one was invented").toEqual([]);
 });
 
 test("THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH", () => {
