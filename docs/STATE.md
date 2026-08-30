@@ -1,16 +1,15 @@
 # State
 
-Updated: 2026-08-30 at the T-167 checkpoint — NINETEEN @human rulings
-in one day: the customization FORM is fully ruled (nine answers, the
-asymmetric hybrid — rooms/customization-form.md RESOLUTION), the
-charter is a vision-not-a-queue (rooms/version-planning.md, draft
-v1/v2/v3 partition awaiting @human's markup), and all three afternoon
-lanes are LANDED (T-156-s1 bands ritual live, T-168 brief ruled,
-T-167 genesis skill packs). TWO alarms routed: graph budget 99.3%
-(7,395 bytes left — T-167-s2 p1; the fix chain is T-135 Half B ->
-T-140-s1) and triage/live-suggestions DRIFTING at 22 (standing
-sitting #2 due). Current record:
-docs/checkpoints/2026-08-30-T-167.md.
+Updated: 2026-08-30 at standing sitting #2's checkpoint — the
+suggested column went 22 -> 0 (band CLEARED): twelve preflight-green
+promotions, two absorptions into the T-143-s1 carrier, two archived
+discharges, seven parks with checkable conditions, and ONE new
+finding: the C-11 ruling's LAST LIVE FALSE COPY sits in CONVENTIONS'
+SHIPPED PARTITION bullet ("carries two slugs") — T-163-s3, promoted
+p6, owns it. The graph alarm stands (99.3%, 7,395 left; T-167-s2 now
+F-06 p1 as the tripwire; the real fix chain T-135 Half B ->
+T-140-s1). Current record:
+docs/checkpoints/2026-08-30-standing-triage-2.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -57,16 +56,16 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. STANDING SITTING #2 IS DUE (triage/live-suggestions drifting at
-   22): run it FIRST under T-159's rules — the day's ~14 fresh
-   suggestion cards, T-167-s2's graph alarm among them at p1. Then by
-   derived priority: `T-135` Half B (unblocks T-140-s1, the graph
-   fix), `T-160-s4`, `T-162-s2`, `T-169`, `T-112` (ONE collider),
-   `T-164`. The customization UI cards wait on a VERSION sitting
-   (rooms/version-planning.md — the standing rule).
+1. Dispatch by the board's derived order: `T-167-s2` (F-06 p1, the
+   graph tripwire, crate-index) ∥ `T-160-s4` (F-04 p1, tools/e2e) ∥
+   `T-025-s6` (F-03 p2, app-agent) — fences disjoint at this
+   rewrite; derive at dispatch. Behind them: `T-163-s3` (the false
+   clause, CONVENTIONS), `T-135` Half B (unblocks T-140-s1),
+   `T-169`, `T-112` (ONE collider), `T-164`. Customization UI cards
+   wait on a VERSION sitting (the standing rule).
 2. @human's open items: THE GENESIS WALK (closes milestone 3); the
-   v1/v2/v3 partition markup (rooms/version-planning.md). Both
-   unhurried; `T-025-s4` queues for the sitting.
+   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling
+   (floor vs per-merge delta — routed by sitting #2). All unhurried.
 3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
    the preflight refuses it until then, correctly. `T-154-s2`
    (promoted, `review: independent`) is dispatchable after the e2e
