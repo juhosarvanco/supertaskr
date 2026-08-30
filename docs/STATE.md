@@ -1,22 +1,22 @@
 # State
 
-Updated: 2026-08-30 by the standing-triage-4 seat — the ARCHITECT/
-INTEGRATOR SEAT CHANGED HANDS today and this is the incoming seat's
-first record: docs/checkpoints/2026-08-30-standing-triage-4.md.
-**The suggested column is 0** (14 dispositioned: 10 promoted, 4 parked;
-4 cards filed; T-161 corroborated). ZERO LANES.
-**GRAPH AT 410 BYTES HEADROOM (1,039,590/1,040,000 by `wc -c`) — AND
-THAT NOW BLOCKS THE QUEUE**: eight of the ten promotions reach indexed
-source and cannot be dispatched until @human rules T-140-s4. The two
-that CAN go are `[tools/e2e]`, outside the walk: T-112-s3 and T-163-s5,
-which contend with each other on that one package.
-Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-30 at the second RULINGS SITTING — record:
+docs/checkpoints/2026-08-30-the-rulings-sitting-2-eight-answers.md.
+**@human cleared EIGHT open items in one pass** — the record has them.
+**TWO LANES LIVE** — derive them, never quote this line. **The graph is
+still at 410 bytes** (1,039,590 by `wc -c`): the code queue is held
+until `T-140-s4` MERGES, because the ruling released the card and not
+the constraint. Pre-compaction:
+docs/checkpoints/2026-08-27-backfill-STATE.md.
 
-**NOTHING IS BROKEN.** The one designed non-zero exit a session will
-meet: `npm run health` exits 3 while four bands await keepers
-(T-156-s1/s2) — never read that 3 as clean, and never "fix" it. The
-DOCS GATE answering exit 1 on a diff is also designed: 1 means it HAS a
-verdict (suites owed), not that something is wrong.
+**NOTHING IS BROKEN.** Designed non-zero exits a session will meet:
+`npm run health` exits 3 while four bands await keepers (T-156-s1/s2),
+and the DOCS GATE answering 1 on a diff means it HAS a verdict (suites
+owed) — never read either as a fault. **Two intermittents can red a
+green tree**: `T-161` (stderr tail, two CI sightings) and `T-178`
+(fixture teardown ENOTEMPTY, two sightings, one of them main's own tip).
+Re-run once as a second measurement, then attribute — never re-run until
+green and call it evidence.
 
 ## The contract this file is under
 
@@ -58,25 +58,33 @@ record's commit is newer, and it caught the previous seat doing it.
 
 ## Next up — hooks only; statuses are the board's
 
-1. **BLOCKED ON @human, and it is the whole code queue**: `T-140-s4`
-   (the graph limit). At 410 bytes any indexed diff can cross the
-   budget. Until it is ruled, dispatch only fences outside the walk.
-2. DISPATCHABLE TODAY, and they contend on one package: `T-112-s3`
-   (row 3 APPLIES the role file's reading step) and `T-163-s5` (two
-   live-checkout bodies grade an exit they accept either way). One
-   lane at a time — the second refuses at `--write-fence`.
-3. FIRST AFTER THE RULING: `T-112-s1` (registration — until it lands
-   the drawer's brief block never renders), then the e2e train
-   (`T-167-s8` p2, `T-167-s6`, `T-164-s2`+`T-156-s5` as one lane).
-4. THE NEXT METHOD RELEASE HAS FIVE RIDERS and is worth cutting as a
-   card: `T-112-s2`, `T-154-s3`, `T-159-s6` name it as their
-   resurfacing condition; `T-173` and `T-176` owe a bump when they
-   land. Watch-list on any push: `T-161` (stderr-drain, TWO CI
-   sightings), `T-178` (fixture-teardown ENOTEMPTY, one), `T-018-s2`.
-5. @human's open items: `T-140-s4` (blocking), `T-154-s4` (one word),
-   milestone-3's closing word, the v1/v2/v3 markup, `T-162-s1`,
-   `T-169-s2`, M4, `T-025-s4`'s four routed questions, and `T-112`'s
-   closing evidence. D3 and D5 are RULED (rooms/cockpit-or-mirror.md).
+<KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
+
+1. IN FLIGHT: `T-112-s3` (row 3 APPLIES the role file's reading step)
+   and `T-140-s4` (graph leaves the collector, budget rises, banner
+   retired). **`T-140-s4`'s MERGE is what ends the 410-byte hold** —
+   until then only fences outside the graph walk may merge.
+2. THE HOLD, stated once: eight of sitting #4's ten promotions reach
+   indexed source. `tools/e2e` and `docs/**` are outside the walk and
+   are the only safely mergeable fences meanwhile.
+3. NEXT IN `tools/e2e` once `T-112-s3` clears: **`T-178`** — two reds
+   in one evening, both on other seats' work — then `T-163-s5`,
+   `T-179`, `T-167-s8` p2, `T-167-s6`, `T-164-s2`+`T-156-s5` as one
+   lane.
+4. AFTER THE GRAPH LANDS: `T-112-s1` (registration — until it lands the
+   drawer's brief block never renders), then `T-162-s1` (implement the
+   byte floor; its `DOC_BUDGETS` half is OUTSIDE its fence — decide at
+   dispatch, not inside the lane), then the walk's cards
+   (`T-171`/`T-172`/`T-173`/`T-176`/`T-177`).
+5. THE NEXT METHOD RELEASE HAS FIVE RIDERS and is worth cutting as a
+   card: `T-112-s2`, `T-154-s3`, `T-159-s6` park on it; `T-173` and
+   `T-176` owe a bump when they land; `T-154-s4`'s sentence joins them.
+6. @human holds: the **STEERING SPLIT** (rooms/steering-split.md — how
+   much is steered from nputer vs from Claude/Codex, per concern;
+   `T-180` is PARKED on its resolution and is NOT startable) and the
+   **FORM decision** (deferred to 2026-08-31). **D5 IS RULED BUT NOT
+   ENFORCED**: nothing passes `--model`, so an assignment is honoured
+   only by the session that dispatches — set it deliberately.
 
 ## Standing hazards — the section that saves the hour
 
@@ -133,7 +141,7 @@ record's commit is newer, and it caught the previous seat doing it.
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
   newer than this file. Current record:
-  2026-08-30-standing-triage-4.md.
+  2026-08-30-the-rulings-sitting-2-eight-answers.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.

@@ -5,7 +5,7 @@ feature: F-05
 milestone: 4
 priority: 1
 size: L
-status: planned
+status: parked
 blocked_by: []
 touches: [app-agent, app-dispatch]
 suggested_by: "@human, 2026-08-30, in session — raised while ruling T-169-s2"
@@ -111,3 +111,36 @@ not the same as the assignment being true.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+## PARKED THE SAME DAY IT WAS FILED — @human, 2026-08-30, correcting this card's framing
+
+**@human, verbatim:** *"This is a product decision we still need to make
+and plan. Because its not a either or question. Its a question of how
+much is steered from nputer and how much is steered from Claude or
+Codex. So dont execute the new card yet."*
+
+**THE CARD'S QUESTION 1 WAS PUT WRONGLY AND THIS IS THE CORRECTION.** It
+asked WHERE the loop runs — Claude Code, Codex, or the nputer app — as
+three alternatives. They are not alternatives. The question is a DIAL:
+how much steering sits in nputer and how much stays in the agent CLI,
+and the answer may legitimately DIFFER PER CONCERN (interview, build,
+verify, architect). A card offering three doors cannot express the
+answer, which is why it is parked rather than re-scoped in place.
+
+**THE ROOM IS `docs/rooms/steering-split.md`**, opened at this ruling,
+carrying @human's framing, the four dial positions and the four
+questions the planning has to answer — including the one this card never
+asked: what a user who prefers their own CLI gets.
+
+**RESURFACES: `docs/rooms/steering-split.md` records a RESOLUTION.**
+That is the only event; no lane, no sitting and no seat may substitute
+for it.
+
+**AND NOTHING IS BLOCKED MEANWHILE, which is why parking costs nothing
+here.** The enforcement gap is live but inert while dispatch is
+hand-driven: every dispatching session reads `builder:` off the card and
+sets the model on the subagent it launches, which is what happened on
+2026-08-30 for both lanes of that day. The gap is that this is a
+DISCIPLINE — if a future dispatcher forgets, nothing catches it at spawn
+time and only `T-169`'s after-the-fact flag would notice. That is the
+cost of the park, stated so the room can weigh it.
