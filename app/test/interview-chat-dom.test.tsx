@@ -305,8 +305,35 @@ describe("one current question, history quieter above (criterion 1)", () => {
     expect(history.className, "history is never the prominent step").not.toContain("text-xl");
   });
 
-  it("only the current question carries the footer", () => {
-    expect(qa("[data-testid=interview-question-footer]")).toHaveLength(1);
+  /**
+   * T-172 — @human at the 2026-08-30 genesis walk, verbatim: *"this is
+   * unnecessary -> one question at a time · 6 of 7"*. This body used to
+   * assert the footer rendered exactly once; it now asserts it renders
+   * nowhere, and the two POSITIVE CONTROLS are what make that zero mean
+   * something. A bare "no footer node" is satisfied equally by a screen
+   * that rendered no planner messages at all.
+   */
+  it("no planner message carries the per-message status line (T-172)", () => {
+    const messages = qa("[data-testid=interview-planner-turn]");
+    // CONTROL ONE: this render really did produce the messages the
+    // footer used to hang off — the current question and its history.
+    expect(messages, "the messages the ruling is about are on screen").toHaveLength(2);
+    expect(qa("[data-testid=interview-turn-current]")).toHaveLength(1);
+
+    expect(qa("[data-testid=interview-question-footer]")).toHaveLength(0);
+    // And not merely the NODE: the phrase itself is gone from every
+    // planner message. Scoped to the messages rather than to
+    // `interview-log`, because the not-started paragraph in that same
+    // region legitimately says "asks one question at a time".
+    for (const message of messages) {
+      expect(message.textContent).not.toContain("one question at a time");
+    }
+    // WHERE THE STAGE STILL LIVES — the ruling removed a repeat, not the
+    // count. Deliberately not re-asserted here: the very next body
+    // ("the stage strip renders seven segments and follows the DERIVED
+    // stage") already drives the readout and all seven segments, and a
+    // second copy would kill no mutant it does not (POISON DRILL,
+    // shape SIX).
   });
 
   it("the stage strip renders seven segments and follows the DERIVED stage", async () => {
@@ -377,11 +404,21 @@ describe("the challenge treatment (criterion 2)", () => {
     );
   });
 
-  it("the challenge carries the footer, so the count is never lost to the treatment", async () => {
+  it("the challenge carries no status line either (T-172)", async () => {
     await turnWith("pushing back: really?");
+    // POSITIVE CONTROL: the pushing-back treatment DID render, so the
+    // absence below is about the footer and not about a block that never
+    // appeared. This body used to assert the opposite — the challenge
+    // was the one treatment that had to keep the count — and @human's
+    // ruling took the line off every planner message, this one included.
+    const block = q("[data-testid=interview-turn-challenge]");
+    expect(block, "the treatment the ruling is about rendered").not.toBeNull();
+    expect(block!.textContent).toContain("really?");
+
     expect(
       q("[data-testid=interview-turn-challenge] [data-testid=interview-question-footer]"),
-    ).not.toBeNull();
+    ).toBeNull();
+    expect(block!.textContent).not.toContain("one question at a time");
   });
 });
 
@@ -521,6 +558,17 @@ describe("the input row (criterion 4)", () => {
       String.fromCharCode(0x23ce) + " send " + String.fromCharCode(0x00b7) + " " +
         String.fromCharCode(0x21e7) + String.fromCharCode(0x23ce) + " newline",
     );
+  });
+
+  /**
+   * T-172 — @human at the 2026-08-30 genesis walk, verbatim: *"'Bank
+   * answer' button should be just answer."* Asserted as an EQUALITY, not
+   * a `toContain`: the whole ruling is that the label is that one word
+   * and nothing else, and a `toContain("Answer")` would pass on the very
+   * string it retired.
+   */
+  it("the send button reads exactly Answer (T-172)", () => {
+    expect(q("[data-testid=interview-bank]")?.textContent).toBe("Answer");
   });
 
   it("Enter sends and Shift+Enter does not", async () => {

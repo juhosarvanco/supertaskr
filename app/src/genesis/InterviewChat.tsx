@@ -228,10 +228,13 @@ export function InterviewChat({
    * RECORDED AT SUBMIT, NEVER INFERRED ON LANDING, and that is the whole
    * of why this is a ref rather than a check inside the effect. By the
    * time the turn lands the box has already been blurred by the disable,
-   * so "did it have focus?" is unanswerable then — and a "Bank answer"
-   * click, where focus is on the BUTTON, would be indistinguishable from
-   * an ⏎ send. Two different intentions, one observable state: the flag
-   * separates them at the only moment they are still distinguishable.
+   * so "did it have focus?" is unanswerable then — and an "Answer"
+   * button click, where focus is on the BUTTON, would be
+   * indistinguishable from an ⏎ send. Two different intentions, one
+   * observable state: the flag separates them at the only moment they
+   * are still distinguishable. (The label read "Bank answer" until
+   * T-172; this sentence names the control the reader can see, so it
+   * moved with it rather than becoming a citation of nothing.)
    */
   const heldFocusAtSubmit = useRef(false);
 
@@ -376,7 +379,6 @@ export function InterviewChat({
               turn={entry.turn}
               planner={entry.planner}
               current={entry.current}
-              approxStage={entry.current ? stage.approxStage : null}
               onRetry={onRetry}
               onHandDriven={onHandDriven}
             />
@@ -536,8 +538,15 @@ export function InterviewChat({
           <span data-testid="interview-hint" className="font-mono text-xs text-muted-foreground">
             {busy ? "planner is thinking… · ⌘. to stop" : "⏎ send · ⇧⏎ newline"}
           </span>
+          {/* JUST "Answer" — @human's ruling at the 2026-08-30 genesis
+              walk, verbatim: *"'Bank answer' button should be just
+              answer."* (T-172). "Bank" is the method's internal verb for
+              the write-to-disk step; the person answering a question is
+              answering a question. The banked→files confirmation chip
+              stays exactly where it was, which is where that word is
+              news rather than jargon. */}
           <Button data-testid="interview-bank" disabled={busy} onClick={submit}>
-            Bank answer
+            Answer
           </Button>
         </div>
       </div>

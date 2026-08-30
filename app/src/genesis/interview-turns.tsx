@@ -8,7 +8,6 @@ import {
   failureAction,
   failureDetail,
   failureHeadline,
-  questionFooter,
   visibleDenials,
   type StageSegmentState,
 } from "./interview-model";
@@ -106,7 +105,7 @@ export function UserTurn({ text }: { text: string }) {
  * `challengeOf`'s boolean: the prefix reaches this class list and
  * nothing else in the app, which is what "the hint is never
  * load-bearing" means as a construction rather than as a claim. */
-function ChallengeTurn({ body, footer }: { body: string; footer: string | null }) {
+function ChallengeTurn({ body }: { body: string }) {
   return (
     <div
       data-testid="interview-turn-challenge"
@@ -121,11 +120,6 @@ function ChallengeTurn({ body, footer }: { body: string; footer: string | null }
       >
         {body}
       </span>
-      {footer !== null && (
-        <span data-testid="interview-question-footer" className="font-mono text-xs text-muted-foreground">
-          {footer}
-        </span>
-      )}
     </div>
   );
 }
@@ -149,8 +143,14 @@ function HistoryTurn({ body }: { body: string }) {
   );
 }
 
-/** The one question that is prominent (criterion 1). */
-function CurrentQuestion({ body, footer }: { body: string; footer: string | null }) {
+/** The one question that is prominent (criterion 1).
+ *
+ * NO STATUS LINE UNDER IT, and that is a ruling rather than an omission:
+ * @human retired the `one question at a time · N of 7` footer at the
+ * 2026-08-30 genesis walk (T-172). The stage lives in the header —
+ * `stageReadout` and the seven-segment `StageStrip`, both one region up
+ * — so repeating it under every message was chrome restating chrome. */
+function CurrentQuestion({ body }: { body: string }) {
   return (
     <div data-testid="interview-turn-current" className="flex flex-col gap-1.75">
       <Overline>planner</Overline>
@@ -160,11 +160,6 @@ function CurrentQuestion({ body, footer }: { body: string; footer: string | null
       >
         {body}
       </span>
-      {footer !== null && (
-        <span data-testid="interview-question-footer" className="font-mono text-xs text-muted-foreground">
-          {footer}
-        </span>
-      )}
     </div>
   );
 }
@@ -233,19 +228,16 @@ export const PlannerTurn = memo(function PlannerTurn({
   turn,
   planner,
   current,
-  approxStage,
   onRetry,
   onHandDriven,
 }: {
   turn: number;
   planner: GenesisTurn;
   current: boolean;
-  approxStage: number | null;
   onRetry: (turn: number) => void;
   onHandDriven?: () => void;
 }) {
   const reading = challengeOf(planner.text);
-  const footer = current ? questionFooter(approxStage) : null;
   const running = planner.status === "running";
   const lastActivity = planner.activity[planner.activity.length - 1];
   // PER DENIAL, NEVER PER TURN — see `visibleDenials`. The first build
@@ -264,9 +256,9 @@ export const PlannerTurn = memo(function PlannerTurn({
       className="flex flex-col gap-2"
     >
       {reading.challenge ? (
-        <ChallengeTurn body={reading.body} footer={footer} />
+        <ChallengeTurn body={reading.body} />
       ) : current ? (
-        <CurrentQuestion body={reading.body} footer={footer} />
+        <CurrentQuestion body={reading.body} />
       ) : (
         <HistoryTurn body={reading.body} />
       )}

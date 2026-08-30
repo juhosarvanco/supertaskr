@@ -380,12 +380,15 @@ export function stageReadout(approxStage: number | null, stageStep: string | nul
   return `stage ${at} of ${INTERVIEW_STAGES}${stageStep === null ? "" : ` · ${stageStep}`}`;
 }
 
-/** The footer under the current question. The design's constant phrase
- * plus the count, and just the phrase before there is a count to give. */
-export function questionFooter(approxStage: number | null): string {
-  if (approxStage === null || approxStage <= 0) return "one question at a time";
-  return `one question at a time · ${Math.min(approxStage, INTERVIEW_STAGES)} of ${INTERVIEW_STAGES}`;
-}
+/* THE PER-MESSAGE FOOTER USED TO LIVE HERE — `questionFooter`, the
+ * design's constant phrase plus the count, rendered under every current
+ * question and every challenge. @human retired it at the 2026-08-30
+ * genesis walk, verbatim: *"this is unnecessary -> one question at a
+ * time · 6 of 7"* (T-172). The stage is already carried TWICE by the
+ * header — `stageReadout` above and `stageStrip` above that — so the
+ * line was chrome restating chrome. Recorded here rather than deleted
+ * silently, because the next reader of `stageReadout`'s comment will
+ * wonder where its sibling went. */
 
 // ---- the transcript ----------------------------------------------------
 
