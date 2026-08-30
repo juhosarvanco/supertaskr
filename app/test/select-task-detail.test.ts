@@ -359,3 +359,64 @@ describe("the panel's soft issues (T-031, absorbing T-019-s1)", () => {
     expect(selectTaskDetail(model, { kind: "id", id: "T-431" })?.issues).toEqual([]);
   });
 });
+
+describe("selectTaskDetail — the assignment flag (T-169, @human's D5 ruling)", () => {
+  const stamped = (id: string, extras: Field[]): [string, string] => [
+    path(id),
+    task(id, [["status", "done"], ["review", "independent"], ...extras]),
+  ];
+
+  it("carries BOTH values for a flagged pair, verbatim and unlabelled by fault", () => {
+    const model = withRoadmap([
+      stamped("T-410", [
+        ["builder", "claude-opus-5@subagent"],
+        ["built_by", "codex/gpt-5.2 @S3"],
+      ]),
+    ]);
+    const detail = selectTaskDetail(model, byId("T-410"));
+    expect(detail?.assignment).toEqual([
+      {
+        role: "builder",
+        assignedField: "builder",
+        executedField: "built_by",
+        assigned: "claude-opus-5@subagent",
+        executed: "codex/gpt-5.2 @S3",
+      },
+    ]);
+    // The panel's existing verbatim issues section carries the parser's
+    // own sentence too — one join, so the mark and the row cannot
+    // disagree about which card is flagged.
+    expect(detail?.issues.some((m) => m.includes("the fields disagree"))).toBe(true);
+    // What the flag repairs: `built_by` was already on screen and
+    // `builder` was nowhere, so the assignment could not be checked by
+    // eye. Both are here now.
+    expect(detail?.builtBy).toBe("codex/gpt-5.2 @S3");
+  });
+
+  it("is [] on an honoured pair, matching issues/blockedBy/touches", () => {
+    const model = withRoadmap([
+      stamped("T-411", [
+        ["builder", "claude-opus-5@subagent"],
+        ["built_by", "claude-opus-5 @T-411"],
+      ]),
+    ]);
+    expect(selectTaskDetail(model, byId("T-411"))?.assignment).toEqual([]);
+  });
+
+  it("flags both pairs on one card, in builder-then-verifier order", () => {
+    const model = withRoadmap([
+      stamped("T-412", [
+        ["builder", "claude-opus-5"],
+        ["built_by", "codex/gpt-5.2 @S3"],
+        ["verifier", "claude-opus-5"],
+        ["verified_by", "codex/gpt-5.6 @fresh"],
+      ]),
+    ]);
+    const detail = selectTaskDetail(model, byId("T-412"));
+    expect(detail?.assignment.map((e) => e.role)).toEqual(["builder", "verifier"]);
+    expect(detail?.assignment.map((e) => e.executed)).toEqual([
+      "codex/gpt-5.2 @S3",
+      "codex/gpt-5.6 @fresh",
+    ]);
+  });
+});

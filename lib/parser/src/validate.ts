@@ -1,3 +1,4 @@
+import { assignmentIssues } from './assignment.js';
 import { aliasedIdSlots, idSlotIndex, nearMissClause, slotNearMisses } from './id-slot.js';
 import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
 
@@ -76,6 +77,13 @@ import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
  *    rings weave through it — and enumerating simple rings is exponential
  *    in the worst case, which no parser should be. Dangling references
  *    are not edges (check 1 already owns them).
+ * 6. assignment vs execution (`assignment-violation`, T-169): the card's
+ *    `builder:`/`verifier:` against its `built_by:`/`verified_by:`, on
+ *    the MODEL half of `model@vehicle`. THE EXACT COMPARISON RULE IS AT
+ *    ITS DEFINITION SITE in assignment.ts — it is not restated here,
+ *    because a rule written in two places is two chances to disagree
+ *    (T-057). The check is per-task and reference-free: it reads only the
+ *    record's own fields, so no cascade suppression applies to it.
  *
  * Both project assemblers (parseProject, parseProjectFromFiles) run this
  * and append its issues after their own (task → roadmap → component →
@@ -181,6 +189,16 @@ export function validateProject(
         });
       }
     }
+
+    // 6. assignment vs execution (`assignment-violation`, T-169 —
+    //    @human's D5 ruling: assignment is BINDING). Last of the per-task
+    //    checks, so every issue order pinned before this card is untouched.
+    //    It reads only THIS record's own four fields, so unlike checks 1-2
+    //    it needs no reference space and cannot cascade; it lives here
+    //    rather than in parseTaskFile because that layer reports what a
+    //    FIELD is malformed about, and both these fields are well-formed —
+    //    what disagrees is the pair, which is a verdict over a record.
+    issues.push(...assignmentIssues(task));
   }
 
   // The two project-shaped checks follow every per-task finding, so the

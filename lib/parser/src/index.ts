@@ -23,6 +23,9 @@ export {
   type ComponentStatus,
   type ComponentRecord,
   type IdSpace,
+  type AssignmentRole,
+  type AssignmentVerdict,
+  type AssignmentReading,
   type ParseIssue,
   type TaskParseResult,
   type RoadmapParseResult,
@@ -32,6 +35,13 @@ export {
 } from './types.js';
 
 export { parseModelSession } from './model-session.js';
+export {
+  ASSIGNMENT_PAIRS,
+  assignmentIssues,
+  readAssignment,
+  satisfiesAssignment,
+  stampModels,
+} from './assignment.js';
 export { extractFrontmatter, type FrontmatterResult } from './frontmatter.js';
 export { parseTaskFile, splitSections } from './task.js';
 export { parseRoadmap } from './roadmap.js';

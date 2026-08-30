@@ -2,7 +2,11 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
 import { ReviewBadge } from "../src/components/board/badges/ReviewBadge";
+import { TaskCard } from "../src/components/board/TaskCard";
+import { TaskDetailPanel } from "../src/components/board/TaskDetailPanel";
+import type { BoardCard } from "../src/lib/board-model";
 
 // ADR-016: provenance renders as TWO marks — solid disc + check for a
 // checked task (independent AND same-model draw the IDENTICAL mark),
@@ -78,5 +82,118 @@ describe("ReviewBadge (ADR-016 two-mark provenance)", () => {
     expect(badge.innerHTML).toContain("var(--review-disc)");
     expect(badge.innerHTML).toContain("var(--review-mark)");
     expect(badge.innerHTML).not.toContain("--status-");
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-169 — the assignment flag's RENDERING, in the provenance block this
+ * file already owns the other half of.
+ *
+ * It lives here because of a fence, and the fence is worth naming: the
+ * board's general DOM file is `board-truth.test.tsx`, which T-169's
+ * `touches: [lib-parser, app-board]` does not reach, while this file
+ * does and is already the provenance surface's rendering pin. Filed as
+ * T-169-s1 rather than moved by a lane that may not move it.
+ * ──────────────────────────────────────────────────────────────────── */
+
+const ROADMAP_SRC = ["# R", "", "## Backbone", "- F-01: Method — the convention", ""].join("\n");
+
+function panelModel(extras: string): ProjectParseResult {
+  return parseProjectFromFiles([
+    { path: "docs/ROADMAP.md", content: ROADMAP_SRC },
+    {
+      path: "docs/tasks/T-950-fixture.md",
+      content:
+        "---\nid: T-950\ntitle: Fixture\nfeature: F-01\nmilestone: 1\npriority: 1\n" +
+        `size: S\nstatus: done\nreview: independent\n${extras}---\n\nbody\n`,
+    },
+  ]);
+}
+
+function renderPanel(model: ProjectParseResult): HTMLElement {
+  act(() =>
+    root.render(
+      <TaskDetailPanel
+        model={model}
+        taskRef={{ kind: "id", id: "T-950" }}
+        onOpen={() => {}}
+        onClose={() => {}}
+      />,
+    ),
+  );
+  return container;
+}
+
+describe("the assignment flag in the provenance block (T-169, D5)", () => {
+  it("shows BOTH values, names both fields, and says only that they disagree", () => {
+    const dom = renderPanel(
+      panelModel("builder: claude-opus-5@subagent\nbuilt_by: codex/gpt-5.2 @S3\n"),
+    );
+    const row = dom.querySelector('[data-testid="stamp-assignment"]');
+    if (!(row instanceof HTMLElement)) throw new Error("assignment row did not render");
+    expect(row.dataset.assignmentRole).toBe("builder");
+    expect(row.querySelector('[data-testid="assignment-assigned"]')?.textContent).toBe(
+      "claude-opus-5@subagent",
+    );
+    expect(row.querySelector('[data-testid="assignment-executed"]')?.textContent).toBe(
+      "codex/gpt-5.2 @S3",
+    );
+    expect(row.textContent).toContain("disagree");
+    // The stamp the board ALREADY showed is still there, so the row adds
+    // the assignment beside it rather than replacing what was on screen.
+    expect(dom.querySelector('[data-testid="stamp-built-by"]')?.textContent).toBe(
+      "codex/gpt-5.2 @S3",
+    );
+    // And the parser's own sentence is in the verbatim issues section —
+    // the flag reaches the reader the way a parse error does.
+    expect(dom.querySelector('[data-testid="detail-issues"]')?.textContent).toContain(
+      "the fields disagree",
+    );
+  });
+
+  it("renders NO row on an honoured pair — a notice on every card stops being read", () => {
+    const dom = renderPanel(
+      panelModel("builder: claude-opus-5@subagent\nbuilt_by: claude-opus-5 @T-950\n"),
+    );
+    expect(dom.querySelector('[data-testid="stamp-assignment"]')).toBeNull();
+    expect(dom.querySelector('[data-testid="detail-issues"]')).toBeNull();
+    expect(dom.querySelector('[data-testid="stamp-built-by"]')?.textContent).toBe(
+      "claude-opus-5 @T-950",
+    );
+  });
+});
+
+describe("the assignment flag on the card face (T-169)", () => {
+  const face = (assignment?: BoardCard["assignment"]): HTMLElement => {
+    const card: BoardCard = {
+      key: "docs/tasks/T-951-x.md",
+      id: "T-951",
+      title: "Face fixture",
+      status: "done",
+      visual: { token: "done", pulse: false },
+      ...(assignment === undefined ? {} : { assignment }),
+      file: "docs/tasks/T-951-x.md",
+    };
+    act(() => root.render(<TaskCard card={card} onOpen={() => {}} />));
+    const li = container.querySelector('[data-testid="task-card"]');
+    if (!(li instanceof HTMLElement)) throw new Error("card did not render");
+    return li;
+  };
+
+  it("counts the flagged pairs for a census, and is ABSENT on a clean card", () => {
+    expect(
+      face([
+        {
+          role: "builder",
+          assignedField: "builder",
+          executedField: "built_by",
+          assigned: "claude-opus-5",
+          executed: "codex/gpt-5.2 @S3",
+        },
+      ]).dataset.assignmentViolations,
+    ).toBe("1");
+    // Absence, never "0" (T-017) — so a census counting attributes counts
+    // violations rather than cards.
+    expect(face(undefined).dataset.assignmentViolations).toBeUndefined();
   });
 });
