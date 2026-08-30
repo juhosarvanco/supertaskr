@@ -457,7 +457,7 @@ export function ClosingBlock({ canAnswer }: { canAnswer: boolean }) {
         Genesis is done — every answer is banked and the plan is on disk.
       </span>
       <span data-testid="interview-complete-next" className="text-sm text-secondary-foreground">
-        The board beside this is the product of the walk;{" "}
+        Your new board is the product of the walk;{" "}
         <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> is the
         record, in your own repository. The method offers one more step and does not
         require it: the <strong className="font-semibold">cold-start test</strong> — point a

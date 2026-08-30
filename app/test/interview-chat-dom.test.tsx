@@ -1700,6 +1700,21 @@ describe("the ending, and the footer that used to lie about it (T-171)", () => {
     // The method's last step, named where the person can read it — the
     // planner said it in its own words on the walk and the app had no
     // answer.
+    // T-171's VERDICT, correction 1: the clause used to read "The board
+    // BESIDE this…", and below `lg` the board half is hidden — so the
+    // sentence was false in exactly the window the chat column exists to
+    // serve, and mutating it killed ZERO bodies (shape SEVEN, measured by
+    // the blind verifier). The clause is now width-independent and this
+    // line is what makes it stay that way: a spatial claim reintroduced
+    // here fails by name.
+    expect(
+      next.textContent,
+      "the ending must not claim a LAYOUT — the board half is hidden below lg",
+    ).not.toMatch(/\bbeside\b|\bto the right\b|\bon the right\b/i);
+    expect(next.textContent, "and it still names what was produced").toContain(
+      "Your new board",
+    );
+
     expect(next.textContent).toContain("cold-start test");
     expect(next.textContent, "and what makes a session cold").toContain("docs/");
     // NOT A GATE (the ruling is on T-175) — completion is at the last
