@@ -13,9 +13,12 @@ customization feature. One round: the analysis is below, the questions
 are at the end, and the room closes when @human answers them.
 
 The evidence base is `docs/research/customization-ux-benchmark.md` —
-twenty-plus tools read out of their current documentation on
-2026-08-30, with that sweep's limits stated in its own last section.
-Its lessons are cited here as **L-1…L-12** rather than restated.
+tools and open formats read out of their own current documentation on
+2026-08-30, each claim carrying the URL it was read from, with that
+sweep's limits stated in its own last section. **Count the entries
+there rather than quoting a number here**; this brief transcribes no
+figure it did not derive. Its lessons are cited as **L-1…L-12** rather
+than restated.
 
 **This brief obeys the ruling's prohibition.** It names the SURFACES
 each form implies — which files and which screens would exist — and
