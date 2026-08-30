@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5@subagent @T-163
 blocked_by: []
 touches: [docs/ARCHITECTURE.md]
@@ -122,3 +122,5 @@ moves a slug either way; the other two are the reason this is a card and
 not a line in a checkpoint.
 
 DISCHARGED-NOT-DECLINED (2026-08-30, integration seat, the T-163 flip-set landing): the finding was real and the landing consumed it — performed in the merge window per the lanes-need-green-bases rule (a complement lane could not legally be cut from the red window this fix closes), with the executor's diagnosis on this card as the map and the select-board rewrite as the model. Every live half now states the ruled negative; every mechanism moved onto a synthetic registry carrying the shape. Evidence: the 2026-08-30-T-163 checkpoint record.
+
+Standing triage sitting #2, 2026-08-30 (architect): ARCHIVED AS **DISCHARGED — NOT DECLINED**. The narrow half landed at the T-163 flip-set integration; re-derived at this sitting rather than taken on the stamp's word — `docs/ARCHITECTURE.md`'s block now reads `app-board -> C-08, C-09, C-17, C-18` and `app-shell -> C-05, C-10, C-16`, C-11 is gone from both rows, and the two-slug sentence above them is replaced by the ruling's own. The finding was right, the work is done, and there is no receiving card to carry an absorption line — which is why this archive entry names the landing instead. The card's SURVIVING half, the fence-vocabulary hazard (`docs/architecture` the directory versus `docs/ARCHITECTURE.md` the file), is not lost: it is appended as a dated corroboration to `T-160-s4`, the class parent this card itself named, carrying both dispositions it left open.

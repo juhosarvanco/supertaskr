@@ -3,9 +3,9 @@ id: T-111-s12
 title: A column-zero `- ` inside a docs/CONVENTIONS.md bullet splits that bullet silently — the guard that catches it only runs for the handful of phrases some reader happens to pass to conventionsBullet, and POISON DRILL is not one of them
 feature: F-01
 milestone: 4
-priority: 6
+priority: 15
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-111-s10
@@ -71,12 +71,34 @@ grows a hole for every bullet no reader happens to name. The bullets
 with the most prose are the ones most likely to gain a stray `- ` and
 the least likely to be on that list.
 
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-01 priority 15
+
+Taken as filed — the criteria are exact and, unusually, criterion 1 is
+the card admitting what it has not established and paying for it first.
+That is the shape triage wants and it is why this promotes rather than
+parks: the finding is partial, and the card already knows where its own
+edge is. Priority 15 because nothing is red today and the hole only
+opens when somebody adds a stray dash; it is behind the F-01 work
+already queued, not in front of it.
+
+**PREFLIGHT CORRECTION (2026-08-30), made before this card stood.** The
+promotion's first preflight exited 1 with `UNCOVERED CRITERION PATH …
+lib/parser — reserved by lib-parser, which this fence does not carry`:
+criterion 1 named that package as a build step and the tool cannot tell
+a build order from a write target. Corrected in the criterion itself
+rather than ruled away, because the fix is one clause and a ruling would
+have left the same ambiguity for the next reader. Re-run green.
+
 ## Acceptance criteria
 
 - THE lane SHALL first re-run M3b under the FULL owed suite set with the
-  drill worktree properly built (lib/parser, then app, then tools/e2e),
-  and record whether anything reds — the finding above is explicitly
-  partial and this criterion is what closes it.
+  drill worktree properly BUILT — the parser package first, then the
+  app, then this package, which is the order the app suite's build
+  dependency forces — and record whether anything reds. The finding
+  above is explicitly partial and this criterion is what closes it.
+  Building a package is not writing to it: nothing here orders an edit
+  outside this fence, and anything the re-run says needs one is RECORDED
+  and ROUTED.
 - WHERE nothing reds, THE gate SHALL gain a check that no line inside a
   named bullet begins at column zero with `- ` unless it opens a bullet
   the document intends — derived from the document rather than from a

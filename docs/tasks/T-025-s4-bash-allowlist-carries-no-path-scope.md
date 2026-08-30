@@ -1,8 +1,19 @@
 ---
 id: T-025-s4
-title: The Bash allowlist is the one grant cwd scoping does not cover — `cp` and `mkdir` reach the whole filesystem
-status: parked
+title: The Bash allowlist is the one grant cwd scoping does not cover — `cp` and `mkdir` reach the whole filesystem, and the effective grant is the union of three tables of which one is reviewed
+feature: F-03
+milestone: 3
+priority: 4
+size: S
+status: planned
+blocked_by: []
+touches: [app-agent]
 suggested_by: verifier claude-opus-5 @T-025
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
 
 Criterion 2's containment argument is "the CLI's own cwd scoping IS the
@@ -125,4 +136,58 @@ grant when we say nothing — is a measurement nobody has taken. UNPARK
 with that measurement, or with F-04's adapter card (T-086 in the
 2026-08-19 decomposition draft), whichever comes first.
 
-Measurement 2026-08-30 (integration seat, T-025-s2's closing run): the gating run this park waited on HAS HAPPENED. Observed: one compound Bash call denied in band ("Contains shell syntax (string) that cannot be statically analyzed"), typed `denied` event, planner recovered via Write + a simpler Bash and completed the scaffold. So the allowlist's narrowness is REAL and fails safe-and-loud, and the open question is now priced: one denial per genesis turn, zero turn failures. Queues for the next standing sitting with this evidence.
+Measurement 2026-08-30 (integration seat, T-025-s2's closing run): the gating run this park waited on HAS HAPPENED. Observed: one compound Bash call denied in band ("Contains shell syntax (string) that cannot be statically analyzed"), typed `denied` event, planner recovered via Write + a simpler Bash and completed the scaffold. So the allowlist's narrowness is REAL and fails safe-and-loud, and the open question is now priced: one denial per genesis turn, zero turn failures.
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-03 priority 4 — the park's own UNPARK condition has fired
+
+**RE-DERIVED BEFORE PROMOTING, because a resurfaced card is re-derived
+and never trusted.** The park's condition was *"UNPARK with that
+measurement, or with F-04's adapter card, whichever comes first"* — the
+measurement being what the CLI grants when the adapter says nothing.
+`T-025-s2` is `status: done`; the run happened; the capture is
+`docs/research/captures/real-planner-turn-2026-08-30.txt`, beside the
+earlier observation in `docs/research/real-cli-observation.md`. So the
+gate is met and the card comes off the shelf.
+
+**WHAT THE CARD MAY NOT ASSUME, and this is why the criteria are shaped
+the way they are.** The 2026-08-30 run priced ONE denial; it did not
+characterise the CLI's default grant, which is the measurement the
+2026-08-19 note said was missing. Two observations bound the question
+and neither is a full answer: the CLI granted `ls` and `find` unprompted
+under a user config that allows neither, and it refused a compound
+command it could not statically analyse. **The effective grant is the
+union of three tables — the adapter's six patterns, the CLI's own
+defaults, and whatever the user happens to have configured — and only
+the first is reviewed.** That sentence, not the six patterns, is what
+this card now exists to make true or false in writing.
+
+## Acceptance criteria
+
+- THE lane SHALL characterise the EFFECTIVE grant from the landed
+  captures and the adapter's own source, and record it here as three
+  named tables with what each contributes — naming, for each, the
+  question the captures cannot answer rather than leaving the gap
+  implicit.
+- THE lane SHALL then either narrow the adapter's imperative surface or
+  record the ruling that it stays, with the reason, on this card and
+  dated. Both arms are acceptable; leaving the question open is not,
+  because that is what this card has already cost three triages.
+- WHERE the answer is to narrow, THE change SHALL move the pin that
+  asserts the imperative surface is exactly the kit's — reconciled,
+  never loosened — and SHALL carry the justification comment that pin
+  demands.
+- THE lane SHALL record whether the containment argument in `T-025`'s
+  criterion 2 survives its own findings, in one sentence, because that
+  argument is what every later reader will cite.
+- THE lane SHALL NOT spawn a real planner turn as its proof (the
+  `T-025-s5` / `T-025-s6` precedent): the fixture suites green are the
+  evidence, and any question only a real run can settle is RECORDED and
+  ROUTED to @human rather than taken.
+- Verification: headless. The app crate's own `cargo test` green at the
+  lane's ref, with the moved pin's assertions shown changed rather than
+  weakened.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts Queues for the next standing sitting with this evidence.

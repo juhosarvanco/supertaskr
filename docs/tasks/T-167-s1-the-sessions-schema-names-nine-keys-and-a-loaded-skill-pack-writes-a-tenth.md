@@ -3,12 +3,12 @@ id: T-167-s1
 title: method/runtime/sessions-schema.md names nine keys and a genesis that loads skill packs writes a tenth — the code says "field-for-field per" a document that does not name the field
 feature: F-03
 milestone: 4
-priority: 2
+priority: 3
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
-touches: [method/runtime]
+touches: [method/runtime/sessions-schema.md, app-agent]
 builder:
 verifier:
 built_by:
@@ -88,3 +88,59 @@ the next field added without the document reds instead of passing. A
 fixture with one loaded pack is four lines in that test module —
 `skills::SkillPack` is constructible by hand, and
 `agent/skills.rs`'s own tests show the shape.
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-03 priority 3 — THE BUMP QUESTION IS RULED HERE, which is the half a lane may not decide
+
+**RULING: NO METHOD VERSION BUMP IS OWED. This is an editorial repair to
+an unshipped method file and it rides the next bump.** Both tests
+re-derived at `@ 780d0af02f90ca6072c946fe9d19a6ca40362472`, not taken
+from the card:
+
+- **Test 1, SHIPPED BYTES — fails.** `git grep -h 'rel: "'
+  app/src-tauri/src/agent/kit.rs` prints fourteen entries; `runtime/`
+  appears exactly once and it is `runtime/nputer.yaml`. The schema
+  document is not among the bytes the kit materialises into a new
+  project, so nothing a project inherits changes.
+- **Test 2, GRAMMAR — fails.** The trigger is a field, a status, a
+  normative table or a contract row governing what a card, a room, a
+  brief or a role may say. `.nputer/sessions.json` is none of those: it
+  is runtime state, losable by charter, and no seat reads it as a
+  contract.
+
+Recorded rather than left to the next reader precisely because the
+sentence *"adds a field to a schema"* sits close enough to test 2 that
+each reader would re-derive it. If a later reader disagrees, the thing
+to argue with is the two derivations above, not this conclusion.
+
+**AND THE FENCE IS NARROWED AT PROMOTION.** As filed the card carried
+`touches: [method/runtime]`, a directory that also reaches
+`runtime/nputer.yaml` — a KIT_FILES entry, so the blast radius included
+shipped bytes this card has no business near. The fence is now the one
+document plus `app-agent`, which is where the pin lives. The card still
+takes a verifier: `app-agent` is a registry slug and the shipped
+partition is read off `touches:`.
+
+## Acceptance criteria
+
+- THE schema document SHALL name the tenth key and say what it holds,
+  with the shape DERIVED from the type the code writes rather than
+  transcribed from this card, which goes stale.
+- THE pin SHALL assert the written entry's keys are a SUBSET of what the
+  schema names, so the next field added without the document reds
+  instead of passing — today it walks only the schema's side and its
+  "no extra keys" arm is exercised by a fixture with no packs.
+- THE new arm SHALL be driven by a fixture with at least one loaded
+  pack, and SHALL carry a positive control: an entry with a key the
+  schema does not name reds, and the packless entry still passes.
+- THE lane SHALL NOT bump the method version, and SHALL NOT edit any
+  KIT_FILES entry. The ruling above is why; a lane that bumped anyway
+  would be deciding at the seat the question this card decided at
+  triage.
+- Verification: headless. The app crate's own `cargo test` green at the
+  lane's ref, with the byte-identity behaviour for a packless genesis
+  unchanged.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

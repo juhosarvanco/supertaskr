@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [crate-index, app-agent]
@@ -79,3 +79,14 @@ unreadable.
 The fence needs both `crate-index` and `app-agent`, and adding a direct
 `blake3` dependency would need `app/src-tauri/Cargo.toml` besides —
 derive whether that path is in the fence before dispatching.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect).** The card is explicit that nothing is broken, and it is right: the duplication has a stated reason, the two crates carry different dependency policies on purpose, and the hand-rolled implementation is pinned against the published vectors rather than merely believed. Question 1 ("is one hash worth a widened surface?") is real but it buys nothing today — one caller, one `pub`, sixty lines — and the fence it needs spans two components plus, on one arm, a manifest neither of them carries.
+
+**RESURFACES when a THIRD party wants a content hash, which is the event that turns a duplication with a reason into a pattern nobody chose.** Derive it with
+
+    git grep -n "fn content_hash\|fn sha256_hex" -- app/src-tauri
+    git grep -n "content_hash(\|sha256_hex(" -- app/src-tauri
+
+— today those answer two definitions and their existing callers. A THIRD definition, or a caller of either from a module that is neither the indexer nor the agent, is the signal: at that point the shared-helper question is being answered by accident and should be answered on purpose.
+
+**Or sooner, if the coupling argument dissolves on its own:** if the app crate takes a direct `blake3` dependency for some other reason, arm 1 becomes free and this card is the record of why it was worth taking. Whoever unparks re-derives both — the stamps live in runtime state that is losable by charter, so nothing has to migrate, and the fix should say that out loud rather than leave a reader wondering.

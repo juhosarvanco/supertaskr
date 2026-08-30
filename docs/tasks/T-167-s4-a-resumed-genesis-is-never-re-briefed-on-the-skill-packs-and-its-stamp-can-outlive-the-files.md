@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [app-agent]
@@ -73,3 +73,12 @@ is worse than one that names none.
 Question 1 is a one-clause change to `assemble_resume_nudge` and one
 integration body in `tests/agent_runner.rs` beside the T-167 guards.
 Question 2 needs the schema answer first.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect), and the card's own sentence is the reason: "neither is urgent while genesis is the only consumer."** Both questions are decisions rather than defects — today's behaviour is deliberate on both counts and argued in the body — and question 2 cannot be answered before the schema question is, which is `T-167-s1`'s and is now `planned`. Promoting this beside it would put two seats on one decision with the dependent half going first.
+
+**RESURFACES when skill packs reach a SECOND consumer, which is the event the card itself names as what makes either question load-bearing.** Two checkable forms, either one:
+
+1. **A card carrying the loop room's Stage-2 work — packs in spec-writing sessions, or seat briefs naming which skills were active — reaches `status: planned`.** That is the moment a brief can name a stale pack set, and a brief that names a stale pack set is worse than one that names none.
+2. **The skills discovery gains a caller outside genesis.** Derive with `git grep -n "report_skills" -- app/src-tauri`; today it answers the two genesis entry points and its own definition. A third call site is the signal.
+
+**And question 2 additionally waits on `T-167-s1`** — the schema ruling there decides whether a second stamp is even expressible. Read them together; whoever unparks re-derives both, because the code paths described above are stamped at T-167's landing and not at the reader's ref.

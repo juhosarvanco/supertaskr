@@ -3,9 +3,9 @@ id: T-143-s3
 title: The board pane's blind-lane CAVEAT says "is claimed" and "its fence" about a list of two, which is the third live instance of T-143's own number-agreement class
 feature: F-06
 milestone: 4
-priority: 5
+priority: 6
 size: S
-status: suggested
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-143
 blocked_by: []
 touches: [app-board]
@@ -82,3 +82,41 @@ the comparable figure-in-a-comment lint in writing). **The cheaper
 keeper is a shared helper** — one function that renders *"N lanes (a, b)
 are"* / *"1 lane (a) is"* — so the four copies become one, and the
 number stops being a thing each author has to remember.
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-06 priority 6 — and the keeper question is ANSWERED: NOT HERE
+
+**RULED: this card takes the instance and the pin, and does NOT build the
+shared helper.** The card asked the question at triage and the answer is
+a fence fact rather than a preference: the copies of this sentence live
+in three different packages, so one helper cannot be written from inside
+`app-board` — a criterion ordering it would be a criterion the fence
+forbids, which `method/tasks/TASK-FORMAT.md` names a DEFECTIVE CARD. The
+lint arm stays declined for the reason the card already gives. **If the
+lane still believes a helper is right after building the instance, it
+ROUTES the argument with what it learned rather than taking it.**
+
+## Acceptance criteria
+
+- THE caveat's number SHALL be derived from the blind-lane count the
+  same way the surrounding sentence already derives *"live lane"* /
+  *"live lanes"* two clauses earlier in the same string — the verb and
+  the pronoun both, since the current text gets both wrong together.
+- THE change SHALL be pinned IN BOTH DIRECTIONS: one body driving a
+  single blind lane and one driving two, each asserting the rendered
+  verb and pronoun rather than only that the caveat appears. The
+  existing one-lane body asserts neither, so a mutation between the two
+  spellings has nothing to fail against today.
+- THE lane SHALL NOT touch the caveat's other half: the clause is
+  genuinely consumed at the dispatchable sentence rather than merely
+  computed, which this card's parent checked and recorded.
+- THE lane SHALL NOT build a shared renderer, and SHALL route the
+  argument for one if it still holds after the work — see the ruling
+  above.
+- Verification: headless. The app's own unit suite green at the lane's
+  ref, with the new two-lane body shown failing against the singular
+  spelling before it passes against the derived one.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

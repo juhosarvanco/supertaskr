@@ -3,9 +3,9 @@ id: T-111-s11
 title: The graph walk indexes any cargo target directory not literally named `target`, so a drill under a chosen name is counted as repository content — teach the walk to skip a directory carrying cargo's own CACHEDIR.TAG
 feature: F-06
 milestone: 4
-priority: 6
+priority: 12
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [crate-index]
 suggested_by: executor claude-opus-5@subagent @T-111-s10
@@ -57,6 +57,16 @@ is the sentence a checkpoint decides on — it is the whole argument for
 reconciliation nobody owes, which is the cheap direction; the expensive
 one is equally available, a REAL `+1` hidden among build artefacts a
 reader has learned to discount.
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-06 priority 12
+
+Taken as filed: the criteria below are already exact, they were written
+by the lane that measured the defect twice from two directions, and
+`T-111-s10`'s own third criterion ORDERED this card into existence
+rather than leaving it to a reader's judgement. Priority 12 rather than
+the filed 6 because `crate-index` carries `T-167-s2` at 1 and the
+budget's ruled fix chain ahead of it, and this is a correctness fix on a
+walk nothing is currently mis-walking — real, and not first.
 
 ## Acceptance criteria
 

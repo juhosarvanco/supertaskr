@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5@subagent @T-143
 blocked_by: []
 touches: [tools/e2e]
@@ -90,3 +90,11 @@ cause in this project (`method/lane-protocol.md` rule 5, `T-085`,
 `T-137`'s three `method/` cards against `T-135`, and T-143's own night).
 It is NOT a new class — it is the one class this repository keeps
 meeting, arriving in a join that had not been taught it yet.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect).** Not declined — the finding is right and the census above is real. Three things together make now the wrong time: the magnitude the card itself measured is two tokens on the whole board; the READER-side mitigation has landed, so `brief.mjs --state` now prints, above its own ledger, that a FREE row is not a dispatch verdict and that a lane declaring a contained PATH can hold a slug's files without naming it; and the card's four open questions are a DESIGN pass, not a repair — question 2 alone (what a path-only lane's row becomes) decides the shape of every row the ledger prints.
+
+**RESURFACES on the disagreement itself, which any dispatcher can see and nobody has to remember this card to notice:** when `brief.mjs --state` prints a slug row as FREE while `brief.mjs --task` on a live lane's own card answers OVERLAP through that same slug. That is the exact reproduction this card carries, it costs two commands the dispatcher already runs, and the seat that meets it unparks with its own measurement rather than with this one.
+
+**Or, sooner, if the magnitude moves:** re-derive the containment census — every distinct `touches:` token on the board, the subset that is not a slug NAME, and the subset of those a slug's region CONTAINS. This card measured that at its own ref and states it as a fact about what the board declared that week, never as a property of the join. If a later derivation puts the contained set above the handful measured here, the hole has grown and the park is over.
+
+**AND A RESURFACED CARD IS RE-DERIVED, NEVER TRUSTED.** The four questions under "What a fix would have to decide" are the state of the argument at filing, not a plan.

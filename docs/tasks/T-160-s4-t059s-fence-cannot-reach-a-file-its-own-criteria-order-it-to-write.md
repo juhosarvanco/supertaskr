@@ -96,3 +96,46 @@ caught mechanically instead.
 - `node tools/e2e/scripts/brief.mjs --task T-059 --preflight` SHALL
   exit 0, with no UNCOVERED CRITERION PATH finding, by a change to
   `T-059`'s own card and to nothing else.
+
+## Corroboration (2026-08-30, standing triage sitting #2) — a THIRD shape of the same class, from `T-163-s1`
+
+Appended rather than filed beside, per `method/tasks/TASK-FORMAT.md`:
+a second instance belongs attached to the card that owns the class.
+**This one differs in the way that matters and the difference is the
+reason it is recorded here.** This card's instance is a fence that
+misses a file the card's OWN CRITERIA name — visible to the preflight,
+and refused by it. `T-163`'s instance is a fence that misses a file NO
+criterion names: `touches: [docs/architecture, app/test]` is the natural
+spelling for a card whose subject is a component file, the fence domain
+is the DIRECTORY `docs/architecture/`, and the governing document
+`docs/ARCHITECTURE.md` is a FILE beside it differing by case and a
+suffix. Asked of the lane hook rather than assumed, at that lane's ref:
+
+    docs/ARCHITECTURE.md                               -> block (outside-the-fence)
+    docs/architecture/components/C-11-design-tokens.md -> allow (inside-the-fence)
+
+So the card parses, the preflight passes, the manifest is written, and
+the lane discovers the exclusion only when a suite in a third package
+reds — because the obligation is created by that suite, not by any
+criterion a card author reads. **A preflight cannot catch this one**,
+which is why it is worth attaching to the card that owns the shape the
+preflight DOES catch.
+
+The narrow repair that instance asked for is discharged (the slug block
+was corrected at the T-163 flip-set landing). Two dispositions survive
+it, and neither is this card's fence to take — they are recorded so
+whoever picks this class up starts from them:
+
+- **Structural** — make the architecture doc's slug block DERIVED rather
+  than transcribed, so a `touch_slugs:` change cannot leave it stale.
+  `docs/CAPABILITIES.md` is the precedent already in this repo:
+  generated, with a currency check; the existing block-versus-field
+  comparison becomes that check.
+- **Vocabulary** — teach the fence that the architecture directory and
+  the architecture document are one blast radius, or refuse the
+  ambiguous token when the manifest is written. Largest, and the one
+  most likely to be a cure worse than the disease — recorded because
+  leaving it unnamed means the next card re-derives the choice.
+
+Nothing above changes this card's own acceptance criterion, which stays
+exactly the one line it was promoted with.

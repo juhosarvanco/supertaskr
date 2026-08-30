@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: parked
 blocked_by: []
 touches: [docs/decisions, docs/rooms]
 suggested_by: executor claude-opus-5@subagent @T-162
@@ -64,3 +64,14 @@ already recorded that CONVENTIONS' growth "is rule text that survived
 the pipeline, which is what the document is FOR". That is the same
 observation from the other side — the document is not sludge, so the
 tripwire's shape is the thing left to argue about.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect) — because the ruling this needs is one only @human can give, and the seat's rule is to park with that as the condition rather than guess.** ADR-019 §Budgets is @human's decision text; the formula it legislates is what this card argues is the wrong shape. A lane rewriting it would be a lane rewriting the decision it was dispatched to execute, which is the honest framing this card already gives itself, and triage has no more standing to write a new formula than a lane does.
+
+**ROUTED TO @human at this sitting**, with the arithmetic above as the whole of the ask: compaction buys less absolute runway than it costs whenever headroom is a fixed fraction of the landing, and two instruments exist that the decision does not name — a byte FLOOR, so a small document is not punished for being small, and a PER-MERGE delta budget, which is the shape the ROADMAP contract already states in prose and nothing enforces.
+
+**RESURFACES on either event, and both are things a reader can check:**
+
+1. **@human records a resolution on the budget formula** in `docs/rooms/governing-docs.md` — the room this belongs beside, and the file whose RESOLUTION line is the machine-visible answer. Whatever is ruled, this card is then either promoted to implement it or archived as the argument that produced it.
+2. **A governing document crosses its warn line again** — `npm run lint:docs` prints the budget line for each governed document on every run, so the next warn is the evidence that a re-basing bought one-and-a-bit days of runway rather than a policy. The seat that sees it appends the reading here, dated, and re-routes.
+
+**Re-derive before either move.** The figures in this card are stamped at T-162's refs; the lines were re-based at that merge, so headroom now is not headroom then.

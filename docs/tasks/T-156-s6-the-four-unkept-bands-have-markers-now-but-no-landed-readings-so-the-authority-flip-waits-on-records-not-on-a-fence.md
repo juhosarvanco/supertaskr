@@ -3,9 +3,9 @@ id: T-156-s6
 title: Three of the four unkept bands have a marker now and still no landed reading, so the authority flip waits on records rather than on a fence — and the config still points at a card that no longer exists
 feature: F-06
 milestone: 4
-priority: 14
+priority: 17
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-156-s1
@@ -67,3 +67,59 @@ stale in the other direction — it names the write that has now happened
 which this card's fence [tools/e2e] cannot write — routed as
 T-156-s1"*). Both are one-line repairs inside `[tools/e2e]` and neither
 is worth its own card.
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-06 priority 17 — AND THE HEADLINE MOVED UNDER THE CARD WHILE IT SAT
+
+**RE-DERIVED AT `@ 780d0af02f90ca6072c946fe9d19a6ca40362472`, and the
+"no landed readings" premise is no longer true.** The markers landed and
+records started carrying them the same day:
+
+    for m in "Gate runtime:" "Cold start:" "Drift incidents:"; do
+      grep -l "$m" docs/checkpoints/*.md | grep -v TEMPLATE; done
+
+answers 5 records for `Gate runtime:` and 3 each for `Cold start:` and
+`Drift incidents:`. So step 1 of this card's own sequence is RUNNING
+rather than blocked, which is the good news — and it does not move step
+2, because a limit set from three readings would be the guess this
+card's own reasoning refuses.
+
+**WHAT THE PROMOTION TAKES, and what it deliberately leaves.** The two
+stale keeper strings are live wrongness printed on every run and they
+are inside the fence; they are taken. The authority flip is NOT taken —
+it waits on readings, the wait is the finding, and this card records the
+census so the next reader starts from a number instead of a belief. Both
+halves stay on one card because separating them would leave the flip
+with no home, which is how a sequencing constraint becomes a shelf.
+
+## Acceptance criteria
+
+- THE health config SHALL name no card that does not exist. The three
+  keeper strings routing to an absorbed id are the instance; derive the
+  set at the lane's own ref rather than trusting this body, because
+  triage moves card ids and this card is exactly that hazard's witness.
+- THE gate-seconds keeper string SHALL be re-stated against what now
+  exists rather than against what was owed when it was written — the
+  record template's stamped line has landed, so the string asking for it
+  is stale in the opposite direction.
+- THE lane SHALL re-derive the landed-reading census for each unkept
+  band with the command above, record the answer here with its date,
+  and state in one sentence per band whether that count can carry a
+  limit yet.
+- THE lane SHALL NOT flip any band off its no-authority setting from
+  this card's reasoning alone, and SHALL NOT invent a limit. A limit set
+  from a guess is the known-vacuous keeper docs/NORTH_STAR.md's bar
+  calls a stop-the-line defect, and it is the failure this card exists
+  to prevent, not to commit.
+- THE lane SHALL NOT make anything walk docs/checkpoints/. ADR-019
+  forbids a suite, gate or generator depending on that directory; the
+  reading reaches the health command carried BY HAND into a readings
+  file at the checkpoint that wrote it, which is the same path the suite
+  and graph readings already take.
+- Verification: headless. The health command runs at the lane's ref and
+  its output names no absent card, shown by the derived set before and
+  after.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

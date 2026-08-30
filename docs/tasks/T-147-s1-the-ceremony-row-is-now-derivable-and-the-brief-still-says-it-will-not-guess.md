@@ -3,7 +3,7 @@ id: T-147-s1
 title: The ceremony ROW is now mechanically derivable and row 11 of every brief still says it will not guess — the partition T-147 landed is read by no program
 feature: F-01
 milestone: 4
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-147
 touches: [tools/e2e, docs/CONVENTIONS.md]
 ---
@@ -59,3 +59,9 @@ gains a second copy of a rule (this file's own standing lesson). Prefer
 parsing the two derivation COMMANDS the bullet carries over
 re-implementing its sentences, and red loudly by name if the bullet is
 renamed — `rawBullet`'s existing throw-on-absence shape is the precedent.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect) — behind `T-135`, which is the second arm of this card's own disposition hint.** The finding holds: the partition is a two-clause mechanical test, every input it needs is already loaded in the same program, and the brief still delivers as a question the fact that decides the ceremony. What triage will not do is build a deriver for a partition `T-135` is under way to REPLACE. That card (`status: building`, @human-adopted) swaps the S/M/L basis for a graph-derived one; a deriver written against today's clauses would be a second copy of a rule about to move, which is this card's own closing caution turned on itself.
+
+**RESURFACES when `T-135` reaches `status: done`** — derive with `grep '^status:' docs/tasks/T-135-*.md`, one command, checkable by whoever integrates that card. The seat that unparks re-derives the partition's clauses AT ITS OWN REF rather than trusting the two named here, because the whole point of the wait is that they are expected to have changed.
+
+**And if `T-135` lands without touching row 11's note**, that is the signal this card was right to be separate: unpark it immediately and take it small, since by then the partition is settled and the derivation is the one-pass change this card describes.

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5@subagent @T-163
 blocked_by: []
 touches: [tools/e2e]
@@ -87,3 +87,5 @@ or dispatched — a fact with a shelf life of hours, so derive the lane
 list rather than trusting this sentence.
 
 DISCHARGED-NOT-DECLINED (2026-08-30, integration seat, the T-163 flip-set landing): the finding was real and the landing consumed it — performed in the merge window per the lanes-need-green-bases rule (a complement lane could not legally be cut from the red window this fix closes), with the executor's diagnosis on this card as the map and the select-board rewrite as the model. Every live half now states the ruled negative; every mechanism moved onto a synthetic registry carrying the shape. Evidence: the 2026-08-30-T-163 checkpoint record.
+
+Standing triage sitting #2, 2026-08-30 (architect): ARCHIVED AS **DISCHARGED — NOT DECLINED**. Consumed whole by the T-163 flip-set integration, re-derived at this sitting rather than taken on the stamp's word: the brief spec's two bodies now assert the ruled NEGATIVE on the live registry — "a component is claimed by two slugs — the T-163 ruling has been undone" — and the mechanism each of them guarded moved onto a synthetic map that still carries the shape, exactly the treatment this card asked for and named the precedent for. Nothing was loosened to `>= 0`, which was the card's one prohibition. No receiving card exists, so this entry is the record.

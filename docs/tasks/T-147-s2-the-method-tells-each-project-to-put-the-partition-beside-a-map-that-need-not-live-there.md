@@ -3,7 +3,7 @@ id: T-147-s2
 title: The ceremony boundary tells each project to state its partition beside its slug map, and in this project the slug map is in a different document — the instruction cannot be obeyed literally by anyone whose map moved
 feature: F-01
 milestone: 4
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-147
 touches: [method/tasks/TASK-FORMAT.md]
 ---
@@ -56,3 +56,9 @@ lives anywhere.
 **It is a `KIT_FILES` file, so under the partition T-147 just landed this
 card takes a verifier** — the self-demonstrating case, and worth keeping
 as one.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect) — behind the next method version bump, which is this card's own disposition hint made precise.** The finding is correct and the repair is one clause. It cannot ride any lane whose fence cannot bump the method version: the file is a `KIT_FILES` entry, so a change to it changes bytes every project this system creates inherits, and a bump is a multi-file commit whose third file is Rust plus a method-eval block that is not a file at all. Landing one clause on its own would either smuggle an unversioned change into shipped bytes or spend a whole bump on a wording repair.
+
+**RESURFACES at the next method version bump, and the rider is checkable at the moment the bump is cut:** the bump's own card carries a riders list, and this card belongs on it. Derive that a bump is in flight with `grep -n 'METHOD_SNAPSHOT_VERSION' app/src-tauri/src/agent/kit.rs` — the pinned version there is the live one, and a lane moving it is the lane this rider joins.
+
+**The repair, restated so the rider needs no reconstruction:** say WHAT the partition statement must be beside rather than WHERE — it belongs in the project's conventions and must be stated in the vocabulary its slug map uses, with the map's own location named by the project. `T-135` may rewrite the surrounding paragraph anyway; whoever carries the rider re-derives the sentence at its own ref before writing.

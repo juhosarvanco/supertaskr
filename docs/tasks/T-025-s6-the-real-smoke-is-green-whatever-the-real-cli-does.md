@@ -3,12 +3,12 @@ id: T-025-s6
 title: The real smoke is green whatever the real CLI does — it asserts nothing, so the one authorized real run's verdict lives in stdout and no exit code carries it
 feature: F-03
 milestone: 3
-priority: 3
+priority: 2
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-025-s5
 blocked_by: []
-touches: [app/src-tauri/tests]
+touches: [app-agent]
 builder:
 verifier:
 built_by:
@@ -79,12 +79,44 @@ Shape 1 is the smaller change and the one this suggestion leans toward;
 shape 2 is what the current body implicitly assumes and has never been
 written down.
 
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-03 priority 2 — SHAPE 1 RULED, and the fence corrected
+
+**The tension is ruled: SHAPE 1.** Assert the PREMISE, never the
+content — red only when the body observed no real turn at all, and leave
+every line SHAPE printed and unasserted so the provenance recording this
+body exists for is untouched. Shape 2 is declined with its reason
+recorded rather than dropped: it makes the verdict a file somebody
+remembers to commit, which is the keeper-less figure ADR-019's Law 2
+names, and it cannot tell a run that produced nothing from a run nobody
+took.
+
+**And the card's "WHY IT MATTERS RIGHT NOW" paragraph is now history, not
+forecast, which strengthens rather than weakens it.** The one authorized
+closing run HAS been taken: `T-025-s2` is `status: done`, milestone 3's
+gate moved on 2026-08-30, and the verdict was read off `--nocapture`
+stdout by a human exactly as this card predicted — the capture is
+`docs/research/captures/real-planner-turn-2026-08-30.txt`. The surviving
+consumer is @human's GENESIS WALK, the open item that closes milestone 3
+and the next real turn anybody will run. A body that is equally green on
+`Failed { AuthFailed }` would misreport that walk the same way.
+
+**THE FENCE WAS CORRECTED AT PROMOTION.** As filed this card carried
+`touches: [app/src-tauri/tests]`, a bare directory path whose one
+relevant file is reserved by the `app-agent` slug through C-14 — the
+shape `T-160-s4` exists to refuse. The fence is now the slug.
+
 ## Acceptance criteria
 
 - THE real smoke SHALL distinguish, in its own exit status, a run that
-  observed a real planner turn from a run that observed no turn at all —
-  or the project SHALL record, on this card, the ruling that it
-  deliberately does not and what carries the verdict instead.
+  observed a real planner turn from a run that observed no turn at all.
+  (The "or record the ruling" branch this criterion carried as filed is
+  SPENT — the ruling is recorded above and it chose shape 1.)
+- THE premise the body asserts SHALL be exactly the four the shape-1
+  paragraph names — a started outcome, a native session id in the
+  settled status, at least one text delta, and a terminal event that is
+  `Completed` — and each failure SHALL name which of the four was
+  missing, because "no turn observed" and "the CLI refused at auth" are
+  the two answers a reader needs told apart.
 - THE smoke SHALL keep every gate it has (`#[ignore]`,
   `NPUTER_REAL_CLI=1`, the one deliberate `NO_REAL_CLI_VAR` opt-out) and
   its real-cadence deadline (T-025-s5).

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 14
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-156-s1
@@ -72,3 +72,40 @@ carrying no `run from <dir>/:` marker and passed every lane in silence —
 that shape is pinned as genuinely invisible by
 `FIXTURE: the shape that IS silent`. It did not, and the next lane should
 not either. **The listing is owed; what was refused is smuggling it.**
+
+## PROMOTED at standing triage sitting #2 (2026-08-30), F-06 priority 14
+
+Taken because the disposition is already argued in writing and the fence
+is the only thing that was ever missing: `[docs/CONVENTIONS.md,
+tools/e2e]` reaches every half in one commit, which is precisely what
+`T-156-s1`'s narrower fence could not do. The card's own three-step work
+list becomes the criteria below, unchanged in substance and stated as
+SHALLs so the coupling is enforceable rather than remembered.
+
+## Acceptance criteria
+
+- THE tools/e2e command bullet in docs/CONVENTIONS.md's Build & test
+  section SHALL list the health command, in that file's own typography —
+  a middle dot BETWEEN commands, never inside a parenthetical.
+- IN THE SAME COMMIT THE workflow-parity spec SHALL gain the matching
+  LOCAL_ONLY entry with its reason: the command exits non-zero at every
+  ref while any band is unkept, so a CI step would red every push for no
+  actionable signal, and its readings are the outputs of steps the job
+  already runs. The disposition is already ruled in writing and this
+  criterion records rather than re-opens it.
+- BECAUSE LOCAL_ONLY is asserted rather than merely listed, THE CI
+  bullet SHALL also say that CI does not run it — the third half, and it
+  is inside the same file as the first.
+- THE lane SHALL NOT write the command into a bullet carrying no
+  `run from <dir>/:` marker. That shape passes every gate in silence and
+  is pinned as genuinely invisible; taking it would be smuggling the
+  listing rather than landing it.
+- Verification: headless, and the coupling is the proof. Run the
+  workflow-parity spec before the edit and after; the before run reds by
+  name on the doc's new command and the after run is green, with both
+  results recorded here.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

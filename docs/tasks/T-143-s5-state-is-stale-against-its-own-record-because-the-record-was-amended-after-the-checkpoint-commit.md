@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 20
 size: S
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-143-s4
 blocked_by: []
 touches: [tools/e2e]
@@ -105,3 +105,9 @@ measurement establishing that three of its five reds belonged to the
 tree. The next lane cut in that window pays the same. That is the cost
 this card prices, and it is the argument for (B) rather than a claim
 that (A) is wrong.
+
+**PARKED at standing triage sitting #2 (2026-08-30, architect).** The instance is discharged and the card says so with its own re-measurement; what is left is a choice between disposition (A) and (B) that this card deliberately declines to make, and triage declines it too — for a reason the card supplies: the cost is ONE lane's inherited red, paid once so far, and (B) rewrites a gate that exists because the ritual slipped twice in its first two checkpoints. A rule with more moving parts is not obviously worth buying against a cost of one.
+
+**RESURFACES when a SECOND lane pays it**, which is checkable at the moment it happens and by the seat it happens to: a lane whose base sits between an APPEND to an already-checkpointed record and the STATE commit that repairs it, seeing `docs-gate: docs/STATE.md is STALE against N newer checkpoint record(s)` for a record whose own creation commit was accompanied by its STATE regeneration. That lane appends its base ref here as a dated corroboration and unparks the card; at two instances the recurrence is priced and (B) has an argument this park does not.
+
+Derive the shape of any suspected instance with `git log --format='%h %cI' -- docs/STATE.md` against `git log --format='%h %cI' -- docs/checkpoints/<record>`: an APPEND is a later commit touching the record alone. **Whoever takes (B) must keep the original slip caught** — poison both shapes, an amended record that must pass and a new record with no STATE commit that must red.
