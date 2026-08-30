@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 21
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app-agent]
 suggested_by: integrator nputer-4e @the first green-run attempt, run 33274798983
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

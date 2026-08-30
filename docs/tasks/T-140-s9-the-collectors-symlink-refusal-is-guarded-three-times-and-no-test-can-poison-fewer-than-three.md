@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 25
 size: S
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
 touches: [app/src-tauri/src/docs_watch.rs]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
