@@ -22796,8 +22796,8 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:265cf5a41491569e7aec59539c49716fccbf78586dd187b7915e6d4870638504",
-      "loc": 426,
+      "hash": "blake3:525075a6613907c18e84c8c29ba91aba161c9fcdc76c4d6be8255db1eee4850a",
+      "loc": 430,
       "symbols": [
         {
           "id": "s:lib/parser/test/fence.test.ts#board",
