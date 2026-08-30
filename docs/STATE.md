@@ -1,18 +1,20 @@
 # State
 
-Updated: 2026-08-30 after THE GENESIS WALK — @human walked
-/Users/ujju/Projects/first-walk into existence (7/7 banked, 3 cards,
-scaffold verified whole on disk, planner on claude-opus-5[1m]).
-Milestone 3's closing word is @human's; the walk itself is DONE.
-Findings filed: T-171 (genesis has no ending — the cold-start test
-has no operational owner; run by hand this once), T-172 (two chrome
-rulings), T-173 (free write-up intake, planner drafts the answers —
-the ruled F-01 direction). **T-025-s4 UNHELD.** T-112 blind verifier
-RUNNING (tip 96e3886); its merge carries the GRAPH KLAXON (forecast
-1,038,884/1,040,000 — 1,116 left, truncated_files 2→4, docs_watch.rs
-55→0; T-140-s4's @human ruling now urgent). e2e whole at 332/332;
-e2e-seat train next (T-163-s4 p1). Current record:
-docs/checkpoints/2026-08-30-the-genesis-walk.md.
+Updated: 2026-08-30 at T-112's close — **F-04 IS WHOLE** (disposition,
+ledger, guard, brief). The assembler landed APPROVED WITH ASSIGNED
+CORRECTIONS (wrong residual holder fixed + pinned; FIRST-heading
+fixtures added; two tallies restated at their ref). ZERO LANES live;
+battery whole: cargo 588, app 1060, e2e 332, parser 336. **GRAPH AT
+926 BYTES HEADROOM** (1,039,074/1,040,000, 199 files, truncated_files
+4, docs_watch.rs 0 symbols — T-140-s4's @human ruling is the next
+code merge's problem). THE GENESIS WALK IS DONE (first-walk exists;
+T-171/T-172/T-173/T-174 carry its findings; the cold-start capture is
+in docs/research/captures/). T-025-s4 UNHELD. Next dispatches:
+T-112-s1 (assembler registration — until it lands the drawer's block
+never renders), e2e train (T-163-s4 p1). @human also holds: the
+brief's closing evidence (one hand-driven dispatch using it), v1/v2/v3
+markup, T-162-s1, T-169-s2, T-140-s4 (urgent), M4. Current record:
+docs/checkpoints/2026-08-30-T-112-the-brief-lands.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will

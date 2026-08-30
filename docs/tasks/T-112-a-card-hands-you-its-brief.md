@@ -5,13 +5,13 @@ feature: F-04
 milestone: 4
 priority: 5
 size: M
-status: verifying
+status: done
 blocked_by: [T-111]
 touches: [app-dispatch, app-board]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -374,8 +374,8 @@ holder. Filed as **`T-112-s2`** instead, which says so.
 | `npx vitest run` (336 passed / 16 files) | lib/parser/ | 0 |
 | `npx tsc --noEmit` | lib/parser/ | 0 |
 | `npm test` (1060 passed / 49 files) | app/ | 0 |
-| `cargo test` (251 + 86 + 197 + 10 + 4 + 16 passed, 2 ignored) | app/src-tauri/ | 0 |
-| `npm run lint:tokens` (TOKEN 159 files, CONTROL 976) | tools/e2e/ | 0 |
+| `cargo test` (588 passed / 0 failed / 4 ignored over 18 buckets, measured at 96e3886 — CORRECTED at verification: the row originally read "251 + 86 + 197 + 10 + 4 + 16 passed, 2 ignored", a tally that does not reproduce at the ref it was stamped at: first bucket 252 not 251, ignored 4 not 2, five buckets omitted) | app/src-tauri/ | 0 |
+| `npm run lint:tokens` (TOKEN 159 / CONTROL 981 at 96e3886 — CORRECTED at verification: "CONTROL 976" carried no ref, the shape CONVENTIONS' derive-at-your-own-ref rule exists to stop) | tools/e2e/ | 0 |
 
 The cargo cache cliff was watched rather than assumed: the lib suite's
 own time is **4.21s**, well inside the under-9.5s green band, so
@@ -493,3 +493,48 @@ tools/e2e/ exits **1** — *committed 25444 bytes, a fresh generation is
 `tools/e2e` path and no `docs/CAPABILITIES.md`. It is
 `T-153-s8`'s card by name — *the generated capabilities census is stale
 on main and no gate can say so*.
+
+## VERDICT (2026-08-30, blind factless verifier claude-opus-5@subagent)
+
+**APPROVED WITH ASSIGNED CORRECTIONS** — three, all performed at
+merge, none touching the design. The verifier's own words: "the
+assembler is the strongest piece of work I have verified on this
+repository" — every property holds BY CONSTRUCTION (the row set
+parsed from the contract at run time, the entitled-fields set
+excluding the executor's reasoning for every role, the refusal a
+serde-tagged sum type that cannot represent a partial brief). The
+45-attack blind set died against the code in every class but two:
+
+1. **Row 11's residual routed readers to the wrong card** — the
+   shipped string said "Filed as T-112-s3" where the holder is
+   T-112-s2 (the notes said so correctly; the string did not), and
+   V-M7 proved the citation unpinned across all 28 bodies. Fixed +
+   two holder pins added so it cannot rot silently again.
+2. **The FIRST-heading guarantee was unguarded** — `notes_boundary`
+   uses `.find` correctly, but every fixture carried one heading, so
+   V-M2 (.find → last()) survived. On any card carrying both headings
+   (every card that has been through a verdict, including this one
+   the moment this verdict landed) the last-heading variant reads the
+   verifier straight through the reasoning criterion 5 exists to
+   stop. Two both-heading fixtures added, both orders.
+3. **Two tallies restated at their ref** — cargo 588/0/4 over 18
+   buckets at 96e3886 (was a six-bucket sum that omitted five and
+   miscounted two); lint:tokens CONTROL 981 at 96e3886 (was 976,
+   no ref).
+
+Independently re-derived, command and number matching the lane:
+census 13/17/13 with the censuses' own regexes, acl_pin 0-file diff
+at 92 grants sha256-identical, forecast 13 paths through the RANGE
+RULE (the 44-path two-dot form run and discarded), DOCS GATE firing
+and its three named suites green, e2e 321 with all plant targets
+restored. Fence 13/13 against the registry's own touch_slugs fields,
+zero breaches. **The T-112-s1 routing judged CORRECT against
+TASK-FORMAT's own paragraph: the card was the defective party
+(criterion 1 orders app-shell work its fence cannot reach), the
+burden was triage's, and the lane took the one legal move — record,
+route naming the fence it needs, build the rest.** brief_for_card is
+in the binary crate (the T-126 hazard closed), and the graph-regen
+klaxon figures all reproduce (fresh 1,038,884 — 1,116 headroom,
+truncated_files 2→4, docs_watch.rs 55→0). The @human closing
+evidence — one real hand-driven dispatch using only this brief —
+remains open on the card and is @human's, not the lane's.

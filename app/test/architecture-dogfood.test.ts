@@ -1211,6 +1211,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // run (the T-088 technique), never read off a failure — the first red
     // in this body hides the three below it.
     expect(c15?.files).toEqual([
+      // brief.rs NEW at the T-112 merge regen (2026-08-30) — the
+      // assembler, C-15's sixth file, first in sort order.
+      "app/src-tauri/src/dispatch/brief.rs",
       "app/src-tauri/src/dispatch/fixtures.rs",
       "app/src-tauri/src/dispatch/join.rs",
       "app/src-tauri/src/dispatch/lanes.rs",
@@ -1219,6 +1222,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
     expect(c15?.declaredOnly).toBe(false);
     expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([
+      // Six at the T-112 merge regen (2026-08-30): brief.rs joined.
+      "C-15",
       "C-15",
       "C-15",
       "C-15",
@@ -1380,7 +1385,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // briefly swallowed until the anchor gave them back. The bucket
     // stays closed; .nputerignore gained /.claude/ this commit after a
     // nested session worktree doubled the walk (the T-153-s3 class).
-    expect(derived.fileComponent.size).toBe(198);
+    // 198 -> 199 at the T-112 merge regen (2026-08-30) — brief.rs under
+    // C-15, mapped, the bucket still empty.
+    expect(derived.fileComponent.size).toBe(199);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1733,7 +1740,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the tree. Derived from `arch` over the regenerated graph before
       // the suite ran; it is the FOURTH assertion in this body, so three
       // separate reds can hide it.
-      ["C-15", 5],
+      ["C-15", 6], // T-112: 5 -> 6, brief.rs
       // AND THE ROW NOBODY DECLARED. `app/src-tauri/tests/dispatch_lanes.rs`
       // is the two-line `#[path]` shim that lets `cargo test` compile
       // `src/dispatch/**` at all — the placement T-110's verifier RULED
@@ -2235,7 +2242,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-08's, so C-09 owned a file that depended on C-08 while C-08 owned
       // a file that depended on C-09. Splitting both into C-17 leaves each
       // component declaring a leaf instead of owning half of one.
-      ["C-09", "C-17", "confirmed", 4],   // T-169: 3 -> 4 (the panel assignment row reads task-detail)
+      ["C-09", "C-17", "confirmed", 7],   // T-169: 3 -> 4; T-112: 4 -> 7 (selectBriefPanel — the panel and both its test files read task-detail's new seam)
       ["C-10", "C-06", "confirmed", 1],
       // THE ONE UNDECLARED ROW LEFT IN THIS REPOSITORY, and it is left on
       // purpose: declaring it would write this registry's first cycle

@@ -799,8 +799,10 @@ describe("the nputer repo on its own map", () => {
       // commands, and its suite (claimed in the regen's own commit),
       // plus the two bin/ files an unanchored ignore line briefly ate
       // and the anchor gave back.
+      // 198 -> 199 at the T-112 merge regen (2026-08-30) - brief.rs, the
+      // dispatch assembler, mapped under C-15.
       // Derived from arch after the regen, not from the failure output.
-      "committed graph · 198 files",
+      "committed graph · 199 files",
     );
   });
 });

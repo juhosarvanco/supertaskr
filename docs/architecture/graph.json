@@ -6418,6 +6418,14 @@
       ]
     },
     {
+      "id": "f:app/src-tauri/src/dispatch/brief.rs",
+      "path": "app/src-tauri/src/dispatch/brief.rs",
+      "lang": "rust",
+      "hash": "blake3:df88883ae80b955dcd8b44d394a13ca0c5b70c8c60373bbb1a10560496ee053e",
+      "loc": 2895,
+      "symbols": []
+    },
+    {
       "id": "f:app/src-tauri/src/dispatch/fixtures.rs",
       "path": "app/src-tauri/src/dispatch/fixtures.rs",
       "lang": "rust",
@@ -6868,22 +6876,12 @@
       "id": "f:app/src-tauri/src/dispatch/mod.rs",
       "path": "app/src-tauri/src/dispatch/mod.rs",
       "lang": "rust",
-      "hash": "blake3:f298083af68611c8649f4c34e9e5a34d0776aac0426b996c720f0a47b548304c",
-      "loc": 61,
+      "hash": "blake3:52573f38fc40ad28308d506534edb9572e3ee89efc90100396fc7d177e65ab1c",
+      "loc": 62,
       "symbols": [
         {
-          "id": "s:app/src-tauri/src/dispatch/mod.rs#fixtures",
-          "name": "fixtures",
-          "kind": "mod",
-          "exported": true,
-          "range": [
-            61,
-            61
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/dispatch/mod.rs#join",
-          "name": "join",
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#brief",
+          "name": "brief",
           "kind": "mod",
           "exported": true,
           "range": [
@@ -6892,13 +6890,33 @@
           ]
         },
         {
-          "id": "s:app/src-tauri/src/dispatch/mod.rs#lanes",
-          "name": "lanes",
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#fixtures",
+          "name": "fixtures",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#join",
+          "name": "join",
           "kind": "mod",
           "exported": true,
           "range": [
             55,
             55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#lanes",
+          "name": "lanes",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            56,
+            56
           ]
         }
       ]
@@ -6909,558 +6927,7 @@
       "lang": "rust",
       "hash": "blake3:bca570f33f1961ef2c258eb2b66929a1ab809a93d25da3c54c082ce5bc71df96",
       "loc": 4150,
-      "symbols": [
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
-          "name": "ARCHITECTURE_NAME",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            63,
-            63
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#CollectOutcome",
-          "name": "CollectOutcome",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            212,
-            221
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DEBOUNCE",
-          "name": "DEBOUNCE",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            53,
-            53
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DOCS_DIR",
-          "name": "DOCS_DIR",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            55,
-            55
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DocsFile",
-          "name": "DocsFile",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            172,
-            175
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DocsSnapshot",
-          "name": "DocsSnapshot",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            225,
-            236
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_DEPTH",
-          "name": "MAX_DEPTH",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            160,
-            160
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_ECHO_LOG_CHARS",
-          "name": "MAX_ECHO_LOG_CHARS",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            166,
-            166
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_FILES",
-          "name": "MAX_FILES",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            159,
-            159
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_FILE_BYTES",
-          "name": "MAX_FILE_BYTES",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            158,
-            158
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_SKIPPED_REPORTED",
-          "name": "MAX_SKIPPED_REPORTED",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            164,
-            164
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#PickInFlight",
-          "name": "PickInFlight",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            379,
-            379
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#PickOutcome",
-          "name": "PickOutcome",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            262,
-            315
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#PlanProbe",
-          "name": "PlanProbe",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            513,
-            523
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#ProjectStatus",
-          "name": "ProjectStatus",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            244,
-            256
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#REARM_TIMEOUT",
-          "name": "REARM_TIMEOUT",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            168,
-            168
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#ROADMAP_NAME",
-          "name": "ROADMAP_NAME",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            62,
-            62
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#SkipReason",
-          "name": "SkipReason",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            186,
-            198
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#SkippedFile",
-          "name": "SkippedFile",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            202,
-            205
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#TASKS_SUBDIR",
-          "name": "TASKS_SUBDIR",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            64,
-            64
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#WatchCtl",
-          "name": "WatchCtl",
-          "kind": "enum",
-          "exported": true,
-          "range": [
-            318,
-            343
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#WatchState",
-          "name": "WatchState",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            353,
-            373
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#WatchTarget",
-          "name": "WatchTarget",
-          "kind": "struct",
-          "exported": false,
-          "range": [
-            1259,
-            1277
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#apply_genesis_folder",
-          "name": "apply_genesis_folder",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1048,
-            1218
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#apply_picked_folder",
-          "name": "apply_picked_folder",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            914,
-            927
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#arm_genesis",
-          "name": "arm_genesis",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1626,
-            1679
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#arm_sentinel",
-          "name": "arm_sentinel",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1298,
-            1331
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#build_snapshot",
-          "name": "build_snapshot",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            872,
-            874
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#collect_docs_files",
-          "name": "collect_docs_files",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            854,
-            856
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#collect_docs_tree",
-          "name": "collect_docs_tree",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            738,
-            848
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#dir_identity",
-          "name": "dir_identity",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1281,
-            1291
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#ensure_docs_watch",
-          "name": "ensure_docs_watch",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1355,
-            1425
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#handle_fs_batch",
-          "name": "handle_fs_batch",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1431,
-            1478
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#has_any_task_file",
-          "name": "has_any_task_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            689,
-            699
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#has_plain_docs_dir",
-          "name": "has_plain_docs_dir",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            494,
-            496
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#impl Drop for PickInFlight",
-          "name": "impl Drop for PickInFlight",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            381,
-            385
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#impl PlanProbe",
-          "name": "impl PlanProbe",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            525,
-            598
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#impl WatchState",
-          "name": "impl WatchState",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            387,
-            454
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#is_collected_docs_path",
-          "name": "is_collected_docs_path",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            708,
-            717
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#is_flat_task_file",
-          "name": "is_flat_task_file",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            663,
-            671
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#is_plain_dir",
-          "name": "is_plain_dir",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            482,
-            487
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#next_seq",
-          "name": "next_seq",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            456,
-            458
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#now_ms",
-          "name": "now_ms",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            460,
-            465
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#open_as_project",
-          "name": "open_as_project",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            934,
-            1002
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#probe_plan",
-          "name": "probe_plan",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            677,
-            685
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#project_status",
-          "name": "project_status",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            878,
-            894
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#rearm",
-          "name": "rearm",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1550,
-            1608
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#relative_posix",
-          "name": "relative_posix",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            468,
-            475
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#routes_to_genesis",
-          "name": "routes_to_genesis",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            644,
-            646
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#run_watcher",
-          "name": "run_watcher",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            1480,
-            1542
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#sanitize_for_log",
-          "name": "sanitize_for_log",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1223,
-            1239
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#snapshot_from",
-          "name": "snapshot_from",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            859,
-            869
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#spawn_watcher_thread",
-          "name": "spawn_watcher_thread",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            1247,
-            1256
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#tests",
-          "name": "tests",
-          "kind": "mod",
-          "exported": false,
-          "range": [
-            1682,
-            4150
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#under_docs_dir",
-          "name": "under_docs_dir",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            654,
-            656
-          ]
-        }
-      ]
+      "symbols": []
     },
     {
       "id": "f:app/src-tauri/src/index_cmd.rs",
@@ -10324,8 +9791,8 @@
       "id": "f:app/src/components/board/Board.tsx",
       "path": "app/src/components/board/Board.tsx",
       "lang": "ts",
-      "hash": "blake3:c6440732224827c77c2e8120b04cb3a31a490e5ee2a620b1f3c80ac67751e1c0",
-      "loc": 58,
+      "hash": "blake3:ae2770b6175780d62e6642bddda69c88f731dffb632245818d81a22d22826971",
+      "loc": 82,
       "symbols": [
         {
           "id": "s:app/src/components/board/Board.tsx#Board",
@@ -10333,8 +9800,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            28,
-            58
+            37,
+            82
           ]
         },
         {
@@ -10518,8 +9985,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:ad89cbee3d4ca58b770603da3b0e1f424fd9e7cb9368d633610356c12724546b",
-      "loc": 597,
+      "hash": "blake3:5fb0f29bebd74d7bff41220a50478116f8589ff193a9ce2e30a8344a95449acd",
+      "loc": 700,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
@@ -10527,8 +9994,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            552,
-            586
+            655,
+            689
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#BriefBlock",
+          "name": "BriefBlock",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            443,
+            498
           ]
         },
         {
@@ -10537,8 +10014,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            524,
-            530
+            627,
+            633
           ]
         },
         {
@@ -10547,8 +10024,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            398,
-            404
+            501,
+            507
           ]
         },
         {
@@ -10557,8 +10034,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            413,
-            441
+            516,
+            544
           ]
         },
         {
@@ -10567,8 +10044,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            496,
-            520
+            599,
+            623
           ]
         },
         {
@@ -10577,8 +10054,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            588,
-            597
+            691,
+            700
           ]
         },
         {
@@ -10587,8 +10064,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            62,
-            395
+            67,
+            424
           ]
         },
         {
@@ -10597,8 +10074,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            459,
-            494
+            562,
+            597
           ]
         }
       ]
@@ -14374,8 +13851,8 @@
       "id": "f:app/src/lib/dispatch-store.ts",
       "path": "app/src/lib/dispatch-store.ts",
       "lang": "ts",
-      "hash": "blake3:baffdb5df9d94ed2c04a75d29bd2af3e247b1fefb08b56be5fc52b072e5d1f98",
-      "loc": 314,
+      "hash": "blake3:a5010f262c7fc79796bcd2339ccf00f4ca83c2bd1e66f6c5cb0fb142d7b85ec5",
+      "loc": 423,
       "symbols": [
         {
           "id": "s:app/src/lib/dispatch-store.ts#BoardStamp",
@@ -14383,8 +13860,58 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            152,
-            156
+            160,
+            164
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BriefLineWire",
+          "name": "BriefLineWire",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            346,
+            350
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BriefOutcomeWire",
+          "name": "BriefOutcomeWire",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            396,
+            409
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BriefProvenanceWire",
+          "name": "BriefProvenanceWire",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            341,
+            344
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BriefRowWire",
+          "name": "BriefRowWire",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            354,
+            363
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BriefWire",
+          "name": "BriefWire",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            365,
+            378
           ]
         },
         {
@@ -14393,8 +13920,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            189,
-            191
+            197,
+            199
           ]
         },
         {
@@ -14403,8 +13930,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            182,
-            187
+            190,
+            195
           ]
         },
         {
@@ -14413,8 +13940,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            98,
-            103
+            106,
+            111
           ]
         },
         {
@@ -14423,8 +13950,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            250,
-            264
+            258,
+            272
           ]
         },
         {
@@ -14433,8 +13960,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            219,
-            238
+            227,
+            246
           ]
         },
         {
@@ -14443,8 +13970,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            194,
-            211
+            202,
+            219
           ]
         },
         {
@@ -14453,8 +13980,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            163,
-            171
+            171,
+            179
           ]
         },
         {
@@ -14463,8 +13990,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            72,
-            85
+            80,
+            93
           ]
         },
         {
@@ -14473,8 +14000,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            123,
-            125
+            131,
+            133
           ]
         },
         {
@@ -14483,8 +14010,18 @@
           "kind": "type",
           "exported": true,
           "range": [
-            132,
-            136
+            140,
+            144
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#MissingBriefRowWire",
+          "name": "MissingBriefRowWire",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            381,
+            386
           ]
         },
         {
@@ -14493,8 +14030,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            88,
-            95
+            96,
+            103
           ]
         },
         {
@@ -14503,8 +14040,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            106,
-            110
+            114,
+            118
           ]
         },
         {
@@ -14513,8 +14050,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            112,
-            116
+            120,
+            124
           ]
         },
         {
@@ -14523,8 +14060,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            312,
-            314
+            421,
+            423
           ]
         },
         {
@@ -14533,8 +14070,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            281,
-            300
+            289,
+            308
           ]
         }
       ]
@@ -14742,8 +14279,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:3c5fe9cb8b0b8d94ba3431d033871f754a8d75549e78c819b39e8bb87ba432b9",
-      "loc": 240,
+      "hash": "blake3:630896ca84244e423ad0ee5ab349b5d2f6fc5a27b02bc980aa5c796711421588",
+      "loc": 444,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -14751,8 +14288,58 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            52,
-            63
+            55,
+            66
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#BriefLineView",
+          "name": "BriefLineView",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            212,
+            216
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+          "name": "BriefOutcomeView",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            230,
+            248
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#BriefPanel",
+          "name": "BriefPanel",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            256,
+            263
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#BriefProvenance",
+          "name": "BriefProvenance",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            206,
+            209
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#BriefRowView",
+          "name": "BriefRowView",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            219,
+            227
           ]
         },
         {
@@ -14761,8 +14348,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            141,
-            146
+            144,
+            149
           ]
         },
         {
@@ -14771,8 +14358,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            70,
-            130
+            73,
+            133
           ]
         },
         {
@@ -14781,8 +14368,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            38,
-            38
+            41,
+            41
           ]
         },
         {
@@ -14791,8 +14378,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            41,
-            43
+            44,
+            46
           ]
         },
         {
@@ -14801,8 +14388,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            153,
-            177
+            156,
+            180
           ]
         },
         {
@@ -14811,8 +14398,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            179,
-            184
+            383,
+            388
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#provenanceSuffix",
+          "name": "provenanceSuffix",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            266,
+            275
           ]
         },
         {
@@ -14821,8 +14418,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            47,
-            49
+            50,
+            52
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#refusalSentence",
+          "name": "refusalSentence",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            307,
+            325
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#renderBrief",
+          "name": "renderBrief",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            286,
+            304
           ]
         },
         {
@@ -14831,8 +14448,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            134,
-            136
+            137,
+            139
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+          "name": "selectBriefPanel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            333,
+            381
           ]
         },
         {
@@ -14841,8 +14468,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            192,
-            240
+            396,
+            444
           ]
         }
       ]
@@ -15831,8 +15458,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:f32230cc644d07b9b080f96d54d431f8cf81169a988e51fa2d2d15e8d6f27298",
-      "loc": 2620,
+      "hash": "blake3:082c29ee77f756761c44812b3a6b2696c83f52b2a548da91f9875da01c40dc06",
+      "loc": 2627,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -16722,17 +16349,87 @@
       "id": "f:app/test/detail-assignment.test.tsx",
       "path": "app/test/detail-assignment.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9be7304d6d6ebf2b2c30dcdbacc0a7dd364a216aa722de4863d41c1746801177",
-      "loc": 91,
+      "hash": "blake3:7f47de6db7e540170404fa1121e5b4039cf0a3690ab6bfd957d8f66b108b2ca7",
+      "loc": 260,
       "symbols": [
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#BOARD_ROADMAP",
+          "name": "BOARD_ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            104,
+            111
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#BRIEF",
+          "name": "BRIEF",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            173,
+            198
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#COMPONENT",
+          "name": "COMPONENT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            113,
+            128
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#HELD",
+          "name": "HELD",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            152,
+            171
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#NO_LANES",
+          "name": "NO_LANES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            150,
+            150
+          ]
+        },
         {
           "id": "s:app/test/detail-assignment.test.tsx#ROADMAP_SRC",
           "name": "ROADMAP_SRC",
           "kind": "const",
           "exported": false,
           "range": [
-            26,
-            26
+            28,
+            28
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#briefModel",
+          "name": "briefModel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            135,
+            148
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#card",
+          "name": "card",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            130,
+            132
           ]
         },
         {
@@ -16741,8 +16438,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            14,
-            14
+            16,
+            16
           ]
         },
         {
@@ -16751,8 +16448,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            28,
-            38
+            30,
+            40
+          ]
+        },
+        {
+          "id": "s:app/test/detail-assignment.test.tsx#renderBriefPanel",
+          "name": "renderBriefPanel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            200,
+            218
           ]
         },
         {
@@ -16761,8 +16468,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            40,
-            52
+            42,
+            54
           ]
         },
         {
@@ -16771,8 +16478,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            15,
-            15
+            17,
+            17
           ]
         }
       ]
@@ -18486,8 +18193,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:e1dd29798d1ce7d3469f2de2cf1fef6a17e9c8ff6cd392388bbf9736f2058f5f",
-      "loc": 806,
+      "hash": "blake3:0714e4c676f632d6e69ae3a651bf6020a528844bbd2dea64cab0d12bf42c17bc",
+      "loc": 808,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -19637,8 +19344,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:41a19b731d581a94171235d8d7639d2c65abe7912655e5091b87ea45113a7c2b",
-      "loc": 422,
+      "hash": "blake3:6df2bb572753ffa42fe463bf5a81091b19d279e8f8dd46799def8812180b4aa1",
+      "loc": 684,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -19646,8 +19353,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            60,
-            72
+            68,
+            80
           ]
         },
         {
@@ -19656,8 +19363,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            20,
-            20
+            28,
+            28
           ]
         },
         {
@@ -19666,8 +19373,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            11,
-            18
+            19,
+            26
           ]
         },
         {
@@ -19676,8 +19383,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            52,
-            58
+            60,
+            66
           ]
         },
         {
@@ -19686,8 +19393,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            50,
-            50
+            58,
+            58
           ]
         },
         {
@@ -19696,8 +19403,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            48,
-            48
+            56,
+            56
           ]
         },
         {
@@ -19706,8 +19413,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            42,
-            43
+            50,
+            51
           ]
         },
         {
@@ -19716,8 +19423,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            23,
-            24
+            31,
+            32
           ]
         },
         {
@@ -19726,8 +19433,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            28,
-            40
+            36,
+            48
           ]
         },
         {
@@ -19736,8 +19443,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            45,
-            46
+            53,
+            54
           ]
         }
       ]
@@ -24413,6 +24120,42 @@
       ]
     },
     {
+      "from": "f:app/src-tauri/src/dispatch/brief.rs",
+      "to": "f:app/src-tauri/src/dispatch/fixtures.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/brief.rs",
+      "to": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "kind": "import",
+      "symbols": [
+        "LaneScan",
+        "WorktreeEntry"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/brief.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/brief.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap",
+        "Path",
+        "PathBuf",
+        "fs"
+      ]
+    },
+    {
       "from": "f:app/src-tauri/src/dispatch/fixtures.rs",
       "to": "p:cargo:std",
       "kind": "import",
@@ -24490,6 +24233,11 @@
         "PathBuf",
         "fs"
       ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/mod.rs",
+      "to": "f:app/src-tauri/src/dispatch/brief.rs",
+      "kind": "import"
     },
     {
       "from": "f:app/src-tauri/src/dispatch/mod.rs",
@@ -25599,6 +25347,7 @@
       "to": "f:app/src/lib/board-model.ts",
       "kind": "import",
       "symbols": [
+        "DispatchReading",
         "selectBoard"
       ]
     },
@@ -25607,6 +25356,7 @@
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
       "symbols": [
+        "BriefOutcomeView",
         "TaskRef"
       ]
     },
@@ -25799,7 +25549,8 @@
       "to": "f:app/src/lib/board-model.ts",
       "kind": "import",
       "symbols": [
-        "AssignmentDisclosure"
+        "AssignmentDisclosure",
+        "DispatchReading"
       ]
     },
     {
@@ -25807,9 +25558,12 @@
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
       "symbols": [
+        "BriefOutcomeView",
+        "BriefPanel",
         "TaskRef",
         "criterionLines",
         "refLabel",
+        "selectBriefPanel",
         "selectTaskDetail"
       ]
     },
@@ -26425,9 +26179,12 @@
       "symbols": [
         "AssignmentDisclosure",
         "BoardCard",
+        "DispatchReading",
+        "Disposition",
         "StatusVisual",
         "assignmentByFile",
         "issuesByFile",
+        "selectDispositions",
         "statusVisual"
       ]
     },
@@ -27041,6 +26798,22 @@
       "kind": "import",
       "symbols": [
         "TaskDetailPanel"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DispatchReading"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-assignment.test.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "BriefOutcomeView"
       ]
     },
     {
@@ -28723,12 +28496,22 @@
     },
     {
       "from": "f:app/test/select-task-detail.test.ts",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DispatchReading"
+      ]
+    },
+    {
+      "from": "f:app/test/select-task-detail.test.ts",
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
       "symbols": [
+        "BriefOutcomeView",
         "TaskRef",
         "cardRef",
         "refLabel",
+        "selectBriefPanel",
         "selectTaskDetail"
       ]
     },
@@ -32226,8 +32009,20 @@
     },
     {
       "from": "s:app/src/components/board/Board.tsx#Board",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/Board.tsx#Board",
       "to": "s:app/src/lib/board-model.ts#selectBoard",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/Board.tsx#Board",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -32351,9 +32146,27 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#BriefBlock",
+      "to": "s:app/src/lib/task-detail.ts#BriefPanel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
       "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -32371,6 +32184,12 @@
     {
       "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
       "to": "s:app/src/lib/task-detail.ts#refLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#selectBriefPanel",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -35429,6 +35248,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/dispatch-store.ts#BriefLineWire",
+      "to": "s:app/src/lib/dispatch-store.ts#BriefProvenanceWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#BriefOutcomeWire",
+      "to": "s:app/src/lib/dispatch-store.ts#BriefWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#BriefOutcomeWire",
+      "to": "s:app/src/lib/dispatch-store.ts#MissingBriefRowWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#BriefRowWire",
+      "to": "s:app/src/lib/dispatch-store.ts#BriefLineWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#BriefWire",
+      "to": "s:app/src/lib/dispatch-store.ts#BriefRowWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/dispatch-store.ts#DISPATCH_STATES",
       "to": "s:app/src/lib/dispatch-store.ts#DispatchState",
       "kind": "type_ref",
@@ -35669,6 +35518,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/task-detail.ts#BriefLineView",
+      "to": "s:app/src/lib/task-detail.ts#BriefProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "to": "s:app/src/lib/task-detail.ts#BriefRowView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#BriefPanel",
+      "to": "s:app/src/lib/board-model.ts#Disposition",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#BriefRowView",
+      "to": "s:app/src/lib/task-detail.ts#BriefLineView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/task-detail.ts#TaskDetail",
       "to": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
       "kind": "type_ref",
@@ -35711,9 +35584,81 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/task-detail.ts#provenanceSuffix",
+      "to": "s:app/src/lib/task-detail.ts#BriefProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/task-detail.ts#refLabel",
       "to": "s:app/src/lib/task-detail.ts#TaskRef",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#refusalSentence",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#renderBrief",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#renderBrief",
+      "to": "s:app/src/lib/task-detail.ts#provenanceSuffix",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/board-model.ts#selectDispositions",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#BriefPanel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#findTask",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#refusalSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#renderBrief",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -36674,6 +36619,42 @@
       "from": "s:app/test/cross-file-rows.test.tsx#strip",
       "to": "s:app/test/cross-file-rows.test.tsx#q",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#BRIEF",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#HELD",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#NO_LANES",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#briefModel",
+      "to": "s:app/test/detail-assignment.test.tsx#card",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#renderBriefPanel",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/detail-assignment.test.tsx#renderBriefPanel",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -39547,10 +39528,10 @@
     }
   ],
   "stats": {
-    "files": 198,
-    "symbols": 2095,
-    "edges": 2293,
+    "files": 199,
+    "symbols": 2065,
+    "edges": 2334,
     "truncated_symbols": true,
-    "truncated_files": 2
+    "truncated_files": 4
   }
 }

@@ -1595,7 +1595,7 @@ fn row_deliverable(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, Missi
         // **THE SECOND RESIDUAL** (`T-089-s9`), re-derived at this ref
         // rather than taken from the card that named it.
         Some(
-            "row 11's three named sources — TASK-FORMAT's ceremony table, lane-protocol.md and the role file — all USE the word `checkpoint` and none of them DEFINES one or says how to make it; the size-S row tells an executor to checkpoint and routes only to lane-protocol rules 4 and 6, neither of which is a definition. The definition lives in method/docs-protocol.md and method/roles/integrator.md, which row 11's source column does not name. Filed as T-112-s3."
+            "row 11's three named sources — TASK-FORMAT's ceremony table, lane-protocol.md and the role file — all USE the word `checkpoint` and none of them DEFINES one or says how to make it; the size-S row tells an executor to checkpoint and routes only to lane-protocol rules 4 and 6, neither of which is a definition. The definition lives in method/docs-protocol.md and method/roles/integrator.md, which row 11's source column does not name. Filed as T-112-s2."
                 .to_string(),
         ),
     ))
@@ -2333,6 +2333,20 @@ mod tests {
         );
         // A card with neither has no boundary — and `None` is not zero.
         assert_eq!(notes_boundary("---\nid: T-4\n---\n\nbody\n"), None);
+        // BOTH headings, notes first: the boundary is the FIRST, or the
+        // bounded read runs straight through the reasoning it exists to
+        // stop at — V-M2 (.find -> .filter(..).last()) survived every
+        // single-heading fixture above.
+        assert_eq!(
+            notes_boundary("---\nid: T-5\n---\n\n## Implementation notes\nx\n\n## Verdicts\ny\n"),
+            Some(5)
+        );
+        // And the other order, so the assertion is about FIRST and not
+        // about which heading it is.
+        assert_eq!(
+            notes_boundary("---\nid: T-6\n---\n\n## Verdicts\ny\n\n## Implementation notes\nx\n"),
+            Some(5)
+        );
     }
 
     #[test]
@@ -2679,6 +2693,11 @@ mod tests {
         let eleven = brief.rows.iter().find(|r| r.number == 11).expect("row 11");
         assert!(nine.residual.as_ref().is_some_and(|r| r.contains("untwinned")));
         assert!(eleven.residual.as_ref().is_some_and(|r| r.contains("checkpoint")));
+        // The HOLDER each residual routes to is part of the claim: both
+        // are T-112-s2's, and V-M7 at verification proved the citation
+        // was unpinned — a wrong card id survived 28 bodies.
+        assert!(nine.residual.as_ref().is_some_and(|r| r.contains("T-112-s2")));
+        assert!(eleven.residual.as_ref().is_some_and(|r| r.contains("T-112-s2")));
         // And a row with nothing open carries none — the field is not a
         // decoration every row wears.
         assert!(brief
