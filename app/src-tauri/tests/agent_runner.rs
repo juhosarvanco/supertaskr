@@ -4902,8 +4902,16 @@ fn a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis() {
 /// drifted from what genesis used to send.
 ///
 /// The registry half is measured the same way: the entry a packless
-/// genesis writes still carries EXACTLY the nine keys
-/// `method/runtime/sessions-schema.md` names, with no `skills` key at all.
+/// genesis writes still carries EXACTLY the nine keys it carried before
+/// T-167, with no `skills` key at all. **Since T-167-s1 that document
+/// names TEN** and marks `skills` omitted when no packs were loaded, so
+/// the nine below are the schema's set minus that one — deliberately
+/// still transcribed HERE, because this body's subject is what genesis
+/// used to write and a list derived from today's document would move with
+/// it. The document-versus-writer agreement is
+/// `the_written_registry_matches_the_sessions_schema_field_for_field`'s,
+/// one crate in; this is a frozen before-picture, and the two want
+/// opposite treatment.
 #[test]
 fn a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before() {
     let h = harness("t167nopacks", Options::default());
@@ -4929,7 +4937,7 @@ docs/ path resolves inside the project directory. Turns are plain text. Method v
     let lines = sessions::read_transcript(&h.project);
     assert_eq!(lines[0].text, expected);
 
-    // THE REGISTRY FILE: nine keys, the schema's own set, and no tenth.
+    // THE REGISTRY FILE: nine keys, the pre-T-167 set, and no tenth.
     let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("sessions.json");
     let value: serde_json::Value = serde_json::from_str(&raw).expect("parses");
     let session = value["sessions"][0].as_object().expect("object");

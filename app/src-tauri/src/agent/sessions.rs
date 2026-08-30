@@ -7,7 +7,15 @@
 //! fact about the project, which is why both may be overwritten,
 //! renamed-aside on corruption, and killed mid-write without ceremony.
 //!
-//! Field-for-field per `method/runtime/sessions-schema.md`.
+//! Field-for-field per `method/runtime/sessions-schema.md`, and that
+//! sentence is MECHANICAL rather than aspirational since T-167-s1:
+//! [`tests::the_written_registry_matches_the_sessions_schema_field_for_field`]
+//! parses that document's own JSON example off disk and compares it with a
+//! written entry BOTH WAYS — nothing the schema names may be missing, and
+//! nothing written here may be unnamed there. It used to walk one
+//! direction against a transcribed list of nine keys, which is how a tenth
+//! key went unnoticed: a transcription is a second implementation of the
+//! field set, and the two disagree in silence.
 
 use std::fs;
 use std::io::{self, Read, Seek, SeekFrom, Write};
@@ -58,17 +66,23 @@ pub struct SessionEntry {
     ///
     /// **IT IS SKIPPED WHEN EMPTY, AND THAT IS LOAD-BEARING TWICE.** A
     /// genesis with no packs writes the same nine keys it always wrote, so
-    /// the card's byte-identity criterion holds at the FILE and not only
-    /// in the prompt, and
-    /// [`tests::the_written_registry_matches_the_sessions_schema_field_for_field`]
-    /// stays green with its assertions untouched.
+    /// T-167's byte-identity criterion holds at the FILE and not only in
+    /// the prompt, and an entry written before this field existed reads
+    /// back unchanged. The schema document states the rule in its own
+    /// words, and the pin now checks the packless entry against it rather
+    /// than against a count.
     ///
-    /// **CONFLICT, RECORDED RATHER THAN PAPERED OVER** (T-167's notes):
-    /// `method/runtime/sessions-schema.md` names nine keys and this module
-    /// says "field-for-field per" it, so a populated `skills` is a TENTH
-    /// key that document does not yet name. The schema lives in `method/`,
-    /// outside this card's fence — routed as a suggestion, not widened
-    /// here.
+    /// **THE CONFLICT THIS FIELD CARRIED IS CLOSED (T-167-s1), AND IS KEPT
+    /// HERE BECAUSE THE MECHANISM THAT HID IT IS THE LESSON.** T-167
+    /// recorded it rather than papering over it: the schema named nine
+    /// keys, this module claimed "field-for-field per" it, and a populated
+    /// `skills` was a tenth the document did not name. It could not RED —
+    /// the field is skipped when empty, so the only fixture the pin had
+    /// wrote nine keys, and the pin walked the schema's side only. **A
+    /// disagreement that no fixture can reach is not a weak test, it is an
+    /// absent one.** The document now names the key; the pin derives its
+    /// key set FROM the document and checks both directions over a fixture
+    /// that loads a pack.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub skills: Vec<super::skills::SkillPack>,
 }
@@ -648,7 +662,9 @@ pub fn iso8601_utc(epoch_ms: u64) -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::super::skills::SkillPack;
     use super::*;
+    use std::collections::BTreeSet;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     struct TempTree(PathBuf);
@@ -685,46 +701,191 @@ mod tests {
             tasks: vec![],
             roles: vec!["planner".into()],
             status: "running".into(),
-            // T-167: the ordinary case is no packs, which is what keeps
-            // the schema pin below at nine keys.
+            // T-167: the ordinary case is no packs. The schema pin below
+            // uses this fixture for the packless arm and a packed one
+            // beside it — one fixture alone cannot see both.
             skills: vec![],
         }
     }
 
-    /// The registry file is byte-checkable against the schema's field
-    /// set: every documented key present, spelled as the schema spells it.
+    /// **THE SCHEMA DOCUMENT ITSELF, COMPILED IN** — the same mechanism
+    /// [`super::super::kit`] uses for every method file it pins, and for
+    /// the same two reasons: `include_str!` recompiles when the file
+    /// changes, so this can never read a stale copy, and it needs no
+    /// working directory, so the pin answers the same in a lane, a drill
+    /// worktree and CI.
+    ///
+    /// **IT IS DELIBERATELY NOT A RUNTIME CLIMB TO THE REPOSITORY ROOT.**
+    /// The first pass here formed the path from `CARGO_MANIFEST_DIR` and
+    /// two `parent()` hops, and `npm run lint:docs` refused it by name —
+    /// a file that holds the repository root can reach `docs/`, so the
+    /// DOCS GATE requires every one to be argued in `ROOT_ANCHOR_LEDGER`.
+    /// A fixed relative path resolved by the compiler holds no root and
+    /// can reach exactly one file, so the question does not arise.
+    const SCHEMA_DOC: &str = include_str!("../../../../method/runtime/sessions-schema.md");
+
+    /// One fenced ```json block out of a markdown file, parsed.
+    fn json_example(doc: &str, whose: &str) -> serde_json::Value {
+        const FENCE: &str = "```json";
+        let start = doc
+            .find(FENCE)
+            .unwrap_or_else(|| panic!("{whose} must carry a {FENCE} example"))
+            + FENCE.len();
+        let rest = &doc[start..];
+        let end = rest
+            .find("```")
+            .unwrap_or_else(|| panic!("{whose}'s json example is never closed"));
+        serde_json::from_str(&rest[..end])
+            .unwrap_or_else(|err| panic!("{whose}'s json example must parse: {err}"))
+    }
+
+    /// **WHAT THE SCHEMA NAMES, READ OFF THE SCHEMA (T-167-s1).**
+    ///
+    /// Derived from `method/runtime/sessions-schema.md`'s own JSON example
+    /// rather than transcribed into this file, and that is the whole
+    /// repair. A transcribed list is a SECOND IMPLEMENTATION of the field
+    /// set, and the two disagree silently: this pin held a hard-coded nine
+    /// keys while a pack-loading genesis wrote ten, the extra key is
+    /// `skip_serializing_if`, and nothing in the tree could ever say so.
+    /// Now the document is the one authority and this body is a reader of
+    /// it, so the NEXT key added without the document reds here by name.
+    ///
+    /// **THE EXPECTED SIDE IS ASSERTED NON-EMPTY BEFORE ANYTHING IS
+    /// COMPARED AGAINST IT** (CONVENTIONS: a comparison is evidence only
+    /// once its expected side is). A renamed fence or a reflow that
+    /// emptied this set would make every containment assertion below
+    /// vacuously true — which is this pin's own failure mode, one level up.
+    fn schema_entry_keys() -> (BTreeSet<String>, BTreeSet<String>) {
+        let example = json_example(SCHEMA_DOC, "method/runtime/sessions-schema.md");
+        let entry = example["sessions"][0]
+            .as_object()
+            .expect("the schema's example carries one session entry");
+        let keys: BTreeSet<String> = entry.keys().cloned().collect();
+        assert!(
+            keys.contains("id") && keys.contains("status"),
+            "the parsed block must be the session ENTRY, not some other object: {keys:?}"
+        );
+        assert!(
+            keys.contains("skills"),
+            "method/runtime/sessions-schema.md must NAME the tenth key a pack-loading \
+             genesis writes (T-167-s1): {keys:?}"
+        );
+        // …and the pack object's own keys, one level down, for the same
+        // reason: a field added to `SkillPack` is as silent as a field
+        // added to `SessionEntry` was.
+        let pack = entry["skills"][0]
+            .as_object()
+            .expect("the schema's `skills` example carries one pack");
+        let pack_keys: BTreeSet<String> = pack.keys().cloned().collect();
+        assert!(pack_keys.contains("hash"), "the pack example is a pack: {pack_keys:?}");
+        (keys, pack_keys)
+    }
+
+    /// ONE WRITTEN OBJECT AGAINST ONE DOCUMENTED KEY SET, BOTH DIRECTIONS
+    /// AT ONCE: what the schema names and the writer omitted, and what the
+    /// writer wrote and the schema never named. The second half is the one
+    /// this pin did not have.
+    fn against_the_schema(
+        written: &serde_json::Value,
+        schema: &BTreeSet<String>,
+    ) -> (Vec<String>, Vec<String>) {
+        let keys: BTreeSet<String> =
+            written.as_object().expect("an object").keys().cloned().collect();
+        (
+            schema.difference(&keys).cloned().collect(),
+            keys.difference(schema).cloned().collect(),
+        )
+    }
+
+    /// A LOADED PACK, constructed by hand — the fixture that makes the
+    /// tenth key visible at all. `skills` is skipped when empty, so a
+    /// packless fixture exercises the subset arm over nine keys and can
+    /// never see the tenth; that is exactly how the disagreement stayed
+    /// silent.
+    fn pack() -> SkillPack {
+        SkillPack {
+            dir: "brand".into(),
+            name: "brand".into(),
+            description: "House voice and naming rules.".into(),
+            triggers: "Use when naming anything user-facing.".into(),
+            rel_path: ".claude/skills/brand/SKILL.md".into(),
+            hash: format!("sha256:{}", "a".repeat(64)),
+        }
+    }
+
+    /// The registry file is byte-checkable against the schema's field set:
+    /// every documented key present, spelled as the schema spells it —
+    /// **and no key the schema does not name**, which is the direction
+    /// T-167-s1 added.
+    ///
+    /// THE PACKED FIXTURE IS THE POINT. A pack-loading genesis writes the
+    /// tenth key, and before this body existed the only fixture here had
+    /// no packs — so the "no extra keys" arm was a count of nine that
+    /// nothing could ever push past.
     #[test]
     fn the_written_registry_matches_the_sessions_schema_field_for_field() {
+        let (schema, schema_pack) = schema_entry_keys();
         let t = TempTree::new("schema");
-        upsert(&t.0, entry("S1")).expect("upsert");
 
+        // (1) A PACK-LOADING GENESIS: the entry and the document agree
+        // exactly, in both directions.
+        upsert(&t.0, SessionEntry { skills: vec![pack()], ..entry("S1") }).expect("upsert packed");
         let raw = fs::read_to_string(sessions_path(&t.0)).expect("sessions.json");
         let value: serde_json::Value = serde_json::from_str(&raw).expect("parses");
         let session = &value["sessions"][0];
-        for key in [
-            "id",
-            "agent",
-            "model",
-            "native_session_id",
-            "created",
-            "turns",
-            "tasks",
-            "roles",
-            "status",
-        ] {
-            assert!(
-                session.get(key).is_some(),
-                "method/runtime/sessions-schema.md names `{key}`; the written entry lacks it"
-            );
-        }
+        let (missing, extra) = against_the_schema(session, &schema);
+        assert!(
+            missing.is_empty(),
+            "method/runtime/sessions-schema.md names {missing:?}; the written entry lacks them"
+        );
+        assert!(
+            extra.is_empty(),
+            "the entry writes {extra:?}, which method/runtime/sessions-schema.md does not name - \
+             add the key to the document (T-167-s1) rather than to this list"
+        );
+        // …and one level down, the pack object itself.
+        let (pack_missing, pack_extra) = against_the_schema(&session["skills"][0], &schema_pack);
+        assert!(pack_missing.is_empty(), "the schema names pack keys {pack_missing:?}; unwritten");
+        assert!(pack_extra.is_empty(), "a pack writes {pack_extra:?}, undocumented");
+        assert_eq!(session["skills"][0]["relPath"], ".claude/skills/brand/SKILL.md");
+
+        // (2) THE PACKLESS GENESIS, unchanged: the same nine keys it has
+        // always written, and the tenth ABSENT rather than empty. This is
+        // T-167's byte-identity behaviour, now stated as the schema's own
+        // skip-when-empty rule instead of as a bare count.
+        upsert(&t.0, entry("S1")).expect("upsert packless");
+        let raw = fs::read_to_string(sessions_path(&t.0)).expect("sessions.json");
+        let value: serde_json::Value = serde_json::from_str(&raw).expect("parses");
+        let session = &value["sessions"][0];
+        let (missing, extra) = against_the_schema(session, &schema);
+        assert_eq!(
+            missing,
+            vec!["skills".to_string()],
+            "a packless entry omits `skills` and NOTHING else the schema names"
+        );
+        assert!(extra.is_empty(), "unexpected extra keys: {extra:?}");
+
         assert_eq!(session["id"], "S1");
         assert_eq!(session["agent"], "claude");
         assert_eq!(session["roles"], serde_json::json!(["planner"]));
         assert_eq!(session["tasks"], serde_json::json!([]));
         assert_eq!(session["turns"], 0);
-        // No key the schema does not name (a runtime file is small on purpose).
-        let keys: Vec<&String> = session.as_object().expect("object").keys().collect();
-        assert_eq!(keys.len(), 9, "unexpected extra keys: {keys:?}");
+
+        // (3) THE POSITIVE CONTROL (CONVENTIONS: a negative assertion needs
+        // one). The two arms above assert that nothing is missing and
+        // nothing is extra; a comparison that CANNOT report an extra key
+        // satisfies them both forever. So an entry carrying a key the
+        // schema does not name is put through the SAME function, and it is
+        // the same shape the silent one had: an undocumented field beside
+        // nine documented ones.
+        let mut planted = session.as_object().expect("object").clone();
+        planted.insert("sediment_score".into(), serde_json::json!(7));
+        let (_, extra) = against_the_schema(&serde_json::Value::Object(planted), &schema);
+        assert_eq!(
+            extra,
+            vec!["sediment_score".to_string()],
+            "the subset arm must be able to FAIL, or the arms above are decoration"
+        );
     }
 
     #[test]
