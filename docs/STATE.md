@@ -1,18 +1,18 @@
 # State
 
-Updated: 2026-08-30 at T-154-s2's close. THE GUARD HAS ITS SECOND
-ARM: a lane-less seat's write into a live lane's fence is refused
-mechanically (@human's ruling, now code), limits 6 and 7 declared in
-the hook, and this very integration was the first one shaped by it
-(worktree removed BEFORE the correction edits — hook limit 6's own
-route). e2e WHOLE at 332/332 — the session-economics live-lane reds
-cleared with the card, as the class predicted. T-112 executor OUT
-(tip 96e3886), blind verifier RUNNING. **GRAPH KLAXON at T-112's
-merge: fresh index forecast 1,038,884/1,040,000 — 1,116 left,
-truncated_files 2→4, docs_watch.rs 55→0 symbols. T-140-s4's ruling
-(@human) is now urgent.** e2e-seat train unblocked (tools/e2e freed):
-T-163-s4 p1 first. Current record:
-docs/checkpoints/2026-08-30-T-154-s2-the-guard-grows-its-second-arm.md.
+Updated: 2026-08-30 after THE GENESIS WALK — @human walked
+/Users/ujju/Projects/first-walk into existence (7/7 banked, 3 cards,
+scaffold verified whole on disk, planner on claude-opus-5[1m]).
+Milestone 3's closing word is @human's; the walk itself is DONE.
+Findings filed: T-171 (genesis has no ending — the cold-start test
+has no operational owner; run by hand this once), T-172 (two chrome
+rulings), T-173 (free write-up intake, planner drafts the answers —
+the ruled F-01 direction). **T-025-s4 UNHELD.** T-112 blind verifier
+RUNNING (tip 96e3886); its merge carries the GRAPH KLAXON (forecast
+1,038,884/1,040,000 — 1,116 left, truncated_files 2→4, docs_watch.rs
+55→0; T-140-s4's @human ruling now urgent). e2e whole at 332/332;
+e2e-seat train next (T-163-s4 p1). Current record:
+docs/checkpoints/2026-08-30-the-genesis-walk.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
