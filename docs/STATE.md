@@ -1,15 +1,14 @@
 # State
 
-Updated: 2026-08-30 at standing sitting #2's checkpoint — the
-suggested column went 22 -> 0 (band CLEARED): twelve preflight-green
-promotions, two absorptions into the T-143-s1 carrier, two archived
-discharges, seven parks with checkable conditions, and ONE new
-finding: the C-11 ruling's LAST LIVE FALSE COPY sits in CONVENTIONS'
-SHIPPED PARTITION bullet ("carries two slugs") — T-163-s3, promoted
-p6, owns it. The graph alarm stands (99.3%, 7,395 left; T-167-s2 now
-F-06 p1 as the tripwire; the real fix chain T-135 Half B ->
-T-140-s1). Current record:
-docs/checkpoints/2026-08-30-standing-triage-2.md.
+Updated: 2026-08-30 at the T-167-s2 checkpoint — THE GRAPH HEADROOM
+ALARM IS LIVE and fired on its first breath (6,865 left under the
+14,914 tripwire; every gate run now shouts it until T-140-s1's
+rollup lands — fix chain T-135 Half B -> T-140-s1). T-160-s4 landed
+beside it: T-059's fence defect fixed, proven red-before/green-after
+in a lane-free clone, the sibling-lane finding re-checked gone at
+this checkpoint. T-025-s6 is VERIFYING under a blind verifier seat
+(the slug-fence ceremony row — its T-025-s7 carries the policy
+question). Current record: docs/checkpoints/2026-08-30-T-167-s2.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will

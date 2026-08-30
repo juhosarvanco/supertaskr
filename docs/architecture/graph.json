@@ -862,8 +862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/check.rs",
       "path": "app/src-tauri/crates/nputer-index/src/check.rs",
       "lang": "rust",
-      "hash": "blake3:b8ea7e444411f0fae4b504f5aaba756980f1826b18f37f2f4f4c7d7ab088d823",
-      "loc": 745,
+      "hash": "blake3:e5b137306149a459624fe7ef0ebccc7641d01a0cacd90abb45a5535a28dcfba6",
+      "loc": 972,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#CheckReport",
@@ -896,13 +896,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#WARN_HEADROOM_BYTES",
+          "name": "WARN_HEADROOM_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            354,
+            354
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#budget_line",
           "name": "budget_line",
           "kind": "fn",
           "exported": false,
           "range": [
-            230,
-            249
+            235,
+            254
           ]
         },
         {
@@ -921,8 +931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            392,
-            403
+            503,
+            514
           ]
         },
         {
@@ -931,8 +941,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            271,
-            299
+            276,
+            304
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#headroom_alarm",
+          "name": "headroom_alarm",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            371,
+            410
           ]
         },
         {
@@ -951,8 +971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            406,
-            412
+            517,
+            523
           ]
         },
         {
@@ -962,7 +982,7 @@
           "exported": true,
           "range": [
             156,
-            215
+            220
           ]
         },
         {
@@ -971,8 +991,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            301,
-            341
+            412,
+            452
           ]
         },
         {
@@ -981,8 +1001,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            343,
-            390
+            454,
+            501
           ]
         },
         {
@@ -991,8 +1011,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            415,
-            745
+            526,
+            972
           ]
         }
       ]
@@ -39230,7 +39250,7 @@
   ],
   "stats": {
     "files": 190,
-    "symbols": 2195,
+    "symbols": 2197,
     "edges": 2117
   }
 }
