@@ -44,6 +44,25 @@ FIELD, and the prose block is compared rather than trusted"*:
     - Expected: ["C-08", "C-09", "C-17", "C-18"]
     + Received: ["C-08", "C-09", "C-11", "C-17", "C-18"]
 
+**AND IT IS WORTH THREE OF THE FIVE E2E REDS, NOT ONE.** The full lane
+at `cec6cde` — `NPUTER_E2E_PORT=14741 npm test` from tools/e2e/, exit 1,
+**5 failed / 315 passed** — also reds `session-economics.spec.ts`'s
+*"the recommended seat is a function of the CARD …"* and *"the advisory
+line is NOT a contract row …"*, both of which assert `exit 0` from
+`brief.mjs --task T-157`. That command's FOUND list carries THREE items
+and TWO of them are this staleness, printed by the assembler itself:
+
+    the slug map's two copies disagree — app-board: field says
+      C-08, C-09, C-17, C-18 and the prose block says … C-11 …
+    the slug map's two copies disagree — app-shell: field says
+      C-05, C-10, C-16 and the prose block says … C-11 …
+
+(The third, `fences are not disjoint: T-162 tools/e2e against T-157
+tools/e2e`, is `T-143-s1`'s already-filed subject and is untouched by
+this repair — so those two bodies stay red until THAT is settled, and
+this repair is still what removes two thirds of what the assembler
+cannot settle.)
+
 The repair is mechanical: drop `C-11` from both rows, and repair the
 two-slug sentence and the surrounding paragraph, which argue their case
 from the shared component that no longer exists. Whoever takes it should

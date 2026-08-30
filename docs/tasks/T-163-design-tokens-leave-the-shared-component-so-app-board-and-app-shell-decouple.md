@@ -266,6 +266,66 @@ a throwaway vitest probe in this lane against
 deleted before the commit. So there is no status regression to route;
 the membership change is the ruling working as intended.
 
+### The gates, every exit read from `$?` on an UNPIPED command
+
+Run from a script file rather than pasted, per the persisted-cwd rule.
+Branch tip `cec6cde` unless noted.
+
+| gate | cwd | exit |
+|---|---|---|
+| `npx vitest run` (parser suite) | lib/parser/ | **1** — 2 failed / 313 passed, both `test/fence.test.ts`, `T-163-s3` |
+| `npx tsc --noEmit` | lib/parser/ | 0 |
+| `npm run build` | app/ | 0 |
+| `npm test` (app suite) | app/ | 0 — **1015 passed / 47 files** |
+| `npm run lint:tokens` | tools/e2e/ | 0 |
+| `npm run lint:docs` (DOCS GATE, named form) | tools/e2e/ | 0 |
+| `docs-gate.mjs <diff paths>` (DOCS GATE, diff half) | repo root | **1** — FIRES, and it is the honest answer |
+| `cargo test` | app/src-tauri/ | 0 |
+| `NPUTER_E2E_PORT=14741 npm test` (e2e lane) | tools/e2e/ | **1** — 5 failed / 315 passed |
+| `index --check --root ../..` | app/src-tauri/ | **1** — STALE, regen owed at the checkpoint |
+
+The port was read to ZERO ROWS with
+`lsof -nP -iTCP:14741 -sTCP:LISTEN` immediately before binding, and
+1420 was read once, with the one permitted command, and never probed.
+
+**THE DOCS GATE FIRES AND OWES FOUR SUITES**, all four of which were
+run: `cargo test from app/src-tauri/`, `npm test from app/`, `npm test
+from tools/e2e/`, `npx vitest run from lib/parser/`. It also reports
+every live card's frontmatter parsing with a legal status, and the
+governing-document budgets holding. **The RANGE RULE's executor form
+returns exit 1 for merge-tree** — `CONFLICT (content)` in exactly one
+file, this card, on the `status:` line: main carries the dispatch stamp
+`building` (`8e6b18b`, which post-dates the checkpoint this lane was cut
+from) and the lane carries its own stamp. That is the conflict EVERY
+lane produces by construction and the integrator resolves by taking the
+lane's; `builder:`/`built_by:` were set to match main so nothing else in
+the frontmatter conflicts. The path list was taken from the tree
+merge-tree wrote anyway, and the gate ran on it.
+
+**THE E2E LANE's FIVE, AND TWO OF THEM ARE NOT NEW.**
+`session-economics.spec.ts` bodies *"the recommended seat is a function
+of the CARD …"* and *"the advisory line is NOT a contract row …"* both
+assert `exit 0` from `brief.mjs --task T-157`, whose honest answer here
+is FOUND. Its list has THREE items and only two are this lane's:
+
+    fences are not disjoint: T-162 tools/e2e against T-157 tools/e2e
+      — the same entry (lane-protocol rule five).
+    the slug map's two copies disagree — app-board: field says
+      C-08, C-09, C-17, C-18 and the prose block says … C-11 …
+    the slug map's two copies disagree — app-shell: field says
+      C-05, C-10, C-16 and the prose block says … C-11 …
+
+The first names neither a slug nor C-11 — it is two cards' `touches:`
+lines, neither of which this diff touches — so it stands at the base
+too, and one item alone fails `toBe(0)`. **These two bodies were
+therefore red before this lane and are `T-143-s1`'s already-filed
+subject, in as many words: *"Two session-economics bodies red for every
+lane that holds tools/e2e, because they assert exit 0 from a command
+whose honest answer is FOUND."* This lane neither caused nor cleared
+them.** The other two items ARE this lane's, and `T-163-s1`'s repair
+clears both — which makes that card worth three of the five e2e reds
+rather than one.
+
 ### Why this card is stamped `verifying` and not `done`
 
 The ceremony table's row for this card (size S, diff outside shipped

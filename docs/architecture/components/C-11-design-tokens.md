@@ -25,8 +25,12 @@ PATH as well as a slug, so `touches: [app/src/styles]` (or
 spelling every reader already expands. This field used to read
 `[app-shell, app-board]`, which made C-11 the ONLY component two slugs
 expanded through, and that one sharing made every `app-shell` card's
-fence overlap every `app-board` card's — nineteen planned cards flipped
-with T-112 through a stylesheet, against ONE direct sharer. **THE
+fence overlap every `app-board` card's through a stylesheet. **NO
+FIGURE IS RESTATED HERE**: the before/after count is derived and stamped
+at its own ref by the `CORRECTION 2026-08-30` on
+docs/tasks/T-112-a-card-hands-you-its-brief.md, which names the sweep
+that produced it — a number copied into a second file is the drift this
+registry's own fence rules exist to prevent. **THE
 NEVER-FENCED SLUG WAS THE OTHER SPELLING OFFERED AND IT WAS DECLINED**:
 a slug that exists is a slug a card may declare and the expander will
 expand, so "never-fenced" would have been a promise kept by nobody,
