@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
