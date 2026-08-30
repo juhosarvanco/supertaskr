@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 1
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [docs/research, docs/rooms]
 suggested_by: "@human ruling (2026-08-30, loop-customization sitting): before any UI visual design work, decide the FORM of the customization UX — config system or in-app setup area — well designed and thought from ground up"
 builder: claude-opus-5@subagent
 verifier:
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: nputer-4e@integration-seat
 review:
 ---
 
