@@ -129,3 +129,108 @@ landing — warn 137,928, fail 165,513 — with the 48 KB target still
 standing as the aim for the day T-092/T-093's classes retire their
 kept spans. Measured reason recorded; the mechanism, not the
 adjective, is the bar.
+
+## Addendum 4 (2026-08-30, at T-162's re-landing): ROADMAP and CONVENTIONS re-land, and the formula's own arithmetic is stated
+
+@human's ruling at the 2026-08-30 rulings sitting approved a full
+re-landing pass over raise-the-lines-only and keep-absorbing. Two
+documents are re-landed on their own terms per §Budgets; STATE's and
+ARCHITECTURE's landings are untouched.
+
+    document             landed     warn      fail    target   note
+    docs/ROADMAP.md       9,801    12,252    14,702   24,576   under
+    docs/CONVENTIONS.md 131,514   164,393   197,271   49,152   OVER
+
+Derivation, the same one §Budgets legislates and the same rounding the
+2026-08-27 and 2026-08-29 landings used: `wc -c` at the re-landing
+commit, `warn = ceil(landed × 1.25)`, `fail = ceil(landed × 1.5)`.
+ROADMAP measured at `c0b865b` (`git cat-file -s c0b865b:docs/ROADMAP.md`
+= 9801); CONVENTIONS at `5b85715`
+(`git cat-file -s 5b85715:docs/CONVENTIONS.md` = 131514). The table's
+home is `DOC_BUDGETS` in tools/e2e/scripts/docs-scan.mjs; the gate
+enforces it from there and the health bands read the headroom under
+`warn`. Both docs-headroom bands read INSIDE after the landing —
+`npm run health` from tools/e2e reports 7 inside, 0 drifting, 0
+BREACHED (it still exits 3 while four unrelated bands await keepers,
+T-156-s1/s2, which is by design and not this card's).
+
+**WHAT THE COMPACTION MOVED.** ROADMAP 10,315 → 9,801 (−514, −5.0%):
+three days of per-merge chronicle back to the checkpoint records that
+already hold it, the method version stopped being quoted where
+CONVENTIONS' first-gotcha stamp is the keeper, F-03's second copy of the
+real-model gate replaced by a pointer to milestone 3 which states it
+once, and the milestone-4 tally replaced by the derivation the same
+paragraph already ordered. CONVENTIONS 134,167 → 131,514 (−2,653,
+−2.0%): the per-release method changelog to T-159's card and checkpoint,
+the POISON DRILL bullet's transcribed drill measurements to T-013,
+T-092, T-130-s1, T-145-s3, T-153-s5 and T-111-s10, the xargs BSD/GNU
+narrative to T-153-s6, the token-lint replaced-row story to T-058 and
+T-080, and T-090's retraction message to T-090. Every rule, tell,
+remedy, hazard and poison-shape ordinal is whole; the RANGE RULE bullet
+is untouched, because range-rule.mjs parses it sentence by sentence and
+addendum 1's ruling on it stands.
+
+**AND THE PASS FOUND ONE STALE SENTENCE, CORRECTED IN PLACE PER §Scope.**
+CONVENTIONS' DOCS GATE bullet described the PRE-T-085 site rule — a
+literal opening with `docs` AND a base evaluating to the repository root,
+"both halves load-bearing" — which T-085 subsumed under one containment
+test so that a package-relative docs read holding no root is SEEN. No
+suite compares the bullet to `docs-scan.mjs`, so the two implementations
+had disagreed unnoticed. The bullet now names that module's own
+`THE DERIVATION` header as the authority.
+
+**THE RE-BREACH PRICE, STATED RATHER THAN ASSUMED** — the card's own
+condition, and it has two halves, one of which is uncomfortable.
+
+*The bar is cleared.* ROADMAP's new landing buys **2,451 bytes** of warn
+headroom. Derive the growth rate rather than quoting it: for each commit
+`c` touching the file, `git cat-file -s $c:docs/ROADMAP.md`. Over the
+night the card was filed about — 2026-08-29 12:35 through 2026-08-30
+05:40, sixteen commits — the file went 8,559 → 10,320, **+1,761 bytes
+net**, with per-commit positive deltas from 25 to 302 bytes (median 177)
+and FIVE net-negative absorption trims paid inside that window to stay
+under the old line. Six sentences at that median is ~1,062 bytes, so the
+new landing buys about **2.3× the card's ~six-sentence bar**, or ~13
+merges at the median delta. It does NOT buy a comfortable multiple of
+that whole night: 2,451 against 1,761 is **1.4 nights**. CONVENTIONS is
+the same shape one order up — **32,879 bytes** of headroom against
+**+23,825 bytes** measured between the 2026-08-29 T-154 landing (110,342)
+and this card's dispatch (134,167), six merges of rule text in about
+fourteen hours: **1.4 days** at that rate.
+
+*The uncomfortable half.* Because §Budgets sets `warn = landed × 1.25`,
+**headroom is exactly a quarter of the landing, so compacting a document
+BUYS LESS ABSOLUTE RUNWAY, not more.** Measured on this pass: ROADMAP's
+514-byte cut cost 128 bytes of headroom (2,579 → 2,451) and CONVENTIONS'
+2,653-byte cut cost 663 (33,542 → 32,879). What actually bought the
+runway was RE-BASING — ROADMAP's warn line moves 10,499 → 12,252
+(+1,753) and CONVENTIONS' 137,928 → 164,393 (+26,465) — because the old
+lines were derived from landings that three days of legitimate rule
+growth had left behind. **So the compaction is not the instrument of the
+runway and must not be pushed as though it were**: §Budgets already says
+the gate is a tripwire against relapse rather than the instrument of the
+cut, and this pass took the cut exactly as far as ADR-019's own law
+reaches — record-shaped sentences to the records that keep them — and
+not one hazard further. A deeper cut would have shortened the runway it
+was supposed to lengthen.
+
+**WHAT THIS CARD THEREFORE DOES NOT ANSWER, SAID PLAINLY.** At the
+measured velocity ROADMAP re-breaches in about a night and a half of
+merges and CONVENTIONS in about a day and a half of rule-text landings.
+Re-deriving the gate cannot fix that, because the gate is a tripwire and
+the velocity is real work: what holds the line is ROADMAP's
+one-sentence-per-feature-per-merge contract being enforced at the merge
+and CONVENTIONS' growth being rule text that survived the pipeline
+(addendum 3's finding, still true). If the next re-breach arrives on the
+same schedule, the question to take to @human is whether a proportional
+`landed × 1.25` is the right shape for a document under this velocity at
+all — a FLOOR in bytes, or a per-merge budget, are different instruments
+and neither is legislated here. Routed as `T-162-s1`.
+
+Record of execution: T-162's card (Implementation notes) and the
+integrator's checkpoint record for this merge. **THE CHECKPOINT RECORD
+IS NOT THIS LANE'S**: T-162's fence is
+[docs/ROADMAP.md, docs/CONVENTIONS.md, docs/decisions, tools/e2e] and
+docs/checkpoints/ is outside it, which is the correct division — ADR-019
+§Records has the record written at the integration, before STATE is
+regenerated.
