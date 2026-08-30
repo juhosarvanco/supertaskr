@@ -320,6 +320,24 @@ detached and clean at `1eb05f2` — it is not a lane, holds no fence, and
 is the reproducible copy of what was measured. The integrator may remove
 it at the checkpoint.
 
+### One residual, DISCLOSED rather than discovered
+
+**`dispatch_brief` IS THE FIRST COMMAND IN THIS APP WHOSE ARGUMENT NAME
+EXERCISES TAURI'S camelCase → snake_case CONVERSION, AND NOTHING HERE
+PINS IT.** `readBrief` invokes with `{ taskId, role }` and the Rust
+signature takes `task_id: String` — Tauri v2's documented default, and
+the reason `#[tauri::command(rename_all = "snake_case")]` exists to opt
+out of. Every argument-taking command before this one is a single word
+(`arch_detail`'s `target`, `genesis_send_turn`'s `text`), so no existing
+body distinguishes the two spellings. **The IPC census pins the command's
+NAME at both ends and says nothing about its argument names**, the boot
+check does not invoke commands, and `THE E2E LANE'S HONEST SCOPE` rules
+that an IPC path is not the browser lane's to cover. So the claim rests
+on Tauri's documented behaviour rather than on a measurement in this
+repository. It is named here so the verifier can decide whether it wants
+one; the cheapest honest check is @human opening the drawer once the
+`dispatch` prop has a filler, which is `T-126-s2`'s and `T-112-s5`'s.
+
 ### Where the brief and the card were wrong
 
 1. **The brief's ROW 4 names a worktree INSIDE the repository** —
