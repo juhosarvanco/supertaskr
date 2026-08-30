@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 4
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [app-agent]
 suggested_by: verifier claude-opus-5 @T-025
@@ -390,5 +390,94 @@ in `adapter.rs`'s own doc comment, where the next reader will meet it.
   init line's `tools` array is that measurement. What was genuinely
   untaken is the Bash sub-class boundary, which is the gap table 2 now
   names explicitly.
+
+## What landed, and where
+
+- `app/src-tauri/src/agent/adapter.rs` — `GrantTable` +
+  `EFFECTIVE_GRANT_TABLES` (the three tables, each with its own
+  unanswered question); the `acceptEdits` bullet's over-broad containment
+  sentence RETRACTED in place; the dated ruling written beside the six
+  patterns; the `--settings` bullet told what riding the user's config
+  costs. New unit body
+  `the_effective_grant_is_three_tables_and_exactly_one_is_reviewed`.
+- `app/src-tauri/tests/agent_runner.rs` — new body
+  `the_cli_default_tool_table_is_read_off_the_2026_08_19_capture`. It
+  adds NO new docs reader: `docs-gate.mjs` resolves all three climbs in
+  that file to the capture the two existing bodies already read.
+- `allowed_tools_are_exactly_the_kits_imperative_surface`: **UNMOVED.**
+
+## Drill ledger (four one-sided mutants, all killed)
+
+Detached scratch worktree at `/tmp/t25s4` (short root), at commit
+`31e17fe`, with `CARGO_TARGET_DIR=/tmp/t25s4/target` — inside itself, so
+the lane's own cache is untouched. **Every mutant is on the CONST side;
+no assertion was touched, and no literal shared by both sides was
+touched** — the denied tool names the assertions use are read off the
+live argv, and the tool array they compare against is read off the
+capture file.
+
+Controls first, because a red proves nothing without them: the unit body
+1 passed / exit 0, the integration body 1 passed / exit 0.
+
+| # | mutation (const side only) | result |
+|---|---|---|
+| A | `"DesignSync"` → `"DesignSyncX"` in table 2's `observed` | **exit 101** — the transcription body reds and prints the capture's own array as the right side |
+| B | table 3 `reviewed: false` → `true` | **exit 101** — "exactly one table is reviewed" |
+| C | table 1's `unanswered` → `""` | **exit 101** — the criterion-1 gap assertion, by name |
+| D | `"WebFetch"` inserted into table 2's `observed` | **exit 101 in BOTH bodies** — the measured-lever control and the transcription |
+
+Restoration proved after each, and again at the end, by sha256 rather
+than asserted: `git show 31e17fe:app/src-tauri/src/agent/adapter.rs |
+shasum -a 256` and the working file both
+`66e76ba9235f0f6ec865c1f349603454e6c4ef50bddf66194df5d8b2e4084aaa`, with
+an empty per-path `git diff` as the companion. The unit body was re-run
+after the last restore: 1 passed, exit 0. Worktree removed.
+
+## Gates, derived at this tip's forecast tree
+
+The path list is the RANGE RULE's own —
+`git merge-tree --write-tree 8ebbb08 HEAD` (exit 0, tree
+`2c108cd`), three paths — and it does not move when this notes commit
+lands, so these decisions are not one commit behind.
+
+- **GRAPH REGEN — FIRES** (`*.rs` outside `docs/`). `index --check`
+  **before**: CURRENT, 1039074 bytes / 199 files / 2065 symbols / 2334
+  edges, exit 0. **After**: STALE, exit 1 — 1039590 bytes / 199 files /
+  2067 symbols / 2334 edges, `files +0 -0 ~2`, no indexed file added,
+  removed or moved. **The regen is the integrator's, not this lane's.**
+  **AND IT IS NEWS**: headroom falls **926 → 410 bytes** against the
+  1,040,000 budget, still inside the alarm band `T-140-s4` carries.
+  `truncated_symbols` was already `true` at the base, and
+  `tests/agent_runner.rs` was already truncated to zero symbols — which
+  is why the new integration body cost no symbols and only the two
+  consts did.
+- **BOOT GATE — FIRES** (`app/src-tauri/**`).
+  `NPUTER_BOOT_PORT=14733 npm run boot:check` → **exit 0**, both lines:
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-025-s4` and
+  `[nputer] window "main" created`. Port read to zero rows immediately
+  before; 1420 was left alone and is held by the human's app.
+- **DOCS GATE — FIRES**, and the dispatch brief said it would not. It
+  named `docs/tasks` as exempt, but `docs/tasks/T-*.md` IS a code input:
+  the gate answers **exit 1** on this card and names three suites.
+  - `npx vitest run` from `lib/parser/` → **exit 0**, 336 passed.
+  - `npm test` from `app/` → **exit 0**, 1060 passed.
+  - `npm test` from `tools/e2e/` → **exit 1**, 330 passed / **2 failed**,
+    and **both failures are PROVEN not this lane's**. Both are
+    `session-economics.spec.ts` bodies asserting
+    `brief.mjs --task T-157` exits 0; the assembler refuses with
+    *"fences are not disjoint: T-163-s4 tools/e2e against T-157
+    tools/e2e"*. Run at the BASE ref in a detached worktree at `/tmp/b25`
+    (`8ebbb08`) the same command exits **1** with a byte-identical
+    refusal on the same line — so it is a live-board condition, not a
+    diff. The brief's own disjointness block clears this lane by name:
+    *"T-025-s4 and T-163-s4: DISJOINT"*, *"T-025-s4 and T-157:
+    DISJOINT"*. **No suggestion filed**: `T-163-s4` is live right now and
+    its own title is *the session economics positive control fences
+    against the live board* — this is that lane's subject, and the
+    collision is a live lane joined against a card at `status: done`.
+
+`cargo test` from `app/src-tauri/` (the whole crate) at `31e17fe`:
+**exit 0, 590 passed, 0 failed** — the base battery's 588 plus the two
+bodies this card adds.
 
 ## Verdicts Queues for the next standing sitting with this evidence.
