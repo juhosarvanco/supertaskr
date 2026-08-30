@@ -253,3 +253,41 @@ describe('THE LIVE BOARD CENSUS at this lane’s ref — derived, never assumed'
     expect(violations(project.issues).map((issue) => issue.message)).toEqual([]);
   });
 });
+
+describe('the two verifier corrections, pinned (T-169 verdict, 2026-08-30)', () => {
+  it('@human is the WORD, not the prefix — a @human-driven vehicle keeps its model', () => {
+    // Correction 1: the prefix match swallowed `claude-opus-5
+    // @human-driven` into an empty set that reported `unconstrained`.
+    expect(stampModels('claude-opus-5 @human-driven')).toEqual(['claude-opus-5']);
+    expect(stampModels('claude-opus-5 @human-in-the-loop')).toEqual(['claude-opus-5']);
+    // ...and the genuine notes-about-a-person stay skipped.
+    expect(stampModels('claude-fable-5 @fresh (2 passes) + @human (visual)')).toEqual([
+      'claude-fable-5',
+    ]);
+    expect(stampModels("APPROVED under @human's waiver")).toEqual([]);
+  });
+
+  it('an execution stamp naming no readable model is VIOLATED, not waved through', () => {
+    // Correction 2: `claude-opus-5 (completion)` parses clean, names no
+    // readable model (bare branch, MODEL_ID refuses the parenthetical),
+    // and used to land `unconstrained` — an unverifiable stamp against a
+    // binding assignment. D5 verifies everywhere: it violates, with
+    // every assigned model missing.
+    const task = {
+      id: 'T-998',
+      title: 'fixture',
+      status: 'done',
+      blockedBy: [],
+      touches: [],
+      builder: { raw: 'claude-opus-5' },
+      builtBy: { raw: 'claude-opus-5 (completion)' },
+      extra: Object.create(null) as Record<string, unknown>,
+      sections: {},
+      file: 'docs/tasks/T-998-fixture.md',
+    } as never;
+    const readings = readAssignment(task);
+    const builderPair = readings.find((r) => r.role === 'builder');
+    expect(builderPair?.verdict).toBe('violated');
+    expect(builderPair?.missing).toEqual(['claude-opus-5']);
+  });
+});

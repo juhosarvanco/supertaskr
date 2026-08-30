@@ -108,7 +108,11 @@ import type {
  * `claude-fable-5`, `claude-opus-5`). Deliberately narrow — it is what
  * REJECTS the prose that sits beside an `@` in a stamped sentence
  * (`(re-verified`, `+`), and every rejection makes the executed set
- * SMALLER, which can only make rule 4 stricter.
+ * SMALLER — stricter under rule 4, INCLUDING the limit case: a stamp
+ * whose rejections empty the set entirely now reports `violated`, never
+ * `unconstrained` (T-169 verifier, correction 2 — the old comment
+ * claimed the empty case was unreachable, and `claude-opus-5
+ * (completion)` reached it through ordinary frontmatter).
  */
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 
@@ -156,8 +160,12 @@ export function stampModels(value: string): string[] {
   }
   for (let index = 0; index < raw.length; index++) {
     if (raw[index] !== '@') continue;
-    // `@human` is a note about a person, not a vehicle a model ran in.
-    if (/^human/i.test(raw.slice(index + 1))) continue;
+    // `@human` is a note about a person, not a vehicle a model ran in —
+    // and the match is the WORD, not the prefix (T-169 verifier,
+    // correction 1): `@human-driven` and `@human-in-the-loop` are
+    // vehicles a model ran in, and the prefix match swallowed the model
+    // beside them into an empty set that reported `unconstrained`.
+    if (/^human(?![A-Za-z0-9._/-])/i.test(raw.slice(index + 1))) continue;
     const before = raw.slice(0, index).trimEnd();
     const token = before.split(/\s+/).pop() ?? '';
     if (token !== '' && MODEL_ID.test(token) && !found.includes(token)) found.push(token);
@@ -215,12 +223,17 @@ export function readAssignment(task: TaskRecord): AssignmentReading[] {
     }
     const assignedModels = stampModels(assigned.raw);
     const executedModels = stampModels(executed.raw);
-    // A side whose value names no model at all cannot be compared. It is
-    // unreachable through parseTaskFile (an empty model half is already an
-    // invalid-field there), so this is the standalone-caller guard: an
-    // uncomparable pair reports `unconstrained` rather than a violation
-    // manufactured out of a value nobody could read.
-    const comparable = assignedModels.length > 0 && executedModels.length > 0;
+    // The two empty-set cases are NOT symmetric (T-169 verifier,
+    // correction 2). An assignment that names no readable model
+    // constrains nothing — `unconstrained`. An EXECUTION stamp that
+    // names no readable model, against an assignment that does, is a
+    // pair this module cannot verify — and D5 makes assignment binding
+    // with nputer VERIFYING everywhere, so the unverifiable stamp is
+    // reported `violated` with every assigned model missing, never
+    // waved through. Both shapes are reachable through parseTaskFile
+    // (`claude-opus-5 (completion)` parses clean and yields the empty
+    // set) — the old claim of unreachability was measured false.
+    const comparable = assignedModels.length > 0;
     const missing = comparable
       ? assignedModels.filter((m) => !executedModels.some((e) => satisfiesAssignment(m, e)))
       : [];
