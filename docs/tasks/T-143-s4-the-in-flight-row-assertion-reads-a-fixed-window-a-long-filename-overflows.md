@@ -235,3 +235,54 @@ only the question that survives it: whether an APPEND to an
 already-checkpointed record should re-trigger the staleness rule at all.
 This lane did not rebase — that is not the executor's move — and does
 not need to.
+
+### THE MERGE SHAPE, RUN — the strongest evidence this card has
+
+Because `main` moved, the lane's own gate table is not what CI will see.
+So the merge was BUILT and RUN rather than argued about.
+
+The executor's RANGE RULE form, from the lane:
+
+    TREE=$(git merge-tree --write-tree 35e6504 HEAD)
+    git diff --name-only 35e6504 "$TREE"
+
+exit **0**, `TREE=a286c5710280036027d228ce9434253248be3dd3`, three paths
+and no conflict: this card, `T-143-s5`, and
+`tools/e2e/tests/dispatch-order.spec.ts`.
+
+That tree was then MATERIALIZED in the CI-shaped clone — detached at
+`35e6504`, this lane's three files checked out over it — and `git
+write-tree` there answered **`a286c5710280036027d228ce9434253248be3dd3`**,
+the same object, so the checkout IS the merge's content rather than a
+resemblance to it. `git worktree list --porcelain` there: **zero**
+`task/` branches, so every building card takes the no-lane arm — the
+board at that tree still carries `T-143-s4` (97 ch), `T-163` (96 ch) and
+`T-135` (53 ch) at `status: building`.
+
+| gate, at the merge tree, no lanes, `NPUTER_E2E_PORT=14539` | exit |
+|---|---|
+| `npm test` | **0** — **320 passed** |
+| `npm run typecheck` | **0** |
+| `npm run lint:docs` | **0** |
+| `npm run lint:tokens -- --selftest` | **0** |
+| `npm run lint:tokens` | **0** |
+
+320 = the lane's 315 plus the five reds, every one of which is base- or
+lane-caused and none of which survives the merge. `lint:docs` prints
+*"every live task card's frontmatter parses, with a legal status"* over
+both new cards, `T-143-s5`'s `closed_by:` key included.
+
+### The lane's own final gate run, for completeness
+
+Re-run at `197c69d` after both cards landed in the lane, same figures as
+the table above: `npm test` **exit 1, 5 failed / 315 passed** — the same
+five, by name — `npm run typecheck` **0**, `npm run lint:docs` **1**
+(the base's STATE staleness), `npm run lint:tokens -- --selftest` **0**,
+`npm run lint:tokens` **0**.
+
+### Criteria unmet
+
+None known. The one thing this card was asked to prove and could not
+prove from the lane alone — that the fix holds in the shape where the
+defect fires — is proved twice: in a clone at the lane's own tip
+(`af6bacc`, 13 passed) and at the merge tree (`a286c571`, 320 passed).
