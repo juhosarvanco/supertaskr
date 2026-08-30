@@ -78,14 +78,22 @@ export function TaskDetailPanel({
   onClose: () => void;
   /**
    * The lane reader's answer (T-110/T-111). **ABSENT MEANS THE APP HAS NO
-   * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT** — the
-   * command that would fill it is `app-shell`'s and is routed
-   * (`T-112-s1`). While it is absent the dispatch block does not render
-   * at all, rather than rendering an "unavailable" strip on every card:
-   * a section that says nothing on every open is a section nobody reads.
+   * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT** — this wants
+   * a `DispatchJoin`, and the join has no zero-argument command shape:
+   * `join_lanes(scan, board)` takes the board's stamps and the board is
+   * parsed in TypeScript. That is `T-126-s2`, PARKED, and `T-112-s1`
+   * routed it rather than deciding it from inside a lane. While it is
+   * absent the dispatch block does not render at all, rather than
+   * rendering an "unavailable" strip on every card: a section that says
+   * nothing on every open is a section nobody reads.
    */
   dispatch?: DispatchReading;
-  /** The assembler's answer for this card, when one has been asked for. */
+  /**
+   * The assembler's answer for this card, when one has been asked for.
+   * `dispatch_brief` is registered since `T-112-s1` and reachable through
+   * `dispatch-store.ts`'s `readBrief`; what has no caller yet is the prop
+   * above, which gates this one.
+   */
   brief?: BriefOutcomeView;
 }) {
   const detail = useMemo(() => selectTaskDetail(model, taskRef), [model, taskRef]);

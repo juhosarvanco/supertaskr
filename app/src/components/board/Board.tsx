@@ -31,8 +31,22 @@ const DENSE_CARD_THRESHOLD = 40;
  * decision about them; `selectBriefPanel` in `task-detail.ts` does, where
  * a suite can reach it. Absent, the drawer's dispatch block does not
  * render at all, so a board with no lane channel is byte-for-byte what it
- * was. The `invoke` that fills them is `app-shell`'s and is routed
- * (`T-112-s1`).
+ * was.
+ *
+ * **THE THREADING IS PINNED SINCE `T-112-s1`** — in
+ * `app/test/board-truth.test.tsx`, which is C-05's and has imported this
+ * file since T-017, so the pin cost no registry line and no new component
+ * edge. Deleting either line below reds it by name; before that card the
+ * same deletion left the whole app suite green, which is what `T-112-s4`
+ * measured and why it exists.
+ *
+ * **AND `brief` NOW HAS A DOOR WHILE `dispatch` DOES NOT.**
+ * `dispatch_brief` is registered (`T-112-s1`) and reached by
+ * `dispatch-store.ts`'s `readBrief`. `dispatch` wants a `DispatchJoin`,
+ * and the join has no zero-argument command shape — that is `T-126-s2`,
+ * PARKED with a ruling owed rather than a fence owed. Until it lands
+ * nothing in the shipped app fills either prop, so the block still does
+ * not render outside a suite; `T-112-s5` carries the account.
  */
 export function Board({
   model,

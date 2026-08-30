@@ -534,6 +534,130 @@ fn dispatch_lanes(state: tauri::State<'_, WatchState>) -> DispatchLanesOutcome {
     dispatch_lanes_at(state.project_dir().as_deref())
 }
 
+/// T-112-s1: what the brief assembler had to say, plus the one fact it
+/// cannot express about itself.
+///
+/// **THE `DispatchLanesOutcome` SHAPE, DELIBERATELY.**
+/// [`dispatch::brief::BriefOutcome`] answers five ways about a PROJECT,
+/// and every one of them presumes there is a project. "No project is open"
+/// is a fact about the APP, so it is named here rather than smuggled in as
+/// a sixth kind of refusal — folding it into `NoSuchCard` would tell a
+/// user with no project open that their card does not exist.
+///
+/// **AND THE TS MIRROR MOVES IN THIS COMMIT, WHICH IS `T-126-s1`'s WHOLE
+/// FINDING APPLIED RATHER THAN REPEATED.** That card exists because
+/// `DispatchLanesOutcome` added exactly this wrapper and
+/// `app/src/lib/dispatch-store.ts` was outside the fence that added it, so
+/// the mirror never learned about it. This lane holds both `app-shell` and
+/// `app-dispatch`, so `DispatchBriefWire` is written beside this enum
+/// instead of being routed.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+enum DispatchBriefOutcome {
+    /// Nothing resolved at launch and nothing picked.
+    NoProject,
+    /// The assembler ran over the open project. Everything it is able to
+    /// say — including its own four refusals — is inside `outcome`.
+    Answered { outcome: dispatch::brief::BriefOutcome },
+}
+
+/// The seam [`dispatch_brief`] is a wrapper over: everything the command
+/// does once `WatchState` has been asked which project is open.
+///
+/// The [`dispatch_lanes_at`] precedent, and it exists for the same reason:
+/// a `tauri::State` cannot be constructed in a unit test, so a command
+/// whose whole body reads state is a command nothing can drive.
+fn dispatch_brief_at(
+    project_root: Option<&Path>,
+    task_id: &str,
+    role: dispatch::brief::Role,
+) -> DispatchBriefOutcome {
+    match project_root {
+        None => DispatchBriefOutcome::NoProject,
+        Some(root) => DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::brief_for_card(root, task_id, role),
+        },
+    }
+}
+
+/// T-112-s1: THE EIGHTEENTH COMMAND — **a card hands you its brief.**
+///
+/// The assembler has been built, proved and compiled into this binary
+/// since T-112; what was missing was this line. Its module header says so
+/// in as many words: registration is `app/src-tauri/src/lib.rs`, which is
+/// C-05's `app-shell`, and T-112's `[app-dispatch, app-board]` fence did
+/// not reach it. This is the same disposition `lanes.rs` took at T-110 and
+/// `T-126` discharged, one card later.
+///
+/// **TWO ARGUMENTS, AND NEITHER OF THEM IS A PATH** (ADR-012's
+/// *narrowness lives in the command's own signature*). The project root
+/// comes from `WatchState` — the source `dispatch_lanes`, `repo_churn` and
+/// `index_repo` all read — so no path crosses inbound and none goes back:
+/// the outcome carries repository-RELATIVE sources, which is what the
+/// assembler emits either way.
+///
+/// `task_id` is a KEY into the directory listing this command has just
+/// taken, matched by equality against names `docs/tasks` handed over —
+/// the `arch_detail` shape. Nothing joins it onto the project root, opens
+/// it, or hands it to the filesystem, so a traversal string is a MISS
+/// rather than a traversal. It is length-bounded BEFORE it is looked up,
+/// because a miss ECHOES the id back so the caller can say what it could
+/// not serve.
+///
+/// `role` is a closed enum rather than a string, so serde refuses a third
+/// spelling before any file is read.
+///
+/// **ZERO NEW WEBVIEW GRANTS.** An app command is not a grant, which is
+/// the whole ADR-012 point, so `acl_pin.rs` is a 0-file diff at the same
+/// `core:default` set — re-derived at this lane's own ref rather than
+/// quoted, and recorded on the card.
+///
+/// Reading a directory, a card, the contract and the project's own
+/// governing documents is blocking fs work, so it goes through
+/// `spawn_blocking` like `arch_detail` and `index_repo` rather than
+/// holding Tauri's main thread.
+#[tauri::command]
+async fn dispatch_brief(
+    app: tauri::AppHandle,
+    task_id: String,
+    role: dispatch::brief::Role,
+) -> DispatchBriefOutcome {
+    if !dispatch::brief::task_id_within_bounds(&task_id) {
+        // Refused without the echo, and still as the assembler's own
+        // typed answer: the caller's handling stays one path rather than
+        // two (the `arch_detail` bound, character for character).
+        return DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                task_id: String::new(),
+            },
+        };
+    }
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        dispatch_brief_at(state.project_dir().as_deref(), &task_id, role)
+    })
+    .await
+    .unwrap_or_else(|err| {
+        // A join failure is not "no project" and not "no card": it is the
+        // assembler never having run. The contract it could not read is
+        // the honest name for that, and it carries the source and the
+        // reason — sanitised, because it reaches the app's own log family
+        // the same way `repo_churn`'s does.
+        DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::ContractMissing {
+                source: dispatch::brief::CONTRACT_FILE.to_string(),
+                because: dispatch::brief::SourceMiss::Unreadable {
+                    because: format!(
+                        "the brief task failed: {}",
+                        docs_watch::sanitize_for_log(&err.to_string())
+                    ),
+                },
+            },
+        }
+    })
+}
+
 /// T-025 criterion 1: start the genesis interview. ZERO ARGUMENTS — the
 /// kickoff prompt is assembled Rust-side from the compiled-in method
 /// snapshot plus the open project from `WatchState`, never from the
@@ -736,6 +860,13 @@ pub fn run() {
             // root is `WatchState`'s) and zero grants; see the doc
             // comment on `dispatch_lanes` above.
             dispatch_lanes,
+            // T-112-s1: THE EIGHTEENTH — the brief assembler's one door.
+            // Built, proved and compiled into this binary since T-112;
+            // this line is the whole of what T-112's fence could not
+            // reach. Two arguments, neither a path (a key into a listing
+            // this command just took, and a closed role enum), and zero
+            // new grants.
+            dispatch_brief,
             // T-025: four app commands, ZERO new webview grants — app
             // commands are not grants, which is the whole ADR-012 point.
             genesis_start,
@@ -1029,5 +1160,167 @@ mod tests {
         assert!(exists_on_disk);
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    // ---- T-112-s1: the brief assembler's one door ----------------------
+    //
+    // NEITHER BODY READS THIS REPOSITORY'S OWN `.git`, for the reason the
+    // T-126 pair above gives and one this pair adds: this checkout is a
+    // worktree, so its `.git` is a FILE and the live lane reader answers
+    // `GitIsAFile` here and `Scanned` in the integration checkout. A body
+    // that read it would pass in one checkout and not in the other. Both
+    // drive `dispatch::fixtures`, the temp-directory tree C-15's own
+    // bodies use.
+
+    /// The four method and docs sources the assembler reads, copied out of
+    /// this repository into a fixture so the fixture's brief is assembled
+    /// from the SAME documents a real dispatch would use.
+    ///
+    /// `brief.rs`'s own end-to-end body copies this set; the verifier role
+    /// file is the one addition, and it is what makes the role argument
+    /// observable rather than assumed.
+    fn plant_the_brief_sources(root: &Path) {
+        let here = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .canonicalize()
+            .expect("the repository root is two directories above app/src-tauri");
+        for rel in [
+            "CLAUDE.md",
+            "docs/CONVENTIONS.md",
+            "method/roles/executor.md",
+            "method/roles/verifier.md",
+            "method/lane-protocol.md",
+            "method/tasks/TASK-FORMAT.md",
+        ] {
+            let dest = root.join(rel);
+            fs::create_dir_all(dest.parent().expect("a parent")).expect("dirs");
+            fs::copy(here.join(rel), &dest).expect("copy a source");
+        }
+        // Row 5 expands the card's `touches:` through the live component
+        // registry, so the registry travels with the fixture — the same
+        // set `brief.rs`'s own end-to-end body plants.
+        let components = root.join("docs/architecture/components");
+        fs::create_dir_all(&components).expect("dirs");
+        for entry in fs::read_dir(here.join("docs/architecture/components")).expect("components") {
+            let entry = entry.expect("a component file");
+            fs::copy(entry.path(), components.join(entry.file_name())).expect("copy");
+        }
+    }
+
+    /// Write one card onto a fixture project's board.
+    fn plant_a_card(root: &Path, id: &str) {
+        let tasks = root.join("docs").join("tasks");
+        fs::create_dir_all(&tasks).expect("docs/tasks");
+        fs::write(
+            tasks.join(format!("{id}-a-card.md")),
+            format!("---\nid: {id}\ntitle: A card\nsize: M\nstatus: building\ntouches: [app-dispatch]\n---\n"),
+        )
+        .expect("the card");
+    }
+
+    /// **THE TWO EMPTIES ARE DIFFERENT FACTS**, and this is the
+    /// `dispatch_lanes` pair's argument one command over.
+    ///
+    /// `NoProject` is a fact about the APP; every `BriefOutcome` refusal is
+    /// a fact about a PROJECT. A wrapper that collapsed them would tell a
+    /// user with no project open that their card does not exist. The
+    /// assertion that this is refused needs its POSITIVE CONTROL beside it
+    /// (docs/CONVENTIONS.md's rule): the second half proves a real
+    /// directory DOES reach the assembler, so `NoProject` cannot be
+    /// satisfied by "the seam never calls anything".
+    #[test]
+    fn no_open_project_is_its_own_outcome_and_never_an_assembler_refusal() {
+        assert_eq!(
+            dispatch_brief_at(None, "T-112-s1", dispatch::brief::Role::Executor),
+            DispatchBriefOutcome::NoProject
+        );
+
+        // The control: a real directory, built the way the producer's own
+        // fixtures build one, reaches the assembler and comes back as the
+        // ASSEMBLER's own answer about a project.
+        let root = dispatch::fixtures::scratch("t112s1-no-project-control");
+        assert!(
+            matches!(
+                dispatch_brief_at(Some(&root), "T-112-s1", dispatch::brief::Role::Executor),
+                DispatchBriefOutcome::Answered { .. }
+            ),
+            "an open folder must reach the ASSEMBLER's refusal, not the app's"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// **THE SEAM CARRIES BOTH ARGUMENTS, AND EACH IS PROVED BY THE ANSWER
+    /// MOVING WITH IT.** A seam that dropped the task id would answer the
+    /// same for a card that is there and one that is not; a seam that
+    /// hardcoded the executor would hand a verifier the executor's brief —
+    /// which is the leak `verifier.md` forbids, arriving through the one
+    /// place no downstream reader can see it.
+    #[test]
+    fn the_seam_carries_the_task_id_and_the_role_into_the_assembler() {
+        let root = dispatch::fixtures::repo_with_worktrees_dir("t112s1-seam");
+        plant_a_card(&root, "T-901");
+        plant_the_brief_sources(&root);
+
+        // THE TASK ID: an id no card carries is its own answer, and it
+        // ECHOES the id the seam was given rather than a constant.
+        assert_eq!(
+            dispatch_brief_at(Some(&root), "T-902", dispatch::brief::Role::Executor),
+            DispatchBriefOutcome::Answered {
+                outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                    task_id: "T-902".to_string()
+                }
+            }
+        );
+
+        // THE ROLE: the same card, two roles, two different briefs. The
+        // role file follows the argument, and only the verifier's brief
+        // carries the marker its half is split at.
+        let DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::Assembled { brief: executor },
+        } = dispatch_brief_at(Some(&root), "T-901", dispatch::brief::Role::Executor)
+        else {
+            panic!("the executor's brief did not assemble");
+        };
+        assert_eq!(executor.role, dispatch::brief::Role::Executor);
+        assert_eq!(executor.role_file, "method/roles/executor.md");
+        assert_eq!(executor.task_id, "T-901");
+        assert_eq!(executor.marker, None);
+
+        let DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::Assembled { brief: verifier },
+        } = dispatch_brief_at(Some(&root), "T-901", dispatch::brief::Role::Verifier)
+        else {
+            panic!("the verifier's brief did not assemble");
+        };
+        assert_eq!(verifier.role, dispatch::brief::Role::Verifier);
+        assert_eq!(verifier.role_file, "method/roles/verifier.md");
+        assert!(
+            verifier.marker.is_some(),
+            "the verifier's brief lost the line its two halves are split at"
+        );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// The wrapper is a WIRE type, and `T-126-s1` is the record of what it
+    /// costs when the TS mirror does not learn about one. This pins the
+    /// two spellings `app/src/lib/dispatch-store.ts` mirrors.
+    #[test]
+    fn the_wrapper_serializes_as_the_tagged_camel_cased_shape_the_ts_mirror_expects() {
+        let none = serde_json::to_value(DispatchBriefOutcome::NoProject).expect("serializable");
+        assert_eq!(none["kind"], "noProject");
+
+        let answered = serde_json::to_value(DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                task_id: "T-901".to_string(),
+            },
+        })
+        .expect("serializable");
+        assert_eq!(answered["kind"], "answered");
+        // The assembler's own tag survives the wrapper unchanged: the
+        // mirror unwraps one level and reads `BriefOutcomeWire` beneath.
+        assert_eq!(answered["outcome"]["kind"], "noSuchCard");
+        assert_eq!(answered["outcome"]["taskId"], "T-901");
     }
 }

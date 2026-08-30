@@ -500,7 +500,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     return [...found].sort();
   }
 
-  it("the frontend reaches exactly the thirteen commands it is allowed", () => {
+  it("the frontend reaches exactly the fourteen commands it is allowed", () => {
     // The whole set, spelled out: a fourteenth would fail this line by
     // name, and so would a rename. `pick_project_folder` /
     // `pick_genesis_folder` / `start_genesis_here` go through one call
@@ -530,9 +530,19 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // read (`c:<component-id>` / `f:<graph file id>`), never a path this
     // process opens — so ADR-010's containment is kept rather than
     // reopened, and ADR-012's grant set is a 0-line diff (`acl_pin.rs`).
+    //
+    // T-112-s1 ADDS ONE — `dispatch_brief`, F-04's second command and the
+    // brief assembler's one door. It is the FIRST here to take two
+    // arguments and NEITHER is a path: the task id is a key into the
+    // `docs/tasks` listing the command itself takes (the `arch_detail`
+    // shape, bounded before it is echoed) and the role is a closed enum
+    // serde refuses a third spelling for. The project root stays
+    // `WatchState`'s, so ADR-012 is applied rather than reopened and
+    // `acl_pin.rs` is a 0-file diff at its 92-grant `core:default` set.
     expect(frontendCommands()).toEqual([
       "arch_detail",
       "arch_rollup",
+      "dispatch_brief",
       "docs_snapshot",
       "genesis_cancel",
       "genesis_fresh",
@@ -547,7 +557,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     ]);
   });
 
-  it("Rust exposes exactly seventeen commands, and T-140-s1 added the map's own channel", () => {
+  it("Rust exposes exactly eighteen commands, and T-112-s1 added the brief assembler's door", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -568,9 +578,18 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // criteria ask the pane to REST on the rollup and to PULL detail, so
     // a channel the shell never calls would be the whole defect rather
     // than a deferred wiring.
+    // T-112-s1 ADDS ONE — `dispatch_brief`, the EIGHTEENTH. The assembler
+    // it wraps has been compiled into this binary since T-112 and
+    // unreachable from the webview for exactly as long: registration is
+    // this file, which is `app-shell`, and T-112's fence was
+    // `[app-dispatch, app-board]`. Like `arch_rollup`/`arch_detail` and
+    // unlike `dispatch_lanes`, it IS in `frontendCommands()` above —
+    // `dispatch-store.ts` reaches it, which is what makes the assembler
+    // reachable rather than merely registered.
     expect(names.sort()).toEqual([
       "arch_detail",
       "arch_rollup",
+      "dispatch_brief",
       "dispatch_lanes",
       "docs_snapshot",
       "genesis_cancel",

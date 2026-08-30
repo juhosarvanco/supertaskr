@@ -43,26 +43,35 @@
  * file turns it into a `ReadonlyMap`. There is not a plain object literal
  * keyed by file-derived text anywhere below.
  *
- * **THIS FILE IMPORTS NOTHING, DELIBERATELY.** It is C-15's first indexed
- * file, so every import it carries becomes a component edge on the
+ * **THIS FILE IMPORTS ONE THING, DELIBERATELY.** It is C-15's first
+ * indexed file, so every import it carries becomes an edge on the
  * architecture map. The board's task records are described by the
  * structural {@link BoardStamp} rather than by importing `TaskRecord`
  * from `@nputer/parser`, which would declare a C-15 → C-06 dependency the
- * component file does not claim, for two fields.
+ * component file does not claim, for two fields. The one import is
+ * `invoke` — a PACKAGE edge to `@tauri-apps/api` and not a component one,
+ * added at `T-112-s1` because a mirror with no door is a mirror of
+ * nothing.
  *
- * **WHAT IS STILL NOT HERE.** No Tauri command delivers a
- * {@link DispatchJoinWire} to this file yet: registering one edits
- * `app/src-tauri/src/lib.rs`, which is `app-shell` — outside this card's
- * fence and held by a live lane at dispatch. `T-110-s1` carries it.
+ * **WHAT IS STILL NOT HERE, AND IT IS THE JOIN.** No Tauri command
+ * delivers a {@link DispatchJoinWire} to this file. That is not a fence
+ * problem any more — `T-112-s1` held `app-shell` and could have registered
+ * one — it is `T-126-s2`, PARKED: `join_lanes(scan, board)` takes the
+ * board's stamps, the board is parsed in TypeScript, and all three shapes
+ * a joining command could take are refused today (stamps inbound breaks
+ * ADR-012; a second card parser in Rust is the `T-033-s11` divergence;
+ * joining here is what T-110 measured four surviving mutants against).
+ * That card wants a RULING before it wants a fence, so this lane routed it
+ * rather than deciding it. Until it lands, the board root has no
+ * {@link DispatchJoin} to hand the drawer and the dispatch block still
+ * does not render.
  *
- * **AND T-112'S BRIEF ARRIVES IN THE SAME STATE, FOR THE SAME REASON.**
- * The assembler is built and proved in `dispatch/brief.rs`; its wire
- * types are mirrored at the foot of this file; and the `invoke` that
- * would fill them edits `lib.rs` and moves the IPC census pinned in
- * `app/test/crescendo-dom.test.tsx` — both `app-shell`, both outside
- * `[app-dispatch, app-board]`. `T-112-s1` carries that wiring, and until
- * it lands the board root passes the brief in as an optional prop.
+ * **T-112'S BRIEF HAS ITS DOOR SINCE `T-112-s1`.** The assembler is built
+ * and proved in `dispatch/brief.rs`, registered as `dispatch_brief` in
+ * `app/src-tauri/src/lib.rs`, and reached from here by {@link readBrief}.
  */
+
+import { invoke } from "@tauri-apps/api/core";
 
 // ---------------------------------------------------------------------
 // The Rust reader's answer, mirrored.
@@ -319,14 +328,15 @@ export function hydrateJoin(wire: DispatchJoinWire): DispatchJoin {
 // in that module, which is the cross-language keeper this side cannot
 // hold on its own.
 //
-// **TYPES ONLY, DELIBERATELY.** T-110's whole lesson is one module up in
-// this file: a DERIVATION here reaches no suite, because
-// `app/vitest.config.ts` collects `test/**` only and both that config
-// and `app/test/**` are C-05's `app-shell`, outside this card's fence.
-// So the brief's presentation lives in `task-detail.ts`, which
-// `app/test/select-task-detail.test.ts` drives, and this file adds not
-// one line of behaviour — `tsc` in both programs is a type's keeper and
-// needs no body to run.
+// **TYPES AND ONE DOOR, AND THE DISTINCTION IS T-110's WHOLE LESSON.** A
+// DERIVATION here would reach no suite that judges it: the brief's
+// presentation lives in `task-detail.ts`, which
+// `app/test/select-task-detail.test.ts` drives. What `T-112-s1` adds is
+// not a derivation — {@link readBrief} chooses nothing, classifies
+// nothing and hands the wire back unchanged, and its one claim (that the
+// command it names exists at both ends) is pinned by the IPC census in
+// `app/test/crescendo-dom.test.tsx`, which reads this call site and the
+// Rust handler list and requires them to agree.
 //
 // ROWS ARE AN ARRAY AND NOT A `Map`, and that is ADR-009 obeyed rather
 // than skipped: the key would be the contract's own row NUMBER, which is
@@ -420,4 +430,55 @@ export type BriefOutcomeWire =
  */
 function assertNever(value: never): never {
   throw new Error(`unhandled variant: ${JSON.stringify(value)}`);
+}
+
+// ---------------------------------------------------------------------
+// The door (T-112-s1).
+// ---------------------------------------------------------------------
+
+/**
+ * What `dispatch_brief` answers with — the assembler's outcome, plus the
+ * one fact it cannot express about itself.
+ *
+ * **THE WRAPPER IS MIRRORED IN THE COMMIT THAT ADDS IT, WHICH IS
+ * `T-126-s1` APPLIED RATHER THAN REPEATED.** That finding exists because
+ * `dispatch_lanes` grew exactly this wrapper — `NoProject` beside the
+ * reader's own answers — in a lane whose fence did not reach this file, so
+ * the mirror never learned about it and still has not. `T-112-s1` held
+ * both `app-shell` and `app-dispatch`, so this type is written beside the
+ * Rust enum instead of being routed after it.
+ *
+ * **`noProject` IS A FACT ABOUT THE APP** and every {@link BriefOutcomeWire}
+ * arm is a fact about a PROJECT. Collapsing them would tell a user with no
+ * project open that their card does not exist.
+ *
+ * The authority is `DispatchBriefOutcome` in `app/src-tauri/src/lib.rs`,
+ * serialized by serde with `tag = "kind"` and camelCase fields, and
+ * `the_wrapper_serializes_as_the_tagged_camel_cased_shape_the_ts_mirror_expects`
+ * is the keeper this side cannot hold on its own.
+ */
+export type DispatchBriefWire =
+  | { readonly kind: "noProject" }
+  | { readonly kind: "answered"; readonly outcome: BriefOutcomeWire };
+
+/**
+ * Ask the assembler for one card's brief.
+ *
+ * **TWO ARGUMENTS AND NEITHER IS A PATH** (ADR-012). The task id is a key
+ * into the `docs/tasks` listing the command itself takes, and the role is
+ * one of two spellings serde refuses anything else for; the project root
+ * is `WatchState`'s, never this side's. Nothing about the answer is
+ * decided here — the wire comes back as it arrived, because a second
+ * opinion about the assembler's outcome is the divergence this file was
+ * rebuilt to remove.
+ *
+ * `invoke` REJECTS rather than returning a typed refusal when the boundary
+ * itself fails (no Tauri runtime, a malformed argument), so callers own
+ * that path the way every other store in this app does.
+ */
+export function readBrief(
+  taskId: string,
+  role: "executor" | "verifier",
+): Promise<DispatchBriefWire> {
+  return invoke<DispatchBriefWire>("dispatch_brief", { taskId, role });
 }
