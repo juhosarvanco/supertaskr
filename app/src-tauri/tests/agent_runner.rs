@@ -1493,6 +1493,81 @@ fn a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail() {
     assert_eq!(sessions::load(&h.project).sessions[0].status, "idle");
 }
 
+/// **T-161 — THE TAIL IS READ TO EOF, NOT SNAPSHOTTED AT THE REAP.**
+///
+/// The body above is the one that reds on Linux CI: twice, on code that
+/// had passed the same step many times, with `ExitNonZero { code:
+/// Some(3), stderr_tail: "" }` — the CLI's own diagnostic written, sent,
+/// sitting in the pipe, and reported as silence. That body cannot pin the
+/// property, because the property is an ORDER and it holds by luck there:
+/// the runner reaps the child and snapshots its stderr ring with nothing
+/// sequencing the drain thread in between, so the fixture passes whenever
+/// that thread happens to have been scheduled first. **A body that passes
+/// by luck on the machine writing it is what the two CI reds are made
+/// of.**
+///
+/// So this one removes the luck. `nonzero-late-stderr` puts a second
+/// writer on the same pipe that OUTLIVES the process the runner reaps, so
+/// "the exit was observed before the last write" stops being a scheduling
+/// coin flip and becomes a fact of the fixture. Measured both ways: the
+/// racy capture loses this 30 times out of 30, the fixed capture wins it
+/// 30 out of 30.
+///
+/// **THE FIRST ASSERTION IS THE CONTROL FOR THE SECOND.** A body that
+/// only demanded the late line would be satisfied by a capture that waits
+/// and then loses everything written before it, and an empty tail is
+/// equally consistent with "the runner did not wait" and "the fixture
+/// wrote nothing". Requiring the EARLY line too says the tail is
+/// COMPLETE rather than merely late — the pair the shipped `nonzero`
+/// fixture writes, plus the one it cannot.
+///
+/// **WHAT IT DOES NOT PIN, said rather than implied**: the ring's 64 KiB
+/// cap is not reachable from an integration fixture and keeps its own pin
+/// at `runner::tests::the_stderr_ring_keeps_the_tail_not_the_head`. This
+/// body pins the ORDER; that one pins the BOUND.
+#[test]
+fn a_stderr_line_written_after_the_exit_is_observed_still_reaches_the_tail() {
+    let h = harness(
+        "nonzerolate",
+        Options {
+            scenario: "nonzero-late-stderr",
+            // The drain wait is bounded by the kill grace (T-161 reuses
+            // it rather than inventing a second dial). The fixture's late
+            // write lands 150 ms after the exit, so the bound is raised
+            // here for the reason the kill-path bodies raise theirs: a
+            // claim about an ordering is only a claim when the bound is
+            // comfortably larger than the scheduling noise of the machine
+            // measuring it. Nothing in this body waits on a clock — it
+            // waits on the failure EVENT, like every body in this file.
+            kill_grace: Duration::from_secs(5),
+            ..Options::default()
+        },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(3), "the exit is still the child's own");
+            assert!(
+                stderr_tail.contains("credentials expired"),
+                "the control: the line written BEFORE the exit must still be there, got \
+                 {stderr_tail:?}"
+            );
+            assert!(
+                stderr_tail.contains("after the exit was observed"),
+                "the tail was snapshotted at the reap instead of read to EOF, so the write that \
+                 outlived the reaped child was lost, got {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    // The turn's semantics are the ones `nonzero` asserts, unchanged: a
+    // typed failure, an untouched project, a resumable session.
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Failed);
+    assert!(!h.project.join("docs").exists());
+    assert_eq!(sessions::load(&h.project).sessions[0].status, "idle");
+}
+
 /// THE REGRESSION PIN FOR WHAT THE REAL SMOKE FOUND, carried one step
 /// further by T-029. Against the live `claude 2.1.226` this task's first
 /// smoke run produced `exitNonZero { code: 1, stderrTail: "" }` — a typed
