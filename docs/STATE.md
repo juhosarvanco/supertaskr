@@ -1,9 +1,9 @@
 # State
 
-Updated: 2026-08-31 at T-171's close — record:
-docs/checkpoints/2026-08-31-T-171-the-interview-gets-an-ending.md, which
-carries the night's queue and the other six records beside it.
-**SEVEN LANES LANDED overnight** and the GRAPH HOLD IS OVER: the emit
+Updated: 2026-08-31 at T-178's close — record:
+docs/checkpoints/2026-08-31-T-178-the-teardown-race-is-named.md; the
+queue lives in T-171's record beside it.
+**EIGHT LANES LANDED overnight, and NO task branches remain** and the GRAPH HOLD IS OVER: the emit
 budget is a derived 2,145,959 with roughly a megabyte free — derive it,
 never quote it. Pre-compaction:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
@@ -49,9 +49,8 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-178` (executor). **SEVEN LANES LANDED overnight** —
-   the current record lists them and carries the whole queue, so this
-   file points rather than transcribes.
+1. IN FLIGHT: **none.** Eight lanes landed overnight and the queue
+   lives in T-171's record, so this file points rather than transcribes.
 2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED; it wants a RULING before
    a fence** — it stands between the registered command and a rendered
    brief. Registration was necessary, NOT sufficient; this file said
@@ -127,7 +126,7 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-171-the-interview-gets-an-ending.md.
+  2026-08-31-T-178-the-teardown-race-is-named.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
   health band's window and CONVENTIONS' dispatch base BOTH read that
   marker, and a seat dropped it for six records before a band noticed

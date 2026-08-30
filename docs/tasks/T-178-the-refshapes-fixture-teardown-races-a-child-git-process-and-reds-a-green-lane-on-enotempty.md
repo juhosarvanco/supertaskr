@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 23
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: standing triage sitting #4 (2026-08-30) — CI run 33327281402, diagnosed at this seat
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@integration-seat
 review:
 ---
 

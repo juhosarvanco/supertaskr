@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **335 behaviours** — 333 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **339 behaviours** — 337 extracted sentences + 2 named-not-extracted (listed at the end) — across 30 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -209,6 +209,13 @@ Census: **335 behaviours** — 333 extracted sentences + 2 named-not-extracted (
 - T-024's streak tree renders through the lens, inside the slot
 - the pane is laid out and painted by the real sheet, inside the slot
 - the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720
+
+## git-fixture
+
+- a fixture's git commit DETACHES a background maintenance process, and the fixture's own config is what stops it
+- a git fixture teardown that cannot remove its tree names the FIXTURE, and does not fail the body it follows
+- the git fixture teardown's removal is BOUNDED, and the bound is the one written beside it
+- every spec that commits into a fixture it removes carries the protection, and the census saying so is DERIVED
 
 ## health-bands
 
