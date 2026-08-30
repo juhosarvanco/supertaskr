@@ -7,6 +7,8 @@ import {
   assembleBrief,
   context,
   contractRows,
+  fenceOverlaps,
+  fieldList,
   render,
   roleText,
   unstampedLines,
@@ -61,6 +63,110 @@ function advisory(stdout: string): string {
   return stdout.slice(at);
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE IDS THIS SUITE SPAWNS ARE DERIVED, NEVER TYPED (T-163-s4).
+ *
+ * `brief.mjs --task <id>` is a DISPATCH question and not a lookup: before
+ * it prints a row it compares the named card's fence against every live
+ * lane's, and a shared entry is a FINDING, which is exit 1. A card id
+ * written into this file therefore hands a fact about somebody else's
+ * worktree the power to red this file — and it did, three times on three
+ * different colliders. `T-169` held `app-board` against the `T-112` this
+ * control used to name; `T-143-s3` held it two days later; and then the
+ * lane fixing THIS defect held `tools/e2e` against `T-157`, which is the
+ * card the whole suite is about, so the fix could not have gone green in
+ * its own lane by repairing the `T-112` half alone.
+ *
+ * THE RULE THIS FILE NOW KEEPS: every invocation whose EXIT is graded
+ * takes a DERIVED id; every in-process reading of the suite's own subject
+ * card stays `T-157`, because a read of a card is not a dispatch question
+ * and no lane can move it.
+ * ──────────────────────────────────────────────────────────────────── */
+
+type BriefCtx = ReturnType<typeof context>;
+
+/**
+ * Card ids whose fence is disjoint from every live lane's AT THE REF THIS
+ * RUNS AT, in a stable order — computed through the SAME `fenceOverlaps`
+ * the command itself compares with, so the prediction cannot drift from
+ * the rule it is predicting.
+ *
+ * Two board states are deliberately NOT worked around here: two live lanes
+ * that overlap EACH OTHER, and a live lane whose card this checkout cannot
+ * read. Each is a finding on every `--task` run whatever id is asked for,
+ * so no choice made here avoids one — and each is lane-protocol rule five
+ * actually broken rather than this suite naming the wrong card.
+ */
+function unfencedIds(ctx: BriefCtx): string[] {
+  const lanes: { id: string; entries: string[] }[] = [];
+  for (const lane of ctx.lanes) {
+    const card = ctx.cards.get(lane.taskId);
+    if (card !== undefined) {
+      lanes.push({ id: lane.taskId, entries: fieldList(card.fields, "touches") });
+    }
+  }
+  const out: string[] = [];
+  for (const [id, card] of ctx.cards) {
+    const mine = { id, entries: fieldList(card.fields, "touches") };
+    // A card that IS a live lane is already in the comparison the command
+    // runs, so it is compared against the OTHER lanes and never itself.
+    const clear = lanes.every(
+      (l) => l.id === id || fenceOverlaps(mine, l, ctx.slugs, ctx.comps).length === 0,
+    );
+    if (clear) out.push(id);
+  }
+  return out.sort();
+}
+
+/** Which seat a rendered advisory block recommends — "" if it names none. */
+function recommendation(block: string): string {
+  const line = block.split("\n").find((l) => l.startsWith("RECOMMENDED SEAT:")) ?? "";
+  return Object.values(SEAT_PHRASE).find((p) => line.includes(p)) ?? "";
+}
+
+let CONTROL: { baseId: string; otherId: string } | undefined;
+
+/**
+ * TWO CARDS THE LIVE BOARD CANNOT COLLIDE, GETTING DIFFERENT
+ * RECOMMENDATIONS — the positive control's two inputs, derived once.
+ *
+ * Chosen on the RECOMMENDATION and not on the whole block, because the
+ * block echoes the card's own path: two distinct ids differ there whatever
+ * the derivation does, so a control satisfied by the echoed filename would
+ * survive a rule that recommended one seat for everything. The choosing
+ * runs IN-PROCESS and the assertion runs on the SUBPROCESS's stdout, so
+ * what is asserted is that the command's real output carries the
+ * difference the derivation claims — not that the derivation agrees with
+ * itself.
+ *
+ * A derivation gone constant has no such pair, and this says so by name
+ * rather than grading a card.
+ */
+function control(): { baseId: string; otherId: string } {
+  if (CONTROL !== undefined) return CONTROL;
+  const ctx = context({});
+  const ids = unfencedIds(ctx);
+  // `seatRecs` reads ctx.card, ctx.root, ctx.slugs, ctx.comps, ctx.ref and
+  // ctx.role and nothing else, so one context serves every card below: the
+  // same derivation with exactly one input moved.
+  const block = (id: string) => render(seatRecs({ ...ctx, taskId: id, card: ctx.cards.get(id) }));
+  const baseId = ids[0];
+  expect(
+    baseId,
+    "no card on the board has a fence disjoint from every live lane, so this suite has no input " +
+      "the board cannot collide",
+  ).toBeDefined();
+  const base = recommendation(block(baseId as string));
+  const otherId = ids.slice(1).find((id) => recommendation(block(id)) !== base);
+  expect(
+    otherId,
+    `all ${ids.length} cards the live board leaves unfenced draw the same recommendation ` +
+      `(${JSON.stringify(base)}) — nothing here could tell a derivation from a constant`,
+  ).toBeDefined();
+  CONTROL = { baseId: baseId as string, otherId: otherId as string };
+  return CONTROL;
+}
+
 /** A signal set that answers KNOW on every arm — the fixture the others move. */
 const ALL_KNOWN = {
   size: "S",
@@ -71,7 +177,8 @@ const ALL_KNOWN = {
 };
 
 test("the recommended seat is a function of the CARD, and an environment full of model dials does not move it", () => {
-  const clean = spawnSync(process.execPath, [CLI, "--task", "T-157"], {
+  const { baseId, otherId } = control();
+  const clean = spawnSync(process.execPath, [CLI, "--task", baseId], {
     cwd: repoRoot,
     encoding: "utf8",
   });
@@ -82,7 +189,7 @@ test("the recommended seat is a function of the CARD, and an environment full of
   // the card, one of these would move it — and the failure mode this
   // guards is the one the criterion names in as many words: a row filled
   // "from the assembling session's own dials".
-  const loud = spawnSync(process.execPath, [CLI, "--task", "T-157"], {
+  const loud = spawnSync(process.execPath, [CLI, "--task", baseId], {
     cwd: repoRoot,
     encoding: "utf8",
     env: {
@@ -105,13 +212,24 @@ test("the recommended seat is a function of the CARD, and an environment full of
   // POSITIVE CONTROL for the comparison itself: the block is not a
   // constant, so "identical" above is a claim about the environment
   // rather than about a string that could never differ. Two cards, one
-  // command, two different blocks.
-  const other = spawnSync(process.execPath, [CLI, "--task", "T-112"], {
+  // command, two different blocks — and the two cards are DERIVED (see
+  // `control` above), because the id this line used to name was a live
+  // card whose fence the board kept colliding.
+  const other = spawnSync(process.execPath, [CLI, "--task", otherId], {
     cwd: repoRoot,
     encoding: "utf8",
   });
   expect(other.status, other.stderr ?? "").toBe(0);
   expect(advisory(other.stdout)).not.toBe(advisory(clean.stdout));
+  // AND THE DIFFERENCE IS IN THE RECOMMENDATION, not merely in the card
+  // path the block echoes back — which two distinct ids differ in whatever
+  // the derivation does, and which is therefore the half of "not a
+  // constant" that is free.
+  expect(
+    recommendation(advisory(other.stdout)),
+    "the two inputs were chosen because the derivation recommends different seats for them, and " +
+      "the command printed the same seat for both",
+  ).not.toBe(recommendation(advisory(clean.stdout)));
 
   // And the structural half, because an env read added tomorrow would
   // pass the comparison above on a machine where that variable is unset.
@@ -256,8 +374,15 @@ test("the advisory line is NOT a contract row — it is printed outside the row 
   expect(rows.some((r) => /seat|model|econom/i.test(r.label))).toBe(false);
   expect(render(assembleBrief(context({ taskId: "T-157" })).recs)).not.toContain("ADVISORY —");
 
-  // …and the command prints it anyway, after the rows.
-  const run = spawnSync(process.execPath, [CLI, "--task", "T-157"], { cwd: repoRoot, encoding: "utf8" });
+  // …and the command prints it anyway, after the rows. THE SPAWN TAKES A
+  // DERIVED ID while the reads above stay on T-157: this line grades an
+  // EXIT, and an exit from `--task` is a dispatch verdict the live board
+  // moves. What it asserts — where the line sits and what it says about
+  // itself — is a fact about the command and not about the card.
+  const run = spawnSync(process.execPath, [CLI, "--task", control().baseId], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
   expect(run.status, run.stderr ?? "").toBe(0);
   expect(run.stdout.indexOf("ROW 13")).toBeLessThan(run.stdout.indexOf("ADVISORY —"));
   expect(advisory(run.stdout)).toContain("NOT one of the rows above");

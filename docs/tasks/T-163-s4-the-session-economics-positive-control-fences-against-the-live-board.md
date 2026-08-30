@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-163-s3
@@ -159,5 +159,220 @@ lands, with nothing to re-edit.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
+
+### Confirmation of understanding — executor, lane `T-163-s4` at base `8ebbb08`
+
+I am building one card inside `touches: [tools/e2e]`: `tests/session-economics.spec.ts`
+grades subprocess exits of `scripts/brief.mjs --task <live card id>`, and
+`brief.mjs --task` is a DISPATCH question, so it answers exit 1 whenever the named
+card's fence collides with any live lane's — which makes a board fact, belonging to
+no input this suite owns, decide whether this suite is green. My job is to keep the
+property the bodies buy (the advisory block is not a constant; nothing about the
+SESSION reaches the recommendation) while removing the board from the grading path:
+the control's card id must be DERIVED as disjoint at the ref it runs at rather than
+typed in, no assertion may be loosened to tolerate a non-zero exit, and I check every
+body in the file that shells the brief rather than only `:73`. My own lane is the test
+bed — it holds `tools/e2e`, so the red must be reproducible before my fix and absent
+after it WITH this lane still live. I re-derive every figure at my own ref and say
+plainly where the card and the repository disagree; the repository wins. Size S,
+`touches: [tools/e2e]` — tooling, not shipped code — so I stamp `verifying` in-lane
+and leave the verifier fields empty as dispatched, and I do not merge, push, or touch
+the integration checkout.
+
+### What landed — executor, lane tip `a18a6f8` (base `8ebbb08`)
+
+One file changed in shipped scope: `tools/e2e/tests/session-economics.spec.ts`
+— `git diff --numstat 8ebbb08..9e3d91f` says **+131/-6**, and the file
+still holds **10** `test("…")` bodies, the same ten, with the same names.
+No script changed; no assertion loosened.
+
+**THE RULE THE FILE NOW KEEPS**, written into it above the helpers: *every
+invocation whose EXIT is graded takes a DERIVED id; every in-process
+reading of the suite's own subject card stays `T-157`.* A read of a card
+is not a dispatch question, so the five in-process `context({ taskId:
+"T-157" })` calls are untouched — the live half still asserts the ruled
+fact, which is the T-163 model this card's own body prescribes.
+
+Three helpers, all in the spec file (nothing was added to
+`session-economics.mjs`, whose "no `process.env`" pin at line 118 is a
+claim about that module):
+
+- `unfencedIds(ctx)` — the card ids whose fence is disjoint from every
+  live lane's, computed through the **same `fenceOverlaps`** the command
+  compares with, so the prediction cannot drift from the rule. It
+  deliberately does not work around two live lanes that overlap *each
+  other*, nor a lane whose card the checkout cannot read: each is a
+  finding on every `--task` run whatever id is asked for, so no choice
+  avoids one, and each is rule five actually broken.
+- `recommendation(block)` — which `SEAT_PHRASE` a rendered block names.
+- `control()` — memoised; takes the first unfenced id as `baseId` and the
+  first later one drawing a DIFFERENT recommendation as `otherId`.
+
+### Each criterion
+
+1. **Not graded on a collidable id** — MET. The four spawns that graded an
+   exit now take `baseId`/`otherId`. Nothing in the file types a card id
+   into a spawn.
+2. **The control still proves the block is not a constant** — MET, and
+   strengthened. Two inputs, one command, two blocks, difference asserted
+   (unchanged line), **plus** a new assertion that the difference lands on
+   the RECOMMENDATION and not only on the card path the block echoes back
+   — which two distinct ids differ in for free, so that half of "not a
+   constant" was previously bought at no cost. Mutant M3 below kills the
+   new line while the old one survives, which is the measurement of what
+   it buys.
+3. **Derived, not named** — MET. `unfencedIds` runs at the ref the suite
+   runs at, off `context()`'s own lane list and card index.
+4. **No exit tolerance** — MET. Both graded exits are still
+   `expect(status, stderr).toBe(0)`; no `[CLEAN, FOUND]` form was
+   introduced. Mutant M2 proves they still red on a 1.
+5. **Headless verification** — MET, both halves. See the figures below.
+
+### Figures, each with its command and ref
+
+Live-environment facts read 2026-08-30 on this host; lanes at every run:
+`T-025-s4` (app-agent) and `T-163-s4` (tools/e2e), read with
+`git worktree list --porcelain`. The `claude/…` worktree is not on a
+`task/` branch and is not a lane.
+
+- **THE RED, at `8ebbb08` with this lane live** —
+  `NPUTER_E2E_PORT=41797 npx playwright test tests/session-economics.spec.ts`
+  from tools/e2e: **2 failed / 8 passed, exit 1**. Both reds at
+  `expect(…status).toBe(0)`, both on `--task T-157`, stderr *"fences are
+  not disjoint: T-163-s4 tools/e2e against T-157 tools/e2e — the same
+  entry"*. Bodies: `:73` (line 113) and `:247` (line 261).
+- **THE GREEN, at `a18a6f8` with the same lane live** — same command:
+  **10 passed, exit 0**. Whole suite,
+  `NPUTER_E2E_PORT=41797 npm test`: **332 passed, exit 0 (3.6m)**.
+- **The board at `8ebbb08`**: 357 live cards; **246 fence-disjoint from
+  every live lane, 111 not**; all **246 of 246** answer `brief.mjs --task`
+  exit 0, so fence disjointness fully predicted the exit at that ref
+  (swept with `fenceOverlaps` + one spawn each).
+- **The recommendation split over those 246**: 201 *"the STRONGEST seat
+  available to this operator"*, 45 *"a STANDARD seat is sufficient"* — so
+  the pair `control()` needs is not scarce. Today it picks `T-001` and
+  `T-016`; it names neither.
+- `node tools/e2e/scripts/brief.mjs --task T-112` at `8ebbb08` → **exit
+  0** (see CORRECTION below). `--task T-157` → **exit 1**.
+  `--task T-163-s4` → **exit 0**.
+
+### Drill ledger — three mutants, one side each, all killed
+
+Run from a **detached scratch worktree** at `/tmp/n163` (short root) at
+the lane tip `a18a6f8`, `NPUTER_E2E_PORT=41798`, baseline **10 passed,
+exit 0**. Untracked build artifacts were symlinked in; no tracked file of
+any other tree was touched. `CARGO_TARGET_DIR` was outside the walk for
+the one cargo run below. Worktree removed after.
+
+| # | Side mutated | The mutation | Result |
+|---|---|---|---|
+| M1 | code under test — `scripts/session-economics.mjs` | `seatRecs` returns a fixed two-record block (the card's own criterion-5 stub: the advisory block made a CONSTANT) | **RED, exit 1, 5 failed / 5 passed.** `:179` fails with the intended sentence: *"all 246 cards the live board leaves unfenced draw the same recommendation (\"a STANDARD seat is sufficient\") — nothing here could tell a derivation from a constant"* |
+| M2 | the new derivation — `unfencedIds` in the spec | `if (clear)` → `if (!clear)`: the helper returns the CLASHING ids | **RED, exit 1, 2 failed / 8 passed.** Both graded bodies fail `toBe(0)` with *"fences are not disjoint: T-163-s4 tools/e2e against T-010-s10 tools/e2e"* — the card's own class, reproduced on purpose, and the proof the exit assertion was not loosened |
+| M3 | code under test — `scripts/brief.mjs` | the printed advisory has its `RECOMMENDED SEAT:` line replaced by a constant; every other line still varies by card | **RED, exit 1, 1 failed / 9 passed** — and the failure is the NEW assertion alone. The pre-existing `expect(advisory(other)).not.toBe(advisory(clean))` **SURVIVED** it, because the echoed card path still differs. This is why criterion 2 was met by strengthening rather than by transcribing |
+
+Restoration, both sides named, per the T-092-s4 rule
+(`git restore --source=HEAD --staged --worktree -- <path>`), sha256 of the
+worktree file against `git show HEAD:<path>`, and an empty diff in the
+index as well as the worktree:
+
+    session-economics.mjs   66d542f493d1326b782bfcc8b6406308913ae87d2aee6094a06f3f13b691ea8b   diff 0 / cached 0
+    session-economics.spec.ts d250224ec8cf39c4914eb6d91b8a29959beb6c4177ef9304217bf3726e9c49c3 diff 0 / cached 0
+    brief.mjs               2b53d87a78c4d8122d751aa485ff59d8e01cc89340a820607b945f163d8f153d   diff 0 / cached 0
+
+Post-drill re-run in the scratch worktree: **10 passed, exit 0**.
+
+### Gates, derived from the merge-forecast diff (2 paths: the spec, and docs/tasks)
+
+Enumerated from `brief.mjs --task T-163-s4` ROW 8 rather than from memory.
+
+- **GRAPH REGEN — FIRES** (`.ts` outside docs/). **ASKED, not predicted**:
+  `CARGO_TARGET_DIR=/tmp/n163tgt cargo run -q -p nputer-index -- index
+  --check --root ../..` from app/src-tauri at `a18a6f8` → **exit 0,
+  `graph.json is CURRENT`** (1,039,074 bytes, 199 files, 2,065 symbols,
+  2,334 edges; 926 bytes of headroom). Nothing to regenerate — the
+  `.nputerignore` exclusion of `tools/` is why, and this is the third
+  worked example of the shape CONVENTIONS already names twice.
+- **BOOT GATE — NOT OWED.** No `app/src-tauri/**`, `app/src/**` or
+  manifest path in the diff.
+- **DOCS GATE — FIRES** (`docs/tasks/**` is read by `cardIndex` and by the
+  gate itself). `npm run lint:docs` → **exit 0**. The DIFF half stays the
+  integrator's hand run.
+- **METHOD EVAL GATE — NOT OWED.** No `method/**` path.
+- **AUDIT GATE** declares no merge-diff trigger, so it is not one of these.
+
+Command exits, `$?` unpiped, in order run: `npm ci` + `npm run build`
+(lib/parser) 0, 0 · `npm ci` (tools/e2e) 0 · `npm install` + `npm run
+build` (app) 0, 0 · playwright session-economics BEFORE **1** · `npm run
+typecheck` 0 · playwright session-economics AFTER 0 · `npm test` 0 ·
+`npm run lint:tokens` 0 · `npm run lint:docs` 0 ·
+`npm run capabilities:check` **1** (see below) · drill M1/M2/M3 1/1/1 ·
+`index --check` 0.
+
+### Where the repository contradicted the card
+
+1. **CORRECTION 1 IS RIGHT AND ITS MEASUREMENT BLOCK IS NOW STALE.** The
+   script is `brief.mjs` — confirmed at `:54`. But the card's whole
+   measurement is `--task T-112 → exit 1`, and **at `8ebbb08` `--task
+   T-112` exits 0**: both colliders the card names (`T-169` at `bf274ed`,
+   `T-143-s3` at `51fa31c`) are landed, and no live lane holds
+   `app-board`. A lane that had reproduced only the card's named instance
+   would have found nothing.
+2. **THE LIVE RED WAS ON `T-157`, AND THE CARD NEVER MENTIONS IT.** Three
+   of the four brief spawns in the file name `T-157`, whose `touches:` is
+   `[docs/checkpoints/, tools/e2e]`. **This card's own fence is
+   `[tools/e2e]`.** So the collision was with the lane fixing the defect,
+   and criterion 5 (`npm test` exits 0) was **unsatisfiable by the card's
+   own prescription** — repairing only the `T-112` half at `:113` leaves
+   `:74`, `:85` and `:260` red in this very lane. The card is right about
+   the class and wrong about its extent; the fix covers all four.
+3. **THE PROMOTION'S PREFLIGHT FINDING IS DISCHARGED BY THE CLOCK.** The
+   card records `--preflight` exit 1 against a live `T-154-s2` holding
+   `tools/e2e`. That lane is gone: at `8ebbb08`
+   `brief.mjs --task T-163-s4` exits **0**.
+4. **THE DISPATCH BRIEF ADDED A DOCUMENT THE ROLE FILE SUBTRACTS.** The
+   brief's read-first row named `docs/ROADMAP.md`;
+   `method/roles/executor.md` step 1 subtracts it in as many words
+   (*"a deliberate subtraction rather than an oversight"*). Per the brief
+   contract's own rule — a brief may not contradict the role file it
+   cites, and where it does the role file wins — ROADMAP was not read,
+   and this is the disclosure that rule requires. `method/tasks/
+   TASK-FORMAT.md`'s ceremony table was read instead, as that step adds.
+5. **THE CEREMONY ROW AND THE DISPATCH INSTRUCTION DISAGREE, AND THE ROW
+   IS NOT WHAT WAS OBEYED.** `touches: [tools/e2e]` is tooling, which
+   CONVENTIONS' rule of thumb (the project states no explicit partition)
+   puts on **"S, diff outside shipped code" — no verifier, executor is its
+   own integrator**. The dispatch said `verifying`, empty verifier fields,
+   do not merge. This lane stamped **`verifying` and did not merge**: that
+   is the conservative reading, since a `done` card left unmerged is worse
+   than a `verifying` one, and executor.md's own step 1 says a lane in
+   exactly this position stops rather than guessing upward against an
+   explicit restriction. **The row says no verifier is owed** — whoever
+   picks this up should read it as ready to integrate, not as awaiting a
+   verdict.
+
+### Attributed, not absorbed
+
+`npm run capabilities:check` exits **1**: *"STALE — committed 25528 bytes,
+a fresh generation is 26427 bytes"*. **Pre-existing and provably not
+this diff's** — the identical pair of figures comes back from a detached
+worktree at the base `8ebbb08` with this diff absent, and the fresh
+generation is the same 26427 bytes on both sides, so this change moves
+`docs/CAPABILITIES.md` by zero bytes. `git diff` confirms no `test("…")`
+line was added or removed. `docs/CAPABILITIES.md` is outside this fence,
+so `npm run capabilities` was **not** run; this is T-153-s8's red, still
+open on main.
+
+### Routed rather than fixed
+
+`T-163-s5` (filed, `status: suggested`): `tools/e2e/tests/brief.spec.ts`
+`:734` and `:750` spawn `brief.mjs --task T-133` against the LIVE checkout
+and accept `[EXIT.CLEAN, EXIT.FOUND]` — the same board-dependence this
+card is about, discharged there by loosening the exit instead of deriving
+the id. Inside this fence but outside this card's criteria, and criterion
+4 forbids this lane's own fix from tolerating a non-zero exit while saying
+nothing about bodies that already do. The three other `[CLEAN, FOUND]`
+sites (`:1019`, `:1049`, `:1069`) pass `--root <fixture>`, where no live
+lane reaches them — a different class, argued on the new card and left
+alone.
 
 ## Verdicts
