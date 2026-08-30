@@ -304,10 +304,32 @@ Two questions, both re-derived at this lane's own ref.
   measured; the number is stamped here so the integrator regenerating the
   graph sees what it costs.
 - GRAPH REGEN fires (the diff touches a `*.rs` file outside `docs/`) and
-  is the integrator's at merge. BOOT GATE fires on `app/src-tauri/**` and
-  is likewise the integrator's; the executor's own run is owed on the
-  same trigger and is recorded in the report.
-- DOCS GATE: recorded in the report with the exit it was read at.
+  the REGEN is the integrator's at merge.
+- BOOT GATE fires on `app/src-tauri/**`. **THE EXECUTOR RUNS IT TOO** and
+  did: `NPUTER_BOOT_PORT=14524 npm run boot:check` from `tools/e2e/` —
+  **exit 0**, both `[nputer]` lines observed, *"[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-025-s6"* and *"[nputer] window "main"
+  created"*, tree stopped on SIGTERM with no SIGKILL. The port was read
+  with `lsof -nP -iTCP:14524 -sTCP:LISTEN` at ZERO ROWS immediately
+  before, and 1420 was neither probed nor bound.
+- DOCS GATE, DIFF half, fed the RANGE RULE's own executor pair
+  (`TREE=$(git merge-tree --write-tree 9ed2b7f HEAD)` — `$?` read first,
+  0 — then `git diff --name-only 9ed2b7f "$TREE"`, which returns the two
+  files this lane changed and nothing else): **exit 1, FIRES** — 1 path
+  under `docs/` is a code input, this card itself, read by 9 bodies
+  across 3 suites. All three run and all three are green:
+  `npx vitest run` from `lib/parser/` **exit 0**, 315 passed / 15 files;
+  `npm test` from `app/` **exit 0**, 1015 passed / 47 files;
+  `npm test` from `tools/e2e/` **exit 0**, **320 passed** on
+  `NPUTER_E2E_PORT=14523` (lsof-read at zero rows first; 3.4 min). The
+  e2e lane plants and restores control bytes in seven tracked files as it
+  runs — `git status` was clean afterwards, and it was run in this
+  WORKTREE rather than the main checkout for exactly that reason.
+- WHOLE-TREE half: `npm run lint:docs` from `tools/e2e/` **exit 0** — 23
+  derived readers, 0 frontmatter issues, every live card's status legal
+  (`verifying` included), governing-document budgets hold.
+- `npm run lint:tokens` from `tools/e2e/` **exit 0** — clean, TOKEN 155
+  files, CONTROL 935 tracked text files.
 
 **CONFLICTS BETWEEN CARD AND TREE: none.** Every claim the card makes
 about the tree held at `9ed2b7f` — the body with no assertion of any
