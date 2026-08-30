@@ -1,13 +1,16 @@
 # State
 
-Updated: 2026-08-30 at the loop-customization sitting — TEN @human
-rulings landed in one day. Afternoon: milestone 3 HELD for @human's
-own genesis walk; the customization sitting approved TWO-TRACK,
-FORM-FIRST (no UI before the form ruling — T-168's brief); D5 ruled
-in @human's words (assignment BINDING; mismatch flagged — T-169).
-Cut: T-167/T-168/T-169; T-166 done same-day. Dispatching
-T-167 ∥ T-168 ∥ T-156-s1. Current record:
-docs/checkpoints/2026-08-30-loop-sitting.md.
+Updated: 2026-08-30 at the T-167 checkpoint — NINETEEN @human rulings
+in one day: the customization FORM is fully ruled (nine answers, the
+asymmetric hybrid — rooms/customization-form.md RESOLUTION), the
+charter is a vision-not-a-queue (rooms/version-planning.md, draft
+v1/v2/v3 partition awaiting @human's markup), and all three afternoon
+lanes are LANDED (T-156-s1 bands ritual live, T-168 brief ruled,
+T-167 genesis skill packs). TWO alarms routed: graph budget 99.3%
+(7,395 bytes left — T-167-s2 p1; the fix chain is T-135 Half B ->
+T-140-s1) and triage/live-suggestions DRIFTING at 22 (standing
+sitting #2 due). Current record:
+docs/checkpoints/2026-08-30-T-167.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -54,15 +57,16 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. Dispatching from this checkpoint: `T-167` (app-agent) ∥ `T-168`
-   (docs/research + docs/rooms) ∥ `T-156-s1` (docs/checkpoints/,
-   CONVENTIONS, .github). Queued after: `T-160-s4`, `T-162-s2`
-   (e2e seat), `T-169` (board seat), `T-112` (ONE collider —
-   T-031-s1 ruled or absorbed at dispatch), `T-164` (nothing).
-2. @human's open items: THE GENESIS WALK (closes milestone 3 —
-   "genesis walk now" preps it in minutes); the FORM ruling when
-   T-168's brief lands (gates all customization UI). `T-025-s4`
-   queues for the next sitting.
+1. STANDING SITTING #2 IS DUE (triage/live-suggestions drifting at
+   22): run it FIRST under T-159's rules — the day's ~14 fresh
+   suggestion cards, T-167-s2's graph alarm among them at p1. Then by
+   derived priority: `T-135` Half B (unblocks T-140-s1, the graph
+   fix), `T-160-s4`, `T-162-s2`, `T-169`, `T-112` (ONE collider),
+   `T-164`. The customization UI cards wait on a VERSION sitting
+   (rooms/version-planning.md — the standing rule).
+2. @human's open items: THE GENESIS WALK (closes milestone 3); the
+   v1/v2/v3 partition markup (rooms/version-planning.md). Both
+   unhurried; `T-025-s4` queues for the sitting.
 3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
    the preflight refuses it until then, correctly. `T-154-s2`
    (promoted, `review: independent`) is dispatchable after the e2e

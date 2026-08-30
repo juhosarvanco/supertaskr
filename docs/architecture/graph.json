@@ -4601,8 +4601,8 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:d2a7fb797a00c43624bf5980ed2354145a7c88abe495039751725afe1b36405d",
-      "loc": 562,
+      "hash": "blake3:c4c3522afd8b0f26c5e1a0a0fddff6b272409c9e4bd50c55266c6b078b965e9f",
+      "loc": 735,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/kit.rs#KIT_FILES",
@@ -4610,8 +4610,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            61,
-            118
+            63,
+            120
           ]
         },
         {
@@ -4620,8 +4620,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            38,
-            38
+            40,
+            40
           ]
         },
         {
@@ -4630,8 +4630,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            41,
-            47
+            43,
+            49
           ]
         },
         {
@@ -4640,8 +4640,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            124,
-            129
+            126,
+            131
           ]
         },
         {
@@ -4650,8 +4650,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            35,
-            35
+            37,
+            37
           ]
         },
         {
@@ -4660,8 +4660,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            204,
-            216
+            256,
+            258
           ]
         },
         {
@@ -4670,7 +4670,27 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            268,
+            332,
+            338
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#assemble_kickoff_for_with",
+          "name": "assemble_kickoff_for_with",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            341,
+            347
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#assemble_kickoff_with",
+          "name": "assemble_kickoff_with",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            261,
             274
           ]
         },
@@ -4680,8 +4700,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            246,
-            263
+            304,
+            306
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#assemble_resume_kickoff_with",
+          "name": "assemble_resume_kickoff_with",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            309,
+            327
           ]
         },
         {
@@ -4690,8 +4720,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            283,
-            294
+            356,
+            367
           ]
         },
         {
@@ -4700,8 +4730,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            226,
-            230
+            284,
+            288
           ]
         },
         {
@@ -4710,8 +4740,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            139,
-            145
+            141,
+            147
           ]
         },
         {
@@ -4720,8 +4750,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            153,
-            172
+            155,
+            174
           ]
         },
         {
@@ -4730,8 +4760,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            131,
-            136
+            133,
+            138
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#skills_clause",
+          "name": "skills_clause",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            222,
+            241
           ]
         },
         {
@@ -4740,8 +4780,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            297,
-            562
+            370,
+            735
           ]
         },
         {
@@ -4750,8 +4790,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            177,
-            196
+            179,
+            198
           ]
         }
       ]
@@ -4760,8 +4800,8 @@
       "id": "f:app/src-tauri/src/agent/mod.rs",
       "path": "app/src-tauri/src/agent/mod.rs",
       "lang": "rust",
-      "hash": "blake3:e2c616cc1f7ccd4f70b5ff13b37567f20a9b3fa7e5600e87585fcf51bf7206c6",
-      "loc": 1873,
+      "hash": "blake3:65d2245a4e4a89dd8c9d339b111b3f10e28017106a113bf76b2d14a5a75f9b19",
+      "loc": 1940,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/mod.rs#AgentState",
@@ -4769,8 +4809,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            172,
-            180
+            173,
+            181
           ]
         },
         {
@@ -4779,8 +4819,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            106,
-            111
+            107,
+            112
           ]
         },
         {
@@ -4789,8 +4829,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            49,
-            49
+            50,
+            50
           ]
         },
         {
@@ -4799,8 +4839,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            125,
-            136
+            126,
+            137
           ]
         },
         {
@@ -4809,8 +4849,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            141,
-            151
+            142,
+            152
           ]
         },
         {
@@ -4819,8 +4859,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            701,
-            728
+            758,
+            785
           ]
         },
         {
@@ -4829,8 +4869,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            663,
-            663
+            720,
+            720
           ]
         },
         {
@@ -4839,8 +4879,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            115,
-            119
+            116,
+            120
           ]
         },
         {
@@ -4849,8 +4889,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            91,
-            102
+            92,
+            103
           ]
         },
         {
@@ -4859,8 +4899,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            55,
-            87
+            56,
+            88
           ]
         },
         {
@@ -4869,8 +4909,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            162,
-            162
+            163,
+            163
           ]
         },
         {
@@ -4889,8 +4929,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            876,
-            890
+            933,
+            947
           ]
         },
         {
@@ -4899,8 +4939,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            572,
-            654
+            625,
+            711
           ]
         },
         {
@@ -4909,8 +4949,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            182,
-            265
+            183,
+            266
           ]
         },
         {
@@ -4919,8 +4959,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            153,
-            157
+            154,
+            158
           ]
         },
         {
@@ -4929,8 +4969,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            267,
-            271
+            268,
+            272
           ]
         },
         {
@@ -4939,8 +4979,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            164,
-            168
+            165,
+            169
           ]
         },
         {
@@ -4949,8 +4989,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            746,
-            779
+            803,
+            836
           ]
         },
         {
@@ -4964,13 +5004,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/agent/mod.rs#report_skills",
+          "name": "report_skills",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            462,
+            490
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/agent/mod.rs#resume_genesis",
           "name": "resume_genesis",
           "kind": "fn",
           "exported": true,
           "range": [
-            448,
-            545
+            501,
+            598
           ]
         },
         {
@@ -4989,8 +5039,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            784,
-            850
+            841,
+            907
           ]
         },
         {
@@ -5004,13 +5054,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/agent/mod.rs#skills",
+          "name": "skills",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            31,
+            31
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/agent/mod.rs#spawn_turn",
           "name": "spawn_turn",
           "kind": "fn",
           "exported": false,
           "range": [
-            895,
-            980
+            952,
+            1047
           ]
         },
         {
@@ -5019,8 +5079,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            278,
-            437
+            279,
+            445
           ]
         },
         {
@@ -5029,8 +5089,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            853,
-            865
+            910,
+            922
           ]
         },
         {
@@ -5039,8 +5099,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            983,
-            1873
+            1050,
+            1940
           ]
         },
         {
@@ -5049,8 +5109,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            684,
-            696
+            741,
+            753
           ]
         }
       ]
@@ -5778,8 +5838,8 @@
       "id": "f:app/src-tauri/src/agent/sessions.rs",
       "path": "app/src-tauri/src/agent/sessions.rs",
       "lang": "rust",
-      "hash": "blake3:e6500db72fc054d561167428ac8c1435f06864ca8ff2ba1090eb960b3a44693f",
-      "loc": 1175,
+      "hash": "blake3:098ac503a9f283e1368765255c941674aec0a8970d2998030362c5064a19d1d0",
+      "loc": 1197,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/sessions.rs#DAYS_IN_MONTH",
@@ -5787,8 +5847,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            582,
-            582
+            601,
+            601
           ]
         },
         {
@@ -5797,8 +5857,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            286,
-            304
+            305,
+            323
           ]
         },
         {
@@ -5807,8 +5867,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            224,
-            242
+            243,
+            261
           ]
         },
         {
@@ -5828,7 +5888,7 @@
           "exported": true,
           "range": [
             31,
-            55
+            74
           ]
         },
         {
@@ -5837,8 +5897,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            124,
-            127
+            143,
+            146
           ]
         },
         {
@@ -5847,8 +5907,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            434,
-            434
+            453,
+            453
           ]
         },
         {
@@ -5877,8 +5937,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            355,
-            377
+            374,
+            396
           ]
         },
         {
@@ -5887,8 +5947,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            382,
-            396
+            401,
+            415
           ]
         },
         {
@@ -5897,8 +5957,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            202,
-            206
+            221,
+            225
           ]
         },
         {
@@ -5907,8 +5967,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            324,
-            326
+            343,
+            345
           ]
         },
         {
@@ -5917,8 +5977,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            246,
-            262
+            265,
+            281
           ]
         },
         {
@@ -5927,8 +5987,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            57,
-            121
+            76,
+            140
           ]
         },
         {
@@ -5937,8 +5997,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            584,
-            586
+            603,
+            605
           ]
         },
         {
@@ -5947,8 +6007,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            594,
-            628
+            613,
+            647
           ]
         },
         {
@@ -5957,8 +6017,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            149,
-            172
+            168,
+            191
           ]
         },
         {
@@ -5967,8 +6027,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            335,
-            350
+            354,
+            369
           ]
         },
         {
@@ -5977,8 +6037,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            175,
-            183
+            194,
+            202
           ]
         },
         {
@@ -5987,8 +6047,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            311,
-            317
+            330,
+            336
           ]
         },
         {
@@ -5997,8 +6057,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            414,
-            422
+            433,
+            441
           ]
         },
         {
@@ -6007,8 +6067,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            558,
-            566
+            577,
+            585
           ]
         },
         {
@@ -6017,8 +6077,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            137,
-            143
+            156,
+            162
           ]
         },
         {
@@ -6027,8 +6087,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            129,
-            131
+            148,
+            150
           ]
         },
         {
@@ -6037,8 +6097,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            454,
-            456
+            473,
+            475
           ]
         },
         {
@@ -6047,8 +6107,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            486,
-            535
+            505,
+            554
           ]
         },
         {
@@ -6057,8 +6117,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            631,
-            1175
+            650,
+            1197
           ]
         },
         {
@@ -6067,8 +6127,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            133,
-            135
+            152,
+            154
           ]
         },
         {
@@ -6077,8 +6137,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            569,
-            578
+            588,
+            597
           ]
         },
         {
@@ -6087,8 +6147,217 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            189,
-            198
+            208,
+            217
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/agent/skills.rs",
+      "path": "app/src-tauri/src/agent/skills.rs",
+      "lang": "rust",
+      "hash": "blake3:e546b7ac990348477a0d4315aa9cc8c0f5eadc6dd32b03db4a547337587a6f34",
+      "loc": 808,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#Discovered",
+          "name": "Discovered",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            100,
+            106
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#MAX_DESCRIPTION_CHARS",
+          "name": "MAX_DESCRIPTION_CHARS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            61,
+            61
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#MAX_NAME_CHARS",
+          "name": "MAX_NAME_CHARS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            56,
+            56
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#MAX_PACKS",
+          "name": "MAX_PACKS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#MAX_SKILL_BYTES",
+          "name": "MAX_SKILL_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            49,
+            49
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#SKILLS_REL_DIR",
+          "name": "SKILLS_REL_DIR",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            41,
+            41
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#SKILL_FILE",
+          "name": "SKILL_FILE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#SkillPack",
+          "name": "SkillPack",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            66,
+            85
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#SkillReject",
+          "name": "SkillReject",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            91,
+            96
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#discover",
+          "name": "discover",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            132,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#flatten",
+          "name": "flatten",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            259,
+            281
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#impl Discovered",
+          "name": "impl Discovered",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            108,
+            114
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#io_why",
+          "name": "io_why",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            247,
+            249
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#parse_frontmatter",
+          "name": "parse_frontmatter",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            292,
+            364
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#read_pack",
+          "name": "read_pack",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            194,
+            232
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#required",
+          "name": "required",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            236,
+            243
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#sha256_hex",
+          "name": "sha256_hex",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            394,
+            475
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#skills_root",
+          "name": "skills_root",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            117,
+            123
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            478,
+            808
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/skills.rs#unquote",
+          "name": "unquote",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            367,
+            377
           ]
         }
       ]
@@ -8007,9 +8276,19 @@
       "id": "f:app/src-tauri/tests/agent_runner.rs",
       "path": "app/src-tauri/tests/agent_runner.rs",
       "lang": "rust",
-      "hash": "blake3:2d808dc946a7418ca071a1ef8c186d70f0130ff61f10565f23b6ff0509229937",
-      "loc": 5351,
+      "hash": "blake3:440f80a85380b54ac0cbe8fb7cc88d8330063e5c6fc2dfe26ca6b950b40d9270",
+      "loc": 5561,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#BRAND_PACK",
+          "name": "BRAND_PACK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4757,
+            4757
+          ]
+        },
         {
           "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY",
           "name": "CANARY",
@@ -8096,8 +8375,18 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            4801,
-            4806
+            5011,
+            5016
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#SECURITY_PACK",
+          "name": "SECURITY_PACK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4759,
+            4759
           ]
         },
         {
@@ -8106,8 +8395,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4111,
-            4111
+            4114,
+            4114
           ]
         },
         {
@@ -8116,8 +8405,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4113,
-            4113
+            4116,
+            4116
           ]
         },
         {
@@ -8126,8 +8415,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4117,
-            4118
+            4120,
+            4121
           ]
         },
         {
@@ -8146,8 +8435,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5034,
-            5067
+            5244,
+            5277
           ]
         },
         {
@@ -8231,6 +8520,16 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
+          "name": "a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4896,
+            4946
+          ]
+        },
+        {
           "id": "s:app/src-tauri/tests/agent_runner.rs#a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
           "name": "a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
           "kind": "fn",
@@ -8246,8 +8545,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4456,
-            4542
+            4459,
+            4545
           ]
         },
         {
@@ -8256,8 +8555,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3571,
-            3647
+            3574,
+            3650
           ]
         },
         {
@@ -8266,8 +8565,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3393,
-            3453
+            3396,
+            3456
           ]
         },
         {
@@ -8276,8 +8575,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3509,
-            3563
+            3512,
+            3566
           ]
         },
         {
@@ -8286,8 +8585,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4918,
-            4955
+            5128,
+            5165
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
+          "name": "a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4841,
+            4882
           ]
         },
         {
@@ -8328,6 +8637,16 @@
           "range": [
             1467,
             1482
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_planted_skill_pack_reaches_the_child_and_the_session_record",
+          "name": "a_planted_skill_pack_reaches_the_child_and_the_session_record",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4770,
+            4832
           ]
         },
         {
@@ -8406,8 +8725,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3877,
-            3950
+            3880,
+            3953
           ]
         },
         {
@@ -8476,8 +8795,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4961,
-            5026
+            5171,
+            5236
           ]
         },
         {
@@ -8536,8 +8855,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4845,
-            4908
+            5055,
+            5118
           ]
         },
         {
@@ -8556,8 +8875,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4574,
-            4637
+            4577,
+            4640
           ]
         },
         {
@@ -8586,8 +8905,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4654,
-            4736
+            4657,
+            4739
           ]
         },
         {
@@ -8596,8 +8915,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5301,
-            5351
+            5511,
+            5561
           ]
         },
         {
@@ -8656,8 +8975,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3461,
-            3501
+            3464,
+            3504
           ]
         },
         {
@@ -8686,8 +9005,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3838,
-            3849
+            3841,
+            3852
           ]
         },
         {
@@ -8766,8 +9085,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3967,
-            4061
+            3970,
+            4064
           ]
         },
         {
@@ -8776,8 +9095,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3343,
-            3374
+            3346,
+            3377
           ]
         },
         {
@@ -8806,8 +9125,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3665,
-            3673
+            3668,
+            3676
           ]
         },
         {
@@ -8816,8 +9135,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3679,
-            3682
+            3682,
+            3685
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_pack",
+          "name": "plant_pack",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4751,
+            4755
           ]
         },
         {
@@ -8856,8 +9185,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4748,
-            4788
+            4958,
+            4998
           ]
         },
         {
@@ -8866,8 +9195,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4812,
-            4835
+            5022,
+            5045
           ]
         },
         {
@@ -8876,8 +9205,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3686,
-            3698
+            3689,
+            3701
           ]
         },
         {
@@ -8936,8 +9265,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4338,
-            4392
+            4341,
+            4395
           ]
         },
         {
@@ -8946,8 +9275,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4398,
-            4441
+            4401,
+            4444
           ]
         },
         {
@@ -8956,8 +9285,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4206,
-            4208
+            4209,
+            4211
           ]
         },
         {
@@ -8966,8 +9295,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4210,
-            4334
+            4213,
+            4337
           ]
         },
         {
@@ -8976,8 +9305,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4172,
-            4204
+            4175,
+            4207
           ]
         },
         {
@@ -9006,8 +9335,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5175,
-            5240
+            5385,
+            5450
           ]
         },
         {
@@ -9016,8 +9345,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3319,
-            3337
+            3322,
+            3340
           ]
         },
         {
@@ -9036,8 +9365,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4161,
-            4168
+            4164,
+            4171
           ]
         },
         {
@@ -9086,8 +9415,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5077,
-            5105
+            5287,
+            5315
           ]
         },
         {
@@ -9096,8 +9425,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5250,
-            5295
+            5460,
+            5505
           ]
         },
         {
@@ -9106,8 +9435,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            5111,
-            5153
+            5321,
+            5363
           ]
         },
         {
@@ -9126,8 +9455,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            4085,
-            4106
+            4088,
+            4109
           ]
         },
         {
@@ -9167,7 +9496,7 @@
           "exported": false,
           "range": [
             3228,
-            3312
+            3315
           ]
         },
         {
@@ -9226,8 +9555,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3728,
-            3833
+            3731,
+            3836
           ]
         },
         {
@@ -9306,8 +9635,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            3700,
-            3709
+            3703,
+            3712
           ]
         }
       ]
@@ -24602,6 +24931,14 @@
     },
     {
       "from": "f:app/src-tauri/src/agent/kit.rs",
+      "to": "f:app/src-tauri/src/agent/skills.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/agent/kit.rs",
       "to": "p:cargo:std",
       "kind": "import",
       "symbols": [
@@ -24650,6 +24987,11 @@
         "SessionEntry",
         "TranscriptLine"
       ]
+    },
+    {
+      "from": "f:app/src-tauri/src/agent/mod.rs",
+      "to": "f:app/src-tauri/src/agent/skills.rs",
+      "kind": "import"
     },
     {
       "from": "f:app/src-tauri/src/agent/mod.rs",
@@ -24771,6 +25113,17 @@
         "Write",
         "fs",
         "io"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/agent/skills.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap",
+        "Path",
+        "PathBuf",
+        "fs"
       ]
     },
     {
@@ -38876,8 +39229,8 @@
     }
   ],
   "stats": {
-    "files": 189,
-    "symbols": 2163,
-    "edges": 2114
+    "files": 190,
+    "symbols": 2195,
+    "edges": 2117
   }
 }
