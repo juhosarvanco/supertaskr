@@ -138,6 +138,46 @@ this file is a project's actual name.
    which is the fact that decides the shape of this rule: the seat had
    read the finding, agreed with it, and still could not see itself in a
    sentence that named the executor.
+   **AND THE ATOMICITY THE TEST RESTS ON IS AN OBLIGATION ON THE WRITER,
+   NOT A PROPERTY OF GIT — SO A PERMITTED WRITE IS STAGE-AND-COMMIT IN
+   ONE MOTION, LEAVING NOTHING STAGED BEHIND.** *"A commit does not
+   contend; it is atomic"* is true of a COMPLETED commit and false of
+   the staging step, and the counterexample is violation **(a)** above:
+   the index is a shared surface, and an integrator spent four minutes
+   deciding whether a tree it shared was safe to write because that
+   index was dirty. **THAT ACT OPENED THIS WHOLE THREAD AND WAS
+   PROHIBITED BY NOTHING.** Staging is not an install, not a suite run,
+   and not one of the four write prohibitions — so it sat outside this
+   rule's list before the seat was generalised, while it was
+   generalised, and after the generalisation was scoped back. Three
+   spellings of one rule, none of which reached the incident it was
+   written for. The collision-or-authority discriminator was right and
+   its supporting clause overstated; this sentence is the repair, and it
+   is stated so that the ordinary case this rule explicitly blesses — an
+   atomic stamp-and-commit under a running integrator, at that
+   integrator's own request — still passes unchanged.
+   **AND THIS RULE PARTITIONS BY CHECKOUT, WHICH IS NOT THE ONLY WAY A
+   LANE CAN COLLIDE.** Every surface this protocol reasons about is
+   scoped by LOCATION — an index, a ref namespace, a directory, a
+   checkout, a board — and the isolation everybody reaches for is the
+   worktree. **Some surfaces are scoped by the MACHINE instead**: a port
+   number, the host's list of worktrees, anything keyed on a name that
+   is global to the machine. **Two lanes with disjoint fences, disjoint
+   trees, disjoint indexes and disjoint runners still share those**, and
+   every written rule stays satisfied while they collide — so the
+   collision probability rises with parallelism and nothing warns.
+   Observed both ways on this method's own project: two lanes, each
+   obeying this rule exactly, contending for one DEFAULTED port; and a
+   check that joined a MACHINE-scoped list to a CHECKOUT-scoped one,
+   which reddened in every older lane the moment a newer lane was cut.
+   **NAME THE SCOPE OF EVERY SURFACE YOU DEPEND ON — machine or
+   checkout — and where the answer is machine, DERIVE the value from the
+   lane rather than defaulting it.** A construction beats a check: two
+   lanes cannot pick the same number when the number comes from the
+   lane. Where you must check instead, ask the operating system — never
+   by connecting, never by binding to test, because taking a port for a
+   microsecond is still taking it — and remember that proving it free
+   NOW reserves nothing.
 
 5. **Concurrent lanes have disjoint `touches:`** — the orchestrator's
    guardrail (tasks/TASK-FORMAT.md), and the executor's too. An executor
@@ -198,6 +238,36 @@ this file is a project's actual name.
    the act — and this clause does not touch it. Two lanes split on this
    in one night, which is the signature of an unruled conflict rather
    than of one session's mistake.
+   **THE FENCE IS A PROPERTY AT THE MOMENT OF THE WRITE, NOT ONLY A
+   DISCIPLINE AT THE HANDOFF.** Everything above describes a rule a
+   session KEEPS. A project that can enforce it should: after cutting
+   the lane and before briefing the session, the dispatcher EXPANDS the
+   card's `touches:` once — through the project's single fence
+   implementation, never a second copy of the expansion — and leaves the
+   answer IN THE LANE as a manifest the lane's own tooling reads at
+   every write. **The expansion happens at dispatch and not at the
+   write** because a lane that computes its own fence can compute a
+   wider one, which is widening from inside the lane by another route.
+   **THREE ANSWERS AND A POSITIVE CONTROL.** A checkout that is not on a
+   task branch is ALLOWED — the integrator, the coordinating seat and
+   every detached scratch tree — and that is the control that keeps a
+   refusal distinguishable from an absence. A task branch with NO
+   manifest is REFUSED, because that is a dispatch that skipped its
+   step. A path outside the manifest is refused, NAMING the fence, the
+   path and the route. Anything the protocol itself writes on every card
+   — the task-file directory — is allowed, per the clause above.
+   **AND THE LIMITS ARE DISCLOSED IN THE SAME BREATH, BECAUSE A GUARD
+   DESCRIBED AS TOTAL IS WORSE THAN NO GUARD.** A hook on the write
+   TOOLS sees writes made with those tools. **A write mediated by a
+   shell — a redirect, a `sed -i`, a script — does not pass through
+   them, and stays covered by this protocol and by nothing else.** So
+   does any write by a seat that holds no lane. And a guard that cannot
+   locate its own program cannot refuse: it fails OPEN, silently, which
+   is the harness's contract and not a defect to be argued away. **State
+   these where the guard is documented**, and read the guard's own
+   decision function rather than a page about it — a description of a
+   guard drifts from the guard, and the description is the half that
+   gets read.
 
 6. **The integrator removes the worktree** — after the merge and the
    checkpoint, not before. The executor never removes its own: a
@@ -229,3 +299,43 @@ all — which is the whole reason the order is fixed rather than
 conventional. A stamp written inside the lane and a stamp written on the
 integration branch are two edits to one line, and the merge has to be
 resolved by hand.
+
+## The revert play — the undo, written before the first bad merge
+
+**A merge that should not have landed is not a rare event; it is an
+event this method had no move for.** Written down now, in the calm,
+because the alternative is that the first one is improvised by whoever
+is holding the branch at the time — and an improvised undo is how a
+project loses the record of what went wrong along with the work.
+
+1. **REVERT THE MERGE COMMIT, mainline first** — `git revert -m 1
+   <merge>` — and never rebase, amend or force the integration branch.
+   The bad merge STAYS in the history: it is the evidence, the verdict
+   names it, and a branch rewritten to hide it makes every citation of
+   that commit dangle. The revert is a new commit that undoes the
+   content and preserves the fact.
+2. **THE CARD RETURNS TO `planned`, AND THE REVERT IS RECORDED IN THE
+   CARD'S OWN BODY** — dated, naming the reverting commit and the
+   reason. It is a RECORD, so it is appended and never erased, and it
+   survives the card being rebuilt. A card that goes back to `planned`
+   with no trace of why is a card the next executor will rebuild
+   identically. Its fields unlock with the status (tasks/TASK-FORMAT.md,
+   lifecycle), and the rebuild is dispatched to a FRESH seat by the same
+   rule that sends a rejected card to one.
+3. **RECONCILE THE GENERATED ARTIFACTS AT THE REVERTING CHECKPOINT, NOT
+   IN THE REVERT.** Fixtures, indexes, generated documents and anything
+   else derived from the tree are regenerated in the checkpoint commit
+   that follows, exactly as at any other integration — a revert is a
+   merge-shaped event and it takes the two-commit shape for the same
+   reason (roles/integrator.md step 1). A revert whose generated half
+   was reverted textually is stale in a new way.
+4. **THE CHECKPOINT RECORD CARRIES THE WHY**, at the loudness a skipped
+   gate gets: what landed, what it broke, how it was found, and what
+   would have caught it earlier. That last clause is the whole return on
+   the play — the revert costs a commit, and the record is what makes it
+   cost less than once.
+
+**AND A REVERT IS NOT A DISPOSITION.** It undoes a merge; it does not
+close, reject or park anything. Which of those the card gets is
+triage's, by the same single-writer rule that governs every other
+placement field.

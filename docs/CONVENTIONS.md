@@ -325,13 +325,64 @@
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.7) and noted here.
+  method/ formats are version-bumped (currently v0.1.8) and noted here.
+  v0.1.8 (T-159, 2026-08-30) — the METABOLISM release, one bump owning
+  every method-text change ADR-020 and its reviews earned, plus the
+  parked riders whose resurfacing condition named it. The fence becomes
+  a PROPERTY at the write in lane-protocol rule 5, limits disclosed
+  (shell-mediated writes stay protocol-covered, a guard that cannot
+  find its program fails open); rule 4 gains the staged-state
+  obligation — a permitted write is stage-and-commit in one motion —
+  and the MACHINE-versus-CHECKOUT scope class. The REVERT PLAY arrives
+  as lane-protocol's undo. Per-seat RUN HYGIENE enters all five role
+  files (dials at session start, standing seats compact between
+  dispatches, noisy jobs in subagents, quiet flags with the count
+  kept). The verifier's pass becomes explicitly TWO-PHASE with the
+  attack set written out first, and executor-derived facts belong below
+  the marker in any brief that has one. executor.md step 1 gains
+  TASK-FORMAT's ceremony table (T-152), the report gains the
+  gate-derivation-is-not-a-figure clause (T-126-s6), and brief row 3
+  applies the role file's own subtractions (T-155-s4). integrator.md
+  gains the predicted-tree comparison (T-091-s4), the WHO-before-WHEN
+  ordering on repair-versus-file (T-132-s5) and its steps-versus-rules
+  citation vocabulary (T-052-s5). TASK-FORMAT gains guard-class
+  `review: independent`, the suggestion METABOLISM (search before
+  filing, corroborate rather than duplicate, class parent plus
+  disposition hint), the parked-card resurfacing condition, the
+  DISCHARGED-not-declined archive wording, the half-dispatched card's
+  named case (T-135-s4) and the reason it keeps its own vocabulary copy
+  (T-104-s4 item 2). docs-protocol gains law 8 — every machine ships
+  its RETIREMENT condition — and the trust relocation. planner.md and
+  plan-interview's stage-0 row gain bare-git and write-tool spellings
+  (T-124-s1); the adapter template states that a role file's reading
+  step wins over its list. orchestrator gains triage-at-the-stamp,
+  review reconciliation and the assembler pointer (T-133-s3).
   v0.1.7 (ADR-019, 2026-08-27): method/docs-protocol.md added — the
   three-tier governing-docs contract; the integrator's checkpoint
   ritual gains the record-first sequence; the adapter template names
   the generated capabilities census (completing T-145's fix and
   discharging T-138-s2); the kit's STATE scaffold points at the
   protocol.
+  **WHAT A BUMP IS OWED FOR — SETTLED HERE, BECAUSE "FORMATS" HAS BEEN
+  READ BOTH WAYS AND A LANE CANNOT DECIDE IT FROM INSIDE ITS OWN
+  FENCE** (T-145-s2, whose instance went moot and whose question did
+  not; T-104 ruled the call belongs to triage BEFORE dispatch). The
+  trigger is NOT the word *format*. **Two tests, either one
+  sufficient.** (1) **SHIPPED BYTES** — the change alters a file the kit
+  MATERIALIZES into another project. Derive that set from `KIT_FILES` in
+  app/src-tauri/src/agent/kit.rs at your own ref, never from a directory
+  name: the boundary runs THROUGH method/, and lane-protocol.md and
+  roles/integrator.md are not in the table while every adapter and
+  template is. (2) **GRAMMAR** — the change alters what a card, a room,
+  a brief or a role may SAY: a field, a status, a normative table, a
+  contract row. **An adapter takes test 1 and fails test 2**, which is
+  exactly the case that was argued both ways: it is a scaffolded
+  ARTIFACT rather than a format, and it still ships, so it is owed a
+  bump. **A purely editorial change to an unshipped method file — a
+  typo, a reflow, a citation repair — is owed no bump** and rides the
+  next one. Deciding this before dispatch is triage's, and a card whose
+  fence cannot reach all three stamps CANNOT take it: say so on the
+  card rather than leaving the lane to discover it.
   **A BUMP IS A THREE-FILE COMMIT AND THE THIRD FILE IS RUST** (T-078-s3
   arm 1, taken here at T-089 — it had been true and unwritten for six
   method versions). The three are: this stamp; the `(v<version>` stamp in
@@ -367,6 +418,22 @@
   reaches the three pinned places and this file's own references, and
   does NOT reach docs/ARCHITECTURE.md, the component file or the app
   suites. Route what you cannot reach.
+  **AND THE VERSION STAMP IS NOT THE ONLY THING PINNED IN THAT FILE —
+  ITS BANKING TABLE IS TRANSCRIBED INTO TYPESCRIPT AND ASSERTED CELL BY
+  CELL** (found by T-159 walking into it). `BANKING_MAP` in
+  app/src/genesis/genesis-derive.ts is a verbatim copy of
+  method/interview/plan-interview.md's stage table, and
+  `every_cell_of_the_9_row_table_matches_plan_interview_md_verbatim` in
+  app/test/genesis-derive.test.ts reds on ANY change to ANY cell. **So
+  the canonical bump fence can move the file's version stamp and CANNOT
+  move a row of its table** — the two live in one file and answer to
+  different fences, which is the same per-path lesson `method/` teaches
+  about `KIT_FILES`. Measured at T-159: appending one clause to the
+  stage-0 cell took the app suite to **1 failed / 1014 passed, exit 1**,
+  and the clause was withdrawn and routed rather than the fence widened.
+  **The reader is in `app/`, so a `method/`-only lane will not run it by
+  reflex** — run `npm test` from app/ whenever your diff touches that
+  table, and read the assertion rather than the count.
   **A BUMP NOW OWES A FOURTH THING, AND IT IS NOT A FILE** (T-155,
   ADR-020 decision 2). The METHOD EVAL GATE below is RUN against the new
   method text and its result is RECORDED IN THE BUMP'S OWN COMMIT
@@ -971,6 +1038,24 @@
     suite growth (12-of-840-in-five when measured at `4d2f03c`). CI
     never sees it because ci.yml orders app build before app suite; a
     hand-run lane does.
+  - **THE BRIEF IS ASSEMBLED BY THE ASSEMBLER, AND THIS IS THE SPELLING
+    method/roles/orchestrator.md 5b POINTS AT** (`T-133-s3`, the split
+    that card's own first question asked for: the RULE is
+    product-agnostic and lives in the role file, the COMMAND is an
+    nputer path and lives here). Run from the repository root:
+
+        node tools/e2e/scripts/brief.mjs --task T-NNN
+
+    and paste what it emits. Every row comes back with the source that
+    row names and the ref or reading time it was derived at, and a row
+    the command cannot derive is printed as NOT DERIVED with its source
+    rather than filled in. **WHY A COMMAND AND NOT MORE PROSE ABOUT
+    CARE**: step 5b already said the brief is assembled to the contract,
+    every dispatch brief written on 2026-08-25 obeyed that clause and
+    broke the one after it, and the sentence had been read closely
+    enough to be QUOTED. A rule that depends on a reader remembering has
+    a failure mode; one that depends on a construction does not, and
+    this command already refuses to emit a figure it did not derive.
   - **THE FENCE IS A PROPERTY AT THE MOMENT OF THE WRITE, NOT ONLY A
     DISCIPLINE AT THE HANDOFF** (T-154, ADR-020 decision 1). After
     cutting the lane and before briefing the session, the dispatcher
@@ -1460,6 +1545,21 @@
   own CI step.
   IF the suite cannot run THEN say so LOUDLY in the checkpoint, naming the
   reason and the exit code — a skipped gate is news, never silence.
+  AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
+  residual, taken at T-159): a `method/**` diff now matches a trigger, and
+  it still owes `cargo test` that no trigger names. `kit.rs` `include_str!`s
+  a SUBSET of method/ into `nputer_lib`, so editing one of those paths
+  forces a recompile and two cargo bodies read `method/` off disk and
+  assert against it — `every_compiled_entry_matches_its_method_file_byte_for_byte`
+  and `the_snapshot_table_covers_every_method_scaffold_file`. **THE
+  BOUNDARY RUNS THROUGH `method/`, SO THE DIRECTORY NAME ANSWERS
+  NOTHING**: lane-protocol.md and roles/integrator.md are outside the
+  table while every adapter and docs-template is inside it. DERIVE which
+  paths from `KIT_FILES` at your own ref and run `cargo test` when your
+  diff hits one; widening this gate's trigger to fire cargo is NOT done
+  here and stays that card's, because it needs the reader census
+  re-run and the root-anchor ledger re-asserted rather than a word
+  changed in a trigger.
 - POISON DRILL (ratified at T-054; until then it was pure oral
   tradition — "poison", "vacuous" and "mutation" appeared nowhere in
   this file or in method/roles/, verified at the 2026-08-17 triage): at

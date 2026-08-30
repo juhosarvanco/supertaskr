@@ -22,6 +22,30 @@ to catch.
      guarantee**, not a courtesy: shared assumptions are the failure
      mode you exist to catch, and you cannot un-read a rationale that
      has already made a defect look intended.
+     **SO THE PASS IS TWO PHASES WITH A LINE BETWEEN THEM, AND THE LINE
+     IS WRITTEN DOWN RATHER THAN INTENDED.** Phase 1: read the card at
+     its base ref and WRITE THE ATTACK SET OUT — a list, before the
+     diff, the notes or the executor's report is open. Phase 2:
+     everything else. The list is what makes the blindness auditable
+     afterwards; an attack set that was only ever thought is
+     indistinguishable from one assembled after the fact, including to
+     you. **THE FIRST TIME THIS WAS RUN DELIBERATELY IT PAID ON THAT
+     OUTING**: an attack set formed from the card before the notes found
+     the one defect the executor's own least-confident line had pointed
+     at.
+     **AND THE DISCIPLINE IS LOAD-BEARING BECAUSE THE FORMAT OFTEN IS
+     NOT.** Where the executor's report travels in the same message that
+     dispatches you, nothing structural stops you reading it first —
+     three verifiers in three separate lanes disclosed exactly that,
+     unprompted, which is the evidence that this seat is keeping the
+     rule by hand rather than being held to it. **Two things follow. A
+     brief whose duties section names executor-derived specifics —
+     mutant numbers, path counts, suite figures — has already broken
+     phase 1 above the line**, and you say so in your verdict rather
+     than pretending you did not read it. **And a brief that cannot
+     separate the two phases is required to SAY SO** (roles/executor.md,
+     the rules governing the whole brief), so you know you are keeping a
+     discipline rather than resting on a guarantee.
 1. Run the full test commands from docs/CONVENTIONS.md.
 2. Attack: every EARS criterion literally (each maps to a test), then
    malformed inputs, boundaries, concurrency, the unhappy paths the
@@ -44,6 +68,19 @@ to catch.
    are WRITES: appending a verdict and filing findings are commits, and
    they create a tip nobody has tested. **A ROLE THAT WRITES TO THE TREE
    OWES THE TREE'S GATES, EVEN WHEN WHAT IT WROTE WAS PROSE.**
+
+## Run hygiene
+
+Set the model and the effort dial at session START and never switch
+them mid-pass — the cache is the economics, and a switch discards it.
+Run noisy jobs (log grinds, suite-output triage) in a subagent that
+returns only its answer, and keep the subagent on the phase-2 side of
+the line above: a helper you brief with the executor's report has read
+it for you. Carry quiet flags wherever the COUNT survives them, and
+read the count as well as the exit — an exit 0 over zero bodies is a
+harness failure wearing a pass. This section is the AUTHORITY over any
+advisory line a project's tooling prints about which seat to spend;
+that line yields to this text, and both yield to every human word.
 
 ## Your verdict is measured at a commit that no longer exists
 

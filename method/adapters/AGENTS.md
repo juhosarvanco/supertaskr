@@ -10,6 +10,14 @@ docs/ARCHITECTURE.md, docs/CONVENTIONS.md and — once this project
 generates it — docs/CAPABILITIES.md. Confirm your understanding of
 your task in one paragraph before touching anything.
 
+**This list is addressed to EVERY seat, and your own role file may add
+to it or subtract from it — where the two differ, the role file wins.**
+The subtractions are argued where they are made (an executor and a
+verifier do not read the roadmap, because which card deserved building
+is not their question). Reading a document is something a seat DOES, so
+the acting role's file is authoritative, and a brief that hands you this
+list unfiltered has not applied its own row 3.
+
 Those documents answer different questions and none substitutes for
 another: STATE is what is happening right now, ROADMAP is what the
 product does per feature and what comes next, ARCHITECTURE is which
