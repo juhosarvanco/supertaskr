@@ -856,6 +856,62 @@ test("a DETACHED checkout is not judged, so the poison drill may mutate what a l
   );
 });
 
+test("the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // A linked worktree on a branch that is not a lane: the `arch-verify`
+  // shape, and a session worktree's. Its own git directory is a POINTER,
+  // so the walk has to follow `commondir` to reach the administration at
+  // all — from the main checkout that file does not exist and this whole
+  // hop is unexercised.
+  const seat = path.join(path.dirname(fx.lane), "nputer-review");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-check", seat]);
+  expect(readHeadRef(seat)).toBe("refs/heads/review/T-901-check");
+  expect(liveLanes(seat).map((l) => l.manifest.taskId), "the walk lost the lane list").toEqual([
+    FIXTURE_ID,
+  ]);
+  const refused = ask(seat, path.join(seat, "tools/e2e/tests/fixture.spec.ts"));
+  expect(refused.verdict, refused.reason).toBe("block");
+  expect(refused.code).toBe("held-by-a-live-lane");
+  // Discriminating in the same tree: a path no lane holds is allowed.
+  expect(ask(seat, path.join(seat, "app/src/main.tsx")).verdict).toBe("allow");
+
+  // AND THE MAIN CHECKOUT IS A CANDIDATE LIKE ANY OTHER. Git keeps its
+  // HEAD in the common directory rather than under `worktrees/`, so a
+  // walk that only read the linked entries would miss an integration
+  // checkout parked on a task branch — rare, and exactly the kind of
+  // state a guard should not be blind to.
+  writeFixtureFile(fx.repo, "docs/tasks/T-905-the-main-checkout-holds-a-lane.md", [
+    "---",
+    "id: T-905",
+    "title: The main checkout holds a lane",
+    "feature: F-04",
+    "milestone: 4",
+    "priority: 30",
+    "size: M",
+    "status: building",
+    "blocked_by: []",
+    "touches: [app/src/main.tsx]",
+    "builder:",
+    "verifier:",
+    "built_by:",
+    "verified_by:",
+    "review:",
+    "---",
+    "",
+  ].join("\n"));
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", "fixture T-905", "--quiet"]);
+  git(fx.repo, ["checkout", "--quiet", "-b", "task/T-905-main-as-lane"]);
+  writeLaneFence(await buildLaneFence("T-905", fx.repo, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" }));
+
+  expect(liveLanes(seat).map((l) => l.manifest.taskId).sort()).toEqual([FIXTURE_ID, "T-905"]);
+  const held = ask(seat, path.join(seat, "app/src/main.tsx"));
+  expect(held.verdict, held.reason).toBe("block");
+  expect(held.reason).toContain("T-905");
+});
+
 test("the three carve-outs each free a DIFFERENT write, and the fence still holds around them", async () => {
   // A lane fencing `docs` is what makes this measurable: the domain
   // contains the card, the stamps and this seat's own standing writes,
