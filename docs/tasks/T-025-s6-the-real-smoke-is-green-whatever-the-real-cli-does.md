@@ -331,6 +331,20 @@ Two questions, both re-derived at this lane's own ref.
 - `npm run lint:tokens` from `tools/e2e/` **exit 0** — clean, TOKEN 155
   files, CONTROL 935 tracked text files.
 
+**SUGGESTION FILED**: `T-025-s7` (`status: suggested`) — a slug fence
+buys a verifier for a diff that moves no shipped byte; `T-025-s5` and this
+card changed the SAME test file and fall on different ceremony rows,
+decided by whether `touches:` was spelled as a bare path or as a slug, and
+the fence correction that moved it was made for a disjointness reason with
+no ceremony consequence recorded. Named rather than fixed: the rule lives
+in `docs/CONVENTIONS.md` and `method/tasks/TASK-FORMAT.md`, both outside
+this lane's fence, and `T-145-s2`'s lesson is that a lane cannot decide
+its own ceremony from inside it. Three shapes are written on that card so
+it is a ruling and not an open question. **The three DOCS-GATE suites were
+re-run WITH that card present** — a new `docs/tasks/T-*.md` is exactly the
+input `9c64cd8` and `fede266` redded a suite through — and all three are
+green again: parser 315, app 1015, e2e 320, `npm run lint:docs` exit 0.
+
 **CONFLICTS BETWEEN CARD AND TREE: none.** Every claim the card makes
 about the tree held at `9ed2b7f` — the body with no assertion of any
 kind, the four `println!`s, the `#[ignore]` and env gates, the
