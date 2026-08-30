@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [docs/ROADMAP.md, docs/CONVENTIONS.md, docs/decisions, tools/e2e]
 suggested_by: "@human ruling (2026-08-30, rulings sitting): full re-landing pass approved over raise-the-lines-only and keep-absorbing"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

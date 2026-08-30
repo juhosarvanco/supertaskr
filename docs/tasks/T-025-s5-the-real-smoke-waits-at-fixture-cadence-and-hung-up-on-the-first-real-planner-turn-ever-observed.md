@@ -5,11 +5,11 @@ feature: F-02
 milestone: 3
 priority: 1
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app/src-tauri/tests]
 suggested_by: integrator nputer-4e @T-025-s2 real-smoke run, 2026-08-30
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [docs/architecture, app/test]
 suggested_by: "@human ruling (2026-08-30, rulings sitting): split C-11 first, over dispatching T-112 as-is"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
