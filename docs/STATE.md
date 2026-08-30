@@ -1,11 +1,11 @@
 # State
 
-Updated: 2026-08-30 at the T-159 checkpoint — METHOD v0.1.8 IS
-LANDED (the metabolism release: riders, run hygiene, the archive
-vocabulary, review reconciliation), and the FIRST STANDING TRIAGE
-under its rules is the live next act — the backlog band has been
-demanding it since T-157. Current record:
-docs/checkpoints/2026-08-30-T-159.md.
+Updated: 2026-08-30 at the standing-triage checkpoint — THE
+METABOLISM IS IN STEADY STATE: the first sitting under v0.1.8 took
+the suggested queue 46 to ZERO with every promotion preflighted, and
+the POISON DRILL bullet now says what eight seats paid to learn
+(T-111-s10). Current record:
+docs/checkpoints/2026-08-30-standing-triage-1.md.
 Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
@@ -26,8 +26,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — the first standing triage sitting
-  dispatches next. Dispatch derives
+  this rewrite: NO lanes — T-147 dispatches next (the CONVENTIONS
+  fence is free again). Dispatch derives
   the brief, PREFLIGHTS the card (T-160 — a failed preflight refuses
   the manifest), then writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
@@ -53,13 +53,10 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. METHOD v0.1.8 IS LANDED (T-159 done, zero corrections). NEXT: the
-   FIRST STANDING TRIAGE under its rules — the
-   `triage/live-suggestions` band is BREACHED (the system demanding
-   the sitting; derive the queue: `command grep -l '^status:
-   suggested' docs/tasks/T-*.md`). Then the CONVENTIONS train
-   (`T-111-s10` +T-153-s7 rider, `T-147`) -> `T-143`, `T-156-s1` ->
-   derive T-112's flip pairs (prep only, @human decides dispatch).
+1. THE SITTING IS DONE (46 -> 0, every promotion preflighted) and
+   `T-111-s10` is DONE with the rider taken. Remaining ruled order:
+   `T-147` -> `T-143`, `T-156-s1` -> derive T-112's flip pairs
+   (prep only, @human decides dispatch).
 2. Board items the preflight surfaced: `T-160-s4` (T-059's fence
    cannot reach a file its criteria order written — a live
    planned-card defect). Watch-list on any push: `T-161`
@@ -106,8 +103,8 @@ hazard is never deleted to fit.
   different pairs; the pre-merge two-dot form hands your lane main's
   work.
 - **Drill in a detached scratch worktree with its OWN
-  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) — and that dir is
-  inside the GRAPH WALK (`T-153-s3`). A lane with uncommitted edits
+  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) (the bullet now names
+  `<scratch>/target`, the walk-safe form — T-111-s10). A lane with uncommitted edits
   to a token-scan plant target reds the restoration proof
   (`T-156-s3`).
 
@@ -115,7 +112,7 @@ hazard is never deleted to fit.
 
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record: 2026-08-30-T-159.md.
+  newer than this file. Current record: 2026-08-30-standing-triage-1.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.
