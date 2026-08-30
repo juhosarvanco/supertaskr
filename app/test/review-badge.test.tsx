@@ -2,7 +2,6 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
 import { ReviewBadge } from "../src/components/board/badges/ReviewBadge";
 import { TaskCard } from "../src/components/board/TaskCard";
 import type { BoardCard } from "../src/lib/board-model";
@@ -94,9 +93,6 @@ describe("ReviewBadge (ADR-016 two-mark provenance)", () => {
  * does and is already the provenance surface's rendering pin. Filed as
  * T-169-s1 rather than moved by a lane that may not move it.
  * ──────────────────────────────────────────────────────────────────── */
-
-const ROADMAP_SRC = ["# R", "", "## Backbone", "- F-01: Method — the convention", ""].join("\n");
-
 
 describe("the assignment flag on the card face (T-169)", () => {
   const face = (assignment?: BoardCard["assignment"]): HTMLElement => {

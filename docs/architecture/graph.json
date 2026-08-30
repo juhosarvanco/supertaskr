@@ -15736,8 +15736,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:fe118a3f991f3892f156baa581e5609da82acc7dadc12fb7063a08bf913dacf2",
-      "loc": 2575,
+      "hash": "blake3:20a26dbae4e6b2550ef949dcc14d1b6d79f6e1fff02063fa2839c575809af4c8",
+      "loc": 2590,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -18391,8 +18391,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:dd43c649b4e2ed8d219516d541acdf385870280c234c632402f1bad910a9e97f",
-      "loc": 797,
+      "hash": "blake3:85140971fe3dead806061d8c8cbb0fdfbf2c7e9044c1bdc4c9b90733471f2f45",
+      "loc": 799,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -19255,27 +19255,17 @@
       "id": "f:app/test/review-badge.test.tsx",
       "path": "app/test/review-badge.test.tsx",
       "lang": "ts",
-      "hash": "blake3:83f443af0021ca928b1f4428be671874588ed76dadde48585a37162ea54e85d7",
-      "loc": 134,
+      "hash": "blake3:08848c180cc6a5b8321584874638ca7beb29012e436fce41469d1146c1eff782",
+      "loc": 130,
       "symbols": [
-        {
-          "id": "s:app/test/review-badge.test.tsx#ROADMAP_SRC",
-          "name": "ROADMAP_SRC",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            98,
-            98
-          ]
-        },
         {
           "id": "s:app/test/review-badge.test.tsx#container",
           "name": "container",
           "kind": "const",
           "exported": false,
           "range": [
-            21,
-            21
+            20,
+            20
           ]
         },
         {
@@ -19284,8 +19274,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            35,
-            40
+            34,
+            39
           ]
         },
         {
@@ -19294,8 +19284,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            22,
-            22
+            21,
+            21
           ]
         }
       ]
@@ -28176,15 +28166,6 @@
       "kind": "import",
       "symbols": [
         "BoardCard"
-      ]
-    },
-    {
-      "from": "f:app/test/review-badge.test.tsx",
-      "to": "p:@nputer/parser",
-      "kind": "import",
-      "symbols": [
-        "ProjectParseResult",
-        "parseProjectFromFiles"
       ]
     },
     {
@@ -38526,8 +38507,8 @@
   ],
   "stats": {
     "files": 193,
-    "symbols": 2087,
-    "edges": 2163,
+    "symbols": 2086,
+    "edges": 2162,
     "truncated_symbols": true,
     "truncated_files": 1
   }

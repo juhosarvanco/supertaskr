@@ -2164,7 +2164,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // observed edges before, two after — nothing was added to the graph.
       ["C-05", "C-18", "confirmed", 2],
       ["C-06", "C-01", "planned", 0],
-      ["C-08", "C-06", "confirmed", 4],   // T-149: 4 -> 5; T-127-s6: 5 -> 3; T-169: 3 -> 4 (review-badge.test.tsx gains a parser/pure import)
+      ["C-08", "C-06", "confirmed", 3],   // T-149: 4 -> 5; T-127-s6: 5 -> 3; T-169: 3 -> 4 and back to 3 at integration — the panel tests took the parser usage with them when they moved to C-09
       // `["C-08","C-09","confirmed",6]` IS GONE, AND THIS IS THE ROW THE
       // WHOLE CARD EXISTS TO REMOVE. It was half of `C-08 -> C-09 -> C-08`,
       // the registry's last declared cycle and the reason
@@ -2372,11 +2372,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       { from: "app/src/components/board/badges/SizeBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
       // 4 -> 5 at T-149: `select-board.test.ts` arrives from C-05's
       // dissolved test umbrella and consumes the parser through the same
-      // seam. `review-badge.test.tsx` joined at T-169 — its card-face
-      // assignment tests build fixtures with parseProjectFromFiles (it
-      // had no parser import before, which this list recorded; the
-      // routing check survives the count moving).
-      { from: "app/test/review-badge.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
+      // seam. `review-badge.test.tsx` joined at T-169 and LEFT at the
+      // same card's integration — the panel tests that carried its
+      // parser usage moved to C-09's detail-assignment file, and the
+      // import left with them (tsc's unused-local check is what said so,
+      // on CI, after a battery script that swallowed build exits).
       { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c09 = derived.edges.find((e) => e.from === "C-09" && e.to === "C-06");
