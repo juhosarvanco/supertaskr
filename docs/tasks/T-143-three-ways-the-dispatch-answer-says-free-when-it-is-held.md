@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: building
+status: verifying
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [lib-parser, tools/e2e]
@@ -245,3 +245,215 @@ of `task/T-NNN-<slug>`. Fixed at the seat in dispatch-brief.mjs with a
 pinning body in lane-fence.spec.ts (the suffixed-id round-trip); this
 card keeps the CLASS — the `--state` join and ledger display still
 carry it, and the pinned pair is the floor, not the sweep.
+
+---
+
+# Implementation notes — executor claude-opus-5@subagent, lane `task/T-143-free-when-held`
+
+Base `0276fb54ef3272c2de5c2fc0b8d061071e531a78`; dispatch commit
+`c74890a89e967e9baca2dfac4ce3c1bdd0e9db0b`; work commit
+`69bf790ccfb72f909a30b5d60ae702bcd1df1ab2`. Every figure below carries
+the ref it was measured at; every live fact carries the clock and host.
+
+## What the class turned out to be, measured rather than quoted
+
+**Criterion 5 first: this card's own three mechanisms, re-derived at
+`c74890a89e96` before anything was built.**
+
+- **MECHANISM 1 — ALIVE, and in THREE implementations, not two.** The
+  card names `lanes.ts` (fixed at `62a4364`) and `fenceLedger` (left as
+  this card's ground). **The class sweep found a THIRD**:
+  `tools/e2e/scripts/card-figures.mjs`'s `contention` deriver, which
+  answers *"which live lane holds each entry of this card's fence right
+  now"*, carried the identical `if (other === undefined) continue` with
+  the identical `FREE` four lines below — and `card-figures.spec.ts`
+  named `contention` in NO body, in either direction. It was found by
+  running the sweep this project's own bullet requires, not by a report.
+- **MECHANISM 2 — REFUSED, and it stays refused.** Nothing here
+  manufactures a hold from a `status:` field. The one place it would
+  have been quietly undone is the new IN FLIGHT section, and that
+  section says so in its own comment and in its own printed note.
+- **MECHANISM 3 — a DISPLAY trap, confirmed and closed as a display.**
+  The `--task` half still answers correctly; the `--state` ledger now
+  says what it is answering and points at the half that answers.
+
+**And the dispatch brief's item (a) is REFUTED at this ref.** The brief
+asked me to derive whether the `--state` LANE-LIST JOIN still reads
+`task/T-153-s2-…` to the parent card. It does not. Reproduced with a
+synthetic porcelain at `c74890a89e96`:
+
+    laneWorktrees("… branch refs/heads/task/T-153-s2-clock-restore-guard …")
+      -> taskId "T-153-s2"
+
+and the ledger printed `app-agent: T-153-s2` — the CHILD's fence, not
+T-153's `app-shell`. The T-153-s5 fix to `laneSpellings.branchRe`
+reached this join because the join spends the same matcher.
+
+**What was still open there, and is now closed:** `laneWorktrees` holds
+its OWN copy of the id extraction (`T-${m[1]}`), a SECOND
+implementation of `lane-fence.mjs`'s `laneIdOf`, and the pin in
+`lane-fence.spec.ts` drives `laneIdOf` and `normaliseTaskId` — never
+`laneWorktrees`. Drill **D6** confirms it: truncating the id in
+`laneWorktrees` killed nothing before this lane and kills one body now.
+
+## What was built
+
+| # | Producer | What it stopped saying |
+|---|---|---|
+| 1 | `dispatch-brief.mjs` `fenceLedger` | `FREE` for every slug a lane it could not read reserves. Now `UNKNOWN`, naming the ids; a HELD row carries the residual too, as `readDispatchOrder`'s `fenced` reason already did. |
+| 2 | `card-figures.mjs` `contention` | the same sentence, in the third implementation, found by the sweep. |
+| 3 | `dispatch-brief.mjs` `deriveFence` (ROW 5) | `DISJOINT` over lanes it never compared, and *"fewer than two fences to compare"* when there were three lanes and two were unreadable. |
+| 4 | `dispatch-brief.mjs` `stateReport` | a bare FREE column with no statement of what it answers. It now names the question it is NOT answering and points at `--task`, and the slugs that are not independent are DERIVED from `touch_slugs` rather than naming `C-11` in prose. |
+| 5 | `lanes.ts` `rule()` | *"no card for it"* about a list of two. |
+| 6 | `dispatch-order.mjs` `dispatchReport` | nothing at all about a card in flight (T-137-s10, absorbed). |
+
+**Criterion 4, in full.** The `fenced` residual now carries a `blindMany`
+flag mirroring the `unfenceable` branch written in the same commit WITH
+one. Both directions are pinned, one body each — the singular half added
+to the existing `a PROVED overlap still outranks it` body, the plural
+half a new body with two blind lanes. Drills **D1** and **D2** are the
+two sides: before this lane the mutation killed zero bodies; each side
+now kills exactly one.
+
+**Criterion 3 is derived, not written.** `slugsSharingComponents` joins
+the registry's own `touch_slugs` fields, so a component declared
+tomorrow is in the answer with nothing edited. At `c74890a89e96` it
+finds exactly one: *app-board and app-shell both expand through C-11*
+— the card's own example, arrived at from the data.
+
+**The absorbed T-137-s10, and the line I did not cross.** `underway` is
+the scheduler's word for *"status is not planned"*, so it holds every
+`done` and `parked` card — **127 and 124 at `c74890a89e96`**, which is a
+dump and not a report. The section is filtered through the parser's own
+exported `IN_FLIGHT` set, so a fourth status added there arrives here
+with nothing edited, and every row says which of the two it is. At
+`c74890a89e96` it prints two cards: T-143 (has a lane, fence held for
+real) and **T-135 (no lane, holds no fence — the board stamp is all
+there is)**. That is mechanism 2's own example, reported without being
+promoted to a hold.
+
+## The sweep — the class, the search, and the result
+
+**Class**: a join that drops a lane, card or token it cannot read, and
+lets the surviving answer read `FREE` or `disjoint` — a claim about the
+whole world made without reading all of it.
+
+**Search**, at `c74890a89e96`, over `tools/e2e/scripts`,
+`lib/parser/src`, `app/src` and `.claude/hooks`:
+
+    command grep -rn "=== undefined) continue" <those roots>
+    command grep -rn '"FREE"\|FREE`\|disjoint'   <those roots>
+
+**Result — four sites in the class, three of them defects:**
+
+- `lib/parser/src/lanes.ts` — already fixed at `62a4364`. Verified still
+  fixed here.
+- `tools/e2e/scripts/dispatch-brief.mjs` `fenceLedger` — **DEFECT, fixed
+  here.**
+- `tools/e2e/scripts/card-figures.mjs` `contention` — **DEFECT, fixed
+  here, and the reason the sweep was worth running.**
+- `tools/e2e/scripts/dispatch-brief.mjs` `deriveFence` — **DEFECT in the
+  `disjoint` spelling, fixed here.**
+
+**Clean, checked and recorded so the zero is not confused with an unrun
+search:**
+
+- `tools/e2e/scripts/card-preflight.mjs` — defers the ruling to the
+  parser's `readDispatchOrder` and reports `no live card` explicitly on
+  its `heldClaims` join. No FREE-when-held.
+- `app/src/lib/board-model.ts` — already carries `fenceKnown` and
+  `blindLanes` (T-111's work), and refuses rather than guessing when the
+  registry is absent. Nothing in `app/` calls `readDispatchOrder` at
+  all, so the terminal is the only consumer of the parser's lane term.
+
+## The poison drill — 8 mutants, one side each, every restoration hashed
+
+Work COMMITTED first at `69bf790`, then mutated, per the DRILL AT A
+COMMIT clause. Every mutant moves the PRODUCER and never an assertion.
+Restorations are `git restore --source=HEAD --staged --worktree --` and
+proved by sha256 against `git show HEAD:<path>`.
+
+| # | Producer mutated | Mutation | Suite | Result |
+|---|---|---|---|---|
+| D1 | `lanes.ts` | `blindMany` ternary → unconditional `'no card for it'` | parser | **exit 1 · 1 failed / 314 passed** |
+| D2 | `lanes.ts` | ternary → unconditional `'no cards for them'` | parser | **exit 1 · 1 failed / 314 passed** |
+| D3 | `dispatch-brief.mjs` | `fenceLedger` drops the unreadable lane again | e2e brief | **exit 1 · 2 failed / 28 passed** |
+| D4 | `dispatch-brief.mjs` | `slugsSharingComponents` filter `> 1` → `> 2` | e2e brief | **exit 1 · 1 failed / 29 passed** |
+| D5 | `dispatch-brief.mjs` | ROW 5's residual block gated to `if (false)` | e2e brief | **exit 1 · 1 failed / 29 passed** |
+| D6 | `dispatch-brief.mjs` | `laneWorktrees` truncates the suffixed id | e2e brief | **exit 1 · 1 failed / 29 passed** |
+| D7 | `card-figures.mjs` | `contention` drops the unreadable lane again | e2e card-figures | **exit 1 · 1 failed / 27 passed** |
+| D8 | `dispatch-order.mjs` | IN FLIGHT widens back to the whole `underway` set | e2e dispatch-order | **exit 1 · 2 failed / 11 passed** |
+
+**8 mutants, 8 kills, 10 distinct bodies red across them.** Every
+restoration MATCHED by sha256, and `git status --porcelain` was empty
+after the run. D3's first attempt was **SKIPPED rather than counted**:
+its anchor text occurred twice in the file, the script refused to
+substitute, and it was re-run against a unique anchor — recorded because
+a mutant that did not apply and a mutant that did not kill are the same
+line in a table that only prints a count.
+
+D8 killed one body BEYOND its target (`--dispatch runs on the live
+repository, exits 0, and WRITES NOTHING`), which is honest collateral:
+widening the section to 251 rows moves the whole report.
+
+## The positive controls, which the card asks for by name
+
+*"Do not verify this with a census … prove each fix with a POSITIVE
+CONTROL: construct the held state, see the tool say HELD, then remove
+the hold and see it say FREE."* Every new body does both sides, on
+fixtures that differ in exactly one lane:
+
+- the ledger with one blind lane says `UNKNOWN` on every row and names
+  it; **the same board with that lane removed says `FREE`** and every
+  `unknownFrom` is empty.
+- `contention` with no lane live says `FREE` for every fence entry;
+  with one blind lane it says `UNKNOWN` for every one.
+- ROW 5 with no blind lane prints the plain *"fewer than two fences to
+  compare"* and no residual.
+- the suffixed-branch body proves the join is a PREFERENCE, not a
+  suffix-appender: `task/T-153-inotify-sentinels` still reads `T-153`.
+- the shared-component body asserts the independent walk is NON-EMPTY
+  before comparing, so two empty lists cannot agree.
+
+## Suites, with counts and unpiped exits
+
+Measured at `69bf790` plus these notes, in the lane, `NPUTER_E2E_PORT=14143`
+(lsof zero rows immediately before binding, read on Mac.lan).
+
+Recorded in the report accompanying this card.
+
+## What the class STILL hides after this card — the honest omission
+
+1. **`fenceLedger` and `contention` both compare fence entries as
+   STRINGS.** They join a lane's `touches:` token to a slug NAME; they
+   do not expand through `fence.ts`. So a lane declaring the PATH
+   `app/src/components/board/` still leaves `app-board` reading `FREE`,
+   and the two overlap by containment. The new qualifier tells the
+   reader that in as many words and points at `--task`, which does
+   expand — **but the ledger is still a name join, and making it a
+   region join is a different card.** This is the same shape as
+   mechanism 3 and it survives at a second remove.
+2. **`FREE` is still not the same word as a verdict.** The card's own
+   fix sketch item 2 asks the ledger to *"emit verdicts, not
+   availability"*. This lane made the display honest about which
+   question it answers; it did not change the question.
+3. **`lanesWithNoCard` is still terminal-only.** Nothing in `app/` calls
+   `readDispatchOrder`, so the pane's own frontier
+   (`board-model.ts`'s `fenceKnown` / `blindLanes`) is a SECOND
+   implementation of the same idea, currently correct. Two correct
+   copies of one rule is the `T-057` shape one merge away from
+   diverging.
+4. **The `--state` ledger prints one line per slug and the blind-lane
+   clause is repeated on every one of them.** At `c74890a89e96` that is
+   nine identical tails. It is loud on purpose — a reader who skims one
+   row must not miss it — but a reviewer may reasonably prefer one
+   banner. Left as it is rather than guessed at.
+
+## Routed, not built
+
+- **`T-143-s1`** — two `session-economics.spec.ts` bodies red for every
+  lane that holds `tools/e2e`. **This is a PRE-EXISTING red, measured at
+  the base commit before any edit of mine**, and it is inside this
+  card's fence but outside its class. Filed rather than fixed: greening
+  another card's assertion to make one's own lane look clean is exactly
+  the move a verifier should distrust.
