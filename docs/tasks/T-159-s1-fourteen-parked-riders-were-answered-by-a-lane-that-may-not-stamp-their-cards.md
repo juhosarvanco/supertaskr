@@ -5,13 +5,13 @@ feature: F-01
 milestone: 4
 priority: 2
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [docs/tasks/T-052-s5-integrator-md-now-holds-two-numbered-lists-and-every-citation-cites-by-number.md, docs/tasks/T-091-s4-the-predicted-tree-comparison-is-practised-everywhere-and-written-nowhere.md, docs/tasks/T-104-s4-four-defects-in-the-card-s-own-criteria-that-the-merge-reveals-rather-than-introduces.md, docs/tasks/T-124-s1-the-planner-must-run-git-bare-in-its-own-cwd-and-write-with-the-write-tool.md, docs/tasks/T-126-s5-two-fences-that-cannot-be-obeyed-as-written.md, docs/tasks/T-126-s6-a-lanes-gate-derivation-is-stale-at-its-own-tip-and-only-the-verifier-seat-was-told.md, docs/tasks/T-132-s2-method-is-a-code-input-and-no-standing-gate-fires-on-it.md, docs/tasks/T-132-s4-the-staged-state-rule-two-shipped-files-cite-does-not-exist.md, docs/tasks/T-132-s5-ruling-thirteen-sorts-by-when-and-never-by-who.md, docs/tasks/T-132-s6-rule-four-partitions-by-checkout-and-ports-are-machine-wide.md, docs/tasks/T-133-s3-step-5b-requires-the-contract-and-names-no-way-to-obey-it.md, docs/tasks/T-135-s4-a-half-dispatched-card-has-no-status-and-the-executor-role-forbids-the-workaround.md, docs/tasks/T-145-s2-a-kit-file-changed-under-a-fence-that-could-not-bump-the-version-that-describes-it.md, docs/tasks/T-152-row-eleven-lives-in-a-file-the-read-first-set-does-not-name.md]
 suggested_by: executor claude-opus-5@subagent @T-159
 builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---
@@ -344,3 +344,21 @@ from this fence and `tools/e2e` was not touched.
   `docs/tasks/`, so the generator's input and output are byte-identical
   at base and tip and the check's answer cannot have moved. Regenerating
   is the integrator's — `docs/CAPABILITIES.md` is outside this fence.
+
+### The stamp, and the half of its ceremony row this lane did NOT perform
+
+**Stamped `done`, not `verifying`, and the reason is the diff rather than
+the letter S.** The ceremony table's two size-S rows are separated by
+whether the diff touches SHIPPED code; `docs/CONVENTIONS.md`'s shipped
+partition answers that directly — *"NOT SHIPPED … `docs/**`"* — and all
+eighteen forecast paths are under `docs/`. So this card is owed no
+verifier, and `roles/executor.md` step 6 says stamp `done` where that is
+true. `review:` is empty, so no guard-class independence is in play.
+**The same row makes the executor its own integrator, and that half was
+withheld by the dispatching instruction** (no merge, no push, no branch
+but this one). The merge, the checkpoint and the worktree removal are
+therefore outstanding and belong to whoever integrates; the worktree is
+left standing. **Two things the integrator should carry**: the graph
+needs no regeneration (GRAPH REGEN is not owed — zero code paths), and
+`docs/CAPABILITIES.md` wants its regen at the checkpoint for the reason
+recorded on `T-153-s8` above, which is not this lane's to run.
