@@ -182,7 +182,9 @@ the integration checkout.
 ### What landed — executor, lane tip `a18a6f8` (base `8ebbb08`)
 
 One file changed in shipped scope: `tools/e2e/tests/session-economics.spec.ts`
-(+137/-6). No script, no assertion loosened, no `test("…")` name moved.
+— `git diff --numstat 8ebbb08..9e3d91f` says **+131/-6**, and the file
+still holds **10** `test("…")` bodies, the same ten, with the same names.
+No script changed; no assertion loosened.
 
 **THE RULE THE FILE NOW KEEPS**, written into it above the helpers: *every
 invocation whose EXIT is graded takes a DERIVED id; every in-process
