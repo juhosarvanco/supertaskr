@@ -1,12 +1,17 @@
 # State
 
-Updated: 2026-08-30 at the T-025-s6 checkpoint — THE SECOND WAVE IS
-FULLY LANDED: the smoke has a verdict (blind-verified; the verifier's
-two surviving mutants became the merge's proven corrections), the
-headroom alarm reads **4,693 left** and rises in urgency with every
-merge (fix chain: T-135 Half B -> T-140-s1, now the board's most
-urgent), T-059's defect is fixed and re-proven, the tripwire is live.
-No lanes. Current record: docs/checkpoints/2026-08-30-T-025-s6.md.
+Updated: 2026-08-30 at the T-135 checkpoint — THE THIRD WAVE IS
+LANDED AND THE BOARD'S OLDEST STAMP IS DONE: T-135 closed
+blind-verified (seven corrections performed; the flip measured
+non-empty SAME-DAY and honestly HOLDS on its floor-mechanisation
+precondition), T-169's D5 teeth landed with the drift detector
+catching a real undeclared edge at integration (fixed by moving the
+test, not declaring convenience), the launcher exists
+(bin/app-dev.mjs), the C-11 ruling's last false copy is gone.
+**THE GRAPH IS DEGRADING** (symbols 2205 -> 2087; the tripwire goes
+silent at that exact moment — T-167-s7): `T-140-s1` is UNBLOCKED and
+is the next dispatch. No lanes. Current record:
+docs/checkpoints/2026-08-30-T-135.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -53,26 +58,24 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. THE GRAPH CHAIN OUTRANKS EVERYTHING: read T-135's card, finish
-   Half B (its building status is the stale stamp STATE has carried
-   for days), then dispatch `T-140-s1` (the rollup — shape RULED).
-   Around it, disjoint: `T-163-s3` (the false clause, CONVENTIONS),
-   `T-169` (lib-parser+app-board), `T-164` (bin). Then `T-112` (ONE
-   collider). Customization UI cards wait on a VERSION sitting.
+1. `T-140-s1` DISPATCHES NEXT (the rollup, shape RULED, blocker
+   cleared at T-135's close, degradation active). Around it,
+   disjoint: `T-112` (ONE collider, T-031-s1 ruled or absorbed at
+   dispatch). Suggested arrivals for the next sitting: T-135-s5,
+   T-143-s4-family, T-163-s4, T-164-s1/s2, T-167-s5/s6/s7,
+   T-169-s1/s2, T-025-s7 — derive, never list. Customization UI
+   cards wait on a VERSION sitting.
 2. @human's open items: THE GENESIS WALK (closes milestone 3); the
-   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling.
+   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling;
+   `T-169-s2` (two-model stamps: honoured or flagged — one word).
    All unhurried.
-3. `T-140-s1` (promoted, shape RULED) waits on `T-135` (building) —
-   the preflight refuses it until then, correctly. `T-154-s2`
-   (promoted, `review: independent`) is dispatchable after the e2e
-   seat frees. Watch-list on any push: `T-161` (stderr-drain
-   intermittent), `T-153-s14` (one PR run answers it).
-4. @human's remaining items: D5 (`model@session` per-adapter,
-   cockpit-or-mirror room) — unhurried; everything else queued to
-   @human was ruled at this sitting.
-5. Standing hooks: `T-135` Half B (never re-dispatch whole),
-   `T-139-s2` (wants a room), `T-144`, `T-127-s8/s9`, `T-149-s1…s5`,
-   `T-143-s1/s2/s3`.
+3. `T-154-s2` (promoted, `review: independent`) is dispatchable —
+   the e2e seat is free. Watch-list on any push: `T-161`
+   (stderr-drain intermittent), `T-018-s2` (picker-rearm, one
+   sighting), `T-153-s14` (one PR run answers it).
+4. Standing hooks: `T-139-s2` (wants a room), `T-144`,
+   `T-127-s8/s9`, `T-149-s1…s5`, `T-143-s1/s2/s3`, `T-156-s2`.
+   D3 and D5 are both RULED (rooms/cockpit-or-mirror.md).
 
 ## Standing hazards — the section that saves the hour
 
@@ -115,7 +118,7 @@ hazard is never deleted to fit.
 
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record: 2026-08-30-rulings-sitting.md.
+  newer than this file. Current record: 2026-08-30-T-135.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.
