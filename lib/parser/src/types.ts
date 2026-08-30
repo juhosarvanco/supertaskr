@@ -216,6 +216,43 @@ export interface FeatureRecord {
 export type IdSpace = 'component' | 'task' | 'feature';
 
 /**
+ * Which of D5's two assignment pairs a reading is about (T-169):
+ * `builder:` against `built_by:`, `verifier:` against `verified_by:`.
+ */
+export type AssignmentRole = 'builder' | 'verifier';
+
+/**
+ * What one card says about one assignment pair (T-169). Three verdicts:
+ * `unconstrained` (a side is empty — an empty assignment constrains
+ * nothing), `honoured` (every model the assignment names is among those
+ * the execution names), `violated` (one is not). THE EXACT COMPARISON
+ * RULE IS AT ITS DEFINITION SITE, `assignment.ts` — read it there rather
+ * than inferring it from these field names.
+ */
+export type AssignmentVerdict = 'unconstrained' | 'honoured' | 'violated';
+
+/** One pair's reading. `missing` is non-empty iff `verdict` is
+ * `violated`; `assigned`/`executed` are the frontmatter values VERBATIM
+ * and absent exactly when the field is. */
+export interface AssignmentReading {
+  role: AssignmentRole;
+  /** Frontmatter spelling of the assignment field (`builder`). */
+  assignedField: string;
+  /** Frontmatter spelling of the execution field (`built_by`). */
+  executedField: string;
+  /** Source file of the card this reading is about. */
+  file: string;
+  verdict: AssignmentVerdict;
+  assigned?: string;
+  executed?: string;
+  /** Models each side names, first-appearance order, deduplicated. */
+  assignedModels: string[];
+  executedModels: string[];
+  /** Assigned models absent from `executedModels`. */
+  missing: string[];
+}
+
+/**
  * Structured validation issues. Parsing never throws on bad input:
  * issues are collected and parsing continues with the remaining files.
  */
@@ -356,6 +393,41 @@ export type ParseIssue =
       ids: [string, string];
       files: [string, string];
       patterns: [string, string];
+      message: string;
+    }
+  /**
+   * A card's ASSIGNMENT and its EXECUTION name different models (T-169,
+   * enforcing @human's D5 ruling: assignment is BINDING). `builder:`
+   * names a model that `built_by:` does not, or `verifier:` one that
+   * `verified_by:` does not — compared on the MODEL half of
+   * `model@vehicle`, by the exact rule stated at its definition site in
+   * `assignment.ts`. The record is kept and both fields preserved:
+   * flagging, not hiding, and never a silent substitution.
+   *
+   * IT CARRIES `assignedField` AND `executedField` RATHER THAN ONE
+   * `field`, unlike `invalid-field` and `dangling-reference`. Those name
+   * the one field that is wrong; here the parser knows only that two
+   * fields disagree, and naming one of them would be naming the one at
+   * fault — which is the human question this issue exists to raise, not
+   * one it may answer. For the same reason the message says the fields
+   * DISAGREE and says nothing about why.
+   *
+   * `missing` is the assigned models absent from `executedModels`, and
+   * is always non-empty on this kind.
+   */
+  | {
+      kind: 'assignment-violation';
+      file: string;
+      role: AssignmentRole;
+      assignedField: string;
+      executedField: string;
+      /** The assignment field's value, verbatim. */
+      assigned: string;
+      /** The execution field's value, verbatim. */
+      executed: string;
+      assignedModels: string[];
+      executedModels: string[];
+      missing: string[];
       message: string;
     };
 
