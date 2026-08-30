@@ -97,3 +97,43 @@ evidence.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+## CORROBORATION (2026-08-30) — the SECOND sighting, and this one redded MAIN
+
+CI run **33333142954**, main at `2489b0f` — a **docs-only** commit
+(docs/ROADMAP.md, docs/rooms/governing-docs.md, one card). Step `e2e
+lane`, one failure of 332, the same body:
+
+    ✘ 42 [chromium] › tests/brief.spec.ts:1000:1 › the WHOLE brief
+      assembles on a pull_request-shaped checkout, and names the ref it
+      actually spent (2.0s)
+    Error: ENOTEMPTY: directory not empty, rmdir
+      '/tmp/t153s9-refshape-QDWTIx/local/.git'
+
+**WHAT THE SECOND SIGHTING ADDS, beyond confirming the class is real:**
+
+1. **IT REDS MAIN, NOT ONLY A PUSH.** The first sighting (run
+   33327281402) landed on an intermediate commit. This one is main's own
+   tip, on a diff that touches no code at all — so the failure is
+   provably independent of what was merged, and it is now the second
+   uncarded-until-today intermittent able to red a green tree (`T-161`
+   is the first).
+2. **THE PATH DEPTH MOVED AND THE MECHANISM DID NOT.** First sighting
+   removed `…/local/.git/objects`; this one `…/local/.git`. Same
+   fixture stem (`t153s9-refshape-`), same clone, same `rmSync(fx.dir,
+   {recursive: true, force: true})`. **Cite the mechanism, not the
+   path** — a card that pinned `objects` would already read as fixed.
+3. **THE COST IS CONFIRMED AS THE ONE THE CARD PREDICTED**: the `e2e
+   lane` step failed, so `xvfb tauri boot` behind it never ran. One
+   fixture teardown hides a gate.
+
+Second measurement fired immediately at this record (`gh run rerun
+33333142954 --failed`), the same protocol `T-161`'s card uses; its
+result stands in the checkpoint that cites this card.
+
+**PRIORITY ARGUMENT FOR THE NEXT SITTING, recorded rather than acted on
+here:** two reds in one evening, both on other people's work, is the
+threshold this project usually treats as promotion-worthy. It is already
+`planned` and fenced `[tools/e2e]`; what it wants is to be NEXT in that
+package rather than to be re-argued. It contends with `T-112-s3`, which
+holds `tools/e2e` right now.
