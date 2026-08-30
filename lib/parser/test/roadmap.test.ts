@@ -299,6 +299,161 @@ describe('parseRoadmap — backbone lines', () => {
   });
 });
 
+/**
+ * THE FIXTURE IS A REAL PLANNER'S OUTPUT, NOT AN IMITATION (T-177's third
+ * criterion). These are lines 1–20 of `docs/ROADMAP.md` in @human's first
+ * generated project (`~/Projects/first-walk`), copied byte for byte on
+ * 2026-08-31 — em dashes, straight apostrophes, inline code spans and all.
+ * The source path is machine-local, so the bytes live here rather than
+ * being read at test time; what makes this a fixture rather than an
+ * imitation is that a planner session wrote it, unprompted, as the
+ * ordinary way to write a backbone.
+ *
+ * MEASURED BEFORE THE FIX (T-177's card, at `b60b06d`): three features
+ * declared, ZERO parsed, ZERO issues reported. No feature, no error, no
+ * reason — the board was simply shorter than the file, and every task card
+ * in that project pointed at a backbone slot that did not exist.
+ */
+const FIRST_WALK_BACKBONE = [
+  '# Roadmap',
+  '',
+  '## Backbone',
+  '',
+  "- **F-01: Open — one command puts the cursor in today's note.** Run `note`;",
+  '  `~/notes/YYYY-MM-DD.md` exists (created from a three-line header template if',
+  '  new) and is open in `$EDITOR`. This is the entire product as the writer',
+  '  experiences it.',
+  "- **F-02: Place — where notes live is the writer's choice.** An environment",
+  '  variable overrides the hard-coded notes directory. Not milestone 1: there is',
+  '  one writer with one folder, so configurability is speculation until a second',
+  '  location exists.',
+  '- **F-03: Reach — the command is on PATH without hand-editing a shell profile.**',
+  '  Not milestone 1: an alias costs the writer one line and teaches the same',
+  '  lesson.',
+  '',
+  'Ordered as the writer meets them: you must be able to open the note before it',
+  'matters where it lives, and it must be worth opening before distribution is',
+  'worth building.',
+  '',
+].join('\n');
+
+describe('parseRoadmap — an emphasis-wrapped feature id is REPORTED, never dropped in silence (T-177)', () => {
+  it("the real planner's bold backbone yields no feature and one named issue per line", () => {
+    const { features, issues } = parseRoadmap(FIRST_WALK_BACKBONE, FILE);
+    // STILL NOT FEATURES, deliberately: arm 2 (parsing the bold form as the
+    // plain one) was declined — see this file's header and T-177's notes.
+    // The accepted grammar is unchanged; what changed is that refusing it
+    // is now AUDIBLE. Reporting the shape and accepting the shape answer
+    // different questions, and only the first is this card's core.
+    expect(features).toEqual([]);
+    expect(issues).toHaveLength(3);
+    expect(issues.map((issue) => issue.kind)).toEqual([
+      'roadmap-error',
+      'roadmap-error',
+      'roadmap-error',
+    ]);
+    // One per declaration, located where a human can act on it.
+    expect(issues[0]?.message).toContain(`${FILE}:5:`);
+    expect(issues[1]?.message).toContain(`${FILE}:9:`);
+    expect(issues[2]?.message).toContain(`${FILE}:13:`);
+  });
+
+  it('the message names the emphasis as the cause and the unwrapped shape as the fix', () => {
+    // The silence was the defect; a `roadmap-error` that does not say WHY
+    // would only move the silence one step. The reader gets the cause, the
+    // remedy and the offending line.
+    const first = parseRoadmap(FIRST_WALK_BACKBONE, FILE).issues[0]?.message ?? '';
+    expect(first).toContain("markdown emphasis ('**')");
+    expect(first).toContain("expected '- F-NN: Name — description'");
+    expect(first).toContain('unwrap the id');
+    expect(first).toContain('- **F-01: Open —');
+  });
+
+  it('the fix is the CLASS, not the one spelling: every emphasis run reports, and is named', () => {
+    // `**` is what the planner wrote; the detector is written against the
+    // class it belongs to, so the NEXT decoration lands in the reporter
+    // instead of teaching this lesson again.
+    const decorated = [
+      '## Backbone',
+      '- *F-01: Italic — one star*',
+      '- __F-02: Underscored — two bars__',
+      '- ~~F-03: Struck — through~~',
+      '- ***F-04: Bold italic — three stars***',
+      '- ** F-05: Spaced — the run need not touch the id**',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(decorated, FILE);
+    expect(features).toEqual([]);
+    expect(issues.map((issue) => issue.kind)).toEqual(Array<string>(5).fill('roadmap-error'));
+    expect(
+      issues.map((issue) => /markdown emphasis \('(.+?)'\)/.exec(issue.message)?.[1]),
+    ).toEqual(['*', '__', '~~', '***', '**']);
+  });
+
+  it('a bold bullet that is NOT a feature id stays silent — the detector still requires F-', () => {
+    // The discriminating half. A backbone section holds prose bullets too,
+    // and a reporter that fired on every bold bullet would trade one
+    // silence for a badge nobody can act on.
+    const prose = [
+      '## Backbone',
+      '- F-01: Real — the only feature here',
+      '- **Ordered as the writer meets them** — prose in a bullet, not a backbone line',
+      '- **Parked:** nothing below this is a feature',
+      '- *Footnote about F-01 that starts with emphasis*',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(prose, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((feature) => feature.id)).toEqual(['F-01']);
+  });
+
+  it("keeps T-030's property: a DECORATED example row inside a comment is no feature AND no issue", () => {
+    // The widening reads the inert-blanked view, exactly as the plain
+    // detector does, so a scaffolded template's commented example rows
+    // cannot become phantom columns OR phantom parse errors. Asserted
+    // rather than assumed: this is the property the card names as the one
+    // the widening must not break.
+    const content = [
+      '## Backbone',
+      '<!-- example rows, do not ship:',
+      '- **F-98: Example — a bold template row**',
+      '- F-99: Example — the plain template row',
+      '-->',
+      '<!-- - **F-97: Example — the one-line form, equally silent** -->',
+      '- F-01: Real — the only feature here',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((feature) => feature.id)).toEqual(['F-01']);
+  });
+
+  it('the plain malformed arm is unchanged and says nothing about emphasis', () => {
+    const bad = '## Backbone\n- F-01: Fine — good\n- F-XX: broken id\n';
+    const { issues } = parseRoadmap(bad, FILE);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.message).toContain(`${FILE}:3:`);
+    expect(issues[0]?.message).not.toContain('markdown emphasis');
+  });
+
+  it('a decorated line closes the feature above it and does not swallow the one below', () => {
+    const mixed = [
+      '## Backbone',
+      '- F-01: Real — first',
+      '  and its wrapped continuation',
+      '- **F-02: Decorated — the reported one**',
+      '  its own continuation, which belongs to nothing',
+      '- F-03: Real — second',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(mixed, FILE);
+    expect(features.map((feature) => `${feature.id}@${feature.line}`)).toEqual(['F-01@2', 'F-03@6']);
+    expect(features[0]?.description).toBe('first and its wrapped continuation');
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.message).toContain(`${FILE}:4:`);
+  });
+});
+
 describe('parseRoadmap — numerically aliased feature ids (T-053, promoting T-030-s3)', () => {
   it('F-1 beside F-01 is one slot spelled twice, and the message LOCATES both', () => {
     // Used to parse with ZERO issues, and the board then renders two

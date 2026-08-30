@@ -20,6 +20,32 @@ import type { FeatureRecord, ParseIssue, RoadmapParseResult } from './types.js';
  * The shared inert-span pass blanks fenced blocks, HTML comments and
  * single-backtick inline code before any line is matched (T-055), so
  * examples and apparent markup inside code cannot become backbone syntax.
+ *
+ * THE ACCEPTED LINE GRAMMAR IS THE ONE ABOVE AND NOTHING ELSE — but a
+ * refusal is REPORTED rather than silent (T-177). A bullet whose `F-NN:`
+ * hides behind markdown emphasis — `- **F-01: Open — …**`, the shape a
+ * real planner produced in a generated project — used to match neither
+ * regex: not the bullet, and not the malformed-line reporter either,
+ * because the emphasis run sits between the dash and the `F`. The reader
+ * got no feature, no error and no reason, and the board was simply
+ * shorter than the file. The reporter now looks past a leading run of
+ * emphasis punctuation (`*`, `_`, `~`, in any combination) and names that
+ * run as the cause, so the CLASS is covered rather than the one spelling
+ * and the next decoration lands in the reporter too. Emphasis after the
+ * id — `- F-01**: …` — was already covered, by the plain arm.
+ *
+ * REPORTED, NEVER TOLERATED: parsing the bold form AS the plain one
+ * (T-177 arm 2) is a decision about the FORMAT every generated project
+ * inherits, not about this parser, and it is declined here with its
+ * reasons on T-177's card; pinning the grammar where the planner reads it
+ * is arm 3, which rides a method version bump. So there is no "tolerated
+ * set": a decorated id is an issue, and the fix a reader is told to make
+ * is to unwrap it.
+ *
+ * AND THE REPORTER'S REACH STOPS WHERE THE INERT PASS STARTS. It matches
+ * the blanked view, exactly as the plain arm does, so a decorated example
+ * row inside an HTML comment or a code fence still yields NO feature and
+ * NO issue — T-030's property, kept deliberately and pinned by a test.
  */
 export function parseRoadmap(content: string, file: string): RoadmapParseResult {
   const features: FeatureRecord[] = [];
@@ -87,12 +113,21 @@ export function parseRoadmap(content: string, file: string): RoadmapParseResult 
       openFeature = { id: bullet[1], text: bullet[2].trim(), line: i + 1 };
       continue;
     }
-    if (/^-\s+F-/.test(line)) {
+    // The emphasis run, when there is one, is CAPTURED rather than merely
+    // detected: the message names the exact characters that hid the line,
+    // which is the difference between a badge and a diagnostic a writer
+    // can act on in one edit.
+    const emphasis = /^-\s+([*_~]+)\s*(?=F-)/.exec(line)?.[1];
+    if (emphasis !== undefined || /^-\s+F-/.test(line)) {
       close();
+      const cause =
+        emphasis === undefined
+          ? ''
+          : ` — markdown emphasis ('${emphasis}') sits between the bullet and the feature id, which the backbone reader does not accept; unwrap the id and put the emphasis inside the description`;
       issues.push({
         kind: 'roadmap-error',
         file,
-        message: `${file}:${i + 1}: malformed backbone line (expected '- F-NN: Name — description'): ${line.trim()}`,
+        message: `${file}:${i + 1}: malformed backbone line (expected '- F-NN: Name — description')${cause}: ${line.trim()}`,
       });
       continue;
     }
