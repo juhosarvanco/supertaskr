@@ -13,6 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CLAIM_CLASSES,
   dischargedBy,
@@ -59,7 +60,11 @@ import { context, render } from "../scripts/dispatch-brief.mjs";
 const SCRATCH: string[] = [];
 
 test.afterAll(() => {
-  for (const dir of SCRATCH.splice(0)) rmSync(dir, { recursive: true, force: true });
+  // T-178: these roots hold repositories this file COMMITTED into, and a
+  // commit detaches `git maintenance run --auto` behind it. The removal is
+  // bounded-retried, and one that still cannot finish is the FIXTURE's
+  // finding rather than a red on whichever body happened to run last.
+  for (const dir of SCRATCH.splice(0)) removeGitFixture(dir, "card-preflight scratch");
 });
 
 /** A scratch root, stem DERIVED from the lane (docs/CONVENTIONS.md, POISON DRILL). */
@@ -72,7 +77,16 @@ function scratchRoot(): string {
 function git(cwd: string, args: string[]): string {
   return execFileSync(
     "git",
-    ["-C", cwd, "-c", "user.email=t160@example.invalid", "-c", "user.name=T-160 fixture", ...args],
+    [
+      "-C",
+      cwd,
+      "-c",
+      "user.email=t160@example.invalid",
+      "-c",
+      "user.name=T-160 fixture",
+      ...NO_BACKGROUND_MAINTENANCE,
+      ...args,
+    ],
     { encoding: "utf8" },
   );
 }

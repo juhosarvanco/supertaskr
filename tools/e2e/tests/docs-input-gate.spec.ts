@@ -5,6 +5,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CALL_SAMPLES,
   DISPOSITION_RULING,
@@ -299,8 +300,19 @@ function plantRepo(): string {
   write("docs/research/captures/planted.jsonl", "{}\n");
   write("docs/tasks/T-000-planted.md", "---\nid: T-000\nstatus: planned\n---\n\nbody\n");
   for (const plant of PLANTED_READERS) write(plant.file, plant.source);
-  execFileSync("git", ["init", "-q"], { cwd: dir, stdio: ["ignore", "ignore", "ignore"] });
-  execFileSync("git", ["add", "-A"], { cwd: dir, stdio: ["ignore", "ignore", "ignore"] });
+  // T-178, the sweep's third site: this fixture never COMMITS, so nothing
+  // here detaches `git maintenance run --auto` today. The config and the
+  // teardown below are carried anyway, so the rule over git-built fixtures
+  // is uniform — the moment a plant needs a commit, the protection is
+  // already in place rather than owed.
+  execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "init", "-q"], {
+    cwd: dir,
+    stdio: ["ignore", "ignore", "ignore"],
+  });
+  execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "add", "-A"], {
+    cwd: dir,
+    stdio: ["ignore", "ignore", "ignore"],
+  });
   return dir;
 }
 
@@ -392,7 +404,7 @@ test("PLANTED READERS in BOTH spellings are derived by the real derivation, off 
     expect(docsGate([rust.prefix!], planted).commands).toContain("cargo test from app/src-tauri/");
     expect(docsGate([js.prefix!], planted).commands).toContain("npm test from app/");
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    removeGitFixture(dir, "docs-input-gate plantRepo");
   }
 });
 
@@ -417,7 +429,7 @@ test("a planted climb that ESCAPES the repository is excluded, and the exclusion
     expect(climbs.filter((c) => c.kind === "derived").length).toBeGreaterThan(0);
     expect(climbs.every((c) => c.kind !== "unlinked")).toBe(true);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    removeGitFixture(dir, "docs-input-gate plantRepo");
   }
 });
 

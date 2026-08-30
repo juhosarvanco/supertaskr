@@ -1,10 +1,11 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsText, liveTaskCards, trackedFiles } from "../scripts/docs-scan.mjs";
 import {
   DERIVERS,
@@ -1075,7 +1076,17 @@ test("a brief assembled at this ref names the lanes the repository holds, and no
  * something about a different repository.
  * ──────────────────────────────────────────────────────────────────── */
 
-/** Author and committer come from the environment, so a runner with no configured identity can still commit. */
+/**
+ * Author and committer come from the environment, so a runner with no
+ * configured identity can still commit.
+ *
+ * THE FIXTURE'S GIT CALLS ALSO CARRY `NO_BACKGROUND_MAINTENANCE` (T-178).
+ * `git commit` ends by detaching `git maintenance run --auto`, which keeps
+ * writing inside this fixture's `.git` and `.git/objects` for hundreds of
+ * milliseconds after the foreground command has returned — and the teardown
+ * at the bottom of the two bodies below raced it into ENOTEMPTY on CI twice.
+ * tests/git-fixture.ts carries the measurement and the mechanism.
+ */
 const FIXTURE_GIT_ENV = {
   ...process.env,
   GIT_AUTHOR_NAME: "t153s9",
@@ -1085,7 +1096,7 @@ const FIXTURE_GIT_ENV = {
 };
 
 function fixtureGit(cwd: string, args: string[]): string {
-  return execFileSync("git", ["-C", cwd, ...args], {
+  return execFileSync("git", ["-C", cwd, ...NO_BACKGROUND_MAINTENANCE, ...args], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
     env: FIXTURE_GIT_ENV,
@@ -1126,7 +1137,9 @@ function refShapes(): RefShapes {
   // `actions/checkout` leaves behind — a remote-tracking ref and no
   // local name.
   const detached = path.join(dir, "detached");
-  execFileSync("git", ["clone", "--quiet", local, detached], { env: FIXTURE_GIT_ENV });
+  execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "clone", "--quiet", local, detached], {
+    env: FIXTURE_GIT_ENV,
+  });
   fixtureGit(detached, ["checkout", "--quiet", "--detach", "HEAD"]);
   fixtureGit(detached, ["branch", "--quiet", "-D", "main"]);
 
@@ -1134,7 +1147,9 @@ function refShapes(): RefShapes {
   // remote-tracking refs with it, so this tree holds the whole history
   // and no name for the branch it is on.
   const orphan = path.join(dir, "orphan");
-  execFileSync("git", ["clone", "--quiet", local, orphan], { env: FIXTURE_GIT_ENV });
+  execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "clone", "--quiet", local, orphan], {
+    env: FIXTURE_GIT_ENV,
+  });
   fixtureGit(orphan, ["checkout", "--quiet", "--detach", "HEAD"]);
   fixtureGit(orphan, ["branch", "--quiet", "-D", "main"]);
   fixtureGit(orphan, ["remote", "remove", "origin"]);
@@ -1203,7 +1218,7 @@ test("THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still w
     }
     expect(refusal).not.toContain(head);
   } finally {
-    rmSync(fx.dir, { recursive: true, force: true });
+    removeGitFixture(fx.dir, "refShapes");
   }
 });
 
@@ -1293,7 +1308,7 @@ test("the WHOLE brief assembles on a pull_request-shaped checkout, and names the
     expect(orphan.stderr).not.toContain("ambiguous argument");
     expect(orphan.stdout).not.toContain("base commit:");
   } finally {
-    rmSync(fx.dir, { recursive: true, force: true });
+    removeGitFixture(fx.dir, "refShapes");
   }
 });
 
