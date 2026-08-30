@@ -501,7 +501,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
   }
 
   it("the frontend reaches exactly the fourteen commands it is allowed", () => {
-    // The whole set, spelled out: a fourteenth would fail this line by
+    // The whole set, spelled out: a fifteenth would fail this line by
     // name, and so would a rename. `pick_project_folder` /
     // `pick_genesis_folder` / `start_genesis_here` go through one call
     // site with a variable, so they are asserted against the Rust handler

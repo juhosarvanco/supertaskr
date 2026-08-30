@@ -572,6 +572,20 @@ fn dispatch_brief_at(
     task_id: &str,
     role: dispatch::brief::Role,
 ) -> DispatchBriefOutcome {
+    // T-112-s1's VERDICT, correction 1: this guard lived in the async
+    // command, which takes a `tauri::AppHandle` and therefore cannot be
+    // driven by a unit test — so the blind verifier's mutant turning it
+    // into `if false` SURVIVED the whole cargo suite. A bound that nothing
+    // can poison is a bound nothing keeps. It sits on the seam now, ahead
+    // of the project read, because an over-long id is refused whether or
+    // not a project is open — the behaviour the command already had.
+    if !dispatch::brief::task_id_within_bounds(task_id) {
+        return DispatchBriefOutcome::Answered {
+            outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                task_id: String::new(),
+            },
+        };
+    }
     match project_root {
         None => DispatchBriefOutcome::NoProject,
         Some(root) => DispatchBriefOutcome::Answered {
@@ -622,16 +636,10 @@ async fn dispatch_brief(
     task_id: String,
     role: dispatch::brief::Role,
 ) -> DispatchBriefOutcome {
-    if !dispatch::brief::task_id_within_bounds(&task_id) {
-        // Refused without the echo, and still as the assembler's own
-        // typed answer: the caller's handling stays one path rather than
-        // two (the `arch_detail` bound, character for character).
-        return DispatchBriefOutcome::Answered {
-            outcome: dispatch::brief::BriefOutcome::NoSuchCard {
-                task_id: String::new(),
-            },
-        };
-    }
+    // The bound is enforced on the seam (`dispatch_brief_at`), where a
+    // test can reach it — T-112-s1's verdict, correction 1. Refused
+    // without the echo, and still as the assembler's own typed answer, so
+    // the caller's handling stays one path rather than two.
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<WatchState>();
@@ -1246,6 +1254,47 @@ mod tests {
                 DispatchBriefOutcome::Answered { .. }
             ),
             "an open folder must reach the ASSEMBLER's refusal, not the app's"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// **AN OVER-LONG TASK ID IS REFUSED WITHOUT ECHOING ITSELF, AND THE
+    /// BOUND IS ON THE SIDE A TEST CAN REACH** (T-112-s1's verdict,
+    /// correction 1). The verifier's mutant turned the guard into
+    /// `if false` and the whole cargo suite stayed green, because the
+    /// guard sat in the async command where no unit test can drive it.
+    /// The POSITIVE CONTROL is the second half: an id one byte inside the
+    /// bound reaches the assembler and comes back echoing itself, so this
+    /// body cannot be satisfied by a seam that refuses everything.
+    #[test]
+    fn an_over_long_task_id_is_refused_on_the_seam_and_never_echoed_back() {
+        let root = dispatch::fixtures::scratch("t112s1-bound");
+        let over = "T-".to_string() + &"9".repeat(dispatch::brief::MAX_TASK_ID_CHARS);
+        assert!(over.chars().count() > dispatch::brief::MAX_TASK_ID_CHARS);
+
+        assert_eq!(
+            dispatch_brief_at(Some(&root), &over, dispatch::brief::Role::Executor),
+            DispatchBriefOutcome::Answered {
+                outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                    task_id: String::new()
+                }
+            },
+            "an over-long id must be refused WITHOUT echoing itself back"
+        );
+
+        // THE CONTROL: an id inside the bound is not refused by the bound —
+        // it reaches the assembler, which answers about the CARD and
+        // echoes the id it was given.
+        let inside = "T-".to_string() + &"9".repeat(dispatch::brief::MAX_TASK_ID_CHARS - 3);
+        assert!(inside.chars().count() <= dispatch::brief::MAX_TASK_ID_CHARS);
+        assert_eq!(
+            dispatch_brief_at(Some(&root), &inside, dispatch::brief::Role::Executor),
+            DispatchBriefOutcome::Answered {
+                outcome: dispatch::brief::BriefOutcome::NoSuchCard {
+                    task_id: inside.clone()
+                }
+            },
+            "an id inside the bound must reach the assembler and echo"
         );
         let _ = fs::remove_dir_all(&root);
     }

@@ -2962,6 +2962,26 @@ mod tests {
         let json = serde_json::to_value(&outcome).expect("serializable");
         assert_eq!(json["kind"], "assembled");
         assert_eq!(json["brief"]["role"], "executor");
+        // **THE HEADER'S OWN TWO FIELDS** (`T-112-s1`'s verdict, correction
+        // 2). `task-detail.ts`'s `renderBrief` puts `roleFile` and
+        // `cardPath` in the copied brief's header, and this body read
+        // neither — so the same `rename_all_fields` gap that spelled
+        // `taskId` as `task_id` could have spelled these two snake_case
+        // with every assertion here still green. Both halves, because an
+        // absent camelCase key and a present snake_case one are different
+        // failures and only the pair distinguishes them.
+        assert!(
+            json["brief"]["roleFile"].is_string(),
+            "the header's role file is not on the wire in camelCase: {json}"
+        );
+        assert!(
+            json["brief"]["cardPath"].is_string(),
+            "the header's card path is not on the wire in camelCase: {json}"
+        );
+        assert!(
+            json["brief"].get("role_file").is_none() && json["brief"].get("card_path").is_none(),
+            "a snake_case spelling survives on the wire: {json}"
+        );
         assert!(json["brief"]["rows"][0]["assembledFrom"].is_string());
         assert!(json["brief"]["rows"][0]["lines"][0]["provenance"]["kind"].is_string());
         let refused = BriefOutcome::NoSuchCard {
