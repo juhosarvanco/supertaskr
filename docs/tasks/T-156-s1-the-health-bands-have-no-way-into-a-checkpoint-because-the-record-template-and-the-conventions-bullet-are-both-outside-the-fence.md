@@ -145,3 +145,182 @@ and mine does not**, and that item 2 is a PAIR — the command in the
 measure that red rather than predict it, build every half that is inside
 the fence, and route the rest rather than widen anything or quietly
 write the command in a shape the derivation cannot see.
+
+### What landed
+
+| file | what |
+|---|---|
+| `docs/checkpoints/TEMPLATE.md` | Gates gains the HEALTH BANDS block; Metrics goes from three stamped lines to five |
+| `docs/CONVENTIONS.md` | one named bullet, `HEALTH BANDS AT THE CHECKPOINT`, in Gotchas beside the four standing gates |
+| `docs/tasks/T-156-s5-*.md`, `docs/tasks/T-156-s6-*.md` | the two routed halves, filed |
+| `.github/workflows/ci.yml` | **UNCHANGED, on purpose** — the disposition is LOCAL ONLY and is argued below |
+
+**Item 1 — the Gates line.** The record now stamps the census line and
+the exit, names the readings file as the output of gates the checkpoint
+already ran, and carries three things the card asked for beside it: the
+`--` measurement, the capture rule (a bare `| tee` hands you tee's
+status, which every gate bullet forbids), and the graph band's
+integrator-only reading with its `T-153-s3`/`T-111-s10` reason.
+
+**The three markers, which are the hard half.** `Gate runtime:` was
+already a stamped line (T-157) and is now NAMED as
+`machinery/gate-seconds`' only reading. `Cold start:` and
+`Drift incidents:` are new, and both are owed by the SESSION at every
+checkpoint rather than by whoever noticed a problem — the sampling trap,
+carried as a criterion. **The denominator they build is named rather
+than assumed**: switches and windows that REACHED A CHECKPOINT, which is
+not every switch, so whoever sets the bands' limits reads the census as
+a floor. `north-star/rejection-rate-by-size` gets NO marker here: its
+own config entry says the marker belongs in
+`method/tasks/TASK-FORMAT.md`, which no fence this card holds reaches,
+and inventing a checkpoint-shaped substitute would be the known-vacuous
+keeper docs/NORTH_STAR.md calls a stop-the-line defect.
+
+**And ADR-019 constrains the future keeper, which is worth more than a
+sentence.** The Records clause forbids any suite, gate or generator from
+depending on docs/checkpoints/, so a scanner over the records is the
+WRONG build of the next card. The template says so where it binds: these
+readings reach `npm run health` hand-carried into `--readings` at the
+checkpoint that wrote them — the hand reporter that clause already
+allows.
+
+### The band census, before and after — UNCHANGED, and that is the honest answer
+
+    npm run health   # from tools/e2e/, unpiped, both runs
+
+| | bands | inside | drifting | BREACHED | unread | UNKEPT | exit |
+|---|---|---|---|---|---|---|---|
+| before (`1d297c9`) | 14 | 7 | 0 | 0 | 3 | 4 | **3** |
+| after (`44cfbc9`) | 14 | 7 | 0 | 0 | 3 | 4 | **3** |
+
+**A band's authority is data in `tools/e2e/scripts/health-bands.config.mjs`,
+which this fence does not hold**, so no write inside it can move a band
+off `authority.kind: "none"`. What moved is that the markers those
+entries ask for now exist. Routed as `T-156-s6`, which also carries the
+finding that the flip waits on RECORDS rather than on a fence: there is
+still no landed measurement to set a limit from, and the config's own
+`machinery/gate-seconds` reason forbids setting one from a guess.
+
+**THE MECHANISM ITSELF IS PROVEN END TO END**, with this lane's own suite
+output as the readings file:
+
+    npm run health -- --readings <this lane's npm test output>
+    health-bands: 14 band(s) — 8 inside, 0 drifting, 0 BREACHED, 2 unread, 4 UNKEPT   (exit 3)
+
+`suite/e2e-seconds` moved from UNREAD to a reading. The other two stay
+unread because this lane ran neither `cargo test` nor `index --check`,
+which is exactly what the template now tells a checkpoint to feed it.
+
+### Item 2 is REFUSED AND ROUTED, measured rather than predicted
+
+Adding `` `npm run health` `` to the `Build & test` tools/e2e bullet and
+changing nothing else takes `workflow-parity.spec.ts` to **3 failed of
+17, exit 1** at `8c210b2` — *"lists [tools/e2e] npm run health, which
+this spec has no entry for — add it to CI_SEQUENCE … or to LOCAL_ONLY"*,
+plus the two fixtures that assert the live doc derives cleanly. **Both
+dispositions live in that spec**, so a `ci.yml` step would not have
+rescued the doc edit either. The mutant was reverted with
+`git checkout docs/CONVENTIONS.md` and the tree was clean before the
+real edits. Filed as `T-156-s5` with the measurement.
+
+**WHAT WAS AVAILABLE AND WAS NOT TAKEN**: `FIXTURE: the shape that IS
+silent` pins that a command in a bullet with no `run from <dir>/:`
+marker is genuinely invisible to the derivation, so the command could
+have been written into `Build & test` in silence. It was not. The
+command is written down in the bullet that owns the ceremony, which is
+where `node tools/method-evals/run.mjs` already lives for exactly this
+reason (T-155's own routed half, `T-155-s1`) — and that bullet says
+plainly that the listing is owed and where it went.
+
+### Item 3, the CI disposition, decided in writing: LOCAL ONLY
+
+Written into the CONVENTIONS bullet so the next editor of ci.yml meets
+it. Three reasons; the first is decisive.
+
+1. `npm run health` exits **3 at every ref** while any band is unkept,
+   so a step would red every push for no actionable signal — the AUDIT
+   GATE POLICY's own argument against `--deny warnings`, one layer up.
+2. The readings that make the run informative are the OUTPUTS of steps
+   the job already runs, so a step would either report three bands
+   UNREAD or need the job rewired to capture and re-feed them.
+3. The card's *"on CI's schedule once the pipeline is green"* form is
+   refused for reason 1 and one more: a scheduled reporter re-runs the
+   whole pipeline to produce those readings, and `on: schedule` is not
+   one of the three triggers `workflow-parity.spec.ts` pins ci.yml to
+   (`["pull_request", "push", "workflow_dispatch"]`, asserted as an
+   exact set) — so even the scheduled form is a two-package commit.
+
+**So ci.yml is untouched and the four cargo-audit command copies were
+never approached.** Revisiting is behind `T-156-s4`, whose subject is
+whether the exit code can move at all.
+
+### Gates
+
+| gate | how | result |
+|---|---|---|
+| `npm run lint:docs` from tools/e2e/ | unpiped, twice (after CONVENTIONS, after the cards) | **exit 0** both times; budgets hold, 4 gated |
+| `npm test` from tools/e2e/ | `NPUTER_E2E_PORT=14741`, lsof zero rows first, redirected so `$?` is the suite's | **2 failed / 318 passed, exit 1** — both attributed below |
+| `npx vitest run` from lib/parser/ | DOCS GATE owed it | 315 passed / 15 files, **exit 0** |
+| `npm test` from app/ | DOCS GATE owed it (`npm run build` first, exit 0) | 1015 passed / 47 files, **exit 0** |
+| `cargo test` from app/src-tauri/ | DOCS GATE owed it | **NOT RUN — argued, see below** |
+| `npm run health` from tools/e2e/ | before and after | **exit 3** both, by design |
+
+**THE DOCS GATE FIRES** on this diff — three paths under `docs/` are
+code inputs — and names four suites. Derived, not guessed:
+
+    TREE=$(git merge-tree --write-tree 1bcdb4c HEAD)   # exit 0
+    node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only 1bcdb4c "$TREE")   # exit 1, FIRES
+
+**`cargo test` was NOT run, and the reason is a targeted proof rather
+than a shrug.** The only cargo-side reader of docs/CONVENTIONS.md is
+`app/src-tauri/src/agent/kit.rs`'s
+`snapshot_version_matches_the_live_method_stamps`, which calls
+`the_one_line_carrying(&conventions, "formats are version-bumped", …)`
+and asserts that line contains `currently v0.1.8`. At this ref
+`grep -c 'formats are version-bumped' docs/CONVENTIONS.md` is **1** and
+that line is *"method/ formats are version-bumped (currently v0.1.8) and
+noted here."* — untouched by this diff, which adds one bullet in Gotchas
+and moves no stamp. Against that: running `cargo test` in a lane builds
+a multi-gigabyte `target/` INSIDE the worktree, which is both the cargo
+cache cliff's own trigger (STATE's first standing hazard) and the graph
+walk's (`T-153-s3`). **This is news, not silence**: the integrator owes
+the run at the merge.
+
+### The two e2e reds are the live-lane class, PROVEN one side only
+
+Both are in `session-economics.spec.ts` (lines 73 and 247), and both say
+the same thing:
+
+    brief: FOUND 1 thing(s) the assembler could not settle:
+      fences are not disjoint: T-156-s1 docs/checkpoints/ against
+      T-157 docs/checkpoints/ — the same entry (lane-protocol rule five).
+
+**THE COUNTERFACTUAL, RUN RATHER THAN ASSERTED.** `git checkout 1d297c9
+-- docs/` plus `git rm` of the two new cards put the tree's `docs/` back
+to the base ref exactly (`git diff --cached --name-only 1d297c9` empty)
+while the lane stayed live. The same spec then gave **2 failed / 8
+passed, exit 1 — the same two bodies, the same message**. So the red is
+this LANE EXISTING, not this diff; `git diff 1d297c9..HEAD` moves
+neither input (this card's `touches:` line is unchanged and T-157's card
+is not in the diff). The tree was restored with
+`git checkout HEAD -- docs/`, `git status --porcelain` empty. The first
+attempt at this drill was CONTAMINATED and is recorded rather than
+hidden: `rm -f` left the two new cards in the index, so `brief.mjs` hit
+ENOENT and exited 3 with five bodies red — a false counterfactual that
+would have been read as "the diff made it worse".
+
+**AND IT REFINES THE TWO CARDS THAT ALREADY OWN THIS DEFECT.**
+`T-143-s1` and `T-162-s2` both state it as *"every lane that holds
+`tools/e2e`"*. T-157's card reads `touches: [docs/checkpoints/,
+tools/e2e]`, so the real blast radius is **any lane whose fence
+intersects EITHER entry** — this lane holds no `tools/e2e` and reds
+identically through `docs/checkpoints/`. No third card is filed for a
+defect already filed twice; the refinement belongs on those two.
+
+### Figures in this section
+
+Every count above is from a run in this lane, redirected to a file so
+`$?` is the command's own, at the ref named beside it. Byte figures:
+`docs/CONVENTIONS.md` 131,514 → **137,350** (`wc -c`), warn line 164,393,
+so `docs-headroom/docs/CONVENTIONS.md` reads **16.45%** against a drift
+line of 10% — INSIDE, and the band says so on the runs above.
