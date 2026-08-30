@@ -1,8 +1,18 @@
 ---
 id: T-143-s4
 title: The in-flight row assertion reads a fixed 600-character window that a long card filename overflows — green wherever the card has a lane, red only on CI, found by the first push after a long-named dispatch
-status: suggested
+feature: F-04
+milestone: 4
+priority: 1
+size: S
+status: building
+blocked_by: []
 suggested_by: integrator nputer-4e @T-025-s5 merge, CI run on 8e6b18b (2026-08-30)
+builder: claude-opus-5@subagent
+verifier:
+built_by:
+verified_by:
+review:
 touches: [tools/e2e]
 ---
 
@@ -32,3 +42,5 @@ interim exposure is one spec body, red only on CI, only while a
 long-named card sits at `status: building` with no lane.
 
 MEASURED BEFORE THE NEXT PUSH (2026-08-30, integration seat, CI-shaped clone — no worktrees, so the no-lane arm runs): **T-162's row ALSO overflows.** The 600-character slice ends mid-sentence — `and it has NO lane, so it holds n` — the phrase BEGINS inside the window and is truncated by it, so the assertion fails on a report that is printing exactly the right thing. Two contributors, both data-length: the card's title in the row line and the card's filename in each stamp. Consequence: main's push is HELD at the T-025-s5 checkpoint until this card lands — the fence frees when T-162 merges, and this dispatches immediately after, ahead of T-156-s1 and T-160-s4 (a red main outranks new work).
+
+PROMOTED AT FILING-PLUS-ONE (2026-08-30, integrator, the T-153-s5/s6 precedent): main's push is HELD on this card alone — the CI-green standing authorization covers a blocker on the green path, and the clone measurement above is the startability evidence. Dispatched the moment T-162's landing freed the fence.
