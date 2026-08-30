@@ -54,6 +54,14 @@
  * {@link DispatchJoinWire} to this file yet: registering one edits
  * `app/src-tauri/src/lib.rs`, which is `app-shell` — outside this card's
  * fence and held by a live lane at dispatch. `T-110-s1` carries it.
+ *
+ * **AND T-112'S BRIEF ARRIVES IN THE SAME STATE, FOR THE SAME REASON.**
+ * The assembler is built and proved in `dispatch/brief.rs`; its wire
+ * types are mirrored at the foot of this file; and the `invoke` that
+ * would fill them edits `lib.rs` and moves the IPC census pinned in
+ * `app/test/crescendo-dom.test.tsx` — both `app-shell`, both outside
+ * `[app-dispatch, app-board]`. `T-112-s1` carries that wiring, and until
+ * it lands the board root passes the brief in as an optional prop.
  */
 
 // ---------------------------------------------------------------------
@@ -298,6 +306,107 @@ export function hydrateJoin(wire: DispatchJoinWire): DispatchJoin {
       return assertNever(wire);
   }
 }
+
+// ---------------------------------------------------------------------
+// The dispatch brief's wire form (T-112), mirrored.
+//
+// THE AUTHORITY IS THE RUST TYPE, NEVER THIS FILE: `BriefOutcome`,
+// `Brief`, `BriefRow`, `BriefLine` and `Provenance` in
+// `app/src-tauri/src/dispatch/brief.rs`, serialized by serde with
+// `tag = "kind"` and camelCase fields — and the shape below is pinned
+// against that serialization by
+// `the_wire_form_is_tagged_and_camel_cased_the_way_the_ts_mirror_expects`
+// in that module, which is the cross-language keeper this side cannot
+// hold on its own.
+//
+// **TYPES ONLY, DELIBERATELY.** T-110's whole lesson is one module up in
+// this file: a DERIVATION here reaches no suite, because
+// `app/vitest.config.ts` collects `test/**` only and both that config
+// and `app/test/**` are C-05's `app-shell`, outside this card's fence.
+// So the brief's presentation lives in `task-detail.ts`, which
+// `app/test/select-task-detail.test.ts` drives, and this file adds not
+// one line of behaviour — `tsc` in both programs is a type's keeper and
+// needs no body to run.
+//
+// ROWS ARE AN ARRAY AND NOT A `Map`, and that is ADR-009 obeyed rather
+// than skipped: the key would be the contract's own row NUMBER, which is
+// an integer read off a table this project authors, not a file-derived
+// string. The order is the document's and an array is the only shape
+// that keeps it.
+// ---------------------------------------------------------------------
+
+/** Where one line came from. A TREE fact names its file; a LIVE fact is
+ * re-read at dispatch; a COMPOSED one names every part it was built
+ * from. */
+export type BriefProvenanceWire =
+  | { readonly kind: "tree"; readonly source: string }
+  | { readonly kind: "live"; readonly source: string }
+  | { readonly kind: "composed"; readonly from: readonly string[] };
+
+export interface BriefLineWire {
+  readonly label: string;
+  readonly text: string;
+  readonly provenance: BriefProvenanceWire;
+}
+
+/** One row of the contract, with the three columns the document spells
+ * and the content assembled from the source column three names. */
+export interface BriefRowWire {
+  readonly number: number;
+  readonly carries: string;
+  readonly assembledFrom: string;
+  readonly ifAbsent: string;
+  readonly lines: readonly BriefLineWire[];
+  /** Something open about this row's own source column, surfaced rather
+   * than papered over. `null` on a row with nothing open. */
+  readonly residual: string | null;
+}
+
+export interface BriefWire {
+  readonly role: "executor" | "verifier";
+  readonly roleFile: string;
+  readonly taskId: string;
+  readonly cardPath: string;
+  readonly rows: readonly BriefRowWire[];
+  /**
+   * The line a verifier's brief is split at, and `null` for an
+   * executor's. Everything the executor produced belongs BELOW it — and
+   * the assembler puts nothing there, which is the guarantee rather than
+   * an oversight.
+   */
+  readonly marker: string | null;
+}
+
+/** A row that could not be assembled: WHICH ROW and WHICH SOURCE. */
+export interface MissingBriefRowWire {
+  readonly number: number;
+  readonly source: string;
+  readonly path: string;
+  readonly because: { readonly kind: string };
+}
+
+/**
+ * The assembler's typed answer.
+ *
+ * **NEVER A PARTIAL BRIEF.** A row that could not be assembled takes the
+ * whole answer to `unassemblable` rather than shortening the output: a
+ * brief with a silently missing gate list is worse than no brief, and
+ * this repository has paid for three of them.
+ */
+export type BriefOutcomeWire =
+  | { readonly kind: "assembled"; readonly brief: BriefWire }
+  | {
+      readonly kind: "contractUnreadable";
+      readonly source: string;
+      readonly defect: { readonly kind: string };
+    }
+  | {
+      readonly kind: "contractMissing";
+      readonly source: string;
+      readonly because: { readonly kind: string };
+    }
+  | { readonly kind: "unassemblable"; readonly rows: readonly MissingBriefRowWire[] }
+  | { readonly kind: "noSuchCard"; readonly taskId: string };
 
 /**
  * The exhaustiveness check.

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
-import { selectBoard } from "@/lib/board-model";
-import type { TaskRef } from "@/lib/task-detail";
+import { selectBoard, type DispatchReading } from "@/lib/board-model";
+import type { BriefOutcomeView, TaskRef } from "@/lib/task-detail";
 import { FeatureColumn } from "./FeatureColumn";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 
@@ -24,8 +24,25 @@ const DENSE_CARD_THRESHOLD = 40;
  * state only. The panel outlives an emptied board (its "no longer
  * present" state covers the ref) and re-targets when a blocker link or
  * another card is clicked.
+ *
+ * T-112: the composition root is also where the DISPATCH channel enters,
+ * because it is the one file on the board side that reaches the drawer.
+ * Both props are optional and are threaded VERBATIM — this file makes no
+ * decision about them; `selectBriefPanel` in `task-detail.ts` does, where
+ * a suite can reach it. Absent, the drawer's dispatch block does not
+ * render at all, so a board with no lane channel is byte-for-byte what it
+ * was. The `invoke` that fills them is `app-shell`'s and is routed
+ * (`T-112-s1`).
  */
-export function Board({ model }: { model: ProjectParseResult }) {
+export function Board({
+  model,
+  dispatch,
+  brief,
+}: {
+  model: ProjectParseResult;
+  dispatch?: DispatchReading;
+  brief?: BriefOutcomeView;
+}) {
   const board = useMemo(() => selectBoard(model), [model]);
   const [openRef, setOpenRef] = useState<TaskRef | undefined>(undefined);
   const close = useCallback(() => setOpenRef(undefined), []);
@@ -51,7 +68,14 @@ export function Board({ model }: { model: ProjectParseResult }) {
         </div>
       )}
       {openRef !== undefined && (
-        <TaskDetailPanel model={model} taskRef={openRef} onOpen={setOpenRef} onClose={close} />
+        <TaskDetailPanel
+          model={model}
+          taskRef={openRef}
+          onOpen={setOpenRef}
+          onClose={close}
+          dispatch={dispatch}
+          brief={brief}
+        />
       )}
     </>
   );

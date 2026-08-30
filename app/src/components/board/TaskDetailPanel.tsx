@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
 import { cn } from "@/lib/utils";
-import type { AssignmentDisclosure } from "@/lib/board-model";
+import type { AssignmentDisclosure, DispatchReading } from "@/lib/board-model";
 import {
   criterionLines,
   refLabel,
+  selectBriefPanel,
   selectTaskDetail,
+  type BriefOutcomeView,
+  type BriefPanel,
   type TaskRef,
 } from "@/lib/task-detail";
 import { verdictEntries, type VerdictEntry } from "@/lib/verdicts";
@@ -27,7 +30,9 @@ import { ReviewBadge } from "./badges/ReviewBadge";
  * ✓ only once the verdict gate passed); status-tinted blocker chips;
  * verdict history as tinted verbatim blocks; provenance rows where the
  * independent/same-model distinction lives in TEXT (ADR-016). The
- * mockup's dispatch footer belongs to F-04 and is deliberately absent.
+ * mockup's dispatch footer belonged to F-04 and was deliberately absent
+ * until T-112 landed it: see {@link BriefBlock}. It renders only when a
+ * lane reading is supplied, so a board with no lane channel is unchanged.
  *
  * T-017 (T-005-s2): Implementation notes — often the richest text in a
  * finished task file — render as a collapsed-by-default disclosure
@@ -64,13 +69,35 @@ export function TaskDetailPanel({
   taskRef,
   onOpen,
   onClose,
+  dispatch,
+  brief,
 }: {
   model: ProjectParseResult;
   taskRef: TaskRef;
   onOpen: (ref: TaskRef) => void;
   onClose: () => void;
+  /**
+   * The lane reader's answer (T-110/T-111). **ABSENT MEANS THE APP HAS NO
+   * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT** — the
+   * command that would fill it is `app-shell`'s and is routed
+   * (`T-112-s1`). While it is absent the dispatch block does not render
+   * at all, rather than rendering an "unavailable" strip on every card:
+   * a section that says nothing on every open is a section nobody reads.
+   */
+  dispatch?: DispatchReading;
+  /** The assembler's answer for this card, when one has been asked for. */
+  brief?: BriefOutcomeView;
 }) {
   const detail = useMemo(() => selectTaskDetail(model, taskRef), [model, taskRef]);
+  // T-112: the brief block. The JUDGEMENT is `selectBriefPanel`'s, which
+  // takes T-111's disposition rather than re-deriving one here.
+  const briefPanel = useMemo(
+    () =>
+      dispatch === undefined
+        ? undefined
+        : selectBriefPanel(model, taskRef, dispatch, brief),
+    [model, taskRef, dispatch, brief],
+  );
   const panelRef = useRef<HTMLElement>(null);
 
   // Esc closes; a pointer press outside the panel closes unless it
@@ -382,6 +409,8 @@ export function TaskDetailPanel({
             </Section>
           )}
 
+          {briefPanel !== undefined && <BriefBlock panel={briefPanel} />}
+
           <p
             data-testid="detail-file"
             className="mt-auto min-w-0 border-t border-hairline pt-2.5 font-mono text-xs break-words text-muted-foreground"
@@ -391,6 +420,80 @@ export function TaskDetailPanel({
         </div>
       )}
     </aside>
+  );
+}
+
+/**
+ * The dispatch block (T-112) — the mockup's dispatch footer, which the
+ * header note above called deliberately absent until F-04 reached it.
+ *
+ * **THREE OUTCOMES AND NO TWO OF THEM ARE THE SAME SILENCE.** A brief you
+ * may copy; a card you may NOT dispatch, shown with the disposition's own
+ * reason instead of a blank; and an assembler that could not tell you,
+ * shown as its typed refusal rather than as a shortened brief. The
+ * judgement is `selectBriefPanel`'s and none of it is re-decided here —
+ * this component chooses a `data-testid` and nothing else.
+ *
+ * The block is `overflow-x-auto` and NOT `break-words`, for the reason
+ * T-031 settled one section up: the brief is a PREFORMATTED quotation of
+ * other files, and breaking a verbatim quote is not containment, it is
+ * editing. A human selects it and pastes it into their own agent, so the
+ * columns have to survive the trip.
+ */
+function BriefBlock({ panel }: { panel: BriefPanel }) {
+  if (panel.kind === "copyable") {
+    return (
+      <Section title="dispatch brief · copyable" testid="detail-brief">
+        <div
+          data-testid="detail-brief-copyable"
+          data-task-id={panel.taskId}
+          className="overflow-x-auto rounded-chip border border-hairline bg-muted px-2.5 py-2"
+        >
+          <pre className="font-mono text-xs whitespace-pre text-secondary-foreground">
+            {panel.text}
+          </pre>
+        </div>
+        <button
+          type="button"
+          data-testid="detail-brief-copy"
+          className="self-start rounded-chip border border-ghost-border px-1.75 py-0.5 font-mono text-xs text-muted-foreground"
+          onClick={() => {
+            // The clipboard is not the project: this writes no file, so
+            // the pure-lens rule is untouched. It is also absent in
+            // jsdom and in a hostile webview, so the call is optional
+            // and its failure costs the reader nothing — the block above
+            // is still selectable by hand, which is what makes the
+            // affordance an accelerator rather than the only way out.
+            void navigator.clipboard?.writeText(panel.text).catch(() => {});
+          }}
+        >
+          copy
+        </button>
+      </Section>
+    );
+  }
+  if (panel.kind === "withheld") {
+    return (
+      <Section title="dispatch brief · withheld" testid="detail-brief">
+        <p
+          data-testid="detail-brief-withheld"
+          data-disposition={panel.disposition}
+          className="min-w-0 text-sm break-words text-secondary-foreground"
+        >
+          {panel.reason}
+        </p>
+      </Section>
+    );
+  }
+  return (
+    <Section title="dispatch brief · unavailable" testid="detail-brief">
+      <p
+        data-testid="detail-brief-unavailable"
+        className="min-w-0 text-sm break-words text-secondary-foreground"
+      >
+        {panel.sentence}
+      </p>
+    </Section>
   );
 }
 

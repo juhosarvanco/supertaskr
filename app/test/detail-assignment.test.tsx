@@ -9,6 +9,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import type { DispatchReading } from "../src/lib/board-model";
+import type { BriefOutcomeView } from "../src/lib/task-detail";
 import { TaskDetailPanel } from "../src/components/board/TaskDetailPanel";
 
 let container: HTMLElement;
@@ -87,5 +89,172 @@ describe("the assignment flag in the provenance block (T-169, D5)", () => {
     expect(dom.querySelector('[data-testid="stamp-built-by"]')?.textContent).toBe(
       "claude-opus-5 @T-950",
     );
+  });
+});
+
+// ---- the dispatch brief block (T-112) --------------------------------
+//
+// **THE APP-SIDE DOM TEST THE CARD'S VERIFICATION LINE ASKS FOR**: the
+// copyable block, and its ABSENCE on a card whose fence a live lane
+// holds. This file is C-09's and mounts `TaskDetailPanel` directly, which
+// is why the bodies live here rather than in a new file — a new
+// `app/test/**` path would need a component-registry edit outside this
+// card's fence.
+
+const BOARD_ROADMAP = [
+  "# R",
+  "",
+  "## Backbone",
+  "- F-01: Method — the convention",
+  "- F-02: App — shell and board",
+  "",
+].join("\n");
+
+const COMPONENT = [
+  "---",
+  "id: C-90",
+  "name: C-90",
+  "layer: app",
+  "paths:",
+  "  - app/src/components/board/**",
+  "depends_on: []",
+  "decisions: []",
+  "status: auto",
+  "touch_slugs: [app-board]",
+  "---",
+  "",
+  "A component.",
+  "",
+].join("\n");
+
+const card = (id: string, status: string, feature: string): string =>
+  `---\nid: ${id}\ntitle: ${id} title\nfeature: ${feature}\nmilestone: 1\npriority: 1\n` +
+  `size: M\nstatus: ${status}\ntouches: [app-board]\n---\n\nbody\n`;
+
+/** A board with one planned card, and optionally a lane-holding sibling. */
+function briefModel(withLane: boolean): ProjectParseResult {
+  const files = [
+    { path: "docs/ROADMAP.md", content: BOARD_ROADMAP },
+    { path: "docs/architecture/components/C-90-x.md", content: COMPONENT },
+    { path: "docs/tasks/T-960-fixture.md", content: card("T-960", "planned", "F-01") },
+  ];
+  if (withLane) {
+    files.push({
+      path: "docs/tasks/T-961-lane.md",
+      content: card("T-961", "building", "F-02"),
+    });
+  }
+  return parseProjectFromFiles(files);
+}
+
+const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+
+const HELD: DispatchReading = {
+  kind: "joined",
+  rows: new Map([
+    [
+      "T-961",
+      {
+        taskId: "T-961",
+        state: "live" as const,
+        lanes: [
+          {
+            taskId: "T-961",
+            branch: "task/T-961-lane",
+            worktreePath: "/tmp/nputer-T-961",
+            existsOnDisk: true,
+          },
+        ],
+      },
+    ],
+  ]),
+};
+
+const BRIEF: BriefOutcomeView = {
+  kind: "assembled",
+  brief: {
+    role: "executor",
+    roleFile: "method/roles/executor.md",
+    taskId: "T-960",
+    cardPath: "docs/tasks/T-960-fixture.md",
+    rows: [
+      {
+        number: 1,
+        carries: "**Role**",
+        assembledFrom: "`roles/<role>.md`",
+        ifAbsent: "the session invents its own obligations",
+        lines: [
+          {
+            label: "one line",
+            text: "You build exactly one task, then you end.",
+            provenance: { kind: "tree", source: "method/roles/executor.md" },
+          },
+        ],
+        residual: null,
+      },
+    ],
+    marker: null,
+  },
+};
+
+function renderBriefPanel(
+  model: ProjectParseResult,
+  dispatch: DispatchReading | undefined,
+  brief: BriefOutcomeView | undefined,
+): HTMLElement {
+  act(() =>
+    root.render(
+      <TaskDetailPanel
+        model={model}
+        taskRef={{ kind: "id", id: "T-960" }}
+        onOpen={() => {}}
+        onClose={() => {}}
+        dispatch={dispatch}
+        brief={brief}
+      />,
+    ),
+  );
+  return container;
+}
+
+describe("the dispatch brief block (T-112)", () => {
+  it("renders the brief in a copyable block for a dispatchable card", () => {
+    const dom = renderBriefPanel(briefModel(false), NO_LANES, BRIEF);
+    const block = dom.querySelector('[data-testid="detail-brief-copyable"]');
+    if (!(block instanceof HTMLElement)) throw new Error("the copyable block did not render");
+    expect(block.dataset.taskId).toBe("T-960");
+    // The block carries the brief's own text, row and provenance intact —
+    // what a human selects is what the assembler produced.
+    expect(block.textContent).toContain("ROW 1 —");
+    expect(block.textContent).toContain("You build exactly one task, then you end.");
+    expect(block.textContent).toContain("<- method/roles/executor.md");
+    // PREFORMATTED, not broken: breaking a verbatim quote is editing, so
+    // the block scrolls inside itself the way the verdict blocks do.
+    expect(block.className).toContain("overflow-x-auto");
+    expect(dom.querySelector('[data-testid="detail-brief-copy"]')).not.toBeNull();
+    // And the withheld/unavailable faces are NOT on screen at the same
+    // time — three answers, one shown.
+    expect(dom.querySelector('[data-testid="detail-brief-withheld"]')).toBeNull();
+    expect(dom.querySelector('[data-testid="detail-brief-unavailable"]')).toBeNull();
+  });
+
+  it("shows the disposition's reason and NO copyable block for a fenced card", () => {
+    const dom = renderBriefPanel(briefModel(true), HELD, BRIEF);
+    expect(dom.querySelector('[data-testid="detail-brief-copyable"]')).toBeNull();
+    const withheld = dom.querySelector('[data-testid="detail-brief-withheld"]');
+    if (!(withheld instanceof HTMLElement)) throw new Error("no withheld reason rendered");
+    expect(withheld.dataset.disposition).toBe("fenced");
+    expect(withheld.textContent).toContain("T-961");
+    expect(withheld.textContent).toContain("app-board");
+  });
+
+  it("renders no dispatch block at all when the app has no lane channel", () => {
+    // Absence is the honest answer while the `invoke` is routed: a strip
+    // that says nothing on every open is a strip nobody reads.
+    const dom = renderBriefPanel(briefModel(false), undefined, undefined);
+    expect(dom.querySelector('[data-testid="detail-brief"]')).toBeNull();
+    // The positive control: the panel itself did render, so the absence
+    // above is the block's and not a failed mount.
+    expect(dom.querySelector('[data-testid="task-detail-panel"]')).not.toBeNull();
   });
 });
