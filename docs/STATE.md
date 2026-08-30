@@ -1,20 +1,23 @@
 # State
 
-Updated: 2026-08-30 at T-112's close — **F-04 IS WHOLE** (disposition,
-ledger, guard, brief). The assembler landed APPROVED WITH ASSIGNED
-CORRECTIONS (wrong residual holder fixed + pinned; FIRST-heading
-fixtures added; two tallies restated at their ref). ZERO LANES live;
-battery whole: cargo 588, app 1060, e2e 332, parser 336. **GRAPH AT
-926 BYTES HEADROOM** (1,039,074/1,040,000, 199 files, truncated_files
-4, docs_watch.rs 0 symbols — T-140-s4's @human ruling is the next
-code merge's problem). THE GENESIS WALK IS DONE (first-walk exists;
-T-171/T-172/T-173/T-174 carry its findings; the cold-start capture is
-in docs/research/captures/). T-025-s4 UNHELD. Next dispatches:
-T-112-s1 (assembler registration — until it lands the drawer's block
-never renders), e2e train (T-163-s4 p1). @human also holds: the
-brief's closing evidence (one hand-driven dispatch using it), v1/v2/v3
-markup, T-162-s1, T-169-s2, T-140-s4 (urgent), M4. Current record:
-docs/checkpoints/2026-08-30-T-112-the-brief-lands.md.
+Updated: 2026-08-30 at the SESSION'S CLOSE — T-163-s4 and T-025-s4
+both landed (the live-lane e2e red class is ENDED: graded spawns
+derive fence-disjoint ids; and the effective Bash grant is three
+named tables in adapter::EFFECTIVE_GRANT_TABLES, the six patterns
+ruled to stay, dated). ZERO LANES; battery whole: cargo 590, app
+1060, e2e 332* (*minus three docs-input-gate bodies that redded on
+THIS seat's own STATE staleness, repaired in this commit — the gate
+caught the record-append class mechanically, third sighting).
+**GRAPH AT 410 BYTES HEADROOM (1,039,590/1,040,000) — T-140-s4's
+@human ruling BLOCKS the next code merge in practice.** THE GENESIS
+WALK IS DONE; F-04 IS WHOLE. **HANDOVER: the takeover signal for the
+new architect session is FIRED** (no task/ worktrees, all cards done
+on pulled main). Its queue: the triage sitting (T-171..T-174,
+T-112-s1..s4, T-154-s3/s4, T-163-s5), then T-112-s1 first dispatch.
+@human holds: milestone-3 word, T-140-s4 (URGENT), the brief's
+closing evidence, v1/v2/v3 markup, T-162-s1, T-169-s2, M4, and
+T-025-s4's four routed questions. Current record:
+docs/checkpoints/2026-08-30-T-025-s4-the-three-tables-and-the-ledger-closes.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will

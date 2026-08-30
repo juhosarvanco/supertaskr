@@ -5,14 +5,14 @@ feature: F-03
 milestone: 3
 priority: 4
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent]
 suggested_by: verifier claude-opus-5 @T-025
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -361,10 +361,16 @@ in `adapter.rs`'s own doc comment, where the next reader will meet it.
    `EnterWorktree`, `ExitWorktree` are all measured present and a genesis
    interview provably needs none of them — the same *"free ADR-010
    narrowing"* argument that already justifies `WebFetch`/`WebSearch`.
-   **NOT TAKEN**: it is unknown whether the CLI validates unknown tool
-   names at argument-validation time, so an untested denylist risks
-   killing genesis at SPAWN, which is worse than the gap. Only a real run
-   prices it.
+   **NOT TAKEN**: [reason restated at verification — the original said
+   "it is unknown whether the CLI validates unknown tool names", which
+   this card's own table 2 refutes: all nine names are measured present
+   in the 2026-08-19 capture, so they are KNOWN names to CLI 2.1.226.]
+   The real unpriced risk: the adapter spawns against ANY installed CLI
+   version, and whether a denylist naming a tool a DIFFERENT build does
+   not know is refused at argument-validation time is unmeasured — an
+   untested denylist still risks killing genesis at SPAWN, which is
+   worse than the gap. Only a real run prices it; the routing stands on
+   that.
 2. **Close table 3 with `--setting-sources`**, given the measured drift.
    **NOT TAKEN**: it also drops the user's hooks and project settings and
    changes the auth posture ADR-003 fixes. A product decision plus a real
@@ -481,3 +487,33 @@ lands, so these decisions are not one commit behind.
 bodies this card adds.
 
 ## Verdicts Queues for the next standing sitting with this evidence.
+
+## VERDICT (2026-08-30, blind verifier claude-opus-5@subagent)
+
+**APPROVED WITH ASSIGNED CORRECTIONS** — two, both prose, both
+performed at merge: (1) ruling reason (c) in adapter.rs now carries
+its own counterweight (smallest by COUNT is largest by WRITE REACH —
+(a) and (b) carry the ruling, not (c)); (2) routed item 1's stated
+obstacle restated above — the lane's own table 2 refuted the original
+wording, and the routing now stands on the real risk (a DIFFERENT
+installed CLI build's argument validation), which it does.
+
+The verifier DISCLOSED ITS OWN BLINDNESS VIOLATION: the card came
+back in full before the attack set was written. It recorded the
+violation at the top of its attack file and compensated by
+re-deriving every figure from disk and aiming its mutants at the
+axes the executor never touched — M1/M2 mutated the CAPTURE FILE
+itself and proved the fidelity body reads the capture's bytes (the
+panic printed the file's mutated array), the decisive answer to the
+second-implementation question. Five mutants, five killed, exactly
+one failing body where the shape demands it; the unmoved pin proved
+a live alarm (deleting Bash(cp:*) from the argv reds four bodies).
+All six criteria MET, re-derived: 590/0 cargo, the three tables'
+gaps all real (none rhetorical), the pin byte-identical base→tip
+(1825 bytes compared), criterion 4 one sentence and true against the
+pins on disk, no real turn spawned. Fence clean. The two e2e reds'
+attribution CONFIRMED and the condition has since cleared — the same
+command at the same tree now exits 0, because T-163-s4 landed while
+this lane was under verification: the class this board just closed,
+observed closing. Graph: headroom 926 → 410 at this merge, the
+integrator's regen.

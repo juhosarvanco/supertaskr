@@ -113,7 +113,11 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   a user ever runs, and pricing that needs the real turn T-025-s4 is
 ///   forbidden to spawn. (c) The six are the SMALLEST and only reviewed
 ///   member of [`EFFECTIVE_GRANT_TABLES`], so narrowing them moves the
-///   union very little and the two tables it does not reach not at all.
+///   union very little and the two tables it does not reach not at all —
+///   but smallest by COUNT is largest by WRITE REACH: this is the only
+///   member that auto-approves a write outside the cwd, so (a) and (b)
+///   are what carry this ruling, not (c). (Corrected at verification:
+///   as first written, (c) met its counterweight only on the card.)
 /// - `--disallowedTools WebFetch WebSearch` — free ADR-010 narrowing; a
 ///   genesis interview has zero web business, and denying loudly beats
 ///   discovering it later.

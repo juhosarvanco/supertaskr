@@ -4431,8 +4431,8 @@
       "id": "f:app/src-tauri/src/agent/adapter.rs",
       "path": "app/src-tauri/src/agent/adapter.rs",
       "lang": "rust",
-      "hash": "blake3:0e7cf5172d38717675d23b54d393a94978e0effd6f2a174ccd6c2489dfddea36",
-      "loc": 1820,
+      "hash": "blake3:56cb3951cdc6363de5647b08db6a0700dead7b37591f3820a28de0d4c4ea1854",
+      "loc": 2100,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/adapter.rs#ADAPTERS",
@@ -4440,8 +4440,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            158,
-            158
+            196,
+            196
           ]
         },
         {
@@ -4460,8 +4460,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            410,
-            429
+            590,
+            609
           ]
         },
         {
@@ -4470,8 +4470,28 @@
           "kind": "const",
           "exported": true,
           "range": [
-            108,
-            153
+            146,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#EFFECTIVE_GRANT_TABLES",
+          "name": "EFFECTIVE_GRANT_TABLES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            423,
+            499
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#GrantTable",
+          "name": "GrantTable",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            370,
+            391
           ]
         },
         {
@@ -4480,8 +4500,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            674,
-            750
+            854,
+            930
           ]
         },
         {
@@ -4490,8 +4510,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            756,
-            772
+            936,
+            952
           ]
         },
         {
@@ -4500,8 +4520,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            536,
-            536
+            716,
+            716
           ]
         },
         {
@@ -4510,8 +4530,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            542,
-            549
+            722,
+            729
           ]
         },
         {
@@ -4520,8 +4540,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            281,
-            319
+            319,
+            357
           ]
         },
         {
@@ -4530,8 +4550,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            222,
-            229
+            260,
+            267
           ]
         },
         {
@@ -4550,8 +4570,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            179,
-            193
+            217,
+            231
           ]
         },
         {
@@ -4560,8 +4580,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            207,
-            218
+            245,
+            256
           ]
         },
         {
@@ -4570,8 +4590,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            364,
-            364
+            544,
+            544
           ]
         },
         {
@@ -4590,8 +4610,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            650,
-            650
+            830,
+            830
           ]
         },
         {
@@ -4600,8 +4620,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            371,
-            402
+            551,
+            582
           ]
         },
         {
@@ -4610,8 +4630,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            324,
-            326
+            504,
+            506
           ]
         },
         {
@@ -4620,8 +4640,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            830,
-            852
+            1010,
+            1032
           ]
         },
         {
@@ -4630,8 +4650,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            661,
-            663
+            841,
+            843
           ]
         },
         {
@@ -4640,8 +4660,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            783,
-            803
+            963,
+            983
           ]
         },
         {
@@ -4650,8 +4670,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            343,
-            349
+            523,
+            529
           ]
         },
         {
@@ -4660,8 +4680,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            854,
-            909
+            1034,
+            1089
           ]
         },
         {
@@ -4670,8 +4690,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            431,
-            440
+            611,
+            620
           ]
         },
         {
@@ -4680,8 +4700,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            551,
-            572
+            731,
+            752
           ]
         },
         {
@@ -4690,8 +4710,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            195,
-            203
+            233,
+            241
           ]
         },
         {
@@ -4700,8 +4720,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            442,
-            481
+            622,
+            661
           ]
         },
         {
@@ -4710,8 +4730,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            937,
-            953
+            1117,
+            1133
           ]
         },
         {
@@ -4720,8 +4740,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            915,
-            922
+            1095,
+            1102
           ]
         },
         {
@@ -4730,8 +4750,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            163,
-            165
+            201,
+            203
           ]
         },
         {
@@ -4740,8 +4760,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            956,
-            1820
+            1136,
+            2100
           ]
         },
         {
@@ -4750,8 +4770,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            599,
-            617
+            779,
+            797
           ]
         },
         {
@@ -4760,8 +4780,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            507,
-            527
+            687,
+            707
           ]
         }
       ]
@@ -7330,8 +7350,8 @@
       "id": "f:app/src-tauri/tests/agent_runner.rs",
       "path": "app/src-tauri/tests/agent_runner.rs",
       "lang": "rust",
-      "hash": "blake3:b3d9f7f262bc8107249d9cbe6f64301329c4d374ac103fe575bc8f619e9132b6",
-      "loc": 5838,
+      "hash": "blake3:617b321232077a06f8ea4829f94782759a36190b050f0d4b245f5604a1839925",
+      "loc": 5926,
       "symbols": []
     },
     {
@@ -39529,7 +39549,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2065,
+    "symbols": 2067,
     "edges": 2334,
     "truncated_symbols": true,
     "truncated_files": 4
