@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 5
 size: M
-status: building
+status: verifying
 blocked_by: [T-111]
 touches: [app-dispatch, app-board]
 builder: claude-opus-5@subagent
@@ -224,3 +224,217 @@ that moment — which at this base is not empty: `T-143-s3` holds
 `app-board` right now, and `node scripts/brief.mjs --task T-112` from
 the e2e package exits 1 naming it. That is a lane, not a card, and it
 clears when the lane lands.
+
+
+## Implementation notes
+
+**STATUS `verifying`, stamped in this lane only.** Branch
+`task/T-112-the-brief`, worktree `/Users/ujju/Projects/nputer-T-112`.
+Ceremony row M: executor -> verifier -> integrator, so the verifier
+fields are left empty and nothing is merged from here.
+
+### Where the assembler lives, and the one criterion that is NOT built
+
+`app/src-tauri/src/dispatch/brief.rs` (new, inside C-15's own
+`app/src-tauri/src/dispatch/**`) holds the whole assembler and 28 pins.
+**It is a plain `pub fn`, not a `#[tauri::command]`, and that is
+criterion 1's routed half rather than an omission.** Registration is
+`app/src-tauri/src/lib.rs`'s `generate_handler!` list and BOTH ends of
+the IPC census are `app/test/crescendo-dom.test.tsx`; both files are in
+`docs/architecture/components/C-05-app.md`'s `paths:`, so both are
+`app-shell`, and this card's `touches:` is `[app-dispatch, app-board]`.
+Widening the fence from inside the lane is the one repair this role may
+never make, so it is recorded and routed as **`T-112-s1`** — the same
+disposition `T-110` took (`T-110-s1`) and `T-126` discharged, one card
+over, and `dispatch/mod.rs` already carries that sentence.
+`method/tasks/TASK-FORMAT.md` names this class exactly: *a card whose
+criterion and whose fence disagree is a DEFECTIVE CARD, not a hard call
+for the lane*.
+
+**Because nothing is registered, the IPC census does NOT move**, which
+is what criterion 1's own second clause requires either way: an app
+command is not a webview grant. Re-derived at `8ee848e` from both ends
+and intersected, with the two censuses' own regexes: FRONTEND **13**,
+RUST **17**, intersection **13**, frontend-only **empty**. Rust-only:
+`dispatch_lanes`, `pick_genesis_folder`, `pick_project_folder`,
+`start_genesis_here`. `acl_pin.rs` is a **0-file diff** against the base
+`4e08d29` (`git diff --name-only` returns nothing for it), its
+`EXPECTED_GRANTS` array holds **92** entries at this ref, and its
+sha256 is
+`81f9e4acbbe7f55e0de185e3643b2445ec287ee35f286ecdfe7e4b99839da653`.
+
+### The thirteen rows, and what fed each
+
+The row SET is not written down anywhere in this lane: `read_contract`
+parses the table out of `method/roles/executor.md` at run time, so a
+fourteenth row appears in the output with no edit here — and a row with
+no assembler is reported by NUMBER and SOURCE rather than dropped
+(pinned by growing the live table in a body). A table this module cannot
+parse is an `Err`, never `Ok(vec![])`: an empty contract would make
+every downstream *every row is present* assertion vacuously true, which
+is poison shape TEN.
+
+| row | fed from |
+|---|---|
+| 1 Role | `method/roles/<role>.md` — its `# ` heading and its opening line, quoted |
+| 2 Task | the card's `id`/`path`/`title`/`status`/`size`/`feature`/`milestone` through `CardSource`, plus the role file's own confirm-understanding sentence; a verifier's brief also gets the DERIVED notes boundary |
+| 3 Read-first set | `CLAUDE.md`/`AGENTS.md` (first that names any `docs/*.md`), with the role file's reading step **APPLIED** — subtraction and addition both derived from the role file's own sentences |
+| 4 The lane | `docs/CONVENTIONS.md`'s lane bullet (integration branch, branch, worktree, create command, all backtick-extracted and `T-NNN`-substituted), its DISPATCH FROM THE LAST CHECKPOINT bullet, and `method/lane-protocol.md` rules two and three |
+| 5 The fence | the card's `touches:`; `lanes::read_lanes`'s live list (a FILE read of `.git/worktrees`); the slug map from each `docs/architecture/components/C-*.md`'s own `touch_slugs:` FIELD; disjointness computed as SETS through that map |
+| 6 Setup | CONVENTIONS' `Fresh-clone ORDER` bullet and its `A FRESH WORKTREE HAS NOTHING INSTALLED` sub-bullet |
+| 7 Commands | CONVENTIONS' four `run from <dir>/:` bullets, backtick-delimited, stopping at the first middle-dot segment that does not open with a backtick — the document's own rule, transcribed |
+| 8 Gates | every top-level CONVENTIONS bullet stating `at any merge whose diff touches`, name plus TRIGGER |
+| 9 Standing disciplines | every top-level CONVENTIONS bullet opening with an upper-case run — **row 8's clause borrowed; see the residual below** |
+| 10 Prohibitions | CONVENTIONS' PORT RULE bullet, `lane-protocol.md` rule four, the `lsof` COMMAND for the live half, and the other checkouts from the same file read |
+| 11 The deliverable | `method/tasks/TASK-FORMAT.md`'s ceremony row for THIS card's size (qualified rows matched, so the letter alone does not decide it), `lane-protocol.md` rule six, and the role file's step 6 |
+| 12 The report | the brief's own role file's `## The report` bullets — `executor.md` for an executor, `verifier.md` for a verifier |
+| 13 The correction clause | the contract table's own row 13, plus the role file's *a brief is evidence, never authority* and *every figure carries the ref* rules |
+
+### The T-089-s9 residuals, surfaced
+
+**`T-089-s9` NO LONGER EXISTS** — `T-104` absorbed it at the seventh
+triage and removed the file, so *file it against `T-089-s9`* had no
+holder. Filed as **`T-112-s2`** instead, which says so.
+
+- **Row 9 is row 8's untwinned twin — OPEN.** Row 8's source names its
+  enumeration; row 9's is the bare *the project's CONVENTIONS*. The
+  mechanism above is therefore BORROWED, and the symptom is measured
+  rather than predicted: a named bullet whose name runs through a
+  lower-case word is cut at that word, so CONVENTIONS' merge-into-main
+  bullet comes back as `THE MERGE INTO MAIN IS`. **The independent
+  reader in `tools/e2e/scripts/dispatch-brief.mjs` cuts the same name at
+  the same word**, which is what makes it the contract's defect. Carried
+  on the row as a `residual` and asserted by
+  `row_nines_borrowed_mechanism_truncates_a_name_and_the_symptom_is_asserted`
+  rather than repaired: repairing it means inventing a rule row 9 does
+  not state, which is the paper-over this card forbids.
+- **Row 11's `checkpoint` — OPEN.** All three sources row 11 names use
+  the word; none defines it. The size-S ceremony row routes to
+  `lane-protocol.md` rules 4 and 6, neither a definition; the definition
+  is in `method/docs-protocol.md` and `roles/integrator.md`, which row 11
+  does not name. Carried on the row as a `residual`.
+- **Row 5's slug/path map — CLOSED AT THIS REF, and said so rather than
+  filed.** Row 5 now locates it and names which copy wins.
+  `row_fives_residual_is_closed_at_this_ref_and_the_document_says_so`
+  reds if that clause ever leaves the column.
+
+### The pins the card asks for, by name
+
+- **Assembled from FILES**: `HostileCard` panics on any field outside
+  `ENTITLED_FIELDS` and a brief still comes back
+  (`a_card_that_refuses_every_unentitled_field_still_yields_a_brief`).
+  **With its positive control** — refusing an ENTITLED field makes the
+  same call panic, caught with `catch_unwind`, so the guard is shown
+  capable of firing.
+- **Verifier blindness BY CONSTRUCTION**:
+  `ImplementationNotes`/`Verdicts`/`Body` are outside the entitled set
+  for EVERY role — there is no flag anyone can set wrong — and
+  `NotesThrowCard` panics on a notes read while a verifier brief is
+  required out the other side. The brief's rendered text is also
+  asserted not to contain the fixture notes' own bytes.
+  `FrontmatterCard` parses no body section at all, so the bytes never
+  enter the struct.
+- **The derived notes boundary**: `notes_boundary` answers 5 on a card
+  whose notes come early and 405 on one whose notes come late — the two
+  directions `T-121` measured against the number this criterion used to
+  carry. The verifier's brief names the HEADINGS and carries no digit;
+  the cross-reference to `T-121` rides in the line's provenance, and the
+  **interim discipline itself is not restated here**.
+- **No git subprocess**: row 4 emits
+  `git log --first-parent --format='%H %s' main | grep -m1 ' Checkpoint:' | cut -d' ' -f1`
+  — both moving parts file-derived, the composition named as the
+  assembler's own — and a body asserts no 40-hex run appears anywhere in
+  row 4. `no_subprocess_in_this_file` sweeps the production half of this
+  module for the process API, with its needles shown capable of matching.
+- **Never a partial brief**: any unassemblable row takes the whole answer
+  to `Unassemblable`, listing every affected row with its source column
+  and the path tried. Asserted against a source that refuses
+  `docs/CONVENTIONS.md`, **with the positive control that the same call
+  assembles when nothing refuses**.
+- **The copyable block only for `dispatchable`**: `selectBriefPanel`
+  consumes `selectDispositions` — **its first consumer in `app/src`** —
+  and renders the disposition's own REASON otherwise. Proved for
+  `fenced` and for `blocked`, each with the positive control that the
+  same card with no lane live comes back copyable.
+- **End to end over a fixture repository**: assemble the brief in a
+  temp-directory repo, perform by hand exactly what row 4's create
+  command leaves on disk (`.git/worktrees` bookkeeping), and the lane
+  appears through T-110's reader with nothing told to anything — then the
+  re-assembled brief names its own lane. Nothing in the Rust suite reads
+  this repository's `.git`.
+
+### Commands, exit codes read from `$?` unpiped
+
+| command | cwd | exit |
+|---|---|---|
+| `npm ci` then `npm run build` | lib/parser/ | 0, 0 |
+| `npm install` then `npm run build` | app/ | 0, 0 |
+| `npm ci` | tools/e2e/ | 0 |
+| `node scripts/brief.mjs --task T-112` | tools/e2e/ | 0 |
+| `npx vitest run` (336 passed / 16 files) | lib/parser/ | 0 |
+| `npx tsc --noEmit` | lib/parser/ | 0 |
+| `npm test` (1060 passed / 49 files) | app/ | 0 |
+| `cargo test` (251 + 86 + 197 + 10 + 4 + 16 passed, 2 ignored) | app/src-tauri/ | 0 |
+| `npm run lint:tokens` (TOKEN 159 files, CONTROL 976) | tools/e2e/ | 0 |
+
+The cargo cache cliff was watched rather than assumed: the lib suite's
+own time is **4.21s**, well inside the under-9.5s green band, so
+`startup_arm_watches_the_initial_root` is not near it. No `cargo clean`
+was run; other lanes were live.
+
+### The drill — 17 for 17, plus one measured survivor
+
+Detached scratch worktree at `/tmp/t112d`, cut at this lane's own commit
+`8ee848e`, with `CARGO_TARGET_DIR=/tmp/t112d/target` — inside itself and
+named `target`, the walk-safe form. One stem derived from the lane
+(`t112d`) spent on the worktree, the target dir and the driver script.
+Every mutant is ONE-SIDED production source, `git diff --numstat` read
+back before each suite ran, restored with
+`git restore --source=8ee848e --staged --worktree --` and proved by
+sha256 on all three files, worktree clean afterwards.
+
+**17 of 17 killed.** Twelve Rust: an empty contract table returning
+`Ok`; every field entitled; a partial brief; row 3 unapplied; row 4's
+command losing its marker; a no-card lane called DISJOINT; the command
+read not stopping at a non-backtick segment; a gate with no trigger; the
+notes boundary as a number; a verifier brief with no marker; the
+ceremony row taken as the table's first; and row 2 reading the
+implementation notes. Five TypeScript: the disposition gate letting a
+fenced card through; a typed refusal dropping WHICH ROW and WHICH
+SOURCE; a dropped residual; a dropped provenance; and the block
+rendering with no lane channel. Each killed by 1 to 3 named bodies.
+
+**AND ONE MUTANT SURVIVES, WHICH IS THE FINDING.** Deleting the two
+lines that thread `dispatch` and `brief` out of `Board.tsx` left
+`npm test` from app/ at **49 files / 1060 tests, exit 0**.
+`C-18-board-root.md` declares no `app/test/**` path, and no other board
+test file may import `Board` without an undeclared component edge — the
+defect `arch drift` caught at T-169. Routed as **`T-112-s4`** with the
+measurement. Every JUDGEMENT was kept out of the component for exactly
+this reason; what survives is plumbing that has nowhere testable to go.
+
+### Where the brief and the card were wrong
+
+1. **The card's criterion 1 orders work outside its own `touches:`** —
+   the IPC census and the registration are both `app-shell`. Routed as
+   `T-112-s1`; the fence was not widened.
+2. **`T-089-s9` does not exist** — absorbed into `T-104` and removed at
+   the seventh triage — so *file it against `T-089-s9`* names no holder.
+   `T-112-s2` is the holder.
+3. **Only TWO of the card's three residuals are open at this ref.** Row
+   5's is closed in the document; a body keeps that claim honest.
+4. **`brief.mjs`'s row 3 does not apply the role file's reading step** —
+   it prints both adapters' lists, ROADMAP still in and TASK-FORMAT
+   still out, which is the internally-inconsistent brief the table's own
+   rules section names. Routed as `T-112-s3`.
+5. **The brief's live facts had already moved.** Its row 5 named
+   `T-167-s1` as a live lane; that lane landed during this build and
+   `git worktree list` no longer carries it. Its row 4 stamped a base of
+   `11e94867dd84` and an integration tip of `2e4b76ff8950`; re-derived at
+   this lane's tip the newest `Checkpoint:` on main is
+   `4e08d293b0fcd14c` and that is also the tip. Live facts, re-read
+   rather than trusted — which is what row 13 asks for.
+6. **The verification line's *IPC census re-derived from both ends and
+   intersected* was performed and the census did not move**, because the
+   half that would have moved it is routed. Reported rather than
+   silently satisfied.

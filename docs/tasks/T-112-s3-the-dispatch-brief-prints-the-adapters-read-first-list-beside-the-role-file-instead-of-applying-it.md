@@ -1,0 +1,65 @@
+---
+id: T-112-s3
+title: dispatch-brief.mjs prints BOTH adapters' read-first lists beside the role file instead of APPLYING its reading step, so every brief it has ever emitted told an executor to read the one document its role file subtracts
+feature: F-04
+milestone: 4
+priority: 20
+size: S
+status: suggested
+suggested_by: executor claude-opus-5@subagent @T-112
+blocked_by: []
+touches: [tools/e2e]
+builder:
+verifier:
+built_by:
+verified_by:
+review:
+---
+
+**FOUND BY BEING THE SECOND READER OF THE TABLE, WHICH IS THE WHOLE
+REASON T-112 EXISTS.** That card says so: *"This card's assembler is the
+second reader of that table, and it will find whatever the hand-walk
+missed."* This is one of them, and it is in the FIRST reader.
+
+Row 3's source column does not merely name the adapter. It says the role
+file's *"reading step is APPLIED to that list rather than printed beside
+it — **the adapter is addressed to every seat and the role file to one,
+so where they differ the ROLE FILE WINS**"*. The table's rules section
+then names the exact failure this prevents: *"a brief that is internally
+inconsistent while every row is individually faithful to its source"*,
+and gives this row as the worked example — *"row 3 transcribes an
+adapter list addressed to every seat, and the role file four rows
+earlier subtracts from it."*
+
+**`tools/e2e/scripts/dispatch-brief.mjs` PRINTS IT BESIDE.** Run
+`node scripts/brief.mjs --task T-112` from `tools/e2e/` at any ref and
+row 3 comes back as two lines — `AGENTS.md names:` and `CLAUDE.md
+names:` — each carrying `docs/ROADMAP.md`, which
+`method/roles/executor.md` step 1 subtracts in as many words
+(*"You do NOT read docs/ROADMAP.md, and that is a deliberate
+subtraction rather than an oversight"*), and neither carrying the role
+file's own ADDITION (`tasks/TASK-FORMAT.md`'s ceremony table), whose
+absence that step says *"cost the same dispatch error twice"*.
+
+So an executor obeying its brief's row 3 reads a document its role file
+forbids and misses the one it requires — and both halves are quoted
+correctly from their sources, which is exactly why a transcription rule
+alone cannot catch it.
+
+**THE FIX IS DERIVED, NOT LISTED, AND ONE EXISTS TO COPY.**
+`app/src-tauri/src/dispatch/brief.rs`'s `row_read_first` reads both
+halves out of the role file's own sentences (`read_subtractions`,
+`read_additions`) and emits the APPLIED list beside the adapter's
+original, so the difference is visible rather than silent. A role file
+stating no subtraction leaves the adapter's list unchanged, which is the
+positive control that keeps the derivation from being a constant.
+
+## Acceptance criteria
+
+- ROW 3 SHALL emit the read-first set with the brief's own role file's
+  reading step APPLIED, and the subtraction and addition SHALL be
+  DERIVED from that role file rather than listed in the tool.
+- THE brief SHALL still show what the adapter itself named, so a reader
+  can see WHICH document the role file removed and which it added.
+- A body SHALL prove the derivation is not vacuous: a role file with no
+  subtraction clause leaves the adapter's list unchanged.
