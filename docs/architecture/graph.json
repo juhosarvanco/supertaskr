@@ -24663,8 +24663,8 @@
       "id": "f:lib/parser/src/roadmap.ts",
       "path": "lib/parser/src/roadmap.ts",
       "lang": "ts",
-      "hash": "blake3:8e17f8c2e051cc7e0d0a4b5f8ab48797b30311f6ffe6f15fcc4eb390ee10bf8b",
-      "loc": 142,
+      "hash": "blake3:6b5cc7fa713e5582b26d0dfbbeec395cc7393d582537515e7f5683329048dff8",
+      "loc": 177,
       "symbols": [
         {
           "id": "s:lib/parser/src/roadmap.ts#parseRoadmap",
@@ -24672,8 +24672,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            24,
-            142
+            50,
+            177
           ]
         }
       ]
@@ -25736,8 +25736,8 @@
       "id": "f:lib/parser/test/roadmap.test.ts",
       "path": "lib/parser/test/roadmap.test.ts",
       "lang": "ts",
-      "hash": "blake3:27af9af549afe413399ed195f50e6987917261d9a4987becea2021b2f670f6ac",
-      "loc": 394,
+      "hash": "blake3:93534875972cf829caa6c4a5565cdd31510f2ece065c70cf92af55648aad139e",
+      "loc": 572,
       "symbols": [
         {
           "id": "s:lib/parser/test/roadmap.test.ts#FILE",
@@ -25747,6 +25747,16 @@
           "range": [
             4,
             4
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/roadmap.test.ts#FIRST_WALK_BACKBONE",
+          "name": "FIRST_WALK_BACKBONE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            317,
+            338
           ]
         },
         {
@@ -43042,7 +43052,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2418,
+    "symbols": 2419,
     "edges": 2331
   }
 }

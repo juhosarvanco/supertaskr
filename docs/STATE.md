@@ -1,8 +1,8 @@
 # State
 
-Updated: 2026-08-31 at T-112-s3's close — records:
-docs/checkpoints/2026-08-31-T-112-s3-the-brief-applies-its-own-reading-step.md
-and 2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
+Updated: 2026-08-31 at T-177's close — records:
+docs/checkpoints/2026-08-31-T-177-the-backbone-stops-vanishing-silently.md,
+with T-112-s3's and T-140-s4's beside it.
 **THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
 budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
 bytes (derive: `index --check`). Every fence is dispatchable again.
@@ -48,16 +48,13 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s1` (executor); `T-172` and `T-177` (blind
-   verifiers out). LANDED tonight: `T-140-s4`, `T-112-s3`.
-2. THEN, no blocker left: `T-153-s8` (the capabilities census has no
-   keeper — three by-hand regenerations now; `tools/e2e` is free again),
-   `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
+1. IN FLIGHT: `T-112-s1` and `T-153-s8` (executors); `T-172` APPROVED
+   and awaiting merge. LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`.
+2. THEN, no blocker left: `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
    OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
    `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
-3. STANDING REDS worth a lane: `T-153-s8` (capabilities census),
-   `T-161`, `T-178`, `T-167-s8` (the pre-push graph guard — four local
-   strikes, one CI confirmation).
+3. STANDING REDS worth a lane: `T-161`, `T-178`, `T-167-s8` (the
+   pre-push graph guard — four local strikes, one CI confirmation).
 4. THE NEXT METHOD RELEASE has five riders and wants a carrier card:
    `T-112-s2`, `T-154-s3`, `T-159-s6`; `T-173` and `T-176` owe a bump;
    `T-154-s4`'s sentence joins them.
@@ -121,6 +118,6 @@ it.
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-112-s3-the-brief-applies-its-own-reading-step.md.
+  2026-08-31-T-177-the-backbone-stops-vanishing-silently.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
