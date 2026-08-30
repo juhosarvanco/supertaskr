@@ -3,9 +3,9 @@ id: T-153-s11
 title: The platform story is told twice and only the recipe LINES are pinned — the DOCS GATE bullet and docs-gate.mjs's header can disagree about which xargs does what, and nothing reds
 feature: F-01
 milestone: 4
-priority: 5
+priority: 6
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s6
@@ -15,6 +15,28 @@ built_by:
 verified_by:
 review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30, as the OWNER OF ITS CLASS: one fact told twice, only part of it pinned.**
+
+Re-derived at this ref, both members HOLD:
+`docs-input-gate.spec.ts:1029` — *"ONE SPELLING, TWO PLACES"* — still
+lifts exactly two lines per side (`expect(fromScript.length).toBe(2)` at
+`:1067`) and compares nothing else, while `docs-gate.mjs:17-30` carries a
+full BSD/GNU prose narration (empty-list behaviour, the 1-125 -> 123
+mapping, *"A MAPPING QUOTED WITHOUT ITS PLATFORM IS WRONG ON ONE OF
+THEM"*) that no reader parses out of either copy.
+
+The absorbed sibling is the same shape one layer down in the same
+subject, and its own body says so: *"Worth pairing with T-153-s11, which
+is the same class in prose."* This card's fence
+`[tools/e2e, docs/CONVENTIONS.md]` is the superset of its `[tools/e2e]`,
+so absorption costs nothing and splitting would put two lanes on one
+platform story.
+
+**DISPATCH NOTE:** carries `docs/CONVENTIONS.md`, held by the live
+`task/T-111-s10-poison-drill-bullet` lane at this sitting.
+
+Absorbs: T-153-s12 (Standing triage 2026-08-30 (architect seat)) — the prober's GNU row restates a number the DOCS GATE matrix already holds and nothing compares the copies. Re-derived at this ref and HOLDS, decisively: `xargs-dialect.mjs:51-52` holds `bsd.nonzeroBecomes: 1` / `gnu.nonzeroBecomes: 123`, and `range-rule.mjs:2023` sets `const column = probe.name` so every comparison below it reads ONLY the detected dialect's cell. The single place `XARGS_DIALECTS[column]` is dereferenced (`range-rule.mjs:2076`) compares `runsUtilityOnEmptyInput` against observed output, never `nonzeroBecomes` against the matrix; `docs-input-gate.spec.ts:1000` compares key SETS only. So corrupting the GNU row leaves every gate green on Darwin. Same subject, same two artefacts, same remedy shape — parse the document, compare the claim. File removed in this commit.
 
 T-057's lesson — a recipe in two places is two chances to disagree — is
 held by `docs-input-gate.spec.ts`'s "ONE SPELLING, TWO PLACES", which

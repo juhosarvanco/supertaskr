@@ -1,9 +1,53 @@
 ---
 id: T-127-s7
 title: docs/ARCHITECTURE.md's derived slug block is a FOURTH enforcing copy of the registry, it reds `brief.spec.ts` the moment a component is declared, and it sits outside every fence T-127, T-127-s1 and T-127-s6 could carry
-status: suggested
+feature: F-06
+milestone: 4
+priority: 10
+size: S
+status: planned
+blocked_by: []
+touches: [docs/ARCHITECTURE.md]
 suggested_by: executor claude-opus-5 @T-127-s6
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30 — but SEVENTY PERCENT DISCHARGED, and what survives is smaller than the card reads.**
+
+Re-derived at this ref, defect by defect:
+
+| # | as the card names it | now |
+|---|---|---|
+| 1 | the slug block omits C-17 / C-18, reding `brief.spec.ts` | **DISCHARGED at `268f544`** |
+| 2 | *"the full component set — C-08 ... C-16"* omits C-17 / C-18 | **STILL PRESENT** (`docs/ARCHITECTURE.md:36-38`) |
+| 3 | *"pinned by three live-tree fixtures"* | **STILL PRESENT** (`:40`) |
+
+`docs/ARCHITECTURE.md:57` now reads `app-board -> C-08, C-09, C-11,
+C-17, C-18`, and the field side derived independently
+(`grep -l app-board docs/architecture/components/*.md`) returns the same
+five — so the spec-asserted copy agrees with the fields and
+`brief.spec.ts:439` is satisfied. The T-127-s6 checkpoint claims this
+landing and the claim is true. A fourth defect the card never named
+(*"Three slugs are claimed by more than one component"* -> *"Two"*)
+landed in the same commit.
+
+**WHAT IS LEFT IS THE HALF NOTHING ASSERTS**, which is exactly why it
+survived the merge that fixed its sibling: `grep -rn "shared
+primitives\|live-tree fixtures"` over `tools/e2e/tests/`, `app/test/`
+and `lib/parser/test/` returns nothing. Two prose sentences in one file,
+under a path-token fence, with no gate behind them — the card predicted
+this and was right.
+
+**THE SIZE IS S AND THE CEREMONY ROW IS THE DOCS ROW** — `docs/` only,
+nothing a user could run, so the executor is its own integrator.
+Acceptance names the command, not the count: after the edit,
+`npm test` from `tools/e2e/` SHALL stay green and the two sentences
+SHALL agree with the fields derived from
+`docs/architecture/components/C-*.md` at the executing ref.
 
 **T-127-s6 landed the four-node partition and left one file stale that
 its fence cannot reach.** `docs/ARCHITECTURE.md` carries a derived slug

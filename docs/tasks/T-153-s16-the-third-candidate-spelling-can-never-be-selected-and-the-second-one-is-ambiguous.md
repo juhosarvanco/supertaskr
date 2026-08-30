@@ -3,9 +3,9 @@ id: T-153-s16
 title: The third candidate spelling can never be selected, the second one resolves to a LOCAL branch before the remote-tracking ref, and deleting either leaves the suite green — the resolver's order is argued in prose and pinned only structurally
 feature: F-01
 milestone: 4
-priority: 3
+priority: 7
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: verifier claude-opus-5@subagent @T-153-s9
@@ -15,6 +15,28 @@ built_by:
 verified_by:
 review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30, as the owner of the T-153-s9 RESIDUE in the integration-ref resolver.**
+
+Re-derived at this ref, all four elements HOLD:
+`dispatch-brief.mjs:632` still returns the three-candidate list and
+`resolveIntegrationRef` (`:684-685`) still takes the first that resolves —
+so the third spelling is unreachable and the second resolves a LOCAL
+`refs/heads/origin/<b>` before the remote-tracking ref, both by git's own
+resolution order. `grep -n 'toHaveLength' tools/e2e/tests/brief.spec.ts`
+returns nothing, and the refusal body at `:972` iterates
+`integrationRefCandidates(branch)` itself — **so deleting a candidate
+deletes its own assertion**, which is the cardinality hole. `refShapes()`
+(`:879`) still returns `{dir, local, detached, orphan}`; the divergent
+fourth shape was never added.
+
+**THE ABSORPTION IS PAID FOR BY A FIXTURE, NOT BY A FENCE.** Both members
+want the same new thing — a fourth `refShapes()` fixture — and building it
+twice is the whole waste. They are also the same function region:
+`:631-685` is the resolution, `:1907` is the read immediately downstream
+of it, both filed by the same T-153-s9 verifier at the same priority.
+
+Absorbs: T-153-s17 (Standing triage 2026-08-30 (architect seat)) — the integration revision is still spent with no `--` separator, so a checkout holding a root path named for the branch reproduces the same ambiguous-argument fatal the resolver was built to remove. Re-derived verbatim at this ref: `dispatch-brief.mjs:1907` reads `git(root, ["log", "--first-parent", "--format=%H %s", integration.rev])` with no separator. **ITS SWEEP CLAUSE IS KEPT AS AN EXPLICIT CRITERION AND HAS WIDENED SINCE FILING** — the same class lives at `card-figures.mjs:440-443` and at `range-rule.mjs:849` (`rev-list --first-parent --merges range`, a document-derived range spent with no separator, which is the second half the card predicted). Absorbing must not lose the sweep: the lane fixes the named site AND reports the sweep at its own ref. File removed in this commit.
 
 `integrationRefCandidates(branch)` in
 `tools/e2e/scripts/dispatch-brief.mjs` returns
