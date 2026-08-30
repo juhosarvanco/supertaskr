@@ -1,6 +1,10 @@
 ---
 id: T-025-s2
 title: The real-CLI smoke could not observe a model turn — this machine's claude login is revoked
+feature: F-02
+milestone: 3
+priority: 1
+size: S
 status: done
 suggested_by: executor claude-opus-5 @T-025
 ---
