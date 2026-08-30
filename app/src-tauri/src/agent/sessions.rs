@@ -52,6 +52,25 @@ pub struct SessionEntry {
     /// `dead` reserved for explicit abandonment (T-029's fresh-session
     /// choice) — never written by this task.
     pub status: String,
+    /// T-167: WHICH ORGANIZATION SKILL PACKS SHAPED THIS SESSION, by name
+    /// and content hash — "which policy shaped this decision" answerable
+    /// later from files alone.
+    ///
+    /// **IT IS SKIPPED WHEN EMPTY, AND THAT IS LOAD-BEARING TWICE.** A
+    /// genesis with no packs writes the same nine keys it always wrote, so
+    /// the card's byte-identity criterion holds at the FILE and not only
+    /// in the prompt, and
+    /// [`tests::the_written_registry_matches_the_sessions_schema_field_for_field`]
+    /// stays green with its assertions untouched.
+    ///
+    /// **CONFLICT, RECORDED RATHER THAN PAPERED OVER** (T-167's notes):
+    /// `method/runtime/sessions-schema.md` names nine keys and this module
+    /// says "field-for-field per" it, so a populated `skills` is a TENTH
+    /// key that document does not yet name. The schema lives in `method/`,
+    /// outside this card's fence — routed as a suggestion, not widened
+    /// here.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skills: Vec<super::skills::SkillPack>,
 }
 
 impl SessionEntry {
@@ -666,6 +685,9 @@ mod tests {
             tasks: vec![],
             roles: vec!["planner".into()],
             status: "running".into(),
+            // T-167: the ordinary case is no packs, which is what keeps
+            // the schema pin below at nine keys.
+            skills: vec![],
         }
     }
 

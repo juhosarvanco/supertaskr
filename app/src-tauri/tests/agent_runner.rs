@@ -3264,6 +3264,9 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
             tasks: vec![],
             roles: vec!["planner".into()],
             status: "running".into(),
+            // T-167 added the field; this body's subject is the WATCHER's
+            // silence over `.nputer/**` and no assertion in it moved.
+            skills: vec![],
         },
     )
     .expect("registry");

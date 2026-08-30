@@ -28,6 +28,7 @@ pub mod adapter;
 pub mod kit;
 pub mod runner;
 pub mod sessions;
+pub mod skills;
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -383,6 +384,12 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         };
     }
 
+    // T-167: THE ORG'S SKILL PACKS, discovered ONCE per genesis and used
+    // for both things that need them — the kickoff the planner is handed
+    // and the stamp the registry keeps. Two reads would be two chances to
+    // disagree about one folder.
+    let found = report_skills(&project_dir);
+
     // THE FRESH-SPAWN PATH'S OWN READ, taken here rather than beside the
     // routing question above: `next_id` needs the whole file, and this
     // line is reached only where nothing was resumable, so it cannot
@@ -399,6 +406,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         tasks: Vec::new(),
         roles: vec!["planner".to_string()],
         status: "running".to_string(),
+        skills: found.packs.clone(),
     };
     if let Err(err) = sessions::upsert(&project_dir, entry) {
         return StartOutcome::Error {
@@ -418,7 +426,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         guard.last_error = None;
     }
 
-    let prompt = kit::assemble_kickoff(&project_dir);
+    let prompt = kit::assemble_kickoff_with(&project_dir, &found.packs);
     // Turn 1's user half-turn IS the kickoff: recording it keeps the
     // transcript a complete protocol record rather than a half of one.
     let _ = sessions::append_transcript(
@@ -434,6 +442,51 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 
     spawn_turn(agent, cli, TurnRequest { project_dir, prompt, resume: None, turn: 1 }, flight);
     StartOutcome::Started { turn: 1 }
+}
+
+/// DISCOVER the opened project's organization skill packs and REPORT what
+/// was skipped (T-167, criterion 1: "a pack that fails to parse is
+/// REPORTED by name and skipped, never a crash and never silently
+/// absorbed").
+///
+/// The report is a log line per rejected pack, in the module's own
+/// `[nputer] agent:` voice and through the same
+/// [`docs_watch::sanitize_for_log`] every other file-borne value here goes
+/// through. It is deliberately NOT an error outcome: one unreadable pack
+/// must not refuse a genesis, which is the whole difference between
+/// "skipped" and "fatal".
+///
+/// Called ONCE per spawn, and its answer feeds both the kickoff and the
+/// registry stamp — the "exactly ONE place" discipline `genesis_record`
+/// keeps for the registry.
+fn report_skills(project_dir: &std::path::Path) -> skills::Discovered {
+    let found = skills::discover(project_dir);
+    for reject in &found.rejected {
+        println!(
+            "[nputer] agent: skill pack '{}' under {} was SKIPPED - {}",
+            docs_watch::sanitize_for_log(&reject.dir),
+            skills::SKILLS_REL_DIR,
+            docs_watch::sanitize_for_log(&reject.why),
+        );
+    }
+    if !found.packs.is_empty() {
+        println!(
+            "[nputer] agent: {} organization skill pack(s) loaded from {}: {}",
+            found.packs.len(),
+            skills::SKILLS_REL_DIR,
+            found
+                .packs
+                .iter()
+                .map(|p| format!(
+                    "{} ({})",
+                    docs_watch::sanitize_for_log(&p.name),
+                    docs_watch::sanitize_for_log(&p.hash)
+                ))
+                .collect::<Vec<_>>()
+                .join(", "),
+        );
+    }
+    found
 }
 
 /// `genesis_resume()` — zero-argument. Respawn the RECORDED native
@@ -607,6 +660,9 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         }
     }
 
+    // T-167: one discovery, feeding both the kickoff and the stamp.
+    let found = report_skills(&project_dir);
+
     let registry = sessions::load(&project_dir);
     let id = sessions::next_id(&registry);
     let entry = SessionEntry {
@@ -619,6 +675,7 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         tasks: Vec::new(),
         roles: vec!["planner".to_string()],
         status: "running".to_string(),
+        skills: found.packs.clone(),
     };
     if let Err(err) = sessions::upsert(&project_dir, entry) {
         return StartOutcome::Error {
@@ -638,7 +695,7 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         guard.last_error = None;
     }
 
-    let prompt = kit::assemble_kickoff_for(&project_dir);
+    let prompt = kit::assemble_kickoff_for_with(&project_dir, &found.packs);
     let _ = sessions::append_transcript(
         &project_dir,
         &TranscriptLine {
@@ -944,6 +1001,15 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                 .unwrap_or_else(|| sessions::iso8601_utc(now_ms()));
             let turns = previous.map(|s| s.turns).unwrap_or(0)
                 + if outcome.text.is_some() { 1 } else { 0 };
+            // T-167: the pack stamp CARRIES FORWARD, the way `created`
+            // does. This entry is rebuilt from scratch on every completed
+            // turn, so a stamp written at spawn and not carried here would
+            // be erased by turn 1's own completion — the provenance would
+            // exist for the length of one child process. The packs are NOT
+            // re-discovered: the stamp records what THIS session was
+            // briefed with, and re-reading the folder mid-session would
+            // silently rewrite that history if a pack changed under it.
+            let skills = previous.map(|s| s.skills.clone()).unwrap_or_default();
             let guard = inner.lock().expect("agent state poisoned");
             let entry = SessionEntry {
                 id,
@@ -955,6 +1021,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                 tasks: Vec::new(),
                 roles: vec!["planner".to_string()],
                 status: "idle".to_string(),
+                skills,
             };
             drop(guard);
             if let Err(err) = sessions::upsert(&project_dir, entry) {
