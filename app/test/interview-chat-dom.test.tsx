@@ -2,7 +2,12 @@
 import { act, Profiler } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { emptyState, type DocsModelState } from "../src/lib/docs-model";
+import {
+  applySnapshot,
+  emptyState,
+  type DocsFilePayload,
+  type DocsModelState,
+} from "../src/lib/docs-model";
 import type { GenesisEvent, GenesisStatusPayload } from "../src/lib/agent-store";
 
 /**
@@ -1486,5 +1491,200 @@ describe("the answer box takes the focus back (criterion 6)", () => {
     expect(ipc.invoke, "nothing was sent").not.toHaveBeenCalled();
     expect(document.activeElement, "…so nothing moved").toBe(elsewhere);
     elsewhere.remove();
+  });
+});
+
+// ---- T-171: the ending, and a footer that stops lying about its own state
+
+/**
+ * THE STATE @HUMAN'S WALK ENDED IN, driven through the shipped store.
+ *
+ * The 2026-08-30 genesis walk finished its questions, banked every
+ * answer and put a board on disk — and the screen held *"planner is
+ * thinking… · ⌘. to stop"* with a disabled answer button, indefinitely,
+ * over a turn that had already landed. The walk's own `.nputer/` is what
+ * says the turn landed: the runner appends a planner transcript line only
+ * when the turn produced text, that line is on disk, and the session
+ * registry reads `turns: 10, status: idle`.
+ *
+ * THE RE-ARM BELOW IS A REAL PATH, not a contrivance for the fixture.
+ * `applyGenesisStatus` folds the mount-time catch-up pull with NO seq
+ * guard — `sending: status.phase === "running"` — so a status read that
+ * races a completion puts the store back into flight over a turn that has
+ * settled, and nothing in the store can ever take it out again: `phase`
+ * returns to `idle` only on a `completed`/`failed` EVENT, and that event
+ * has already been spent. Whether that is what happened on the walk is
+ * not knowable from here, and it does not need to be: what this file
+ * pins is that the SCREEN no longer follows the claim off the evidence.
+ */
+describe("the ending, and the footer that used to lie about it (T-171)", () => {
+  /** A real parsed board, through the parser the app actually uses. */
+  function boardDocs(): DocsModelState {
+    const taskFile = (id: string, title: string): DocsFilePayload => ({
+      path: `docs/tasks/${id}-x.md`,
+      content: [
+        "---",
+        `id: ${id}`,
+        `title: ${JSON.stringify(title)}`,
+        "feature: F-01",
+        "milestone: 1",
+        "priority: 1",
+        "size: S",
+        "status: planned",
+        "blocked_by: []",
+        "---",
+        "## Acceptance criteria",
+        "- WHEN the command runs THE tool SHALL open today's note.",
+      ].join("\n"),
+    });
+    return applySnapshot(emptyState(), {
+      seq: 1,
+      projectDir: PROJECT,
+      generatedAtMs: 1,
+      files: [
+        { path: "docs/NORTH_STAR.md", content: "# North star\n\n## Vision\nA note tool.\n" },
+        taskFile("T-001", "Entry and today's path"),
+        taskFile("T-002", "Create without destroying"),
+        taskFile("T-003", "Launch the editor"),
+      ],
+    });
+  }
+
+  /** The walk's terminal tree: a settled turn over a parseable board. */
+  async function walkedToTheEnd(): Promise<void> {
+    ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
+    await withStatus();
+    render(boardDocs());
+    // LET THE AUTO-START'S OUTCOME LAND FIRST, and this line is not
+    // ceremony — the first draft of this fixture skipped it and was
+    // ACCIDENTALLY STRANDED, which is how the path was found:
+    // `reduceGenesisOutcome` arms `sending`/`phase` with no seq guard at
+    // all, so a `started`/`accepted` answer that resolves AFTER the turn's
+    // own events puts the store into a flight nothing can take it out of.
+    // Routed as a finding against `app-agent` (out of this fence); pinned
+    // here as an ordering the fixture must not depend on.
+    await flush(() => Promise.resolve());
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      {
+        kind: "completed",
+        seq: 2,
+        turn: 1,
+        text: "Genesis is committed. Here is the board for your review.",
+        truncatedRelay: false,
+      },
+    );
+  }
+
+  /** Put the store back into flight over the turn that already settled. */
+  async function strandTheClaim(): Promise<void> {
+    ipc.outcomes.set("genesis_status", status({ phase: "running", turn: 1 }));
+    await flush(async () => {
+      await store.refreshGenesisStatus();
+    });
+  }
+
+  it("A STRANDED CLAIM IS REFUSED: the footer, the box and the ending all follow the turn", async () => {
+    await walkedToTheEnd();
+    await strandTheClaim();
+
+    // The store really is claiming flight — without this the body would
+    // pass over a state that was never the defect.
+    expect(
+      store.isTurnInFlight(store.getGenesisState()),
+      "the fixture must actually reproduce the stranded claim",
+    ).toBe(true);
+    expect(store.getGenesisState().turns[0]?.status, "…over a turn that landed").toBe(
+      "completed",
+    );
+
+    // …and the screen says so, in the DOM, by name.
+    const chat = q("[data-testid=interview-chat]")!;
+    expect(chat.getAttribute("data-flight")).toBe("stranded");
+    expect(chat.getAttribute("data-complete")).toBe("true");
+    // The line the walk rested on, gone — and the ending in its place.
+    expect(q("[data-testid=interview-hint]")?.textContent).not.toContain("thinking");
+    expect(q("[data-testid=interview-hint]")?.textContent).toContain("interview complete");
+    // The conversation CONCLUDES where the reader was looking — which is
+    // the way forward @human did not have.
+    expect(q("[data-testid=interview-complete]")).not.toBeNull();
+
+    // AND THE CONTROLS STILL FOLLOW THE GUARD THAT WILL ANSWER THEM. The
+    // store is refusing sends, so enabling the box here would buy a button
+    // that eats the answer — the footer's lie with the arrow reversed.
+    expect((q("[data-testid=interview-bank]") as HTMLButtonElement).disabled).toBe(true);
+    expect((q("[data-testid=interview-input]") as HTMLTextAreaElement).disabled).toBe(true);
+    // …so the ending says THAT rather than inviting an answer nothing
+    // would take.
+    expect(q("[data-testid=interview-complete]")?.getAttribute("data-can-answer")).toBe(
+      "false",
+    );
+    expect(q("[data-testid=interview-complete-carry-on]")?.textContent).toContain(
+      "not taking another turn",
+    );
+  });
+
+  it("THE POSITIVE CONTROL: a turn that really is running still says so", async () => {
+    // The same board, the same screen, one turn genuinely open. Without
+    // this the body above is satisfied by a screen that never says a turn
+    // is in flight at all.
+    await walkedToTheEnd();
+    await emit({ kind: "started", seq: 3, turn: 2 });
+
+    const chat = q("[data-testid=interview-chat]")!;
+    expect(chat.getAttribute("data-flight")).toBe("running");
+    expect(chat.getAttribute("data-complete")).toBe("false");
+    expect(q("[data-testid=interview-hint]")?.textContent).toContain("to stop");
+    expect((q("[data-testid=interview-bank]") as HTMLButtonElement).disabled).toBe(true);
+    expect(q("[data-testid=interview-complete]"), "an open turn is not an ending").toBeNull();
+  });
+
+  it("the ending stands down when the user answers again — it is not a latch", async () => {
+    await walkedToTheEnd();
+    expect(q("[data-testid=interview-complete]"), "the ending is on screen").not.toBeNull();
+    // THE POSITIVE CONTROL FOR THE BODY ABOVE: on a HEALTHY completion the
+    // send path is open, so the ending invites an answer and the controls
+    // are live. Without this, "disabled at the ending" would be satisfied
+    // by a screen that disables the box at every ending.
+    expect(q("[data-testid=interview-complete]")?.getAttribute("data-can-answer")).toBe("true");
+    expect((q("[data-testid=interview-bank]") as HTMLButtonElement).disabled).toBe(false);
+    expect(q("[data-testid=interview-complete-carry-on]")?.textContent).toContain(
+      "answer again",
+    );
+
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 2 });
+    await type("actually, one more thing");
+    await press("Enter");
+    await flush(() => Promise.resolve());
+
+    // The accepted turn has no `started` event yet — the runner spawns it
+    // on a thread — and the screen holds flight across that gap rather
+    // than flickering back to "⏎ send".
+    expect(q("[data-testid=interview-chat]")?.getAttribute("data-flight")).toBe("unlanded");
+    expect(q("[data-testid=interview-complete]"), "the conversation is live again").toBeNull();
+    expect(q("[data-testid=interview-hint]")?.textContent).toContain("to stop");
+  });
+
+  it("the ending NAMES the cold-start test, offers no way to run it, and says it is optional", async () => {
+    await walkedToTheEnd();
+    const block = q("[data-testid=interview-complete]")!;
+    expect(block, "the ending is on screen").not.toBeNull();
+    const next = q("[data-testid=interview-complete-next]")!;
+
+    // The method's last step, named where the person can read it — the
+    // planner said it in its own words on the walk and the app had no
+    // answer.
+    expect(next.textContent).toContain("cold-start test");
+    expect(next.textContent, "and what makes a session cold").toContain("docs/");
+    // NOT A GATE (the ruling is on T-175) — completion is at the last
+    // bank, so the block says the test is offered and not required.
+    expect(next.textContent).toContain("does not require it");
+    // AND THE DISQUALIFICATION IS THE SCREEN'S, not a model's: the
+    // session that ran the interview cannot be the cold one.
+    expect(next.textContent).toContain("cannot be that session");
+    // NO AFFORDANCE. Spawning the session is `T-175` behind an
+    // `app-agent` fence, so a button here would be a control with nothing
+    // behind it — the failure family this screen is written against.
+    expect(block.querySelectorAll("button")).toHaveLength(0);
   });
 });

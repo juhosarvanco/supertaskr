@@ -7,11 +7,12 @@ import type {
   SendOutcomePayload,
   StartOutcomePayload,
 } from "@/lib/agent-store";
-import { elapsedLabel } from "./crescendo";
+import { completionSafely, elapsedLabel } from "./crescendo";
 import {
   activeTurn,
   assembleTranscript,
   EMPTY_BANKING_OBSERVATION,
+  inputHint,
   mergeRehydrated,
   noticeRoutesToHandDriven,
   observeBanking,
@@ -22,7 +23,8 @@ import {
 } from "./interview-model";
 import {
   freshInterview,
-  interviewBusy,
+  interviewFlight,
+  interviewLocked,
   loadKickoff,
   rehydrateInterview,
   resumeInterview,
@@ -34,7 +36,13 @@ import {
   useGenesisState,
   useInterviewUi,
 } from "./interview-source";
-import { BankedChips, PlannerTurn, StageStrip, UserTurn } from "./interview-turns";
+import {
+  BankedChips,
+  ClosingBlock,
+  PlannerTurn,
+  StageStrip,
+  UserTurn,
+} from "./interview-turns";
 
 /**
  * THE PLANNER CHAT — the left half of the split (T-027).
@@ -62,7 +70,18 @@ export function InterviewChat({
 }) {
   const genesis = useGenesisState();
   const ui = useInterviewUi();
-  const busy = interviewBusy(genesis, ui);
+  // T-171: TWO QUESTIONS, NOT ONE, and conflating them is the defect this
+  // card exists for. `busy` is the FACT — is a turn in flight — and it
+  // feeds everything that makes a claim: the hint slot, the completion
+  // reading, the ending. `flight.because` is WHY, on the section as a data
+  // attribute, so a stranded claim is legible in the DOM instead of being
+  // a boolean nobody can interrogate.
+  const flight = interviewFlight(genesis, ui);
+  const busy = flight.inFlight;
+  // …and the OTHER question, which is not the same one: will the send
+  // path take an answer? Every `disabled` below reads THIS, because a
+  // control has to agree with the guard that will actually answer it.
+  const locked = interviewLocked(genesis, ui);
 
   // ---- banked chips: file evidence, and only file evidence -----------
   //
@@ -185,6 +204,14 @@ export function InterviewChat({
   // `stageOf`, which is the difference between a torn file breaking a
   // progress bar and a torn file taking the conversation down.
   const stage = stageOf(docs);
+  // T-171: the SAME completion reading the board pane celebrates with —
+  // T-028's `completionOf`, not a second rule — through the throw-safe
+  // wrapper, because this half of the screen renders outside T-037's
+  // error boundary exactly as `stageOf` does. The chat may not invent a
+  // second answer to "is the interview over": that question already has
+  // one derivation, off typed state plus a parseable board on disk, and
+  // ADR-017/T-028 forbid a model-emitted marker becoming a third.
+  const completion = completionSafely(docs, genesis.turns, busy);
   // THE CONVERSATION IS WHERE YOU LEFT IT (criteria 1-2). Pulled on
   // arrival rather than at app startup: `genesis_transcript` reads the
   // OPEN project, and at startup there may not be one.
@@ -283,7 +310,7 @@ export function InterviewChat({
    * is where a blurred element's focus goes), or the box itself.
    */
   useEffect(() => {
-    if (busy || !heldFocusAtSubmit.current) return;
+    if (locked || !heldFocusAtSubmit.current) return;
     heldFocusAtSubmit.current = false;
     const el = box.current;
     if (el === null) return;
@@ -327,6 +354,12 @@ export function InterviewChat({
       data-phase={genesis.phase}
       data-turns={genesis.turns.length}
       data-stage-derivation={stage.failed ? "failed" : "ok"}
+      // T-171: the flight reading and the completion reading, in the DOM.
+      // `data-flight` is the WHY behind `busy` — `stranded` is the state
+      // that used to render as "planner is thinking…" forever — and
+      // `data-complete` is what the closing block and the hint follow.
+      data-flight={flight.because}
+      data-complete={completion.complete ? "true" : "false"}
       // Mobile-first, and the only responsive call site in the app. Below
       // `lg` the lens is not rendered at all and the chat takes the frame,
       // centred at the width it would have had; at `lg` and up it is the
@@ -385,6 +418,14 @@ export function InterviewChat({
           ),
         )}
 
+        {/* T-171: the ending, at the foot of the conversation and after
+            the last turn — where the transcript actually stops, which is
+            where @human's walk stopped with nothing to read. It stands
+            down on its own if the user answers again: `completionOf` is
+            not a latch, so a turn back in flight takes this away without
+            a second rule saying it should. */}
+        {completion.complete && <ClosingBlock canAnswer={!locked} />}
+
         {genesis.listenerFailed && (
           <div
             data-testid="interview-listener-failed"
@@ -430,7 +471,7 @@ export function InterviewChat({
             <div className="flex items-center gap-2.25">
               <Button
                 data-testid="interview-resume"
-                disabled={busy}
+                disabled={locked}
                 onClick={() => void resumeInterview(projectDir)}
               >
                 Pick up where it stopped
@@ -438,7 +479,7 @@ export function InterviewChat({
               <Button
                 data-testid="interview-fresh"
                 variant="outline"
-                disabled={busy}
+                disabled={locked}
                 onClick={() => void freshInterview(projectDir)}
               >
                 Start a fresh session
@@ -473,7 +514,7 @@ export function InterviewChat({
             <div className="flex items-center gap-2.25">
               <Button
                 data-testid="interview-fresh"
-                disabled={busy}
+                disabled={locked}
                 onClick={() => void freshInterview(projectDir)}
               >
                 Start a fresh session
@@ -496,7 +537,7 @@ export function InterviewChat({
             <div className="flex items-center gap-2.25">
               <Button
                 data-testid="interview-start"
-                disabled={busy}
+                disabled={locked}
                 onClick={() => void startInterview(projectDir, { force: true })}
               >
                 Start the interview
@@ -520,7 +561,7 @@ export function InterviewChat({
           ref={box}
           rows={1}
           data-testid="interview-input"
-          disabled={busy}
+          disabled={locked}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
@@ -536,7 +577,7 @@ export function InterviewChat({
         />
         <div className="flex items-center justify-between gap-3">
           <span data-testid="interview-hint" className="font-mono text-xs text-muted-foreground">
-            {busy ? "planner is thinking… · ⌘. to stop" : "⏎ send · ⇧⏎ newline"}
+            {inputHint(busy, completion.complete)}
           </span>
           {/* JUST "Answer" — @human's ruling at the 2026-08-30 genesis
               walk, verbatim: *"'Bank answer' button should be just
@@ -545,7 +586,7 @@ export function InterviewChat({
               answering a question. The banked→files confirmation chip
               stays exactly where it was, which is where that word is
               news rather than jargon. */}
-          <Button data-testid="interview-bank" disabled={busy} onClick={submit}>
+          <Button data-testid="interview-bank" disabled={locked} onClick={submit}>
             Answer
           </Button>
         </div>

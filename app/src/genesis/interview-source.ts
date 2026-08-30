@@ -23,6 +23,7 @@ import {
   type StartOutcomePayload,
   type TranscriptLinePayload,
 } from "@/lib/agent-store";
+import { flightOf, type FlightReading } from "./crescendo";
 
 /**
  * WHERE THE INTERVIEW'S STATE COMES FROM — one hook, two runtimes, ONE
@@ -170,6 +171,27 @@ export interface InterviewUiState {
   userHalves: ReadonlyMap<number, string>;
   /** A send or start is in flight from THIS side, set SYNCHRONOUSLY. */
   busy: boolean;
+  /**
+   * THE TURN NUMBER OF THE LAST START OR SEND A COMMAND ACCEPTED (T-171),
+   * or null when none has been.
+   *
+   * It is a TYPED OUTCOME's own field, never a guess: `started { turn }`
+   * and `accepted { turn }` both carry it, and nothing else writes here.
+   *
+   * WHY IT IS NOT `userHalves`' HIGHEST KEY, which carries the same number
+   * for a send: `userHalves` means "answers the human typed", turn 1 has
+   * no such answer (the kickoff is machine-assembled), and giving one
+   * field two meanings is how the store and the UI end up disagreeing
+   * about whether the interview is live — the split-brain T-027 §1 spent
+   * its length arguing against.
+   *
+   * WHAT IT IS FOR: `flightOf` needs to know WHICH turn a claim of flight
+   * is about, so that a claim about a turn that has since settled can be
+   * refused. Without it, the gap between an accepted answer and its
+   * `started` event is indistinguishable from a stranded flag, and the
+   * screen must either flicker after every answer or lie forever.
+   */
+  awaiting: number | null;
   /** The last non-accepted outcome worth showing, or null. */
   notice: StartOutcomePayload | SendOutcomePayload | null;
 }
@@ -177,6 +199,7 @@ export interface InterviewUiState {
 const EMPTY_UI: InterviewUiState = {
   userHalves: new Map(),
   busy: false,
+  awaiting: null,
   notice: null,
 };
 
@@ -230,19 +253,62 @@ export function useInterviewUi(): InterviewUiState {
 }
 
 /**
- * Is a turn in flight? The store's own flag OR this module's synchronous
- * latch.
+ * Is a turn in flight, and WHY (T-171) — the screen's one reading, joined
+ * from the two states that hold the evidence.
  *
- * BOTH are needed and neither is sufficient, which is worth stating
- * because it is not obvious: `sendGenesisTurn` sets `sending` only after
- * `invoke` RESOLVES, so between the keypress and the answer the store
- * still reads "idle" — and a burst of ⏎ presses would each pass the
- * store's guard and each reach a command. The synchronous latch below
+ * THE FLAGS ARE STILL BOTH READ and neither is sufficient, which was true
+ * before this task and is still true: `sendGenesisTurn` sets `sending`
+ * only after `invoke` RESOLVES, so between the keypress and the answer
+ * the store still reads "idle" — and a burst of ⏎ presses would each pass
+ * the store's guard and each reach a command. The synchronous latch
  * closes exactly that window. The `disabled` attribute is not the guard
  * either: a keydown can be delivered between state updates, so the ⏎
- * handler re-checks this function before calling.
+ * handler re-checks `interviewBusy` before calling.
+ *
+ * WHAT CHANGED IS WHO HAS THE LAST WORD. This used to BE
+ * `ui.busy || isTurnInFlight(genesis)` — a disjunction of three flags in
+ * which the store's `phase` could outlive the turn it described and
+ * nothing could contradict it. `flightOf` takes the same three flags and
+ * puts the runner's own per-turn `status` in front of them, so a claim
+ * about a turn that has landed and settled is refused. The full argument,
+ * with the walk it was measured on, is on `flightOf`.
  */
+export function interviewFlight(
+  genesis: GenesisState,
+  ui: InterviewUiState,
+): FlightReading {
+  return flightOf(genesis.turns, ui.busy, ui.awaiting, isTurnInFlight(genesis));
+}
+
+/** IS A TURN IN FLIGHT — the FACT, for everything that makes a claim
+ * about the world: the hint slot, the completion reading, the ending.
+ * `BoardCrescendo` reads it too, so the board pane's completion panel and
+ * the chat's cannot disagree about whether the interview is over. */
 export function interviewBusy(genesis: GenesisState, ui: InterviewUiState): boolean {
+  return interviewFlight(genesis, ui).inFlight;
+}
+
+/**
+ * WILL THE SEND PATH ACCEPT AN ANSWER — the MACHINERY, and a different
+ * question from `interviewBusy` above (T-171).
+ *
+ * This is the OLD `interviewBusy` disjunction, kept verbatim and for
+ * exactly one purpose: the `disabled` attributes and the focus-return
+ * effect. Those must agree with the guard that will actually answer, and
+ * that guard is `sendGenesisTurn`'s own `isTurnInFlight` — so a control
+ * enabled against a store that is going to refuse is a button that eats
+ * the answer, which is the same class of lie as the footer's, with the
+ * arrow reversed.
+ *
+ * SPLITTING THE TWO IS THE FIX'S REAL CONTENT. One boolean used to answer
+ * both — "is a turn running" and "will a send be taken" — and conflating
+ * them is why a stranded `phase` could take the footer, every affordance
+ * and the completion state down together. They agree in every healthy
+ * state and disagree in exactly one: a claim of flight the turn evidence
+ * has outlived, where the honest screen says the interview is complete
+ * AND says the session is not taking another turn. Both are true.
+ */
+export function interviewLocked(genesis: GenesisState, ui: InterviewUiState): boolean {
   return ui.busy || isTurnInFlight(genesis);
 }
 
@@ -272,8 +338,13 @@ export async function sendAnswer(text: string): Promise<SendOutcomePayload | nul
       }
       return null;
     }
-    if (outcome.kind === "accepted") recordUserHalf(outcome.turn, text);
-    else setUi({ notice: outcome });
+    if (outcome.kind === "accepted") {
+      recordUserHalf(outcome.turn, text);
+      // T-171: the turn this send is about, from the outcome's own typed
+      // field. Set BEFORE the `finally` releases the latch, so there is no
+      // frame in which nothing claims the pending turn.
+      setUi({ awaiting: outcome.turn });
+    } else setUi({ notice: outcome });
     return outcome;
   } finally {
     setUi({ busy: false });
@@ -310,6 +381,7 @@ export async function startInterview(
     // happened. Anything else leaves the latch open for a retry.
     autoStarted.add(projectDir);
     if (outcome.kind !== "started") setUi({ notice: outcome });
+    else setUi({ awaiting: outcome.turn });
     return outcome;
   } finally {
     setUi({ busy: false });
@@ -347,7 +419,10 @@ async function takeStart(
     if (outcome === null) return null;
     autoStarted.add(projectDir);
     if (outcome.kind !== "started") setUi({ notice: outcome });
-    else void refreshGenesisTranscript();
+    else {
+      setUi({ awaiting: outcome.turn });
+      void refreshGenesisTranscript();
+    }
     return outcome;
   } finally {
     setUi({ busy: false });

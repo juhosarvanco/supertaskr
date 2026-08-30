@@ -18,6 +18,7 @@ import {
   failureAction,
   failureDetail,
   failureHeadline,
+  inputHint,
   listOf,
   MAX_CHIP_PATHS,
   mergeRehydrated,
@@ -723,6 +724,34 @@ describe("the seven-segment strip maps the derivation's 0-8 scale", () => {
      model).toBe(false)`: that would pin a dead producer rather than the
      ruling, and kill no mutant the two pins above do not already kill
      (POISON DRILL, shape SIX). */
+});
+
+describe("inputHint — three states, and thinking is not a resting one (T-171)", () => {
+  it("says the planner is thinking ONLY while a turn is in flight", () => {
+    expect(inputHint(true, false)).toBe("planner is thinking… · ⌘. to stop");
+    // …and the flight reading wins over completion: a turn back in flight
+    // over a finished plan is the user talking again, which is a live
+    // conversation and not an ending.
+    expect(inputHint(true, true)).toBe("planner is thinking… · ⌘. to stop");
+  });
+
+  it("SAYS THE INTERVIEW IS COMPLETE, and how to carry on anyway", () => {
+    // The state @human's walk could never reach: nothing in flight, a
+    // plan on disk. The slot used to advertise "⏎ send" here as though
+    // nothing had happened — an interview with no ending.
+    const hint = inputHint(false, true);
+    expect(hint).toContain("interview complete");
+    // `completionOf` is not a latch, so the ending must not read as a
+    // closed door: the slot still says what ⏎ does.
+    expect(hint).toContain(String.fromCharCode(0x23ce) + " send");
+  });
+
+  it("is the plain send hint mid-interview — no ending claimed before there is one", () => {
+    expect(inputHint(false, false)).toBe(
+      String.fromCharCode(0x23ce) + " send " + String.fromCharCode(0x00b7) + " " +
+        String.fromCharCode(0x21e7) + String.fromCharCode(0x23ce) + " newline",
+    );
+  });
 });
 
 describe("stageOf degrades instead of taking the conversation down", () => {

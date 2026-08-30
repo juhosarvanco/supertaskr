@@ -408,6 +408,84 @@ export function FailureBlock({
 }
 
 /**
+ * THE INTERVIEW'S ENDING, IN THE COLUMN THE PERSON WAS READING (T-171).
+ *
+ * WHY IT IS HERE AND NOT ONLY IN THE BOARD PANE. `BoardCrescendo`'s
+ * completion panel has said "The board is ready" since T-028 and it says
+ * it on the RIGHT — which is the half that is not rendered at all below
+ * the `lg` breakpoint, and which was not where @human was looking. The
+ * 2026-08-30 walk ended with the chat column on the planner's last words
+ * and a footer claiming a turn nobody was running; what the conversation
+ * never did was CONCLUDE. This block is the conversation's own ending,
+ * and it is the only one a narrow window ever gets.
+ *
+ * IT NAMES THE NEXT THING AND OFFERS NO WAY TO DO IT, deliberately.
+ * `method/interview/plan-interview.md` ends on the cold-start test, and
+ * SPAWNING that session is `T-175`'s card behind an `app-agent` fence —
+ * so a button here would be an affordance with nothing behind it, which
+ * is the one thing this screen's failure family (T-069/T-081/T-101) is
+ * written against. Naming it costs nothing and is what the person needs;
+ * building it here would be reaching through a fence.
+ *
+ * AND IT IS AN OFFER, NEVER A GATE — the ruling is on `T-175`: completion
+ * is at the last bank, the cold-start test follows it. The wording says
+ * so in as many words, because a "next step" printed under a completion
+ * panel reads as a requirement unless it says otherwise.
+ *
+ * THE REFUSAL IN THE LAST SENTENCE IS THE PRODUCT'S, NOT A MODEL'S. On
+ * the walk the planner said it in its own words — *"I can't be that
+ * session; I have the whole interview in context"* — and it was right,
+ * which is why the app was left with nothing to say. Stating it here
+ * makes it a property of the screen: the blindness IS the test, so the
+ * session that ran the interview is disqualified by construction and the
+ * person is told that rather than left to discover it.
+ */
+export function ClosingBlock({ canAnswer }: { canAnswer: boolean }) {
+  return (
+    <div
+      data-testid="interview-complete"
+      data-can-answer={canAnswer ? "true" : "false"}
+      className="flex flex-col gap-2 rounded-lg border border-status-done-border bg-status-done px-4 py-3.5"
+    >
+      <span className="flex items-center gap-2">
+        <BankedMark />
+        <span className="font-mono text-xs tracking-overline text-status-done-foreground uppercase">
+          interview complete
+        </span>
+      </span>
+      <span className="text-sm font-semibold tracking-heading text-status-done-title">
+        Genesis is done — every answer is banked and the plan is on disk.
+      </span>
+      <span data-testid="interview-complete-next" className="text-sm text-secondary-foreground">
+        The board beside this is the product of the walk;{" "}
+        <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> is the
+        record, in your own repository. The method offers one more step and does not
+        require it: the <strong className="font-semibold">cold-start test</strong> — point a
+        fresh agent session at this folder, let it read only{" "}
+        <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>, and ask
+        it to explain the project back. Gaps in its answer are gaps in the docs; fix and
+        repeat. This conversation cannot be that session — it has the whole interview in
+        context, and that blindness is the test.
+      </span>
+      {/* THE INVITATION IS CONDITIONAL, and this is the second half of
+          T-171's split. Completion says the interview is OVER; it does not
+          say the planner session will take another turn, and those are
+          different facts held by different things. Inviting an answer the
+          send path is going to refuse is the footer's own lie with the
+          arrow reversed — so the block says whichever of the two is true
+          rather than the friendlier one. `canAnswer` is
+          `interviewLocked`'s complement, i.e. the guard that will actually
+          answer, not a second guess at it. */}
+      <span data-testid="interview-complete-carry-on" className="text-sm text-secondary-foreground">
+        {canAnswer
+          ? "Nothing here is closed: answer again and the interview carries on from where it stopped."
+          : "The planner session is not taking another turn just now — everything above is banked, and docs/ and the board are yours either way."}
+      </span>
+    </div>
+  );
+}
+
+/**
  * The banked-answer confirmation (criterion 3). PATHS, not the design's
  * section names: a section-level claim ("banked → north star, person")
  * is not file evidence, and T-024 made exactly this call already.

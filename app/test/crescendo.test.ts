@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   boardReadiness,
   completionOf,
+  completionSafely,
   crescendo,
   elapsedLabel,
+  flightOf,
   showsBoard,
   HOUR_FORM_FROM_MINUTES,
   MINUTE_MS,
@@ -273,6 +275,131 @@ describe("completionOf — four conditions, none of them read out of prose", () 
     const turns = [turn(1, "completed")];
     expect(completionOf(docs, turns, false).complete).toBe(true);
     expect(completionOf(docs, turns, true).complete, "the user is still talking").toBe(false);
+  });
+});
+
+// ---- T-171: is a turn ACTUALLY in flight? --------------------------------
+
+describe("flightOf — a flag is a claim, the turn's own status is the measurement", () => {
+  it("A RUNNING TURN IS THE STRONGEST READING, whatever the flags say", () => {
+    // Every flag off, one running turn: the runner opened it and has not
+    // closed it, which is the only evidence that earns "planner is
+    // thinking…".
+    expect(flightOf([turn(1, "running")], false, null, false)).toEqual({
+      inFlight: true,
+      because: "running",
+    });
+    // …and it is read over the whole list, not off the tail: a retry of
+    // turn 1 runs UNDER settled later turns, and the pulse dot the chat
+    // draws per turn reads the same field.
+    expect(flightOf([turn(1, "running"), turn(2, "completed")], false, null, false)).toEqual({
+      inFlight: true,
+      because: "running",
+    });
+  });
+
+  it("THE STRANDED CLAIM IS REFUSED — @human's walk, in one call", () => {
+    // The 2026-08-30 genesis walk's terminal state, reconstructed from
+    // what its own `.nputer/` recorded: ten turns, the last one COMPLETED
+    // (its planner line is on disk, which the runner writes only when the
+    // turn produced text), the registry `idle`, a board of cards — and a
+    // store still claiming flight. The screen rested on "planner is
+    // thinking… · ⌘. to stop" with a disabled button, indefinitely.
+    const settled = [turn(9, "completed"), turn(10, "completed")];
+    expect(flightOf(settled, false, 10, true)).toEqual({
+      inFlight: false,
+      because: "stranded",
+    });
+    // The claim is refused whether or not this side remembers which turn
+    // it was about: what contradicts it is that nothing is running.
+    expect(flightOf(settled, false, null, true)).toEqual({
+      inFlight: false,
+      because: "stranded",
+    });
+  });
+
+  it("the latch covers the command's own round trip", () => {
+    // Between the keypress and the command's answer there is no turn to
+    // read — dropping this is a footer that flickers to "⏎ send" after
+    // every single answer.
+    expect(flightOf([turn(1, "completed")], true, 1, false)).toEqual({
+      inFlight: true,
+      because: "latched",
+    });
+  });
+
+  it("an ACCEPTED turn with no event yet is in flight — the `started` race", () => {
+    // The runner spawns the turn on a thread, so `started` races the
+    // command's return. `awaiting` is the outcome's own turn number, and
+    // a turn that has not arrived cannot have settled.
+    expect(flightOf([turn(1, "completed")], false, 2, true)).toEqual({
+      inFlight: true,
+      because: "unlanded",
+    });
+    // The same shape at the very first turn, where the list is empty.
+    expect(flightOf([], false, 1, true)).toEqual({ inFlight: true, because: "unlanded" });
+  });
+
+  it("an empty turn list contradicts nothing, so the store's claim stands", () => {
+    // A webview that arrived after the turn did — the mount-time status
+    // pull's whole purpose. There is no measurement to set against it.
+    expect(flightOf([], false, null, true)).toEqual({ inFlight: true, because: "claimed" });
+    // …and with nothing claiming anything, nothing is in flight.
+    expect(flightOf([], false, null, false)).toEqual({ inFlight: false, because: "idle" });
+  });
+
+  it("a settled tail with no claim at all is idle, not stranded", () => {
+    // The ordinary between-questions state. `stranded` is reserved for a
+    // claim that was CONTRADICTED, so that the defect stays nameable
+    // rather than collapsing into the healthy case.
+    expect(flightOf([turn(1, "completed")], false, 1, false)).toEqual({
+      inFlight: false,
+      because: "idle",
+    });
+    for (const status of ["failed", "cancelled"] as const) {
+      expect(
+        flightOf([turn(1, status)], false, 1, false),
+        `a ${status} turn is not in flight`,
+      ).toEqual({ inFlight: false, because: "idle" });
+    }
+  });
+});
+
+describe("completionSafely — the ending cannot take the conversation down", () => {
+  const safeBoard = (): DocsModelState =>
+    tree([...SCAFFOLD, taskFile("T-001", "Store and done"), taskFile("T-002", "Week view")]);
+
+  it("agrees with completionOf on a readable tree, complete and not", () => {
+    // The positive control: this wrapper is a guard, so it has to be shown
+    // passing the real reading through before its degradation means
+    // anything.
+    expect(completionSafely(safeBoard(), [turn(1, "completed")], false)).toEqual({
+      complete: true,
+      turns: 1,
+    });
+    expect(completionSafely(tree(SCAFFOLD), [turn(1, "completed")], false)).toEqual({
+      complete: false,
+      blocker: "noBoard",
+    });
+  });
+
+  it("a tree that throws on every read degrades to `unreadable`, not to a crash", () => {
+    const boom = new Proxy(new Map<string, string>(), {
+      get() {
+        throw new Error("T-171 PROBE: the tree exploded while being read");
+      },
+    });
+    const hostile: DocsModelState = {
+      ...safeBoard(),
+      effective: boom as ReadonlyMap<string, string>,
+    };
+    // The unguarded call is the defect the chat would have inherited from
+    // OUTSIDE T-037's error boundary; the guarded one is the fix.
+    expect(() => completionOf(hostile, [turn(1, "completed")], false)).toThrow();
+    expect(completionSafely(hostile, [turn(1, "completed")], false)).toEqual({
+      complete: false,
+      blocker: "unreadable",
+    });
   });
 });
 

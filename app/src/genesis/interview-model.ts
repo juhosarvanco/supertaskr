@@ -380,6 +380,31 @@ export function stageReadout(approxStage: number | null, stageStep: string | nul
   return `stage ${at} of ${INTERVIEW_STAGES}${stageStep === null ? "" : ` · ${stageStep}`}`;
 }
 
+/**
+ * THE INPUT ROW'S HINT SLOT — three states, and "planner is thinking…" is
+ * not one of the resting ones (T-171).
+ *
+ * IT USED TO BE TWO, WRITTEN INLINE AS A TERNARY ON ONE BOOLEAN: thinking
+ * or not. That boolean was `interviewBusy`, which could strand true, so
+ * the slot's ONLY other state was unreachable and the screen rested on a
+ * claim that a turn was running when none was — the defect this card
+ * exists for. The states are named here, as a function of a reading
+ * rather than of a flag, so each is drivable and none is the absence of
+ * another.
+ *
+ * THE THIRD STATE IS THE ENDING. An interview whose plan is on disk and
+ * whose last turn has settled is finished, and a hint slot still
+ * advertising "⏎ send" as though nothing had happened is the screen
+ * failing to say so. It says the ending AND how to carry on, because
+ * `completionOf` is not a latch and answering again is legitimate — the
+ * conversation is not closed, it is complete.
+ */
+export function inputHint(inFlight: boolean, complete: boolean): string {
+  if (inFlight) return "planner is thinking… · ⌘. to stop";
+  if (complete) return "interview complete · ⏎ send to keep going";
+  return "⏎ send · ⇧⏎ newline";
+}
+
 /* THE PER-MESSAGE FOOTER USED TO LIVE HERE — `questionFooter`, the
  * design's constant phrase plus the count, rendered under every current
  * question and every challenge. @human retired it at the 2026-08-30
