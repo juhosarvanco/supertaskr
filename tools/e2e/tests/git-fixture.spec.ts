@@ -243,18 +243,24 @@ test("every spec that commits into a fixture it removes carries the protection, 
   ).toBeGreaterThanOrEqual(3);
   expect(specs.length, "the walk read no specs at all").toBeGreaterThan(inClass.length);
 
+  // THE USE SITE, NEVER THE IMPORT — and this sentence is here because the
+  // first draft of this body checked for the bare NAMES and its own poison
+  // drill SURVIVED: deleting `...NO_BACKGROUND_MAINTENANCE` from a sibling's
+  // git helper left the import line behind, and an import satisfies a
+  // substring check while protecting nothing. A spread and a call cannot be
+  // spelled by an unused import.
   for (const { file, source } of inClass) {
     expect(
       source,
-      `${file} commits into a fixture it removes and does NOT carry ` +
-        `NO_BACKGROUND_MAINTENANCE, so its commits detach a writer into the tree ` +
-        `its teardown is about to walk (T-178)`,
-    ).toContain("NO_BACKGROUND_MAINTENANCE");
+      `${file} commits into a fixture it removes and does not SPREAD ` +
+        `NO_BACKGROUND_MAINTENANCE into its git calls, so its commits detach a ` +
+        `writer into the tree its teardown is about to walk (T-178)`,
+    ).toContain("...NO_BACKGROUND_MAINTENANCE");
     expect(
       source,
-      `${file} commits into a fixture it removes and tears it down without ` +
+      `${file} commits into a fixture it removes and never CALLS ` +
         `removeGitFixture, so a removal that cannot finish will red whichever body ` +
         `it happens to follow instead of reporting itself (T-178)`,
-    ).toContain("removeGitFixture");
+    ).toContain("removeGitFixture(");
   }
 });
