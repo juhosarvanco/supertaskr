@@ -1571,6 +1571,94 @@
   here and stays that card's, because it needs the reader census
   re-run and the root-anchor ledger re-asserted rather than a word
   changed in a trigger.
+- HEALTH BANDS AT THE CHECKPOINT (T-156, ADR-020 decision 3; this bullet
+  is the half that card's `[tools/e2e]` fence could not write, routed and
+  taken as `T-156-s1`) — **A REPORTER, NOT A FIFTH STANDING GATE, AND THE
+  DISTINCTION IS THE POINT**: no tier acts on its answer, it declares no
+  merge-diff trigger, and it is enumerated with `index --watch`, `arch`
+  and the orphan drill rather than with the four gates above.
+  RUN IT — from tools/e2e/, at every checkpoint:
+
+      npm run health
+      npm run health -- --readings <the checkpoint's captured output>
+
+  **THE `--` IS LOAD-BEARING AND ITS ABSENCE IS LOUD** (measured at
+  `8c210b2` on npm 11.12.1, the same npm behaviour the PORT RULE bullet
+  measures on `npm run tauri dev -- --config`): without it npm warns
+  `Unknown cli config "--readings"`, eats the flag and hands the script
+  the bare path, which it refuses — *"this command takes flags, never
+  paths"* — at exit 2. Four codes again: 0 clean, 1 a band is BREACHED,
+  2 called wrong, 3 the run could not read what it needed, and **3 takes
+  precedence over 1** because a run that could not read three of its
+  bands is not a claim about the tree however loud the breach it did
+  read. The AUTHORITY is the frozen `EXIT` object in
+  tools/e2e/scripts/health-bands.mjs, and the LIMITS are data in
+  tools/e2e/scripts/health-bands.config.mjs, tuned by TRIAGE and never by
+  the session that trips them — that file's header is the argument and is
+  not restated here.
+  **EXIT 3 IS THE DESIGNED ANSWER TODAY, NOT A BREAKAGE**: four bands are
+  declared with no keeper and are named on every run, docs/STATE.md says
+  so in as many words, and the two failures this bullet exists to prevent
+  are reading that 3 as clean and "fixing" it.
+  WHAT THE CHECKPOINT OWES, AND THE RECORD TEMPLATE CARRIES THE SHAPE
+  (docs/checkpoints/TEMPLATE.md, Gates and Metrics): the CENSUS LINE and
+  the EXIT, read unpiped, plus the readings that turn the three
+  readings-authority bands from UNREAD into a reading — the output of
+  `cargo test` and `index --check` from app/src-tauri/ and `npm test`
+  from tools/e2e/, all three of which that checkpoint already ran.
+  Capture them with a redirect and read `$?` from the gate itself; a
+  bare `| tee` hands you tee's status, which every gate bullet above
+  forbids in as many words. The record's own `Gate runtime:` total is
+  `machinery/gate-seconds`'s only reading, and its `Cold start:` and
+  `Drift incidents:` lines are the two docs/NORTH_STAR.md indicators'
+  only markers — **owed by the SESSION every time rather than by whoever
+  noticed a problem**, because a cold start that went badly is exactly
+  the one nobody writes up and a denominator that collects successes only
+  is worse than no band.
+  **THE GRAPH BAND'S READING IS THE INTEGRATOR'S AND A LANE CANNOT HOLD
+  IT HONESTLY** — the fact about WHO can hold a reading, stated beside
+  the command because that is where it is met. `index --check` is
+  `graph/budget-headroom-bytes`'s authority, and a worktree that has
+  built anything with cargo has its own target directory inside the graph
+  walk (`T-153-s3`, `T-111-s10`: a non-`target` target dir is inside it),
+  so a lane's number is about the lane. Take it from the checkout the
+  merge is integrated in, or record the band as not read and say which.
+  **AND NOTHING MAY SCAN THE RECORDS FOR ANY OF THIS** (ADR-019's Records
+  clause): the marker reaches the command hand-carried into `--readings`
+  at the checkpoint that wrote it, which is the hand reporter that clause
+  already allows, and never as a walk of docs/checkpoints/.
+  THE CI DISPOSITION, DECIDED HERE RATHER THAN LEFT TO THE NEXT EDITOR
+  (`T-156-s1`, the decision T-156's shape item 3 asked for in writing):
+  **LOCAL ONLY**, the disposition `index --watch`, `arch` and
+  `npm run boot:orphan-drill` already have. Three reasons, and the first
+  is decisive: it exits 3 at every ref while any band is unkept, so a
+  step would red every push for no actionable signal — the AUDIT GATE
+  POLICY's own argument against `--deny warnings`, one layer up. Second,
+  the readings that make the run informative are the OUTPUTS of steps the
+  job already runs, so a step would either report three bands UNREAD or
+  need the job rewired to capture and re-feed them. Third, the card's
+  "on CI's schedule once the pipeline is green" form is refused for the
+  same first reason and one more: a scheduled reporter would re-run the
+  whole pipeline to produce those readings, and `on: schedule` is not one
+  of the three triggers workflow-parity pins ci.yml to. **Revisit this
+  when the exit code can move** — that is `T-156-s4`'s subject — and not
+  before.
+  IT IS NOT IN "Build & test" ABOVE, DELIBERATELY, AND THE REASON IS
+  MECHANICAL — the same one the METHOD EVAL GATE bullet states, and the
+  same trap T-090 walked into while adding `npm run lint:docs`.
+  `deriveExpectedSteps` in tools/e2e/tests/workflow-parity.spec.ts makes
+  every command in those four bullets either a CI step or an argued
+  `LOCAL_ONLY` entry, and both dispositions live in that spec. **MEASURED
+  RATHER THAN PREDICTED, at `8c210b2`**: adding `npm run health` to the
+  tools/e2e command bullet and changing nothing else takes that spec to
+  **3 failed of 17, exit 1** — *"lists [tools/e2e] npm run health, which
+  this spec has no entry for"*, plus the two fixtures that assert the
+  live doc derives cleanly. So the doc half and the spec half are ONE
+  commit across two packages, `T-156-s1`'s fence reached one of them, and
+  the listing is routed as **`T-156-s5`** rather than smuggled into a
+  bullet the derivation cannot see. Until it lands, this is the only
+  place the command is written down, and adding it above without that
+  same commit's `LOCAL_ONLY` entry fails the lane by name.
 - POISON DRILL (ratified at T-054; until then it was pure oral
   tradition — "poison", "vacuous" and "mutation" appeared nowhere in
   this file or in method/roles/, verified at the 2026-08-17 triage): at
