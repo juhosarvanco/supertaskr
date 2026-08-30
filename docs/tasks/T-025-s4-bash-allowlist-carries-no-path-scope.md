@@ -517,3 +517,47 @@ command at the same tree now exits 0, because T-163-s4 landed while
 this lane was under verification: the class this board just closed,
 observed closing. Graph: headroom 926 → 410 at this merge, the
 integrator's regen.
+
+## @human RULED 2026-08-30, in session — ROUTED ITEM 2 IS DECLINED
+
+**"lets not lock down list 3. we can think about this design later, if
+need be."**
+
+So routed item 2 — closing table 3 with `--setting-sources` — is
+**DECLINED**, and it is declined as a DESIGN CALL rather than deferred
+for a measurement, which is what separates it from the other three.
+
+**WHAT THE DECLINE COSTS, WRITTEN DOWN SO NOBODY RE-DISCOVERS IT AS
+NEWS:** table 3 keeps drifting. It is the user's own
+`~/.claude/settings.json`, the spawned planner inherits it because the
+adapter passes neither `--settings` nor `--setting-sources`, and this
+card already measured it moving under observation — four entries on
+2026-08-19, five on 2026-08-30, the arrival being `Bash(git merge:*)`,
+the one verb this project's CONVENTIONS reserve to @human's own gate.
+Nothing in this repository can keep a copy of that table honest, which
+is why the third entry's `observed` field is empty on purpose.
+
+**WHY THE DECLINE IS NOT MERELY A DEFERRAL, stated at the strength of
+its evidence.** `--setting-sources <sources>` takes a comma-separated
+list of `user, project, local` (read from the installed CLI's own
+`--help` at this ruling). Passing it does not subtract permissions
+alone: the user's settings source also carries hooks and participates
+in how credentials resolve — the same help text ties `apiKeyHelper` to
+`--settings` — so restricting the sources trades a bounded, visible
+exposure for unbounded invisible ones, against a code path ADR-003
+designed to inherit the user's setup. That is a product judgement and
+@human made it.
+
+**THE MIDDLE PATH NOBODY HAS PRICED, recorded rather than proposed**:
+`--settings` accepts an explicit file or JSON string, so a future design
+could hand the planner a KNOWN permission set without discarding the
+user's hooks. It is not on this card's list of four, it is not ruled
+here, and it would want a real watched genesis run like the rest.
+
+**THE OTHER THREE ROUTED ITEMS ARE UNTOUCHED BY THIS RULING** — 1 (the
+nine-name denylist), 3 (the `cpio` boundary) and 4 (dropping
+`Bash(cp:*)`). The seat's recommendation, routed and NOT ruled: each
+needs a price only a watched genesis run can give — whether an unknown
+tool name refuses at spawn on another CLI build, where the boundary
+falls, and what eight in-band denials actually feel like on a first
+run — so they wait for that run rather than for an opinion.
