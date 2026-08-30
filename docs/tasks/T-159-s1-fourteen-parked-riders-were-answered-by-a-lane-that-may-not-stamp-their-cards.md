@@ -129,3 +129,34 @@ dispatch and were all met on that dispatch — **the mechanism worked** —
 and if the board still shows fourteen parked cards a week later, what
 it will have demonstrated instead is that resurfacing costs nothing to
 declare and everything to honour.
+
+## Implementation notes
+
+Built at base `51fa31c` on `task/T-159-s1-method-debt`, worktree
+`/Users/ujju/Projects/nputer-T-159-s1`. Every figure below is derived at
+the ref it names; live-environment facts carry the time they were read.
+
+### Understanding, confirmed before anything was touched
+
+This card is the FRONTMATTER HALF of a disposition whose reasoning half
+is already written. T-159's lane answered fourteen parked riders whose
+resurfacing condition had fired, wrote the per-rider table into
+`docs/tasks/T-159-method-v018-the-metabolism-release.md`, and correctly
+did not stamp a single one of the fourteen — disposition is triage's by
+the same single-writer rule that governs every other placement field. My
+job is to write the stamps triage's promotion note ordered: for each of
+the fourteen, re-derive its needle at MY ref (never copy the table), then
+make exactly one of three moves — **promoted by absorption** where the
+ask is now text at v0.1.8 (the bump's card is the absorbing card, the
+`Absorbs:` line is the surviving record, the suggestion file goes in the
+same commit); **archived as DISCHARGED-NOT-DECLINED**, naming the
+commit, where the ask had already landed by another route and the
+parking note is stale; or **PARKED BACK with a NEW condition** where an
+arm survives that the fence could not reach — the last being explicitly
+required for `T-132-s2` (trigger-widening, its author's own UNVERIFIED
+mark) and `T-132-s6` (arm 2, waiting on a T-120-s2 merge that has not
+happened), because parking twice under the same note is how a shelf
+forms. My fence is exactly the fourteen card files plus the protocol's
+always-writable `docs/tasks/`; `method/` and `docs/CONVENTIONS.md` are
+outside it, so where a rider's residual wants method text I record it and
+route it rather than reaching out.
