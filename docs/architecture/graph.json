@@ -13865,8 +13865,8 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:a2d9d812fb92bf02017e172ed2a3ee3be6e7d6a5ede316df9a2d4bca6657d251",
-      "loc": 1364,
+      "hash": "blake3:62a690dc3fad32f09b752766a1b81e8ff201c41cbd5c6ed333a3c46b10da4abe",
+      "loc": 1380,
       "symbols": [
         {
           "id": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
@@ -14285,7 +14285,7 @@
           "exported": true,
           "range": [
             1093,
-            1364
+            1380
           ]
         },
         {
@@ -19428,8 +19428,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:4862639841016ff36cdbc39f6065d02280660a787304f42b52d114cdec247069",
-      "loc": 2031,
+      "hash": "blake3:a45e0cc47aaaa3944c06e9e526dacecba61e41db9c41a640b2730b686114e21e",
+      "loc": 2089,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
