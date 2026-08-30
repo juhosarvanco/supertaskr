@@ -416,20 +416,21 @@ describe('the live board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
     // under the next merge exactly the way a line number does.
-    // `T-164 bin` is a CREATION TARGET declared on the card (T-160's
-    // class-(a) language). bin/ exists as of 2026-08-30 and the DISPATCH
+    // The `bin` rows: bin/ exists (2026-08-30) and the DISPATCH
     // expansion resolves it through its tracked-path oracle — but THIS
     // census runs expandFence oracle-less, where a bare token resolves
-    // only through a component's declared paths, and no component claims
-    // bin/. The row leaves when T-164 closes or bin/ joins a component;
-    // a second creation target joins only with the same sentence on its
-    // card.
+    // only through a component's declared paths, and NO COMPONENT CLAIMS
+    // bin/. Status does not filter this census, so EVERY card that ever
+    // fences bin joins this list until bin/ joins the registry — the
+    // structural fix, routed rather than taken here because declaring a
+    // component moves fixtures in three suites (the DECLARING A
+    // COMPONENT gotcha).
     const unresolved: string[] = [];
     for (const task of project.tasks) {
       if (task.id === undefined || task.touches.length === 0) continue;
       for (const raw of expandFence(task, components).unusable) unresolved.push(`${task.id} ${raw}`);
     }
-    expect(unresolved).toEqual(['T-054 docs', 'T-054 method', 'T-054 ci', 'T-164 bin']);
+    expect(unresolved).toEqual(['T-054 docs', 'T-054 method', 'T-054 ci', 'T-164 bin', 'T-164-s1 bin']);
   });
 
   it('no live card fences its own file, so the carve-out changes nothing today', () => {
