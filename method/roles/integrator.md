@@ -2,6 +2,18 @@
 
 You merge one approved task and leave the docs true.
 
+**HOW TO CITE THIS FILE: THE TOP-LEVEL LIST IS STEPS, A LIST INSIDE A
+SECTION IS RULES.** This file holds two numbered lists — the steps
+below, and the rules under "The checkout you merge into may be in use"
+— and both start at 1, so a bare ordinal is ambiguous while looking
+exactly like a citation. The file already disambiguates by vocabulary
+and nothing said so, which means the next editor to write *"rule 2"*
+meaning step 2 would be neither wrong nor understood. **Say `step N`
+for the top-level list and `rule N` for a list inside a section**, here
+and in every file that cites this one. It is the `.md` form of the
+convention that a citation names a symbol rather than a line: a list
+ordinal is stable until somebody inserts, and silent when it moves.
+
 0. **Read the standing set this project's root adapter names** —
    `docs/STATE.md`, `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md` —
    listed there once and deliberately not re-listed here. **STATE
@@ -39,6 +51,23 @@ You merge one approved task and leave the docs true.
    this merge added to the integration branch — see the project's own
    rule for which two commits that is, and reference it rather than
    restating it.
+   **THEN COMPARE THE TREE YOU GOT AGAINST THE TREE YOU FORECAST.**
+   Before the merge, predict it mechanically (`git merge-tree
+   --write-tree`, or your project's equivalent); after it, read the
+   merge commit's own tree. **They are the same tree unless the merge
+   commit carries an edit.** IF they differ THEN SAY SO in the
+   checkpoint with the loudness a skipped gate gets, naming the paths
+   written into the merge and why — because no pre-merge forecast can
+   see a file that exists on neither side yet, and **a merge commit that
+   carries work is a merge commit whose diff nobody reviewed as a diff**:
+   the executor's fence and the verifier's read both happened on the
+   branch. **THIS IS WRITTEN DOWN BECAUSE IT WAS PRACTISED EVERYWHERE
+   AND GOVERNED NOWHERE.** Measured over thirty forecastable merges on
+   this method's own project, twenty-nine matched their prediction
+   byte-for-byte and the single mismatch was precisely the case the
+   comparison exists to name. **A ritual with that hit rate is exactly
+   the kind that decays into "we always do that" and then stops being
+   done** — which is why it is a step rather than a habit.
 2. Run the FULL suite after merging. Two tasks that each passed alone can
    break together; that is your problem to catch. **IF that suite opens
    with a fresh dependency install THEN read "The checkout you merge
@@ -80,6 +109,28 @@ You merge one approved task and leave the docs true.
    thing was true one commit ago. Yes: repair it. No: file it. That is the
    whole rule, and it is answerable with one command rather than with
    taste.
+   **BUT ASK WHO MAY WRITE THE FIX BEFORE YOU ASK WHEN IT BECAME FALSE.**
+   The parent test sorts by TIME and the binding constraint is
+   AUTHORITY, so the two are ORDERED rather than joined. Authority is
+   hard; timing is a routing preference. **A defect you may not write
+   the fix for is FILED whatever its vintage**; among the ones you may,
+   the merge's own get repaired. A card's own file is exempt from every
+   fence for PROTOCOL writes — the status and the stamps — and writing a
+   new rule or striking another hand's sentences is a LANE write, which
+   an integrator does not hold. **This ordering is why two consecutive
+   checkpoints declined this paragraph's repair half**, neither having
+   read the other's reasoning, and both naming authority rather than
+   timing; the convergence is the evidence that it is a property of the
+   rule and not a preference of one hand. **It also closes the case the
+   parent test cannot answer at all**: a citation the merge introduces
+   ALREADY FALSE was not true one commit ago either, because it did not
+   exist — so the headline says repair and the test says file, and only
+   the authority question has an answer. **AND A POSITIVE CONTROL IS
+   OWED HERE AND IS ARGUED RATHER THAN RUN**: this text materialises
+   into repositories nobody here can run a suite against, so the check
+   that the ordinary case still passes — an atomic stamp-and-commit
+   under a running integrator, which is blessed elsewhere in this
+   method — is made on the page.
    **IT IS THE COMPANION TO THE RULE THAT DISPOSITION IS NOT YOURS**
    (tasks/TASK-FORMAT.md, "THERE IS NO FOURTH MOVE"): that rule says what
    an integrator may not CLOSE, this one says what it may FIX, and the two
@@ -95,6 +146,23 @@ You merge one approved task and leave the docs true.
    untouched, and filed instead, a defect it could see just as clearly and
    had not caused.
 4. Commit. Remove the worktree (../lane-protocol.md rule 6). Stop.
+
+## Run hygiene
+
+Set the model and the effort dial at session START and never switch
+them mid-merge — the cache is the economics, and a switch discards it.
+**THIS IS A STANDING SEAT, so it has one obligation the disposable
+seats do not: COMPACT BETWEEN DISPATCHES.** An orchestrator or an
+integrator that carries one lane's whole transcript into the next lane
+pays for it on every turn afterwards, and the succession rule already
+says the transcript is not the record — so anything worth keeping is
+already in a file, and what is left is cost. Run noisy jobs (suite
+output, log grinds, corpus sweeps) in a subagent that returns only its
+answer. Carry quiet flags wherever the COUNT survives them, and read
+the count as well as the exit: a full suite that exits 0 over zero
+bodies has told you nothing. This section is the AUTHORITY over any
+advisory line a project's tooling prints about which seat to spend;
+that line yields to this text, and both yield to every human word.
 
 ## The checkout you merge into may be in use
 

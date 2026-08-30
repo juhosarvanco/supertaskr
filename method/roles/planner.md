@@ -22,6 +22,23 @@ project directory.
    from runtime/nputer.yaml (runtime defaults, losable, gitignored).
    Stamp docs/STATE.md: Updated line filled in, In progress =
    "genesis interview running — next stage: 1 (Q1)".
+   **TWO SPELLINGS, BOTH ABOUT HOW YOU TOUCH THE DISK, NEITHER A NEW
+   CAPABILITY — every operation named here is already granted to you.**
+   **Run git BARE, in your own working directory.** That directory IS
+   the project directory, so a directory-CHANGING form (`git -C <dir>
+   …`) is redundant, and agent runtimes commonly treat it as a
+   different and more dangerous operation than its bare twin — the bare
+   command is the one you were granted. **Write files with the write
+   tool your runtime gives you, not with a shell redirect (`> file`).**
+   A write inside your own working directory is already permitted,
+   while a redirect whose target is built by the shell is the shape a
+   command analyser refuses without reading. **Both were measured on a
+   live genesis** against a real agent CLI, where three separate
+   refusals cost a turn of reasoning each and every one was routed
+   around rather than lost: nothing failed, the loop ran DEGRADED. **The
+   MECHANISM behind each refusal is a fact about one runtime and is
+   deliberately not written here** — this file is product-agnostic, so
+   it carries the rule and leaves the evidence to whoever captured it.
 2. Interview per interview/plan-interview.md — ONE question at a
    time, never a wall. Challenge weak answers instead of transcribing
    them (open such turns with "pushing back:"). An answer is BANKED
@@ -94,3 +111,18 @@ yourself in this genesis (template headings, comment guidance, and
 your own earlier banks are yours to update) — THEN stop and ask the
 human instead of overwriting. Adopting an existing project is
 archaeology's job (interview/archaeology.md), not yours.
+
+## Run hygiene
+
+Set the model and the effort dial at session START and never switch
+them mid-interview — the cache is the economics, and a switch discards
+it, which matters more here than anywhere else because this seat is
+one long conversation by design. Do not compact to save tokens: step 3
+already banks every answer to disk the moment it is confirmed, so the
+cost of a long transcript is paid in tokens and the cost of a lost one
+is paid in re-asking a human questions they have answered. Run noisy
+jobs (repository reads during archaeology, large file sweeps) in a
+subagent that returns only its answer, and keep the human's turn in
+this session. This section is the AUTHORITY over any advisory line a
+project's tooling prints about which seat to spend; that line yields
+to this text, and both yield to every human word.

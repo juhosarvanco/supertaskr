@@ -128,6 +128,28 @@ they have always meant, written down. Discipline, not a gate: nothing can
 verify that a verifier stayed blind — the field records a claim about how
 the pass was run, and only the role's own procedure makes it true.
 
+**A GUARD-CLASS CARD REQUIRES `review: independent`, AND THE FIELD IS
+SET AT DISPATCH.** Where the card's SUBJECT is a guard — a hook, a gate,
+a keeper, a lint, a permission check, a security control, anything whose
+job is to REFUSE — the default is not good enough and the reason is not
+a doubt about any model: **the builder of a cage is not its inspector.**
+A guard is the one artifact whose author's mental model IS the thing
+under test. Every ordinary defect shows up as something failing; a
+guard's characteristic defect shows up as nothing happening, which is
+also what success looks like, and the person best placed to mistake one
+for the other is the person who decided what the guard should notice.
+**This is the paragraph above applied rather than contradicted**: the
+guarantee is still informational blindness, and `independent` is
+required here because a guard's specification lives so far inside its
+author's head that the card alone under-determines it more than usual.
+**Ask what the card is ABOUT, not what it touches.** A card that adds a
+feature behind an existing guard is not a guard card; a card that
+changes what the guard refuses is one, however small its diff. **And the
+ordinary companion applies with full force — a guard owes a POSITIVE
+CONTROL**: prove it lets the ordinary case through, not only that it
+stops the bad one. A check that cannot tell an absence from a refusal is
+not a check.
+
 ## Task creation — single writer
 
 Only the ARCHITECT (planner/orchestrator role) creates tasks with
@@ -139,6 +161,33 @@ Everyone else suggests. A suggestion is a minimal file:
 status: suggested, title, one paragraph of context, suggested_by.
 Suggested cards are NOT in the queue — the dashboard renders them as
 ghosts (dashed) at the bottom of their feature column.
+
+**SEARCH BEFORE FILING, AND A SECOND INSTANCE IS A CORROBORATION RATHER
+THAN A CARD.** Before writing a suggestion, look for a card that already
+owns its CLASS. IF one exists THEN the finding is a CORROBORATION: it
+appends a dated evidence line to that card — what you saw, where, and at
+which ref — and no sibling file is created. **A second instance is worth
+more attached to the first than filed beside it**, because the pair is
+the evidence that the class is real, and two files describing one class
+are two triage decisions that can disagree. A corroboration is a RECORD
+and is appended, never rewritten over what is there.
+**EVERY NEW SUGGESTION NAMES ITS CLASS PARENT IF ONE EXISTS, AND CARRIES
+A ONE-LINE DISPOSITION HINT.** The parent is a card id; the hint is the
+filer's own sentence about what should happen to this — promote, park
+behind X, probably a duplicate of Y, needs a ruling from a human. **The
+filer knows this and the triage seat does not**, because the filer has
+just spent a lane inside the problem while triage arrives cold, weeks
+later, to a title. The hint is advisory and triage overrules it freely;
+it costs one line and it is the difference between triaging a finding
+and reconstructing one.
+**THIS IS THE HALF THAT KEEPS THE BOARD METABOLISING.** A suggestion
+corpus grows faster than any triage sitting can drain it, and the
+failure is not volume but ILLEGIBILITY: undated instances of one class
+scattered across a dozen files, each needing its world rebuilt before it
+can be judged. Corroboration collapses the class into one card; the hint
+carries the world with the finding; and triage-at-the-stamp
+(roles/orchestrator.md) keeps the distance between a finding and its
+disposition to one dispatch cycle.
 
 **A TITLE THAT OPENS WITH A SYMBOL IS QUOTED.** The frontmatter is YAML
 and a plain scalar MAY NOT BEGIN with a reserved indicator, so a `title:`
@@ -199,6 +248,17 @@ the parser agree:
 - Parked: `status: parked` in place, still flat in the tasks dir.
   Placement fields stay optional, but `id:` becomes required — an
   id-less suggestion gains one when parked.
+  **A PARKING NOTE CARRIES A RESURFACING CONDITION OR IT IS A REJECTION
+  NOBODY WROTE DOWN.** The note is dated, says why the card is not being
+  taken now, and NAMES THE EVENT that brings it back. The default event,
+  where nothing better presents itself, is that the card's fence's
+  component is NEXT DISPATCHED — which makes the condition checkable by
+  whoever cuts that lane instead of by whoever remembers this card.
+  **AND A RESURFACED CARD IS RE-DERIVED, NEVER TRUSTED**: a parking note
+  is a finding stamped at a ref, so the seat that picks it up re-derives
+  its needle at its own ref, and where the ask no longer holds it says
+  so in writing and parks it back with a NEW condition. Parking twice
+  with the same note is how a shelf forms.
 - Rejected: the file MOVES to `docs/tasks/rejected/`, keeping
   `status: rejected` plus a dated one-line reasoning. The task globs
   are deliberately flat, so nothing under rejected/ is a model input.
@@ -218,6 +278,19 @@ makes one of the three moves above, normally promotion, which is what
 "resolved by other work" already means once the resolving task can name
 it. Recording the discharge is not the same act as disposing of it, and
 only the second one is triage's.
+**AND A DISCHARGE IS ARCHIVED AS A DISCHARGE, NOT AS A DECLINE.** When
+triage does dispose of one and the file moves to the rejected archive,
+the reasoning line SAYS which of the two happened: *discharged — the
+work landed at `<commit>`* reads differently from *declined — we are not
+doing this*, and only the first is a compliment to the finding. The
+distinction is invisible in the status word, which is the same either
+way, and it is the distinction a later reader actually needs: a
+discharged finding is evidence the method works, and filing it under the
+same heading as a refusal quietly loses that. **The case that forces the
+wording is the one with no receiving card**: a finding closed by work
+that produced no task to carry an absorption line has nowhere else to
+say so, so the archive entry is the only record and must carry the
+commit that did it.
 
 **AND THERE IS NO NINTH STATUS.** `closed` is not a status; neither is
 any other word invented to make one file parse. The vocabulary is fixed
@@ -231,6 +304,26 @@ nearest. Which gate, and where the vocabulary lives, are the PROJECT's to
 name in its own conventions — this file names no paths.
 **ADDING A STATUS IS A METHOD CHANGE, NOT A PARSE FIX**, and it carries
 the version bump this file's own format changes carry.
+**AND YES, THIS FILE ALSO WRITES THE VOCABULARY DOWN — DELIBERATELY, AND
+THE REASON IS THE ONLY THING THAT MAKES IT SAFE.** The frontmatter block
+at the top lists the statuses, the sizes and the review modes, in the
+same file that says a gate should READ the vocabulary rather than
+restate it. That is a second copy, and a second copy is normally two
+facts rather than one fact checked twice — **which is exactly the
+objection a reader is right to raise, and it went unanswered here long
+enough to become a filed finding.** The copy is KEPT because the method
+has to be readable BEFORE any of a project's code exists: this file is
+copied whole into a repository that has no parser yet, and a pointer to
+a source file that is not there is worse than a list. **What makes it
+safe is a CHECKER, not a promise.** A project whose code declares these
+sets is expected to compare its declaration against this block
+MECHANICALLY, and to red when the two diverge — the same shape as every
+other place this method refuses to trust a duplicate. Redundancy with a
+checker is one fact checked twice; redundancy without one is what this
+paragraph would otherwise be an example of. **Where a project has no
+such check, the honest reading is that this block is the authority and
+the code is the copy** — and adding the check is cheaper than the first
+divergence.
 
 ## Lifecycle rules
 
@@ -293,6 +386,28 @@ the version bump this file's own format changes carry.
   prevent (lane-protocol.md, "Why the branch carries the dispatch stamp
   and the lane does not") — trading a legible gap for a hand-resolved
   conflict on every card. The gap is documented rather than closed.
+- **A CARD DISPATCHED IN HALVES HAS NO TRUE `status:`, AND THE ANSWER IS
+  A SENTENCE IN ITS BODY RATHER THAN A NINTH VALUE.** Where one card is
+  dispatched to two hands — half its work under one fence now, the rest
+  held for a ruling or a freed fence — the first half finishes and no
+  value in the vocabulary is true. `verifying` claims the WHOLE card is
+  built and awaiting a verifier, which is false for as long as the other
+  half is unwritten; `done` is worse. **THE RULE: the card stays
+  `building`, and the executor of the finished half writes a dated line
+  in the body naming WHICH half is built, at which commit, and what the
+  other half waits on.** That is what the seat that first met this did,
+  correctly and without sanction; this bullet is the sanction.
+  **THE TWO OTHER REPAIRS ARE REFUSED AND THE REASONS ARE WORTH
+  KEEPING.** A new status is refused on sight by the rule above — it is
+  a method change, the vocabulary is closed, and the board would gain a
+  value meaningless for every card dispatched whole. *"Never dispatch in
+  halves, slice it instead"* is the clean answer and does not answer
+  this question: the case that produced it was one where splitting was
+  considered and rejected on ceremony cost, and a ruling about ceremony
+  does not tell a lane what to stamp. **A half-dispatched card is still
+  a dispatch defect worth noticing** — but it is one the ARCHITECT
+  makes, and this bullet exists so the LANE that inherits it is not the
+  seat left guessing.
 - A rejected task goes to a FRESH executor (never the author session, which
   would defend its work) — unless a human explicitly overrides.
 - **THE STOP CONDITION WEIGHS REJECTIONS RATHER THAN COUNTING THEM.**

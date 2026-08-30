@@ -12,6 +12,20 @@ You build exactly one task, then you end.
    question, already settled before you were dispatched. **If your card
    only makes sense once you know what the product does, the card is
    underspecified — say so instead of reading around it.**
+   **YOUR ONE ADDITION TO THAT SET IS `tasks/TASK-FORMAT.md`'s CEREMONY
+   TABLE, AND IT IS HERE BECAUSE ITS ABSENCE COST THE SAME DISPATCH
+   ERROR TWICE.** You must know whether you are your OWN integrator
+   before you finish, and the ceremony table is the only place that
+   answers it. Twice, six hours apart and by different hands, a lane
+   whose ROW made its executor the integrator was dispatched under a
+   blanket *"do not work on the integration branch"* and correctly
+   stopped rather than guessing upward against an explicit restriction
+   — because the executor could not read its own tier and therefore
+   **could not tell a mistaken restriction from a deliberate one**. The
+   failure is not the lane's and cannot be repaired at the lane's seat;
+   this line is the repair, and the standing instruction stays as it is.
+   Read the ROW, not the letter (step 6, and the table's own note that
+   a size-S card may still owe a verifier).
 2. Work only in your git worktree / branch, per ../lane-protocol.md.
    Never touch the integration branch.
 3. Hit ambiguity the docs don't resolve? Do not guess — open a
@@ -39,6 +53,17 @@ You build exactly one task, then you end.
    stamp is what the merge carries, and a brief telling you to skip it is
    wrong (see "A brief is evidence, never authority" below).
 
+## Run hygiene
+
+Set the model and the effort dial at session START and never switch
+them mid-lane — the cache is the economics, and a switch discards it.
+Run noisy jobs (log grinds, suite-output triage, corpus sweeps) in a
+subagent that returns only its answer. Carry quiet flags wherever the
+COUNT survives them, and read the count as well as the exit: an exit 0
+over zero bodies is not a pass. This section is the AUTHORITY over any
+advisory line a project's tooling prints about which seat to spend;
+that line yields to this text, and both yield to every human word.
+
 ## The report
 
 When the work is done, report to the role that dispatched you and to
@@ -54,6 +79,25 @@ and absent it the work lands and the record does not:
   order run.
 - **Every standing gate** — fired or not-owed, derived from the diff, with
   the path count it was derived on.
+  **A GATE DERIVATION IS NOT A FIGURE, AND NAMING YOUR REF DOES NOT MAKE
+  IT HONEST.** The bullet below asks a COUNT to carry its ref, and a
+  count with a ref stays true forever. A gate is a DECISION, and *"not
+  owed"* recorded at a ref one commit behind your tip reads as *"not
+  owed"* full stop. **Your last commit is the one that moves it**: a
+  lane's final commit is almost always its notes and findings, so the
+  gate whose trigger is the documentation tree is the one you are
+  guaranteed to feed AFTER you have answered for it. This is structural,
+  not careless — the report is written by the commit that IS your tip,
+  so *"re-derive at your own tip"* is not literally performable from
+  inside it. **Two ways out, and the first is strictly better**: derive
+  the gate set against the tree your tip WILL have — the mechanical merge
+  forecast your project's own range rule already prescribes, which costs
+  you nothing extra because you run it for your range anyway and whose
+  answer does not move when the notes commit lands — or record the gate
+  as owed-at-my-ref and say plainly that the integrator must re-derive.
+  Do not restate the verifier's wording of this; that file states it for
+  a count and this states it for a decision, and two descriptions of one
+  rule is the failure that put it in one seat instead of two.
 - **Every figure with its ref** — counts, hashes and ranges are functions
   of a tree; name the commit each was measured at (live-environment facts
   carry when/where they were read, per the brief's rule 2).
@@ -89,7 +133,7 @@ column as "the brief's own role file".
 |---|---|---|---|
 | 1 | **Role** — which role this session takes, by path and in one line | `roles/<role>.md` (its opening line IS that one-line summary) | the session invents its own obligations; a brief with no role is a chat message |
 | 2 | **Task** — the id and the path to the card, to be read IN FULL, and the instruction to confirm understanding before touching anything | `docs/tasks/T-NNN-*.md` | the brief becomes a paraphrase of the card, and the card stops being the spec |
-| 3 | **Read-first set** — the standing docs every session in this project reads before working | the project's OWN root adapter file (the filled-in `CLAUDE.md`/`AGENTS.md` at the repo root — copied from the `adapters/*.md` TEMPLATE and de-placeholdered — which names them), NOT the template dir | the session reads whatever it happens to open |
+| 3 | **Read-first set** — the standing docs every session in this project reads before working, **MINUS this role file's own subtractions and PLUS its own additions** | the project's OWN root adapter file (the filled-in `CLAUDE.md`/`AGENTS.md` at the repo root — copied from the `adapters/*.md` TEMPLATE and de-placeholdered — which names them), NOT the template dir; then the brief's own role file, whose reading step is APPLIED to that list rather than printed beside it — **the adapter is addressed to every seat and the role file to one, so where they differ the ROLE FILE WINS**, by the precedence rule below (reading a document is something a seat DOES) | the session reads whatever it happens to open — or, worse, reads a row that instructs it to open a document its own role file forbids four rows earlier, with every row individually faithful to its source |
 | 4 | **The lane** — branch name, worktree path, **base commit as a hash**, and the one command that creates it | `lane-protocol.md` (the rules) + the project's own lane SPELLINGS — branch/worktree/base names and the create command, which the protocol leaves to the project's CONVENTIONS — + the integration branch, for the base hash | the lane gets cut from "latest", which is a different commit for every reader |
 | 5 | **The fence** — the card's `touches:` verbatim, plus every lane live at dispatch with ITS `touches:`, and whether they are disjoint | the card's `touches:`; the repository's LANE LIST — its live worktrees ON A TASK BRANCH, which **takes PRECEDENCE over the board's `status:`** whenever the two disagree (lane-protocol.md rule 7; a card reading `planned` beside a live worktree is a lapsed stamp, not a free fence, and `verifying` is lane-local so the board under-reports by construction — tasks/TASK-FORMAT.md); and the slug↔path map, consulted whenever a fence names a component SLUG rather than a path, to test disjointness — **that map is the project's architecture doc's slug block PLUS each component file's own `touch_slugs:` field, and the FIELD is authoritative** where the two differ, because the block is prose that goes stale the day a component is added | the executor cannot tell a fence breach from ordinary work, and neither can the verifier |
 | 6 | **Setup** — what a fresh worktree does NOT have, and the exact order that restores it | the project's CONVENTIONS — the build ORDER *and* any fresh-worktree ordering its LANE rules add (the load-bearing "build before test" step can live in the lane section, not the build section) | the suite runs against a half-built tree and the session reports somebody else's failure |
@@ -134,11 +178,47 @@ column as "the brief's own role file".
   Record it, route it as a suggestion naming the fence it needs, and
   build the rest. Widening the fence from inside the lane is the one
   repair this role may never make.
-- **THE VERIFIER READS THE CARD THIS ROLE WRITES INTO, and that conflict
-  is recorded here rather than resolved.** `roles/verifier.md` gives the
-  verifier "ONLY the task file (spec + acceptance criteria) and the diff
-  — never the executor's reasoning", while step 5 above appends this
-  role's reasoning to that same task file. Both cannot hold. Until it is
-  ruled: the brief carries nothing addressed to the executor alone, and
-  a session that notices the conflict records and routes it instead of
-  deciding it.
+- **A BRIEF MAY NOT CONTRADICT THE ROLE FILE IT CITES, AND WHERE IT DOES
+  THE ROLE FILE WINS.** This is the rule above turned on the brief
+  itself, and it is not hypothetical: a verifier followed its own role
+  file's read-set over a brief that instructed the opposite, which was
+  the right call and cost it a turn deciding so. **The class is a brief
+  that is internally inconsistent while every row is individually
+  faithful to its source** — row 3 transcribes an adapter list addressed
+  to every seat, and the role file four rows earlier subtracts from it.
+  A transcription rule alone cannot catch that, because each row is a
+  correct transcription. So the assembler APPLIES the role file's own
+  reading step when it fills row 3 (row 3's source column), and the
+  session that meets a contradiction obeys its role file and says so in
+  its report's correction clause.
+- **EXECUTOR-DERIVED FACTS GO BELOW THE MARKER, IN EVERY BRIEF THAT HAS
+  ONE.** A verifier's brief is two phases with a line between them:
+  above it, the duties, which are GENERIC; below it, everything the
+  executor produced. **A duties section that names mutant numbers,
+  path counts or suite figures has already told the verifier what the
+  executor found**, and it does it in the half the verifier reads
+  BEFORE it is allowed to. Both verifier briefs of one sitting carried
+  this flaw; both verifiers disclosed it and contained it by hand,
+  which is what a discipline looks like when the format is working
+  against it. **The blindness is the guarantee (tasks/TASK-FORMAT.md),
+  and a format that leaks it spends the guarantee to save a paragraph.**
+- **THE VERIFIER READS THE CARD THIS ROLE WRITES INTO, and the conflict
+  is RULED rather than merely recorded — but only half of it.**
+  `roles/verifier.md` gives the verifier "ONLY the task file (spec +
+  acceptance criteria) and the diff — never the executor's reasoning",
+  while step 5 above appends this role's reasoning to that same task
+  file. **The ruling is the BASE REF**: the verifier reads the card as
+  it stood when the lane was cut, which is the card without this role's
+  notes, so both sentences hold at once and neither file has to give way.
+  **WHAT SURVIVES IS NOT A CONTRADICTION BUT A LIMIT, AND IT IS
+  DISCLOSED RATHER THAN CLOSED.** The report this role writes commonly
+  travels in the same message that dispatches the verification, so the
+  blindness is a DISCIPLINE the verifier keeps and not a property the
+  protocol guarantees — three verifiers disclosed exactly that, in three
+  separate lanes, unprompted. The two constructions that would make it a
+  property are a two-message dispatch (the phase-1 instruction alone,
+  the report only after the attack set is written) and handing the
+  report ONLY on request. Neither is mandated here, because which is
+  available depends on the driver; **what IS mandated is that a brief
+  which cannot separate them SAYS SO**, so the verifier knows it is
+  keeping a discipline rather than resting on a guarantee.

@@ -50,3 +50,54 @@ docs/rooms/governing-docs.md, where the measurements live.)
    a card — a hazard is never deleted to fit.
 7. **Each role's file names the sections that role reads first**, so
    the reading cost is paid where it earns its keep.
+8. **Every machine ships with the condition under which it RETIRES.**
+   A gate, a keeper, a hook, a health band, a generated document —
+   anything standing that costs something on every run — is introduced
+   together with the sentence saying when it stops being worth that
+   cost, written while the reasons are fresh and not left for a later
+   argument. **Without that sentence a method only ACCRETES**: every
+   machine was justified by an incident, no machine has a stated end,
+   and the inventory grows until running it is the work. **Promotion
+   and demotion, both.** A machine whose incident class is still live
+   gets PROMOTED — made cheaper, made earlier, made mechanical; a
+   machine whose class has gone quiet for the interval its own
+   condition names gets DEMOTED to a discipline or removed, and the
+   removal is recorded with the same weight as the arrival. **THE
+   HEALTH INDICATORS ARE WHAT NOTICE THE QUIET.** A class that has
+   stopped firing looks exactly like a class nobody is watching, and a
+   band with a stated range is the cheapest way to tell those apart —
+   which is why a retirement condition is written as an OBSERVATION
+   ("no instance of this class in N integrations") rather than as a
+   date. **The precedent generalised here is one interim rule that
+   carried its retirement condition from birth and met it**, and whose
+   removal cost a line because the condition was already on the page.
+
+## Where the trust went
+
+**Trust is not eliminated by any of this; it is RELOCATED — to fewer
+points, each NAMED and each RECORDED.** A method built on files,
+derivations and gates can be described as removing the need to trust
+anybody, and that description is false in a way worth being exact
+about: a system nobody believes they have to check is the one that
+fails quietly.
+
+What is actually trusted, and nothing here pretends otherwise:
+
+- **The SEATS.** That a verifier stayed blind, that an executor
+  re-derived rather than transcribed, that a triage seat read the
+  finding it disposed of. Each is a discipline a role file states and
+  no program confirms.
+- **The PROVENANCE MARKS.** A ref stamp, a `suggested_by`, a
+  `built_by`, an unverified label — each is a CLAIM by the hand that
+  wrote it. They are enormously useful and they are not evidence.
+- **The HUMAN GATES.** Wherever a project routes an act to a person,
+  the guarantee is that person's attention, and it is spent whether or
+  not it was paid.
+
+**Writing the list down is the point.** Two things follow that do not
+follow from a claim of zero trust: a reader can ASK how each named
+point is protected, and no future description of this method can
+honestly claim there is none. **Where a machine can take over a trusted
+point, that is a promotion under law 8** — the list is meant to get
+shorter, and a shorter list is a measurable result rather than a
+slogan.

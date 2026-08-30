@@ -23,7 +23,7 @@ compared to what, measured how?" An interview is not a form.
 7. **First slice** — The smallest thing that could ship and teach
    something. Ruthless: milestone 1 should feel too small.
 
-## Output — incremental banking (v0.1.7; supersedes the one-pass rule)
+## Output — incremental banking (v0.1.8; supersedes the one-pass rule)
 
 Artifacts are written AS the interview runs, never in one pass at the
 end. Each stage banks into its artifacts the moment its answer is
@@ -34,7 +34,7 @@ inference, kit packaging); a change here is a method version bump.
 
 | Stage | Interview step | Banks into |
 |-------|----------------|------------|
-| 0 | scaffold (pre-Q1) | docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.nputer/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage) |
+| 0 | scaffold (pre-Q1) | docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.nputer/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage); git run bare in the cwd, files written with the write tool (roles/planner.md step 1) |
 | 1 | Q1 problem & person | docs/NORTH_STAR.md § Vision + § Users |
 | 2 | Q2 success | docs/NORTH_STAR.md § Success criteria |
 | 3 | Q3 non-goals | docs/NORTH_STAR.md § Non-goals |
