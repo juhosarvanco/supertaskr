@@ -467,3 +467,33 @@ docs/checkpoints/2026-08-27-adr019-compaction.md; the derived gate
 values are ADR-019's addendum. Nothing remains from §5: the phases are
 complete, and T-092/T-093 continue as ordinary cards at CONVENTIONS'
 seat.
+
+## THE BUDGET FORMULA — @human's ruling, 2026-08-30 (the resolution `T-162-s1` waited for)
+
+**RULED: ADD A BYTE FLOOR. The per-merge delta budget is NOT built.**
+@human, in session, on `T-162-s1`'s routed question.
+
+`warn = landed + max(F, landed × 0.25)` replaces `warn = landed × 1.25`.
+`F` is a floor in BYTES, so a small document stops being punished for
+being small.
+
+**WHAT IT FIXES, which is the arithmetic `T-162-s1` filed:** headroom
+under a proportional line is exactly a quarter of the landing, so
+compacting a document TIGHTENS its own tripwire. Measured on T-162's
+pass: cutting docs/ROADMAP.md by 514 bytes COST 128 bytes of runway, and
+cutting docs/CONVENTIONS.md by 2,653 cost 663. ROADMAP is the case the
+floor exists for — the file this contract asks to stay short, and the
+file whose runway is shortest.
+
+**WHAT IS DELIBERATELY NOT BUILT, and why the refusal is recorded rather
+than left silent:** the PER-MERGE DELTA budget (gate the growth, not the
+total) is the second instrument `T-162-s1` names. It needs new machinery
+and a keeper of its own, and the floor addresses the demonstrated defect
+on its own. It is not rejected on its merits — it is not built YET, and
+the condition for revisiting it is a governing document crossing its warn
+line again under the floor.
+
+**`F` IS DERIVED, NOT PICKED.** One ordinary merge's growth for the
+smallest governed document, measured at the implementing lane's own ref —
+the same shape `check::WARN_HEADROOM_BYTES` already uses in the crate.
+A round number here would be the defect this room exists to avoid.

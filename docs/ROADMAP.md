@@ -129,13 +129,20 @@ answer become a file → watch the files become cards → press one button
 and stand in your new board. The per-card chronicle lives on the
 cards' own bodies and at `git show 08aef1c:docs/ROADMAP.md`; the
 behaviour census is docs/CAPABILITIES.md.
-**THE GATE MOVED 2026-08-30**: the first real planner turn ran to
-COMPLETION (`T-025-s2` closed — 72 s: stage-0 scaffold on disk, the
-interview opened with a real Q1, one allowlist denial in band and
-recovered; capture in docs/research/captures/). What remains is
-@human's call, not a task: whether one completed turn closes this
-milestone or the full Q1–Q7 genesis walk does. `T-025-s4` carries the
-allowlist's measured narrowness either way.
+**COMPLETE 2026-08-30, @human's ruling.** The genesis walk was
+performed end to end at `/Users/ujju/Projects/first-walk` — seven
+questions, every bank landed, a whole docs/ tree and three cards on a
+board — and @human closed the milestone on it. The gate that had been
+open (whether one completed planner turn closed it or the full Q1–Q7
+walk did) is answered by the walk itself. **What the walk FOUND is
+ordinary F-03 work and deliberately does not reopen this milestone**:
+the interview has no terminal state (`T-171`), the cold-start test has
+no operational owner (`T-175`), two chrome rulings (`T-172`), the
+ruled write-up-first direction (`T-173`), and the two systemic kit
+defects the walk's own board surfaced (`T-176`, `T-177`). All carry
+`milestone: 4`. The walk's record is
+docs/checkpoints/2026-08-30-the-genesis-walk.md and its cold-start
+capture is in docs/research/captures/.
 
 ### Milestone 4 — dispatch (F-04) (decided 2026-08-19, @human D1 ruling)
 Goal: stop hand-writing the instructions that put an agent to work —

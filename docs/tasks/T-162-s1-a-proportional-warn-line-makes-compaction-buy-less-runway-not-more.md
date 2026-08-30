@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: parked
+status: planned
 blocked_by: []
 touches: [docs/decisions, docs/rooms]
 suggested_by: executor claude-opus-5@subagent @T-162
@@ -75,3 +75,30 @@ tripwire's shape is the thing left to argue about.
 2. **A governing document crosses its warn line again** — `npm run lint:docs` prints the budget line for each governed document on every run, so the next warn is the evidence that a re-basing bought one-and-a-bit days of runway rather than a policy. The seat that sees it appends the reading here, dated, and re-routes.
 
 **Re-derive before either move.** The figures in this card are stamped at T-162's refs; the lines were re-based at that merge, so headroom now is not headroom then.
+
+## PROMOTED (2026-08-30, sitting #4's seat) — @human RULED the byte FLOOR
+
+Resurfacing condition 1 has FIRED: @human recorded a resolution on the
+budget formula, in session, and it is written into
+`docs/rooms/governing-docs.md` under **THE BUDGET FORMULA**. The ruling:
+**add the byte floor (`warn = landed + max(F, landed × 0.25)`); do NOT
+build the per-merge delta budget.**
+
+So this card stops being an argument and becomes the implementation of
+one. What it now owes:
+
+- ADR-019 §Budgets' formula text moves to the floor form — @human's
+  decision text, changed under @human's own recorded ruling, which is
+  the only thing that made it untouchable before.
+- `F` is DERIVED at the lane's own ref (one ordinary merge's growth for
+  the smallest governed document), never picked round, with the
+  derivation shown on this card.
+- `tools/e2e/scripts/docs-scan.mjs`'s `DOC_BUDGETS` and the health
+  bands' doc-headroom derivation read the same table and must agree with
+  the new shape — **that is OUTSIDE this card's `[docs/decisions,
+  docs/rooms]` fence**, so it is either a widened fence decided at
+  dispatch or a routed sibling. Decide before cutting the lane, not
+  inside it.
+- **Re-derive every figure**: the lines were re-based at T-162's merge,
+  so the headroom numbers in this card's body are stamped at refs that
+  have moved.
