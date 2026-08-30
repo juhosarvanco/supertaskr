@@ -5,13 +5,13 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: verifying
+status: done
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---
