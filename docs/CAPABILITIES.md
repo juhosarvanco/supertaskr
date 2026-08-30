@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **303 behaviours** — 301 extracted sentences + 2 named-not-extracted (listed at the end) — across 28 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **313 behaviours** — 311 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -324,6 +324,19 @@ Census: **303 behaviours** — 301 extracted sentences + 2 named-not-extracted (
 - a refused turn subscription says so, in the half that is not receiving
 - a restart mid-interview rehydrates the conversation instead of showing an empty log
 - a resumable session offers both exits, and a fresh one is never a dead end
+
+## session-economics
+
+- the recommended seat is a function of the CARD, and an environment full of model dials does not move it
+- every one of the three signals reads its own input, and every one of them is decisive once the other two split
+- the EARS patterns are READ from the method, and a step that moved is a throw rather than an empty pattern set
+- a criterion that opens with an EARS keyword and never says SHALL is not EARS-shaped
+- the card's acceptance criteria are read where they exist, and their absence is a reading rather than a crash
+- the method text is the authority: the line quotes a role file's run-hygiene section, and says so plainly when there is none
+- the advisory line is NOT a contract row — it is printed outside the row set and derives none of it
+- the recommendation names a seat strength and never a model, because this project passes no --model
+- every line of the advisory block carries its provenance, and the detector is not vacuous here either
+- the lightest ceremony tier is read off the table's first row rather than typed into the tool
 
 ## shell-frame
 

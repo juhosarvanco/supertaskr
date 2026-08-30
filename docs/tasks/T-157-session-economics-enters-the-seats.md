@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 priority: 36
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/checkpoints/, tools/e2e]
 builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---

@@ -1,10 +1,10 @@
 # State
 
-Updated: 2026-08-30 at the T-160 checkpoint — DISPATCH NOW PREFLIGHTS
-THE CARD (`brief.mjs --task T-NNN --preflight`, and a failed preflight
-gates the fence write in the same invocation); it found a true board
-defect on its first live pass (T-160-s4). Current record:
-docs/checkpoints/2026-08-30-T-160.md. Pre-compaction narrative:
+Updated: 2026-08-30 at the T-157 checkpoint — the brief now prints a
+derived seat-strength row (advisory, never a model, outranked by
+every human word), and the TEMPLATE's metrics slot is a stated
+obligation. Current record: docs/checkpoints/2026-08-30-T-157.md.
+Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -24,7 +24,7 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — T-157 dispatches next. Dispatch derives
+  this rewrite: NO lanes — T-159 dispatches next. Dispatch derives
   the brief, PREFLIGHTS the card (T-160 — a failed preflight refuses
   the manifest), then writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
@@ -50,15 +50,14 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-160` is DONE and merged — every future dispatch preflights its
-   card. Remaining night order (@human's ruling): `T-157` -> `T-159`
-   -> the FIRST standing triage under T-159's rules -> the
-   CONVENTIONS train (`T-111-s10`, `T-147`) -> `T-143`, `T-156-s1`
-   -> derive T-112's flip pairs (prep only, no dispatch). Board
-   items the preflight surfaced: `T-160-s4` (T-059's fence cannot
-   reach a file its criteria order written — a live planned-card
-   defect). Watch-list on any push: `T-161` (the stderr-drain
-   intermittent) and `T-153-s14` (one PR run answers it).
+1. `T-157` is DONE and merged (self-integrated on TASK-FORMAT's own
+   row, the reasons in its record). Remaining night order (@human's
+   ruling): `T-159` (preflight first) -> the FIRST standing triage
+   under its rules -> the CONVENTIONS train (`T-111-s10`, `T-147`)
+   -> `T-143`, `T-156-s1` -> derive T-112's flip pairs (prep only).
+   Board items the preflight surfaced: `T-160-s4` (T-059's fence
+   cannot reach a file its criteria order written). Watch-list on
+   any push: `T-161` (stderr-drain intermittent) and `T-153-s14`.
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release

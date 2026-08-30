@@ -18,13 +18,11 @@ opens with the card id that still holds its story.
   this file itself is under. The corrected read-first set reaches new
   projects (T-145) and the behaviour census is GENERATED rather than
   written (docs/CAPABILITIES.md, T-138-s1) — @human's T-138 ruling
-  delivered. What the set costs and why is the room's ledger; the
-  docs-protocol is in method/ at v0.1.7, so every future genesis
-  inherits the contract. ADR-020's layer is LANDED (2026-08-29):
+  delivered (costs: the room's ledger; docs-protocol in method/ at
+  v0.1.7). ADR-020's layer is LANDED (2026-08-29):
   determinism at the write (T-154), the method reds its own
   degradation (T-155, ten evals — every bump owes the eval block)
-  and watches its own health (T-156) — org-scale by construction,
-  nothing org-shaped before a second team.
+  and watches its own health (T-156) — org-scale by construction.
   ADR-018 stays owed to T-135 Half B. The repository has a human
   front door (T-158 — a README whose every link is verified against
   the record), and since the amnesty sitting (2026-08-29) the
@@ -32,7 +30,9 @@ opens with the card id that still holds its story.
   parked, 5 rejected), arrivals queue for T-159's rules. The e2e
   recipes probe the xargs dialect at run time (T-153-s6) and every seat
   RESOLVES the integration branch rather than assuming it
-  (T-153-s9) — the first fully green run followed.
+  (T-153-s9) — the first fully green run followed. The brief now
+  carries a derived seat-strength row and the record template a
+  stated metrics obligation (T-157, 2026-08-30).
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -94,8 +94,8 @@ opens with the card id that still holds its story.
   with `index --check`, never quote it. The drill taxonomy and the
   hand's measurement hazards are written rules (T-092/T-093 — a query
   that runs clean is not yet an answer), and the budget VALUE call
-  rides `T-151`. Since
-  T-156 (2026-08-29) the method watches its own health: fourteen
+  rides `T-151`. Since T-156 the method
+  watches its own health: fourteen
   control bands as data with measured reasons, doc-headroom bands
   derived from the budgets themselves, and the first official
   reading caught STATE breached while the merge was still landing.
