@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [method/runtime/sessions-schema.md, app-agent]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

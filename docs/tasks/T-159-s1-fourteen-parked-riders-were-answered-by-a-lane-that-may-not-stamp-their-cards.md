@@ -5,11 +5,11 @@ feature: F-01
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [docs/tasks/T-052-s5-integrator-md-now-holds-two-numbered-lists-and-every-citation-cites-by-number.md, docs/tasks/T-091-s4-the-predicted-tree-comparison-is-practised-everywhere-and-written-nowhere.md, docs/tasks/T-104-s4-four-defects-in-the-card-s-own-criteria-that-the-merge-reveals-rather-than-introduces.md, docs/tasks/T-124-s1-the-planner-must-run-git-bare-in-its-own-cwd-and-write-with-the-write-tool.md, docs/tasks/T-126-s5-two-fences-that-cannot-be-obeyed-as-written.md, docs/tasks/T-126-s6-a-lanes-gate-derivation-is-stale-at-its-own-tip-and-only-the-verifier-seat-was-told.md, docs/tasks/T-132-s2-method-is-a-code-input-and-no-standing-gate-fires-on-it.md, docs/tasks/T-132-s4-the-staged-state-rule-two-shipped-files-cite-does-not-exist.md, docs/tasks/T-132-s5-ruling-thirteen-sorts-by-when-and-never-by-who.md, docs/tasks/T-132-s6-rule-four-partitions-by-checkout-and-ports-are-machine-wide.md, docs/tasks/T-133-s3-step-5b-requires-the-contract-and-names-no-way-to-obey-it.md, docs/tasks/T-135-s4-a-half-dispatched-card-has-no-status-and-the-executor-role-forbids-the-workaround.md, docs/tasks/T-145-s2-a-kit-file-changed-under-a-fence-that-could-not-bump-the-version-that-describes-it.md, docs/tasks/T-152-row-eleven-lives-in-a-file-the-read-first-set-does-not-name.md]
 suggested_by: executor claude-opus-5@subagent @T-159
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
