@@ -2668,9 +2668,14 @@ export function conventionsBullet(md, phrase) {
  */
 export const DOC_BUDGETS = Object.freeze({
   "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
-  "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
+  // RE-LANDED 2026-08-30 (T-162, ADR-019 addendum 4). ROADMAP and
+  // CONVENTIONS only; STATE and ARCHITECTURE keep their 2026-08-27
+  // landings. `wc -c` at the re-landing commit, warn = ceil(landed x
+  // 1.25), fail = ceil(landed x 1.5) — the same rounding the 2026-08-27
+  // and 2026-08-29 landings used.
+  "docs/ROADMAP.md": { landed: 9801, warn: 12252, fail: 14702 },
   "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  "docs/CONVENTIONS.md": { landed: 110342, warn: 137928, fail: 165513 },
+  "docs/CONVENTIONS.md": { landed: 131514, warn: 164393, fail: 197271 },
 });
 
 /** Every live task card as a `{path, content}` entry, read off the tree

@@ -1,10 +1,13 @@
 # Roadmap
 
-Compacted 2026-08-27 under ADR-019 (docs/rooms/governing-docs.md). The
-contract: one present-tense paragraph per feature — capability now,
-what is next, card ids — and at most one new sentence per feature per
-merge, absorbed into the paragraph at the next edit. The story of any
-merge lives on its card; the exact behaviour census is
+Compacted 2026-08-27 under ADR-019 (docs/rooms/governing-docs.md),
+RE-LANDED 2026-08-30 by T-162 whose addendum to ADR-019 carries the new
+gate values. The contract: one present-tense paragraph per feature —
+capability now, what is next, card ids — and at most one new sentence
+per feature per merge, absorbed into the paragraph at the next edit.
+**A MERGE'S STORY IS ITS CARD'S AND ITS CHECKPOINT RECORD'S, NEVER
+THIS FILE'S**: docs/checkpoints/ holds one record per integration and
+a card id here is the pointer to both. The exact behaviour census is
 docs/CAPABILITIES.md (generated, currency-checked); the pre-compaction
 file, 1,199 lines of per-card chronicle, is permanently readable at
 `git show 08aef1c:docs/ROADMAP.md`, and every paragraph it carried
@@ -15,25 +18,21 @@ opens with the card id that still holds its story.
 - F-01: Method — the convention itself (method/), usable by hand.
   Runs this project daily: lanes, fences, verdicts, checkpoints, and
   since ADR-019 (2026-08-27) the three-tier governing-docs contract
-  this file itself is under. The corrected read-first set reaches new
-  projects (T-145) and the behaviour census is GENERATED rather than
-  written (docs/CAPABILITIES.md, T-138-s1) — @human's T-138 ruling
-  delivered (costs: the room's ledger; docs-protocol in method/ at
-  v0.1.8). ADR-020's layer is LANDED (2026-08-29):
-  determinism at the write (T-154), the method reds its own
-  degradation (T-155 — every bump owes the eval block)
-  and watches its own health (T-156) — org-scale by construction.
-  ADR-018 stays owed to T-135 Half B. The repository has a human
-  front door (T-158 — a README whose every link is verified against
-  the record), and since the amnesty sitting (2026-08-29) the
-  backlog is metabolized — 140 cards dispositioned (73 promoted, 62
-  parked, 5 rejected), arrivals queue for T-159's rules. CI's
-  first-contact classes are closed (T-153-s6/s9 — the dialect probed,
-  the branch resolved) and the first fully green run followed. The brief now
-  carries a derived seat-strength row and the record template a
-  stated metrics obligation (T-157, 2026-08-30). METHOD v0.1.8 IS LANDED
-  (T-159: metabolism rules, run hygiene, archive vocabulary, review
-  reconciliation — the evals fired on the release's own text).
+  this file itself is under. The behaviour census is GENERATED rather
+  than written (docs/CAPABILITIES.md, T-138-s1) and the corrected
+  read-first set reaches new projects (T-145). ADR-020's layer is
+  LANDED (2026-08-29) — determinism at the write (T-154), the method
+  redding its own degradation (T-155: every bump owes the eval block),
+  health bands over its own metrics (T-156) — and ADR-018 stays owed
+  to T-135 Half B. Suggestion arrivals queue for T-159's metabolism
+  rules, never a second amnesty. **THE LIVE METHOD VERSION IS
+  CONVENTIONS' FIRST-GOTCHA STAMP AND IS NEVER QUOTED HERE**; what a
+  bump moved is on its release card and that card's checkpoint
+  (v0.1.8: T-159). The rest of the ledger — T-158's human front door,
+  the amnesty sitting's dispositions, T-153-s6/s9's CI first-contact
+  classes and the first fully green run, T-157's derived seat-strength
+  row — is one record per merge in docs/checkpoints/. Next: T-135
+  Half B.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -41,9 +40,9 @@ opens with the card id that still holds its story.
   screen (T-062), a declared window minimum (T-051), diagnostics that
   stay reachable (T-066). Hardening continues as inherited backlog —
   the F-02 cards riding milestone 4 — with `app-shell`'s
-  umbrella-fence cost just cut by T-149, and the docs watcher's live
-  tests awaiting the CONVERGED state across platforms (T-153, CI's
-  first Linux fix). Next: T-149-s1…s5.
+  umbrella-fence cost cut by T-149, and the docs watcher's live tests
+  awaiting the CONVERGED state across platforms (T-153). Next:
+  T-149-s1…s5.
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer
@@ -54,12 +53,10 @@ opens with the card id that still holds its story.
   validated session ids (T-039), probe-only CLI resolution (T-060),
   fast honest cancel (T-043), typed failures that never cost a user an
   affordance (T-069/T-101/T-102/T-107/T-113), and nothing the runner
-  hands execve is unbounded (T-153-s2 — an oversized env pair costs
-  the value, never the turn). THE GATE THAT REMAINS is
-  not a card: no planner turn has ever run against a real model —
-  every stream ever seen is a fixture. `T-025-s2`, @human's, one real
-  timed genesis on an authenticated machine. The archaeology variant
-  stays parked (ADR-005).
+  hands execve is unbounded (T-153-s2). THE GATE THAT REMAINS is
+  milestone 3's, stated there and not restated here: no planner turn
+  has ever run to completion against a real model. The archaeology
+  variant stays parked (ADR-005).
 - F-04: Dispatch — worktrees, model@session, verify/merge, from the
   board; CLI as plumbing/power path
   The board reads its own lanes off git's files with no subprocess
@@ -69,13 +66,12 @@ opens with the card id that still holds its story.
   named slice deliberately spawns nothing. The fence is a PROPERTY at
   the write (T-154 — a dispatch-stamped manifest, a zero-dependency
   hook, hostile-payload verified), and dispatch PREFLIGHTS the card
-  itself (T-160, @human's — five claim classes re-derived at HEAD, a
-  failed preflight refusing the manifest, a live board defect found
-  on its first pass). Next: T-112 hands you the brief and lane
-  commands from the board (the slice's third clause); it is also the
-  board's most colliding card — derive the flip pairs first. Open
-  ruling: D5 (`model@session` per-adapter); D3 ruled narrow
-  2026-08-30 (both in rooms/cockpit-or-mirror.md).
+  itself (T-160 — a failed preflight refuses the manifest). Next:
+  T-112 hands you the brief and lane commands from the board (the
+  slice's third clause); it is also the board's most colliding card —
+  derive the flip pairs first. Open ruling: D5 (`model@session`
+  per-adapter); D3 ruled narrow 2026-08-30 (both in
+  rooms/cockpit-or-mirror.md).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
   Not started; follower-first ordering ruled in
@@ -97,14 +93,11 @@ opens with the card id that still holds its story.
   that runs clean is not yet an answer), and the budget VALUE call
   rides `T-151`. Since T-156 the method watches its own health
   (fourteen bands as data with measured reasons, doc-headroom bands
-  derived from the budgets; the first reading caught STATE breached
-  mid-merge).
-  The last declared cycle is BROKEN (T-127-s1's measured stop ->
-  T-127-s6, 2026-08-29): `arch cycles` answers ACYCLIC on main for
-  the first time, with C-17/C-18 minted and no import severed. The
-  file ceiling PRINTS from `index --check` every run (T-140: ~918
-  files at this tree's density), an oversize graph tells the map the
-  truth (payload shape: T-140-s1, @human's).
+  derived from the budgets). `arch cycles` ANSWERS ACYCLIC on main
+  since T-127-s6 (2026-08-29), with C-17/C-18 minted and no import
+  severed; the file ceiling PRINTS from `index --check` every run
+  (T-140), and an oversize graph tells the map the truth (payload
+  shape: T-140-s1, @human's).
 
 ## Milestones
 
@@ -121,13 +114,11 @@ Goal: interview completed, milestone 1 decomposed into exact tasks.
 ### Milestone 1 — the mirror (scoped 2026-08-14, interview Q7)
 Goal: open the nputer app and watch nputer being built on its own
 board — read-only story map of this repo; the method run by hand
-underneath. Progress: COMPLETE 2026-08-15, T-001…T-007 through the
-pipeline.
+underneath. COMPLETE 2026-08-15, T-001…T-007.
 
 ### Milestone 2 — the map slice (decided 2026-08-15, rooms/map-sequencing.md)
 Goal: the architecture map's vertical slice on nputer's own repo.
-Progress: COMPLETE 2026-08-15, T-008 → T-009 → T-011 → T-012; the map
-renders the repo's own drift.
+COMPLETE 2026-08-15, T-008 → T-009 → T-011 → T-012.
 
 ### Milestone 3 — in-app genesis (F-03)
 Goal: the planning interview as split view; decomposed at its own
@@ -135,16 +126,15 @@ Goal: the planning interview as split view; decomposed at its own
 every card is through the pipeline, and the arc a user walks is
 continuous: open a folder with no plan → be asked → answer → watch the
 answer become a file → watch the files become cards → press one button
-and stand in your new board. The full per-card chronicle (what each
-merge changed for a user, and what each verification caught) lives on
-the cards' own bodies and at `git show 08aef1c:docs/ROADMAP.md`; the
+and stand in your new board. The per-card chronicle lives on the
+cards' own bodies and at `git show 08aef1c:docs/ROADMAP.md`; the
 behaviour census is docs/CAPABILITIES.md.
 **THE MILESTONE IS NOT COMPLETE AND WHAT IT WAITS ON IS NOT A TASK**:
-no planner turn has ever been observed against a real model — this
-machine's `claude` OAuth token is revoked, so every stream the app has
-ever seen is a scripted fixture. One real, timed, end-to-end genesis
-on an authenticated machine (`T-025-s2`, @human) is the whole
-remaining gate.
+no planner turn has ever been observed running to completion against a
+real model — this machine's `claude` OAuth token is revoked, so every
+stream the app has ever seen is a scripted fixture. One real, timed,
+end-to-end genesis on an authenticated machine (`T-025-s2`, @human) is
+the whole remaining gate; `T-025-s5` carries its deadline half.
 
 ### Milestone 4 — dispatch (F-04) (decided 2026-08-19, @human D1 ruling)
 Goal: stop hand-writing the instructions that put an agent to work —
@@ -153,10 +143,11 @@ THE OTHERS ARE NOT, and hands you the exact brief and lane commands.
 Deliberately, not one card in it spawns a process (milestone 3's own
 hand-driven-first precedent, one role over).
 Rulings and standing facts: D1 ruled 2026-08-19; D2 taken (dispatch
-is C-15, slug `app-dispatch`); D3 ruled, D5 open. ~80 inherited-backlog
-cards carry `milestone: 4` without being slice content — a known,
-accepted cost of the ruling; a milestone census and a board census
-answer DIFFERENT questions, and neither is this file's to transcribe.
+is C-15, slug `app-dispatch`); D3 ruled, D5 open. Most cards carrying
+`milestone: 4` are inherited backlog rather than slice content — a
+known, accepted cost of the ruling, and the count is a DERIVATION, not
+a figure this file keeps; a milestone census and a board census answer
+DIFFERENT questions, and neither is this file's to transcribe.
 Progress: DERIVE IT — cross `^feature: F-04$` with each card's own
 `^status:` over `docs/tasks/`; the transcribed fraction went stale
 here under work nobody's merge did, repeatedly, which is why this line
