@@ -72,20 +72,103 @@ pub struct IndexOptions {
     /// Serialized-size budget: the emitted document never exceeds this,
     /// because [`emit::apply_budget`] drops symbol arrays until it fits.
     ///
-    /// DEFAULT `1_040_000`, WHICH IS `MAX_FILE_BYTES - 8_576`. The number
-    /// this must stay under is the docs collector's per-file cap,
-    /// `docs_watch.rs`'s `MAX_FILE_BYTES` (1 MiB) — `graph.json` is
-    /// subject to BOTH, because the collector accepts `.json` only under
+    /// DEFAULT `2_145_959`, AND THE ARITHMETIC IS BELOW BECAUSE THIS
+    /// NUMBER IS DERIVED RATHER THAN CHOSEN (T-140-s4, @human's ruling of
+    /// 2026-08-30: *"yes, raise the budget — go ahead"*).
+    ///
+    /// **WHAT THIS CONSTANT USED TO BE COUPLED TO, AND IS NOT ANY MORE.**
+    /// It was `MAX_FILE_BYTES - 8_576`: `docs_watch.rs`'s per-file
+    /// collector cap minus a gap, because `graph.json` was subject to
+    /// BOTH limits — the collector accepted `.json` under
     /// `docs/architecture/`, a rule written for this file. The two
-    /// failure modes are not alike and that asymmetry is the whole
-    /// argument: crossing THIS budget DEGRADES (symbol arrays go, files
-    /// and `import` edges never do, `truncated_*` is set); crossing the
-    /// collector's cap is a CLIFF (`SkipReason::Oversize`, and the pane
-    /// simply stops receiving the graph). So `max_graph_bytes <
-    /// MAX_FILE_BYTES` is what keeps the survivable failure in front of
-    /// the silent one, and it is ENFORCED rather than assumed, by
-    /// `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`,
-    /// which reads both constants instead of restating either.
+    /// failure modes were not alike and the asymmetry was the argument:
+    /// crossing THIS budget DEGRADES (symbol arrays go, files and
+    /// `import` edges never do, `truncated_*` is set), while crossing the
+    /// collector's cap was a CLIFF (`SkipReason::Oversize`, the pane
+    /// receiving nothing). `max_graph_bytes < MAX_FILE_BYTES` kept the
+    /// survivable failure in front of the silent one and was enforced by
+    /// `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`.
+    /// **T-140-s4 removed the `.json` branch, so the collector no longer
+    /// governs this file at any size**, that test is retired with its
+    /// reason at its own site, and the cliff cannot occur — a file that is
+    /// never eligible is never `Oversize`. There is now exactly ONE limit
+    /// on the graph and it is this one; it is a DEGRADATION threshold and
+    /// nothing else.
+    ///
+    /// **THE DERIVATION, IN THREE TERMS, ALL MEASURED AT `5073db6` WITH
+    /// THIS CARD'S OWN DIFF IN THE TREE.**
+    ///
+    /// 1. **WHAT THE GRAPH WANTS TO BE: 1 134 406 bytes.** Not a
+    ///    forecast — the budget was set to 100 000 000 and
+    ///    `index --check` asked: `fresh index: 1134406 bytes · 199 files
+    ///    · 2418 symbols · 2331 edges`, `truncated_*` absent. The
+    ///    committed graph at the same ref was 1 039 590 with
+    ///    `truncated_symbols: true, truncated_files: 4`, so the old
+    ///    budget was costing 351 symbols across four files.
+    /// 2. **WHAT THAT COSTS THE ONLY CONSUMER LEFT: about 1 ms, and it
+    ///    does not bind.** The graph is now read only on a DRILL —
+    ///    `arch_cmd::load`, `fs::read` plus
+    ///    `serde_json::from_slice::<Graph>`, Rust-side, never crossing
+    ///    IPC. Measured by `app/src-tauri/tests/graph_budget_bench.rs`
+    ///    on `--release`, min of 9 trials: **1 048 us at the live
+    ///    1 039 590 bytes**, 1 900 us at 2.0 MB, 3 719 us at 4.0 MB,
+    ///    24 787 us at 25.8 MB — linear, no knee, ~0.93 us per KB. At
+    ///    this ceiling one drill costs about 2.0 ms, paid on a click. The
+    ///    same harness measures the docs snapshot the app ships on EVERY
+    ///    push at 9 830 us to collect and 4 094 us to encode, so the
+    ///    drill is an order of magnitude off the stage that binds. That
+    ///    is why term 2 does not set the number — it only proves term 3
+    ///    is affordable.
+    /// 3. **GROWTH ROOM: 1 011 553 bytes, which is this graph's ENTIRE
+    ///    MEASURED LIFETIME GROWTH.** The first `graph.json` blob this
+    ///    repository ever committed was 122 853 bytes; its natural size
+    ///    today is 1 134 406. So the room granted is exactly what the
+    ///    graph has grown since it existed: the budget binds again when
+    ///    the repository has doubled the whole of its history. One
+    ///    measured quantity, no free coefficient to argue about.
+    ///
+    /// So `1_134_406 + (1_134_406 - 122_853) = 2_145_959`.
+    ///
+    /// **AND TERM 1 IS STAMPED AT THE STATE IT WAS MEASURED IN, WHICH IS
+    /// NOT THIS ONE — BECAUSE WRITING THE DERIVATION DOWN MOVED IT.**
+    /// `1_134_406` was read part-way through this card, before the rest
+    /// of its own `.rs` edits landed — this comment and
+    /// `tests/graph_budget_bench.rs`'s drill stage among them, both
+    /// inside the walk. The regen at the finished tree answers
+    /// `1_134_409`: **three bytes**, spent describing the measurement.
+    /// The constant is deliberately NOT chased to a fixed point. Each
+    /// correction is itself indexed, so convergence would be precision
+    /// about nothing; this is a CEILING, three bytes against 1 011 550 of
+    /// headroom, and the authority for what the graph weighs today is
+    /// `index --check`'s `budget:` line rather than this page.
+    ///
+    /// **CROSS-CHECKED IN ORDINARY MERGES, WHICH IS THE UNIT THE ALARM
+    /// SPEAKS.** [`crate::check::WARN_HEADROOM_BYTES`] is one ordinary
+    /// merge's growth of this graph, re-derived at this ref as **13 921**
+    /// bytes (mean of the 68 positive single-commit growths; median
+    /// 4 501, max 241 980). The room above is 1 011 553 / 13 921 =
+    /// **72.7 ordinary merges**, against **68** growths on this graph's
+    /// entire record. Two independent framings — "double the lifetime"
+    /// and "one more lifetime of merges" — agreeing to within 7% is the
+    /// reason this number is stated rather than rounded to 2 MiB, which
+    /// would have been 2 097 152 and would have meant nothing.
+    ///
+    /// **WHAT IT BUYS ON THE CURVE THAT ACTUALLY DECIDES THE MAP'S
+    /// CEILING — read `check::floor_line`, never this line.** The floor
+    /// (files plus `import` edges, which truncation may never reclaim) is
+    /// linear in file count: 230 079 bytes over 199 files, 1 156
+    /// bytes/file at this ref, so graceful degradation now ends at about
+    /// 1 856 files where it ended at about 898 — both printed by that
+    /// line, neither computed here. That is a factor and not
+    /// a new curve, exactly as T-140 said a raise would be — which is why
+    /// this constant is still not the answer to "how large a project can
+    /// the map hold". It is the answer to "how long before the map stops
+    /// answering what is in a file".
+    ///
+    /// **AND THE FIGURES BELOW THIS LINE ARE T-139's AND T-140's, AT
+    /// THEIR OWN REFS.** They are kept because they are the measurement
+    /// that argued the old number, and every one of them is about a
+    /// delivery path this card removed. Read them as history.
     ///
     /// THE VALUE IS MEASURED, at `13c736e` on an Apple M5 / macOS 26.6
     /// (25G72), by `app/src-tauri/tests/graph_budget_bench.rs` and
@@ -154,10 +237,15 @@ impl Default for IndexOptions {
             root: PathBuf::new(),
             cache_dir: None,
             languages: vec![Lang::Ts, Lang::Js, Lang::Rust],
-            // T-139: `MAX_FILE_BYTES - 8_576`. The field's doc above
-            // carries the measurement and the argument; the pin that
-            // holds the relation is in docs_watch.rs's tests.
-            max_graph_bytes: 1_040_000,
+            // T-140-s4: the graph's natural size at `5073db6` plus its
+            // whole measured lifetime growth —
+            // `1_134_406 + (1_134_406 - 122_853)`. The field's doc above
+            // carries every term, its measurement and its cross-check.
+            // No pin holds it to another constant any more: the
+            // cross-crate relation this used to sit under was retired
+            // with the collector's `.json` branch, and what watches this
+            // number now is `check::WARN_HEADROOM_BYTES`'s alarm.
+            max_graph_bytes: 2_145_959,
         }
     }
 }

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { TaskDetailPanel } from "@/components/board/TaskDetailPanel";
 import type { TaskRef } from "@/lib/task-detail";
 import type { IndexOutcomePayload } from "@/lib/watcher-store";
-import type { SkipReason } from "@/lib/docs-model";
 import {
   deriveArchitecture,
   type DerivedArchitecture,
@@ -69,18 +68,33 @@ import { MAP_LENSES, type MapLens } from "./map-lens";
 /** Zoom clamp (recorded silence: 0.25–3). */
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 3;
-/** The docs collector's per-file cap — over it, the graph leaves the
- * snapshot; the header hint says so after a manual index.
+/* T-140-s4 — `COLLECTOR_CAP_BYTES` AND `graphSkip` ARE RETIRED HERE,
+ * WITH `map-too-large`. THIS IS THE NOTE THAT OWES THE READER WHAT
+ * SPEAKS NOW; the banner's own site below carries the ruling.
  *
- * IT USED TO SAY SO ONLY THEN, WHICH IS WHY `graphSkip` EXISTS (T-140).
- * A manual index is an in-SESSION event; the ordinary case is a user
- * opening a project whose committed graph is already over the cap, and
- * for that user there is no outcome to read. The collector already
- * reports the file it left out — `SkipReason::Oversize` on
- * `docs/architecture/graph.json` — and the shell already carries that
- * list; the map simply was not given it, so it rendered the one sentence
- * that is false in exactly this state: "index not run". */
-const COLLECTOR_CAP_BYTES = 1_048_576;
+ * All three said one thing in three places: *the committed graph is
+ * subject to the docs collector's per-file cap, and may be withheld by
+ * it.* `is_collected_docs_path` no longer admits the graph at any size
+ * (docs_watch.rs), so that sentence is not merely unreachable — it is
+ * FALSE, and a 1 MiB constant transcribed here would have gone on
+ * printing "over the snapshot cap" about a file no snapshot carries.
+ * `COLLECTOR_CAP_BYTES` was a second copy of `MAX_FILE_BYTES` living in
+ * another language from the thing it claimed, which is the shape
+ * CONVENTIONS' "a comment that restates a measured figure is a second
+ * implementation" warns about; it is deleted rather than updated.
+ *
+ * WHAT THE PANE STILL READS ABOUT A GRAPH THAT COULD NOT FULLY ARRIVE:
+ * `stats.truncatedSymbols` / `stats.truncatedFiles` in the graph itself,
+ * rendered by the `no-graph`/oversize modes below and by the rollup's own
+ * truncation flag. Those report DEGRADATION — symbols thin, files and
+ * import edges intact — and degradation is the only failure this pipeline
+ * still has. What left with the banner is the report of a CLIFF, and it
+ * left because the cliff cannot happen: nothing between the emitter and
+ * this pane discards the graph for being large. The cliff's remaining
+ * cousin — the emitter spending its own budget — is reported outside the
+ * app entirely, by `nputer_index::check`'s headroom alarm at
+ * `index --check`.
+ */
 
 interface Viewport {
   x: number;
@@ -125,26 +139,24 @@ export function relativeTime(thenMs: number, nowMs: number): string {
 /** The header hint renders from the IN-SESSION outcome — never the
  * file (ADR-014: the committed payload carries no volatile stats).
  *
- * `graphSkip` is the one STANDING fact it does read, and it is read only
- * where the outcome cannot answer (T-140). A graph the collector left
- * out is indistinguishable from an absent one in `derived`, so without
- * it this hint answers "index not run" for a project whose index has run
- * perfectly well and produced a file too large to deliver — the state
- * this card exists for, reported as its opposite. */
+ * T-140-s4 took its fourth argument away. `graphSkip` was the one
+ * STANDING fact it read, and it read it only where the outcome could not
+ * answer (T-140): a graph the collector had withheld was indistinguishable
+ * from an absent one in `derived`, so without it the hint said "index not
+ * run" about a project whose index had run perfectly well. The collector
+ * no longer withholds the graph — it no longer carries it — so the state
+ * that argument existed to name cannot occur, and "index not run" is once
+ * again the true answer whenever `derived` has no graph. The `· over the
+ * snapshot cap` suffix went with it for the same reason and a sharper
+ * one: it was still reachable, and after the removal it would have been
+ * reachable and WRONG. */
 export function indexHint(
   outcome: IndexOutcomePayload | null,
   derived: DerivedArchitecture,
   nowMs: number,
-  graphSkip?: SkipReason,
 ): string {
   if (outcome?.kind === "indexed") {
-    const base = `indexed ${relativeTime(outcome.indexedAtMs, nowMs)} · ${outcome.files} files`;
-    return outcome.graphBytes > COLLECTOR_CAP_BYTES
-      ? `${base} · over the snapshot cap`
-      : base;
-  }
-  if (graphSkip !== undefined) {
-    return graphSkip === "oversize" ? "graph too large to deliver" : "graph not delivered";
+    return `indexed ${relativeTime(outcome.indexedAtMs, nowMs)} · ${outcome.files} files`;
   }
   if (derived.indexNotRun) return "index not run";
   return `committed graph · ${derived.indexedFileCount} files`;
@@ -153,21 +165,31 @@ export function indexHint(
 export function MapView({
   model,
   graphContent,
-  graphSkip,
   indexing,
   indexOutcome,
   onRunIndex,
 }: {
   model: ProjectParseResult;
-  graphContent?: string;
   /**
-   * Why the collector left `docs/architecture/graph.json` out of the
-   * snapshot, when it did (T-140). Absent means it was not skipped —
-   * which is NOT the same as present, and is exactly the distinction
-   * this pane could not make: a graph withheld by a cap and a graph that
-   * was never written both arrive here as `graphContent === undefined`.
+   * The whole committed graph, when something handed it over.
+   *
+   * **IT STAYS, AND T-140-s4 IS THE CARD THAT HAD TO DECIDE WHETHER IT
+   * WOULD.** Removing the collector's `.json` branch and removing this
+   * prop are two decisions, not one: the branch was the REAL APP's supply
+   * of these bytes, and this prop is the input to the pane's documented
+   * BROWSER fallback. `rollup-source.ts` answers `unavailable: notTauri`
+   * in a served bundle — it has no `invoke` — and this pane then derives
+   * from `graphContent` exactly as it did before the channel existed,
+   * which is the honest degradation that module's own doc promises. The
+   * feed is `window.__nputerDocsHarness.apply` (watcher-store.ts, DEV +
+   * `!isTauri`), and `app/test/map-dogfood-render.test.tsx` drives this
+   * path against the live repository's own graph on every `npm test`.
+   *
+   * So: undefined in the shipped desktop app from this card onward, and
+   * load-bearing everywhere the channel cannot answer. Removing it would
+   * remove the fallback, which nobody ruled.
    */
-  graphSkip?: SkipReason;
+  graphContent?: string;
   indexing: boolean;
   indexOutcome: IndexOutcomePayload | null;
   onRunIndex: () => void;
@@ -769,7 +791,7 @@ export function MapView({
             </span>
           ) : (
             <span data-testid="map-index-hint" className="font-mono text-xs text-muted-foreground">
-              {indexHint(indexOutcome, derived, Date.now(), graphSkip)}
+              {indexHint(indexOutcome, derived, Date.now())}
             </span>
           )}
           <Button
@@ -810,25 +832,32 @@ export function MapView({
               </span>
             </p>
           )}
-          {/* T-140 — A PROJECT TOO LARGE TO MAP SAYS SO, AND IT SAYS SO
-              WITHOUT A BUTTON. Every other state in this banner has
-              "Run index" as its remedy, and for this one that offer is
-              the defect rather than the fix: the index HAS run, it
-              wrote a correct graph, and the graph is larger than the
-              channel that carries it — so re-running writes the same
-              file and nothing changes. Silence was the old behaviour
-              and a false "index not run" was worse than silence. */}
-          {derived.indexNotRun && graphSkip === "oversize" && (
-            <p data-testid="map-too-large" className="text-sm">
-              <span className="font-semibold">too large to map</span>{" "}
-              <span className="text-secondary-foreground">
-                — the committed graph is over the snapshot cap, so it never reaches this
-                pane. The index ran and the file is fine; re-running writes the same one.
-                Declared components only, every edge planned.
-              </span>
-            </p>
-          )}
-          {derived.indexNotRun && graphSkip !== "oversize" && (
+          {/* T-140-s4 — `map-too-large` STOOD HERE AND IS RETIRED BY
+              @human's ruling of 2026-08-30 ("retire it"). THE RULING
+              DID NOT DISCHARGE THE OBLIGATION, SO HERE IS THE SENTENCE
+              IT OWES: what speaks now is `truncated_files` /
+              `truncated_symbols` in the emitted graph and
+              `nputer_index::check`'s headroom alarm at `index --check`,
+              and both of those report DEGRADATION — symbols thinned,
+              files and import edges kept. What vanishes with this banner
+              is the report of a CLIFF that can no longer happen, because
+              `is_collected_docs_path` no longer carries the graph at any
+              size and a file that is never collected is never
+              `SkipReason::Oversize`.
+
+              WHAT IT SAID AND WHY IT MATTERED (T-140 built it as the
+              answer to a measured silence): every other state in this
+              banner has "Run index" as its remedy, and for a graph the
+              collector had withheld that offer was the defect rather
+              than the fix — the index HAD run, it wrote a correct graph,
+              and the graph was larger than the channel carrying it, so
+              pressing the button rewrote the same file. Silence was the
+              behaviour before it and a false "index not run" was worse
+              than silence. Both of those are gone with the state, not
+              with the banner: "index not run" below is TRUE again
+              whenever `derived` has no graph, and the arm that used to
+              be its exception is the one this comment replaces. */}
+          {derived.indexNotRun && (
             <div className="flex items-center gap-2.5">
               <p className="text-sm text-secondary-foreground">
                 {graphUnreadable

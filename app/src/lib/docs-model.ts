@@ -23,8 +23,24 @@ import {
 /** Paths the model derives from, relative to the project dir (POSIX). */
 export const ROADMAP_FILE = "docs/ROADMAP.md";
 
-/** The committed reality layer (ADR-014), delivered by the collector's
- * .json rule (T-012). */
+/**
+ * The committed reality layer (ADR-014).
+ *
+ * **THIS PASSTHROUGH STAYS, AND T-140-s4 IS THE CARD THAT DECIDED IT.**
+ * Until that card the constant named a path the collector's `.json` rule
+ * (T-012) actually delivered; it no longer does, and removing this fold
+ * along with the rule was the other half of the choice. It stays because
+ * this fold is not the collector's — it is the SNAPSHOT's, and the
+ * snapshot has a second producer: `window.__nputerDocsHarness.apply`
+ * hands `applyDocsPayload` whatever payload a caller composes (DEV +
+ * `!isTauri`, watcher-store.ts). That is how the browser bundle and the
+ * e2e lane drive the shell's real reducers, and it is the supply line
+ * for `MapView`'s documented `graphContent` fallback, which
+ * `rollup-source.ts` promises for exactly the case its channel cannot
+ * serve (`unavailable: notTauri`). Delete this and the fallback has no
+ * input; keeping it costs one `if` over a path the desktop app will
+ * never send.
+ */
 export const GRAPH_FILE = "docs/architecture/graph.json";
 
 /** One file as delivered by the Rust side. */
@@ -277,7 +293,10 @@ export interface DocsModelState {
   fileCount: number;
   /**
    * Raw graph.json bytes as delivered, or undefined when the snapshot
-   * carries none (index not run / over the collector cap). DELIBERATELY
+   * carries none — which since T-140-s4 is EVERY snapshot the desktop
+   * app's collector produces, the file having left that pipeline. What
+   * still reaches this field is a harness-composed payload (see
+   * `GRAPH_FILE` above). DELIBERATELY
    * no last-good fallback (T-012 plan §4): ADR-014 forbids hand-editing,
    * so a corrupt graph is an abnormal state whose designed recovery is
    * regeneration — parseGraph degrades it to the index-not-run family
