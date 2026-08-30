@@ -1,8 +1,8 @@
 # State
 
-Updated: 2026-08-31 at T-177's close — records:
-docs/checkpoints/2026-08-31-T-177-the-backbone-stops-vanishing-silently.md,
-with T-112-s3's and T-140-s4's beside it.
+Updated: 2026-08-31 at T-172's close — record:
+docs/checkpoints/2026-08-31-T-172-the-chrome-rulings-land.md; T-177's,
+T-112-s3's and T-140-s4's are beside it. FOUR LANES LANDED tonight.
 **THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
 budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
 bytes (derive: `index --check`). Every fence is dispatchable again.
@@ -48,8 +48,12 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s1` and `T-153-s8` (executors); `T-172` APPROVED
-   and awaiting merge. LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`.
+1. IN FLIGHT: `T-112-s1` and `T-153-s8` (executors). LANDED tonight:
+   `T-140-s4`, `T-112-s3`, `T-177`, `T-172`.
+   **A TRIAGE SITTING IS CALLED BY A BAND, not a cadence**:
+   `triage/net-arrivals-per-window` reads 10 against a drift line of 9
+   — `T-140-s8`, `T-140-s9`, `T-172-s1`, `T-179`, `T-181` and more,
+   none dispositioned.
 2. THEN, no blocker left: `T-178`, `T-171`, `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
    OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
    `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
@@ -113,11 +117,14 @@ it.
   unverified for hours. Batch pushes; watch one run at a time.
 - **THE BOOT GATE AND THE HEALTH BANDS ARE OWED AT EVERY CHECKPOINT**
   (T-046, T-156) and were skipped across four records on 2026-08-30.
-  The health run is what found this file's own breached band.
+  The health run found this file's own breached band. **FEED IT
+  `--readings`** over the captured `cargo test`, `index --check` and
+  e2e output, or three bands answer UNREAD and the run is not a claim
+  about the tree.
 
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-177-the-backbone-stops-vanishing-silently.md.
+  2026-08-31-T-172-the-chrome-rulings-land.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
