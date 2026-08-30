@@ -27,6 +27,10 @@ mod graph;
 mod hash;
 mod parse;
 mod resolve;
+/// T-140-s1: the map's resting payload and the pull that answers for what
+/// is on screen — the reality side rolled up to components, flat in file
+/// count by construction.
+pub mod rollup;
 mod walk;
 pub mod watch;
 
@@ -39,6 +43,7 @@ use std::path::{Path, PathBuf};
 pub use diff::{diff, GraphDiff};
 pub use error::IndexError;
 pub use graph::{DepthSite, Edge, FileEntry, Graph, Lang, Package, Stats, Symbol, Unresolved};
+pub use rollup::{detail, rollup, stable_detail_json, stable_rollup_json, Detail, Rollup};
 
 use extract::Extractor;
 

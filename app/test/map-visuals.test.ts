@@ -36,6 +36,12 @@ function component(partial: Partial<DerivedComponent>): DerivedComponent {
     hasDrift: false,
     tasks: [],
     ...partial,
+    // T-140-s1: AFTER the spread, so the count defaults to the fixture's
+    // own list length and a caller that passes `files` keeps the two
+    // agreeing without saying it twice — while a caller that means "many
+    // files, none delivered yet" (the rollup mode) says `fileCount`
+    // explicitly and gets it.
+    fileCount: partial.fileCount ?? partial.files?.length ?? 0,
   };
 }
 
@@ -346,13 +352,13 @@ describe("edges", () => {
 
 describe("finding attribution + text", () => {
   const findings: DriftFinding[] = [
-    { rule: "D1", id: "D1:C-05->C-06", from: "C-05", to: "C-06", fileEdges: [
+    { rule: "D1", id: "D1:C-05->C-06", from: "C-05", to: "C-06", observedCount: 2, fileEdges: [
       { from: "app/test/a.test.ts", to: "lib/parser" },
       { from: "app/test/b.test.ts", to: "lib/parser" },
     ] },
-    { rule: "D2", id: "D2:unmapped", files: ["src/x.ts", "src/y.ts"] },
+    { rule: "D2", id: "D2:unmapped", files: ["src/x.ts", "src/y.ts"], count: 2 },
     { rule: "D3", id: "D3:C-07", component: "C-07", informational: false },
-    { rule: "D4", id: "D4:src/shared.ts", path: "src/shared.ts", ids: ["C-05", "C-08"] },
+    { rule: "D4", id: "D4:src/shared.ts", path: "src/shared.ts", ids: ["C-05", "C-08"], count: 1 },
     { rule: "D5", id: "D5:C-05->C-99", from: "C-05", to: "C-99" },
   ];
 
@@ -429,12 +435,12 @@ describe("finding attribution + text", () => {
       component: "C-01",
       informational: true,
     };
-    const before = driftFooter(findings, []);
-    expect(before).toBe(driftFooter([...findings, informational], []));
+    const before = driftFooter(findings, 0);
+    expect(before).toBe(driftFooter([...findings, informational], 0));
     // and the control: a NON-informational D3 on the same component does
     // move it, so this is not a footer that ignores D3 entirely.
     const real: DriftFinding = { rule: "D3", id: "D3:C-01", component: "C-01", informational: false };
-    expect(driftFooter([...findings, real], [])).not.toBe(before);
+    expect(driftFooter([...findings, real], 0)).not.toBe(before);
   });
 
   it("evidence lists cap at four leaves", () => {
@@ -442,14 +448,15 @@ describe("finding attribution + text", () => {
       rule: "D2",
       id: "D2:unmapped",
       files: ["a/1.ts", "a/2.ts", "a/3.ts", "a/4.ts", "a/5.ts", "a/6.ts"],
+      count: 6,
     };
     expect(findingText(many).evidence).toBe("1.ts · 2.ts · 3.ts · 4.ts · +2 more");
   });
 
   it("the drift-overlay footer counts findings, components, unclaimed files", () => {
-    expect(driftFooter(findings, ["src/x.ts", "src/y.ts"])).toBe(
+    expect(driftFooter(findings, 2)).toBe(
       "5 findings across 2 components · 2 unclaimed files",
     );
-    expect(driftFooter([], [])).toBe("0 findings across 0 components");
+    expect(driftFooter([], 0)).toBe("0 findings across 0 components");
   });
 });

@@ -490,22 +490,41 @@ export interface FindingText {
   evidence?: string;
 }
 
+/**
+ * T-140-s1 — THE SENTENCE READS THE COUNT AND THE EVIDENCE LINE READS THE
+ * LIST, and since the rollup channel the two come apart.
+ *
+ * In the graph-derived mode a finding carries its file-level bodies and
+ * both halves render exactly as before. In the rollup mode the bodies are
+ * one pull away and only the counts travelled, so the SENTENCE — the fact
+ * — is unchanged and the EVIDENCE line is ABSENT rather than wrong. A
+ * sentence computed from `files.length` would read "0 files claimed by no
+ * component" over a project with hundreds: an absent list must never
+ * become a stated zero, which is the same defect T-140 found in the
+ * pane's "index not run" over a project whose index had run.
+ */
 export function findingText(finding: DriftFinding): FindingText {
   switch (finding.rule) {
     case "D1": {
       const files = [...new Set(finding.fileEdges.map((e) => e.from))];
-      return {
+      const text: FindingText = {
         label: "D1",
         sentence: `${finding.from} imports ${finding.to} without declaring the dependency.`,
-        evidence: evidenceList(files),
       };
+      if (files.length > 0) text.evidence = evidenceList(files);
+      else if (finding.observedCount > 0) {
+        text.evidence = `${finding.observedCount} file edge${finding.observedCount === 1 ? "" : "s"}`;
+      }
+      return text;
     }
-    case "D2":
-      return {
+    case "D2": {
+      const text: FindingText = {
         label: "D2",
-        sentence: `${finding.files.length} file${finding.files.length === 1 ? "" : "s"} claimed by no component.`,
-        evidence: evidenceList(finding.files),
+        sentence: `${finding.count} file${finding.count === 1 ? "" : "s"} claimed by no component.`,
       };
+      if (finding.files.length > 0) text.evidence = evidenceList(finding.files);
+      return text;
+    }
     case "D3":
       return finding.informational
         ? {
@@ -518,11 +537,21 @@ export function findingText(finding: DriftFinding): FindingText {
             sentence: `${finding.component} is declared but its globs match no indexed file.`,
           };
     case "D4":
-      return {
-        label: "D4",
-        sentence: `${finding.path} is claimed by ${finding.ids.length} components — ${finding.ids.join(", ")}.`,
-        evidence: `first by component id order wins (${finding.ids[0]})`,
-      };
+      // The TALLY form (rollup mode): the per-path bodies did not travel,
+      // so the fact is stated as a number and no claimant is named. It
+      // stays a D4 rather than becoming nothing, because "some paths are
+      // claimed twice" is exactly the kind of registry defect a reader
+      // must be told about even when the pane cannot yet say which.
+      return finding.ids.length === 0
+        ? {
+            label: "D4",
+            sentence: `${finding.count} path${finding.count === 1 ? "" : "s"} claimed by more than one component.`,
+          }
+        : {
+            label: "D4",
+            sentence: `${finding.path} is claimed by ${finding.ids.length} components — ${finding.ids.join(", ")}.`,
+            evidence: `first by component id order wins (${finding.ids[0]})`,
+          };
     case "D5":
       return {
         label: "D5",
@@ -532,10 +561,14 @@ export function findingText(finding: DriftFinding): FindingText {
   }
 }
 
-/** Drift-overlay footer: the pane-level summary line. */
+/** Drift-overlay footer: the pane-level summary line.
+ *
+ * Takes the unclaimed COUNT and not the list (T-140-s1): the number is
+ * true in both modes and the list is not, and this line only ever said a
+ * number about it. */
 export function driftFooter(
   findings: readonly DriftFinding[],
-  unmappedFiles: readonly string[],
+  unmappedCount: number,
 ): string {
   // T-033: the footer counts DRIFT, so an informational D3 is out of both
   // halves — otherwise the pane reports a finding count no node's ring
@@ -550,8 +583,8 @@ export function driftFooter(
   const parts = [
     `${drift.length} finding${drift.length === 1 ? "" : "s"} across ${components.size} component${components.size === 1 ? "" : "s"}`,
   ];
-  if (unmappedFiles.length > 0) {
-    parts.push(`${unmappedFiles.length} unclaimed file${unmappedFiles.length === 1 ? "" : "s"}`);
+  if (unmappedCount > 0) {
+    parts.push(`${unmappedCount} unclaimed file${unmappedCount === 1 ? "" : "s"}`);
   }
   return parts.join(" · ");
 }

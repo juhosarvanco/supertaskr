@@ -500,8 +500,8 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     return [...found].sort();
   }
 
-  it("the frontend reaches exactly the eleven commands it is allowed", () => {
-    // The whole set, spelled out: an eleventh would fail this line by
+  it("the frontend reaches exactly the thirteen commands it is allowed", () => {
+    // The whole set, spelled out: a fourteenth would fail this line by
     // name, and so would a rename. `pick_project_folder` /
     // `pick_genesis_folder` / `start_genesis_here` go through one call
     // site with a variable, so they are asserted against the Rust handler
@@ -521,7 +521,18 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // arguments — the session id they act on is read Rust-side out of
     // `.nputer/sessions.json` through its own gate and never crosses the
     // boundary in either direction.
+    //
+    // T-140-s1 ADDS TWO — `arch_rollup` and `arch_detail`, the map's own
+    // channel — and they are the reason the map stopped needing a payload
+    // that is linear in file count. `arch_rollup` is zero-argument like
+    // every command above it. `arch_detail` is the FIRST here to take an
+    // argument, and it is a KEY into a document the Rust side has just
+    // read (`c:<component-id>` / `f:<graph file id>`), never a path this
+    // process opens — so ADR-010's containment is kept rather than
+    // reopened, and ADR-012's grant set is a 0-line diff (`acl_pin.rs`).
     expect(frontendCommands()).toEqual([
+      "arch_detail",
+      "arch_rollup",
       "docs_snapshot",
       "genesis_cancel",
       "genesis_fresh",
@@ -536,7 +547,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     ]);
   });
 
-  it("Rust exposes exactly fifteen commands, and T-126 added F-04's first", () => {
+  it("Rust exposes exactly seventeen commands, and T-140-s1 added the map's own channel", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -552,7 +563,14 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // deliberately NOT in `frontendCommands()` above — the card asks for
     // the reader to be REACHABLE, and no criterion asks the shell to call
     // it yet.
+    // T-140-s1 ADDS TWO — the sixteenth and seventeenth. Unlike
+    // `dispatch_lanes` they ARE in `frontendCommands()` above: this card's
+    // criteria ask the pane to REST on the rollup and to PULL detail, so
+    // a channel the shell never calls would be the whole defect rather
+    // than a deferred wiring.
     expect(names.sort()).toEqual([
+      "arch_detail",
+      "arch_rollup",
       "dispatch_lanes",
       "docs_snapshot",
       "genesis_cancel",

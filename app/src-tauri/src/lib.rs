@@ -43,6 +43,13 @@ pub mod churn;
 /// the declaration that ends the silence would arrive wearing a warning
 /// per item.
 pub mod dispatch;
+/// T-140-s1 (C-12's data, C-05's registration): the map's own channel —
+/// the component rollup at rest and file-level detail on a pull, so the
+/// pane stops needing a payload that is linear in file count. `pub` for
+/// the reason `docs_watch` and `churn` are: the seam is driven directly
+/// by tests, and `arch_cmd.rs` states the containment argument its one
+/// argument rests on.
+pub mod arch_cmd;
 mod index_cmd;
 
 /// T-021: the pinned webview ACL surface (test-only module — the pin
@@ -58,6 +65,7 @@ use tauri::{Emitter, Listener, Manager};
 use tauri_plugin_dialog::DialogExt;
 
 use agent::{AgentState, CancelOutcome, GenesisStatus, SendOutcome, StartOutcome};
+use arch_cmd::{DetailOutcome, RollupOutcome};
 use churn::{ChurnDisabled, ChurnOutcome};
 use docs_watch::{PickOutcome, ProjectStatus, WatchState};
 use index_cmd::IndexOutcome;
@@ -339,6 +347,76 @@ async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
     .await
     .unwrap_or_else(|err| IndexOutcome::Error {
         message: format!("index task failed: {err}"),
+    })
+}
+
+/// T-140-s1: THE SIXTEENTH COMMAND — the map's resting payload.
+///
+/// **ZERO ARGUMENTS, the `index_repo`/`repo_churn`/`dispatch_lanes`
+/// pattern.** The project root comes from `WatchState`, the graph's
+/// location is a `&'static` relative path inside the crate, and what
+/// comes back is a picture whose size is a function of the REGISTRY
+/// rather than of the tree. No webview grant moves — an app command is
+/// not a grant, which is the whole ADR-012 point, so `acl_pin.rs`'s
+/// 92-grant `core:default` set is a 0-line diff across this card.
+///
+/// **WHY IT EXISTS RATHER THAN RIDING THE DOCS WATCHER.** T-140 ruled at
+/// `MAX_FILE_BYTES`'s own definition site that the graph LEAVES that
+/// pipeline: a broadcast of the whole docs tree cannot express "detail
+/// for what is on screen" at any cap, and the cap it would need is
+/// against a driver that is linear in file count. `arch_cmd.rs` carries
+/// the rest of the argument.
+///
+/// Reading and parsing a graph is blocking fs + serde work, so it goes
+/// through `spawn_blocking` like `index_repo`.
+#[tauri::command]
+async fn arch_rollup(app: tauri::AppHandle) -> RollupOutcome {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        arch_cmd::run_rollup(&state)
+    })
+    .await
+    .unwrap_or_else(|err| RollupOutcome::Unreadable {
+        message: format!("rollup task failed: {err}"),
+    })
+}
+
+/// T-140-s1: THE SEVENTEENTH COMMAND — file-level detail for ONE thing
+/// the user opened.
+///
+/// **THE FIRST MAP COMMAND THAT TAKES AN ARGUMENT, AND THE ARGUMENT IS
+/// NOT A PATH.** `target` is a KEY into the document this command has
+/// just read — `c:<component-id>` or `f:<graph file id>` — looked up by
+/// equality against ids the process already holds. Nothing joins it onto
+/// the project root, opens it, or hands it to the filesystem, so a
+/// traversal string is a MISS rather than a traversal (pinned by name in
+/// `rollup::tests` and again in `arch_cmd::tests`). That is ADR-010's
+/// containment kept while still letting the pane say WHICH thing is on
+/// screen, which is the one fact a zero-argument command cannot carry
+/// and the whole reason T-140 routed this as a channel.
+///
+/// The argument is length-bounded before it is looked up, because a miss
+/// ECHOES the target back so the pane can say what it could not serve.
+#[tauri::command]
+async fn arch_detail(app: tauri::AppHandle, target: String) -> DetailOutcome {
+    if !arch_cmd::target_within_bounds(&target) {
+        // Refused without the echo: the answer is still the typed
+        // refusal, so the pane's handling is one path rather than two.
+        return DetailOutcome::Answered {
+            detail: nputer_index::rollup::Detail::Unknown {
+                target: String::new(),
+            },
+        };
+    }
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        arch_cmd::run_detail(&state, &target)
+    })
+    .await
+    .unwrap_or_else(|err| DetailOutcome::Unreadable {
+        message: format!("detail task failed: {err}"),
     })
 }
 
@@ -643,6 +721,14 @@ pub fn run() {
             // T-013: the fourteenth. A SUBPROCESS surface, still zero
             // arguments and still zero grants (see repo_churn above).
             repo_churn,
+            // T-140-s1: the sixteenth and seventeenth — the map's own
+            // channel. `arch_rollup` is zero-argument like every command
+            // above it; `arch_detail` is the FIRST to take one, and its
+            // argument is a key into a document rather than a path (the
+            // containment argument is on the command and in
+            // arch_cmd.rs). Zero new webview grants either way.
+            arch_rollup,
+            arch_detail,
             // T-126: the fifteenth, and F-04's first. Registered in the
             // SAME commit that declares `pub mod dispatch;` — a module
             // the binary compiles but the webview cannot reach is half
