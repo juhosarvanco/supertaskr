@@ -5,13 +5,13 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154
 builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review: independent
 ---
@@ -288,23 +288,43 @@ exit read FIRST (**0**, a tree and not a conflict report) — then
 - **METHOD EVAL GATE — NOT OWED.** `method/` is **0 files** in the set,
   which is `T-154-s3` honoured by omission rather than by promise.
 
-### The suite ledger — counts AND exits, unpiped
+### The suite ledger — counts AND exits, unpiped, at the tip `e645754`
 
-Ports read with `lsof -nP -iTCP:<port> -sTCP:LISTEN` at zero rows
-immediately before binding: the lane on **16154**, the drill on
-**16155**. Port 1420 was never touched.
+Every figure below is stamped at `e645754`, the commit carrying this
+card's notes and its two routed suggestions — the four suites the DOCS
+GATE named were re-run AFTER those cards were in the tree, because a
+flat `docs/tasks/T-*.md` is a parser input and a ledger taken before
+them is a ledger about a different tree. Ports read with
+`lsof -nP -iTCP:<port> -sTCP:LISTEN` at zero rows immediately before
+binding: the lane on **16154**, the drill on **16155**. Port 1420 was
+never touched.
 
 | command | where | result |
 |---|---|---|
-| `npm test` (`NPUTER_E2E_PORT=16154`) | tools/e2e | see the attribution below |
+| `npm test` (`NPUTER_E2E_PORT=16154`) | tools/e2e | **330 passed, 2 failed**, exit **1** — both attributed below |
 | `npm run typecheck` | tools/e2e | exit **0** |
-| `npm run lint:tokens` | tools/e2e | clean — TOKEN 159 files, CONTROL 975 tracked text files; exit **0** |
-| `npm run lint:docs` | tools/e2e | exit **0**; budgets HOLD, 4 gated |
-| `npx vitest run` | lib/parser | **336 passed**; exit **0** |
+| `npm run lint:tokens` | tools/e2e | clean — TOKEN 159 files, CONTROL 977 tracked text files; exit **0** |
+| `npm run lint:docs` | tools/e2e | exit **0**; budgets HOLD, 4 gated, 0 awaiting a landing |
+| `npx vitest run` | lib/parser | **336 passed** of 336; exit **0** |
 | `npx tsc --noEmit` | lib/parser | exit **0** |
 | `npm test` | app | **1047 passed** of 1047, 49 files; exit **0** |
-| `cargo test --no-fail-fast` | app/src-tauri | in the report |
-| `index --check --root ../..` | app/src-tauri | **CURRENT**; exit **0** |
+| `cargo test --no-fail-fast` | app/src-tauri | **560 passed / 0 failed / 4 ignored** over 18 result blocks; exit **0** |
+| `index --check --root ../..` | app/src-tauri | **CURRENT**, 1037788 bytes; exit **0** |
+
+The e2e lane was **320** bodies at the base and is **332** here; all 12
+new ones are in `tools/e2e/tests/lane-fence.spec.ts`, which runs **37 of
+37** green — the 25 bodies T-154 landed, every one of them unchanged
+except two that GAINED a case (the unreadable-manifest shapes and the
+two-seats body), plus 12 new.
+
+**THE BUDGET WARN DID NOT FIRE, WHICH IS A CHANGE SINCE T-154 AND IS
+WORTH SAYING RATHER THAN ENJOYING.** That card left `docs/CONVENTIONS.md`
+1,926 bytes over its warn line; `npm run lint:docs` here reports
+*"governing-document budgets hold"* with this card's edit added, so the
+line moved between then and now (ADR-019 derives it at each compaction
+landing). The edit was still written to carry the mechanism, the
+carve-outs and the limits and nothing else, and the now-false sentence
+it replaces was deleted rather than left standing beside its successor.
 
 **TWO E2E BODIES RED IN THIS LANE AND NEITHER IS THIS DIFF'S — the
 class the dispatch brief predicted by name.**
@@ -319,7 +339,9 @@ That is MY OWN LANE's fence colliding with the card those bodies probe.
 worktree cut at this lane's BASE commit `f3f4671`, carrying none of this
 diff, exits **1** with the identical message. It is a live-environment
 fact about the lane list — not a tree fact — and it clears when this
-worktree is removed. Nothing here touches those files.
+worktree is removed. Nothing here touches those files. The dispatch
+brief predicted the class by name and predicted one body; it is two,
+and the second (`:247`) reds through the same `--task T-157` call.
 
 ### Least confident
 
