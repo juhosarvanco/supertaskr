@@ -531,28 +531,42 @@ test("FENCE DISJOINTNESS IS COMPUTED AS SETS THROUGH THE MAP, not as a string co
   const comps = components();
   const slugs = slugMapFromFields(comps);
 
-  // The sharp case, and it is live on this board rather than invented:
-  // `app-board` and `app-shell` are DIFFERENT strings and both claim
-  // C-11, so two fences naming one each were never disjoint.
-  const shared = [...slugs].filter(([, ids]) => ids.length > 1);
-  expect(shared.length, "no slug is claimed by more than one component on this tree").toBeGreaterThan(0);
-  const [slugA, idsA] = shared[0] ?? ["", []];
-  const slugB = [...slugs].find(([s, ids]) => s !== slugA && ids.some((i) => idsA.includes(i)))?.[0];
-  expect(
-    slugB,
-    "no two slugs share a component here, so this body has lost its subject — the overlap it " +
-      "pins is the one a string compare cannot see",
-  ).toBeDefined();
+  // The sharp case USED to be live: `app-board` and `app-shell` were
+  // different strings both claiming C-11. T-163 (@human, 2026-08-30)
+  // took that field to the empty list, so the live half is now the
+  // RULED NEGATIVE, derived rather than quoted: no component is
+  // claimed by two slugs (the T-163-s2 rewrite; select-board.test.ts
+  // is the model).
+  for (const [slug, ids] of slugs) {
+    for (const id of ids) {
+      const claimants = [...slugs].filter(([, list]) => list.includes(id)).map(([s]) => s);
+      expect(
+        claimants,
+        `${id} is claimed by two slugs (via ${slug}) — the T-163 ruling has been undone`,
+      ).toEqual([slug]);
+    }
+  }
 
+  // THE MECHANISM MOVED, IT DID NOT LEAVE: a synthetic registry still
+  // carries the shape — one component, two slugs — and the overlap a
+  // string compare cannot see is still caught through the map.
+  const c70 = {
+    id: "C-70",
+    file: "synthetic (this body)",
+    slugs: ["alpha", "beta"],
+    paths: ["app/src/assets", "app/src/styles"],
+  };
+  const synthComps = [...comps, c70];
+  const synthSlugs = slugMapFromFields(synthComps);
   const overlap = fenceOverlaps(
-    { id: "T-A", entries: [slugA] },
-    { id: "T-B", entries: [slugB ?? ""] },
-    slugs,
-    comps,
+    { id: "T-A", entries: ["alpha"] },
+    { id: "T-B", entries: ["beta"] },
+    synthSlugs,
+    synthComps,
   );
   expect(
     overlap.length,
-    `${slugA} and ${slugB} are different strings that reserve the same component, and this ` +
+    "alpha and beta are different strings that reserve the same component, and this " +
       "derivation called them disjoint",
   ).toBeGreaterThan(0);
 
@@ -1201,7 +1215,11 @@ test("the LEDGER SAYS WHAT IT IS ANSWERING, and the slugs that are not independe
   // THE SHARED-COMPONENT FACT IS A JOIN OVER THE REGISTRY, not a
   // sentence about C-11. Two sides that share no constant: the
   // derivation walks `touch_slugs`, and this body re-walks the
-  // component files independently.
+  // component files independently. T-163 (@human, 2026-08-30) took the
+  // registry's ONLY doubly-claimed component to no slugs, so the live
+  // join is now the RULED NEGATIVE — asserted, with the ledger's own
+  // negative sentence, so the ruling stays ruled rather than merely
+  // tolerated (the T-163-s2 rewrite; select-board.test.ts is the model).
   const shared = slugsSharingComponents(ctx.slugs);
   const expected = new Map<string, string[]>();
   for (const comp of components(repoRoot)) {
@@ -1211,10 +1229,21 @@ test("the LEDGER SAYS WHAT IT IS ANSWERING, and the slugs that are not independe
   }
   const wanted = [...expected].filter(([, s]) => s.length > 1).map(([c]) => c).sort();
   expect(shared.map((s) => s.component).sort()).toEqual(wanted);
-  // POSITIVE CONTROL: this repository HAS such a component today, so the
-  // agreement above is not two empty lists agreeing.
-  expect(wanted.length, "no component is shared, so the join proves nothing here").toBeGreaterThan(0);
-  for (const s of shared) expect(rendered).toContain(`both expand through ${s.component}`);
+  expect(wanted, "a component is claimed by two slugs — the T-163 ruling has been undone").toEqual([]);
+  expect(rendered).toContain("no component is claimed by two slugs today");
+  expect(rendered).not.toContain("both expand through");
+  // THE MECHANISM MOVED, IT DID NOT LEAVE: on a synthetic map still
+  // carrying the shape — one component, two slugs — the join finds the
+  // pair and sorts it, so the derivation is proven against a populated
+  // subject rather than two empty lists agreeing.
+  const synthShared = slugsSharingComponents(
+    new Map([
+      ["beta", ["C-70"]],
+      ["alpha", ["C-70"]],
+      ["app-map", ["C-12"]],
+    ]),
+  );
+  expect(synthShared).toEqual([{ component: "C-70", slugs: ["alpha", "beta"] }]);
 });
 
 test("`DISJOINT` is the same class of word as `FREE` — ROW 5's verdicts carry the blind lane", () => {

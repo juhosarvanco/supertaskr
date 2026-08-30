@@ -20207,8 +20207,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:2fbbbfaa61829e2a7e78aff8421fcc41db65266217f77fdd9d70eaa40eb06c86",
-      "loc": 1853,
+      "hash": "blake3:8fc2dd0680a951da8fb092b6e16ad8ac59dc58b5076dadd33f0d24a339e99e7b",
+      "loc": 1924,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -22796,8 +22796,8 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:525075a6613907c18e84c8c29ba91aba161c9fcdc76c4d6be8255db1eee4850a",
-      "loc": 430,
+      "hash": "blake3:bf41605d6cebf3bd3af988f3faaa56441105593533d421f42659c8f1e2d5552e",
+      "loc": 454,
       "symbols": [
         {
           "id": "s:lib/parser/test/fence.test.ts#board",

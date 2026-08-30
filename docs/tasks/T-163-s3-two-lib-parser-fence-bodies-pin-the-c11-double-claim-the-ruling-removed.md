@@ -103,3 +103,5 @@ this repo's vocabulary reaches all four. That belongs beside the
 DECLARING A COMPONENT gotcha, derived rather than transcribed if
 somebody can see how; T-163's fence could not reach
 `docs/CONVENTIONS.md` either.
+
+DISCHARGED-NOT-DECLINED (2026-08-30, integration seat, the T-163 flip-set landing): the finding was real and the landing consumed it — performed in the merge window per the lanes-need-green-bases rule (a complement lane could not legally be cut from the red window this fix closes), with the executor's diagnosis on this card as the map and the select-board rewrite as the model. Every live half now states the ruled negative; every mechanism moved onto a synthetic registry carrying the shape. Evidence: the 2026-08-30-T-163 checkpoint record.

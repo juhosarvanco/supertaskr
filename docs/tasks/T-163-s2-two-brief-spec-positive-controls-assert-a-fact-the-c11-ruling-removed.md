@@ -85,3 +85,5 @@ sits inside `T-162`'s live fence (`tools/e2e`) at the time of filing,
 which triage may want to know when it decides whether this is absorbed
 or dispatched — a fact with a shelf life of hours, so derive the lane
 list rather than trusting this sentence.
+
+DISCHARGED-NOT-DECLINED (2026-08-30, integration seat, the T-163 flip-set landing): the finding was real and the landing consumed it — performed in the merge window per the lanes-need-green-bases rule (a complement lane could not legally be cut from the red window this fix closes), with the executor's diagnosis on this card as the map and the select-board rewrite as the model. Every live half now states the ruled negative; every mechanism moved onto a synthetic registry carrying the shape. Evidence: the 2026-08-30-T-163 checkpoint record.

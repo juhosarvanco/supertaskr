@@ -153,20 +153,26 @@ describe('slugPathIndex — the map is READ from touch_slugs:, never built', () 
     expect(new Set(index.keys())).toEqual(declaredSlugs);
   });
 
-  it('C-11 carries two slugs, so app-board and app-shell share its paths', () => {
-    // `T-111-s1`: the only component in the registry carrying two slugs,
-    // and therefore the only slug pair in the vocabulary that can collide
-    // this way. Derived from the registry rather than quoted.
+  it('no component carries two slugs — the T-163 ruling stays ruled, and the shared-path mechanism holds synthetically', () => {
+    // `T-111-s1` pinned C-11 as the registry's only doubly-claimed
+    // component. @human's ruling (T-163, 2026-08-30) took that field to
+    // `[]`, so the live fact INVERTED: the negative is now the property
+    // somebody could silently undo, and this body is how the ruling
+    // stays ruled. Derived from the registry rather than quoted.
     const doubleClaimed = components.filter((c) => c.touchSlugs.length > 1);
-    expect(doubleClaimed.map((c) => c.id)).toEqual(['C-11']);
-    const c11 = componentById('C-11');
-    expect(c11.touchSlugs).toEqual(['app-shell', 'app-board']);
+    expect(doubleClaimed).toEqual([]);
+    expect(componentById('C-11').touchSlugs).toEqual([]);
 
-    const index = slugPathIndex(components);
-    const shared = c11.paths.map(normalizeFenceToken);
+    // THE MECHANISM MOVED, IT DID NOT LEAVE: one component claimed by
+    // two slugs still shares its paths into both expansions — pinned on
+    // a synthetic registry carrying the shape the live one gave up.
+    const c70 = { ...componentById('C-11'), id: 'C-70', touchSlugs: ['alpha', 'beta'] };
+    const index = slugPathIndex([...components, c70]);
+    const shared = c70.paths.map(normalizeFenceToken);
+    expect(shared.length).toBeGreaterThan(0);
     for (const path of shared) {
-      expect(index.get('app-shell')?.paths).toContain(path);
-      expect(index.get('app-board')?.paths).toContain(path);
+      expect(index.get('alpha')?.paths).toContain(path);
+      expect(index.get('beta')?.paths).toContain(path);
     }
   });
 });
@@ -350,17 +356,35 @@ describe('THE TWO PINS THE CARD ASKS FOR, each measured against BEFORE', () => {
    * pin is GENUINELY NEW rather than a control — the opposite of the
    * card's own guess that "the second one probably passes today".
    */
-  it('PIN TWO (a): two live planned cards whose slugs differ and whose paths meet at C-11', () => {
-    // T-112 [app-dispatch, app-board] against T-114 [app-shell]: no
-    // shared token, and both reserve C-11's two directories.
+  it('PIN TWO (a): the C-11 pair the ruling split comes back disjoint, and the shared-component catch holds synthetically', () => {
+    // BEFORE T-163, T-112 [app-dispatch, app-board] against T-114
+    // [app-shell] met at C-11's two directories, and this pin proved
+    // compareFences catches what token equality misses. @human's ruling
+    // (2026-08-30) took C-11 to no slugs, so the live pair is now
+    // DISJOINT — asserted as the ruling PINNED, not merely tolerated.
     const t112 = card('T-112');
     const t114 = card('T-114');
-    expect(tokenEquality(t112, t114)).toBe('disjoint'); // BEFORE — and wrong
-    const seen = compareFences(fenceOf('T-112'), fenceOf('T-114'));
+    expect(tokenEquality(t112, t114)).toBe('disjoint');
+    expect(compareFences(fenceOf('T-112'), fenceOf('T-114')).verdict).toBe('disjoint');
+
+    // THE MECHANISM MOVED, IT DID NOT LEAVE: two cards with no shared
+    // token, meeting through one doubly-claimed component — token
+    // equality wrong, the comparator right — on a synthetic registry
+    // still carrying the shape the live one gave up.
+    const c70 = { ...componentById('C-11'), id: 'C-70', touchSlugs: ['alpha', 'beta'] };
+    const registry = [...components, c70];
+    const left = expandFence(synthetic('T-905', ['alpha']), registry);
+    const right = expandFence(synthetic('T-906', ['beta']), registry);
+    expect(tokenEquality(synthetic('T-905', ['alpha']), synthetic('T-906', ['beta']))).toBe(
+      'disjoint',
+    ); // BEFORE — and wrong, which is the whole point
+    const seen = compareFences(left, right);
     expect(seen.verdict).toBe('overlapping');
-    expect(seen.witnesses.map((w) => w.path)).toEqual(['app/src/assets', 'app/src/styles']);
     expect(new Set(seen.witnesses.map((w) => `${w.left}|${w.right}`))).toEqual(
-      new Set(['app-board|app-shell']),
+      new Set(['alpha|beta']),
+    );
+    expect(seen.witnesses.map((w) => w.path)).toEqual(
+      [...componentById('C-11').paths.map(normalizeFenceToken)].sort(),
     );
   });
 
