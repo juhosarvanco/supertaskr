@@ -1,10 +1,10 @@
 # State
 
-Updated: 2026-08-30 at the T-147 checkpoint — THE SHIPPED PARTITION
-IS STATED (in slugs, KIT_FILES granularity, REACHES semantics): the
-ceremony row is mechanical at last, and T-147 itself self-integrated
-under the rule it landed. Current record:
-docs/checkpoints/2026-08-30-T-147.md.
+Updated: 2026-08-30 at the T-143 checkpoint — THE RULED NIGHT ORDER
+IS COMPLETE: the dispatch answer cannot print FREE for a held fence,
+the board says underway for exactly the in-flight cards, and every
+seat's work of the night is landed, verified and pushed. Current
+record: docs/checkpoints/2026-08-30-T-143.md.
 Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
@@ -25,9 +25,9 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — T-143 dispatches next; the CONVENTIONS
-  seat is OUT OF RUNWAY (3,761 bytes to warn) and holds until
-  @human's re-landing ruling. Dispatch derives
+  this rewrite: NO lanes — the ruled order is COMPLETE; the next
+  dispatch is @human's morning call. The CONVENTIONS seat is OUT OF
+  RUNWAY (3,761 bytes to warn) and holds until the re-landing ruling. Dispatch derives
   the brief, PREFLIGHTS the card (T-160 — a failed preflight refuses
   the manifest), then writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
@@ -53,10 +53,11 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-147` is DONE (the partition stated; self-integrated under its
-   own rule). Remaining: `T-143`; `T-156-s1` HELD on the CONVENTIONS
-   runway; T-112's flip pairs are DERIVED on its card (one direct
-   sharer, nineteen via shared C-11 — the split is @human's lever).
+1. THE NIGHT ORDER IS COMPLETE: T-147 and T-143 DONE. `T-156-s1`
+   HELD on the CONVENTIONS runway; T-112's flip pairs DERIVED on its
+   card (one direct sharer, nineteen via shared C-11 — the split is
+   @human's lever). Fresh suggested cards await the next standing
+   sitting — derive, never list.
 2. Board items the preflight surfaced: `T-160-s4` (T-059's fence
    cannot reach a file its criteria order written — a live
    planned-card defect). Watch-list on any push: `T-161`
@@ -112,7 +113,7 @@ hazard is never deleted to fit.
 
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record: 2026-08-30-T-147.md.
+  newer than this file. Current record: 2026-08-30-T-143.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.

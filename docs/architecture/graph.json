@@ -21837,8 +21837,8 @@
       "id": "f:lib/parser/src/lanes.ts",
       "path": "lib/parser/src/lanes.ts",
       "lang": "ts",
-      "hash": "blake3:558be12878599c3b2c11a7b05e22d989e6b6928d050e04bca7ee8b1a5f2d25a3",
-      "loc": 527,
+      "hash": "blake3:91d5610f6b631aac07c1889edf225dcd211738732d3bd4d9363cf581eabe5e1d",
+      "loc": 538,
       "symbols": [
         {
           "id": "s:lib/parser/src/lanes.ts#CardStartability",
@@ -21967,7 +21967,7 @@
           "exported": false,
           "range": [
             395,
-            527
+            538
           ]
         },
         {
@@ -22941,8 +22941,8 @@
       "id": "f:lib/parser/test/lanes.test.ts",
       "path": "lib/parser/test/lanes.test.ts",
       "lang": "ts",
-      "hash": "blake3:f412d17d8cf66da6ac6216ea090f75fe511341e1809908e8bda7c46454a2d0ab",
-      "loc": 415,
+      "hash": "blake3:6a19d0830e7dd97168b6704831a72f9ab06b7f595f9bc8b2bf4b189b260952f7",
+      "loc": 456,
       "symbols": [
         {
           "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",

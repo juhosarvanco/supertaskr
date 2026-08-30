@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **313 behaviours** — 311 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **320 behaviours** — 318 extracted sentences + 2 named-not-extracted (listed at the end) — across 29 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -64,6 +64,11 @@ Census: **313 behaviours** — 311 extracted sentences + 2 named-not-extracted (
 - a brief assembled at this ref names the lanes the repository holds, and no others
 - THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still wins wherever it exists
 - the WHOLE brief assembles on a pull_request-shaped checkout, and names the ref it actually spent
+- THE FENCE LEDGER SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT READ
+- and the UNKNOWN clause agrees in number with the lanes it names
+- the LEDGER SAYS WHAT IT IS ANSWERING, and the slugs that are not independent are DERIVED
+- `DISJOINT` is the same class of word as `FREE` — ROW 5's verdicts carry the blind lane
+- A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, NOT ITS PARENT'S
 
 ## card-figures
 
@@ -94,6 +99,7 @@ Census: **313 behaviours** — 311 extracted sentences + 2 named-not-extracted (
 - a census claim is NOT inferred from a transcript, because it is inferred and not declared
 - the stamp is anchored at end of line, so a quoted stamp does not inherit a verdict
 - frontmatter is not prose, so its fields are never audited as figures
+- CONTENTION SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT READ
 
 ## card-preflight
 
@@ -140,6 +146,7 @@ Census: **313 behaviours** — 311 extracted sentences + 2 named-not-extracted (
 - --dispatch is a NAMED arm: an empty request is still a usage error
 - the STARTABLE set is exactly the ready set minus what the live lanes hold
 - a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the CALL SITE
+- A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold
 
 ## docs-input-gate
 

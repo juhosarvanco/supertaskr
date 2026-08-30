@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 suggested_by: architect claude-opus-5
 blocked_by: []
 touches: [lib-parser, tools/e2e]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
