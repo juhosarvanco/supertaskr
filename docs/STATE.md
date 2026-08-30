@@ -54,12 +54,12 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. IN FLIGHT: T-154-s2 (guard), T-159-s1 (method debt), T-167-s1
-   (schema), T-143-s3 (verifying, blind verifier out). THEN: T-112
-   (after T-143-s3 lands — the sitting's sequencing ruling), the
-   e2e-seat train (T-163-s4 p1, T-167-s8 p2, T-167-s6, T-164-s2 —
-   the sitting suggests one lane for the adjacent-sentence pair
-   T-164-s2/T-156-s5). HELD for the walk: T-025-s4 only.
+1. IN FLIGHT: T-112 (the slice's last act — its lane wires
+   selectDispositions' first consumer), T-154-s2 (guard), T-167-s1
+   (verifying, blind verifier out). LANDED this hour: T-143-s3,
+   T-159-s1 (fourteen riders disposed). THEN: the e2e-seat train
+   (T-163-s4 p1, T-167-s8 p2, T-167-s6, T-164-s2+T-156-s5 as one
+   lane per the sitting's note). HELD for the walk: T-025-s4 only.
 2. @human's open items: THE GENESIS WALK; the v1/v2/v3 markup;
    `T-162-s1`; `T-169-s2` (one word); `T-140-s4` (the graph limit —
    live again, the graph truncates today); the M4 strategy question.
