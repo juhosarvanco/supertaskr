@@ -68,6 +68,27 @@ interview document and a nine-row table transcribed cell-by-cell into
 `BANKING_MAP` — so if the form decision slips, moving entry 03 to v2 is
 the cheaper correction than letting v1's scope drift.
 
+**CORRECTION (2026-08-31, the seat that wrote the paragraph above).
+THE FORM DECISION WAS ALREADY RULED WHEN THIS WAS WRITTEN, AND THE SEAT
+DID NOT CHECK.** `docs/rooms/customization-form.md` carries
+*"RESOLUTION (2026-08-30, @human, all nine ruled the same day the brief
+landed)"* — Q1 **hybrid, in the asymmetric shape**: files ARE the
+system; the app reads, explains, proposes and routes, and never authors.
+Landed at commit `3b2057b`.
+
+So FORM-FIRST is **DISCHARGED**, not pending. @human's *"lets leave the
+form decision for tomorrow"* was given in answer to this seat's
+INCORRECT statement that the decision was outstanding, so it deferred a
+decision already made. This correction withdraws the seat's premise, not
+@human's ruling.
+
+**CONSEQUENCE: entry 03 is NOT gated and `T-173` may be dispatched on
+its merits.** What still binds it is the customization room's own closing
+sentence — *"The UI cards these rulings unblock are cut at a sitting
+under the version-planning room's standing rule, not automatically"* — so
+it enters at a sitting like anything else, and its size-L method bump is
+a cost rather than a gate.
+
 ADDENDUM (2026-08-30, @human's idea, reviewed and adopted): **THE
 VERSION TABLE** — a selector surface in nputer where charter entries
 and feature-shaped cards are dragged between version columns. Reviewed
