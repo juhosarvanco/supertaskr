@@ -317,6 +317,15 @@ new ones are in `tools/e2e/tests/lane-fence.spec.ts`, which runs **37 of
 except two that GAINED a case (the unreadable-manifest shapes and the
 two-seats body), plus 12 new.
 
+**RE-RUN AT `c883b16`, THE COMMIT THAT CARRIES THIS TABLE AND THE
+`verifying` STAMP**, because that commit moved a card's FRONTMATTER and
+that is the DOCS GATE's own class rather than a prose edit: all four
+suites the gate names reproduce EXACTLY — e2e 330 passed / 2 failed
+(the same two), parser 336, app 1047, cargo 560/0/4 over 18 blocks, and
+the gate itself FIRES on 6 paths naming the same four suites, with
+`merge-tree` exit 0 against a main that moved twice during this lane
+(`16f4821` → `9d2f01a`). Only this paragraph is newer than that tip.
+
 **THE BUDGET WARN DID NOT FIRE, WHICH IS A CHANGE SINCE T-154 AND IS
 WORTH SAYING RATHER THAN ENJOYING.** That card left `docs/CONVENTIONS.md`
 1,926 bytes over its warn line; `npm run lint:docs` here reports
