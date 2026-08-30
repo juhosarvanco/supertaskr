@@ -1,9 +1,43 @@
 ---
 id: T-156-s3
 title: The token-scan restoration proof reds for any lane holding an uncommitted edit to one of its seven plant targets, and the message names the restore rather than the working tree
-status: suggested
+feature: F-06
+milestone: 4
+priority: 15
+size: S
+status: planned
+blocked_by: []
+touches: [tools/e2e]
 suggested_by: executor claude-opus-5 @T-156
+builder:
+verifier:
+built_by:
+verified_by:
+review: independent
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30. It is on `docs/STATE.md`'s standing-hazard list, which is where a defect goes to be survived rather than fixed.**
+
+The mechanism, re-derived from the card's own measurement and the file:
+`token-scan.spec.ts` finishes its restoration with
+`spawnSync("git", ["diff", "--quiet", "--", ...targets])`. `git diff`
+with no range compares the WORKING TREE to the INDEX, and one of the
+seven plant targets is `tools/e2e/package.json` — **so every executor
+adding an npm script to that package reds this body the moment it runs
+the lane before committing, under a message saying the restore failed.**
+
+**THE RESTORE HAD NOT FAILED.** Every sha256 assertion above it passed in
+the same run over the same seven files; only the index comparison reds,
+on a change the body never made. Measured twice at two refs: 1 failed /
+277 passed with an uncommitted edit; committed and re-run with nothing
+else changed, 278 passed, exit 0.
+
+**THIS IS A GUARD THAT CANNOT TELL AN ABSENCE FROM A REFUSAL**, which is
+the defect class TASK-FORMAT prices at `review: independent` — the
+message names the restore rather than the working tree, so the seat that
+meets it debugs the wrong thing. It owes a POSITIVE CONTROL: prove the
+body still reds on a genuinely failed restore, not only that it stops
+blaming a dirty tree.
 
 **MEASURED ON THIS LANE, TWICE, AT TWO REFS.**
 `tools/e2e/tests/token-scan.spec.ts`'s *"one runtime-built control byte

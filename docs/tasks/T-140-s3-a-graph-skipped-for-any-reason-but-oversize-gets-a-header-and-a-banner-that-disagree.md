@@ -1,9 +1,40 @@
 ---
 id: T-140-s3
 title: A graph skipped for any reason but oversize gets a header and a banner that disagree — the header says it was not delivered while the banner still says the index never ran
-status: suggested
+feature: F-06
+milestone: 4
+priority: 13
+size: S
+status: planned
+blocked_by: []
+touches: [app-map]
 suggested_by: verifier claude-opus-5@subagent @T-140
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30.**
+
+Re-derived at this ref and HOLDS, unchanged: in
+`app/src/architecture/MapView.tsx`, `indexHint` (`:134-135`) answers on
+ANY skip — `graphSkip === "oversize" ? "graph too large to deliver" :
+"graph not delivered"` — while the banner branches
+`derived.indexNotRun && graphSkip === "oversize"` (`:697`) against
+`derived.indexNotRun && graphSkip !== "oversize"` (`:707`), with
+`data-testid="map-run-index"` still inside the second arm.
+
+So for every skip reason that is not `oversize`, the header says the
+graph was not delivered and the banner still says the index never ran.
+**The header partitions the whole skip space and the banner does not**,
+and the user is shown two different explanations of one state.
+
+Small and in reach whenever `app-map` is free, which it is at this
+sitting. Acceptance pins header and banner in ONE body, so the pair
+cannot drift apart again — the two are only wrong RELATIVE to each
+other, and separate assertions would let the next change re-open it.
 
 **Found while verifying `T-140` at `1792e3a`, by driving the pane's own
 states rather than by reading the diff.** `T-140` fixed the state it was
