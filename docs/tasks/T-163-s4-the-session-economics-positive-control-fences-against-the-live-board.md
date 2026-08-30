@@ -160,4 +160,23 @@ lands, with nothing to re-edit.
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### Confirmation of understanding — executor, lane `T-163-s4` at base `8ebbb08`
+
+I am building one card inside `touches: [tools/e2e]`: `tests/session-economics.spec.ts`
+grades subprocess exits of `scripts/brief.mjs --task <live card id>`, and
+`brief.mjs --task` is a DISPATCH question, so it answers exit 1 whenever the named
+card's fence collides with any live lane's — which makes a board fact, belonging to
+no input this suite owns, decide whether this suite is green. My job is to keep the
+property the bodies buy (the advisory block is not a constant; nothing about the
+SESSION reaches the recommendation) while removing the board from the grading path:
+the control's card id must be DERIVED as disjoint at the ref it runs at rather than
+typed in, no assertion may be loosened to tolerate a non-zero exit, and I check every
+body in the file that shells the brief rather than only `:73`. My own lane is the test
+bed — it holds `tools/e2e`, so the red must be reproducible before my fix and absent
+after it WITH this lane still live. I re-derive every figure at my own ref and say
+plainly where the card and the repository disagree; the repository wins. Size S,
+`touches: [tools/e2e]` — tooling, not shipped code — so I stamp `verifying` in-lane
+and leave the verifier fields empty as dispatched, and I do not merge, push, or touch
+the integration checkout.
+
 ## Verdicts
