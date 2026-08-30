@@ -1,13 +1,15 @@
 # State
 
-Updated: 2026-08-30 at standing sitting #3 — suggested 14 -> 0
-again: eight promotions (five held only by T-154-s2's live lane, clean
-at their next preflight), T-167-s7 absorbed, two discharged-archived,
-three parks (two @human's). T-031-s1 RULED SEQUENCED behind T-112 —
-absorbing would re-widen the fence the C-11 split narrowed. T-112
-dispatches when T-143-s3's app-board lane lands. FOUR lanes live +
-one blind verifier; the walk needs none of them. Current record:
-docs/checkpoints/2026-08-30-standing-triage-3.md.
+Updated: 2026-08-30 at T-167-s1's close. Verdict corrections
+performed FOR REAL in the second commit — `18d8166`'s message claims
+them and contains only the graph regen (the record names the rule:
+an edit script's success is a gate; never chain commit after a
+scripted edit without reading the diff). T-154-s2 executor OUT
+(guard built, 19 mutants killed, walk measured 0.19–0.50ms), its
+blind factless verifier RUNNING; T-112 executor still building.
+Graph: 2293 edges, headroom 2,022 — alarm prints, survivable.
+Current record:
+docs/checkpoints/2026-08-30-T-167-s1-close-and-the-false-commit-message.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
