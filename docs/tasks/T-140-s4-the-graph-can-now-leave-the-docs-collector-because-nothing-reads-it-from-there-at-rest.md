@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: verifying
+status: done
 blocked_by: []
 suggested_by: executor claude-opus-5 @T-140-s1
 touches: [app-shell, app-map, crate-index]
 built_by: claude-opus-5@subagent
 verified_by: claude-opus-5@subagent
+review: independent
 ---
 
 PARKED at standing triage sitting #3, 2026-08-30 (architect seat),
@@ -323,10 +324,27 @@ it is this rule and not `k × mean`.
 growth, re-derived here, is **13 921** bytes (mean of the **68** positive
 single-commit growths; median 4 501, max 241 980 at T-010). So the room
 is `1 011 553 / 13 921 = 72.7` ordinary merges, against **68** growths on
-the entire record. Two independent framings — "double the lifetime" and
-"one more lifetime of merges" — agree to within 7%. That is the reason
-the number is stated rather than rounded to 2 MiB (2 097 152), which
-would have meant nothing.
+the entire record.
+
+**CORRECTION (integrator, 2026-08-31, the verifier's finding 1): THOSE
+TWO FRAMINGS ARE NOT INDEPENDENT AND THE 7% CANNOT DISCONFIRM
+ANYTHING.** Write `L` for lifetime growth, `P` for the sum of the 68
+positive single-commit growths, so the mean is `P/68`. Then
+`L / (P/68) = 68 × (L/P)` — 68 is a FACTOR of the left-hand side, so the
+comparison is `68 × (L/P)` against `68`, and it reduces to the question
+of how far `L/P` is from 1. That ratio is below 1 only by whatever the
+graph gave back in shrinking commits. **The agreement was arithmetic,
+not corroboration**, and a cross-check that cannot fail is not a
+cross-check.
+
+**WHAT SURVIVES, because the number itself is untouched by this.** The
+budget is term 1 plus term 2, both measured: the graph's natural size
+and its entire lifetime growth. The alarm-unit calculation is still
+worth stating — it says the headroom is about 72 ordinary merges, which
+is a READABLE horizon — but it is a RESTATEMENT of the same measurement
+in a second unit, and it is now labelled as one. The reason the number
+is not rounded to 2 MiB (2 097 152) stands on its own: a round number
+would be a picked number, and this one is derived.
 
 **What it costs the only consumer left, measured rather than assumed.**
 The graph is now read on a DRILL only — `arch_cmd::load`: `fs::read` plus
@@ -351,13 +369,20 @@ encode**, so the drill is an order of magnitude off the stage that binds.
 **Term 2 therefore does not set the number — it proves term 3
 affordable**, which is the honest way round.
 
-**THE SELF-REFERENCE, NAMED AT THE SITE.** The regen at the finished
-tree answers **1 134 409**, three bytes above the 1 134 406 the
-derivation used: the derivation is written into `.rs` files that are
-themselves inside the walk (this doc comment and the bench's drill
-stage). The constant is deliberately NOT chased to a fixed point — each
-correction is also indexed. It is a ceiling; three bytes against
-1 011 549 of headroom.
+**THE SELF-REFERENCE, NAMED AT THE SITE.** The regen at a finished tree
+answers a few bytes ABOVE the `1 134 406` the derivation used, because
+the derivation is written into `.rs` files that are themselves inside
+the walk (that doc comment and the bench's drill stage). **The exact
+figure is ref-bound and this card states it as one** (the verifier's
+finding 2: it read `1 134 409` with no ref, and the tip already
+disagreed): at the integration ref `d6a5957`, regenerated,
+`index --check` answers **1 134 410 of 2 145 959 — 1 011 549 left**.
+**AND THAT NUMBER MOVES AGAIN WITH THIS VERY CORRECTION**, which edits
+an indexed file. That is the point rather than a defect: the constant is
+deliberately NOT chased to a fixed point, because each correction is
+itself indexed and convergence would be precision about nothing. It is a
+CEILING, and the authority for what the graph weighs today is
+`index --check`, never a figure transcribed here.
 
 **THE ALARM RE-ARMED.** `check::WARN_HEADROOM_BYTES` 14 914 → **13 921**,
 by its own stated derivation at this lane's ref (the series to date:
@@ -743,3 +768,42 @@ card and carries its own written argument.
 `status:` left at `verifying` for the integrator, per the dispatch.
 Gates above were re-run at the tip this verdict was written against; the
 three corrections are prose-and-frontmatter only and move no gate.
+
+## INTEGRATOR'S ANSWER TO THE THREE CORRECTIONS (2026-08-31, at merge `d6a5957`)
+
+**1 — PERFORMED.** The "two independent framings agree to within 7%"
+sentence is replaced at its site by the algebra the verifier gave:
+`L / (P/68) = 68 × (L/P)`, so 68 is a factor of the left side and the
+comparison cannot disconfirm. The budget's VALUE is untouched — it never
+rested on that sentence — and the alarm-unit figure survives, relabelled
+as a restatement in a second unit rather than as corroboration.
+
+**2 — PERFORMED, and deliberately not as a new literal.** The card and
+`lib.rs` both carried `1_134_409` / *"three bytes"* with no ref. The card
+now states the figure ref-bound (`d6a5957`, regenerated: **1 134 410 of
+2 145 959, 1 011 549 left**) and says in the same breath that this
+correction moves it again, because the sentence is itself inside the
+walk. `lib.rs` stops transcribing a figure at all and names
+`index --check` as the authority — the stronger fix, and the one this
+project's own doctrine asks for.
+
+**3 — DECLINED, and the evidence is a `git log`.** The finding reads:
+*"`T-167-s6` is filed `status: planned` by an executor, which
+TASK-FORMAT reserves to the architect."* **It was not filed by an
+executor.** `git log --oneline -- docs/tasks/T-167-s6-*.md` at this ref
+returns three commits: `0815bb9` filed it (as a suggestion, from
+`T-167-s2`'s lane), **`202904a` PROMOTED it — standing triage sitting #3,
+the architect seat**, whose own record's table reads *"T-167-s6 |
+PROMOTED F-06 p21, re-featured F-01 -> F-06, its own derive command
+corrected"* — and `2170fa8`, this lane, which appended a CORROBORATION
+and moved no field. So `planned` is the architect's stamp, correctly
+placed, and the two cards the finding compares it against
+(`T-140-s8`, `T-140-s9`) read `suggested` because they are NEW and have
+not been triaged yet. The comparison was between a promoted card and two
+unpromoted ones.
+
+**A DECLINED CORRECTION IS RECORDED, NEVER SILENTLY DROPPED** — and the
+verifier's other 53 attacks stand undiminished by this one: it read a
+status field without reading the file's history, which is the same class
+of error as citing a line instead of a symbol, and it is the only one of
+the three that did not hold.

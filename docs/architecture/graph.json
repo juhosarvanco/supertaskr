@@ -862,8 +862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/check.rs",
       "path": "app/src-tauri/crates/nputer-index/src/check.rs",
       "lang": "rust",
-      "hash": "blake3:e5b137306149a459624fe7ef0ebccc7641d01a0cacd90abb45a5535a28dcfba6",
-      "loc": 972,
+      "hash": "blake3:4357b8d2ed8de81490455a030f690a949175398d0ec0dba3f8400454914d90f2",
+      "loc": 996,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#CheckReport",
@@ -901,8 +901,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            354,
-            354
+            378,
+            378
           ]
         },
         {
@@ -931,8 +931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            503,
-            514
+            527,
+            538
           ]
         },
         {
@@ -951,8 +951,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            371,
-            410
+            395,
+            434
           ]
         },
         {
@@ -971,8 +971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            517,
-            523
+            541,
+            547
           ]
         },
         {
@@ -991,8 +991,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            412,
-            452
+            436,
+            476
           ]
         },
         {
@@ -1001,8 +1001,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            454,
-            501
+            478,
+            525
           ]
         },
         {
@@ -1011,8 +1011,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            526,
-            972
+            550,
+            996
           ]
         }
       ]
@@ -1862,8 +1862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
       "path": "app/src-tauri/crates/nputer-index/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:04005d5a08463c93aecf29498a0930344f856af6eb9820ec7f98e1eae355de22",
-      "loc": 437,
+      "hash": "blake3:c57951dc80f8c68200317902363139da3bbbdf1893a1ed552854c83b3bf3dfc5",
+      "loc": 528,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/lib.rs#GRAPH_REL_PATH",
@@ -1882,7 +1882,7 @@
           "exported": true,
           "range": [
             61,
-            149
+            235
           ]
         },
         {
@@ -2001,8 +2001,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            151,
-            163
+            237,
+            254
           ]
         },
         {
@@ -2011,8 +2011,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            167,
-            309
+            258,
+            400
           ]
         },
         {
@@ -2051,8 +2051,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            314,
-            319
+            405,
+            410
           ]
         },
         {
@@ -2061,8 +2061,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            341,
-            437
+            432,
+            528
           ]
         },
         {
@@ -2081,8 +2081,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            328,
-            338
+            419,
+            429
           ]
         },
         {
@@ -2111,8 +2111,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            324,
-            326
+            415,
+            417
           ]
         }
       ]
@@ -5310,7 +5310,718 @@
       "lang": "rust",
       "hash": "blake3:b59ae606ba394170d53a659c3ffaf8c0bd249b6bb0180def34faac450026041e",
       "loc": 3577,
-      "symbols": []
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ChildHandle",
+          "name": "ChildHandle",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1288,
+            1295
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ENV_ALLOWLIST",
+          "name": "ENV_ALLOWLIST",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1085,
+            1104
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ENV_ALLOWLIST_LINUX",
+          "name": "ENV_ALLOWLIST_LINUX",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1107,
+            1108
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#Emitter",
+          "name": "Emitter",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            300,
+            303
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#GroupExit",
+          "name": "GroupExit",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1314,
+            1326
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#LineMsg",
+          "name": "LineMsg",
+          "kind": "enum",
+          "exported": false,
+          "range": [
+            2606,
+            2610
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_AUTH_MESSAGE_BYTES",
+          "name": "MAX_AUTH_MESSAGE_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            167,
+            167
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIALS",
+          "name": "MAX_DENIALS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            106,
+            106
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIAL_BYTES",
+          "name": "MAX_DENIAL_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            114,
+            114
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_DENIAL_MESSAGE_BYTES",
+          "name": "MAX_DENIAL_MESSAGE_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            142,
+            142
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_EVENT_TEXT",
+          "name": "MAX_EVENT_TEXT",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            98,
+            98
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_LINE_BYTES",
+          "name": "MAX_LINE_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            96,
+            96
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_RELAY_BYTES",
+          "name": "MAX_RELAY_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            101,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#MAX_STDERR_RING",
+          "name": "MAX_STDERR_RING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            103,
+            103
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#NOT_UNIX",
+          "name": "NOT_UNIX",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1487,
+            1492
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#NO_REAL_CLI_VAR",
+          "name": "NO_REAL_CLI_VAR",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            444,
+            444
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#POLL_INTERVAL",
+          "name": "POLL_INTERVAL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1402,
+            1402
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ResolveError",
+          "name": "ResolveError",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            420,
+            427
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ResolvedCli",
+          "name": "ResolvedCli",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            430,
+            438
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ResolvedPathRejection",
+          "name": "ResolvedPathRejection",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            599,
+            613
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#ResultDenial",
+          "name": "ResultDenial",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1512,
+            1515
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#Ring",
+          "name": "Ring",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            2658,
+            2661
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#RunEvent",
+          "name": "RunEvent",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            242,
+            281
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#RunnerConfig",
+          "name": "RunnerConfig",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            367,
+            399
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#SimpleOutput",
+          "name": "SimpleOutput",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            1010,
+            1013
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#StreamLine",
+          "name": "StreamLine",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            1518,
+            1574
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#TurnError",
+          "name": "TurnError",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            182,
+            234
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#TurnOutcome",
+          "name": "TurnOutcome",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1809,
+            1816
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#TurnRequest",
+          "name": "TurnRequest",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1798,
+            1804
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#apply_child_env",
+          "name": "apply_child_env",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1152,
+            1183
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#as_status_u32",
+          "name": "as_status_u32",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1716,
+            1723
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#bounded_stream_string",
+          "name": "bounded_stream_string",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1731,
+            1733
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#cap_text",
+          "name": "cap_text",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2602,
+            2604
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#classify_line",
+          "name": "classify_line",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1577,
+            1711
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#denial_entries",
+          "name": "denial_entries",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1756,
+            1779
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#denial_field",
+          "name": "denial_field",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1737,
+            1744
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#denial_names",
+          "name": "denial_names",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1790,
+            1792
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#finish",
+          "name": "finish",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            888,
+            906
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#flush_pending",
+          "name": "flush_pending",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2585,
+            2600
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#group_has_members",
+          "name": "group_has_members",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1254,
+            1260
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#guard_decision",
+          "name": "guard_decision",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            528,
+            534
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl ChildHandle",
+          "name": "impl ChildHandle",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            1297,
+            1309
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl Default for RunnerConfig",
+          "name": "impl Default for RunnerConfig",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            401,
+            415
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl Emitter",
+          "name": "impl Emitter",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            305,
+            339
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl Ring",
+          "name": "impl Ring",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            2663,
+            2679
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl RunEvent",
+          "name": "impl RunEvent",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            283,
+            295
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#impl std::fmt::Display for ResolvedPathRejection",
+          "name": "impl std::fmt::Display for ResolvedPathRejection",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            615,
+            627
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#is_test_harness_dir",
+          "name": "is_test_harness_dir",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            591,
+            593
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#kill_group_now",
+          "name": "kill_group_now",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1262,
+            1267
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#login_shell",
+          "name": "login_shell",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            859,
+            873
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#login_shell_probe",
+          "name": "login_shell_probe",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            918,
+            958
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#now_ms",
+          "name": "now_ms",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            169,
+            174
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#pid_alive",
+          "name": "pid_alive",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1242,
+            1248
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#probe_version",
+          "name": "probe_version",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            991,
+            1008
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#read_lines_capped",
+          "name": "read_lines_capped",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2616,
+            2655
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#real_cli_arms_forbidden",
+          "name": "real_cli_arms_forbidden",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            507,
+            512
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#resolve_cli",
+          "name": "resolve_cli",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            746,
+            811
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#run_turn",
+          "name": "run_turn",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1825,
+            2583
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#run_with_timeout",
+          "name": "run_with_timeout",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1017,
+            1052
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#running_as_cargo_test_binary",
+          "name": "running_as_cargo_test_binary",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            549,
+            560
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#set_child_env",
+          "name": "set_child_env",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1132,
+            1143
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#signals",
+          "name": "signals",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            1188,
+            1234
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_async",
+          "name": "terminate_group_async",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1470,
+            1482
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_observing",
+          "name": "terminate_group_observing",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1452,
+            1462
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_owning",
+          "name": "terminate_group_owning",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1410,
+            1441
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#terminate_group_polling",
+          "name": "terminate_group_polling",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1363,
+            1397
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            2682,
+            3577
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#validate_resolved_binary",
+          "name": "validate_resolved_binary",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            660,
+            665
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#validate_resolved_program",
+          "name": "validate_resolved_program",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            674,
+            708
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#which_in",
+          "name": "which_in",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            985,
+            989
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/runner.rs#which_on_path",
+          "name": "which_on_path",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            971,
+            976
+          ]
+        }
+      ]
     },
     {
       "id": "f:app/src-tauri/src/agent/sessions.rs",
@@ -6443,7 +7154,818 @@
       "lang": "rust",
       "hash": "blake3:df88883ae80b955dcd8b44d394a13ca0c5b70c8c60373bbb1a10560496ee053e",
       "loc": 2895,
-      "symbols": []
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#ADAPTER_FILES",
+          "name": "ADAPTER_FILES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            118,
+            118
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#Brief",
+          "name": "Brief",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            554,
+            568
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#BriefLine",
+          "name": "BriefLine",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            482,
+            486
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#BriefOutcome",
+          "name": "BriefOutcome",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            577,
+            591
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#BriefRow",
+          "name": "BriefRow",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            523,
+            536
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#COMPONENTS_DIR",
+          "name": "COMPONENTS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1134,
+            1134
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#CONTRACT_FILE",
+          "name": "CONTRACT_FILE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            110,
+            110
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#CONVENTIONS",
+          "name": "CONVENTIONS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1044,
+            1044
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#CardField",
+          "name": "CardField",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            304,
+            320
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#CardSource",
+          "name": "CardSource",
+          "kind": "trait",
+          "exported": true,
+          "range": [
+            348,
+            353
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#Component",
+          "name": "Component",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1261,
+            1264
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#ContractDefect",
+          "name": "ContractDefect",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            140,
+            147
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#ContractRow",
+          "name": "ContractRow",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            127,
+            135
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#Ctx",
+          "name": "Ctx",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            626,
+            634
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#DiskFiles",
+          "name": "DiskFiles",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            245,
+            247
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#ENTITLED_FIELDS",
+          "name": "ENTITLED_FIELDS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            331,
+            340
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#FileSource",
+          "name": "FileSource",
+          "kind": "trait",
+          "exported": true,
+          "range": [
+            236,
+            242
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#FrontmatterCard",
+          "name": "FrontmatterCard",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            362,
+            365
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#LANE_PROTOCOL",
+          "name": "LANE_PROTOCOL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1045,
+            1045
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#MARKER",
+          "name": "MARKER",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            746,
+            747
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#MissingRow",
+          "name": "MissingRow",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            541,
+            549
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#NOTES_HEADINGS",
+          "name": "NOTES_HEADINGS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            598,
+            598
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#Provenance",
+          "name": "Provenance",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            468,
+            477
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#Role",
+          "name": "Role",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            88,
+            91
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#RowContent",
+          "name": "RowContent",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            766,
+            766
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#SourceMiss",
+          "name": "SourceMiss",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            225,
+            228
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#TASK_FORMAT",
+          "name": "TASK_FORMAT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1564,
+            1564
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#assemble",
+          "name": "assemble",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            644,
+            743
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#assemble_row",
+          "name": "assemble_row",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            768,
+            785
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#backticked",
+          "name": "backticked",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1022,
+            1039
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#brief_for_card",
+          "name": "brief_for_card",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1859,
+            1882
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#bullet_containing",
+          "name": "bullet_containing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1696,
+            1700
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#ceremony_row",
+          "name": "ceremony_row",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1605,
+            1627
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#contains_path",
+          "name": "contains_path",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1346,
+            1348
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#docs_named",
+          "name": "docs_named",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            952,
+            980
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#empty",
+          "name": "empty",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            798,
+            807
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#entitled",
+          "name": "entitled",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            343,
+            345
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#expand",
+          "name": "expand",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1297,
+            1307
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#frontmatter_block_list",
+          "name": "frontmatter_block_list",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1815,
+            1844
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#frontmatter_scalar",
+          "name": "frontmatter_scalar",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1797,
+            1812
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl BriefLine",
+          "name": "impl BriefLine",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            488,
+            518
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl CardSource for FrontmatterCard",
+          "name": "impl CardSource for FrontmatterCard",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            415,
+            441
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl DiskFiles",
+          "name": "impl DiskFiles",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            249,
+            255
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl FileSource for DiskFiles",
+          "name": "impl FileSource for DiskFiles",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            257,
+            291
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl FrontmatterCard",
+          "name": "impl FrontmatterCard",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            367,
+            405
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#impl Role",
+          "name": "impl Role",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            93,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#lane_touches",
+          "name": "lane_touches",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1351,
+            1363
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#leading_caps",
+          "name": "leading_caps",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1703,
+            1717
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#named_bullets",
+          "name": "named_bullets",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1721,
+            1730
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#need",
+          "name": "need",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            788,
+            795
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#normalise",
+          "name": "normalise",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1310,
+            1317
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#notes_boundary",
+          "name": "notes_boundary",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            613,
+            619
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#numbered_rule",
+          "name": "numbered_rule",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1733,
+            1755
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#package_commands",
+          "name": "package_commands",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1407,
+            1431
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#parse_flow_list",
+          "name": "parse_flow_list",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            444,
+            452
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#read_additions",
+          "name": "read_additions",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1006,
+            1019
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#read_contract",
+          "name": "read_contract",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            160,
+            208
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#read_subtractions",
+          "name": "read_subtractions",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            987,
+            1000
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_commands",
+          "name": "row_commands",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1382,
+            1396
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_correction",
+          "name": "row_correction",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1644,
+            1662
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_deliverable",
+          "name": "row_deliverable",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1566,
+            1602
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_disciplines",
+          "name": "row_disciplines",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1477,
+            1500
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_fence",
+          "name": "row_fence",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1136,
+            1257
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_gates",
+          "name": "row_gates",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1433,
+            1449
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_lane",
+          "name": "row_lane",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1047,
+            1130
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_prohibitions",
+          "name": "row_prohibitions",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1502,
+            1560
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_read_first",
+          "name": "row_read_first",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            891,
+            949
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_report",
+          "name": "row_report",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1629,
+            1642
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_role",
+          "name": "row_role",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            811,
+            837
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_setup",
+          "name": "row_setup",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1367,
+            1380
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#row_task",
+          "name": "row_task",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            841,
+            887
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#section_bullets",
+          "name": "section_bullets",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1758,
+            1778
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#sentence_containing",
+          "name": "sentence_containing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1781,
+            1794
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#shared_paths",
+          "name": "shared_paths",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1323,
+            1343
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#slug_map",
+          "name": "slug_map",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1271,
+            1294
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#standing_gates",
+          "name": "standing_gates",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1456,
+            1475
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#strip_comment",
+          "name": "strip_comment",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            408,
+            413
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#table_cells",
+          "name": "table_cells",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            213,
+            216
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            1889,
+            2895
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#top_level_bullets",
+          "name": "top_level_bullets",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1669,
+            1693
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#unknown_row",
+          "name": "unknown_row",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            755,
+            764
+          ]
+        }
+      ]
     },
     {
       "id": "f:app/src-tauri/src/dispatch/fixtures.rs",
@@ -6945,16 +8467,567 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:bca570f33f1961ef2c258eb2b66929a1ab809a93d25da3c54c082ce5bc71df96",
-      "loc": 4150,
-      "symbols": []
+      "hash": "blake3:be64275e68603944746f5049381552f427063dee70a94b633134f150b1ca1830",
+      "loc": 4167,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
+          "name": "ARCHITECTURE_NAME",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            63,
+            63
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#CollectOutcome",
+          "name": "CollectOutcome",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            201,
+            210
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DEBOUNCE",
+          "name": "DEBOUNCE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DOCS_DIR",
+          "name": "DOCS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            55,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DocsFile",
+          "name": "DocsFile",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            161,
+            164
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DocsSnapshot",
+          "name": "DocsSnapshot",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            214,
+            225
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_DEPTH",
+          "name": "MAX_DEPTH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            149,
+            149
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_ECHO_LOG_CHARS",
+          "name": "MAX_ECHO_LOG_CHARS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            155,
+            155
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_FILES",
+          "name": "MAX_FILES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            148,
+            148
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_FILE_BYTES",
+          "name": "MAX_FILE_BYTES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            147,
+            147
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_SKIPPED_REPORTED",
+          "name": "MAX_SKIPPED_REPORTED",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            153,
+            153
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#PickInFlight",
+          "name": "PickInFlight",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            368,
+            368
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#PickOutcome",
+          "name": "PickOutcome",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            251,
+            304
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#PlanProbe",
+          "name": "PlanProbe",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            502,
+            512
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#ProjectStatus",
+          "name": "ProjectStatus",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            233,
+            245
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#REARM_TIMEOUT",
+          "name": "REARM_TIMEOUT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            157,
+            157
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#ROADMAP_NAME",
+          "name": "ROADMAP_NAME",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#SkipReason",
+          "name": "SkipReason",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            175,
+            187
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#SkippedFile",
+          "name": "SkippedFile",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            191,
+            194
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#TASKS_SUBDIR",
+          "name": "TASKS_SUBDIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#WatchCtl",
+          "name": "WatchCtl",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            307,
+            332
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#WatchState",
+          "name": "WatchState",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            342,
+            362
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#WatchTarget",
+          "name": "WatchTarget",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            1274,
+            1292
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#apply_genesis_folder",
+          "name": "apply_genesis_folder",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1063,
+            1233
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#apply_picked_folder",
+          "name": "apply_picked_folder",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            929,
+            942
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#arm_genesis",
+          "name": "arm_genesis",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1641,
+            1694
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#arm_sentinel",
+          "name": "arm_sentinel",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1313,
+            1346
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#build_snapshot",
+          "name": "build_snapshot",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            887,
+            889
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#collect_docs_files",
+          "name": "collect_docs_files",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            869,
+            871
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#collect_docs_tree",
+          "name": "collect_docs_tree",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            753,
+            863
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#dir_identity",
+          "name": "dir_identity",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1296,
+            1306
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#ensure_docs_watch",
+          "name": "ensure_docs_watch",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1370,
+            1440
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#handle_fs_batch",
+          "name": "handle_fs_batch",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1446,
+            1493
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#has_any_task_file",
+          "name": "has_any_task_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            678,
+            688
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#has_plain_docs_dir",
+          "name": "has_plain_docs_dir",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            483,
+            485
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#impl Drop for PickInFlight",
+          "name": "impl Drop for PickInFlight",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            370,
+            374
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#impl PlanProbe",
+          "name": "impl PlanProbe",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            514,
+            587
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#impl WatchState",
+          "name": "impl WatchState",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            376,
+            443
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#is_collected_docs_path",
+          "name": "is_collected_docs_path",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            724,
+            732
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#is_flat_task_file",
+          "name": "is_flat_task_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            652,
+            660
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#is_plain_dir",
+          "name": "is_plain_dir",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            471,
+            476
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#next_seq",
+          "name": "next_seq",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            445,
+            447
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#now_ms",
+          "name": "now_ms",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            449,
+            454
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#open_as_project",
+          "name": "open_as_project",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            949,
+            1017
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#probe_plan",
+          "name": "probe_plan",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            666,
+            674
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#project_status",
+          "name": "project_status",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            893,
+            909
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#rearm",
+          "name": "rearm",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1565,
+            1623
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#relative_posix",
+          "name": "relative_posix",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            457,
+            464
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#routes_to_genesis",
+          "name": "routes_to_genesis",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            633,
+            635
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#run_watcher",
+          "name": "run_watcher",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1495,
+            1557
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#sanitize_for_log",
+          "name": "sanitize_for_log",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1238,
+            1254
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#snapshot_from",
+          "name": "snapshot_from",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            874,
+            884
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#spawn_watcher_thread",
+          "name": "spawn_watcher_thread",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1262,
+            1271
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            1697,
+            4167
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#under_docs_dir",
+          "name": "under_docs_dir",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            643,
+            645
+          ]
+        }
+      ]
     },
     {
       "id": "f:app/src-tauri/src/index_cmd.rs",
       "path": "app/src-tauri/src/index_cmd.rs",
       "lang": "rust",
-      "hash": "blake3:9182634416514f985050b450f16c25f703c272c6bff58ff9df7ac43f5d2abdda",
-      "loc": 312,
+      "hash": "blake3:9c57b6ec0f5f3125ce09c24386964973b3080c39ade7021097c80c3f481c0608",
+      "loc": 342,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/index_cmd.rs#IndexOutcome",
@@ -6983,7 +9056,7 @@
           "exported": false,
           "range": [
             112,
-            312
+            342
           ]
         }
       ]
@@ -7352,14 +9425,1465 @@
       "lang": "rust",
       "hash": "blake3:617b321232077a06f8ea4829f94782759a36190b050f0d4b245f5604a1839925",
       "loc": 5926,
-      "symbols": []
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#BRAND_PACK",
+          "name": "BRAND_PACK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4857,
+            4857
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY",
+          "name": "CANARY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            40,
+            40
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#CANARY_VALUE",
+          "name": "CANARY_VALUE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            41,
+            41
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#FIXTURE_DEADLINE",
+          "name": "FIXTURE_DEADLINE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            179,
+            179
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#GroupGuard",
+          "name": "GroupGuard",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            874,
+            874
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#Harness",
+          "name": "Harness",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            53,
+            61
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#Options",
+          "name": "Options",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            69,
+            95
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#OwnedGroup",
+          "name": "OwnedGroup",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            762,
+            768
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_COMPLETED",
+          "name": "PREMISE_COMPLETED",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            5102,
+            5104
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_SESSION_ID",
+          "name": "PREMISE_SESSION_ID",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            5090,
+            5092
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_STARTED",
+          "name": "PREMISE_STARTED",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            5080,
+            5082
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#PREMISE_TEXT_DELTA",
+          "name": "PREMISE_TEXT_DELTA",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            5096,
+            5098
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#REAL_CLI_DEADLINE",
+          "name": "REAL_CLI_DEADLINE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            225,
+            225
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#Reboot",
+          "name": "Reboot",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            5376,
+            5381
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#SECURITY_PACK",
+          "name": "SECURITY_PACK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4859,
+            4859
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_ARM_VAR",
+          "name": "T060_ARM_VAR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4214,
+            4214
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_ROOT_VAR",
+          "name": "T060_ROOT_VAR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4216,
+            4216
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#T060_TEST_NAME",
+          "name": "T060_TEST_NAME",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4220,
+            4221
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cancel_releases_the_turn_latch_well_inside_the_grace",
+          "name": "a_cancel_releases_the_turn_latch_well_inside_the_grace",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1136,
+            1180
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_project",
+          "name": "a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_project",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5609,
+            5642
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cli_below_the_minimum_major_is_refused_loudly",
+          "name": "a_cli_below_the_minimum_major_is_refused_loudly",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3229,
+            3237
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
+          "name": "a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            964,
+            984
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped",
+          "name": "a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1998,
+            2032
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds",
+          "name": "a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1623,
+            1672
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit",
+          "name": "a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2501,
+            2542
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed",
+          "name": "a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2456,
+            2472
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool",
+          "name": "a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2564,
+            2601
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_first_turn_with_no_init_line_is_malformed",
+          "name": "a_first_turn_with_no_init_line_is_malformed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3119,
+            3127
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
+          "name": "a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5004,
+            5054
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
+          "name": "a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1400,
+            1464
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_init_line_model_is_refused_and_a_real_one_round_trips",
+          "name": "a_hostile_init_line_model_is_refused_and_a_real_one_round_trips",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4559,
+            4645
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing",
+          "name": "a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3674,
+            3750
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded",
+          "name": "a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3496,
+            3556
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary",
+          "name": "a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3612,
+            3666
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs",
+          "name": "a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5493,
+            5530
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
+          "name": "a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4941,
+            4982
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_missing_binary_is_a_typed_spawn_failure_not_a_panic",
+          "name": "a_missing_binary_is_a_typed_spawn_failure_not_a_panic",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3194,
+            3208
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_missing_cli_is_a_typed_not_found_never_a_dead_end",
+          "name": "a_missing_cli_is_a_typed_not_found_never_a_dead_end",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3240,
+            3261
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_non_json_flood_with_no_anchors_is_malformed",
+          "name": "a_non_json_flood_with_no_anchors_is_malformed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3130,
+            3138
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail",
+          "name": "a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1479,
+            1494
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_planted_skill_pack_reaches_the_child_and_the_session_record",
+          "name": "a_planted_skill_pack_reaches_the_child_and_the_session_record",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4870,
+            4932
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write",
+          "name": "a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3295,
+            3320
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial",
+          "name": "a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2417,
+            2431
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor",
+          "name": "a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            998,
+            1034
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failure",
+          "name": "a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failure",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2340,
+            2365
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error",
+          "name": "a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2393,
+            2411
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure",
+          "name": "a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3036,
+            3083
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure",
+          "name": "a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2899,
+            2924
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_relative_search_path_element_reaches_no_process",
+          "name": "a_relative_search_path_element_reaches_no_process",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3980,
+            4053
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps",
+          "name": "a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1041,
+            1068
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail",
+          "name": "a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1919,
+            1978
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_result_only_denial_with_no_in_band_line_is_still_reported",
+          "name": "a_result_only_denial_with_no_in_band_line_is_still_reported",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1831,
+            1871
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure",
+          "name": "a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2940,
+            2953
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first",
+          "name": "a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1770,
+            1817
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_second_start_offers_the_recorded_session_rather_than_auto_resuming",
+          "name": "a_second_start_offers_the_recorded_session_rather_than_auto_resuming",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3264,
+            3281
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs",
+          "name": "a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5536,
+            5601
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_in_flight_refuses_a_second_one",
+          "name": "a_turn_in_flight_refuses_a_second_one",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3284,
+            3292
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code",
+          "name": "a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1546,
+            1585
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie",
+          "name": "a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1279,
+            1333
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs",
+          "name": "a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            919,
+            955
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail",
+          "name": "an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2652,
+            2744
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_app_restart_mid_interview_resumes_the_recorded_session_off_disk",
+          "name": "an_app_restart_mid_interview_resumes_the_recorded_session_off_disk",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5420,
+            5483
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_auth_failure_that_streamed_text_before_it_failed_is_still_typed",
+          "name": "an_auth_failure_that_streamed_text_before_it_failed_is_still_typed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2862,
+            2879
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
+          "name": "an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4677,
+            4740
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code",
+          "name": "an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1511,
+            1536
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_oversize_stream_line_is_malformed_not_an_out_of_memory",
+          "name": "an_oversize_stream_line_is_malformed_not_an_out_of_memory",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3141,
+            3149
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
+          "name": "an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channels",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4757,
+            4839
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume",
+          "name": "an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5876,
+            5926
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#assert_real_turn_observed",
+          "name": "assert_real_turn_observed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5145,
+            5152
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#assert_settled_error_is",
+          "name": "assert_settled_error_is",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            395,
+            405
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#cancel_kills_the_whole_process_group_including_a_grandchild",
+          "name": "cancel_kills_the_whole_process_group_including_a_grandchild",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            638,
+            690
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#collect_turn",
+          "name": "collect_turn",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            284,
+            286
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#collect_turn_within",
+          "name": "collect_turn_within",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            293,
+            314
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#concurrent_cancel_exit_and_drop_observations_stay_idempotent",
+          "name": "concurrent_cancel_exit_and_drop_observations_stay_idempotent",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1340,
+            1379
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#denied_events",
+          "name": "denied_events",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            318,
+            327
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#every_hostile_id_class_fails_the_turn_at_capture",
+          "name": "every_hostile_id_class_fails_the_turn_at_capture",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3564,
+            3604
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#exit_zero_without_a_result_line_is_malformed",
+          "name": "exit_zero_without_a_result_line_is_malformed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3152,
+            3160
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#fake_agent_bin",
+          "name": "fake_agent_bin",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            47,
+            49
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#find_named",
+          "name": "find_named",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3941,
+            3952
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#harness",
+          "name": "harness",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            114,
+            170
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Default for Options<'_>",
+          "name": "impl Default for Options<'_>",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            97,
+            112
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for GroupGuard",
+          "name": "impl Drop for GroupGuard",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            898,
+            907
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for Harness",
+          "name": "impl Drop for Harness",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            63,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl Drop for OwnedGroup",
+          "name": "impl Drop for OwnedGroup",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            850,
+            854
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl GroupGuard",
+          "name": "impl GroupGuard",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            877,
+            888
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#impl OwnedGroup",
+          "name": "impl OwnedGroup",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            771,
+            847
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#missing_real_turn_premises",
+          "name": "missing_real_turn_premises",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5114,
+            5140
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#no_login_path_ever_comes_from_a_file",
+          "name": "no_login_path_ever_comes_from_a_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4070,
+            4164
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#no_source_in_the_agent_module_builds_a_shell_command_line",
+          "name": "no_source_in_the_agent_module_builds_a_shell_command_line",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3446,
+            3477
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#now_ms",
+          "name": "now_ms",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            43,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#one_denial_on_each_channel_is_reported_once_each",
+          "name": "one_denial_on_each_channel_is_reported_once_each",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1697,
+            1737
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_agent_paths",
+          "name": "plant_agent_paths",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3768,
+            3776
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_binary",
+          "name": "plant_binary",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3782,
+            3785
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_pack",
+          "name": "plant_pack",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4851,
+            4855
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#read_argv",
+          "name": "read_argv",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            421,
+            425
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#read_dump",
+          "name": "read_dump",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            432,
+            435
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#read_env",
+          "name": "read_env",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            427,
+            430
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#real_cli_smoke_records_the_stream_schema",
+          "name": "real_cli_smoke_records_the_stream_schema",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5162,
+            5220
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#reboot",
+          "name": "reboot",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5387,
+            5410
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#resolving_cfg",
+          "name": "resolving_cfg",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3789,
+            3801
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#settle",
+          "name": "settle",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            341,
+            353
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#sig",
+          "name": "sig",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            749,
+            756
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#silence_before_the_first_line_is_a_start_timeout",
+          "name": "silence_before_the_first_line_is_a_start_timeout",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3163,
+            3175
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#silence_mid_turn_is_a_stall",
+          "name": "silence_mid_turn_is_a_stall",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3178,
+            3191
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#spawn_turn_resume_round_trip_with_the_prompt_on_stdin",
+          "name": "spawn_turn_resume_round_trip_with_the_prompt_on_stdin",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            456,
+            523
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_guarded_arm",
+          "name": "t060_child_guarded_arm",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4441,
+            4495
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_lifted_arm",
+          "name": "t060_child_lifted_arm",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4501,
+            4544
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_child_root",
+          "name": "t060_child_root",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4309,
+            4311
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_parent_drives_both_arms",
+          "name": "t060_parent_drives_both_arms",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4313,
+            4437
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#t060_run_arm",
+          "name": "t060_run_arm",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4275,
+            4307
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#terminal_error",
+          "name": "terminal_error",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            410,
+            415
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture",
+          "name": "the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2164,
+            2229
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file",
+          "name": "the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5750,
+            5815
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_bundle_declares_no_external_binaries",
+          "name": "the_bundle_declares_no_external_binaries",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3422,
+            3440
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_child_gets_the_allowlist_and_never_a_secret",
+          "name": "the_child_gets_the_allowlist_and_never_a_secret",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            527,
+            564
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_cli_default_tool_table_is_read_off_the_2026_08_19_capture",
+          "name": "the_cli_default_tool_table_is_read_off_the_2026_08_19_capture",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2253,
+            2317
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found",
+          "name": "the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4264,
+            4271
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them",
+          "name": "the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2774,
+            2803
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_hook_reaps_the_turns_process_group",
+          "name": "the_exit_hook_reaps_the_turns_process_group",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            697,
+            727
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists",
+          "name": "the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1230,
+            1271
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group",
+          "name": "the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1187,
+            1222
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_fact_that_an_interview_ran_here_lives_in_exactly_one_file",
+          "name": "the_fact_that_an_interview_ran_here_lives_in_exactly_one_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5652,
+            5680
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_hand_driven_kickoff_carries_what_was_banked",
+          "name": "the_hand_driven_kickoff_carries_what_was_banked",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5825,
+            5870
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_hand_driven_kickoff_materializes_a_real_kit_and_names_it",
+          "name": "the_hand_driven_kickoff_materializes_a_real_kit_and_names_it",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5686,
+            5728
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_kit_lands_inside_the_project_and_the_kickoff_points_at_it",
+          "name": "the_kit_lands_inside_the_project_and_the_kickoff_points_at_it",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            615,
+            632
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_no_real_cli_guard_is_on_without_anything_being_set",
+          "name": "the_no_real_cli_guard_is_on_without_anything_being_set",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4188,
+            4209
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group",
+          "name": "the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1085,
+            1129
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_production_kill_grace_is_five_seconds",
+          "name": "the_production_kill_grace_is_five_seconds",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1472,
+            1474
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_real_smokes_verdict_names_which_premise_was_missing",
+          "name": "the_real_smokes_verdict_names_which_premise_was_missing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5234,
+            5363
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_registry_and_transcript_record_the_exchange",
+          "name": "the_registry_and_transcript_record_the_exchange",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            568,
+            610
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not",
+          "name": "the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3328,
+            3415
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay",
+          "name": "the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2969,
+            2988
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_stream_without_the_retry_line_classifies_the_same_way",
+          "name": "the_same_stream_without_the_retry_line_classifies_the_same_way",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2373,
+            2387
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay",
+          "name": "the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3097,
+            3116
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_tool_denied_fixture_is_a_transcription_not_a_construction",
+          "name": "the_tool_denied_fixture_is_a_transcription_not_a_construction",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2055,
+            2139
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_transcribed_auth_shape_carries_its_status_on_its_own_result_line",
+          "name": "the_transcribed_auth_shape_carries_its_status_on_its_own_result_line",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            2822,
+            2844
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#there_is_no_agent_paths_json_to_poison_at_any_door",
+          "name": "there_is_no_agent_paths_json_to_poison_at_any_door",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3831,
+            3936
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#turn_dump",
+          "name": "turn_dump",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            417,
+            419
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_completed",
+          "name": "wait_completed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            264,
+            266
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_failed",
+          "name": "wait_failed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            268,
+            273
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for",
+          "name": "wait_for",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            227,
+            233
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for_file",
+          "name": "wait_for_file",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            437,
+            448
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wait_for_within",
+          "name": "wait_for_within",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            238,
+            262
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#warnings_and_unknown_event_types_do_not_fail_the_turn",
+          "name": "warnings_and_unknown_event_types_do_not_fail_the_turn",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3213,
+            3224
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#wired",
+          "name": "wired",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            3803,
+            3812
+          ]
+        }
+      ]
     },
     {
       "id": "f:app/src-tauri/tests/graph_budget_bench.rs",
       "path": "app/src-tauri/tests/graph_budget_bench.rs",
       "lang": "rust",
-      "hash": "blake3:4e90f3477214c8e4e2b1752684fde5bc4f87b2c317b7442d3d0f75778ac75d23",
-      "loc": 430,
+      "hash": "blake3:9a0a64bb0fb1877c9b11595a0ccbad76b8f63931e04216e6a4122e31a3d0fc2e",
+      "loc": 468,
       "symbols": [
         {
           "id": "s:app/src-tauri/tests/graph_budget_bench.rs#Scratch",
@@ -7367,8 +10891,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            78,
-            78
+            98,
+            98
           ]
         },
         {
@@ -7377,8 +10901,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            66,
-            66
+            86,
+            86
           ]
         },
         {
@@ -7387,8 +10911,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            128,
-            131
+            148,
+            151
           ]
         },
         {
@@ -7397,8 +10921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            193,
-            225
+            213,
+            245
           ]
         },
         {
@@ -7407,8 +10931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            139,
-            170
+            159,
+            190
           ]
         },
         {
@@ -7417,8 +10941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            282,
-            430
+            302,
+            468
           ]
         },
         {
@@ -7427,8 +10951,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            95,
-            99
+            115,
+            119
           ]
         },
         {
@@ -7437,8 +10961,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            80,
-            93
+            100,
+            113
           ]
         },
         {
@@ -7447,8 +10971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            101,
-            106
+            121,
+            126
           ]
         },
         {
@@ -7457,8 +10981,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            175,
-            180
+            195,
+            200
           ]
         },
         {
@@ -7467,8 +10991,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            69,
-            75
+            89,
+            95
           ]
         },
         {
@@ -7477,8 +11001,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            182,
-            187
+            202,
+            207
           ]
         },
         {
@@ -7487,8 +11011,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            249,
-            260
+            269,
+            280
           ]
         },
         {
@@ -7497,8 +11021,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            265,
-            278
+            285,
+            298
           ]
         },
         {
@@ -7507,8 +11031,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            232,
-            243
+            252,
+            263
           ]
         },
         {
@@ -7517,8 +11041,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            112,
-            125
+            132,
+            145
           ]
         }
       ]
@@ -7527,8 +11051,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:4a8bb5ff2feb5cfd5d2602ff07a8dbbf8dc5bb4a702898b27f9295162b431389",
-      "loc": 836,
+      "hash": "blake3:ddf09f830a590935cbc767c0a0818487ae92119c96a7b2b9befa97ef1f3a1b6e",
+      "loc": 839,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -7536,8 +11060,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            496,
-            834
+            491,
+            837
           ]
         },
         {
@@ -7546,8 +11070,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            153,
-            168
+            148,
+            163
           ]
         },
         {
@@ -7556,8 +11080,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            191,
-            311
+            186,
+            306
           ]
         },
         {
@@ -7566,8 +11090,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            131,
-            149
+            126,
+            144
           ]
         },
         {
@@ -7576,8 +11100,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            48,
-            65
+            43,
+            60
           ]
         },
         {
@@ -7586,8 +11110,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            74,
-            98
+            69,
+            93
           ]
         },
         {
@@ -7596,8 +11120,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            376,
-            483
+            371,
+            478
           ]
         },
         {
@@ -7606,8 +11130,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            487,
-            494
+            482,
+            489
           ]
         },
         {
@@ -7616,8 +11140,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            359,
-            363
+            354,
+            358
           ]
         },
         {
@@ -7626,8 +11150,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            341,
-            355
+            336,
+            350
           ]
         }
       ]
@@ -7861,27 +11385,17 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:d6686d04183a6b5d7549ed62e847f15a874f2f7a7f398388587f326fed00aa91",
-      "loc": 1195,
+      "hash": "blake3:4f3aa42e3bbb242d7713b1c3db80eda78555aca5955cce40fd7014ab7e45c0af",
+      "loc": 1224,
       "symbols": [
-        {
-          "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
-          "name": "COLLECTOR_CAP_BYTES",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            83,
-            83
-          ]
-        },
         {
           "id": "s:app/src/architecture/MapView.tsx#LegendLine",
           "name": "LegendLine",
           "kind": "function",
           "exported": false,
           "range": [
-            1188,
-            1195
+            1217,
+            1224
           ]
         },
         {
@@ -7890,8 +11404,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            71,
-            71
+            70,
+            70
           ]
         },
         {
@@ -7900,8 +11414,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            70,
-            70
+            69,
+            69
           ]
         },
         {
@@ -7910,8 +11424,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            153,
-            1186
+            165,
+            1215
           ]
         },
         {
@@ -7920,8 +11434,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            91,
-            96
+            105,
+            110
           ]
         },
         {
@@ -7930,8 +11444,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            85,
-            89
+            99,
+            103
           ]
         },
         {
@@ -7940,8 +11454,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            100,
-            112
+            114,
+            126
           ]
         },
         {
@@ -7950,8 +11464,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            134,
-            151
+            153,
+            163
           ]
         },
         {
@@ -7960,8 +11474,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            115,
-            123
+            129,
+            137
           ]
         }
       ]
@@ -14100,8 +17614,8 @@
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
-      "hash": "blake3:39cfd93d8265311a290746cec3d2fc5c68cd72d74bc599ccc82e271bc4e85191",
-      "loc": 428,
+      "hash": "blake3:4e8a9c38ca9acfdbb2b5e4dc28a917e949d4c253552a5f8720d9b00924af33cf",
+      "loc": 447,
       "symbols": [
         {
           "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
@@ -14109,8 +17623,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            31,
-            34
+            47,
+            50
           ]
         },
         {
@@ -14119,8 +17633,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            240,
-            288
+            256,
+            307
           ]
         },
         {
@@ -14129,8 +17643,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            53,
-            65
+            69,
+            81
           ]
         },
         {
@@ -14139,8 +17653,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            28,
-            28
+            44,
+            44
           ]
         },
         {
@@ -14149,8 +17663,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            113,
-            128
+            129,
+            144
           ]
         },
         {
@@ -14159,8 +17673,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            68,
-            74
+            84,
+            90
           ]
         },
         {
@@ -14179,8 +17693,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            39,
-            39
+            55,
+            55
           ]
         },
         {
@@ -14189,8 +17703,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            81,
-            87
+            97,
+            103
           ]
         },
         {
@@ -14199,8 +17713,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            43,
-            46
+            59,
+            62
           ]
         },
         {
@@ -14209,8 +17723,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            350,
-            428
+            369,
+            447
           ]
         },
         {
@@ -14219,8 +17733,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            290,
-            304
+            309,
+            323
           ]
         },
         {
@@ -14229,8 +17743,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            321,
-            335
+            340,
+            354
           ]
         },
         {
@@ -14239,8 +17753,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            340,
-            342
+            359,
+            361
           ]
         },
         {
@@ -14249,8 +17763,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            143,
-            152
+            159,
+            168
           ]
         },
         {
@@ -14259,8 +17773,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            159,
-            165
+            175,
+            181
           ]
         },
         {
@@ -14269,8 +17783,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            180,
-            183
+            196,
+            199
           ]
         },
         {
@@ -14279,8 +17793,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            213,
-            238
+            229,
+            254
           ]
         },
         {
@@ -14289,8 +17803,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            92,
-            107
+            108,
+            123
           ]
         }
       ]
@@ -15478,8 +18992,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:082c29ee77f756761c44812b3a6b2696c83f52b2a548da91f9875da01c40dc06",
-      "loc": 2627,
+      "hash": "blake3:0cc3a8b0b5742e19357ca6344279103208338b630fe7d8f8acf4ca32b8aaa438",
+      "loc": 2638,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -18399,8 +21913,8 @@
       "id": "f:app/test/map-shell-dom.test.tsx",
       "path": "app/test/map-shell-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:0d08c6737fb943867b3e751ca2dfe4f45bcfd388cc1b260ad3aadd6b41d646f9",
-      "loc": 211,
+      "hash": "blake3:3da13f78b49fef80a629ca43d90de3b5da2ef90f35bb0dea20213b14963d8447",
+      "loc": 206,
       "symbols": [
         {
           "id": "s:app/test/map-shell-dom.test.tsx#ROADMAP",
@@ -18775,7 +22289,7 @@
       "id": "f:app/test/map-view-dom.test.tsx",
       "path": "app/test/map-view-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:571dae791abf602d0e8fc40a4f5154a39782194958d0ac47b3a0805ed71fd11e",
+      "hash": "blake3:92f397e3b0d13180ad83cbc4ed198f20772f6e20943ac04209ada49269a6d36e",
       "loc": 694,
       "symbols": [
         {
@@ -24622,7 +28136,6 @@
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
       "symbols": [
-        "GRAPH_FILE",
         "ModelIssueRow",
         "modelIssueRows",
         "skipReasonPhrase"
@@ -25075,14 +28588,6 @@
         "componentTarget",
         "fileTarget",
         "partialGraph"
-      ]
-    },
-    {
-      "from": "f:app/src/architecture/MapView.tsx",
-      "to": "f:app/src/lib/docs-model.ts",
-      "kind": "import",
-      "symbols": [
-        "SkipReason"
       ]
     },
     {
@@ -30907,12 +34412,6 @@
     },
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
-      "to": "s:app/src/lib/docs-model.ts#SkipReason",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
       "confidence": "resolved"
@@ -30944,12 +34443,6 @@
     {
       "from": "s:app/src/architecture/MapView.tsx#indexHint",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/MapView.tsx#indexHint",
-      "to": "s:app/src/lib/docs-model.ts#SkipReason",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -39549,9 +43042,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2067,
-    "edges": 2334,
-    "truncated_symbols": true,
-    "truncated_files": 4
+    "symbols": 2418,
+    "edges": 2331
   }
 }

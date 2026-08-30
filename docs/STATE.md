@@ -1,151 +1,124 @@
 # State
 
-Updated: 2026-08-30 at the second RULINGS SITTING — record:
-docs/checkpoints/2026-08-30-the-rulings-sitting-2-eight-answers.md.
-**@human cleared EIGHT open items in one pass** — the record has them.
-**TWO LANES LIVE** — derive them, never quote this line. **The graph is
-still at 410 bytes** (1,039,590 by `wc -c`): the code queue is held
-until `T-140-s4` MERGES, because the ruling released the card and not
-the constraint. Pre-compaction:
-docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-31 at T-140-s4's close — record:
+docs/checkpoints/2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
+**THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
+budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
+bytes (derive: `index --check`). Every fence is dispatchable again.
+Pre-compaction: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
-**NOTHING IS BROKEN.** Designed non-zero exits a session will meet:
-`npm run health` exits 3 while four bands await keepers (T-156-s1/s2),
-and the DOCS GATE answering 1 on a diff means it HAS a verdict (suites
-owed) — never read either as a fault. **Two intermittents can red a
-green tree**: `T-161` (stderr tail, two CI sightings) and `T-178`
-(fixture teardown ENOTEMPTY, two sightings, one of them main's own tip).
-Re-run once as a second measurement, then attribute — never re-run until
-green and call it evidence.
+**NOTHING IS BROKEN.** Designed non-zero exits: `npm run health` exits 3
+while bands await keepers (T-156-s1/s2); the DOCS GATE answering 1 on a
+diff means it HAS a verdict. **Two intermittents can red a green tree** —
+`T-161` (stderr tail) and `T-178` (fixture teardown ENOTEMPTY), two CI
+sightings each. Re-run ONCE as a second measurement, then attribute;
+never re-run until green and call that evidence.
 
 ## The contract this file is under
 
-REPLACED at every checkpoint from docs/STATE-template.md, after the
-record is written — the record keeps the INSTANCE, this file the
-MECHANISM (ADR-019). A figure appears here only with its derive
-command or a ref stamp. The byte budget is `npm run lint:docs`'s to
-enforce; when it warns, content moves to the record or a card — a
-hazard is never deleted to fit. **Never commit a record without
-regenerating this file in the SAME commit** — the gate reds when a
-record's commit is newer, and it caught the previous seat doing it.
+REPLACED at every checkpoint from docs/STATE-template.md, AFTER the
+record is written, in the SAME commit (ADR-019; the gate reds when a
+record is newer). A figure appears here only with its derive command or
+a ref. **When the byte budget warns, content MOVES to the record — a
+hazard is never deleted to fit.** This file BREACHED its band on
+2026-08-31 because a seat deferred that twice; the health bands caught
+it.
 
 ## Live right now — derive, never quote
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
-  — a detached entry is NOT a lane — or `brief.mjs --state`. At this
-  rewrite: NO lanes. Dispatch derives the brief, PREFLIGHTS the card
-  (T-160 — a failed preflight refuses the manifest), then writes the
-  fence manifest (`brief.mjs --task T-NNN --write-fence <worktree>`);
-  run `brief.mjs --task` before ANY dispatch; never read the ledger's
-  FREE column as a verdict (the `--state` join misreads suffixed
-  branch slugs — T-143's card).
-- THE HUMAN'S APP: port 1420 is read with
-  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else — never
-  bind-probe, never connect (the vite listens on IPv6 loopback; an
-  IPv4-only probe answers FREE while the app runs). `../nputer-app`
-  is detached ON PURPOSE (@human 2026-08-25): not a lane.
-- BOARD CENSUS: `brief.mjs --state` prints it per status; the
-  parser's field is `blockedBy`, NOT `blocked_by`. The suggested
-  column holds only post-amnesty arrivals — they queue for T-159's
-  rules, never a second amnesty.
-- E2E PORT: the variable is `NPUTER_E2E_PORT` (preflight.ts) — an
-  `E2E_PORT` export binds NOTHING and the suite silently uses its
-  default. lsof the port to zero rows first.
-- GRAPH: `cargo run -p nputer-index -- index --check --root ../..`
-  from app/src-tauri/ — ASK IT, never predict, ask AGAIN after every
-  write. Never regen or trust CURRENT from inside a drill worktree
-  (T-153-s3: a non-`target` target dir is inside the walk).
+  — a detached entry is NOT a lane. Dispatch = derive brief → PREFLIGHT
+  the card → `--write-fence <worktree>` → read the manifest back →
+  launch. Never read the ledger's FREE column as a verdict (T-143).
+- THE HUMAN'S APP: 1420 is read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and NOTHING else — never
+  bind-probe, never connect (the vite is on IPv6 loopback; an IPv4 probe
+  answers FREE while it runs). `../nputer-app` is detached ON PURPOSE:
+  not a lane.
+- BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
+- E2E PORT: `NPUTER_E2E_PORT` (default 14520) — `E2E_PORT` binds
+  NOTHING. Derive scratch ports FROM THE CARD ID; lsof to zero rows
+  immediately before binding.
+- GRAPH: `cargo run -p nputer-index -- index --check --root ../..` from
+  app/src-tauri/ — ASK IT, never predict, ask AGAIN after every write.
+  Never trust it from inside a drill worktree (T-153-s3).
 
 ## Next up — hooks only; statuses are the board's
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-112-s3` (row 3 APPLIES the role file's reading step)
-   and `T-140-s4` (graph leaves the collector, budget rises, banner
-   retired). **`T-140-s4`'s MERGE is what ends the 410-byte hold** —
-   until then only fences outside the graph walk may merge.
-2. THE HOLD, stated once: eight of sitting #4's ten promotions reach
-   indexed source. `tools/e2e` and `docs/**` are outside the walk and
-   are the only safely mergeable fences meanwhile.
-3. NEXT IN `tools/e2e` once `T-112-s3` clears: **`T-178`** — two reds
-   in one evening, both on other seats' work — then `T-163-s5`,
-   `T-179`, `T-167-s8` p2, `T-167-s6`, `T-164-s2`+`T-156-s5` as one
-   lane.
-4. AFTER THE GRAPH LANDS: `T-112-s1` (registration — until it lands the
-   drawer's brief block never renders), then `T-162-s1` (implement the
-   byte floor; its `DOC_BUDGETS` half is OUTSIDE its fence — decide at
-   dispatch, not inside the lane), then the walk's cards
-   (`T-171`/`T-172`/`T-173`/`T-176`/`T-177`).
-5. THE NEXT METHOD RELEASE HAS FIVE RIDERS and is worth cutting as a
-   card: `T-112-s2`, `T-154-s3`, `T-159-s6` park on it; `T-173` and
-   `T-176` owe a bump when they land; `T-154-s4`'s sentence joins them.
-6. @human holds: the **STEERING SPLIT** (rooms/steering-split.md — how
-   much is steered from nputer vs from Claude/Codex, per concern;
-   `T-180` is PARKED on its resolution and is NOT startable).
-   the **FORM**, REOPENED by @human 2026-08-31 (rooms/customization-form.md):
-   Q1's asymmetric answer leaves every authoring act a file edit, and
-   @human wants customization without opening files. Q2 moves with it;
-   Q3-Q9 do not. NOTHING is cut from it until @human returns.
-   **D5 IS RULED BUT NOT
-   ENFORCED**: nothing passes `--model`, so an assignment is honoured
-   only by the session that dispatches — set it deliberately.
+1. IN FLIGHT: `T-112-s3`, `T-172` (building); `T-177` (BUILT, awaiting
+   the integrator pass).
+2. THEN, no blocker left: `T-112-s1` (until it lands the drawer's brief
+   block never renders), `T-178`, `T-171`, `T-162-s1` (byte floor —
+   its `DOC_BUDGETS` half is OUTSIDE its fence; decide at dispatch),
+   `T-174`, `T-112-s4`, `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`.
+3. STANDING REDS worth a lane: `T-153-s8` (capabilities census),
+   `T-161`, `T-178`, `T-167-s8` (the pre-push graph guard — four local
+   strikes, one CI confirmation).
+4. THE NEXT METHOD RELEASE has five riders and wants a carrier card:
+   `T-112-s2`, `T-154-s3`, `T-159-s6`; `T-173` and `T-176` owe a bump;
+   `T-154-s4`'s sentence joins them.
+5. @human holds, and NOTHING is cut from these: the **FORM**, REOPENED
+   2026-08-31 (rooms/customization-form.md — the ruled asymmetric answer
+   leaves every authoring act a file edit, and @human wants
+   customization without opening files; Q2 moves with it, Q3–Q9 do
+   not); the **STEERING SPLIT** (rooms/steering-split.md; `T-180`
+   parked on it); and T-025-s4's three remaining permission questions,
+   which want a watched genesis run rather than an opinion.
+6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
+   assignment is honoured only by the session that dispatches. Set it
+   deliberately on every spawn.
 
 ## Standing hazards — the section that saves the hour
 
-- **The cargo cache cliff** (`T-088-s4`): `startup_arm_watches_the_initial_root`
-  reds when `app/src-tauri/target/` is large. Read the lib suite's
-  own time FIRST — green under 9.5s, red over 14.6s, never between.
-  No reflexive `cargo clean`; lanes may be building — `lsof` first.
-- **`a_hostile_session_id…` is live at ~1-in-22 clean-cache**
-  (`T-086-s1`): run it alone before attributing anything to a diff.
-- **Read the assertion, not the body's name** (`T-111-s9`):
-  token-scan's whole-corpus totals red for any control character
-  anywhere in the tracked corpus, under an unrelated title.
+- **The cargo cache cliff** (`T-088-s4`):
+  `startup_arm_watches_the_initial_root` reds when `target/` is large or
+  lanes contend. READ THE LIB SUITE'S OWN TIME FIRST — green under 9.5s,
+  red over 14.6s. Re-run the body ALONE before attributing it; no
+  reflexive `cargo clean`, lanes may be building. Fired 2026-08-31 at
+  16.21s and passed alone in 1.27s.
+- **`a_hostile_session_id…` is live at ~1-in-22** (`T-086-s1`): run it
+  alone before blaming a diff.
+- **Read the assertion, not the body's name** (`T-111-s9`): token-scan's
+  totals red for any control byte anywhere, under an unrelated title.
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
-  build artifact no merge updates — `npm run build` from lib/parser/
-  FIRST. An UNBUILT app tree fails `npm test` about `app/dist`.
-- **`npm run typecheck` from app/ DOES NOT EXIST** — exit 1 `Missing
-  script` reads like a type error; the app's typecheck is the two
-  `tsc` calls inside `npm run build` (T-073). The same trap holds
-  for EVERY tools/e2e script run from the wrong cwd — suite chains go
-  in guarded script files with `cd || exit N`, never pasted.
-- **THE ONE SPELLING IS ONE SPELLING BECAUSE EVERY VARIANT BREAKS
-  DIFFERENTLY** — and this shell adds a variant CONVENTIONS does not
-  name. The DOCS GATE's printed recipe passes an unquoted COMMAND
-  SUBSTITUTION, which zsh word-splits correctly. Route it through a
-  variable instead (`P=$(…)`, then `docs-gate.mjs $P`) and **zsh does
-  NOT split unquoted parameter expansions**: the gate takes the whole
-  list as ONE path and answers "1 path(s)" — plausible, wrong, exit 1
-  either way. Measured at sitting #4 on its own diff (19 paths). Type
-  the printed spelling, or build a real array.
-- **This session's `grep` is a `ugrep` shim carrying `-I`** — use
-  `command grep` when it matters; sweep NULs with `perl -0777`.
+  build artifact no merge updates — build the parser FIRST. An unbuilt
+  app tree fails `npm test` about `app/dist`.
+- **`npm run typecheck` from app/ DOES NOT EXIST** — the app's typecheck
+  is the two `tsc` calls inside `npm run build` (T-073).
+- **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`);
+  read every gate exit UNPIPED, never through a pipe.
+- **THE ONE SPELLING IS ONE SPELLING**: the DOCS GATE's printed recipe
+  uses an unquoted COMMAND SUBSTITUTION, which zsh splits. Route it
+  through a variable and zsh does NOT split it — the gate takes all
+  paths as ONE and answers "1 path(s)": plausible, wrong. Type the
+  printed spelling or build a real array.
+- **This shell's `grep` is a shim** carrying `-I` and rejecting
+  `--include` — use `command grep`; sweep NULs with `perl -0777`.
 - **An edit script's success is a GATE, not a step** (`18d8166`): never
-  chain `commit` after a scripted edit — read the diff first, or let
-  the script's own non-zero exit stop the chain.
-- **Cut scratch worktrees at SHORT roots** (`T-133-s5`): a 116-char
-  root steals the board's standing region at 800×600.
-- **Ports are machine-wide** (`T-132-s6`): explicit port, lsof-read
-  at zero rows immediately before binding — a probe reserves nothing.
-- **The RANGE RULE decides which two commits "the merge's diff"
-  means** (CONVENTIONS): integrator's pair and executor's pair are
-  different pairs; the pre-merge two-dot form hands your lane main's
-  work.
-- **Drill in a detached scratch worktree with its OWN
-  `CARGO_TARGET_DIR`** (CONVENTIONS, POISON DRILL) at `<scratch>/target`,
-  the walk-safe form (T-111-s10). A lane with uncommitted edits to a
-  token-scan plant target reds the restoration proof (`T-156-s3`).
+  chain a commit after a scripted edit — read the diff back first. Broken
+  twice in 24h, once by the seat that had just written the rule down.
+- **Cut scratch worktrees at SHORT roots** (`T-133-s5`), detached, with
+  their own `CARGO_TARGET_DIR` at `<scratch>/target` and a stem DERIVED
+  from the card id — the scratch directory is shared between sessions.
+- **Ports are machine-wide** (`T-132-s6`): explicit, lsof-read at zero
+  rows immediately before binding; a probe reserves nothing.
+- **The RANGE RULE decides which two commits "the merge's diff" means**
+  (CONVENTIONS): the integrator's pair and the executor's pair differ.
 - **After merging a lane, REMOVE ITS WORKTREE BEFORE the verdict
-  corrections** — the lane-fence guard's limit 6: git drops its
-  mid-merge marker at the merge commit while the worktree keeps the
-  fence, so corrections into it are refused for that window.
+  corrections** — guard limit 6: git drops its mid-merge marker at the
+  merge commit while the worktree keeps the fence.
+- **A PUSH CANCELS THE RUNNING CI JOB.** Four runs were superseded on
+  2026-08-30 by this seat's own rapid pushes, leaving main's tip
+  unverified for hours. Batch pushes; watch one run at a time.
+- **THE BOOT GATE AND THE HEALTH BANDS ARE OWED AT EVERY CHECKPOINT**
+  (T-046, T-156) and were skipped across four records on 2026-08-30.
+  The health run is what found this file's own breached band.
 
 ## The records
 
-- docs/checkpoints/ — append-only, one per integration; no suite may
-  depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record:
-  2026-08-30-the-rulings-sitting-2-eight-answers.md.
+- docs/checkpoints/ — append-only, one per integration. Current:
+  2026-08-31-T-140-s4-the-graph-leaves-the-collector.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
-- Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
-  every earlier version at `git log -- docs/STATE.md`.
+- Every earlier version: `git log -- docs/STATE.md`.

@@ -134,8 +134,11 @@ pub struct IndexOptions {
     /// `1_134_406` was read part-way through this card, before the rest
     /// of its own `.rs` edits landed — this comment and
     /// `tests/graph_budget_bench.rs`'s drill stage among them, both
-    /// inside the walk. The regen at the finished tree answers
-    /// `1_134_409`: **three bytes**, spent describing the measurement.
+    /// inside the walk. The regen at a finished tree answers a HANDFUL
+    /// of bytes more, spent describing the measurement — and the exact
+    /// figure is ref-bound, so it is not transcribed here: ask
+    /// `index --check`, which is the authority for what the graph
+    /// weighs today.
     /// The constant is deliberately NOT chased to a fixed point. Each
     /// correction is itself indexed, so convergence would be precision
     /// about nothing; this is a CEILING, three bytes against 1 011 550 of
