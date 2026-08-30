@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: building
+status: done
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [crate-index]
 builder: claude-opus-5@subagent
 verifier:
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: nputer-4e@integration-seat
 review:
 ---
 
