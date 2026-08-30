@@ -432,3 +432,54 @@ card in this feature waits on Q1.
 
 RESOLUTION (2026-08-30, @human, all nine ruled the same day the brief landed):
 Q1 **hybrid** in the asymmetric shape — files ARE the system; the app reads, explains, proposes, routes. Q2 **propose** — the app never authors a rule; a session or @human commits. Q3 **yes, imports only** — the app may copy a pack in verbatim, every import owing a card. Q4 **yes** — a `review:`-class per-card field joins D3's stampable set. Q5 **drift → card, per-skill interim** — @human's own reframing: harmony is the birthright (packs at genesis, CONVENTIONS grown from them); a LATER disagreement (pack updated, project learned, pack adopted mid-life) is DRIFT, surfaced as a card and never silently resolved, with the skill's own binding declaration deciding which side holds until reconciled. Q6 **per skill** — advisory-vs-binding in each SKILL.md's frontmatter. Q7 **yes** — the explain surface ships BEFORE any authoring surface. Q8 **yes** — every customization change owes a card. Q9 **host** — distribution rides the git host (the team-enablement room's standing answer, unobjected). The UI cards these rulings unblock are cut at a sitting under the version-planning room's standing rule, not automatically.
+
+## REOPENED BY @human, 2026-08-31 — the ruling may not answer the question @human was asking
+
+**@human, verbatim, on being told the form was decided:** *"I dont
+think it is. I mean the form of how those rules are edited/customized in
+practise. I want it to be easy and simple. I don't want users to need to
+open files."*
+
+**THE TENSION, STATED AND NOT RESOLVED HERE.** Q1's ruled answer is the
+ASYMMETRIC hybrid: files are the system, and the app reads, explains,
+proposes and routes but never authors. That answer settles WHERE THE
+RULES LIVE and WHO HOLDS THE PEN. **It does not give a user a way to
+customize without opening a file** — under c2 every authoring act is
+still open a file, type prose, commit, and the app's contribution is a
+better explanation of a system the user still authors by hand. The
+room's own brief said exactly this against c2, in the counter-argument
+it recorded and did not adopt: *"the 'simple for everyone' clause is not
+served at all, it is answered with a better manual. A newcomer who
+wanted a setup screen gets a diagram of one."*
+
+So the brief already contained @human's objection, argued, before the
+ruling was taken. That is the fact that makes this a reopening rather
+than a new question.
+
+**WHAT IS NOT IN DOUBT and should not be re-litigated tomorrow:** Q2
+through Q9 are about provenance, imports, drift, binding strength,
+ordering and distribution, and none of them depends on who holds the pen
+for AUTHORING. The propose-only pen (Q2) is the one that does — it is
+the same axis as Q1 and moves with it.
+
+**WHAT THE NEXT SITTING HAS TO WEIGH**, since the brief already did the
+analysis: c1 (the symmetric hybrid — the surface WRITES the same files a
+human edits, with a door to the file on every control the form cannot
+render) is the form that serves *"I don't want users to need to open
+files"* while keeping files as the store. Its cost is the one the brief
+priced: it reopens D3 for two surfaces and it is the form most likely to
+rot into a settings screen unless one published authority sentence
+governs the whole stack. **That is a cost, not a refusal** — and it is
+@human's to weigh, not a seat's.
+
+**AND THE SLOT COUNT IS NOW LOAD-BEARING RATHER THAN CHEAP HOUSEKEEPING.**
+The brief refused to invent it: *"If they are many and typed — gate
+commands, read-first document lists, attack-set sources, ceremony rows,
+model assignments, review modes — then a surface has something real to
+render."* Under c2 that count was interesting. Under a c1 reconsideration
+it decides whether an editing surface is even possible, because a form
+can only render what is enumerable.
+
+**STATUS: @human deferred this to 2026-08-31's waking hours and
+explicitly asked that the night's work be planned without it.** No seat
+rules it, and no card is cut from it, until @human returns.

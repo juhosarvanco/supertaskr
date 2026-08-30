@@ -82,9 +82,10 @@ record's commit is newer, and it caught the previous seat doing it.
 6. @human holds: the **STEERING SPLIT** (rooms/steering-split.md — how
    much is steered from nputer vs from Claude/Codex, per concern;
    `T-180` is PARKED on its resolution and is NOT startable).
-   **FORM-FIRST IS DISCHARGED, NOT PENDING** — customization-form.md's
-   RESOLUTION, all nine ruled 2026-08-30 at `3b2057b`; a seat said
-   otherwise on 08-31 without checking, so `T-173` is UNGATED.
+   the **FORM**, REOPENED by @human 2026-08-31 (rooms/customization-form.md):
+   Q1's asymmetric answer leaves every authoring act a file edit, and
+   @human wants customization without opening files. Q2 moves with it;
+   Q3-Q9 do not. NOTHING is cut from it until @human returns.
    **D5 IS RULED BUT NOT
    ENFORCED**: nothing passes `--model`, so an assignment is honoured
    only by the session that dispatches — set it deliberately.
