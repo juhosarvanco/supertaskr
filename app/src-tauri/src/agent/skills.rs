@@ -644,6 +644,11 @@ mod tests {
         let why = |dir: &str| {
             found.rejected.iter().find(|r| r.dir == dir).map(|r| r.why.clone()).unwrap_or_default()
         };
+        assert!(
+            why("no-frontmatter").contains("does not open with"),
+            "the drill found this reason unpinned: {}",
+            why("no-frontmatter")
+        );
         assert!(why("no-name").contains("`name:`"), "{}", why("no-name"));
         assert!(why("no-description").contains("`description:`"), "{}", why("no-description"));
         assert!(why("empty-description").contains("empty"), "{}", why("empty-description"));
