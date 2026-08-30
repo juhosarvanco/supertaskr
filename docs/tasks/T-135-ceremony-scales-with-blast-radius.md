@@ -1388,3 +1388,5 @@ commits must be in the path list the gate is asked about, or the gate
 cannot see it. It named `tools/e2e` as an owner of `graph.json`
 (`shell-frame.spec.ts`, `window-contract.spec.ts`), which is a suite the
 card's "cheap fix for THIS merge" does not mention.
+
+@HUMAN'S §6/§7 RULING (2026-08-30, in session): **ADVISORY NOW, BINDING AT THE MEASURED FLIP** — the rungs are computed and printed at every dispatch and recorded by the seat, binding on nothing, and become BINDING the day a re-derivation of §6's table shows the middle rung non-empty (one command, not a date). §7's corrections land with it: known non-code keeps the ceremony table's existing rule of thumb, the genuinely-unmeasured class (currently empty) takes the higher ceremony, and a build-target root is never rung 0. Half B (the TASK-FORMAT ceremony section + the ADR, prose only) dispatches on this ruling.
