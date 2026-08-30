@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 5
 size: S
-status: suggested
+status: parked
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: verifier claude-opus-5@subagent @T-153-s5
@@ -88,3 +88,7 @@ executor had no reason to reach for them. Cite the ordinals from
 `T-153-s8` the stale census. This one is the only member of the three
 that lands in `tools/e2e` rather than in a governing document, so it can
 ride whichever `tools/e2e` lane comes next rather than asking for one.
+
+Standing triage 2026-08-30 (architect seat): PARKED as a RIDER, on the card's own instruction: "it can ride whichever `tools/e2e` lane comes next rather than asking for one." Re-derived at this ref and all three elements HOLD — `token-scan.spec.ts` still has `ulpOf` at `:80`, the tolerance at `:95-96`, `Math.abs(row.deltaNs)` at `:140`, and `expectClocksRestored` at `:117` iterating `captured` with no length guard; `grep -rn 'ulp|tolerance|binade|nextafter' tools/e2e/tests/*.spec.ts` returns only the definition sites and a log string, so nothing pins the doubling, the epoch-dependence, the two-sidedness or a non-empty target list. A widened bound, a one-sided guard and an empty target list would all stay green.
+Not promoted, because it is one small assertion-integrity edit in a file another card will already have open, and giving it its own lane spends a session on three expectations. Not absorbed into `T-153-s11` or `T-153-s16` either: it shares their fence but not their file, their subject or their fixture, and folding it in would let a sweep lane weaken it by accident — which is the very failure it describes.
+RESURFACES: the next `tools/e2e` dispatch whose fence reaches `tools/e2e/tests/token-scan.spec.ts` — most likely `T-156-s3`, which is promoted at this sitting and opens exactly that file. Whoever cuts it attaches this card's three expectations as riders and says so on the card. IF two such lanes pass without taking it THEN it is under-served as a rider and promotes on its own.

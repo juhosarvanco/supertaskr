@@ -1,7 +1,7 @@
 ---
 id: T-156-s4
 title: The health bands can emit only two of the four house exit codes, because a standing property of the config is folded into a per-run one
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5@subagent @T-156
 ---
 
@@ -97,3 +97,7 @@ would decide this card by quotation instead of by argument.
     npm run health -- --readings <captured runs>    # 3, unread now 0
     # poison one DOC_BUDGETS warn line below the file's size, then:
     npm run health                                  # 3, with a BREACH printed
+
+Standing triage 2026-08-30 (architect seat): PARKED — BEHIND ITS OWN PRECONDITION, and the ordering is the whole reason. The finding HOLDS as measured: `EXIT.CLEAN` and `EXIT.FOUND` are unreachable while any band carries `authority.kind: "none"`, and four do, so `npm run health` returns 3 whether nothing breached, everything was fed through `--readings`, or a real band was poisoned. An exit code that never moves is one a reader stops reading, and the card is right that the information is printed but not carried.
+**IT CANNOT BE TAKEN FIRST.** The four bands carry `authority.kind: "none"` precisely because their keepers do not exist yet — that is `T-156-s1` (which absorbed `T-156-s2` at this sitting and is promoted at F-06 priority 14). Once those bands can be read, two of the four exit codes become reachable by construction and this card's measurement has to be re-taken to see what, if anything, is left. Building an exit-code repair now would price a state that is about to change, and `docs/STATE.md` is explicit that today's 3 is DESIGNED — "never read that 3 as clean, and never 'fix' it" — so a lane doing this out of order would be fixing the sentence STATE forbids fixing.
+RESURFACES: the merge of `T-156-s1` — the moment the health bands gain their keepers. The seat that picks it up re-runs the three-way measurement (`npm run health` default, with `--readings`, and with a band poisoned) at its own ref FIRST and parks it back with a new condition if the exit code now moves on its own. This card's own numbers were stamped at `2aef3d8` and are not to be copied.
