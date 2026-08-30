@@ -1360,7 +1360,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // difference over the two graph.json revisions (added 4, removed 0)
     // and from arch after the regen (files=189 unmapped=0), never from the
     // failure output.
-    expect(derived.fileComponent.size).toBe(189);
+    // 189 -> 190 AT THE T-167 MERGE REGEN (2026-08-30): ONE file joins,
+    // none leave — app/src-tauri/src/agent/skills.rs, the skill-pack
+    // loader, landing under C-14's globs, so unmapped stays 0 and the
+    // bucket stays closed. Derived from the regen line (190 files) and
+    // arch after it, the same way as the row above.
+    expect(derived.fileComponent.size).toBe(190);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1682,7 +1687,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-05" is what T-149 retires: there is no longer an `app/test/**`
       // rule, only per-file routing, and this component's own test is the
       // first row to feel it.
-      ["C-14", 9],
+      // 9 -> 10 at the T-167 merge regen (2026-08-30): skills.rs joins
+      // the agent component it lives inside.
+      ["C-14", 10],
       // C-15 JOINS THE MAPPING AT THE T-110 MERGE REGEN WITH FIVE FILES,
       // and it is the row this ledger has been forecasting since T-088
       // declared the component with nothing under it. Four Rust files

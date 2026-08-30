@@ -788,8 +788,10 @@ describe("the nputer repo on its own map", () => {
       // 185 -> 189 at the T-137 merge regen (2026-08-27, c22f0ac) - the four
       // lib-parser files of the schedule extraction, all mapped, so unlike
       // the entry above this one moves the count WITHOUT moving findings.
+      // 189 -> 190 at the T-167 merge regen (2026-08-30) - skills.rs under
+      // C-14, mapped, findings unmoved.
       // Derived from arch after the regen, not from the failure output.
-      "committed graph · 189 files",
+      "committed graph · 190 files",
     );
   });
 });
