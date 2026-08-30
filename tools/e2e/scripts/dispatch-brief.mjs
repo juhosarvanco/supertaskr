@@ -471,6 +471,7 @@ export function subBullet(bullet, phrase) {
  * @property {string} path
  * @property {string} head
  * @property {string} branch  the full ref, or "" for a detached entry
+ * @property {boolean} bare   git's own `bare` marker — a repository with NO working tree
  */
 
 /**
@@ -478,26 +479,124 @@ export function subBullet(bullet, phrase) {
  * the pin that drives a detached worktree at a lane-shaped path can feed
  * it a fixture without creating one on disk.
  *
+ * THE `bare` MARKER IS READ AND NOT DROPPED (T-179). It is the one shape
+ * in which the first entry names a directory that is NOT a working tree,
+ * and `mainWorktree` below has to be able to refuse rather than hand back
+ * a repository directory as though it were a checkout.
+ *
  * @param {string} porcelain
  * @returns {WorktreeEntry[]}
  */
 export function parseWorktreePorcelain(porcelain) {
   /** @type {WorktreeEntry[]} */
   const out = [];
-  /** @type {{ path: string, head: string, branch: string } | undefined} */
+  /** @type {WorktreeEntry | undefined} */
   let cur;
   for (const line of porcelain.split(/\r?\n/)) {
     if (line.startsWith("worktree ")) {
       if (cur !== undefined) out.push(cur);
-      cur = { path: line.slice("worktree ".length).trim(), head: "", branch: "" };
+      cur = { path: line.slice("worktree ".length).trim(), head: "", branch: "", bare: false };
       continue;
     }
     if (cur === undefined) continue;
     if (line.startsWith("HEAD ")) cur.head = line.slice("HEAD ".length).trim();
     else if (line.startsWith("branch ")) cur.branch = line.slice("branch ".length).trim();
+    else if (line.trim() === "bare") cur.bare = true;
   }
   if (cur !== undefined) out.push(cur);
   return out;
+}
+
+/**
+ * @typedef {object} MainWorktree
+ * @property {string} path    the repository's main working tree, or "" when it could not be derived
+ * @property {string} reason  why it could not be derived — "" when it could
+ * @property {string} via     the command that answered, for the provenance
+ */
+
+/**
+ * THE REPOSITORY'S OWN ROOT — the MAIN worktree, never the checkout this
+ * command happens to have run in (T-179).
+ *
+ * ── THE DEFECT THIS EXISTS TO REMOVE ─────────────────────────────────
+ * `docs/CONVENTIONS.md` publishes the lane worktree as `../nputer-T-NNN`,
+ * a RELATIVE path. Row 4 resolved it against `ctx.root` — the checkout the
+ * command ran in — and printed the answer under the heading "absolute, per
+ * lane-protocol rule three". From the integration checkout that lands on
+ * the intended sibling. From a NESTED worktree it lands one level inside
+ * `.claude/worktrees/`, which is the case rule three exists to forbid, and
+ * the row announced the rule while breaking it. The architect/integrator
+ * seat runs from a nested worktree by construction in this harness, so
+ * every brief that seat emitted on 2026-08-30 carried the wrong path;
+ * FOUR executors read it, four reported it, and the dispatching seat
+ * corrected each by hand. A lane is a sibling of the REPOSITORY, not of
+ * whoever dispatched it.
+ *
+ * ── WHY THE PORCELAIN'S FIRST ENTRY AND NOT `--git-common-dir` ────────
+ * Both were measured on this repository from all three checkout shapes
+ * (integration, nested worktree, lane) and both answered
+ * `/Users/ujju/Projects/nputer`. The porcelain wins on three counts.
+ * It is GIT'S OWN ANSWER rather than a derivation from one — git-worktree(1)
+ * lists the main working tree first, by contract, while the parent of
+ * `--git-common-dir` is a guess that holds only where `.git` is a
+ * directory at the top of the main worktree and is WRONG under
+ * `git init --separate-git-dir`, under an exported `GIT_DIR`, and for a
+ * bare repository. It SAYS `bare` instead of quietly handing back a
+ * directory that has no working tree. And `context()` ALREADY reads it —
+ * `ctx.porcelain` — so this costs no new git call, no new failure mode,
+ * and row 4's base is derived from the same text row 5's lane list is,
+ * which means the two rows cannot disagree about where the repository is.
+ *
+ * PURE, and it takes the text: every refusal below is drivable from a
+ * fixture rather than from a checkout somebody has to build.
+ *
+ * @param {string} porcelain
+ * @returns {MainWorktree}
+ */
+export function mainWorktree(porcelain) {
+  const via = "git worktree list --porcelain, first entry — git lists the MAIN worktree first";
+  const entries = parseWorktreePorcelain(porcelain);
+  const first = entries[0];
+  if (first === undefined || first.path === "") {
+    return {
+      path: "",
+      reason:
+        "`git worktree list --porcelain` named no worktree, so this command cannot tell where the " +
+        "repository's own root is. It will not fall back to the checkout it ran in: that fallback " +
+        "is the defect T-179 removed.",
+      via,
+    };
+  }
+  if (first.bare) {
+    return {
+      path: "",
+      reason:
+        `the repository's first worktree entry (${first.path}) is BARE, so the repository has no ` +
+        "main working tree for a sibling path to be a sibling OF.",
+      via,
+    };
+  }
+  return { path: first.path, reason: "", via };
+}
+
+/**
+ * Does `candidate` lie INSIDE `root`? The containment test lane-protocol
+ * rule three is about, spelled the way `docs-scan.mjs` already spells it
+ * for the DOCS GATE's own root check — one relative path, and a `..`
+ * segment or an absolute answer means it escaped.
+ *
+ * The root ITSELF counts as inside: rule three asks for a SIBLING
+ * directory, and the repository is not a sibling of itself.
+ *
+ * @param {string} root
+ * @param {string} candidate
+ * @returns {boolean}
+ */
+export function insideRepository(root, candidate) {
+  const rel = path.relative(path.resolve(root), path.resolve(candidate));
+  if (rel === "") return true;
+  if (path.isAbsolute(rel)) return false;
+  return rel !== ".." && !rel.startsWith(`..${path.sep}`);
 }
 
 /**
@@ -1380,15 +1479,83 @@ function deriveLane(ctx) {
   const branch = ctx.taskId === "" ? s.branchPattern : s.branchPattern.replace("T-NNN", ctx.taskId);
   const worktree =
     ctx.taskId === "" ? s.worktreePattern : s.worktreePattern.replace("T-NNN", ctx.taskId);
-  const absolute = path.resolve(ctx.root, worktree);
+  // THE BASE THE PUBLISHED SPELLING IS RESOLVED AGAINST — the REPOSITORY's
+  // own main worktree, not this checkout. See `mainWorktree` for the
+  // defect, the measurement and why the porcelain's first entry is the
+  // honest answer. When it cannot be derived this row REFUSES with its
+  // source, which is the shape this command already uses for a contract
+  // row it has no deriver for: a confident wrong path is worse.
+  const repo = mainWorktree(ctx.porcelain);
+  const derivedWorktree = repo.path === "";
+  const absolute = derivedWorktree ? "" : path.resolve(repo.path, worktree);
   const create =
     ctx.taskId === ""
       ? s.createCommand
       : s.createCommand.split("T-NNN").join(ctx.taskId).replace("<base>", base);
+  // AND THE COMMAND IS SPELLED ABSOLUTELY TOO, because the command is the
+  // ACT and the row above is only the report. Rule three's own remedy is
+  // "STATE THE PATH ABSOLUTELY, OR VERIFY THE WORKING DIRECTORY FIRST",
+  // and its own stated failure is a relative path in exactly this command:
+  // "`git` has no opinion about where a worktree lands, and there is no
+  // error — so a sibling path typed one directory too deep silently
+  // creates the inside case this rule forbids." A pasted line that carries
+  // the absolute path cannot land one directory too deep.
+  // AND ONLY WHERE A CARD IS NAMED, which the suite caught rather than the
+  // author: with no task the create line is the document's own text,
+  // `T-NNN` and `<base>` placeholders and all, and a transcription is a
+  // TREE fact. Substituting a machine path into a placeholder line would
+  // put a live stamp on a tree fact — this card's own defect facing the
+  // other way, and `a figure read from the MOVING integration ref…`
+  // reddened on it.
+  const spelledAbsolutely = !derivedWorktree && ctx.taskId !== "" && create.includes(worktree);
+  const createLine = spelledAbsolutely ? create.replace(worktree, absolute) : create;
   // DERIVED, not assumed: whether this line carries the moving hash is
   // what decides its stamp. With no task named it is the document's own
   // text, `<base>` placeholder and all, and a transcription is a tree fact.
-  const carriesBase = create.includes(base);
+  // The path substitution moves it the same way — where it fired, the line
+  // is no longer a function of the tree alone.
+  const carriesBase = createLine.includes(base);
+  /** @type {Rec[]} */
+  const worktreeRecs = derivedWorktree
+    ? [
+        value(
+          `worktree (absolute, per lane-protocol rule three): NOT DERIVED — ${repo.reason} ` +
+            `The published spelling is ${worktree}; resolve it yourself against the repository root.`,
+          live(ctx, repo.via),
+        ),
+      ]
+    : [
+        // A LIVE FACT, AND IT ALWAYS WAS. Where the repository sits on a
+        // disk is not determined by the commit this checkout holds — the
+        // same tree answers `/Users/ujju/Projects/nputer` here and
+        // something else on a runner — so stamping it `@ <ref>` was the
+        // module's own contract rule 3 broken in the row that cites rule
+        // three. The SPELLING is the tree's; the resolved path is the
+        // machine's, and the provenance now names both.
+        value(
+          `worktree (absolute, per lane-protocol rule three): ${absolute}`,
+          live(
+            ctx,
+            `docs/CONVENTIONS.md lane bullet worktree spelling ${JSON.stringify(worktree)}, ` +
+              `resolved against the repository's main worktree from ${repo.via}`,
+          ),
+        ),
+      ];
+  // THE ROW CHECKS ITSELF AGAINST THE RULE IT CITES. Fixing the base makes
+  // the path right for the spelling this project publishes today; it does
+  // not make it right for every spelling the document could publish
+  // tomorrow. A worktree pattern that resolved INSIDE the repository would
+  // print here under rule three's own heading, exactly as it did before —
+  // so the containment is measured rather than argued.
+  if (!derivedWorktree && insideRepository(repo.path, absolute)) {
+    ctx.findings.push(
+      `the lane worktree this row derives (${absolute}) is INSIDE the repository ` +
+        `(${repo.path}), and method/lane-protocol.md rule three says "The worktree is a sibling ` +
+        `directory, never a path inside the repository." The spelling docs/CONVENTIONS.md ` +
+        `publishes is ${JSON.stringify(s.worktreePattern)}; a lane cut there is a second copy of ` +
+        "every file to everything that walks the tree.",
+    );
+  }
   return [
     value(`integration branch: ${s.integrationBranch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet")),
     // WHICH SPELLING OF THAT BRANCH THIS CHECKOUT HOLDS. A live fact by
@@ -1407,10 +1574,7 @@ function deriveLane(ctx) {
       ),
     ),
     value(`branch: ${branch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet branch spelling")),
-    value(
-      `worktree (absolute, per lane-protocol rule three): ${absolute}`,
-      tree(ctx, "docs/CONVENTIONS.md lane bullet worktree spelling"),
-    ),
+    ...worktreeRecs,
     // THE THREE MOVING FIGURES. Each is a read of the integration REF, so
     // each carries the time and host it was read at and never a commit —
     // see `integrationRefs`. The create command is the third because the
@@ -1420,9 +1584,16 @@ function deriveLane(ctx) {
     value(`base commit: ${base}`, live(ctx, `${logVia}, newest Checkpoint`)),
     value(`integration tip right now: ${tip}`, live(ctx, logVia)),
     value(
-      `create: ${create}`,
-      carriesBase
-        ? live(ctx, `docs/CONVENTIONS.md lane bullet create command, base substituted from ${logVia}`)
+      `create: ${createLine}`,
+      carriesBase || spelledAbsolutely
+        ? live(
+            ctx,
+            "docs/CONVENTIONS.md lane bullet create command" +
+              (carriesBase ? `, base substituted from ${logVia}` : "") +
+              (spelledAbsolutely
+                ? `, worktree path spelled absolutely against the repository's main worktree from ${repo.via}`
+                : ""),
+          )
         : tree(ctx, "docs/CONVENTIONS.md lane bullet create command"),
     ),
     value(`lane-protocol rule two: ${rule2}`, tree(ctx, "method/lane-protocol.md rule two")),

@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -22,10 +22,12 @@ import {
   fenceOverlaps,
   fieldList,
   frontmatterFields,
+  insideRepository,
   integrationRefCandidates,
   laneSpellings,
   laneWorktrees,
   liveProv,
+  mainWorktree,
   namedDisciplines,
   note,
   packageCommands,
@@ -1567,5 +1569,275 @@ test("A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, N
     expect(heldBy.get(slug), `${slug} is the PARENT's ground and the child is not holding it`).toBe(
       "FREE",
     );
+  }
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-179 — A LANE IS A SIBLING OF THE REPOSITORY, NOT OF WHOEVER
+ * DISPATCHED IT.
+ *
+ * `docs/CONVENTIONS.md` publishes the lane worktree as `../nputer-T-NNN`.
+ * Row 4 resolved that RELATIVE spelling against `ctx.root` — the checkout
+ * the command ran in — and printed the answer under the heading
+ * "absolute, per lane-protocol rule three". From a NESTED worktree it
+ * landed one level inside `.claude/worktrees/`, which is the case rule
+ * three exists to forbid, announced under the rule it broke. The
+ * architect/integrator seat runs from a nested worktree by construction
+ * in this harness, so every brief it emitted on 2026-08-30 carried it;
+ * four executors read it, four reported it, and the dispatching seat
+ * corrected each by hand. A discipline was standing in for a
+ * construction.
+ *
+ * The two bodies below are the construction and its SWEEP. Neither could
+ * fail before the fix by failing to import — both drive behaviour that
+ * the pre-fix module had, and had wrong.
+ * ──────────────────────────────────────────────────────────────────── */
+
+interface NestedShapes {
+  /** the mkdtemp root, for the teardown */
+  dir: string;
+  /** the repository's MAIN worktree */
+  main: string;
+  /** a worktree INSIDE it — the architect/integrator seat's shape in this harness */
+  nested: string;
+}
+
+/**
+ * A repository whose main worktree holds a SECOND worktree inside itself.
+ * That shape is the whole fixture: everything this card is about is
+ * invisible from a checkout that is its own repository root, which is why
+ * the defect survived a suite that ran only from one.
+ *
+ * The nested entry is DETACHED on purpose. A lane-shaped branch would put
+ * it in the lane list and move rows that have nothing to do with this
+ * card; detached, the two runs differ only in where they were made from.
+ */
+function nestedShapes(): NestedShapes {
+  // REALPATH, AND IT IS LOAD-BEARING. `os.tmpdir()` is `/var/folders/…` on
+  // macOS and `/var` is a symlink to `/private/var`, so git reports the
+  // resolved spelling while `mkdtemp` hands back the symlinked one — and
+  // every path comparison in this body would then be comparing two names
+  // for one directory. Measured here first: the fixture's own checkout
+  // failed to match its porcelain entry, so the brief listed BOTH
+  // worktrees as "not yours" in both runs and the sweep's positive
+  // control went quiet.
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t179-nested-")));
+  const main = path.join(dir, "nputer");
+  mkdirSync(main);
+  const tar = path.join(dir, "tree.tar");
+  writeFileSync(
+    tar,
+    execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
+  );
+  execFileSync("tar", ["-x", "-f", tar, "-C", main]);
+  fixtureGit(main, ["init", "--initial-branch=main", "--quiet"]);
+  fixtureGit(main, ["add", "-A"]);
+  // Two `Checkpoint:` commits, for the same reason `refShapes` needs them:
+  // the base rule reads the newest out of the first-parent log.
+  fixtureGit(main, ["commit", "--quiet", "-m", "Checkpoint: fixture base"]);
+  fixtureGit(main, ["commit", "--quiet", "--allow-empty", "-m", "Checkpoint: fixture tip"]);
+  const nested = path.join(main, ".claude", "worktrees", "nested-seat");
+  fixtureGit(main, ["worktree", "add", "--quiet", "--detach", nested, "HEAD"]);
+  return { dir, main, nested };
+}
+
+/** The VALUE half of every rendered line — the provenance carries a clock
+ *  by design, so comparing whole lines would compare two clocks. */
+function values(rendered: string): string[] {
+  return rendered
+    .trimEnd()
+    .split("\n")
+    .map((l) => l.split("  <- ")[0] ?? l);
+}
+
+test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no working tree is REFUSED", () => {
+  // KILLED BY: `mainWorktree` returning `entries[entries.length - 1]`, by
+  // it dropping the `bare` refusal, and by `parseWorktreePorcelain`
+  // discarding git's `bare` marker. Every expectation below is a VALUE,
+  // never a name — a body that asserted only that the module exports
+  // something called `mainWorktree` is satisfied by an unused import.
+  const main = mainWorktree(PORCELAIN_FIXTURE);
+  expect(main.path, "git lists the MAIN worktree first, and that is the repository's root").toBe(
+    "/Users/x/nputer",
+  );
+  expect(main.reason).toBe("");
+  expect(main.via).toContain("git worktree list --porcelain");
+
+  // POSITIVE CONTROL FOR THE FIRST-ENTRY CLAIM. The fixture holds four
+  // more worktrees, so "it answered /Users/x/nputer" is a choice among
+  // five and not the only path there was to hand back.
+  const entries = parseWorktreePorcelain(PORCELAIN_FIXTURE);
+  expect(entries.length).toBeGreaterThan(1);
+  expect(entries.map((e) => e.path)).toContain("/Users/x/nputer-T-901");
+  expect(entries.every((e) => e.bare)).toBe(false);
+
+  // THE REFUSALS — the tool's own established idiom, and better than a
+  // confident wrong path. A BARE repository has no working tree for a
+  // sibling to be a sibling OF, and git says so in one word.
+  const bare = mainWorktree(["worktree /Users/x/nputer.git", "bare", ""].join("\n"));
+  expect(parseWorktreePorcelain(["worktree /Users/x/nputer.git", "bare", ""].join("\n"))[0]?.bare)
+    .toBe(true);
+  expect(bare.path, "a bare repository is not a checkout, and this must not answer with one").toBe(
+    "",
+  );
+  expect(bare.reason).toContain("BARE");
+  expect(bare.reason).toContain("/Users/x/nputer.git");
+
+  const empty = mainWorktree("");
+  expect(empty.path).toBe("");
+  expect(empty.reason).toContain("named no worktree");
+  // AND IT SAYS WHY IT WILL NOT FALL BACK, because the fallback IS the defect.
+  expect(empty.reason).toContain("the checkout it ran in");
+
+  // THE CONTAINMENT TEST RULE THREE IS ABOUT, both directions. The sibling
+  // is OUT; the nested path the brief used to print is IN; and the root
+  // itself is IN, because the repository is not a sibling of itself.
+  expect(insideRepository("/Users/x/nputer", "/Users/x/nputer-T-179")).toBe(false);
+  expect(
+    insideRepository("/Users/x/nputer", "/Users/x/nputer/.claude/worktrees/nputer-T-179"),
+    "this is the exact path the brief printed under the heading citing rule three",
+  ).toBe(true);
+  expect(insideRepository("/Users/x/nputer", "/Users/x/nputer")).toBe(true);
+});
+
+test("THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named", () => {
+  // KILLED BY: `path.resolve(ctx.root, worktree)` in `deriveLane` — the
+  // sentence this card removes. MEASURED AGAINST IT BEFORE THE ZERO BELOW
+  // WAS WRITTEN DOWN: the fixture's own tar is a checkout of the pre-fix
+  // tree, and running ITS `brief.mjs` over the same two roots produced a
+  // third moved line, `worktree (absolute, per lane-protocol rule three)`,
+  // naming `<main>/.claude/worktrees/nputer-T-133`.
+  //
+  // THE SWEEP IS THE DELIVERABLE, NOT THE ROW. Row 4's worktree was one
+  // member of a class — "a path this command derives by resolving a
+  // RELATIVE spelling against whoever ran it" — and a class is a class
+  // until somebody looks. This body looks at EVERY row at once by asking
+  // one question of the whole rendered brief: what changed when nothing
+  // changed but the directory the command was run from?
+  const fx = nestedShapes();
+  try {
+    const id = "T-133";
+    const run = (root: string) =>
+      spawnSync(process.execPath, [CLI, "--task", id, "--root", root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+      });
+    const fromMain = run(fx.main);
+    const fromNested = run(fx.nested);
+    expect([EXIT.CLEAN, EXIT.FOUND], fromMain.stderr ?? "").toContain(fromMain.status);
+    expect([EXIT.CLEAN, EXIT.FOUND], fromNested.stderr ?? "").toContain(fromNested.status);
+
+    // PRE-CONDITION, ASSERTED RATHER THAN ASSUMED: the second checkout
+    // really is INSIDE the first. Without it every zero below is the zero
+    // a suite gets for running the same command twice.
+    expect(
+      insideRepository(fx.main, fx.nested),
+      "the fixture's second checkout is not nested, so this body is comparing one shape with itself",
+    ).toBe(true);
+
+    // ── THE ALLOWLIST — the rows that are ABOUT the asker, each with the
+    //    reason it may move. Every other moved line is a finding.
+    const mayMove: { prefix: string; why: string }[] = [
+      {
+        prefix: "repository: ",
+        why: "this row names the checkout the command ran in, and says so in its own provenance",
+      },
+      {
+        prefix: "  another checkout exists and is not yours: ",
+        why: "`yours` is relative to the asker by construction — row 12 lists the OTHER checkouts",
+      },
+      {
+        prefix: "  port ",
+        why: "a live read of the MACHINE, not of any checkout: two reads seconds apart may differ",
+      },
+    ];
+    const mainVals = values(fromMain.stdout);
+    const nestedVals = values(fromNested.stdout);
+    expect(
+      mainVals.length,
+      "the two runs printed different numbers of lines, so a row appeared or vanished with the checkout",
+    ).toBe(nestedVals.length);
+    const moved = mainVals
+      .map((line, i) => ({ line, other: nestedVals[i] ?? "" }))
+      .filter((p) => p.line !== p.other);
+    const unexplained = moved.filter((p) => !mayMove.some((a) => p.line.startsWith(a.prefix)));
+    expect(
+      unexplained.map((p) => `${p.line}\n   became ${p.other}`),
+      "a DERIVED row moved when only the dispatching directory moved. A fact about the repository " +
+        "that answers differently depending on who asked is the defect T-179 removed from row 4, " +
+        "arriving in another row",
+    ).toEqual([]);
+
+    // POSITIVE CONTROLS FOR THE ALLOWLIST, so an empty `unexplained` is
+    // not the emptiness of a comparison that never ran. The two STRUCTURAL
+    // entries must actually have fired; the port entry is a stated safety
+    // valve for a machine fact and is not required to.
+    expect(
+      moved.map((p) => p.line).filter((l) => l.startsWith("repository: ")),
+      "the two runs report the same repository row, so they were made from the same place",
+    ).toHaveLength(1);
+    expect(
+      moved.map((p) => p.line).filter((l) => l.startsWith("  another checkout exists")),
+      "neither run saw a checkout that was not its own, so the fixture has one worktree, not two",
+    ).not.toEqual([]);
+
+    // ── AND THE VALUE ITSELF, because the sweep alone cannot see a row
+    //    that is equally wrong from both checkouts — which the `create:`
+    //    line WAS: it carried the bare relative `../nputer-T-133`, and a
+    //    pasted relative path lands wherever the pasting shell happens to
+    //    sit. Two sides sharing no constant: the producer derives the base
+    //    from git, this body derives it from the fixture's own layout.
+    const spelling = laneSpellings(conventions()).worktreePattern.replace("T-NNN", id);
+    const sibling = path.resolve(fx.main, spelling);
+    const row4 = (out: string) =>
+      values(out).find((l) => l.includes("worktree (absolute, per lane-protocol rule three)")) ?? "";
+    expect(row4(fromMain.stdout), "row 4 emitted no worktree line at all").not.toBe("");
+    for (const [where, out] of [
+      ["the main worktree", fromMain.stdout],
+      ["a nested worktree", fromNested.stdout],
+    ] as const) {
+      expect(row4(out), `dispatched from ${where}`).toBe(
+        `  worktree (absolute, per lane-protocol rule three): ${sibling}`,
+      );
+      expect(
+        insideRepository(fx.main, sibling),
+        "the path row 4 prints is INSIDE the repository, under a heading citing the rule that " +
+          "forbids exactly that — lane-protocol rule three",
+      ).toBe(false);
+      // THE COMMAND IS THE ACT AND THE ROW IS ONLY THE REPORT. Rule three's
+      // own remedy is "STATE THE PATH ABSOLUTELY", and its own stated
+      // failure is a relative path in this very command.
+      const create = values(out).find((l) => l.startsWith("  create: ")) ?? "";
+      expect(create, `dispatched from ${where}: no create command was emitted`).not.toBe("");
+      expect(create, `dispatched from ${where}`).toContain(`git worktree add ${sibling} `);
+      expect(
+        create,
+        "the pasted command still carries the relative spelling, which git resolves against " +
+          "whatever directory the dispatching shell sits in",
+      ).not.toContain(`add ${spelling} `);
+    }
+
+    // ── THE CLASS'S SECOND MEMBER, AND THE ONE THAT WRITES. `--write-fence`
+    //    resolved its argument against `ctx.root` too, so a dispatcher
+    //    pasting the published spelling from a nested worktree aimed the
+    //    manifest one directory inside `.claude/worktrees/`. No such
+    //    worktree exists here, so the command refuses — and what this pins
+    //    is WHICH PATH it refused about.
+    const wf = spawnSync(
+      process.execPath,
+      [CLI, "--task", id, "--root", fx.nested, "--write-fence", spelling],
+      { cwd: repoRoot, encoding: "utf8" },
+    );
+    const wfOut = `${wf.stdout}\n${wf.stderr}`;
+    expect(wfOut, "--write-fence aimed at some path other than the repository's own sibling").toContain(
+      sibling,
+    );
+    expect(
+      wfOut,
+      "--write-fence aimed INSIDE the repository, which is where a manifest becomes a second copy " +
+        "of the project to everything that walks the tree",
+    ).not.toContain(path.resolve(fx.nested, spelling));
+  } finally {
+    removeGitFixture(fx.dir, "nestedShapes");
   }
 });
