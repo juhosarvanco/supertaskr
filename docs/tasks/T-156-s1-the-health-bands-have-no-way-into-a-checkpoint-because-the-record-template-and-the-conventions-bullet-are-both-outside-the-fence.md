@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 14
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [docs/checkpoints/, docs/CONVENTIONS.md, .github/workflows/]
 suggested_by: executor claude-opus-5 @T-156
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:

@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [app-agent]
 suggested_by: "@human ruling (2026-08-30, loop-customization sitting): two-track sitting approved — track 1, wire skills into genesis, is form-independent engineering and proceeds"
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
@@ -57,3 +57,5 @@ the substrate both forms share.
 
 `touches: [app-agent]` — disjoint from every queued card at filing
 (derive at dispatch). The e2e seat is NOT held by this card.
+
+PREFLIGHT RULING (2026-08-30): the finding "STALE PATH .claude/skills" is RULED ACCEPTABLE — `.claude/skills/<name>/SKILL.md` names a RUNTIME surface in the OPENED project (the project genesis is run against: a temp directory in the smoke, a fixture directory in tests), never a tracked path in this repository. This repository deliberately has no such directory today, and the card creates none here; the criteria's third bullet already states the read-only nature of the surface. The preflight cannot know an opened-project path from a repo path, which it says honestly in its cannot-rows — this ruling is the missing knowledge, dated.
