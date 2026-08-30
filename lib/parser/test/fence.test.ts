@@ -413,19 +413,18 @@ describe('THE TWO PINS THE CARD ASKS FOR, each measured against BEFORE', () => {
 });
 
 describe('the live board, censused through the expansion', () => {
-  it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
+  it('every token on every live card resolves, except the three on T-054', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
     // under the next merge exactly the way a line number does.
-    // `T-164 bin` is a CREATION TARGET declared on the card in T-160's
-    // class-(a) language — the fence names a path the card exists to
-    // create. It leaves this list the day bin/ exists; a second
-    // creation target joins it only with the same sentence on its card.
+    // `T-164 bin` sat here for part of 2026-08-30 as a declared creation
+    // target; bin/ exists now (its own leaving condition), and a future
+    // creation target joins only with the same sentence on its card.
     const unresolved: string[] = [];
     for (const task of project.tasks) {
       if (task.id === undefined || task.touches.length === 0) continue;
       for (const raw of expandFence(task, components).unusable) unresolved.push(`${task.id} ${raw}`);
     }
-    expect(unresolved).toEqual(['T-054 docs', 'T-054 method', 'T-054 ci', 'T-164 bin']);
+    expect(unresolved).toEqual(['T-054 docs', 'T-054 method', 'T-054 ci']);
   });
 
   it('no live card fences its own file, so the carve-out changes nothing today', () => {

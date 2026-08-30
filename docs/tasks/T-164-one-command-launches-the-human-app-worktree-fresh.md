@@ -61,3 +61,5 @@ about the actual cause.
 `touches: [bin]` is a creation target (T-160 class (a): stated
 explicitly). Nothing else on the board fences `bin/`; the card is
 dispatchable the moment a seat is free, and collides with nothing.
+
+PREFLIGHT RULING (2026-08-30): the finding "UNCOVERED CRITERION PATH lib/parser" is RULED ACCEPTABLE — the criterion names lib/parser as a directory the SCRIPT acts on AT RUNTIME inside the app worktree it is pointed at (~/Projects/nputer-app or the env-named path), never as a write target in this repository; the lane writes only under bin/. The T-167 runtime-surface precedent, same date. The "bin" token finding was CORRECTED instead: bin/ now exists (.gitkeep), the census exception retired by its own leaving condition in the same commit.
