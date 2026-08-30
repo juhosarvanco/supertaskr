@@ -49,3 +49,24 @@ caller and exactly two live cards (T-020, T-024) light up.
 RESURFACES: @human answers, here or in session; the answer lands as a
 dated ruling on this card and, if "flagged", promotes it as a
 one-clause card.
+
+## @human RULED, 2026-08-30, in session: HONOURED
+
+**"The cards can name two models, that is fine."** A stamp naming the
+assigned model AND a second model is HONOURED — disclosure, not
+substitution. The landed behaviour (`assignment.ts` rule 4: every
+assigned model satisfied by SOME executed model) is CORRECT and needs no
+change; `T-020` and `T-024` stay clean.
+
+**This card is DISCHARGED as a question and stays `parked` as the
+record of it** — there is no work to promote, and the one-clause change
+its body specified for the "flagged" branch is not owed.
+
+**AND @human RAISED THE LARGER QUESTION IN THE SAME BREATH, WHICH IS NOT
+THIS CARD'S**: whether the assignment is ENFORCED at all — *"Is the
+decision of the model honored by Claude and Codex?"* — and the direction
+that nputer itself should run the architect session and route tasks to
+subagent sessions with the correct model. That is D5's enforcement half,
+it is NOT built, and it is filed as **`T-180`** rather than folded in
+here. This card is about how a two-model STAMP is READ; `T-180` is about
+whether anything makes the assignment true in the first place.

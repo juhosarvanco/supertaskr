@@ -49,8 +49,24 @@ versions, rules v1's cut line, and the ruling is recorded here.
 Until that sitting, the standing rule holds and the in-flight work
 (@human-approved) proceeds.
 
-RESOLUTION: none yet — the partition above is a DRAFT awaiting
-@human's markup at a sitting of their choosing.
+RESOLUTION (2026-08-30, @human, in session): **THE DRAFT PARTITION ABOVE IS
+APPROVED AS WRITTEN.** v1, v2 and v3+ are as drafted; no entry moved
+columns at this ruling. The standing rule stands unchanged for anything
+NOT in the partition — a charter entry still needs a version ruling
+before it reaches the board.
+
+**ONE ITEM CARRIES A KNOWN DEPENDENCY AND @human DEFERRED IT
+DELIBERATELY**: *customization by interview* (entry 03) sits in v1 while
+FORM-FIRST still holds — no customization UI is designed before the form
+decision (`docs/rooms/customization-form.md`,
+`docs/rooms/loop-customization.md`). @human: **"lets leave the form
+decision for tomorrow."** So v1's cut line is ruled and this one entry's
+BUILDABILITY is not; it is approved into v1 and gated on the form
+decision, not on a second version ruling. The seat flagged the cost at
+the ruling: `T-173` turned out to be size L — it moves a shipped
+interview document and a nine-row table transcribed cell-by-cell into
+`BANKING_MAP` — so if the form decision slips, moving entry 03 to v2 is
+the cheaper correction than letting v1's scope drift.
 
 ADDENDUM (2026-08-30, @human's idea, reviewed and adopted): **THE
 VERSION TABLE** — a selector surface in nputer where charter entries

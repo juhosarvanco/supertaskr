@@ -64,4 +64,25 @@ channel move becomes buildable.
 
 ## Resolution
 
-None yet — @human rules. One word suffices: **A / B / C**.
+**RULED 2026-08-30, @human, in session: A — INTEGRATION IS THE PRODUCT.**
+
+The full loop is the offer; the verdict is its sharpest feature.
+Milestone 4's board surfaces are the destination.
+
+**@human's own reasoning, which narrows the ruling further than the
+option text does:** *"I'm not sure why i would want to build a Jira or
+Linear integration, as our product is so similar."* So the channel move
+— registering as an agent against Linear/Jira/Plane protocols — is NOT
+adopted even as the distribution tactic option A allows. Option A's text
+kept it as a tactic; this ruling declines it on the ground that a
+product this similar to the incumbents does not gain by entering their
+surface as a guest.
+
+**WHAT THIS DOES NOT DECIDE, said plainly so nobody reads more into it
+than was ruled:** the verdict's value as the differentiator is untouched
+— it is what makes the loop worth buying, and the 27% first-pass
+rejection evidence stands. What was rejected is the DELIVERY VEHICLE
+question (should the verdict travel alone into other people's trackers),
+not the verdict's importance. If the incumbents' similarity later
+becomes a distribution problem rather than a positioning one, that is
+the event that reopens this room.

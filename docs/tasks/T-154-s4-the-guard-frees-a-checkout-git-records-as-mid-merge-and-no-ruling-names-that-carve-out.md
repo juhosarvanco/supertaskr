@@ -3,9 +3,9 @@ id: T-154-s4
 title: The guard frees a checkout git records as mid-merge, and no ruling names that carve-out
 feature: F-04
 milestone: 4
-priority: 30
+priority: 31
 size: S
-status: parked
+status: planned
 blocked_by: []
 touches: [.claude, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154-s2
@@ -96,3 +96,25 @@ inside it stays open either way**: `MERGE_HEAD` alone covers the merge
 play; the four also cover revert and both rebase directories.
 
 **RESURFACING CONDITION: @human answers.**
+
+## @human RULED, 2026-08-30, in session: KEEP IT
+
+**"keep it".** The fourth carve-out — a checkout git records as
+mid-merge, mid-rebase, mid-revert or mid-cherry-pick is free of every
+live lane's fence — STANDS, and it stops being an executor's note.
+
+What the card now owes, which is bookkeeping rather than judgement:
+
+- the carve-out joins @human's own list of three rather than sitting in
+  `INTEGRATION_IN_PROGRESS_MARKERS`' header as a lane's addition;
+- `method/lane-protocol.md` gains the sentence beside `T-154-s3`'s, so
+  this card joins the next method release's rider set;
+- **the narrow question inside it is still open and is NOT ruled here**:
+  `MERGE_HEAD` alone covers the merge play, and the four markers also
+  cover revert and both rebase directions. The lane picks the set and
+  says why — that is a mechanical call, unlike the carve-out itself.
+- **and the WINDOW the marker does not cover stays a known limit**: git
+  clears it at the merge COMMIT while the worktree lives until after the
+  checkpoint, so post-merge verdict corrections are still refused unless
+  the worktree is removed first (hook limit 6). The ruling keeps the
+  carve-out; it does not close that window.
