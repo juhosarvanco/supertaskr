@@ -1,9 +1,30 @@
 ---
 id: T-140-s1
 title: The pane should receive the component picture and pull file detail only for what is on screen — the shape T-140 measured, and the one it could not build inside its own fence
-status: parked
+feature: F-06
+milestone: 4
+priority: 2
+size: L
+status: planned
+blocked_by: [T-135]
+touches: [crate-index, app-map, app-shell]
 suggested_by: executor claude-opus-5 @T-140
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the rulings sitting (2026-08-30): @human ruled the
+payload shape in this card's favour — rollup at rest, file detail
+pulled for what is on screen.** The density measurements below are
+this card's acceptance evidence, and the four numbered steps under
+"What this card would do" are its criteria, each read as a SHALL. The
+same ruling REJECTED `T-151` (docs/tasks/rejected/) by that card's own
+framing; nothing here inherits its cap-raise. `blocked_by: [T-135]`
+because `crate-index` is held by T-135's building status; the fence
+question is re-derived at dispatch, not quoted from here.
 
 **This is `T-140`'s criterion 6 — "pin the RELATION, that the shipped
 payload does not grow with file count" — recorded as NOT BUILT and

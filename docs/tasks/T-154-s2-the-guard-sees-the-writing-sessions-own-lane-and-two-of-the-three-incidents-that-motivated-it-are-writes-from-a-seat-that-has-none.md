@@ -1,9 +1,34 @@
 ---
 id: T-154-s2
 title: The guard sees the writing session's own lane, and two of the three incidents that motivated it are writes from a seat that has none
-status: parked
+feature: F-04
+milestone: 4
+priority: 4
+size: M
+status: planned
+blocked_by: []
+touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154
+builder:
+verifier:
+built_by:
+verified_by:
+review: independent
 ---
+
+**PROMOTED at the rulings sitting (2026-08-30): @human ruled lane-less
+seats' writes IN SCOPE.** A write from a checkout that is not a lane
+(the integration checkout above all) to a path some LIVE lane's
+manifest reserves is refused mechanically — with the carve-outs the
+ruling names, stated as criteria, not left to the hook's judgement:
+`docs/tasks/` stays unfenceable, a card's own file is outside every
+fence, and the integration seat's ordinary writes (docs/STATE.md,
+docs/checkpoints/, the dispatch and closing stamps) are never a lane's
+to veto. `review: independent` per TASK-FORMAT — the builder of a cage
+is not its inspector. The cost question below (a hook reading sibling
+worktrees on every write) is the executor's to measure and the card's
+to answer honestly; a guard too slow to keep on is the gate nobody
+runs, and saying so with a measurement is an acceptable outcome.
 
 **T-154's spec paragraph and T-154's redesigned mechanism do not cover
 the same set, and the difference is not a defect in either — it is a

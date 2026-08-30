@@ -64,3 +64,18 @@ follower ships first.
   carries `--dangerously-bypass-approvals-and-sandbox` (and
   `--dangerously-bypass-hook-trust`). The adapter-table ban must match
   both when the Codex entry is written.
+
+## D3 RULED (2026-08-30, @human, decision sitting with integrator nputer-4e)
+
+**Narrow yes.** The app may write into docs/ exactly what the method
+already lets a dispatch write: card frontmatter stamps (the
+`builder:`/`verifier:` fields above, `status:` at dispatch and close)
+and APPENDS to record-class locations — cards it is entitled to stamp,
+never an edit to a record already written. The four governing
+documents (NORTH_STAR, ROADMAP, ARCHITECTURE, CONVENTIONS) and
+`method/` are out of bounds: their sentences are RULE- and TRUTH-tier
+(ADR-019), maintained by sessions under gates, and a program gets no
+pen for them. The earlier partial ruling in this room is this rule's
+special case, not a separate grant. Same gates bind the app as bind
+any seat — the DOCS GATE and the budget bands read an app write
+exactly as they read a session's.

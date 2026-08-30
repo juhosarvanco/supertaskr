@@ -73,9 +73,9 @@ opens with the card id that still holds its story.
   failed preflight refusing the manifest, a live board defect found
   on its first pass). Next: T-112 hands you the brief and lane
   commands from the board (the slice's third clause); it is also the
-  board's most colliding card — derive the flip pairs first. Open rulings:
-  D3 (may the app write into docs/?) and D5 (`model@session`
-  per-adapter, from the cockpit-or-mirror room).
+  board's most colliding card — derive the flip pairs first. Open
+  ruling: D5 (`model@session` per-adapter); D3 ruled narrow
+  2026-08-30 (both in rooms/cockpit-or-mirror.md).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
   Not started; follower-first ordering ruled in
@@ -153,7 +153,7 @@ THE OTHERS ARE NOT, and hands you the exact brief and lane commands.
 Deliberately, not one card in it spawns a process (milestone 3's own
 hand-driven-first precedent, one role over).
 Rulings and standing facts: D1 ruled 2026-08-19; D2 taken (dispatch
-is C-15, slug `app-dispatch`); D3 and D5 open. ~80 inherited-backlog
+is C-15, slug `app-dispatch`); D3 ruled, D5 open. ~80 inherited-backlog
 cards carry `milestone: 4` without being slice content — a known,
 accepted cost of the ruling; a milestone census and a board census
 answer DIFFERENT questions, and neither is this file's to transcribe.

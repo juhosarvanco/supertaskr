@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: rejected
 blocked_by: [T-135]
 touches: [crate-index, app-shell]
 builder:
@@ -90,3 +90,5 @@ is T-140.**
 
 `crate-index` is held by `T-135` (`status: building`, no lane), so this
 card cannot dispatch until T-135 closes — recorded in `blocked_by`.
+
+Rulings sitting 2026-08-30 (@human, with integrator nputer-4e): REJECTED — @human ruled the map payload shape in T-140-s1's favour (rollup at rest, detail pulled on drill-in), and this card's own honest framing already conceded the outcome: the raise buys ~10 files, T-140's shape removes the wall, and "if only one of the two cards is worth a lane, it is T-140." Declined by the ruling it asked for, not by decay.
