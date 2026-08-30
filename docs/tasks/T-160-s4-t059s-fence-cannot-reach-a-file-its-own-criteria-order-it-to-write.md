@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/tasks/T-059-the-two-joins-cannot-quietly-disagree.md]
 suggested_by: verifier claude-opus-5@subagent @T-160
 builder: claude-opus-5@subagent
 verifier:
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: nputer-4e@integration-seat
 review:
 ---
 
