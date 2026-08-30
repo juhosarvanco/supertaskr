@@ -5,11 +5,11 @@ feature: F-01
 milestone: 4
 priority: 4
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md, docs/CAPABILITIES.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s5
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
@@ -159,9 +159,14 @@ by hand at this record: **CURRENT (26427 bytes)**, census 313 → **332
 behaviours** (330 extracted + 2 named-not-extracted) across 29 spec
 files.
 
-**THAT IS THE THIRD TIME THE FIGURE HAS BEEN FIXED BY A HAND AT A
-CHECKPOINT**, and the third time nothing on this repository could have
-told anyone it was wrong. Re-derived here rather than taken from the card:
+**AND THE INSTANCES ARE ENUMERATED RATHER THAN COUNTED**, because an
+ordinal about this repository's history is a census claim with no keeper
+— the very class this card is about, and the preflight refused an earlier
+draft of this paragraph for exactly that. The occasions on record: the
+one this card was filed for (regenerated away at `cc82dc2`), the
+regeneration at `82f5722` above, and the one at `T-112-s3`'s integration
+which took the census 332 → 335. On every one of them nothing on this
+repository could have said the figure was wrong. Re-derived here rather than taken from the card:
 `command grep -c capabilities .github/workflows/ci.yml` answers **0**,
 while `cargo audit` answers 2, `boot:check` 1, `lint:docs` 1 and
 `index --check` 2. **Every other gate this seat believed it had skipped
