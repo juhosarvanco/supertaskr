@@ -144,7 +144,9 @@ partition is read off `touches:`.
 
 Built in `/Users/ujju/Projects/nputer-T-167-s1` on
 `task/T-167-s1-sessions-schema`, cut from `51fa31c`. Every figure below
-re-derived in this lane at `9fdc4d4` unless it carries its own stamp.
+was re-derived in this lane at its own final commit, against **main at
+`16f4821`** — which is NOT the tip this lane was briefed at; see "main
+moving under the lane" below.
 
 ### The tenth key, as documented
 
@@ -273,9 +275,11 @@ thrown away the work would not have been. The scratch worktree is removed.
 - **`cargo test` from app/src-tauri — exit 0, UNPIPED** (`cargo test > <file> 2>&1; echo $?`;
   a redirect, never a pipe). 560 passed, 0 failed, 4 ignored across every
   target. Cache cliff read the way T-088-s4 says — by the lib suite's OWN
-  time, not by `target`'s size: **4.17s**, against green-under-9.5s and
+  time, not by `target`'s size: **4.24s**, against green-under-9.5s and
   red-over-14.6s, with `target` at 2.5G. No `cargo clean`; three sibling
-  lanes were live.
+  lanes were live. One warning in the build and it is NOT this diff's:
+  `unused import: Path` at `src/arch_cmd.rs:2`, a file this lane never
+  opened.
 - **`npm run lint:docs` from tools/e2e — exit 0** (exit 1 before the
   root-anchor correction above; both runs recorded).
 - **DOCS GATE on this lane's own RANGE RULE pair** — `git merge-tree
@@ -327,6 +331,51 @@ caught by the author at the gate rather than by the next executor. Worth
 recording because the trap is invisible while writing: the fence looks
 like prose, the card renders acceptably, and nothing about the error
 message points at the sentence that caused it.
+
+### THE SUITES THE GATE NAMED, AND MAIN MOVING UNDER THE LANE
+
+All three named suites were run, at the lane's final commit:
+
+- `npx vitest run` from lib/parser/ — **336/336, exit 0** (after the fence
+  repair above; the failing run is recorded there rather than hidden).
+- `npm test` from app/ — **1047/1047 across 49 files, exit 0**. Needed the
+  fresh-worktree order first: `npm ci` + `npm run build` from lib/parser/,
+  then `npm install` + `npm run build` from app/, each exit 0.
+- `npm test` from tools/e2e/ — **319 passed / 2 failed, exit 1**, on
+  `NPUTER_E2E_PORT=14167`. The port is DERIVED FROM THE LANE (T-167) and
+  not defaulted, because ports are machine-wide and three sibling lanes
+  are live; `lsof -nP -iTCP:14167 -sTCP:LISTEN` read **0 rows immediately
+  before binding**. Chromium was already in the machine-wide playwright
+  cache; nothing was downloaded.
+
+**THE TWO FAILURES ARE NOT THIS LANE'S, AND THAT IS MEASURED RATHER THAN
+ASSERTED.** Both are in `tests/session-economics.spec.ts`, both share one
+cause, and the cause is a brief refusal:
+
+    fences are not disjoint: T-154-s2 tools/e2e against T-157 tools/e2e
+      — the same entry (lane-protocol rule five).
+
+Those bodies shell out to `brief.mjs --task T-157`, and `T-157-s2`
+(`status: parked`, `touches: [tools/e2e]`) collides with the LIVE LANE
+`T-154-s2` (`status: building`, `touches: [.claude, tools/e2e,
+docs/CONVENTIONS.md]`). Neither card is in this lane's diff. **Reproduced
+at main's own tip in a detached worktree with not one line of this diff
+present — `exit 1`, same refusal, at `16f4821`.** It is a live-environment
+condition of the board — the spec hard-codes `--task T-157`, so it reds
+for as long as any lane holds `tools/e2e` — and it will clear itself when
+T-154-s2 lands. Routing it is not this card's to do from inside a fence
+that cannot reach `tools/e2e`; it is named here so the next reader does
+not attribute it to this merge.
+
+**AND MAIN MOVED UNDER THIS LANE MID-SESSION.** The fence manifest and the
+opening brief were stamped at `51fa31c`; main is now `16f4821` — standing
+triage sitting #3 plus its STATE regeneration, two docs-only first-parent
+commits. Every gate above was RE-DERIVED against the new tip rather than
+left at the old one, and `git merge-tree --write-tree` is clean against it
+(`$?=0`, same five paths). One consequence worth naming: sitting #3 took
+the suggested column 14 → 0, so **`T-167-s9` filed by this lane is a
+post-sitting arrival** and queues for T-159's metabolism rules rather than
+joining that sweep.
 
 ### The bump question — re-derived here, and it agrees with the sitting
 
