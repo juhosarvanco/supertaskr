@@ -977,7 +977,30 @@
     runs `node tools/e2e/scripts/brief.mjs --task T-NNN --write-fence
     <the lane worktree>`: it expands the card's `touches:` through the
     parser's ONE fence implementation and leaves the answer in the lane
-    as `.nputer/lane-fence.json`. A PreToolUse hook wired in
+    as `.nputer/lane-fence.json`.
+    **AND THE STEP BEFORE IT IS THE PREFLIGHT** (T-160): the dispatch
+    ritual is derive the brief, PREFLIGHT the card, write the fence,
+    stamp and cut, and
+    `node tools/e2e/scripts/brief.mjs --task T-NNN --preflight` run from
+    the repository root re-derives at HEAD every claim the card makes
+    that IS derivable — the paths it names, the fence it declares
+    through the live slug map, the figures it stamps, its `blocked_by:`
+    against live statuses, its `@ <hash>` ref stamps — and refuses the
+    dispatch on any that no longer holds, in `--write-fence`'s own
+    refusal shape and at the same four exit codes. It judges no
+    DESIRABILITY and says so on every run, printing which claim classes
+    it checked and which it cannot; a discrepancy is either corrected or
+    ruled acceptable ON THE CARD, dated, with a
+    `PREFLIGHT RULING (<date>):` line naming that finding's own SUBJECT
+    rather than its class. IT IS DELIBERATELY NOT IN "Build & test"
+    above, for the reason the METHOD EVAL GATE gives about its own
+    runner — `deriveExpectedSteps` in
+    tools/e2e/tests/workflow-parity.spec.ts reads exactly the
+    `run from <dir>/:` bullets that section carries and reds by name on
+    a command it cannot map to a CI step, which is a two-package edit
+    T-160's fence did not reach — so the command lives beside the ritual
+    it serves, and wiring it into CI is a routed suggestion.
+    A PreToolUse hook wired in
     `.claude/settings.json` then reads that file at every Edit/Write
     with no dependency a freshly cut worktree lacks. FOUR ANSWERS, AND
     THE AUTHORITY IS `decide` IN `.claude/hooks/lane-fence.mjs` RATHER

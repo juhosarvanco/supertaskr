@@ -11,6 +11,7 @@
  *   node tools/e2e/scripts/brief.mjs --state
  *   node tools/e2e/scripts/brief.mjs --task T-133 --state --full
  *   node tools/e2e/scripts/brief.mjs --card T-150
+ *   node tools/e2e/scripts/brief.mjs --task T-160 --preflight
  *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../nputer-T-154
  *
  * ARM ONE (`--task`) emits the row set of `method/roles/<role>.md`'s
@@ -29,6 +30,15 @@
  * seconds ago has neither of. It is a NAMED arm and requires `--task`, so
  * the read arms above are still exactly reads and the body pinning that
  * (`"THE COMMAND IS A READ"`) drives the same invocation it always did.
+ *
+ * ARM SIX (`--preflight`, T-160) is the step BETWEEN the brief and the
+ * fence: it re-derives, at HEAD, every claim the card makes that IS
+ * derivable — the paths it names, the fence it declares, the figures it
+ * stamps, the blockers it waits on, the refs it cites — and refuses the
+ * dispatch when one no longer holds. It reads and prints; it writes
+ * nothing, so it runs before a seat is paid for rather than after. It
+ * judges no DESIRABILITY: its own output names the claim classes it
+ * checked and the ones it cannot.
  *
  * ARM FOUR (`--card`, T-150) points arm one's machinery ONE SEAT OVER, at
  * the card AUTHOR. It answers the figures an author would otherwise type
@@ -51,8 +61,10 @@
  *   1  assembled and FOUND something: a contract row with no deriver, a
  *      deriver whose row the table no longer carries, two live fences
  *      that are not disjoint, a lane whose card cannot be read, the
- *      slug map's two copies disagreeing, or a fence `--write-fence`
- *      could not expand and therefore did not write. Read the message.
+ *      slug map's two copies disagreeing, a fence `--write-fence`
+ *      could not expand and therefore did not write, or a claim
+ *      `--preflight` re-derived that the tree no longer agrees with.
+ *      Read the message.
  *   2  called wrong: an unknown flag, or neither arm asked for.
  *   3  the command COULD NOT RUN, so this run is not a claim about the
  *      repository at all. Every throw out of the derivation lands here,
@@ -66,6 +78,7 @@ import {
   cardReport,
   derivedTexts,
 } from "./card-figures.mjs";
+import { preflight } from "./card-preflight.mjs";
 import {
   EXIT,
   assembleBrief,
@@ -89,6 +102,7 @@ const FLAGS = Object.freeze([
   "--dispatch",
   "--card",
   "--audit",
+  "--preflight",
   "--write-fence",
   "--full",
   "--help",
@@ -100,6 +114,7 @@ async function main(argv) {
   const opts = {};
   let wantsState = false;
   let wantsDispatch = false;
+  let wantsPreflight = false;
   let full = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
@@ -118,8 +133,8 @@ async function main(argv) {
     if (a === "--help") {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
-          "[--dispatch] [--card <T-NNN>] [--audit <path>] [--write-fence <worktree>] [--full] " +
-          "[--root <path>]",
+          "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
+          "[--write-fence <worktree>] [--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -129,6 +144,10 @@ async function main(argv) {
     }
     if (a === "--dispatch") {
       wantsDispatch = true;
+      continue;
+    }
+    if (a === "--preflight") {
+      wantsPreflight = true;
       continue;
     }
     if (a === "--full") {
@@ -147,6 +166,13 @@ async function main(argv) {
   const cardId = opts["card"] ?? "";
   const auditPath = opts["audit"] ?? "";
   const fenceWorktree = opts["write-fence"] ?? "";
+  if (wantsPreflight && taskId === "") {
+    console.error(
+      "brief: --preflight needs --task <T-NNN> — a preflight re-derives ONE card's claims against " +
+        "this tree, and which card that is comes from the card, never from the invocation.",
+    );
+    return EXIT.USAGE;
+  }
   if (fenceWorktree !== "" && taskId === "") {
     console.error(
       "brief: --write-fence needs --task <T-NNN> — the manifest is one card's expanded fence, and " +
@@ -154,7 +180,14 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
-  if (taskId === "" && cardId === "" && auditPath === "" && !wantsState && !wantsDispatch) {
+  if (
+    taskId === "" &&
+    cardId === "" &&
+    auditPath === "" &&
+    !wantsState &&
+    !wantsDispatch &&
+    !wantsPreflight
+  ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
         "sections of docs/STATE.md a command can answer, --dispatch for what is startable now " +
@@ -201,6 +234,29 @@ async function main(argv) {
   }
 
   /**
+   * ARM SIX — the preflight. It runs BEFORE arm five and that ordering is
+   * the ritual: a card whose claims no longer hold should not have a
+   * manifest written for it, because the manifest is the step that makes
+   * the lane real. Its findings join the rest, so a discrepancy answers 1
+   * and the dispatch is refused with every claim named.
+   *
+   * A `CardPreflightError` is NOT caught here. It means this command
+   * could not look at all — an unreadable card, a parser that will not
+   * load, a git that will not answer — and the outer catch turns that
+   * into 3. Reporting "nothing stale" because nothing was checked is the
+   * one failure this arm exists to remove.
+   *
+   * @type {string[]}
+   */
+  let preflightFindings = [];
+  if (wantsPreflight) {
+    if (taskId !== "" || wantsState || wantsDispatch) console.log("");
+    const report = await preflight(ctx);
+    preflightFindings = report.findings;
+    console.log(render(report.recs));
+  }
+
+  /**
    * ARM FIVE — the dispatch-time expansion. It runs LAST of the arms that
    * derive, so a dispatcher asking for the brief and the manifest in one
    * invocation reads the brief first and the write's own stamped receipt
@@ -216,7 +272,7 @@ async function main(argv) {
    */
   const fenceFindings = [];
   if (fenceWorktree !== "") {
-    if (taskId !== "" || wantsState || wantsDispatch) console.log("");
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
     const worktree = path.resolve(ctx.root, fenceWorktree);
     try {
       const manifest = await buildLaneFence(taskId, worktree, { root: ctx.root });
@@ -285,7 +341,7 @@ async function main(argv) {
     const cardText = readFileSync(path.join(cardCtx.root, cardCtx.card.file), "utf8");
     const report = cardReport(cardCtx, cardText);
     cardFindings = report.findings;
-    if (taskId !== "" || wantsState || wantsDispatch) console.log("");
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
     console.log(render(report.recs));
   }
 
@@ -303,7 +359,8 @@ async function main(argv) {
      */
     const text = readFileSync(path.resolve(cardCtx.root, auditPath), "utf8");
     const figures = auditCard(text, derivedTexts(cardCtx));
-    if (taskId !== "" || wantsState || wantsDispatch || cardId !== "") console.log("");
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight || cardId !== "")
+      console.log("");
     console.log(
       render([
         note("THE AUDIT, over a file that is not a card"),
@@ -334,7 +391,13 @@ async function main(argv) {
     }
   }
 
-  const findings = [...ctx.findings, ...fenceFindings, ...cardFindings, ...auditFindings];
+  const findings = [
+    ...ctx.findings,
+    ...preflightFindings,
+    ...fenceFindings,
+    ...cardFindings,
+    ...auditFindings,
+  ];
   if (findings.length > 0) {
     console.error("");
     console.error(`brief: FOUND ${findings.length} thing(s) the assembler could not settle:`);
