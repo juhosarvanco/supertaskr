@@ -443,3 +443,73 @@ test("frontmatter is not prose, so its fields are never audited as figures", asy
   // (method/tasks/TASK-FORMAT.md). Auditing them here would be a second
   // opinion about a vocabulary that already has one.
 });
+
+test("CONTENTION SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT READ", () => {
+  // THE THIRD IMPLEMENTATION OF T-143's ONE MECHANISM, and the sweep is
+  // how it was found rather than a report. `lanes.ts` carried
+  // `if (other === undefined) continue` and was rejected for it at
+  // `62a4364`; `dispatch-brief.mjs`'s `fenceLedger` carried the same
+  // sentence and was filed as `T-137-s11`; THIS derivation carried it
+  // too, with `FREE` four lines below, and NO body in this file named
+  // `contention` in either direction.
+  //
+  // KILLED BY: restoring that `continue` — the lane vanishes from the
+  // join and every entry of the card's fence comes back FREE, which is
+  // the answer a session reads while deciding whether to take the card.
+  const real = context({ root: repoRoot, taskId: "T-150" });
+  const entries = fieldList(real.card!.fields, "touches");
+  expect(entries.length, "T-150 declares no fence, so this body proves nothing").toBeGreaterThan(0);
+
+  const porcelain = (blindIds: string[]): string =>
+    [
+      "worktree /Users/x/nputer",
+      "HEAD 1111111111111111111111111111111111111111",
+      "branch refs/heads/main",
+      "",
+      ...blindIds.flatMap((id, i) => [
+        `worktree /Users/x/nputer-${id}`,
+        `HEAD ${String(i + 2).repeat(40)}`,
+        `branch refs/heads/task/${id}-a-card-this-checkout-cannot-read`,
+        "",
+      ]),
+    ].join("\n");
+
+  const contention = (blindIds: string[]): string[] => {
+    const c = context({ root: repoRoot, taskId: "T-150", porcelain: porcelain(blindIds) });
+    for (const id of blindIds) {
+      expect(c.cards.has(id), `${id} names a card here, so this fixture is not blind`).toBe(false);
+    }
+    expect(c.lanes.map((l) => l.taskId).sort()).toEqual([...blindIds].sort());
+    const derive = CARD_DERIVERS.get("contention");
+    expect(derive, "the contention deriver is gone").toBeDefined();
+    return render(derive!.derive(c)).split("\n").filter((l) => l.startsWith("contention "));
+  };
+
+  // THE POSITIVE CONTROL THE CARD DEMANDS BY NAME: with NO lane live,
+  // every entry reads FREE. Without this, "nothing says FREE" is
+  // satisfied by a deriver that only ever prints UNKNOWN.
+  const sighted = contention([]);
+  expect(sighted.length).toBe(entries.length);
+  for (const line of sighted) expect(line).toContain(": FREE");
+
+  // AND THE OTHER SIDE, one lane this checkout cannot read: no row says
+  // FREE, no row is dropped, and each names the lane it could not read.
+  const oneBlind = contention(["T-901"]);
+  expect(oneBlind.length).toBe(entries.length);
+  for (const line of oneBlind) {
+    expect(line).toContain("UNKNOWN");
+    expect(line).toContain("T-901");
+    expect(line).toContain("cannot be ruled free");
+    expect(line).not.toContain(": FREE");
+  }
+
+  // AND THE CLAUSE AGREES IN NUMBER, which is the same defect this card
+  // fixes in `lanes.ts`'s `fenced` residual: the mutation from "that
+  // fence" to "those fences" must kill something.
+  expect(oneBlind[0]).toContain("that fence could not be expanded");
+  expect(oneBlind[0]).not.toContain("those fences");
+  const twoBlind = contention(["T-901", "T-902"]);
+  expect(twoBlind[0]).toContain("those fences could not be expanded");
+  expect(twoBlind[0]).not.toContain("that fence");
+  expect(twoBlind[0]).toContain("T-901, T-902");
+});

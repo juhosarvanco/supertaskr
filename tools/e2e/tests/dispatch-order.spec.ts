@@ -304,3 +304,64 @@ test("a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the
       .length,
   ).toBeGreaterThan(0);
 });
+
+test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold", async () => {
+  // T-137-s10, absorbed by T-143. `readDispatchOrder` computes seven
+  // states and this report emitted six: a card at `status: building`
+  // with a declared fence appeared ZERO times in the whole answer, so a
+  // session choosing among cards that overlap its ground by containment
+  // was never told such a card existed. The architect reports nearly
+  // dispatching against one.
+  //
+  // KILLED BY: deleting the section, or by widening it back to the
+  // scheduler's whole `underway` set — which holds every `done` and
+  // `parked` card and is a dump rather than a report.
+  const ctx = await dispatchContext({});
+  const parser = await loadParser();
+  const rendered = render(dispatchReport(ctx));
+  expect(unstampedLines(rendered)).toEqual([]);
+  expect(rendered).toContain("IN FLIGHT ON THE BOARD");
+
+  const inFlight = ctx.order.underway.filter((r: { card: { status: string } }) =>
+    parser.IN_FLIGHT.has(r.card.status),
+  );
+  // POSITIVE CONTROL FIRST: this repository HAS such a card right now —
+  // its own lane's, at minimum — so every assertion below is about a
+  // populated section rather than an empty one agreeing with itself.
+  expect(
+    inFlight.length,
+    "no card is in flight on this board, so this body proves nothing about the section",
+  ).toBeGreaterThan(0);
+  for (const r of inFlight) expect(rendered).toContain(r.id);
+
+  // AND THE SECTION IS NARROWER THAN `underway`, through the PARSER'S
+  // OWN SET. `done` cards are `underway` to the scheduler and must not
+  // be listed: 127 of them at `c74890a8` would bury the two that matter.
+  const doneOnes = ctx.order.underway.filter(
+    (r: { card: { status: string } }) => !parser.IN_FLIGHT.has(r.card.status),
+  );
+  expect(
+    doneOnes.length,
+    "nothing is underway-but-not-in-flight, so the narrowing is untested here",
+  ).toBeGreaterThan(0);
+  const section = rendered.slice(rendered.indexOf("IN FLIGHT ON THE BOARD"));
+  for (const r of doneOnes.slice(0, 20)) expect(section).not.toContain(`${r.id} [`);
+
+  // MECHANISM 2 STAYS REFUSED, AND THIS IS WHERE IT WOULD BE QUIETLY
+  // UNDONE. A `status:` stamp is not a hold — the lane list is
+  // authoritative and the board under-reports by construction — so every
+  // row here says which of the two it is, and a card with no lane says
+  // it holds nothing.
+  expect(section).toContain("is NOT a fence hold");
+  for (const r of inFlight) {
+    const hasLane = ctx.order.lanes.some((l: { taskId: string }) => l.taskId === r.id);
+    const line = section
+      .split("\n")
+      .find((l: string) => l.startsWith(`${r.id} [`));
+    expect(line, `${r.id} is in flight and is not listed`).toBeDefined();
+    const after = section.slice(section.indexOf(`${r.id} [`));
+    expect(after.slice(0, 600)).toContain(
+      hasLane ? "it HAS a lane above" : "it has NO lane, so it holds no fence",
+    );
+  }
+});

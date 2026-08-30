@@ -339,6 +339,58 @@ export function dispatchReport(ctx) {
     );
   }
 
+  // UNDERWAY, AND IT IS A BOARD REPORT RATHER THAN A HOLD (T-137-s10,
+  // absorbed by T-143). `readDispatchOrder` computes this seventh state
+  // and this report emitted it NOWHERE, so a card at `status: building`
+  // with a declared fence appeared ZERO times in the whole answer — and
+  // a session choosing among cards that overlap its ground was not told
+  // such a card existed. The architect reports nearly dispatching
+  // against one.
+  //
+  // WHY IT IS STAMPED TO THE BOARD AND NOT TO THE LANE LIST, in as many
+  // words: T-143's own MECHANISM 2 is REFUSED, and this section is where
+  // that refusal would be quietly undone. A `status:` stamp is NOT a
+  // hold — the lane list is authoritative and the board under-reports by
+  // construction — so nothing here is a fence and nothing here changes a
+  // verdict above. It is the cheapest thing that closes the gap: the
+  // reader is TOLD, and the ruling is left where it belongs.
+  //
+  // AND IT IS FILTERED TO `IN_FLIGHT`, THROUGH THE PARSER'S OWN SET
+  // rather than a status list re-spelled here. `underway` is the
+  // scheduler's word for "status is not planned", so it holds every
+  // `done` and `parked` card too — 127 and 124 of them on this board at
+  // `c74890a8`, which is a dump and not a report. The three statuses
+  // that mean somebody is on it right now are `task-waves.ts`'s
+  // `IN_FLIGHT`, exported and imported, so a fourth added there arrives
+  // here with nothing edited.
+  const inFlight = o.underway.filter((/** @type {any} */ r) =>
+    ctx.parser.IN_FLIGHT.has(r.card.status),
+  );
+  recs.push(
+    blank(),
+    note("IN FLIGHT ON THE BOARD — somebody claims it. A `status:` stamp is NOT a fence hold: the"),
+    note("lane list above is what holds ground, and a card here with no lane holds nothing. Read"),
+    note("this as a courtesy to whoever is choosing, never as a verdict."),
+  );
+  if (inFlight.length === 0) recs.push(value("no card is in flight on the board", tree(boardVia)));
+  for (const r of inFlight) {
+    const laneHeld = o.lanes.some((/** @type {any} */ l) => l.taskId === r.id);
+    const fence =
+      r.fence.paths.length === 0
+        ? "it declares no fence"
+        : `it declares ${r.fence.paths.length} path(s)`;
+    recs.push(
+      value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
+      value(`   ${r.reason} — ${fence}`, tree(`${r.card.file} frontmatter, fence expanded`)),
+      laneHeld
+        ? value("   and it HAS a lane above, so that fence is held for real", live(laneVia))
+        : value(
+            "   and it has NO lane, so it holds no fence — the board stamp is all there is",
+            live(laneVia),
+          ),
+    );
+  }
+
   const s = o.schedule;
   recs.push(
     blank(),

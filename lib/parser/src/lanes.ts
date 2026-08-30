@@ -478,12 +478,23 @@ function rule(
     // lattice, not re-ordered here — but the unreadable lane is still said
     // out loud, because a human weighing a COARSE-fence override needs to
     // know the named overlap may not be the only one.
+    //
+    // AND IT AGREES IN NUMBER WITH THE LIST IT NAMES, for the reason the
+    // `unfenceable` branch below states at length (T-143 criterion 4).
+    // The two clauses were written in one commit and only one of them
+    // got the flag; the reader of this one is a human weighing a
+    // COARSE-fence override, which is the LAST sentence that can afford
+    // to read as though one lane were unreadable when three are. The
+    // count is the LANE count and not the id count — two worktrees on
+    // one branch are two live writers.
     const blind = holds.filter((h) => h.cardMissing);
+    const blindMany = blind.length > 1;
     const residual =
       blind.length === 0
         ? ''
         : ` And ${blind.map((h) => laneName(h.lane)).join(', ')} could not be compared at all — ` +
-          'no card for it in this checkout — so this overlap may not be the only one.';
+          `${blindMany ? 'no cards for them' : 'no card for it'} in this checkout — so this ` +
+          'overlap may not be the only one.';
     return {
       ...base,
       state: 'fenced',

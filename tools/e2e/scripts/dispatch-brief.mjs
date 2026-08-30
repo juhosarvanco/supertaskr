@@ -1321,6 +1321,8 @@ function deriveFence(ctx) {
   );
   /** @type {{ id: string, entries: string[] }[]} */
   const fences = [];
+  /** @type {string[]} */
+  const blind = [];
   for (const lane of ctx.lanes) {
     const card = ctx.cards.get(lane.taskId);
     if (card === undefined) {
@@ -1329,6 +1331,7 @@ function deriveFence(ctx) {
           "a lane whose fence cannot be read is a fence nobody can be disjoint from.",
       );
       recs.push(value(`${lane.taskId}: no live card, fence UNKNOWN`, live(ctx, via)));
+      if (!blind.includes(lane.taskId)) blind.push(lane.taskId);
       continue;
     }
     const entries = fieldList(card.fields, "touches");
@@ -1375,7 +1378,33 @@ function deriveFence(ctx) {
       }
     }
   }
-  if (fences.length < 2) overlapLines.push("fewer than two fences to compare");
+  if (fences.length < 2) {
+    // AND IT SAYS WHICH "FEWER" IT IS (T-143 criterion 2). "Fewer than
+    // two fences to compare" is a claim about the WORLD, and with a lane
+    // whose card this checkout cannot read it is false in the one
+    // direction a fence exists to prevent: there ARE two lanes, and one
+    // of them could not be expanded.
+    overlapLines.push(
+      blind.length === 0
+        ? "fewer than two fences to compare"
+        : `fewer than two READABLE fences to compare — ${blind.join(", ")} is live and could not ` +
+          "be expanded at all, so nothing below is a claim about it",
+    );
+  }
+  // `DISJOINT` IS THE SAME CLASS OF WORD AS `FREE` — a claim about the
+  // whole world, unreachable while part of the world could not be read
+  // (T-143 criterion 2). The parser's `fenced` reason already carries
+  // this residual beside a PROVED overlap; the pairwise verdicts here
+  // carried none, so a lane this checkout cannot read left the word
+  // `DISJOINT` standing over ground nobody compared.
+  if (blind.length > 0) {
+    const many = blind.length > 1;
+    overlapLines.push(
+      `AND EVERY VERDICT ABOVE IS PARTIAL: ${blind.join(", ")} could not be compared at all — ` +
+        `this checkout has no card for ${many ? "them" : "it"} — so no line above rules out an ` +
+        `overlap with ${many ? "those lanes" : "that lane"}`,
+    );
+  }
   for (const line of overlapLines) {
     recs.push(value(line, tree(ctx, "each card's touches, expanded through the slug map")));
   }
@@ -2002,17 +2031,46 @@ export function boardCensus(root = repoRoot) {
   return { byStatus: new Map([...byStatus].sort((a, b) => a[0].localeCompare(b[0]))), total, rejected };
 }
 
-/** Every fence slug the map knows, with the lane holding it or FREE. */
 /**
+ * Every fence slug the map knows, with the lane holding it — or `FREE`,
+ * which is a claim about the WHOLE WORLD and is therefore unreachable
+ * while part of the world could not be read.
+ *
+ * A LANE WHOSE CARD THIS CHECKOUT CANNOT READ HOLDS AN UNKNOWN FENCE,
+ * NEVER AN EMPTY ONE (T-143 criteria 1 and 2). This function shipped
+ * `if (card === undefined) continue` — the identical sentence
+ * `lib/parser/src/lanes.ts` was rejected for at `62a4364`, in the second
+ * implementation, filed as `T-137-s11` and left as this card's ground.
+ * `continue` drops the lane's whole fence from the join, so every slug it
+ * reserves comes back `FREE` — and the `--state` report prints those rows
+ * FOUR LINES BELOW its own lane list saying `no live card — board says
+ * unknown` about the same lane. Measured at `c74890a8` with a synthetic
+ * `task/T-901-…` lane live: **seven of nine rows read `FREE`**, and each
+ * of the seven is ground that lane may be writing right now.
+ *
+ * THE VOCABULARY IS THE PARSER'S AND IS NOT INVENTED HERE: `unusable` —
+ * "no overlap PROVED and none ruled out". `FREE` is folded into nothing
+ * and no row is dropped; a row nobody holds reads `UNKNOWN` NAMING the
+ * ids whose fences could not be expanded, and a row somebody DOES hold
+ * still names its holder and carries the same residual, exactly as
+ * `readDispatchOrder`'s `fenced` reason does.
+ *
  * @param {Ctx} ctx
- * @returns {{ slug: string, heldBy: string }[]}
+ * @returns {{ slug: string, heldBy: string, unknownFrom: string[] }[]}
  */
 export function fenceLedger(ctx) {
   /** @type {Map<string, string[]>} */
   const holders = new Map();
+  /** @type {string[]} */
+  const blind = [];
   for (const lane of ctx.lanes) {
     const card = ctx.cards.get(lane.taskId);
-    if (card === undefined) continue;
+    if (card === undefined) {
+      // DEDUPED BY TASK ID, for the reason `lanesWithNoCard` is: two
+      // worktrees can sit on one branch and the reader wants the id once.
+      if (!blind.includes(lane.taskId)) blind.push(lane.taskId);
+      continue;
+    }
     for (const entry of fieldList(card.fields, "touches")) {
       const held = holders.get(entry) ?? [];
       held.push(lane.taskId);
@@ -2021,9 +2079,55 @@ export function fenceLedger(ctx) {
   }
   /** @type {Set<string>} */
   const all = new Set([...ctx.slugs.keys(), ...holders.keys()]);
-  return [...all]
-    .sort()
-    .map((slug) => ({ slug, heldBy: (holders.get(slug) ?? []).join(", ") || "FREE" }));
+  const named = blind.join(", ");
+  const many = blind.length > 1;
+  return [...all].sort().map((slug) => {
+    const held = holders.get(slug) ?? [];
+    if (blind.length === 0) {
+      return { slug, heldBy: held.join(", ") || "FREE", unknownFrom: [] };
+    }
+    return {
+      slug,
+      heldBy:
+        held.length === 0
+          ? `UNKNOWN — this checkout has no card for ${named}, so ${many ? "those fences" : "that fence"} ` +
+            `could not be expanded at all and this slug cannot be ruled free`
+          : `${held.join(", ")} — and UNKNOWN besides: this checkout has no card for ${named}, so ` +
+            `${many ? "those fences" : "that fence"} could not be expanded at all`,
+      unknownFrom: [...blind],
+    };
+  });
+}
+
+/**
+ * THE SLUGS THAT CANNOT BE FREE INDEPENDENTLY — every component id more
+ * than one slug expands through, with the slugs that share it.
+ *
+ * T-143 criterion 3: the ledger is keyed by slug NAME and a fence is a
+ * REGION, so two slugs sharing a component can read `FREE` and `HELD`
+ * about one set of files. This is DERIVED from the same `touch_slugs`
+ * fields the ledger's own map comes from rather than typed, so a
+ * component declared tomorrow is in the answer with nothing edited — the
+ * card names `C-11` and this function is why the card's example does not
+ * have to be maintained.
+ *
+ * @param {Map<string, string[]>} slugs
+ * @returns {{ component: string, slugs: string[] }[]}
+ */
+export function slugsSharingComponents(slugs) {
+  /** @type {Map<string, string[]>} */
+  const byComponent = new Map();
+  for (const [slug, ids] of slugs) {
+    for (const id of ids) {
+      const found = byComponent.get(id) ?? [];
+      found.push(slug);
+      byComponent.set(id, found);
+    }
+  }
+  return [...byComponent]
+    .filter(([, names]) => names.length > 1)
+    .map(([component, names]) => ({ component, slugs: [...names].sort() }))
+    .sort((a, b) => a.component.localeCompare(b.component));
 }
 
 /**
@@ -2073,7 +2177,43 @@ export function stateReport(ctx) {
       ),
     );
   }
-  recs.push(blank(), note("THE FENCE LEDGER — held or free, derived from the lanes above"));
+  // WHAT THIS LEDGER IS ANSWERING, SAID BEFORE IT ANSWERS (T-143
+  // criterion 3). It is keyed by slug NAME; a fence is a REGION; and the
+  // architect took a FREE row here for a dispatch verdict on 2026-08-26
+  // and nearly put T-112 on ground the live T-141 was holding. The
+  // `--task` half of this same command answers the actual question, with
+  // the witness paths named — so this display POINTS AT IT rather than
+  // approximating it, which is the lesson the card records: a cheap
+  // display that approximates an expensive verdict gets consulted
+  // INSTEAD of it.
+  recs.push(
+    blank(),
+    note("THE FENCE LEDGER — held or free, derived from the lanes above"),
+    note("IT IS KEYED BY SLUG NAME AND IS NOT A DISPATCH VERDICT. Two slugs can expand through one"),
+    note("component, so one can read FREE while the other is HELD over the same files. Never read a"),
+    note("FREE row here as an answer to \"may I dispatch this card\" — this is what answers it:"),
+    value(
+      "`brief.mjs --task T-NNN`, the fence row, which compares EXPANDED fences and names the witness paths",
+      tree(ctx, `method/roles/${ctx.role}.md contract row 5, and this command's own ROW 5`),
+    ),
+  );
+  const shared = slugsSharingComponents(ctx.slugs);
+  if (shared.length === 0) {
+    recs.push(
+      value(
+        "no component is claimed by two slugs today, so no row here is free-as-a-name and held-as-a-region",
+        tree(ctx, "docs/architecture/components/C-*.md field touch_slugs"),
+      ),
+    );
+  }
+  for (const s of shared) {
+    recs.push(
+      value(
+        `${s.slugs.join(" and ")} both expand through ${s.component} — these rows are not independent`,
+        tree(ctx, "docs/architecture/components/C-*.md field touch_slugs"),
+      ),
+    );
+  }
   for (const row of fenceLedger(ctx)) {
     recs.push(value(`${row.slug}: ${row.heldBy}`, live(ctx, `${via}, joined to each lane's card`)));
   }
