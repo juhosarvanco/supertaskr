@@ -19,20 +19,21 @@ opens with the card id that still holds its story.
   projects (T-145) and the behaviour census is GENERATED rather than
   written (docs/CAPABILITIES.md, T-138-s1) — @human's T-138 ruling
   delivered (costs: the room's ledger; docs-protocol in method/ at
-  v0.1.7). ADR-020's layer is LANDED (2026-08-29):
+  v0.1.8). ADR-020's layer is LANDED (2026-08-29):
   determinism at the write (T-154), the method reds its own
-  degradation (T-155, ten evals — every bump owes the eval block)
+  degradation (T-155 — every bump owes the eval block)
   and watches its own health (T-156) — org-scale by construction.
   ADR-018 stays owed to T-135 Half B. The repository has a human
   front door (T-158 — a README whose every link is verified against
   the record), and since the amnesty sitting (2026-08-29) the
   backlog is metabolized — 140 cards dispositioned (73 promoted, 62
-  parked, 5 rejected), arrivals queue for T-159's rules. The e2e
-  recipes probe the xargs dialect at run time (T-153-s6) and every seat
-  RESOLVES the integration branch rather than assuming it
-  (T-153-s9) — the first fully green run followed. The brief now
+  parked, 5 rejected), arrivals queue for T-159's rules. CI's
+  first-contact classes are closed (T-153-s6/s9 — the dialect probed,
+  the branch resolved) and the first fully green run followed. The brief now
   carries a derived seat-strength row and the record template a
-  stated metrics obligation (T-157, 2026-08-30).
+  stated metrics obligation (T-157, 2026-08-30). METHOD v0.1.8 IS LANDED
+  (T-159: metabolism rules, run hygiene, archive vocabulary, review
+  reconciliation — the evals fired on the release's own text).
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -94,11 +95,10 @@ opens with the card id that still holds its story.
   with `index --check`, never quote it. The drill taxonomy and the
   hand's measurement hazards are written rules (T-092/T-093 — a query
   that runs clean is not yet an answer), and the budget VALUE call
-  rides `T-151`. Since T-156 the method
-  watches its own health: fourteen
-  control bands as data with measured reasons, doc-headroom bands
-  derived from the budgets themselves, and the first official
-  reading caught STATE breached while the merge was still landing.
+  rides `T-151`. Since T-156 the method watches its own health
+  (fourteen bands as data with measured reasons, doc-headroom bands
+  derived from the budgets; the first reading caught STATE breached
+  mid-merge).
   The last declared cycle is BROKEN (T-127-s1's measured stop ->
   T-127-s6, 2026-08-29): `arch cycles` answers ACYCLIC on main for
   the first time, with C-17/C-18 minted and no import severed. The

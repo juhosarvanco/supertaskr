@@ -58,3 +58,5 @@ a bump's fence never reaches them. **Two shapes, both askable:**
 either way: no test reads any of the three, which is precisely why
 they have drifted unnoticed for two versions and why this is a card
 rather than a suite.
+
+Discharged: closed_by the T-159 checkpoint (2026-08-30, integrator) — all three outside-fence claims moved with the bump at the integration seat: ARCHITECTURE row C-01, C-01-method.md status pin, ROADMAP F-01. The class (version claims outside every bump fence) stays this card's to retire structurally if it recurs.

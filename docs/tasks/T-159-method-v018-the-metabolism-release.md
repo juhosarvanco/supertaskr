@@ -5,13 +5,13 @@ feature: F-01
 milestone: 4
 priority: 38
 size: M
-status: verifying
+status: done
 blocked_by: [T-154]
 touches: [method/, docs/CONVENTIONS.md, app-agent]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 

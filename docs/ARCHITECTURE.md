@@ -25,7 +25,7 @@ graph TD
 
 | ID | Component | Responsibility | Depends on | Status |
 |----|-----------|----------------|------------|--------|
-| C-01 | method/ | The convention: templates, formats, roles, interviews, docs-protocol | — | built (v0.1.7) |
+| C-01 | method/ | The convention: templates, formats, roles, interviews, docs-protocol | — | built (v0.1.8) |
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
@@ -115,7 +115,8 @@ ADR-014/015).
   = the real-input lane + the docs-gate/token-lint/brief analysers,
   dev tooling under no component, `.nputerignore`d out of the map ·
   `.github/workflows/` = one CI job, a thin invoker of CONVENTIONS'
-  commands, dormant until first push. No root workspace (ADR-011,
+  commands, ENFORCING since the first push (2026-08-29; green end to
+  end since run 33274798983). No root workspace (ADR-011,
   reaffirmed). docs/ stays the brain — and since T-084 the brain is a
   CODE INPUT: programs in all four packages read it, the DOCS GATE
   derives the reader set on every run, and no count of them is ever

@@ -4601,7 +4601,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:280c2095777a5d2aaf19f1d12336ed96ebdbbdd609a786c899bfe49113d53ab9",
+      "hash": "blake3:d2a7fb797a00c43624bf5980ed2354145a7c88abe495039751725afe1b36405d",
       "loc": 562,
       "symbols": [
         {

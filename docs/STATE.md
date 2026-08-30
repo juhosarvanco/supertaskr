@@ -1,9 +1,11 @@
 # State
 
-Updated: 2026-08-30 at the T-157 checkpoint — the brief now prints a
-derived seat-strength row (advisory, never a model, outranked by
-every human word), and the TEMPLATE's metrics slot is a stated
-obligation. Current record: docs/checkpoints/2026-08-30-T-157.md.
+Updated: 2026-08-30 at the T-159 checkpoint — METHOD v0.1.8 IS
+LANDED (the metabolism release: riders, run hygiene, the archive
+vocabulary, review reconciliation), and the FIRST STANDING TRIAGE
+under its rules is the live next act — the backlog band has been
+demanding it since T-157. Current record:
+docs/checkpoints/2026-08-30-T-159.md.
 Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
@@ -24,7 +26,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — T-159 dispatches next. Dispatch derives
+  this rewrite: NO lanes — the first standing triage sitting
+  dispatches next. Dispatch derives
   the brief, PREFLIGHTS the card (T-160 — a failed preflight refuses
   the manifest), then writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
@@ -50,29 +53,29 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-157` is DONE and merged (self-integrated on TASK-FORMAT's own
-   row, the reasons in its record). Remaining night order (@human's
-   ruling): `T-159` (preflight first) -> the FIRST standing triage
-   under its rules -> the CONVENTIONS train (`T-111-s10`, `T-147`)
-   -> `T-143`, `T-156-s1` -> derive T-112's flip pairs (prep only).
-   Board items the preflight surfaced: `T-160-s4` (T-059's fence
-   cannot reach a file its criteria order written). Watch-list on
-   any push: `T-161` (stderr-drain intermittent) and `T-153-s14`.
-2. `T-157` session economics — six arc datapoints already stamped in
-   the records.
-3. `T-159` — method v0.1.8, the metabolism release
-   (`blocked_by: [T-154]` satisfied): twelve parked riders, `T-152`
-   TAKE FIRST; owes the DISCHARGED-NOT-DECLINED wording, two-phase
-   verifier blindness + the brief-format flaw both verifiers
-   disclosed (executor facts below the marker, ALWAYS).
-4. Board arrivals awaiting T-159 rules: `T-154-s2` (needs a ruling),
-   `T-153-s3`/`s4`, `T-155-s1..s7`, `T-156-s1..s4`.
-5. @human's items: `T-025-s2` (one real genesis), `T-151` (graph
-   budget number), D3 (may the app write docs/?).
-6. Standing hooks: `T-135` Half B (never re-dispatch whole), `T-112`
-   (most colliding), `T-140`, `T-139-s2` (wants a room), `T-144`,
-   `T-111-s10` (+riders T-153-s7), `T-147`, `T-160` (the dispatch
-   preflight, @human's), `T-153-s9`, `T-127-s7/s8/s9`.
+1. METHOD v0.1.8 IS LANDED (T-159 done, zero corrections). NEXT: the
+   FIRST STANDING TRIAGE under its rules — the
+   `triage/live-suggestions` band is BREACHED (the system demanding
+   the sitting; derive the queue: `command grep -l '^status:
+   suggested' docs/tasks/T-*.md`). Then the CONVENTIONS train
+   (`T-111-s10` +T-153-s7 rider, `T-147`) -> `T-143`, `T-156-s1` ->
+   derive T-112's flip pairs (prep only, @human decides dispatch).
+2. Board items the preflight surfaced: `T-160-s4` (T-059's fence
+   cannot reach a file its criteria order written — a live
+   planned-card defect). Watch-list on any push: `T-161`
+   (stderr-drain intermittent), `T-153-s14` (one PR run answers it).
+3. Standing arrivals for the sitting: the T-153/T-155/T-156/T-157/
+   T-159/T-160/T-127/T-140 s-cards — derive, never list. `T-154-s2`
+   still needs a ruling.
+4. @human's items: `T-025-s2` (one real genesis), `T-151` (graph
+   budget number), D3 (may the app write docs/?), `T-140-s1` (the
+   payload shape, with the verifier's density numbers attached), and
+   a proposed ADR-019 RE-LANDING of ROADMAP's budget (five nibble
+   trims in one night says the landed figure is too tight for this
+   merge velocity).
+5. Standing hooks: `T-135` Half B (never re-dispatch whole), `T-112`
+   (most colliding), `T-139-s2` (wants a room), `T-144`,
+   `T-127-s8/s9`, `T-149-s1…s5`.
 
 ## Standing hazards — the section that saves the hour
 
@@ -112,7 +115,7 @@ hazard is never deleted to fit.
 
 - docs/checkpoints/ — append-only, one per integration; no suite may
   depend on the directory, and the gate REDS when a record commits
-  newer than this file. Current record: 2026-08-29-T-156.md.
+  newer than this file. Current record: 2026-08-30-T-159.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Pre-compaction STATE: docs/checkpoints/2026-08-27-backfill-STATE.md;
   every earlier version at `git log -- docs/STATE.md`.
