@@ -992,7 +992,14 @@
     it checked and which it cannot; a discrepancy is either corrected or
     ruled acceptable ON THE CARD, dated, with a
     `PREFLIGHT RULING (<date>):` line naming that finding's own SUBJECT
-    rather than its class. IT IS DELIBERATELY NOT IN "Build & test"
+    rather than its class — and the ruling's FORM is load-bearing
+    (T-160's verdict, correction four): it must be a plain, unindented
+    body line. A ruling written as a `- ` list item, indented, or
+    inside a fenced block is invisible to the reader and the finding
+    stays refused; the bullet is the natural way to write one, and the
+    failure is silent to the author. A failed preflight also GATES
+    `--write-fence` in the same invocation: no manifest is written for
+    a card whose claims fell. IT IS DELIBERATELY NOT IN "Build & test"
     above, for the reason the METHOD EVAL GATE gives about its own
     runner — `deriveExpectedSteps` in
     tools/e2e/tests/workflow-parity.spec.ts reads exactly the

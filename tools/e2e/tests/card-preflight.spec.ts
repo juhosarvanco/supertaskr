@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   cpSync,
   mkdirSync,
   mkdtempSync,
@@ -14,6 +15,7 @@ import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import {
   CLAIM_CLASSES,
+  dischargedBy,
   NOT_A_CLAIM_CLASS,
   componentOwners,
   ownersOf,
@@ -679,4 +681,61 @@ test("a discrepancy answers ONE and a preflight that could not run answers THREE
   const cannot = cli(["--task", FIXTURE_ID, "--preflight", "--root", broken]);
   expect(cannot.status, String(cannot.stderr)).toBe(3);
   expect(String(cannot.stderr)).toContain("COULD NOT RUN");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-160's VERDICT — the two assigned-correction pins (2 and 3)
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("a failed preflight GATES the fence write — no manifest for a card whose claims fell", () => {
+  // Correction 2: the ordering used to be PRINT order only, and the
+  // verifier measured arm five writing a manifest for a card with four
+  // findings one screen up. The manifest is the step that makes the
+  // lane real, so the write is now conditional, and this body is what
+  // makes dropping that condition a red rather than a regression.
+  const fx = makeFixture({
+    criteria: ["- THE work SHALL edit docs/architecture/gone-at-dispatch.md, which does not exist."],
+  });
+  const lane = path.join(fx.repo, "..", "gate-lane");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-gate-drill`, lane]);
+  const refused = cli(
+    ["--task", FIXTURE_ID, "--preflight", "--write-fence", lane, "--root", fx.repo],
+    fx.repo,
+  );
+  expect(refused.status, String(refused.stderr)).toBe(1);
+  expect(String(refused.stdout)).toContain("fence: NOT WRITTEN");
+  expect(
+    existsSync(path.join(lane, ".nputer", "lane-fence.json")),
+    "the manifest must not exist after a refused preflight",
+  ).toBe(false);
+
+  // The clean twin: a card whose claims hold gets its manifest in the
+  // same invocation shape.
+  const ok = makeFixture();
+  const okLane = path.join(ok.repo, "..", "gate-lane-ok");
+  git(ok.repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-gate-ok`, okLane]);
+  const written = cli(
+    ["--task", FIXTURE_ID, "--preflight", "--write-fence", okLane, "--root", ok.repo],
+    ok.repo,
+  );
+  expect(written.status, String(written.stderr)).toBe(0);
+  expect(existsSync(path.join(okLane, ".nputer", "lane-fence.json"))).toBe(true);
+});
+
+test("a ruling discharges at a token boundary — suffixes and .map twins stay refused", () => {
+  // Correction 3: a bare substring over-discharged (a ruling naming
+  // `event-names.ts.map` discharged the finding about `event-names.ts`;
+  // `T-153` inside `T-153-s5` is the same trap on ids). The boundary:
+  // word characters, hyphen, slash, and a dot-followed-by-word all
+  // EXTEND the token; a sentence-ending period does not.
+  const rule = (text: string) => [{ line: 1, date: "2026-08-30", text }];
+  const subject = "app/src/lib/event-names.ts";
+  expect(dischargedBy(rule(`PREFLIGHT RULING (2026-08-30): ${subject} is carried.`), subject),
+    "the exact subject, sentence period after, discharges").toBeDefined();
+  expect(dischargedBy(rule(`PREFLIGHT RULING (2026-08-30): ${subject}.map is carried.`), subject),
+    "the .map twin must NOT discharge the .ts finding").toBeUndefined();
+  expect(dischargedBy(rule("PREFLIGHT RULING (2026-08-30): T-153-s5 is carried."), "T-153"),
+    "a suffixed id must not discharge its parent's finding").toBeUndefined();
+  expect(dischargedBy(rule(`PREFLIGHT RULING (2026-08-30): ${subject}, because reasons.`), subject),
+    "trailing punctuation that does not extend the token still discharges").toBeDefined();
 });

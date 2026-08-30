@@ -120,13 +120,17 @@ export const CLAIM_CLASSES = Object.freeze([
   {
     key: "paths",
     checks:
-      "every repository path the card names, resolved against the tracked tree at HEAD",
+      "every slash-carrying path token whose first segment exists at HEAD, resolved against " +
+      "the tracked tree (the verdict's first correction: narrower than 'every path', stated so)",
     refuses:
       "a path named in the frontmatter or the acceptance criteria that does not exist and " +
       "is not inside this card's own fence, so it cannot be a creation target either",
     cannot:
-      "a glob, a truncated token, a git-ignored build artefact, and anything inside a fenced " +
-      "or indented transcript block, which the prose reading blanks",
+      "a glob, a truncated token, a git-ignored build artefact, anything inside a fenced " +
+      "or indented transcript block (the prose reading blanks them), a token whose FIRST " +
+      "segment is not a top-level entry at HEAD (a deleted or renamed top-level directory " +
+      "is this staleness class at its largest and is invisible here), a leading-./ token, " +
+      "and a root file with no slash",
   },
   {
     key: "fence",
@@ -163,7 +167,10 @@ export const CLAIM_CLASSES = Object.freeze([
     key: "refs",
     checks: "every commit-ref stamp the card carries, resolved with git rev-parse",
     refuses: "a stamp this checkout can no longer resolve to a commit",
-    cannot: "whether the stamped ref is still the RIGHT one — only that it still exists",
+    cannot:
+      "whether the stamped ref is still the RIGHT one — only that it still exists — and a " +
+      "commit written in any form but the published stamp: prose like 'at commit <hash>' is " +
+      "invisible, only the '@ <hash>' spelling is read (the verdict's first correction)",
   },
 ]);
 
@@ -333,7 +340,33 @@ export function rulings(cardText) {
  */
 export function dischargedBy(ruled, subject) {
   if (subject === "") return undefined;
-  return ruled.find((r) => r.text.includes(subject));
+  // T-160's VERDICT, correction 3: a bare substring over-discharged —
+  // a ruling naming `event-names.ts.map` discharged the finding about
+  // `event-names.ts`, and `T-153` inside `T-153-s5` is the same trap
+  // on ids. The subject must end at a boundary: the character after
+  // the match may not extend the token (word chars, dot, hyphen, or
+  // slash all keep it going).
+  /** @param {string} text @param {number} idx @returns {boolean} */
+  const boundaryOk = (text, idx) => {
+    const i = idx + subject.length;
+    const after = text[i];
+    if (after === undefined) return true;
+    if (/[\w\-/]/.test(after)) return false;
+    // A dot extends the token only when a word character follows it —
+    // `.map` extends, a sentence-ending period does not.
+    const afterDot = text[i + 1];
+    if (after === "." && afterDot !== undefined && /\w/.test(afterDot)) return false;
+    return true;
+  };
+  return ruled.find((r) => {
+    let from = 0;
+    for (;;) {
+      const idx = r.text.indexOf(subject, from);
+      if (idx === -1) return false;
+      if (boundaryOk(r.text, idx)) return true;
+      from = idx + 1;
+    }
+  });
 }
 
 /**

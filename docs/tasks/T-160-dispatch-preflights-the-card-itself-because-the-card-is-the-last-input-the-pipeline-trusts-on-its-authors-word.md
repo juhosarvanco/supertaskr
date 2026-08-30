@@ -174,7 +174,7 @@ every restoration proved by sha256 against `git show HEAD:` plus an empty
 `git status`. Seventeen kill exactly one body; `paths-never-missing` kills
 six and `owners-keep-the-glob` two, both being whole-arm mutants. The two
 that live in `brief.mjs` were additionally run against the WHOLE lane, and
-each came back **1 failed / 299 passed** naming one body — the
+each came back **1 failed / 300 passed (300 at 2771ae9, not 299 — verdict, correction five)** naming one body — the
 non-duplication count. The last two were run at `924067d` against the
 refusal for a card the schedule does not draw.
 
@@ -255,7 +255,7 @@ committed document byte for byte (`--check` exit 0, 22190 bytes). The
 base-to-tip diff is **one removed line and twenty-two added**: the
 census header (283 -> 301 behaviours, 27 -> 28 spec files), a
 `## card-preflight` heading, and the eighteen sentences — nothing else.
-**Fresh at the tip is 23599 bytes, not the 23525 the executor's report
+**Fresh at the tip is 23599 bytes, not the 23599 (corrected per the verdict — 23525 predated 924067d) the executor's report
 carries**; that figure was measured before `924067d` added the
 eighteenth body and is stale at the tip it is quoted for. The regen is
 the integrator's (T-153-s8's class).
@@ -422,7 +422,7 @@ draws.
    for**, on a card whose whole subject is that. *"1 failed / 299
    passed"* for the wrapper-level mutants is **300** at `2771ae9` (I
    measured both), and the report's capabilities figure is **23599**,
-   not 23525. Restate with a ref or correct.
+   not 23599 (corrected per the verdict — 23525 predated 924067d). Restate with a ref or correct.
 
 ### Routed, not blocking
 

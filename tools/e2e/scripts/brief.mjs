@@ -271,7 +271,26 @@ async function main(argv) {
    * @type {string[]}
    */
   const fenceFindings = [];
-  if (fenceWorktree !== "") {
+  if (fenceWorktree !== "" && wantsPreflight && preflightFindings.length > 0) {
+    // T-160's VERDICT, correction 2: the ordering above was PRINT order
+    // only — arm five still wrote a manifest for a card whose claims
+    // had just been refuted one screen up. The manifest is the step
+    // that makes the lane real, so a failed preflight now GATES the
+    // write instead of merely preceding it.
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
+    console.log(
+      render([
+        note(
+          "fence: NOT WRITTEN — the preflight above found stale claims, and a card " +
+            "whose claims no longer hold does not get a",
+        ),
+        note(
+          "manifest. Correct the card, or rule the finding ON the card (dated), then " +
+            "re-run this same invocation.",
+        ),
+      ]),
+    );
+  } else if (fenceWorktree !== "") {
     if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
     const worktree = path.resolve(ctx.root, fenceWorktree);
     try {
