@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
 touches: [app-interview]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
