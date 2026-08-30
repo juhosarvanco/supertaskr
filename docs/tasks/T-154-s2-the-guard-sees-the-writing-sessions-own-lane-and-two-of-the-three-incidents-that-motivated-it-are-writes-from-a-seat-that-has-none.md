@@ -1,7 +1,7 @@
 ---
 id: T-154-s2
 title: The guard sees the writing session's own lane, and two of the three incidents that motivated it are writes from a seat that has none
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-154
 ---
 
@@ -57,3 +57,6 @@ deciding it.
 
 Filed rather than built: T-154's fence reached `.claude/` and
 `tools/e2e`, so the code was reachable and the RULING was not.
+
+Standing triage 2026-08-30 (architect seat): PARKED — NOT RULED. docs/STATE.md states in as many words that "`T-154-s2` still needs a ruling", and that ruling is @human's; this card questions whether a guard should see the writing session's own lane, which is a policy call about what the method permits rather than a defect with a derivable answer. Two of the three incidents that motivated the guard are writes from a seat that HAS no lane, so the card is arguing the guard's premise, not its implementation — exactly the class a triage seat may route but not settle.
+RESURFACES: @human rules the question STATE has queued. IF the ruling says a lane-less seat's writes are in scope THEN this promotes as a guard-class card and dispatches `review: independent` (TASK-FORMAT: the builder of a cage is not its inspector); IF it says the guard's current premise stands THEN this is DECLINED with the ruling named as the reason.

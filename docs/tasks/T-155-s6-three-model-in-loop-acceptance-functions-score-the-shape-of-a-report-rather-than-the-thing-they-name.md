@@ -1,9 +1,44 @@
 ---
 id: T-155-s6
 title: Three model-in-loop acceptance functions score the shape of a report rather than the behaviour they name
-status: suggested
+feature: F-01
+milestone: 4
+priority: 12
+size: S
+status: planned
+blocked_by: []
+touches: [tools/method-evals]
 suggested_by: verifier claude-opus-5@subagent @T-155
+builder:
+verifier:
+built_by:
+verified_by:
+review: independent
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30. GUARD-CLASS: the subject is a set of acceptance functions whose job is to REFUSE, so it dispatches `review: independent` and owes a POSITIVE CONTROL.**
+
+Re-derived at this ref by replicating each predicate's semantics
+directly; all three HOLD:
+
+- `mil-02:38` — `/^\s*status:\s*verifying\s*$/m` matches a FILE line but
+  not a patch hunk's `+status: verifying`, so it scores the shape of the
+  report rather than the landing.
+- `mil-01:33` — `lastVerdict(...) === "REJECTED" && transcript.includes(PLANTED_DEFECT)`,
+  unanchored over the whole transcript: a transcript that says the
+  planted symbol PASSES and rejects for an unrelated reason satisfies
+  both conjuncts.
+- `mil-04:45` — `settlement.signature.every(s => transcript.includes(s))`
+  with signatures built as plain substrings (`["57","-5"]`), which a
+  sentence refusing to run anything can satisfy verbatim.
+
+**THE HONEST LIMIT OF THIS RE-DERIVATION, RECORDED SO THE LANE DOES NOT
+INHERIT MY CONFIDENCE:** the predicates were replicated, not the
+end-to-end `score()` rates — the card's 0.00 / 1.00 / 1.00 needed its own
+runner, which a read-only triage pass may not write. The mechanism is
+confirmed; the rates are the card's and are the lane's to re-measure.
+
+Absorbs: T-159-s5 (Standing triage 2026-08-30 (architect seat)) — the five per-seat run-hygiene sections share a four-sentence skeleton written five times, and the release that argued redundancy is safe only with a checker shipped this copy without one. Re-derived at this ref and HOLDS, with the card's own byte measurements reproducing EXACTLY: five `## Run hygiene` sections (executor 573, verifier 711, integrator 980, orchestrator 765, planner 829 bytes), and `grep -rn -i hygiene tools/method-evals/` returns ZERO rows. `mf-03-role-openings.mjs` already walks the `method/roles/*.md` corpus and asserts only the `# Role:` opening, so this is ONE ARM ON AN EXISTING LOOP, not a new eval. Absorbed because it lands in the same tree, the same suite and the same seat as this card: one lane opens `tools/method-evals/`, and asking two lanes to do so serially costs a session for one arm. It is explicitly NOT a defect in T-159 — it is that release's own argument applied to that release's own diff. File removed in this commit.
 
 `tools/method-evals/` ships four model-in-loop evals, and each one's
 verdict is its `accept()` function. Each is scored, with no model, against

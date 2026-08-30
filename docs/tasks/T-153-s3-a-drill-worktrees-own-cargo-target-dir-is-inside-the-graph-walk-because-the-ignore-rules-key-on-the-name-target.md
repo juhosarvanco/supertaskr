@@ -1,9 +1,50 @@
 ---
 id: T-153-s3
 title: A drill worktree's own CARGO_TARGET_DIR is INSIDE the graph walk, because the ignore rules key on the name "target" and the convention tells you to pick a different one
-status: suggested
+feature: F-06
+milestone: 4
+priority: 11
+size: S
+status: planned
+blocked_by: []
+touches: [crate-index]
 suggested_by: executor claude-opus-5 @T-153-s2
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30. THIS CARD ALREADY HAD A SLOT WRITTEN FOR IT AND NEITHER DOCUMENT KNEW.**
+
+`T-111-s10` (planned, `touches: [docs/CONVENTIONS.md]`) carries a
+criterion that routes exactly this work and names no card:
+*"THE class fix (teaching the walk to skip any directory containing
+cargo's own `CACHEDIR.TAG`) SHALL be ROUTED as its own `[crate-index]`
+card rather than taken here — it is code, it is a different fence, and
+the doc edit must not wait on it. Arm (a) and arm (c) are not
+alternatives."* **T-153-s3 IS that card.** Promoting it with the
+`[crate-index]` fence T-111-s10 specifies is what makes the routing real
+instead of a sentence hoping someone connects it.
+
+Re-derived at this ref — **documented, not fixed**, which is the trap:
+`.nputerignore` lists only `docs/`, the index fixtures dir and `tools/`;
+`.gitignore:4` has the sole entry `target/`; `grep -rn 'CACHEDIR'` over
+`crates/nputer-index/src/` returns nothing and `walk.rs:55` still only
+calls `add_custom_ignore_filename(".nputerignore")`. `docs/CONVENTIONS.md`
+still instructs a drill to **"GIVE IT ITS OWN `CARGO_TARGET_DIR` INSIDE
+ITSELF"** with `<scratch>/.drilltarget` as the worked example. So the
+convention still tells a seat to build the very directory the walk will
+index, and the only thing that changed is that `docs/STATE.md` now warns
+about it as a standing hazard. **A hazard note is not a fix, and the
+distance between them is this card.**
+
+**DISPATCH ORDER NOTE:** T-111-s10's own criterion says the doc edit must
+NOT wait on this, and that lane is live right now
+(`task/T-111-s10-poison-drill-bullet`). The fences are disjoint —
+`crate-index` here, `docs/CONVENTIONS.md` there — so this may run
+concurrently, which is precisely what that criterion arranged for.
 
 **CONVENTIONS' POISON DRILL bullet says to drill in a detached scratch
 worktree and give it its OWN `CARGO_TARGET_DIR` INSIDE ITSELF, and

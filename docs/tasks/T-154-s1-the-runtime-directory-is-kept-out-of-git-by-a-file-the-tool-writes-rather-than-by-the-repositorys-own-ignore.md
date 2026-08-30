@@ -1,9 +1,39 @@
 ---
 id: T-154-s1
 title: The runtime directory is kept out of git by a file the tool writes, rather than by the repository's own ignore
-status: suggested
+feature: F-04
+milestone: 4
+priority: 6
+size: S
+status: planned
+blocked_by: []
+touches: [.gitignore, tools/e2e]
 suggested_by: executor claude-opus-5 @T-154
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30.**
+
+Re-derived at this ref and HOLDS, unchanged from the card's own
+derivation: `grep -n nputer .gitignore` returns nothing, and
+`git check-ignore -v .nputer/lane-fence.json` exits 1. The runtime
+directory is kept out of git only by a `.gitignore` the tool WRITES into
+`.nputer/` itself — so the repository's own ignore rules do not know
+about it, and the protection exists only after the tool has run once.
+
+**THE CARD'S OWN GUARD RAIL IS CARRIED AS A CRITERION, BECAUSE THE
+OBVIOUS EDIT IS THE WRONG ONE.** Adding the line to the root
+`.gitignore` must NOT remove the writer (`writeLaneFence` in
+`tools/e2e/scripts/lane-fence.mjs`) or `lane-fence.spec.ts`'s
+`check-ignore` body. The tool-written file protects a checkout that has
+not yet been configured, which is a different guarantee from the
+repository's own ignore and not a duplicate of it — this is one fact
+protected twice on purpose, and deleting either arm silently narrows the
+guarantee.
 
 `.nputer/` is this project's runtime directory — ADR-017 confines
 app-side writes to it, `kit.rs` materialises the genesis kit under it,

@@ -3,9 +3,9 @@ id: T-160-s1
 title: The preflight is a written ritual with no tripwire — nothing makes a dispatcher run it, and the honest comparison is the METHOD EVAL GATE's own disclosure about itself
 feature: F-04
 milestone: 4
-priority: 3
-size: S
-status: suggested
+priority: 4
+size: M
+status: planned
 blocked_by: []
 touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5@subagent @T-160
@@ -13,8 +13,36 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30. Kept SEPARATE from T-160-s2 deliberately.**
+
+T-160-s2's class is *make the preflight read correctly*; this one is
+*make the preflight unskippable*. They share a package and nothing else:
+this card's two arms reach `.github/workflows/` and `docs/CONVENTIONS.md`,
+neither of which s2 touches, and the choice between them is a design
+ruling a hardening lane should not be asked to make in passing.
+
+Re-derived at this ref, both halves HOLD:
+`grep -rn "preflight\|brief.mjs" .github/workflows/` returns nothing, and
+the manifest literal at `tools/e2e/scripts/lane-fence.mjs:183-199` carries
+no preflight-verdict field, so a lane armed without a preflight is
+indistinguishable from one armed with it.
+
+**THE CARD'S OWN INSTRUCTION STANDS AND IS THE ACCEPTANCE:** build ONE
+arm, not both — a CI step, or a preflight receipt stamped into
+`.nputer/lane-fence.json` — and record why the other was declined.
+
+**DISPATCH NOTE FOR THE ORCHESTRATOR:** this fence carries
+`docs/CONVENTIONS.md`, which the live `task/T-111-s10-poison-drill-bullet`
+lane holds at the time of this sitting. Not dispatchable concurrently
+with it; the overlap is the ordinary `touches:` guardrail, not a defect.
+
+**GUARD-CLASS.** Its subject is a thing whose job is to REFUSE, so it
+dispatches `review: independent` and owes a POSITIVE CONTROL — prove a
+preflighted lane still arms, not only that an unpreflighted one is
+stopped.
 
 ## What T-160 built, and what it did not
 

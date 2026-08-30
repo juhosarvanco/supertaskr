@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 1
 size: S
-status: suggested
+status: rejected
 blocked_by: []
 touches: [.github/workflows/]
 suggested_by: executor claude-opus-5@subagent @T-153-s9
@@ -86,3 +86,5 @@ list against CONVENTIONS and is the place a static half would live.
 is why it is routed rather than fixed where it was found.
 
 Discharged: closed_by 129e3c9 (2026-08-30, integrator) — the guard landed on main directly under the CI-green authorization before this card could reach a lane; this card arrived with the s9 merge already satisfied.
+
+Standing triage 2026-08-30 (architect seat): REJECTED — DISCHARGED, NOT DECLINED — the work landed at `129e3c9`. Verified at this ref: the commit exists on this base, and `.github/workflows/ci.yml:176` now runs `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`, which is the "only install when the binary is absent" shape this card named as the honest fix. The cache-hit path the card measured — `cargo install` refusing over a restored binary at step 19 — can no longer be reached. Recorded here rather than as an absorption because the resolver is a direct-to-main CI commit under the CI-green authorization and no task card exists to carry an Absorbs line — the case TASK-FORMAT names as forcing this wording.

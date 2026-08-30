@@ -1,9 +1,47 @@
 ---
 id: T-156-s1
 title: The health bands have no way into a checkpoint, because the record template and the CONVENTIONS bullet are both outside the fence that built them
-status: suggested
+feature: F-06
+milestone: 4
+priority: 14
+size: M
+status: planned
+blocked_by: []
+touches: [docs/checkpoints/, docs/CONVENTIONS.md, .github/workflows/]
 suggested_by: executor claude-opus-5 @T-156
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30, as the owner of the ROUTED REFUSALS T-156 could not build. It absorbs T-156-s2, its own other half.**
+
+Both are the same shape stated twice: T-156's fence was `[tools/e2e]`,
+and the recording mechanisms its criteria needed all live outside it. The
+lane widened nothing to reach them, which is the one repair an executor
+may never make — so these are **routed refusals, not oversights**, and
+they are the reason `npm run health` exits 3 today.
+
+`docs/STATE.md` names them together and treats them as one obligation:
+*"the one designed non-zero exit a session will meet: `npm run health`
+exits 3 while four bands await keepers (T-156-s1/s2) — never read that 3
+as clean, and never 'fix' it."* Two cards for one exit code would be two
+triage decisions that can disagree about a state STATE describes once.
+
+**THE HARD HALF IS NOT A SCRIPT AND THE CARD SAYS SO.** Every band here
+needs a MARKER — a place where a fact is recorded at the moment it
+happens, by whoever it happens to. The scanner is the easy part.
+**And the sampling trap is carried forward as a criterion**: a cold start
+that went badly is exactly the one nobody writes up, so the marker must
+be owed by the SESSION rather than by whoever noticed a problem.
+A denominator that only collects successes is worse than no band.
+
+**DISPATCH NOTE:** carries `docs/CONVENTIONS.md`, held by the live
+`task/T-111-s10-poison-drill-bullet` lane at this sitting.
+
+Absorbs: T-156-s2 (Standing triage 2026-08-30 (architect seat)) — the constitution's three indicators have a band each and still nothing to read, because the recording mechanisms they need all live outside the fence that declared them. Same routed-refusal shape, same parent lane, same `authority.kind: "none"` consequence, and the same fence this card needs — `docs/checkpoints/` for the marker, `docs/CONVENTIONS.md` for the bullet. It brings the three NORTH_STAR bands (`cold-start-pass-rate`, `drift-incidents`, `rejection-rate-by-size`) and the sampling-trap argument, which is carried above as a criterion rather than lost in the merge. File removed in this commit.
 
 **THIS IS A ROUTED REFUSAL, NOT AN OVERSIGHT.** T-156's fence is
 `touches: [tools/e2e]`, and two of its own criteria land outside it.

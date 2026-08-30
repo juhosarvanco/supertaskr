@@ -1,10 +1,43 @@
 ---
 id: T-159-s3
 title: The adapter TEMPLATE now says a role file's reading step wins over its list, and this repository's own two adapters do not — the kit is ahead of the project it was written in
-status: suggested
-suggested_by: executor claude-opus-5@subagent @T-159
+feature: F-01
+milestone: 4
+priority: 14
+size: S
+status: planned
+blocked_by: []
 touches: [CLAUDE.md, AGENTS.md]
+suggested_by: executor claude-opus-5@subagent @T-159
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30. Kept SEPARATE from T-159-s4 despite the shared subject, because its fence is disjoint and its work is one paragraph.**
+
+Re-derived at this ref:
+`grep -c 'role file wins' CLAUDE.md AGENTS.md method/adapters/CLAUDE.md method/adapters/AGENTS.md`
+-> `0, 0, 1, 1`. The kit's adapter TEMPLATE carries
+*"This list is addressed to EVERY seat, and your own role file may add to
+it or subtract from it — where the two differ, the role file wins."*
+This repository's own two root adapters carry a different paragraph in
+that slot and have never had the sentence.
+
+**THE CONSEQUENCE IS LIVE, NOT COSMETIC**, and it is the same defect
+T-159-s4 arm B attacks from the code side: `CLAUDE.md`'s read-first set
+names `docs/ROADMAP.md`, and `method/roles/executor.md:9` subtracts it by
+name — so an executor reading this repository's adapter cold is told to
+read a document its own role file forbids, with nothing on the page
+saying which wins. The kit is ahead of the project it was written in.
+
+**BOTH ROOT ADAPTERS MOVE TOGETHER AND MUST STAY cmp-IDENTICAL** in the
+region they share — this project's standing hazard for these two files.
+Acceptance names the command: after the edit, `npm test` from
+`tools/e2e/` SHALL stay green (the adapter-agreement body reads both),
+and the paragraph SHALL be the template's, not a paraphrase.
 
 **CLASS PARENT: `T-155-s4`** (the executor is told to read a document
 its own role file subtracts by name). T-159 took that card's method

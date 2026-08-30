@@ -3,11 +3,11 @@ id: T-160-s4
 title: T-059's fence cannot reach a file its own criteria order it to write, which is T-127-s1's shape sitting on the board right now
 feature: F-04
 milestone: 4
-priority: 4
+priority: 1
 size: S
-status: suggested
+status: planned
 blocked_by: []
-touches: [tools/e2e]
+touches: [docs/tasks/T-059-the-two-joins-cannot-quietly-disagree.md]
 suggested_by: verifier claude-opus-5@subagent @T-160
 builder:
 verifier:
@@ -15,6 +15,38 @@ built_by:
 verified_by:
 review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30, at the TOP of its column — this is the only live defect on the board that a dispatch would pay for.**
+
+Re-derived at this ref, from both cwds, before promoting:
+`node tools/e2e/scripts/brief.mjs --task T-059 --preflight` exits 1 with
+`UNCOVERED CRITERION PATH ... line 74: app/test/architecture-dogfood.test.ts is named in the acceptance criteria, exists at HEAD, and is reserved by the app-map slug — which this card's touches do not carry.`
+T-059's fence is `touches: [crate-index, app-shell]`; its criterion at line 74 orders an assertion to LIVE BESIDE `app/test/architecture-dogfood.test.ts`, which `app-map` reserves. TASK-FORMAT is unambiguous about what that makes T-059: *a card whose criterion and whose fence disagree is a DEFECTIVE CARD, not a hard call for the lane.*
+
+**Why priority 1.** The preflight was run over all 48 cards at
+planned/building/verifying/merging and T-059 is the ONLY hit — and T-059
+is startable right now (its blocker T-033 is done, and the parser rules
+it disjoint from every live lane). The protection today is procedural,
+not mechanical: `brief.mjs:289` gates the fence write on preflight
+findings only when `--preflight` is passed in the same invocation, so
+`--write-fence` alone still arms a clean manifest over this card.
+
+**THE FENCE ON THIS CARD IS NARROWED BY HAND, AND THAT IS THE FINDING
+APPLIED TO ITSELF.** As filed, this card carried `touches: [tools/e2e]`
+while its own criterion ordered an edit to T-059's card — the very shape
+it was filing against. It escaped its own preflight only because
+`docs/tasks/` is under no component slug and because a suggested card is
+refused a preflight at all. A bare `docs/tasks` fence is refused BY THE
+PARSER (`UNFENCEABLE_PATHS`, `lib/parser/test/fence.test.ts`), so the
+fence is narrowed to the single card file this work may touch, on the
+T-108 precedent.
+
+**THE REPAIR IS ONE OF TWO AND THE LANE CHOOSES IN WRITING**, per
+TASK-FORMAT: widen T-059's `touches:` to carry `app-map`, or rewrite the
+criterion as a ROUTE (*IF this path is outside the fence THEN record it,
+route it as a suggestion naming the fence it needs, and say so*).
+Acceptance is the command, not a count: `brief.mjs --task T-059
+--preflight` SHALL exit 0, and no other card's preflight SHALL change.
 
 ## The instance, found by the tool under verification
 

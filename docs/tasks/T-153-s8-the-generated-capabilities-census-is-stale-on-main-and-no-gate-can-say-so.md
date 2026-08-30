@@ -1,11 +1,11 @@
 ---
 id: T-153-s8
-title: The generated capabilities census is STALE on main by one behaviour, and neither CI nor any spec can say so — the check exists, is documented nowhere in "Build & test", and runs in no pipeline
+title: The generated capabilities census has no keeper — `capabilities:check` is in no pipeline, no CONVENTIONS command bullet and no spec, so the figure is true only while someone remembers by hand (the one-behaviour staleness this was filed for is discharged at cc82dc2)
 feature: F-01
 milestone: 4
-priority: 3
+priority: 4
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md, docs/CAPABILITIES.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s5
@@ -15,6 +15,44 @@ built_by:
 verified_by:
 review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30 — RETITLED, because the headline this card was filed under is FALSE at this ref and promoting it unchanged would dispatch a lane to fix a number that is already correct.**
+
+Re-derived before promoting:
+`node scripts/capabilities.mjs --check` from `tools/e2e/` prints
+`capabilities: CURRENT (24849 bytes)` and **exits 0**. The census line now
+reads 313 behaviours (311 extracted + 2 named-not-extracted) across 29
+spec files. The one-behaviour staleness the card measured was regenerated
+away at `cc82dc2`. **THE MEASUREMENT IS DEAD.**
+
+**THE ARGUMENT IS NOT, AND IT IS THE ONLY PART WORTH A LANE.** The
+surviving claim is that nothing KEEPS the figure true:
+`grep -rn 'capabilities' .github/workflows/` returns nothing; the
+`tools/e2e` command bullet in `docs/CONVENTIONS.md` lists `npm ci`,
+`npm test`, `typecheck`, `lint:tokens`, `lint:docs`, `boot:orphan-drill`
+and `boot:check` and not `capabilities`; no spec reads it. Both scripts
+exist in `package.json` and nothing references them. That is ADR-019 Law 2
+— a figure with no keeper — and the card's own death is the demonstration:
+the census went stale, was fixed by hand at a checkpoint, and no
+instrument on this repository could have told anyone either time.
+
+**THIS IS THE RULING THE ABSORBED CARD ASKED TRIAGE FOR, AND IT IS MADE
+HERE: the keeper is a CI STEP, not a lane spec body.** T-154-s3 named the
+choice and said in as many words that it was *"triage's call and not an
+executor's"*. A lane-red keeps the census honest only for lanes that
+happen to touch the specs; the failure mode both instances actually took
+was an integrator regenerating by hand at a checkpoint, which no lane
+body observes. CI is the seat that sees every merge.
+
+**DISPATCH NOTE:** this fence carries `docs/CONVENTIONS.md`, held by the
+live `task/T-111-s10-poison-drill-bullet` lane at this sitting. Not
+dispatchable concurrently.
+
+Acceptance names the command: the pipeline SHALL run
+`capabilities:check`, and a spec-name change without a regenerate SHALL
+red it, with a positive control proving a current census passes.
+
+Absorbs: T-154-s3 (Standing triage 2026-08-30 (architect seat)) — a new spec file makes the generated behaviour census stale and nothing in the lane or in CI says so. This is the SAME CLASS as this card, filed independently from the T-154 lane — which is precisely the corroboration TASK-FORMAT's SEARCH BEFORE FILING section says should have been one card with two dated instances rather than two cards. Its instance was discharged at T-154's own checkpoint (the integrator ran `npm run capabilities`, 233 -> 258, and asked `capabilities:check` either side); its CLASS is this card's surviving half. It brings the second stamped instance — and the second instance is the evidence the class is real. It also brings the ruling it explicitly reserved for triage, answered above: CI step, not lane body. File removed in this commit.
 
 ## The measurement
 

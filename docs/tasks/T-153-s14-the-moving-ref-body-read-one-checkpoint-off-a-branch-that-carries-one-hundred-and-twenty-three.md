@@ -5,8 +5,8 @@ feature: F-01
 milestone: 4
 priority: 4
 size: S
-status: suggested
-blocked_by: [T-153-s13]
+status: parked
+blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-153-s9
 builder:
@@ -97,3 +97,8 @@ the e2e lane, which is `T-153-s13` and is why this card is blocked on it.
   reproduction that failed to reproduce here SHALL be re-run after it.
 
 **FENCE.** `tools/e2e`.
+
+Standing triage 2026-08-30 (architect seat): PARKED — UNVERIFIABLE AT THIS REF BY CONSTRUCTION, which is the park case rather than a reason to guess. Nothing local can distinguish the three readings of what happened (a short read, a genuinely short branch, or a ref-state artefact); only a `pull_request`-event CI run can. The disclosure that will answer it is already built and live: `brief.spec.ts:317` is the body, and `:341-355` assemble the `seen` string naming the branch, the resolved ref, the first-parent line count, the Checkpoint count, the index of the newest and the head line.
+**ITS STALE BLOCKER IS LIFTED IN THIS COMMIT.** `blocked_by: [T-153-s13]` pointed at a card discharged at `129e3c9` and now archived; the line would have made this look blocked by something that no longer exists. `docs/STATE.md:66` already treats it as unblocked, on the watch-list, glossed "one PR run answers it".
+Not promoted, because there is NO WORK TO DO before the trigger fires and dispatching it would force a lane to choose between three readings — which the card explicitly warns is "how a body gets 'fixed' by being weakened".
+RESURFACES: the next `pull_request` run that reaches the e2e lane. Read the `seen` disclosure off it. IF the Checkpoint count is ~123 THEN the read was short — fold into `T-161`'s stderr/stdout-drain family and fix the READ, not the assertion. IF it is 1 THEN the branch really is short on that checkout and the body owes a subject buildable on both event types. Stays on STATE's watch-list until then.

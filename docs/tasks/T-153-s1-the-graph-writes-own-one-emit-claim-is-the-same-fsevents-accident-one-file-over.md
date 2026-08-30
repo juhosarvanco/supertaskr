@@ -1,9 +1,41 @@
 ---
 id: T-153-s1
 title: index_cmd's "one write, one emit — no echo" is the same FSEvents accident T-153 removed from docs_watch, asserted this time as a property
-status: suggested
+feature: F-02
+milestone: 4
+priority: 14
+size: S
+status: planned
+blocked_by: []
+touches: [app-shell]
 suggested_by: executor claude-opus-5 @T-153
+builder:
+verifier:
+built_by:
+verified_by:
+review:
 ---
+
+**PROMOTED at the first standing triage, 2026-08-30.**
+
+Re-derived at this ref and HOLDS, byte-identical to the card's quotation:
+`app/src-tauri/src/index_cmd.rs:284-300` still carries
+`recv_timeout(Duration::from_secs(10))`, the `"schema": 1` content check,
+and `assert!(emits.recv_timeout(DEBOUNCE * 6).is_err(), "one write, one
+emit — no echo")`.
+
+**THE POINT IS WHOSE ASSUMPTION IT IS.** T-153 removed exactly this
+FSEvents assumption from `docs_watch.rs`, where it was a CONVENIENCE. Here
+it is the CLAIM — the assertion's own text is the property under test —
+so the same platform behaviour that broke the first one does not merely
+inconvenience this body, it makes it assert something false while staying
+green on the machine that wrote it.
+
+**THE COST IS NAMED SO IT IS NOT DISCOVERED MID-LANE:** the primitive
+that would fix it, `recv_until`, is `#[cfg(test)]` inside
+`docs_watch.rs`'s test module (`:1764`), so the lane either moves it to a
+shared test helper or rewrites it locally. That is the whole size of the
+card, and it is why this is not a one-liner.
 
 `index_cmd::tests::reindex_emits_once_then_never_again`
 (app/src-tauri/src/index_cmd.rs) takes THE NEXT emit off the watcher
@@ -27,7 +59,7 @@ a mechanical fix, and T-153's executor routed it instead of taking it.
 
 ## WHY IT HAS NOT BITTEN YET, DERIVED RATHER THAN ASSUMED
 
-It passed the repository's first CI run (`33246335429`) and the T-153
+It passed CI run `33246335429` and the T-153
 lane's run (`33252279564`), both on ubuntu/inotify. The reason is a
 property of the FIXTURE and not of the assertion: the body's `TempTree`
 holds one four-line `src/a.ts`, so the graph it writes is small enough

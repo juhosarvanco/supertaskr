@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 36
 size: S
-status: suggested
+status: parked
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-157
@@ -85,3 +85,7 @@ over 1, every figure carrying what it was read from.
 - IF the records directory holds no parseable metrics line THEN the
   run SHALL say so and exit non-zero, never print a total over zero
   records.
+
+Standing triage 2026-08-30 (architect seat): PARKED — because the card's own framing says the design question comes before the tool, and triage answering it would be triage designing it. The checkpoint template now names three metrics lines and forbids silence on any of them, so the per-arc cost of this pipeline is genuinely STAMPED in every record from here on and nothing can add it up. That much is real and unchanged at this ref.
+**WHAT IT IS NOT IS URGENT, AND THE ARITHMETIC SAYS SO.** A by-hand economics reporter over the records has a denominator that grows one checkpoint at a time; the trend it would draw is a trend over a handful of arcs, and a reporter written now measures mostly its own construction. The card additionally names "the one design constraint that decides whether it may exist at all" and leaves it open — a card dispatched with its central constraint unresolved is a card whose executor has to rule on scope mid-lane, which is the shape this method routes rather than builds.
+RESURFACES: whichever comes first — the next `tools/e2e` dispatch that opens the record-reading scripts (the default condition, its fence's component next dispatched), or the point at which the records carry enough stamped arcs for a trend to mean anything. IF the design constraint is settled before either fires THEN it promotes on that ruling alone. The seat that takes it re-derives how many records actually carry the three metrics lines at its own ref, rather than assuming every record since the template landed does.
