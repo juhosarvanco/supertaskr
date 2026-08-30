@@ -63,7 +63,9 @@ external claim carries its source.
 ## Implementation notes
 
 Lane `task/T-168-form-brief`, worktree `../nputer-T-168`, base
-`1d297c9`. Two documents, docs-only diff, nothing else touched.
+`1d297c9`. The diff is docs-only and is four paths: the two deliverable
+documents, these notes, and one suggestion card. No code, no `method/`,
+nothing outside the fence.
 
 **What landed.**
 
@@ -118,7 +120,7 @@ rather than by any sampling frame, one reading on one day.
 **Two disclosures on the criteria.**
 
 - The acceptance criterion says the brief ENDS with the decision
-  questions. It ends with the questions and then a two-line
+  questions. It ends with the questions and then a short
   `RESOLUTION:` footer, which is the room-format status line every open
   room in `docs/rooms/` carries (`method/rooms/ROOM-FORMAT.md`). The
   questions are the last substantive section.
@@ -134,13 +136,25 @@ rather than by any sampling frame, one reading on one day.
 - DOCS GATE, diff half, executor's pair of the RANGE RULE
   (`TREE=$(git merge-tree --write-tree main HEAD)` then
   `docs-gate.mjs $(git diff --name-only main "$TREE")`, run from the
-  repository root) — **exit 1, a verdict**: two paths under `docs/` are
-  code inputs and the diff owes ONE command, `npm test` from
-  `tools/e2e/`, both files reached through
-  `tools/e2e/tests/shell-frame.spec.ts` and
-  `tools/e2e/tests/window-contract.spec.ts`.
-- The owed suite, `npm test` from `tools/e2e/` — **318 passed, 2
-  failed**, and NEITHER failure is a function of this diff. Both are
+  repository root) — **exit 1, a verdict**, run TWICE because the
+  answer moved when the diff did. On the docs-only diff it owed ONE
+  command (`npm test` from `tools/e2e/`, both files reached through
+  `shell-frame.spec.ts` and `window-contract.spec.ts`). Once this
+  card's notes and `T-168-s1` joined the diff, **four paths** under
+  `docs/` are code inputs and the owed set is THREE commands:
+  `npm test` from `app/`, `npm test` from `tools/e2e/`, and
+  `npx vitest run` from `lib/parser/`. Asking the gate again after the
+  diff grew is the whole point of asking it rather than predicting it.
+  **NOTE THE LEFT ENDPOINT: `main` is not this lane's base.** Main
+  moved three commits past `1d297c9` while the lane ran (the dispatch
+  stamps plus two filings), so a plain `main..HEAD` reports six paths
+  and hands this lane main's own work in reverse. The merge-tree form
+  reports the four that are actually this lane's — the RANGE RULE
+  earning its keep on a live tree.
+- `npx vitest run` from `lib/parser/` — **exit 0**, 315 passed.
+- `npm test` from `app/` — **exit 0**, 1015 passed.
+- `npm test` from `tools/e2e/` — **318 passed, 2 failed**, and NEITHER
+  failure is a function of this diff. Both are
   `tools/e2e/tests/session-economics.spec.ts` (`:73` and `:247`), both
   spawn `brief.mjs --task T-157` and assert exit 0, and the assembler
   correctly exits 1 because the LIVE lane T-156-s1 holds
