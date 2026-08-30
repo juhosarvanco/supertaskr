@@ -465,6 +465,136 @@ State which it is when you dispatch. The rule of thumb: **docs, method
 and tooling self-integrate; anything a user could run does not.**
 A card that cannot be placed is an M.
 
+## Ceremony by blast radius — ADVISORY
+
+**UNTIL THE FLIP CONDITION BELOW MEASURES TRUE, THESE RUNGS BIND
+NOTHING.** The table above governs every dispatch, unchanged. What the
+rungs buy today is a NUMBER: the dispatching seat computes it, prints
+it on the brief, and records it on the card — and where a rung and a
+ceremony ROW disagree, the ROW is what the lane obeys. Say which one
+you applied when you dispatch, so the disagreements are countable.
+That count is the whole point of an advisory period.
+
+**WHY A SECOND AXIS AT ALL.** Size predicts how LONG work takes. It
+does not predict how expensive the work is to get wrong, and it has
+been asked to stand in for both. **A card touching a file nothing
+imports is cheap to get wrong; a card touching a file twelve things
+import is not.** A project that already computes a dependency graph
+already knows that number, and a rule keyed to it spends the expensive
+rungs where they earn rather than where the letter happens to fall.
+
+**THE RUNGS, IN DIRECT DEPENDENTS OF WHAT THE CARD TOUCHES:**
+
+| Rung | Direct dependents | The pipeline it would buy |
+|---|---|---|
+| 0 | none | executor + tests; the executor is its OWN integrator |
+| 1 | 1 to 7 | executor → verifier; the executor integrates its own work |
+| 2 | 8 or more | executor → verifier → integrator |
+
+**`size:` KEEPS EXACTLY ONE RUNG AND IT IS NOT ON THAT TABLE: `L` ⇒ a
+planning pass before any of the above, whatever the rung.** That is a
+fact about the work's SHAPE — how long it is, and whether it needs
+decomposing before anyone opens an editor — and no dependent count
+predicts it.
+
+**SO THE TWO FIELDS STOP OVERLAPPING BY EACH KEEPING THE HALF IT
+ACTUALLY KNOWS, WHICH IS WHY NEITHER IS DELETED.** `size:` is HOW LONG
+THE WORK IS; blast radius is HOW EXPENSIVE IT IS TO GET WRONG. The
+three rungs above are the same three rungs the table above already
+has — this is continuity, not replacement. The mapping is total,
+nothing is deleted, and an M or an L card at rung 0 or 1 becomes
+spellable where before it was not.
+
+**DIRECT DEPENDENTS, NOT TRANSITIVE.** Transitive counts saturate: in
+one connected application almost everything reaches almost everything,
+and a distribution that separates nothing cannot carry a threshold.
+Direct keeps a legible tail.
+
+**THE THRESHOLDS ARE NOT ROUND NUMBERS AND MAY NOT BE COPIED AS
+THOUGH THEY WERE.** They sit where a measured distribution separated —
+at an empty bucket below the top rung — on the project that ruled
+them. **A project adopting this SHALL re-derive its own distribution
+and put its own rungs where its own data separates**, and the
+derivation, the command that produced it and the ref it was measured
+at belong in that project's conventions or its decision record. They
+are not transcribed here: a count in a normative document is a line
+number by another name, and this file names no paths and no commands.
+
+**THE THREE COVERAGE CLASSES, BECAUSE "UNMEASURED" AND "NOT CODE" ARE
+DIFFERENT FACTS.** Reading them as one promotes the whole
+docs/method/tooling population — the population the table above
+deliberately routes to its CHEAPEST row — to the most expensive one,
+and average ceremony goes UP. That is the opposite of the reason this
+axis exists.
+
+- **KNOWN NON-CODE** — the path is excluded from the project's index
+  walk, or carries no walked extension, or belongs to a component
+  whose declared paths name neither. **This class takes the rule of
+  thumb above, NOT a raised rung.** It is not unmeasured; it is
+  measured to be outside the walk, which is a different answer.
+- **GENUINELY UNMEASURED** — a walked path inside the walk root with
+  no entry, or an entry the indexer could not complete: skipped,
+  truncated, depth-limited or refused. **This class takes the HIGHER
+  ceremony, never the lower. An unmeasured blast radius is not a small
+  one.**
+- **MEASURED** — an entry exists, and the rungs apply.
+
+**Which class an input falls in is DERIVED, never judged** — each of
+the three is a question the project's own derivation can answer — and
+**a derivation that cannot say which class an input is in has answered
+GENUINELY UNMEASURED.**
+
+**AND THE FLOOR RULE, WHICH IS NOT OPTIONAL: A BUILD-TARGET ROOT IS
+NEVER AT RUNG 0.** Reverse reachability terminates at entry points, so
+a root reads zero dependents BY CONSTRUCTION — and a crate root or an
+application entry point is the most expensive file in its tree, not
+the cheapest. The rule over-corrects on the genuinely trivial roots (a
+three-line build script), and that is the correct direction: the
+failure this axis exists to close is UNDER-counting.
+**A PROJECT WHOSE DERIVATION MARKS ONLY SOME OF ITS ROOTS HAS NOT
+MECHANISED THIS RULE.** The unmarked ones then print a bare zero and
+are indistinguishable from genuinely unimported files, in exactly that
+failure direction. Until every language's roots are marked in the
+derivation's own OUTPUT, the floor is applied BY THE READER and the
+gap is stated where a reader of that output will meet it — not only in
+the notes of whoever found it. **Closing that gap is a precondition of
+the flip below**, not a nicety.
+
+**THE OVERRIDE IS PROSE IN THE CARD BODY AND NOTHING ELSE.** At
+dispatch the seat may move a card's computed rung by writing the tier
+and the REASON into the card. **No field, no status, no parser change,
+no gate** — so a wrong threshold costs a sentence rather than a
+re-ruling, and every override written down is a datum about where the
+thresholds actually belong. Discipline, not enforcement.
+
+**THE FLIP CONDITION IS A MEASUREMENT AND NOT A DATE.** These rungs
+BIND on the day a re-derivation shows the MIDDLE rung NON-EMPTY over
+the project's own live board — that is, at least one planned card
+whose fence resolves to rung 1 under the coverage classes above. It is
+one command, run against the board at that day's ref, and the project
+names that command in its own conventions.
+
+**WHY ADVISORY RATHER THAN SIMPLY ADOPTED, STATED HERE BECAUSE THE
+REASON IS THE EVIDENCE.** On the board that ruled it the rule was a
+**CONSTANT FUNCTION**: every code fence there was component-sized,
+every component-sized set contained a rung-2 file, and once the
+coverage classes rescue it, the two values it takes are code versus
+not-code — which is the rule of thumb above wearing a number. **A rule
+that agrees with the existing one on every card it can be asked about
+adds no information and costs a derivation per dispatch.**
+**THE PREREQUISITE IS PATH-GRANULAR CODE FENCES** — a norm this method
+already states, that a fence names the paths a lane WRITES at the
+narrowest granularity that still covers them, and one the board in
+question had adopted in none of its entries. **So the flip measures
+FENCE DISCIPLINE, not the metric**: the metric separates cleanly per
+file and has never been handed an input finer than a component.
+Re-derive it, do not re-argue it.
+
+**REVERSING THIS IS REVERTING ONE COMMIT.** Nothing here is stored:
+the number is derived on demand, no card records it, no frontmatter
+field carries it, no gate reads it. That is deliberate, and it is what
+makes an advisory period honest instead of a soft launch.
+
 ## Parallelism guardrails
 
 - Tasks with overlapping `touches:` never run concurrently.

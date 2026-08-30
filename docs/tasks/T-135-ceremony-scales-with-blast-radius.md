@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 7
 size: L
-status: building
+status: verifying
 blocked_by: []
 touches: [crate-index, method/tasks/TASK-FORMAT.md]
 builder: claude-opus-5
@@ -1390,3 +1390,253 @@ cannot see it. It named `tools/e2e` as an owner of `graph.json`
 card's "cheap fix for THIS merge" does not mention.
 
 @HUMAN'S §6/§7 RULING (2026-08-30, in session): **ADVISORY NOW, BINDING AT THE MEASURED FLIP** — the rungs are computed and printed at every dispatch and recorded by the seat, binding on nothing, and become BINDING the day a re-derivation of §6's table shows the middle rung non-empty (one command, not a date). §7's corrections land with it: known non-code keeps the ceremony table's existing rule of thumb, the genuinely-unmeasured class (currently empty) takes the higher ceremony, and a build-target root is never rung 0. Half B (the TASK-FORMAT ceremony section + the ADR, prose only) dispatches on this ruling.
+
+## Implementation notes — HALF B (executor claude-opus-5, 2026-08-30)
+
+**THE CARD IS NOW WHOLE.** Half B is built and `status:` moves
+`building` -> **`verifying`**. Built in the integration checkout at
+@human's direction — T-135 has no lane and never had one for this half
+— so the two-writer conflict `roles/executor.md` step 6 guards against
+cannot arise; `git worktree list --porcelain` at this ref names one
+lane, `task/T-169-assignment-flag`, whose fence is disjoint from these
+three files. **`verifier:`, `built_by:`, `verified_by:` and `review:`
+stay EMPTY**: TASK-FORMAT stamps those on `done`, this is a size-L card
+whose row is executor -> verifier -> integrator, and Half B has had no
+verifier. `T-135-s4` is discharged by completion rather than by ruling
+— the card is no longer half-dispatched, so the vocabulary has a true
+value again.
+
+**THE WHOLE POLICY IS ONE COMMIT, WHICH IS §2's REVERSIBLE BOUNDARY.**
+Footprint: the new `## Ceremony by blast radius — ADVISORY` section in
+`method/tasks/TASK-FORMAT.md`, `docs/decisions/018-blast-radius-advisory.md`,
+and this section. No code, no field, no parser change, no schema, no
+gate. Reverting is `git revert` of this commit.
+
+### What Half B discharges, criterion by criterion
+
+- **Criterion 4 — thresholds named, justified from measured
+  distribution.** The rungs land as §6 specifies them: rung 0 = no
+  direct dependents, rung 1 = 1 to 7, rung 2 = 8 or more, with `L` ⇒ a
+  planning pass at any rung. **The distribution's FIGURES are not
+  transcribed into `method/`** — the section says a project SHALL
+  re-derive its own and put its rungs where its own data separates,
+  and ADR-018 carries the argument. That is this file's own rule about
+  counts applied to itself.
+- **Criterion 5 — safe degradation.** §7's three coverage classes land
+  whole (KNOWN NON-CODE takes the rule of thumb, GENUINELY UNMEASURED
+  takes the higher ceremony, MEASURED takes the rungs), with the
+  conflation §7 diagnosed stated as the reason they are three and not
+  two, plus the closing rule that **a derivation which cannot say which
+  class an input is in has answered GENUINELY UNMEASURED** — which is
+  F6's `arch blast ""` case answered in policy where it could not be
+  answered in code from this fence. The floor rule lands unconditional:
+  a build-target root is never at rung 0.
+- **Criterion 6 — the ADR.** `docs/decisions/018-blast-radius-advisory.md`,
+  in §10's order: the architect's objection verbatim in substance and
+  that @human adopted with it in view; the measurement in BOTH
+  directions; what would falsify it, three named cheap checks; the
+  prerequisite named as a prerequisite.
+- **Criterion 7 — reversible, and it says how.** The override is prose
+  in the card body and nothing else, in the section; the reversal story
+  is a section of the ADR.
+- **Criterion 8 — `size:` is not deleted.** §8's split is written into
+  the section: `size:` is HOW LONG THE WORK IS and keeps exactly one
+  rung (`L` ⇒ planning pass); blast radius is HOW EXPENSIVE IT IS TO
+  GET WRONG and takes the verifier and separate-integrator rungs. The
+  frontmatter block's `size:` comment is deliberately UNTOUCHED,
+  because while the rungs are advisory the size letter really does set
+  the ceremony tier and a changed comment would be the false half of
+  the ruling.
+
+### THE ADR IS 018, NOT 021, AND THE NUMBER WAS RESERVED
+
+The brief said 021 and said to verify. **018 is reserved for this
+exact work, in three places**, and `docs/decisions/018-*.md` is what
+§10 asks for:
+
+    docs/decisions/019-…:6   "Numbering: ADR-018 is reserved — STATE records it as
+                              owed to T-135 Half B — so this decision takes 019 and
+                              the gap is deliberate."
+    docs/rooms/governing-docs.md:261  "STATE records ADR-018 as owed to T-135 Half B"
+    docs/ROADMAP.md (F-01)            "ADR-018 stays owed to T-135 Half B"
+
+Taking 021 would have left a permanent hole that three live documents
+claim is owed, and would have falsified all three in one commit.
+
+### THE READER SET, DERIVED AND NOT PREDICTED
+
+`method/tasks/TASK-FORMAT.md` is read by **three mechanical readers**,
+and the DOCS GATE is not one of them — its trigger keys on `docs/`, so
+`docs-gate.mjs --census` lists 23 readers and every one of them reads a
+`docs/` path (`T-132-s2`, and §12 already says so).
+
+1. **`app/src-tauri/src/agent/kit.rs`** — `include_str!` at the
+   `tasks/TASK-FORMAT.md` `KIT_FILES` row, and
+   `every_compiled_entry_matches_its_method_file_byte_for_byte` compares
+   the compiled snapshot against the file on disk. Suite: `cargo test`
+   from app/src-tauri/. **This is §12's "`cargo test` IS OWED BY THE
+   `method/` EDIT and no gate will say so", confirmed at HEAD.**
+2. **`tools/e2e/scripts/dispatch-brief.mjs`** — `taskFormatText()` and
+   `ceremonyRows()`, which find the table headed `| Size | Pipeline |`
+   and **throw hard** if it is missing or rowless, collecting rows until
+   the first line that is not a two-cell table row. Pinned by
+   `tools/e2e/tests/brief.spec.ts`'s *"the ceremony ROW is read from
+   TASK-FORMAT, and the tier letter alone does not decide it"*, which
+   requires size S to resolve to **more than one** row.
+3. **`tools/e2e/scripts/session-economics.mjs`** — `lightestTier()`,
+   which reads the leading letters of that table's FIRST row. Pinned by
+   `tools/e2e/tests/session-economics.spec.ts`'s *"the lightest ceremony
+   tier is read off the table's first row rather than typed into the
+   tool"*, whose mutant string-replaces the literal cell
+   `| S, diff outside shipped code |` — so that cell is pinned
+   BYTE-FOR-BYTE by a test in another package.
+
+**So the new section is placed AFTER the size table and carries a
+THREE-column table of its own**, which `ceremonyRows`' two-cell header
+match cannot see. Checked by running the two readers against the edited
+file rather than by reading them (no suite, per the dispatch):
+
+    node -e "ceremonyRows(TASK-FORMAT.md)"      -> ["S, diff outside shipped code","S, touching shipped code","M","L"]
+    sRows.length = 2                            (brief.spec needs > 1)
+    lightestTier(md) = "S"                      (spec needs S)
+    lightestTier(md with the S cell renamed XS) = "XS"   (spec needs XS)
+
+`docs/CAPABILITIES.md` carries both of those sentences (they are
+generated from the spec names), so both would have gone false silently.
+
+**DOCS GATE, run on this merge's own path list, exit read unpiped: 1.**
+It names `npm test` from app/, `npm test` from tools/e2e/ and
+`npx vitest run` from lib/parser/, and it fires on the **two `docs/`
+paths only** — the ADR (`shell-frame.spec.ts`, `window-contract.spec.ts`)
+and this card (both parser and app board readers). `method/` is invisible
+to it, exactly as §12 says. The suites are the integrator's.
+
+### §9's NO-BUMP REASONING NO LONGER HOLDS AT HEAD, AND THE OBLIGATION IS RECORDED RATHER THAN TAKEN
+
+**This is the one place the ratified plan is stale, and it went stale
+four days after it was written.** §9 argues no method version bump is
+owed because Half B adds no FIELD and therefore is not a format change.
+At the planning ref `5547f02`, `docs/CONVENTIONS.md` said only *"Changes
+to method/ formats are version-bumped"* — the ambiguous wording §9 was
+reading. **At HEAD the trigger is explicitly NOT the word format.**
+`9c0da79` (T-159, 2026-08-30) landed WHAT A BUMP IS OWED FOR: two
+tests, either one sufficient — (1) SHIPPED BYTES, the change alters a
+file the kit MATERIALIZES, derived from `KIT_FILES`; (2) GRAMMAR.
+Derived at this ref:
+
+    grep -n 'rel: "' app/src-tauri/src/agent/kit.rs
+    -> rel: "tasks/TASK-FORMAT.md"   (with its include_str! on the next line)
+
+**Test 1 is satisfied.** These bytes ship verbatim into every project
+the kit creates, and the same clause says a purely editorial change is
+exempt only for an UNSHIPPED method file. **So a bump is owed and this
+fence cannot take it.** The three stamps are CONVENTIONS' first-gotcha
+stamp, `method/interview/plan-interview.md`'s Output heading and
+`METHOD_SNAPSHOT_VERSION` in `app/src-tauri/src/agent/kit.rs` — all
+three outside `[method/tasks/TASK-FORMAT.md, docs/decisions/]`, and a
+one-sided move is exit 101 twice in a fixed order. A bump now also owes
+a FOURTH thing that is not a file: the method-eval block from
+`node tools/method-evals/run.mjs --bump`, recorded in the bump's own
+commit message (ADR-020 decision 2).
+
+**So this text RIDES THE NEXT BUMP, and this paragraph is the
+resurfacing condition.** CONVENTIONS' own instruction for this case is
+*"a card whose fence cannot reach all three stamps CANNOT take it: say
+so on the card rather than leaving the lane to discover it"* — said
+here. **No gate reds meanwhile**, and that is the hazard rather than
+the reassurance: `snapshot_version_matches_the_live_method_stamps`
+checks that the three stamps AGREE with each other, never that a shipped
+method change was accompanied by one. The next release card must list
+this section among what its version carries.
+
+**§9 is not retracted.** Its conclusion — *no field, no parser change,
+no gate* — is still exactly right and is what keeps the footprint one
+commit. What is stale is its inference that "not a field" implies "not
+owed a bump", which was true under the wording it read and is false
+under the wording at HEAD.
+
+### THE FLIP CONDITION IS ALREADY LIVE, AND §6's "0 OF 216" IS NO LONGER TRUE
+
+Measured while writing the section, with one command run at two refs
+(printed in ADR-018 so it can be re-run):
+
+    git grep -l '^status: planned' -- docs/tasks | xargs grep -h '^touches:' \
+      | tr ',' '\n' | sed 's/^touches: *\[*//; s/\]//; s/^ *//; s/ *$//' \
+      | grep -E '^(app|lib)/' | sort -u
+
+    at 70b1d40 (§6's ref):  35 planned cards, ZERO entries
+    at 4df2305, and again
+    at 9471027 (this commit's parent):
+                            70 planned cards, TWO entries —
+                            app/src/genesis/genesis-derive.ts
+                            app/test/genesis-derive.test.ts
+                            both on the one card T-159-s4
+
+**The prerequisite §6 called 0-of-216 has its first adopter on the
+planned board.** `T-159-s4`'s fence names single walked files beside a
+`method/` path and a tooling script — which is T-108's norm actually
+practised, arrived at by a different card for a different reason.
+
+**WHETHER IT RESOLVES TO RUNG 1 IS DELIBERATELY NOT ANSWERED HERE.**
+Computing a dependent count in prose would be a second implementation of
+`arch blast`'s derivation, which is precisely the T-057 hazard criterion
+3 exists to prevent, and this fence cannot run the crate's answer as
+part of its deliverable. **The next dispatching seat SHALL ask
+`arch blast` rather than assume the flip is still false**, and if the
+middle rung is non-empty the rungs bind that day with no further ruling
+— that is what "a measurement, not a date" buys.
+
+### THE TS HALF OF THE FLOOR RULE — STATED, NOT CLOSED, AS THE FENCE REQUIRES
+
+F3 and the integrator's blocker 3 say Half B must **close or state**
+the gap that `arch blast` marks only cargo target roots, so
+`app/src/main.tsx`, `app/vite.config.ts` and `app/vitest.config.ts`
+print a bare `dependents=0`. **Closing it is `crate-index` and is
+outside this fence**, so Half B STATES it, in both places a reader
+meets it: TASK-FORMAT's section makes "a project whose derivation marks
+only some of its roots has not mechanised this rule" a named clause and
+**a precondition of the flip**, and ADR-018 gives it a section of its
+own naming the three files. **OWED AND NOT FILED FROM HERE** (filing a
+suggestion would be a fourth file in a fence of three): a `crate-index`
+suggestion to mark TypeScript entry points in `arch blast`'s own
+output, whose parent class is this card and whose disposition hint is
+*promote before the flip, because the flip cannot bind without it*.
+
+### WHERE THE PLAN WAS RIGHT AND THE BRIEF WAS WRONG
+
+1. **The brief's ADR number (021) is wrong; 018 is reserved.** Above.
+2. **The brief's "verify §9 still holds, and follow it" — the
+   verification FAILS.** Above. Following §9's conclusion (no bump in
+   this commit) is still correct; following its reasoning would have
+   left the obligation unrecorded, which is the half that mattered.
+3. **The brief's "set `status: building` -> `done` with
+   built_by/verified_by" is refused on the card's own authority**, as
+   the brief itself instructs where the two disagree. This is an L card,
+   its row owes a verifier and a separate integrator, and Half B has had
+   neither. `verifying` is the only true value; `done` plus a
+   `verified_by` would be the false stamp the Half A integrator
+   explicitly declined to write.
+4. **The plan is right that the policy footprint is one section plus one
+   ADR**, and right that nothing needs to be stored. Nothing in §2's
+   reversible-boundary analysis moved.
+5. **`method/` may not name a path, a command or a card id**, which the
+   file states about itself twice (*"this file names no paths"*) and
+   CONVENTIONS' first gotcha states generally. The brief asked for the
+   derive command in the section; the section instead states the
+   measurement completely and says the PROJECT names the command — the
+   same shape the existing ceremony boundary already uses for the
+   shipped partition — and ADR-018 carries nputer's actual command. A
+   `cargo run -p nputer-index` line in `TASK-FORMAT.md` would ship a
+   broken command into every project the kit creates.
+
+### For the integrator
+
+The gates are yours and none was run here. **`cargo test` from
+app/src-tauri/ is owed by the `method/` edit** (the `include_str!`
+byte-for-byte pin) and no gate announces it. **DOCS GATE fires at exit
+1** on the two `docs/` paths, naming app/, tools/e2e/ and lib/parser/.
+**GRAPH REGEN does not fire** — no `.rs` and no walked extension is in
+this diff. **BOOT GATE does not fire** — nothing under
+`app/src-tauri/**`. No manifest or lockfile moved, so no `cargo audit`.
+The method version bump this text is owed is recorded above and is not
+in this commit.
