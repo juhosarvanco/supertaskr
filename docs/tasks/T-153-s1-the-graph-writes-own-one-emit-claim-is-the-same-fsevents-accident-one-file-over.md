@@ -59,7 +59,7 @@ a mechanical fix, and T-153's executor routed it instead of taking it.
 
 ## WHY IT HAS NOT BITTEN YET, DERIVED RATHER THAN ASSUMED
 
-It passed the repository's first CI run (`33246335429`) and the T-153
+It passed CI run `33246335429` and the T-153
 lane's run (`33252279564`), both on ubuntu/inotify. The reason is a
 property of the FIXTURE and not of the assertion: the body's `TempTree`
 holds one four-line `src/a.ts`, so the graph it writes is small enough
