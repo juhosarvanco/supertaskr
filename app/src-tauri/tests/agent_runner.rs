@@ -5229,6 +5229,41 @@ fn the_real_smokes_verdict_names_which_premise_was_missing() {
     sorted.sort_unstable();
     sorted.dedup();
     assert_eq!(sorted.len(), 4, "four distinct premises");
+
+    // THE VERDICT ITSELF, not only the judgement (T-025-s6 verifier,
+    // correction 1). Without this, the whole body of
+    // `assert_real_turn_observed` gutted to `let _ = missing;` leaves
+    // the suite green with zero warnings — the exact shape the smoke's
+    // own docstring names. Both directions: silent on empty, red with
+    // the missing premises named in the payload.
+    assert_real_turn_observed(Vec::new());
+    let refused = std::panic::catch_unwind(|| {
+        assert_real_turn_observed(vec![PREMISE_SESSION_ID, PREMISE_COMPLETED])
+    });
+    let payload = refused.expect_err("a missing premise must red the smoke");
+    let msg = payload
+        .downcast_ref::<String>()
+        .cloned()
+        .or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+        .expect("formatted assert payload");
+    assert!(msg.contains("NO REAL TURN WAS OBSERVED"), "{msg}");
+    assert!(msg.contains(PREMISE_SESSION_ID) && msg.contains(PREMISE_COMPLETED), "{msg}");
+
+    // FIND, NOT LAST (T-025-s6 verifier, correction 2): an event AFTER
+    // the terminal must not change the verdict — the judgement does not
+    // depend on `collect_turn_within`'s stopping rule, and this is the
+    // case that makes that sentence a pin instead of a comment.
+    let trailing = vec![
+        RunEvent::Started { seq: 1, turn: 1 },
+        delta.clone(),
+        completed.clone(),
+        RunEvent::TextDelta { seq: 4, turn: 1, text: "after the terminal".into() },
+    ];
+    assert!(
+        missing_real_turn_premises(&started, Some((&trailing, &status(Some("677664de")))))
+            .is_empty(),
+        "a trailing event after the terminal must not unmake the turn"
+    );
 }
 
 // ==== T-029: the restart simulation =====================================

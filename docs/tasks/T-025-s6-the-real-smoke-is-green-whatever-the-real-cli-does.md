@@ -5,14 +5,14 @@ feature: F-03
 milestone: 3
 priority: 2
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-025-s5
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -367,3 +367,5 @@ partition bullet's own instruction is to read the row off `touches:`, and
 where the two readings disagree the one that buys a verifier is the one a
 lane may take on its own. The lighter reading is available to the
 integration seat with this paragraph as its argument.
+
+VERDICT (2026-08-30, blind verifier claude-opus-5@subagent): **APPROVED WITH ASSIGNED CORRECTIONS**, both performed at merge by the integration seat, committed-first, and both proven by re-planting the verifier's surviving mutants: (1) `assert_real_turn_observed` — the function that converts the judgement into the exit status — is now pinned BOTH directions in the always-running body (gutting it to `let _ = missing;` reds the suite where it used to stay green at zero warnings); the notes' "WHAT COULD NOT BE POISONED" paragraph is corrected by this stamp — the CALL SITES cannot run, the helper's own assertion can and now is. (2) The find-not-last independence claim is a pin: a trailing event after the terminal must not unmake the turn, and `.last()` now reds it. The verifier also disclosed the dispatch brief gave procedural rather than structural blindness (executor shape-claims below the marker in the same message) — the fix for future dispatches is a factless spawn plus a follow-up message after the attack set is committed.
