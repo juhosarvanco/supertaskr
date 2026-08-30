@@ -123,3 +123,5 @@ are printed in this sitting's record.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+FOURTH STRIKE (2026-08-30, run on 2e4b76f's rerun): T-143-s3's merged code files pushed without their regen — masked in the original run because the cargo intermittent redded BEFORE the graph step ran, and revealed only when the rerun cleared cargo. A guard at the push would have caught it regardless of step order.
