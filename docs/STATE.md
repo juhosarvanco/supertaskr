@@ -1,18 +1,14 @@
 # State
 
-Updated: 2026-08-30 at the T-135 checkpoint — THE THIRD WAVE IS
-LANDED AND THE BOARD'S OLDEST STAMP IS DONE: T-135 closed
-blind-verified (seven corrections performed; the flip measured
-non-empty SAME-DAY and honestly HOLDS on its floor-mechanisation
-precondition), T-169's D5 teeth landed with the drift detector
-catching a real undeclared edge at integration (fixed by moving the
-test, not declaring convenience), the launcher exists
-(bin/app-dev.mjs), the C-11 ruling's last false copy is gone.
-**THE GRAPH IS DEGRADING** (symbols 2205 -> 2087; the tripwire goes
-silent at that exact moment — T-167-s7): `T-140-s1` is UNBLOCKED and
-is the next dispatch. No lanes. Current record:
-docs/checkpoints/2026-08-30-T-135.md (its empty-board addendum
-included — this line is the currency touch its append cost).
+Updated: 2026-08-30 at the T-140-s1 checkpoint — THE WALL IS
+REMOVED: the map rests on the flat rollup (verifier-measured, four
+adversarial shapes), file detail is a hardened pull, an over-budget
+graph degrades the drill and never the map, and the pane speaks every
+truncation. The graph reads 2,212 bytes of headroom with the alarm
+printing — SURVIVABLE now by design. The walk is immunized against
+nested session worktrees (/.claude/ root-anchored in .nputerignore
+after the double-index incident). Current record:
+docs/checkpoints/2026-08-30-T-140-s1.md.
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
@@ -59,17 +55,17 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-140-s1` DISPATCHES NEXT (the rollup, shape RULED, blocker
-   cleared at T-135's close, degradation active). Around it,
-   disjoint: `T-112` (ONE collider, T-031-s1 ruled or absorbed at
-   dispatch). Suggested arrivals for the next sitting: T-135-s5,
-   T-143-s4-family, T-163-s4, T-164-s1/s2, T-167-s5/s6/s7,
-   T-169-s1/s2, T-025-s7 — derive, never list. Customization UI
-   cards wait on a VERSION sitting.
+1. `T-112` is dispatchable (ONE collider, T-031-s1 ruled or
+   absorbed at dispatch) — the last named slice clause. Standing
+   sitting #3 is NEAR (the day's suggestion arrivals — derive with
+   `git grep -l "^status: suggested" docs/tasks/`, never list).
+   `T-154-s2` dispatchable. Customization UI cards wait on a VERSION
+   sitting. `T-140-s4` (the graph limit ruling) is @human's when the
+   alarm's number matters again.
 2. @human's open items: THE GENESIS WALK (closes milestone 3); the
-   v1/v2/v3 partition markup; `T-162-s1`'s budget-instrument ruling;
-   `T-169-s2` (two-model stamps: honoured or flagged — one word).
-   All unhurried.
+   v1/v2/v3 partition markup; `T-162-s1`; `T-169-s2` (one word);
+   the M4 strategy question (docs/business/strategy-room.md). All
+   unhurried.
 3. `T-154-s2` (promoted, `review: independent`) is dispatchable —
    the e2e seat is free. Watch-list on any push: `T-161`
    (stderr-drain intermittent), `T-018-s2` (picker-rearm, one
