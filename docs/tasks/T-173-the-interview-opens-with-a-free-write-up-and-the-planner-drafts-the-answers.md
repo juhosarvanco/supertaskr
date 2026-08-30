@@ -1,9 +1,14 @@
 ---
 id: T-173
 title: The interview opens with a free write-up and the planner drafts the answers — @human's ruled UX direction for the whole Q1–Q7 flow
-status: suggested
+feature: F-03
+milestone: 4
+priority: 3
+size: L
+status: planned
+blocked_by: []
 suggested_by: "@human's genesis walk debrief (2026-08-30) — a direction statement, near-verbatim below"
-touches: [app-interview, method/interview]
+touches: [app-interview, method/interview, docs/CONVENTIONS.md, app-agent]
 ---
 
 **@HUMAN'S DIRECTION, near-verbatim:** *"I would like nputer to work
@@ -48,3 +53,41 @@ Unpacked into the three behaviours the sentence orders:
 - `method/interview/plan-interview.md` changes (the sequence gains
   the intake stage) — a method file, so the bump question is
   TRIAGE'S, decided on this card at promotion, not the lane's.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-03 p3 at size L, with the fence the card's own method half forces
+
+**THE CARD SAYS THE BUMP QUESTION IS TRIAGE'S. IT IS RULED HERE: A BUMP
+IS OWED, AND IT COSTS MORE THAN THE CARD EXPECTED.** Derived at
+`b60b06d`:
+
+1. `git grep -h 'rel: "' app/src-tauri/src/agent/kit.rs` lists
+   `interview/plan-interview.md`. **Test 1, SHIPPED BYTES: YES.** Adding
+   an intake stage edits shipped bytes, so the three-file bump applies
+   and the eval block is owed in the commit message (METHOD EVAL GATE).
+2. **AND THE STAGE TABLE IS TRANSCRIBED INTO TYPESCRIPT AND ASSERTED
+   CELL BY CELL.** `BANKING_MAP` at
+   `app/src/genesis/genesis-derive.ts:40` is a verbatim copy of that
+   table, and `every_cell_of_the_9_row_table_matches_plan_interview_md_verbatim`
+   in `app/test/genesis-derive.test.ts` reds on ANY change to ANY cell.
+   `genesis-derive.ts` is `C-13`'s, so `app-interview` carries it —
+   which is why the fence above reads as it does and why the size is L
+   rather than M.
+
+**THE PRACTICAL READING FOR THE LANE**: a stage added to the interview
+is not an interview change, it is a method release. The fence carries
+the CONVENTIONS stamp, `method/interview`, and `app-agent` for
+`METHOD_SNAPSHOT_VERSION` in `kit.rs` — the canonical three — plus
+`app-interview` for the table's second implementation.
+
+**FORM-FIRST APPLIES AND IS NOT DISCHARGED HERE.** The card's own second
+settle-item (how a suggested answer renders) reaches
+`docs/rooms/customization-form.md`'s standing condition if it grows UI
+machinery. The sitting does not rule it: a prefilled editable input is
+the shape that adds no machinery, and anything beyond that goes to the
+room before it is designed.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

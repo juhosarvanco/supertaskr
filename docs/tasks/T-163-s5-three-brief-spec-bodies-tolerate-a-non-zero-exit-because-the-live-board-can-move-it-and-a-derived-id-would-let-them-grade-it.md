@@ -3,9 +3,9 @@ id: T-163-s5
 title: Two brief.spec.ts bodies accept `[CLEAN, FOUND]` against the LIVE checkout because the board can move the exit — the same defect T-163-s4 fixed by deriving the id, discharged there by loosening instead
 feature: F-06
 milestone: 4
-priority: 20
+priority: 6
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-163-s4
 blocked_by: []
 touches: [tools/e2e]
@@ -88,3 +88,18 @@ briefs cleanly*, which is exactly what the derivation returns.
 ## Implementation notes
 
 ## Verdicts
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-06, priority 20 -> 6
+
+Re-derived at `b60b06d`:
+`command grep -n "EXIT.CLEAN, EXIT.FOUND" tools/e2e/tests/brief.spec.ts`
+still returns five sites, and the two the card claims — `:734` and
+`:750` — still spawn against the live checkout with no `--root`. The
+three fixture-root sites (`:1019`, `:1049`, `:1069`) are unchanged and
+stay out of scope exactly as the card argues.
+
+**PRIORITY MOVED, AND THE REASON IS NOT VALUE.** F-06's planned column
+already holds p20; p6 was free. The card is also one of the two
+promotions dispatchable under the `T-140-s4` freeze (fence `[tools/e2e]`,
+outside the graph walk), and it closes a class `T-163-s4` opened rather
+than starting a new one.

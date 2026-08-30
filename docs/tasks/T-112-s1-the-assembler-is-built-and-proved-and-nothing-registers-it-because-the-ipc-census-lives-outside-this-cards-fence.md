@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [app-shell, app-dispatch, app-board]
@@ -75,3 +75,22 @@ criterion's own second clause.
   from the store, so the drawer's dispatch block reaches a real card.
 - A pin SHALL cover `Board.tsx`'s prop threading, which no suite reaches
   today — `T-112-s4` carries the measurement and the reason.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-04 p5, as filed
+
+Fence, priority and criteria re-derived at `b60b06d` and nothing on the
+card moved: `p5` is free in F-04 (the planned column holds p3, p4, p6,
+p7, p8), and the two census pins the card names are live —
+`command grep -n "thirteen commands\|seventeen commands" app/test/crescendo-dom.test.tsx`
+answers at lines 503 and 550. `command grep -n "brief" app/src-tauri/src/lib.rs`
+returns NOTHING at this ref, which is the card's whole subject: the
+assembler is still unregistered and the drawer's brief block still
+cannot render.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority. **This remains the next code dispatch the moment the
+limit is ruled** — T-112's verifier recommended it and nothing since has
+displaced it.

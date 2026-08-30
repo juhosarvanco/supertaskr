@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 25
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [app-board, docs/architecture/components]
@@ -61,3 +61,17 @@ PLUMBING that cannot be moved anywhere a suite can see.
 - THE mutant above SHALL be re-run after the fix and SHALL die, with the
   failing-body count reported: a count of ONE is the non-duplication,
   mechanically (POISON DRILL, shape SIX).
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PROMOTED F-02 p25, as filed
+
+The registry gap is unchanged at `b60b06d`:
+`docs/architecture/components/C-18-board-root.md` declares
+`Board.tsx` and no `app/test/**` path, so a `[app-board]` lane still has
+no test file it may write into. The card's measured mutant (the two
+threading lines deleted, app suite green at exit 0) stands as filed.
+
+**DISPATCH IS BLOCKED ON @human's `T-140-s4` RULING, NOT ON THIS CARD.**
+The graph sits at **410 bytes** of headroom at `b60b06d`
+(`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
+1,040,000 budget), and this card's fence reaches indexed source. The
+sitting records the block rather than lowering the priority.

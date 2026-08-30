@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 30
 size: S
-status: suggested
+status: parked
 blocked_by: []
 touches: [.claude, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5 @T-154-s2
@@ -67,3 +67,32 @@ protecting against.
   writes are freed too, by an earlier worktree removal, or not at all.
   (Added at T-154-s2's verification, which measured the window on the
   card itself.)
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PARKED, and ROUTED TO @human as a one-line ratification
+
+**THE SITTING DELIBERATELY DOES NOT RULE THIS ONE.** The three
+carve-outs are @human's own ruling of 2026-08-30; this card asks whether
+a FOURTH, added by an executor from inside the lane, joins them. A seat
+that adds criteria to @human's ruling on the ruling's own behalf is the
+shape the ruling exists to prevent, so the sitting routes it instead.
+
+**THE SEAT'S RECOMMENDATION, so @human answers yes or no rather than an
+essay: KEEP IT.** Three facts, all re-derivable:
+
+1. It is MECHANICAL, not judgement — git writes and removes the marker
+   itself and `INTEGRATION_IN_PROGRESS_MARKERS` in
+   `.claude/hooks/lane-fence.mjs:243` only stats it.
+2. Without it the guard refuses the integrator the one act that CONSUMES
+   a fence, and a guard that forbids merging is a guard somebody turns
+   off.
+3. The alternatives are worse and are already written on this card: lose
+   the lane's tree mid-merge, or route around the hook and say out loud
+   that it is advisory.
+
+**IF @human keeps it**, it belongs in the ruling's list and in
+`method/lane-protocol.md` beside `T-154-s3`'s sentence — at which point
+this card joins the same method-release rider set. **The narrow question
+inside it stays open either way**: `MERGE_HEAD` alone covers the merge
+play; the four also cover revert and both rebase directories.
+
+**RESURFACING CONDITION: @human answers.**

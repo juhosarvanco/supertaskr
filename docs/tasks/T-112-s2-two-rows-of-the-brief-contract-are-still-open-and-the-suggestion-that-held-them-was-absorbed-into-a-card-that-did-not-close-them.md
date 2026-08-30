@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 30
 size: S
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [method/roles/executor.md, docs/CONVENTIONS.md, method/interview/plan-interview.md, app-agent]
@@ -88,3 +88,21 @@ question to re-derive at the lane's own ref.
   or the size-S ceremony row SHALL stop using the word.
 - THE method version SHALL be bumped across its three files in ONE
   commit, and the eval block SHALL be recorded in that commit's message.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PARKED, riding the next method version bump
+
+Both open rows are contract-row edits, and the card's own fence
+paragraph derives why: a contract row is GRAMMAR, so this is a method
+version bump whose three files are the CONVENTIONS stamp,
+`plan-interview.md`'s Output heading and `METHOD_SNAPSHOT_VERSION` in
+`kit.rs`. A lane cannot take it alone without carrying all three.
+
+**RESURFACING CONDITION — checkable without remembering this card: the
+next method version release card is cut.** At that moment this card is
+one of its riders, the way `T-154`'s rule-5 sentence rode `T-159`'s
+v0.1.8. Re-verified at `b60b06d` that both residuals are still open:
+`row_nines_borrowed_mechanism_truncates_a_name_and_the_symptom_is_asserted`
+and `row_fives_residual_is_closed_at_this_ref_and_the_document_says_so`
+are both live in `app/src-tauri/src/dispatch/brief.rs`, which is the
+card's own evidence that row 9 still truncates and row 5 is still
+closed.

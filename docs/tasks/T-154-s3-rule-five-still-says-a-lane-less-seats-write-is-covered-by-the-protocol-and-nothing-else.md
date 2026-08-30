@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 30
 size: S
-status: suggested
+status: parked
 blocked_by: []
 touches: [method/lane-protocol.md]
 suggested_by: executor claude-opus-5 @T-154-s2
@@ -49,3 +49,14 @@ for one.
   unchanged.
 - The sentence SHALL point at the guard's own decision function rather
   than restate it, per that paragraph's own closing instruction.
+
+## TRIAGE (2026-08-30, standing triage sitting #4) — PARKED, riding the next method version bump
+
+Unchanged at `b60b06d`: `method/lane-protocol.md:264` still reads
+*"does any write by a seat that holds no lane"* inside the limits
+paragraph, and @human's 2026-08-30 ruling has made that sentence false.
+
+**RESURFACING CONDITION: the next method version release card is cut.**
+This is the card's own proposal and it is accepted as filed — `method/`
+text rides a shared bump rather than a lane's own, which is why
+`T-154-s2` could not fix it from inside its fence.
