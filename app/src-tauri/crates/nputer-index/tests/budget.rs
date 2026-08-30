@@ -21,7 +21,9 @@ mod common;
 
 use std::collections::BTreeSet;
 
-use nputer_index::{index, stable_json, IndexOptions};
+use nputer_index::arch::join;
+use nputer_index::arch::registry::Component;
+use nputer_index::{index, rollup, stable_json, stable_rollup_json, IndexOptions};
 
 use common::TempTree;
 
@@ -197,33 +199,39 @@ fn under_an_impossible_budget_the_graph_is_still_emitted_and_still_flagged() {
     assert_eq!(reparsed.stats.files, floored.stats.files);
 }
 
-/// T-140 — THE RELATION, PINNED, AND IT IS THE STATUS QUO RATHER THAN
-/// THE PROPERTY ANYBODY WANTS.
+/// T-140-s1 — THE RELATION, PINNED THE OTHER WAY ROUND. THIS BODY
+/// REPLACES `the_undroppable_floor_grows_with_the_file_count`, WHICH IT
+/// RETIRED.
 ///
-/// The budget is a ceiling the emitter can always reach by giving
-/// symbols up; the floor is what it cannot give up, and this body
-/// requires the floor to GROW WITH THE FILE COUNT. That is the defect
-/// T-140 names: a limit the emitter cannot degrade past, linear in
-/// project size, so the map has a file ceiling and raising a constant
-/// only moves it.
+/// **WHAT THE RETIRED BODY SAID AND WHY ITS RED WAS THE EVIDENCE.** T-140
+/// pinned the status quo: the emitter's undroppable floor — files plus
+/// `import` edges, which `apply_budget` may never drop — GROWS WITH THE
+/// FILE COUNT, so the map had a file ceiling and raising a constant only
+/// moved it. T-140's own notes named that body its discriminator and said
+/// it was expected to red when this shape landed. It is retired HERE, in
+/// the lane that landed the shape, exactly as T-140 instructed — not
+/// muted, not loosened, and not because a constant moved.
 ///
-/// **NO PROJECT SIZE IS ASSERTED HERE, DELIBERATELY** (the card's own
-/// criterion). "Works to N files" rots the day the schema changes; a
-/// RELATION between two trees measured in the same run does not. The
-/// derived ceiling for a given tree is PRINTED instead, by
-/// `index --check`'s floor line, where it cannot go stale.
+/// **WHAT REPLACES IT, AND WHY IT IS THE SAME KIND OF CLAIM.** No project
+/// size is asserted here either. What is asserted is a RELATION between
+/// two trees measured in the same run: as the file count multiplies, the
+/// SHIPPED RESTING PAYLOAD — `rollup::Rollup`, what the pane receives
+/// when nobody has drilled in — does not. That is the property that
+/// distinguishes this shape from every constant anybody could raise, and
+/// it is the property T-140's criterion 6 asked for and could not pin.
 ///
-/// **THIS BODY IS THE DISCRIMINATOR FOR THE FIX AND IS EXPECTED TO RED
-/// WHEN IT LANDS.** A payload the pane can hold for a real codebase is
-/// one that does NOT grow with the file count — the component rollup is
-/// flat at every project size — so whoever ships that shape retires this
-/// assertion with it, and its red is the evidence that the shape
-/// actually changed rather than a constant having moved.
+/// **THE FLOOR IS STILL MEASURED HERE, AS THIS BODY'S POSITIVE CONTROL.**
+/// A "the rollup did not grow" assertion passes vacuously against two
+/// trees that are the same size, so the retired body's own measurement is
+/// kept and inverted into the control: the graph floor MUST still track
+/// the file count over this fixture pair. Without it, "1.0x" would be a
+/// claim about the fixture rather than about the payload shape — and the
+/// contrast between the two ratios in one run is the whole finding.
 #[test]
-fn the_undroppable_floor_grows_with_the_file_count() {
-    /// Files with imports, so the floor carries both halves it is made
-    /// of: the file list AND the `import` edges neither the budget nor
-    /// truncation can drop.
+fn the_resting_rollup_does_not_grow_with_the_file_count() {
+    /// Files with imports, so both payloads carry what they are made of:
+    /// the graph floor gets its file list AND its `import` edges, and the
+    /// rollup gets real observed component edges to roll up.
     fn tree(tag: &str, files: usize) -> TempTree {
         let t = TempTree::new(tag);
         t.write("src/lib.ts", "export function one() { return 1; }\n");
@@ -237,18 +245,55 @@ fn the_undroppable_floor_grows_with_the_file_count() {
                 ),
             );
         }
+        // A second component's worth of territory, so the rollup carries
+        // an edge rather than a single box: a payload with one node in it
+        // is flat for an uninteresting reason.
+        t.write("core/base.ts", "export const base = 0;\n");
+        t.write(
+            "core/use.ts",
+            "import { one } from \"../src/lib\";\nexport const used = one;\n",
+        );
         t
     }
 
-    // A budget of 1 is unmeetable, so both runs emit their FLOOR.
-    let small = tree("floor-small", 20);
-    let large = tree("floor-large", 80);
+    /// The registry both runs are joined against — TWO components and a
+    /// declared edge, fixed, so the rollup's size is a function of THIS
+    /// and of nothing in the trees below.
+    fn registry() -> Vec<Component> {
+        vec![
+            Component {
+                id: "C-01".to_string(),
+                name: "src".to_string(),
+                layer: "app".to_string(),
+                status: "auto".to_string(),
+                paths: vec!["src/**".to_string()],
+                depends_on: vec![],
+                touch_slugs: vec!["src".to_string()],
+                file: "C-01.md".to_string(),
+            },
+            Component {
+                id: "C-02".to_string(),
+                name: "core".to_string(),
+                layer: "app".to_string(),
+                status: "auto".to_string(),
+                paths: vec!["core/**".to_string()],
+                depends_on: vec!["C-01".to_string()],
+                touch_slugs: vec!["core".to_string()],
+                file: "C-02.md".to_string(),
+            },
+        ]
+    }
+
+    // A budget of 1 is unmeetable, so both runs emit their FLOOR — the
+    // largest thing the emitter can be forced down to, which is what an
+    // oversized project actually ships.
+    let small = tree("rollup-small", 20);
+    let large = tree("rollup-large", 80);
     let small_graph = index(&opts(small.root(), 1)).expect("index small");
     let large_graph = index(&opts(large.root(), 1)).expect("index large");
 
-    // Control: both really are at the floor — every symbol array gone,
-    // every file and import edge still there. Without this the size
-    // comparison below would be a claim about two arbitrary documents.
+    // Control 1: both really are at the floor — every symbol array gone,
+    // every file and import edge still there.
     for (label, graph) in [("small", &small_graph), ("large", &large_graph)] {
         assert_eq!(graph.stats.symbols, 0, "{label} is not at the floor");
         assert!(
@@ -258,27 +303,60 @@ fn the_undroppable_floor_grows_with_the_file_count() {
         assert!(!graph.files.is_empty(), "{label} dropped its files");
     }
 
+    let file_ratio = (large_graph.stats.files as f64) / (small_graph.stats.files as f64);
+    assert!(
+        file_ratio > 3.0,
+        "the fixture pair must actually differ in size, or every ratio below is vacuous: \
+         {} -> {} files",
+        small_graph.stats.files,
+        large_graph.stats.files
+    );
+
+    // Control 2: THE RETIRED BODY'S OWN MEASUREMENT, kept as the contrast.
+    // The graph floor still tracks the file count — the defect is real and
+    // is not what changed; what changed is what the pane is sent.
     let small_floor = stable_json(&small_graph).len();
     let large_floor = stable_json(&large_graph).len();
-    let ratio = (large_floor as f64) / (small_floor as f64);
-    let file_ratio = (large_graph.stats.files as f64) / (small_graph.stats.files as f64);
-
-    // The relation: the floor tracks the file count. A payload that did
-    // not grow with the tree would land near 1.0 and fail this.
+    let floor_ratio = (large_floor as f64) / (small_floor as f64);
     assert!(
-        ratio > file_ratio * 0.8,
-        "the floor is supposed to be LINEAR in file count and is not: \
-         {small_floor} -> {large_floor} ({ratio:.2}x) over \
-         {} -> {} files ({file_ratio:.2}x). If the shipped payload has been made \
-         flat in project size, this assertion is the one that had to go — retire it \
-         with the card that did it.",
+        floor_ratio > file_ratio * 0.8,
+        "the graph floor is supposed to still be LINEAR in file count (that is the \
+         defect this card routes AROUND rather than fixes): {small_floor} -> \
+         {large_floor} ({floor_ratio:.2}x) over {file_ratio:.2}x files"
+    );
+
+    // THE RELATION. Same two trees, same registry, the payload the pane
+    // actually rests on.
+    let small_model = join(registry(), &small_graph);
+    let large_model = join(registry(), &large_graph);
+    let small_rollup = stable_rollup_json(&rollup(&small_model, &small_graph));
+    let large_rollup = stable_rollup_json(&rollup(&large_model, &large_graph));
+
+    // Control 3: the rollup is a real picture of both trees, not an empty
+    // document that would be trivially flat.
+    for (label, doc) in [("small", &small_rollup), ("large", &large_rollup)] {
+        assert!(doc.contains("\"C-01\""), "{label} rollup lost a component");
+        assert!(doc.contains("\"C-02\""), "{label} rollup lost a component");
+        assert!(doc.contains("\"confirmed\""), "{label} rollup lost its observed edge");
+    }
+
+    let rollup_ratio = (large_rollup.len() as f64) / (small_rollup.len() as f64);
+    assert!(
+        rollup_ratio < 1.05,
+        "THE SHIPPED RESTING PAYLOAD GREW WITH THE FILE COUNT, which is the whole \
+         property this shape exists for: {} -> {} bytes ({rollup_ratio:.3}x) over \
+         {} -> {} files ({file_ratio:.2}x), while the graph floor moved \
+         {floor_ratio:.2}x in the same run. Something keyed by a FILE has entered \
+         the rollup — check `rollup::Rollup` for a list where a count belongs.",
+        small_rollup.len(),
+        large_rollup.len(),
         small_graph.stats.files,
         large_graph.stats.files
     );
     assert!(
-        ratio < file_ratio * 1.2,
-        "the floor grew FASTER than the file count, which is worse than the defect \
-         this pins: {ratio:.2}x over {file_ratio:.2}x"
+        rollup_ratio > 0.95,
+        "the rollup SHRANK as the tree grew, which no honest rollup does: \
+         {rollup_ratio:.3}x"
     );
 }
 
