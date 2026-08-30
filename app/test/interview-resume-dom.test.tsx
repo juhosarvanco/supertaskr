@@ -427,10 +427,24 @@ describe("the transcript survives a restart, and its loss costs only scrollback"
     await flush(() => render(docsWith(2, {
       "docs/NORTH_STAR.md": "## Vision\n\nA thing.\n\n## Users\n\nSomeone.\n",
     })));
+    // THIS ARM USED TO EXPECT A `1` IN THE LAST SLOT, and the change is
+    // T-172's own consequence rather than a weakening. The current turn
+    // re-rendered on a docs-stage change for exactly one reason: the
+    // per-message `one question at a time · N of 7` footer took
+    // `approxStage` as a prop. @human retired that line at the
+    // 2026-08-30 genesis walk, so `PlannerTurn` no longer reads the
+    // stage at all and a stage move is nothing to it — the header's
+    // readout and strip are the only things that redraw. The stricter
+    // row is the ruling stated as memo economy, and a revert reds here.
+    //
+    // THE ZERO IS NOT VACUOUS: the arm directly above drives the same
+    // counter to `[0,0,0,0,0,0,1]` on a live delta, so this fixture is
+    // proven able to record an invocation before an all-zero row is
+    // written down.
     expect(
       Array.from({ length: 7 }, (_, index) => plannerRenderCounts.get(index + 1) ?? 0),
-      "a docs-stage change invokes only the current footer",
-    ).toEqual([0, 0, 0, 0, 0, 0, 1]);
+      "a docs-stage change invokes no planner turn at all (T-172)",
+    ).toEqual([0, 0, 0, 0, 0, 0, 0]);
 
     for (const event of [
       { kind: "activity" as const, seq: 15, turn: 7, label: "Write" },
@@ -508,7 +522,6 @@ describe("the transcript survives a restart, and its loss costs only scrollback"
         turn={1}
         planner={planner}
         current={false}
-        approxStage={null}
         onRetry={firstRetry}
         onHandDriven={firstHandDriven}
       />,
@@ -520,7 +533,6 @@ describe("the transcript survives a restart, and its loss costs only scrollback"
         turn={1}
         planner={planner}
         current={false}
-        approxStage={null}
         onRetry={secondRetry}
         onHandDriven={firstHandDriven}
       />,
@@ -532,7 +544,6 @@ describe("the transcript survives a restart, and its loss costs only scrollback"
         turn={1}
         planner={planner}
         current={false}
-        approxStage={null}
         onRetry={secondRetry}
         onHandDriven={() => {}}
       />,

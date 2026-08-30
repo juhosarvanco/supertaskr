@@ -320,7 +320,32 @@ describe("the gate, build half: the harness is absent from the shipped bundle", 
     // a bundle that happens to be missing the module entirely.
     expect(has("planning interview"), "the chat's own strings are present").toBe(true);
     expect(has("planner · pushing back"), "the challenge label ships").toBe(true);
-    expect(has("one question at a time"), "the footer ships").toBe(true);
+    expect(has("one question at a time"), "the chat's own sentence ships").toBe(true);
     expect(has("genesis-turn"), "the real event channel ships").toBe(true);
+
+    // T-172 — @human's two rulings from the 2026-08-30 genesis walk, in
+    // the shipped bundle rather than only in the DOM. Both are NEGATIVE,
+    // and each has its positive control named beside it, because a bare
+    // "not present" is satisfied equally by a bundle that lost the whole
+    // module.
+    //
+    // (1) *"this is unnecessary -> one question at a time · 6 of 7"*.
+    // THE NEEDLE IS THE COUNT'S OWN PREFIX, NOT THE BARE PHRASE, and the
+    // `"the chat's own sentence ships"` control above is why: the chat's
+    // not-started paragraph says "The planner asks one question at a
+    // time…" and still ships, so the bare phrase can never go `false`
+    // here, and its `true` is what proves this `false` is about the
+    // FOOTER's own spelling rather than about a bundle that lost the
+    // module. Measured at fbeac77 before the change: both needles were
+    // `true`.
+    const footerNeedle = "one question at a time " + String.fromCharCode(0x00b7) + " ";
+    expect(has(footerNeedle), "T-172: the per-message status line does not ship").toBe(false);
+
+    // (2) *"'Bank answer' button should be just answer."* The three
+    // `true` controls above are this one's positive control — this IS
+    // the bundle carrying the interview, so the label's absence is a
+    // rename and not a missing module. Measured at fbeac77 before the
+    // change: `true`.
+    expect(has("Bank answer"), "T-172: the old button label does not ship").toBe(false);
   });
 });

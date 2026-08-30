@@ -22,7 +22,6 @@ import {
   MAX_CHIP_PATHS,
   mergeRehydrated,
   observeBanking,
-  questionFooter,
   rehydrate,
   shouldStickToBottom,
   stageOf,
@@ -326,9 +325,6 @@ describe("challengeOf reads the marker and consumes it", () => {
     expect(challengeOf(challenged.turns[0]!.text).body).toBe(
       challengeOf(plain.turns[0]!.text).body,
     );
-
-    // The footer the current question carries is the same in both.
-    expect(questionFooter(4)).toBe("one question at a time · 4 of 7");
   });
 });
 
@@ -716,12 +712,17 @@ describe("the seven-segment strip maps the derivation's 0-8 scale", () => {
     expect(stageReadout(null, null)).toBe("stage —");
   });
 
-  it("the question footer counts to seven and never past it", () => {
-    expect(questionFooter(4)).toBe("one question at a time · 4 of 7");
-    expect(questionFooter(8)).toBe("one question at a time · 7 of 7");
-    expect(questionFooter(0)).toBe("one question at a time");
-    expect(questionFooter(null)).toBe("one question at a time");
-  });
+  /* THE `questionFooter` BODY THAT USED TO CLOSE THIS BLOCK IS GONE WITH
+     ITS PRODUCER (T-172): @human retired the per-message status line at
+     the 2026-08-30 genesis walk, so there is no longer a function here
+     to unit-test. The ruling is pinned where it is now a BEHAVIOUR
+     rather than a string — `interview-chat-dom.test.tsx` asserts no
+     planner message renders the line, and `interview-harness.test.ts`
+     asserts the footer's own spelling is absent from the shipped
+     bundle. Deliberately NOT replaced by an `expect("questionFooter" in
+     model).toBe(false)`: that would pin a dead producer rather than the
+     ruling, and kill no mutant the two pins above do not already kill
+     (POISON DRILL, shape SIX). */
 });
 
 describe("stageOf degrades instead of taking the conversation down", () => {
