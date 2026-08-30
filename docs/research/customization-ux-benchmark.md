@@ -258,9 +258,13 @@ budget on the wiring, which is the part nobody standardized (L-7).
   intelligently by description, applied to files matching globs, or
   applied manually by @-mention (same page).
 - User rules are global preferences set in the app and apply across
-  projects; Team Rules exist on Team and Enterprise plans, are created
-  from the dashboard, apply to all members and take precedence over
-  project and user rules (same page).
+  projects; Team Rules exist on Team and Enterprise plans and are
+  created by administrators in the dashboard, applying to all members
+  (same page).
+- The stated application order is Team Rules, then Project Rules, then
+  User Rules, with all applicable rules MERGED and the earlier source
+  taking precedence where guidance conflicts (same page) — so the org
+  is strongest here and merging, not replacement, is the default.
 - Rules can be imported from GitHub repositories into
   `.cursor/rules/imported/<repoName>` (same page).
 - Cursor reads `AGENTS.md` in the project root and in subdirectories,
@@ -883,11 +887,13 @@ direction is deliberate.
   then project-local, then shared project, then user — so the ORG is
   strongest and the individual weakest
   (https://code.claude.com/docs/en/settings).
-- Copilot custom instructions: the exact inverse — personal, then
-  repository, then organization LAST
+- Copilot custom instructions: the exact inverse — the docs state
+  personal instructions take highest priority, repository next, and
+  organization last
   (https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions).
-- Cursor: Team Rules take precedence over project and user rules
-  (https://cursor.com/docs/rules).
+- Cursor: Team Rules, then Project Rules, then User Rules, all merged
+  with the earlier source winning a conflict — org strongest, like
+  Claude Code and unlike Copilot (https://cursor.com/docs/rules).
 
 Four tools, three directions. The direction is not discoverable from
 first principles; it is a product decision that must be stated. That is
