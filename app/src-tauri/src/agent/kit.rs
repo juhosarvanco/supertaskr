@@ -28,6 +28,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use super::skills;
+
 /// The method version this snapshot was taken at. Cross-checked against
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
@@ -195,23 +197,79 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
     }
 }
 
+/// THE ORG SKILL-PACK CLAUSE (T-167), appended to a kickoff that has
+/// packs to name — and to NOTHING otherwise.
+///
+/// **THE EMPTY CASE IS THE CONTRACT**: with no packs this returns the
+/// empty string, so every kickoff in this module is BYTE-IDENTICAL to
+/// what it was before T-167. The card asks for that measured rather than
+/// assumed, and [`tests::the_no_packs_kickoffs_are_byte_identical_to_the_unskilled_text`]
+/// measures it against the literal text.
+///
+/// CARRIED THE WAY THE KIT IS CARRIED: the kit's own clause NAMES a root
+/// on disk and tells the planner to read the role file there, rather than
+/// inlining method text into the prompt. Packs get the same treatment —
+/// they are already files inside the project, so the prompt names each
+/// one's path and hands over the description that says when it applies,
+/// and the planner reads the guidance itself. One paragraph, no line
+/// breaks: every value comes through `skills::flatten`.
+///
+/// **THE PRECEDENCE QUESTION IS NOT RULED HERE.**
+/// `docs/rooms/loop-customization.md` carries it open ("when an org skill
+/// and project CONVENTIONS disagree, who wins"), so this clause asks the
+/// planner to SURFACE a conflict rather than resolve one — which is a
+/// statement of the current state, not an answer to the open question.
+fn skills_clause(packs: &[skills::SkillPack]) -> String {
+    if packs.is_empty() {
+        return String::new();
+    }
+    let named: Vec<String> = packs
+        .iter()
+        .map(|pack| format!("'{}' at {} - {}", pack.name, pack.rel_path, pack.triggers))
+        .collect();
+    format!(
+        " ORGANIZATION SKILL PACKS ({count}), inside the project directory: {named}. \
+Read each of those {file} files before you write anything and follow the \
+guidance in each one where its conditions apply - they are the \
+organization's own policy for this project. Their precedence against the \
+method is NOT yet decided, so where a pack and the method conflict, say \
+so in your turn instead of choosing silently.",
+        count = packs.len(),
+        named = named.join("; "),
+        file = skills::SKILL_FILE,
+    )
+}
+
 /// The kickoff prompt, assembled Rust-side from the open project and the
 /// materialized kit — never from the webview (criterion 1).
 ///
 /// Exported (rather than inlined at the spawn) because T-029's
 /// hand-driven fallback renders exactly this block for the human to paste
 /// into their own terminal: one text, one source of truth.
+///
+/// T-167: the one-argument form DISCOVERS the project's skill packs
+/// itself, so its signature and its no-packs output are unchanged. A
+/// caller that already holds a discovery — because it is also stamping it
+/// into the session registry — passes it to [`assemble_kickoff_with`]
+/// instead, so one genesis reads the packs ONCE and the prompt and the
+/// stamp cannot disagree about them.
 pub fn assemble_kickoff(project_dir: &Path) -> String {
+    assemble_kickoff_with(project_dir, &skills::discover(project_dir).packs)
+}
+
+/// [`assemble_kickoff`] over an already-discovered pack list.
+pub fn assemble_kickoff_with(project_dir: &Path, packs: &[skills::SkillPack]) -> String {
     let root = kit_root(project_dir);
     format!(
         "You are the planner. KIT ROOT: {kit} - PROJECT DIRECTORY: {project}. \
 Read roles/planner.md at the kit root now and follow it exactly: stage 0 \
 scaffold first, then the interview, one question at a time. Kit-internal \
 paths resolve against the kit root; every docs/ path resolves inside the \
-project directory. Turns are plain text. Method v{version}.",
+project directory. Turns are plain text. Method v{version}.{skills}",
         kit = root.display(),
         project = project_dir.display(),
         version = METHOD_SNAPSHOT_VERSION,
+        skills = skills_clause(packs),
     )
 }
 
@@ -244,6 +302,11 @@ pub fn has_banked_docs(project_dir: &Path) -> bool {
 /// (`method/roles/planner.md:79`) — the habit T-028's missing "completion
 /// signal" earned.
 pub fn assemble_resume_kickoff(project_dir: &Path) -> String {
+    assemble_resume_kickoff_with(project_dir, &skills::discover(project_dir).packs)
+}
+
+/// [`assemble_resume_kickoff`] over an already-discovered pack list.
+pub fn assemble_resume_kickoff_with(project_dir: &Path, packs: &[skills::SkillPack]) -> String {
     let root = kit_root(project_dir);
     format!(
         "You are the planner. KIT ROOT: {kit} - PROJECT DIRECTORY: {project}. \
@@ -255,10 +318,11 @@ template-empty), state which stage is next, then continue the interview \
 from there, one question at a time. The banked files are ground truth; \
 re-ask nothing that is already on disk, and never overwrite real content. \
 Kit-internal paths resolve against the kit root; every docs/ path resolves \
-inside the project directory. Turns are plain text. Method v{version}.",
+inside the project directory. Turns are plain text. Method v{version}.{skills}",
         kit = root.display(),
         project = project_dir.display(),
         version = METHOD_SNAPSHOT_VERSION,
+        skills = skills_clause(packs),
     )
 }
 
@@ -270,6 +334,15 @@ pub fn assemble_kickoff_for(project_dir: &Path) -> String {
         assemble_resume_kickoff(project_dir)
     } else {
         assemble_kickoff(project_dir)
+    }
+}
+
+/// [`assemble_kickoff_for`] over an already-discovered pack list (T-167).
+pub fn assemble_kickoff_for_with(project_dir: &Path, packs: &[skills::SkillPack]) -> String {
+    if has_banked_docs(project_dir) {
+        assemble_resume_kickoff_with(project_dir, packs)
+    } else {
+        assemble_kickoff_with(project_dir, packs)
     }
 }
 
@@ -558,5 +631,105 @@ mod tests {
         // The prompt is data on stdin; it is never a command line, so it
         // needs no quoting and must not carry any.
         assert!(!text.contains('\n'), "one paragraph, no line breaks to mangle");
+    }
+
+    // ---- T-167: the org skill packs in the kickoff ---------------------
+
+    /// One well-formed pack, as `skills::discover` would answer it.
+    fn pack(dir: &str, triggers: &str) -> skills::SkillPack {
+        skills::SkillPack {
+            dir: dir.to_string(),
+            name: dir.to_string(),
+            description: triggers.to_string(),
+            triggers: triggers.to_string(),
+            rel_path: format!("{}/{dir}/{}", skills::SKILLS_REL_DIR, skills::SKILL_FILE),
+            hash: skills::sha256_hex(dir.as_bytes()),
+        }
+    }
+
+    /// GUARD RULE 3, MEASURED AGAINST THE LITERAL TEXT rather than against
+    /// this build's own other function (T-167's third guard: "a no-packs
+    /// run proven identical").
+    ///
+    /// The two expected strings below are the PRE-T-167 bodies of
+    /// `assemble_kickoff` and `assemble_resume_kickoff`, transcribed at
+    /// `1d297c9`. Comparing the new function to the old TEXT is what makes
+    /// this a pin: comparing it to `assemble_kickoff_with(.., &[])` would
+    /// pass for any pair of functions that agree with each other, however
+    /// far both had drifted from what genesis used to send.
+    #[test]
+    fn the_no_packs_kickoffs_are_byte_identical_to_the_unskilled_text() {
+        let project = Path::new("/tmp/some project/with space");
+        let stage0 = format!(
+            "You are the planner. KIT ROOT: /tmp/some project/with space/.nputer/genesis/kit - \
+PROJECT DIRECTORY: /tmp/some project/with space. Read roles/planner.md at the kit root now and \
+follow it exactly: stage 0 scaffold first, then the interview, one question at a time. \
+Kit-internal paths resolve against the kit root; every docs/ path resolves inside the project \
+directory. Turns are plain text. Method v{METHOD_SNAPSHOT_VERSION}."
+        );
+        let resume = format!(
+            "You are the planner. KIT ROOT: /tmp/some project/with space/.nputer/genesis/kit - \
+PROJECT DIRECTORY: /tmp/some project/with space. Read roles/planner.md at the kit root now and \
+follow it exactly. THIS GENESIS IS ALREADY UNDER WAY: docs/ holds banked artifacts from earlier \
+turns. Apply the RESUME RULE - derive the next stage from disk (the first row of the banking map \
+whose artifacts are missing or still template-empty), state which stage is next, then continue \
+the interview from there, one question at a time. The banked files are ground truth; re-ask \
+nothing that is already on disk, and never overwrite real content. Kit-internal paths resolve \
+against the kit root; every docs/ path resolves inside the project directory. Turns are plain \
+text. Method v{METHOD_SNAPSHOT_VERSION}."
+        );
+
+        assert_eq!(assemble_kickoff_with(project, &[]), stage0);
+        assert_eq!(assemble_resume_kickoff_with(project, &[]), resume);
+        // The one-argument forms over a project that HAS no `.claude/`
+        // reach the same bytes — the ordinary case for every genesis run
+        // before this card and after it.
+        assert_eq!(assemble_kickoff(project), stage0);
+        assert_eq!(assemble_resume_kickoff(project), resume);
+        // And the clause itself is empty rather than "empty-looking".
+        assert_eq!(skills_clause(&[]), "");
+    }
+
+    /// GUARD RULE 1 (the positive control): a discovered pack MUST appear
+    /// in the assembled kickoff — by name, by path, and with the
+    /// conditions that say when it applies.
+    #[test]
+    fn a_discovered_pack_appears_in_the_assembled_kickoff() {
+        let project = Path::new("/tmp/skilled project");
+        let packs = [
+            pack("brand", "Brand voice. Use when writing user-facing copy."),
+            pack("security", "Use when touching authentication or secrets."),
+        ];
+        for text in [
+            assemble_kickoff_with(project, &packs),
+            assemble_resume_kickoff_with(project, &packs),
+        ] {
+            assert!(text.contains("ORGANIZATION SKILL PACKS (2)"), "{text}");
+            assert!(text.contains("'brand' at .claude/skills/brand/SKILL.md"), "{text}");
+            assert!(text.contains("Brand voice. Use when writing user-facing copy."), "{text}");
+            assert!(text.contains("'security' at .claude/skills/security/SKILL.md"), "{text}");
+            assert!(text.contains("Use when touching authentication or secrets."), "{text}");
+            // The kit's own brief is still whole — the clause is an
+            // ADDITION, never a replacement.
+            assert!(text.contains("roles/planner.md"), "{text}");
+            assert!(text.contains(&format!("Method v{METHOD_SNAPSHOT_VERSION}")), "{text}");
+            // Still one paragraph on a child's stdin.
+            assert!(!text.contains('\n'), "one paragraph, no line breaks to mangle: {text}");
+            // The open precedence question is surfaced, not answered.
+            assert!(text.contains("NOT yet decided"), "{text}");
+        }
+    }
+
+    /// THE CLAUSE IS APPENDED, so the pre-T-167 text is a PREFIX of the
+    /// skilled one — the sharpest available statement of "carried the way
+    /// the kit is carried, and nothing about the kit moved".
+    #[test]
+    fn the_skilled_kickoff_extends_the_unskilled_one_rather_than_rewriting_it() {
+        let project = Path::new("/tmp/skilled project");
+        let packs = [pack("brand", "Use when writing copy.")];
+        let plain = assemble_kickoff_with(project, &[]);
+        let skilled = assemble_kickoff_with(project, &packs);
+        assert!(skilled.starts_with(&plain), "plain:\n{plain}\nskilled:\n{skilled}");
+        assert!(skilled.len() > plain.len());
     }
 }

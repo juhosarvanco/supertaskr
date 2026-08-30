@@ -3264,6 +3264,9 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
             tasks: vec![],
             roles: vec!["planner".into()],
             status: "running".into(),
+            // T-167 added the field; this body's subject is the WATCHER's
+            // silence over `.nputer/**` and no assertion in it moved.
+            skills: vec![],
         },
     )
     .expect("registry");
@@ -4733,6 +4736,213 @@ fn an_oversized_path_or_allowlist_pair_meets_the_bound_on_the_production_channel
          execve; the child saw {:?} bytes",
         env.get("HTTPS_PROXY").map(String::len)
     );
+}
+
+// ---- T-167: the organization's skill packs -----------------------------
+
+/// Plant one pack on the RUNTIME surface of a harness project.
+///
+/// **THIS IS THE CARD'S DATED PREFLIGHT RULING MADE CONCRETE**
+/// (2026-08-30): `.claude/skills/<name>/SKILL.md` is a path in the OPENED
+/// PROJECT — here a temp directory the harness owns and drops — and never
+/// a tracked path in this repository. Nothing in this suite reads or
+/// writes a `.claude/` under the repo root, and this repository
+/// deliberately has none.
+fn plant_pack(project: &Path, dir: &str, body: &str) {
+    let path = project.join(".claude").join("skills").join(dir);
+    fs::create_dir_all(&path).expect("mk pack dir");
+    fs::write(path.join("SKILL.md"), body).expect("write pack");
+}
+
+const BRAND_PACK: &str = "---\nname: brand\ndescription: Brand voice and naming rules. Use when writing any user-facing copy.\n---\n\nAlways say nputer in lower case.\n";
+
+const SECURITY_PACK: &str = "---\nname: security\ndescription: The security policy.\nwhen: Any change that touches authentication or secrets.\n---\n\nNever put a secret in argv.\n";
+
+/// **GUARD RULE 1 (T-167): the POSITIVE CONTROL.** A fixture pack must
+/// appear in the ASSEMBLED KICKOFF — asserted where it actually matters,
+/// on the bytes the child received on stdin — and must be stamped into
+/// the session record by name AND content hash.
+///
+/// Driven through the real `start_genesis` against the fake CLI, so this
+/// covers the whole path the card names: discovery, the kickoff assembly
+/// in `kit.rs`, the spawn, and the registry write.
+#[test]
+fn a_planted_skill_pack_reaches_the_child_and_the_session_record() {
+    let h = harness("t167packs", Options::default());
+    plant_pack(&h.project, "brand", BRAND_PACK);
+    plant_pack(&h.project, "security", SECURITY_PACK);
+
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    // THE KICKOFF THE CHILD ACTUALLY GOT.
+    let stdin1 = read_dump(&h.dump, 1, "stdin.txt");
+    assert!(stdin1.contains("You are the planner"), "the kit's brief is untouched: {stdin1}");
+    assert!(stdin1.contains("ORGANIZATION SKILL PACKS (2)"), "{stdin1}");
+    assert!(stdin1.contains("'brand' at .claude/skills/brand/SKILL.md"), "{stdin1}");
+    assert!(
+        stdin1.contains("Brand voice and naming rules. Use when writing any user-facing copy."),
+        "{stdin1}"
+    );
+    assert!(stdin1.contains("'security' at .claude/skills/security/SKILL.md"), "{stdin1}");
+    assert!(
+        stdin1.contains("Any change that touches authentication or secrets."),
+        "an explicit `when:` is what the planner is told to trigger on: {stdin1}"
+    );
+    // The prompt is DATA ON STDIN and never a command line — the packs
+    // change nothing about that.
+    let argv1 = read_argv(&h.dump, 1);
+    assert!(
+        !argv1.iter().any(|a| a.contains("SKILL") || a.contains(".claude")),
+        "a pack must never reach argv: {argv1:?}"
+    );
+
+    // THE PROVENANCE STAMP: name and content hash, in the session record.
+    let entry = &sessions::load(&h.project).sessions[0];
+    assert_eq!(
+        entry.skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+        vec!["brand", "security"]
+    );
+    for (pack, source) in entry.skills.iter().zip([BRAND_PACK, SECURITY_PACK]) {
+        assert_eq!(
+            pack.hash,
+            nputer_lib::agent::skills::sha256_hex(source.as_bytes()),
+            "the stamp is the hash of the pack's own bytes"
+        );
+    }
+    assert_eq!(entry.skills[0].rel_path, ".claude/skills/brand/SKILL.md");
+
+    // AND IT SURVIVES THE TURN. The entry is rebuilt from scratch at every
+    // completion, so a stamp that is not carried forward lives exactly one
+    // child process.
+    assert_eq!(entry.turns, 1, "the stamp is read AFTER a completed turn");
+    agent::send_turn(&h.watch, &h.agent, "answer one".into());
+    wait_completed(&h.events);
+    settle(&h.agent);
+    let after = &sessions::load(&h.project).sessions[0];
+    assert_eq!(after.turns, 2);
+    assert_eq!(after.skills, entry.skills, "the provenance survives later turns");
+
+    // ...and it survives the round trip through the FILE, where the serde
+    // attributes have to hold.
+    let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("sessions.json");
+    assert!(raw.contains("\"skills\""), "written, not inferred: {raw}");
+    assert!(raw.contains("sha256:"), "{raw}");
+}
+
+/// **GUARD RULE 2 (T-167): a MALFORMED pack is REPORTED and SKIPPED.**
+///
+/// Never a crash and never silently absorbed: the genesis still starts,
+/// the good pack beside it still loads (the positive control that stops
+/// "everything was dropped" passing as "the bad one was dropped"), and
+/// nothing about the malformed pack reaches the child or the record.
+#[test]
+fn a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis() {
+    let h = harness("t167malformed", Options::default());
+    plant_pack(&h.project, "brand", BRAND_PACK);
+    plant_pack(
+        &h.project,
+        "broken",
+        "---\nname: broken\nTHIS LINE IS NOT KEY VALUE\n---\nsecret guidance nobody can parse\n",
+    );
+    plant_pack(&h.project, "nameless", "---\ndescription: has no name\n---\nbody\n");
+
+    // NOT A CRASH: the genesis starts and completes exactly as it would
+    // with no packs at all.
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    let stdin1 = read_dump(&h.dump, 1, "stdin.txt");
+    assert!(stdin1.contains("ORGANIZATION SKILL PACKS (1)"), "only the good one counts: {stdin1}");
+    assert!(stdin1.contains("'brand' at .claude/skills/brand/SKILL.md"), "{stdin1}");
+    // NOT SILENTLY ABSORBED: a pack that could not be parsed contributes
+    // NOTHING to the prompt — not its name, not its path, not its body.
+    assert!(!stdin1.contains("broken"), "{stdin1}");
+    assert!(!stdin1.contains("nameless"), "{stdin1}");
+    assert!(!stdin1.contains("secret guidance"), "{stdin1}");
+
+    // And the record stamps only what was actually loaded, so provenance
+    // never claims a policy the planner was never given.
+    let entry = &sessions::load(&h.project).sessions[0];
+    assert_eq!(entry.skills.len(), 1);
+    assert_eq!(entry.skills[0].name, "brand");
+
+    // The REPORT itself, at the level the module owns it: discovery names
+    // both by their directory, with a reason apiece.
+    let found = nputer_lib::agent::skills::discover(&h.project);
+    assert_eq!(
+        found.rejected.iter().map(|r| r.dir.as_str()).collect::<Vec<_>>(),
+        vec!["broken", "nameless"]
+    );
+    for reject in &found.rejected {
+        assert!(!reject.why.is_empty(), "{reject:?} must say why it was skipped");
+    }
+}
+
+/// **GUARD RULE 3 (T-167): with no packs, byte-identical to today.**
+///
+/// MEASURED AGAINST THE PRE-T-167 TEXT, transcribed here from
+/// `assemble_kickoff` at `1d297c9`, rather than against this build's own
+/// other function — a comparison between two functions of one build
+/// passes for any pair that agree with each other, however far both have
+/// drifted from what genesis used to send.
+///
+/// The registry half is measured the same way: the entry a packless
+/// genesis writes still carries EXACTLY the nine keys
+/// `method/runtime/sessions-schema.md` names, with no `skills` key at all.
+#[test]
+fn a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before() {
+    let h = harness("t167nopacks", Options::default());
+    assert!(!h.project.join(".claude").exists(), "no packs is the ordinary case");
+
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    let project = h.watch.project_dir().expect("the harness opened one");
+    let expected = format!(
+        "You are the planner. KIT ROOT: {kit} - PROJECT DIRECTORY: {project}. \
+Read roles/planner.md at the kit root now and follow it exactly: stage 0 scaffold first, then \
+the interview, one question at a time. Kit-internal paths resolve against the kit root; every \
+docs/ path resolves inside the project directory. Turns are plain text. Method v{version}.",
+        kit = project.join(".nputer").join("genesis").join("kit").display(),
+        project = project.display(),
+        version = nputer_lib::agent::kit::METHOD_SNAPSHOT_VERSION,
+    );
+    assert_eq!(read_dump(&h.dump, 1, "stdin.txt"), expected, "the kickoff must not have moved");
+
+    // The transcript's own copy of turn 1 is the same bytes.
+    let lines = sessions::read_transcript(&h.project);
+    assert_eq!(lines[0].text, expected);
+
+    // THE REGISTRY FILE: nine keys, the schema's own set, and no tenth.
+    let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("sessions.json");
+    let value: serde_json::Value = serde_json::from_str(&raw).expect("parses");
+    let session = value["sessions"][0].as_object().expect("object");
+    assert!(!session.contains_key("skills"), "an empty stamp is not written: {raw}");
+    // serde_json's default map is a BTreeMap, so the written order is
+    // alphabetical and the expectation is sorted to match it.
+    let mut expected_keys = vec![
+        "id",
+        "agent",
+        "model",
+        "native_session_id",
+        "created",
+        "turns",
+        "tasks",
+        "roles",
+        "status",
+    ];
+    expected_keys.sort_unstable();
+    let mut written_keys: Vec<&str> = session.keys().map(String::as_str).collect();
+    written_keys.sort_unstable();
+    assert_eq!(
+        written_keys, expected_keys,
+        "the packless registry entry is the pre-T-167 entry"
+    );
+    assert!(sessions::load(&h.project).sessions[0].skills.is_empty());
 }
 
 // ---- the one env-gated real smoke (§7) ---------------------------------
