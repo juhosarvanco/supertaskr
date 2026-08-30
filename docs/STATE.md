@@ -11,7 +11,8 @@ test, not declaring convenience), the launcher exists
 **THE GRAPH IS DEGRADING** (symbols 2205 -> 2087; the tripwire goes
 silent at that exact moment — T-167-s7): `T-140-s1` is UNBLOCKED and
 is the next dispatch. No lanes. Current record:
-docs/checkpoints/2026-08-30-T-135.md.
+docs/checkpoints/2026-08-30-T-135.md (its empty-board addendum
+included — this line is the currency touch its append cost).
 Pre-compaction narrative: docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** The one designed non-zero exit a session will
