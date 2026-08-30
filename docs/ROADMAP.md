@@ -54,8 +54,7 @@ opens with the card id that still holds its story.
   fast honest cancel (T-043), typed failures that never cost a user an
   affordance (T-069/T-101/T-102/T-107/T-113), and nothing the runner
   hands execve is unbounded (T-153-s2). THE GATE THAT REMAINS is
-  milestone 3's, stated there and not restated here: no planner turn
-  has ever run to completion against a real model. The archaeology
+  milestone 3's, stated there and not restated here. The archaeology
   variant stays parked (ADR-005).
 - F-04: Dispatch — worktrees, model@session, verify/merge, from the
   board; CLI as plumbing/power path
@@ -129,12 +128,13 @@ answer become a file → watch the files become cards → press one button
 and stand in your new board. The per-card chronicle lives on the
 cards' own bodies and at `git show 08aef1c:docs/ROADMAP.md`; the
 behaviour census is docs/CAPABILITIES.md.
-**THE MILESTONE IS NOT COMPLETE AND WHAT IT WAITS ON IS NOT A TASK**:
-no planner turn has ever been observed running to completion against a
-real model — this machine's `claude` OAuth token is revoked, so every
-stream the app has ever seen is a scripted fixture. One real, timed,
-end-to-end genesis on an authenticated machine (`T-025-s2`, @human) is
-the whole remaining gate; `T-025-s5` carries its deadline half.
+**THE GATE MOVED 2026-08-30**: the first real planner turn ran to
+COMPLETION (`T-025-s2` closed — 72 s: stage-0 scaffold on disk, the
+interview opened with a real Q1, one allowlist denial in band and
+recovered; capture in docs/research/captures/). What remains is
+@human's call, not a task: whether one completed turn closes this
+milestone or the full Q1–Q7 genesis walk does. `T-025-s4` carries the
+allowlist's measured narrowness either way.
 
 ### Milestone 4 — dispatch (F-04) (decided 2026-08-19, @human D1 ruling)
 Goal: stop hand-writing the instructions that put an agent to work —
