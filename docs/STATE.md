@@ -1,41 +1,42 @@
 # State
 
-Updated: 2026-08-31 at T-153-s8's close — record:
-docs/checkpoints/2026-08-31-T-153-s8-the-census-gets-a-keeper.md; the
-other five records are beside it. FIVE LANES LANDED tonight.
-**THE GRAPH HOLD IS OVER**: the graph left the docs collector, the emit
-budget is a derived 2,145,959, and headroom went 410 → **1,011,549**
-bytes (derive: `index --check`). Every fence is dispatchable again.
-Pre-compaction: docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-08-31 at T-171's close — record:
+docs/checkpoints/2026-08-31-T-171-the-interview-gets-an-ending.md, which
+carries the night's queue and the other six records beside it.
+**SEVEN LANES LANDED overnight** and the GRAPH HOLD IS OVER: the emit
+budget is a derived 2,145,959 with roughly a megabyte free — derive it,
+never quote it. Pre-compaction:
+docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** Designed non-zero exits: `npm run health` exits 3
-while bands await keepers (T-156-s1/s2); the DOCS GATE answering 1 on a
-diff means it HAS a verdict. **Two intermittents can red a green tree** —
-`T-161` (stderr tail) and `T-178` (fixture teardown ENOTEMPTY), two CI
-sightings each. Re-run ONCE as a second measurement, then attribute;
-never re-run until green and call that evidence.
+while bands await keepers (T-156-s1/s2); the DOCS GATE's 1 means it HAS
+a verdict. **Two intermittents can red a green tree** — `T-161` (stderr
+tail) and `T-178` (fixture teardown), two CI sightings each. Re-run ONCE
+as a second measurement, then attribute; never re-run until green and
+call that evidence.
 
 ## The contract this file is under
 
 REPLACED at every checkpoint from docs/STATE-template.md, AFTER the
-record is written, in the SAME commit (ADR-019; the gate reds when a
-record is newer). A figure appears here only with its derive command or
-a ref. **When the byte budget warns, content MOVES to the record — a
-hazard is never deleted to fit.** This file BREACHED its band on
-2026-08-31 because a seat deferred that twice; the health bands caught
-it.
+record is written, in the SAME commit (ADR-019). A figure appears here
+only with its derive command. **When the byte band warns, content MOVES
+to the record — a hazard is never deleted to fit.** This file breached
+its band once overnight and drifted twice more; each time the remedy was
+a POINTER where a list had grown.
+**AND THE COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the triage
+band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 ## Live right now — derive, never quote
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
-  — a detached entry is NOT a lane. Dispatch = derive brief → PREFLIGHT
-  the card → `--write-fence <worktree>` → read the manifest back →
-  launch. Never read the ledger's FREE column as a verdict (T-143).
+  — a detached entry is NOT a lane. Dispatch = brief → PREFLIGHT →
+  `--write-fence` → read the manifest back → launch. Never read the
+  ledger's FREE column as a verdict (T-143).
 - THE HUMAN'S APP: 1420 is read with
   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and NOTHING else — never
-  bind-probe, never connect (the vite is on IPv6 loopback; an IPv4 probe
-  answers FREE while it runs). `../nputer-app` is detached ON PURPOSE:
-  not a lane.
+  bind-probe, never connect (the vite is on IPv6 loopback, so an IPv4
+  probe answers FREE while it runs). `../nputer-app` is detached ON
+  PURPOSE: not a lane.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
 - E2E PORT: `NPUTER_E2E_PORT` (default 14520) — `E2E_PORT` binds
   NOTHING. Derive scratch ports FROM THE CARD ID; lsof to zero rows
@@ -48,34 +49,33 @@ it.
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: `T-171` (blind verifier out), `T-178` (executor).
-   LANDED tonight: `T-140-s4`, `T-112-s3`, `T-177`, `T-172`,
-   `T-153-s8`, `T-112-s1` — SIX lanes.
-   Sitting #5 DONE — called by a band at DRIFT rather than by a cadence.
-2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED** — it wants a RULING
-   before a fence, and it is what stands between the registered command
-   and a rendered brief. Registration (`T-112-s1`) was necessary and is
-   NOT sufficient; this file said otherwise three times and was wrong.
-   THEN, no blocker left: `T-162-s1` (byte floor — its `DOC_BUDGETS` half is
-   OUTSIDE its fence; decide at dispatch), `T-174`, `T-112-s4`,
-   `T-167-s9`, `T-143-s6`, `T-163-s5`, `T-179`, `T-181`.
-3. STANDING REDS worth a lane: `T-161`, `T-178`, `T-167-s8` (the
-   pre-push graph guard, now ALSO carrying T-181's record trigger).
-   **`capabilities:check` IS A CI STEP since `T-153-s8`** — the census
-   is no longer kept by a hand remembering.
-4. THE NEXT METHOD RELEASE has five riders and wants a carrier card:
-   `T-112-s2`, `T-154-s3`, `T-159-s6`; `T-173` and `T-176` owe a bump;
-   `T-154-s4`'s sentence joins them.
-5. @human holds, and NOTHING is cut from these: the **FORM**, REOPENED
-   2026-08-31 (rooms/customization-form.md — the ruled asymmetric answer
-   leaves every authoring act a file edit, and @human wants
-   customization without opening files; Q2 moves with it, Q3–Q9 do
-   not); the **STEERING SPLIT** (rooms/steering-split.md; `T-180`
-   parked on it); and T-025-s4's three remaining permission questions,
-   which want a watched genesis run rather than an opinion.
+1. IN FLIGHT: `T-178` (executor). **SEVEN LANES LANDED overnight** —
+   the current record lists them and carries the whole queue, so this
+   file points rather than transcribes.
+2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED; it wants a RULING before
+   a fence** — it stands between the registered command and a rendered
+   brief. Registration was necessary, NOT sufficient; this file said
+   otherwise three times.
+3. THE QUEUE ITSELF is in the current record's "Board and the queue"
+   section. Standing reds worth a lane: `T-161`, `T-178`, `T-167-s8`
+   (the pre-push guard, now also carrying `T-181`'s record trigger).
+4. THE NEXT METHOD RELEASE has riders: `T-112-s2`, `T-154-s3`,
+   `T-159-s6` park on it; `T-173`, `T-176` owe a bump; `T-154-s4`'s
+   sentence joins them.
+5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
+   2026-08-31 — the ruled asymmetric answer leaves every authoring act a
+   file edit and @human wants customization without opening files); the
+   **STEERING SPLIT** (`T-180` parked on it); T-025-s4's three remaining
+   permission questions; and **thirty seconds of @human's eye on the
+   interview's new ending at a narrow width** — jsdom applies no
+   breakpoints, so no gate here can see it.
 6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
    assignment is honoured only by the session that dispatches. Set it
    deliberately on every spawn.
+7. **A BLIND BRIEF QUOTES THE EXECUTOR'S REPORT FOR NOTHING** — three
+   of six leaked lane facts above the phase-1 line overnight, caught by
+   the verifiers' own disclosure. Name the contract and the hazards; put
+   any lane fact BELOW the line, labelled.
 
 ## Standing hazards — the section that saves the hour
 
@@ -96,40 +96,38 @@ it.
   is the two `tsc` calls inside `npm run build` (T-073).
 - **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`);
   read every gate exit UNPIPED, never through a pipe.
-- **THE ONE SPELLING IS ONE SPELLING**: the DOCS GATE's printed recipe
-  uses an unquoted COMMAND SUBSTITUTION, which zsh splits. Route it
-  through a variable and zsh does NOT split it — the gate takes all
-  paths as ONE and answers "1 path(s)": plausible, wrong. Type the
-  printed spelling or build a real array.
+- **TYPE THE DOCS GATE'S PRINTED SPELLING.** It passes an unquoted
+  COMMAND SUBSTITUTION, which zsh splits; route it through a VARIABLE and
+  zsh does not — the gate takes every path as ONE and answers
+  "1 path(s)", plausible and wrong.
 - **This shell's `grep` is a shim** carrying `-I` and rejecting
   `--include` — use `command grep`; sweep NULs with `perl -0777`.
 - **An edit script's success is a GATE, not a step** (`18d8166`): never
   chain a commit after a scripted edit — read the diff back first. Broken
   twice in 24h, once by the seat that had just written the rule down.
-- **Cut scratch worktrees at SHORT roots** (`T-133-s5`), detached, with
-  their own `CARGO_TARGET_DIR` at `<scratch>/target` and a stem DERIVED
-  from the card id — the scratch directory is shared between sessions.
+- **Scratch worktrees: SHORT root, detached, own `CARGO_TARGET_DIR` at
+  `<scratch>/target`, stem DERIVED from the card id** (`T-133-s5`) — the
+  scratch directory is shared between sessions. A VERIFIER cuts its own:
+  a bench carries build artefacts, so a green measured on the builder's
+  could be their leftovers'.
 - **Ports are machine-wide** (`T-132-s6`): explicit, lsof-read at zero
   rows immediately before binding; a probe reserves nothing.
 - **The RANGE RULE decides which two commits "the merge's diff" means**
-  (CONVENTIONS): the integrator's pair and the executor's pair differ.
+  (CONVENTIONS) — the integrator's pair and the executor's differ.
 - **After merging a lane, REMOVE ITS WORKTREE BEFORE the verdict
   corrections** — guard limit 6: git drops its mid-merge marker at the
   merge commit while the worktree keeps the fence.
-- **A PUSH CANCELS THE RUNNING CI JOB.** Four runs were superseded on
-  2026-08-30 by this seat's own rapid pushes, leaving main's tip
-  unverified for hours. Batch pushes; watch one run at a time.
+- **A PUSH CANCELS THE RUNNING CI JOB** — four superseded overnight by
+  one seat's rapid pushes. Commit stamps freely; batch the PUSH.
 - **THE BOOT GATE AND THE HEALTH BANDS ARE OWED AT EVERY CHECKPOINT**
-  (T-046, T-156) and were skipped across four records on 2026-08-30.
-  The health run found this file's own breached band. **FEED IT
-  `--readings`** over the captured `cargo test`, `index --check` and
-  e2e output, or three bands answer UNREAD and the run is not a claim
-  about the tree.
+  (T-046, T-156), and health takes **`--readings`** over the captured
+  `cargo test`, `index --check` and e2e output — without it three bands
+  answer UNREAD and the run is not a claim about the tree.
 
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-112-s1-the-assembler-is-reachable.md.
+  2026-08-31-T-171-the-interview-gets-an-ending.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
   health band's window and CONVENTIONS' dispatch base BOTH read that
   marker, and a seat dropped it for six records before a band noticed

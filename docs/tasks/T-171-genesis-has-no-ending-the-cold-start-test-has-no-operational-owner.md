@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 1
 size: M
-status: verifying
+status: done
 blocked_by: []
 suggested_by: "@human's genesis walk (2026-08-30, /Users/ujju/Projects/first-walk) — the milestone-3 walk's principal finding"
 touches: [app-interview]
