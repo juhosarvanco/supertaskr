@@ -75,6 +75,15 @@ question:
    the row is read off `touches:` EXCEPT where the diff is confined to
    paths the slug's own component declares as tests. Smallest change,
    and the one that would have made this pair agree.
+   **AND THE TREE ALREADY LEANS THIS WAY, in a place nothing reads as a
+   rule.** `docs/ARCHITECTURE.md`'s Code-layout bullet states C-14's
+   ownership as *"`app/src-tauri/src/agent/**` + `agent-store.ts`"* — the
+   test file is NOT in that sentence, while it IS in the path set
+   `brief.mjs --write-fence` expands `app-agent` to (five paths, the
+   manifest at `.nputer/lane-fence.json`). So the prose and the expansion
+   already disagree about whether the test file is C-14's, and the
+   SHIPPED reading rests entirely on the expansion. Whichever shape wins,
+   those two should be made to agree or the difference made deliberate.
 
 **WHAT THIS FINDING IS NOT.** It is not a claim that `T-025-s6` was
 mis-promoted, and not a request to lighten it — that lane stamped
