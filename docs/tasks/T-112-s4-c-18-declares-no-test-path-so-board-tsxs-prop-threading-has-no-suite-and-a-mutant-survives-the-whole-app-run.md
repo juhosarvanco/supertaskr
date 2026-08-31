@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 2
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [app-board, docs/architecture/components]

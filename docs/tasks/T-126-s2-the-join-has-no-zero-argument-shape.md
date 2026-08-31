@@ -6,7 +6,7 @@ milestone: 4
 priority: 3
 size: M
 status: planned
-blocked_by: []
+blocked_by: [T-190]
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
 builder:
@@ -270,3 +270,11 @@ general question, and its exit 0 means *"I wasn't asked"* while the
 gate's contract reserves 0 for *"nothing owed"*. `T-090` argued this gate
 should not be an npm script at all and recorded "exactly four" scripts;
 there are now nine, including that alias. Filed as `T-142-s1`.
+
+## `blocked_by` RESTORED — `T-190` landed with `T-112-s4`'s merge, 2026-08-31
+
+The field is repointed at `T-190` in the same merge that brought it onto
+main, as the paragraph above promised. **The obligation was memory-held
+and it was discharged only because it was written down here and in the
+checkpoint draft** — which is the whole argument of `T-167-s8`, met once
+more.
