@@ -1,5 +1,5 @@
 ---
-id: T-186
+id: T-190
 title: The shell store takes a latch and then awaits an unbounded command — `runIndexRepo` and `runPicker` have the same never-answers shape T-184 bounded in the agent store, and a command that never answers kills their button for the session
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-184, found by that card's own class sweep — the class is named there and this is the sweep's non-empty result"

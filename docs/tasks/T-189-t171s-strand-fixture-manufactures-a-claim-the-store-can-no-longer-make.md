@@ -1,5 +1,5 @@
 ---
-id: T-185
+id: T-189
 title: T-171's strand fixture manufactures its claim by the exact route T-184 closed, so the body now fails on its own positive control — and the screen half of T-184's end-to-end criterion has nowhere else to live
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-184, routed from inside the lane; the red is measured at both refs rather than predicted"
