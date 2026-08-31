@@ -5,12 +5,12 @@ feature: F-03
 milestone: 4
 priority: 3
 size: S
-status: verifying
+status: done
 suggested_by: "executor claude-opus-5@subagent @T-184, found by that card's own class sweep — the class is named there and this is the sweep's non-empty result"
 touches: [app-shell]
 blocked_by: []
 builder:
-review:
+review: independent
 ---
 
 **ROUTED OUT OF `T-184`'S CLASS SWEEP.** That card fixed a liveness

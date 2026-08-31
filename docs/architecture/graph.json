@@ -18320,8 +18320,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:9604db45d98b888a54935d51d04680ccaffc34cf66e59d2849d575e338ea7e30",
-      "loc": 1319,
+      "hash": "blake3:028fb18ea011a80b7107ca13a11512e117df0904ad452c580009aacd59f5edef",
+      "loc": 1452,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -18329,8 +18329,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            331,
-            332
+            394,
+            395
           ]
         },
         {
@@ -18349,8 +18349,18 @@
           "kind": "type",
           "exported": true,
           "range": [
-            365,
-            367
+            428,
+            430
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#INDEX_ANSWER_BOUND_MS",
+          "name": "INDEX_ANSWER_BOUND_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            262,
+            262
           ]
         },
         {
@@ -18389,8 +18399,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            336,
-            341
+            399,
+            404
           ]
         },
         {
@@ -18419,8 +18429,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            235,
-            239
+            298,
+            302
           ]
         },
         {
@@ -18439,8 +18449,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            220,
-            220
+            283,
+            283
           ]
         },
         {
@@ -18449,8 +18459,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            371,
-            385
+            434,
+            448
           ]
         },
         {
@@ -18459,8 +18469,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            655,
-            676
+            718,
+            739
           ]
         },
         {
@@ -18479,8 +18489,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            241,
-            294
+            304,
+            357
           ]
         },
         {
@@ -18489,8 +18499,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            224,
-            230
+            287,
+            293
           ]
         },
         {
@@ -18504,13 +18514,23 @@
           ]
         },
         {
+          "id": "s:app/src/lib/watcher-store.ts#UNANSWERED_INDEX_MESSAGE",
+          "name": "UNANSWERED_INDEX_MESSAGE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            270,
+            272
+          ]
+        },
+        {
           "id": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
           "name": "applyDocsPayload",
           "kind": "function",
           "exported": false,
           "range": [
-            861,
-            874
+            924,
+            937
           ]
         },
         {
@@ -18519,8 +18539,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            889,
-            917
+            952,
+            980
           ]
         },
         {
@@ -18529,8 +18549,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            846,
-            859
+            909,
+            922
           ]
         },
         {
@@ -18539,8 +18559,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1230,
-            1276
+            1331,
+            1377
           ]
         },
         {
@@ -18549,8 +18569,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            487,
-            495
+            550,
+            558
           ]
         },
         {
@@ -18559,8 +18579,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            805,
-            807
+            868,
+            870
           ]
         },
         {
@@ -18569,8 +18589,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            721,
-            721
+            784,
+            784
           ]
         },
         {
@@ -18579,8 +18599,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            809,
-            811
+            872,
+            874
           ]
         },
         {
@@ -18589,8 +18609,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1293,
-            1295
+            1394,
+            1396
           ]
         },
         {
@@ -18599,8 +18619,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            737,
-            737
+            800,
+            800
           ]
         },
         {
@@ -18609,8 +18629,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            606,
-            610
+            669,
+            673
           ]
         },
         {
@@ -18619,8 +18639,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1285,
-            1290
+            1386,
+            1391
           ]
         },
         {
@@ -18629,8 +18649,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            630,
-            641
+            693,
+            704
           ]
         },
         {
@@ -18639,8 +18659,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1186,
-            1188
+            1249,
+            1251
           ]
         },
         {
@@ -18649,8 +18669,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1175,
-            1177
+            1238,
+            1240
           ]
         },
         {
@@ -18659,8 +18679,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            346,
-            356
+            409,
+            419
           ]
         },
         {
@@ -18669,8 +18689,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            925,
-            969
+            988,
+            1032
           ]
         },
         {
@@ -18679,8 +18699,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            316,
-            326
+            379,
+            389
           ]
         },
         {
@@ -18689,8 +18709,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            504,
-            584
+            567,
+            647
           ]
         },
         {
@@ -18699,8 +18719,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            306,
-            308
+            369,
+            371
           ]
         },
         {
@@ -18709,8 +18729,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            992,
-            1029
+            1055,
+            1092
           ]
         },
         {
@@ -18719,8 +18739,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1308,
-            1319
+            1409,
+            1452
           ]
         },
         {
@@ -18729,8 +18749,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1211,
-            1221
+            1274,
+            1322
           ]
         },
         {
@@ -18739,8 +18759,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1048,
-            1125
+            1111,
+            1188
           ]
         },
         {
@@ -18749,8 +18769,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            387,
-            451
+            450,
+            514
           ]
         },
         {
@@ -18759,8 +18779,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            878,
-            887
+            941,
+            950
           ]
         },
         {
@@ -18769,8 +18789,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            813,
-            816
+            876,
+            879
           ]
         },
         {
@@ -18779,8 +18799,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            723,
-            736
+            786,
+            799
           ]
         },
         {
@@ -18789,8 +18809,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            823,
-            844
+            886,
+            907
           ]
         },
         {
@@ -18799,8 +18819,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1138,
-            1167
+            1201,
+            1230
           ]
         },
         {
@@ -18809,8 +18829,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1196,
-            1198
+            1259,
+            1261
           ]
         },
         {
@@ -18819,8 +18839,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            766,
-            766
+            829,
+            829
           ]
         },
         {
@@ -18829,8 +18849,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            768,
-            768
+            831,
+            831
           ]
         },
         {
@@ -18839,8 +18859,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            798,
-            798
+            861,
+            861
           ]
         },
         {
@@ -18849,8 +18869,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            800,
-            803
+            863,
+            866
           ]
         },
         {
@@ -18859,8 +18879,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            787,
-            787
+            850,
+            850
           ]
         }
       ]
@@ -23465,8 +23485,8 @@
       "id": "f:app/test/startup-recovery.test.ts",
       "path": "app/test/startup-recovery.test.ts",
       "lang": "ts",
-      "hash": "blake3:afed687985e3c5efe18029710bc5f7b31518ebeb3c12c201f942273cda1fa5a6",
-      "loc": 1094,
+      "hash": "blake3:a0b0a9fad5c3c4dafaa47354324992f9800806ab18d543c873343c7c55e06d60",
+      "loc": 1380,
       "symbols": [
         {
           "id": "s:app/test/startup-recovery.test.ts#PROBE",
@@ -23474,8 +23494,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            154,
-            154
+            184,
+            184
           ]
         },
         {
@@ -23484,8 +23504,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            109,
-            120
+            135,
+            146
           ]
         },
         {
@@ -23494,8 +23514,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            107,
-            107
+            133,
+            133
           ]
         },
         {
@@ -23504,8 +23524,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            156,
-            156
+            186,
+            186
           ]
         },
         {
@@ -23514,8 +23534,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            149,
-            152
+            179,
+            182
           ]
         },
         {
@@ -23524,8 +23544,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            125,
-            141
+            151,
+            171
           ]
         },
         {
@@ -23534,8 +23554,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            34,
-            62
+            36,
+            77
           ]
         },
         {
@@ -23544,8 +23564,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            146,
-            146
+            176,
+            176
           ]
         }
       ]
@@ -32477,6 +32497,22 @@
       "kind": "import",
       "symbols": [
         "*"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-recovery.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-recovery.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "resolve"
       ]
     },
     {
@@ -43539,7 +43575,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2446,
-    "edges": 2363
+    "symbols": 2448,
+    "edges": 2365
   }
 }
