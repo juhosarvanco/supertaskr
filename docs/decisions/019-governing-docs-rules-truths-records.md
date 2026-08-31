@@ -40,14 +40,38 @@ longer licenses it.
 Compaction TARGETS: STATE ≤ 12 KB · ROADMAP ≤ 24 KB · ARCHITECTURE
 ≤ 20 KB · CONVENTIONS ≤ 48 KB. An overshoot up to ~25% is acceptable
 when the compaction card argues it. GATE values are not legislated
-here: they are DERIVED at each document's compaction landing — warn
-at landed size × 1.25, fail at landed size × 1.5 — and recorded by
-addendum to this ADR with the measurement (the max_graph_bytes
-pattern). STATE's gate is hard once set (template-generated, low
-variance); the other three run warn-only until they have survived
-several merges. The budget is a tripwire against relapse, not the
-instrument of the cut: the room's §3 laws do the compaction, the
-gate holds the line after.
+here: they are DERIVED at each document's compaction landing —
+
+    warn = landed + max(F, landed × 0.25)      fail = landed × 1.5
+
+both rounded with `ceil` — and recorded by addendum to this ADR with
+the measurement (the max_graph_bytes pattern). STATE's gate is hard
+once set (template-generated, low variance); the other three run
+warn-only until they have survived several merges. The budget is a
+tripwire against relapse, not the instrument of the cut: the room's §3
+laws do the compaction, the gate holds the line after.
+
+**`F` IS A FLOOR IN BYTES AND IT IS 2 053** (@human's ruling of
+2026-08-30, docs/rooms/governing-docs.md §THE BUDGET FORMULA; derived
+in addendum 5 below, which is the only place the arithmetic lives).
+The floor exists because the proportional term alone makes headroom
+exactly a quarter of the landing, so **compacting a document TIGHTENS
+its own tripwire** — addendum 4 measured that: a 514-byte cut to
+ROADMAP COST 128 bytes of runway. `F` is one ordinary merge's growth
+of the SMALLEST governed document, re-derived at the ref of whatever
+lane next re-lands a line, by the same rule and stated with its
+measurement — the shape `check::WARN_HEADROOM_BYTES` already uses in
+the crate. **A round number here would be the defect the room exists
+to avoid.**
+
+Two thresholds fall out of the shape and are stated so a future
+landing does not have to rediscover them. The floor **binds only
+where `landed < 4F`** (8 212 bytes at today's `F`); above that the
+proportional term wins and the line is unchanged. And **`warn` would
+cross above `fail` where `landed < 2F`** (4 106 bytes) — no governed
+document is near that today, the smallest landing being STATE's 6 772,
+but a document landed under it would need `fail` reconsidered in the
+same pass rather than gaining a warn line above its own fail line.
 
 ## Records
 
@@ -234,3 +258,99 @@ IS NOT THIS LANE'S**: T-162's fence is
 docs/checkpoints/ is outside it, which is the correct division — ADR-019
 §Records has the record written at the integration, before STATE is
 regenerated.
+
+## Addendum 5 (2026-08-31, T-162-s1): the byte floor lands, and `F` is derived rather than picked
+
+@human RULED on 2026-08-30, in session, on the question addendum 4
+routed as `T-162-s1`: **add the byte floor; do NOT build the per-merge
+delta budget.** The ruling text is
+`docs/rooms/governing-docs.md` §THE BUDGET FORMULA. §Budgets above now
+carries the formula; this addendum carries the arithmetic, per the same
+"recorded by addendum with the measurement" rule every landing obeys.
+
+**`F` = 2 053 BYTES.** Derivation, re-derived at this lane's own ref
+`bd8a8e88c727` (the base; `main` had moved to `a3bb22d4c47f` while the
+lane ran, which changes no input below):
+
+    for each first-parent commit c on the integration branch that
+    changed the file:  git cat-file -s $c:<file>  minus the same at c's
+    first parent; keep the POSITIVE deltas; F = their mean.
+
+    document              changes   +ve   mean     median    max
+    docs/STATE.md            214    147   2 052.73    842   12 039
+    docs/ROADMAP.md           89     78   1 057.82    625    4 963
+    docs/ARCHITECTURE.md      73     69   1 920.57  1 409    6 652
+    docs/CONVENTIONS.md       59     57   2 814.05  1 111   16 039
+
+`F` is STATE's mean, 301 751 / 147 = 2 052.73, rounded to **2 053**.
+No file-creation event is in any series (each file predates the
+reachable first-parent history), so no `0 → n` jump is being counted as
+growth. The MEAN is the statistic and the median is stated beside it
+because that is exactly what `check::WARN_HEADROOM_BYTES` does; the two
+differ by 2.4× here because the growth distribution has a long right
+tail, and the mean is the honest choice for a floor meant to survive a
+merge that lands a real block of text rather than a typing fix.
+
+**WHY THE SMALLEST DOCUMENT IS `docs/STATE.md` AND NOT `docs/ROADMAP.md`,
+WHICH THE RULING'S PROSE NAMES.** The ruling gives a derivation rule
+("the smallest governed document") and, separately, a motivation
+("ROADMAP is the case the floor exists for"). At this ref the two pick
+different files, so this is said rather than smoothed over. STATE is
+smallest on all three available readings — landed (6 772 vs ROADMAP's
+9 801), size at this ref (7 571 vs 10 346) and compaction target (12 KB
+vs 24 KB) — so the derivation rule is unambiguous. The motivation was
+about ROADMAP's *contract* ("at most one new sentence per feature per
+merge") and about ROADMAP having the shortest runway when addendum 4
+measured it; **at this ref that second half is no longer true either** —
+STATE has 894 bytes of headroom against ROADMAP's 1 906.
+
+**AND THE CHOICE IS DECIDED BY MORE THAN THE LETTER: deriving `F` from
+ROADMAP MAKES THE RULING A NO-OP.** ROADMAP's mean is 1 058, so the
+floor would bind where `landed < 4 232` and no governed document is
+under that — every line would be unchanged and @human's ruling would
+have changed nothing. STATE's 2 053 binds for exactly one document.
+A derivation that reduces a ruling to nothing is a wrong derivation.
+
+**WHAT THE FLOOR ACTUALLY MOVES** — one line, and the honest report is
+that it is one line:
+
+    document              landed    old warn   new warn   which term
+    docs/STATE.md          6 772      8 465      8 825    FLOOR (+360)
+    docs/ROADMAP.md        9 801     12 252     12 252    proportional
+    docs/ARCHITECTURE.md   8 525     10 657     10 657    proportional
+    docs/CONVENTIONS.md  131 514    164 393    164 393    proportional
+
+`fail` is untouched everywhere: the ruling replaced the `warn` formula
+and said nothing about `fail`, and a lane does not widen a ruling.
+ARCHITECTURE is 313 bytes above the `4F` crossover, so a future
+re-landing below 8 212 pulls it under the floor too.
+
+**WHAT IT BUYS, MEASURED RATHER THAN ASSERTED.** STATE is 7 571 bytes at
+this ref, so its warn headroom goes 894 → 1 254 bytes. In the unit that
+matters it is **less than one ordinary STATE merge** (2 053) and about
+1.5 median ones (842) — a real improvement and a small one, stated that
+way because the alternative is to inflate `F` until the number looks
+better, which is the defect the room named. The health band moves with
+it: `docs-headroom/docs/STATE.md` reads headroom as a percentage of the
+warn line and drifts below 10%; STATE sits at **10.56%** today, half a
+point from drifting, and the floor moves it to **14.21%**.
+
+**WHAT IS DELIBERATELY NOT BUILT.** The per-merge DELTA budget — gate
+the growth, not the total. @human refused it on cost, not on merit: it
+needs new machinery and a keeper of its own, and the floor addresses the
+demonstrated defect alone. The condition for revisiting is a governing
+document crossing its warn line again *under the floor*.
+
+**THE IMPLEMENTATION IS ROUTED, NOT DONE HERE.** `T-162-s1`'s fence is
+[docs/decisions, docs/rooms]; every executable and prose site of the old
+formula lives under `tools/e2e`, which is outside it — measured, not
+assumed: `DOC_BUDGETS` at `tools/e2e/scripts/docs-scan.mjs` (the table,
+plus its doc-comment's "warn at landed size × 1.25" and the RE-LANDED
+comment's "warn = ceil(landed x 1.25)"), and two comments in
+`tools/e2e/scripts/health-bands.config.mjs` that argue *against* a byte
+floor and assert headroom is "EXACTLY 20% of the warn line … by
+construction", an invariant this addendum breaks (STATE lands at 23.3%).
+Routed as **`T-162-s2`**, fenced on `tools/e2e`. Until it lands, this
+ADR and `DOC_BUDGETS` disagree about STATE's warn line by 360 bytes,
+**in the safe direction** — the code holds the TIGHTER line, so the gate
+fires early rather than late, and nothing is unguarded in the window.
