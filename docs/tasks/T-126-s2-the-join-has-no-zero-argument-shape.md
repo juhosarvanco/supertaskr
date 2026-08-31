@@ -6,7 +6,7 @@ milestone: 4
 priority: 3
 size: M
 status: planned
-blocked_by: [T-112-s4]
+blocked_by: [T-190]
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
 builder:
@@ -178,3 +178,62 @@ than by a USE is a failure family this repository has now met in five
 places, and it very nearly booked an architecture decision. The check
 that settled it was grepping for `import`/`require`/`import(` rather than
 for the module's name.
+
+## CORRECTION TO THE RULING — same day, and the lane the ruling DISPATCHED is what corrected it
+
+**The ruling named the wrong component as the blocker.** It is corrected
+here rather than quietly amended above, because the reasoning that
+produced the error is worth more than the error.
+
+`T-112-s4`'s executor measured, from inside `[app-board]`, that **the
+dispatch view model is already reachable**:
+
+- `selectDispositions` — driven by `app/test/select-board.test.ts`
+- `selectBriefPanel` — driven by `app/test/select-task-detail.test.ts`
+- the drawer's rendered block — driven by `app/test/detail-assignment.test.tsx`
+
+All three in-fence, all three verified at that lane's own ref. **What no
+test file may reach is `dispatch-store.ts` itself: C-15 declares no test
+path either.** Routed as `T-190`.
+
+### What survives and what does not
+
+**The ruling's DIRECTION is unchanged and is now better supported.** The
+join goes to TypeScript, and shape 3's objection is still test
+reachability rather than architecture. The asymmetry that decided it —
+shapes 1 and 2 refused on properties that cannot be fixed, shape 3 on one
+a lane can — is untouched.
+
+**What was wrong is the ATTRIBUTION.** The ruling said C-18's missing
+test path was the obstacle. It is not: C-18's prop threading is now
+pinned (see below), and the view model beneath it was always reachable.
+**The obstacle is C-15's missing test path**, one component over, and
+that is exactly where the unreachable code sits.
+
+So `blocked_by` should name `T-190`, not `T-112-s4`. `T-112-s4` remains
+worth doing on its own terms and remains a neighbour; it is not this
+card's gate.
+
+### And the ruling's own evidence was already pointing at C-15
+
+This is the part worth keeping. The sitting measured that **nothing
+imports `dispatch-store.ts`** and that `hydrateJoin` is referenced only
+by a doc comment — both facts about **C-15**, and it wrote them down
+correctly. Then it reached for the nearest carded registry gap and
+attributed them to **C-18**, because `T-112-s4` was the card in front of
+it and said "no test path" in its title.
+
+**The measurement was right and the card it was pinned to was wrong.**
+That is a quieter failure than a bad measurement and a harder one to
+catch, and it was caught only because the ruling dispatched a lane that
+went and looked.
+
+### A second correction, from the same lane
+
+`T-112-s4`'s own premise **healed before it was executed**. Its title
+claims a mutant survives the whole app run; `T-112-s1` pinned the
+threading in `board-truth.test.tsx` in the interval, and the lane
+re-drilled each threading line separately and together — one side only,
+restored and proven by hash — and **every mutant now dies**. So the
+sitting's citation of *"deletable with the whole app run green"* was true
+when written and false when quoted.
