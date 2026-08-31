@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   boardReadiness,
+  coldStartOffer,
   completionOf,
   completionSafely,
   crescendo,
   elapsedLabel,
   flightOf,
   showsBoard,
+  splitColdStartAnswer,
   HOUR_FORM_FROM_MINUTES,
   MINUTE_MS,
+  type ColdStartPhase,
+  type ColdStartReading,
 } from "../src/genesis/crescendo";
 import type { GenesisTurn } from "../src/lib/agent-store";
 import {
@@ -508,5 +512,186 @@ describe("openBoardFromGenesis — a screen change, not a project change", () =>
     });
     expect(openBoardFromGenesis(withRejection).rejectedPick).toBeNull();
     expect(selectScreen(openBoardFromGenesis(withRejection)).screen).toBe("board");
+  });
+});
+
+// ---- T-175: the cold-start test, offered and never gating ---------------
+
+describe("splitColdStartAnswer — the GAPS are the output, and 'none' is not zero", () => {
+  const ANSWER = [
+    "This is a habit tracker for one founder who forgets.",
+    "Milestone 1 ships the log and the week view.",
+    "",
+    "GAPS:",
+    "- ARCHITECTURE says the tool hands the process over; ADR-002 says it exits with the editor's status.",
+    "- B-1 is referenced and no such file exists.",
+  ].join("\n");
+
+  it("splits the explain-back from the gaps the reader named", () => {
+    const split = splitColdStartAnswer(ANSWER);
+    expect(split.gapsNamed).toBe(true);
+    expect(split.gaps).toHaveLength(2);
+    expect(split.gaps[0]).toContain("ADR-002");
+    expect(split.gaps[1]).toBe("B-1 is referenced and no such file exists.");
+    // The explain-back is the prose ABOVE the heading, and the heading
+    // itself is not in it.
+    expect(split.explainBack).toContain("habit tracker");
+    expect(split.explainBack).toContain("Milestone 1");
+    expect(split.explainBack).not.toContain("GAPS:");
+    expect(split.explainBack).not.toContain("B-1");
+  });
+
+  it("an answer with NO gaps section keeps the whole text and says the section is missing", () => {
+    const split = splitColdStartAnswer("A habit tracker. I ran out of room to say more.");
+    // THE POSITIVE FIRST: the words are all still there, so this is a
+    // degradation and not a loss.
+    expect(split.explainBack).toBe("A habit tracker. I ran out of room to say more.");
+    expect(split.gapsNamed, "a missing section is never 'no gaps'").toBe(false);
+    expect(split.gaps).toEqual([]);
+  });
+
+  it("'- none' is an ANSWER to the second half, not a gap", () => {
+    const split = splitColdStartAnswer("Whole and clear.\n\nGAPS:\n- none\n");
+    expect(split.gapsNamed, "the reader answered the second half").toBe(true);
+    expect(split.gaps).toEqual([]);
+    expect(split.explainBack).toBe("Whole and clear.");
+  });
+
+  it("the heading is matched EXACTLY and on its own line — the two near misses", () => {
+    // (a) THE SINGULAR. The prompt's own wording says "one '- ' bullet
+    // per GAP:", so a containment matcher on "GAP" splits here and loses
+    // half the explain-back.
+    // WHAT EACH NEAR MISS ASSERTS IS THAT NOTHING WAS TRUNCATED. That
+    // `gapsNamed` is false here is the previous body's subject and is
+    // deliberately not restated: both redded on one mutant when it was.
+    const singular = splitColdStartAnswer("I found one GAP: the roadmap.\n- not a bullet list");
+    expect(singular.explainBack).toContain("I found one GAP: the roadmap.");
+    expect(singular.explainBack).toContain("- not a bullet list");
+
+    // (b) THE HEADING QUOTED IN PROSE. The method's own sentence carries
+    // it, and a reader may quote the instruction it was given.
+    const quoted = splitColdStartAnswer(
+      "The docs told me GAPS: are gaps in the docs, so here goes.\nIt is a tracker.",
+    );
+    expect(quoted.explainBack).toContain("The docs told me GAPS:");
+    expect(quoted.explainBack).toContain("It is a tracker.");
+
+    // …and the real thing, on its own line, still splits — without which
+    // the two assertions above would be satisfied by a parser that never
+    // matches anything.
+    const real = splitColdStartAnswer("It is a tracker.\nGAPS:\n- the roadmap has no dates");
+    expect(real.gapsNamed).toBe(true);
+    expect(real.gaps).toEqual(["the roadmap has no dates"]);
+  });
+
+  it("the LAST heading wins, so a reader that quotes itself still splits at what it wrote", () => {
+    const split = splitColdStartAnswer(
+      ["I will end with GAPS:", "GAPS:", "- the first one", "GAPS:", "- the real one"].join("\n"),
+    );
+    expect(split.gaps).toEqual(["the real one"]);
+    expect(split.explainBack).toContain("the first one");
+  });
+
+  it("blank lines and stray prose between bullets are skipped, never swallowed as gaps", () => {
+    const split = splitColdStartAnswer(
+      ["Prose.", "GAPS:", "", "- one", "some trailing sentence", "  - two  ", ""].join("\n"),
+    );
+    expect(split.gaps).toEqual(["one", "two"]);
+  });
+});
+
+describe("coldStartOffer — offered at completion, and gating nothing in either direction", () => {
+  const board = (): DocsModelState =>
+    tree([...SCAFFOLD, taskFile("T-001", "Store and done"), taskFile("T-002", "Week view")]);
+  const cold = (phase: ColdStartPhase, over: Partial<ColdStartReading> = {}): ColdStartReading => ({
+    phase,
+    answer: null,
+    error: null,
+    ...over,
+  });
+
+  it("a finished interview STAYS finished through every cold-start phase", () => {
+    // THE RULING, AS A MEASUREMENT. Triage: "completion is at the last
+    // bank; the cold-start test is an offered next action." One docs
+    // tree, one turn list, one `inFlight` — and the completion reading is
+    // deep-equal across all four phases, because the cold-start state is
+    // not one of its inputs and this body is what would red if somebody
+    // made it one.
+    const docs = board();
+    const turns = [turn(1, "completed")];
+    const completion = completionOf(docs, turns, false);
+    expect(completion).toEqual({ complete: true, turns: 1 });
+    for (const phase of ["idle", "running", "done", "failed"] as const) {
+      // Reading the offer is the act that could have moved completion, so
+      // it happens BETWEEN the two readings rather than beside them.
+      // What each phase renders as is the next body's subject and is
+      // deliberately not restated here.
+      coldStartOffer(completion, cold(phase, { answer: "an answer" }));
+      expect(
+        completionOf(docs, turns, false),
+        `completion after reading the offer at ${phase}`,
+      ).toEqual({ complete: true, turns: 1 });
+    }
+  });
+
+  it("offers nothing before the last bank — including when a cold answer exists", () => {
+    // THE REVERSE DIRECTION, which is the half a reader would not think
+    // to check: an explain-back over a tree the planner is still writing
+    // must not be rendered beside a half-built board.
+    const midFlight = completionOf(board(), [turn(1, "running")], true);
+    expect(midFlight).toEqual({ complete: false, blocker: "turnInFlight" });
+    expect(coldStartOffer(midFlight, cold("done", { answer: "a stale reading" }))).toEqual({
+      offered: false,
+      because: "notComplete",
+    });
+    const noBoard = completionOf(tree(SCAFFOLD), [turn(1, "completed")], false);
+    expect(noBoard).toEqual({ complete: false, blocker: "noBoard" });
+    expect(coldStartOffer(noBoard, cold("idle")).offered).toBe(false);
+  });
+
+  // THE FAILED ARM IS THE NEXT BODY'S AND IS NOT REPEATED HERE. Both
+  // bodies redded on one mutant when this one covered all four phases,
+  // which is two descriptions of one rule rather than two rules.
+  it("idle, running and answered each render as themselves", () => {
+    const completion = completionOf(board(), [turn(1, "completed")], false);
+    expect(coldStartOffer(completion, cold("idle"))).toEqual({
+      offered: true,
+      state: "available",
+    });
+    expect(coldStartOffer(completion, cold("running"))).toEqual({
+      offered: true,
+      state: "running",
+    });
+    const answered = coldStartOffer(
+      completion,
+      cold("done", { answer: "It is a tracker.\nGAPS:\n- no dates" }),
+    );
+    expect(answered).toMatchObject({ offered: true, state: "answered" });
+    if (answered.offered && answered.state === "answered") {
+      expect(answered.answer.gaps).toEqual(["no dates"]);
+      expect(answered.answer.explainBack).toBe("It is a tracker.");
+    }
+  });
+
+  it("a failed cold read leaves the offer standing, named, and shows no score of any kind", () => {
+    const completion = completionOf(board(), [turn(1, "completed")], false);
+    expect(
+      coldStartOffer(completion, cold("failed", { error: { kind: "exitNonZero" } })),
+      "the typed reason travels so the pane can say what happened",
+    ).toEqual({ offered: true, state: "failed", kind: "exitNonZero" });
+    const failed = coldStartOffer(completion, cold("failed", { error: { kind: "startTimeout" } }));
+    expect(failed.offered, "a failed cold read is not a failed project").toBe(true);
+    // The whole offer, serialized: nothing in it is a number, a
+    // percentage or a grade. Criterion 3 says the gaps are the output
+    // "not a score", and this is that sentence as an assertion.
+    expect(JSON.stringify(failed)).not.toMatch(/\d/);
+  });
+
+  it("a `done` with no text renders as the offer, never as an empty answer panel", () => {
+    const completion = completionOf(board(), [turn(1, "completed")], false);
+    expect(coldStartOffer(completion, cold("done", { answer: null }))).toEqual({
+      offered: true,
+      state: "available",
+    });
   });
 });

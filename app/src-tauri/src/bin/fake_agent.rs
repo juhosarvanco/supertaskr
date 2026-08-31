@@ -920,7 +920,8 @@ fn main() {
 /// Record everything the runner handed this process. This IS the
 /// assertion channel: argv (no prompt, no shell string), the full
 /// environment (the canary must be absent), stdin (the prompt), cwd (the
-/// project dir) and the pid (the group-kill proof).
+/// project dir), the pid (the group-kill proof) and — since T-175 — the
+/// cwd's own CONTENTS.
 fn record(turn_dir: &Path, args: &[String], stdin_text: &str) {
     let _ = fs::create_dir_all(turn_dir);
     let _ = fs::write(
@@ -933,11 +934,56 @@ fn record(turn_dir: &Path, args: &[String], stdin_text: &str) {
         serde_json::to_vec_pretty(&env).unwrap_or_default(),
     );
     let _ = fs::write(turn_dir.join("stdin.txt"), stdin_text);
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let _ = fs::write(turn_dir.join("cwd.txt"), cwd.display().to_string());
     let _ = fs::write(
-        turn_dir.join("cwd.txt"),
-        std::env::current_dir().unwrap_or_default().display().to_string(),
+        turn_dir.join("visible.json"),
+        serde_json::to_vec_pretty(&walk_cwd(&cwd)).unwrap_or_default(),
     );
     let _ = fs::write(turn_dir.join("pid.txt"), std::process::id().to_string());
+}
+
+/// Depth and entry bounds for [`walk_cwd`]. Generous against every fixture
+/// tree in the suite and finite against a cwd that is not one — a fake
+/// that hung walking a real home directory would be a fixture that can
+/// fail for a reason nothing in the test says.
+const WALK_MAX_ENTRIES: usize = 2000;
+const WALK_MAX_DEPTH: usize = 8;
+
+/// WHAT THIS PROCESS CAN SEE FROM WHERE IT WAS STARTED — every path at or
+/// below its cwd, cwd-relative, sorted (T-175).
+///
+/// **THIS IS A MEASUREMENT OF THE HANDED SURFACE, NOT A CLAIM ABOUT THE
+/// REAL CLI.** What it establishes is what the RUNNER put this child in
+/// front of: a body asserting that the project's `.nputer/` transcript is
+/// absent from this list is asserting that the child was not started
+/// somewhere it could walk to it, which is the half of the cold-start
+/// restriction this repository owns. What the real CLI would do with an
+/// absolute path typed into its own `Read` tool is the CLI's, and the
+/// adapter table says so where the grants are.
+///
+/// It is written for EVERY scenario rather than a new one, because "record
+/// everything you were handed" is this binary's whole charter and a
+/// working directory's contents are the largest thing it is handed.
+fn walk_cwd(cwd: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut stack = vec![(cwd.to_path_buf(), String::new(), 0usize)];
+    while let Some((dir, prefix, depth)) = stack.pop() {
+        if depth > WALK_MAX_DEPTH || out.len() >= WALK_MAX_ENTRIES {
+            break;
+        }
+        let Ok(entries) = fs::read_dir(&dir) else { continue };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let rel = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+            out.push(rel.clone());
+            if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                stack.push((entry.path(), rel, depth + 1));
+            }
+        }
+    }
+    out.sort();
+    out
 }
 
 /// `<dump>/turn-1`, `<dump>/turn-2`, … so the resume round trip is

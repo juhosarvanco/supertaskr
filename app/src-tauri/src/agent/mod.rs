@@ -23,6 +23,19 @@
 //! Tauri commands do lives in `pub fn`s minus the Tauri runtime, so cargo
 //! tests drive it directly and the `#[tauri::command]` wrappers in lib.rs
 //! stay thin.
+//!
+//! **T-175 ADDS TWO SEAMS AND NO COMMANDS, AND THE GAP IS RECORDED RATHER
+//! THAN LEFT TO BE FOUND.** [`cold_start`] and [`cold_start_status`] are
+//! the cold-start test's whole Rust half — built, driven directly by
+//! `cargo test` through the seam above, and reachable from the webview by
+//! NOTHING, because a `#[tauri::command]` wrapper and its
+//! `generate_handler!` line live in `app/src-tauri/src/lib.rs`, which is
+//! C-05 `app-shell` and outside T-175's `[app-agent, app-interview]`
+//! fence. That is the disposition `app/src-tauri/src/dispatch/mod.rs`
+//! already records for `dispatch_lanes` (T-110 → T-126) and T-112 records
+//! for the brief assembler (→ T-112-s1): record it, route it, build the
+//! rest, and never widen a fence from inside the lane it fences. The
+//! routing card is `T-175-s1`.
 
 pub mod adapter;
 pub mod kit;
@@ -119,6 +132,101 @@ pub enum Phase {
     Failed,
 }
 
+// ---- T-175: the cold-start test's typed surface -------------------------
+
+/// The cold reader's working directory, relative to the project root.
+///
+/// **THIS IS THE RESTRICTION, AND IT IS A PATH RATHER THAN A SENTENCE.**
+/// The card says so in as many words — *"The restriction has to be stated
+/// against a path set, not against the project"* — because `.nputer/`
+/// holds the interview transcript, is gitignored, and is nonetheless
+/// present on disk in the generated project. A session started in the
+/// project ROOT can reach it; a session started HERE has it above its
+/// working directory, alongside nothing else it was ever told about.
+pub const COLD_START_CWD_REL: &str = "docs";
+
+/// The turn number a cold-start child carries.
+///
+/// Interview turns are 1-based (`start_genesis` opens at turn 1), so ZERO
+/// is a number no interview turn can hold. Not decoration: the shared
+/// [`ChildHandle`] and every log line downstream carry a turn, and a cold
+/// start appearing as "turn 3" in a cancel notice would be an interview
+/// turn as far as any reader could tell.
+pub const COLD_START_TURN: u32 = 0;
+
+/// Where the cold-start test is, for a pane that mounts late or polls.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ColdStartPhase {
+    /// Never run in this app process, or run and stood down — the offer
+    /// is available. A CANCELLED run lands here too, which is the
+    /// affordance rule: stopping the test must cost nothing.
+    #[default]
+    Idle,
+    Running,
+    /// The reader answered; `answer` carries its words.
+    Done,
+    /// The run failed; `error` carries the typed reason.
+    Failed,
+}
+
+/// What asking for the cold-start test answered.
+///
+/// **EVERY ARM COSTS THE PERSON NOTHING** (the T-069/T-101/T-102/T-107/
+/// T-113 family's rule, and this card's fourth criterion). No arm ends the
+/// interview, marks the project unfinished, or removes an affordance: the
+/// finished project is finished before this is called and exactly as
+/// finished after every one of these.
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum ColdStartOutcome {
+    /// A child is spawned. The answer arrives through [`cold_start_status`].
+    Started,
+    /// A turn — interview or cold start — is already in flight. The
+    /// single-flight claim is SHARED with genesis on purpose: exactly one
+    /// child exists at a time, so the child slot `genesis_cancel` and the
+    /// exit hook read is never ambiguous about whose group it is killing.
+    Busy,
+    /// No project is open.
+    NoProject,
+    /// The project has no `docs/` tree, so there is nothing to read back
+    /// and nowhere to stand the reader up. Typed rather than an error
+    /// string: it is the one refusal a person can act on, and the action
+    /// is "finish the interview", never "try again".
+    NoDocs { rel: String },
+    /// The agent CLI could not be found. The same shape as
+    /// [`StartOutcome::CliNotFound`] on purpose — the hand-driven fallback
+    /// is the same fallback.
+    CliNotFound { probed: Vec<String> },
+    /// Found, but too old to trust the flag semantics against.
+    UnsupportedVersion { found: String },
+}
+
+/// The cold-start test's own catch-up pull — [`GenesisStatus`]'s sibling,
+/// and deliberately a SEPARATE reading.
+///
+/// **NOTHING HERE IS PART OF THE INTERVIEW'S STATE, WHICH IS THE WHOLE
+/// RULING THIS CARD IS BUILT ON.** Triage ruled the cold-start test
+/// OFFERED, NEVER GATED: completion is at the last bank. So a running cold
+/// start must not set [`Phase::Running`], must not add a turn, must not
+/// touch the transcript or the session registry, and must not appear in
+/// [`GenesisStatus`] at all — because every one of those is an input to
+/// the completion the pane has already drawn, and moving any of them would
+/// make a finished project un-finish itself the moment somebody accepted
+/// the offer.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ColdStartReading {
+    pub phase: ColdStartPhase,
+    /// The reader's own words, whole. Never a score and never a verdict —
+    /// the pane splits the gaps out of it for rendering (criterion 3) and
+    /// this side keeps the text intact.
+    pub answer: Option<String>,
+    pub error: Option<TurnError>,
+    pub started_at_ms: Option<u64>,
+    pub finished_at_ms: Option<u64>,
+}
+
 /// The mount-time catch-up pull (the `docs_snapshot` precedent): a late
 /// pane learns where the interview is without replaying events.
 #[derive(Clone, Debug, Serialize)]
@@ -178,6 +286,23 @@ pub struct AgentState {
     /// Set to true by cancel/exit so the relay loop stops promptly.
     cancel: Arc<AtomicBool>,
     emitter: Emitter,
+    /// T-175: the cold-start test's state, and it is a SECOND cell rather
+    /// than four more fields on [`Inner`]. The separation is the ruling:
+    /// `Inner` is the interview's, every field of it feeds
+    /// [`GenesisStatus`], and `GenesisStatus` is an input to the
+    /// completion the board has already drawn. A cold start that wrote
+    /// into `Inner` would gate the completion it is only allowed to be
+    /// offered beside.
+    cold: Arc<Mutex<ColdInner>>,
+}
+
+#[derive(Default)]
+struct ColdInner {
+    phase: ColdStartPhase,
+    answer: Option<String>,
+    error: Option<TurnError>,
+    started_at_ms: Option<u64>,
+    finished_at_ms: Option<u64>,
 }
 
 impl AgentState {
@@ -201,6 +326,7 @@ impl AgentState {
             child: Arc::new(Mutex::new(None)),
             cancel: Arc::new(AtomicBool::new(false)),
             emitter: Emitter::new(wrapped, Arc::new(AtomicU64::new(0))),
+            cold: Arc::new(Mutex::new(ColdInner::default())),
         }
     }
 
@@ -944,6 +1070,188 @@ pub fn cancel(agent: &AgentState) -> CancelOutcome {
         }
         None => CancelOutcome::Idle,
     }
+}
+
+// ---- T-175: the cold-start test ----------------------------------------
+
+/// `genesis_cold_start()` — spawn the FRESH, docs-restricted session the
+/// method names, over the project the interview just planned.
+///
+/// **THE READING RESTRICTION IS THE TEST, AND IT IS A CONTRACT OF THE
+/// SPAWN RATHER THAN AN INSTRUCTION IN THE PROMPT.** A session that read
+/// the interview transcript, the planner's context, or the repository
+/// outside `docs/` is not cold, and a green answer from it is worthless.
+/// Three things carry that here, and none of them is a sentence the model
+/// could decline to follow:
+///
+///  1. **The child's working directory is `<project>/docs`**, never the
+///     project root — so `.nputer/` (transcript, session registry, the
+///     materialized kit) and every other sibling sit ABOVE it. This is the
+///     half the card asks to be stated "against a path set, not against
+///     the project".
+///  2. **The argv is [`adapter::CLAUDE_COLD_START_V1`]**, which grants no
+///     directory (`--add-dir` absent), no permission mode, no tool, and
+///     denies `Bash` by name — the spelling `cat ../.nputer/…` would have
+///     needed. That table's own doc comment carries the flag-by-flag
+///     reasoning and the residual.
+///  3. **The prompt is [`kit::assemble_cold_start_prompt`], which takes no
+///     arguments** — so, unlike every other prompt in this module, it
+///     cannot name a path above `docs/`. Telling a cold reader where the
+///     transcript lives would undo (1) in one sentence.
+///
+/// **AND IT IS OFFERED, NEVER GATED** (the 2026-08-30 triage ruling, on
+/// this card). This function writes nothing into [`Inner`], appends no
+/// transcript line, upserts no session entry and returns no arm that
+/// removes an affordance — so the completion the board has already drawn
+/// is exactly as true after this call as before it, on every path
+/// including the failures.
+pub fn cold_start(watch: &WatchState, agent: &AgentState) -> ColdStartOutcome {
+    // The shared single-flight claim: one child at a time, so the child
+    // slot `cancel` and the exit hook read is unambiguous. Dropped on
+    // every early return below, which is what makes a refusal free.
+    let Some(flight) = agent.begin_turn() else {
+        return ColdStartOutcome::Busy;
+    };
+    let Some(project_dir) = watch.project_dir() else {
+        return ColdStartOutcome::NoProject;
+    };
+
+    // THE CWD IS DERIVED AND THEN CHECKED, in that order. A cold start
+    // over a project with no docs/ would otherwise spawn a child into a
+    // directory that does not exist and report the OS's word for it.
+    let docs = project_dir.join(COLD_START_CWD_REL);
+    if !docs.is_dir() {
+        return ColdStartOutcome::NoDocs { rel: COLD_START_CWD_REL.to_string() };
+    }
+
+    let adapter = adapter::cold_start_adapter();
+    let cli = match runner::resolve_cli(&agent.cfg, adapter) {
+        Ok(cli) => cli,
+        Err(ResolveError::NotFound { probed }) => return ColdStartOutcome::CliNotFound { probed },
+        Err(ResolveError::Unsupported { found }) => {
+            return ColdStartOutcome::UnsupportedVersion { found }
+        }
+    };
+
+    {
+        let mut guard = agent.cold.lock().expect("cold-start state poisoned");
+        // A fresh run CLEARS the previous answer rather than layering on
+        // it: the fix-and-repeat loop means the same person runs this
+        // twice over a docs tree they changed in between, and a stale
+        // answer beside a running one is a lie about which tree was read.
+        *guard = ColdInner {
+            phase: ColdStartPhase::Running,
+            answer: None,
+            error: None,
+            started_at_ms: Some(now_ms()),
+            finished_at_ms: None,
+        };
+    }
+
+    println!(
+        "[nputer] agent: cold-start test - spawning a fresh session in {}",
+        crate::docs_watch::sanitize_for_log(&docs.display().to_string()),
+    );
+
+    spawn_cold_start(
+        agent,
+        cli,
+        TurnRequest {
+            // The child's CWD. Named `project_dir` by the runner because
+            // every other caller passes one; for this surface it is the
+            // docs tree, and that difference IS the restriction.
+            project_dir: docs,
+            prompt: kit::assemble_cold_start_prompt(),
+            // Never `Some`. A resumed cold start has read something, and
+            // the adapter's own template refuses it besides.
+            resume: None,
+            turn: COLD_START_TURN,
+        },
+        flight,
+    );
+    ColdStartOutcome::Started
+}
+
+/// `genesis_cold_start_status()` — the cold-start test's catch-up pull.
+///
+/// Synchronous and in-memory, exactly like [`status`]. Separate from it
+/// for the reason [`ColdStartReading`] states: the interview's status is
+/// an input to the completion the board draws, and this must never be.
+pub fn cold_start_status(agent: &AgentState) -> ColdStartReading {
+    let guard = agent.cold.lock().expect("cold-start state poisoned");
+    ColdStartReading {
+        phase: guard.phase,
+        answer: guard.answer.clone(),
+        error: guard.error.clone(),
+        started_at_ms: guard.started_at_ms,
+        finished_at_ms: guard.finished_at_ms,
+    }
+}
+
+/// Run the cold-start turn on its own thread.
+///
+/// **THE EMITTER IS SILENT, AND THAT IS THE DESIGN RATHER THAN A GAP.**
+/// `genesis-turn` is the INTERVIEW's channel: the store folds every
+/// payload on it into the conversation, by turn number. A cold-start
+/// delta arriving there would be rendered as the planner speaking, and a
+/// cold-start `Started` would arm the store's own in-flight claim — which
+/// is `flightOf`'s `claimed` arm, and therefore the completion panel
+/// standing down. So this turn's stream reaches no channel at all and its
+/// answer is READ through [`cold_start_status`], which is the
+/// `genesis_status` precedent applied to a run that must stay outside the
+/// interview's state.
+fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: TurnInFlight) {
+    let cfg = agent.cfg.clone();
+    let cold = agent.cold.clone();
+    let child = agent.child.clone();
+    let cancel = agent.cancel.clone();
+    cancel.store(false, Ordering::SeqCst);
+
+    std::thread::spawn(move || {
+        let _flight = flight; // released when this thread ends
+        let adapter = adapter::cold_start_adapter();
+        let emitter = Emitter::new(Arc::new(|_event| {}), Arc::new(AtomicU64::new(0)));
+        let outcome = runner::run_turn(&cfg, adapter, &cli, &req, &emitter, &child, &cancel);
+
+        let mut guard = cold.lock().expect("cold-start state poisoned");
+        guard.finished_at_ms = Some(now_ms());
+        match (&outcome.error, outcome.cancelled, &outcome.text) {
+            (Some(error), _, _) => {
+                guard.phase = ColdStartPhase::Failed;
+                guard.error = Some(error.clone());
+                println!(
+                    "[nputer] agent: cold-start test failed: {}",
+                    crate::docs_watch::sanitize_for_log(&format!("{error:?}"))
+                );
+            }
+            // CANCELLED IS NOT A FAILURE AND COSTS NOTHING. The person hit
+            // stop; the offer comes back, and the previous answer stays
+            // cleared because the run that would have replaced it did not
+            // finish.
+            (None, true, _) => {
+                guard.phase = ColdStartPhase::Idle;
+                guard.started_at_ms = None;
+                guard.finished_at_ms = None;
+                println!("[nputer] agent: cold-start test cancelled");
+            }
+            (None, false, Some(text)) => {
+                guard.phase = ColdStartPhase::Done;
+                guard.answer = Some(text.clone());
+                println!("[nputer] agent: cold-start test answered ({} bytes)", text.len());
+            }
+            // A turn that ended clean and said nothing. Typed rather than
+            // rendered as an empty success: "the reader answered nothing"
+            // and "the reader is still thinking" are different situations
+            // and the screen must not show the second for the first.
+            (None, false, None) => {
+                guard.phase = ColdStartPhase::Failed;
+                guard.error = Some(TurnError::MalformedStream {
+                    why: "the cold-start session ended without an answer".to_string(),
+                });
+                println!("[nputer] agent: cold-start test ended with no answer");
+            }
+        }
+    });
 }
 
 /// Run one turn on its own thread and settle the bookkeeping when it

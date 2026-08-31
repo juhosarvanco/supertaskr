@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 5
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [app-agent, app-interview]
 suggested_by: standing triage sitting #4 (2026-08-30) — SPLIT from T-171
@@ -95,7 +95,202 @@ to be stated against a path set, not against the project.
   offer-not-gate body is the app suite's.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+**Executor `claude-opus-5@subagent`, lane `task/T-175-lane` at
+`/Users/ujju/Projects/nputer-T-175`, base `0a8dd58` (derived:
+`git merge-base main HEAD`).** Every figure below is measured at this
+lane's own tip unless it names another ref.
+
+### THE CARD IS PARTLY DEFECTIVE, AND SAYING SO IS THE FIRST NOTE
+
+**Criteria 1 and 3 order work outside this card's own `touches:`.** A
+"named action" is a rendered affordance with a working handler, and the
+last three links of that handler's chain are all `app-shell` (C-05):
+
+- `app/src-tauri/src/lib.rs`'s `generate_handler!` list, where a
+  `#[tauri::command]` wrapper is registered;
+- `app/test/crescendo-dom.test.tsx`'s **two IPC census pins**, each a
+  `toEqual` over an exact command set — one derived by scanning EVERY
+  `invoke<T>("name")` in the whole of `app/src/`, the other read out of
+  `lib.rs`. Adding the frontend door reds the first; registering the
+  command reds the second;
+- that same file is where `BoardCrescendo` is DOM-tested, so the panel
+  that renders the offer has no reachable body either.
+
+`[app-agent, app-interview]` expands to C-14 + C-13 and reaches none of
+them — re-derived at `0a8dd58` by calling `decide()` in
+`.claude/hooks/lane-fence.mjs` over each of the 13 manifest paths plus
+six negative controls (including the near miss `app/src/genesis-not-a-dir.ts`,
+which shares the string prefix of a fence domain and is correctly
+REFUSED), rather than by reading the manifest JSON. `TASK-FORMAT.md`
+rules this case — *"A card whose criterion and whose fence disagree is a
+DEFECTIVE CARD, not a hard call for the lane"* — so it is **routed as
+`T-175-s1`**, the third instance of the disposition `T-110`→`T-126` and
+`T-112`→`T-112-s1` already took. The fence was not widened.
+
+**The one-line dodge was available and refused, recorded so nobody
+re-derives it as a good idea.** The frontend census matches the literal
+`invoke<T>("name")`, so an invoke through a `const` name would have
+added the door without reddening anything. That is hiding from a census,
+not passing one.
+
+### What was built, and where the restriction actually lives
+
+**`adapter.rs` — `CLAUDE_COLD_START_V1`, a second ARGV SURFACE over the
+one agent.** `ADAPTERS` is untouched and `exactly_one_v1_entry_…` still
+reads 1, because ADR-017 clause 6 fixes the v1 AGENT set, not the
+template set. The new `SPAWNABLE` list is `[CLAUDE_V1,
+CLAUDE_COLD_START_V1]` and the three security sweeps (`all_argv_strings`,
+the bypass ban's assembled-argv half, the data-borne-flag round trip) now
+walk **it** rather than `ADAPTERS` — a strengthening: those bodies ask
+which bytes reach an `execve`, and that stopped being the agent set the
+moment a second template existed.
+
+The cold template is every subtraction and no addition: **no `--add-dir`,
+no `--permission-mode`, no `--allowedTools`, no `--resume`**, and
+`--disallowedTools Bash Edit Write NotebookEdit WebFetch WebSearch Task`.
+`Bash` is the load-bearing member — it is how `cat
+../.nputer/genesis/transcript.jsonl` would have been spelled from inside
+`docs/`. `resume_args` is byte-identical to `spawn_args`, which is how
+this surface refuses to resume **structurally** rather than by a caller's
+discipline: no `--resume` and no `SESSION_ID_SLOT` exist for an id to be
+substituted into.
+
+**`mod.rs` — `cold_start(watch, agent)` + `cold_start_status(agent)`.**
+The child's cwd is `<project>/docs` (`COLD_START_CWD_REL`), which is the
+card's own *"stated against a path set, not against the project"*. The
+turn number is `COLD_START_TURN = 0` — interview turns are 1-based, so no
+cancel notice or log line can present a cold start as an interview turn.
+
+**The emitter is SILENT, and that is the design.** `genesis-turn` is the
+interview's channel and the store folds every payload on it into the
+conversation by turn number; a cold-start delta would render as the
+planner speaking and a cold-start `Started` would arm `flightOf`'s
+`claimed` arm — which is the completion panel standing down. So the run
+reaches no channel and its answer is READ through `cold_start_status`,
+the `genesis_status` precedent. A second channel would need a second sink
+in `lib.rs`, which is the same out-of-fence file as everything else in
+`T-175-s1`.
+
+**The single-flight latch is SHARED with genesis** (`begin_turn`), so
+exactly one child exists at a time and the child slot `genesis_cancel`
+and the exit hook read is never ambiguous. A cold start therefore
+answers `Busy` mid-interview, and `genesis_cancel`/`reap_for_exit` reach
+its process group unchanged — no new orphan class.
+
+**`kit.rs` — `assemble_cold_start_prompt()` takes NO ARGUMENTS.** Every
+other prompt in that module interpolates two absolute paths; this one
+CANNOT, so it cannot tell a cold reader where `.nputer/` lives. Pinned
+both ways: the prompt carries no `/` at all, and the interview's kickoff
+DOES name the project (the control that keeps the first assertion from
+being vacuous).
+
+**`fake_agent.rs` — the dump gained `visible.json`**, the cwd's own
+contents, cwd-relative and bounded (2000 entries, depth 8). "Record
+everything you were handed" is that binary's charter and a working
+directory's contents are the largest thing it is handed.
+
+**`crescendo.ts` — `coldStartOffer(completion, cold)` and
+`splitColdStartAnswer(text)`.** The argument order is the ruling:
+completion goes in and the offer comes out, and `completionOf` takes no
+cold-start argument, so nothing can travel the other way. The reverse
+direction is closed too — a cold answer over an unfinished interview
+offers nothing, because an explain-back of a tree the planner is still
+writing would present a mid-flight tree as a finished one.
+`gapsNamed` is deliberately not `gaps.length > 0`: "the reader looked and
+found nothing" and "the reader never answered the second half" are
+different facts and only one is good news.
+
+### What the restriction proof does and does not claim
+
+The half this repository owns is **the surface the app hands the child**
+— cwd, argv, environment, stdin — and that half is measured in the same
+dump channel `the_child_gets_the_allowlist_and_never_a_secret` has used
+since T-025. The half it does NOT own is what a real CLI would do with an
+absolute path typed into its own `Read` tool, and **table three of
+`EFFECTIVE_GRANT_TABLES` is live on this surface too**: no `--settings`
+and no `--setting-sources` are passed, so a user whose own CLI
+configuration grants `Bash` has granted it here, and no argv on this
+table takes it back. That is ROUTED to @human on `T-025-s4` already and
+is not re-decided here; it is written into
+`CLAUDE_COLD_START_V1`'s doc comment beside the grants, in the voice
+`validate_resolved_program` uses for *"the gate checks SHAPE, never
+identity"*.
+
+### Criteria
+
+1. **Offer at the last bank, never gating** — the DERIVATION is built and
+   pinned (`coldStartOffer`, 5 bodies); the RENDER is routed to
+   `T-175-s1` (fence). The not-gating half is fully met and measured.
+2. **Fresh docs-restricted spawn + the restriction proven** — MET.
+   `cargo test` bodies below.
+3. **Explain-back beside the board, gaps as the actionable output** — the
+   PARSER is built and pinned (`splitColdStartAnswer`, 6 bodies, including
+   a body asserting no digit appears anywhere in a failed offer); the
+   RENDER is routed to `T-175-s1` (fence).
+4. **Typed failure costing no affordance; the finished project stays
+   finished** — MET, and the "costs nothing" half is asserted as the
+   POSITIVE it is: after a `CliNotFound` the offer is asked again and
+   reaches the same refusal rather than `Busy`, which is what a stranded
+   latch would have produced.
+5. **Verification headless** — MET; nothing here spawns a real model.
+
+### Gates and figures, each with its ref (tip `<TIP>`, base `0a8dd58`)
+
+- `npm ci` + `npm run build` from `lib/parser/`, `npm install` from
+  `app/`, `npm ci` from `tools/e2e/` — exit **0** each (fresh worktree).
+- `npm run build` from `app/` — exit **0**.
+- `npm test` from `app/` — exit **0**, **50 files / 1130 tests**.
+- `cargo test` from `app/src-tauri/` — exit **0**, **268** lib +
+  **95/1 ignored** `agent_runner` + the rest of the targets.
+- `node tools/e2e/scripts/docs-gate.mjs` over the 7 source paths, run
+  FROM THE REPOSITORY ROOT — exit **0**, *"7 changed path(s) given, none
+  under docs/ — this gate is not owed"*. Re-derived after the docs/tasks
+  writes; see the report.
+- `cargo run -p nputer-index -- index --check --root ../..` — exit **1**,
+  **STALE and genuinely so** (7 files `~`, edges +8/-1, fresh index
+  1,165,474 of 2,145,959 bytes). It is the REAL shape, not the false red:
+  it prints both counts and a file diff. **The regen is the integrator's
+  at the checkpoint** (CONVENTIONS, GRAPH REGEN) and
+  `docs/architecture/graph.json` is outside this fence besides.
+- BOOT GATE — owed (the diff touches `app/src-tauri/**` and
+  `app/src/**`); run by the executor per T-046 criterion 6 on the derived
+  scratch port **14175**, `lsof` zero rows immediately before. Result in
+  the report.
+
+### Drills — eight, one side only, each restored IDENTICAL by sha256
+
+Landing was decided by **sha256**, never by the mutator: the first
+harness used `git diff --numstat`, which is UNCHANGED for a
+one-line-for-one-line swap, and its `$?` was reading a trailing `cd` —
+so it reported "exit 0, mutant survived" for three drills while
+measuring nothing. Re-run; the corrected results are these.
+
+| # | mutated (one side) | bodies red |
+|---|---|---|
+| D1 | `cold_start`'s cwd → the project root | 1 — `…is_stood_up_in_docs_and_can_reach_nothing_above_it` |
+| D3 | `spawn_cold_start` uses `planner_adapter()` | 1 — `…argv_and_prompt_hand_the_child_no_route_out` |
+| D6 | `walk_cwd` returns an empty list | 1 — the central body, **on its POSITIVE assertion** |
+| D2 | heading match `===` → `.includes()` | 1 — the two near misses |
+| D4 | `failed` arm → not offered | 1 — the failed-offer body |
+| D5 | drop the `- none` skip | 1 — `'- none' is an ANSWER…` |
+| D7 | `running` arm → `available` | 1 — the phase-mapping body |
+| D8 | no-heading arm → `gapsNamed: true` | 1 — the no-heading body |
+
+**D6 is the one worth reading twice.** It kills the fake's directory walk
+and the central restriction body reds on the line that says the docs tree
+MUST be reachable — proof that the body's four absences are not being
+satisfied by silence.
+
+D4 and D8 each redded THREE and TWO bodies on the first pass. Both were
+restatements and both were separated rather than explained: the
+phase-mapping body no longer covers `failed`, and the near-miss body no
+longer restates `gapsNamed`.
+
+### Noticed, not done
+
+- `app/src-tauri/src/arch_cmd.rs:2` has an unused `Path` import warning
+  at base `0a8dd58`, unrelated to this diff and outside this fence.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->

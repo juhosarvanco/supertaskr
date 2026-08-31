@@ -339,6 +339,151 @@ export function crescendo(
   };
 }
 
+// ---- T-175: the cold-start test, OFFERED beside the completion ----------
+
+/**
+ * THE COLD-START TEST'S READING, mirrored from the Rust side's
+ * `ColdStartReading` (`app/src-tauri/src/agent/mod.rs`).
+ *
+ * It is a SEPARATE reading from `GenesisStatus` on both sides of the
+ * boundary, and the separation is the ruling this card is built on: triage
+ * ruled the cold-start test OFFERED, NEVER GATED, so completion is at the
+ * last bank and nothing below may become an input to `completionOf`.
+ */
+export type ColdStartPhase = "idle" | "running" | "done" | "failed";
+
+export interface ColdStartReading {
+  phase: ColdStartPhase;
+  /** The reader's own words, whole. Split for rendering by
+   * `splitColdStartAnswer`; never scored, never graded. */
+  answer: string | null;
+  /** The typed failure, as the runner classified it. Rendered by the same
+   * `failureAction` family every other typed genesis failure uses. */
+  error: { kind: string } | null;
+}
+
+/** The heading the cold reader's actionable half sits under.
+ *
+ * ONE SPELLING, and its other copy is `kit.rs`'s
+ * `COLD_START_GAPS_HEADING` — the constant the prompt is assembled from.
+ * Two copies of one string is the shape this repo legislates against, and
+ * the join that would remove the duplication runs through an IPC surface
+ * this card's fence cannot reach; `T-175-s1` carries it. Until then the
+ * Rust side is authoritative and this is the mirror. */
+export const COLD_START_GAPS_HEADING = "GAPS:";
+
+export interface ColdStartAnswer {
+  /** The explain-back, whole and untouched. */
+  explainBack: string;
+  /** One entry per named gap, in the reader's own order. */
+  gaps: readonly string[];
+  /** Did the reader produce the gaps section at all?
+   *
+   * **THIS IS NOT `gaps.length > 0`, AND COLLAPSING THE TWO IS THE ONE
+   * LIE THIS TYPE EXISTS TO PREVENT.** "The reader looked and found
+   * nothing" and "the reader never answered the second half" are
+   * different facts, and only the first is good news. A pane that read an
+   * empty array as "no gaps" would celebrate a truncated answer. */
+  gapsNamed: boolean;
+}
+
+/**
+ * Split the cold reader's answer into the explain-back and the GAPS it
+ * named — criterion 3's "its GAPS SHALL be the actionable output".
+ *
+ * **THE HEADING IS MATCHED EXACTLY, ON ITS OWN LINE, AND THE LAST ONE
+ * WINS.** Exactly, because the prompt's own instructions use the singular
+ * `GAP:` two words later and a containment matcher cannot tell the two
+ * apart. On its own line, because the phrase appears inside ordinary
+ * prose — the method's own sentence is *"Gaps in its answer are gaps in
+ * the docs"* — and a reader quoting it mid-paragraph must not truncate its
+ * own explain-back. The last one, because a reader that mentions the
+ * heading before writing it is quoting, and the section it actually wrote
+ * is the one at the end.
+ *
+ * **NO HEADING DEGRADES TO THE WHOLE TEXT AND SAYS SO** (`gapsNamed:
+ * false`). It never degrades to "zero gaps": a parse that could not find
+ * the section knows nothing about how many gaps there are, and reporting
+ * none would be the empty-board celebration one type up, in a different
+ * costume.
+ */
+export function splitColdStartAnswer(text: string): ColdStartAnswer {
+  const lines = text.split("\n");
+  let heading = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (lines[i]!.trim() === COLD_START_GAPS_HEADING) heading = i;
+  }
+  if (heading === -1) return { explainBack: text.trim(), gaps: [], gapsNamed: false };
+
+  const gaps: string[] = [];
+  for (const line of lines.slice(heading + 1)) {
+    const trimmed = line.trim();
+    if (trimmed === "") continue;
+    if (!trimmed.startsWith("-")) continue;
+    const gap = trimmed.replace(/^-+\s*/, "").trim();
+    if (gap === "") continue;
+    // The prompt asks for `- none` when there are none. That is an ANSWER
+    // to the second half, not a gap, so it lands as `gapsNamed: true` with
+    // an empty list — which is the one case where empty means good news.
+    if (gap.toLowerCase() === "none") continue;
+    gaps.push(gap);
+  }
+  return { explainBack: lines.slice(0, heading).join("\n").trim(), gaps, gapsNamed: true };
+}
+
+/**
+ * WHAT THE COMPLETION PANEL SHOWS FOR THE COLD-START TEST.
+ *
+ * **THE ARGUMENT ORDER IS THE RULING.** Completion comes IN and the offer
+ * comes out; nothing here can travel the other way, because
+ * `completionOf` above takes no cold-start argument and this function is
+ * the only thing that joins them. That is what "offered, never gated"
+ * means once it is code rather than a sentence: the person who finishes an
+ * interview has finished it, and accepting or refusing this offer — or
+ * watching it fail — cannot move that.
+ *
+ * The reverse direction is closed too, and it is the half a reader would
+ * not think to check: a cold answer over an UNFINISHED interview offers
+ * nothing. An explain-back is a reading of a docs tree that a planner is
+ * still writing, and rendering it beside a half-built board would present
+ * a mid-flight tree as a finished one.
+ */
+export type ColdStartOffer =
+  /** The interview is not complete, so there is nothing to test yet. */
+  | { offered: false; because: "notComplete" }
+  /** Complete, and the test has not run (or was stopped, which costs
+   * nothing and returns here). */
+  | { offered: true; state: "available" }
+  /** Complete, and a cold session is reading right now. */
+  | { offered: true; state: "running" }
+  /** Complete, and the reader answered. */
+  | { offered: true; state: "answered"; answer: ColdStartAnswer }
+  /** Complete, and the run failed. The offer STAYS — a failed cold read
+   * is a failed cold read, not a failed project. */
+  | { offered: true; state: "failed"; kind: string | null };
+
+export function coldStartOffer(
+  completion: CompletionReading,
+  cold: ColdStartReading,
+): ColdStartOffer {
+  if (!completion.complete) return { offered: false, because: "notComplete" };
+  switch (cold.phase) {
+    case "running":
+      return { offered: true, state: "running" };
+    case "done":
+      // An answer-less `done` cannot come off the Rust side (it types that
+      // as a failure), but the wire is a wire: a `done` with no text
+      // renders as the offer rather than as an empty answer panel.
+      return cold.answer === null
+        ? { offered: true, state: "available" }
+        : { offered: true, state: "answered", answer: splitColdStartAnswer(cold.answer) };
+    case "failed":
+      return { offered: true, state: "failed", kind: cold.error?.kind ?? null };
+    case "idle":
+      return { offered: true, state: "available" };
+  }
+}
+
 // ---- the elapsed slot ---------------------------------------------------
 
 /** One minute, in ms — the unit the product's own success criterion is

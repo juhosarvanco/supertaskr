@@ -366,6 +366,55 @@ continue. Re-ask nothing that is already on disk. Turns are plain text.",
     )
 }
 
+/// The heading the cold-start answer's actionable half sits under — one
+/// spelling, read by the prompt below and by the pane that renders the
+/// answer, so the two cannot drift.
+pub const COLD_START_GAPS_HEADING: &str = "GAPS:";
+
+/// THE COLD-START PROMPT (T-175) — and it takes NO ARGUMENTS, which is
+/// the point rather than a convenience.
+///
+/// `method/interview/plan-interview.md` ends: *"Then: cold-start test. A
+/// fresh session reads only docs/ and explains the project back. Gaps in
+/// its answer are gaps in the docs — fix and repeat."* Verified against
+/// the repo before being built on, the habit T-028's missing "completion
+/// signal" earned: that sentence is the last line of that file.
+///
+/// **EVERY OTHER PROMPT IN THIS MODULE NAMES TWO ABSOLUTE PATHS — the kit
+/// root and the project directory — AND THIS ONE NAMES NONE.** A path
+/// above `docs/` written into the prompt is a path the session has been
+/// told about, and telling a cold reader where `.nputer/` lives would undo
+/// in one sentence what the spawn's cwd is doing. So this function takes
+/// no `project_dir`: it CANNOT interpolate one, and
+/// `the_cold_start_prompt_names_no_path_at_all` pins that the result stays
+/// path-free. The session's working directory IS the docs tree, so
+/// "everything you can read" needs no path to be unambiguous.
+///
+/// **AND IT ASKS FOR THE GAPS AS THE OUTPUT, NEVER A SCORE.** The method's
+/// loop is fix-and-repeat over named gaps; a number would be a verdict on
+/// the project, which is precisely the planning theater NORTH_STAR names.
+pub fn assemble_cold_start_prompt() -> String {
+    format!(
+        "You are a COLD READER. You have never seen this project before, \
+you have no interview transcript, and everything you can read is in and \
+below your current working directory - that directory is this project's \
+docs tree and it is the whole of what you are allowed to know. Do not \
+ask for anything outside it; there is nothing outside it for you.\n\n\
+Read it, then do two things, in this order.\n\n\
+FIRST: explain the project back in plain prose - what it is, who it is \
+for, what the first slice ships, and what would make it fail. Write it \
+the way you would to a person about to work on it.\n\n\
+SECOND, on its own line, the exact word {heading} and then one \
+'- ' bullet per GAP: a question about this project that its docs did not \
+answer, a claim two documents make differently, or a reference you could \
+not resolve. Gaps in your answer are gaps in the docs, so name them \
+plainly and specifically enough to fix. Write '- none' if there are \
+none. Do not score, rate or grade anything - a number is not actionable \
+and this is a fix-and-repeat loop, not a report card.",
+        heading = COLD_START_GAPS_HEADING,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -532,6 +581,100 @@ mod tests {
         // the materialized kit) out of the project's git.
         assert!(interview.contains("`.nputer/`"), "stage 0 must still bank the .gitignore line");
         assert!(interview.contains("docs-templates/"));
+    }
+
+    /// T-175: THE COLD-START TEST THIS PROMPT AUTOMATES IS STILL THE ONE
+    /// THE SHIPPED METHOD ASKS FOR.
+    ///
+    /// The kit materializes `plan-interview.md` VERBATIM into every
+    /// project this system creates, so its last line is the spec the
+    /// spawned cold reader answers to. If that sentence is edited, the
+    /// prompt below is answering a question the method no longer asks —
+    /// and this body is what says so instead of leaving the drift to be
+    /// noticed by a human reading two files.
+    #[test]
+    fn the_shipped_method_still_asks_for_the_cold_start_test_this_prompt_automates() {
+        let interview = KIT_FILES
+            .iter()
+            .find(|f| f.rel == "interview/plan-interview.md")
+            .expect("plan-interview rides the kit")
+            .content;
+        // WHITESPACE-NORMALISED, because the sentence is WRAPPED in the
+        // file and a re-flow is not a change of meaning. Matching the raw
+        // bytes made this body red over a newline the first time it ran.
+        let flat = interview.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            flat.contains("A fresh session reads only docs/ and explains the project back."),
+            "the method's cold-start sentence has moved; T-175's spawn is built on it verbatim"
+        );
+        assert!(
+            flat.contains("Gaps in its answer are gaps in the docs"),
+            "the GAPS half is what the prompt asks for as output; it must still be the method's"
+        );
+        // The CONTROL that keeps the two lines above from being green over
+        // a normalisation that ate the file.
+        assert!(!flat.is_empty() && flat.len() > 1000, "the shipped interview text is present");
+    }
+
+    /// T-175: THE COLD-START PROMPT NAMES NO PATH AT ALL, AND THE
+    /// COMPARISON THAT MAKES THAT MEAN SOMETHING IS RIGHT BESIDE IT.
+    ///
+    /// Every other prompt in this module interpolates two absolute paths.
+    /// A body that only asserted "no `/` appears" would be green over an
+    /// empty string and green over a prompt that had quietly stopped being
+    /// assembled, so this one asserts the kickoff DOES carry a path in the
+    /// same breath: the difference between the two is the property.
+    #[test]
+    fn the_cold_start_prompt_names_no_path_at_all() {
+        let t = TempTree::new("coldpath");
+        let project = t.0.join("proj");
+        fs::create_dir_all(&project).expect("mk project");
+        let project = project.as_path();
+        let cold = assemble_cold_start_prompt();
+
+        // THE CONTROL: the interview's own kickoff names the project, so
+        // "no path here" is a difference and not an absence.
+        let kickoff = assemble_kickoff_with(project, &[]);
+        assert!(
+            kickoff.contains(&project.display().to_string()),
+            "the kickoff names the project directory - if it stopped, the assertion below is vacuous"
+        );
+
+        assert!(
+            !cold.contains(&project.display().to_string()),
+            "the cold-start prompt must not name the project directory: {cold}"
+        );
+        assert!(
+            !cold.contains(KIT_REL_DIR) && !cold.contains(".nputer"),
+            "the cold-start prompt must not name the runtime directory it is fenced out of: {cold}"
+        );
+        assert!(
+            !cold.contains('/'),
+            "no path separator may appear in the cold-start prompt at all - its cwd is the whole \
+             of what it is told: {cold}"
+        );
+    }
+
+    /// T-175: THE PROMPT ASKS FOR NAMED GAPS AND REFUSES A SCORE.
+    ///
+    /// Criterion 3 makes the gaps the actionable output — "the method's
+    /// fix-and-repeat loop, not a score" — and the heading is a shared
+    /// constant precisely so the pane's parser and this text cannot drift.
+    #[test]
+    fn the_cold_start_prompt_asks_for_named_gaps_and_never_a_score() {
+        let cold = assemble_cold_start_prompt();
+        assert!(
+            cold.contains(COLD_START_GAPS_HEADING),
+            "the prompt must ask for the answer's actionable half under the shared heading"
+        );
+        assert!(
+            cold.contains("explain the project back"),
+            "the explain-back is the first half of the method's own sentence"
+        );
+        assert!(
+            cold.contains("Do not score, rate or grade anything"),
+            "a score is the failure mode this criterion names; the refusal is IN the prompt"
+        );
     }
 
     /// PARITY (c): the const cross-checks the two live stamps, so bumping
