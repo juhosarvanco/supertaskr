@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [app-board, app-dispatch]
 suggested_by: "architect/integrator seat, allocating an id for a finding MEASURED by T-112-s4's lane, which declined to mint one itself"
@@ -320,3 +320,120 @@ card on `main`, AND carry that amendment onto the lane branch. Re-running
 half that must move. `T-211` should carry this; the version of fast path
 A written before today says "amend on main plus `--write-fence`" and
 would strand every lane that used it.
+
+## Implementation notes, HALF 2 (executor, 2026-09-01) — the card is now WHOLE
+
+The fence was widened mid-flight to `touches: [app-board, app-dispatch]`
+and the amendment reached this branch at `cb45e3d`. Criteria 1 and 2 are
+built here. **Half 1's notes above stand unchanged** — nothing in them was
+retracted.
+
+**THE WIDENING TOOK TWO INTEGRATION ACTS, NOT ONE, AND THE FIRST ATTEMPT
+STRANDED THIS LANE.** Recorded because the next lane will meet it: the
+card was amended on `main` and the manifest re-stamped, which looked
+complete — the read-back showed 20 paths, the right ref and the right
+`touchesLine`. But the hook reads the card's `touches:` line **from the
+lane worktree**, and the lane branch did not carry the amendment. The
+result was `code: stale-stamp` blocking **every** path, including the
+three in fence since dispatch and `docs/tasks`, which is `alwaysWritable`.
+**The JSON read-back looked perfect throughout; only asking `decide()`
+found it.** Routed as `T-211`. The repair that would have made the block
+vanish — editing this card's own `touches:` inside the lane so the two
+strings match — is the widening rule 5 forbids, in the form that looks
+like it worked; it was refused, not performed.
+
+### Criterion 1 — BUILT. The pin is on the presentation side.
+
+`app/test/select-task-detail.test.ts` (C-09's), two new bodies:
+
+- `the \`unavailable\` sentence is pinned WHOLE — the reason-bearing half included`
+- `every typed refusal reaches the reader as its WHOLE sentence, reason and all`
+
+### Criterion 2 — ANSWERED BOTH WAYS IT ASKS
+
+**Which side owns it: PRESENTATION.** The sentence is not authored on the
+wire at all — it is composed in `selectBriefPanel`. `dispatch-store.ts`
+declares itself a mirror that *"classifies nothing"*, so asserting it
+there would make that module answer for a string it never sees.
+
+**Whole, not by parts.** A body asserting only that a reason is PRESENT
+survives exactly the edit that makes a refusal stop saying why. The
+measurement below is the argument: a `toContain` prefix pin cannot tell
+the sentence from the sentence plus anything.
+
+### The sweep of the presentation sentences — members, with reasons
+
+| sentence site | pin before this lane | member? |
+|---|---|---|
+| `dispositions.sentence` (undecidable frontier) | `toContain` on BOTH halves, incl. the carried inner sentence | **NO** — already pinned on both sides |
+| `…has not answered for this card yet — …` (**the subject**) | `panel.kind` only, plus a PREFIX `toContain` in another component's file | **YES** |
+| `this card carries no id, … — a suggestion is triaged …` | `toContain("carries no id")` — four words | **YES** |
+| `the dispatch frontier returned no answer for {id}` | nothing | **member, NOT PINNED** — see below |
+| `contractMissing` | `toContain` on the interpolated source only | **YES** |
+| `contractUnreadable` | `toContain("the row set is unknown")` — pre-em-dash | **YES** |
+| `noSuchCard` | **nothing at all** — the string was in no test file | **YES** |
+| `unassemblable` | `toContain` on the row list only | **YES** |
+
+**THE ONE I DID NOT PIN, SAID PLAINLY.** `the dispatch frontier returned
+no answer for {id}` is the `card === undefined` arm at `task-detail.ts:392`.
+`selectDispositions` builds its map from every task carrying an id, so a
+ref that resolved by id is in the map by construction and I could not
+build a fixture that reaches this line. It is left unpinned and named
+here rather than papered over with a body that asserts nothing. **If it
+is genuinely unreachable it is dead code and should be deleted, and that
+is a separate card's decision, not this lane's.**
+
+### Criterion 4 — the positive control. SEVEN mutants, all one side only.
+
+Against the PRODUCER `app/src/lib/task-detail.ts`, each read back on
+`git diff --numstat` before its suite and each restored and proved by
+sha256 against `7d760c78…cbc0`:
+
+| # | mutant | numstat | app suite | failing bodies |
+|---|---|---|---|---|
+| P1 | subject sentence — **near-miss**, `, probably` APPENDED | `1 1` | exit 1 | **1** |
+| P2 | subject sentence — post-em-dash half DELETED (**the card's own mutant**) | `1 1` | exit 1 | **1** |
+| P3 | id-less sentence's reason half — near-miss | `1 1` | exit 1 | **1** |
+| P4 | `contractUnreadable`'s post-em-dash half replaced | `1 1` | exit 1 | **1** |
+| P5 | `noSuchCard` reworded | `1 1` | exit 1 | **1** |
+| P6 | the `; ` joining unassemblable rows -> `, ` | `1 1` | exit 1 | **1** |
+| P7 | the `path === "" ? source : path` fallback flattened | `1 1` | exit 1 | **1** |
+
+**Count of exactly ONE on all seven** — POISON DRILL shape SIX satisfied,
+and no body here is a restatement of another.
+
+**P1 AND P2 ARE THE PAIR WORTH READING.** Both leave
+`board-truth.test.tsx`'s prefix `toContain` GREEN — its failing-body count
+is zero in both — so the only pin that existed before this lane was blind
+to the deletion the card was filed on *and* to the near-miss. P6 and P7
+are why the second body is not a restatement of the first: they pin
+branches nothing in the repository reached.
+
+**THE EM-DASH HAZARD BIT AGAIN, IN A NEW FORM, AND THE READ-BACK CAUGHT
+IT.** P2 first no-opped: my drill harness wraps each pattern in
+`\Q…\E`, which makes `\x{2014}` match the literal characters `\x{2014}`
+rather than an em dash. `numstat` came back EMPTY and the suite came back
+GREEN — a false "survives" that would have contradicted half 1's own
+measurement. Re-run with the escape OUTSIDE the quote block (`\E \x{2014}
+\Q`), it reds. **Reading the numstat before trusting the suite is the
+only reason this was not reported as a surviving mutant.**
+
+### The false claim, fixed where reachable and routed where not
+
+Two files asserted the wording is *"authored in `lanes.rs`"*. Measured at
+`40c9b8b`: `lanes.rs` holds no `fn sentence`, no `&'static str` return and
+no `-> String`, and no em dash appears outside comments anywhere in
+`app/src-tauri/src/dispatch/*.rs`.
+
+- **FIXED** — `app/test/dispatch-store.test.ts:184`, in fence.
+- **ROUTED** — `docs/architecture/components/C-15-dispatch.md:300`.
+  Confirmed `BLOCK outside-the-fence` by `decide()` at this tip; no
+  component declares its own registry file in `paths:`, so no lane fence
+  reaches it. **It still says `lanes.rs` and still needs correcting.**
+
+### Gates at this lane's tip
+
+app `npm test` **50 files / 1118 tests, exit 0** (1116 at `cb45e3d`; +2
+new bodies). Producer `task-detail.ts` is UNTOUCHED by this diff —
+verified `git diff --numstat` empty for it. Remaining gate figures are in
+the report and re-derived at the final tip.

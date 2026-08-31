@@ -731,4 +731,115 @@ describe("selectBriefPanel — the copyable block is gated on T-111's dispositio
     if (panel.kind !== "unavailable") throw new Error("not unavailable");
     expect(panel.sentence).toContain("carries no id");
   });
+
+  /**
+   * **`T-195`'S PIN, AND IT SITS HERE BECAUSE THIS SIDE OWNS PRESENTATION.**
+   *
+   * The card's first decision is which side of the boundary the pin
+   * belongs to. `dispatch-store.ts` declares itself a mirror that
+   * *"classifies nothing"*, and the sentence is not authored on the wire
+   * at all — it is composed HERE, in `selectBriefPanel`. Asserting it
+   * from the mirror would make that module answer for a string it never
+   * sees.
+   *
+   * **WHAT WAS WRONG BEFORE THIS BODY.** The `outcome === undefined` arm
+   * was driven three tests above, asserting `panel.kind` ALONE. The only
+   * other pin in the repository is a `toContain` on the PREFIX, in
+   * `app/test/board-truth.test.tsx` — a different component's file.
+   * Measured at `40c9b8b`, one side only, `1 1` on `git diff --numstat`,
+   * restored by sha256: deleting everything from the em dash on left the
+   * app suite at **50 files / 1116 tests exit 0** AND `npm run build` at
+   * exit 0. The half that says WHY was free.
+   *
+   * **ASSERTED WHOLE, AND THE NEAR-MISS IS THE REASON.** A containment
+   * matcher is satisfied by any superstring, so a prefix pin cannot tell
+   * the sentence from the sentence plus anything. This lane measured that
+   * on the Rust side: `LaneScanRefusal::NoWorktreesDirectory`'s pinned
+   * fragment IS its whole reason clause, so no DELETION can dodge it —
+   * and appending `, probably` dodges it anyway. A deletion-only sweep
+   * scored that arm safe and was wrong. `toBe` is what closes the shape.
+   */
+  it("the `unavailable` sentence is pinned WHOLE — the reason-bearing half included", () => {
+    // THE SUBJECT OF T-195: a dispatchable card whose assembler has not
+    // answered. Reached only after the id, frontier and disposition
+    // checks pass, so this fixture is the arm and not a near neighbour.
+    const notAsked = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, undefined);
+    expect(notAsked.kind).toBe("unavailable");
+    if (notAsked.kind !== "unavailable") throw new Error("not unavailable");
+    expect(notAsked.sentence).toBe(
+      "the assembler has not answered for this card yet — the brief is assembled from files the app reads Rust-side",
+    );
+
+    // THE SECOND MEMBER FOUND BY THE SWEEP. Its post-em-dash half is the
+    // half that tells a reader what to DO, and the only pin on it was a
+    // `toContain` on the first four words.
+    const idless = selectBriefPanel(
+      withRoadmap([
+        [
+          "docs/tasks/T-500-s1-a-thought.md",
+          "---\nstatus: suggested\nsuggested_by: executor\n---\n\nA thought.\n",
+        ],
+      ]),
+      { kind: "file", file: "docs/tasks/T-500-s1-a-thought.md" },
+      NO_LANES,
+      undefined,
+    );
+    expect(idless.kind).toBe("unavailable");
+    if (idless.kind !== "unavailable") throw new Error("not unavailable");
+    expect(idless.sentence).toBe(
+      "this card carries no id, so the dispatch frontier has no answer for it — a suggestion is triaged into a card before it is dispatched",
+    );
+  });
+
+  /**
+   * **THE SWEEP'S OTHER HALF — every typed refusal, whole.**
+   *
+   * `refusalSentence`'s four arms reach the reader through the same
+   * `unavailable` panel, and each was pinned by one `toContain` fragment
+   * or by nothing at all: `contractMissing` by its interpolated source,
+   * `contractUnreadable` by five words before its em dash,
+   * `unassemblable` by its row list only, and `noSuchCard` by NOTHING —
+   * that string appeared in no test file in the repository.
+   *
+   * Two branches nothing reached at all are pinned here as a
+   * side-effect, and they are the reason this is not a restatement of the
+   * bodies above: the `; ` that JOINS multiple unassemblable rows, and
+   * the `path === "" ? source : path` fallback for a row with no path.
+   */
+  it("every typed refusal reaches the reader as its WHOLE sentence, reason and all", () => {
+    const sentenceFor = (outcome: BriefOutcomeView): string => {
+      const panel = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, outcome);
+      if (panel.kind !== "unavailable") throw new Error(`expected unavailable, got ${panel.kind}`);
+      return panel.sentence;
+    };
+
+    expect(sentenceFor({ kind: "contractMissing", source: "method/roles/executor.md" })).toBe(
+      "the brief's own contract could not be read: method/roles/executor.md is missing, so no row can be transcribed from it",
+    );
+
+    expect(sentenceFor({ kind: "contractUnreadable", source: "method/roles/executor.md" })).toBe(
+      "the normative table in method/roles/executor.md could not be parsed, so the row set is unknown — a shorter brief would be a brief whose missing rows the session fills in by guessing",
+    );
+
+    // Pinned by nothing before this line.
+    expect(sentenceFor({ kind: "noSuchCard", taskId: "T-999" })).toBe(
+      "no card on this board carries the id T-999",
+    );
+
+    // TWO rows, so the `; ` separator is pinned rather than assumed, and
+    // the second carries an EMPTY path so the `source` fallback is taken.
+    expect(
+      sentenceFor({
+        kind: "unassemblable",
+        rows: [
+          { number: 8, source: "the project's CONVENTIONS", path: "docs/CONVENTIONS.md" },
+          { number: 9, source: "the project's CONVENTIONS", path: "" },
+        ],
+      }),
+    ).toBe(
+      "the brief is incomplete and is therefore not shown — a brief with a silently missing row is worse than no brief. " +
+        "row 8 could not be assembled from docs/CONVENTIONS.md; " +
+        "row 9 could not be assembled from the project's CONVENTIONS",
+    );
+  });
 });

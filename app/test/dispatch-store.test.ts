@@ -179,12 +179,27 @@ describe("hydrateJoin: the refusal arm is handed back whole", () => {
     // whatever crossed the wire — and four near-identical bodies would be
     // four restatements of one fact (poison shape SIX).
     //
-    // **THIS IS NOT `T-195` AND MUST NOT BE READ AS CLOSING IT.** That
-    // card is about the sentence's post-em-dash half — the reason-bearing
-    // WORDING, which is authored in `lanes.rs`'s `LaneScanRefusal::sentence`
-    // and rendered by `task-detail.ts`. Neither is reachable from here.
-    // What this body pins is narrower and is the half that IS C-15's: the
-    // reason-bearing field cannot be DROPPED in transit without a red.
+    // **THIS IS NOT `T-195`'s PIN.** That card is about the sentence's
+    // post-em-dash half — the reason-bearing WORDING. What this body pins
+    // is narrower and is the half that IS C-15's: the reason-bearing
+    // field cannot be DROPPED in transit without a red.
+    //
+    // **THE FILE THIS COMMENT USED TO NAME WAS THE WRONG ONE.** It said
+    // the wording is authored in `lanes.rs`'s `LaneScanRefusal::sentence`.
+    // Measured at `40c9b8b`: `lanes.rs` holds no `fn sentence`, no
+    // `&'static str` return and no `-> String`, and no em dash appears
+    // outside comments anywhere in `app/src-tauri/src/dispatch/*.rs`. The
+    // enum and its four sentences live in `join.rs`; the sentence T-195
+    // is named for is authored wholly in `task-detail.ts`. The same wrong
+    // file is asserted in `docs/architecture/components/C-15-dispatch.md`,
+    // which no lane fence reaches — ROUTED there rather than fixed here.
+    //
+    // `T-195` is now closed and both halves are pinned: the four wire
+    // sentences by `join.rs`'s
+    // `every_refusal_sentence_is_pinned_whole_rather_than_by_a_fragment`,
+    // and the presentation sentence by `select-task-detail.test.ts`. Both
+    // assert WHOLE strings, because a `contains` fragment is satisfied by
+    // any superstring — measured, not assumed.
     const refusals: readonly LaneScanRefusal[] = [
       { kind: "notAGitRepository" },
       { kind: "gitIsAFile" },
