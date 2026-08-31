@@ -205,6 +205,14 @@ being handed over**:
     gate-verdict suite=rust   exit=0 bodies=611  targets=18 GREEN  ref=0f0a230
     gate-verdict suite=e2e    exit=0 bodies=409  targets=1  GREEN  ref=0f0a230
 
+…and again over the two notes-only commits after it, so the counts are
+stable across every commit in this lane rather than sampled once:
+
+    gate-verdict suite=parser exit=0 bodies=344  targets=1  GREEN  ref=a86ce9f / 11d6aed
+    gate-verdict suite=app    exit=0 bodies=1116 targets=1  GREEN  ref=a86ce9f / 11d6aed
+    gate-verdict suite=rust   exit=0 bodies=611  targets=18 GREEN  ref=11d6aed
+    gate-verdict suite=e2e    exit=0 bodies=409  targets=1  GREEN  ref=a86ce9f
+
 Three of them are exactly the suites the DOCS GATE named (`npm test` from
 app/, `npx vitest run` from lib/parser/, `npm test` from tools/e2e/); the
 card's own criterion — the app crate's `cargo test`, headless — is the
@@ -260,7 +268,30 @@ this"* is the kind that is cheapest to assert and never test.
 | A | code | `#[serde(rename = "atMillis")]` on `at_ms` | **101** | `…transcript-schema.md names ["atMs"]; the written line lacks them` |
 | B | doc | drop `"machine": true` from the example | **101** | the MACHINE-ASSEMBLED guard, printing the short set `{"atMs","role","text","turn"}` |
 | C | doc | respell `"atMs"` as `"at_ms"` | **101** | the camelCase guard, by name |
-| D | doc, at `a86ce9f` | delete **49 of 60 lines** — all prose, keeping the H1 and the fenced block | **0** | **nothing.** `cargo test --lib` 261/0 unchanged, method-evals 0, docs-gate **0** (does not fire) |
+| D | doc, at `a86ce9f` then `11d6aed` | delete **49 of 60 lines** — all prose, keeping the H1 and the fenced block | **0** | **nothing.** `cargo test --lib` 261/0 unchanged, method-evals 0, docs-gate **0** (does not fire) |
+
+**DRILL D WAS RUN TWICE, AND THE SECOND RUN IS THE ONE THAT COUNTS.**
+The first invoked `cargo test --lib` DIRECTLY rather than through
+`gate-run.mjs`, so it bypassed the SOLO GUARD and took its reading while
+the e2e suite held the lock. **The runner caught it on the very next
+call** — `gate-verdict suite=rust exit=-1 bodies=0 targets=0
+verdict=REFUSED reason=solo-lock: … held by pid 5351 running suite e2e …
+REFUSING rather than waiting, because a reading taken after a wait is a
+reading of the wait (T-088-s4)`. That refusal is the guard working, and
+it is recorded rather than quietly worked around.
+
+The bypass was not harmless in principle: rust's `solo: true` names
+`startup_arm`, and `startup_arm_watches_the_initial_root` lives in
+`app/src-tauri/src/docs_watch.rs` — the LIB target — so the contended run
+did execute the vulnerable body. **What saves the finding is the
+DIRECTION of the bias, not luck**: the failure mode that flag exists to
+prevent is a spurious **RED**, and this drill's conclusion rests on
+**GREEN**. Contention could only have pushed toward "something DID
+notice", the opposite of what was concluded. That is an argument about
+direction and NOT a substitute for a clean run, so it was re-run with the
+lock free and reproduced byte-for-byte: same 261/0, same method-evals 0,
+same docs-gate 0, same restore to `6914ba86…`. **A/B/C are unaffected** —
+they ran at `5fcd646`, before any e2e existed in this lane.
 
 Restoration: `sessions.rs` back to
 `aac6fd7c4facc047b96cbe9dfdbfbf88e7f9658ea5afe844a748e5628c5ce1a8`, the
