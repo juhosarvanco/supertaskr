@@ -1640,6 +1640,48 @@ describe("the lane set joined with status:, and their DISAGREEMENT visible (crit
     expect(d.sentence).toContain("no .git/worktrees directory.");
   });
 
+  /**
+   * **`T-195`'s DEFECT, ONE COMPONENT OVER — and it was labelled covered.**
+   *
+   * The undecidable sentence composes from THREE parts, not two: a head,
+   * the lane reader's own carried sentence, and a TRAILING reason clause
+   * that is this producer's own prose. The body above and
+   * `select-task-detail.test.ts` both assert the head plus the value the
+   * test itself supplied — so between them they pin everything except the
+   * part no test author wrote down.
+   *
+   * Measured at `1f4f7c7`, one side only, `1 1` on `git diff --numstat`,
+   * restored by sha256 against `14f9dacd…fbbd`:
+   *
+   *     tail: "are not the same fact" -> "are DIFFERENT facts"    exit 0, 1118 passed, 0 failing
+   *     tail: "is the failure direction..." -> "is fine"          exit 0, 1118 passed, 0 failing
+   *     head: reworded (the CONTROL)                              exit 1, 2 failing
+   *
+   * Both halves of the tail edit freely while the whole app suite stays
+   * green. That is exactly the exposure `T-195` was opened for, in the
+   * one row of its own sweep that was scored a NON-member — the scoring
+   * was wrong, and this body is the correction.
+   *
+   * **ASSERTED WHOLE**, which also pins the two JOINS nothing reached: the
+   * `": "` after the head and the single leading space before the tail. A
+   * `toContain` pair cannot see either, because concatenation with a
+   * missing separator still contains both operands.
+   */
+  it("the undecidable sentence is pinned WHOLE — head, carried reason AND the trailing clause", () => {
+    const d = selectDispositions(withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]), {
+      kind: "unavailable",
+      sentence: "no .git/worktrees directory.",
+    });
+    expect(d.kind).toBe("undecidable");
+    if (d.kind !== "undecidable") throw new Error("unreachable");
+    expect(d.sentence).toBe(
+      "the lane reader could not answer, so no card can be called dispatchable: " +
+        "no .git/worktrees directory." +
+        " An empty lane set and an unread one are not the same fact, and reporting every card " +
+        "as free is the failure direction this frontier exists to close.",
+    );
+  });
+
   it("a missing component registry with a FENCED live lane is undecidable too", () => {
     const m = withRoadmap([
       ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["touches", "[alpha]"]])],

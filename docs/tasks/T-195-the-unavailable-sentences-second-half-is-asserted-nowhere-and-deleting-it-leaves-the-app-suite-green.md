@@ -143,8 +143,16 @@ Ownership read from `paths:` entries with an ANCHORED match, the form
 |---|---|---|
 | `app/src/lib/task-detail.ts` — **the producer** | **C-17** | **NO** |
 | `app/test/select-task-detail.test.ts` — the natural pin home | **C-09** | **NO** |
-| `app/test/board-truth.test.tsx` — the only existing pin | **C-05** | **NO** |
+| `app/test/board-truth.test.tsx` — the only existing pin | **C-05** (`app-shell`) | **NO — and deliberately still NO after the widening** |
 | `app/src-tauri/src/dispatch/join.rs` | C-15 | yes |
+
+**C-05 IS THE ONE ROW THAT WAS NEVER ASKED FOR.** Its slug is
+`app-shell`, not `app-board`, so it is not behind the widened fence and
+was not requested: the whole-sentence pin belongs in C-09's
+`select-task-detail.test.ts`, and the prefix `toContain` in
+`board-truth.test.tsx` can stay exactly as it is. `decide()` returns
+`BLOCK outside-the-fence` for it at every tip in this lane, and nothing
+in this diff writes it.
 
 This lane holds `touches: [app-dispatch]` -> **C-15 only**.
 **Verified against the hook's own `decide()` rather than assumed** — it
@@ -177,7 +185,9 @@ on the mirror would make that file assert a fact it does not own.
 in `lanes.rs`"*. **Both are wrong at `40c9b8b`, measured**:
 `app/src-tauri/src/dispatch/lanes.rs` holds no `fn sentence`, no
 `&'static str` return and no `-> String`, and **no U+2014 appears outside
-comments anywhere in `app/src-tauri/src/dispatch/*.rs`**. The Rust-side
+comments in `lanes.rs`, `join.rs`, `fixtures.rs` or `mod.rs`** — this
+clause originally said *"anywhere in `dispatch/*.rs`"* and that was FALSE;
+see "Corrections" at the foot of this card. The Rust-side
 sentences live in `join.rs`; the subject sentence is authored wholly in
 `task-detail.ts`. Corrected here rather than in those two files, which
 this lane may not edit — `dispatch-store.test.ts` IS in fence, but its
@@ -238,14 +248,26 @@ Every restore proved against the pinned-tree oracle `6b877876…9fcf`.
 no existing body kills any of them, so the new body is not a restatement
 of one already present.
 
-### Gates at this lane's tip
+### Gates at HALF 1's tip `e27be71` — A READING AT ONE COMMIT, NOT CURRENT
+
+**SUPERSEDED: read the half-2 gate block for the lane's answer.** This
+block was true at `e27be71` and one row of it is no longer the lane's
+state, which is why it now carries the ref in its heading rather than
+*"this lane's tip"*.
 
 app `npm run build` **0** · app `npm test` **50 files / 1116 tests, 0** ·
 `cargo test` **0** (261 in the dispatch crate, **260 at base** — this
 diff is +1 body) · `arch cycles` **0** · `arch drift` **0** REPORT,
-`findings=4` unchanged from base · `docs-gate` **0**, *"1 changed
-path(s) given, none under docs/ — this gate is not owed"* · `lint:docs`
-**0**.
+`findings=4` unchanged from base · `lint:docs` **0**.
+
+**THE `docs-gate` ROW WAS THE STALE ONE.** At `e27be71` it read **0**,
+*"1 changed path(s) given, none under docs/ — this gate is not owed"* —
+a reading taken when the lane's diff was `join.rs` alone. **At the lane's
+tip it FIRES: exit 1, naming three owed suites**, because the card itself
+is under `docs/`. All three run green; the figures are in the half-2
+block. A gate decision recorded at one commit reads as the lane's answer
+unless its heading says otherwise, which is the executor role file's
+warning about gate derivations earning itself here.
 
 **`index --check` exits 1 STALE, by construction and not a lane
 failure.** It names its own cause: `~ app/src-tauri/src/dispatch/join.rs
@@ -365,7 +387,7 @@ the sentence from the sentence plus anything.
 
 | sentence site | pin before this lane | member? |
 |---|---|---|
-| `dispositions.sentence` (undecidable frontier) | `toContain` on BOTH halves, incl. the carried inner sentence | **NO** — already pinned on both sides |
+| `dispositions.sentence` (undecidable frontier) | head + the value the TEST supplied; the producer's own trailing clause pinned by nothing | **YES — NOW PINNED** (this row first read "NO"; it was wrong, see Corrections) |
 | `…has not answered for this card yet — …` (**the subject**) | `panel.kind` only, plus a PREFIX `toContain` in another component's file | **YES** |
 | `this card carries no id, … — a suggestion is triaged …` | `toContain("carries no id")` — four words | **YES** |
 | `the dispatch frontier returned no answer for {id}` | nothing | **member, NOT PINNED** — see below |
@@ -374,14 +396,32 @@ the sentence from the sentence plus anything.
 | `noSuchCard` | **nothing at all** — the string was in no test file | **YES** |
 | `unassemblable` | `toContain` on the row list only | **YES** |
 
-**THE ONE I DID NOT PIN, SAID PLAINLY.** `the dispatch frontier returned
-no answer for {id}` is the `card === undefined` arm at `task-detail.ts:392`.
-`selectDispositions` builds its map from every task carrying an id, so a
-ref that resolved by id is in the map by construction and I could not
-build a fixture that reaches this line. It is left unpinned and named
-here rather than papered over with a body that asserts nothing. **If it
-is genuinely unreachable it is dead code and should be deleted, and that
-is a separate card's decision, not this lane's.**
+**THE ONE I DID NOT PIN — AND IT IS UNREACHABLE, NOT MERELY UNREACHED.**
+`the dispatch frontier returned no answer for {id}` is the
+`card === undefined` arm at `task-detail.ts:392`. The first draft of this
+paragraph said only *"I could not build a fixture"*; the stronger claim
+was available and is the one the evidence supports.
+
+**No fixture CAN exist.** `selectDispositions`' loop over `model.tasks`
+(`board-model.ts:1269`) has exactly one `continue` that skips a
+`cards.set` for the task itself — `if (id === undefined) continue` at
+:1271 — and every other branch ends in a `cards.set(id, …)`.
+`task-detail.ts:385` has already RETURNED on that same condition, and
+`findTask` draws from the same `model.tasks`. So every id reaching
+`cards.get(id)` is an id `cards` has an entry for.
+
+Confirmed empirically as well as structurally: replacing the branch's
+first statement with a `throw` (`1 1`, restored by sha256 against
+`7d760c78…cbc0`) leaves the app suite at **1119 passed, exit 0** — no
+fixture in the suite reaches it. *The first attempt at that mutant
+NO-OPPED — a multi-line `\Q…\E` pattern that matched nothing — and
+reported a green suite on an unmutated tree. Caught by reading `numstat`
+before the suite, the same way twice before in this lane.*
+
+**It is therefore dead code, and deleting it is a separate card's
+decision, not this lane's.** Pinning it is impossible by construction, so
+it is named here rather than papered over with a body that asserts
+nothing.
 
 ### Criterion 4 — the positive control. SEVEN mutants, all one side only.
 
@@ -422,8 +462,8 @@ only reason this was not reported as a surviving mutant.**
 
 Two files asserted the wording is *"authored in `lanes.rs`"*. Measured at
 `40c9b8b`: `lanes.rs` holds no `fn sentence`, no `&'static str` return and
-no `-> String`, and no em dash appears outside comments anywhere in
-`app/src-tauri/src/dispatch/*.rs`.
+no `-> String`, and **no em dash outside comments in `lanes.rs`,
+`join.rs`, `fixtures.rs` or `mod.rs` — 0 lines in each.**
 
 - **FIXED** — `app/test/dispatch-store.test.ts:184`, in fence.
 - **ROUTED** — `docs/architecture/components/C-15-dispatch.md:300`.
@@ -437,3 +477,105 @@ app `npm test` **50 files / 1118 tests, exit 0** (1116 at `cb45e3d`; +2
 new bodies). Producer `task-detail.ts` is UNTOUCHED by this diff —
 verified `git diff --numstat` empty for it. Remaining gate figures are in
 the report and re-derived at the final tip.
+
+## Corrections performed (executor, 2026-09-01, after the REJECTION)
+
+All three assigned corrections are landed, each re-measured here rather
+than accepted on the verdict's word.
+
+### C1 — THE SWEEP'S ONE "NON-MEMBER" ROW WAS WRONG, and it was this card's own defect one component over
+
+`selectDispositions`' undecidable sentence (`board-model.ts:1178-1186`)
+composes from **THREE** parts, not two: a head, the lane reader's carried
+sentence, and **a trailing reason clause of the producer's own**. Both
+existing pins assert the head plus the value the test itself supplied —
+`select-task-detail.test.ts:662` and `select-board.test.ts:1639` — and
+`select-board.test.ts:1676` mentions the tail only in a COMMENT, on a
+different body. So the part no test author wrote down was the part
+nothing pinned.
+
+Reproduced independently at `1f4f7c7`, one side only against the
+producer, each `1 1`, each restored and proved by sha256 against
+`14f9dacd…fbbd`:
+
+| mutant | app suite | failing bodies |
+|---|---|---|
+| tail: `are not the same fact` -> `are DIFFERENT facts` | **exit 0 — 1118 passed** | **0** |
+| tail: `is the failure direction this frontier exists to close` -> `is fine` | **exit 0 — 1118 passed** | **0** |
+| head reworded (**the CONTROL**) | exit 1 | 2 |
+
+**Both halves of the tail edit freely with the whole app suite green.**
+That is precisely the exposure this card exists for, in the row its own
+sweep scored a non-member. The scoring was wrong; the verifier caught it.
+
+**FIXED** in `app/test/select-board.test.ts` (in fence, `decide()` =
+`inside-the-fence`): `the undecidable sentence is pinned WHOLE — head,
+carried reason AND the trailing clause`. Asserted whole, which also pins
+the two JOINS nothing reached — the `": "` after the head and the single
+leading space before the tail; a `toContain` pair cannot see either,
+because a concatenation with a missing separator still contains both
+operands.
+
+**Positive control, at the pinned tree:** the two tail mutants now red at
+**exit 1 with a failing-body count of exactly ONE**, the new body. The
+head mutant reds with **3** — the two pre-existing bodies plus this one —
+named rather than left as a bare number, per shape SIX.
+
+### C2 — THE EM-DASH SENTENCE WAS FALSE AT THE REF IT NAMED
+
+I wrote *"no em dash appears outside comments anywhere in
+`app/src-tauri/src/dispatch/*.rs`"*. Re-measured at `40c9b8b`, per file,
+non-comment lines containing U+2014:
+
+    brief.rs 9 · fixtures.rs 0 · join.rs 0 · lanes.rs 0 · mod.rs 0
+
+`brief.rs:1517` is `let end = tail.find(" — ")` — code that SEARCHES for
+an em dash. **The overreach is mine and it was visible in my own first
+grep of half 1**, which listed those `brief.rs` lines before I
+generalised past them.
+
+**The conclusion it supports is unaffected and stays**: `lanes.rs` holds
+no sentence at all, so *"authored in `lanes.rs`"* is false and `join.rs`
+is where the enum lives. Only the supporting clause was wrong, and the
+narrower claim — 0 lines in `lanes.rs`, `join.rs`, `fixtures.rs`,
+`mod.rs` — is both true and sufficient.
+
+Corrected in all three places: this card's half-1 notes, its half-2
+notes, and permanently in `app/test/dispatch-store.test.ts`, which is the
+only one of the three a future reader meets without the card.
+
+### C3 — A GATE READING AT ONE COMMIT WAS SITTING UNDER A CURRENT-TENSE HEADING
+
+Half 1's block was headed *"Gates at this lane's tip"* and recorded
+`docs-gate` **0**, *"none under docs/ — this gate is not owed"*. True at
+`e27be71`, where the diff was `join.rs` alone. **At the lane's tip the
+same gate FIRES: exit 1, naming three owed suites**, because the card
+itself is under `docs/`. There is no red behind it — all three run green
+— but *"not owed"* is a DECISION, and a decision recorded at a stale ref
+reads as the lane's answer.
+
+Re-labelled `### Gates at HALF 1's tip e27be71 — A READING AT ONE COMMIT,
+NOT CURRENT`, marked superseded, and the stale row replaced with what the
+gate actually answers at the tip. This is `roles/executor.md`'s own
+warning about gate derivations — *"naming your ref does not make it
+honest"* — earning itself on this card.
+
+### Also corrected, unassigned
+
+- **The unreachability claim was UNDERSTATED.** It said *"I could not
+  build a fixture"*; the evidence supports *"no fixture can exist"*, and
+  it now says so with the structural argument and a `throw` mutant.
+- **The C-05 row** now carries its slug (`app-shell`) and a sentence
+  saying it is deliberately outside the widened fence and was never
+  wanted. Done here rather than left for the merge, since this card was
+  open anyway — **no merge-time edit is owed for it.**
+
+### Two corrections the verdict makes to the DISPATCH, recorded so they are not lost
+
+- **This lane's base is `40c9b8b`**, derived by `git merge-base main
+  HEAD`. The brief named `dcd1c3e`, which is `main`'s state at dispatch
+  and a different thing. Every figure on this card is bound to
+  `40c9b8b`, `e27be71`, `cb45e3d` or `1f4f7c7` as labelled, so nothing
+  here inherits the conflation.
+- The fence amendment reached this lane as `cb45e3d`, carrying main's
+  section byte-verbatim.

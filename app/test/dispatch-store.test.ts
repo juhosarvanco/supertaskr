@@ -187,12 +187,19 @@ describe("hydrateJoin: the refusal arm is handed back whole", () => {
     // **THE FILE THIS COMMENT USED TO NAME WAS THE WRONG ONE.** It said
     // the wording is authored in `lanes.rs`'s `LaneScanRefusal::sentence`.
     // Measured at `40c9b8b`: `lanes.rs` holds no `fn sentence`, no
-    // `&'static str` return and no `-> String`, and no em dash appears
-    // outside comments anywhere in `app/src-tauri/src/dispatch/*.rs`. The
-    // enum and its four sentences live in `join.rs`; the sentence T-195
-    // is named for is authored wholly in `task-detail.ts`. The same wrong
-    // file is asserted in `docs/architecture/components/C-15-dispatch.md`,
-    // which no lane fence reaches — ROUTED there rather than fixed here.
+    // `&'static str` return and no `-> String`, and no em dash outside
+    // comments in `lanes.rs`, `join.rs`, `fixtures.rs` or `mod.rs` — 0
+    // lines in each. **NOT "anywhere in `dispatch/*.rs`", which is how
+    // this comment first put it and is false: `brief.rs` carries NINE
+    // such lines, including `brief.rs:1517`'s `tail.find(" — ")`, code
+    // that searches for one.** The narrower claim is the one the
+    // conclusion needs and the one that is true.
+    //
+    // The enum and its four sentences live in `join.rs`; the sentence
+    // T-195 is named for is authored wholly in `task-detail.ts`. The same
+    // wrong file is asserted in
+    // `docs/architecture/components/C-15-dispatch.md`, which no lane
+    // fence reaches — ROUTED there rather than fixed here.
     //
     // `T-195` is now closed and both halves are pinned: the four wire
     // sentences by `join.rs`'s
