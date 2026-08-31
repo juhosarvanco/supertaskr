@@ -338,8 +338,24 @@ describes the tip.
 - **AUDIT GATE** names a gate and declares no merge-diff trigger, so it is
   not one of these.
 
-**EVERY GATE ABOVE WAS RE-RUN AFTER THE `T-194` RENUMBER, AND THE FIGURES
-QUOTED ARE THE RE-RUN'S.** The renumber moved two paths under
+**AND EVERY GATE WAS RE-RUN AGAIN AFTER THE VERDICT CORRECTIONS**, at
+`4fa7665`, because those moved `walk.rs` and added `T-196` — a 4-path
+forecast now, `merge-tree` exit 0. All green: `cargo test` **exit 0, 601
+passed / 0 failed over 18 targets** (lib 260/0 in 5.87s, `nputer-index`
+200/0, `--no-fail-fast` so the target count is the whole workspace);
+`docs-gate.mjs` **exit 1, FIRES, 3 paths**, naming the same three
+commands; parser **344**; app **1077**; e2e **341** in 3.5m on 31860;
+`lint:docs` and `capabilities:check` exit 0; **BOOT GATE exit 0** on 21860
+with both startup lines; `index --check` **exit 1 STALE** on this lane's
+one file — `~ walk.rs (content, loc 224 -> 599)`, with files, symbols,
+edges and bytes still identical on both sides. **That `loc` figure moves
+with every comment edit and is quoted at the ref it was measured at; the
+integrator re-asks the gate at the merge rather than carrying it
+forward.** 1420 read with `lsof` and nothing else throughout: zero rows,
+before and after, every run.
+
+**EVERY GATE WAS ALSO RE-RUN AFTER THE `T-194` RENUMBER, AND THOSE FIGURES
+ARE THE RE-RUN'S.** The renumber moved two paths under
 `docs/tasks/` and one comment block in `walk.rs`, so the whole trigger set
 fired again rather than only the docs half; carrying the earlier run's
 numbers forward would have described a tree that no longer exists. The
