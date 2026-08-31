@@ -105,6 +105,10 @@ const CURRENT_REPORT =
 interface Fixture {
   root: string;
   marker: string;
+  /** A bare repository this fixture's `origin` points at. */
+  remote: string;
+  /** The local commit that has NOT reached `remote` yet. */
+  unpushed: string;
 }
 
 /**
@@ -145,6 +149,24 @@ function fixture(
   git("add", "-A");
   git("commit", "-qm", "fixture");
 
+  // A REAL REMOTE, so a push can be observed to have happened or not
+  // happened rather than inferred from an exit code. The bare repository
+  // sits inside this fixture's own mkdtemp root; nothing leaves the
+  // machine and no network is touched.
+  const remote = path.join(root, "remote.git");
+  execFileSync("git", ["init", "-q", "--bare", remote], { stdio: "pipe" });
+  git("remote", "add", "origin", remote);
+  git("push", "-q", "origin", "HEAD:refs/heads/main");
+  // The commit the guarded push WOULD carry. It is deliberately made
+  // after the initial push, so the remote is one commit behind and
+  // "did the push happen?" has a mechanical answer.
+  writeFileSync(path.join(root, "README.md"), "fixture, second commit\n");
+  git("add", "-A");
+  git("commit", "-qm", "the commit a guarded push would carry");
+  const unpushed = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+
   if (opts.branch !== undefined) git("checkout", "-q", "-b", opts.branch);
   if (opts.fence !== undefined) {
     mkdirSync(path.join(root, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
@@ -162,7 +184,63 @@ function fixture(
       }),
     );
   }
-  return { root, marker: writeCargoShim(root, code, report) };
+  return { root, remote, unpushed, marker: writeCargoShim(root, code, report) };
+}
+
+/** What `origin` actually holds for `main` right now. */
+function remoteTip(fx: Fixture): string {
+  return execFileSync("git", ["-C", fx.remote, "rev-parse", "refs/heads/main"], {
+    encoding: "utf8",
+  }).trim();
+}
+
+/**
+ * THE HOOK COMMAND `.claude/settings.json` ACTUALLY WIRES, run the way
+ * the harness runs it.
+ *
+ * NOT a path this file typed. The body below reads the `Bash` matcher's
+ * own command string out of the committed settings, expands it through a
+ * real shell with `CLAUDE_PROJECT_DIR` set exactly as the harness sets
+ * it, and feeds it a real `PreToolUse` payload. That closes the gap
+ * between *"the decision module refuses"* and *"the thing settings.json
+ * invokes refuses"* — two different claims, and only the second one is
+ * the guard.
+ */
+function runWiredHook(fx: Fixture, command: string): { status: number | null; stderr: string } {
+  const settings = JSON.parse(
+    readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8"),
+  ) as { hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] } };
+  const entry = settings.hooks.PreToolUse.find((h) => new RegExp(`^(${h.matcher})$`).test("Bash"));
+  if (entry === undefined) throw new Error("no PreToolUse entry whose matcher matches `Bash`");
+  const wired = entry.hooks.map((h) => h.command).join(" && ");
+  const out = spawnSync("sh", ["-c", wired], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: fx.root }),
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      CLAUDE_PROJECT_DIR: repoRoot,
+      PATH: `${path.join(fx.root, "bin")}${path.delimiter}${process.env["PATH"] ?? ""}`,
+    },
+  });
+  return { status: out.status, stderr: String(out.stderr ?? "") };
+}
+
+/**
+ * Drive a push THROUGH the guard the way a cooperating harness would:
+ * consult the wired hook, and run the command only if it did not refuse.
+ *
+ * This is the harness contract in three lines — exit 2 blocks, anything
+ * else proceeds — and it is written here rather than assumed because the
+ * property under test is what REACHES THE REMOTE, not what an exit code
+ * was.
+ */
+function pushThroughGuard(fx: Fixture): { refused: boolean; pushed: boolean } {
+  const decision = runWiredHook(fx, "git push origin HEAD:refs/heads/main");
+  if (decision.status === 2) return { refused: true, pushed: false };
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "origin", "HEAD:refs/heads/main"], {
+    stdio: "pipe",
+  });
+  return { refused: false, pushed: true };
 }
 
 /** Run the REAL hook runner as a subprocess, with the fixture's PATH. */
@@ -448,6 +526,78 @@ test("a dirty tree gets the stash sentence and a clean one does not", () => {
   const cleanRun = runHook(clean, "git push");
   expect(cleanRun.status, "the control: both are refusals").toBe(2);
   expect(cleanRun.stderr).not.toContain("git stash");
+});
+
+/* ─── THE GUARD FIRES: measured on the REMOTE, not on an exit code ──── */
+
+/**
+ * THE THREE ARMS ARE ONE EXPERIMENT AND MUST BE READ TOGETHER.
+ *
+ * Every other body in this file asserts what the guard DECIDED. These
+ * three assert what a stale commit DID — whether it reached a remote —
+ * because that is the event this card exists to prevent, and because a
+ * guard's characteristic defect is indistinguishable from success when
+ * you only ever look at the guard (method/tasks/TASK-FORMAT.md, the
+ * guard-class paragraph).
+ *
+ * Arm 1 is the DEFECT REPRODUCED: with the guard not consulted, a stale
+ * graph reaches the remote. Without this arm the other two are satisfied
+ * by a fixture that could never push in the first place.
+ */
+test("WITHOUT the guard, a stale graph reaches the remote — the defect, reproduced", () => {
+  const fx = fixture("fires-control-unguarded", CHECK_EXIT.STALE, STALE_REPORT);
+  expect(remoteTip(fx), "the remote must start one commit behind").not.toBe(fx.unpushed);
+
+  // The guard is simply not consulted — the pre-guard world.
+  execFileSync(
+    "git",
+    ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "origin", "HEAD:refs/heads/main"],
+    { stdio: "pipe" },
+  );
+
+  expect(remoteTip(fx), "unguarded, the stale commit lands — this is the red").toBe(fx.unpushed);
+});
+
+test("WITH the guard, the same stale graph never reaches the remote", () => {
+  const fx = fixture("fires-control-guarded", CHECK_EXIT.STALE, STALE_REPORT);
+  const before = remoteTip(fx);
+  expect(before, "the remote must start one commit behind").not.toBe(fx.unpushed);
+
+  const { refused, pushed } = pushThroughGuard(fx);
+
+  expect(checkWasSpawned(fx), "the guard must have actually asked the graph").toBe(true);
+  expect(refused, "the wired hook must refuse").toBe(true);
+  expect(pushed).toBe(false);
+  expect(remoteTip(fx), "the stale commit must NOT have landed").toBe(before);
+  expect(remoteTip(fx)).not.toBe(fx.unpushed);
+});
+
+test("WITH the guard, a current graph still reaches the remote", () => {
+  // The third arm is what stops the second from being satisfied by a
+  // guard that refuses everything.
+  const fx = fixture("fires-control-current", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(remoteTip(fx)).not.toBe(fx.unpushed);
+
+  const { refused, pushed } = pushThroughGuard(fx);
+
+  expect(checkWasSpawned(fx)).toBe(true);
+  expect(refused, "a current graph must not be refused").toBe(false);
+  expect(pushed).toBe(true);
+  expect(remoteTip(fx), "the ordinary push must land").toBe(fx.unpushed);
+});
+
+test("the refusal travels through the WIRED command, not through a path this spec typed", () => {
+  // `runWiredHook` resolves the command out of the committed settings and
+  // runs it through a real shell with the harness's own environment
+  // variable. If the settings entry stopped pointing at a working guard,
+  // this reds while every `decide`-level body in this file stayed green.
+  const stale = fixture("wired-stale", CHECK_EXIT.STALE, STALE_REPORT);
+  const staleRun = runWiredHook(stale, "git push origin main");
+  expect(staleRun.status, "the wired command must refuse with exit 2").toBe(2);
+  expect(staleRun.stderr).toContain("regenerate: nputer-index index --root ../..");
+
+  const current = fixture("wired-current", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(runWiredHook(current, "git push origin main").status).toBe(0);
 });
 
 test("the guard is wired into .claude/settings.json on the Bash matcher", () => {

@@ -1,5 +1,5 @@
 ---
-id: T-185
+id: T-193
 title: The absorbed T-181 trigger cannot be built as written — a guard that reads a checkpoint record's CONTENTS is what ADR-019's Records clause forbids, and this needs a RULING before it needs a fence
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-167-s8, routed from inside the lane: the criterion is unbuildable as written, not merely out of fence"
@@ -83,12 +83,35 @@ mechanical enforcement and must not get one"*) and `T-157-s2`
 (*"A reporter a human or a checkpointing integrator RUNS BY HAND is
 fine; a gate is not"*).
 
+## THE FINDING IS THE ABSORPTION, NOT THE COLLISION
+
+**`T-181` WAS ABSORBED INTO `T-167-s8` AT STANDING TRIAGE SITTING #5
+WITHOUT THE GOVERNING CLAUSE BEING CONSULTED.** That is the finding; the
+collision is only its consequence.
+
 **NEITHER T-181, NOR THE ABSORPTION BLOCK, NOR THE TRIAGE RECORD CITES
-THE CLAUSE.** That is the whole finding. The argument for the trigger is
-strong and the measurement behind it is real; what was never done is the
-check against the decision it collides with — the same omission the
-absorbed card's own filer made about `cargo audit` and corrected by
-checking.
+ADR-019.** The absorption promoted a criterion to `priority: 2` and a
+lane was dispatched to build it, and the one check that would have caught
+it — *does the decision layer permit this artifact to exist at all?* —
+was never run. The argument for the trigger is strong and the measurement
+behind it is real. What was never done is the check against the decision
+it collides with.
+
+**THE ARCHITECT SEAT HAS STATED THIS AS ITS OWN ERROR**, on receiving
+this lane's report (2026-08-31): *"I absorbed `T-181` into your card at a
+triage sitting without checking whether the trigger it asked for was
+buildable."* Recorded here rather than left in a message, because a
+seat's own account of its own error is the part that goes missing first.
+
+**AND THE HABIT WAS AVAILABLE — IT WAS EXERCISED ONE PARAGRAPH EARLIER.**
+`T-167-s8`'s own absorption block records that `cargo audit` was NOT
+absorbed because it is already a CI step, *"a fact the absorbed card's
+own filer got wrong at first and corrected by checking."* The same
+sitting checked one claim against the tree and did not check the other
+against the decision records. **A triage sitting that promotes a
+criterion is making a BUILDABILITY claim**, and this is the case for
+checking that claim against `docs/decisions/` before the lane is cut
+rather than after it is built.
 
 ## The ONE distinction that might survive, stated so the ruling can rule on it
 
@@ -135,9 +158,27 @@ dependency sideways even if it only stats the path. Whichever shape
 lands, derive that census (`docs-gate.mjs --census`) at the lane's own
 ref before and after.
 
+## A MERGED CARD ON MAIN NOW RESTS ON A GUARD THAT DOES NOT EXIST
+
+**`T-182` MERGED on 2026-08-31 and its reasoning assumes this trigger was
+built.** It was not, and after `T-167-s8` it still is not. Anyone
+trusting that bullet is trusting a mechanism with no implementation
+behind it — the exact shape this whole card family exists to prevent, one
+level up: a MEMORY-HELD obligation whose written record reads as though
+it were mechanically enforced.
+
+**THIS IS WRITTEN DOWN RATHER THAN LEFT TO BE DISCOVERED**, at the
+architect seat's explicit request, because the discovering party would
+otherwise be whoever next relies on `T-182` to have made the checkpoint's
+readings mechanical. **The push trigger fires; the RECORD trigger does
+not exist.** Until this card is ruled and built, the health-band census
+line and the boot readings in a checkpoint record remain exactly what the
+absorbed measurement said they were: memory-held, and decaying.
+
 ## And one live coupling
 
-`T-182` (live lane at the time of writing) reasons from this guard as an
+`T-182` (a live lane when this card was written, merged since) reasons
+from this guard as an
 assumed fact: *"The `T-167-s8`/`T-181` guard already fires on the commit
 that adds a record."* **It does not, and after `T-167-s8` it still will
 not.** That card's own build should not rest on it.

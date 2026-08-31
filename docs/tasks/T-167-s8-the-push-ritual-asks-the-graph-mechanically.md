@@ -121,10 +121,39 @@ are printed in this sitting's record.
 
 ## Implementation notes
 
+> ─────────────────── THE BLIND LINE — VERIFIER, STOP ───────────────────
+>
+> **EVERYTHING BELOW THIS LINE IS EXECUTOR-DERIVED AND IS NOT PART OF THE
+> SPEC.** The spec is everything ABOVE it: the card's body, its Acceptance
+> criteria, and its triage and absorption sections. Those are what stood
+> when this lane was cut, and `method/roles/executor.md` rules that the
+> card a verifier is owed is the card AT THE BASE REF — which is this file
+> without this section.
+>
+> **DO NOT READ ON UNTIL YOUR ATTACK SET IS WRITTEN.** Below are mutant
+> counts, suite figures, timings, ports, commit hashes and the arguments
+> this seat found persuasive. Every one of them would seed an attack set
+> with the author's own model of what mattered — and a guard's
+> characteristic defect lives exactly where its author did not look
+> (`method/tasks/TASK-FORMAT.md`, the guard-class paragraph).
+>
+> **THE FIGURES CANNOT SIMPLY BE OMITTED**, which is why this is a marker
+> and not a deletion: this card's FOURTH criterion requires the wall-clock
+> cost to be stated ON THIS CARD, and CONVENTIONS' POISON DRILL requires
+> the drill count and its restoration proof to be recorded. Both are
+> discharged below, behind this line.
+>
+> **AND THE BLINDNESS IS A DISCIPLINE, NOT A GUARANTEE** — an executor's
+> report commonly travels in the same message that dispatches the
+> verification, so this line is DISCLOSED rather than enforced
+> (`method/roles/executor.md`, the base-ref ruling and the limit it states
+> in the same breath).
+> ───────────────────────────────────────────────────────────────────────
+
 **BUILT AT `b8dcb37`, MEASURED THERE, IN THE LANE
 `/Users/ujju/Projects/nputer-T-167-s8` CUT FROM `bd8a8e8`.** The PUSH
 trigger shipped. The ABSORBED trigger did NOT, and that is a finding
-rather than an omission — it is routed as **`T-185`** and the reason is
+rather than an omission — it is routed as **`T-193`** and the reason is
 below.
 
 ### What landed
@@ -265,7 +294,52 @@ dirty-tree body. The rule that caught it is *"confirm the mutated TEXT is
 what you intended rather than only that a substitution COUNT was
 non-zero"*.
 
-### WHAT WAS NOT BUILT: THE ABSORBED T-181 TRIGGER — ROUTED AS `T-185`
+### THE GUARD FIRES, MEASURED ON A REMOTE RATHER THAN ON AN EXIT CODE
+
+**EVERY OTHER BODY IN THE SPEC ASSERTS WHAT THE GUARD DECIDED. THESE
+ASSERT WHAT A STALE COMMIT DID.** The distinction is the whole
+guard-class problem: a decision module returning `block` and a push
+actually not happening are two different claims, and only the second one
+is the guard. Three arms, one experiment, all over a bare repository
+inside the fixture's own `mkdtemp` root — nothing leaves the machine:
+
+1. **THE DEFECT, REPRODUCED** — *"WITHOUT the guard, a stale graph
+   reaches the remote"*. The guard is simply not consulted, the push is
+   run, and `origin`'s `refs/heads/main` MOVES to the unpushed commit.
+   **Without this arm the other two are satisfied by a fixture that could
+   never push in the first place.**
+2. **THE DEFECT, PREVENTED** — *"WITH the guard, the same stale graph
+   never reaches the remote"*. Same fixture shape, same stale check; the
+   wired hook refuses, the push is never run, and the remote ref is
+   asserted UNCHANGED and still not equal to the local commit.
+3. **AND IT IS NOT A GUARD THAT REFUSES EVERYTHING** — *"WITH the guard,
+   a current graph still reaches the remote"*: the remote ref MOVES.
+
+**AND THE REFUSAL TRAVELS THROUGH THE WIRED COMMAND, NOT A PATH THE SPEC
+TYPED.** `runWiredHook` reads the `Bash` matcher's own command string out
+of the committed `.claude/settings.json`, matches it against the tool name
+as a regex the way a harness does, and runs THAT string through a real
+shell with `CLAUDE_PROJECT_DIR` set as the harness sets it. So a settings
+entry that stopped pointing at a working guard reds these bodies while
+every `decide`-level body stayed green — which was the real hole, since
+until now nothing connected "the module refuses" to "the configured hook
+refuses".
+
+**THE HARNESS CONTRACT IS WRITTEN OUT RATHER THAN ASSUMED**
+(`pushThroughGuard`): exit 2 blocks, anything else proceeds. That is the
+one thing these bodies take on trust, it is three lines long, and it is
+stated here so a verifier can attack it. What CANNOT be proved from
+inside this repository is that the real harness honours exit 2 — that is
+the harness's own contract, and the guard is advice to a cooperating
+harness exactly as `lane-fence.mjs`'s limit 5 already says of itself.
+
+**ARM 1 CANNOT BE KILLED BY MUTATING THE GUARD, AND THAT IS WHAT MAKES IT
+A CONTROL** — it never consults the guard, so no change to guard code can
+move it. It is not thereby unfalsifiable: it is anchored on a
+FIXTURE-side precondition (the remote starts one commit behind), and the
+drill below kills it from that side.
+
+### WHAT WAS NOT BUILT: THE ABSORBED T-181 TRIGGER — ROUTED AS `T-193`
 
 **It is not a fence problem. It is a collision with a ratified @human
 decision, and the lane is not the seat that resolves it.** The absorbed
@@ -285,7 +359,7 @@ this. **Four cards have already declined this exact build** — `T-156-s1`,
 carries a lane's written refusal in its docblock.
 
 **NEITHER T-181, NOR THE ABSORPTION BLOCK, NOR THE TRIAGE RECORD CITES
-THE CLAUSE.** `T-185` carries the evidence, the one distinction that might
+THE CLAUSE.** `T-193` carries the evidence, the one distinction that might
 survive a ruling (a pre-commit guard reads only the record in the commit
 under judgement, so it cannot red retroactively and lacks the hazard the
 clause protects against), and **a shape that needs no ruling at all**:
