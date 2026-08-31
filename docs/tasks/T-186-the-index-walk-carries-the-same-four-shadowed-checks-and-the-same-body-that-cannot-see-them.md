@@ -300,7 +300,7 @@ describes the tip.
   `cargo run -p nputer-index -- index --check --root ../..` from
   `app/src-tauri/`: **exit 1, STALE**, and the staleness is exactly this
   lane's one file — `files +0 -0 ~1`,
-  `~ app/src-tauri/crates/nputer-index/src/walk.rs (content, loc 224 -> 454)`.
+  `~ app/src-tauri/crates/nputer-index/src/walk.rs (content, loc 224 -> 491)`.
   **Nothing the graph emits moved**: 199 files, 2436 symbols, 2351 edges
   and 1143153 bytes are identical on the committed and fresh sides, which
   is what a comments-and-tests diff should look like. Budget 1143153 of
@@ -336,7 +336,19 @@ describes the tip.
 - **AUDIT GATE** names a gate and declares no merge-diff trigger, so it is
   not one of these.
 
-**THE E2E LANE WAS RUN TWICE AND ONLY THE SECOND RUN IS QUOTED.** The
+**EVERY GATE ABOVE WAS RE-RUN AFTER THE `T-194` RENUMBER, AND THE FIGURES
+QUOTED ARE THE RE-RUN'S.** The renumber moved two paths under
+`docs/tasks/` and one comment block in `walk.rs`, so the whole trigger set
+fired again rather than only the docs half; carrying the earlier run's
+numbers forward would have described a tree that no longer exists. The
+forecast is unchanged at 3 paths, `merge-tree` exit 0, and the re-run is
+green throughout: `cargo test` exit 0 with lib 260/0 and `nputer-index`
+200/0; parser **344**; app **1077**; e2e **341** in 3.6m; `lint:docs` and
+`capabilities:check` exit 0; BOOT GATE exit 0 on 21860 with both startup
+lines; `index --check` exit 1 STALE on this lane's one file, as above.
+
+**THE E2E LANE WAS RUN TWICE BEFORE THAT, AND ONLY THE SECOND RUN WAS
+QUOTED.** The
 first run was in flight when this lane renumbered its routed card and
 edited this card — both paths that e2e bodies read. It came back 341
 passed, but **a gate run against a tree that moved under it is not a claim
