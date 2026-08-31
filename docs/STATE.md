@@ -83,23 +83,26 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   **no root `package.json`** (scripts live in `tools/e2e/`); this seat
   read exit **254** as green four times. **Redirect, capture `$?`, THEN
   look.**
+- **THE FENCE HOOK JUDGES NOTHING in this shape** (`T-199`): lanes are
+  SIBLINGS, outside the dispatching checkout, and `lane-fence.mjs`'s
+  limit 2 allows an outside path UNJUDGED. Seven lanes' compliance was
+  DISCIPLINE. **Never tell a lane a hook enforces its fence.**
+- **`brief.mjs` TRUNCATES piped stdout at 64 KiB** (`T-197`) — redirect
+  to a file; it reds a standing e2e body no lane caused.
 - **The cargo cache cliff** (`T-088-s4`):
   `startup_arm_watches_the_initial_root` reds when `target/` is large or
   lanes contend. READ THE LIB SUITE'S OWN TIME FIRST — green under 9.5s,
   red over 14.6s. Re-run the body ALONE before attributing it; no
   reflexive `cargo clean`, lanes may be building. Fired 2026-08-31 at
   16.21s and passed alone in 1.27s.
-- **`a_hostile_session_id…` is live at ~1-in-22** (`T-086-s1`): run it
-  alone before blaming a diff.
-- **Read the assertion, not the body's name** (`T-111-s9`): token-scan's
-  totals red for any control byte anywhere, under an unrelated title.
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
   build artifact no merge updates — build the parser FIRST. An unbuilt
   app tree fails `npm test` about `app/dist`.
-- **`npm run typecheck` from app/ DOES NOT EXIST** — the app's typecheck
-  is the two `tsc` calls inside `npm run build` (T-073).
-- **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`);
-  read every gate exit UNPIPED, never through a pipe.
+- **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
+- **Three narrower hazards MOVED to this checkpoint's record** rather
+  than deleted, per this file's contract: `T-086-s1`'s 1-in-22 body,
+  `T-111-s9`'s misnamed token-scan totals, and app/'s absent
+  `typecheck` script.
 - **PASS THE DOCS GATE SEPARATE LITERAL PATHS.** zsh splits an unquoted
   COMMAND SUBSTITUTION but NOT a variable, so a variable hands the gate
   every path as ONE and it answers "1 path(s)" — plausible and wrong.

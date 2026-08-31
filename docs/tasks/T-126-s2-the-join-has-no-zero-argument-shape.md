@@ -6,7 +6,7 @@ milestone: 4
 priority: 3
 size: M
 status: planned
-blocked_by: [T-190]
+blocked_by: [T-198]
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
 builder:
@@ -278,3 +278,20 @@ main, as the paragraph above promised. **The obligation was memory-held
 and it was discharged only because it was written down here and in the
 checkpoint draft** — which is the whole argument of `T-167-s8`, met once
 more.
+
+## THE BLOCKER MOVES AGAIN — `T-190` PRICED THE WALL, `T-198` CROSSES IT
+
+Second correction to this ruling's attribution, and both came from lanes
+the ruling itself dispatched.
+
+`T-190` measured that **no location an `[app-dispatch]` fence reaches is
+collected by any runner** — `app/vitest.config.ts` collects `test/**`
+relative to `app/` — so the pin this seam needs cannot be built from that
+fence at all. It priced the wall exactly (the registry line reds one
+body, owned by C-12) and routed the crossing as **`T-198`**, which
+carries the four `touches:` tokens a lane actually needs.
+
+So: the ruling's DIRECTION has never moved, and its BLOCKER has now moved
+twice — C-18 → `T-190` → `T-198`. Each move was a measurement, and each
+came from a lane that went and looked rather than from this seat
+reasoning harder.

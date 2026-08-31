@@ -96,3 +96,24 @@ read truncated, while every visible signal said the derivation was whole.
 outside the diff — this is what `T-192` first met), and
 `dispatch-brief.mjs`'s rule 2, whose provenance guarantee this defect
 silently voids.
+
+## AND IT REDS A STANDING GATE THAT EVERY DOCS-TOUCHING LANE NOW INHERITS
+
+Added after `T-190` reported it independently, to the same byte, and
+corroborated rather than re-filing.
+
+The truncation is not merely a reading nuisance: **it reds
+`dispatch-order.spec.ts`**, which the DOCS GATE names for any lane
+touching `docs/`. So every such lane now inherits a red it did not cause
+and must spend time attributing.
+
+**And the tell makes it read as a flake rather than a bug**: the
+truncation point is fixed at one buffer, but WHAT falls past it moves
+with the live lane count, because the dispatch listing grows with every
+worktree. So the failing assertion moves between runs. Two lanes
+attributed it correctly only by restoring their files to base and
+reproducing it there.
+
+`T-143-s1` owns the neighbouring class — `tools/e2e` bodies that red for
+reasons outside the diff — and this is a second member with a different
+cause.

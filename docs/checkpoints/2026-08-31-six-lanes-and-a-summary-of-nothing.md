@@ -196,3 +196,24 @@ same reasoning, and the move ADR-019's compaction rule exists to prevent.
 No gate is red: the census exits 0 and the budgets hold. **The remedy is
 a compaction landing, which is a deliberate act with its own ceremony and
 resets a band @human owns.** Recorded rather than improvised.
+
+
+## THREE HAZARDS MOVED HERE FROM `docs/STATE.md`, NOT DELETED
+
+`docs/STATE.md`'s own contract: *"When the byte band warns, content MOVES
+to the record — a hazard is never deleted to fit."* Adding the fence and
+truncation findings took it to 3.21% of its warn line, within sight of
+the 2% breach, so three narrower hazards move here and STATE keeps a
+pointer. **Each is card-owned and each is still true:**
+
+- **`a_hostile_session_id…` is live at roughly 1-in-22** (`T-086-s1`) —
+  run it ALONE before blaming a diff.
+- **Read the assertion, not the body's name** (`T-111-s9`) —
+  token-scan's totals red for any control byte anywhere, under a title
+  that names something else.
+- **`npm run typecheck` from `app/` DOES NOT EXIST** (`T-073`) — the
+  app's typecheck is the two `tsc` calls inside `npm run build`.
+
+They were chosen because each is narrow, each has a card that owns it,
+and none fires in the ordinary course of a lane — unlike the two that
+displaced them, which fired repeatedly tonight.
