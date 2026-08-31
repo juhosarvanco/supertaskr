@@ -235,28 +235,61 @@ identity"*.
    latch would have produced.
 5. **Verification headless** — MET; nothing here spawns a real model.
 
-### Gates and figures, each with its ref (tip `<TIP>`, base `0a8dd58`)
+### Gates and figures — measured at `2a38623`, base `0a8dd58`
 
-- `npm ci` + `npm run build` from `lib/parser/`, `npm install` from
-  `app/`, `npm ci` from `tools/e2e/` — exit **0** each (fresh worktree).
+**THE GATE SET WAS DERIVED AGAINST THE TREE THIS TIP WILL HAVE**, per
+`roles/executor.md`: the only commit after `2a38623` is this notes
+edit, whose whole diff is `docs/tasks/T-175-*.md` — already in the path
+set the DOCS GATE was asked about and already covered by the three
+suites it named. So no gate answer below moves, and the integrator
+inherits a derivation rather than a forecast.
+
+- Setup, fresh worktree: `npm ci` + `npm run build` from `lib/parser/`,
+  `npm install` from `app/`, `npm ci` from `tools/e2e/` — exit **0** each.
 - `npm run build` from `app/` — exit **0**.
 - `npm test` from `app/` — exit **0**, **50 files / 1130 tests**.
-- `cargo test` from `app/src-tauri/` — exit **0**, **268** lib +
-  **95/1 ignored** `agent_runner` + the rest of the targets.
-- `node tools/e2e/scripts/docs-gate.mjs` over the 7 source paths, run
-  FROM THE REPOSITORY ROOT — exit **0**, *"7 changed path(s) given, none
-  under docs/ — this gate is not owed"*. Re-derived after the docs/tasks
-  writes; see the report.
-- `cargo run -p nputer-index -- index --check --root ../..` — exit **1**,
-  **STALE and genuinely so** (7 files `~`, edges +8/-1, fresh index
-  1,165,474 of 2,145,959 bytes). It is the REAL shape, not the false red:
-  it prints both counts and a file diff. **The regen is the integrator's
-  at the checkpoint** (CONVENTIONS, GRAPH REGEN) and
-  `docs/architecture/graph.json` is outside this fence besides.
-- BOOT GATE — owed (the diff touches `app/src-tauri/**` and
-  `app/src/**`); run by the executor per T-046 criterion 6 on the derived
-  scratch port **14175**, `lsof` zero rows immediately before. Result in
-  the report.
+- `npx vitest run` from `lib/parser/` — exit **0**, **16 files / 344
+  tests**. `npx tsc --noEmit` — exit **0**.
+- `npm test` from `tools/e2e/` — exit **0**, **420 passed** (5.4 m),
+  `NPUTER_E2E_PORT=14175`. **Worktree count 12 either side** (`git
+  worktree list | wc -l`), so `THE MARGIN GUARD` read a stable lane list
+  — `T-220`'s environmental red did not occur here. `npm run typecheck`
+  — exit **0**.
+- `cargo test` from `app/src-tauri/` — exit **0**: **268** lib, **95
+  passed / 1 ignored** in `agent_runner`, every other target green.
+- `npm run lint:tokens -- --selftest` **0** · `npm run lint:tokens` **0**
+  · `npm run lint:docs` **0** (the CENSUS half — "I was not asked", never
+  "nothing owed") · `npm run capabilities:check` **0**.
+- **DOCS GATE — FIRES.** `node tools/e2e/scripts/docs-gate.mjs` over the
+  7 source paths answered *"none under docs/ — this gate is not owed"*;
+  **re-derived over the full 9-path set including this card and
+  `T-175-s1` it FIRES** and names three suites — `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/` — all
+  three run and green above. Run FROM THE REPOSITORY ROOT: from
+  `tools/e2e/` it exits **2** (CALLED WRONG) on plain relative paths,
+  which is the gate refusing an ambiguous question rather than a finding.
+- **BOOT GATE — OWED and RUN.** Trigger derived from the diff: it touches
+  `app/src-tauri/**` and `app/src/**`. `NPUTER_BOOT_PORT=14175 npm run
+  boot:check` from `tools/e2e/` — exit **0**, both lines observed:
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-175` and
+  `[nputer] window "main" created`. Port derived from the card id and
+  `lsof -nP -iTCP:14175 -sTCP:LISTEN` returned **zero rows** immediately
+  before and after. 1420 was never probed.
+- **GRAPH — STALE, and it is the integrator's.** `cargo run -p
+  nputer-index -- index --check --root ../..` — exit **1**. Committed
+  1,153,961 bytes / 200 files / 2,456 symbols / 2,379 edges; fresh
+  1,165,474 / 200 / 2,493 / 2,386. Diff: **7 files `~`, edges +8 −1**,
+  budget 1,165,474 of 2,145,959 (54.3 %). This is the REAL red shape —
+  both counts plus a file diff — not the `--root` false red, which says
+  `committed: MISSING`. CONVENTIONS' GRAPH REGEN puts the regen at the
+  CHECKPOINT, and `docs/architecture/graph.json` is outside this fence
+  besides.
+- NOT OWED, each derived rather than assumed: `cargo audit` (no manifest
+  or lock change), the DECLARING-A-COMPONENT three-fixture reconcile (no
+  `docs/architecture/components/` change), a METHOD VERSION BUMP (no
+  `method/` byte moved, so neither of the two doc stamps nor
+  `METHOD_SNAPSHOT_VERSION` is owed; `snapshot_version_matches_the_live_method_stamps`
+  is green).
 
 ### Drills — eight, one side only, each restored IDENTICAL by sha256
 
