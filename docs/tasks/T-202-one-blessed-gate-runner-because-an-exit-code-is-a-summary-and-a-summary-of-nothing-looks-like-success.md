@@ -107,7 +107,6 @@ mutants that failed open and closed), `T-186` (the vacuous drill checks
 and the fail-fast count), and `T-203`, which consumes this runner's
 verdict token.
 
-
 ## `review: independent` SET AT FILING, not left for a dispatch to remember
 
 **The lane judged its own runner guard-class: it refuses six distinct things.**
