@@ -372,3 +372,257 @@ safely and the dispatching seat allocates.
    lane writing to its own card is not a fence breach (lane-protocol rule
    5). **NO gate was deleted or weakened** — the diff removes no line of
    shipped code; it adds one test body and rewrites comments.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind two-phase seat):
+**APPROVED WITH TWO ASSIGNED CORRECTIONS.** The card's subject is fixed:
+gate A now has a body, the body kills gate A's mutant **alone**, and the
+positive control is not decoration — it is the only thing standing between
+this body and a walk that refused the fixture for its NAME. Every figure in
+the lane's ledger **reproduced at my own bench**, exit for exit and name for
+name, and both of the lane's recorded restore hashes are real. The two
+corrections are comment-only, live in shipped bytes, and neither is a reason
+to hold the lane.
+
+Measured at **`2640f25`** (the lane tip) and **`e6a97d2`** (its base). Every
+figure below names its ref. Bench: my own detached worktree with
+`CARGO_TARGET_DIR` at `<scratch>/target`; nothing was run in the integration
+checkout or in the lane's own worktree.
+
+### Phase 1 was sealed before the diff was opened
+
+The attack set was written from the contract alone — card, `T-186`, `T-194`,
+`T-208`, CONVENTIONS, lane-protocol, roles/verifier — and saved before the
+branch, the diff or the notes existed to me. sha256
+**`08b7c093612d418dd5f7d98dd1a0966f11f08a291c10289ad1637e865bb7d6ba`**.
+Its headline was derived blind and the lane reached it independently: the
+card's `252/0` premise is stale, and `T-194`/`T-208` put the baseline at
+`256/0`. Two derivations agreeing stop being checks on each other, so I
+re-measured anyway (arm 5).
+
+**DISCLOSURE, AND THE LEAK IS NOT MINE.** My phase-1 brief named the
+executor's scratch ports and this card's line count. Both are
+executor-derived facts and had no business above the line. Neither is a
+mutant number, a path count or a suite figure, so phase 1 stands. The
+coordinator identified it as their own defect and asked that the record
+carry who leaked it; it is carried here for that reason.
+
+### What reproduced — crate scope, `--no-fail-fast`, 12 targets every arm, exits captured before any pipe
+
+| # | ref | mutation, ONE SIDE ONLY | exit | passed/failed | failing body |
+|---|---|---|---|---|---|
+| 1 | `2640f25` | none | 0 | 257/0 | — |
+| 2 | `2640f25` | `.follow_links(false)` -> `true` (CODE) | 101 | **256/1** | the new body, **ALONE** |
+| 3 | `2640f25` | `path.canonicalize()` -> `path.to_path_buf()` (CODE) | 0 | 257/0 | none — INERT |
+| 4 | `2640f25` | `filter_entry` gains `name != "vendor"` (CODE) | 101 | 256/1 | the same body, **failing at the CONTROL** |
+| 5 | `e6a97d2` | `.follow_links(false)` -> `true` (CODE) | 0 | **256/0** | none — the premise holds at base |
+
+Arm 2's panic is byte-identical to the ledger's:
+`left: ["node_modules/pkg/index.ts", "real.ts"] / right: ["real.ts"]`.
+**4 restores, 4 for 4 sha256-proved** with both sides named
+(`git restore --source=HEAD --staged --worktree`), the empty `git status`
+kept as companion and never as proof; every mutation read back with
+`git -C ... diff` before its suite ran. Tip blob
+`e844015db079d69b87136982da1618ebd2962e6b879f2136986c1c1439b7b108`, base blob
+`c3478e5d898ab58ac9b5c4dae66d24c8c736f7e395e91969f676a1b2b8c4ef91`.
+
+**AND THE LANE'S OWN RESTORE PROOFS ARE REAL RATHER THAN QUOTED.** Its base
+hash is character-identical to my arm-5 proof, and `git show 106c096:` on
+this file reproduces its tip hash
+`cd088e9c1a5db9b36e379b0abf5af7e0eb891d93e34545c51a36a9e102ccbfcb` exactly.
+
+### The count of ONE, attacked from the other end
+
+A count of one can be a count of the WRONG one. It is not: the single
+failure under arm 2 is the new body itself, panicking at its own refusal
+assertion — not a file-count body reddening on volume. Measured on a cold
+build against a private target directory, so the
+mutant-looks-dead-against-a-stale-binary reading is excluded by construction
+rather than by hope.
+
+### THE POSITIVE CONTROL DISCRIMINATES, AND THE LANE'S OWN ARM DID NOT SHOW THAT
+
+The lane's `p-control` poisons the control's EXPECTED side, which proves the
+assertion RUNS and that its value matters. It does not prove the control
+EXCLUDES the reading it exists to exclude. Arm 4 does, and it is the arm to
+want on any future card of this shape: add `vendor` to `filter_entry`'s hard
+skip and **the refusal assertion still PASSES** — `rels` is `["real.ts"]`
+either way — while the control REDS with
+`left: ["real.ts"] / right: ["real.ts", "vendor/pkg/index.ts"]`. Without the
+control that mutant is completely silent. AC3 is satisfied in the strongest
+form available, and the control arm doubles as proof that the `node_modules`
+skip fires BY NAME: the real `node_modules/pkg/index.ts` is on disk and
+absent from the expectation.
+
+### `canonicalize()` — THE DISPOSITION IS CORRECT, and it is this family's lesson USED rather than misapplied
+
+Arm 3 reproduces `257/0`. **Recorded-not-routed is right**, and the reason is
+checkable from the two signatures rather than from either verdict:
+
+- `read_contained(root, dir, name)` takes a **caller-supplied path segment**
+  and joins it. `starts_with` compares COMPONENTS, so `..` satisfies it
+  textually and only `canonicalize` collapses it. **Load-bearing** (`T-208`).
+- `walk_root(canon_root, languages)` takes **no caller path at all**. Every
+  path is generated by `ignore` descending real directory entries from an
+  already-canonical root — so no `..` component can exist — and with gate A
+  refusing descent and gate B refusing link entries, no unresolved link
+  component reaches the line. **Identity, therefore inert.**
+
+Same twelve characters, opposite answers, decided entirely by what reaches
+them. `T-208` does not transfer and this does not weaken `T-208`. **No card
+is owed** and I endorse minting no id for it.
+
+ONE CAVEAT FOR THE SITE, not a defect and not blocking: the inertness is
+contingent on the root actually BEING canonical, and the note states only the
+gates-A-and-B condition. A non-canonical root makes
+`canon.starts_with(canon_root)` false for every entry and the walk emits
+NOTHING — which is this lane's own *"no word for I could not tell"* shape one
+layer up. Verified benign today: `rels()` canonicalizes before calling, and
+the single production caller at `lib.rs:261` passes `&canon_root`.
+
+### The sweep recounted independently — NOTHING IS OMITTED
+
+Counted from source with the lane's letters unread first, as the seat is
+supposed to. Everything in `walk_root` that can drop a file: three builder
+mechanisms (`follow_links`; the ignore files; `filter_entry`) and TEN
+`continue`s (`result` err, `depth()==0`, `symlink_metadata` err, gate B,
+`extension()`, `Lang::for_extension`, `!languages.contains`, `canonicalize`
+err, `starts_with`, `relative_posix`), plus `dedup_by` — which the site
+discloses and deliberately excludes as not-a-refusal. Correctly excluded as
+non-droppers: `hidden(false)`, `parents(false)`, `git_global(false)`,
+`git_exclude(false)`, `ignore(false)` — every one DISABLES a filter.
+
+**The lane's six unlettered constructs are exactly the six that exist.** An
+accounting headed with a count, recounted by a hostile reader, and complete:
+materially better than the `T-194` outcome that prompted it.
+
+### CORRECTION 1 — a false sentence in the gate key, and it has a SIBLING
+
+    walk.rs:171   // gate A is the fifth letter, unpinned until `T-196` …
+    walk.rs:617   // GATE A's body (`T-196`). The walk's fifth lettered refusal, …
+
+**Gate A is the FIRST of five letters; the fifth is E, `relative_posix`.**
+The base text read *"gate A is the fifth refusal"*, which is defensible —
+this card's own title uses "fifth refusal" for the fifth member of the set to
+be identified. Binding "fifth" to the LETTERING makes it false, and the first
+instance lands inside the one comment whose stated purpose is to stop a
+reader mis-mapping a ledger row onto a site letter (`T-186` correction 3).
+Restore "refusal", or say "the fifth gate to be pinned".
+
+**AND IT IS A CLASS WITH TWO MEMBERS, WHICH IS WHY IT IS WORTH A SWEEP RATHER
+THAN AN EDIT** (CONVENTIONS, A FIX NAMES ITS CLASS AND ITS SWEEP). Line 617
+is in the new body's own doc comment and repeats the same claim in different
+words. `T-078`'s lesson exactly: a fix session found three of its own and
+left an identical sibling a few lines away, **both inside the subsection that
+announces the sweep**. Fix both; `git grep -n 'fifth' -- walk.rs` names them
+at your own ref.
+
+### THE CLASS SWEEP THIS CARD OPENED, RUN ACROSS THE REPOSITORY AND CLOSED
+
+The lane swept the constructs INSIDE `walk_root`, which is the sweep the site
+comment owed. The wider class the card opens is *a walker configuration flag
+that is a real refusal and that nothing pins* — and CONVENTIONS' own Gotchas
+warn that this repository walks its tree FOUR different ways. Swept from the
+repository ROOT, because a `git grep` from a subdirectory silently scopes
+itself and reads like a refutation:
+
+- `follow_links` exists at **exactly one code site in the tree**, `walk.rs`.
+  The only other occurrence anywhere is a prose citation of `T-196` in
+  `resolve/mod.rs`.
+- `ignore::WalkBuilder` is constructed **exactly once**, `walk.rs:53`. The
+  other traversals are `std::fs::read_dir`, a different mechanism whose
+  symlink handling is per-entry — and the two `read_dir`-based readers in
+  this family (`read_registry`, `read_contained`) are already `T-194`'s and
+  `T-208`'s.
+- **The zero was shown capable of being non-zero before it was written down**
+  (CONVENTIONS: a search-based check is run against a planted hit first): the
+  same search returns **7** against `walk.rs`.
+
+**So the class has one member, and after this card it is pinned.** Recorded
+here because an unrecorded sweep and an unrun one are indistinguishable to
+the next reader.
+
+### CORRECTION 2 — ELEVEN is a count without a unit
+
+The number was put in the heading so an omission would be visible, which is
+the right instinct and `T-194`'s own lesson. It cannot do that job as
+written. **ELEVEN counts MECHANISMS**: gate C is three `continue` statements
+counted as ONE, while each error arm is counted singly. A reader who does
+what the lesson instructs — recount from source — gets **13** sites, or 14
+with `dedup_by`, and has no way to tell an omission from a unit mismatch.
+State the unit in the heading.
+
+### Every criterion, read literally
+
+1. **MET** — body reds on the flip, passes at the tip, count recorded at
+   crate scope with targets. Noted for the record: this card's AC1 asks only
+   that the count be RECORDED where `T-208`'s asks that it be ONE. The lane
+   delivered ONE anyway, which is what CONVENTIONS' poison shape SIX requires
+   regardless of the card's looser wording.
+2. **MET** — the guard-state assertions run before the walk, and the lifted
+   arm's termination is proven IN-BODY (`target.starts_with(&canon_root)`),
+   so it holds on every run rather than only in the drill. Precision note:
+   what is asserted is the FIXTURE's state, gate A's own state being
+   unobservable without a seam — and a seam would have been a weakening, so
+   this is the correct reading of the criterion rather than a dodge.
+3. **MET, in its strongest form** — see arm 4 above.
+4. **MET** — `symlinks_are_never_followed_file_or_dir` now states PINS D and
+   E, NOT B, NOT A, each row naming the body that pins the layer instead. It
+   correctly DEMOTES the old body rather than promoting it, which was the
+   failure mode I was watching for.
+5. **MET** — one body added, no existing body's assertions changed, drilled
+   one side only, read back, restored, hash-proved.
+6. **MET** — every count carries `--no-fail-fast` and its target count.
+7. **MET** — no gate deleted or weakened; the shipped chain still carries a
+   literal `.follow_links(false)` and no test-only seam, parameter, const or
+   cfg toggle was introduced. This was my primary rejection hypothesis and it
+   is cleanly absent.
+
+### Gates at the tip THIS verdict creates
+
+`npm ci` from `tools/e2e/` **exit 0** first, because `docs-gate.mjs` imports
+`yaml` and without it Node exits 1 at IMPORT time — a crash wearing
+`EXIT.FOUND`'s clothes. Checked rather than assumed: **zero** occurrences of
+`ERR_MODULE_NOT_FOUND`, `Cannot find package` or `node:internal` in the
+output, which also prints its own derivation (26 readers, the 172-site
+census, the frontmatter verdict, the budget verdict). That is FOUND.
+
+- DOCS GATE, separate literal paths (a shell VARIABLE hands the gate every
+  path as ONE and it answers "1 path(s)" — plausible and wrong), run both
+  BEFORE and AFTER my commit — **exit 1 FOUND** both times, naming three
+  suites; *"every live task card's frontmatter parses, with a legal status"*;
+  governing-document budgets hold.
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**.
+- `npm test` from `app/` — **exit 0, 50 files / 1105 tests**, after
+  `npm ci` + `npm run build` in lib/parser and then app (all exit 0), which
+  is CONVENTIONS' fresh-clone ORDER — a fresh worktree has no
+  `lib/parser/dist` and no `app/dist`.
+- `npm test` from `tools/e2e/` — **exit 0, 404 passed (5.2m)** on
+  `NPUTER_E2E_PORT=41960`, derived differently from the executor's 31960,
+  with `lsof` showing zero rows immediately before binding. 1420 was never
+  probed, bound or named. All three figures match the lane's own.
+- `index --check --root ../..` — **exit 1 STALE, and it is a REAL red rather
+  than the `--root` false red**: the second line prints counts plus a file
+  diff (`files +0 -0 ~1`, `~ walk.rs`, content, loc 599 -> 817), where a
+  false red says `committed: MISSING`. One content-changed file, this lane's
+  own. **This verdict moved the graph not at all** — no file added, no symbol
+  moved — so the regen stays exactly what the lane described: the
+  integrator's, at the checkpoint.
+
+MY OWN BENCH DID NOT BECOME A LANE: this verdict is committed on
+`verdict/T-196-verifier`, deliberately NOT under `refs/heads/task/`, and
+STATE's LANES derivation does not list it.
+
+**AND MAIN HAS MOVED SINCE THE LANE FORECAST ITS MERGE.** The notes derive
+against `2eb87f7`; main is **`462f7ef`** at my ref. Re-derived at mine, exit
+read FIRST and unpiped: `git merge-tree --write-tree main HEAD` **exit 0**,
+tree `20bf301b`, **the same 2 paths**. No conflict, and the frontmatter
+merges the way it should: the merged card carries the lane's
+`status: verifying` AND main's late `review: independent` together. **I
+deliberately did not stamp `review:` in the lane** — main already carries it,
+and two edits to one line is the merge this protocol tells us to avoid.
+
+GRAPH REGEN still fires and is still the integrator's at the checkpoint;
+`index --check` is STALE by this lane's own `walk.rs` and now by this verdict
+too. Nothing here changes that disposition.
