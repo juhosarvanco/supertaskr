@@ -100,29 +100,60 @@ identical TypeScript are not the same defect, and what decides it is what
 the surrounding code does. Here the deciding fact is **what each command
 AWAITS**, and it was read off the Rust rather than assumed:
 
-| | `index_repo` | the three picker commands |
-|---|---|---|
-| Rust body | `spawn_blocking(run_index).await`, **no timeout anywhere**; `IndexOptions` carries no time field | `begin_pick` -> dialog -> `spawn_blocking(apply_*_folder)` |
-| answers on a held latch | n/a — it has no Rust latch | `Busy` |
-| answers on a dismissed dialog | n/a | `Cancelled` |
-| answers on a **DROPPED** callback | n/a | `Cancelled` — `rx.recv().await` yields `None` when the sender goes |
-| answers on an unusable selection | n/a | `Error` |
-| answers on a panicking task | `Error` via `unwrap_or_else` | `Error` via `unwrap_or_else` |
-| bounded sub-step | **none** | the re-arm, by `REARM_TIMEOUT` = 10 s (`docs_watch.rs`) |
-| the one segment with no bound | **the whole command** | the dialog standing open — a HUMAN deciding |
+**CORRECTED 2026-08-31 ON THE BLIND VERDICT (CORRECTION 1).** This table
+first ran THREE COMMANDS IN ONE COLUMN and gave them a Rust body one of
+them does not have. `start_genesis_here` **opens no dialog**, so its
+`Cancelled`-on-a-dismissed-dialog, `Cancelled`-on-a-dropped-callback and
+`Error`-on-an-unusable-selection rows described paths it has none of. The
+column is split below and the wrong rows are gone.
 
-So the picker answers on every path it has except the one where a person
-is being asked a question, and the index answers on none.
+| | `index_repo` | `pick_project_folder` / `pick_genesis_folder` | `start_genesis_here` |
+|---|---|---|---|
+| Rust body | `spawn_blocking(run_index).await`, **no timeout anywhere**; `IndexOptions` carries no time field | `begin_pick` -> **dialog** -> `spawn_blocking(apply_*_folder)` | `begin_pick` -> `genesis_target()` -> `spawn_blocking(apply_genesis_folder)` — **NO DIALOG** |
+| claims Rust's `PickInFlight` | no — it has no Rust latch | **yes** (`lib.rs:185`) | **yes** (`lib.rs:295`) |
+| answers on a held latch | n/a | `Busy` | `Busy` |
+| answers on a dismissed dialog | n/a | `Cancelled` | **n/a — there is no dialog** |
+| answers on a **DROPPED** callback | n/a | `Cancelled` — `rx.recv().await` yields `None` when the sender goes | **n/a** |
+| answers on an unusable selection | n/a | `Error` | **n/a** |
+| answers with no target | n/a | n/a | `Error` ("no folder to start an interview in") |
+| answers on a panicking task | `Error` via `unwrap_or_else` | `Error` via `unwrap_or_else` | `Error` via `unwrap_or_else` |
+| bounded sub-step | **none** | the re-arm, by `REARM_TIMEOUT` = 10 s (`docs_watch.rs`) | the re-arm, same 10 s |
+| the segment with no bound | **the whole command** | the dialog standing open — a HUMAN deciding | **the `spawn_blocking` — nobody is being asked anything** |
 
-**AND A BOUND ON THE PICKER WOULD MANUFACTURE THE FAILURE THIS CARD
-EXISTS TO CLOSE.** It would fire while the folder dialog is still on
-screen, tell the user the app did not answer when it is waiting for
-THEM, and release the webview latch while Rust still holds its own — so
-the next press reaches `begin_pick`, gets `Busy`, and
-`reducePickOutcome` maps `busy` to `prev` **by identity**: a button that
-silently does nothing, which is exactly the `T-171`/`T-183` family. The
+Counted mechanically at `36f8d31`: `begin_pick()` appears at **three**
+sites in `lib.rs` (185, 244, 295) and `pick_folder(` at **two** (196,
+252). Three commands, one shared Rust latch, two dialogs.
+
+So the two dialog commands answer on every path but the human one; the
+index answers on none; and **`start_genesis_here` also answers on none**
+— it is `index_repo`'s shape wearing the picker's latch.
+
+**WHICH MEANS THE HUMAN-AT-A-DIALOG ARGUMENT IS TRUE AND IS NOT THE
+LOAD-BEARING ONE.** It covers two of three. **The reason that covers all
+three is LATCH PARITY**: every one of them claims the same Rust
+`PickInFlight`, which is the real gate (T-021) with this store's flag as
+its webview mirror. A bound here releases the mirror while Rust still
+holds the original, so the next press reaches `begin_pick`, gets `Busy`,
+and `reducePickOutcome` maps `busy` to `prev` **by identity**: a button
+that silently does nothing, which is exactly the `T-171`/`T-183` family.
+Bounding the webview half of a two-latch pair does not shorten the wait;
+it only desynchronises the pair. The
 decision is recorded at `runPicker`'s own site per criterion 4, and
 pinned by a body so that adding a bound has to come past a test.
+
+**AND THE RESIDUAL IS STATED RATHER THAN LEFT TO BE FOUND**, which the
+first draft of these notes did not do: because `start_genesis_here`
+really can never answer, the `picking` latch really can strand, and all
+three buttons die with it. That is an **ACCEPTED residual, not a closed
+case.** The repair available at this seat — a webview bound — is worse
+than the defect, for the latch-parity reason above. The repair that
+would actually work is Rust-side: bound `apply_genesis_folder` (or the
+`spawn_blocking` around it) so that `PickInFlight` is released with the
+answer, keeping the two latches in step. `app/src-tauri/src/lib.rs` and
+`docs_watch.rs` ARE inside this fence, so that is buildable here — it is
+**not taken** because it is new Rust behaviour arriving after a blind
+verdict, it owes the whole cargo suite, and the verifier explicitly did
+not ask for it. Routed below.
 
 ### WHERE THE NUMBER COMES FROM, and why it is NOT T-184's 30 s
 
@@ -198,20 +229,39 @@ holds.
 the release only in a `finally` — which a promise that never settles
 never reaches.
 
-Swept every `await invoke(` site in `app/src` (7 hits, so the search is
-shown capable of answering non-empty before its zero is recorded):
+**THE FIRST SWEEP USED THE WRONG UNIT AND ITS CLOSURE IS WITHDRAWN
+(CORRECTION 1, assigned by the blind verdict).** It swept every
+`await invoke(` **CALL SITE** in `app/src` — 7 hits, 3 latch-guarded —
+and concluded *"the class is CLOSED inside `app-shell`"*. **That
+sentence is withdrawn.** This card's own thesis is that the defect is
+decided per **RUST COMMAND**, and `runPicker` is ONE call site serving
+**THREE** commands, so the unit was coarser than the thesis and the odd
+command hid behind the shared `await`. **A sweep whose unit is coarser
+than its thesis reports a closure it has not measured** — recorded here
+and at `runPicker`'s site, because this is the reusable half.
 
-- **In fence, 3 latch-guarded sites, all now accounted for**:
-  `runHandshake`'s `docs_snapshot` (already bounded by
-  `STARTUP_DEADLINE_MS`, pre-existing), `runIndexRepo` (bounded by this
-  card), `runPicker` (deliberately unbounded, recorded by this card).
-  **The class is CLOSED inside `app-shell`.**
-- **Out of fence, `app-agent`: EMPTY.** `refreshGenesisTranscript`,
-  `genesisKickoff` and `refreshGenesisStatus` each open with only
+**RE-SWEPT BY COMMAND.** Unit: one Tauri command invoked from the
+`app-shell` surface. Five, not three:
+
+| Rust command | TS site | webview latch | can it never answer? | bound |
+|---|---|---|---|---|
+| `docs_snapshot` | `runHandshake` | `starting` | yes | **bounded** — `STARTUP_DEADLINE_MS`, pre-existing |
+| `index_repo` | `runIndexRepo` | `indexing` | yes | **bounded** — `INDEX_ANSWER_BOUND_MS`, this card |
+| `pick_project_folder` | `runPicker` | `picking` | only while a human holds the dialog | none, deliberate |
+| `pick_genesis_folder` | `runPicker` | `picking` | only while a human holds the dialog | none, deliberate |
+| `start_genesis_here` | `runPicker` | `picking` | **YES — no dialog, nobody asked** | none, deliberate; **accepted residual**, routed |
+
+- **In fence: 5 commands, all classified; 2 bounded, 2 human-gated, 1
+  ACCEPTED RESIDUAL.** Not a closure. The residual is
+  `start_genesis_here`, argued above and routed below.
+- **Out of fence, `app-agent`: still EMPTY, and re-checked by command
+  rather than by site.** `genesis_transcript`, `genesis_kickoff` and
+  `genesis_status` each reach a wrapper opening with only
   `if (!isTauri) return …` and take **no latch at all**, so a
-  never-answering one strands nothing. `cancelGenesis` is unbounded by
-  `T-184`'s own recorded decision ("nothing latches behind cancel").
-  **No new card routed from the sweep.**
+  never-answering one strands nothing; `genesis_cancel` is unbounded by
+  `T-184`'s own recorded decision ("nothing latches behind cancel"); the
+  three flight-arming commands are bounded there already. **No new card
+  routed from the out-of-fence half.**
 
 ### Gates and figures, every exit read UNPIPED from a guarded script
 
@@ -351,15 +401,35 @@ ROADMAP was not read.
   `app-shell`) and have both stores import it, which needs **one card
   whose `touches:` carries `app-shell` AND `app-agent`**, and which
   should land with or before `T-125`.
-- **Nothing else.** The class sweep outside this fence is empty (see
-  above), so no sibling card is owed.
+- **`T-200` (`app-map`) — the map's index hint prefixes an ABSENCE with
+  *"index failed:"*.** Written on assignment from the blind verdict's
+  CORRECTION 2, with that seat's measurement carried across; **the id was
+  allocated by the dispatching seat, not minted in this lane.** Card:
+  `docs/tasks/T-200-the-maps-index-hint-prefixes-an-absence-with-index-failed.md`.
+  All three of its citations re-verified here at `36f8d31` rather than
+  transcribed: `MapView.tsx:790` renders `index failed: {message}`,
+  `map-view-dom.test.tsx:674` pins the `index failed` prefix against a
+  genuine rejection fixture, and `watcher-store.ts:251` is this lane's
+  own quotation of *"a premature \"index failed\""* — the string was in
+  hand and was not carried into the message's design.
+- **A Rust-side bound for `start_genesis_here`** — the accepted residual
+  above. The webview repair is worse than the defect (latch parity); the
+  working one is to bound `apply_genesis_folder` so Rust's
+  `PickInFlight` is released with the answer. `lib.rs` and
+  `docs_watch.rs` are inside this fence, so this is buildable here and is
+  **deliberately not taken**: it is new Rust behaviour arriving after a
+  blind verdict, it owes the whole cargo suite, and the verifier
+  explicitly did not ask for it. **No id minted** — this lane mints none.
+- **Nothing else.** The out-of-fence half of the class sweep is empty
+  (see above), so no sibling card is owed there.
 
 ### Each acceptance criterion, against its evidence
 
 | # | criterion | met | evidence |
 |---|---|---|---|
 | 1 | a never-answering command SHALL NOT leave its latch held, proved with the command CONSTRUCTED | **yes, for `index_repo`** | `ipc.parked` returns a promise that is neither resolved nor rejected — nothing calls its `resolve` unless a body reaches for `ipc.release`. Body *"AN INDEX THAT NEVER ANSWERS SETTLES ANYWAY, and the button comes back"*: latch asserted **true** before, **false** after; killed by M2 alone. |
-| 1 | — the same criterion applied to `runPicker` | **antecedent is FALSE** | This is a reading of the criterion, not a waiver: *"WHERE a shell-store command can never answer"*. The picker's Rust commands answer on **every** path — `Busy`, `Cancelled` (dismissed **or** dropped callback), `Error`, `Error` on a panicking task, with the re-arm bounded by `REARM_TIMEOUT`. Their one unbounded segment is a dialog a human has not answered yet, which is not "can never answer". Table above; recorded at the site and pinned by a body. |
+| 1 | — applied to the two DIALOG picker commands | **antecedent is FALSE** | A reading of the criterion, not a waiver: *"WHERE a shell-store command can never answer"*. `pick_project_folder` and `pick_genesis_folder` answer on **every** path — `Busy`, `Cancelled` (dismissed **or** dropped callback), `Error`, `Error` on a panicking task, re-arm bounded by `REARM_TIMEOUT`. Their one unbounded segment is a dialog a human has not answered yet, which is not "can never answer". |
+| 1 | — applied to `start_genesis_here` | **antecedent is TRUE, and the criterion is NOT met — deliberately** | **CORRECTED on the blind verdict.** This command opens no dialog and awaits an unbounded `spawn_blocking`, so it CAN never answer and its latch CAN strand. It is left unbounded because the only repair at this seat desynchronises the webview latch from Rust's `PickInFlight` and turns the next press into a `Busy` → `prev` silent no-op — strictly worse. Stated as an **accepted residual** with the working repair (Rust-side) routed, rather than counted as met. |
 | 2 | a REJECTED command SHALL behave exactly as today | **yes** | Body *"a REJECTED index still reports the REFUSAL, never the bound"* — the message still carries the boundary's own text and is asserted `not.toBe(UNANSWERED_INDEX_MESSAGE)`. Killed by M3 alone. |
 | 3 | a HEALTHY command SHALL be untouched, its answer shown to come from the command | **yes** | Body *"a HEALTHY index is untouched: the answer came from the COMMAND, no clock involved"* — fake timers installed and **never advanced**, so an answer from the bound could not arrive at all; the command's own stats object is asserted by equality. Killed by M4 alone. |
 | 4 | the `runPicker` decision SHALL be recorded either way, with the reason at its site | **yes** | A headed comment at `runPicker`'s own site carrying the Rust-derived argument, **plus** a body — *"THE PICKER IS DELIBERATELY NOT BOUNDED, and this body is that decision"* — so adding a bound must come past a test rather than past a comment. Killed by M6 alone. |

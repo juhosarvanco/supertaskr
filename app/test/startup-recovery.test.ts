@@ -1186,6 +1186,13 @@ describe("a shell command that never answers is answered for (T-192)", () => {
     );
     expect(store.UNANSWERED_INDEX_MESSAGE).toContain("within 15 seconds");
     expect(store.UNANSWERED_INDEX_MESSAGE).toContain("re-indexing is safe");
+    // AND THE CLAUSE THAT MAKES THIS AN ABSENCE RATHER THAN A FAILURE.
+    // The lines above pin the message's NUMBER and nothing pinned its
+    // MEANING, so "the indexer FAILED within 15 seconds" — the exact
+    // blame this constant's own site says it avoids, and a contradiction
+    // of its own next sentence — passed all 1100 bodies. Assigned by the
+    // blind verdict's mutant N2.
+    expect(store.UNANSWERED_INDEX_MESSAGE).toContain("did not answer");
   });
 
   it("AN INDEX THAT NEVER ANSWERS SETTLES ANYWAY, and the button comes back", async () => {

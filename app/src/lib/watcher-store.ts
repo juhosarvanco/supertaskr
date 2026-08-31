@@ -1273,32 +1273,43 @@ export async function startGenesisHere(): Promise<void> {
  */
 async function runPicker(command: string): Promise<void> {
   // T-192: DELIBERATELY NOT BOUNDED, and the reason is recorded here
-  // because the sibling latch twelve lines down IS bounded and the next
-  // reader will otherwise take this for the oversight it looks like.
+  // because the sibling latch a few functions down IS bounded and the
+  // next reader will otherwise take this for the oversight it looks like.
   //
-  // THE SHAPE IS IDENTICAL TO `runIndexRepo`'s AND THE DEFECT IS NOT,
-  // which is decided by what each command AWAITS rather than by the
-  // TypeScript, and was read off the Rust rather than assumed. The three
-  // picker commands in `src-tauri/src/lib.rs` answer on every path they
-  // have: a held latch answers `Busy`; a dismissed dialog — or one whose
-  // callback is DROPPED — answers `Cancelled`, because `rx.recv().await`
-  // yields `None` when the sender goes; an unusable selection answers
-  // `Error`; a panicking blocking task answers `Error` through
-  // `unwrap_or_else`; and the re-arm behind the dialog is itself bounded
-  // Rust-side by `REARM_TIMEOUT` (10 s, `docs_watch.rs`). The ONE segment
-  // with no bound is the dialog standing open, which is a HUMAN deciding.
-  // `index_repo` has no such excuse: it is `spawn_blocking(run_index)`
-  // with no deadline anywhere and nobody on the other end.
+  // **THIS ONE `await` IS THREE RUST COMMANDS, AND THEY ARE NOT ALIKE.**
+  // `pick_project_folder` and `pick_genesis_folder` open a native dialog
+  // and await `rx.recv()`. **`start_genesis_here` OPENS NO DIALOG** — its
+  // own doc comment in `src-tauri/src/lib.rs` says so; it claims the
+  // flight guard, reads `genesis_target()` out of Rust's own memory, and
+  // awaits `spawn_blocking(apply_genesis_folder)`. That is `index_repo`'s
+  // shape wearing this latch, with nobody being asked anything.
   //
-  // AND A BOUND HERE WOULD MANUFACTURE THE FAILURE THIS CARD EXISTS TO
-  // CLOSE. Firing while the folder dialog is still on screen would tell
-  // the user the app did not answer when it is waiting for THEM, and
-  // release this latch while Rust still holds its own — so the next press
-  // reaches `begin_pick`, gets `Busy`, and `reducePickOutcome` returns
-  // `prev`: a button that silently does nothing, which is the family
-  // T-171 and T-183 were written against. The latch is held here only
-  // while a human is being asked a question, and that is what a
-  // single-flight latch is for.
+  // SO THE HUMAN-AT-A-DIALOG ARGUMENT COVERS TWO OF THE THREE AND MUST
+  // NOT BE STATED AS COVERING ALL THREE. It is true and it is not the
+  // load-bearing reason. **THE REASON THAT COVERS ALL THREE IS LATCH
+  // PARITY**: every one of them claims the SAME Rust latch —
+  // `begin_pick()` at three sites in `lib.rs` — and Rust's `PickInFlight`
+  // is the real gate (T-021), this flag only its webview mirror. A bound
+  // HERE releases the mirror while Rust still holds the original, so the
+  // next press reaches `begin_pick`, gets `Busy`, and `reducePickOutcome`
+  // maps `busy` to `prev` BY IDENTITY: a button that silently does
+  // nothing — the T-171/T-183 family this card exists to close. Bounding
+  // the webview half of a two-latch pair does not shorten the wait, it
+  // only desynchronises the pair.
+  //
+  // THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND: because
+  // `start_genesis_here` really can never answer, its latch really can
+  // strand. That is an ACCEPTED residual, not a closed case — the repair
+  // available at this seat is worse than the defect, and the repair that
+  // is not (a Rust-side bound that releases `PickInFlight` with it) is a
+  // different change in a different language. Routed in the notes.
+  //
+  // AND HOW THE THIRD COMMAND WAS MISSED, because the next sweep should
+  // not repeat it: this card's own thesis is that the defect is decided
+  // per RUST COMMAND, and the first class sweep used the `await invoke(`
+  // CALL SITE as its unit — so all three counted once and the odd one
+  // hid behind the shared `await`. **A sweep whose unit is coarser than
+  // its thesis reports a closure it has not measured.**
   if (!isTauri || shell.picking) return;
   setShell({ picking: true });
   try {
