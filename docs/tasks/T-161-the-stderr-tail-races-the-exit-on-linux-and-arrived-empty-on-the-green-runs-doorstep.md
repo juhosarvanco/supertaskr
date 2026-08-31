@@ -316,8 +316,16 @@ commits or the notes were opened, with `tests/agent_runner.rs` closed so
 the mutants came from the CRITERIA (shape SEVEN's procedure). The
 dispatching brief named no executor-derived specifics — no mutant counts,
 no suite figures, no file counts, and it deliberately withheld the port
-the lane used — so nothing had to be un-read. **One attack survived
-contact**; the rest are answered below.
+the lane used — so nothing had to be un-read.
+
+**TWO of the 36 produced findings, and only one of them is about the
+code.** Attack D4 — *"does the happy path now pay the wait?"* — survived
+contact and is CORRECTION 2. Attack A2 — *"if the product is named, the
+harness must be shown incapable, and the reproduction must prove it"* —
+did **not** survive as an attack on the fix (the deterministic
+reproduction holds, and I reproduced it myself), but running it falsified
+a figure in the notes, which is CORRECTION 1. The other 34 are answered
+below.
 
 **THE OWNER: the claim is PRODUCT, and it holds.** I reached the same
 answer blind, from the base file alone: the drain thread's `JoinHandle`
