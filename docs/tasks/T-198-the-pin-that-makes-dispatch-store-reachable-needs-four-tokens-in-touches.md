@@ -415,3 +415,226 @@ the correction clause asks for a re-derivation rather than a transcript.
   four assertions that move at the regen; derive them from a throwaway
   probe against the regenerated graph, because the first red hides the
   rest.
+
+## Verdicts
+
+### 2026-08-31 — APPROVED — verifier claude-opus-5@subagent (blind pass)
+
+**PHASE 1 WAS WRITTEN BEFORE THE DIFF WAS OPENED.** The attack set was
+composed from the card at its base ref `146ebb6` plus the base tree
+alone, saved and hashed **before** `git diff`, the implementation notes,
+`.nputer/BRIEF.md` or any lane report was read:
+`sha256 b99384cad444adc8c82e21e9b72987190647a1d94f779e21a4e9c157bb7b36f6`,
+213 lines, sealed 2026-08-31T06:59:41Z.
+
+**CONTAMINATION: NONE SELF-INFLICTED, AND THE BRIEF WAS CLEAN.** I ran
+no `git log` and read no commit message at any point — orientation used
+`rev-parse`, `merge-base`, `ls-tree`, `cat-file -e` and
+`git show <ref>:<path>` only, none of which carries a subject line. The
+dispatching brief carried no T-198 lane fact. **Three disclosures for
+the record, none of which is an executor-derived specific about this
+diff:** (1) the brief named the standing `brief.mjs` truncation and the
+`T-199` fence fact as live conditions — both are in `docs/STATE.md`'s
+own standing set, so they reached me from the standing docs rather than
+from the lane; (2) my environment's git block listed recent commits from
+a **different** worktree (`T-163-s4`), not this lane; (3)
+`method/roles/verifier.md` subtracts `docs/ROADMAP.md` from the brief's
+reading list, and the role file won — I did not read it.
+
+**PHASE 1's OWN ANSWER TO THE QUESTION THE CARD LIVES OR DIES ON,
+recorded before the diff and quoted from the sealed file.** Criterion 2
+says "**A** one-side-only mutant … SHALL be killed" — singular. So the
+weakest conforming pin is one happy-path body asserting `join.kind`,
+which is collected, does drive `hydrateJoin` rather than merely import
+it, and satisfies C1 and C2 **to the letter while changing almost
+nothing**. I predicted such a pin would leave `notLanes`, `truncated`,
+the refusal arm and the duplicate-id case alive at exit 0 — the T-110
+repeat. **The lane did not build that pin.** Five bodies were built, and
+every mutant I derived from the criteria with the test file closed dies.
+
+### The drills — NINE, all mine, all one side only, zero survivors
+
+Constructed from the base file, not reused from anyone. `dispatch-store.ts`
+is byte-identical at base and HEAD (`sha256 3bc8162e…`), so the lane
+changed **no production code** and my base-derived mutants apply exactly.
+Each was applied alone, **read back with `git -C <worktree> diff`**, run
+under the whole app suite with the **exit captured before any pipe**,
+then restored with `git restore --source=HEAD --staged --worktree` and
+**proven by sha256** against `git show HEAD:<path>`.
+
+| # | mutant, one side only | target | failing bodies |
+|---|---|---|---|
+| M1 | delete `rows.set(row.taskId, row)` — the canonical gutting | `dispatch-store.ts` | **2** |
+| M6 | first duplicate wins | `dispatch-store.ts` | **1** |
+| M7 | every key maps to the LAST row | `dispatch-store.ts` | **1** |
+| M3 | `notLanes: []` | `dispatch-store.ts` | **1** |
+| M4 | `truncated: false` | `dispatch-store.ts` | **1** |
+| M5 | refusal `sentence` dropped | `dispatch-store.ts` | **1** |
+| M8 | refusal `because` swapped | `dispatch-store.ts` | **1** |
+| R1 | the `paths:` line REMOVED | `C-15-dispatch.md` | **1** (dogfood) |
+| R2 | a spurious path ADDED | `C-15-dispatch.md` | **1** (dogfood) |
+
+All nine RED at exit 1. `dispatch-store.ts` restored to
+`sha256 3bc8162eb5741d2bf520026131316fd60bb88b4c42b3fa061fa7313e14bed964`
+after each of M1–M8, and `C-15-dispatch.md` to
+`sha256 5a37a12228ac4e74735cc6caab86e270ca7075a5f0b8af87e6aed99bab32c1ab`
+after R1–R2.
+
+**M1's COUNT OF 2 IS EXPLAINED AND I MEASURED THE EXPLANATION RATHER
+THAN ACCEPTING IT.** Shape SIX wants each body to kill a mutant of its
+own. M6 reds the duplicate-id body **alone** and M7 reds the ordinary-rows
+body **alone**, so the two bodies M1 hits together are blind to different
+things in both directions and neither is a duplicate of the other. The
+lane's notes claim exactly this pair; I built both mutants myself and got
+count 1 each.
+
+**M8 IS MINE AND WAS A SHAPE-SEVEN PROBE.** The lane pinned the refusal's
+`sentence`; I attacked the other half of that arm to look for a mutant no
+body kills. It dies at count 1 — the sweep body pins `because` as well.
+I found no shape-seven survivor.
+
+**R2 IS MINE AND IS THE ONE CONTROL THE LANE DID NOT RUN — it is the
+reason this verdict can call the reconciliation legitimate.** The lane's
+drill 7 reverted the `paths:` line, i.e. the REMOVAL direction only. A
+removal reds under `toContain` just as it does under `toEqual`, so that
+drill alone cannot distinguish a preserved exact matcher from a weakened
+one. **R2 ADDS a spurious path and still reds**, which only an exact
+`toEqual` does. The worst outcome available in this lane — quietly
+widening the only exact-array pin over a live component's `paths:` into a
+superset check — provably did not happen: the matcher is untouched and
+only the expected VALUE gained a third literal entry.
+
+### Phase 1's other settled question, answered independently
+
+**What a registry `paths:` change breaks, and who owns it.** It breaks
+`app/test/architecture-dogfood.test.ts › … › C-15 HAS TERRITORY AT LAST`,
+and the owner is **C-12 (`app-map`)** — derived, not taken from prose:
+`command grep -n 'architecture-dogfood' docs/architecture/components/*.md`
+returns C-12 as the only component carrying it as a **`paths:` entry**
+(`C-12-map-pane.md:17`, `touch_slugs: [app-map]`); the C-05 and C-09 hits
+are prose sentences. Run against a live control first (15 files match a
+token I knew was present), per shape TEN.
+
+**Reconciling it in-lane is LEGITIMATE, not a moving expectation.** The
+fixture is a census of DECLARED territory, not a behavioural claim about
+C-15's code; when the territory genuinely gains a path, updating the
+census is reconciliation. The boundary I set in phase 1 was that the
+matcher must survive and the expected side must stay literal rather than
+becoming derived from the registry it pins. Both hold, and R2 proves the
+first by measurement.
+
+**THE FENCE HELD, JUDGED BY READING THE MANIFEST AGAINST THE DIFF** —
+not by assuming anything was blocked, since `T-199` establishes the hook
+stands aside unjudged for a sibling worktree. `.nputer/lane-fence.json`
+allows five paths plus `alwaysWritable: ["docs/tasks"]`; the diff's four
+files all fall inside. **The manifest independently corroborates the
+card's core reasoning**: `app-dispatch` expanded to only the TWO paths
+C-15 declared *at dispatch*, so the new test path genuinely could not
+have been written without its own explicit token.
+
+### Gates, at my own ref `3805079` — counts, not exits alone
+
+    npm test        from app/        50 files / 1105 tests        exit 0
+    npm run build   from app/        tsc x2 + vite                exit 0
+    npx vitest run  from lib/parser/ 16 files / 344 tests         exit 0
+    cargo test --no-fail-fast        18 targets, 601 passed / 0 failed / 4 ignored   exit 0
+    npm test        from tools/e2e/  1 failed / 366 passed        exit 1  (T-197)
+    index --check                    STALE, by construction       exit 1
+    arch cycles                      ACYCLIC, 15 components / 43 edges   exit 0
+    capabilities --check             CURRENT (29121 bytes)        exit 0
+    docs-gate.mjs (4 separate literal paths, from the repo root)  exit 1 FIRES
+
+The base app suite was 49 files; the tip is 50. **Collection is proven by
+the runner's own file count moving, not by the file existing.** The docs
+gate named four owed suites and **all four were run**. Its first
+invocation from `tools/e2e/` exited **2** — called wrong, because a plain
+relative path has two readings — which is the gate refusing to answer a
+question it could not read; re-run from the repository root with absolute
+literal paths it returned a verdict.
+
+`cargo test` ran in 14s wall **including a cold build** with 0 failures,
+so this is not the `T-088-s4` cache cliff; 601/0 matches the count STATE
+records post-clean.
+
+**`index --check` STALE IS CORRECT AND IS THE INTEGRATOR'S, NOT A
+DEFECT.** It is a REAL stale, not the `--root` false red: the second line
+prints both counts and a file diff (`committed 199 files` / `fresh 200`,
+`files +1 -0 ~1`, `edges +9 -0`) rather than `committed: MISSING`. **All
+nine new edges land on `dispatch-store.ts` (C-15's own) or on `p:vitest`
+— zero cross-component edges** — which is why `arch cycles` is still
+ACYCLIC, and `arch`'s summary came back exactly as the lane quotes it:
+`components=15 files=199 mapped=199 unmapped=0 edges=45 findings=4
+drift_components=4`, C-15 at `files=6 drift=-`.
+
+**THE ONE e2e RED IS `T-197` AND IS ATTRIBUTED BY MECHANISM, NOT BY A
+RE-RUN.** `tests/dispatch-order.spec.ts:200`. I reproduced the cause at
+my own ref: `brief.mjs --dispatch` **redirected** yields 77,568 bytes at
+exit 0 and **piped** yields exactly 65,536 — the macOS pipe buffer. The
+three strings the body fails on sit at byte offsets **73,704**, **76,301**
+and **76,472**, all more than 8 KB past the cut, while the two that pass
+sit at 1,313 and 9,561. **This diff contributes zero bytes to that
+output**: two distinct phrases from the lane's notes return 0 hits in the
+77,568-byte listing against a live positive control (`STARTABLE NOW`, 1
+hit). Not charged to this lane.
+
+### Criteria
+
+1. **Reachable and DRIVEN — MET.** Import census at my ref: the specifier
+   form returns **1 file** (`app/test/dispatch-store.test.ts`) and the
+   other three forms 0 each; at base it returns **0**. Positive controls
+   alive: **12 files each** for `board-model` and `task-detail`. Driven,
+   not merely imported — proven by M1–M8 rather than by the import.
+2. **A one-side-only mutant killed — MET, and far past the letter.**
+   Eight mutants of `hydrateJoin`, zero survivors.
+3. **Registry line declared and the body it reds reconciled — MET.**
+   R1 and R2 prove the reconciled assertion is load-bearing in both
+   directions.
+4. **Says where it makes `T-185`/`T-195` cheaper, neither in scope — MET.**
+   Both the card and `C-15-dispatch.md` carry the distinction, and neither
+   card's work was performed here.
+5. **Headless — MET.** No app launched, no `tauri dev`, no screen read.
+   1420 read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN` only: nothing
+   listening. My e2e run bound port **14198, derived from this card id**,
+   lsof'd to zero rows immediately before binding.
+
+**SECURITY SWEEP — CLEAN.** No dependency or manifest change in the
+range. The pin imports `vitest` and the module under test and nothing
+else: no fs, network, `child_process`, `process.env`, `eval` or dynamic
+require; its fixtures are in-memory literals with synthetic paths and no
+real credential, host or personal data. No new input path, endpoint or
+authz surface. (My secret-shaped grep returned three hits which are all
+the substring `sk-` inside the word "ta**sk-**detail" — false positives,
+recorded rather than quietly dropped.)
+
+**THE LANE'S OWN CORRECTION TO `C-15-dispatch.md` IS RIGHT, AND I
+RE-DERIVED IT WITH MY OWN PROBE AS ITS NOTES INVITE.** The file forecast
+that `c15?.files`, the `fileComponent` tally and the tree-wide count move
+in-lane with the `paths:` array. They do not: reading the **committed**
+`docs/architecture/graph.json` directly gives **199 total files**, C-15
+matching **6**, and `app/test/dispatch-store.test.ts` **absent from the
+committed graph** — so exactly one assertion moves in the lane. The green
+app suite is the second, independent confirmation, since the untouched
+6-entry `c15?.files` assertion would have red otherwise.
+
+### Non-blocking observations — no correction assigned
+
+1. **The lane's drill figures were measured at `dde0273`; HEAD is
+   `3805079`.** Not an error — the notes name their ref — and I re-ran
+   every one at HEAD and got identical counts, so the table holds at the
+   tip a reader will actually pick up.
+2. **The removal-only drill shape is a method gap worth naming**, not a
+   defect in this card: where the property under test is a matcher's
+   EXACTNESS, a drill must mutate in both directions, because a removal
+   reds under `toContain` too. R2 is the missing half and it passes here.
+   Described for the dispatching seat rather than filed, since minting a
+   card id is not this seat's.
+3. **The brief listing has grown from the 70,092 bytes the lane measured
+   to 77,568 at my ref** — three sibling lanes are live. It changes no
+   conclusion; it is why a figure without its ref goes stale.
+
+**VERDICT: APPROVED.** The card's own hazard — that structural
+reachability proves nothing — is the one thing this lane demonstrably
+did not do. `status`, `review:` and `verified_by` are stamped on
+completion and are left to the integrator; the GRAPH REGEN at merge is
+owed and the lane's list of what moves is explicitly not warranted
+complete.
