@@ -8,11 +8,12 @@ GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
 megabyte free — derive it, never quote it. Pre-compaction:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
-**CI IS BROKEN AND THE TREE IS NOT.** GitHub Actions stopped STARTING on
-2026-08-31 — zero steps, no log, two commits, five attempts; likely
-exhausted minutes, @human's to check. Designed non-zero exits: `npm run
-health` exits 3 while bands await keepers (T-156-s1/s2); the DOCS GATE's
-1 means it HAS a verdict. **Re-run a suspect ONCE as a second measurement, then
+**NOTHING IS BROKEN.** CI stopped STARTING for ~4h on 2026-08-31 (an
+account BILLING block, not minutes — the reason lives in check-run
+ANNOTATIONS, nowhere else); @human cleared it and `146ebb6` is green,
+including `cargo audit`. Designed non-zero exits: `npm run health` exits
+3 while bands await keepers (T-156-s1/s2); the DOCS GATE's 1 means it HAS
+a verdict. **Re-run a suspect ONCE as a second measurement, then
 ATTRIBUTE** — never re-run until green and call that evidence. (`T-161`
 and `T-178`'s causes are both fixed.)
 

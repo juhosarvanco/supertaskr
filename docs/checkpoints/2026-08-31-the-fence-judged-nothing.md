@@ -243,3 +243,30 @@ losing**: `T-199` establishes that the fence hook judges nothing in this
 session's shape, so the guard whose limit 6 that hazard routes around is
 not running at all. **It becomes live again the moment `T-199` lands** —
 which is precisely why it is recorded here instead of deleted.
+
+## CORRECTION — the "verified LOCALLY ONLY" caveat above is DISCHARGED
+
+Written while CI was dead; **no longer true, and a record that says
+"unverified" after verification arrived is stale in the direction that
+misleads.**
+
+@human cleared an **account-level billing block** and `146ebb6` ran
+green: **32 steps, all success**, including `cargo test`, the parser, app
+and e2e suites, the docs gate's whole-tree half, and **`cargo audit`** —
+which independently confirms the hand-run this seat did while CI was
+down. **Every merge this record covers is now CI-verified on Linux.**
+
+**And this record's diagnosis of the outage was WRONG.** It said
+*"most likely exhausted Actions minutes, unconfirmable from here."* The
+cause was a failed account payment, and it was never unconfirmable — the
+reason sat in the **check-run annotations** endpoint in plain English the
+whole time:
+
+> *"The job was not started because recent account payments have failed
+> or your spending limit needs to be increased."*
+
+Making the repository public did **not** fix it, because the block is at
+the account level. What fixed it was settling the payment. **The
+diagnostic lesson — read check-run annotations before calling a CI
+failure unconfirmable — is `T-206`'s runbook line, and this is its
+measured instance.**
