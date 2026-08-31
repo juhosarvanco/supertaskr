@@ -463,7 +463,11 @@ read out of CONVENTIONS' own bullets rather than retyped:
   card paths. It named three suites and all three were run:
   **lib/parser `npx vitest run` 344/344 passed** (16 files) ·
   **app `npm test` 1077/1077 passed** (49 files) ·
-  **tools/e2e `npm test` 359 passed / 3 failed** — attributed below.
+  **tools/e2e `npm test` 363 passed / 3 failed in 4.5m** — attributed
+  below. (An earlier run at the same ref-minus-the-fires-control was 359
+  passed / the same 3 failed in 4.1m; the delta is this card's own four
+  new bodies, and the two times are close enough to exclude the cargo
+  cache cliff, whose signature is the suite's OWN reported time moving.)
 
 Also green, unpiped: tools/e2e `npm run typecheck` **0** ·
 `lint:tokens --selftest` **0** · `lint:tokens` **0** · `lint:docs` **0**.
