@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { TaskDetailPanel } from "@/components/board/TaskDetailPanel";
 import type { TaskRef } from "@/lib/task-detail";
-import type { IndexOutcomePayload } from "@/lib/watcher-store";
+import { UNANSWERED_INDEX_MESSAGE, type IndexOutcomePayload } from "@/lib/watcher-store";
 import {
   deriveArchitecture,
   type DerivedArchitecture,
@@ -160,6 +160,57 @@ export function indexHint(
   }
   if (derived.indexNotRun) return "index not run";
   return `committed graph · ${derived.indexedFileCount} files`;
+}
+
+/**
+ * T-200: the `error` arm of `IndexOutcomePayload` carries TWO different
+ * things, and only one of them is a failure.
+ *
+ * A REFUSAL is `index_repo` rejecting — `docs/architecture` is a symlink,
+ * a read threw — and *"index failed"* is exactly right about it. An
+ * ABSENCE is T-192's bound: the command did not answer inside
+ * `INDEX_ANSWER_BOUND_MS`, so `runIndexRepo` settles the race itself and
+ * releases the `indexing` latch rather than leaving the Re-index button
+ * greyed for the rest of the session. Nothing was refused, the run may
+ * still be in flight, and `UNANSWERED_INDEX_MESSAGE`'s own site says the
+ * wording is about TIME, not blame — which this pane then contradicted in
+ * its first three words, retracting itself inside one sentence.
+ *
+ * THE DISCRIMINATOR IS IDENTITY AGAINST THE CONSTANT, NEVER A SUBSTRING.
+ * The bound's message is the one `runIndexRepo` writes, so this pane
+ * compares against the exported constant itself: a reword moves both
+ * sides in a single edit, and no rejection can sniff its way into the
+ * calm arm the way `message.includes("did not answer")` would let one
+ * (a real refusal quoting the indexer's own wording is the case that
+ * breaks, and it is pinned in `map-view-dom.test.tsx`).
+ *
+ * WHY HERE AND NOT IN THE TYPE. Widening `IndexOutcomePayload` so an
+ * absence is never spelled `error` is the cleaner shape and is NOT taken:
+ * `watcher-store.ts` is C-10 (`app-shell`) and this card's fence is
+ * `app-map` (C-12). Routed rather than widened — T-200's notes carry the
+ * routing, and this comment is here so the next reader knows the shape
+ * was chosen against an alternative rather than defaulted into.
+ *
+ * AND THE ABSENCE ARM DROPS THE MESSAGE FROM THE VISIBLE TEXT ON PURPOSE.
+ * The chip is `max-w-70 truncate`, so a 130-character sentence is cut
+ * around its fortieth character and the half that RETRACTS the blame is
+ * reachable only by hovering — which is close to no retraction at all.
+ * A short line that is still complete and true where it is cut beats a
+ * long one whose correction never arrives; the whole sentence stays in
+ * the `title`. A REFUSAL keeps its message inline, because there the
+ * message IS the information and truncating it costs detail rather than
+ * meaning.
+ *
+ * DELIBERATELY NOT EXPORTED, unlike `indexHint` above. This card's whole
+ * subject is a sentence on a screen, and the acceptance criterion asks
+ * for the RENDERED text rather than a return value — a body that could
+ * call this directly would be pinning the same string one layer away from
+ * the place it is wrong. Giving it no import surface is what keeps the
+ * assertions in the DOM.
+ */
+function indexErrorText(message: string): string {
+  if (message === UNANSWERED_INDEX_MESSAGE) return "no answer yet · re-index is safe";
+  return `index failed: ${message}`;
 }
 
 export function MapView({
@@ -787,7 +838,7 @@ export function MapView({
               title={indexOutcome.message}
               className="max-w-70 truncate rounded-md border border-border bg-muted px-2.5 py-1.25 font-mono text-xs text-muted-foreground"
             >
-              index failed: {indexOutcome.message}
+              {indexErrorText(indexOutcome.message)}
             </span>
           ) : (
             <span data-testid="map-index-hint" className="font-mono text-xs text-muted-foreground">

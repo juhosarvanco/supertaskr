@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@nputer/parser/pure";
 import { centerViewport, indexHint, MapView, relativeTime } from "../src/architecture/MapView";
+import { UNANSWERED_INDEX_MESSAGE, type IndexOutcomePayload } from "../src/lib/watcher-store";
 import { deriveArchitecture } from "../src/lib/architecture/derive";
 import { parseGraph } from "../src/lib/architecture/graph";
 
@@ -665,13 +666,94 @@ describe("the header hint (volatile stats from the outcome, never the file)", ()
     ).toBe(true);
   });
 
-  it("an error outcome renders as a chip line", () => {
+});
+
+// ---- T-200: an ABSENCE is not a FAILURE, as RENDERED -------------------
+
+describe("the index hint tells an ABSENCE from a REFUSAL", () => {
+  // `IndexOutcomePayload`'s `error` arm carries both, and the two payloads
+  // are IDENTICAL IN SHAPE — same `kind`, same one `message` field. So
+  // every assertion here is on the RENDERED text and none on the payload:
+  // a body that asserted the payload would pass whichever sentence reached
+  // the screen, which is precisely how the defect survived T-192's suite.
+  //
+  // The old body this block replaces asserted
+  // `toContain("index failed")` against the refusal fixture alone; that
+  // assertion survives below as an exact-equality positive control, and
+  // the card's point is that it passed identically before and after the
+  // sentence became wrong for the OTHER state.
+
+  const REFUSAL = "docs/architecture is a symlink";
+
+  function renderHint(outcome: IndexOutcomePayload): HTMLElement {
     const { model, graphContent } = statesFixture();
-    renderMap(model, graphContent, {
-      indexOutcome: { kind: "error", message: "docs/architecture is a symlink" },
-    });
-    expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toContain(
-      "index failed",
+    renderMap(model, graphContent, { indexOutcome: outcome });
+    const el = container.querySelector("[data-testid=map-index-hint]");
+    if (!(el instanceof HTMLElement)) throw new Error("the index hint did not render");
+    return el;
+  }
+
+  it("an ABSENCE does not claim the index failed, and says what is true instead", () => {
+    // CONSTRUCTED THE WAY THE PRODUCER BUILDS IT (CONVENTIONS: a positive
+    // control is built the way the producer builds it, never written to
+    // look similar): `runIndexRepo`'s bound resolves exactly this payload,
+    // so a reword of the constant moves this fixture with the code rather
+    // than leaving a stale look-alike literal behind.
+    const hint = renderHint({ kind: "error", message: UNANSWERED_INDEX_MESSAGE });
+    const text = hint.textContent ?? "";
+
+    // The defect in one line: the bound is not a failure and must not be
+    // announced as one.
+    expect(text).not.toContain("index failed");
+    expect(text.toLowerCase()).not.toContain("fail");
+
+    // …and the chip is not merely blank-and-harmless. Pinned by its
+    // LITERAL, because a body parametrised by the constant it checks
+    // cannot pin that constant (T-063, and the sibling trap
+    // `startup-recovery.test.ts` names one field over).
+    expect(text).toBe("no answer yet · re-index is safe");
+
+    // THE RETRACTION IS NOT HOVER-ONLY ANY MORE. The span is
+    // `max-w-70 truncate`, so the visible line has to be true where it is
+    // cut; the whole sentence stays reachable in the tooltip rather than
+    // being the only place the correction lives.
+    expect(hint.getAttribute("title")).toBe(UNANSWERED_INDEX_MESSAGE);
+  });
+
+  it("a genuine REFUSAL still reads as a failure — the positive control", () => {
+    // Without this the body above is satisfied by a repair that stopped
+    // saying "failed" about ANYTHING, which would flatten the two cases
+    // into one in the other direction.
+    const hint = renderHint({ kind: "error", message: REFUSAL });
+    expect(hint.textContent).toBe(`index failed: ${REFUSAL}`);
+    expect(hint.getAttribute("title")).toBe(REFUSAL);
+  });
+
+  it("THE TWO STATES DO NOT RENDER THE SAME SENTENCE", () => {
+    // The body this card is about. Each assertion above pins ONE literal,
+    // and a repair that rendered both states identically would pass either
+    // of them alone exactly as happily as it passes both — this project's
+    // most-repeated defect class. Rendered one after the other, into the
+    // same root, they must differ and each must carry the half the other
+    // does not.
+    const absence = renderHint({ kind: "error", message: UNANSWERED_INDEX_MESSAGE }).textContent;
+    const refusal = renderHint({ kind: "error", message: REFUSAL }).textContent;
+
+    expect(absence).not.toBe(refusal);
+    expect(refusal).toContain("index failed");
+    expect(absence).not.toContain("index failed");
+  });
+
+  it("a refusal that merely SOUNDS like the bound still reads as a failure", () => {
+    // The discriminator is IDENTITY against `UNANSWERED_INDEX_MESSAGE`,
+    // not a substring sniff — and this is the body that says so. A
+    // `message.includes("did not answer")` repair passes all three bodies
+    // above and quietly swallows this one, rendering a real refusal as a
+    // calm absence: the same defect pointing the other way.
+    const nearMiss = "index_repo: the indexer did not answer — the command was refused";
+    expect(nearMiss).not.toBe(UNANSWERED_INDEX_MESSAGE);
+    expect(renderHint({ kind: "error", message: nearMiss }).textContent).toBe(
+      `index failed: ${nearMiss}`,
     );
   });
 });
