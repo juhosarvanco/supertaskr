@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [crate-index]
 suggested_by: verifier claude-opus-5@subagent @T-194, re-measured by T-194's executor before filing; id allocated by the integrator
-builder:
+builder: claude-opus-5@subagent
 review: independent
 ---
 
