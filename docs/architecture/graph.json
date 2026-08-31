@@ -19467,8 +19467,8 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:70dbf2693c22f98d9e3b3d48a89aa96f7e91575b963e546f47662a5169f0e263",
-      "loc": 950,
+      "hash": "blake3:4b25ef7e9dc439555455e87c3f17364b9bf36831d8a6047dd928531e4af98bf5",
+      "loc": 983,
       "symbols": [
         {
           "id": "s:app/test/board-truth.test.tsx#CLAMPING",

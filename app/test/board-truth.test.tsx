@@ -869,8 +869,41 @@ describe("the board root threads the dispatch channel into the drawer (T-112-s1)
   ]);
 
   /** A scanned repository holding no lane — the ordinary quiet state, and
-   * the one that leaves T-400 dispatchable. */
-  const NO_LANES = { kind: "joined", rows: new Map() } as const;
+   * the one that leaves T-400 dispatchable.
+   *
+   * **NO BODY IN THIS SUITE CAN TELL EITHER FIELD FROM ITS OPPOSITE, AND
+   * THE ONE THAT LOOKS LOAD-BEARING IS THE DANGEROUS ONE.** Both are
+   * required by `DispatchReading` since T-185. `truncated: true`, and a
+   * populated `notLanes`, are each fully green — build 0, `npm test` 0,
+   * 1113 passed, measured both ways. `truncated` is not inert in the
+   * MODEL (`selectDispositions` reads it as `scanIsFloor` and the floor
+   * sentence does reach the output); it is unasserted HERE. `false` is
+   * right because it names the quiet state this constant is for, never
+   * because a body would catch `true`.
+   *
+   * **THE ASYMMETRY IS IN WHAT HAPPENS WHEN A FIELD GOES MISSING, AND IT
+   * RUNS OPPOSITE TO THE ONE ABOVE.** Drop `notLanes` and BOTH gates red
+   * — `tsc`, and two bodies below on `.length` of `undefined`. Drop
+   * `truncated` and ONLY `tsc` reds: a missing boolean is falsy, so it
+   * degrades silently into the `false` branch and the suite stays at
+   * 1113. **That is the silent floor T-185 exists to remove, reproduced
+   * in miniature inside the fixture that card repairs** — so if a later
+   * change ever puts this constant out of `tsc`'s sight, `truncated` is
+   * the field that will lie quietly and `notLanes` is the one that will
+   * shout.
+   *
+   * **AND `as const` HERE LEANS ON A `readonly` IT DOES NOT NAME.** The
+   * assertion gives `notLanes` the type `readonly []`, assignable only
+   * because `board-model.ts` declares the field `readonly
+   * NotLaneHold[]`. Narrow that to a mutable `NotLaneHold[]` and this
+   * literal reds — *"the type `readonly []` is `readonly` and cannot be
+   * assigned to the mutable type"* — with nothing here hinting why. */
+  const NO_LANES = {
+    kind: "joined",
+    rows: new Map(),
+    notLanes: [],
+    truncated: false,
+  } as const;
 
   /** One assembled brief, with a line whose text nothing else in this file
    * produces, so the assertion below proves the brief's VALUE arrived and
