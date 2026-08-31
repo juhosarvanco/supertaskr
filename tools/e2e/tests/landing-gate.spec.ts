@@ -439,6 +439,36 @@ test("a checkpoint sync is not charged with main's own paths — the diff is mer
   expect(push.refused, `a synced lane was charged with main's paths: ${push.stderr}`).toBe(false);
 });
 
+test("a lane that has NOT synced is not charged with main's paths either", () => {
+  // THE OTHER HALF, AND THE ONE A POISON DRILL FOUND MISSING. The body
+  // above syncs, and after a sync `main` and `merge-base(main, HEAD)` are
+  // THE SAME COMMIT — so it cannot tell the prescribed range from the
+  // two-dot `main..HEAD` that looks like a refinement of it. Unsynced,
+  // they differ, and they differ in the direction that manufactures a
+  // refusal: `main..HEAD` reports main's own new file as CHANGED, because
+  // this branch does not have it.
+  const fx = fixture("unsynced");
+  git(fx.root, "checkout", "-q", "main");
+  commit(fx, { "docs/ARCHITECTURE.md": "main's own work, never merged down\n" }, "main moves on");
+  git(fx.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+  git(fx.root, "checkout", "-q", fx.lane);
+  commit(fx, { "tools/e2e/unsynced.txt": "inside the fence\n" }, "work without syncing");
+
+  // The precondition, measured rather than assumed: the two ranges really
+  // do disagree on this tree, and only one of them is the lane's work.
+  const twoDot = git(fx.root, "diff", "--name-only", "main..HEAD").split("\n");
+  const mergeBase = git(fx.root, "merge-base", "main", "HEAD").trim();
+  const prescribed = git(fx.root, "diff", "--name-only", `${mergeBase}..HEAD`).split("\n");
+  expect(twoDot, "the fixture did not reproduce the range the gate must not use").toContain(
+    "docs/ARCHITECTURE.md",
+  );
+  expect(prescribed).not.toContain("docs/ARCHITECTURE.md");
+  expect(prescribed).toContain("tools/e2e/unsynced.txt");
+
+  const push = pushThroughGuard(fx, fx.laneRef);
+  expect(push.refused, `an unsynced lane was charged with main's paths: ${push.stderr}`).toBe(false);
+});
+
 test("a card with an ABSENT `touches:` has its push refused WHOLE", () => {
   const fx = fixture("absent-touches", { touches: null });
   const before = remoteRef(fx, fx.laneRef);
