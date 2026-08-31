@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **341 behaviours** — 339 extracted sentences + 2 named-not-extracted (listed at the end) — across 30 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **366 behaviours** — 364 extracted sentences + 2 named-not-extracted (listed at the end) — across 31 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -320,6 +320,34 @@ Census: **341 behaviours** — 339 extracted sentences + 2 named-not-extracted (
 - real Escape closes the panel and focus returns to the opener trigger
 - real Enter on a focused card trigger opens its panel
 - real Space on a focused card trigger opens its panel
+
+## push-guard
+
+- the four exit codes are docs/CONVENTIONS.md's, not this hook's
+- the check this guard runs is the command docs/CONVENTIONS.md publishes
+- the paths this guard holds resolve in this repository's own tree
+- a push is recognised through git's global options and its separators
+- a command that pushes nothing is not guarded
+- the subcommand scanner steps over exactly the options that take a value
+- a request with no readable command is read as such and never as a push
+- a STALE graph refuses the push and quotes the check's own regenerate line
+- a CURRENT graph pushes, in the same fixture that refuses when it is stale
+- the guard reads the exit code and not the report's words
+- exit 3 allows the push and says the graph was not asked
+- exit 2 allows the push and is named as `called wrong`, never stale
+- no cargo at all allows the push rather than refusing every toolchain-less machine
+- an unreadable request stands aside
+- a checkout without the indexer crate is not judged, and is not asked
+- an allow that left the graph unverified is announced; an ordinary one is silent
+- a command that is not a push costs nothing at all
+- a lane whose fence cannot reach the graph is not refused, and one that can is
+- a lane branch with no readable manifest allows rather than refusing
+- a dirty tree gets the stash sentence and a clean one does not
+- WITHOUT the guard, a stale graph reaches the remote — the defect, reproduced
+- WITH the guard, the same stale graph never reaches the remote
+- WITH the guard, a current graph still reaches the remote
+- the refusal travels through the WIRED command, not through a path this spec typed
+- the guard is wired into .claude/settings.json on the Bash matcher
 
 ## range-rule
 

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: integrator nputer-4e, third graph-staleness CI red of 2026-08-30
@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by: claude-opus-5@subagent
 verified_by: claude-opus-5@subagent
-review:
+review: independent
 ---
 
 Three CI runs redded on graph currency in one day, same seat, same
@@ -888,3 +888,23 @@ individual keeper. The one residual whose interpolation ends its needle
 is `docs-input-gate.spec.ts:336`, `toContain(`../../${capture}`)`; it is
 named here rather than assessed, because assessing it is outside this
 fence's card and would be a second card's work.
+
+## `review: independent` WAS STAMPED LATE, AND THE FIELD SAYS SO
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. **This seat did not set it**, having placed the card
+on the ceremony row for *S, diff outside shipped code* — which is correct
+about the DIFF and incomplete about the SUBJECT. It was stamped at the
+merge instead, and that is recorded here rather than left to read as
+though the rule had been followed.
+
+**The rule then caught, on the first card it was applied to, exactly what
+the size row would have shipped**: three mutants of the guard's own
+`--root`/cwd constant surviving 25 passed / 0 failed, two of which would
+have refused every push in the repository and one of which would have
+allowed every push for ever. *"The builder of a cage is not its
+inspector"* was not a precaution here; it was the difference.
+
+The lane reached the same conclusion independently, refused to award
+itself the review, and stamped `verifying` — before this seat's
+correction reached it.
