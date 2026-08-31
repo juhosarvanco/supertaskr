@@ -647,6 +647,45 @@ level.**
   body can call, and AC5 names the app CRATE's `cargo test`, which no
   TypeScript body runs under.
 
+### The three questions the lane put to the verifier, answered
+
+1. **The seam** — answered above. Measured further than the lane
+   measured it (D4, D5) and still not an unmet criterion.
+
+2. **The `missing == ["machine"]` transcription: it IS one, it is the
+   right call for THIS card, and the shape that would remove it is worth
+   naming rather than leaving to the next reader.** The expected KEY SET
+   is derived from the page; what is transcribed is the omission RULE, as
+   a hard-coded one-element vector. So the page and the test hold that
+   rule twice — and D4 is exactly what that costs: invert the page's
+   sentence and the test goes on asserting the old rule, green, with the
+   two copies disagreeing in silence. That is this card family's own
+   defect class, one level down from where it was fixed.
+   **The mechanical remedy is a SECOND example object on the page** — the
+   TYPED half-turn, four keys — with the arm deriving its expected set
+   from that example instead of from `schema` minus a literal. Then the
+   omission rule is the page's, both example objects are pinned in both
+   directions, and a page whose rule was edited without its second
+   example reds. It is the shape T-167-s1 already used one level up (its
+   packed and packless arms, from one document). It is also more than
+   this card asked for, so it is routed rather than required: recorded on
+   `T-167-s12` as the fuller alternative to that card's one-line remedy,
+   for triage to choose between. Note what it does NOT close — the
+   camelCase paragraph and every other sentence stay unheld; a second
+   example holds the omission rule and nothing else.
+
+3. **The old substring assertion is not a defect, and I looked before
+   saying so.** The `contains("atMs")` line in
+   `transcript_appends_one_line_per_half_turn_and_caps_text` is now
+   strictly weaker than the new body, but it is not a second copy of a
+   VALUE: the lane annotated it with a pointer NAMING the body that owns
+   the field set, which is CONVENTIONS' own cite-the-assertion-by-name
+   remedy applied correctly. Its haystack is the written file's own lines
+   rather than a whole file, so shape EIGHT does not reach it, and it
+   sits in a body about half-turns and caps where an `atMs` tripwire
+   costs nothing. Deleting it would remove a check and buy nothing; the
+   card did not ask for it either way.
+
 ### Where the brief was wrong
 
 - **The tip I was dispatched at did not exist by the time I read it.**

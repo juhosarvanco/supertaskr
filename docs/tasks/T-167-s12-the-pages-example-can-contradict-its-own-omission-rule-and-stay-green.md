@@ -62,6 +62,40 @@ asserts `machine["machine"] == true` about the writer's output, and that
 is a different object. Pick the anchor deliberately: this is the page's
 side of the comparison, not the writer's.
 
+## A FULLER ALTERNATIVE, AND THE CHOICE BETWEEN THEM IS TRIAGE'S
+
+The one-line remedy closes the value. **A second EXAMPLE OBJECT on the
+page closes more**, and it is the shape T-167-s1 already used one level
+up (its packed and packless arms, both derived from one document). Add
+the TYPED half-turn — four keys, no `machine` — as a second fenced
+example, and have the typed arm derive its expected set from THAT example
+instead of from `schema` minus the hard-coded `vec!["machine"]`.
+
+What it buys, in the order that matters:
+
+1. **The omission rule stops being held twice.** Today the page states it
+   in prose and the test transcribes it as a literal, so the two can
+   disagree in silence — measured at `07831da`: inverting the page's rule
+   to *omitted when it is true* / *absent means machine-assembled* leaves
+   `cargo test --lib` at **261 passed / 0 failed, exit 0**.
+2. **Both objects then get both directions**, so a page edited without
+   its second example reds by name.
+3. It removes the last transcription in a pin whose whole subject is that
+   a transcription is a second implementation.
+
+What it costs, said plainly: `json_example` takes the FIRST fenced block,
+so a second example needs the reader to pick its block by an ANCHOR
+rather than by position — which is the shape CONVENTIONS' poison-drill
+catalogue asks for anyway (narrow the haystack, and make the anchor's own
+uniqueness assertable). **And it does NOT close the prose seam**: the
+camelCase paragraph and every other sentence on the page stay unheld
+either way.
+
+**Neither shape is chosen here.** The one-liner is cheap and closes one
+measured hole; the second example is a redesign of the pin's expected
+side and closes the transcription too. That is a scope call, and scope
+calls belong to triage before dispatch.
+
 ## What it does NOT fix, stated so the next reader does not over-read it
 
 The page's PROSE stays unheld either way, which T-167-s9's own drill D
