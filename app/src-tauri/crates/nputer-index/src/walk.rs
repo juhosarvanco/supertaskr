@@ -318,20 +318,57 @@ mod tests {
     //                               directories still skipped).
     //
     // **WHERE THIS CRATE PARTS COMPANY WITH `docs_watch.rs`, AND IT IS THE
-    // REASON T-186 MEASURED INSTEAD OF INHERITING.** One crate over, BOTH
-    // halves of the link classification are undetectable and the finding
-    // was that no body can exist. Here only the `is_symlink()` half is:
-    // `!meta.is_file()` has a fixture of its own, because layer 2 filters
-    // on a NAME rather than on a resolved path, so a directory called
-    // `<name>.ts` reaches predicates a directory in the collector never
-    // could. Assuming the sibling's verdict would have cost this walk a
-    // body it turns out to support.
+    // REASON T-186 MEASURED INSTEAD OF INHERITING A VERDICT.** One crate
+    // over, BOTH halves of the link classification are undetectable, and
+    // that lane's honest landing was a body that cannot red. **The
+    // inherited answer would have been WRONG HERE, and in the direction
+    // that loses a test.**
+    //
+    // Only the `is_symlink()` half is undetectable here. `!meta.is_file()`
+    // has a fixture of its own, and the reason is structural rather than
+    // lucky: **layer 2 filters on the entry's own NAME, where the
+    // collector filtered on a RESOLVED PATH.** So a directory called
+    // `<name>.ts` — allowlisted extension, requested language,
+    // canonicalizes to itself, formats to a relative path — clears every
+    // remaining predicate and is emitted as a source file, which the
+    // parser would then be handed to read. A directory in `docs_watch`'s
+    // collector could never reach that far, so no such fixture exists
+    // there and none could be written.
+    //
+    // The general form, for whoever meets the next sibling of this
+    // finding: **two guards with identical TEXT are not the same guard.**
+    // What decides whether a half is pinnable is what the predicates
+    // DOWNSTREAM of it read — a name or a resolved path — and that is a
+    // property of the surrounding walk, not of the line. Read the
+    // downstream predicates before carrying any verdict across.
     //
     // The lifted arm TERMINATED IN A FIXTURE (CONVENTIONS, LIFTING A
     // SAFETY GUARD TO DISCRIMINATE — pointed at one, not merely started at
     // one): the only path leaked by the all-four arm is a `TempTree`
     // under the system temp dir, and the repository's own path appears in
     // that output zero times.
+    //
+    // **AND A WARNING FOR WHOEVER RE-RUNS THIS DRILL, BECAUSE IT COST THIS
+    // LANE TWO FALSE GREENS** (CONVENTIONS, poison shape TEN — an empty
+    // comparison reports AGREEMENT). Two of the checks written to VERIFY
+    // the work above were themselves vacuous, and both looked like clean
+    // passes:
+    //
+    //   - a `diff` proving this file's shipped half unchanged against base
+    //     compared two EMPTY files and exited 0, because zsh's `:a`
+    //     modifier had eaten `$ref:app/...` inside a `git show`;
+    //   - a duplicate-card-id check ran over an EMPTY corpus, because
+    //     `git ls-tree` emits full paths and the pattern was anchored at
+    //     `^T-`.
+    //
+    // Neither failure is visible in an exit code: a check with nothing on
+    // either side of it passes, loudly and wrongly. **The failure wears the
+    // drill's own costume** — it is indistinguishable from the finished
+    // job it is imitating. What caught both was mechanical and cheap:
+    // **PRINT THE CORPUS SIZE BEFORE READING THE VERDICT, and run the check
+    // once against a PLANTED positive so you have seen it fail.** Every
+    // zero in this ledger was obtained that way; do the same to anything
+    // you add to it.
 
     #[cfg(unix)]
     #[test]

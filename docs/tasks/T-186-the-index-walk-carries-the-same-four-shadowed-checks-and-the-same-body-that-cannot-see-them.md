@@ -276,7 +276,7 @@ the code that ships.
 The gate set is derived against **the tree this tip will have**, the
 merge forecast the RANGE RULE prescribes for the executor's position:
 `git merge-tree --write-tree <main> HEAD` at main `8443a78`, exit 0, no
-conflict — **3 paths**, `walk.rs` plus this card and `T-190`. The last
+conflict — **3 paths**, `walk.rs` plus this card and `T-194`. The last
 commit of this lane is the one carrying this section, and it adds no path
 outside `docs/tasks/`, so it moves no trigger and this derivation still
 describes the tip.
@@ -317,7 +317,7 @@ describes the tip.
   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, before and after
   every run: zero rows every time.**
 - **DOCS GATE FIRES** — this card's own frontmatter (`status`,
-  `built_by`) and `T-190` are paths under `docs/` that code suites READ.
+  `built_by`) and `T-194` are paths under `docs/` that code suites READ.
   Derived by ASKING rather than predicting: `docs-gate.mjs` on the
   forecast's path list answers **2 path(s)** and names three commands.
   All three green at `df52adb`:
@@ -337,7 +337,7 @@ describes the tip.
   not one of these.
 
 **THE E2E LANE WAS RUN TWICE AND ONLY THE SECOND RUN IS QUOTED.** The
-first run was in flight when this lane renamed `T-189` to `T-190` and
+first run was in flight when this lane renumbered its routed card and
 edited this card — both paths that e2e bodies read. It came back 341
 passed, but **a gate run against a tree that moved under it is not a claim
 about the tree**, so it was discarded rather than reported, the tree was
@@ -359,32 +359,52 @@ ids with zero duplicates** (control: a planted duplicate is reported).
 
 ### ROUTED, NOT BUILT
 
-**`T-190`** — the two sites above. Fence `crate-index`, the same as this
+**`T-194`** — the two sites above. Fence `crate-index`, the same as this
 card. Filed with both measurements on it, so the next lane starts from
 evidence rather than from a claim, and carrying this lane's own warning:
 **measure whether the surviving half is separately pinnable rather than
 inheriting a verdict**, because that is exactly what this card would have
 got wrong.
 
-**AND THE CARD ID IS A MACHINE-SCOPED SURFACE WITH NO KEEPER, WHICH THIS
-LANE HIT.** This suggestion was first filed as `T-189`, derived correctly
-as one past the highest id in the tree at dispatch. **`T-189` then landed
-on main from another lane while this one worked** — a different card
-entirely — so the merge would have carried TWO live cards with `id:
-T-189`, and `git merge-tree` reports NO conflict because the two files
-have different names. It was caught by re-deriving the id against main's
-tip before the final commit rather than against the base, and the card is
-now `T-190`.
+### THE CARD ID IS A BOARD-SCOPED SURFACE WITH NO KEEPER, AND THIS LANE COLLIDED ON IT TWICE
 
-This is `lane-protocol.md` rule four's closing paragraph exactly: a
-surface scoped by the BOARD rather than by the checkout, where every
-written rule stays satisfied while two lanes collide, and the collision
-probability rises with parallelism while nothing warns. A construction
-beats a check here, and the id namespace has no construction — so the
-check is: **derive a new card's id against the integration tip at the
-moment you commit it, never against your base.** Worth a rule if it
-happens again; recorded rather than routed, because one sighting is an
-observation.
+**Two collisions, and the SECOND is the finding.** The first is the
+ordinary hazard; the second proves the obvious fix does not work.
+
+1. Filed as **`T-189`**, derived correctly as one past the highest id in
+   the tree at dispatch. A DIFFERENT `T-189` then merged to main while
+   this lane worked, so the merge would have carried two live cards with
+   `id: T-189`. Caught by re-deriving against **main's tip** rather than
+   against the base. Renamed to `T-190`.
+2. **`T-190` was taken as well** — by `T-112-s4`'s routed card, in a live
+   lane that had not merged. **Re-deriving against main could not have
+   seen it**, because an unmerged lane's ids are absent from main by
+   construction. The integrator holds the authoritative allocation and
+   assigned **`T-194`**; this lane's is the FIFTH collision of the night.
+
+**SO THE CHECK THIS LANE FIRST WROTE DOWN IS WRONG, AND IT IS CORRECTED
+HERE RATHER THAN LEFT STANDING.** *"Derive a new card's id against the
+integration tip when you commit it"* is exactly what collision 2 defeats.
+**The id namespace cannot be derived from any single checkout**: main
+lacks every live lane's ids, and no lane may read its siblings' trees.
+There is no construction available to a lane at all — which is precisely
+the case `lane-protocol.md` rule four ends on, a surface scoped by the
+BOARD rather than by the checkout, where every written rule stays
+satisfied while two lanes collide and nothing warns.
+
+**What works is an ALLOCATOR, and only the dispatching seat can be one.**
+A lane should be handed its suggestion ids at dispatch, or file a
+suggestion with NO id and let the integrator assign one. Five sightings in
+one night is well past an observation.
+
+**AND WHY IT WOULD HAVE REACHED A MERGE UNSEEN IS THE HALF WORTH
+KEEPING**: `git merge-tree` reports **NO conflict** for two cards carrying
+the same `id:` under different filenames, so a merge forecast — the very
+instrument the RANGE RULE prescribes — cannot catch it. **A
+duplicate-`id:` check over the merged tree, read from the authoritative
+frontmatter field rather than from filenames, is what catches it**, and
+this lane ran that check with a planted positive control before trusting
+its zero.
 
 ### WHERE THE BRIEF WAS WRONG
 

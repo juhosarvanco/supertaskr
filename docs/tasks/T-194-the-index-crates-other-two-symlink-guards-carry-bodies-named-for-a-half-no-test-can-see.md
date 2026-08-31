@@ -1,5 +1,5 @@
 ---
-id: T-190
+id: T-194
 title: The index crate's other two symlink guards carry bodies NAMED for a shadowed half, and lifting that half leaves the whole crate suite green — measured, and it corrects a sentence in T-140-s9's landed sweep
 feature: F-06
 milestone: 4
