@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 4
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [method/runtime, app-agent]
 suggested_by: executor claude-opus-5@subagent @T-167-s1
