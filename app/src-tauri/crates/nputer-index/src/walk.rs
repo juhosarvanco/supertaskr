@@ -295,6 +295,44 @@ mod tests {
         assert_eq!(rels(t.root()), vec!["real.ts"]);
     }
 
+    // THE LIFT LEDGER (T-186). Every row RUN, not reasoned, in a detached
+    // scratch worktree at this file's own commit with its own
+    // `CARGO_TARGET_DIR`; each arm mutated ONE side, read the mutation
+    // back with `git -C`, ran the crate's lib suite unpiped, restored and
+    // proved the restoration by sha256.
+    //
+    //   is_symlink() alone        -> NOTHING reds. Shadowed: see layer 1.
+    //   !meta.is_file() alone     -> 1 red, the directory body, ALONE.
+    //   both link checks          -> 2 red, the directory and inside
+    //                               bodies; `symlinks_are_never_followed_
+    //                               file_or_dir` stays GREEN.
+    //   starts_with alone         -> NOTHING reds. Shadowed: see layer 3.
+    //   relative_posix's ok()?    -> 1 red, the predicate body, ALONE.
+    //   all four together         -> 4 red, and only HERE does
+    //                               `symlinks_are_never_followed_file_or_dir`
+    //                               finally notice — which is the proof
+    //                               that what it pins is containment.
+    //   classification -> is_dir  -> 1 red, the inside body ALONE (the
+    //                               count-1 mutant that answers poison
+    //                               shape SIX for it: symlinks pass,
+    //                               directories still skipped).
+    //
+    // **WHERE THIS CRATE PARTS COMPANY WITH `docs_watch.rs`, AND IT IS THE
+    // REASON T-186 MEASURED INSTEAD OF INHERITING.** One crate over, BOTH
+    // halves of the link classification are undetectable and the finding
+    // was that no body can exist. Here only the `is_symlink()` half is:
+    // `!meta.is_file()` has a fixture of its own, because layer 2 filters
+    // on a NAME rather than on a resolved path, so a directory called
+    // `<name>.ts` reaches predicates a directory in the collector never
+    // could. Assuming the sibling's verdict would have cost this walk a
+    // body it turns out to support.
+    //
+    // The lifted arm TERMINATED IN A FIXTURE (CONVENTIONS, LIFTING A
+    // SAFETY GUARD TO DISCRIMINATE — pointed at one, not merely started at
+    // one): the only path leaked by the all-four arm is a `TempTree`
+    // under the system temp dir, and the repository's own path appears in
+    // that output zero times.
+
     #[cfg(unix)]
     #[test]
     fn a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone() {
