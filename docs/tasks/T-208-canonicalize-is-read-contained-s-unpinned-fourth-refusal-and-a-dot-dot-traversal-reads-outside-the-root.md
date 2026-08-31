@@ -353,3 +353,331 @@ neither. Status stamped `verifying` **in this lane**; verifier fields left
 empty. Worktree left STANDING for the holder (lane-protocol rule 6): a
 worktree removed before the verdict destroys the only reproducible copy of
 what was measured.
+
+---
+
+## Verdicts
+
+2026-09-01 — claude-opus-5@subagent (verifier, blind two-phase seat):
+**APPROVED WITH ONE ASSIGNED CORRECTION.** The card's subject is fixed.
+`canonicalize()` has a body, the body kills its mutant **alone and by
+name**, and — the thing that decides this pass — **the body is not
+vacuous**. I went into phase 2 with a specific vacuity attack derived
+blind from the card's own suggested probe, and the lane had already
+closed it with a control the card never asked for. The one correction is
+prose in this card's own spec half, it is the shape this family keeps
+producing, and it is not a reason to hold the lane.
+
+Measured at **`2ccb498`** (lane tip) and **`d7ec96c`** (its base). Every
+figure below names its ref. Bench: my own detached worktree at
+`/Users/ujju/Projects/nputer-V-208` with a private `CARGO_TARGET_DIR` at
+`/Users/ujju/Projects/V-208-verify-scratch/target`, **cold for the first
+arm**; command verbatim on every arm,
+`cargo test -p nputer-index --no-fail-fast`, exits captured by redirect
+and `$?` before any pipe. Nothing was run in the integration checkout or
+in the lane's worktree.
+
+### Phase 1 was sealed before the diff was opened
+
+The attack set was written from the contract alone — this card at
+`d7ec96c`, `T-186`, `T-194`, `T-196`, CONVENTIONS, lane-protocol,
+roles/verifier — and saved before the branch, the diff or the notes
+existed to me. sha256
+**`e88968a11c480e30d888217d9fbed7ca5affc34fc85c4a22122aa4c6a1d83ce4`**,
+387 lines, at `/Users/ujju/Projects/V-208-verify-scratch/`.
+
+**I checked this card's HEADINGS before reading its body**, per the
+hazard `T-213` now carries: at `d7ec96c` it is 123 lines with no
+implementation notes and no verdicts. Blindness intact.
+
+**DISCLOSURE, AND THE LEAK IS NOT MINE — AND IT IS THE SECOND
+INSTANCE.** My phase-1 brief named the executor's scratch port (22080)
+and this card's line count at the tip (355). Both are executor-derived
+and had no business above the line; `docs/STATE.md` §"Next up" 7 says a
+verifier's brief carries **no** lane fact. Neither is a mutant number or
+a suite figure, so phase 1 stands. **The coordinator identified it as
+their own defect, and asked that the record carry that this is the
+SECOND time**: `T-196`'s verifier disclosed the identical leak — the
+executor's ports and the card's line count — hours earlier, was told,
+undertook to tighten it, and the same two facts travelled again. The
+reasoning that let it through both times was *"it isn't a mutant
+number"*. Carried here so the third instance has a countable prior.
+
+**AND THE `review: independent` REPAIR LANDED.** It is in the
+frontmatter at `d7ec96c`, i.e. stamped at DISPATCH. `T-194`'s verifier
+found that field **lane-stamped** — "the weakest possible form of it" —
+assigned the repair to the dispatching seat, and recorded that it was
+already the second consecutive sighting. This is that repair arriving.
+Credited, because an assigned correction that lands and is never noticed
+teaches nothing.
+
+### What reproduced — 12 targets and 2 ignored on every arm
+
+| # | ref | mutation, ONE SIDE ONLY | exit | passed/failed | failing body |
+|---|---|---|---|---|---|
+| 1 | `2ccb498` | none (cold build) | 0 | **258/0** | — |
+| 2 | `2ccb498` | `canonicalize().ok()?` → `path.to_path_buf()` | 101 | **257/1** | the new body, **ALONE** |
+| 3 | `d7ec96c` | none | 0 | **257/0** | — |
+| 4 | `d7ec96c` | the same lift, no probe | 0 | **257/0** | none — the premise holds |
+| 5 | `2ccb498` | `{ let _ = path.canonicalize().ok()?; path.to_path_buf() }` | 101 | **257/1** | the same body, **ALONE** |
+
+Arm 2's panic is byte-identical to the lane's ledger, at `mod.rs:827`:
+
+    assertion `left == right` failed: a .. traversal must not escape the root
+      left: Some("{\"loot\":1}")
+     right: None
+
+**Every row of the lane's five-arm ledger reproduced at an independent
+bench, exit for exit and name for name.** Its two recorded blob hashes
+are real, not quoted: `git show d7ec96c:` gives
+`4640ff10712712537228eac8e17ba6782e90fc0338b5d96fce96fbdb125be96f` and
+`git show 3cd86e9:` gives
+`b24cef7144457ab361d2ab4be2758d127c68e422313f7019aee384b08c1689aa`, both
+character-identical to the ledger. My own six mutations were restored
+against the tip blob
+`9d895110640e89f9b41b1103a2894570fec84ba18ab20b62542941a2a68c3cc6`,
+**6 for 6 sha256-proved**, with an empty `git status` kept as companion
+and never as proof, and every mutation read back with `git diff` and
+hash-compared before its suite ran (a no-op substitution aborts the arm
+rather than reporting a green).
+
+### THE HEADLINE ATTACK, DERIVED BLIND — AND THE LANE HAD ALREADY CLOSED IT
+
+Phase 1 §2, written before the diff: **the card's own suggested probe is
+structurally vacuous.** It uses TWO DIFFERENT ROOTS — the control reads
+through `outside_root`, the refusal through `root` — so dropping
+`.canonicalize()` from the refusal's root alone makes
+`canon.starts_with(root)` false for every path under `/var/folders`,
+`read_contained` refuses **everything**, the refusal assertion still sees
+its `None`, and the control never notices because it goes the other way.
+A body of the card's shape would stay green while measuring nothing, on
+shipped code. I ruled it REJECTED-level in advance and named the fix: a
+second control **through `root`**.
+
+**Measured, arm 6 at `2ccb498`** — `let root = canon_root(&t);` →
+`let root = t.root().to_path_buf();`, the refusal's root only:
+**exit 101, 257/1, this body ALONE**, dying at `mod.rs:779` —
+
+    assertion `left == right` failed: control: an ordinary inside file must read
+      left: None
+     right: Some("{\"who\":\"inside\"}")
+
+That is POSITIVE CONTROL 1, and it is exactly the control I derived blind
+and the card does not ask for. **The lane found it without being told.**
+AC2 as written is satisfied by the card's own weaker spelling; the lane
+shipped the stronger one.
+
+### What FAILED to break it, reported as the seat owes
+
+Four more one-side arms at `2ccb498`, each aimed at a distinct vacuity,
+each killed **by the right assertion** rather than by volume:
+
+| arm | attack | result | died at |
+|---|---|---|---|
+| 6 | **M1** non-canonical refusal root | 257/1, this body alone | `779` — control 1 |
+| 7 | **M3** refuse-everything (`if !canon.starts_with(root)` → `if true`) | 234/24, this body among them | `779` — control 1 |
+| 8 | **M4** delete `outside.write("loot.json", …)` | 257/1, this body alone | `785` — control 2 |
+| 9 | **M2** near-miss traversal (`../<basename>` → `../<basename>-nope`) | 257/1, this body alone | `807` — the reachability assertion, `NotFound` |
+
+**M3 is the arm `T-196`'s verifier said to want on any future card of
+this shape** — one that leaves the refusal assertion PASSING and reds the
+CONTROL. It does. So the control does not merely RUN, it **EXCLUDES the
+reading it exists to exclude**: a `read_contained` that refuses
+everything cannot satisfy this body. **M4** excludes
+there-was-nothing-there. **M2** excludes the absent-directory reading —
+and M2 is the one that matters most, because the card's `TempTree`
+sibling-hop premise is a claim about a helper, not a fact of the
+language. It is true (`testutil.rs:14` puts every tree directly under
+`std::env::temp_dir()`), and the body **asserts** it rather than relying
+on it.
+
+**Both controls are in the SAME body and BOTH run BEFORE the refusal.**
+Phase 1 §A10 called that out as the thing to check; it holds.
+
+### ESCAPE or TYPE — the question the criteria leave open, settled
+
+AC1 demands only a TYPE. The body's final assertion is `== None`, which
+is *strictly stronger* than any `!= Some(loot)` form. What makes it an
+ESCAPE claim is not the assertion but the four fixture assertions in
+front of it, and my phase-1 ruling was that a type assertion suffices
+**if and only if** the target is proven reachable and the refusing root
+is proven live. Both are proven here, in-body, before anything is
+exercised — including the sharpest of them, `escaped.starts_with(&root)`,
+which asserts the **mechanism**: uncollapsed, the traversal path clears
+refusal D on components alone, so D cannot be what refuses it and C is.
+The loot is distinctive on both name and content (`{"loot":1}` versus the
+inside fixture's `{"who":"inside"}`), so the panic's `left:` identifies
+the file it came from unambiguously.
+
+### The count of ONE, attacked from the other end
+
+A count of one can be a count of the wrong one. It is not: under arms 2,
+5, 6, 8 and 9 the single failure is
+`resolve::tests::a_dot_dot_traversal_never_reads_outside_the_root`
+itself, read **by name out of the output** rather than inferred from a
+count — not a file-count body reddening on volume. Measured on a cold
+build against a private target directory, so the
+mutant-looks-dead-against-a-stale-binary reading is excluded by
+construction rather than by hope.
+
+### The accounting, recounted independently from source
+
+I counted `read_contained`'s droppers from the function body before
+comparing against the lane's letters, and got the same three numbers:
+**SIX constructs** (`symlink_metadata(&path).ok()?`, `is_symlink()`,
+`!meta.is_file()`, `canonicalize().ok()?`, `!canon.starts_with(root)`,
+`read_to_string(&canon).ok()`), **FIVE statements** (A and B share one
+`if`), **FOUR lettered**. **Nothing is omitted** — this is a unit
+mismatch and not a `T-194` repeat, and all three counts now carry their
+unit at the site. The lane's claim that `T-196`'s correction 2 reached
+the SIBLING and not the site that started the thread is **true**:
+`walk.rs:88` has carried *"THE FIVE LETTERED GATES, OF ELEVEN MECHANISMS"*
+since `T-196`, while this site's heading still read *"The FOUR refusals"*
+at `d7ec96c`. Fixing it here is the right call and was not asked for.
+
+### REACHABILITY — I ran my own procedure and reached PINNED independently
+
+Phase 1 §5 set the test by SIGNATURE, this family's standard, and made
+both answers reportable. `git grep 'read_contained'` **from the
+repository root** at both refs returns **three production call sites**,
+each read to its origin rather than taken:
+
+- `resolve/mod.rs:232` `PackageIndex::nearest` and `tsconfig.rs:56`
+  `TsconfigIndex::nearest` — `dir` originates at `mod.rs:420`,
+  `let dir = parent_dir_of(rel)` over the WALKED map's keys; both climb
+  with `parent_dir_of`/`parent_dir_of_owned`, which only STRIP at the
+  last `/` and can introduce nothing.
+- `rust.rs:474` `manifest_dirs` — the same shape over `rust_files`.
+
+`walk_root` generates every `rel` by descending real entries from a
+canonical root, so no `..` component exists to pass on. **And the
+content-injectable route is weaker than the lane claims, in the lane's
+favour**: a `tsconfig.json` `baseUrl`/`paths` goes through
+`normalize_join` (`ts.rs:57`), whose body collapses `..` on a segment
+stack and returns `None` on underflow — so it cannot emit a `..`-bearing
+string — **and its output never reaches `read_contained` at all**. It
+terminates in `first_hit` (`mod.rs:352`), a pure `walked.contains()` set
+lookup with no filesystem access. **PINNED, not LIVE, confirmed
+independently.** The card's title is true of the FUNCTION and the notes
+are right to say so out loud.
+
+**My A5b residual, checked and benign — and worth one sentence at the
+site.** `read_contained`'s containment is only as strong as the caller's
+root: a non-canonical root makes `starts_with` false for everything and
+the function refuses **everything, silently** — the *"no word for I could
+not tell"* shape `T-196` found one module over, and the very failure mode
+my M1 arm exploits. It is benign today because `lib.rs:259`
+`validate_root` canonicalizes once at a single boundary and hands the one
+`canon_root` to both `walk_root` and `resolve_all`. `walk.rs:144` already
+states this third condition for its own line; this site does not.
+
+### CORRECTION 1 — THIS CARD'S OWN SPEC HALF IS FALSE AT ITS TIP
+
+Assigned, non-blocking, prose only.
+
+    title: "... is `read_contained`'s FOURTH refusal, it is UNPINNED, ..."
+    line 20: "**It omitted `canonicalize()`, which is load-bearing and
+              which nothing pins.**"
+
+**Both are false the moment this lane merges**, because this lane is what
+pins it. The lane applied `T-196`'s correction 2 to the SITE and did not
+apply `T-194`'s correction 2 to its OWN CARD — and `T-194`'s correction 2
+is *literally this defect*, on the card one id away: *"THE CARD'S SPEC
+HALF STILL SAYS 'TWO' AT THE TIP."* This family exists because a landed
+sentence in `T-140-s9`'s sweep was false and cost the next lane the work
+of rediscovering it; leaving the same shape in the title re-arms it for
+whoever greps the board for what is pinned.
+
+**Assigned, in `T-194`'s own disposition:** add ONE line under
+`## The refusal, and what it independently contributes` reading *"PINNED
+since this card landed — see the implementation notes"*. **Do not rewrite
+the dispatched spec or the title**: the record of what was dispatched is
+worth keeping, and a pointer preserves both. Notes-only, no field moves.
+
+**Not mechanically caught, which is why it needs a human sentence.**
+`tools/e2e/scripts/card-figures.mjs` is a derivation module with no I/O
+at import, wired into neither `package.json` nor `ci.yml`, so nothing
+gates a stale figure or a stale claim in a card body. I checked before
+ruling on severity.
+
+**The SOURCE half of this sweep is CLEAN**, and I ran it rather than
+assumed it: `git grep 'unpinned\|UNPINNED'` and `git grep 'T-208'` across
+`app/`, `lib/` and `tools/` at `2ccb498`. `resolve/mod.rs:126` reads
+*"what unpinned looked like"* — past tense, correct. Every `walk.rs`
+citation of `T-208` describes the FINDING (that the call is load-bearing
+in `read_contained`), never its pinned-ness, so none went stale. No code
+site still calls C unpinned.
+
+### Every criterion, read literally
+
+1. **MET.** Pins `canonicalize()` alone; passes at the tip (258/0);
+   reds on the non-resolving replacement at **257/1, exit 101**, crate
+   scope, `--no-fail-fast`, the failing count read as **ONE** and the one
+   confirmed by name. Arm 5 additionally separates the construct's two
+   jobs — the error arm kept, only the resolution discarded, same body,
+   same loot — so *"what C contributes is the RESOLUTION"* is now
+   measured where the site used to argue it. **§2 does not make arms 2
+   and 5 uninformative**, and this is the reason it does not: M1 was
+   killed, so the body is known non-vacuous before either arm is read.
+2. **MET, in a stronger form than the card asks.** TWO controls, both in
+   the same body, both before the refusal, and **both shown to
+   discriminate** (arms 6/7 and 8) rather than merely to run.
+3. **MET, and SHOWN.** `root.parent() == outside_root.parent()`; the
+   escaped path canonicalized and compared **to the fixture file
+   itself**; `!escaped_canon.starts_with(&root)`; and the mechanism
+   assertion that makes the refusal attributable to C. Arm 9 proves the
+   chain has teeth: break the hop and the body reds at the reachability
+   assertion, not at the refusal.
+4. **MET**, and improved — the count matches the code and now carries
+   its unit. Recounted hostile from source; nothing omitted.
+5. **MET.** I filtered the diff to non-comment lines: **every one is
+   inside the new `#[test]`**. `read_contained`'s five statements are
+   byte-identical to `d7ec96c`. Nothing deleted, nothing weakened.
+6. **MET.** Headless `cargo test` throughout; no screen control.
+
+### NOT corrections
+
+- **The lane's `256`-vs-`257` premise correction is right and was owed.**
+  It re-derived rather than transcribed, and my four independent
+  predictions — base 257/0, tip 258/0, tip+lift 257/1-alone, base+lift
+  257/0 — were written into the sealed attack set before I measured and
+  all four landed. Two derivations agreeing stop being checks on each
+  other, which is why I measured anyway.
+- **`cargo fmt --check` failing crate-wide** is pre-existing, is not a CI
+  step, and is correctly left alone. Not this fence's business.
+- **The graph is STALE (`index --check` exit 1)** and the lane correctly
+  ASKED rather than predicted, then did not act: `docs/architecture/`
+  is outside its fence and the regen lands with the CHECKPOINT. The
+  integrator owes it. Re-derived at my own tip: bytes, files, symbols and
+  edges identical on both sides, the sole delta being this lane's own
+  `loc` on one file.
+- **Ceremony is correct.** `size: S` with a verifier row: the lane
+  stamped `verifying` in its own lane, left the verifier fields empty,
+  merged nothing, checkpointed nothing, and **left its worktree
+  standing** (lane-protocol rule 6). I checked this specifically, because
+  a worktree removed before the verdict destroys the only reproducible
+  copy of what was measured.
+
+### An observation I mint no id for
+
+`Path::join` with an ABSOLUTE segment discards the base, so
+`read_contained(root, "/etc", "passwd")` builds `/etc/passwd` — the same
+class as this card's `..` (a caller-supplied segment leaving the root),
+refused by **D alone** rather than by C, and pinned by no body. It is
+contract-only today for exactly the reason above: no production caller
+supplies an arbitrary `dir`. Recorded rather than routed, and **I mint no
+id** — `T-186` established that no seat outside the integrator can derive
+a free one, since an unmerged sibling's ids are invisible to every
+checkout. Board-side, alongside `T-196`'s still-open question about
+whether the unlettered error arms are PINNABLE.
+
+### Gates re-run at MY OWN tip, per roles/verifier.md §7
+
+My verdict is a WRITE, and prose is a code input here. **The forecast was
+RE-DERIVED against the main that moved** rather than inherited from the
+lane's ledger: the lane derived at `28f1910` against main `40c9b8b`; main
+is now **`dcd1c3e`**. `git merge-tree --write-tree dcd1c3e <my tip>` —
+exit read first, unpiped: **0** — and the merge's diff is still exactly
+the same **2 paths**, `resolve/mod.rs` and this card. Main's one
+intervening commit touches only `T-195`'s card, so **no gate decision
+moves** and the lane's ledger stands at the new base.
