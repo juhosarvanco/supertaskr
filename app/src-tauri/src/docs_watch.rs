@@ -487,6 +487,14 @@ fn relative_posix(path: &Path, base: &Path) -> Option<String> {
 /// validation and arming is refused at both ends.
 pub fn is_plain_dir(path: &Path) -> bool {
     match fs::symlink_metadata(path) {
+        // ONE PREDICATE WRITTEN TWICE, and it is named rather than
+        // trimmed (T-140-s9's verdict, correction 1). Under
+        // `symlink_metadata` a link is neither file nor dir, so
+        // `meta.is_dir()` ALONE already refuses a symlink — the
+        // `is_symlink` half is inert, and deleting it is invisible to
+        // every test, including the two named for this refusal.
+        // It stays because it states the intent at an ADR-010 boundary;
+        // what it must not do is read as a second, independent check.
         Ok(meta) => !meta.file_type().is_symlink() && meta.is_dir(),
         Err(_) => false,
     }
@@ -2754,6 +2762,47 @@ mod tests {
         // Once, for the dir — not per buried file.
         assert_eq!(outcome.skipped.len(), 1);
         assert_eq!(outcome.skipped_total, 1);
+    }
+
+    /// **A SYMLINKED `docs/` IS REFUSED, AND THIS BODY EXISTS BECAUSE THE
+    /// WHOLE GUARD WAS DELETABLE IN SILENCE** (T-140-s9's verdict,
+    /// correction 1). The blind verifier lifted `collect_docs_tree`'s
+    /// docs-root guard entirely — refusal, `eprintln` and all — and the
+    /// suite stayed 259/0: containment still prevented a leak, so nothing
+    /// failed, and the REFUSAL simply stopped happening. That is a
+    /// coverage hole rather than a vulnerability, and this is the body
+    /// that closes it.
+    ///
+    /// The POSITIVE CONTROL is the second half: the same tree with a real
+    /// `docs/` collects the same file, so the empty outcome above cannot
+    /// be satisfied by a walk that finds nothing anywhere.
+    #[test]
+    fn a_symlinked_docs_root_is_refused_rather_than_walked_through() {
+        use std::os::unix::fs::symlink;
+        let host = bare_tree("t140s9-docs-symlink-host");
+        let real = bare_tree("t140s9-docs-symlink-target");
+        fs::create_dir_all(real.root().join("elsewhere")).expect("mk elsewhere");
+        fs::write(real.root().join("elsewhere/NORTH_STAR.md"), "not ours").expect("write");
+        symlink(real.root().join("elsewhere"), host.root().join("docs")).expect("symlink docs");
+
+        let outcome = collect_docs_tree(host.root());
+        assert!(
+            outcome.files.is_empty(),
+            "a symlinked docs/ must be REFUSED, not walked through: {:?}",
+            outcome.files.iter().map(|f| &f.path).collect::<Vec<_>>()
+        );
+
+        // THE CONTROL: the identical layout with a real directory does
+        // collect, so the assertion above is about the REFUSAL and not
+        // about an empty walk.
+        let plain = bare_tree("t140s9-docs-plain-control");
+        fs::create_dir_all(plain.root().join("docs")).expect("mk docs");
+        fs::write(plain.root().join("docs/NORTH_STAR.md"), "ours").expect("write");
+        let control = collect_docs_tree(plain.root());
+        assert!(
+            control.files.iter().any(|f| f.path == "docs/NORTH_STAR.md"),
+            "the control must collect through a real docs/: {control:?}"
+        );
     }
 
     #[test]
