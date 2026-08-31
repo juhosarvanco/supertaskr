@@ -100,10 +100,10 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   is the two `tsc` calls inside `npm run build` (T-073).
 - **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`);
   read every gate exit UNPIPED, never through a pipe.
-- **TYPE THE DOCS GATE'S PRINTED SPELLING.** It passes an unquoted
-  COMMAND SUBSTITUTION, which zsh splits; route it through a VARIABLE and
-  zsh does not — the gate takes every path as ONE and answers
-  "1 path(s)", plausible and wrong.
+- **PASS THE DOCS GATE SEPARATE LITERAL PATHS.** zsh splits an unquoted
+  COMMAND SUBSTITUTION but NOT a variable, so a variable hands the gate
+  every path as ONE and it answers "1 path(s)" — plausible and wrong.
+  `T-192` read this line as naming only one direction and hit the other.
 - **This shell's `grep` is a shim** carrying `-I` and rejecting
   `--include` — use `command grep`; sweep NULs with `perl -0777`.
 - **An edit script's success is a GATE, not a step** (`18d8166`): never
