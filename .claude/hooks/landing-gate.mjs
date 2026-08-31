@@ -72,7 +72,7 @@
  * `touch_slugs:` field and reading it needs `yaml`. On the live board
  * those tokens are common, so a slug-fenced lane gets its RESOLVED
  * domains enforced and an announcement for everything else. Closing that
- * is `T-220`, routed rather than taken: it wants the slug map published
+ * is `T-221`, routed rather than taken: it wants the slug map published
  * in a form the hook budget can read, which is a change to what
  * `--write-fence` commits and belongs with `T-211`'s fast paths.
  *
@@ -227,7 +227,7 @@ export function runGit(root, args) {
   }
 }
 
-/** The expander this module drives. @see ./expand-fence.mjs */
+/** The expander this module drives — see `expand-fence.mjs` beside it. */
 export const EXPANDER_PATH = fileURLToPath(new URL("./expand-fence.mjs", import.meta.url));
 
 /**
@@ -335,7 +335,7 @@ export function touchesTokens(line) {
  * @param {string} rev       the revision to read the board at
  * @param {string[]} ids     candidate ids, most specific first
  * @param {(root: string, args: string[]) => Ran} [git]
- * @returns {{ id: string, file: string } | { problem: string }}
+ * @returns {{ id: string, file: string } | { noBoard: string } | { problem: string }}
  */
 export function cardAt(root, rev, ids, git = runGit) {
   if (ids.length === 0) return { problem: "its branch names no task id this gate can read" };
@@ -346,6 +346,19 @@ export function cardAt(root, rev, ids, git = runGit) {
     };
   }
   const files = ls.stdout.split("\0").filter((f) => f !== "");
+  // NO BOARD AT ALL IS NOT A MISSING CARD, AND THE DIFFERENCE IS THE ONE
+  // THIS FUNCTION EXISTS TO DRAW. A checkout whose integration branch
+  // carries no `docs/tasks` cards is not this project's board — a
+  // fixture, another repository, this repository before its first card —
+  // and the gate has NO QUESTION to ask there, exactly as
+  // `push-guard.mjs` has none in a checkout carrying no indexer crate.
+  // A board that DOES carry cards and carries none for this lane is a
+  // different thing entirely: a dispatch error, and the caller refuses
+  // it. Collapsing the two would either refuse every fixture or hand a
+  // lane the bypass of naming a branch no card answers to.
+  if (files.filter((f) => CARD_FILE_RE.test(f)).length === 0) {
+    return { noBoard: `${rev} carries no cards under docs/tasks/ at all` };
+  }
   for (const id of ids) {
     const matches = files.filter((f) => {
       const m = CARD_FILE_RE.exec(f);
@@ -536,17 +549,22 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
     }
   }
   if (rev === undefined) {
+    // NO QUESTION HERE, rather than a question this gate could not
+    // answer — so an ORDINARY allow and not an announced one. A checkout
+    // with no integration branch is not a checkout whose lanes this gate
+    // has anything to say about, which is `push-guard.mjs`'s own
+    // `not-this-repository` shape one arm over.
     return allow(
-      "landing-gate-cannot-compare",
-      `THE LANDING GATE DID NOT JUDGE THIS PUSH: ${root} holds no revision spelling the ` +
-        `integration branch ${JSON.stringify(branch)} — asked \`git rev-parse --verify\` for ` +
-        `${tried.join(", ")} and it resolved none. The fence is read from the card as committed ` +
-        "there, so with no such revision there is no fence to read. The push is allowed and the " +
-        "diff is UNJUDGED — which is not a claim that it is inside the fence.",
+      "landing-gate-no-integration-ref",
+      `${root} holds no revision spelling the integration branch ${JSON.stringify(branch)} ` +
+        `(asked for ${tried.join(", ")}), so there is no committed card to read a fence from`,
     );
   }
 
   const card = cardAt(root, rev, laneCardIds(headRef), git);
+  if ("noBoard" in card) {
+    return allow("landing-gate-no-board", `${card.noBoard}, so no lane here has a fence to read`);
+  }
   if ("problem" in card) {
     return block(
       "landing-gate-no-card",
@@ -682,11 +700,14 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
     }
   }
   if (remote === undefined) {
+    // As above: no remote-tracking ref means there is no such thing as
+    // "the merges this push would add" to ask about, which is an absent
+    // question and not an unanswered one.
     return allow(
-      "landing-gate-cannot-compare",
-      `THE LANDING GATE DID NOT JUDGE THIS PUSH: ${root} holds no remote-tracking ref for ` +
-        `${JSON.stringify(branch)} — asked for ${tried.join(", ")} — so WHICH merge commits this ` +
-        "push would add cannot be derived. The push is allowed and its merges are UNJUDGED.",
+      "landing-gate-no-remote",
+      `${root} holds no remote-tracking ref for ${JSON.stringify(branch)} (asked for ` +
+        `${tried.join(", ")}), so which merge commits a push would add is not a question that ` +
+        "can be asked here",
     );
   }
 
@@ -735,6 +756,7 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
     const laneRef = /** @type {string} */ (laneRefs[0]);
 
     const card = cardAt(root, first, laneCardIds(laneRef), git);
+    if ("noBoard" in card) continue;
     if ("problem" in card) {
       refusals.push(
         `    ${merge} (${laneRef}): ${card.problem} — a merge whose lane has no card on its first ` +

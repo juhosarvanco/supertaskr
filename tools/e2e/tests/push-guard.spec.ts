@@ -503,9 +503,18 @@ test("a checkout without the indexer crate is not judged, and is not asked", () 
 test("an allow that left the graph unverified is announced; an ordinary one is silent", () => {
   // The announced set is the guard's, and every member of it is an ALLOW
   // reached with the graph unasked or unanswered.
+  // `landing-gate-cannot-compare` joined this set with T-212, and it
+  // belongs to it for the same reason as the other four: it is an ALLOW
+  // reached with a question UNANSWERED. Its siblings on that arm —
+  // `landing-gate-no-board`, `landing-gate-no-integration-ref`,
+  // `landing-gate-no-remote` — are deliberately NOT here: they are allows
+  // reached because the gate had no question to ask in that checkout at
+  // all, which is this file's own `not-this-repository` shape and is
+  // silent. The body below drives both halves of that split.
   expect([...ANNOUNCED_ALLOW_CODES].sort()).toEqual([
     "check-could-not-run",
     "check-inconclusive",
+    "landing-gate-cannot-compare",
     "lane-fence-unreadable",
     "no-command-to-read",
   ]);
