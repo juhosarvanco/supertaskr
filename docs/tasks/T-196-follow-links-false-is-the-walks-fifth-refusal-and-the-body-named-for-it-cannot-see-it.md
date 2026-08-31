@@ -258,9 +258,79 @@ never as the proof:
 - base arms (`e6a97d2`): `c3478e5d898ab58ac9b5c4dae66d24c8c736f7e395e91969f676a1b2b8c4ef91`, both sides, every restore;
 - tip arms (`106c096`): `cd088e9c1a5db9b36e379b0abf5af7e0eb891d93e34545c51a36a9e102ccbfcb`, both sides, every restore.
 
-Five mutant arms plus two bench baselines; **7 for 7**, no arm left the tree
-dirty. The work was COMMITTED before it was drilled, so no restore could
-pass by throwing away work `HEAD` never saw.
+Eight suite runs on the bench: two unmutated baselines (one per ref) and
+**SIX mutant arms — `a-follow-premise` and `c-canon-at-base` at `e6a97d2`,
+`a-follow-tip`, `p-refusal`, `p-control` and `c-canon-at-tip` at
+`106c096`** — so six restores, **6 for 6 sha256-proved**, no arm leaving the
+tree dirty. The work was COMMITTED before it was drilled, so no restore
+could pass by throwing away work `HEAD` never saw (`T-072-s1`'s mechanism).
+
+### Standing gates, DERIVED against the merge forecast rather than predicted
+
+`main` = `2eb87f7`. `TREE=$(git merge-tree --write-tree 2eb87f7 HEAD)` —
+**exit read FIRST, unpiped: 0** — tree `00778dde`. `git diff --name-only
+2eb87f7 "$TREE"` returns **2 paths**: `walk.rs` and this card.
+
+| gate | trigger | verdict |
+|---|---|---|
+| GRAPH REGEN | `*.rs` outside `docs/` | **FIRES** on 1 path. ASKED: `index --check` **exit 1 STALE**, `files +0 -0 ~1`, the `~1` being `walk.rs` (content, loc 599 -> 791), measured at `909e220`. The **loc figure moves with every later comment commit** and the integrator re-derives at the merge; **the decision does not move** — one content-changed file, this lane's own, nothing added or removed. **NOT acted on** — `docs/architecture/graph.json` is outside this fence, and the bullet lands the regen **with the CHECKPOINT** regardless. The integrator owes it. |
+| BOOT GATE | `app/src-tauri/**` | **FIRES** on 1 path. **exit 0**, both `[nputer]` startup lines detected, on `NPUTER_BOOT_PORT=21960` derived from the card id, lsof showing **0 rows** immediately before the run. 1420 never probed, bound or named. |
+| DOCS GATE | a `docs/` path a code suite reads | **FIRES** on 1 path, `docs-gate.mjs` **exit 1** naming three suites, all green below. |
+| METHOD EVAL | `method/**` | **NOT OWED** — 0 paths match. |
+
+The three suites the DOCS GATE named, at `909e220`:
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+- `npm test` from `app/` — **exit 0, 50 files / 1105 tests**, after `npm run
+  build` **exit 0** (a fresh worktree has no `app/dist`)
+- `npm test` from `tools/e2e/` — **exit 0, 404 passed (5.1m)**, on
+  `NPUTER_E2E_PORT=31960`, derived 30000 + 196x10 (the spelling `T-186` and
+  `T-194` used), lsof **0 rows** before binding
+
+CI-step gates at the same ref: `npm run lint:tokens` **exit 0**, `npm run
+lint:docs` **exit 0**, `npm run capabilities:check` **exit 0, CURRENT
+(33163 bytes)** — no e2e spec name moved, so `docs/CAPABILITIES.md` needs no
+regeneration.
+
+**AND THE DOCS GATE'S EXIT 1 WAS CHECKED FOR THE CRASH READING BEFORE IT WAS
+BELIEVED.** A coordinator correction landed mid-lane: `docs-gate.mjs` sets
+`CANNOT_RUN` inside `main()`, so an import failure exits **1** before the
+contract engages and is indistinguishable from `FOUND`. Verified here rather
+than assumed: `tools/e2e` `npm ci` ran first (**exit 0**) — note CONVENTIONS'
+fresh-clone ORDER names only lib/parser and app, so that install is one the
+documented order omits; the gate's output carries **zero** occurrences of
+`ERR_MODULE_NOT_FOUND`, `Cannot find package`, `node:internal` or a stack
+frame, **and that search was shown capable of finding one** against a
+planted sample (count 1); and the output prints the script's own derivation
+— 26 derived readers across 4 suites, the 172-site census, the FIRES line
+naming the path and its readers, the frontmatter verdict and the budget
+verdict. That is `EXIT.FOUND`, not `EXIT.CANNOT_RUN`.
+
+### The sweep's second finding: this walk has no word for *"I could not tell"*
+
+Prompted by a coordinator correction that arrived mid-lane about
+`docs-gate.mjs` (`T-185-s2`'s executor, 2026-08-31): that script defines a
+frozen `{CLEAN:0, FOUND:1, USAGE:2, CANNOT_RUN:3}` vocabulary and sets
+`CANNOT_RUN` inside `main()`, so an import failure exits **1** before the
+contract engages — **a crash and a verdict are the same exit code.** The
+correction asked whether the sweep found anything of that species. It did.
+
+**`walk_root`'s three error arms are the same shape one layer down.**
+`let Ok(entry) = result else`, `let Ok(meta) = symlink_metadata(..) else`
+and `let Ok(canon) = path.canonicalize() else` each `continue`, so a file
+the walker **could not read** leaves the emitted set by the identical route
+a file this function **correctly refused** leaves it. The output vocabulary
+is one word wide, and *refused for the right reason*, *refused for the wrong
+reason* and *never read at all* are exactly the three readings CONVENTIONS'
+A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL exists to separate. **Here the
+code cannot separate them, so no body downstream can.**
+
+**Kept apart on purpose, because this family punishes the other habit:**
+that the three arms are UNPINNED is a FACT — no body in this crate exercises
+one. Whether any is PINNABLE is **NOT MEASURED**, and the lesson of `T-186`,
+`T-194` and this card is precisely that you may not infer it from gate A
+having turned out pinnable. Recorded at the site and here; **no id minted**,
+on this card's own closing precedent — a lane cannot construct a card id
+safely and the dispatching seat allocates.
 
 ### Flagged for the verifier
 

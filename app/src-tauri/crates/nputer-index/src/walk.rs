@@ -138,6 +138,32 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     //     that is the family's whole lesson (T-186, T-194), applied to the
     //     call rather than to a guard.
     //
+    // **AND THE THREE ERROR ARMS SHARE ONE SHAPE THAT IS WORTH NAMING
+    // TOGETHER: THIS WALK HAS NO WORD FOR "I COULD NOT TELL".** Each of
+    // them `continue`s, so a file the walker could not READ — a directory
+    // whose entry errored, a path lstat refused, a path that would not
+    // canonicalize — leaves the emitted set by the identical route a file
+    // this function correctly REFUSED leaves it. The output vocabulary is
+    // one word wide. *Refused for the right reason*, *refused for the wrong
+    // reason* and *never read at all* are the three readings CONVENTIONS'
+    // A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL exists to separate, and
+    // here the code itself cannot separate them, so no body downstream can.
+    // **The same species one layer up is `docs-gate.mjs`** — a frozen,
+    // carefully-argued `{CLEAN, FOUND, USAGE, CANNOT_RUN}` vocabulary whose
+    // `CANNOT_RUN` is set inside `main()`, so an import failure exits 1
+    // before the contract engages and a crash is indistinguishable from a
+    // verdict (found by `T-185-s2`'s executor, 2026-08-31). **A correct
+    // exit vocabulary that cannot cover its own failure is a contract that
+    // is real while its coverage is not**, and that is this crate's version
+    // of it.
+    // **WHAT IS MEASURED AND WHAT IS NOT, kept apart on purpose**: that the
+    // three arms are UNPINNED is a fact — no body in this crate exercises
+    // one. Whether any of them is PINNABLE is **NOT measured here**, and
+    // this family's whole lesson forbids inferring it from the fact that
+    // gate A turned out pinnable. `T-196` deliberately minted no id for it,
+    // on that card's own closing precedent: a lane cannot construct a
+    // card id safely, and the dispatching seat allocates.
+    //
     // **THE LEDGER'S "ALL FOUR" MEANS THE FOUR PREDICATES `T-186` WAS
     // ABOUT** — `is_symlink` and `!meta.is_file()` (both inside gate B),
     // `starts_with` (gate D) and `strip_prefix` (inside gate E). **Gates A
