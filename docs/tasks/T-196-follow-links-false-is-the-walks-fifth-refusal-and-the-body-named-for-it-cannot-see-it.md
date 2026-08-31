@@ -342,9 +342,31 @@ safely and the dispatching seat allocates.
    sets it.
 2. **The card's premise figure (252/0) is stale by construction**, corrected
    above. Nothing else in the card was contradicted by the repository.
-3. **`e6a97d2` is this lane's base, not `2eb87f7`.** The dispatch brief
-   named `2eb87f7`; `git merge-base --is-ancestor 2eb87f7 HEAD` is FALSE.
-   `.nputer/lane-fence.json` records `e6a97d2` and is right.
+3. **`e6a97d2` IS THIS LANE'S BASE, AND `2eb87f7` IS A DIFFERENT THING THE
+   BRIEF CALLED BY THAT NAME.** The dispatch brief stated the base as
+   `2eb87f7`. Derived rather than trusted, at this lane's own ref:
+
+       git merge-base main HEAD                    -> e6a97d2
+       git merge-base --is-ancestor 2eb87f7 HEAD   -> exit 1  (NOT an ancestor)
+       git rev-parse main                          -> 2eb87f7
+       .nputer/lane-fence.json .ref                -> e6a97d2
+
+   **Two refs, two jobs, and the brief conflated them.** `e6a97d2` is the
+   CUT POINT — what this lane changed is measured from it, and it is what
+   the fence manifest records. `2eb87f7` is main's TIP, which is the correct
+   LEFT-HAND ref for the range rule and is exactly what the merge forecast
+   above uses; it became main after this lane was cut (one commit, T-189's
+   citation fix, re-cut for that lane only). So the brief's hash is right
+   for one question and wrong for the one it was labelled with. The
+   practical effect here is nil — but a lane cut from "latest" is what
+   lane-protocol rule 2 forbids by name, so it is recorded rather than
+   waved through.
+   **The coordinator confirmed this independently mid-lane and asked that it
+   be written down rather than politely omitted**, which is the right
+   instinct: it is a figure stated without deriving it, in a brief whose own
+   row 13 instructs the session to derive every figure. Both halves of this
+   lane's discipline caught it — ancestry was tested before the hash was
+   used, and the fence manifest was read before the brief was believed.
 4. Nothing outside the fence was touched: the whole diff is
    `app/src-tauri/crates/nputer-index/src/walk.rs` plus this card, and a
    lane writing to its own card is not a fence breach (lane-protocol rule
