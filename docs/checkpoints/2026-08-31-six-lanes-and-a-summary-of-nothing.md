@@ -39,8 +39,16 @@ indistinguishable from a summary of success.**
 - **`T-112-s4`**: read its first suite exit **through a pipe** and nearly
   shipped an intermittent that did not exist.
 
-And a **third shape-TEN member**, found by `T-186` while re-measuring a
-verdict: `cargo test -p <crate>` without `--no-fail-fast` **stops after
+And a **third shape-TEN member** — and the attribution matters, because
+**both seats had to work for it.** `T-186`'s VERIFIER met it first, on
+its own harness control: one mutant reded **1** body under cargo's
+default fail-fast and **2** under `--no-fail-fast`, so it switched every
+arm before measuring anything it would quote. **That call is what made
+its disputed count of 5 correct.** The executor then re-measured, got
+**4**, and nearly corrected a right answer into a wrong one — catching
+itself by ARITHMETIC, because 196 + 4 = 200 is the lib total against a
+baseline of 252. **A control found it; arithmetic stopped it.** The
+mechanism: `cargo test -p <crate>` without `--no-fail-fast` **stops after
 the first failing target**, so a crate-scope count silently describes one
 target. It nearly turned its verifier's correct `5` into a wrong `4`. The
 tell was arithmetic — the parts did not add up to the baseline.
