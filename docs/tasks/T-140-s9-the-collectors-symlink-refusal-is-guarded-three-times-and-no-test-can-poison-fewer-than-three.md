@@ -92,7 +92,7 @@ Priority moved off a collision (18 was taken); no value judgement.
 
 Lane `/Users/ujju/Projects/nputer-T-140-s9`, branch
 `task/T-140-s9-t140s9-symlink-guard`, base `155993f`. One commit,
-`8c5550d`, one file, **+223/-6** — `app/src-tauri/src/docs_watch.rs`, the
+`8c5550d`, one file, **+224/-6** — `app/src-tauri/src/docs_watch.rs`, the
 whole fence. Ceremony row: **S touching shipped code**, so a verifier is
 owed; nothing merged, nothing pushed, the lane worktree left standing.
 
@@ -586,3 +586,49 @@ pair at the merge** — re-ask `index --check` there rather than carrying
 my figures forward. Incidentally, T-179 is the very brief defect the
 notes report under "WHERE THE BRIEF WAS WRONG" item 1; that report was
 right and is now fixed on main.
+
+## INTEGRATOR'S ANSWER TO THE THREE CORRECTIONS (2026-08-31, at the merge)
+
+**1 — ANSWERED BY MEASUREMENT, AND THE ANSWER IS NOT THE ONE THE FINDING
+EXPECTED.** The finding is right that the sweep stopped one function
+short: `is_plain_dir`'s `is_symlink` half is inert (under
+`symlink_metadata` a link is neither file nor dir, so `meta.is_dir()`
+alone refuses it) and `collect_docs_tree`'s docs-root guard can be
+deleted entire — refusal, `eprintln`, early return — with the suite
+green. Both are now NAMED at their sites, the same treatment this lane
+gave the four it did classify.
+
+**But the docs-root guard is not a coverage hole a body can close, and
+this seat proved that the expensive way — by writing the body twice and
+watching both attempts pass under the deletion mutant.** A link pointing
+OUTSIDE the project is rescued by containment after canonicalization; a
+link pointing INSIDE it is dropped by `is_collected_docs_path`'s own
+`docs/` prefix, because the entries canonicalize to `real-docs/…`. **The
+refusal is unobservable through the function's public outcome by
+construction.** CONVENTIONS' POISON DRILL bullet rules that case
+directly — *"IF a body cannot be poisoned … THEN say so and name it,
+because a body that cannot red is the finding"* — so the body that
+landed pins the OUTCOME the five layers hold jointly, is NAMED for that
+rather than for the guard, and carries both failed attempts at its site
+so the next reader does not repeat them. The guard stays: it refuses
+EARLY and LOUDLY rather than letting a walk read a foreign tree and
+discard it silently, and that difference is real even where no assertion
+can see it.
+
+**2 — RECORDED.** Shape SIX was never asked by the lane, and the
+verifier answered it: `the_prefix_check_and_relative_posix_are_one_predicate`
+kills no mutant its sibling does not, because it asserts only
+`.is_some()` — every Some-side mutant is invisible to it. Its subject is
+a std-library equivalence no first-party mutant can falsify, so **no
+count-1 mutant exists and none can be constructed.** That is the finding
+rather than a gap, and the body is kept for what it documents.
+
+**3 — PERFORMED.** The diff figure reads `+224/-6`.
+
+**AND THE TITLE'S CLAIM IS FALSE, FLAGGED RATHER THAN RENAMED.** This
+card's title and filename still say *"guarded three times"*; the body
+retracts it — there are four in the walk and a fifth for an
+outside-pointing link. **Renaming would strand three cards' references**,
+so it is left standing with the retraction attached, which is the same
+disposition this project takes for a stale headline whose body carries
+the correction.

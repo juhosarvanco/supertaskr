@@ -2764,26 +2764,36 @@ mod tests {
         assert_eq!(outcome.skipped_total, 1);
     }
 
-    /// **A SYMLINKED `docs/` IS REFUSED, AND THE FIXTURE IS THE ONE
-    /// CONTAINMENT CANNOT RESCUE** (T-140-s9's verdict, correction 1).
-    /// The blind verifier lifted this guard entirely — refusal,
-    /// `eprintln` and all — and the suite stayed green, because for a
-    /// link pointing OUTSIDE the project containment rejects every entry
-    /// after canonicalization and the outcome is byte-identical either
-    /// way. **An integrator's first attempt at this body used exactly
-    /// that fixture and was therefore vacuous**; it passed under the
-    /// deletion mutant, which is how the mistake was found.
+    /// **A SYMLINKED `docs/` COLLECTS NOTHING — AND THIS BODY DOES NOT PIN
+    /// THE DOCS-ROOT GUARD, WHICH IS THE FINDING** (T-140-s9's verdict,
+    /// correction 1, answered by measurement at the merge).
     ///
-    /// The discriminating fixture points the link INSIDE the project: the
-    /// entries then canonicalize to contained paths, containment passes,
-    /// and without the guard they are COLLECTED. So this body fails the
-    /// moment the guard stops refusing, which is what the guard is for.
+    /// The blind verifier lifted `collect_docs_tree`'s docs-root refusal
+    /// ENTIRELY — the `is_symlink() || !is_dir()` branch, its `eprintln`
+    /// and its early return — and the suite stayed green. An integrator
+    /// then tried twice to write the body that would catch it, and BOTH
+    /// attempts passed under the deletion mutant:
     ///
-    /// Its POSITIVE CONTROL is the second half — the same tree with the
-    /// same file under a REAL `docs/` does collect — so the empty
-    /// outcome above cannot be satisfied by a walk that finds nothing.
+    /// * a link pointing OUTSIDE the project — every entry canonicalizes
+    ///   out of the tree and containment rejects it;
+    /// * a link pointing INSIDE it — entries canonicalize to
+    ///   `real-docs/…`, and `is_collected_docs_path`'s own `docs/` prefix
+    ///   drops them.
+    ///
+    /// **So the refusal is unobservable through this function's public
+    /// outcome, by construction rather than by oversight**, and
+    /// docs/CONVENTIONS.md's POISON DRILL bullet says what to do about a
+    /// body that cannot red: *say so and name it, because a body that
+    /// cannot red is the finding.* This is that naming. The guard stays —
+    /// it refuses EARLY and LOUDLY, before a walk that would otherwise
+    /// read a foreign tree and discard it silently, and that difference is
+    /// real even though no assertion here can see it.
+    ///
+    /// What this body DOES pin is the OUTCOME — a symlinked `docs/`
+    /// collects nothing — which the five layers hold JOINTLY. Its
+    /// positive control is the second half.
     #[test]
-    fn a_symlinked_docs_root_is_refused_even_when_it_points_inside_the_project() {
+    fn a_symlinked_docs_root_collects_nothing_though_no_single_layer_owns_the_refusal() {
         use std::os::unix::fs::symlink;
         let host = bare_tree("t140s9-docs-link-inside");
         fs::create_dir_all(host.root().join("real-docs")).expect("mk real-docs");
@@ -2793,8 +2803,7 @@ mod tests {
         let outcome = collect_docs_tree(host.root());
         assert!(
             outcome.files.is_empty(),
-            "a symlinked docs/ must be REFUSED even pointing inside — containment cannot \
-             rescue this one, so anything collected here came through the link: {:?}",
+            "a symlinked docs/ must collect nothing, whichever layer refuses it: {:?}",
             outcome.files.iter().map(|f| &f.path).collect::<Vec<_>>()
         );
 
