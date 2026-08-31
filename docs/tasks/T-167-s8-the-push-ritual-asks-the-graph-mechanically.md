@@ -332,14 +332,85 @@ lane does not get to award itself the review its own format says another
 hand must hold**, and stamping `done` would claim a guarantee that was
 never taken.
 
+### THE GATES, DERIVED OVER THE MERGE FORECAST (6 paths at `7850f89`)
+
+Derived MECHANICALLY, by feeding the merge-forecast path list
+(`git merge-tree --write-tree main HEAD`, then
+`git diff --name-only main "$TREE"`) through `range-rule.mjs`'s own
+`graphRegenTrigger` / `bootGateTrigger` / `triggerMatches` — the triggers
+read out of CONVENTIONS' own bullets rather than retyped:
+
+- **GRAPH REGEN — FIRES**, on one path: `tools/e2e/tests/push-guard.spec.ts`
+  (`.ts` outside `docs/`). The two `.mjs` hooks do NOT match the suffix
+  set, which is worth knowing. **SATISFIED**: `index --check` exit **0**,
+  CURRENT, 1143153 bytes / 199 files / 2436 symbols / 2351 edges, budget
+  53.3%. Asked LAST, after this file's final write.
+- **BOOT GATE — NOT OWED**: no `app/src-tauri/**`, no `app/src/**`,
+  neither manifest.
+- **METHOD EVAL GATE — NOT OWED**: no `method/**`.
+- **DOCS GATE — FIRES**, exit **1** (a verdict, not a failure), on the two
+  card paths. It named three suites and all three were run:
+  **lib/parser `npx vitest run` 344/344 passed** (16 files) ·
+  **app `npm test` 1077/1077 passed** (49 files) ·
+  **tools/e2e `npm test` 359 passed / 3 failed** — attributed below.
+
+Also green, unpiped: tools/e2e `npm run typecheck` **0** ·
+`lint:tokens --selftest` **0** · `lint:tokens` **0** · `lint:docs` **0**.
+
+### THE THREE E2E REDS ARE NOT THIS LANE'S, AND THE CONTROL PROVES IT
+
+`dispatch-order.spec.ts`'s *"--dispatch runs on the live repository"* and
+`session-economics.spec.ts`'s two live-CLI bodies red. **THE CAUSE IS A
+LANE CUT ON THIS MACHINE WHILE THE SUITE RAN**: `T-186` holds a worktree
+and its card exists in NO checkout cut before it, so the assembler
+correctly refuses — *"a lane whose fence cannot be read is a fence nobody
+can be disjoint from"* — and bodies asserting exit 0 from that CLI get 1.
+
+**THE CONTROL, RUN RATHER THAN ARGUED**: the same three bodies, in the
+detached bench checked out at **this lane's own base `bd8a8e8`** where
+this diff does not exist, fail **identically — 3 failed / 21 passed**. A
+re-run would have been the wrong instrument (the lane is still live);
+the right one is the base.
+
+**AND THE CLASS IS ALREADY CARDED**: `T-143-s1`, *"Two session-economics
+bodies assert exit 0 from a brief the live lane list can correctly
+refuse… the machine-scoped check inside a spec"* — `dispatch-order`'s
+live body is the third instance of the same mechanism and this is a
+CORROBORATION for that card rather than a new one (TASK-FORMAT: a second
+instance is worth more attached to the first).
+
+### THE CENSUS-CURRENCY GATE IS OWED AT THE MERGE AND THIS FENCE CANNOT PAY IT
+
+`npm run capabilities:check` exits **1 — STALE**: committed 27333 bytes
+against a fresh generation of 28765, because this lane adds **21** test
+names (`command grep -c 'test("' tools/e2e/tests/push-guard.spec.ts`).
+
+**THE REGENERATION IS THE INTEGRATOR'S AND THE FENCE IS RIGHT TO EXCLUDE
+IT.** `docs/CAPABILITIES.md` is outside `[.claude, tools/e2e]`, and the
+established shape is that it moves in the **Checkpoint** commit —
+`git log -- docs/CAPABILITIES.md` shows checkpoints and two explicit
+by-hand regenerations, and **`T-154`, the card that added
+`lane-fence.spec.ts`, has ZERO lane commits touching it** while its
+checkpoint subject reads *"CAPABILITIES at the runner's own 258"*. So
+this is not an unpaid debt but the ordinary division of labour.
+
+**THE MERGE OWES**: `npm run capabilities` from tools/e2e, landed in the
+checkpoint commit. Until it does, CI's `capabilities:check` step reds —
+by design, which is what that gate is for.
+
 ### CORRECTIONS TO THE DISPATCH BRIEF
 
-1. **`lanes live right now: none` was stale.** At `2026-08-31T~01:30Z` on
-   Mac.lan there were FOUR live lanes: this one, `T-162-s1`
-   (`[docs/decisions, docs/rooms]`), `T-182` (`[docs/CONVENTIONS.md]`) and
-   `T-184` (`app-agent`). All disjoint from this fence, so the dispatch
-   was still sound — but the brief's own rule says a live-environment
-   fact is re-read at dispatch, and this one had moved.
+1. **`lanes live right now: none` was stale, and it went on moving all
+   session.** At `~01:30Z` on Mac.lan there were FOUR live lanes — this
+   one, `T-162-s1` (`[docs/decisions, docs/rooms]`), `T-182`
+   (`[docs/CONVENTIONS.md]`) and `T-184` (`app-agent`), all disjoint from
+   this fence, so the dispatch was still sound. By `~04:30Z` the set was
+   FIVE and almost entirely different: `T-112-s4`, `T-142`, this one,
+   `T-184`, `T-186`. **The brief's own rule is the right one — a
+   live-environment fact carries the time it was READ and is re-read at
+   dispatch — and this lane is the case that shows re-reading ONCE is not
+   enough either**: the set churned twice mid-lane, and the third churn
+   is what redded three e2e bodies.
 2. **The e2e lane's default port was NOT free.** 14520 was held by
    another lane's server (`node`, pid 56458, `127.0.0.1:14520`), so this
    lane ran on **14678** and the drill bench on **14679**, both derived

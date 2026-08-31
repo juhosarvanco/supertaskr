@@ -208,3 +208,37 @@ answer is the third arm (publish the precondition), then it is owed to
 the CARD-WRITING seat as well as to the suite-running one, because a
 criterion is briefed to a lane that cannot see the schedule that will
 refuse it.
+
+## CORROBORATION — 2026-08-31, from inside `T-167-s8`'s lane (@ `7850f89`)
+
+**A THIRD INSTANCE, AND IT IS NOT A SESSION-ECONOMICS BODY** — which is
+the part that widens this card rather than merely confirming it.
+
+`tools/e2e npm test` in that lane: **359 passed / 3 failed**. The two
+this card already owns
+(`session-economics.spec.ts`'s *"the recommended seat is a function of
+the CARD…"* and *"the advisory line is NOT a contract row…"*), plus
+**`dispatch-order.spec.ts`'s *"--dispatch runs on the live repository,
+exits 0, and WRITES NOTHING"***, which fails by the same mechanism in a
+different spec and on a different assertion — it expects the string
+`"BLOCKED — the unmet blocker is named"` and gets an UNFENCEABLE report
+instead.
+
+**THE TRIGGER WAS NOT A FENCE OVERLAP THIS TIME, WHICH IS THE NEW
+INFORMATION.** No live lane held `tools/e2e` against these bodies. What
+broke them is a lane whose CARD IS ABSENT: `T-186` was cut on this
+machine mid-suite, its card exists in no checkout cut before it, and the
+assembler correctly refuses — *"a lane whose fence cannot be read is a
+fence nobody can be disjoint from"* — taking the CLI to exit 1. So the
+precondition these bodies actually depend on is **the whole live lane
+list being READABLE**, which is strictly weaker than "no lane holds my
+slug" and strictly harder for a card-writing seat to foresee.
+
+**CONTROLLED RATHER THAN ASSUMED**: the same three bodies were run in a
+detached bench at that lane's own base `bd8a8e8`, where its diff does not
+exist, and failed **identically — 3 failed / 21 passed**. The reds are
+the schedule, not the diff.
+
+Filed as a corroboration and NOT as a sibling card, per
+`method/tasks/TASK-FORMAT.md`: *"a second instance is worth more attached
+to the first than filed beside it."*
