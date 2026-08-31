@@ -141,10 +141,10 @@ board's `DispatchReading` has to import BOTH `dispatch-store.ts` (C-15)
 and `board-model.ts` (C-17). No test file in this repository may do that
 today**: C-15 declares no `app/test/**` path at all, and no other
 component's test file declares C-15 either, so the import would be the
-undeclared component edge `arch drift` caught at T-169. Filed as `T-187`.
+undeclared component edge `arch drift` caught at T-169. Filed as `T-190`.
 This card's `touches: [app-board, app-dispatch]` does not by itself solve
 it, because a slug expands to the registry as it stood at dispatch — so
-either take `T-187` as a `blocked_by`, or have the dispatch name the test
+either take `T-190` as a `blocked_by`, or have the dispatch name the test
 file in `touches:` directly. The mechanism is written out in
 `C-18-board-root.md` and in `T-112-s6`.
 

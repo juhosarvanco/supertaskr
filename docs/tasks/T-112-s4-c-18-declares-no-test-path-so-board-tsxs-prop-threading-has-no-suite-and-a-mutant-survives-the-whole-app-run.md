@@ -168,21 +168,28 @@ premise, not of anything this diff introduced.
 
 ### Routed rather than done, and deliberately not absorbed
 
-- **`T-187`** — the finding that matters most here. `T-126-s2`'s ruling
+- **`T-190`** — the finding that matters most here. `T-126-s2`'s ruling
   names this card as the blocker for putting the join in TypeScript. At
   this base the dispatch VIEW MODEL is already reachable from inside
   `[app-board]` — three separate in-fence test files drive the frontier,
   the presentation and the drawer's rendered block. What no test file may
   reach is `dispatch-store.ts`: **C-15 declares no test path either**, and
-  that is the seam's genuinely unreachable half. Whoever re-triages
-  `T-126-s2` should move the test-reachability `blocked_by` there.
+  that is the seam's genuinely unreachable half. **ACCEPTED by the
+  architect seat while this lane was still open**: the ruling's direction
+  stands and its blocker moves to C-15. That seat is amending `T-126-s2`
+  itself — this lane did not touch it, because a lane does not edit the
+  card that rules over it.
+  **This card was first filed as `T-187` and renumbered**: that id had
+  been taken the same night by a different seat's card, already on main.
+  Nothing in the method derives the next free id, and the account of that
+  gap is on `T-190` rather than here.
 - **The `C-09 -> C-15` edge** that `T-112-s5` wants was priced and NOT
   declared, per the dispatch's instruction to make the case rather than
   act silently. It creates no cycle and would cost no drift — a
   declared-but-unobserved edge is an ordinary `planned` state in this
   registry — but declaring it presupposes `T-112-s5`'s shape 3, which is
   unruled, and an executor may not settle an unruled architecture
-  question from inside a lane. The case is written up on `T-187` so the
+  question from inside a lane. The case is written up on `T-190` so the
   card that writes the import can declare the edge in the same commit,
   which is when it becomes observed.
 - **`T-185`** was NOT absorbed; its other half is `dispatch-store.ts`,

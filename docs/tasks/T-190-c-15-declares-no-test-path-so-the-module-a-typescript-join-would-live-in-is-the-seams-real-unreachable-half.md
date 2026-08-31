@@ -1,5 +1,5 @@
 ---
-id: T-187
+id: T-190
 title: C-15 declares no test path, so `dispatch-store.ts` — the module a TypeScript join would live in — is the seam's real unreachable half, and the ruling named C-18 instead
 feature: F-04
 milestone: 4
@@ -105,9 +105,41 @@ cheap:
 
 ## Ordering
 
-This card, not `T-112-s4`, is what `T-126-s2` should carry as its
-`blocked_by` for the test-reachability half. `T-112-s4`'s own registry
-work is discharged; `T-112-s6` carries the C-18 test file, which is
-placement debt with a working pin rather than a blocker for this seam.
-**Whoever re-triages `T-126-s2` should read `C-18-board-root.md`'s new
-section first** — it carries the derivation both of these cards rest on.
+This card, not `T-112-s4`, is what `T-126-s2` carries as its `blocked_by`
+for the test-reachability half. `T-112-s4`'s own registry work is
+discharged; `T-112-s6` carries the C-18 test file, which is placement
+debt with a working pin rather than a blocker for this seam. **Whoever
+picks this up should read `C-18-board-root.md`'s new section first** — it
+carries the derivation both of these cards rest on.
+
+**ACCEPTED BY THE ARCHITECT SEAT, 2026-08-31, while `T-112-s4`'s lane was
+still open.** The seat that wrote the ruling confirmed the correction and
+is amending `T-126-s2` itself: **the DIRECTION stands — the join goes to
+TypeScript behind a test path — and the BLOCKER moves from C-18 to C-15.**
+`T-112-s4`'s lane did not touch `T-126-s2`, deliberately: a lane does not
+edit the card that rules over it.
+
+## HOW THIS CARD'S ID COLLIDED, RECORDED BECAUSE THE GAP IS REAL
+
+This card was first filed as **`T-187`**, which was already taken — by
+`T-187-a-lane-based-on-the-newest-checkpoint-reads-a-stale-copy-of-its-own-card…`,
+committed to main earlier the same night by a different seat. `T-188` and
+`T-189` were taken in the same window. The clash was caught by the
+dispatching seat at hand-back and renumbered here to `T-190`.
+
+**Nothing in this method derives the next free id.** The lane picked
+`T-187` by listing `docs/tasks/` at its own base commit and taking the
+successor of the highest — which is correct at the instant it is run and
+stale immediately afterwards, because the id space is **machine-scoped
+and shared across concurrent seats** while every lane reads it from a
+CHECKOUT-scoped snapshot. That is exactly the scope mismatch
+`lane-protocol.md` rule 4's closing paragraph names — *"name the scope of
+every surface you depend on, and where the answer is machine, DERIVE the
+value from the lane rather than defaulting it"* — and the id space is a
+surface that rule's own examples do not list.
+
+**Two seats filing concurrently will keep colliding, and the failure is
+silent**: nothing reds, two cards simply share an id until a human
+notices. Worth a card of its own — the cheap fix is a derivation
+(an id allocated FROM the lane, the way scratch ports already are)
+rather than a check, since a check still races.

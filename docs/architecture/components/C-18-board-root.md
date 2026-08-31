@@ -95,4 +95,6 @@ block from `detail-assignment.test.tsx` (C-09's). What no component's
 test file may reach is `app/src/lib/dispatch-store.ts` — **C-15 declares
 no `app/test/**` path at all**, and nothing under `app/src` or `app/test`
 imports that module by `import`, `require` or `import()`. Routed as
-`T-187`.
+`T-190`, and **accepted by the architect seat on 2026-08-31**: the
+ruling's DIRECTION stands — the join goes to TypeScript behind a test
+path — and its BLOCKER moves from C-18 to C-15.
