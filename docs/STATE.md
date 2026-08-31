@@ -1,24 +1,27 @@
 # State
 
-Updated: 2026-08-31 at the fourteen-lane close — record:
-docs/checkpoints/2026-08-31-four-lanes-and-a-spec-that-tested-itself.md; the
-queue lives in T-171's record beside it.
+Updated: 2026-08-31 at the seven-card close — record:
+docs/checkpoints/2026-08-31-the-fence-is-armed-and-six-verifiers-refuted-the-lanes-they-approved.md;
+the queue lives in T-171's record beside it.
 **NO task branches remain** (derive: the LANES command below) and the
 GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
 megabyte free — derive it, never quote it. Pre-compaction:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
-**NOTHING IS BROKEN.** CI stopped STARTING for ~4h on 2026-08-31 (an
-account BILLING block, not minutes — the reason lives in check-run
-ANNOTATIONS, nowhere else); @human cleared it and `c4cf4af` is green,
-including `cargo audit`. **A GATE READ BEFORE A COMMIT DOES NOT CATCH
-WHAT THE COMMIT CREATES** — `lint:docs` was 0, then 1 on the same tree,
-because committing a record is what makes STATE stale (rule 4). Read it
-AGAIN after committing until `T-203` gates the push. Designed non-zero exits: `npm run health` exits
-3 while bands await keepers (T-156-s1/s2); the DOCS GATE's 1 means it HAS
-a verdict. **Re-run a suspect ONCE as a second measurement, then
-ATTRIBUTE** — never re-run until green and call that evidence. (`T-161`
-and `T-178`'s causes are both fixed.)
+**NOTHING IS BROKEN.** A CI outage on 2026-08-31 was an account BILLING
+block whose reason lived ONLY in check-run ANNOTATIONS; cleared.
+**A GATE READ BEFORE A COMMIT DOES NOT CATCH WHAT THE COMMIT CREATES** —
+`lint:docs` went 0 then 1 on one tree, because committing a record is
+what makes STATE stale (rule 4). Read it AGAIN after committing, until
+`T-203` gates the push.
+**AND AN EXIT 1 MAY MEAN THE GATE COULD NOT RUN.** `docs-gate.mjs`'s
+`CANNOT_RUN: 3` sits in a catch inside `main()`, so an IMPORT failure
+exits 1 — which that gate spells `FOUND`. **READ THE OUTPUT**: a verdict
+prints `docs-gate:` lines, a crash prints a stack trace. Three instances
+in one day, one of them this seat's own wrong path. Designed non-zero:
+`npm run health` 3 while bands await keepers (T-156-s1/s2). **Re-run a
+suspect ONCE, then ATTRIBUTE** — never re-run until green and call that
+evidence.
 
 ## The contract this file is under
 
