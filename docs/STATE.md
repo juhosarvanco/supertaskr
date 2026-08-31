@@ -49,29 +49,31 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: **five** — `T-184`, `T-167-s8`, `T-182`, `T-162-s1`,
-   `T-112-s4`. Fences proved pairwise disjoint at dispatch.
-2. **`T-126-s2` IS RULED** (architecture sitting, 2026-08-31): the join
-   goes to TypeScript, but shape 3 was refused on TEST REACHABILITY, so
-   the order is FORCED — `T-112-s4` blocks it, `T-112-s5` follows. An
-   ADR is owed once `T-162-s1` releases `docs/decisions`.
-3. THE QUEUE is in T-171's record; the newest cards are `T-185`–`T-188`.
-4. THE NEXT METHOD RELEASE has riders: `T-112-s2`, `T-154-s3`,
-   `T-159-s6`, `T-154-s4`'s sentence; `T-173` and `T-176` owe a bump.
+1. IN FLIGHT: **DERIVE IT, never transcribe** — `brief.mjs --dispatch`.
+   A hand-kept list here named two dead lanes and missed two live ones
+   inside one sitting (`T-142`).
+2. **ASK THE DOCS GATE WHICH SUITES A CHANGE OWES**: `node
+   tools/e2e/scripts/docs-gate.mjs <changed paths>`. `npm run lint:docs`
+   is the CENSUS — its exit 0 means "I wasn't asked", not "nothing owed".
+3. **`T-126-s2` IS RULED**: the join goes to TypeScript; shape 3 was
+   refused on TEST REACHABILITY. Blocker is **`T-190`** (C-15 has no test
+   path), not `T-112-s4`. **`blocked_by` is EMPTY until `T-190` lands** —
+   a forward reference reds the parser. An ADR is @human's to ratify.
+4. NEXT METHOD RELEASE riders: `T-112-s2`, `T-154-s3`, `T-159-s6`,
+   `T-154-s4`'s sentence; `T-173`/`T-176` owe a bump.
 5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
-   2026-08-31 — the ruled asymmetric answer leaves every authoring act a
-   file edit and @human wants customization without opening files); the
-   **STEERING SPLIT** (`T-180` parked on it); T-025-s4's three remaining
-   permission questions; and **thirty seconds of @human's eye on the
-   interview's new ending at a narrow width** — jsdom applies no
-   breakpoints, so no gate here can see it.
+   2026-08-31 — the ruled answer leaves every authoring act a file edit
+   and @human wants customization without opening files); the **STEERING
+   SPLIT** (`T-180` parked on it); T-025-s4's three permission questions;
+   and **thirty seconds of @human's eye on the interview's new ending at
+   a narrow width** — jsdom applies no breakpoints.
 6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
-   assignment is honoured only by the session that dispatches. Set it
-   deliberately on every spawn.
+   assignment is honoured only by the dispatching session.
 7. **WHAT A DISPATCHER WRITES FROM MEMORY IS THE HALF THAT IS WRONG** —
-   seven instances overnight, in T-179's and T-171's records. **Name the
-   contract and the hazards; point at the derivation; put any lane fact
-   BELOW the blind line, labelled.**
+   nine instances overnight. Point at the derivation. **A verifier's
+   brief carries NO lane fact: a "blind line" inside one message is not
+   one, because the agent reads the whole prompt. Send lane context in a
+   SECOND message, after the attack set is saved.**
 
 ## Standing hazards — the section that saves the hour
 
