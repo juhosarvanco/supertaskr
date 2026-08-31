@@ -1,0 +1,124 @@
+---
+id: T-217
+title: TWO LANES MINTED T-214 ON THE SAME AFTERNOON — a lane cannot see another lane, so no lane can allocate a unique id, and the census that catches it fires only at the SECOND merge when renumbering is most expensive
+feature: F-06
+milestone: 4
+priority: 2
+size: S
+status: planned
+blocked_by: []
+touches: [tools/e2e, method/roles]
+suggested_by: "the incident itself, 2026-08-31: T-185-s2's lane and T-199's lane each minted T-214 for unrelated subjects, neither able to see the other. Filed on the trigger condition a peer seat and this seat agreed on — file it when a collision actually happens, with the incident as evidence"
+builder:
+review: independent
+---
+
+**THE RULE WAS DELIBERATELY NOT WRITTEN, AND THE CONDITION FOR WRITING IT
+HAS NOW OCCURRED.**
+
+Earlier on 2026-08-31 this seat asserted to peers that only the
+dispatching seat may allocate card ids. It then went looking for that
+rule and **found it written nowhere** — no hit in
+`method/tasks/TASK-FORMAT.md`, `method/lane-protocol.md`,
+`method/roles/`, or `docs/CONVENTIONS.md`. A peer seat ruled: leave it
+unfiled, because *the uniqueness census is already the mechanism and the
+claim-message protocol is already the convention; writing a rule on top
+adds law without adding a mechanism. If two seats ever do collide on an
+id, file it then with the incident as evidence.*
+
+**The incident is here.**
+
+## The collision, measured
+
+    /Users/ujju/Projects/nputer-T-185-s2/docs/tasks/T-214-*.md
+      id: T-214  "A structural-literal fixture catches a WIDENED prop
+                  type and is structurally blind to a narrowed one"
+
+    /Users/ujju/Projects/nputer-T-199/docs/tasks/T-214-*.md
+      id: T-214  "ARMING THE FENCE MAKES THE CAPABILITIES CENSUS
+                  UNREGENERABLE BY THE LANE THAT STALED IT"
+
+Unrelated subjects. Two cross-references each. **Neither is on `main`**,
+so nothing is broken yet — which is exactly why it is worth filing now
+rather than after it costs something.
+
+## BOTH LANES OBEYED THE RULE. THAT IS THE POINT
+
+Neither lane was careless. Each derived an id and each could have checked
+uniqueness at its own ref — and **at its own ref, `T-214` was free.** A
+lane worktree cannot see another lane worktree: that isolation is the
+whole reason lanes exist, and it is what makes the check unsound from
+inside one.
+
+**No amount of diligence inside a lane can prevent this.** The
+information required — every id minted in every live lane — exists only
+at the seat that holds them all.
+
+## AND THE EXISTING MECHANISM FIRES TOO LATE
+
+The uniqueness census is real and would catch it: 401 ids, 401 unique,
+with a planted-duplicate control proving the check fires. But it runs
+over **one tree**. It therefore cannot see the collision until the SECOND
+lane merges — at which point:
+
+- one card must be renumbered, and
+- every reference written into the OTHER lane's notes, report, verdict
+  and commit messages already names the id being taken away.
+
+**The cost of the fix is proportional to how late it is found**, and the
+current instrument guarantees it is found at the worst moment.
+
+## What a fix decides
+
+1. **Where the census runs.** Over `main` plus every live lane's
+   `docs/tasks/`, derived from `git worktree list --porcelain` — the
+   same derivation `T-209` uses for fences, and for the same reason: the
+   set exists on disk and must not be typed.
+2. **When it runs.** At MINT time is the useful moment; at merge it is
+   already expensive. A lane cannot run it, so either the dispatching
+   seat pre-allocates a block, or the mint is a request the holder
+   answers.
+3. **Whether pre-allocation beats detection.** A construction beats a
+   check — `lane-protocol.md` rule 4's own closing argument, about a
+   machine-scoped surface, which a card id is: *"two lanes cannot pick
+   the same number when the number comes from the lane."* An id derived
+   from the parent card (`T-185-s2`, `T-199-s1`) collides with nothing by
+   construction, and **the two lanes that DID derive suffix ids today —
+   `T-185-s1`, `T-185-s2`, `T-189-s1`, `T-189-s2`, `T-197-s1`,
+   `T-197-s2` — produced no collisions at all.** Only the two that minted
+   fresh `T-NNN` ids collided. That asymmetry is the strongest evidence
+   in this card and it was free.
+
+## Acceptance criteria
+
+- THE census SHALL run over `main` AND every live lane's cards, with the
+  lane set DERIVED from `git worktree list --porcelain` at the moment of
+  the check.
+- A COLLISION SHALL be reported naming both ids, both worktrees and both
+  titles — a report that says only "duplicate" sends the reader back to
+  the search this card is about.
+- **A POSITIVE CONTROL SHALL prove a genuinely fresh id is ALLOWED.** A
+  check that refuses every mint is indistinguishable from one that works.
+- **A SECOND CONTROL SHALL prove the cross-lane case specifically**: an
+  id free on `main` and taken in a live lane SHALL be refused. A census
+  over one tree passes that case, which is the whole defect.
+- WHERE a suffix id derived from a parent is used, the check SHALL still
+  run — a construction that is believed rather than checked is a
+  resolution.
+- **This card is GUARD-CLASS**: `review: independent`, set at filing.
+- Verification: headless.
+
+## Read beside
+
+`T-209` (the same `git worktree list --porcelain` derivation, for
+fences), `lane-protocol.md` rule 4 (machine-scoped surfaces, and *a
+construction beats a check*), `T-057` (one rule, one implementation), and
+`T-207` (mechanical versus memory-held).
+
+## Disposition of the live collision, recorded so the next seat is not confused
+
+The two `T-214`s are resolved at MERGE by renumbering whichever lands
+second, in the merge commit, with its cross-references updated in the
+same commit. Neither lane is edited while a verifier is drilling its
+tree — that is the `T-202` data-loss shape and it is not repeated for a
+bookkeeping fix.
