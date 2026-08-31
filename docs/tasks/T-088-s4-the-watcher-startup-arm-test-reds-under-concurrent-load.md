@@ -5,13 +5,13 @@ feature: F-02
 milestone: 4
 priority: 12
 size: M
-status: planned
+status: verifying
 blocked_by: [T-153]
 touches: [app-shell]
 suggested_by: integrator claude-opus-5 @T-088
-builder:
+builder: claude-opus-5
 verifier:
-built_by:
+built_by: "claude-opus-5 @fresh (executor lane)"
 verified_by:
 review:
 ---
@@ -298,5 +298,247 @@ It owes `cargo test`.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
+
+**Built by executor claude-opus-5 on branch
+`task/T-088-s4-the-fsevents-wait-is-bound-to-a-wall-clock`, worktree
+`/Users/ujju/Projects/nputer-T-088-s4`, cut at `dd6b723`.** One file
+changed: `app/src-tauri/src/docs_watch.rs`.
+
+### THE MECHANISM, which this card asked anyone who found it to write here
+
+The card says in as many words that the cause is unexplained — *"A test
+binary should not run 3.5x slower because the directory beside it holds
+78 000 files… Accumulated incremental-compilation state is the obvious
+suspect and it is NOT verified here. The correlation is controlled; the
+causation is not."*
+
+**It is not the cache, and it was never a race in the body. It is a
+missing rendezvous at SPAWN, and the code confessed to it in a comment.**
+
+`spawn_watcher_thread` returns the instant `std::thread::spawn` returns.
+The startup arm runs *afterwards*, inside `run_watcher`, before its
+control loop is entered. So `live_state(Some(root))` handed a body a
+watcher that **might not be armed yet**, and the body's own comment said
+so:
+
+> // The initial arm is asynchronous (no rendezvous at spawn), so the
+> // very first write can race the baseline collect and be suppressed;
+> // let that window pass, then a further change MUST emit.
+
+Its mitigation was `std::thread::sleep(DEBOUNCE * 4)` — one second of
+wall clock, betting the race had been won.
+
+**When that bet lost, the write was MISSED, not delayed.** No bound,
+however wide, collects an event that was never generated. That single
+fact explains every observation on this card:
+
+- **why widening never helped** — the card refuses that arm twice on
+  instinct; this is the reason it was right;
+- **why the distribution is bimodal with nothing in the gap** — a body
+  either armed in time (healthy ~3.94 s suite) or waited out the entire
+  10 s `EMIT_BUDGET` over an emit that was never coming. 3.94 + 10 =
+  13.94 against measured reds of **14.70–15.19 s**. The gap in the
+  distribution *is* the budget;
+- **why the cache correlated without causing** — a large `target/` makes
+  the machine slow enough to schedule the spawned thread late. Cache size
+  is one of many ways to lose the race, which is why cleaning helped and
+  why the cliff kept returning;
+- **why isolated re-runs of the named body were green every time** — a
+  lone body wins the race essentially always.
+
+**AND THE CLASS IS EXACTLY TWO BODIES, DERIVED RATHER THAN GUESSED.**
+Exactly two of the 24 `live_state` call sites pass `Some(root)` — i.e.
+arm at startup:
+
+    grep -c '= live_state(Some' app/src-tauri/src/docs_watch.rs   -> 2
+
+and they are precisely the two bodies this card names as red:
+`startup_arm_watches_the_initial_root` and
+`docs_created_after_a_docsless_startup_arms_and_emits`. Every other body
+arms through `apply_pick` / `apply_genesis_pick`, which have carried an
+`ack` rendezvous since T-007 and T-026 — *"what the surrounding code
+already uses everywhere else"*, exactly as this card put it.
+
+### THE FIX
+
+`WatchCtl::Ping { ack }` (`#[cfg(test)]`) is a **barrier on the watcher's
+control loop**. `run_watcher`'s loop is single-threaded and FIFO over ONE
+channel that carries both control messages and the debounced fs batches
+(`spawn_watcher_thread` hands the debouncer a clone of the same `tx`), so
+an answered `Ping` proves every message enqueued before it has been
+HANDLED — and a `Ping` sent immediately after the spawn proves the
+startup arm is done, because that arm runs before the loop is entered.
+`live_state` now blocks on it, so all **24** call sites get the
+rendezvous, not just the two that were failing.
+
+It is `#[cfg(test)]` because the shipped binary has no caller for it; the
+FIFO ordering the rendezvous rests on is identical in both builds.
+
+### THE WAIT TAXONOMY — which waits are which, and why (criterion 2)
+
+Census re-derived at my own refs: **before = `dd6b723`**, **after =
+`293915f`**.
+
+| wait | before | after | disposition |
+|---|---|---|---|
+| `recv_until` helper (`EMIT_BUDGET` 10 s) | 21 call sites / 11 bodies | 21 call sites / 11 bodies | `recv_timeout` → **`recv()`**; `EMIT_BUDGET` **deleted, not widened** |
+| body-level `recv_timeout` on a **synchronous** sink | 4 (at 5 s) | 0 | → **`try_recv()`** — strictly stronger |
+| body-level `recv_timeout`, failure-mode guards | 2 (10 s, 5 s) | 2 | **KEEP** — classified in the diff |
+| the deliberate **NEGATIVE** wait | 1 (1200 ms) | 1 | **KEEP** — the card's own exception |
+| `settle()` / `sleep(DEBOUNCE * 4)` | 5 call sites + 1 inline | **1** | 5 removed; the survivor serves the negative |
+| `live_state` arm rendezvous | 0 | **1 helper, 24 sites** | new |
+
+**The three bounds that survive, and why each is not the thing this card
+removed:**
+
+1. **the 1200 ms NEGATIVE wait** — a rendezvous cannot express *"and
+   nothing arrives"*. Note the direction of its load sensitivity: a
+   slower machine gives a spurious emit MORE time to appear, so it gets
+   *stricter* under load, never flakier. The `settle()` above it is part
+   of the same assertion.
+2. **`status_rx` (5 s)** — the assertion IS *"`project_status` does not
+   block"*. That is a negative in disguise; waiting without a bound would
+   assert nothing.
+3. **`entered_rx` (10 s)** — a test-internal thread handshake with no
+   filesystem, no debouncer and no watcher in it. `recv()` would be a
+   rendezvous, but the regression it guards (`apply_picked_folder` never
+   sending `Rearm`) leaves `entered_tx` alive, so the suite would HANG
+   instead of failing.
+
+**The four `try_recv` conversions are the finding inside the finding.**
+The card counts *"six further `recv_timeout` waits at 5 and 10 seconds"*
+as one class. Four of the six are not FSEvents waits at all: their sink
+is called **synchronously by `handle_fs_batch` on the test's own thread**,
+so the emit is already in the channel before the wait is reached. Their
+bound described a bug it could not survive. `try_recv()` is strictly
+stronger — it now pins the synchronous contract — and it is the spelling
+those same bodies already use for their negative side
+(`assert!(rx.try_recv().is_err())`).
+
+### WHAT THIS COSTS, stated rather than left to be found
+
+A watcher that is **alive but permanently silent** now hangs a positive
+wait instead of failing it. Accepted, for two reasons: the window that
+actually produced silence is closed by the barrier, so reaching it means
+the watcher is broken rather than late; and the loud failure a real
+regression most often takes — a panicking or exiting watcher thread —
+still lands immediately via the channel disconnect, **measured at 0.02 s
+against the 10 s the deleted deadline needed** (drill D1 below).
+
+### EVIDENCE
+
+**My own baseline first, because this worktree's `target/` was cold at
+dispatch.** Cold `cargo test --no-run`: **exit 0**, `target/` **2.4G**.
+
+| run | tree | exit | targets | totals | lib `finished in` | `target/` |
+|---|---|---|---|---|---|---|
+| A baseline | `dd6b723`, unmodified | **0** | 18 | 601 / 0 / 4 | **4.37 s** | 2.4G |
+| B after | `293915f` | **0** | 18 | 601 / 0 / 4 | **4.49 s** | 3.3G |
+
+**Criterion 4 — `cargo test --no-fail-fast` from `app/src-tauri/`,
+UNPIPED, exit read from `$?` before any pipe, under DELIBERATE load.**
+Eight CPU burners on a 10-core machine, on top of an ambient load already
+above the card's own controlled experiment (that experiment ran at
+3.45–3.83 and 5.59–6.74):
+
+| run | exit | 1-min load AT START | targets | totals | lib `finished in` |
+|---|---|---|---|---|---|
+| 1 | **0** | **10.69** | 18 | 601 / 0 / 4 | **4.29 s** |
+| 2 | **0** | **20.96** | 18 | 601 / 0 / 4 | **4.41 s** |
+| 3 | **0** | **22.50** | 18 | 601 / 0 / 4 | **4.43 s** |
+
+At **3–6x the load of the card's own control**, the lib suite clusters in
+**0.14 s** and sits far inside the healthy band (green under 9.5 s, red
+over 14.6 s). The card's degraded readings were 14.70–15.19 s.
+
+### DRILLS
+
+All in a detached scratch worktree at a named commit with its own
+`CARGO_TARGET_DIR` inside itself, per CONVENTIONS:
+`/private/tmp/nd-T-088-s4` (stem derived from the card id),
+`CARGO_TARGET_DIR=/private/tmp/nd-T-088-s4/target`. No `cargo clean` was
+run anywhere — three sibling lanes were live. Every mutation is ONE SIDE
+ONLY (always the code under test, never an assertion and never a shared
+literal), read back through `git -C <dir> diff` with its line count
+printed BEFORE the verdict (shape TEN), restored with both sides named
+(`git restore --source=<ref> --staged --worktree`), and proven by sha256.
+
+**THE MECHANISM CONTROL — the pair that settles the card.** One mutation,
+applied identically to both trees: a `std::thread::sleep(3s)` at the top
+of `run_watcher`, which is what a loaded machine does to a freshly
+spawned thread, only deterministically.
+
+| drill | tree | exit | result | wall |
+|---|---|---|---|---|
+| **M1** | new (`293915f`) + late arm | **0** | **59 passed / 0 failed** | 26.32 s |
+| **M2** | old (`dd6b723`) + late arm | **101** | **57 passed / 2 FAILED** | 37.02 s |
+
+M2's two failures are **exactly the two bodies this card names**, both at
+the old `recv_until`'s panic site `src/docs_watch.rs:1861`:
+
+    waited 10s for a docs-changed emit where the tree carries `startup v3`;
+      emits seen meanwhile: []
+    waited 10s for a docs-changed emit where the late docs/ tree is collected;
+      emits seen meanwhile: []
+
+**`emits seen meanwhile: []` is the whole proof: not one emit ever
+arrived.** The event was missed, not late — which is why a wider bound
+was always going to buy a slower red. And M2 − M1 = **10.7 s**, one
+`EMIT_BUDGET`, reproducing the card's own bimodal gap on demand.
+
+**POISON DRILLS.**
+
+| drill | mutation (code under test) | scope | exit | result | wall |
+|---|---|---|---|---|---|
+| **D1** | `run_watcher` returns before serving its loop | 1 body | 101 | **0 passed / 1 FAILED** — *"watcher thread died before answering the barrier: RecvError"* | **0.02 s** |
+| **D2a** | `handle_fs_batch` stops emitting | `a_vanished_root_never_panics_the_batch_handler` | 101 | **0 / 1 FAILED** — *"the batch handler emits synchronously: Empty"* | 0.03 s |
+| **D2b** | same | `a_dead_sentinel_leaves_the_existing_watch_fully_working` | 101 | **0 / 1 FAILED** — same message | 0.02 s |
+| **D2c** | same | `an_empty_docs_dir_emits_exactly_once…` | 101 | **0 / 1 FAILED** — *"the arm transition must emit exactly once, synchronously: Empty"* | 0.01 s |
+| **D3** | startup arm skipped ONLY for a root that already has `docs/` | **whole lib suite, 0 filtered out** | 101 | **259 passed / 1 FAILED** | 5.33 s |
+
+**D3 is poison shape SIX answered mechanically**, per CONVENTIONS' own
+instruction — *name a mutation of the code under test that this body
+kills, run the WHOLE suite under it, and require the failing-body count
+to be ONE.* The count is **ONE**:
+`docs_watch::tests::startup_arm_watches_the_initial_root`. That is the
+non-duplication proof, in the reporter's own output.
+
+**Restoration, proven by hash rather than asserted** (sha256 of
+`app/src-tauri/src/docs_watch.rs`, before mutation and after restore,
+identical in every drill):
+
+    at 293915f: 5d21d3a9fc2e4ada4db3ee731db2b306f1e2c654b0022de42a0d87e07559b637
+    at dd6b723: 5ea50baa05178773c8c9a46a9126029f79120e24d782defd0b74dbbbcfaad8ff
+
+### WHERE THE CARD AND THE BRIEF WERE WRONG (the correction clause)
+
+1. **The card's own headline finding is superseded by this lane's
+   measurement.** *"THE SIZE OF THE BUILD CACHE decides whether a test
+   passes"* is a true correlation and a false cause. The cause is the
+   missing rendezvous at spawn; the cache is one of many ways to lose
+   that race. **This matters beyond this card**: `docs/STATE.md`'s first
+   standing hazard prescribes `cargo clean` as the remedy, and that
+   remedy treats a symptom whose mechanism is now closed at the source.
+2. **`blocked_by: [T-153]` is discharged — T-153 has LANDED.**
+   `recv_emit` no longer exists; the helper is `recv_until`. The card's
+   criterion survived the landing intact, because T-153 deliberately kept
+   the wall clock (*"bounded by the existing timeout"*, its own finding 1).
+3. **The census moved: the card says "20 call sites across 11 bodies";
+   at `dd6b723` it is 21 call sites across the same 11 bodies.** T-153
+   renamed the helper and added one site.
+4. **The card treats its "six further `recv_timeout` waits" as one
+   class; they are two.** Four are on a synchronous path where the emit
+   is already queued — see the taxonomy above.
+5. **The brief's KNOWN-STALE row is confirmed as declared** (`T-187`):
+   it derives `base commit: f7366770…`, while this worktree was cut at
+   `dd6b723`. No OTHER brief row contradicted the tree.
+6. **The brief's own retraction is confirmed** (`T-199`): no PreToolUse
+   hook judged anything here. The fence was kept by discipline.
+7. **A live worked example of the brief's "read COUNTS, never exit codes
+   alone".** Drill M1's first attempt exited **101** — which reads
+   exactly like a test failure — over **zero** `test result:` lines. The
+   real cause was `error: could not find Cargo.toml`: the script had run
+   cargo from the worktree root instead of `app/src-tauri`. The count is
+   what caught it.
 
 ## Verdicts
