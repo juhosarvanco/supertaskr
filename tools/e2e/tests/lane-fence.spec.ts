@@ -36,7 +36,14 @@ import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
 import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
-import { MANIFEST_DIR_IGNORE, buildLaneFence, laneIdOf, writeLaneFence } from "../scripts/lane-fence.mjs";
+import {
+  MANIFEST_DIR_IGNORE,
+  buildLaneFence,
+  disjointnessRefusal,
+  laneDisjointness,
+  laneIdOf,
+  writeLaneFence,
+} from "../scripts/lane-fence.mjs";
 
 /**
  * THE FENCE AT THE MOMENT OF THE WRITE (T-154) — no browser.
@@ -243,6 +250,24 @@ async function addLane(
   id: string,
   touchesLine: string,
 ): Promise<{ lane: string; manifest: Awaited<ReturnType<typeof buildLaneFence>> }> {
+  const lane = await cutLane(fx, id, touchesLine);
+  const manifest = await buildLaneFence(id, lane, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" });
+  writeLaneFence(manifest);
+  return { lane, manifest };
+}
+
+/**
+ * The half of `addLane` that CUTS but does not ARM (T-209).
+ *
+ * A lane exists on disk from the moment its worktree is cut and holds no
+ * manifest until `--write-fence` runs, and the intersection has to be
+ * measured on both sides of that moment: an OVERLAPPING sibling can no
+ * longer be armed once the first lane holds the ground, so a body that
+ * needs one has to cut it and then watch the arm be refused. Split out of
+ * `addLane` rather than copied, so the two cannot drift in how they build
+ * a card.
+ */
+async function cutLane(fx: Fixture, id: string, touchesLine: string): Promise<string> {
   const card = `docs/tasks/${id}-a-sibling-lane.md`;
   writeFixtureFile(
     fx.repo,
@@ -271,9 +296,7 @@ async function addLane(
   git(fx.repo, ["commit", "-m", `fixture lane ${id}`, "--quiet"]);
   const lane = path.join(path.dirname(fx.lane), `nputer-${id}`);
   git(fx.repo, ["worktree", "add", "--quiet", "-b", `task/${id}-sibling`, lane]);
-  const manifest = await buildLaneFence(id, lane, { root: fx.repo, at: "2026-01-01T00:00:00.000Z" });
-  writeLaneFence(manifest);
-  return { lane, manifest };
+  return lane;
 }
 
 /** One PreToolUse request, as the harness shapes it. */
@@ -1464,4 +1487,342 @@ test("the push guard's import list from this module is a contract, and it still 
   // COMPARED AGAINST THE LIVE MODULE, not against a second copy of the
   // list: a rename here reds by name instead of at somebody's push.
   expect(Object.keys(laneFenceHook)).toEqual(expect.arrayContaining(imported));
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE INTERSECTION (T-209) — rule 5's law, computed instead of asserted
+ *
+ * `method/lane-protocol.md` rule 5 has mandated expanded-set lane
+ * disjointness since it was bought with a defect, and nothing computed
+ * it: every concurrent dispatch was a seat comparing `touches:` STRINGS
+ * in its head. The bodies below drive the real writer over real git
+ * worktrees, and the FIRST of them is the positive control, because a
+ * guard that refuses every dispatch is indistinguishable from one that
+ * works (T-199's lesson, and this card's own first criterion).
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** Read a lane's manifest off disk, as JSON. */
+function manifestOf(lane: string): Record<string, unknown> {
+  return JSON.parse(readFileSync(path.join(lane, MANIFEST_REL_PATH), "utf8"));
+}
+
+/** Rewrite one field of a lane's manifest, the way a hand-edit would. */
+function tamperManifest(lane: string, patch: Record<string, unknown>): void {
+  const held = manifestOf(lane);
+  writeFileSync(
+    path.join(lane, MANIFEST_REL_PATH),
+    `${JSON.stringify({ ...held, ...patch }, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+test("THE POSITIVE CONTROL: a genuinely disjoint pair is ALLOWED, and the overlapping pair beside it is not", async () => {
+  // THE GUARD'S STATE IS ASSERTED FIRST, per this file's own rule about
+  // lifting a safety guard: an allow proves nothing unless the same
+  // machinery is shown refusing one fixture over. Both halves run against
+  // the SAME armed lane, so the only thing that moves is the fence.
+  const fx = makeFixture("touches: [tools/e2e]");
+  await arm(fx);
+
+  // (a) THE REFUSAL — a second lane claiming the same expanded path.
+  const overlapping = await cutLane(fx, "T-902", "touches: [tools/e2e]");
+  await expect(
+    buildLaneFence("T-902", overlapping, { root: fx.repo }),
+    "two lanes over one expanded path have to be refused, or the allow below means nothing",
+  ).rejects.toThrow(/is not disjoint from every live lane/);
+  // A REFUSED DISPATCH LEAVES NO LANE. Removing it is not fixture
+  // housekeeping — it is the remedy the refusal names, and leaving the
+  // worktree standing would make the allow below answer a different
+  // question (an unarmed lane is one this check refuses on its own
+  // terms, which is the body two down).
+  git(fx.repo, ["worktree", "remove", "--force", overlapping]);
+
+  // (b) THE ALLOW — a third lane over ground nobody holds. Same command,
+  // same repository, same live lane; only the fence differs.
+  const disjoint = await addLane(fx, "T-903", "touches: [app/src/main.tsx]");
+  expect(
+    disjoint.manifest.paths,
+    "a genuinely disjoint lane must be dispatchable — a guard that refuses everything is not a guard",
+  ).toEqual(["app/src/main.tsx"]);
+  expect(existsSync(path.join(disjoint.lane, MANIFEST_REL_PATH))).toBe(true);
+});
+
+test("a DIRECTORY token and a FILE beneath it are NOT disjoint — the case string equality gets wrong", async () => {
+  // THE CARD'S SECOND CONTROL, on a path that EXISTS. The criterion first
+  // named a hypothetical `x.mjs` and the dispatch preflight refused this
+  // very lane's fence for it as a STALE PATH — so the pin is anchored to
+  // the live repository here, and the fixture mirrors it.
+  expect(
+    existsSync(path.join(repoRoot, ".claude/hooks/lane-fence.mjs")),
+    "the control's path must exist in the repository, not be a placeholder",
+  ).toBe(true);
+
+  const fx = makeFixture("touches: [.claude]");
+  // `.claude` is a BARE WORD, and `expandFence` can only tell a directory
+  // from a word that names nothing through the tracked-path oracle — so
+  // the file has to be committed before the fence is expanded.
+  writeFixtureFile(fx.repo, ".claude/hooks/lane-fence.mjs", "export const hook = 1;\n");
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", "fixture hook", "--quiet"]);
+  const held = await arm(fx);
+  expect(held.paths, "the directory token must expand to the directory").toEqual([".claude"]);
+
+  const beneath = await cutLane(fx, "T-902", "touches: [.claude/hooks/lane-fence.mjs]");
+  let refusal = "";
+  try {
+    await buildLaneFence("T-902", beneath, { root: fx.repo });
+    expect(false, "a file beneath a held directory was reported disjoint").toBe(true);
+  } catch (err) {
+    refusal = err instanceof Error ? err.message : String(err);
+  }
+  // `.claude` and `.claude/hooks/lane-fence.mjs` are different strings and
+  // sort apart; containment is what sees them.
+  expect(refusal).toContain("is not disjoint from every live lane");
+  expect(refusal, "the refusal must name the NARROWER domain — what both fences reserve").toContain(
+    "shared path .claude/hooks/lane-fence.mjs",
+  );
+});
+
+test("the refusal NAMES BOTH LANES and the overlapping paths — a refusal that does not is this card", async () => {
+  const fx = makeFixture("touches: [tools/e2e]");
+  await arm(fx);
+  const other = await cutLane(fx, "T-902", "touches: [tools/e2e/tests/fixture.spec.ts]");
+  let refusal = "";
+  try {
+    await buildLaneFence("T-902", other, { root: fx.repo });
+  } catch (err) {
+    refusal = err instanceof Error ? err.message : String(err);
+  }
+  expect(refusal, "the card being dispatched").toContain("T-902");
+  expect(refusal, "the lane already holding the ground").toContain(FIXTURE_ID);
+  expect(refusal, "the branch, so the seat can find the session").toContain(
+    `task/${FIXTURE_ID}-guard-fixture`,
+  );
+  expect(refusal, "the worktree, so the seat can find the tree").toContain(fx.lane);
+  expect(refusal, "what each side DECLARED, verbatim").toContain("touches: [tools/e2e]");
+  expect(refusal, "the overlapping path itself").toContain(
+    "shared path tools/e2e/tests/fixture.spec.ts",
+  );
+  expect(refusal, "the law it is enforcing, so the refusal is checkable").toContain(
+    "method/lane-protocol.md rule 5",
+  );
+});
+
+test("THE LIVE-LANE SET IS DERIVED FROM DISK AT DECISION TIME — the same call answers differently as the board moves", async () => {
+  // THE DEFECT THIS BODY EXISTS FOR IS MEASURED, NOT IMAGINED: a
+  // throwaway version of this check written at the integrator seat had
+  // the live lane list HARDCODED, and silently excluded every card
+  // touching `tools/e2e`. Nothing below passes a lane list, and the ONLY
+  // thing that changes between the two calls is the repository's own
+  // worktree administration.
+  const fx = makeFixture("touches: [tools/e2e]");
+  await arm(fx);
+  const rival = await cutLane(fx, "T-902", "touches: [tools/e2e]");
+
+  await expect(
+    buildLaneFence("T-902", rival, { root: fx.repo }),
+    "while the first lane is live the ground is held",
+  ).rejects.toThrow(/is not disjoint from every live lane/);
+
+  // The lane goes away. Same arguments, same command, different disk.
+  git(fx.repo, ["worktree", "remove", "--force", fx.lane]);
+  const now = await buildLaneFence("T-902", rival, { root: fx.repo });
+  expect(
+    now.paths,
+    "a merged lane releases its ground, and the check has to read that rather than remember it",
+  ).toEqual(["tools/e2e"]);
+});
+
+test("THREE VERDICTS: a live lane whose fence cannot be READ is refused, never reported disjoint", async () => {
+  // Rule 5 in as many words: "a fence that answers 'no overlap' when it
+  // means 'I do not know' is worse than one that refuses. Three verdicts,
+  // never two." The hook's own `liveLanes` SKIPS an unreadable lane —
+  // correct at the write, where letting a stale entry lock the
+  // integration seat out would be worse — and that skip is the defect at
+  // DISPATCH, which is why this module enumerates for itself.
+  const fx = makeFixture("touches: [app/src/main.tsx]");
+  // A sibling cut but never armed: a lane on disk holding no manifest.
+  await cutLane(fx, "T-902", "touches: [tools/e2e]");
+  expect(
+    liveLanes(fx.repo).map((l) => l.branch),
+    "the hook's enumeration drops the unarmed lane — this is the divergence, pinned",
+  ).not.toContain("refs/heads/task/T-902-sibling");
+
+  let refusal = "";
+  try {
+    await buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo });
+  } catch (err) {
+    refusal = err instanceof Error ? err.message : String(err);
+  }
+  expect(refusal, "an unread fence is not 'disjoint from everything'").toContain("CANNOT COMPARE");
+  expect(refusal).toContain("T-902");
+  expect(refusal).toContain("no fence manifest");
+});
+
+test("a lane whose manifest reserves NO PATH is refused rather than treated as reserving nothing", async () => {
+  // The third case the card does not name. A zero-path manifest cannot be
+  // WRITTEN by this module — the guard above refuses it — so one found on
+  // disk is a hand-edit or a pre-guard artefact, and the honest answer is
+  // that the comparison could not be made.
+  const fx = makeFixture("touches: [app/src/main.tsx]");
+  // The fixture lane is ARMED first: a lane cut and not armed is one
+  // this check refuses in its own right, and this body is about a
+  // different question.
+  await arm(fx);
+  const sibling = await addLane(fx, "T-902", "touches: [tools/e2e]");
+  tamperManifest(sibling.lane, { paths: [] });
+
+  let refusal = "";
+  try {
+    await buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo });
+  } catch (err) {
+    refusal = err instanceof Error ? err.message : String(err);
+  }
+  expect(refusal).toContain("CANNOT COMPARE");
+  expect(refusal).toContain("reserves no path at all");
+});
+
+test("`alwaysWritable` PARTICIPATES — two lanes judged under different unfenceable sets cannot be compared", async () => {
+  // A manifest carries THREE lists and an intersection over one of them
+  // headed *complete* is T-194's defect. `alwaysWritable` is the parser's
+  // UNFENCEABLE_PATHS frozen at the ref its manifest was stamped at, so a
+  // live lane carrying a different one was judged under a different
+  // constitution and the comparison between them is not sound.
+  const fx = makeFixture("touches: [app/src/main.tsx]");
+  // The fixture lane is ARMED first: a lane cut and not armed is one
+  // this check refuses in its own right, and this body is about a
+  // different question.
+  await arm(fx);
+  const sibling = await addLane(fx, "T-902", "touches: [tools/e2e]");
+  expect(sibling.manifest.alwaysWritable, "the writer stamps the live set").toEqual(["docs/tasks"]);
+  tamperManifest(sibling.lane, { alwaysWritable: ["docs/tasks", "docs/rooms"] });
+
+  let refusal = "";
+  try {
+    await buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo });
+  } catch (err) {
+    refusal = err instanceof Error ? err.message : String(err);
+  }
+  expect(refusal).toContain("CANNOT COMPARE");
+  expect(refusal, "the refusal names both constitutions").toContain("docs/rooms");
+  expect(refusal).toContain("unfenceable set moved");
+});
+
+test("`excluded` PARTICIPATES — a card's own file is not a collision with the lane that holds its directory", async () => {
+  // A card's own file is outside every fence including its own, which
+  // `expandFence` records in `excluded` and `compareFences` already
+  // subtracts. Pinned at THIS call site because the manifest is where the
+  // carve-out has to survive a round trip through JSON.
+  const fx = makeFixture("touches: [app/src/main.tsx]");
+  // The fixture lane is ARMED first: a lane cut and not armed is one
+  // this check refuses in its own right, and this body is about a
+  // different question.
+  await arm(fx);
+  const sibling = await addLane(fx, "T-902", "touches: [docs]");
+  expect(
+    sibling.manifest.excluded,
+    "the sibling's own card is carved out of its own fence",
+  ).toEqual(["docs/tasks/T-902-a-sibling-lane.md"]);
+
+  // A third lane fencing exactly that carved-out file is NOT colliding
+  // with the lane that holds all of `docs/`.
+  const third = await addLane(fx, "T-903", "touches: [docs/tasks/T-902-a-sibling-lane.md]");
+  expect(
+    third.manifest.paths,
+    "the file the other lane excluded is ground it does not hold",
+  ).toEqual(["docs/tasks/T-902-a-sibling-lane.md"]);
+});
+
+test("a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence", async () => {
+  // The card rules an absent or empty `touches:` the UNIVERSAL SET, so
+  // that deleting the declaration is not the bypass and the least careful
+  // card does not get the widest licence. The repository answers it one
+  // step EARLIER than the intersection and more strictly: such a card is
+  // not dispatchable at all. Pinned here so the criterion cannot regress
+  // silently into a fence that collides with nothing.
+  const fx = makeFixture("touches: []");
+  await expect(buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo })).rejects.toThrow(
+    /expands to no path at all/,
+  );
+});
+
+test("a DETACHED worktree holds no fence, however much of the tree it is sitting on", async () => {
+  // The enumeration's own positive control, and rule 5 names it: a
+  // checkout that is not on a task branch is ALLOWED — the integrator,
+  // the coordinating seat, @human's `../nputer-app` and every scratch
+  // drill. Lane-ness is decided by the BRANCH and never by the path or by
+  // the presence of a manifest, so a drill carrying one changes nothing.
+  const fx = makeFixture("touches: [tools/e2e]");
+  mkdirSync(path.join(fx.drill, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
+  writeFileSync(
+    path.join(fx.drill, MANIFEST_REL_PATH),
+    `${JSON.stringify(
+      {
+        version: MANIFEST_VERSION,
+        taskId: "T-909",
+        branch: "refs/heads/task/T-909-not-really",
+        card: "docs/tasks/T-909-x.md",
+        touchesLine: "touches: [tools/e2e]",
+        paths: ["tools/e2e"],
+        excluded: [],
+        alwaysWritable: ["docs/tasks"],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  const manifest = await buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo });
+  expect(
+    manifest.paths,
+    "a detached checkout is not a lane, so the ground is free",
+  ).toEqual(["tools/e2e"]);
+});
+
+test("THE COMPARISON IS THE PARSER'S — this module holds no second intersection", async () => {
+  // T-057: three copies of a containment rule are three chances to
+  // compute it differently. The verdict has to come from
+  // `compareFences` and from nothing this file re-spelled, so a stub
+  // parser is handed provably DISJOINT fences and answers `overlapping`.
+  // A local re-derivation would out-vote it and red this body.
+  const calls: unknown[][] = [];
+  const stub = {
+    UNFENCEABLE_PATHS: ["docs/tasks"],
+    compareFences: (a: unknown, b: unknown) => {
+      calls.push([a, b]);
+      return {
+        verdict: "overlapping",
+        witnesses: [{ left: "left-token", right: "right-token", path: "invented/domain" }],
+        unusable: [],
+      };
+    },
+  };
+  const fx = makeFixture("touches: [app/src/main.tsx]");
+  // The fixture lane is ARMED first: a lane cut and not armed is one
+  // this check refuses in its own right, and this body is about a
+  // different question.
+  await arm(fx);
+  const sibling = await addLane(fx, "T-902", "touches: [tools/e2e]");
+  const porcelain = git(fx.repo, ["worktree", "list", "--porcelain"]);
+  const report = laneDisjointness({
+    fence: { tokens: [{ raw: "app/src/main.tsx", paths: ["app/src/main.tsx"] }], paths: ["app/src/main.tsx"], excluded: [] },
+    taskId: FIXTURE_ID,
+    worktree: fx.lane,
+    porcelain,
+    spellings: laneSpellings(conventionsText(fx.repo)),
+    parser: stub,
+    alwaysWritable: ["docs/tasks"],
+  });
+  expect(calls.length, "the parser's comparison was never asked").toBe(1);
+  expect(report.verdict, "the verdict is the parser's, not this file's").toBe("overlapping");
+  expect(report.collisions[0]?.witnesses[0]?.path).toBe("invented/domain");
+  expect(report.compared.map((c) => c.taskId), "the live lane was the one compared").toEqual([
+    "T-902",
+  ]);
+  expect(sibling.manifest.taskId).toBe("T-902");
+
+  // And the refusal is a pure function of that report.
+  const text = disjointnessRefusal(report, FIXTURE_ID, "touches: [app/src/main.tsx]");
+  expect(text).toContain("invented/domain");
+  expect(text).toContain("T-902");
 });

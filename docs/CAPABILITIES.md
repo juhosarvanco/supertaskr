@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **409 behaviours** — 407 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **420 behaviours** — 418 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -346,6 +346,17 @@ Census: **409 behaviours** — 407 extracted sentences + 2 named-not-extracted (
 - the root comes from the TARGET, so the verdict does not move with the writer
 - an unjudged write SAYS SO — a decline is distinguishable from a judged allow
 - the push guard's import list from this module is a contract, and it still holds
+- THE POSITIVE CONTROL: a genuinely disjoint pair is ALLOWED, and the overlapping pair beside it is not
+- a DIRECTORY token and a FILE beneath it are NOT disjoint — the case string equality gets wrong
+- the refusal NAMES BOTH LANES and the overlapping paths — a refusal that does not is this card
+- THE LIVE-LANE SET IS DERIVED FROM DISK AT DECISION TIME — the same call answers differently as the board moves
+- THREE VERDICTS: a live lane whose fence cannot be READ is refused, never reported disjoint
+- a lane whose manifest reserves NO PATH is refused rather than treated as reserving nothing
+- `alwaysWritable` PARTICIPATES — two lanes judged under different unfenceable sets cannot be compared
+- `excluded` PARTICIPATES — a card's own file is not a collision with the lane that holds its directory
+- a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence
+- a DETACHED worktree holds no fence, however much of the tree it is sitting on
+- THE COMPARISON IS THE PARSER'S — this module holds no second intersection
 
 ## map-retarget
 
