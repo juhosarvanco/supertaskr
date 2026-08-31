@@ -1870,17 +1870,29 @@ mod tests {
         apply_picked_folder(state, picked, state.begin_pick().expect("picker free"))
     }
 
+    /// How long a wait tolerates TOTAL SILENCE before it names itself a
+    /// hang. **NOT a deadline for the emit** — see `recv_until` below for
+    /// the discriminator, which is the whole of why this number is
+    /// allowed to exist on a card that deletes a 10-second one.
+    ///
+    /// 120 s is 480x `DEBOUNCE` and roughly 28x a healthy lib suite
+    /// (4.29-4.49 s measured across six runs at 1-minute loads of 10.69
+    /// to 22.50 on ten cores). No run that is working reaches it; the
+    /// only thing that does is a watcher that has stopped emitting.
+    const SILENCE_BACKSTOP: Duration = Duration::from_secs(120);
+
     /// Wait for the emit whose snapshot satisfies `want`, across however
     /// many emits the backend delivers.
     ///
-    /// **T-088-s4: THE WAIT IS A RENDEZVOUS, NOT A DEADLINE.** It ends on
-    /// an EVENT of the system under test — the awaited emit arrives, or
-    /// the watcher thread is gone (every sender for this channel lives in
-    /// the sink closure the watcher owns, so its death disconnects us at
-    /// once, with a message). Neither is a function of how fast this
-    /// machine is, which is the property the 10-second `EMIT_BUDGET` this
-    /// replaced did not have: three suites redded here in one night
-    /// because a build cache had grown, and a fourth explained it away.
+    /// **T-088-s4: THE WAIT IS A RENDEZVOUS, NOT A DEADLINE.** Both ways
+    /// it can SUCCEED OR FAIL A CLAIM are EVENTS of the system under
+    /// test — the awaited emit arrives, or the watcher thread is gone
+    /// (every sender for this channel lives in the sink closure the
+    /// watcher owns, so its death disconnects us at once, with a
+    /// message). Neither is a function of how fast this machine is,
+    /// which is the property the 10-second `EMIT_BUDGET` this replaced
+    /// did not have: three suites redded here in one night because a
+    /// build cache had grown, and a fourth explained it away.
     ///
     /// **AND THE BUDGET WAS NOT WIDENED, DELIBERATELY** (this card's third
     /// criterion). A wider deadline buys a slower red: the reds were 14.70
@@ -1889,14 +1901,40 @@ mod tests {
     /// figures behind them are three different machines' worth of load,
     /// not one number to clear.
     ///
-    /// **WHAT THIS COSTS, SAID PLAINLY RATHER THAN LEFT TO BE FOUND.** A
-    /// watcher that is alive but permanently silent hangs this wait
-    /// instead of failing it. That is accepted for two reasons. The
-    /// window that actually produced silence — a write landing before the
-    /// startup arm — is closed by `barrier` above, so reaching it now
-    /// means the watcher is broken rather than late; and the loud failure
-    /// that a real regression most often takes, a panicking or exiting
-    /// watcher thread, still lands here immediately via the disconnect.
+    /// **AND A THIRD WAY OUT EXISTS SO THAT A HANG HAS A NAME —
+    /// `SILENCE_BACKSTOP`. READ WHY IT IS NOT THE DEADLINE THIS CARD
+    /// DELETED, BECAUSE A NUMBER HERE OTHERWISE READS AS THE CARD BEING
+    /// IGNORED.** The first cut of this fix removed the bound outright,
+    /// and that was a REGRESSION the blind verifier caught: an
+    /// alive-but-silent watcher then hung 20 call sites across 11 bodies
+    /// with **no name, no counts and no output at all**, where the same
+    /// mutant had previously failed in about 11 seconds WITH a message.
+    /// A worse failure mode was traded for a bad one.
+    ///
+    /// **THE DISCRIMINATOR IS WHETHER THE HAPPY PATH CAN REACH IT**, and
+    /// it is exactly the reasoning this module already applies to
+    /// `entered_rx` two hundred lines below — a bound kept because
+    /// removing it converts a loud failure into a hang. That reasoning
+    /// was written down there and not applied here; this is it applied.
+    ///
+    /// - the deleted `EMIT_BUDGET` was **load-calibrated**: 10 s was
+    ///   chosen as *enough time for an emit on a normal machine*, so a
+    ///   machine that fell behind exhausted it and a GREEN test went RED.
+    ///   That is the deadline the card refuses, twice.
+    /// - `SILENCE_BACKSTOP` is calibrated to be **unreachable by any run
+    ///   that is working at all**: 480x the 250 ms debounce and ~28x the
+    ///   whole healthy lib suite. Nothing that is merely slow gets here.
+    ///
+    /// **AND IT MEASURES SILENCE, NOT ELAPSED TIME** — every arriving
+    /// emit restarts the window. So a body that legitimately watches many
+    /// emits over a long stretch can never trip it, which a total budget
+    /// could. It fires only to say *"nothing has arrived AT ALL for two
+    /// minutes"*, and with the arm now rendezvoused that sentence means
+    /// the watcher is broken, not late. The panic says so in as many
+    /// words, so the next reader is not sent to look at machine load.
+    ///
+    /// The disconnect arm stays SEPARATE and immediate — the backstop
+    /// must never swallow it; a dead watcher is still named in 0.02 s.
     ///
     /// **THE ASSERTION IS STILL THE WAIT.** A state that never converges
     /// fails here, naming what was awaited and every snapshot seen
@@ -1923,8 +1961,11 @@ mod tests {
         want: impl Fn(&DocsSnapshot) -> bool,
     ) -> DocsSnapshot {
         let mut seen: Vec<String> = Vec::new();
+        let started = std::time::Instant::now();
         loop {
-            match rx.recv() {
+            // The window is SILENCE, not total elapsed: re-entering
+            // `recv_timeout` after every emit restarts it.
+            match rx.recv_timeout(SILENCE_BACKSTOP) {
                 Ok(snap) => {
                     if want(&snap) {
                         return snap;
@@ -1937,13 +1978,24 @@ mod tests {
                         snap.truncated
                     ));
                 }
-                // Disconnected is the ONLY way out other than success:
-                // the watcher thread owns the one sender for this
+                // The watcher thread owns the one sender for this
                 // channel, so this is "the watcher is gone", never "the
-                // machine was slow".
-                Err(_) => panic!(
+                // machine was slow" — and it is answered IMMEDIATELY,
+                // which is the arm the backstop must not swallow.
+                Err(mpsc::RecvTimeoutError::Disconnected) => panic!(
                     "the watcher thread is gone while waiting for a docs-changed emit \
                      where {awaited}; emits seen meanwhile: [{}]",
+                    seen.join(" | ")
+                ),
+                Err(mpsc::RecvTimeoutError::Timeout) => panic!(
+                    "BACKSTOP: NOTHING arrived on this channel for {SILENCE_BACKSTOP:?} \
+                     while waiting for an emit where {awaited} ({:?} in this wait). \
+                     THIS IS NOT A SLOW MACHINE — the startup arm is rendezvoused and \
+                     this window is {}x the debounce, so a watcher this silent is a \
+                     BROKEN one. Look at the watcher thread and the notify backend, not \
+                     at machine load. Emits seen meanwhile: [{}]",
+                    started.elapsed(),
+                    SILENCE_BACKSTOP.as_millis() / DEBOUNCE.as_millis(),
                     seen.join(" | ")
                 ),
             }
