@@ -81,3 +81,34 @@ Every other gate on that lane was green, including the 409-body suite.
 - WHICHEVER is chosen, the sentence in `docs/CONVENTIONS.md` SHALL be
   true when it is printed.
 - Verification: headless.
+
+## SECOND MEASURED INSTANCE — `T-209`'s lane, 2026-09-01
+
+Independently, on a different card and a different fence
+(`touches: [tools/e2e]`, base `d8e180b`), eleven bodies added to
+`tools/e2e/tests/lane-fence.spec.ts`:
+
+    npm run capabilities:check   exit 1
+      capabilities: STALE — committed 33576 bytes, a fresh generation is
+      34639 bytes; run npm run capabilities
+
+    decide({ file_path: "<lane>/docs/CAPABILITIES.md" })
+      BLOCK  judged=true  outside-the-fence
+    decide({ file_path: "<lane>/tools/e2e/scripts/lane-fence.mjs" })
+      ALLOW  judged=true  inside-the-fence
+
+The second `decide` is the control: the hook is armed and
+DISCRIMINATING, so the block above is a fence verdict and not a guard
+refusing everything. Every other gate on that lane was green — e2e
+420/420, parser 344/344, app 1116/1116, `lint:tokens` 0, `lint:docs` 0,
+docs-gate not owed on the code paths.
+
+**The two instances share no card, no fence and no seat**, which is what
+makes this structural rather than one lane's bad luck: the committed
+bytes of `docs/CAPABILITIES.md` went stale on both lanes at the moment
+they did the thing they were dispatched to do. `T-209`'s lane did not
+regenerate, for the reason this card names — a fence is not widened from
+inside the lane it fences — and routed the obligation to the integrator's
+merge commit, which is where every regeneration in `git log --
+docs/CAPABILITIES.md` has actually landed (merge, checkpoint, or a
+standalone integrator commit; never a lane's own).

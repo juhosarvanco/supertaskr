@@ -1,0 +1,77 @@
+---
+id: T-219
+title: A fence that CONTAINS the unfenceable directory is not refused — only one that IS it, so a bare `docs` token holds `docs/tasks` and rule 5's mechanical refusal is half-built
+feature: F-06
+milestone: 4
+priority: 20
+size: S
+status: suggested
+blocked_by: []
+touches: [lib-parser]
+suggested_by: "T-209's executor, which needed the exact semantics of `alwaysWritable` to decide how it participates in a lane-vs-lane intersection and found the refusal is token-shaped where the rule is path-shaped"
+builder:
+review:
+---
+
+`method/lane-protocol.md` rule 5:
+
+> **A DIRECTORY THE PROTOCOL ITSELF WRITES TO ON EVERY CARD IS NOT
+> FENCEABLE BY ANY CARD.** … **This has to be refused MECHANICALLY,
+> where the fence is read.**
+
+It is refused mechanically for ONE spelling. `lib/parser/src/fence.ts:353`:
+
+    if (UNFENCEABLE_PATHS.includes(normalized)) { … rejected … }
+
+`includes` is EXACT-MATCH on the normalised token. Every other rule in
+that module is prefix-aware — `sharedDomain` exists precisely because
+*"containment IS overlap"* — and this one is not. So:
+
+- `touches: [docs/tasks]` is REFUSED. Correct.
+- `touches: [docs]` is ACCEPTED and expands to `paths: ["docs"]`, which
+  CONTAINS `docs/tasks`. The lane then holds, by containment, the one
+  directory the rule says no card may hold.
+
+## Measured
+
+At `d8e180b`, over the live board (312 cards carrying a `touches:`):
+**1 card's expanded fence swallows an unfenceable path** — `T-054`
+(`status: done`), `touches: [docs, method, tools/e2e, ci]`, whose
+`docs` domain contains `docs/tasks`. `T-111`'s verifier noted this pair
+in passing (`T-111`, F7) while ruling on a since-removed duplicate
+implementation; it was never filed as its own defect.
+
+The count is low because the vocabulary drifted away from bare `docs`,
+not because anything refuses it — which is the shape of a guard that has
+not yet been asked.
+
+## Why it matters beyond tidiness
+
+`T-209` builds the lane-vs-lane intersection, and had to decide how a
+manifest's `alwaysWritable` participates. It concluded — and rule 5 says
+so directly — that a fence-versus-fence comparison **has no term for a
+protocol write** and "cannot discover this, ever, so it must not be asked
+to". That conclusion is only safe while the EXPANSION refuses a fence
+that swallows the directory. Today it does not, so the two halves of
+rule 5 are each relying on the other to catch this case.
+
+## What to build
+
+- `expandFence` SHALL reject a token whose domain CONTAINS an
+  `UNFENCEABLE_PATHS` entry, not only one that equals it, and SHALL say
+  which unfenceable path the token swallowed.
+- The containment test SHALL be `sharedDomain`, which already exists in
+  that file — a second prefix rule beside it is `T-057`.
+- A body SHALL prove `touches: [docs]` is refused and `touches:
+  [docs/ROADMAP.md]` is not, so the rejection is not widened into every
+  fence that merely sits near the directory.
+- **A POSITIVE CONTROL SHALL prove `docs/architecture/components/` is
+  still fenceable** — six cards hold it, and `UNFENCEABLE_PATHS`'s own
+  doc says the list "is deliberately not a rule about directories".
+- Verification: headless.
+
+## Read beside
+
+`method/lane-protocol.md` rule 5, `lib/parser/src/fence.ts` (`sharedDomain`,
+`UNFENCEABLE_PATHS`), `T-134` (which built the module), `T-111` F7 (where
+the pair was first seen), `T-209` (which needed the answer).

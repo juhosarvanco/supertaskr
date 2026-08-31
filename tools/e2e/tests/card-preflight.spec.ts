@@ -25,6 +25,7 @@ import {
   rulings,
 } from "../scripts/card-preflight.mjs";
 import { context, render } from "../scripts/dispatch-brief.mjs";
+import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
 
 /**
  * THE CARD PREFLIGHT (T-160) — no browser.
@@ -701,7 +702,7 @@ test("a discrepancy answers ONE and a preflight that could not run answers THREE
  * T-160's VERDICT — the two assigned-correction pins (2 and 3)
  * ──────────────────────────────────────────────────────────────────── */
 
-test("a failed preflight GATES the fence write — no manifest for a card whose claims fell", () => {
+test("a failed preflight GATES the fence write — no manifest for a card whose claims fell", async () => {
   // Correction 2: the ordering used to be PRINT order only, and the
   // verifier measured arm five writing a manifest for a card with four
   // findings one screen up. The manifest is the step that makes the
@@ -726,6 +727,17 @@ test("a failed preflight GATES the fence write — no manifest for a card whose 
   // The clean twin: a card whose claims hold gets its manifest in the
   // same invocation shape.
   const ok = makeFixture();
+  // THE FIXTURE'S OTHER LANE IS ARMED FIRST (T-209). `makeFixture` cuts a
+  // second live lane so the board census is not a census of one, and it
+  // left that lane with no manifest — which no real dispatch does and no
+  // lane can survive, since the armed hook refuses EVERY write in a lane
+  // branch that holds no manifest. `--write-fence` now intersects against
+  // every live lane and answers CANNOT COMPARE for one whose fence it
+  // cannot read, so an unarmed sibling made this clean twin unwritable.
+  // Arming it is the fixture becoming faithful, not the guard being
+  // worked around: the two fences (`preflight-lens`, `preflight-map`)
+  // are genuinely disjoint, which is what lets the write below succeed.
+  writeLaneFence(await buildLaneFence(OTHER_ID, ok.lane, { root: ok.repo }));
   const okLane = path.join(ok.repo, "..", "gate-lane-ok");
   git(ok.repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-gate-ok`, okLane]);
   const written = cli(
