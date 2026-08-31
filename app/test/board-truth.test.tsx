@@ -869,8 +869,23 @@ describe("the board root threads the dispatch channel into the drawer (T-112-s1)
   ]);
 
   /** A scanned repository holding no lane — the ordinary quiet state, and
-   * the one that leaves T-400 dispatchable. */
-  const NO_LANES = { kind: "joined", rows: new Map() } as const;
+   * the one that leaves T-400 dispatchable.
+   *
+   * **`truncated: false` IS LOAD-BEARING AND `notLanes: []` IS NOT** —
+   * both are required by `DispatchReading` since T-185, and only the
+   * first carries meaning here. `selectDispositions` reads `truncated`
+   * as *"this scan is a FLOOR"*: under `true` every claim it makes about
+   * there being ROOM goes unsound, and the quiet state this constant
+   * names stops being quiet. `notLanes` invalidates nothing — the
+   * frontier says so in as many words — so the empty list is the literal
+   * reading of *"holding no lane"* and no body below can tell it from a
+   * populated one. */
+  const NO_LANES = {
+    kind: "joined",
+    rows: new Map(),
+    notLanes: [],
+    truncated: false,
+  } as const;
 
   /** One assembled brief, with a line whose text nothing else in this file
    * produces, so the assertion below proves the brief's VALUE arrived and
