@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 9
 size: S
-status: verifying
+status: done
 blocked_by: []
 suggested_by: architect/integrator seat @T-112-s3's dispatch (2026-08-30) — found by reading the brief it emitted
 touches: [tools/e2e]
 builder: claude-opus-5@subagent
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@integration-seat
 review:
 ---
 

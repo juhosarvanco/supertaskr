@@ -1,9 +1,9 @@
 # State
 
-Updated: 2026-08-31 at T-178's close — record:
-docs/checkpoints/2026-08-31-T-178-the-teardown-race-is-named.md; the
-queue lives in T-171's record beside it.
-**EIGHT LANES LANDED overnight, and NO task branches remain** and the GRAPH HOLD IS OVER: the emit
+Updated: 2026-08-31 at T-179's close — record:
+docs/checkpoints/2026-08-31-T-179-the-brief-learns-where-the-repository-is.md;
+the queue lives in T-171's record beside it.
+**NINE LANES LANDED overnight** and the GRAPH HOLD IS OVER: the emit
 budget is a derived 2,145,959 with roughly a megabyte free — derive it,
 never quote it. Pre-compaction:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
@@ -49,18 +49,18 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: **none.** Eight lanes landed overnight and the queue
-   lives in T-171's record, so this file points rather than transcribes.
+1. IN FLIGHT: `T-161` and `T-140-s9`, blind verifiers out. Nine lanes
+   landed overnight; the queue lives in T-171's record, so this file
+   points rather than transcribes.
 2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED; it wants a RULING before
    a fence** — it stands between the registered command and a rendered
    brief. Registration was necessary, NOT sufficient; this file said
    otherwise three times.
-3. THE QUEUE ITSELF is in the current record's "Board and the queue"
-   section. Standing reds worth a lane: `T-161`, `T-178`, `T-167-s8`
-   (the pre-push guard, now also carrying `T-181`'s record trigger).
+3. THE QUEUE is in T-171's record. Standing red worth a lane:
+   `T-167-s8` (the pre-push guard, now also carrying `T-181`'s record
+   trigger).
 4. THE NEXT METHOD RELEASE has riders: `T-112-s2`, `T-154-s3`,
-   `T-159-s6` park on it; `T-173`, `T-176` owe a bump; `T-154-s4`'s
-   sentence joins them.
+   `T-159-s6`, `T-154-s4`'s sentence; `T-173` and `T-176` owe a bump.
 5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
    2026-08-31 — the ruled asymmetric answer leaves every authoring act a
    file edit and @human wants customization without opening files); the
@@ -71,10 +71,13 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
    assignment is honoured only by the session that dispatches. Set it
    deliberately on every spawn.
-7. **A BLIND BRIEF QUOTES THE EXECUTOR'S REPORT FOR NOTHING** — three
-   of six leaked lane facts above the phase-1 line overnight, caught by
-   the verifiers' own disclosure. Name the contract and the hazards; put
-   any lane fact BELOW the line, labelled.
+7. **WHAT A DISPATCHER WRITES FROM MEMORY IS THE HALF THAT IS WRONG.**
+   Overnight: three of six blind briefs leaked lane facts above the
+   phase-1 line (the verifiers disclosed it), and four lanes found the
+   dispatch summary contradicting the derived brief beside it — a
+   narrower fence, a wrong base, an install order short of ADR-011.
+   **Name the contract and the hazards; point at the derivation; put
+   any lane fact BELOW the blind line, labelled.**
 
 ## Standing hazards — the section that saves the hour
 
@@ -106,9 +109,8 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   twice in 24h, once by the seat that had just written the rule down.
 - **Scratch worktrees: SHORT root, detached, own `CARGO_TARGET_DIR` at
   `<scratch>/target`, stem DERIVED from the card id** (`T-133-s5`) — the
-  scratch directory is shared between sessions. A VERIFIER cuts its own:
-  a bench carries build artefacts, so a green measured on the builder's
-  could be their leftovers'.
+  directory is shared between sessions, and a VERIFIER cuts its own,
+  because a bench carries artefacts.
 - **Ports are machine-wide** (`T-132-s6`): explicit, lsof-read at zero
   rows immediately before binding; a probe reserves nothing.
 - **The RANGE RULE decides which two commits "the merge's diff" means**
@@ -126,7 +128,7 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-178-the-teardown-race-is-named.md.
+  2026-08-31-T-179-the-brief-learns-where-the-repository-is.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
   health band's window and CONVENTIONS' dispatch base BOTH read that
   marker, and a seat dropped it for six records before a band noticed

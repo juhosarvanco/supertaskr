@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **339 behaviours** — 337 extracted sentences + 2 named-not-extracted (listed at the end) — across 30 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **341 behaviours** — 339 extracted sentences + 2 named-not-extracted (listed at the end) — across 30 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -72,6 +72,8 @@ Census: **339 behaviours** — 337 extracted sentences + 2 named-not-extracted (
 - the LEDGER SAYS WHAT IT IS ANSWERING, and the slugs that are not independent are DERIVED
 - `DISJOINT` is the same class of word as `FREE` — ROW 5's verdicts carry the blind lane
 - A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, NOT ITS PARENT'S
+- THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no working tree is REFUSED
+- THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named
 
 ## card-figures
 
