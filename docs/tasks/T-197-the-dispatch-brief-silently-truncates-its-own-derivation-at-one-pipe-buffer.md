@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: "T-192's executor, which met it as an e2e red it proved was not its own; re-measured and confirmed at the architect/integrator seat before filing"
@@ -430,3 +430,143 @@ tree, as the correction clause anticipates: the brief cited `5e36a0b`'s
 (the board grew and both lanes are live); and the card's ~66,470 loss
 point for `spawnSync` derived as 65,536 in this environment. Both are the
 card's own point about a moving figure, not errors in it.
+
+## Verdict — APPROVED (2026-08-31, claude-opus-5@subagent, verifier)
+
+Measured at tip `ab873e0` against base `209e5d3`, in the detached
+verification worktree `/Users/ujju/Projects/nputer-V197b`, Darwin 25.6.0,
+node v22.22.0, `NPUTER_E2E_PORT=15197` (derived from the card id; `lsof`
+zero rows on both stacks before each bind; 1420 never probed). Blind
+two-phase: the attack set was written from the card at `209e5d3` and
+hashed before any diff, notes or lane branch was opened —
+`3b7da6de0ec538e5b396d66aa0516d2604993f1fb76e465fcc6935bf0f0fa8fe`.
+
+**The fix is real, minimal, and in the TOOL rather than in the spec.**
+
+### THE MERGE CONDITION — not a defect in the diff, and it must not be dropped
+
+`capabilities:check` is **GREEN at base and RED at this tip**: exit 0
+`CURRENT (32841 bytes)` at `209e5d3`, exit 1 `STALE — committed 32841,
+fresh 33163` at `ab873e0`. **This lane caused it**, it is a CI step, and
+the lane could not fix it: `docs/CAPABILITIES.md` is outside
+`touches: [tools/e2e]` and a fence is not widened from inside the lane it
+fences. The executor routed to `T-201` — which exists, is `status:
+planned`, and is titled for exactly this conflict — and named the
+discharge. That was the right call of the three my attack set anticipated.
+
+**THE INTEGRATOR RUNS `npm run capabilities` FROM tools/e2e/ AND COMMITS
+THE RESULT IN THE MERGE COMMIT.** If it is skipped, the next
+docs-touching lane inherits a red layers from its cause — which is the
+precise harm this card was filed to remove, re-created by its own fix.
+
+### What was attacked, and what held
+
+Every discriminator below was named in the pre-diff attack set.
+
+- **B2, the highest-value probe — a real drain, not a widened window.**
+  `--dispatch` at tip: 67,737 bytes to a file; 67,737 through `| cat`
+  **10/10**; 67,737 through a 2-second-delayed reader; 67,737 through a
+  reader burning 40 ms per chunk. A `setTimeout`/`sleep` fix fails here
+  and this does not.
+- **B4, the fix is not spec-side papering.** Reproduced from a bare shell
+  with no spec involved.
+- **B5/G1.** Base `209e5d3`: **401 bodies, exit 1, RED**. Tip: **404
+  bodies, exit 0, GREEN**. Exactly +3, nothing skipped or renamed away —
+  no hidden dependent on the truncation.
+- **D1, the decisive removal mutant.** Restoring `process.exit(code)`
+  reds **all three** new bodies, each on its own distinct assertion
+  ("spawnSync lost bytes the file destination received"; "--dispatch:
+  spawnSync received 65536 where the file destination received 67737";
+  "brief.mjs is back in the class this card removed it from"). Tree
+  restored clean.
+- **D2, and this is the pair that matters.** Shrinking the synthesis reds
+  with *"the synthesised invocation is no longer past one pipe buffer, so
+  this body proves nothing"* — poison shape TEN refused mechanically, not
+  rhetorically. Neutering the positive control reds **both** dependent
+  bodies. **The control cannot be silently neutered**, which was the open
+  question my brief raised about every guard.
+- **D3.** The synthesis is **90,721 bytes**, clearing both the 65,536 and
+  the ~66,470 boundary. The attack that a synthesis clears only the
+  smaller boundary — real for `| cat`, vacuous for `spawnSync` — does not
+  fire.
+- **D4.** Exact equality (`toBe` on full text), not containment. A prefix
+  matcher would have passed the truncation mutant; this does not.
+- **D5.** The oversize input is a file the body writes, so its size is a
+  property of the spec and not of the board. The COVERAGE line
+  **discloses** which case the run was — on this run *"1 of 6 live arms
+  are past the derived loss point"*, so it was not the vacuous one.
+- **E.** The threshold is derived at run time (65,536; samples
+  65536/65536/65536), **names its reader**, and is not self-referential:
+  threshold from a control writer, measurement from each arm. It found a
+  second near-boundary shape nobody had named — `--task <id> --state
+  --full` at **798 bytes under** the line in my run.
+- **F1/F2.** My independent census, taken at base before the diff was
+  opened, matches `EXITS_AFTER_WRITING` exactly; `brief.mjs`'s three
+  remaining `process.exit(` hits are all inside the new comment. The
+  sweep asserts an **exact set**, so it cannot pass over absent input —
+  the "assert empty" shape I expected, and which reports absence of INPUT
+  rather than absence of BUG, was not used. Sizes verified independently:
+  docs-gate 4,947 B, lint-tokens 105 B, health-bands-run 1,939 B.
+- **C1–C4, my predicted regressions, all absent.** The converted call is
+  the file's last statement (514/514) and all 13 error paths are `return
+  EXIT.x` from inside functions, so no control flow changed. Exit-code
+  matrix identical to the defect shape across five paths
+  (0/2/2/2/1). No hang (443 ms vs 435 ms). **No EPIPE**: `| head -1`,
+  `| head -c 100`, `| grep -m1 .` and an immediate-close reader all exit
+  0 with **zero bytes on stderr** — the card's own named reading motions
+  are intact.
+- **Fence and hygiene.** Diff is `tools/e2e/scripts/brief.mjs`,
+  `tools/e2e/tests/brief-flush.spec.ts` and this card (never part of its
+  own fence). No temp residue; `mkdtemp` under the OS temp dir, cleaned
+  in `finally`; repo status clean after every run. No new dependency, no
+  new input path, no secret.
+
+### Gates at this tip
+
+e2e **404 bodies GREEN** (blessed gate-runner, ref `ab873e0`) · parser
+**344 passed** · app **1105 passed** (after the documented `npm run
+build`; the 14 `app/dist` staleness failures on an unbuilt tree are
+CONVENTIONS' named trap, not this diff) · typecheck 0 · lint:tokens +
+`--selftest` 0 · lint:docs 0 · `index --check` 0 CURRENT ·
+**capabilities:check 1 STALE — the merge condition above.**
+
+### The two executor findings, adjudicated rather than accepted
+
+**Finding 1, "the loss is a property of the WRITE SHAPE" — TRUE AS
+MEASURED, FALSE AS GENERALISED.** The observation reproduces exactly: 200
+small `console.log`s carrying 115 KB lose nothing through either reader.
+But that holds only against a **fast** reader. Measured here, 5/5 runs:
+the same 200-write shape truncates to **65,536** against a
+`(sleep 0.5; cat)` reader, and 2,000 tiny writes to **65,493**. Write
+shape does not decide loss; it decides whether the pipe ever FILLS. The
+invariant is: **loss occurs iff bytes are still queued in userland when
+`process.exit()` runs.**
+
+This does not weaken the diff — the synthesis uses one long line, which
+is the most reliable reproduction, and the sweep's non-membership
+arguments rest on measured SIZE, not on write shape. But the generalised
+claim is written into the spec comment (*"harder to lose, never easier"*)
+and into the card, where a future lane could use it to argue a genuinely
+at-risk script into non-membership. Filed as a suggestion, not a block.
+
+**Finding 2, "`--dispatch` cannot satisfy byte-identity BY
+CONSTRUCTION" — TRUE OBSERVATION, TOO-STRONG CONCLUSION.** Confirmed: two
+whole invocations both measure 67,737 here and differ at char 500 on live
+`<- read <ISO> on <host>` stamps. But the stamps are **fixed-width**, and
+normalising them makes the file and pipe outputs **byte-identical**. So
+the criterion is satisfiable on `--dispatch`, not impossible — "not
+directly, without normalisation" is the accurate statement. The
+criterion is in any case **met** by the diff, byte-for-byte, on the
+deterministic `--audit` arm, and choosing a tree-stamped arm for the
+byte assertion is the better engineering. Suggestion, not a block.
+
+### Two figures that differ from the executor's, with their refs
+
+Both are the card's own moving-figure point and neither is an error.
+(1) The base failure: the executor's tree failed on `Expected substring:
+"critical path:"`; mine failed on `unstampedLines(...)`. Same defect, a
+different cut point, because what falls past the buffer moves with the
+board — the card predicts exactly this. (2) `capabilities.mjs --check` is
+listed at 36 B; on the STALE path at `ab873e0` stdout is **0 B** with 107 B
+on stderr. The 36 B is the CURRENT path. The non-membership conclusion is
+unaffected; the table does not say which path it measured.
