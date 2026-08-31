@@ -167,7 +167,7 @@ below.
   reason at exit 0 (`ANNOUNCED_ALLOW_CODES`).
 - `.claude/settings.json` — a `Bash` matcher beside the existing
   `Edit|Write|NotebookEdit` one. The fence hook's entry is untouched.
-- `tools/e2e/tests/push-guard.spec.ts` — 21 bodies, no browser.
+- `tools/e2e/tests/push-guard.spec.ts` — **25** bodies, no browser.
 
 ### Each criterion, with its evidence
 
@@ -362,9 +362,19 @@ All four restored by sha256; bench `git status` CLEAN.
 **N4 SURVIVED ON ITS FIRST FORM AND THE SURVIVAL WAS THE USEFUL RESULT —
 25 passed, 0 failed.** The first N4 reverted the second commit's file
 content, expecting the commit to vanish. It did not: `remote.git` lives
-INSIDE the fixture root, so `git add -A` had been committing it as a
-GITLINK, and the second commit was non-empty for a reason that had
-nothing to do with the file it was supposed to carry. **The arm's
+INSIDE the fixture root, and **a BARE repository has no `.git`
+directory**, so git never recognised it as a nested repository at all —
+`git add -A` staged **its ordinary files as blobs at mode 100644**
+(HEAD, config, description, the hook samples), not as a gitlink at mode
+160000. The second commit was therefore non-empty for a reason that had
+nothing to do with the file it was supposed to carry.
+
+**THE GITLINK DIAGNOSIS WAS WRONG AND THE VERIFIER CAUGHT IT** (verdict
+correction 3). The symptom was right, the remedy was right, and the
+mechanism named was not. Re-measured directly at this ref — build a bare
+repo inside a work tree, `git add -A`, read `git diff --cached --raw` —
+and every entry is `100644`. A gitlink would have been `160000` and there
+is none. **The arm's
 precondition could not be killed from the side it actually depends on**,
 which is precisely what a surviving mutant is for. Fixed by ignoring
 `remote.git/` in the fixture; re-drilled; RED.
@@ -497,8 +507,19 @@ instance is worth more attached to the first).
 ### THE CENSUS-CURRENCY GATE IS OWED AT THE MERGE AND THIS FENCE CANNOT PAY IT
 
 `npm run capabilities:check` exits **1 — STALE**: committed 27333 bytes
-against a fresh generation of 28765, because this lane adds **21** test
-names (`command grep -c 'test("' tools/e2e/tests/push-guard.spec.ts`).
+against a fresh generation of **29053**, because this lane adds **25**
+test names.
+
+**DERIVE IT WITH THE GENERATOR'S OWN ANCHOR, NOT A LOOSE ONE.** This note
+first said 21, and that figure was wrong twice over: it was measured
+before the fires-control bodies landed, AND the pattern it named
+(`grep -c 'test("'`) is unanchored, so it also counts a mid-line
+`RegExp…test("Bash")` call and answers 26 at this ref.
+`capabilities.mjs` matches `^\s*test\(`, so the honest derivation is
+`command grep -c '^test("' tools/e2e/tests/push-guard.spec.ts` — **25**,
+which is what the suite itself reports. The mid-line call is therefore
+NOT picked up as a behaviour; checked against the generator's anchor
+rather than assumed.
 
 **THE REGENERATION IS THE INTEGRATOR'S AND THE FENCE IS RIGHT TO EXCLUDE
 IT.** `docs/CAPABILITIES.md` is outside `[.claude, tools/e2e]`, and the
@@ -761,3 +782,77 @@ was RECORDED.
 is already a CI step (`command grep -c "cargo audit" .github/workflows/ci.yml`
 answers 2 at `1e886c0`), so it needs no guard — a fact the absorbed
 card's own filer got wrong at first and corrected by checking.
+
+## VERDICT CORRECTIONS PERFORMED (executor, 2026-08-31, at `3d99e29`)
+
+All three assigned corrections are done. **The verdict was right on every
+one, and finding 1 was a real defect in this lane's own keeper.**
+
+**CORRECTION 1 — THE KEEPER WAS THE DEFECT, NOT THE SHIPPED CODE.**
+`expect(bullet).toContain('cargo ' + CHECK_ARGV.join(' '))` is a
+SUBSTRING search over the document, so **every proper prefix of the
+published command passed it**. Three mutants of the `--root`/cwd
+mechanism survived at **25 passed / 0 failed**:
+
+| mutant | unrepaired, it would have | why it passed |
+|---|---|---|
+| `--root ../..` → `--root ..` | refused **every push in the repository** | `… --root ..` is a prefix of `… --root ../..` |
+| `--root ../..` → bare `--root` | refused **every push** | so is `… --root` |
+| `CHECK_DIR_REL_PATH` → `"docs"` | **allowed every push, for ever** | asserted by nothing; `docs/` merely exists |
+
+**THIS IS THIS CARD'S OWN THESIS ONE LAYER UP**, which is why it is
+recorded at length rather than quietly fixed: a guard misconfigured in
+either direction produces universal refusal or total silence, and
+NEITHER IS DISTINGUISHABLE FROM SUCCESS by looking at the guard. The
+keeper that was supposed to notice looked like it was working.
+
+**THE REPAIR IS ANCHORING, NOT A WIDER SUBSTRING.** The bullet's
+backticked commands are extracted into a LIST and the guard's command
+must equal a WHOLE ELEMENT of it (`toContain` over an array is exact
+element equality); the working directory is read out of the bullet's own
+`run from <dir>/:` marker and compared for equality; `--root`'s VALUE is
+asserted; and the check directory must carry the `Cargo.toml` the `-p`
+resolves against, which is a second, independent way for `docs` to die.
+The bullet is whitespace-collapsed first, because these documents wrap at
+~70 columns and a phrase match is otherwise a search for a line break
+nobody chose.
+
+**PROVED, NOT ASSERTED — all three named mutants now die**, each at
+**1 failed / 24 passed**, each naming *"the check this guard runs is the
+command docs/CONVENTIONS.md publishes"*, each restored sha256-ok with the
+bench clean afterwards. Counts recorded beside the exits deliberately: an
+exit code alone cannot separate a kill from a suite that never ran, which
+is this card's own M13/N4 lesson and the verdict's.
+
+**CORRECTION 2 — A FALSE POSITIVE REFUSES; THE DOCBLOCK SAID IT ALLOWS.**
+`gitInvocations`' comment claimed a false positive *"costs a second and a
+half and then allows, because only the check can refuse."* False, and
+measured false by the verifier: `echo git push`, `man git push` and
+`grep -rn git push /tmp` each reach **exit 2, PUSH REFUSED** against a
+stale graph through the real runner. The scanner splits on whitespace and
+cannot tell a quotation, a manual page or a search pattern from a
+command. The comment now states that, and states the three facts that
+bound the cost — it can only fire when the graph is genuinely stale, the
+refusal is loud and names its reason, and one regen clears the false
+positive and the true one together. **The behaviour is unchanged and
+accepted; only the claim about it was wrong.**
+
+**CORRECTION 3 — FIGURES AND ONE MECHANISM.**
+(a) **25 bodies, not 21** — the old figure predated the fires-control
+bodies AND came from an unanchored `grep -c 'test("'`, which also counts
+a mid-line `RegExp…test("Bash")` and answers 26. `capabilities.mjs`
+anchors on `^\s*test\(`, so that call is not picked up as a behaviour and
+the honest count is 25, matching the suite.
+(b) **The fresh capabilities generation is 29053 bytes**, not 28765.
+(c) **`remote.git` was staged as ORDINARY BLOBS at mode 100644, not as a
+gitlink at 160000** — a bare repository has no `.git`, so git never saw a
+nested repository. Re-measured directly. The symptom and the remedy were
+right; the mechanism named was wrong.
+
+**WHAT WAS NOT CHANGED, AND WHY.** No card ids were minted — anything
+needing one is described for the architect seat to allocate. The gate
+ledger above is derived against a main tip that has since moved several
+times; the RANGE RULE covers exactly this and the integrator re-derives
+at the merge, so it is deliberately not chased. `review:` is left empty:
+it is the integrator's to stamp `independent`, with the note that it was
+set late.
