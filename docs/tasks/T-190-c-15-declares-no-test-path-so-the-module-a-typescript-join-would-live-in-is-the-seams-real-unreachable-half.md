@@ -383,8 +383,21 @@ it is outside this fence and I did not drill it.
 See below; worth a card against the brief assembler rather than against
 the hook.
 
-**(d) `brief.mjs --dispatch` LOSES ITS TAIL THROUGH A PIPE, AT EXIT 0 —
-and this is the highest-value thing this lane found.** Measured above:
+**(d) IS ALREADY CARDED AS `T-197`, AND THIS LANE FOUND IT
+INDEPENDENTLY — SO IT IS A CORROBORATION, NOT A ROUTE.** `main` moved to
+`726d807` while this lane was open and filed
+`T-197-the-dispatch-brief-silently-truncates-its-own-derivation-at-one-pipe-buffer`,
+which names the same mechanism (`process.exit()` against Node's async
+stdout), the same 65,536-byte cut, and the same remedy. **That card FILES
+the defect and does not fix it**, so the e2e red below stands until it is
+built. Two seats measuring the same thing hours apart and agreeing to the
+byte is the useful part; the figures differ only by the ref they were
+taken at (that card 69,293 bytes, this lane 69,033 at `c92cbe9` and
+69,299 at `57c1b39`). **Nothing here should be re-filed.** What this lane
+adds to it is below, and is offered for folding in rather than as a
+second card.
+
+**The finding as this lane measured it.** Measured above:
 69033 bytes to a file, **exactly 65536 to a pipe**, `status` 0, `error`
 none. Cause is `process.exit(code)` at the end of
 `tools/e2e/scripts/brief.mjs` against Node's asynchronous pipe writes.
@@ -399,6 +412,20 @@ for the same loss, since they will cross 64 KiB later rather than never.
 the file byte count, which is the only form that cannot pass by being
 under the buffer. This lane did not touch it — `tools/e2e` is outside
 this fence and `T-142-s1` holds it.
+
+**THE ONE THING THIS LANE ADDS TO `T-197`, offered rather than filed:**
+the defect is not only a reader's problem, it **REDS A STANDING GATE
+TODAY** — `dispatch-order.spec.ts`'s *"--dispatch runs on the live
+repository, exits 0, and WRITES NOTHING"*, on `npm test` from tools/e2e,
+which is a suite the DOCS GATE names for any change under
+`docs/architecture/components` or `docs/tasks`. **So every lane touching
+a card or a component file now inherits a red it did not cause**, and
+will have to attribute it from scratch the way this one did. The tell to
+carry forward: **WHICH assertion fails MOVES between runs** — `BLOCKED —
+the unmet blocker is named` at byte 65767, `critical path:` at 67782 —
+because the cut lands wherever the buffer happens to land, so it reads as
+flake and is not. That is worth a sentence in `T-197` and, until it
+lands, a line in the standing-hazards list.
 
 ### Where the brief was wrong
 
