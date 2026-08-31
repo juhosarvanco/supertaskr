@@ -49,15 +49,13 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: **none.** Eleven lanes landed overnight; the queue lives
-   in T-171's record, so this file points rather than transcribes.
-2. **`T-126-s2`'s UN-PARK CONDITION HAS FIRED; it wants a RULING before
-   a fence** — it stands between the registered command and a rendered
-   brief. Registration was necessary, NOT sufficient; this file said
-   otherwise three times.
-3. THE QUEUE is in T-171's record. Standing red worth a lane:
-   `T-167-s8` (the pre-push guard, now also carrying `T-181`'s record
-   trigger).
+1. IN FLIGHT: **five** — `T-184`, `T-167-s8`, `T-182`, `T-162-s1`,
+   `T-112-s4`. Fences proved pairwise disjoint at dispatch.
+2. **`T-126-s2` IS RULED** (architecture sitting, 2026-08-31): the join
+   goes to TypeScript, but shape 3 was refused on TEST REACHABILITY, so
+   the order is FORCED — `T-112-s4` blocks it, `T-112-s5` follows. An
+   ADR is owed once `T-162-s1` releases `docs/decisions`.
+3. THE QUEUE is in T-171's record; the newest cards are `T-185`–`T-188`.
 4. THE NEXT METHOD RELEASE has riders: `T-112-s2`, `T-154-s3`,
    `T-159-s6`, `T-154-s4`'s sentence; `T-173` and `T-176` owe a bump.
 5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
@@ -70,16 +68,18 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
    assignment is honoured only by the session that dispatches. Set it
    deliberately on every spawn.
-7. **WHAT A DISPATCHER WRITES FROM MEMORY IS THE HALF THAT IS WRONG.**
-   Overnight: three of six blind briefs leaked lane facts above the
-   phase-1 line (the verifiers disclosed it), and four lanes found the
-   dispatch summary contradicting the derived brief beside it — a
-   narrower fence, a wrong base, an install order short of ADR-011.
-   **Name the contract and the hazards; point at the derivation; put
-   any lane fact BELOW the blind line, labelled.**
+7. **WHAT A DISPATCHER WRITES FROM MEMORY IS THE HALF THAT IS WRONG** —
+   seven instances overnight, in T-179's and T-171's records. **Name the
+   contract and the hazards; point at the derivation; put any lane fact
+   BELOW the blind line, labelled.**
 
 ## Standing hazards — the section that saves the hour
 
+- **A GATE READ THROUGH A PIPE REPORTS THE PIPE**, so a hard failure
+  reads as a clean pass: `false | tail -1` → 0, `pipefail` → 1. There is
+  **no root `package.json`** (scripts live in `tools/e2e/`); this seat
+  read exit **254** as green four times. **Redirect, capture `$?`, THEN
+  look.**
 - **The cargo cache cliff** (`T-088-s4`):
   `startup_arm_watches_the_initial_root` reds when `target/` is large or
   lanes contend. READ THE LIB SUITE'S OWN TIME FIRST — green under 9.5s,
