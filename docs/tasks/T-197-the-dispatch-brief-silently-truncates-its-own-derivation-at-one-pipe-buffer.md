@@ -10,7 +10,7 @@ blocked_by: []
 touches: [tools/e2e]
 suggested_by: "T-192's executor, which met it as an e2e red it proved was not its own; re-measured and confirmed at the architect/integrator seat before filing"
 builder:
-review:
+review: independent
 ---
 
 **FOUND BY A LANE THAT REFUSED TO ACCEPT A RED AS ITS OWN**, and
