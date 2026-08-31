@@ -251,10 +251,22 @@ card the model does not carry. The field is empty **and this paragraph is
 the blocker of record** until `T-112-s4` merges and brings `T-190` with
 it; the field is restored in that same merge.
 
-**AND THE INSTRUMENT THAT MISSED IT IS THE FINDING.** `lint:docs` passed
-this change, reporting *"every live task card's frontmatter parses, with
-a legal status"* — which is **true, and answers a different question.**
-Frontmatter parsing is not reference resolution, and only the parser's
-own `smoke.test.ts` (*"finds zero issues in the live tree"*) holds the
-second. The seat ran the gate that names cards, got a clean answer, and
-pushed. That is `T-142`'s class arriving for the third time in one night.
+**AND THE FIRST DIAGNOSIS OF THIS WAS WRONG — CORRECTED BY `T-142`'s LANE,
+WHICH MEASURED IT.** This seat wrote that the instrument could not have
+caught it. **It could, and it names the answer.**
+
+`npm run lint:docs` is `docs-gate.mjs --census`. The CENSUS exits 0 and
+prints no FIRES line and no owed suite at all. **The DOCS GATE proper,
+given the changed path, exits 1 and names `lib/parser/test/smoke.test.ts`
+BY NAME** as an owed reader — the exact body that reddened. Verified at
+this seat:
+
+    docs-gate: FIRES — 1 path(s) under docs/ are code inputs. Run:
+      reader  lib/parser/test/smoke.test.ts  [npx vitest run from lib/parser/]
+
+**So the instrument existed, worked, and was never asked.** The defect is
+that the reassuring mode is the one whose npm alias sounds like the
+general question, and its exit 0 means *"I wasn't asked"* while the
+gate's contract reserves 0 for *"nothing owed"*. `T-090` argued this gate
+should not be an npm script at all and recorded "exactly four" scripts;
+there are now nine, including that alias. Filed as `T-142-s1`.
