@@ -842,3 +842,24 @@ still live and where one unsettled intermittent may share it.
 `dd6b723` and tip `7fddfca` and is stale the moment anything is written;
 the suite figures are `7fddfca` with `docs_watch.rs` at sha256
 `5d21d3a9fc2e4ada4db3ee731db2b306f1e2c654b0022de42a0d87e07559b637`.
+
+**GATES AT THE TIP MY OWN VERDICT CREATED — `9892b04`, since a verdict is
+a code input here.** `docs-gate.mjs`, given the card as a separate literal
+path, exits **1** (it HAS a verdict): 25 readers across 4 suites, this card
+a code input to 10 of them, and it reports *"every live task card's
+frontmatter parses, with a legal status"* — so the frontmatter I stamped is
+clean. The three suites it named: `npx vitest run` from `lib/parser/`
+**exit 0, 344 passed / 16 files**; `npm test` from `app/` **exit 0, 1100
+passed / 49 files**; `npm test` from `tools/e2e/` **exit 1, 366 passed / 1
+failed**.
+
+**That single e2e red is `T-197` and I attributed it by measurement rather
+than by citation.** The body is `tests/dispatch-order.spec.ts:200`. At MY
+tip, `brief.mjs --dispatch` REDIRECTED is **75,958 bytes** and contains the
+`BLOCKED — the unmet blocker is named` heading; PIPED — which is what the
+body's `spawnSync` does — it is **exactly 65,536 bytes** and does not. The
+heading sits **10,422 bytes** beyond the cut. My own verdict enlarged this
+card and the output is still over the limit, so the body reds with or
+without any of this; the figure differs from the lane's 77,599 because
+`--dispatch` reflects board state, not card size, which is why it is quoted
+here with its ref. No suite red is attributable to this lane or to me.
