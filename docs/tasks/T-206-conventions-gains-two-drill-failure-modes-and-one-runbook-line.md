@@ -1,10 +1,10 @@
 ---
 id: T-206
-title: CONVENTIONS gains the three drill failure modes 2026-08-31 discovered, and one runbook line that would have saved an hour of the wrong CI diagnosis
+title: CONVENTIONS gains the FOUR drill failure modes 2026-08-31 discovered, and one runbook line that would have saved an hour of the wrong CI diagnosis
 feature: F-06
 milestone: 4
 priority: 4
-size: S
+size: M
 status: planned
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
@@ -119,3 +119,51 @@ answered on a stale `e2e-exit.txt` left by an earlier run — a marker file
 from 10:13 against a 10:16 commit. It caught that before recording
 anything, removed the marker, and re-waited. **A stale artefact answering
 a fresh question is the costume vacuity with a timestamp on it.**
+
+## 5. A RESTORE THAT VERIFIES ITS OWN WRITE DESTROYS WORK AND REPORTS SUCCESS
+
+Routed by `T-202`, which met it inside the drill of a card whose subject
+is exactly this, and it is the most dangerous mode on this list.
+
+**A poison drill restored with `git checkout -- <path>`, silently
+discarded the lane's UNCOMMITTED work, and still reported
+`RESTORED=YES`** — because the check compared the file against **the sha
+it had just written itself**. The restore verified its own write rather
+than the restoration, so the hash matched exactly as designed while the
+lane's work was gone.
+
+**Every property this project asks of a restoration was satisfied**: one
+side mutated, a read-back performed, a hash compared, a `RESTORED=YES`
+printed. **And the outcome was data loss reported as a clean drill.**
+
+The remedies are two and both are cheap:
+
+- **Refuse to drill a DIRTY file.** A mutation whose baseline is
+  uncommitted has no trustworthy restore target, because `checkout --`
+  restores the INDEX and not the reader's intent. `T-202`'s harness now
+  refuses one.
+- **Compare against a hash taken BEFORE the mutation and recorded
+  elsewhere** — never against one the restoring step produced. A
+  self-supplied expectation is not a check.
+
+**This is the third distinct way a drill can lie about itself in one
+night** — a red over zero bodies, a comparison over an empty corpus, and
+now a restore that grades its own homework. `docs/CONVENTIONS.md`'s
+POISON DRILL section states the ritual; what it does not yet say is that
+**the ritual's own instruments are in scope for the ritual.**
+
+## AND THIS CARD'S SIBLING NAMED A PATH ITS OWN FENCE FORBADE
+
+Recorded because it is this seat's defect, not a lane's. **`T-202`'s card
+specifies `tools/gates/` as the runner's home while its own `touches:`
+carries only `tools/e2e` and `docs/CONVENTIONS.md`.** The lane could not
+have obeyed both.
+
+It reported rather than guessed, and chose correctly: **all twenty
+existing gate scripts already live in `tools/e2e/scripts/`**, so the
+card's suggested home was also the less consistent one. **A card that
+names a path outside its own fence is defective by `TASK-FORMAT`'s own
+rule**, and `T-204`'s first proposed refusal — *the card file must
+exist* — should be read as the narrow member of a wider class: **the
+preflight can check that every path a card NAMES is inside the fence it
+DECLARES.**
