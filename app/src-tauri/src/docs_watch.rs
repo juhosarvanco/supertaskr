@@ -2764,40 +2764,46 @@ mod tests {
         assert_eq!(outcome.skipped_total, 1);
     }
 
-    /// **A SYMLINKED `docs/` IS REFUSED, AND THIS BODY EXISTS BECAUSE THE
-    /// WHOLE GUARD WAS DELETABLE IN SILENCE** (T-140-s9's verdict,
-    /// correction 1). The blind verifier lifted `collect_docs_tree`'s
-    /// docs-root guard entirely — refusal, `eprintln` and all — and the
-    /// suite stayed 259/0: containment still prevented a leak, so nothing
-    /// failed, and the REFUSAL simply stopped happening. That is a
-    /// coverage hole rather than a vulnerability, and this is the body
-    /// that closes it.
+    /// **A SYMLINKED `docs/` IS REFUSED, AND THE FIXTURE IS THE ONE
+    /// CONTAINMENT CANNOT RESCUE** (T-140-s9's verdict, correction 1).
+    /// The blind verifier lifted this guard entirely — refusal,
+    /// `eprintln` and all — and the suite stayed green, because for a
+    /// link pointing OUTSIDE the project containment rejects every entry
+    /// after canonicalization and the outcome is byte-identical either
+    /// way. **An integrator's first attempt at this body used exactly
+    /// that fixture and was therefore vacuous**; it passed under the
+    /// deletion mutant, which is how the mistake was found.
     ///
-    /// The POSITIVE CONTROL is the second half: the same tree with a real
-    /// `docs/` collects the same file, so the empty outcome above cannot
-    /// be satisfied by a walk that finds nothing anywhere.
+    /// The discriminating fixture points the link INSIDE the project: the
+    /// entries then canonicalize to contained paths, containment passes,
+    /// and without the guard they are COLLECTED. So this body fails the
+    /// moment the guard stops refusing, which is what the guard is for.
+    ///
+    /// Its POSITIVE CONTROL is the second half — the same tree with the
+    /// same file under a REAL `docs/` does collect — so the empty
+    /// outcome above cannot be satisfied by a walk that finds nothing.
     #[test]
-    fn a_symlinked_docs_root_is_refused_rather_than_walked_through() {
+    fn a_symlinked_docs_root_is_refused_even_when_it_points_inside_the_project() {
         use std::os::unix::fs::symlink;
-        let host = bare_tree("t140s9-docs-symlink-host");
-        let real = bare_tree("t140s9-docs-symlink-target");
-        fs::create_dir_all(real.root().join("elsewhere")).expect("mk elsewhere");
-        fs::write(real.root().join("elsewhere/NORTH_STAR.md"), "not ours").expect("write");
-        symlink(real.root().join("elsewhere"), host.root().join("docs")).expect("symlink docs");
+        let host = bare_tree("t140s9-docs-link-inside");
+        fs::create_dir_all(host.root().join("real-docs")).expect("mk real-docs");
+        fs::write(host.root().join("real-docs/NORTH_STAR.md"), "inside").expect("write");
+        symlink(host.root().join("real-docs"), host.root().join("docs")).expect("symlink docs");
 
         let outcome = collect_docs_tree(host.root());
         assert!(
             outcome.files.is_empty(),
-            "a symlinked docs/ must be REFUSED, not walked through: {:?}",
+            "a symlinked docs/ must be REFUSED even pointing inside — containment cannot \
+             rescue this one, so anything collected here came through the link: {:?}",
             outcome.files.iter().map(|f| &f.path).collect::<Vec<_>>()
         );
 
-        // THE CONTROL: the identical layout with a real directory does
-        // collect, so the assertion above is about the REFUSAL and not
-        // about an empty walk.
-        let plain = bare_tree("t140s9-docs-plain-control");
+        // THE CONTROL: the identical bytes under a REAL docs/ collect, so
+        // the assertion above is about the refusal and not about an empty
+        // walk.
+        let plain = bare_tree("t140s9-docs-link-inside-control");
         fs::create_dir_all(plain.root().join("docs")).expect("mk docs");
-        fs::write(plain.root().join("docs/NORTH_STAR.md"), "ours").expect("write");
+        fs::write(plain.root().join("docs/NORTH_STAR.md"), "inside").expect("write");
         let control = collect_docs_tree(plain.root());
         assert!(
             control.files.iter().any(|f| f.path == "docs/NORTH_STAR.md"),
