@@ -1234,6 +1234,138 @@ mod tests {
         );
     }
 
+    /// T-167-s5, ASSIGNED CORRECTION 1: the guard is a DISJUNCTION, and
+    /// this is the half no body held.
+    ///
+    /// `fresh_truncated_symbols` and `fresh_truncated_files` are two
+    /// facts rather than one — `apply_budget`'s floor arm sets the flag
+    /// and leaves the count unset, because it had nothing to empty — and
+    /// the field's own doc comment says a clause reading only the count
+    /// would go silent in exactly the worst state. The code was right and
+    /// the claim was unpinned: narrowing the guard to
+    /// `if report.fresh_truncated_files == 0` left the suite at 261
+    /// passed / 0 failed (crate scope), measured before this body existed.
+    ///
+    /// THE REACHING FIXTURE IS SYMBOL-LESS FILES, and that is the whole
+    /// trick: `costs` collects only files with a non-empty symbol array,
+    /// so a tree with none sends `apply_budget` straight down its
+    /// `costs.is_empty()` branch on the FIRST pass. Nothing is ever
+    /// emptied, `all_dropped` stays empty, the count is never recorded —
+    /// and the flag is set anyway, because the document is over budget
+    /// and truncation has nothing left to give.
+    #[test]
+    fn the_flag_alone_still_speaks_when_no_file_count_was_ever_recorded() {
+        let t = TempTree::new("check-drop-floor");
+        for i in 0..6 {
+            // No exports: a file the walk indexes and the extractor
+            // finds no symbols in, so nothing is ever droppable.
+            t.write(&format!("src/f{i}.ts"), "// nothing to export here\n");
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 200,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+
+        // THE DISJUNCTION'S LIVE BRANCH, asserted as a pair: the flag is
+        // set and the count is genuinely absent. A fixture that recorded
+        // a count would be re-proving the other half.
+        assert_eq!(
+            (report.fresh_truncated_files, report.fresh_truncated_symbols),
+            (0, true),
+            "the fixture must reach the floor arm with NO file count: {report:?}"
+        );
+        assert_eq!(
+            report.fresh_stats.1, 0,
+            "and must really have had no symbols to drop: {report:?}"
+        );
+
+        let text = render(&report, ".");
+        assert!(
+            text.contains("GRAPH TRUNCATED"),
+            "a set flag must speak even with no count beside it — a guard \
+             reading only the count goes silent in the worst state:\n{text}"
+        );
+        assert!(
+            text.contains("recorded NO file count"),
+            "and must say which of the two facts it has, not print a \
+             fabricated count:\n{text}"
+        );
+        assert!(
+            !text.contains("DROPPED the symbol arrays of"),
+            "nothing was emptied here, so the counted wording would be a \
+             claim the emitter never made:\n{text}"
+        );
+        // Still the louder of the two, by the same placement rule.
+        assert!(
+            text.find("GRAPH TRUNCATED").unwrap() < text.find("GRAPH HEADROOM ALARM").unwrap(),
+            "the floor is the most serious state of all and must lead:\n{text}"
+        );
+    }
+
+    /// T-167-s5, ASSIGNED CORRECTION 2: the NEGATIVE spend arm — this
+    /// card's own named case, and the one its three original halves all
+    /// missed by running with `fresh > committed` or `spend == 0`.
+    ///
+    /// Measured before this body existed: `if spend < 0` mutated to
+    /// `if false` survived at 261 passed / 0 failed (crate scope). The
+    /// cost is not coverage. `spend` is `i128` precisely because a fresh
+    /// index SMALLER than the committed graph is the shape a drop makes,
+    /// and a later refactor to `usize` or `saturating_sub` would restore
+    /// either an underflowed preposterous figure or a silent zero — the
+    /// wallpaper criterion 4 bans — with the whole suite green.
+    #[test]
+    fn a_fresh_index_smaller_than_the_committed_graph_reads_as_giving_back() {
+        let t = TempTree::new("check-spend-negative");
+        for i in 0..8 {
+            t.write(&format!("src/f{i}.ts"), "export const alpha = 1;\n");
+        }
+        // The committed graph is the BIGGER tree's; then the tree loses
+        // files, so a fresh index is smaller than what is on disk.
+        let bigger = stable_json(&index(&opts(t.root())).unwrap());
+        for i in 4..8 {
+            std::fs::remove_file(t.root().join(format!("src/f{i}.ts"))).unwrap();
+        }
+        let fresh_bytes = check(&opts(t.root())).unwrap().fresh_bytes;
+        assert!(
+            fresh_bytes < bigger.len(),
+            "the committed graph must really be the larger one: {fresh_bytes} vs {}",
+            bigger.len()
+        );
+
+        let path = t.root().join(GRAPH_REL_PATH);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, &bigger).unwrap();
+
+        let armed = IndexOptions {
+            max_graph_bytes: fresh_bytes + 10,
+            ..opts(t.root())
+        };
+        let report = check(&armed).unwrap();
+        assert_eq!(report.fresh_bytes, fresh_bytes, "only the committed side moved");
+        let text = render(&report, ".");
+        assert!(
+            text.contains("GRAPH HEADROOM ALARM"),
+            "the spend rides an armed block:\n{text}"
+        );
+
+        let given_back = bigger.len() - fresh_bytes;
+        assert!(
+            text.contains(&format!("GIVES {given_back} BYTES BACK")),
+            "the negative side must print the magnitude, re-derived here \
+             ({given_back}), rather than an underflowed figure or nothing:\n{text}"
+        );
+        assert!(
+            !text.contains("WORKING TREE SPENDS"),
+            "a tree that shrank must not read as one that spent:\n{text}"
+        );
+        assert!(
+            text.contains("only good\n[nputer-index] !! news if the tree shrank with it"),
+            "and must not read as relief, which is the state this card is \
+             about with the sign flipped:\n{text}"
+        );
+    }
+
     /// T-167-s5 criterion 2: where BOTH states are present the drop is
     /// the louder, and loudness here is placement — the drop sits above
     /// the headroom sentence, the way T-167-s2 put the whole block above
