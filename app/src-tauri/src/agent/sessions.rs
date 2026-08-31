@@ -16,6 +16,14 @@
 //! direction against a transcribed list of nine keys, which is how a tenth
 //! key went unnoticed: a transcription is a second implementation of the
 //! field set, and the two disagree in silence.
+//!
+//! **AND THE SAME NOW HOLDS FOR THE OTHER HALF OF THE PAIR** (T-167-s9,
+//! repairing the asymmetry T-167-s1 left): `transcript.jsonl` has its own
+//! page, `method/runtime/transcript-schema.md`, and
+//! [`tests::the_written_transcript_matches_the_transcript_schema_field_for_field`]
+//! reads it the same way, over BOTH the machine-assembled line and the
+//! typed one — the second being the arm no single fixture can see, since
+//! `machine` is skipped on write when false.
 
 use std::fs;
 use std::io::{self, Read, Seek, SeekFrom, Write};
@@ -724,6 +732,11 @@ mod tests {
     /// can reach exactly one file, so the question does not arise.
     const SCHEMA_DOC: &str = include_str!("../../../../method/runtime/sessions-schema.md");
 
+    /// The TRANSCRIPT's page, compiled in for the same two reasons and by
+    /// the same mechanism as [`SCHEMA_DOC`] above — stated once there and
+    /// deliberately not restated here (T-167-s9).
+    const TRANSCRIPT_DOC: &str = include_str!("../../../../method/runtime/transcript-schema.md");
+
     /// One fenced ```json block out of a markdown file, parsed.
     fn json_example(doc: &str, whose: &str) -> serde_json::Value {
         const FENCE: &str = "```json";
@@ -779,6 +792,44 @@ mod tests {
         let pack_keys: BTreeSet<String> = pack.keys().cloned().collect();
         assert!(pack_keys.contains("hash"), "the pack example is a pack: {pack_keys:?}");
         (keys, pack_keys)
+    }
+
+    /// **WHAT THE TRANSCRIPT'S PAGE NAMES, READ OFF THE PAGE (T-167-s9).**
+    ///
+    /// The sibling of [`schema_entry_keys`], over the OTHER runtime file
+    /// this module owns, and derived the same way: the document's own
+    /// `json` example is the authority and this body is a reader of it,
+    /// so a key added to [`TranscriptLine`] without the page reds here by
+    /// name. Until this existed the transcript's only pin was a
+    /// `contains("\"atMs\"")` substring in
+    /// [`transcript_appends_one_line_per_half_turn_and_caps_text`], which
+    /// fixes ONE key's spelling and says nothing about the SET.
+    ///
+    /// **THE EXPECTED SIDE IS ASSERTED NON-EMPTY BEFORE ANYTHING IS
+    /// COMPARED AGAINST IT**, for the reason [`schema_entry_keys`] gives.
+    fn transcript_line_keys() -> BTreeSet<String> {
+        let example = json_example(TRANSCRIPT_DOC, "method/runtime/transcript-schema.md");
+        let line = example
+            .as_object()
+            .expect("the transcript page's example is ONE line object");
+        let keys: BTreeSet<String> = line.keys().cloned().collect();
+        assert!(
+            keys.contains("turn") && keys.contains("role") && keys.contains("text"),
+            "the parsed block must be the transcript LINE, not some other object: {keys:?}"
+        );
+        assert!(
+            keys.contains("atMs"),
+            "method/runtime/transcript-schema.md must carry the camelCase wire spelling \
+             the struct's `rename_all` produces - `atMs`, never `at_ms`: {keys:?}"
+        );
+        assert!(
+            keys.contains("machine"),
+            "the page's example must be the MACHINE-ASSEMBLED half-turn, which is the \
+             only line that carries every key: `machine` is skipped on write when false, \
+             so an example built from a typed turn could never show the full set and \
+             every comparison below would be short by one: {keys:?}"
+        );
+        keys
     }
 
     /// ONE WRITTEN OBJECT AGAINST ONE DOCUMENTED KEY SET, BOTH DIRECTIONS
@@ -884,6 +935,105 @@ mod tests {
         assert_eq!(
             extra,
             vec!["sediment_score".to_string()],
+            "the subset arm must be able to FAIL, or the arms above are decoration"
+        );
+    }
+
+    /// The transcript is byte-checkable against its page's field set, in
+    /// both directions, exactly as the registry became at T-167-s1 — the
+    /// repair of the ASYMMETRY that card left behind (T-167-s9). One
+    /// module owns two runtime files and its header names both in one
+    /// sentence; only one of them was documented, and only one was
+    /// checked.
+    ///
+    /// **THE MACHINE-ASSEMBLED LINE IS THE POINT, and it is the same
+    /// shape the registry's packed fixture was.** `machine` is
+    /// `skip_serializing_if`, so a fixture built from an ordinary typed
+    /// half-turn writes four keys and can NEVER see the fifth — which is
+    /// precisely how the registry's tenth key stayed silent. Both arms
+    /// are written here, from one file, so neither can hide the other.
+    #[test]
+    fn the_written_transcript_matches_the_transcript_schema_field_for_field() {
+        let schema = transcript_line_keys();
+        let t = TempTree::new("transcript-schema");
+
+        append_transcript(
+            &t.0,
+            &TranscriptLine {
+                turn: 1,
+                role: "user".into(),
+                text: "You are the planner.".into(),
+                at_ms: 7,
+                machine: true,
+            },
+        )
+        .expect("machine-assembled line");
+        append_transcript(
+            &t.0,
+            &TranscriptLine {
+                turn: 2,
+                role: "user".into(),
+                text: "solo founders".into(),
+                at_ms: 9,
+                machine: false,
+            },
+        )
+        .expect("typed line");
+
+        // Read the BYTES rather than the parsed struct: a round-trip
+        // through `TranscriptLine` would re-materialise `machine` and
+        // report the writer's defaults instead of the writer's output.
+        let raw = fs::read_to_string(transcript_path(&t.0)).expect("jsonl");
+        let mut written = raw.lines();
+        let machine: serde_json::Value =
+            serde_json::from_str(written.next().expect("line 1")).expect("line 1 parses");
+        let typed: serde_json::Value =
+            serde_json::from_str(written.next().expect("line 2")).expect("line 2 parses");
+        assert!(written.next().is_none(), "one line per half-turn, and no more: {raw}");
+
+        // (1) THE MACHINE HALF-TURN: the line and the page agree exactly,
+        // in both directions.
+        let (missing, extra) = against_the_schema(&machine, &schema);
+        assert!(
+            missing.is_empty(),
+            "method/runtime/transcript-schema.md names {missing:?}; the written line lacks them"
+        );
+        assert!(
+            extra.is_empty(),
+            "the line writes {extra:?}, which method/runtime/transcript-schema.md does not \
+             name - add the key to the document (T-167-s9) rather than to this list"
+        );
+        // The camelCase spelling is now pinned as a SET MEMBERSHIP by the
+        // arms above rather than by a substring, so these two only fix
+        // the VALUES the writer put behind the documented keys.
+        assert_eq!(machine["atMs"], 7);
+        assert_eq!(machine["machine"], true);
+
+        // (2) THE TYPED HALF-TURN: `machine` ABSENT rather than false,
+        // and nothing else the page names missing with it. This arm is
+        // also the positive control for the FIRST direction - it proves
+        // `against_the_schema` can report a missing key, which the
+        // registry's pin next door demonstrates only for the second.
+        let (missing, extra) = against_the_schema(&typed, &schema);
+        assert_eq!(
+            missing,
+            vec!["machine".to_string()],
+            "a typed half-turn omits `machine` and NOTHING else the page names"
+        );
+        assert!(extra.is_empty(), "unexpected extra keys: {extra:?}");
+
+        // (3) THE POSITIVE CONTROL for the second direction (CONVENTIONS:
+        // a negative assertion needs one). A comparison that CANNOT
+        // report an extra key satisfies arm (1) forever, so a line
+        // carrying an undocumented field goes through the SAME function -
+        // and it is the shape the silent one had: one plausible extra
+        // field beside the documented ones.
+        let mut planted = typed.as_object().expect("object").clone();
+        planted.insert("tokens".into(), serde_json::json!(412));
+        let (_, extra) = against_the_schema(&serde_json::Value::Object(planted), &schema);
+        assert_eq!(
+            extra,
+            vec!["tokens".to_string()],
             "the subset arm must be able to FAIL, or the arms above are decoration"
         );
     }
@@ -1103,7 +1253,10 @@ mod tests {
         assert_eq!(lines[1].role, "planner");
         assert_eq!(lines[1].at_ms, 9);
 
-        // camelCase on the wire (the store mirrors it).
+        // camelCase on the wire (the store mirrors it). ONE key by
+        // substring, and deliberately left alone: the FIELD SET is
+        // [`the_written_transcript_matches_the_transcript_schema_field_for_field`]'s
+        // (T-167-s9), which is the body to read for what the wire carries.
         let raw = fs::read_to_string(transcript_path(&t.0)).expect("jsonl");
         assert!(raw.lines().all(|l| l.contains("\"atMs\"")), "{raw}");
 
