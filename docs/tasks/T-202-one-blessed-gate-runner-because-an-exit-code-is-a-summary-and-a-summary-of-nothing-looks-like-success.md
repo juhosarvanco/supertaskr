@@ -108,6 +108,19 @@ and the fail-fast count), and `T-203`, which consumes this runner's
 verdict token.
 
 
+## `review: independent` SET AT FILING, not left for a dispatch to remember
+
+**The lane judged its own runner guard-class: it refuses six distinct things.**
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. This seat has now missed that three times running —
+including on the card immediately after a verifier assigned *"flagged so
+the next dispatch sets it"* as a correction.
+
+**So it is set here, at filing, where the judgement is already being
+made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
+setting it early is the only thing between the rule and a fourth miss.
+
 ## Implementation notes (executor)
 
 **Built:** `tools/e2e/scripts/gate-run.mjs` — the runner — and
