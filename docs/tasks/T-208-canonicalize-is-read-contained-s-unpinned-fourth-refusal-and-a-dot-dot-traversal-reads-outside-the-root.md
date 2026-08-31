@@ -24,6 +24,23 @@ routed `.follow_links(true)` as `T-196` instead of widening its own fence.
 
 ## The refusal, and what it independently contributes
 
+> **PINNED since this card landed — see the implementation notes.** The
+> title and the paragraph above say UNPINNED and *"which nothing pins"*;
+> both are the DISPATCHED SPEC, kept verbatim as the record of what was
+> asked for, and both stopped being true at this card's own tip. The pin is
+> `a_dot_dot_traversal_never_reads_outside_the_root` in `resolve/mod.rs`,
+> which kills its mutant ALONE (257/1, exit 101, at `2ccb498`).
+> **Assigned by this card's verifier as `T-194`'s CORRECTION 2 — the same
+> defect on the card one id away — and it is a POINTER rather than a
+> rewrite** because a card is the contract it was dispatched under.
+> One residual the verifier raises, recorded here rather than acted on:
+> **C+D's containment is only as strong as the caller's ROOT being
+> canonical** — a non-canonical root makes `starts_with` false for
+> everything and this function refuses everything, silently. Benign today
+> (`lib.rs` canonicalizes once at `validate_root` and hands the one
+> `canon_root` on), and `walk.rs:144` states that third condition for its
+> own line while this site does not.
+
 `app/src-tauri/crates/nputer-index/src/resolve/mod.rs::read_contained`:
 
     let meta = std::fs::symlink_metadata(&path).ok()?;
