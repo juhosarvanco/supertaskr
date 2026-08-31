@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-192, carrying its blind verifier's CORRECTION 2 — that seat measured the rendering and ruled it out of T-192's fence; the id was allocated by the dispatching seat, not minted in-lane"
 touches: [app-map]
 blocked_by: []
