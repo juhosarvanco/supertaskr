@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [crate-index]
 suggested_by: verifier claude-opus-5@subagent @T-194, re-measured by T-194's executor before filing; id allocated by the integrator
@@ -121,3 +121,153 @@ it cleans itself up and never writes into the shared temp dir directly.**
 was first run in), `T-196` (the same unpinned-but-pinnable shape, routed
 the same way), and `T-186` (the precedent that a lane routes rather than
 widens its own fence).
+
+---
+
+## Implementation notes (executor, lane `task/T-208-lane`)
+
+Base DERIVED with `git merge-base main HEAD` = **`d7ec96c`**, matching the
+brief. Fence manifest read first: **1 expanded path**,
+`app/src-tauri/crates/nputer-index`, from token `crate-index` -> C-07,
+`alwaysWritable: ["docs/tasks"]`. Every arm ran from
+`/Users/ujju/Projects/nputer-T-208/app/src-tauri` with a PRIVATE
+`CARGO_TARGET_DIR=/Users/ujju/Projects/T-208-scratch/target`, command
+verbatim and identical on every arm:
+
+    cargo test -p nputer-index --no-fail-fast
+
+### The four arms, every figure at its own ref
+
+| arm | ref | targets | passed | failed | exit |
+|---|---|---|---|---|---|
+| baseline, shipped | `d7ec96c` | 12 | **257** | 0 | 0 |
+| `canonicalize().ok()?` -> `path.to_path_buf()`, NO probe | `d7ec96c` | 12 | **257** | **0** | 0 |
+| the probe, on SHIPPED code | `3cd86e9` | 12 | **258** | 0 | 0 |
+| the probe + that lift | `3cd86e9` | 12 | **257** | **1** | **101** |
+| the probe + a RESOLUTION-ONLY lift | `3cd86e9` | 12 | **257** | **1** | **101** |
+
+2 ignored on every arm. **The premise was re-derived by building the
+mutant and watching it survive**, not inherited: arm 2 is 257/0 with
+NOTHING RED, so the card's own claim holds at this ref with a different
+number than it records.
+
+The failing arm names ONE body and prints the escape rather than a type:
+
+    failures:
+        resolve::tests::a_dot_dot_traversal_never_reads_outside_the_root
+
+    assertion `left == right` failed: a .. traversal must not escape the root
+      left: Some("{\"loot\":1}")
+     right: None
+
+`read_contained` returned **the contents of a file outside the root**.
+
+### The fifth arm is new, and it settles a sentence the site used to ARGUE
+
+The site claimed *"what C contributes is not its `.ok()?` arm but the
+RESOLUTION"*. That was reasoning, not measurement. A second one-side
+mutant KEEPS the error arm and discards only the resolution —
+
+    let canon = { let _ = path.canonicalize().ok()?; path.to_path_buf() };
+
+— and reds **the same single body with the same loot, 257/1, exit 101**.
+So the pinned half is the resolution, measured. One construct, two jobs,
+now separated.
+
+### CORRECTION — the card's figures had MOVED, exactly as the brief warned
+
+The card records **256 passed / 0 failed** at `87929c2` for baseline and
+for the no-probe lift, and **257/0 · 256/1** for the probe arms. **At
+`d7ec96c` those are 257/0, 257/0, 258/0 and 257/1.** Main moved under the
+card between filing and dispatch. Nothing about the finding changes; the
+DELTAS are identical. This is the same drift `T-196` reported when its
+card's `252/0` was `256/0` by the time it ran, and it is why a quoted
+count is re-run rather than transcribed.
+
+### THE SWEEP — the count was not WRONG, it was UNITLESS, and the sibling had already been fixed
+
+`T-194` put the count in the heading so an omission would be visible;
+`T-196`'s verifier then showed (its correction 2) that a count with no
+UNIT cannot do that job. **That repair was applied to `walk_root` and not
+to `read_contained` — the site whose omission STARTED the thread.**
+`walk.rs` has carried *"THE UNIT IS A MECHANISM, NOT A SITE"* since
+`T-196`; this site's heading still read *"The FOUR refusals"* over four
+letters.
+
+Recounted hostile from source at `d7ec96c`, letters unread first:
+**SIX constructs in `read_contained` can drop the read; the letters name
+FOUR.** Nothing is omitted — it is a unit mismatch, and both counts are
+now in the block:
+
+    FOUR LETTERED REFUSALS  A, B, C, D — the checks made on purpose
+    SIX CONSTRUCTS          those four plus two unlettered error arms
+    FIVE STATEMENTS         the same six, A and B sharing one `if`
+
+The two unlettered ones are named at the site: **`symlink_metadata(&path)
+.ok()?`** and the trailing **`read_to_string(&canon).ok()`** — the second
+being also **the construct that SHADOWS refusal B**, which B's own bullet
+already turns on without saying they are the same line. And **C is one
+construct doing TWO jobs**, which the fifth arm above separates.
+
+### Acceptance criteria, read literally
+
+1. **MET** — a body pins `canonicalize()` ALONE: passes on shipped code,
+   reds on the non-resolving replacement, **failing count read as ONE** at
+   crate scope under `--no-fail-fast`, exit 101.
+2. **MET** — TWO positive controls, both passing in BOTH arms: an ordinary
+   contained read (`read_contained(&root, "inside", "kept.json")`), and the
+   loot read from a root that DOES contain it
+   (`read_contained(&outside_root, "", "loot.json")`), so the `None` cannot
+   be satisfied by there-was-nothing-there.
+3. **MET, and SHOWN rather than asserted** — the lifted arm terminates in a
+   FIXTURE: the traversal is aimed at a second `TempTree`;
+   `root.parent() == outside_root.parent()` is asserted (that is WHY
+   `../<basename>` reaches it); and the escaped path is canonicalized and
+   compared **to the fixture file itself** before the guard is exercised.
+   Repository content is never on the path. The body additionally asserts
+   the MECHANISM — uncollapsed, the traversal path **clears refusal D on
+   components alone** — so the refusal is attributable to C and not to D.
+4. **MET** — the count still matches the code, and now carries its unit.
+   See THE SWEEP above.
+5. **MET** — nothing deleted, nothing weakened. The only non-comment change
+   in the whole lane is the ADDED test body; `read_contained`'s body is
+   byte-identical to `d7ec96c` (proved by hash in the drill ledger).
+6. **MET** — headless `cargo test` throughout. No screen control.
+
+### Drills — one side only, read back, restored, proved by HASH
+
+Every mutation was a single anchored `perl -CSD -0777` substitution or one
+exact-string edit, **read back with `git diff -U1` before any suite ran** —
+the count is not the proof, the text is. The work was **COMMITTED before it
+was drilled** (`3cd86e9`), so no restore could pass by throwing away work
+`HEAD` never saw (`T-072-s1`'s mechanism). Restored with `git restore
+--source=<ref> --staged --worktree --`, both sides named, proved by
+**sha256** against the tree at that ref, with an empty `git status` as the
+COMPANION and never as the proof.
+
+Only one file was ever mutated,
+`app/src-tauri/crates/nputer-index/src/resolve/mod.rs`:
+
+- at `d7ec96c` — `4640ff10712712537228eac8e17ba6782e90fc0338b5d96fce96fbdb125be96f`
+  (worktree and `git show HEAD:` agreeing before the drill, and the
+  worktree again after the restore);
+- at `3cd86e9` — `b24cef7144457ab361d2ab4be2758d127c68e422313f7019aee384b08c1689aa`
+  (`git show 3cd86e9:` and the worktree agreeing after each of two
+  restores).
+
+**Three mutant arms, three restores, 3 for 3 sha256-proved**, no arm left
+the tree dirty.
+
+### Noticed, not done
+
+- **`cargo fmt --check` exits 1 across the WHOLE crate** — 184 hunks in
+  **29 files**, 28 of which this lane never touched. Pre-existing, and
+  `cargo fmt` is not a CI step (`.github/workflows/ci.yml` runs `cargo
+  test`, `index --check` and `cargo audit`, no fmt and no clippy). Not
+  acted on and not routed as a card: a crate-wide reformat is not this
+  fence's business and nobody has asked for one.
+- **`T-196` left the three `walk_root` error arms unpinned and deliberately
+  minted no id** for whether any is PINNABLE. Untouched here; the same
+  question exists for this site's two unlettered arms. Recorded rather than
+  routed, on `T-196`'s own precedent that a lane cannot construct a card id
+  safely and the dispatching seat allocates.
