@@ -181,7 +181,19 @@ standing hazards: **redirect, capture `$?`, then look.**
 
 ## Owed after this record
 
-- An **ADR for this ruling**, once `T-162-s1` releases `docs/decisions`.
+- ~~An **ADR for this ruling**, once `T-162-s1` releases `docs/decisions`.~~
+  **CORRECTED, same sitting.** `docs/decisions` was released when
+  `T-162-s1` merged, and this seat went to write the ADR and stopped:
+  **every ADR in this repository that names a decider names @human**, and
+  every one carries `Status: ratified`. There is no "proposed" status to
+  file under and inventing one would be a governing-document change made
+  to fit an errand.
+  **So this is not owed from this seat — it is @human's to ratify or
+  overrule**, and the ruling meanwhile stands where an architect's ruling
+  belongs: on `T-126-s2`, cross-referenced from `T-112-s4` and
+  `T-112-s5`, and in this record. The ruling APPLIES ADR-012 and `T-057`
+  to one seam; it does not amend either, which is why it was within this
+  seat's authority to make and is not within it to enshrine.
 - **@human, untouched all night as asked**: the FORM question (reopened),
   the steering split, the three permission questions, and thirty seconds
   on the interview's new ending at a narrow width.
