@@ -358,3 +358,138 @@ false coverage."* At this ref:
    `docs/STATE.md`** (`T-199`): nothing judged my writes. Every path I
    touched is inside `app/src-tauri/crates/nputer-index` except this card,
    by discipline alone.
+
+### GATES — every exit read UNPIPED, every trigger DERIVED from the diff
+
+The gate set is derived against **the tree this tip will have**, the merge
+forecast the RANGE RULE prescribes for the executor's position:
+`TREE=$(git merge-tree --write-tree main HEAD)` then
+`git diff --name-only main "$TREE"`, at main **`dd6b723`** — **exit 0, no
+conflict, 5 paths**: the four crate files and this card. Re-derived at the
+frozen tip `7ae3357`; unchanged. (Main advanced from `146ebb6` to
+`dd6b723` while this lane worked — one docs-only commit that touches no
+path in this fence.)
+
+- **`cargo test` from `app/src-tauri/`** at `7ae3357`: **exit 0, 605
+  passed / 0 failed over 18 targets**, `--no-fail-fast`.
+- **THE BASE WAS MEASURED, so the delta is not arithmetic**: the same
+  command at `146ebb6` before anything was touched is **exit 0, 601
+  passed / 0 failed over 18 targets**. 601 + 4 = 605 and the four are the
+  new bodies, named above. At crate scope
+  `cargo test -p nputer-index --no-fail-fast` goes **252/0 → 256/0 over
+  12 targets**, and the `nputer-index` lib target **200 → 204**. **The
+  parts add up to the whole in both directions**, which is the arithmetic
+  tell `T-186` was saved by.
+- **The cargo cache cliff did not fire** (`T-088-s4`): the lib suite's own
+  time is **4.13s at base and 4.60s at the tip**, against the green band of
+  under 9.5s, with sibling lanes live. The first build in this worktree was
+  COLD, as the dispatch said it would be; that is the build, not the suite.
+  No body was re-run, so there is nothing to attribute.
+- **GRAPH REGEN FIRES** (four `*.rs` paths outside `docs/`), so it was
+  **ASKED and NOT acted on** — `graph.json` is outside this fence.
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  `app/src-tauri/`: **exit 1, STALE**, and the staleness is exactly this
+  lane's four files — `files +0 -0 ~4`. It is a REAL red, not the `--root`
+  false red: it prints both counts and `~` file lines rather than
+  `committed: MISSING`. **`files +0 -0` is the sentence that matters** —
+  no phantom file entered the walk, because the drill's target dir lives
+  at `<scratch>/target` outside the tree and this lane's own logs were
+  moved out of the worktree the moment they were created. One edge is
+  genuinely added: `resolve/mod.rs -> testutil.rs (import) symbols=[TempTree]`,
+  which is the new `#[cfg(test)] mod tests` reaching for `TempTree`;
+  symbols 2448 → 2449, edges 2365 → 2366, 199 files unchanged. Budget
+  1149371 of 2145959 bytes (53.6%), 996588 left. **The integrator
+  regenerates and commits it at the checkpoint; this lane did not.**
+- **BOOT GATE FIRES** (`app/src-tauri/**`): `NPUTER_BOOT_PORT=21940
+  npm run boot:check` from `tools/e2e/` — **exit 0** (0 booted · 1 boot
+  failed · 2 port busy · 3 override refused). The port is DERIVED from the
+  card id, 20000 + 194×10, never defaulted, and `lsof` gave **zero rows
+  immediately before binding**. Both startup lines arrived, naming this
+  lane's own folder: `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-194` and `[nputer] window "main" created`.
+  **1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing
+  else, before and after every run: zero rows every time.**
+- **DOCS GATE FIRES** — this card's own frontmatter and notes are a path
+  under `docs/` that code suites READ. Derived by ASKING rather than
+  predicting, with the forecast's five paths passed as SEPARATE LITERAL
+  ABSOLUTE arguments (`docs/STATE.md`'s zsh-splitting hazard, and a
+  relative path makes this gate refuse with exit 2 rather than answer):
+  **exit 1, FIRES, 1 path(s) under `docs/` are code inputs**, naming three
+  commands. It also reports **every live task card's frontmatter parses,
+  with a legal status** — which covers this card's own `verifying` /
+  `built_by` / `review` stamps — and that governing-document budgets hold.
+  - `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+  - `npm test` from `app/` — **exit 0, 49 files / 1100 tests** (`T-186`
+    measured 1077 six commits ago; derived at this ref, not carried)
+  - `npm test` from `tools/e2e/` — **exit 1, 366 passed / 1 failed**,
+    attributed below and NOT this lane's
+  - `npm run lint:tokens` — **exit 0, clean** (TOKEN 162 files under
+    app/src, app/test, tools/e2e; CONTROL 1049 tracked text files)
+  - `npm run lint:docs` — **exit 0**, and the run says of itself that this
+    is the CENSUS half only, so its 0 means *"I was not asked"*. The
+    owed-suite verdict is the `docs-gate.mjs` call above, which WAS asked.
+  - `npm run capabilities:check` — **exit 0, CURRENT (29121 bytes)**; this
+    lane added no e2e spec, so no spec name moved and
+    `docs/CAPABILITIES.md` needed no regeneration
+- **METHOD EVAL GATE: not owed** — zero paths under `method/` in the
+  forecast's 5.
+- **AUDIT GATE** names a gate and declares no merge-diff trigger, so it is
+  not one of these. No manifest moved in this diff (`Cargo.toml`,
+  `Cargo.lock`, `package.json` all untouched), so no dependency entered.
+
+### THE ONE E2E RED, ATTRIBUTED TO A FILED CARD AND ROUTED — IT IS NOT THIS LANE'S
+
+`tests/dispatch-order.spec.ts:200 › --dispatch runs on the live
+repository, exits 0, and WRITES NOTHING` fails on
+`expect(received).toContain("BLOCKED — the unmet blocker is named")`.
+
+**Measured, not argued:**
+
+- `node tools/e2e/scripts/brief.mjs --dispatch` **redirected to a file** is
+  **77,634 bytes**, and `# BLOCKED — the unmet blocker is named, and
+  nobody is on it.` is present at **line 206**.
+- The same command **piped** is **65,536 bytes — exactly 64 KiB**. The
+  section is past the cut. Loss: **12,098 bytes**.
+- The section is REAL CONTENT rather than an empty-board artifact: **four
+  cards carry an unmet blocker** at this ref — `T-067` and `T-068` on
+  `T-065`, `T-126-s2` on `T-198`, `T-203` on `T-202` — derived over 396
+  parsed cards (a zero there would have been the shape-TEN case and is
+  printed for that reason).
+
+**This is `T-197`**, already filed, `status: planned`, `touches:
+[tools/e2e]` — **outside this fence**, so it is ROUTED and not fixed, and
+`docs/STATE.md` names it in advance: *"`brief.mjs` TRUNCATES piped stdout
+at 64 KiB (`T-197`) — redirect to a file; **it reds a standing e2e body no
+lane caused**."* `T-192`'s executor met the identical red and proved it
+was not its own; **this is the second sighting, and it carries a
+re-measurement `T-197` will want**: that card's title states **3,757
+bytes** lost to `| head`, and at this ref the loss is **12,098 bytes**.
+The defect grows with the board.
+
+**And this lane's diff cannot reach it, by construction rather than by
+assertion**: nothing in `docs/tasks/` declares `blocked_by` containing
+`T-194` (grep exit 1, zero hits), and this lane's ONLY change under
+`docs/` is this card itself. Removing this lane's work cannot put a
+BLOCKED entry back.
+
+**RUN TWICE, AND ONLY THE SECOND IS QUOTED ABOVE — BUT BOTH AGREE.** The
+first full e2e run was in flight when this lane corrected a false sentence
+in `registry.rs`'s own comment, so the tree moved under it. A gate run
+against a tree that moved under it is not a claim about the tree
+(`T-186`), so the tree was committed to `7ae3357` and the suite re-run
+against that frozen tip: **366 passed / 1 failed both times, the same
+single body, the same reason.** The changed path is a Rust comment that no
+e2e body reads, which is why the two agree — stated rather than assumed.
+The failing spec file alone was also re-run at the frozen tip: **13 passed
+/ 1 failed**, same body.
+
+### WHAT THIS LANE LEFT ON DISK
+
+The lane worktree `/Users/ujju/Projects/nputer-T-194` stays standing until
+the verdict (`lane-protocol.md` rule 6: an S card that took a verifier
+keeps the only reproducible copy of what was measured). The drill scratch
+`/private/tmp/nd-T-194` is left standing too, **detached at `a9de0e2` and
+clean**, so the verifier can re-run any arm — a detached entry is not a
+lane and does not appear in the lane list. Its `CARGO_TARGET_DIR` is
+**686M** and is the integrator's to reclaim after the checkpoint. Nothing
+was merged, nothing pushed, and `main` was never touched.
