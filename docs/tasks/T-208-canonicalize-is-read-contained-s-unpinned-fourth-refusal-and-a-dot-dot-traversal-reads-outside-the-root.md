@@ -681,3 +681,53 @@ exit read first, unpiped: **0** — and the merge's diff is still exactly
 the same **2 paths**, `resolve/mod.rs` and this card. Main's one
 intervening commit touches only `T-195`'s card, so **no gate decision
 moves** and the lane's ledger stands at the new base.
+
+**Gates my own commit could move**, run AFTER it landed — `docs/STATE.md`
+is explicit that a gate read BEFORE a commit does not catch what the
+commit creates. Every exit captured by redirect and `$?` before any pipe,
+and every one read as OUTPUT rather than as a code:
+
+| gate | exit | read |
+|---|---|---|
+| `docs-gate.mjs`, run from `tools/e2e/` with a plain relative path | **2** | **CALLED WRONG, and correctly so.** The gate refused: from there the path has two readings. **This run was not a claim about the tree**, and it is recorded rather than quietly re-run, because a gate that refuses a question it cannot read is the behaviour STATE's `CANNOT_RUN` hazard asks for. |
+| `docs-gate.mjs`, re-run from the repository ROOT, separate literal paths | **1** | **A VERDICT, not a crash** — `docs-gate:` lines, 26 derived readers across 4 suites, 0 frontmatter issues, *"every live task card's frontmatter parses, with a legal status"*, governing budgets hold. FIRES on the card and names three suites. |
+| `npm run lint:docs` | **0** | the CENSUS half; its own output says a 0 means *"I was not asked"*. |
+| `npm run lint:tokens` | **0** | clean. |
+| `npm run capabilities:check` | **0** | CURRENT — this lane touches no `tools/e2e/tests/` spec name, so the census could not move. |
+
+The three suites the docs gate named, at **`95318fa`** (my tip), in
+fresh-clone ORDER, after `npm ci` in `tools/e2e/`:
+
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+- `npm test` from `app/` — **exit 0, 50 files / 1116 tests** (after
+  `npm run build` exit 0)
+- `npm test` from `tools/e2e/` — **exit 0, 409 passed (5.0m)**, on
+  `NPUTER_E2E_PORT=22208` derived from this seat's id, `lsof` showing
+  **0 rows** immediately before binding. 1420 was never probed, bound or
+  named.
+
+All three reproduce the lane's own figures exactly. **My commit adds no
+path the merge's set did not already carry** — the forecast against
+`dcd1c3e` is the same 2 paths with the verdict in it — so no gate
+decision moves with this write either.
+
+**FIXTURE CONTAINMENT, CHECKED FROM THE OUTPUT SIDE TOO** (`T-196`'s
+standard, since the body proves it in-band and I wanted the other half):
+occurrences of `Projects/nputer` in the LIFTED arm's captured output
+after the suite marker = **0** over 347 lines — **and the search was
+shown capable of failing first**, returning **1** against a poisoned copy
+of the same corpus at 348 lines. The discriminating half never reached
+repository content.
+
+**Fence, expanded rather than taken:** `crate-index` resolves through
+`docs/architecture/components/C-07-nputer-index.md` (`touch_slugs:
+[crate-index]`, `paths: app/src-tauri/crates/nputer-index/**`) — the code
+path is inside it, and the card is outside every fence by construction
+(lane-protocol rule 5). **No breach.** My verdict rides a non-task branch,
+`verify/T-208-verdict`, so it is the ALLOWED case of the fence's three
+answers rather than an unmanifested task branch.
+
+**What I did not run, and why:** `cargo test` at the workspace root and
+`cargo audit` — my commit is prose in `docs/tasks/`, which no `KIT_FILES`
+entry covers and no Rust body reads. The crate suite is reported above at
+crate scope for the lane's own diff.
