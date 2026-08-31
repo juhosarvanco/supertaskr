@@ -746,3 +746,89 @@ notes state. My own five `index --check` runs are timings, not a regen.
 
 Status left at `verifying`: the merge is not this lane's, and the board
 transition is the integrating seat's.
+
+## Corrections performed against the blind verdict
+
+Performed at `da67c91`, on the verdict at `a3004d9`. The verifier's
+central ruling was accepted; the two in-fence corrections are made, the
+out-of-fence one is written as a card, and **nothing was bounded that the
+verdict did not ask to be bounded** — it says in as many words *"I am NOT
+asking for `start_genesis_here` to be bounded"*, and that restraint is
+obeyed rather than improved upon.
+
+**CORRECTION 1 — `runPicker` is THREE commands and was described as
+one.** Verified here before acting rather than accepted: `begin_pick()`
+appears at **three** sites in `src-tauri/src/lib.rs` (185, 244, 295) and
+`pick_folder(` at **two** (196, 252). So `start_genesis_here` claims the
+same Rust latch as its siblings and opens no dialog — `index_repo`'s
+shape wearing the picker's latch. Three things changed:
+
+1. `runPicker`'s site comment no longer states the human-at-a-dialog
+   reason as covering all three. It now separates the two dialog commands
+   from the dialog-less one and gives **LATCH PARITY** as the reason that
+   covers all three: all three claim Rust's `PickInFlight`, which is the
+   real gate (T-021) with this store's flag as its webview mirror, so a
+   bound here desynchronises the pair and turns the next press into
+   `Busy` -> `prev` by identity — the silent button this card exists to
+   close. **That argument is the verdict's own**, and it is better than
+   the one it replaces because it survives the command that has no human.
+2. The notes' table is split into three columns, and the rows describing
+   paths `start_genesis_here` does not have (`Cancelled` on a dismissed
+   dialog, `Cancelled` on a dropped callback, `Error` on an unusable
+   selection) are gone rather than silently carried.
+3. **The residual is stated instead of hidden.** That command really can
+   never answer, so its latch really can strand — an ACCEPTED residual,
+   with the repair that would work (Rust-side, releasing `PickInFlight`
+   with the answer) routed rather than taken.
+
+**CORRECTION 1b — the sweep's unit, which is the reusable half.**
+*"The class is CLOSED inside `app-shell`"* is **WITHDRAWN.** The first
+sweep's unit was the `await invoke(` CALL SITE (7 hits, 3 latch-guarded)
+while this card's whole thesis is that the defect is decided per **RUST
+COMMAND** — so three commands counted once and the odd one hid behind the
+shared `await`. **A sweep whose unit is coarser than its thesis reports a
+closure it has not measured.** Recorded at `runPicker`'s site as well as
+here, because the next sweep is where it pays. Re-swept by command:
+**five commands, not three** — two bounded, two human-gated, one accepted
+residual. Not a closure, and no longer claimed as one.
+
+**CORRECTION 3 — the message's meaning is now pinned, and the verdict's
+mutant N2 is dead.** One line added to the derivation body:
+`expect(store.UNANSWERED_INDEX_MESSAGE).toContain("did not answer")`.
+Drilled at `da67c91` by reconstructing N2 exactly — *"the indexer did not
+answer within 15 seconds"* -> *"the indexer FAILED within 15 seconds"*,
+which keeps both previously-pinned substrings — diff read back with
+`git -C … diff`:
+
+| | before this correction | after |
+|---|---|---|
+| N2's suite | 1 failed / 1099 passed | **2 failed / 1098 passed** |
+| of which MTIME artifact | 1 | 1 |
+| **attributable reds** | **0** | **1 — the derivation body, and nothing else** |
+
+Shape SIX holds: the count attributable to the diff is ONE. Restored
+`--source=da67c91 --staged --worktree`; sha256
+`3d9ca129c42b4f8684c6d2c99199a86d59a44a730a074a6d017b6ddc34320305`,
+equal to the committed blob, worktree clean.
+
+**CORRECTION 2 — routed, because it is out of fence.** Written as
+**`T-200`** (`touches: [app-map]`), id **allocated by the dispatching
+seat**; this lane mints none. All three of the verdict's citations were
+re-verified at `36f8d31` rather than transcribed: `MapView.tsx:790`
+renders `index failed: {indexOutcome.message}`,
+`map-view-dom.test.tsx:674` pins the `index failed` prefix against a
+genuine-rejection fixture (so it would pass either way, exactly as the
+verdict says), and `watcher-store.ts:251` is this lane's own quotation of
+*"a premature \"index failed\""* — the string was in hand and was not
+carried into the message's design. That is a fair hit and is recorded as
+one.
+
+**WHAT THE VERDICT GOT RIGHT THAT COST THIS LANE NOTHING TO CONCEDE**: it
+reproduced the number's derivation on its own bench (270 / 239 / 244 /
+244 / 246 ms against this lane's 243–246 ms warm), the MTIME artifact,
+and the `brief.mjs` 64 KiB truncation, and it recorded two harness traps
+worth carrying forward — a shape-TEN filter that selected **zero** bodies
+and still exited **0**, and a background runner reporting the e2e as
+"exit code 0" twice while the script's captured `$?` held **1**. Both are
+this project's standing rule met live: **read the COUNT, never the
+runner's exit.**
