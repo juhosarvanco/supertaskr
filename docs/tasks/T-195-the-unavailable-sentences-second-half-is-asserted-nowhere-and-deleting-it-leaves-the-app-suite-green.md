@@ -7,7 +7,7 @@ priority: 5
 size: S
 status: building
 blocked_by: []
-touches: [app-dispatch]
+touches: [app-board, app-dispatch]
 suggested_by: "architect/integrator seat, allocating an id for a finding MEASURED by T-112-s4's lane, which declined to mint one itself"
 builder: claude-opus-5@subagent
 review:
@@ -83,3 +83,30 @@ every gate in the repository would stay green.**
 other facts nothing reads), and `T-190` (why nothing on that side of the
 boundary can be reached by a test at all today — which is very likely why
 this hole exists).
+
+## FENCE WIDENED 2026-09-01, mid-flight, by the dispatching seat
+
+`touches:` was `[app-dispatch]` — **C-15 only** — and criteria 1 and 2
+cannot be built inside it. Ownership, re-derived at the integrator seat
+from anchored `paths:` and confirmed against the ARMED hook's own
+`decide()`:
+
+    producer   app/src/lib/task-detail.ts        C-17
+    pin home   app/test/select-task-detail.test.ts  C-09
+    prior pin  app/test/board-truth.test.tsx     C-05
+
+`docs/ARCHITECTURE.md:57` — `app-board -> C-08, C-09, C-17, C-18` — so
+**one token reaches the producer AND the pin home.** Widened to
+`[app-board, app-dispatch]`, 20 expanded paths, verified disjoint from
+all three concurrently live lanes.
+
+**THE LANE DID NOT WIDEN ITS OWN FENCE, AND WAS RIGHT NOT TO.** It found
+the wall, measured the ownership, named the one-token route and stopped —
+`lane-protocol.md` rule 5, *a fence is not widened from inside the lane
+it fences.* This amendment is the dispatching seat's, committed on `main`
+BEFORE the re-expansion, which is the only shape that keeps `main` the
+ref the fence is read from.
+
+The grant is the MANIFEST ON DISK, not this paragraph: the executor
+proceeds only on reading the new `paths` back out of
+`.nputer/lane-fence.json`.
