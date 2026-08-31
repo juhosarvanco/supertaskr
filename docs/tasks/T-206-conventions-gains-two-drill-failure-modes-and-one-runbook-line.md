@@ -1,6 +1,6 @@
 ---
 id: T-206
-title: CONVENTIONS gains the two drill failure modes 2026-08-31 discovered, and one runbook line that would have saved an hour of the wrong CI diagnosis
+title: CONVENTIONS gains the three drill failure modes 2026-08-31 discovered, and one runbook line that would have saved an hour of the wrong CI diagnosis
 feature: F-06
 milestone: 4
 priority: 4
@@ -85,3 +85,37 @@ else.
 sentence, that card is the runner), `T-186` and `T-167-s8` (the measured
 instances), and `docs/CONVENTIONS.md`'s existing POISON DRILL and shape
 catalogue.
+
+## 4. A REMOVAL-ONLY DRILL CANNOT DISTINGUISH AN EXACT MATCHER FROM A CONTAINMENT ONE
+
+Added from `T-198`'s blind verifier, which found it by running a control
+the lane had no reason to think it needed.
+
+That lane pinned a live component's `paths:` with an exact `toEqual`, and
+drilled it by **removing** an entry. The removal reds — **and it would
+red identically under `toContain`.** So the drill proved the assertion
+notices a missing path and proved **nothing at all** about whether the
+matcher is still exact.
+
+The verifier's control **adds a spurious path**, which only an exact
+`toEqual` refuses. It reds. **That is the arm that closes the worst
+outcome available in that lane**: silently widening the only exact-array
+pin over a live registry into a superset check, where every future
+addition would pass unnoticed.
+
+**The general rule**: where an assertion's strength lies in EXACTNESS,
+a drill that only takes things away measures the wrong half. **Mutate in
+BOTH directions — remove one, and add one** — because the two mutants
+fail under different matchers and only the pair identifies which matcher
+survived.
+
+This is a sibling of shape SIX rather than a restatement: shape SIX asks
+whether a body kills a mutant no sibling kills; this asks whether the
+mutants you chose can tell your matcher from a weaker one.
+
+**And the verifier applied shape TEN to its own instrument in the same
+pass**, which is the habit this card is trying to install: its waiter
+answered on a stale `e2e-exit.txt` left by an earlier run — a marker file
+from 10:13 against a 10:16 commit. It caught that before recording
+anything, removed the marker, and re-waited. **A stale artefact answering
+a fresh question is the costume vacuity with a timestamp on it.**
