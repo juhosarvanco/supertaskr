@@ -2175,6 +2175,14 @@
   stayed green at `8_000_000`; one test now pins the literal). One
   lesson, two faces: an assertion that moves with the thing it is
   checking is checking nothing.
+  AND CENSUSES, NOT ONLY TEST BODIES (T-142): a crash is a finding; a
+  ZERO is what you hoped for. Before a count reaches a card, brief or
+  STATE, show the query able to answer otherwise: a ref where it is
+  known non-zero, or one planted instance. WHY SILENT: frontmatter
+  keys are snake_case and model properties camelCase, so a MODEL
+  census for `blocked_by` and a FRONTMATTER one for `blockedBy` both
+  return zero and read clean. Not a lint on known-bad spellings: a
+  census about censuses.
 - LIFTING A SAFETY GUARD TO DISCRIMINATE (T-060-s1, written down at
   T-078). A guard test needs a discriminating half, but the
   discriminating half of a SAFETY guard is by construction a deliberate
