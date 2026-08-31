@@ -1,9 +1,17 @@
 ---
 id: T-184
 title: The store arms flight with no sequence guard and a command that never answers leaves the latch true for ever — T-171 made the screen honest and left the store permanently able to strand it
-status: suggested
+feature: F-03
+milestone: 4
+priority: 2
+size: M
+status: planned
+blocked_by: []
 suggested_by: "executor claude-opus-5@subagent @T-171, routed from inside the lane; its blind verifier judged this one LOAD-BEARING and said it should be carded"
 touches: [app-agent]
+absorbs: [T-183]
+builder:
+review:
 ---
 
 **ROUTED OUT OF `T-171`, AND ITS VERIFIER SINGLED THIS ONE OUT.** Of the
@@ -72,3 +80,44 @@ from being fatal.
   half** — the store refusing to disarm, where this is the store arming
   without evidence — and whichever is dispatched first should read the
   other; triage may well fold them.
+
+## ABSORBED AT STANDING TRIAGE SITTING #6 (2026-08-31): T-183 — the same surface, faced the other way
+
+**Both cards asked for this in their own text**, and the filer's
+recommendation was explicit on each: *"they are the same surface from two
+directions and should probably be one lane."* This sitting agrees, and
+the reason is mechanical rather than editorial — **they name the same
+file, the same fence, and the same two functions.** `T-183`'s
+`cancelGenesis` and this card's `reduceGenesisOutcome` /
+`applyGenesisStatus` all live in `app/src/lib/agent-store.ts` under
+`[app-agent]`. Two lanes could not run concurrently, and whichever ran
+second would open a file the first had just rewritten.
+
+**T-183's half, carried here intact**: `cancelGenesis` resets nothing
+when the runner answers `{kind:"idle"}`, so the escape the footer
+advertises — *"⌘. to stop"* — did nothing on @human's walk. That is the
+store refusing to DISARM; this card carries the store ARMING without
+evidence. **A guard that fixes only the arming leaves the user with no
+working control, and a cancel that fixes only the disarming leaves the
+next stale answer free to re-arm it.** Either alone is a half-fix that
+looks whole.
+
+**The folded card therefore owes four criteria, not three** — T-183's
+two are added verbatim below and neither is softened by the merge:
+
+- WHEN the runner answers `{kind:"idle"}` to a cancel THE store SHALL
+  clear its own flight claim rather than leaving it set, and a body SHALL
+  pin that with a positive control proving the claim was set first.
+- THE cancel path SHALL be safe to invoke twice in succession.
+
+**And the design questions compose rather than conflict.** T-183's first
+question — what `cancel` MEANS when the runner says there is nothing to
+cancel — has the same answer as this card's first: the token the SCREEN
+already trusts. `flightOf` makes exactly that inference on the render
+side already, so **making the store agree with the screen settles both
+halves with one decision**, which is the strongest argument for the fold
+and the one that would have been missed by running them apart.
+
+`T-183`'s file is removed; this card is the survivor and its id is the
+one to cite. **The executor SHALL read `T-171`'s DOM bodies first** —
+they are what met this defect live.

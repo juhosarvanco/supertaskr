@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 13
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 suggested_by: architect/integrator seat @T-153-s8's integration (2026-08-31) — found by a health band that could not see its own remedy
