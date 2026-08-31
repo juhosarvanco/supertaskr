@@ -127,10 +127,8 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-T-140-s9-a-guard-no-test-can-see.md.
-  **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the
-  health band's window and CONVENTIONS' dispatch base BOTH read that
-  marker, and a seat dropped it for six records before a band noticed
-  (`T-182`).
+  2026-08-31-the-architecture-sitting-the-join-goes-to-typescript.md.
+  **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — two
+  consumers read it; `T-182` states the rule in CONVENTIONS.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
