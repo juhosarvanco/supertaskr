@@ -215,23 +215,40 @@ The bullet carries no `run from <dir>/:` marker, no code fence and no
 indented sub-bullet, so `workflow-parity.spec.ts` reads it as prose and
 it adds no CI-parity obligation.
 
-### Poison drills — seven, one side only, all restored
+### Poison drills — twelve, one side only, all restored
+
+**Every figure below is re-measured at `23726c9`**, the tip that
+carries the corrections, so the table describes one tree rather than
+three. (The earlier table said *"30 bodies"*, which was true of a
+spec that no longer exists — the verifier was right that a stale count
+dates the drills to before the bodies they are supposed to cover.)
 
 Every drill: exact-string mutation refusing on no-match, `git diff`
-read back (2 changed lines each), suite run **unpiped** with `$?`
-captured first, **30 bodies ran every time** (never zero — shape TEN),
-then `git checkout --` with sha256 identical before and after and an
-empty per-path diff.
+read back, suite run **unpiped** with `$?` captured first, **34 bodies
+ran every time** (never zero — shape TEN), then `git checkout --` with
+sha256 identical before and after and an empty per-path diff.
 
 | mutation | bodies failed |
 |---|---|
-| zero-body refusal, exits-ZERO half | 1 |
+| zero-body refusal, exits-ZERO half | **2** |
 | cd guard's sentinel | 1 |
 | shell-metacharacter (pipe) refusal | 1 |
 | cargo `--no-fail-fast` rule | 1 |
 | verdict missing-field refusal | 1 |
 | parts-vs-baseline refusal | **2** |
 | Playwright missing-baseline derivation | 1 |
+| `countCargo` counts an empty target as one body | **3** |
+| **V-M1** drop `"bodies"` from the required fields | **2** |
+| **V-M2** drop the lock's pid-liveness check | 1 |
+| **V-M5** delete the whole `app` suite from the registry | 1 |
+| **V-M3b** add a competing second spelling to CONVENTIONS | 1 |
+
+**The four `V-` rows are the verifier's own survivors, re-run against
+the corrected spec. Every one of them left the suite 31/31 GREEN
+before; every one of them now dies.** That is the evidence the
+corrections work, and it is the only evidence worth having, because
+the defect was precisely a suite that reported agreement while
+measuring nothing.
 
 **Shape SIX asked, and was answered.** Six of seven kill exactly one
 body. The parts-vs-baseline mutation killed two, so a seventh drill was
@@ -256,10 +273,76 @@ these mutations; the reachable suite is the whole suite here.
   fence. **Routed** — and it is the same shape the METHOD EVAL GATE
   already carries as `T-155-s1`.
 - **`docs/CAPABILITIES.md` is STALE and this fence cannot fix it** —
-  `T-201` exactly. Committed 29,121 bytes, fresh generation 32,327:
-  **+3,206 bytes** for 30 new spec names. The integrator must run
-  `npm run capabilities` in the merge commit.
+  `T-201` exactly. Committed 29,121 bytes, fresh generation **32,841**:
+  **+3,720 bytes** for **34** spec names, re-derived at `23726c9`. The
+  integrator must run `npm run capabilities` IN THE MERGE COMMIT —
+  CONVENTIONS requires the regeneration to land in the same commit as
+  whatever moved a test name, or the red arrives at the next lane
+  detached from its cause.
 
+
+
+## Corrections performed (executor, after verification)
+
+The verifier returned **APPROVED WITH ASSIGNED CORRECTIONS** and found
+**one defect class four times: every corpus this spec checked was the
+corpus under test.** Dropping a required verdict field, deleting a whole
+graded suite, and removing the lock's liveness check each left the suite
+**31/31 green**, because the bodies that checked those things ITERATED
+them — and an iteration over a corpus the mutation has just emptied
+passes by having nothing left to check.
+
+**That is instance 5 of this card — a comparison over an empty corpus —
+reproduced inside the artefact built to catch it.** The card's own list
+of instances now describes its own spec, which is the most useful thing
+the verification produced.
+
+1. **`REQUIRED_VERDICT_FIELDS` pinned against an independent literal.**
+   `CRITERION_3_FIELDS` is typed in the spec from the card's own words;
+   the runner never reads it, and the missing-field loop drives off it.
+   V-M1 now kills 2 bodies.
+2. **The registry pinned against an independent expectation.**
+   `CRITERION_1_SUITES` likewise, plus a third source: the DOCUMENT's
+   own `parser|app|rust|e2e` list is parsed and compared, so neither
+   the doc nor the registry can move alone. V-M5 now kills.
+3. **The stale lock is CONSTRUCTED.** The body writes a lock file holding
+   a reaped pid instead of acquiring and cleanly releasing, so the
+   reclaim branch is actually entered. V-M2 now kills, and *"a crashed
+   run cannot wedge the gate"* is measured rather than asserted.
+4. **Two body names corrected to what they measure.** The document body
+   claimed *"the one spelling"* while asserting containment; it now
+   COUNTS occurrences and says so in its name. **This was not cosmetic:
+   `docs/CAPABILITIES.md` is generated from these names, so the old one
+   would have published a sentence this repository does not hold.**
+5. **Two stale figures re-derived** — the drill table and the
+   CAPABILITIES delta above, both at `23726c9`.
+6. **The cargo doc-test body now exercises product code.** It ran
+   `toContain` against a constant declared a hundred lines above, which
+   cannot fail except by editing the constant. It now runs `countCargo`
+   and `judge` over a zero-body target, and states the charter in its
+   sharpest form: **the parts AGREE with the baseline — 0 equals 0 — and
+   it is refused anyway.**
+
+**Shape SIX, asked again at the new tip.** Three mutations kill more than
+one body. `parts-vs-baseline` is separated by the Playwright
+missing-baseline drill, which kills only one of its two. The
+`zero-bodies` pair is separated the other way: a mutation confined to
+`countCargo` kills the new cargo-target body and leaves the pure-`judge`
+body **green**, so each covers a derivation the other cannot reach.
+Neither pair is duplication.
+
+**One thing the verifier recorded that is now in the header**: a child
+that PRINTS a plausible summary having run nothing is reported GREEN,
+because baseline and parts come from the same transcript. This runner's
+floor is the reporter's own honesty. Said out loud rather than left for
+the next reader to discover.
+
+**And the verifier hit this card's subject twice while verifying it** —
+an exit 1 over zero bodies on a busy port, and a harness reporting
+"exit code 0" against its own captured `$?` of 1, which it measured as
+**systematic: three of three background runs.** Instances six and seven,
+neither staged, both caught only by reading counts and printing its own
+exit.
 
 ## Verdicts
 
