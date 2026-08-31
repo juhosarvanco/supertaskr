@@ -365,3 +365,38 @@ with an empty `git diff --stat` as the companion, never the alternative.
 - `T-189-s2` — the 3–5 ceiling is stated twice, in
   `method/roles/orchestrator.md:41` and `method/tasks/TASK-FORMAT.md`'s
   Parallelism guardrails. Inside this fence, outside these criteria.
+
+### ADDENDUM 2026-08-31 — THE DOCS GATE'S EXIT 1 WAS VERIFIED, NOT ASSUMED
+
+A correction reached this lane after the run above: `docs-gate.mjs` exit
+**1** can mean the gate CRASHED rather than that it has a verdict. Its
+vocabulary — `{CLEAN:0, FOUND:1, USAGE:2, CANNOT_RUN:3}` at line **148** —
+is set in a `catch` at line **466**, inside `main()`, while `yaml` is a
+**top-level** import at line **129**. Import resolution precedes the
+catch, so a missing `tools/e2e/node_modules` exits 1 with the contract
+never engaged. `docs/CONVENTIONS.md`'s fresh-clone ORDER names only
+`lib/parser` and `app/`, so a lane that follows it literally reaches
+exactly that state. Found by `T-185-s2`'s executor.
+
+**All four docs-gate reads on this card are genuine verdicts**, checked
+rather than assumed: `tools/e2e` `npm ci` ran in this worktree (exit 0)
+and `tools/e2e/node_modules/yaml` exists; each of the four logs carries
+**7** `docs-gate:` lines and **0** stack-trace markers.
+
+**And the discriminator was given a positive control**, because a
+negative assertion needs one: a scratch module carrying the gate's exact
+`EXIT` object and the same failing `yaml` import, run outside the repo,
+exits **1** with a Node stack trace and **0** `docs-gate:` lines. So
+"read the output, not the code" separates the two cases in both
+directions, on measurement rather than on faith.
+
+**IT IS ALSO A SECOND INSTANCE OF THIS CARD'S OWN FAMILY**, which is why
+it is recorded here and not only routed: a setup ORDER that is silent
+about a dependency a GATE requires, with nothing connecting the two rules
+— the same shape as a ceremony row that is silent about the seat a
+ceiling makes contended. **What generalises is not the pair; it is that
+each rule was correct alone.** `T-189`'s remedy is the one that scales:
+do not enumerate the other rule, state the CONDITION the second rule
+makes true or false, so a reader who never opens the other file still
+gets the right answer. Fixing the setup-order instance is outside this
+fence and is being filed separately by the coordinating seat.
