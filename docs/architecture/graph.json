@@ -8100,8 +8100,8 @@
       "id": "f:app/src-tauri/src/dispatch/join.rs",
       "path": "app/src-tauri/src/dispatch/join.rs",
       "lang": "rust",
-      "hash": "blake3:b08ecc65b82c74105267bc9e44cbc402f45afc4f63827549de90a0ac2a21fc03",
-      "loc": 907,
+      "hash": "blake3:e1c5fbc2a30a5033613c29016fa45345be0fc7cc46c97fae3cb308605c4634a3",
+      "loc": 973,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/join.rs#BoardStamp",
@@ -8270,7 +8270,7 @@
           "exported": false,
           "range": [
             357,
-            907
+            973
           ]
         }
       ]
@@ -20360,8 +20360,8 @@
       "id": "f:app/test/dispatch-store.test.ts",
       "path": "app/test/dispatch-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:37044dd6e8fbe2f86ea8760806cff77b6df80380136ea79cec67ae687e952bb6",
-      "loc": 211,
+      "hash": "blake3:ef8ecd2bb92b6707ddaf39ff3cc60a8d907ce9582020901e213a5d4282c3cf2c",
+      "loc": 233,
       "symbols": [
         {
           "id": "s:app/test/dispatch-store.test.ts#joined",
@@ -23048,8 +23048,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:61421a6ed90a188f862a37f8e2dfdb70649e699332979d224e440c7b5367d7dc",
-      "loc": 2269,
+      "hash": "blake3:165ab0e786ae751a9fc5d9f3ef9d9387bba6b4ddf4704613b397ee229f787e76",
+      "loc": 2311,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -23257,8 +23257,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:d578c9a7ae391df1b2db752961366540e8f47aba280c21e819803beb73538912",
-      "loc": 734,
+      "hash": "blake3:4fe78135cd4cfe0cf227fd905df9d80e0fd9cc5ca191bf7a181189a9ba64eb80",
+      "loc": 845,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
