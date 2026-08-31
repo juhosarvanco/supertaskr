@@ -2974,8 +2974,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/walk.rs",
       "path": "app/src-tauri/crates/nputer-index/src/walk.rs",
       "lang": "rust",
-      "hash": "blake3:50952af574b8dc6e7349fd9caf59b2521b9f94a9ae983c003a1fde2bd6a30c1f",
-      "loc": 599,
+      "hash": "blake3:4b9ff573e063d103d48233a12906cb31d9d4200d7802189c1800e5eaae20a060",
+      "loc": 865,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/walk.rs#WalkedFile",
@@ -3003,8 +3003,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            227,
-            599
+            333,
+            865
           ]
         },
         {
@@ -3014,7 +3014,7 @@
           "exported": true,
           "range": [
             50,
-            224
+            330
           ]
         }
       ]
@@ -19302,8 +19302,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:4af593f281bb4b14493e9eb70410dae47581dfcff8520f5fdc34568967747f2b",
-      "loc": 2665,
+      "hash": "blake3:846d8747704d5d573178f858dfb330587a8ba239d497bc89ca2152c389c7f812",
+      "loc": 2670,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
