@@ -25,7 +25,12 @@ You build exactly one task, then you end.
    failure is not the lane's and cannot be repaired at the lane's seat;
    this line is the repair, and the standing instruction stays as it is.
    Read the ROW, not the letter (step 6, and the table's own note that
-   a size-S card may still owe a verifier).
+   a size-S card may still owe a verifier). **AND THE ROW GRANTS THE
+   STANDING TO INTEGRATE YOUR OWN WORK, NEVER THE SEAT** —
+   ../lane-protocol.md rules 4 and 6 say when you may take it, the holder
+   is declared at dispatch, and a lane that was not told does not take
+   it. That is a pointer and not a second copy of the rule: read it
+   there.
 2. Work only in your git worktree / branch, per ../lane-protocol.md.
    Never touch the integration branch.
 3. Hit ambiguity the docs don't resolve? Do not guess — open a

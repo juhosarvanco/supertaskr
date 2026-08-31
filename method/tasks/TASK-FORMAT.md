@@ -439,8 +439,8 @@ divergence.
 
 | Size | Pipeline |
 |------|----------|
-| S, diff outside shipped code | executor + tests; the executor is its OWN integrator — it merges, checkpoints and removes its own worktree (lane-protocol.md rules 4, 6). No verifier, no *separate* integrator. |
-| S, touching shipped code | executor → verifier, then the executor integrates its OWN work once the verdict is in. One extra session, not two: the *separate* integrator is still not owed. |
+| S, diff outside shipped code | executor + tests; the executor is its OWN integrator — it merges, checkpoints and removes its own worktree WHILE IT HOLDS THE INTEGRATION CHECKOUT, and hands all three to the holder when it does not (lane-protocol.md rules 4, 6). No verifier, no *separate* integrator. |
+| S, touching shipped code | executor → verifier, then the executor integrates its OWN work once the verdict is in AND while it holds the integration checkout (lane-protocol.md rules 4, 6). One extra session, not two: the *separate* integrator is still not owed. |
 | M | executor → verifier → integrator. |
 | L | planning pass (or debate room) → executor → verifier → integrator. |
 
