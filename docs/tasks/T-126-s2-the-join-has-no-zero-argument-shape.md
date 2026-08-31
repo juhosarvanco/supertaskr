@@ -6,7 +6,7 @@ milestone: 4
 priority: 3
 size: M
 status: planned
-blocked_by: [T-190]
+blocked_by: []
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
 builder:
@@ -237,3 +237,24 @@ re-drilled each threading line separately and together — one side only,
 restored and proven by hash — and **every mutant now dies**. So the
 sitting's citation of *"deletable with the whole app run green"* was true
 when written and false when quoted.
+
+## `blocked_by` IS EMPTY AND THE BLOCKER IS REAL — a forward reference redded CI
+
+This card's blocker is **`T-190`** (C-15 declares no test path), routed by
+`T-112-s4` and living in that lane until it merges. Writing
+`blocked_by: [T-190]` here **redded the parser suite on CI**:
+
+    blocked_by names 'T-190' but no task in the model declares it
+
+`blocked_by` is a resolved reference, not a note, so it cannot name a
+card the model does not carry. The field is empty **and this paragraph is
+the blocker of record** until `T-112-s4` merges and brings `T-190` with
+it; the field is restored in that same merge.
+
+**AND THE INSTRUMENT THAT MISSED IT IS THE FINDING.** `lint:docs` passed
+this change, reporting *"every live task card's frontmatter parses, with
+a legal status"* — which is **true, and answers a different question.**
+Frontmatter parsing is not reference resolution, and only the parser's
+own `smoke.test.ts` (*"finds zero issues in the live tree"*) holds the
+second. The seat ran the gate that names cards, got a clean answer, and
+pushed. That is `T-142`'s class arriving for the third time in one night.
