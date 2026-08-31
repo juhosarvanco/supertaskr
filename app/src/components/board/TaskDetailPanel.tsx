@@ -81,8 +81,10 @@ export function TaskDetailPanel({
    * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT** — this wants
    * a `DispatchJoin`, and the join has no zero-argument command shape:
    * `join_lanes(scan, board)` takes the board's stamps and the board is
-   * parsed in TypeScript. That is `T-126-s2`, PARKED, and `T-112-s1`
-   * routed it rather than deciding it from inside a lane. While it is
+   * parsed in TypeScript. That is `T-126-s2`, which `T-112-s1` routed
+   * rather than deciding from inside a lane and which is now UN-PARKED
+   * AND RULED (architecture sitting, 2026-08-31): the join goes to
+   * TypeScript once the dispatch view model has a test path. While it is
    * absent the dispatch block does not render at all, rather than
    * rendering an "unavailable" strip on every card: a section that says
    * nothing on every open is a section nobody reads.
