@@ -10,8 +10,11 @@ docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** CI stopped STARTING for ~4h on 2026-08-31 (an
 account BILLING block, not minutes — the reason lives in check-run
-ANNOTATIONS, nowhere else); @human cleared it and `146ebb6` is green,
-including `cargo audit`. Designed non-zero exits: `npm run health` exits
+ANNOTATIONS, nowhere else); @human cleared it and `c4cf4af` is green,
+including `cargo audit`. **A GATE READ BEFORE A COMMIT DOES NOT CATCH
+WHAT THE COMMIT CREATES** — `lint:docs` was 0, then 1 on the same tree,
+because committing a record is what makes STATE stale (rule 4). Read it
+AGAIN after committing until `T-203` gates the push. Designed non-zero exits: `npm run health` exits
 3 while bands await keepers (T-156-s1/s2); the DOCS GATE's 1 means it HAS
 a verdict. **Re-run a suspect ONCE as a second measurement, then
 ATTRIBUTE** — never re-run until green and call that evidence. (`T-161`
@@ -34,6 +37,11 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   — a detached entry is NOT a lane. Dispatch = brief → PREFLIGHT →
   `--write-fence` → read the manifest back → launch. Never read the
   ledger's FREE column as a verdict (T-143).
+- **CONCURRENT LANES: disjointness is over EXPANDED PATH SETS, NEVER
+  tokens** — lane-protocol rule 5, which already carries the
+  measurement: six lanes, every block a naming collision, **not one real
+  collision**. NOTHING COMPUTES IT (`T-209`); this seat asserted it from
+  memory three times in one conversation and was wrong three times.
 - THE HUMAN'S APP: 1420 is read with
   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and NOTHING else — never
   bind-probe, never connect (the vite is on IPv6 loopback, so an IPv4
