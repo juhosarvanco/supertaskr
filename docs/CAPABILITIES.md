@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **401 behaviours** — 399 extracted sentences + 2 named-not-extracted (listed at the end) — across 32 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **404 behaviours** — 402 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -36,6 +36,12 @@ Census: **401 behaviours** — 399 extracted sentences + 2 named-not-extracted (
 - values that are not ports are refused, never silently defaulted
 - the real script refuses NPUTER_BOOT_PORT=1420 with exit 3, probing nothing
 - a busy scratch port aborts with exit 2 and spawns nothing
+
+## brief-flush
+
+- the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte
+- THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
+- THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
 
 ## brief
 
