@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-dispatch, docs/architecture/components/C-15-dispatch.md, app/test/dispatch-store.test.ts, app/test/architecture-dogfood.test.ts]
 suggested_by: "T-190's executor, which met criterion 2's fence wall, measured what it costs, and derived the exact token list this card carries"
 builder:
-review:
+review: independent
 ---
 
 **`T-190` PRICED THIS WALL RATHER THAN GUESSING AT IT, AND THIS CARD IS

@@ -19282,8 +19282,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:0cc3a8b0b5742e19357ca6344279103208338b630fe7d8f8acf4ca32b8aaa438",
-      "loc": 2638,
+      "hash": "blake3:7c4f13452b73498d22db7b648a91677ce43ca961a90dc6bbda35148c4a1cd0bb",
+      "loc": 2660,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -20315,6 +20315,55 @@
       "hash": "blake3:2503f378d626978b89fa9dd894c4117b77d2b2da026826acd4d60ef19845a8ee",
       "loc": 131,
       "symbols": []
+    },
+    {
+      "id": "f:app/test/dispatch-store.test.ts",
+      "path": "app/test/dispatch-store.test.ts",
+      "lang": "ts",
+      "hash": "blake3:37044dd6e8fbe2f86ea8760806cff77b6df80380136ea79cec67ae687e952bb6",
+      "loc": 211,
+      "symbols": [
+        {
+          "id": "s:app/test/dispatch-store.test.ts#joined",
+          "name": "joined",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            92,
+            96
+          ]
+        },
+        {
+          "id": "s:app/test/dispatch-store.test.ts#lane",
+          "name": "lane",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            62,
+            69
+          ]
+        },
+        {
+          "id": "s:app/test/dispatch-store.test.ts#notALane",
+          "name": "notALane",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            83,
+            90
+          ]
+        },
+        {
+          "id": "s:app/test/dispatch-store.test.ts#row",
+          "name": "row",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            71,
+            80
+          ]
+        }
+      ]
     },
     {
       "id": "f:app/test/docs-model.test.ts",
@@ -30754,6 +30803,29 @@
       ]
     },
     {
+      "from": "f:app/test/dispatch-store.test.ts",
+      "to": "f:app/src/lib/dispatch-store.ts",
+      "kind": "import",
+      "symbols": [
+        "DispatchJoinWire",
+        "DispatchRow",
+        "LaneRegistration",
+        "LaneScanRefusal",
+        "NotALaneEntry",
+        "hydrateJoin"
+      ]
+    },
+    {
+      "from": "f:app/test/dispatch-store.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/docs-model.test.ts",
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
@@ -40704,6 +40776,48 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/dispatch-store.test.ts#joined",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#joined",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#joined",
+      "to": "s:app/src/lib/dispatch-store.ts#NotALaneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#lane",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#notALane",
+      "to": "s:app/src/lib/dispatch-store.ts#NotALaneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#row",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#row",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/docs-model.test.ts#apply",
       "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
       "kind": "type_ref",
@@ -43574,8 +43688,8 @@
     }
   ],
   "stats": {
-    "files": 199,
-    "symbols": 2448,
-    "edges": 2365
+    "files": 200,
+    "symbols": 2452,
+    "edges": 2374
   }
 }

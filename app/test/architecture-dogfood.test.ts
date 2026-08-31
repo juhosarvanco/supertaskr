@@ -1149,7 +1149,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   // reds here and NOWHERE else, while widening them to something that
   // matches reds half the fixture. The intent layer exists to carry
   // components that are not built yet; C-07 has done so since T-009.
-  it("C-15 HAS TERRITORY AT LAST: five files under its declared globs, D3 cleared", () => {
+  it("C-15 HAS TERRITORY AT LAST: SEVEN files under its declared globs, D3 cleared", () => {
     // THE ASSERTION THAT INVERTS AT THE T-110 MERGE REGEN (2026-08-25).
     // This body read "C-15 is DECLARED-ONLY, never a defect: declared
     // paths, zero files, one D3" from T-088 until here, and its own
@@ -1241,10 +1241,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "app/src-tauri/src/dispatch/lanes.rs",
       "app/src-tauri/src/dispatch/mod.rs",
       "app/src/lib/dispatch-store.ts",
+      // T-198 merge regen (2026-08-31): C-15's SEVENTH file — its first
+      // collected test body, which is what made `hydrateJoin` reachable.
+      "app/test/dispatch-store.test.ts",
     ]);
     expect(c15?.declaredOnly).toBe(false);
     expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([
       // Six at the T-112 merge regen (2026-08-30): brief.rs joined.
+      // SEVEN at the T-198 merge regen (2026-08-31): its test body joined.
+      "C-15",
       "C-15",
       "C-15",
       "C-15",
@@ -1409,7 +1414,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // nested session worktree doubled the walk (the T-153-s3 class).
     // 198 -> 199 at the T-112 merge regen (2026-08-30) — brief.rs under
     // C-15, mapped, the bucket still empty.
-    expect(derived.fileComponent.size).toBe(199);
+    expect(derived.fileComponent.size).toBe(200);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1762,7 +1767,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the tree. Derived from `arch` over the regenerated graph before
       // the suite ran; it is the FOURTH assertion in this body, so three
       // separate reds can hide it.
-      ["C-15", 6], // T-112: 5 -> 6, brief.rs
+      ["C-15", 7], // T-112: 5 -> 6, brief.rs; T-198: 6 -> 7, its test body
       // AND THE ROW NOBODY DECLARED. `app/src-tauri/tests/dispatch_lanes.rs`
       // is the two-line `#[path]` shim that lets `cargo test` compile
       // `src/dispatch/**` at all — the placement T-110's verifier RULED
