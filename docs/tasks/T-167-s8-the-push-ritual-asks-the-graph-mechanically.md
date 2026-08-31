@@ -339,6 +339,43 @@ move it. It is not thereby unfalsifiable: it is anchored on a
 FIXTURE-side precondition (the remote starts one commit behind), and the
 drill below kills it from that side.
 
+### THE SECOND DRILL PASS — THE FIRES-CONTROL, 4 OF 4, AFTER ONE SURVIVED
+
+Same bench discipline, at the named commit the bodies were written at.
+
+- **N1 — the headline.** The runner's `process.exit(2)` → `process.exit(0)`:
+  the guard's REFUSAL removed and nothing else changed. **RED, 7 failed /
+  18 passed**, naming *"WITH the guard, the same stale graph never reaches
+  the remote"*. That is the control stated as an experiment: remove the
+  refusal, and the stale commit lands on the remote.
+- **N2** — `settings.json`'s matcher `Bash` → `BashX`: **RED, 4 failed /
+  21 passed.** Settings drift is visible; the wired command no longer
+  resolves.
+- **N3** — the stale verdict's `block(` → `allow(`: **RED, 7 failed / 18
+  passed.**
+- **N4 — the FIXTURE side**, because arm 1 cannot be killed from the guard
+  side by construction: push the second commit at build time so the remote
+  no longer starts behind. **RED, 3 failed / 22 passed.**
+
+All four restored by sha256; bench `git status` CLEAN.
+
+**N4 SURVIVED ON ITS FIRST FORM AND THE SURVIVAL WAS THE USEFUL RESULT —
+25 passed, 0 failed.** The first N4 reverted the second commit's file
+content, expecting the commit to vanish. It did not: `remote.git` lives
+INSIDE the fixture root, so `git add -A` had been committing it as a
+GITLINK, and the second commit was non-empty for a reason that had
+nothing to do with the file it was supposed to carry. **The arm's
+precondition could not be killed from the side it actually depends on**,
+which is precisely what a surviving mutant is for. Fixed by ignoring
+`remote.git/` in the fixture; re-drilled; RED.
+
+**TWO MUTANTS IN THIS CARD FAILED TO MEAN WHAT THEY SAID** — M13 in the
+first pass (a syntax error, RED over zero bodies) and N4 here (a valid
+mutation of the wrong thing, GREEN over the right ones). One failed
+open, one failed closed. Both were caught by reading the COUNTS rather
+than the exit code, and both are the same rule: *confirm the mutated
+behaviour, not the substitution count.*
+
 ### WHAT WAS NOT BUILT: THE ABSORBED T-181 TRIGGER — ROUTED AS `T-193`
 
 **It is not a fence problem. It is a collision with a ratified @human
