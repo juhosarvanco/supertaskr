@@ -1,6 +1,6 @@
 ---
 id: T-206
-title: CONVENTIONS gains the four drill failure modes 2026-08-31 discovered, a role-qualified scratch stem, and one runbook line that would have saved an hour of the wrong CI diagnosis
+title: CONVENTIONS gains FIVE drill failure modes 2026-08-31 discovered — including the self-referential corpus, which shape TEN passes every time — plus a role-qualified scratch stem and one CI runbook line
 feature: F-06
 milestone: 4
 priority: 4
@@ -193,3 +193,39 @@ another seat's evidence.
 the executor and is the one holding the freshly-built drill bench it may
 need to re-derive from. The seat most likely to destroy the evidence is
 the seat least able to notice it is gone.
+
+## 7. THE SELF-REFERENTIAL CORPUS — a spec whose expectation is read from its own subject
+
+**The sharpest of these, found by `T-202`'s blind verifier inside the
+artefact built to catch exactly this.** Four of its mutants survived, all
+one class: **every corpus that spec checks IS the corpus under test.**
+
+- Delete a name from `REQUIRED_VERDICT_FIELDS` → **31/31 still green**,
+  because the body proving *"a missing field is refused"* iterates the
+  very list that defines the requirement. **Removing a requirement
+  removes its own test.**
+- Delete a whole graded suite from the registry → **31/31 still green.**
+- Delete the lock's pid-liveness check → **31/31 still green**; the
+  *"dead process is reclaimed"* body never constructs a stale lock.
+
+**A spec that derives its expectations from the thing it is testing
+reports agreement while measuring nothing** — and it does so while
+looking maximally rigorous, because the assertion count is high and every
+body genuinely runs.
+
+**THE REMEDY IS NOT MORE BODIES. It is an INDEPENDENT expectation.**
+Where a body asserts a requirement, that requirement must be stated
+somewhere the implementation does not read — a literal list in the spec,
+a fixture, or the governing document. **The expectation and the subject
+may not share a source.**
+
+**Why this belongs at the top of the catalogue rather than the bottom**:
+shape TEN asks whether the corpus is empty, which is a question about
+SIZE. This asks where the corpus came FROM, which is a question about
+PROVENANCE — and a self-referential corpus is never empty, so shape TEN
+passes it every time.
+
+**It was reproduced inside a card whose own charter is that a summary of
+nothing looks like success**, by a verifier attacking a runner built to
+refuse exactly that. If it can happen there, the catalogue needs it
+written down.
