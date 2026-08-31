@@ -220,13 +220,29 @@ function block(code, reason) {
  * `lane-fence.mjs`'s limit 1 refuses to widen its matcher to `Bash`
  * because finding a WRITE TARGET in a shell command means parsing shell,
  * which answers confidently and wrongly. The question here is much
- * smaller and the asymmetry runs the other way: this asks only whether
- * the word `push` follows the word `git`, and it never has to be right
- * about a path. A FALSE POSITIVE costs a second and a half and then
- * allows, because only the check can refuse; a FALSE NEGATIVE is a push
- * this guard did not see, which is exactly the pre-guard state and never
- * worse than it. So the scanner is generous and its failures are cheap
- * in the direction they fail.
+ * smaller: this asks only whether the word `push` follows the word
+ * `git`, and it never has to be right about a path.
+ *
+ * ── A FALSE POSITIVE REFUSES, AND THIS COMMENT ONCE CLAIMED OTHERWISE ─
+ * It said a false positive *"costs a second and a half and then allows,
+ * because only the check can refuse"*. **That is false, and a blind
+ * verifier measured it false**: against a STALE graph, `echo git push`,
+ * `man git push` and `grep -rn git push /tmp` each reach exit 2 — PUSH
+ * REFUSED — through the real runner. This scanner splits on whitespace
+ * and cannot tell a quotation, a manual page or a search pattern from a
+ * command, so any segment carrying `git` and then `push` is treated as a
+ * push.
+ *
+ * **THE COST IS REAL AND IS ACCEPTED WITH ITS EYES OPEN**, bounded by
+ * three facts rather than by the scanner's accuracy: it can only refuse
+ * when the graph is ACTUALLY stale, which is a regen the seat already
+ * owes; the refusal is loud and names its reason, so a puzzled reader is
+ * one line from understanding it; and one regen clears the false positive
+ * and the true one together. What it is NOT is silent, and it is not a
+ * refusal that leaves the seat without a remedy.
+ *
+ * A FALSE NEGATIVE is a push this guard did not see, which is exactly the
+ * pre-guard state and never worse than it.
  *
  * ── THE LIMITS, DECLARED RATHER THAN DISCOVERED ──────────────────────
  * A push reached through a shell ALIAS, a FUNCTION, a script file, an

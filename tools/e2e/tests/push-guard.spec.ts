@@ -145,13 +145,16 @@ function fixture(
   // and the fence manifest are all born untracked — so without this the
   // "clean tree" control below is dirty and the body that separates the
   // two sentences can never fail.
-  // `remote.git/` is ignored because it lives INSIDE this root: without
-  // the entry `git add -A` commits it as a GITLINK, which silently makes
-  // the second commit non-empty for a reason that has nothing to do with
-  // the file it is supposed to carry. A poison drill found that by
-  // surviving — the mutant that reverted the second commit's content left
-  // the commit intact anyway, so the arm's precondition could not be
-  // killed from the side it actually depends on.
+  // `remote.git/` is ignored because it lives INSIDE this root. A BARE
+  // repository has no `.git` directory, so git does not recognise it as a
+  // nested repository at all and `git add -A` stages ITS ORDINARY FILES —
+  // HEAD, config, description, the hook samples — as blobs at mode
+  // 100644, not as a gitlink at 160000. That silently makes the second
+  // commit non-empty for a reason that has nothing to do with the file it
+  // is supposed to carry. A poison drill found it by SURVIVING: the
+  // mutant that reverted the second commit's content left the commit
+  // intact anyway, so the arm's precondition could not be killed from the
+  // side it actually depends on.
   writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\nremote.git/\n");
   git("add", "-A");
   git("commit", "-qm", "fixture");
@@ -292,11 +295,49 @@ test("the four exit codes are docs/CONVENTIONS.md's, not this hook's", () => {
 });
 
 test("the check this guard runs is the command docs/CONVENTIONS.md publishes", () => {
+  // ── ANCHORED, NOT SUBSTRING — poison shape EIGHT in its PREFIX form ──
+  // This body used to assert `expect(bullet).toContain('cargo ' + argv)`,
+  // and a substring search over the doc PASSES FOR EVERY PROPER PREFIX of
+  // the published command. Three mutants of the `--root`/cwd mechanism
+  // survived it, and two of them would have refused EVERY push in this
+  // repository while the third would have allowed every push for ever:
+  //
+  //     --root ..        `… --check --root ..`   is a prefix of `… ../..`
+  //     --root  (bare)   `… --check --root`      is a prefix of it too
+  //     CHECK_DIR_REL_PATH -> "docs"             was asserted by nothing
+  //
+  // A guard misconfigured either way produces silence or universal
+  // refusal, and neither is distinguishable from success by looking at
+  // the guard — which is this card's own thesis one layer up. So the
+  // command is matched as a WHOLE ELEMENT of the bullet's command list,
+  // and the working directory is READ OUT of the bullet rather than
+  // merely existing somewhere in the tree.
   const bullet = String(conventionsBullet(conventionsText(), "app/src-tauri (C-05 Rust half"));
-  expect(bullet).toContain(`cargo ${CHECK_ARGV.join(" ")}`);
-  // The `--root` is the false-red the bullet warns about at length.
+  // Collapse the hard wrap first: every governing document here is
+  // wrapped at ~70 columns, so a phrase match is a search for a line
+  // break nobody chose (docs/CONVENTIONS.md, A CITATION NAMES A SYMBOL).
+  const collapsed = bullet.replace(/\s+/g, " ");
+
+  const published = [...collapsed.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+  expect(published.length, "the bullet publishes no backticked commands").toBeGreaterThan(0);
+  // `toContain` over an ARRAY is exact element equality — a prefix is not
+  // an element, which is the whole repair.
+  expect(published, `no EXACT published command equals the one this guard runs`).toContain(
+    `cargo ${CHECK_ARGV.join(" ")}`,
+  );
+
+  // The directory is the bullet's own `run from <dir>/:` marker.
+  const runFrom = /run from ([^\s:]+)\/:/.exec(collapsed);
+  expect(runFrom, "the bullet no longer carries a `run from <dir>/:` marker").not.toBeNull();
+  expect(CHECK_DIR_REL_PATH).toBe((runFrom as RegExpExecArray)[1]);
+  // And that directory is the cargo workspace the command resolves `-p`
+  // against — a second, independent way for `docs` to die.
+  expect(existsSync(path.join(repoRoot, CHECK_DIR_REL_PATH, "Cargo.toml"))).toBe(true);
+
+  // The `--root` is the false-red the bullet warns about at length, and
+  // its VALUE is what the two surviving mutants moved.
   expect(CHECK_ARGV).toContain("--root");
-  expect(bullet).toContain("run from");
+  expect(CHECK_ARGV[CHECK_ARGV.indexOf("--root") + 1]).toBe("../..");
 });
 
 test("the paths this guard holds resolve in this repository's own tree", () => {
