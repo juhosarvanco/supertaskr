@@ -147,6 +147,14 @@ attempts). **What remains is a GitHub-side startup failure, most likely
 exhausted Actions minutes** — unconfirmable from here, because the
 billing endpoint refuses this token, which is correct.
 
+**CONFIRMED AFTER THIS RECORD WAS FIRST WRITTEN, and the evidence is now
+stronger than commit-specific.** The checkpoint commit `a07358d` — a
+FRESH commit, FIRST attempt — reproduces the signature exactly: created
+`02:53:45Z`, job completed `02:53:48Z`, **three seconds, zero steps.** So
+it is not `dc94810`, not a rerun artefact, and not anything in a diff:
+**two unrelated commits and five attempts all fail identically**, while
+the same workflow was green half an hour earlier.
+
 **Two pushes tonight did get green CI** (`5574af3`, and `c05a1bb`
 covering the `T-184` and `T-112-s4` merges plus the graph regen). The
 `T-167-s8` and `T-186` merges are confirmed by the LOCAL battery alone,
