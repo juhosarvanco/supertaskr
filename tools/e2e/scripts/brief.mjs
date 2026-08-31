@@ -92,6 +92,7 @@ import {
   blank,
   context,
   liveProv,
+  mainWorktree,
   note,
   render,
   stateReport,
@@ -307,7 +308,25 @@ async function main(argv) {
     );
   } else if (fenceWorktree !== "") {
     if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
-    const worktree = path.resolve(ctx.root, fenceWorktree);
+    // THE SECOND MEMBER OF ROW 4'S CLASS, AND THE ONE THAT WRITES (T-179).
+    // This resolved a relative `--write-fence` argument against `ctx.root`
+    // — the checkout the command ran in — which is the same base row 4 was
+    // fixed for and the same wrong answer from a nested worktree: the
+    // dispatcher who pastes CONVENTIONS' published `../nputer-T-NNN` gets a
+    // manifest aimed one directory inside `.claude/worktrees/`. It is
+    // WORSE than the row, because the row is read and this one acts. One
+    // base, derived once, spent by both. An ABSOLUTE argument is untouched
+    // by either spelling, which is what the dispatch flow already passes.
+    const repo = mainWorktree(ctx.porcelain);
+    if (repo.path === "" && !path.isAbsolute(fenceWorktree)) {
+      console.error(
+        `brief: --write-fence was given the relative path ${JSON.stringify(fenceWorktree)} and ` +
+          `${repo.reason} A relative worktree path has as many readings as there are directories ` +
+          "to run from, and this command will not pick one — state it absolutely.",
+      );
+      return EXIT.CANNOT_RUN;
+    }
+    const worktree = path.resolve(repo.path === "" ? ctx.root : repo.path, fenceWorktree);
     try {
       const manifest = await buildLaneFence(taskId, worktree, { root: ctx.root });
       const written = writeLaneFence(manifest);
