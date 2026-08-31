@@ -374,21 +374,24 @@ DECISION content (`critical path`, `worst blocker`), the report is
 programmatic reader of it takes a pipe by construction while every
 human reader takes a terminal and sees the whole thing.
 
-**ADDITION ONE — `T-197`'s CRITERION 3 IS ALREADY ANSWERED, AND THE
-ANSWER IS THE DUAL OF THE ONE IT EXPECTS.** That card asks whether any
-suite body *passes* against truncated output and would change when the
-fix lands, and says to check before rather than after. Checked:
-**one body already FAILS on it.**
-`tools/e2e/tests/dispatch-order.spec.ts:200` (*"--dispatch runs on the
-live repository, exits 0, and WRITES NOTHING"*) reds at
-`57c1b39` — **1 failed / 366 passed** in the full e2e lane, and
-**1 failed / 13 passed** running that spec alone. Re-run once as a
-second measurement, per STATE, and it reproduces. Its `status` and
-`HEAD` arms both hold; what fails is `toContain("critical path:")` at
-line 215, because that line sits in the lost tail. **So the fix is not
-neutral to the suite — it turns that body green**, and whoever takes
-T-197 should expect the lane to go from 366/1 to 367/0 rather than to
-stay unmoved.
+**ADDITION ONE IS WITHDRAWN — MAIN GOT THERE FIRST, AND THIS ENTRY SAYS
+SO RATHER THAN LETTING THE OVERLAP STAND.** This entry was drafted
+claiming to answer `T-197`'s criterion 3 (*whether any suite body
+depends on the truncation — check before, not after*) by showing that
+`dispatch-order.spec.ts:200` already reds on it. **`T-190`'s lane
+reported exactly that, independently and to the same byte, and it is
+landed on main at `842521c` under T-197's own heading *"AND IT REDS A
+STANDING GATE THAT EVERY DOCS-TOUCHING LANE NOW INHERITS"*.** This lane
+could not see it — `T-197`'s card does not exist at this lane's base
+`57c1b39` — but not having known is a reason for the duplication, not a
+reason to keep it. **Three lanes reaching one finding is corroboration;
+three lanes each writing it down as news is the illegibility TASK-FORMAT's
+metabolism clause exists to prevent.**
+
+What this lane measured of that half, kept only as a second reading:
+**1 failed / 366 passed** in the full lane and **1 failed / 13 passed**
+in that spec alone at `57c1b39`; the `status` and `HEAD` arms hold and
+what fails is `toContain("critical path:")` at line 215.
 
 **ADDITION TWO — THE LOST-BYTE FIGURE IS A LIVE FACT, NOT A FUNCTION OF
 THE TREE, AND T-197 STATES IT AS THOUGH IT WERE.** That card records
@@ -428,6 +431,17 @@ the moment it runs.** The full e2e lane read **1 failed / 366 passed**
 early in this session and **367 passed / 0 failed** at its end, on the
 same branch, with the only intervening change being other people's
 worktrees disappearing.
+
+**WHAT IS NEW HERE AND WHAT IS NOT, stated exactly, because the
+neighbouring facts are already on main.** `T-197` (as amended at
+`842521c`) records that the truncation point is fixed at one buffer and
+that **WHAT falls past it** moves with the live lane count, so the
+failing assertion moves between runs. **This measurement is one step
+past that: the lane count decides not only WHICH assertion fails but
+WHETHER ANY DOES.** At one live lane the whole output is 62,651 bytes —
+under the buffer — so nothing is lost and the body passes outright. A
+tell that "moves between runs" reads as a flake to be re-run; a tell
+that goes fully green reads as FIXED.
 
 **THREE CONSEQUENCES, AND THE THIRD IS THE ONE THAT COSTS:**
 
