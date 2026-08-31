@@ -13415,8 +13415,8 @@
       "id": "f:app/src/components/board/Board.tsx",
       "path": "app/src/components/board/Board.tsx",
       "lang": "ts",
-      "hash": "blake3:6d2fc28f33c8500d7f25174aaf05dcdbe829c22ce58da7c52f9a9fb552fd1127",
-      "loc": 96,
+      "hash": "blake3:56c2b5fc8e0683d93945125664688f3d4b52bdb4366fdc90139b36b79626202a",
+      "loc": 100,
       "symbols": [
         {
           "id": "s:app/src/components/board/Board.tsx#Board",
@@ -13424,8 +13424,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            51,
-            96
+            55,
+            100
           ]
         },
         {
@@ -13609,8 +13609,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:bd0cb2bfcaf853b5ec9ea1dcfd7efa6ab315f5647c521266fd6b2736eca33e5a",
-      "loc": 708,
+      "hash": "blake3:e1cb4646bf97c6abd15db248a59990423b5d92dd00f729cd127ff3f6edacec30",
+      "loc": 710,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
@@ -13618,8 +13618,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            663,
-            697
+            665,
+            699
           ]
         },
         {
@@ -13628,8 +13628,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            451,
-            506
+            453,
+            508
           ]
         },
         {
@@ -13638,8 +13638,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            635,
-            641
+            637,
+            643
           ]
         },
         {
@@ -13648,8 +13648,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            509,
-            515
+            511,
+            517
           ]
         },
         {
@@ -13658,8 +13658,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            524,
-            552
+            526,
+            554
           ]
         },
         {
@@ -13668,8 +13668,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            607,
-            631
+            609,
+            633
           ]
         },
         {
@@ -13678,8 +13678,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            699,
-            708
+            701,
+            710
           ]
         },
         {
@@ -13689,7 +13689,7 @@
           "exported": true,
           "range": [
             67,
-            432
+            434
           ]
         },
         {
@@ -13698,8 +13698,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            570,
-            605
+            572,
+            607
           ]
         }
       ]
@@ -15662,9 +15662,19 @@
       "id": "f:app/src/lib/agent-store.ts",
       "path": "app/src/lib/agent-store.ts",
       "lang": "ts",
-      "hash": "blake3:521f9b5afbf6ab2a97c8deb991cb54a86286ef4039e4427424c82d6fbe389b9d",
-      "loc": 693,
+      "hash": "blake3:283f4d6ff4c3140c9939b583801cd15d8c99ef3f355a2affbbfb03181970a23d",
+      "loc": 948,
       "symbols": [
+        {
+          "id": "s:app/src/lib/agent-store.ts#COMMAND_ANSWER_BOUND_MS",
+          "name": "COMMAND_ANSWER_BOUND_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            678,
+            678
+          ]
+        },
         {
           "id": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
           "name": "CancelOutcomePayload",
@@ -15721,8 +15731,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            251,
-            293
+            272,
+            320
           ]
         },
         {
@@ -15766,6 +15776,16 @@
           ]
         },
         {
+          "id": "s:app/src/lib/agent-store.ts#StaleFlightClaim",
+          "name": "StaleFlightClaim",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            261,
+            270
+          ]
+        },
+        {
           "id": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
           "name": "StartOutcomePayload",
           "kind": "type",
@@ -15796,13 +15816,23 @@
           ]
         },
         {
+          "id": "s:app/src/lib/agent-store.ts#UNANSWERED_COMMAND_MESSAGE",
+          "name": "UNANSWERED_COMMAND_MESSAGE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            682,
+            684
+          ]
+        },
+        {
           "id": "s:app/src/lib/agent-store.ts#__resetGenesisStoreForTests",
           "name": "__resetGenesisStoreForTests",
           "kind": "function",
           "exported": true,
           "range": [
-            689,
-            693
+            944,
+            948
           ]
         },
         {
@@ -15811,8 +15841,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            439,
-            454
+            523,
+            543
           ]
         },
         {
@@ -15821,8 +15851,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            569,
-            589
+            829,
+            841
           ]
         },
         {
@@ -15831,8 +15861,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            295,
-            311
+            322,
+            339
           ]
         },
         {
@@ -15841,8 +15871,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            605,
-            607
+            857,
+            859
           ]
         },
         {
@@ -15851,8 +15881,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            668,
-            675
+            923,
+            930
           ]
         },
         {
@@ -15861,8 +15891,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            491,
-            493
+            602,
+            604
           ]
         },
         {
@@ -15871,8 +15901,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            479,
-            480
+            590,
+            591
           ]
         },
         {
@@ -15881,8 +15911,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            473,
-            475
+            584,
+            586
           ]
         },
         {
@@ -15891,8 +15921,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            483,
-            483
+            594,
+            594
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#reduceGenesisCancel",
+          "name": "reduceGenesisCancel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            793,
+            810
           ]
         },
         {
@@ -15901,8 +15941,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            346,
-            434
+            374,
+            462
           ]
         },
         {
@@ -15911,8 +15951,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            459,
-            470
+            558,
+            581
           ]
         },
         {
@@ -15921,8 +15961,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            677,
-            686
+            932,
+            941
           ]
         },
         {
@@ -15931,8 +15971,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            646,
-            663
+            901,
+            918
           ]
         },
         {
@@ -15941,8 +15981,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            598,
-            600
+            850,
+            852
           ]
         },
         {
@@ -15951,8 +15991,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            550,
-            565
+            747,
+            763
           ]
         },
         {
@@ -15961,8 +16001,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            495,
-            499
+            606,
+            610
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#settledTurn",
+          "name": "settledTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            501,
+            507
           ]
         },
         {
@@ -15971,8 +16021,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            534,
-            545
+            728,
+            742
           ]
         },
         {
@@ -15981,8 +16031,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            516,
-            530
+            627,
+            641
           ]
         },
         {
@@ -15991,8 +16041,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            621,
-            634
+            873,
+            889
           ]
         },
         {
@@ -16001,8 +16051,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            484,
-            484
+            595,
+            595
           ]
         },
         {
@@ -16011,8 +16061,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            482,
-            482
+            593,
+            593
           ]
         },
         {
@@ -16021,8 +16071,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            486,
-            489
+            597,
+            600
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#unansweredCommand",
+          "name": "unansweredCommand",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            689,
+            691
           ]
         },
         {
@@ -16031,8 +16091,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            315,
-            338
+            343,
+            366
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#withAnswerBound",
+          "name": "withAnswerBound",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            708,
+            724
           ]
         }
       ]
@@ -19034,17 +19104,47 @@
       "id": "f:app/test/agent-store.test.ts",
       "path": "app/test/agent-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:9b97e6f258bf15adc536c20f86f6ae4ec90dc41a50c5f32433f5f62f04af904f",
-      "loc": 325,
+      "hash": "blake3:21cd4e340d82f4ab47a1791075fb5e73ef09b54efe9b3b399ff5e9a80703a29d",
+      "loc": 948,
       "symbols": [
+        {
+          "id": "s:app/test/agent-store.test.ts#IDLE_STATUS",
+          "name": "IDLE_STATUS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            96,
+            105
+          ]
+        },
         {
           "id": "s:app/test/agent-store.test.ts#ev",
           "name": "ev",
           "kind": "function",
           "exported": false,
           "range": [
-            22,
-            24
+            111,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/agent-store.test.ts#freshStore",
+          "name": "freshStore",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            86,
+            94
+          ]
+        },
+        {
+          "id": "s:app/test/agent-store.test.ts#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            47,
+            58
           ]
         },
         {
@@ -19053,8 +19153,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            26,
-            28
+            115,
+            117
           ]
         }
       ]
@@ -21143,8 +21243,8 @@
       "id": "f:app/test/interview-chat-dom.test.tsx",
       "path": "app/test/interview-chat-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:ce39da5f1047e28da5a7cdf34e319e1b249aaf2bd998773f26dc1fd15e17af22",
-      "loc": 1731,
+      "hash": "blake3:dd9b9b971abb1156ad982874bbdf2aad14279be634c8220940b74051551210e7",
+      "loc": 1748,
       "symbols": [
         {
           "id": "s:app/test/interview-chat-dom.test.tsx#C0",
@@ -30058,14 +30158,36 @@
       "to": "f:app/src/lib/agent-store.ts",
       "kind": "import",
       "symbols": [
+        "COMMAND_ANSWER_BOUND_MS",
+        "CancelOutcomePayload",
         "GenesisEvent",
         "GenesisState",
         "GenesisStatusPayload",
+        "GenesisTurn",
+        "UNANSWERED_COMMAND_MESSAGE",
         "applyGenesisStatus",
         "emptyGenesisState",
         "isTurnInFlight",
+        "reduceGenesisCancel",
         "reduceGenesisEvent",
-        "reduceGenesisOutcome"
+        "reduceGenesisOutcome",
+        "settledTurn"
+      ]
+    },
+    {
+      "from": "f:app/test/agent-store.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:app/test/agent-store.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "resolve"
       ]
     },
     {
@@ -30073,9 +30195,11 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "afterEach",
         "describe",
         "expect",
-        "it"
+        "it",
+        "vi"
       ]
     },
     {
@@ -37377,6 +37501,12 @@
     },
     {
       "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#StaleFlightClaim",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
       "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -37424,6 +37554,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/agent-store.ts#StaleFlightClaim",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/agent-store.ts#__resetGenesisStoreForTests",
       "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
       "kind": "call",
@@ -37442,9 +37578,21 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#settledTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/agent-store.ts#cancelGenesis",
       "to": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#cancelGenesis",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisCancel",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -37490,6 +37638,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisCancel",
+      "to": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisCancel",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
       "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
       "kind": "type_ref",
@@ -37523,6 +37683,12 @@
       "from": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
       "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "to": "s:app/src/lib/agent-store.ts#settledTurn",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -37594,6 +37760,12 @@
     {
       "from": "s:app/src/lib/agent-store.ts#setState",
       "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#settledTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -40130,7 +40302,19 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/agent-store.test.ts#IDLE_STATUS",
+      "to": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/agent-store.test.ts#ev",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/agent-store.test.ts#ipc",
       "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -43355,7 +43539,7 @@
   ],
   "stats": {
     "files": 199,
-    "symbols": 2436,
-    "edges": 2351
+    "symbols": 2446,
+    "edges": 2363
   }
 }
