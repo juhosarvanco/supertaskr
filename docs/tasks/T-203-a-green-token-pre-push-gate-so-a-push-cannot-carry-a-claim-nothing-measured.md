@@ -10,7 +10,7 @@ blocked_by: [T-202]
 touches: [.claude, tools/e2e]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); the instances are this seat's own, measured the same night"
 builder:
-review:
+review: independent
 ---
 
 **`docs/CONVENTIONS.md` ALREADY SAYS IT**: *"an edit script's success is a
@@ -93,3 +93,16 @@ than a claim.
 `T-167-s8` (the guard whose shape this extends, landed and verified), and
 `docs/CONVENTIONS.md`'s edit-script-is-a-gate bullet, which this card
 makes mechanical.
+
+## `review: independent` SET AT FILING, not left for a dispatch to remember
+
+**A pre-push gate — its job is to REFUSE a push.**
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. This seat has now missed that three times running —
+including on the card immediately after a verifier assigned *"flagged so
+the next dispatch sets it"* as a correction.
+
+**So it is set here, at filing, where the judgement is already being
+made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
+setting it early is the only thing between the rule and a fourth miss.

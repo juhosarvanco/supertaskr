@@ -10,7 +10,7 @@ blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); every instance below was measured at this seat or reported by a lane on 2026-08-31"
 builder:
-review:
+review: independent
 ---
 
 **THIS CARD'S CHARTER IS ONE SENTENCE, AND FOUR SEATS REACHED IT
@@ -106,3 +106,16 @@ it** — argue whether a lock, a check, or a declared exclusion is right.
 mutants that failed open and closed), `T-186` (the vacuous drill checks
 and the fail-fast count), and `T-203`, which consumes this runner's
 verdict token.
+
+## `review: independent` SET AT FILING, not left for a dispatch to remember
+
+**The lane judged its own runner guard-class: it refuses six distinct things.**
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. This seat has now missed that three times running —
+including on the card immediately after a verifier assigned *"flagged so
+the next dispatch sets it"* as a correction.
+
+**So it is set here, at filing, where the judgement is already being
+made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
+setting it early is the only thing between the rule and a fourth miss.

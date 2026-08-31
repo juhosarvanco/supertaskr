@@ -10,7 +10,7 @@ blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: "T-190's executor, which DRILLED THE FENCE ITSELF and found the write succeeded; re-derived from the hook's source at the architect/integrator seat before filing"
 builder:
-review:
+review: independent
 ---
 
 **A LANE DRILLED THE INSTRUMENT THAT WAS SUPPOSED TO BE CONSTRAINING IT,
@@ -161,3 +161,16 @@ when the key is `paths` and got **empty fences back for three lanes** —
 a reader that answers "no paths" is indistinguishable from a fence that
 carries none, which is this card's own subject arriving in its own
 client.
+
+## `review: independent` SET AT FILING, not left for a dispatch to remember
+
+**The fence hook itself — a guard whose whole subject is refusing a write.**
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. This seat has now missed that three times running —
+including on the card immediately after a verifier assigned *"flagged so
+the next dispatch sets it"* as a correction.
+
+**So it is set here, at filing, where the judgement is already being
+made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
+setting it early is the only thing between the rule and a fourth miss.

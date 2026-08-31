@@ -10,7 +10,7 @@ blocked_by: []
 touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
 suggested_by: "this seat's own skipped-obligations self-audit, returned by the outgoing architect seat with the provenance of three of the four; relayed 2026-08-31, approved in direction by @human"
 builder:
-review:
+review: independent
 ---
 
 **THE TITLE IS THIS SEAT'S OWN SENTENCE, WRITTEN ABOUT ITS OWN SKIPS.**
@@ -129,3 +129,16 @@ verified), `T-156-s6` (the sibling config defect), `T-203` (whose token
 this shares and whose trigger it deliberately does not), `T-182` (which
 made a checkpoint machine-detectable), and `docs/CONVENTIONS.md`'s three
 recorded reasons against a health-bands CI step.
+
+## `review: independent` SET AT FILING, not left for a dispatch to remember
+
+**A checkpoint gate — its job is to REFUSE a checkpoint.**
+
+`method/tasks/TASK-FORMAT.md` requires this field **set at dispatch** for
+a guard-class card. This seat has now missed that three times running —
+including on the card immediately after a verifier assigned *"flagged so
+the next dispatch sets it"* as a correction.
+
+**So it is set here, at filing, where the judgement is already being
+made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
+setting it early is the only thing between the rule and a fourth miss.
