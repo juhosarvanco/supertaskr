@@ -248,6 +248,27 @@ export interface GenesisTurn {
   error: TurnErrorPayload | null;
 }
 
+/**
+ * T-184: A CLAIM OF FLIGHT THIS STORE REFUSED, and the measurement that
+ * outranked it.
+ *
+ * A refused claim is RECORDED rather than dropped. A silent drop and a
+ * claim that never arrived are indistinguishable to the next reader, and
+ * this store's whole defect was a state nothing named; the field is
+ * non-fatal by construction — nothing renders it and nothing branches on
+ * it — so it can only ever add an explanation, never a behaviour.
+ */
+export interface StaleFlightClaim {
+  /** The turn the refused claim was about. */
+  turn: number;
+  /** That turn's own status at the moment of refusal — the runner's
+   * measurement, which is what outranked the claim. */
+  status: GenesisTurn["status"];
+  /** Which arming site refused it: a command's own answer, or the
+   * mount-time status pull. */
+  from: "outcome" | "status";
+}
+
 export interface GenesisState {
   phase: GenesisPhase;
   /** Highest `seq` applied. Anything at or below it is stale. */
@@ -290,6 +311,12 @@ export interface GenesisState {
    * (T-029 criteria 1–2). Empty is the ordinary case AND the
    * cache-is-gone case: the chat renders banked progress instead. */
   rehydrated: readonly TranscriptLinePayload[];
+  /**
+   * T-184: the last claim of flight this store REFUSED, or null. Never
+   * read by the screen — it exists so a refusal is a named event in the
+   * state rather than a silent nothing.
+   */
+  staleFlightClaim: StaleFlightClaim | null;
 }
 
 export function emptyGenesisState(): GenesisState {
@@ -307,6 +334,7 @@ export function emptyGenesisState(): GenesisState {
     projectDir: null,
     listenerFailed: false,
     rehydrated: [],
+    staleFlightClaim: null,
   };
 }
 
@@ -433,37 +461,120 @@ export function reduceGenesisEvent(
   }
 }
 
+// ---- the sequence guard (T-184) -----------------------------------------
+
+/**
+ * THE TURN A CLAIM OF FLIGHT IS ABOUT, WHEN THAT TURN HAS ALREADY
+ * SETTLED — otherwise null (T-184).
+ *
+ * THE DEFECT, STATED EXACTLY. Two sites below ARM flight: a command's
+ * own `started`/`accepted` answer, and the mount-time status pull. Both
+ * name the turn they are about — `started { turn }`, `accepted { turn }`
+ * and `GenesisStatus.turn` are typed fields, not guesses — and neither
+ * used to look at it. So an answer that resolves AFTER its turn's own
+ * events, or a status pull assembled before the turn landed, puts the
+ * store into a flight nothing can take it out of: the events that would
+ * clear it have already been applied, and `reduceGenesisEvent` drops
+ * anything at or below the seq watermark. It is not theoretical — it
+ * stranded T-171's first DOM fixture, which is how it was found.
+ *
+ * THE TOKEN IS THE ONE THE SCREEN ALREADY TRUSTS, and deliberately not a
+ * second one. `flightOf` (`src/genesis/crescendo.ts`, T-171) refuses a
+ * claim by looking up the turn it names and asking whether the runner's
+ * own per-turn `status` has moved off `running`. This is that same
+ * inference, moved from the render side to the ARMING side, over the
+ * same field of the same record. A seq counter would have been a second
+ * source of truth for one question, which is T-057's rule; a turn number
+ * alone would not have been enough, because a turn number says WHICH
+ * turn and not whether it is still live.
+ *
+ * WHY A SETTLED TURN AND NOT MERELY A KNOWN ONE. A claim about a turn
+ * that is still `running` is exactly right and must arm — that is the
+ * ordinary case, and the window between an accepted answer and its
+ * `started` event is a real one the screen has a name for (`unlanded`).
+ * An UNKNOWN turn must arm too: no evidence is not contrary evidence,
+ * and refusing there would break every first turn, whose answer
+ * routinely beats its own `started` event off a runner thread.
+ *
+ * Pure: no clock, no store read, no IO.
+ */
+export function settledTurn(
+  turns: readonly GenesisTurn[],
+  turn: number,
+): GenesisTurn | null {
+  const landed = turns.find((t) => t.turn === turn);
+  return landed !== undefined && landed.status !== "running" ? landed : null;
+}
+
 /** Fold the mount-time status pull into the state (the `docs_snapshot`
  * precedent: a late-mounting pane catches up without replaying events).
- * Never rewinds `seq`, and never invents turn text it did not see. */
+ * Never rewinds `seq`, and never invents turn text it did not see.
+ *
+ * T-184: THE ARMING HALF OF THE PULL IS GUARDED AND THE REST IS NOT, and
+ * the asymmetry is the point. A status that says `idle` or `failed`
+ * DISARMS, and a disarming claim needs no evidence — it can only ever
+ * release a screen, never strand one, so it is applied unconditionally
+ * exactly as before. A status that says `running` over a turn this store
+ * has already watched settle is refused, and the phase and the send gate
+ * are left where the turn's own events put them. Nothing else in the
+ * fold moves: the session id, the version strings and the project dir
+ * are catch-up data, not a claim about flight, and widening the guard
+ * onto them would be a different change with a different risk. */
 export function applyGenesisStatus(
   prev: GenesisState,
   status: GenesisStatusPayload,
 ): GenesisState {
+  const outlived =
+    status.phase === "running" ? settledTurn(prev.turns, status.turn) : null;
   return {
     ...prev,
-    phase: status.phase,
+    phase: outlived ? prev.phase : status.phase,
     nativeSessionId: status.nativeSessionId,
     lastError: status.lastError,
     lastEventAtMs: status.lastEventAtMs ?? prev.lastEventAtMs,
     methodVersion: status.methodVersion,
     cliVersion: status.cliVersion,
     projectDir: status.projectDir,
-    sending: status.phase === "running",
+    sending: outlived ? prev.sending : status.phase === "running",
+    staleFlightClaim: outlived
+      ? { turn: outlived.turn, status: outlived.status, from: "status" }
+      : prev.staleFlightClaim,
   };
 }
 
 /** Apply a start/send outcome. Only `started`/`accepted` arm the
  * in-flight gate; everything else is a message, and `prev` comes back by
- * identity when there is nothing to say. */
+ * identity when there is nothing to say.
+ *
+ * T-184: AND AN ARMING ANSWER IS CHECKED AGAINST ITS OWN TURN FIRST.
+ * `await invoke(…)` gives no ordering guarantee against the event
+ * channel, so `accepted { turn: 3 }` can land after turn 3 has already
+ * completed. Such an answer is refused and RECORDED on
+ * `staleFlightClaim` rather than dropped — it is not an error, nothing
+ * renders it, and `lastOutcome` is deliberately left alone: a refused
+ * `accepted` is not a notice the user needs, and writing one would put
+ * "accepted" in the screen's notice slot, which reads as a failure
+ * report for a turn that succeeded. */
 export function reduceGenesisOutcome(
   prev: GenesisState,
   outcome: StartOutcomePayload | SendOutcomePayload,
 ): GenesisState {
   switch (outcome.kind) {
     case "started":
-    case "accepted":
+    case "accepted": {
+      const outlived = settledTurn(prev.turns, outcome.turn);
+      if (outlived) {
+        return {
+          ...prev,
+          staleFlightClaim: {
+            turn: outlived.turn,
+            status: outlived.status,
+            from: "outcome",
+          },
+        };
+      }
       return { ...prev, sending: true, phase: "running", lastOutcome: null };
+    }
     default:
       return { ...prev, lastOutcome: outcome };
   }
@@ -529,12 +640,98 @@ export async function startGenesisListener(): Promise<void> {
   await refreshGenesisStatus();
 }
 
+// ---- the liveness bound (T-184) -----------------------------------------
+
+/**
+ * HOW LONG A FLIGHT-ARMING COMMAND MAY GO WITHOUT ANSWERING AT ALL,
+ * before this side stops waiting and answers for it. Milliseconds.
+ *
+ * WHY THIS EXISTS. A rejected `invoke` is already handled — every
+ * wrapper below catches it. A promise that NEVER SETTLES is not: the
+ * `await` never returns, so no outcome is ever folded, and
+ * `sendAnswer`'s `finally` in `src/genesis/interview-source.ts` never
+ * releases the synchronous latch it took before the call. `flightOf`
+ * then reads `latched` forever and says a turn is in flight — correctly,
+ * because nothing on the render side can know better. T-171 named that
+ * case at `flightOf`'s own site and routed it here, to `app-agent`,
+ * which is where the command lives. THE FIX FOR A COMMAND THAT NEVER
+ * ANSWERS IS A BOUND, NOT A GUARD: there is no stale evidence to weigh,
+ * only an absence, and the only honest repair is to stop waiting.
+ *
+ * WHERE THE NUMBER COMES FROM, so it is derived rather than picked.
+ * These commands do not wait for the turn — the runner spawns it on a
+ * thread and answers as soon as it is accepted. The one bounded blocking
+ * step inside a command's own body is the login-shell CLI probe, which
+ * `genesis_start`'s doc comment in `src-tauri/src/lib.rs` names and
+ * which `AgentConfig`'s `probe_timeout` in `src-tauri/src/agent/
+ * runner.rs` sets to ten seconds; everything else is in-memory state or
+ * local filesystem work. Thirty seconds is three times that one bounded
+ * step, and it is also the runner's own longest single deadline
+ * (`start_timeout`) — so this side never gives up before the Rust side
+ * has had its full budget for anything it bounds. A healthy command
+ * answers in milliseconds and never comes near it.
+ *
+ * IT IS DELIBERATELY GENEROUS. The failure it converts is INFINITE, so
+ * the cost of being too slow is one waiting user and the cost of being
+ * too fast is a spurious refusal of a command that was going to succeed.
+ */
+export const COMMAND_ANSWER_BOUND_MS = 30_000;
+
+/** The message a bounded command answers with. One spelling, so the two
+ * outcome types cannot drift apart about what happened. */
+export const UNANSWERED_COMMAND_MESSAGE =
+  "The app did not answer within 30 seconds. Nothing was lost — the " +
+  "interview is still where it was, and you can try again.";
+
+/** The answer this side gives on behalf of a command that did not.
+ * `error` is a member of BOTH outcome unions, so one shape serves the
+ * start-like commands and the send. */
+function unansweredCommand(): { kind: "error"; message: string } {
+  return { kind: "error", message: UNANSWERED_COMMAND_MESSAGE };
+}
+
+/**
+ * Run one command under {@link COMMAND_ANSWER_BOUND_MS}, answering with
+ * `onUnanswered()` if it does not answer first.
+ *
+ * A REJECTION IS NOT AN ABSENCE and passes straight through, so every
+ * caller's existing `catch` keeps its exact meaning. The timer is
+ * cleared on every exit — answered, unanswered or thrown — because a
+ * dangling thirty-second timer per command would hold a process open and
+ * make the bound observable in a way it should not be.
+ *
+ * `boundMs` is a parameter so a body can drive it; it is NOT how the
+ * shipped call sites spell it, and the constant above is pinned by its
+ * own literal (T-063: a test parametrised by the constant it checks
+ * cannot pin that constant).
+ */
+export async function withAnswerBound<T>(
+  run: () => Promise<T>,
+  onUnanswered: () => T,
+  boundMs: number = COMMAND_ANSWER_BOUND_MS,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      run(),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(onUnanswered()), boundMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 /** Zero arguments cross the boundary: Rust assembles the kickoff from the
  * compiled-in method snapshot and the open project. */
 export async function startGenesis(): Promise<StartOutcomePayload | null> {
   if (!isTauri || isTurnInFlight(state)) return null;
   try {
-    const outcome = await invoke<StartOutcomePayload>("genesis_start");
+    const outcome = await withAnswerBound<StartOutcomePayload>(
+      () => invoke<StartOutcomePayload>("genesis_start"),
+      unansweredCommand,
+    );
     setState(reduceGenesisOutcome(state, outcome));
     return outcome;
   } catch (err) {
@@ -552,9 +749,10 @@ export async function sendGenesisTurn(
 ): Promise<SendOutcomePayload | null> {
   if (!isTauri || isTurnInFlight(state)) return null;
   try {
-    const outcome = await invoke<SendOutcomePayload>("genesis_send_turn", {
-      text,
-    });
+    const outcome = await withAnswerBound<SendOutcomePayload>(
+      () => invoke<SendOutcomePayload>("genesis_send_turn", { text }),
+      unansweredCommand,
+    );
     setState(reduceGenesisOutcome(state, outcome));
     return outcome;
   } catch (err) {
@@ -623,7 +821,10 @@ async function startLike(
 ): Promise<StartOutcomePayload | null> {
   if (!isTauri || isTurnInFlight(state)) return null;
   try {
-    const outcome = await run();
+    const outcome = await withAnswerBound<StartOutcomePayload>(
+      run,
+      unansweredCommand,
+    );
     setState(reduceGenesisOutcome(state, outcome));
     return outcome;
   } catch (err) {
