@@ -57,10 +57,22 @@ C-17]`. So a file importing `Board`, the parser, the card faces, the
 drawer and the board model adds no registry line beyond its own path.
 
 **It may not import `App`, or anything under `app/src/components/shell/`.**
-That is C-05's, C-05 already declares `C-05 -> C-18`, and the reverse edge
-would be a declared cycle — the measurement is in `C-18-board-root.md`.
-This is exactly why `app/test/board-truth.test.tsx` cannot simply be
-re-routed here, and why `T-169-s1` parked rather than moving it.
+That is C-05's, C-05 already declares `C-05 -> C-18`, and declaring the
+reverse edge cycles — `C-05 -> C-18 -> C-05` and
+`C-05 -> C-13 -> C-18 -> C-05`, `arch cycles` exit 1. **But read the
+measurement in `C-18-board-root.md` rather than that sentence**, because
+the wall a lane actually hits comes first and is different: re-homing
+`board-truth.test.tsx` by a PATH MOVE alone leaves `arch cycles` ACYCLIC
+at exit 0 and instead raises an `arch drift` **D4** double-claim, which
+can only be cleared from `C-05-app.md` — a file no `[app-board]` fence
+reaches. **So a new file is not merely the tidier option here; it is the
+only one this card's fence can execute.** That is also why
+`app/test/board-truth.test.tsx` cannot simply be re-routed here.
+
+`T-169-s1` is adjacent but is NOT authority for the above: it parked on
+whether that file moves to **C-08's or C-09's** `paths:`, and on moving
+the review-badge bodies into it. Neither question is this card's, and
+both stay open.
 
 ## Acceptance criteria
 

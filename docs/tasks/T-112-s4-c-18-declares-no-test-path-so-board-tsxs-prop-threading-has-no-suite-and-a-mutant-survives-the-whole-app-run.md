@@ -111,10 +111,24 @@ worktree at the lane's base — each threading line deleted separately and
 both together, one side only, `0 <n>` on `git -C <dir> diff --numstat`
 before each suite run, restored with `git restore --source=<base>
 --staged --worktree` and proved by sha256 against `git show <base>:` —
-**every one of those mutants dies.** The per-mutant failing-body counts
-are in the lane's report; they are deliberately not transcribed here, so
-that a blind verifier derives its own. The drill worktree came back clean
+**every one of those mutants dies.** The drill worktree came back clean
 and was removed.
+
+**THE COUNTS, ALL AT BASE `df0b550`** — withheld from this card while the
+blind pass was outstanding, and landed at correction C4 now that it has
+served its purpose. The verifier reproduced every row independently in
+its own bench before opening this diff:
+
+| mutant | numstat | app suite exit | failing bodies |
+|---|---|---|---|
+| baseline | — | 0 | 0 — 49 files / 1077 tests |
+| `dispatch={dispatch}` deleted | `0 1` | 1 | **2** |
+| `brief={brief}` deleted | `0 1` | 1 | **1** |
+| both deleted (**the card's own mutant**) | `0 2` | 1 | **2** |
+
+Restores proved by sha256 against `235645c0…4124`. Shape SIX's count of
+ONE belongs to the `brief` line; the `dispatch` line answers TWO because
+bodies 1 and 3 of `T-112-s1`'s pin both discriminate it.
 
 **SO CRITERION 2 WAS ALREADY MET BEFORE THIS LANE OPENED**, by another
 card, in a file this card's fence cannot reach. Criterion 3 is met by
@@ -210,6 +224,86 @@ whether anything imports `dispatch-store.ts` by `import`/`require`/
 value thing to re-measure independently** — if the mutant this card was
 filed on still survived, the section would be wrong about the one fact
 everything else rests on.
+
+## Corrections performed (executor, 2026-08-31, after the verdict)
+
+All six assigned corrections are landed. **C1's finding was re-measured
+here rather than accepted on the verdict's word**, one side only against
+`C-18-board-root.md` and restored by sha256 against `4dded52d…d08b`.
+
+**C1 — the cycle block did not measure the cycle.** It printed
+`arch cycles … ACYCLIC exit 0` under the caption *"run rather than
+forecast"*, as the cost of re-homing the pin. Re-running the re-route
+confirms the verifier exactly: **the path move alone leaves `arch cycles`
+ACYCLIC at exit 0** — it reads declared `depends_on`, and a path move
+declares no edge — while `arch drift` gains a **D4 double-claim**
+(`claimed_by=C-05,C-18 winner=C-05`; `findings` 4→5, `ambiguous` 0→1).
+Only a second, unstated step — declaring `C-05` in this component's
+`depends_on` — reaches `DECLARED CYCLE`, exit 1, two cycles
+(`C-05 -> C-18 -> C-05` and `C-05 -> C-13 -> C-18 -> C-05`). The section
+now prints both steps and labels the ACYCLIC line as the BASELINE it is.
+**The conclusion did not move; the evidence did.** The section also now
+leads with the D4, because that is the wall a lane hits first and it is
+the sharper refusal: clearing a double-claim needs `C-05-app.md`, and
+**no component declares its own registry file in `paths:`**, so a fence
+expanding from `[app-board]` reaches no registry file at all. This card
+could edit the registry only because its `touches:` separately carried
+the directory.
+
+**C2 — the printed derivation was falsified by being written down.** The
+section told the reader to run `grep -n 'board-truth' …/components/*.md`
+and said it answers `C-05-app.md`. At this tip it answers four lines
+across two files, three of them the section's own prose. Replaced with an
+anchored form matching a `paths:` entry, which prose cannot imitate.
+
+**C3 — two truncated quotes, one swapped referent.** `T-169-s1`'s
+RESURFACES clause is now quoted in full, and the T-149 note keeps its
+parenthetical. More importantly the claim is narrowed: `T-169-s1` parked
+on moving the review-badge bodies INTO `board-truth.test.tsx`, and on
+re-routing that file to **C-08's or C-09's** `paths:`. This section
+refuses a third branch — re-homing it to **C-18** — so it no longer
+claims to be "the decision" on that card. Both of `T-169-s1`'s own
+questions stay open.
+
+**C4** — the drill counts are landed above, ref-bound to `df0b550`.
+
+**C5 — the intermittent, recorded and withdrawn as a defect claim.**
+Suite: `npm test` from `tools/e2e/`. Bodies:
+`shell-frame.spec.ts` › *the frame holds on every screen at the declared
+default (1280x840)* and *… at the declared minimum (1024x700)*. Two
+measurements: the full suite reported **2 failed / 339 passed in 4.2m**,
+failing on the rendered `li` count in `boardWithErrors` while the
+model-side `data-failure-count` assertion immediately above it passed;
+re-run alone, **6 passed in 14.9s, exit 0**. Per STATE's
+re-run-once-then-attribute rule I attribute it to contention — the
+integration checkout was running the same suite concurrently with four
+lanes building — and **not to this diff**. The verifier could not
+reproduce any red across parser, app (×4), full cargo, `arch cycles`,
+`arch drift` and three lints, all exit 0. **Withdrawn as a claim against
+this lane; recorded here so the sighting is not lost.**
+
+**C6 — this diff moves the index, so the checkpoint owes a graph regen.**
+`index --check` exits 0 at base and **1 at this tip**: `Board.tsx` loc
+96→100, `TaskDetailPanel.tsx` loc 708→710, symbols and edges identical on
+both sides. The notes above call these two comment edits inert; they are
+inert to BEHAVIOUR and not to the index. `docs/architecture/graph.json`
+is outside this fence and the regeneration is committed with the
+CHECKPOINT — the integrator's, not a lane failure.
+
+### One finding the verifier surfaced and neither seat has filed
+
+**A body that cannot red, and it is not this lane's diff.** The
+"unavailable" sentence produced in `task-detail.ts` (C-17's) has its
+second half — everything from the em dash on — asserted nowhere in the
+repository: deleting it leaves the app suite green at exit 0. Only its
+prefix is pinned, by a `toContain` in `board-truth.test.tsx`, which is
+**C-05's** while the producer is **C-17's** — so an `[app-board]` card may
+edit that sentence without its fence reaching the only file that pins it.
+That is `T-112-s1`'s pin rather than anything this card wrote. **No id is
+minted for it here**: five id collisions happened in one night because
+ids are machine-scoped and every lane reads them from a stale checkout,
+and neither a verdict nor a post-verdict lane is a safe seat to mint
+from. Described for the dispatching seat to allocate.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->

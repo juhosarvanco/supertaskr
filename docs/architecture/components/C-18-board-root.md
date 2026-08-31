@@ -45,8 +45,16 @@ card that already reads `[app-board]`.
 
 **THE COMPOSITION ROOT IS PINNED, AND NOT FROM HERE.** `Board.tsx`'s prop
 threading is covered by `app/test/board-truth.test.tsx`, which is
-**C-05's** — `command grep -n 'board-truth' docs/architecture/components/*.md`
-answers `C-05-app.md`, and that is the derivation rather than a memory.
+**C-05's** — derived rather than remembered, by
+
+    command grep -n '^  - app/test/board-truth' docs/architecture/components/*.md
+
+which answers the single `paths:` line in `C-05-app.md`. **The obvious
+spelling of that check does not survive being written down**: a bare
+`grep -n 'board-truth' docs/architecture/components/*.md` matched one line
+when this section was drafted and matches four across two files now that
+the section itself names the file three times. The anchored form above
+matches a `paths:` entry and nothing prose can imitate.
 The pin landed at `T-112-s1`; before it, deleting the two lines that
 thread `dispatch` and `brief` into the drawer left the whole app suite
 green, which is the measurement `T-112-s4` was filed on. Re-run at that
@@ -54,22 +62,55 @@ card's own base, each threading line deleted one side only and restored
 by sha256, **every such mutant now dies.** What this file records is
 therefore about WHO MAY WRITE THE PIN, never about whether one exists.
 
-**THE PIN CANNOT BE RE-HOMED TO C-18, AND THE REASON IS THE ONE THIS
-COMPONENT WAS SPLIT OUT TO FIX.** `board-truth.test.tsx` imports `App`
-beside `Board`. `C-05-app.md` already declares `C-05 -> C-18`, so C-18
-owning that file buys `C-18 -> C-05` and the pair is a declared cycle —
-the same shape `C-08 -> C-09 -> C-08` was, refused by @human's no-cycles
-ruling of 2026-08-25. The verdict a re-route would spend, run rather than
-forecast at `T-112-s4`'s base:
+**THE PIN CANNOT BE RE-HOMED TO C-18, AND THE FIRST WALL IS NOT THE ONE
+THIS SECTION ORIGINALLY PRINTED.** `board-truth.test.tsx` imports `App`
+beside `Board`, so honouring that import from C-18 eventually reaches the
+cycle this component was split out of C-08 to remove. But the re-route
+takes **two steps, and only the second one cycles** — performed rather
+than forecast, one side only and sha256-restored:
+
+**Step 1, the path move alone** — add `app/test/board-truth.test.tsx` to
+this component's `paths:`. `arch cycles` is **unchanged**, because it
+reads DECLARED `depends_on` and a path move declares no edge:
 
     cargo run -p nputer-index -- arch cycles --root ../..
-    verdict  ACYCLIC   exit 0
+    verdict  ACYCLIC   exit 0          <- the BASELINE, not a finding
 
-**A one-file move is not available here.** `T-169-s1` reached this same
-wall from the other side and parked on it, naming the condition for
-deciding it: *the next `app-board` card that needs to pin something in
-the board's general DOM file.* This is that customer, and this section is
-the decision.
+What the path move actually buys is an `arch drift` **D4**:
+
+    finding  D4  app/test/board-truth.test.tsx  claimed_by=C-05,C-18  winner=C-05
+    summary  findings=5  ambiguous=1            <- 4 and 0 at base
+
+**Step 2, declaring the edge the import requires** — `C-05` into this
+component's `depends_on`. Only now does it cycle, and emphatically:
+
+    cycle    C-05 -> C-18 -> C-05
+    cycle    C-05 -> C-13 -> C-18 -> C-05
+    verdict  DECLARED CYCLE  2 cycle(s) among 15 components
+    exit 1
+
+**THE D4 IS THE WALL THAT ACTUALLY STOPS A LANE, AND IT IS A SHARPER
+REFUSAL THAN THE CYCLE.** Clearing a double-claim means removing the line
+from `C-05-app.md` — and **no component declares its own registry file in
+`paths:`**, so a fence expanding from `[app-board]` reaches no registry
+file at all. `T-112-s4` could edit this file only because its `touches:`
+additionally carried the registry directory; a card holding the slug
+alone, or T-149's narrower `…/C-18-board-root.md` spelling, could not
+clear the D4 it would itself create.
+
+**A one-file move is not available here — and note WHICH move.**
+`T-169-s1` parked two questions. Its "one-file move" is moving the
+*review-badge bodies into* `board-truth.test.tsx`; its general question
+asks whether that file should be re-routed **to C-08's or C-09's**
+`paths:`. What is refused above is a third branch it did not name —
+re-homing the file to **C-18** — so this section answers the branch this
+component is the customer for and leaves `T-169-s1`'s own two open. Its
+RESURFACES clause reads in full: *"the next `app-board` card that needs
+to pin something in the board's general DOM file meets this wall and
+decides it WITH a customer — that seat re-derives the ownership line
+above at its own ref and either moves the bodies under a
+`[app-board, app-shell]` fence or routes the file."* This lane took the
+second option and routed.
 
 **WHAT A TEST PATH OF ITS OWN ACTUALLY COSTS, SO THE NEXT LANE DOES NOT
 RE-DERIVE IT.** It is a NEW file under `app/test/`, importing `Board` and
@@ -80,8 +121,10 @@ this component's `paths:` **as they stand at dispatch**, so the registry
 line and the file it names cannot land in one lane: the lane that adds
 the line still may not write the file. `C-05-app.md`'s own T-149 note
 prescribes most of the remedy — *"the card adding a test now fences its
-own component's slug plus that component's own registry FILE"* — and it
-needs one word more, which `T-112-s4` paid to learn: **the card must also
+own component's slug plus that component's own registry FILE
+(`docs/architecture/components/C-12-map-pane.md`, not the directory), and
+two such cards stay disjoint"* — and it needs one word more, which
+`T-112-s4` paid to learn: **the card must also
 name the TEST FILE ITSELF in `touches:`.** Routed as `T-112-s6`, with
 that line spelled out there.
 
