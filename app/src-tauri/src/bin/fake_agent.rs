@@ -94,6 +94,37 @@ fn main() {
         sleep_forever();
         return;
     }
+    // **T-161: THE WRITE THAT LANDS AFTER THE EXIT IS OBSERVED.** The
+    // leaf of `nonzero-late-stderr` below, and the whole reason that
+    // scenario is DETERMINISTIC where the defect in the wild is not.
+    //
+    // The bug is a race between two events microseconds apart — the
+    // parent's `waitpid` returning and the runner's stderr drain being
+    // scheduled — so no fixture whose only writer is the child can lose
+    // it on purpose: by the time that child is reaped its bytes are
+    // already in the pipe, and which thread runs next is the scheduler's
+    // to decide. A writer that OUTLIVES the reaped process turns the same
+    // property into a fact. That is not a contrivance around the defect,
+    // it is the defect stated at its limit: the capture must not depend
+    // on the exit being observed after the last write.
+    //
+    // **THE DELAY BELOW IS THE THING BEING REPRODUCED, NOT A
+    // SYNCHRONISATION SLEEP.** It is a late write, which is what this
+    // fixture exists to be; nothing in the TEST waits on a clock, and the
+    // body it feeds waits on the failure EVENT exactly like every other.
+    // It is sized far under the drain bound the body sets (150 ms against
+    // a 5 s grace) for the same reason the kill-path bodies raise theirs.
+    //
+    // It reads no dump dir and records no turn: it is handed stdin and
+    // stdout on /dev/null and inherits ONLY stderr, so it holds the one
+    // pipe whose EOF this card is about and holds nothing else. Handled
+    // here, above the stdin read, so it never claims a turn directory
+    // from its parent's dump.
+    if scenario == "stderr-late-writer" {
+        std::thread::sleep(Duration::from_millis(LATE_STDERR_DELAY_MS));
+        eprintln!("fake-agent: the transport closed after the exit was observed");
+        return;
+    }
 
     let mut stdin_text = String::new();
     let _ = std::io::stdin().read_to_string(&mut stdin_text);
@@ -205,6 +236,30 @@ fn main() {
         "nonzero" => {
             emit_init(&session_id, &model);
             eprintln!("fake-agent: credentials expired, please run `claude login`");
+            std::process::exit(3);
+        }
+        // **T-161: THE SAME TURN, WITH ITS STDERR ARRIVING IN TWO FLUSHES
+        // AND THE SECOND ONE LATE.** `nonzero` above is the shape that
+        // reds CI intermittently; this is that shape with the timing the
+        // runner used to get wrong made unmissable.
+        //
+        // The first line is `nonzero`'s own, written and flushed before
+        // the exit. The second is written by `stderr-late-writer` above,
+        // which inherits THIS process's stderr and outlives it — so the
+        // pipe's write end is still open when the runner reaps this pid,
+        // and a capture that snapshots its ring at the reap can only
+        // report the first line. A capture that reads to EOF reports
+        // both.
+        //
+        // **STDOUT IS DELIBERATELY NOT INHERITED.** The relay loop ends
+        // on stdout EOF; a leaf holding stdout open would keep the loop
+        // running to `stall_timeout` and type `Stall` instead of
+        // `ExitNonZero`, which is a different body about a different
+        // thing.
+        "nonzero-late-stderr" => {
+            emit_init(&session_id, &model);
+            eprintln!("fake-agent: credentials expired, please run `claude login`");
+            spawn_late_stderr_writer();
             std::process::exit(3);
         }
         // THE REAL AUTH-FAILURE SHAPE, transcribed from the 2.1.226 smoke
@@ -902,6 +957,37 @@ fn next_turn_dir(dump: &Path) -> PathBuf {
 fn sleep_forever() {
     loop {
         std::thread::sleep(Duration::from_secs(3600));
+    }
+}
+
+/// T-161: how long after its parent's exit the leaf writes. Long enough
+/// that a capture snapshotting at the reap CANNOT have the line — the
+/// racy form lost 30 of 30 at this value — and far under the drain bound
+/// the body that uses it sets, so the fixed form never approaches it.
+const LATE_STDERR_DELAY_MS: u64 = 150;
+
+/// T-161: fork the leaf that writes to stderr AFTER this process is gone.
+///
+/// Only fd 2 is inherited. stdin and stdout go to /dev/null on purpose —
+/// see `nonzero-late-stderr` for why stdout must not be held — and no
+/// process group is set, so the leaf stays in this process's group like
+/// `spawn_grandchild`'s does.
+fn spawn_late_stderr_writer() {
+    let exe = match std::env::current_exe() {
+        Ok(exe) => exe,
+        Err(err) => {
+            eprintln!("fake-agent: no current_exe: {err}");
+            return;
+        }
+    };
+    let spawned = Command::new(exe)
+        .env("NPUTER_FAKE_SCENARIO", "stderr-late-writer")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::inherit())
+        .spawn();
+    if let Err(err) = spawned {
+        eprintln!("fake-agent: could not fork the late stderr writer: {err}");
     }
 }
 

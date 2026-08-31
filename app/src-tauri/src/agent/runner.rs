@@ -1906,9 +1906,32 @@ pub fn run_turn(
     drop(line_tx);
 
     let stderr_ring = Arc::new(Mutex::new(Ring::new(MAX_STDERR_RING)));
+    // **T-161: THE DRAIN'S EOF IS SIGNALLED, BECAUSE THE REAP DOES NOT
+    // IMPLY IT.** This thread was detached and the tail below was
+    // snapshotted the instant `child.wait()` returned — two facts with no
+    // ordering between them. "The process has exited" is observed by
+    // `waitpid`; "the pipe has been read to EOF" is observed by THIS
+    // thread; nothing made the second happen first, so a tail that was
+    // sitting in the kernel pipe buffer, fully written and unread, was
+    // reported as the CLI having said nothing.
+    //
+    // Measured rather than reasoned (T-161's reproduction, macOS, the
+    // shipped `nonzero` fixture's exact shape): 7 empty tails in 900 runs
+    // of the old capture — 1 in 200 idle, 6 in 700 against 32 busy
+    // threads — and 0 in 400 once the parent waited for this signal, with
+    // the CHILD byte-identical across all four. That is what names the
+    // owner: only the parent changed.
+    //
+    // Nothing is ever SENT on this channel. The drain thread owns the
+    // sender and drops it when the closure ends — at EOF, at a read
+    // error, or on an unwind — so `Disconnected` IS the EOF, and a
+    // panicking drain cannot wedge the reader below.
+    let (stderr_eof_tx, stderr_eof_rx) = mpsc::channel::<()>();
     if let Some(stderr) = child.stderr.take() {
         let ring = stderr_ring.clone();
+        let eof = stderr_eof_tx.clone();
         std::thread::spawn(move || {
+            let _eof = eof;
             let mut reader = BufReader::new(stderr);
             let mut buf = [0u8; 4096];
             while let Ok(n) = reader.read(&mut buf) {
@@ -1919,6 +1942,11 @@ pub fn run_turn(
             }
         });
     }
+    // The same idiom as `drop(line_tx)` above, and for the same reason:
+    // this thread must not be a sender or the disconnect can never
+    // arrive. It also covers the `child.stderr == None` arm, where no
+    // drain thread exists and the wait must therefore return at once.
+    drop(stderr_eof_tx);
 
     // --- the relay loop ---------------------------------------------
     let mut pending = String::new();
@@ -2424,6 +2452,23 @@ pub fn run_turn(
     if out.cancelled {
         return out;
     }
+    // T-161: READ TO EOF, THEN TYPE THE FAILURE — in that order, which is
+    // the order the old code left to the scheduler. By here the direct
+    // child is reaped on every arm that reaches this line, and the arms
+    // that got here through a failure killed the whole process group
+    // first, so the write end is closed and this returns in microseconds.
+    if !await_stderr_eof(&stderr_eof_rx, cfg.kill_grace) {
+        // The one case the wait cannot win: a DESCENDANT that inherited
+        // the pipe outlived the process we reaped. Taking the tail as it
+        // stands is exactly the old behaviour, so this bound is a hang
+        // guard and never the mechanism — but it is said out loud,
+        // because a silently short tail is the defect this card is about.
+        println!(
+            "[nputer] agent: turn {} stopped waiting for the child's stderr to close after {} ms - the tail may be short",
+            req.turn,
+            cfg.kill_grace.as_millis()
+        );
+    }
     let stderr_tail = stderr_ring.lock().expect("stderr ring poisoned").to_string();
 
     let error = failure.or_else(|| {
@@ -2652,6 +2697,28 @@ fn read_lines_capped(source: impl Read, cap: usize, tx: mpsc::Sender<LineMsg>) {
     } else if !line.is_empty() {
         let _ = tx.send(LineMsg::Line(String::from_utf8_lossy(&line).into_owned()));
     }
+}
+
+/// **T-161: WAIT FOR THE STDERR PIPE TO REACH EOF, BOUNDED.** `true` when
+/// EOF arrived, `false` when the bound expired first.
+///
+/// Nothing is ever sent on this channel — the drain thread's `Sender` is
+/// dropped when that thread ends, so a `Disconnected` is the drain saying
+/// it read the pipe to the end. `Ok` is unreachable and is treated as
+/// done for the same reason it would be: the sender is gone.
+///
+/// **THE BOUND IS `kill_grace` AND IT IS REUSED RATHER THAN INVENTED.**
+/// The only way EOF does not arrive is a descendant that inherited the
+/// pipe and outlived the process this thread reaped — which is the same
+/// question `kill_grace` already answers ("how long do we wait for the
+/// child's world to go away"), and a second constant answering it would
+/// be a second thing to keep true. **The fix's correctness does not rest
+/// on the number**: in the race this closes, EOF is already in the pipe
+/// and this returns in microseconds. The bound only ever fires where the
+/// old code would have reported a short tail anyway, so it is never
+/// worse than the behaviour it replaces.
+fn await_stderr_eof(rx: &mpsc::Receiver<()>, grace: Duration) -> bool {
+    !matches!(rx.recv_timeout(grace), Err(mpsc::RecvTimeoutError::Timeout))
 }
 
 /// Bounded byte ring for stderr tails.
