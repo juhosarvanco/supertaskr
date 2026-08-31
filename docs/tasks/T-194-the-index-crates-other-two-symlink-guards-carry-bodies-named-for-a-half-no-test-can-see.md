@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [crate-index]
 suggested_by: executor claude-opus-5@subagent @T-186
 builder:
-review:
+built_by: claude-opus-5@subagent
+review: independent
 ---
 
 **FOUND BY `T-186`'S CLASS SWEEP, AND MEASURED RATHER THAN INFERRED.**
@@ -89,3 +90,271 @@ changes.
 `T-186` (the same finding, corrected, with the dedup trap and the
 count-1 mutant recorded at their site) and `T-140-s9` (the ruling, and the
 sweep sentence this card corrects).
+
+## Implementation notes (2026-08-31, executor claude-opus-5@subagent)
+
+Lane `/Users/ujju/Projects/nputer-T-194`, branch
+`task/T-194-the-index-crates-other-two-symlink-guards`, base **`146ebb6`**
+(not the brief's `f7366770` — see WHERE THE BRIEF WAS WRONG). Work commit
+**`a9de0e2`**, +355/−0 over four files, all inside the fence
+`app/src-tauri/crates/nputer-index`. Ceremony row: **S touching shipped
+code**, so a verifier is owed — nothing merged, nothing pushed, the lane
+worktree left standing.
+
+### THE CARD SAYS TWO SITES AND THERE ARE THREE GUARDS, WHICH IS WHERE THE ANSWER WAS HIDING
+
+The card's prose enumerates two expressions. The symbol `read_registry`
+carries the shape **twice** — on the registry DIRECTORY (`registry.rs:119`
+at base) and on EACH ENTRY (`registry.rs:133` at base) — and
+`T-140-s9`'s sweep sentence, the one this card exists to correct, already
+named all three: *"`registry.rs:119,133` and `resolve/mod.rs:49`"*.
+CONVENTIONS' A CITATION NAMES A SYMBOL, NOT A LINE puts the second guard
+inside the symbol the card names, so all three were taken in scope.
+
+**This is not a technicality — the guard the card's prose omitted is the
+only one of the three whose surviving half turned out pinnable.** A lane
+reading the two quoted expressions and stopping would have reported "no
+half is separately pinnable at either site" and been wrong.
+
+### THE ANSWER: FIVE HALVES, THREE GUARDS, AND TWO GUARDS OF IDENTICAL TEXT ANSWER OPPOSITELY
+
+`T-186` generalised the rule and this card is its cleanest instance:
+**`registry.rs`'s entry guard and `resolve/mod.rs`'s guard are the same
+twelve characters — `is_symlink() || !meta.is_file()` — and one half is
+separately pinnable in one and provably unpinnable in the other.** The
+difference is entirely downstream, exactly as `T-186` predicted it would
+be. Nothing here was inherited from either sibling in either direction.
+
+| guard | half | verdict | why | measured |
+|---|---|---|---|---|
+| D1 `read_registry`, the registry dir | `is_symlink()` | inert | its own sibling: lstat makes `!meta.is_dir()` refuse every link | 256/0, exit 0 |
+| D1 | `!meta.is_dir()` | inert | **DOWNSTREAM**: `read_dir` fails on every non-dir and returns the same `DirMissing` | 256/0, exit 0 |
+| D1 | the PAIR | load-bearing | with both lifted `read_dir` FOLLOWS a symlinked registry dir | 255/1 |
+| D2 `read_registry`, each entry | `is_symlink()` | inert | its own sibling, same construction | 256/0, exit 0 |
+| D2 | `!meta.is_file()` | **SEPARATELY PINNABLE** | the only later predicate is `path.extension()`, which reads the entry's own NAME — a directory called `C-99.md` clears it and `std::fs::read` turns it into a `Malformed` | **255/1, alone** |
+| D2 | the PAIR | load-bearing | a symlink named `C-99.md` is read through; this reader has NO containment check at all | 254/2 |
+| G3 `read_contained` | `is_symlink()` | inert | its own sibling, same construction | 256/0, exit 0 |
+| G3 | `!meta.is_file()` | **NOT pinnable** | **DOWNSTREAM**: `read_to_string` fails on every non-file, non-symlink type that does not block, reproducing the guard's own `None` | 256/0, exit 0 |
+| G3 | the PAIR | load-bearing, but only against an INSIDE link | an outside link is refused by `canon.starts_with(root)` first | 255/1 |
+
+**D1's second half is a shape neither sibling had met.** `T-140-s9` and
+`T-186` both found halves shadowed BY THEIR SIBLING. `!meta.is_dir()` is
+shadowed by neither its sibling nor a test's shortcoming but by
+`read_dir` on the next statement, which computes the same outcome from
+the same tree. So D1 is a guard where **no single-side lift is
+detectable and the pair is** — the count-2 shape, arrived at from a
+direction the two prior cards did not have a name for.
+
+### THE THIRD SIGHTING OF THE INSTRUMENT DEFECT, AND IT IS THE WORST OF THE THREE
+
+`symlinked_tsconfig_is_never_read` (`resolve/tsconfig.rs`) aims its link
+at a **second `TempTree`**, so the target canonicalizes out of the root and
+`canon.starts_with(root)` refuses it before the link classification is
+consulted. **Measured: with BOTH halves of that classification lifted the
+body is still `ok`.** It cannot see the half it is named for, and it
+cannot see the pair either — containment alone produces its green. That is
+strictly worse than `T-186`'s `walk_root` body, which at least reds on the
+two-side lift, and it is the same defect `T-140-s9` met in `docs_watch.rs`.
+
+`a_registry_directory_that_is_a_symlink_is_refused_not_followed`
+(`tests/arch.rs`) is the milder case: it reds on D1's two-side lift, so it
+pins the PAIR truthfully while its NAME claims the half.
+
+**Both names are KEPT** — `T-140-s9`'s ruling 4: `T-186` and this card
+cite them, `docs/architecture/graph.json` carries the first as a symbol
+node, and a rename strands those references. Each now states at its own
+site what it actually asserts.
+
+### WHAT THE BODY THAT CANNOT RED BOUGHT, RECORDED RATHER THAN QUIETLY DROPPED
+
+`a_directory_wearing_the_config_files_name_is_refused`
+(`resolve/mod.rs`) was written to pin G3's `!meta.is_file()` half by the
+fixture shape that works one file over. **It stays GREEN under the very
+lift it was written to catch** (arm `g3-isfile`, 256/0, exit 0), and it
+stays green under the full classification lift too. `docs/CONVENTIONS.md`
+rules the case — *"a body that cannot red is the finding"* — so it is
+landed with that stated at its site, in the words that say it is NOT a pin
+on a half, so the next reader does not spend the attempt again.
+
+Attempts made and why each fails, all at the site:
+
+1. **A directory named `tsconfig.json`/`package.json`** — `read_to_string`
+   errors on a directory and `.ok()?` turns that into the same `None` the
+   guard produces. RUN, not reasoned: `g3-isfile` is that measurement.
+2. **A fifo** — would distinguish the halves in principle (`read_to_string`
+   blocks rather than erroring) and is refused as a body on two counts: it
+   HANGS rather than failing, and `std::fs` cannot create one, so it needs
+   an out-of-process `mkfifo`. A body that blocks forever is not a body.
+3. **Any other non-file, non-symlink type** (socket, device) fails
+   `read_to_string` identically. There is no fourth kind.
+
+By poison shape SIX's own definition this body kills no mutant of the
+guard that another body does not, and that is stated plainly rather than
+left for a reader to discover.
+
+### THE RULING: NOTHING DELETED, AND THE SHIPPED BEHAVIOUR IS PROVABLY UNMOVED
+
+`T-140-s9`'s ADR-010 reasoning was not re-litigated and holds unchanged.
+`git diff --numstat 146ebb6 a9de0e2` is **+355 / −0** — the deletion count
+is mechanically zero across all four files.
+
+**Every one of the 355 added lines is either a comment or inside
+`#[cfg(test)] mod tests`, checked mechanically rather than asserted.**
+Each file's shipped half (everything before `#[cfg(test)]`, comments and
+blanks stripped) is IDENTICAL between base and tip: `registry.rs`
+**227 = 227**, `resolve/mod.rs` **398 = 398**, `tsconfig.rs` **82 = 82**
+non-comment lines, non-zero on both sides before any verdict was read.
+
+**AND MY OWN POSITIVE CONTROL WAS VACUOUS FOR ONE OF THE THREE FILES, AND
+ITS OWN FAILURE LINE IS WHAT SAID SO.** The control plants a one-token
+change and requires the comparison to detect it. It used `symlink_metadata`
+— which occurs twice in `registry.rs`'s shipped half and once in
+`resolve/mod.rs`'s, and **zero times in `tsconfig.rs`'s**, so for that
+file it planted nothing and the check reported `CONTROL FAILED`. This is
+poison shape TEN wearing the drill's costume for the third card running
+(`T-186` hit it twice, its verifier once). Re-run with `read_contained`,
+present twice there: the control detects it and base-vs-tip is still
+identical. **The lesson that generalises: a positive control needs its own
+non-empty precondition — assert the planted token OCCURS before trusting
+that the check can say no.**
+
+### THE DRILL — 15 ARMS, EVERY ONE READ BACK, RESTORED AND PROVEN
+
+Detached scratch worktree `/private/tmp/nd-T-194`, cut at **`a9de0e2`**
+(the work COMMITTED FIRST, so a restore cannot pass itself off as a
+revert), `CARGO_TARGET_DIR=/private/tmp/nd-T-194/target` — the one name
+`.gitignore` excludes — never shared with the lane. Stem `nd-T-194`
+DERIVED from the card id and spent on the worktree, the target dir, the
+driver and every log. Scratch baseline reproduces the lane exactly:
+**exit 0, 256 passed / 0 failed over 12 targets**.
+
+Each arm: mutate ONE side only with `perl -0777`, at an absolute path;
+**refuse unless the substitution count is exactly 1**; **read the mutation
+back with `git -C /private/tmp/nd-T-194 diff`** and refuse on an empty
+read-back; run `cargo test -p nputer-index --no-fail-fast` UNPIPED into its
+own log and capture `$?` before anything else; restore with
+`git restore --source=a9de0e2 --staged --worktree`; prove by `shasum -a 256`.
+
+**THE DRIVER WAS SHOWN CAPABLE OF REFUSING BEFORE ANY RESULT WAS WRITTEN
+DOWN.** Arm `control-nomatch` uses a pattern matching nothing: count 0,
+**REFUSED, no suite run**. Without it a mis-aimed arm would report a clean
+256/0 over an unmutated tree — a green built out of a failure.
+
+**Every count below is a TARGET count beside a pass/fail count**, and
+`--no-fail-fast` is on every arm. `T-186` nearly corrected its verifier's
+right answer into a wrong one by omitting it, and the tell was arithmetic:
+crate scope is 12 targets, the lib target alone is 1.
+
+| arm | mutation (one side) | exit | targets | pass/fail | red bodies |
+|---|---|---|---|---|---|
+| `control-nomatch` | pattern matches nothing | — | — | **REFUSED at count 0** | no suite run |
+| `d1-symlink` | `…is_symlink() \|\| !meta.is_dir()` → `false \|\| !meta.is_dir()` | 0 | 12 | 256/0 | **none** |
+| `d1-isdir` | → `…is_symlink() \|\| false` | 0 | 12 | 256/0 | **none** |
+| `d1-both` | → `false` | 101 | 12 | 255/1 | `a_registry_directory_that_is_a_symlink_is_refused_not_followed` |
+| `d2-symlink` | `…is_symlink() \|\| !meta.is_file()` → `false \|\| !meta.is_file()` | 0 | 12 | 256/0 | **none** |
+| `d2-isfile` | → `…is_symlink() \|\| false` | 101 | 12 | 255/1 | `a_directory_wearing_a_component_files_name_is_skipped` **alone** |
+| `d2-both` | → `false` | 101 | 12 | 254/2 | the directory body + the symlink body |
+| `d2-dironly` | → `meta.is_dir()` | 101 | 12 | 255/1 | `a_symlinked_component_file_is_skipped_and_never_read_through` **alone** |
+| `g3-symlink` | `…is_symlink() \|\| !meta.is_file()` → `false \|\| !meta.is_file()` | 0 | 12 | 256/0 | **none** |
+| `g3-isfile` | → `…is_symlink() \|\| false` | 0 | 12 | 256/0 | **none — THE FINDING** |
+| `g3-both` | → `false` | 101 | 12 | 255/1 | `an_inside_pointing_symlink_is_refused_by_the_link_classification` **alone**; `symlinked_tsconfig_is_never_read` **GREEN** |
+| `p-regdir` | assertion `vec!["C-01"]` → `vec!["C-02"]` | 101 | 12 | 255/1 | itself, alone |
+| `p-reglink` | assertion `vec!["C-01"]` → `vec!["C-02"]` | 101 | 12 | 255/1 | itself, alone |
+| `p-inside` | assertion `None` → `Some(String::new())` | 101 | 12 | 255/1 | itself, alone |
+| `p-condir` | assertion `None` → `Some(String::new())` | 101 | 12 | 255/1 | itself, alone |
+
+**Every arm restored and PROVEN by sha256** against its `a9de0e2` blob —
+`registry.rs`
+`23478bd96a4fee2e43cfc6a9e5af5eb86566674403e9865a98047b4df21e2c69`,
+`resolve/mod.rs`
+`97e62213bb249ae29d567253711cba5bc20bfd93f4c5b092de15e404a9f7f8d2` — after
+every single one, and the scratch's `git status --short` is empty at the
+end.
+
+**POISON SHAPE SIX, ASKED FOR ALL FOUR NEW BODIES.** Three answer at
+count 1 — `d2-isfile` for the directory body, `d2-dironly` for the
+registry symlink body (a CONSTRUCTED arm, exactly `T-186`'s device: a
+directory-only skip under which directories are still refused and links
+pass, which is what earns the body out of shape SIX rather than an
+argument), and `g3-both` for the inside-link body. **The fourth,
+`a_directory_wearing_the_config_files_name_is_refused`, has no such
+mutant, and that is recorded above as the finding rather than hidden.**
+All four also die alone under an expected-value poison, so no body is
+vacuous by its own value.
+
+**THE LIFTED ARMS TERMINATE IN FIXTURES, CHECKED RATHER THAN ASSUMED**
+(CONVENTIONS, LIFTING A SAFETY GUARD TO DISCRIMINATE). Both new registry
+bodies and the new `read_contained` body aim at `TempTree`s under the
+system temp dir. **The one exception is pre-existing and is now stated at
+its site**: `a_registry_directory_that_is_a_symlink_is_refused_not_followed`
+links at this repository's OWN `docs/architecture/components`, so under
+`d1-both` the reader reads the live registry. It is a read-only read, no
+body writes through it, and the note at the body says so rather than
+leaving it to be discovered.
+
+### THE CLASS AND THE SWEEP — AND THIS ONE COMES BACK CLOSED
+
+**The class**: a refusal whose removal is shadowed by a later check
+computing the same outcome, with a test NAMED for the shadowed half — so
+the suite reports coverage it does not have.
+
+Swept with `git grep` over the fence, **shown capable of both hitting and
+missing before its result was written down**: the pattern against a
+planted `|| !meta.is_socket()` line matched 1, and a one-token variant
+(`|| !metaZZZ.is_`) matched 0 with grep exit 1.
+
+`git grep -n '|| !meta\.is_' -- app/src-tauri/crates/nputer-index` returns
+**7 hits, of which 4 are shipped code**:
+
+- `registry.rs:160` (D1) — **this card**
+- `registry.rs:193` (D2) — **this card**
+- `resolve/mod.rs:95` (G3) — **this card**
+- `walk.rs:143` — **`T-186`, already corrected**
+
+The other three are prose: the naming `T-186` and this card added. And
+`tests/perf.rs:31` is still a fixture copier rather than shipped
+behaviour, exactly as `T-140-s9` classified it.
+
+**So the class is CLOSED inside `crate-index`: all four shipped sites are
+now named at their site and measured.** Nothing is routed out of this
+sweep.
+
+### THE SENTENCE THIS CARD CORRECTS, AND WHAT SURVIVES OF IT
+
+`T-140-s9`'s sweep classified `registry.rs:119,133` and
+`resolve/mod.rs:49` as *"the halves shadow each other but no separate
+layer claims depth and no body is named for the half — same shape, no
+false coverage."* At this ref:
+
+- *"the halves shadow each other"* — **TRUE at G3 and at D2, and FALSE at
+  D1**, where `!meta.is_dir()` is shadowed by `read_dir` rather than by
+  its sibling. A third relationship the sentence has no room for.
+- *"no body is named for the half"* — **FALSE for all three**; two bodies
+  are, and `T-186` measured that before this card was filed.
+- *"no false coverage"* — **FALSE**, and worse than `T-186` reported:
+  `symlinked_tsconfig_is_never_read` cannot see the pair either.
+- *"same shape"* — **TRUE of the text and FALSE of the behaviour**, which
+  is the whole lesson: D2's `!meta.is_file()` is pinnable and G3's
+  identical `!meta.is_file()` is not.
+
+### WHERE THE BRIEF WAS WRONG
+
+1. **ROW 4's `base commit:` names `f7366770`; this lane is cut at
+   `146ebb6`.** The dispatch named this up front and filed it as `T-187`;
+   the repository wins. `146ebb6` measured green before anything was
+   touched (601/0 over 18 targets), so the base is trusted for its gates
+   rather than for being a checkpoint, which is what the dispatch bullet
+   actually requires. Every other row was checked against the tree.
+2. **The card under-enumerates its own subject** — two expressions named,
+   three guards present, and the omitted one carries the only separately
+   pinnable half. Recorded above rather than silently widened.
+3. **`review:` was EMPTY on a guard-class card, which is the exact defect
+   `T-186`'s verifier assigned as correction 5** — *"`review: independent`
+   was owed at dispatch and the field was empty… flagged so the next
+   dispatch sets it."* This IS the next dispatch, and it did not. Stamped
+   `independent` here; the repair belongs at the dispatching seat, since a
+   lane stamping its own review field is the weakest possible form of it.
+4. **The fence-hook correction in my dispatch is right and matches
+   `docs/STATE.md`** (`T-199`): nothing judged my writes. Every path I
+   touched is inside `app/src-tauri/crates/nputer-index` except this card,
+   by discipline alone.
