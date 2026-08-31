@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **404 behaviours** — 402 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **409 behaviours** — 407 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -314,7 +314,7 @@ Census: **404 behaviours** — 402 extracted sentences + 2 named-not-extracted (
 - a card whose touches line moved under the lane blocks with `re-expand`
 - a manifest the hook cannot read is a refusal, never a shrug
 - in a lane, a request with no readable path is refused rather than waved through
-- a path outside the lane's own checkout is allowed, and the limit is declared
+- a path in NO git checkout is not judged, and the narrowed limit is declared
 - the manifest is stamped with the card's RAW touches line, taken from the frontmatter
 - the writer REFUSES a fence it could not fully expand, and writes nothing
 - the writer refuses a worktree that is not this card's lane
@@ -341,6 +341,11 @@ Census: **404 behaviours** — 402 extracted sentences + 2 named-not-extracted (
 - what the lane-less seat may write, a LANE still may not — the two seats are two rules
 - the runner carries the lane-less refusal as an exit code too
 - a suffixed card id survives every derivation that once truncated it — the id is not the slug's prefix
+- a lane's OUT-OF-FENCE write is refused in the sibling/nested shape, and the file is UNCHANGED
+- THE POSITIVE CONTROL: the same seat's IN-FENCE write is allowed and LANDS
+- the root comes from the TARGET, so the verdict does not move with the writer
+- an unjudged write SAYS SO — a decline is distinguishable from a judged allow
+- the push guard's import list from this module is a contract, and it still holds
 
 ## map-retarget
 

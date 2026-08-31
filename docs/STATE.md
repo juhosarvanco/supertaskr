@@ -92,12 +92,11 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   **no root `package.json`** (scripts live in `tools/e2e/`); this seat
   read exit **254** as green four times. **Redirect, capture `$?`, THEN
   look.**
-- **THE FENCE HOOK JUDGES NOTHING in this shape** (`T-199`): lanes are
-  SIBLINGS, outside the dispatching checkout, and `lane-fence.mjs`'s
-  limit 2 allows an outside path UNJUDGED. Seven lanes' compliance was
-  DISCIPLINE. **Never tell a lane a hook enforces its fence.**
-- **`brief.mjs` TRUNCATES piped stdout at 64 KiB** (`T-197`) — redirect
-  to a file; it reds a standing e2e body no lane caused.
+- **THE FENCE JUDGES A WRITE NOW, AND STILL NOT A PUSH** (`T-199` in,
+  `T-216` open): `decide()` resolves the TARGET's root, so a sibling
+  lane's out-of-fence write is REFUSED. `push-guard.mjs:449` still roots
+  on the writer's cwd, and the hook loads from the DISPATCHING checkout,
+  so a lane never arms its own fix. Say what is enforced, not more.
 - **A TIMING CORRELATE IS NOT A CAUSE.** Read a suite's own time and
   re-run a body ALONE before attributing. (The "cargo cache cliff" was
   retired 2026-08-31: `T-088-s4` proved the cause was a missing
