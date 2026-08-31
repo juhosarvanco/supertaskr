@@ -832,3 +832,44 @@ and still exited **0**, and a background runner reporting the e2e as
 "exit code 0" twice while the script's captured `$?` held **1**. Both are
 this project's standing rule met live: **read the COUNT, never the
 runner's exit.**
+
+### Gates re-run at the correction tip
+
+The corrections are a WRITE, and one of them touches shipped code, so the
+gates are re-run at the tip they create rather than inherited from
+`36f8d31`. Measured at `551d7c2` (the tip before this section's own
+commit; the only path this commit adds is `docs/tasks/`, which moves the
+DOCS GATE — already firing — and neither of the other two).
+
+| where | command | exit | count |
+|---|---|---|---|
+| repo root | `docs-gate.mjs <4 paths, separate literal args>` | **1** | FIRES — **2** paths under `docs/` now (T-192 + T-200), same 3 suites |
+| `app/` | `npm run build` | **0** | the typecheck gate |
+| `app/` | `npm test` | **0** | **49 files, 1100 / 1100** |
+| `lib/parser/` | `npx vitest run` | **0** | **16 files, 344 / 344** |
+| `tools/e2e/` | `npm test` (`NPUTER_E2E_PORT=14192`, lsof'd to 0 rows before binding) | **1** | **1 failed / 365 passed, 4.0m** — the same `dispatch-order.spec.ts:200` |
+| `app/src-tauri/` | `index --check --root ../..` | **1** | STALE — unchanged in shape |
+
+**The count is 1100, not 1101** — correction 3 adds an assertion to an
+existing body rather than a new body, so the body count does not move
+while the mutant it kills does. Read the mutant table, not the total.
+
+**The e2e red is the same one, re-measured rather than re-asserted**:
+`brief.mjs --dispatch` to a FILE is **68747 bytes with `critical path:`
+present**, to a PIPE **65536 — exactly one buffer — with it absent**.
+Same `process.exit()` mechanism, still byte-identical to base, still
+routed. The byte figure moved 69197 -> 68747 between measurements because
+the live board moved, which is the point: the trigger is machine-scoped.
+
+**GRAPH REGEN unchanged and still the integrator's**: `files +0 -0 ~2`,
+`edges +2 -0` (`node:fs`, `node:path` only), symbols 2446 -> 2448.
+**Still no `watcher-store.ts -> agent-store.ts` edge** — the corrections
+are comments and a string, so the C-10/C-14 boundary is untouched.
+
+**AND THE VERDICT'S RUNNER TRAP HIT THIS SEAT TOO, on the very run that
+closed these corrections.** The background runner reported the final e2e
+as *"completed (exit code 0)"* while the guarded script's own captured
+`$?` held **1** — the third sighting, after the verifier's two. It cost
+nothing here only because the script captures `$?` unpiped and the count
+was read from the log. **Read the COUNT and the captured exit; a runner's
+summary is not a gate verdict.**
