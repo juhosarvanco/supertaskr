@@ -586,6 +586,9 @@ twice on this branch.** Measured at `87929c2`, crate scope,
 
 ### 1 — PERFORMED, AND IT REPRODUCES EXACTLY
 
+**Three further arms, taking this lane to TWENTY** — the seventeen in the
+drill ledger above plus these, all restored and hash-proven.
+
 | arm | measured | verdict's figure |
 |---|---|---|
 | `canonicalize().ok()?` → `path.to_path_buf()` | exit 0, **256/0, nothing red** | same |
@@ -675,6 +678,46 @@ AND a pre-drill `sha256` recorded before any mutation in a file no
 restoring step writes:
 `3eb640beccdfcc5517b4a2da565a742fbe33f54b12bcaf628cf8cbfe2a98807a`. The
 scratch's `git status --short` is empty.
+
+### GATES RE-RUN FOR THE CORRECTION PASS, at `66a7fa4`
+
+The corrections move a `*.rs` file (comments only) and add a CARD, so the
+whole trigger set fires again rather than only the docs half. Forecast
+re-derived at main `2b10110`: `merge-tree` **exit 0, no conflict, 6
+paths** — the four crate files, this card, and `T-208`.
+
+- **`cargo test`** from `app/src-tauri/`: **exit 0, 605 passed / 0 failed
+  over 18 targets**. `nputer-index` lib **204/0**; crate scope **256/0 over
+  12 targets**. Cache cliff did not fire — lib suite **6.20s** against the
+  9.5s green band.
+- **GRAPH REGEN FIRES**, asked and not acted on (`graph.json` is outside
+  this fence): **exit 1, STALE**, `files +0 -0 ~4`, `edges +1 -0` — still
+  the one real `resolve/mod.rs -> testutil.rs` import. Budget 1149372 of
+  2145959 (53.6%). **No phantom file entered the walk**, which is what
+  `+0 -0` is read for and why the correction drill ran outside the tree.
+- **BOOT GATE FIRES: exit 0** on the card-derived port **21940**, `lsof`
+  zero rows before binding, **both** startup lines detected. 1420 read
+  with `lsof` and nothing else: zero rows throughout.
+- **DOCS GATE FIRES**: `docs-gate.mjs` on the forecast's six paths —
+  **exit 1, 2 path(s) under `docs/` are code inputs** (this card and
+  `T-208`), naming the same three commands. All three run: parser **exit
+  0, 16 files / 344**; app **exit 0, 49 files / 1100**; e2e **exit 1, 366
+  passed / 1 failed** — the same `T-197` body, unchanged. It also reports
+  **every live task card's frontmatter parses, with a legal status**, which
+  is what checks `T-208`'s new frontmatter.
+- `lint:tokens` **exit 0, clean** — and its CONTROL corpus moved **1049 →
+  1050 tracked text files**, exactly the one card added, which is a small
+  free check that the file landed where the tooling looks.
+- `lint:docs` **exit 0** (census half only, as it says of itself);
+  `capabilities:check` **exit 0, CURRENT (29121 bytes)** — no e2e spec name
+  moved. **METHOD EVAL: not owed** (0 `method/` paths). **AUDIT**: no
+  manifest moved.
+- **`T-208` IS THE ONLY ID MINTED AND IT WAS ALLOCATED, NOT DERIVED.**
+  Checked over the MERGED tree the way `T-186` prescribes, because
+  `merge-tree` reports NO conflict for two cards sharing an `id:`: **397
+  cards parsed, 397 ids, 0 duplicates, `T-208` present once.** The check
+  was shown capable of saying otherwise first — a planted duplicate is
+  reported.
 
 ### THE SCRATCH COLLISION — THE VERIFIER'S DISCLOSURE, AND WHAT I DID ABOUT IT
 
