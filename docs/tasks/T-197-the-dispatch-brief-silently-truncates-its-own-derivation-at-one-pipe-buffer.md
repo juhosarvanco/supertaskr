@@ -25,6 +25,47 @@ re-measured at this seat rather than taken on report.
 **nothing says so**: exit status is 0, no error is printed, and the
 output ends mid-derivation looking like a complete answer.
 
+## RE-MEASURED AT `5e36a0b` — AND THERE IS NO SINGLE BOUNDARY
+
+**The 64 KiB figure above is one reader's answer, not the defect's.** Two
+readers, same tree, same command:
+
+    --dispatch > file                    →  66,464 bytes  (whole)
+    --dispatch | cat                     →  65,536 bytes  (8 of 8 runs)
+    --dispatch via spawnSync (the spec)  →  survives to ~66,470
+
+**The loss point is a property of WHO IS READING**, because it is a race
+between the reader draining the pipe and the writer exiting. A fix that
+pins one number pins one reader.
+
+**HEAD SAT UNDER THIRTY BYTES FROM RED AND NOTHING SAID SO.** A 30-byte
+title edit to `T-212` took the brief from 66,464 to 66,494 and turned
+`dispatch-order.spec.ts` from 14 passed to 1 failed. The spec's own
+failure text is the tell — a stamp truncated to `<- @ 5e3`.
+
+**AND CI'S GREEN IS NOT EVIDENCE OF ABSENCE AT THIS BOUNDARY.** CI passed
+on `5e36a0b` with the brief already 928 bytes past the `| cat` line. A
+green run here proves the reader won the race, not that the tail arrived.
+
+**THE LANE-COUNT ATTRIBUTION IN THE RECORD IS WRONG AND THIS CORRECTS
+IT.** `docs/checkpoints/2026-08-31-four-lanes-and-a-spec-that-tested-itself.md`
+says the body's red/green history "tracked only how many lanes happened
+to be open." At this measurement **zero lanes are live and zero worktrees
+appear in the output at all** — the BOARD'S OWN GROWTH crossed it. Four
+cards filed in one afternoon did what six live lanes had done before.
+
+**Useful for whoever builds this: the brief carries card TITLES, not
+BODIES.** The `T-212` edit added 2,135 bytes of body and moved the brief
+exactly 30 — the title delta alone. So this card's own body may grow
+freely; a new card, or a longer title, is what costs.
+
+## THE STANDING HAZARD UNTIL THIS LANDS
+
+**One more card, or one more sentence in one title, drops the brief's
+tail silently.** Every seat is dispatching against a tool that is one
+edit away from lying, and the tool's whole contract is a trustworthy
+figure. This is why the card was reordered ahead of `T-199`.
+
 ## The mechanism
 
 `brief.mjs` ends at `process.exit()`. **Node's stdout is asynchronous
@@ -84,10 +125,23 @@ read truncated, while every visible signal said the derivation was whole.
   size is over the buffer — **a body run against small output would pass
   before and after the fix and is the vacuity this card is about**
   (poison shape TEN).
+- **THE BODY SHALL PROVE BOTH READER SHAPES, not one.** The loss point is
+  reader-dependent — `| cat` truncates at 65,536 while `spawnSync`
+  survives to ~66,470 — so a body proving one shape leaves the other
+  reader's race unproven. **A fix that pins a single boundary number has
+  pinned a single reader** and will be re-measured false by the next one.
+- **A MARGIN GUARD SHALL ANNOUNCE AN APPROACH RATHER THAN LET IT BE
+  SILENT.** `HEAD` sat under 30 bytes from red with nothing anywhere
+  saying so, and a 30-byte title edit reddened the suite. The guard's
+  threshold SHALL be DERIVED and SHALL state which reader it is derived
+  against, since there is no single line.
 - THE sweep SHALL name every sibling script that exits after writing, and
   argue membership either way with a measured size.
 - WHERE any suite body currently passes against truncated output, it
   SHALL be identified before the fix lands.
+- **A CI GREEN SHALL NOT BE TAKEN AS EVIDENCE FOR THIS CLASS.** CI passed
+  at `5e36a0b` with the brief already 928 bytes past the `| cat` line; if
+  the fix's own proof runs only in CI it inherits that blindness.
 - Verification: headless, the `tools/e2e` suite.
 
 ## Read beside
