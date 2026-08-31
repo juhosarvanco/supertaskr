@@ -36,7 +36,7 @@ one branch and write a checkpoint each, concurrently.**
 The merge race is the obvious half and the least of it. **The checkpoint
 half cannot work at all under concurrency:**
 
-- `docs/docs-protocol.md` rule 4 requires `docs/STATE.md` to be
+- `method/docs-protocol.md` rule 4 requires `docs/STATE.md` to be
   regenerated **in the same commit as the record**. Five lanes writing
   five records means five regenerations of one file — a file that also
   carries a **byte band** and a **staleness gate**.
