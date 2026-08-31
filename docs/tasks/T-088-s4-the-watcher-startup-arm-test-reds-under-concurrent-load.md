@@ -541,4 +541,150 @@ identical in every drill):
    cargo from the worktree root instead of `app/src-tauri`. The count is
    what caught it.
 
+### THE CLASS AND ITS SWEEP
+
+**The class**: *a test that waits for an asynchronous event on a wall
+clock where a rendezvous exists — and in particular one that starts a
+worker (thread or process) and proceeds without waiting for it to report
+READY.*
+
+**The sweep was shown capable of failing before its result was written
+down** (the POISON DRILL's proof clause): a planted
+`rx.recv_timeout(Duration::from_secs(7))` in a scratch file was found by
+the same pattern, then removed.
+
+    command grep -rn 'recv_timeout' --include='*.rs' app/ lib/ tools/
+    command grep -rn 'thread::sleep' --include='*.rs' app/ lib/
+
+**Result — three sites, and only two are exposed:**
+
+1. **`app/src-tauri/src/index_cmd.rs` — INSIDE this fence, and NOT
+   exposed. Recorded because an unrecorded sweep and an unrun one look
+   the same.** It carries its own copy of `live_state` (line 157) with
+   the identical missing rendezvous, and a
+   `recv_timeout(Duration::from_secs(10))` positive control. But its one
+   caller passes **`None`** and then arms through `apply_picked_folder`,
+   whose rendezvous the body's own comment relies on — *"its rendezvous
+   guarantees the watch and emit baseline are set before it returns"*. So
+   the startup-arm path is never taken and the defect cannot occur here.
+   **The copy is latent, not live**: the day someone calls that helper
+   with `Some(root)`, it inherits this card's bug. Its two
+   `recv_timeout(DEBOUNCE * 6).is_err()` waits are NEGATIVES and
+   correctly keep their bounds.
+2. **`app/src-tauri/tests/agent_runner.rs` — OUTSIDE this fence
+   (`app-agent`, C-14). ROUTED.**
+3. **`app/src-tauri/crates/nputer-index/tests/watch.rs` — OUTSIDE this
+   fence (`crate-index`, C-07, and T-194 was live on it). ROUTED.**
+
+### ROUTED, WITH NO ID MINTED
+
+The dispatching seat allocates ids (five id collisions in one night); these
+are described rather than numbered, per that instruction. Both are
+`suggested_by: executor claude-opus-5 @T-088-s4`.
+
+**ROUTE A — `app-agent`: the agent-runner tests are the same class, and
+this card's own record says one of them is an UNSETTLED intermittent.**
+`app/src-tauri/tests/agent_runner.rs` carries ~19 `thread::sleep` waits
+and a `recv_timeout(Duration::from_secs(15))`. The card above records
+`agent_runner.rs:2926`
+(`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`)
+as red **1 in 19 clean runs**, explicitly NOT explained by the cache, and
+warns that *"a re-measurement can only settle a finding whose MECHANISM
+the intervention addresses."* **This lane supplies a candidate
+mechanism** — a worker started and then raced rather than awaited — which
+is exactly the kind of mechanism that survives a clean cache and reds at
+1-in-19. Worth testing before that body is re-measured again. Fence
+`[app-agent]`; it owes `cargo test`.
+
+**ROUTE B — `crate-index`: the index watcher's tests race a spawned
+BINARY.** `app/src-tauri/crates/nputer-index/tests/watch.rs` starts the
+real watcher as a subprocess (`Watcher::spawn`, lines 109/162/334) and
+proceeds without waiting for it to report that it is armed; readiness is
+approximated by `wait_until(deadline, predicate)`, a 5 ms wall-clock poll
+loop. The mechanism is this card's, one level up: process instead of
+thread. The test already reads the child's output (`watcher.lines()`), so
+a readiness LINE is the rendezvous that is probably already available and
+merely unused. Its `sleep(WATCH_DEBOUNCE_MS * 12)` at line 178 precedes a
+NEGATIVE assertion and correctly keeps its bound. Fence `[crate-index]`
+(T-194 was live on it at dispatch, so this could not be taken here even
+had it been in fence).
+
+**NOT ROUTED, recorded as an observation only.** `cargo build` emits one
+pre-existing warning, `unused import: Path` at `app/src-tauri/src/arch_cmd.rs:2`.
+It is not mine — my diff is one file and that is not it — and
+`arch_cmd.rs` is named by BOTH `C-05` (`app-shell`) and `C-12`
+(`app-map`), so its fence is ambiguous. Too small to route as a card; too
+visible to leave unsaid.
+
+### GATES, derived at the mechanical merge forecast this tip WILL have
+
+Per the RANGE RULE's executor row: `TREE=$(git merge-tree --write-tree
+dd6b723 HEAD)` — **exit 0, OID non-empty** (checked before the diff was
+read, poison shape TEN) — then `git diff --name-only dd6b723 "$TREE"`.
+**2 paths**: `app/src-tauri/src/docs_watch.rs` and this card.
+
+| gate | trigger match | verdict | evidence |
+|---|---|---|---|
+| **GRAPH REGEN** | 1 `.rs` path outside docs/ | **FIRES — currently STALE** | `index --check` **exit 1**; the ONLY delta is `~ app/src-tauri/src/docs_watch.rs (content, loc 4449 -> 4610)`; 199 files, 2448 symbols, 2365 edges UNMOVED, `+0 -0 ~1`; 1148895 → 1148896 bytes. **The regen is the INTEGRATOR's at the checkpoint** — CONVENTIONS says so in as many words, and `docs/architecture/graph.json` is outside this fence. |
+| **BOOT GATE** | 1 path under `app/src-tauri/` | **FIRES — RAN IT, exit 0** | `NPUTER_BOOT_PORT=14884 npm run boot:check` from tools/e2e/, **exit 0 = booted**. Both `[nputer]` lines: `project folder: /Users/ujju/Projects/nputer-T-088-s4` and `window "main" created`. Port DERIVED from the card id; `lsof -nP -iTCP:14884 -sTCP:LISTEN` returned **0 rows** immediately before binding. |
+| **DOCS GATE** | 1 path under docs/ | **FIRES — RAN ALL THREE SUITES** | `docs-gate.mjs` given SEPARATE LITERAL PATHS (the `T-192` hazard), exit 1 = it has a verdict: this card is a code input to 10 readers across 3 suites. |
+| **METHOD EVAL GATE** | 0 paths under `method/` | **NOT OWED** | nothing in `method/` moved |
+| **AUDIT GATE** | declares no merge-diff trigger | **not one of these** | per the brief's own row 8 |
+
+**The three suites the DOCS GATE named:**
+
+| suite | exit | counts |
+|---|---|---|
+| `npx vitest run` from `lib/parser/` | **0** | 16 files, **344 passed** |
+| `npm test` from `app/` | **0** | 49 files, **1100 passed** |
+| `npm test` from `tools/e2e/` | see report | — |
+
+**The human's port was read once, with the one permitted command**:
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` → **0 rows**, nothing listening.
+
+**`npm test` from `tools/e2e/`: exit 1 — 366 passed / 1 failed of 367,
+and THE FAILURE IS `T-197`, NOT THIS LANE. Measured, not asserted.**
+
+The body is `tests/dispatch-order.spec.ts:200` — *"--dispatch runs on the
+live repository, exits 0, and WRITES NOTHING"* — failing on
+`expect(run.stdout).toContain("BLOCKED — the unmet blocker is named")`.
+It calls `brief.mjs --dispatch` through `spawnSync`, which captures
+stdout on a **pipe**, and `docs/STATE.md` names this in advance:
+*"`brief.mjs` TRUNCATES piped stdout at 64 KiB (T-197) — redirect to a
+file; **it reds a standing e2e body no lane caused.**"*
+
+| how stdout is taken | bytes | `BLOCKED` heading present |
+|---|---|---|
+| **redirected** (no pipe) | **77 599** | **yes** (1) |
+| **piped** (what `spawnSync` does) | **65 536** — exactly 64 KiB | **no** (0) |
+
+The heading sits in the 12 063 bytes the pipe discards.
+
+**AND THE COUNTERFACTUAL WAS RUN RATHER THAN ARGUED**, because "not mine"
+is the claim most worth checking. With this card restored to its
+`dd6b723` bytes (`status: planned`, no notes) and nothing else changed,
+`--dispatch` is **77 715 bytes** and still 12 179 over the limit — so the
+body reds identically without this lane, and this lane's change made the
+output **116 bytes SMALLER**, not larger. Restored afterwards, sha256
+identical (`6d467f3ac7ee15dcf7813acac6ac6b59d70c7265ee38ef3937436409c5e1ae32`),
+working tree clean.
+
+`T-197` is on the board, unmet-blocked by `T-202` holding `tools/e2e`,
+so it could not have been fixed from this lane either.
+
+### REPETITION — the evidence for the FIVE sleeps that were deleted
+
+Four `settle()` calls and one inline `sleep(DEBOUNCE * 4)` were removed
+because a real rendezvous already sat beside each. Removing a sleep is
+the change most able to buy a rare false green, so it is answered with
+repetition rather than with an argument: **15 consecutive
+`docs_watch::tests` runs under 8 CPU burners — 59 passed, 0 failed,
+exit 0, every time.** Times cluster **2.56–2.71 s** (spread 0.15 s).
+
+    reds: 0 of 15
+
+Together with the three full-suite runs above and M1's pass under a
+deliberate 3 s pre-arm stall, the deleted sleeps are covered from three
+directions.
+
 ## Verdicts
