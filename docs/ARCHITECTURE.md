@@ -33,12 +33,22 @@ graph TD
 | C-06 | lib-parser | Pure library: docs → typed model; browser-safe exports; owns the fence (`fence.ts`, T-134) and the id layer. History: the cards and `git show a6491e6` | C-01 | verified |
 | C-07 | nputer-index | Rust crate + binary: code → committed graph (TS/JS/Rust); `index --check`, `arch`/`drift`/`cycles`/`blast`; depth-bounded (T-129); budget 1,040,000 bytes with a measured reason (T-139) — headroom derived with `index --check`, never quoted | — | building |
 
-The full component set — C-08 board, C-09 model store, C-10 docs
-watcher, C-11 design tokens, C-12 map pane, C-13 genesis pane, C-14
-agent runner, C-15 dispatch, C-16 shared primitives — is the registry:
-one file per component under docs/architecture/components/, parsed by
-C-06, pinned by three live-tree fixtures (the DECLARING-A-COMPONENT
-gotcha in CONVENTIONS).
+The component set is the REGISTRY, never this paragraph: one file per
+component under docs/architecture/components/, parsed by C-06. **THE
+IDS ARE NOT TRANSCRIBED HERE** — `ls docs/architecture/components/`
+prints them at your own ref and each file's own `name:` is what it is
+called; the table above stops at C-07 because the planned C-02/C-03/
+C-04 have no registry file. The list that stood here was wrong three
+ways at once (`T-127-s7`): it ended at C-16 while C-17 and C-18
+existed, it called C-09 a model store when its field says Detail
+panel, and it read as though the table's own components were outside
+the registry. Declaring a component moves live-tree fixtures whose
+COUNT IS NOT WRITTEN HERE either, and for the same reason — it has
+been corrected twice already (`T-127-s1` finding 5, membership;
+`T-127-s8` item 2, count). Ask the DOCS GATE with a registry path for
+the suites owed at your ref, in CONVENTIONS' one spelling; that file's
+DECLARING A COMPONENT gotcha still reads THREE and `T-127-s8` owns
+its repair.
 
 **THE SLUG MAP'S AUTHORITY IS EACH COMPONENT FILE'S OWN `touch_slugs:`
 FIELD — read the field, never prose.** Two implementations compute it
@@ -107,7 +117,7 @@ ADR-014/015).
   code; zero bytes in the production bundle, measured (T-041, T-027).
   The known lever: an inherited `NODE_ENV=development` flips DEV
   (T-041-s4); the runtime `isTauri` half holds regardless.
-- Code layout: `app/` = C-05 (+ C-08/C-09/C-11/C-12/C-13/C-16
+- Code layout: `app/` = C-05 (+ C-08/C-09/C-11/C-12/C-13/C-16/C-17/C-18
   territories in `app/src/`; C-14 owns `app/src-tauri/src/agent/**` +
   `agent-store.ts`; C-15 owns `app/src-tauri/src/dispatch/**`) ·
   `lib/parser/` = C-06, self-contained · `app/src-tauri/crates/
