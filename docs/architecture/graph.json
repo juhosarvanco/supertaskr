@@ -13629,8 +13629,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:e1cb4646bf97c6abd15db248a59990423b5d92dd00f729cd127ff3f6edacec30",
-      "loc": 710,
+      "hash": "blake3:60e24dafb385438798ac4cd5a411234638f1fda7557baadefb6e73d37672846c",
+      "loc": 725,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
@@ -13638,8 +13638,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            665,
-            699
+            680,
+            714
           ]
         },
         {
@@ -13649,7 +13649,7 @@
           "exported": false,
           "range": [
             453,
-            508
+            523
           ]
         },
         {
@@ -13658,8 +13658,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            637,
-            643
+            652,
+            658
           ]
         },
         {
@@ -13668,8 +13668,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            511,
-            517
+            526,
+            532
           ]
         },
         {
@@ -13678,8 +13678,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            526,
-            554
+            541,
+            569
           ]
         },
         {
@@ -13688,8 +13688,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            609,
-            633
+            624,
+            648
           ]
         },
         {
@@ -13698,8 +13698,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            701,
-            710
+            716,
+            725
           ]
         },
         {
@@ -13718,8 +13718,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            572,
-            607
+            587,
+            622
           ]
         }
       ]
@@ -17116,8 +17116,8 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:62a690dc3fad32f09b752766a1b81e8ff201c41cbd5c6ed333a3c46b10da4abe",
-      "loc": 1380,
+      "hash": "blake3:c7921207def1058e253bf0de7edec72678106f8a14e53985e7c9209c43bd0811",
+      "loc": 1528,
       "symbols": [
         {
           "id": "s:app/src/lib/board-model.ts#AssignmentDisclosure",
@@ -17135,8 +17135,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            703,
-            703
+            765,
+            765
           ]
         },
         {
@@ -17175,8 +17175,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            675,
-            678
+            737,
+            740
           ]
         },
         {
@@ -17185,8 +17185,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            736,
-            754
+            798,
+            816
           ]
         },
         {
@@ -17195,8 +17195,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            681,
-            688
+            743,
+            750
           ]
         },
         {
@@ -17205,8 +17205,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            660,
-            662
+            708,
+            724
           ]
         },
         {
@@ -17225,8 +17225,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            690,
-            690
+            752,
+            752
           ]
         },
         {
@@ -17235,8 +17235,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            777,
-            793
+            839,
+            873
           ]
         },
         {
@@ -17245,8 +17245,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            720,
-            733
+            782,
+            795
           ]
         },
         {
@@ -17255,8 +17255,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            757,
-            775
+            819,
+            837
           ]
         },
         {
@@ -17305,8 +17305,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            947,
-            947
+            1027,
+            1027
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#NotLaneHold",
+          "name": "NotLaneHold",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            666,
+            676
           ]
         },
         {
@@ -17335,8 +17345,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            1030,
-            1034
+            1110,
+            1114
           ]
         },
         {
@@ -17345,8 +17355,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            854,
-            861
+            934,
+            941
           ]
         },
         {
@@ -17365,8 +17375,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            705,
-            716
+            767,
+            778
           ]
         },
         {
@@ -17385,8 +17395,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            952,
-            957
+            1032,
+            1037
           ]
         },
         {
@@ -17395,8 +17405,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            994,
-            1023
+            1074,
+            1103
           ]
         },
         {
@@ -17435,8 +17445,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            961,
-            969
+            1041,
+            1049
           ]
         },
         {
@@ -17445,8 +17455,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            879,
-            898
+            959,
+            978
           ]
         },
         {
@@ -17465,8 +17475,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            908,
-            939
+            988,
+            1019
           ]
         },
         {
@@ -17495,8 +17505,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            971,
-            971
+            1051,
+            1051
           ]
         },
         {
@@ -17515,8 +17525,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            829,
-            834
+            909,
+            914
           ]
         },
         {
@@ -17535,8 +17545,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1093,
-            1380
+            1173,
+            1528
           ]
         },
         {
@@ -17605,8 +17615,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1058,
-            1073
+            1138,
+            1153
           ]
         },
         {
@@ -17615,8 +17625,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            845,
-            851
+            925,
+            931
           ]
         }
       ]
@@ -17625,8 +17635,8 @@
       "id": "f:app/src/lib/dispatch-store.ts",
       "path": "app/src/lib/dispatch-store.ts",
       "lang": "ts",
-      "hash": "blake3:5eec6b3128e9f53859c21adef1603e110df47ba82de48d16c3f77f3c93957f2b",
-      "loc": 484,
+      "hash": "blake3:dc3e264e8e8c66a0d6d923b9f5a8422f32f45e74b33e522bb320f4b6d12516c6",
+      "loc": 507,
       "symbols": [
         {
           "id": "s:app/src/lib/dispatch-store.ts#BoardStamp",
@@ -17644,8 +17654,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            356,
-            360
+            379,
+            383
           ]
         },
         {
@@ -17654,8 +17664,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            406,
-            419
+            429,
+            442
           ]
         },
         {
@@ -17664,8 +17674,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            351,
-            354
+            374,
+            377
           ]
         },
         {
@@ -17674,8 +17684,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            364,
-            373
+            387,
+            396
           ]
         },
         {
@@ -17684,8 +17694,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            375,
-            388
+            398,
+            411
           ]
         },
         {
@@ -17724,8 +17734,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            460,
-            462
+            483,
+            485
           ]
         },
         {
@@ -17735,7 +17745,7 @@
           "exported": true,
           "range": [
             267,
-            281
+            304
           ]
         },
         {
@@ -17804,8 +17814,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            391,
-            396
+            414,
+            419
           ]
         },
         {
@@ -17844,8 +17854,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            431,
-            433
+            454,
+            456
           ]
         },
         {
@@ -17854,8 +17864,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            298,
-            317
+            321,
+            340
           ]
         },
         {
@@ -17864,8 +17874,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            479,
-            484
+            502,
+            507
           ]
         }
       ]
@@ -18073,8 +18083,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:630896ca84244e423ad0ee5ab349b5d2f6fc5a27b02bc980aa5c796711421588",
-      "loc": 444,
+      "hash": "blake3:8114e8ec7f6bce654d3ae5f92a9daff96866054cb41fc36e82ec5a4d095d3f56",
+      "loc": 491,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -18112,8 +18122,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            256,
-            263
+            271,
+            301
           ]
         },
         {
@@ -18144,6 +18154,16 @@
           "range": [
             144,
             149
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#FLOOR_NOTE",
+          "name": "FLOOR_NOTE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            267,
+            269
           ]
         },
         {
@@ -18192,8 +18212,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            383,
-            388
+            430,
+            435
           ]
         },
         {
@@ -18202,8 +18222,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            266,
-            275
+            304,
+            313
           ]
         },
         {
@@ -18222,8 +18242,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            307,
-            325
+            345,
+            363
           ]
         },
         {
@@ -18232,8 +18252,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            286,
-            304
+            324,
+            342
           ]
         },
         {
@@ -18252,8 +18272,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            333,
-            381
+            371,
+            428
           ]
         },
         {
@@ -18262,8 +18282,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            396,
-            444
+            443,
+            491
           ]
         }
       ]
@@ -20193,8 +20213,8 @@
       "id": "f:app/test/detail-assignment.test.tsx",
       "path": "app/test/detail-assignment.test.tsx",
       "lang": "ts",
-      "hash": "blake3:7f47de6db7e540170404fa1121e5b4039cf0a3690ab6bfd957d8f66b108b2ca7",
-      "loc": 260,
+      "hash": "blake3:709e494aede24b31c91d68196bf3e43811a96c9254c18d51b29dde48c2c8582e",
+      "loc": 310,
       "symbols": [
         {
           "id": "s:app/test/detail-assignment.test.tsx#BOARD_ROADMAP",
@@ -20212,8 +20232,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            173,
-            198
+            186,
+            211
           ]
         },
         {
@@ -20232,8 +20252,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            152,
-            171
+            163,
+            184
           ]
         },
         {
@@ -20242,8 +20262,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            150,
-            150
+            156,
+            161
           ]
         },
         {
@@ -20302,8 +20322,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            200,
-            218
+            213,
+            231
           ]
         },
         {
@@ -23028,8 +23048,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:a45e0cc47aaaa3944c06e9e526dacecba61e41db9c41a640b2730b686114e21e",
-      "loc": 2089,
+      "hash": "blake3:61421a6ed90a188f862a37f8e2dfdb70649e699332979d224e440c7b5367d7dc",
+      "loc": 2269,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -23037,8 +23057,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            275,
-            283
+            276,
+            284
           ]
         },
         {
@@ -23047,8 +23067,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            53,
-            53
+            54,
+            54
           ]
         },
         {
@@ -23057,8 +23077,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            874,
-            874
+            900,
+            905
           ]
         },
         {
@@ -23067,8 +23087,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            797,
-            797
+            798,
+            798
           ]
         },
         {
@@ -23077,8 +23097,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            792,
-            792
+            793,
+            793
           ]
         },
         {
@@ -23087,8 +23107,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            43,
-            51
+            44,
+            52
           ]
         },
         {
@@ -23097,8 +23117,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            285,
-            286
+            286,
+            287
           ]
         },
         {
@@ -23107,8 +23127,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            880,
-            894
+            911,
+            925
           ]
         },
         {
@@ -23117,8 +23137,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            876,
-            877
+            907,
+            908
           ]
         },
         {
@@ -23127,8 +23147,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            56,
-            57
+            57,
+            58
           ]
         },
         {
@@ -23137,8 +23157,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            852,
-            859
+            853,
+            860
           ]
         },
         {
@@ -23147,8 +23167,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            861,
-            866
+            862,
+            867
           ]
         },
         {
@@ -23157,8 +23177,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            818,
-            835
+            819,
+            836
           ]
         },
         {
@@ -23167,8 +23187,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            840,
-            850
+            841,
+            851
           ]
         },
         {
@@ -23177,8 +23197,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            85,
-            85
+            86,
+            86
           ]
         },
         {
@@ -23187,8 +23207,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            79,
-            80
+            80,
+            81
           ]
         },
         {
@@ -23197,8 +23217,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            794,
-            794
+            795,
+            795
           ]
         },
         {
@@ -23207,8 +23227,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            869,
-            872
+            893,
+            898
           ]
         },
         {
@@ -23217,8 +23237,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            60,
-            77
+            61,
+            78
           ]
         },
         {
@@ -23227,8 +23247,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            82,
-            83
+            83,
+            84
           ]
         }
       ]
@@ -23237,8 +23257,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:6df2bb572753ffa42fe463bf5a81091b19d279e8f8dd46799def8812180b4aa1",
-      "loc": 684,
+      "hash": "blake3:d578c9a7ae391df1b2db752961366540e8f47aba280c21e819803beb73538912",
+      "loc": 734,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -32416,6 +32436,7 @@
         "DispositionModel",
         "InFlightLane",
         "LaneHold",
+        "NotLaneHold",
         "TopmostCard",
         "UNMAPPED_KEY",
         "assignmentByFile",
@@ -39032,6 +39053,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/board-model.ts#DispatchReading",
+      "to": "s:app/src/lib/board-model.ts#NotLaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/board-model.ts#DispatchStamp",
       "to": "s:app/src/lib/board-model.ts#LaneHold",
       "kind": "type_ref",
@@ -39052,6 +39079,12 @@
     {
       "from": "s:app/src/lib/board-model.ts#DispositionModel",
       "to": "s:app/src/lib/board-model.ts#InFlightLane",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispositionModel",
+      "to": "s:app/src/lib/board-model.ts#NotLaneHold",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -43733,7 +43766,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2454,
-    "edges": 2377
+    "symbols": 2456,
+    "edges": 2379
   }
 }

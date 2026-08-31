@@ -647,6 +647,35 @@ export interface DispatchStamp {
 }
 
 /**
+ * One worktree the scan saw that is NOT a lane, as much of it as the
+ * frontier reads — structurally satisfied by every arm of C-15's
+ * `WorktreeEntry`, which is why ONLY the two fields all four arms carry
+ * appear here. Same trade {@link LaneHold} makes one type up: importing
+ * `dispatch-store.ts` for the union would buy an undeclared C-17 -> C-15
+ * component edge for a type alias.
+ *
+ * **THESE HOLD NO FENCE AND COUNT AGAINST NO CEILING, WHICH IS EXACTLY
+ * WHY THEY MUST BE REPORTED RATHER THAN DROPPED.** A detached poison
+ * drill, the human's own app checkout, another session's scratch tree —
+ * every one of them is a worktree that reserves nothing, and a reader who
+ * cannot see them reads a LANE census as a WORKTREE census. The producer
+ * says so in as many words at all three layers below this one
+ * (`join.rs`'s `LaneRegistration::of`: *"carried whole in
+ * `DispatchJoin::Joined::not_lanes` rather than dropped"*).
+ */
+export interface NotLaneHold {
+  /**
+   * `lane`, `notALane`, `detached` or `unreadable` — the entry's own
+   * discriminant, carried as a plain `string` because the AUTHORITY is
+   * the Rust enum and a second copy of its vocabulary on this side is a
+   * second answer (the trade {@link LaneJoinState} states in full).
+   */
+  readonly kind: string;
+  /** The `.git/worktrees/<name>` directory name — not the branch. */
+  readonly name: string;
+}
+
+/**
  * What the lane reader had to say, as the frontier consumes it.
  * Structurally satisfied by `DispatchJoin`.
  *
@@ -656,9 +685,42 @@ export interface DispatchStamp {
  * `dispatchable`, because an empty lane set is indistinguishable from a
  * quiet repository. That is the failure direction this card exists to
  * close, so the frontier refuses to answer instead of answering freely.
+ *
+ * **THE TWO FIELDS BELOW WERE DROPPED HERE AND THE REASON THEY ARE NOW
+ * CARRIED IS WRITTEN AT THIS SITE ON PURPOSE (T-185).** `notLanes` and
+ * `truncated` are produced by a chain three layers deep that argues for
+ * each of them explicitly — `lanes.rs` sets `truncated` on the entry
+ * ceiling and REFUSES the obvious repair of truncating before the sort,
+ * because that *"trades a deterministic answer for a smaller `Vec`"*;
+ * `join.rs` carries every non-lane entry *"whole … rather than dropped"*;
+ * `hydrateJoin` carries both across the wire verbatim. This type had
+ * nowhere to put either, so a decision argued at length in Rust was undone
+ * by a TypeScript type with two fewer fields, and the board rendered a
+ * FLOOR as though it were a count.
+ *
+ * **DELETING THEM AT THE PRODUCER WAS THE OTHER HONEST OPTION AND IS
+ * REFUSED**: it would delete `lanes.rs`'s determinism argument with them.
+ * **AND THEY ARE REQUIRED RATHER THAN OPTIONAL, WHICH IS THE WHOLE
+ * REPAIR** — an optional `truncated` reads as `false` at every site that
+ * forgets it, which is the silent floor this card is about wearing a type
+ * annotation.
  */
 export type DispatchReading =
-  | { readonly kind: "joined"; readonly rows: ReadonlyMap<string, DispatchStamp> }
+  | {
+      readonly kind: "joined";
+      readonly rows: ReadonlyMap<string, DispatchStamp>;
+      /** Worktrees that are not lanes: reported, never dropped. */
+      readonly notLanes: readonly NotLaneHold[];
+      /**
+       * The reader hit its entry ceiling: the answer is a FLOOR.
+       *
+       * Every claim {@link selectDispositions} makes about there being
+       * ROOM is unsound under a floor and now says so; the claims about
+       * there being NO room are sound under one, and that asymmetry is
+       * argued where it is applied rather than here.
+       */
+      readonly truncated: boolean;
+    }
   | { readonly kind: "unavailable"; readonly sentence: string };
 
 /**
@@ -781,6 +843,24 @@ export type DispositionModel =
       readonly cards: ReadonlyMap<string, CardDisposition>;
       readonly inFlight: readonly InFlightLane[];
       readonly ceilingReached: boolean;
+      /**
+       * The lane list is a FLOOR rather than a count — the reader hit its
+       * entry ceiling (T-185). Carried, not re-derived: it is
+       * `DispatchReading.truncated` verbatim, and the frontier's job is to
+       * say what it means rather than to decide it.
+       *
+       * **IT IS THE ONE FIELD HERE THAT INVALIDATES OTHER FIELDS.**
+       * `inFlight` is then a subset, so `ceilingReached: false` is not a
+       * fact and every "there is room" sentence below is qualified.
+       */
+      readonly scanIsFloor: boolean;
+      /**
+       * Worktrees the scan saw that are not lanes, carried whole from the
+       * reading. They reserve nothing and count against nothing, which is
+       * why they are REPORTED here rather than folded into `inFlight` —
+       * see {@link NotLaneHold}.
+       */
+      readonly notLanes: readonly NotLaneHold[];
       /**
        * The board's one-line answer. Criterion 5 asks for DIFFERENT
        * SENTENCES for "nothing is dispatchable" and "the ceiling is
@@ -1149,6 +1229,38 @@ export function selectDispositions(
   const blindLanes = inFlight.filter((l) => !l.fenceKnown);
 
   const dangling = danglingBlockerSentences(model.issues);
+
+  // THE READING'S TWO OTHER FACTS, CONSUMED HERE AND NOWHERE ELSE
+  // (T-185). Both are carried across verbatim: the frontier says what
+  // they MEAN and re-decides neither, the same trade the four lane states
+  // take one field up.
+  //
+  // **THE ASYMMETRY IS THE WHOLE OF WHAT `truncated` BUYS, so it is
+  // written where it is applied.** A floor can only be an UNDERCOUNT, so
+  // the two directions are not equally affected:
+  //
+  //   - `ceilingReached === true` is SOUND under a floor. If the lanes the
+  //     reader could see already reach the cap, lanes it could not see can
+  //     only reinforce that. `at-ceiling` therefore takes no caveat, and
+  //     adding one would be a false hedge.
+  //   - `ceilingReached === false` is NOT A FACT under a floor, and neither
+  //     is "its touches clear all N live lanes" — the clearing was computed
+  //     against a subset. Every sentence claiming ROOM is qualified below.
+  //
+  // `notLanes` invalidates nothing: a worktree that is not a lane reserves
+  // no fence and counts against no ceiling. It is REPORTED, which is what
+  // its producer's comment has always asked for and what this type could
+  // not do until now.
+  const scanIsFloor = dispatch.truncated;
+  const notLanes = dispatch.notLanes;
+  const floorCaveat = scanIsFloor
+    ? " FLOOR: the lane reader hit its entry ceiling, so " +
+      inFlight.length +
+      " is the number of live lanes it COULD SEE and not the number that exist. Every count in " +
+      "this sentence is a least-value, and a fence this card clears may be held by a lane the " +
+      "scan never reached."
+    : "";
+
   const ceilingReached = inFlight.length >= CONCURRENCY_CEILING.max;
   const cards = new Map<string, CardDisposition>();
   let readyCount = 0;
@@ -1349,9 +1461,37 @@ export function selectDispositions(
             (blindLanes.length === 1
               ? ") is claimed by no card, so its fence could not be READ"
               : ") are claimed by no card, so their fences could not be READ") +
-            " — unknown is not empty."),
+            " — unknown is not empty.") +
+        // AND THE FLOOR RIDES LAST, BECAUSE IT QUALIFIES EVERYTHING AHEAD
+        // OF IT (T-185). The CAVEAT above is about lanes the reader SAW
+        // and could not attribute; this is about lanes it never saw at
+        // all. Two different unknowns, and folding them into one sentence
+        // would be the "an empty list and an unread one are not the same
+        // fact" defect this frontier exists to close, one level down.
+        floorCaveat,
     });
   }
+
+  // THE LANE CENSUS'S TWO DISCLOSURES, appended in the order a reader
+  // needs them: what the count is WORTH first, then what else the scan
+  // saw. Both are absent — not empty, absent — when there is nothing to
+  // disclose, which is the same absence discipline `BoardCard.issues`
+  // takes: a note that renders on every board is a note nobody reads.
+  const floorLine = scanIsFloor
+    ? " THE LANE LIST IS A FLOOR, NOT A COUNT: the reader hit its entry ceiling, so every " +
+      "number above is the least it could be and a card called dispatchable was cleared " +
+      "against a subset."
+    : "";
+  const notLaneLine =
+    notLanes.length === 0
+      ? ""
+      : " The scan also saw " +
+        notLanes.length +
+        (notLanes.length === 1 ? " worktree that is not a lane (" : " worktrees that are not lanes (") +
+        joinIds(notLanes.map((w) => w.name + " · " + w.kind)) +
+        (notLanes.length === 1
+          ? "); it holds no fence and counts against no ceiling."
+          : "); they hold no fence and count against no ceiling.");
 
   const headline = ceilingReached
     ? "THE CEILING IS REACHED: " +
@@ -1376,5 +1516,13 @@ export function selectDispositions(
         CONCURRENCY_CEILING.max +
         " lanes live.";
 
-  return { kind: "derived", cards, inFlight, ceilingReached, headline };
+  return {
+    kind: "derived",
+    cards,
+    inFlight,
+    ceilingReached,
+    scanIsFloor,
+    notLanes,
+    headline: headline + floorLine + notLaneLine,
+  };
 }

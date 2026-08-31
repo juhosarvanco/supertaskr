@@ -269,9 +269,32 @@ export type DispatchJoin =
       readonly kind: "joined";
       /** Task id → row. A Map: ids are read from files (ADR-009). */
       readonly rows: ReadonlyMap<string, DispatchRow>;
-      /** Worktrees that are not lanes: reported, never dropped. */
+      /**
+       * Worktrees that are not lanes: reported, never dropped.
+       *
+       * **AND SINCE T-185 THERE IS SOMETHING TO REPORT THEM TO.** This
+       * comment said "never dropped" for four merges while the board's own
+       * `DispatchReading` had no field for it, so the fact reached the last
+       * boundary and stopped. `board-model.ts`'s `NotLaneHold` is where it
+       * lands now, and `selectDispositions` states what it means: these
+       * hold no fence and count against no ceiling, which is precisely why
+       * a reader who cannot see them mistakes a LANE census for a WORKTREE
+       * census.
+       */
       readonly notLanes: readonly WorktreeEntry[];
-      /** The reader hit its entry ceiling: the answer is a floor. */
+      /**
+       * The reader hit its entry ceiling: the answer is a floor.
+       *
+       * **AND THE FLOOR NOW REACHES A SCREEN (T-185).** `lanes.rs` argues
+       * this flag into existence — it REFUSES to truncate before the sort,
+       * because that *"trades a deterministic answer for a smaller `Vec`"*,
+       * so that a bounded answer can still be an HONEST one — and until
+       * T-185 the last boundary discarded the result. It is carried by
+       * `DispatchReading.truncated`, consumed by `selectDispositions`
+       * (which qualifies every "there is room" sentence and no "there is
+       * none"), and rendered beside the copyable brief as the dispatch half
+       * of T-018's docs truncation note.
+       */
       readonly truncated: boolean;
     }
   | {

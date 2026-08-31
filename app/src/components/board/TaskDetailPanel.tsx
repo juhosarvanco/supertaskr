@@ -454,6 +454,21 @@ function BriefBlock({ panel }: { panel: BriefPanel }) {
   if (panel.kind === "copyable") {
     return (
       <Section title="dispatch brief · copyable" testid="detail-brief">
+        {/* T-185's quiet truncation note, in the shell's own idiom — the
+            `docs-truncation-note` pattern from App.tsx (T-018): muted,
+            factual, never a chip, and ABSENT rather than empty when the
+            scan was a count. It sits ABOVE the brief because it qualifies
+            the invitation to copy it, and the sentence is
+            `selectBriefPanel`'s — this component chooses a testid and
+            nothing else, exactly as this block's header promises. */}
+        {panel.floor !== null && (
+          <p
+            data-testid="detail-brief-floor"
+            className="min-w-0 font-mono text-xs break-words text-muted-foreground"
+          >
+            {panel.floor}
+          </p>
+        )}
         <div
           data-testid="detail-brief-copyable"
           data-task-id={panel.taskId}

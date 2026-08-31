@@ -147,10 +147,23 @@ function briefModel(withLane: boolean): ProjectParseResult {
   return parseProjectFromFiles(files);
 }
 
-const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+// A scanned repository whose lane list is a COUNT and which holds no
+// worktree that is not a lane. Both fields are SPELLED rather than
+// defaulted by a helper (T-185): `truncated: false` is a claim this
+// fixture makes, and a default would put "the scan was complete" and
+// "this fixture forgot" back into one value — the exact silence the field
+// was added to remove.
+const NO_LANES: DispatchReading = {
+  kind: "joined",
+  rows: new Map(),
+  notLanes: [],
+  truncated: false,
+};
 
 const HELD: DispatchReading = {
   kind: "joined",
+  notLanes: [],
+  truncated: false,
   rows: new Map([
     [
       "T-961",
@@ -246,6 +259,43 @@ describe("the dispatch brief block (T-112)", () => {
     expect(withheld.dataset.disposition).toBe("fenced");
     expect(withheld.textContent).toContain("T-961");
     expect(withheld.textContent).toContain("app-board");
+  });
+
+  it("puts the FLOOR note on screen beside a brief read off a truncated scan (T-185)", () => {
+    // THE ON-SCREEN HALF of the card's second criterion. `App.tsx` has
+    // rendered `docs truncated · showing first N files` since T-018, so
+    // this repository already ruled that a truncated read must SAY so; the
+    // dispatch scan was the one truncation whose fact stopped at a type
+    // with no field for it. This body is the note actually rendering.
+    //
+    // MUTANT: delete the `panel.floor !== null &&` block in
+    // `TaskDetailPanel`'s `BriefBlock` — the model still carries the note
+    // and nothing else in this repository reds.
+    const dom = renderBriefPanel(
+      briefModel(false),
+      { kind: "joined", rows: new Map(), notLanes: [], truncated: true },
+      BRIEF,
+    );
+    const note = dom.querySelector('[data-testid="detail-brief-floor"]');
+    if (!(note instanceof HTMLElement)) throw new Error("the floor note did not render");
+    expect(note.textContent).toContain("lane list truncated");
+    expect(note.textContent).toContain("FLOOR, not a count");
+    // Muted and factual, the shell's own idiom for this — never a chip.
+    expect(note.className).toContain("text-muted-foreground");
+    // And the brief is still there: the note qualifies the invitation
+    // rather than replacing it.
+    expect(dom.querySelector('[data-testid="detail-brief-copyable"]')).not.toBeNull();
+  });
+
+  it("and shows NO floor note when the lane list is a count — absence, not an empty note", () => {
+    // THE POSITIVE CONTROL for the body above, and the reason it is a
+    // separate body rather than two lines inside one: a note that renders
+    // on every open is a note nobody reads, which is the same absence
+    // discipline the docs truncation note keeps. `NO_LANES` is the only
+    // thing that differs from the fixture above.
+    const dom = renderBriefPanel(briefModel(false), NO_LANES, BRIEF);
+    expect(dom.querySelector('[data-testid="detail-brief-copyable"]')).not.toBeNull();
+    expect(dom.querySelector('[data-testid="detail-brief-floor"]')).toBeNull();
   });
 
   it("renders no dispatch block at all when the app has no lane channel", () => {
