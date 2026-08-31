@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [crate-index]
 suggested_by: executor claude-opus-5@subagent @T-186
