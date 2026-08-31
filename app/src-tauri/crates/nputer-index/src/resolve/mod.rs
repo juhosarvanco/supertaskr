@@ -39,6 +39,46 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 /// Contained read of `<root>/<dir>/<name>`: symlinks (file or dir target)
 /// are never followed, and the canonical path must stay under the root —
 /// same rules as every other read (T-003 idiom).
+///
+/// # The refusals, each NAMED for what it independently contributes (T-194)
+///
+/// `T-140-s9` corrected the same shape in `docs_watch.rs` and `T-186` in
+/// this crate's `walk_root`, and between them they left the reading rule
+/// this block obeys: **two guards with identical text are not the same
+/// guard.** What decides whether a half is separately pinnable is what the
+/// predicates DOWNSTREAM read — a property of the surrounding function,
+/// not of the line. Every classification below was MEASURED at this site
+/// (`T-194`'s ledger) and none of it is inherited from either sibling.
+///
+/// - **A — `is_symlink()` is INERT, and undetectable by construction.**
+///   `meta` comes from `symlink_metadata` (lstat), under which a link is
+///   neither `is_file()` nor `is_dir()`, so `!meta.is_file()` beside it
+///   already refuses every link. `A ⟹ B` inside `A || B`: no fixture can
+///   separate them, here or anywhere this idiom appears.
+/// - **B — `!meta.is_file()` is INERT TOO, but shadowed DOWNSTREAM rather
+///   than by its sibling.** This is where this site DIFFERS from
+///   `walk_root`, and it is why the sibling's verdict could not be
+///   carried across: `walk_root` filters on the entry's own NAME after the
+///   classification, so a directory called `<name>.ts` clears every later
+///   predicate and IS separately pinnable there. Here the next thing that
+///   touches the path is `read_to_string`, which fails on every non-file,
+///   non-symlink type that does not block — so a directory wearing the
+///   config file's name returns `None` with this half lifted exactly as it
+///   does with it in place. **The attempted body is recorded in the test
+///   module below rather than landed**, per `docs/CONVENTIONS.md`: a body
+///   that cannot red is the finding.
+/// - **A and B TOGETHER are load-bearing, and only jointly.** With both
+///   lifted, an inside-pointing link is canonicalized, clears
+///   `starts_with`, and IS read through. That is what
+///   `an_inside_pointing_symlink_is_refused_by_the_link_classification`
+///   below pins — a count-2 mutant, because neither half alone reaches it.
+/// - **C — `canon.starts_with(root)` is load-bearing, and it is the
+///   reason an OUTSIDE-pointing link proves nothing about A or B.**
+///   `symlinked_tsconfig_is_never_read` (`tsconfig.rs`) aims its link at a
+///   second `TempTree`, so containment alone produces that body's green
+///   and it stays GREEN under the full A+B lift. Its name is kept —
+///   `T-186` and `T-194` cite it — and what it actually asserts is stated
+///   at its own site.
 pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<String> {
     let path = if dir.is_empty() {
         root.join(name)
@@ -46,10 +86,17 @@ pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<Strin
         root.join(dir).join(name)
     };
     let meta = std::fs::symlink_metadata(&path).ok()?;
+    // Refusals A and B. Both are individually shadowed (A by its own
+    // sibling, B by `read_to_string` below) and the PAIR is not: it is the
+    // only thing standing between an inside-pointing link and a read
+    // through it. NOT DELETED, and `T-140-s9`'s ruling is why — a provably
+    // behaviour-neutral line on an ADR-010 boundary buys zero
+    // discrimination by leaving and costs a visible containment statement.
     if meta.file_type().is_symlink() || !meta.is_file() {
         return None;
     }
     let canon = path.canonicalize().ok()?;
+    // Refusal C — load-bearing, and the one an outside link meets first.
     if !canon.starts_with(root) {
         return None;
     }
@@ -513,4 +560,108 @@ fn entry_for<'a>(
         symbols: BTreeSet::new(),
         reexport: None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::TempTree;
+
+    /// The root must be CANONICAL before it is handed to `read_contained`:
+    /// on macOS `std::env::temp_dir()` is `/var/...`, a symlink to
+    /// `/private/var/...`, so an uncanonicalized root makes
+    /// `canon.starts_with(root)` fail for every inside path and every
+    /// assertion below would pass for the wrong reason.
+    fn canon_root(t: &TempTree) -> PathBuf {
+        t.root().canonicalize().expect("canon")
+    }
+
+    /// The refusal `read_contained`'s A+B pair actually delivers, exercised
+    /// with a link CONTAINMENT CANNOT RESCUE.
+    ///
+    /// **This is the body `symlinked_tsconfig_is_never_read` looks like but
+    /// is not.** That one aims its link at a second `TempTree`, so
+    /// `canon.starts_with(root)` refuses it before the link classification
+    /// is consulted; it stays green with both halves of that classification
+    /// lifted. Here the link AND its target are inside the root, so
+    /// `canonicalize` succeeds, containment holds, and the classification is
+    /// the only thing left standing.
+    ///
+    /// **Smallest killer is a TWO-side lift, and that is a measured
+    /// property of the code rather than a weakness of the fixture**
+    /// (`T-194`): lifting `is_symlink()` alone leaves `!meta.is_file()`
+    /// refusing the link under lstat, and lifting `!meta.is_file()` alone
+    /// leaves `is_symlink()` refusing it. No fixture can do better.
+    #[cfg(unix)]
+    #[test]
+    fn an_inside_pointing_symlink_is_refused_by_the_link_classification() {
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("contained-inside-link");
+        let root = canon_root(&t);
+        t.write("real/payload.json", "{\"who\":\"real\"}");
+
+        // POSITIVE CONTROL, built the way the producer builds it: the same
+        // call against the real file must SUCCEED. Without it "expected
+        // None, got None" is satisfied equally by refused-for-the-right
+        // -reason, refused-for-the-wrong-reason, and nothing-was-there.
+        assert_eq!(
+            read_contained(&root, "real", "payload.json").as_deref(),
+            Some("{\"who\":\"real\"}"),
+            "control: an ordinary inside file must read, or the refusal below proves nothing"
+        );
+
+        symlink(root.join("real/payload.json"), root.join("payload.json")).expect("symlink");
+        // Assert the fixture's STATE before exercising it (CONVENTIONS,
+        // LIFTING A SAFETY GUARD TO DISCRIMINATE): a plain copy here would
+        // make the body pass while testing nothing.
+        let meta = std::fs::symlink_metadata(root.join("payload.json")).expect("stat the link");
+        assert!(meta.file_type().is_symlink(), "the fixture is not a link");
+        assert!(
+            root.join("payload.json").canonicalize().expect("canon target").starts_with(&root),
+            "the fixture must canonicalize INSIDE the root, or containment refuses it and the \
+             link classification is never reached — the exact defect this body exists to avoid"
+        );
+
+        assert_eq!(
+            read_contained(&root, "", "payload.json"),
+            None,
+            "a link is not repo content, whatever it points at"
+        );
+    }
+
+    /// A directory wearing the config file's name is refused — and this
+    /// body pins the OUTCOME, not the `!meta.is_file()` half.
+    ///
+    /// **RECORDED FAILED ATTEMPT, and it is the finding this card was sent
+    /// to get** (`T-194`, `docs/CONVENTIONS.md` — *"a body that cannot red
+    /// is the finding"*). `T-186` found `!meta.is_file()` separately
+    /// pinnable in `walk_root` by exactly this fixture shape, and the
+    /// obvious move is to carry that verdict one file over. **Measured
+    /// here, it does not hold**: with `!meta.is_file()` lifted this body
+    /// stays GREEN, because the next thing to touch the path is
+    /// `read_to_string`, which fails on a directory and produces the same
+    /// `None` the guard would have. The half is shadowed DOWNSTREAM, and no
+    /// fixture at this site can separate the two.
+    ///
+    /// It is kept rather than deleted because the OUTCOME is worth pinning
+    /// and because the next reader will otherwise re-run the same attempt.
+    /// What it does NOT do is pin a half, and it does not claim to.
+    #[test]
+    fn a_directory_wearing_the_config_files_name_is_refused() {
+        let t = TempTree::new("contained-dir");
+        let root = canon_root(&t);
+        t.write("real/payload.json", "{\"who\":\"real\"}");
+        std::fs::create_dir_all(root.join("payload.json")).expect("mkdir");
+
+        assert_eq!(
+            read_contained(&root, "real", "payload.json").as_deref(),
+            Some("{\"who\":\"real\"}"),
+            "control: an ordinary inside file must read"
+        );
+        assert_eq!(
+            read_contained(&root, "", "payload.json"),
+            None,
+            "a directory is not a config file"
+        );
+    }
 }

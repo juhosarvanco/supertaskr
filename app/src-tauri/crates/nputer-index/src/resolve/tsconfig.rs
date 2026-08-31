@@ -205,6 +205,27 @@ mod tests {
         assert!(idx.nearest("b").expect("b").base_url.is_none());
     }
 
+    /// **WHAT THIS BODY ACTUALLY PINS IS CONTAINMENT, NOT THE LINK
+    /// CLASSIFICATION** (`T-194`, measured).
+    ///
+    /// The link is aimed at a SECOND `TempTree`, so the target
+    /// canonicalizes OUT of the root and `read_contained`'s
+    /// `canon.starts_with(root)` refuses it on its own. Measured: with BOTH
+    /// halves of `is_symlink() || !meta.is_file()` lifted, this body stays
+    /// **GREEN** — containment alone produces it. `T-140-s9` met the
+    /// identical instrument defect in `docs_watch.rs` and `T-186` met it in
+    /// `walk_root`; this is the third sighting of one shape, and the fix is
+    /// the same one those two landed.
+    ///
+    /// **The name is KEPT deliberately.** `T-140-s9`'s ruling 4 applies:
+    /// cards outside this fence cite it by name (`T-186`, `T-194`) and a
+    /// rename strands those references, so the body says at its site what
+    /// it asserts — the OUTCOME, not the layer.
+    ///
+    /// The body that DOES pin the classification is
+    /// `resolve::tests::an_inside_pointing_symlink_is_refused_by_the_link_classification`,
+    /// whose link canonicalizes INSIDE the root so containment cannot
+    /// rescue it.
     #[cfg(unix)]
     #[test]
     fn symlinked_tsconfig_is_never_read() {

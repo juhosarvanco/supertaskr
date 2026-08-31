@@ -111,11 +111,52 @@ fn numeric_id(id: &str) -> Option<u64> {
 ///
 /// Containment (T-003 family, inherited): symlinked entries are skipped
 /// outright — the registry is repo content and a link is not.
+///
+/// # TWO guards of identical text, and they classify DIFFERENTLY (T-194)
+///
+/// This function carries the shadowed-half shape TWICE — on the registry
+/// DIRECTORY and on each ENTRY — written in the same words both times.
+/// **They are not the same guard**, and the reading rule `T-140-s9` and
+/// `T-186` left behind is why: what decides whether a half is separately
+/// pinnable is what the predicates DOWNSTREAM read, which is a property of
+/// the surrounding walk rather than of the line. Measured at this site
+/// (`T-194`'s ledger), the two guards answer the question oppositely:
+///
+/// | guard | `is_symlink()` | the other half | smallest killer |
+/// |---|---|---|---|
+/// | D1, the directory | inert | inert (`read_dir` shadows it) | BOTH halves |
+/// | D2, each entry | inert | **separately pinnable** | ONE half |
+///
+/// **Nothing here is deleted.** `T-140-s9`'s ruling stands: a provably
+/// behaviour-neutral line on an ADR-010 boundary buys exactly zero
+/// discrimination by leaving, and costs a visible containment statement.
+/// The evidence is what changed.
+///
+/// Note that this reader has **no containment check at all** — no
+/// `canonicalize`, no `starts_with`. That is what makes D2's pair
+/// observable where `walk_root`'s is not: a link here is read straight
+/// through with nothing downstream to rescue the tree.
 pub fn read_registry(root: &Path) -> Result<Vec<Component>, RegistryError> {
     let dir = root.join(REGISTRY_REL_DIR);
     let Ok(meta) = std::fs::symlink_metadata(&dir) else {
         return Err(RegistryError::DirMissing(dir));
     };
+    // GUARD D1, on the registry directory itself. BOTH halves are inert
+    // and they are inert for DIFFERENT reasons — the distinction is the
+    // whole point of naming them separately:
+    //   * `is_symlink()` is shadowed BY ITS OWN SIBLING. `meta` is from
+    //     lstat, under which a link is neither file nor dir, so
+    //     `!meta.is_dir()` refuses every link on its own.
+    //   * `!meta.is_dir()` is shadowed DOWNSTREAM, by `read_dir` three
+    //     lines below: every non-dir, non-symlink type it could catch
+    //     (regular file, fifo, socket, device) makes `read_dir` fail, and
+    //     that failure returns the SAME `DirMissing`. Measured: lifting it
+    //     alone leaves the whole crate suite green.
+    // The PAIR is load-bearing and nothing else is: with both lifted,
+    // `read_dir` FOLLOWS a symlinked registry directory and this reader
+    // reports components that are not repo content. That joint refusal is
+    // what `a_registry_directory_that_is_a_symlink_is_refused_not_followed`
+    // (`tests/arch.rs`) pins — the pair, not the half it is named for.
     if meta.file_type().is_symlink() || !meta.is_dir() {
         return Err(RegistryError::DirMissing(dir));
     }
@@ -130,6 +171,25 @@ pub fn read_registry(root: &Path) -> Result<Vec<Component>, RegistryError> {
         let Ok(meta) = std::fs::symlink_metadata(&path) else {
             continue;
         };
+        // GUARD D2, on each entry — SAME TEXT AS D1, DIFFERENT ANSWER.
+        //   * `is_symlink()` is inert here too, and for the same
+        //     construction: lstat makes `!meta.is_file()` refuse every
+        //     link. No fixture can separate them.
+        //   * `!meta.is_file()` is **SEPARATELY PINNABLE**, and this is the
+        //     half `T-140-s9`'s sweep and `T-186`'s route both passed over.
+        //     The only later predicate is `path.extension()`, which reads
+        //     the entry's own NAME rather than a resolved path — so a
+        //     DIRECTORY called `C-99.md` clears it, is pushed into `files`,
+        //     and `std::fs::read` below turns it into a `Malformed`
+        //     ("unreadable") where the guard yields a silent skip. That is
+        //     an observable, and it is
+        //     `a_directory_wearing_a_component_files_name_is_skipped`.
+        //     It is the SAME mechanism `T-186` found in `walk_root` and it
+        //     is present here for the same reason — a name-shaped filter
+        //     downstream of a type-shaped one.
+        // The PAIR is load-bearing beyond either half: with both lifted a
+        // symlink named `C-99.md` is READ THROUGH, and no containment check
+        // exists in this function to catch it.
         if meta.file_type().is_symlink() || !meta.is_file() {
             continue;
         }
@@ -428,5 +488,102 @@ Prose below the block is not read.\n";
             read_registry(t.root()),
             Err(RegistryError::DirMissing(_))
         ));
+    }
+
+    /// The smallest component file this reader accepts — `id`, `name` and
+    /// `paths` are the three it refuses without.
+    fn minimal(id: &str) -> String {
+        format!("---\nid: {id}\nname: {id} component\npaths: []\n---\n")
+    }
+
+    /// Guard D2's `!meta.is_file()` half, pinned **ALONE**.
+    ///
+    /// This is the body `T-140-s9`'s sweep and `T-186`'s route both said
+    /// did not exist here, and it exists for the reason `T-186` found one
+    /// crate over: the only predicate downstream of the type check reads
+    /// the entry's own NAME (`path.extension()`), so a DIRECTORY called
+    /// `C-99*.md` clears it. With `!meta.is_file()` lifted the directory is
+    /// pushed into `files` and `std::fs::read` fails on it, turning a
+    /// silent skip into a `Malformed` that names the file.
+    ///
+    /// **Do NOT reason from `read_contained`'s twin of this guard, which
+    /// this same card measured as unpinnable** (`resolve/mod.rs`): there
+    /// the next thing to touch the path is `read_to_string`, whose own
+    /// failure on a directory reproduces the guard's `None`. Identical
+    /// text, opposite answer, and the difference is entirely downstream.
+    #[test]
+    fn a_directory_wearing_a_component_files_name_is_skipped() {
+        let t = crate::testutil::TempTree::new("registry-dir-entry");
+        t.write(
+            &format!("{REGISTRY_REL_DIR}/C-01-real.md"),
+            &minimal("C-01"),
+        );
+        std::fs::create_dir_all(t.root().join(REGISTRY_REL_DIR).join("C-99-fake.md"))
+            .expect("mkdir the impostor");
+
+        // POSITIVE CONTROL, built the way the producer builds it: a real
+        // `.md` file in the SAME directory must be collected, or "one
+        // component came back" is satisfied by a walk that never reached
+        // the impostor at all.
+        let components = read_registry(t.root()).expect("the registry must read");
+        let ids: Vec<&str> = components.iter().map(|c| c.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec!["C-01"],
+            "the real component is collected and the directory is skipped in silence"
+        );
+    }
+
+    /// Guard D2's two halves pinned **JOINTLY** — the smallest killer is a
+    /// two-side lift, which is a measured property of the code and not a
+    /// weakness of this fixture (`T-194`): under lstat each half refuses a
+    /// link on its own, so neither single lift reaches this body.
+    ///
+    /// The link's target is a second `TempTree` — a FIXTURE, deliberately,
+    /// per `docs/CONVENTIONS.md`'s LIFTING A SAFETY GUARD TO DISCRIMINATE:
+    /// the lifted arm must terminate in one, and `read_registry` has no
+    /// containment check to stop it landing anywhere else.
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_component_file_is_skipped_and_never_read_through() {
+        use std::os::unix::fs::symlink;
+        let t = crate::testutil::TempTree::new("registry-link-entry");
+        let outside = crate::testutil::TempTree::new("registry-link-target");
+        t.write(
+            &format!("{REGISTRY_REL_DIR}/C-01-real.md"),
+            &minimal("C-01"),
+        );
+        outside.write("C-99-linked.md", &minimal("C-99"));
+
+        // POSITIVE CONTROL: the link's TARGET is a component file this
+        // reader would accept. Without it, "C-99 did not appear" is
+        // satisfied by a target this parser would have refused anyway.
+        assert_eq!(
+            parse_component(&minimal("C-99"), "C-99-linked.md")
+                .expect("control: the target parses")
+                .id,
+            "C-99",
+            "control: the link's target is a component this reader accepts"
+        );
+
+        let link = t.root().join(REGISTRY_REL_DIR).join("C-99-linked.md");
+        symlink(outside.root().join("C-99-linked.md"), &link).expect("symlink");
+        // Assert the fixture's STATE before exercising it: a copy here
+        // would make the body pass while testing nothing.
+        assert!(
+            std::fs::symlink_metadata(&link)
+                .expect("stat the link")
+                .file_type()
+                .is_symlink(),
+            "the fixture is not a link"
+        );
+
+        let components = read_registry(t.root()).expect("the registry must read");
+        let ids: Vec<&str> = components.iter().map(|c| c.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec!["C-01"],
+            "the registry is repo content; a link into another tree is not"
+        );
     }
 }
