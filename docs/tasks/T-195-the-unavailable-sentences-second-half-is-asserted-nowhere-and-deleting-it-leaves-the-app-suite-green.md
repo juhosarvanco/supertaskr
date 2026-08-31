@@ -7,7 +7,7 @@ priority: 5
 size: S
 status: building
 blocked_by: []
-touches: [app-dispatch]
+touches: [app-board, app-dispatch]
 suggested_by: "architect/integrator seat, allocating an id for a finding MEASURED by T-112-s4's lane, which declined to mint one itself"
 builder: claude-opus-5@subagent
 review:
@@ -264,3 +264,59 @@ Second, the sweep's completeness — I claim 4 of 4 arms are members and I
 reached 3 of 4 by reading the source; the fourth needed a near-miss, so
 a deletion-only re-run will disagree with me and be wrong. Third, whether
 asserting the four sentences WHOLE is right or merely strict.
+
+## FENCE WIDENED 2026-09-01, mid-flight, by the dispatching seat
+
+`touches:` was `[app-dispatch]` — **C-15 only** — and criteria 1 and 2
+cannot be built inside it. Ownership, re-derived at the integrator seat
+from anchored `paths:` and confirmed against the ARMED hook's own
+`decide()`:
+
+    producer   app/src/lib/task-detail.ts        C-17
+    pin home   app/test/select-task-detail.test.ts  C-09
+    prior pin  app/test/board-truth.test.tsx     C-05
+
+`docs/ARCHITECTURE.md:57` — `app-board -> C-08, C-09, C-17, C-18` — so
+**one token reaches the producer AND the pin home.** Widened to
+`[app-board, app-dispatch]`, 20 expanded paths, verified disjoint from
+all three concurrently live lanes.
+
+**THE LANE DID NOT WIDEN ITS OWN FENCE, AND WAS RIGHT NOT TO.** It found
+the wall, measured the ownership, named the one-token route and stopped —
+`lane-protocol.md` rule 5, *a fence is not widened from inside the lane
+it fences.* This amendment is the dispatching seat's, committed on `main`
+BEFORE the re-expansion, which is the only shape that keeps `main` the
+ref the fence is read from.
+
+The grant is the MANIFEST ON DISK, not this paragraph: the executor
+proceeds only on reading the new `paths` back out of
+`.nputer/lane-fence.json`.
+
+### AND THE MANIFEST WAS NOT THE WHOLE GRANT — the lane proved it
+
+The paragraph above is wrong on its last sentence, and the lane that read
+it caught the error the same hour.
+
+**The armed hook reads the card's `touches:` line FROM THE LANE WORKTREE**
+and compares it to the manifest's stamp. The amendment landed on `main`;
+the lane's copy still said `[app-dispatch]`. The two disagreed, so
+`decide()` returned `block · stale-stamp` for **every** path in the
+lane — including the three that had been in fence since dispatch, and
+including `docs/tasks`, which is `alwaysWritable`.
+
+**The manifest read-back looked PERFECT throughout**: 20 paths, the right
+ref, the right `touchesLine`. Only asking `decide()` rather than reading
+the JSON found it.
+
+**And the one-line workaround is the thing rule 5 forbids.** Editing the
+card's `touches:` inside the lane makes the two strings match and the
+block disappears — a repair that looks like it worked while being exactly
+*widening the fence from inside the lane it fences*. The lane refused it
+and stopped. The hook forbids it by name in its own refusal text.
+
+**So mid-flight widening is TWO integration acts, not one**: amend the
+card on `main`, AND carry that amendment onto the lane branch. Re-running
+`--write-fence` alone cannot help — the lane's copy of the card is the
+half that must move. `T-211` should carry this; the version of fast path
+A written before today says "amend on main plus `--write-fence`" and
+would strand every lane that used it.
