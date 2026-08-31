@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 25
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
 touches: [app/src-tauri/src/docs_watch.rs]
@@ -13,7 +13,7 @@ builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
 verified_by: claude-opus-5@subagent
-review:
+review: independent
 ---
 
 **FOUND BY A POISON DRILL THAT WOULD NOT RED**, in `T-140-s4`'s detached
