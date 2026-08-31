@@ -10,7 +10,7 @@ blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); every instance below was measured at this seat or reported by a lane on 2026-08-31"
 builder:
-review:
+review: independent
 ---
 
 **THIS CARD'S CHARTER IS ONE SENTENCE, AND FOUR SEATS REACHED IT
