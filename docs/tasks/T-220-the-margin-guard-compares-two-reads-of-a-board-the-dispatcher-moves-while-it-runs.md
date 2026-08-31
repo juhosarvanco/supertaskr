@@ -118,3 +118,31 @@ perturbs any concurrent live-board measurement, and nothing warns. That
 is a scheduling rule, not a code change, and it wants writing down
 wherever `T-211` puts the rest of the fast-path law: **do not cut a bench
 into a board a live gate is reading.**
+
+## A THIRD FAILURE MODE: AN ENTRY THAT MUTATES IN PLACE
+
+Found by `T-212`'s verifier during its own phase 1, and it defeats both
+remedies this card and its dispatcher proposed.
+
+Its snapshots read **15 entries on both sides** of a read. The set
+difference over PATHS was also empty. But the whole-line difference showed
+`/Users/ujju/Projects/nputer-V-167s5` **leaving at `7b712c1` and
+returning at `d17258e`** — a sibling verifier re-pointing its own worktree
+between the guard's two reads.
+
+**So the board can move without its size changing and without its path
+set changing.** A count cannot see it. A path-only set difference cannot
+see it. Only comparing the two reads as **whole `git worktree list`
+lines, commit column included**, can.
+
+This also corrects the dispatching seat's own instruction. I told three
+verifiers to *"set-difference rather than count"* after a count proved
+insufficient — and the set difference was itself insufficient, on paths
+alone. **The third instance in one night of advice that was a strict
+subset of the right answer.**
+
+The acceptance criteria above are unchanged in substance: a guard that
+cannot distinguish a moved board from a flush defect must say so in a
+third verdict. But the DISCRIMINATOR they rest on is now known to need
+the commit column, and a fix that snapshots only a count or only a path
+set will pass its own tests and miss this case.
