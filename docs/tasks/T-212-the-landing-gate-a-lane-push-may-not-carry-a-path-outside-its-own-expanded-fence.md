@@ -265,6 +265,39 @@ ranges on its own fixture before pushing, so it fails loudly if the
 fixture ever stops reproducing the disagreement, and the re-drill reds
 exactly it.
 
+### The gate run against REAL history, which the fixtures cannot answer
+
+A read-only probe drove this gate's own `cardAt` / `fenceAt` /
+`rangePaths` / `judgePaths` over the **40 most recent merges on main** at
+`fcdae0c` (the probe identifies the lane from the merge SUBJECT, which
+the gate itself deliberately does not do — that is why it is a
+measurement and not the gate):
+
+| | count |
+|---|---|
+| clean — every path the lane wrote is inside its fence | **21** |
+| **would refuse** | **0** |
+| unjudged | **19** |
+| identifiable by a LIVE LANE BRANCH — the merge arm's own route | **21** |
+
+**ZERO FALSE REFUSALS ACROSS 21 REAL, CORRECT MERGES.** That is the
+positive control the fixtures cannot give: a guard that refused
+correctly-fenced work would have shown it here.
+
+**AND ALL 19 UNJUDGED ARE THE SLUG HOLE**, every one — `app-board`,
+`app-agent`, `crate-index`, `app-shell`, `app-map`, `app-interview`,
+`lib-parser`, `app-dispatch`. So `T-222`'s cost measured on real history
+is **19 of 40 merges** rather than the token census's rough share, and
+it is the single largest limit on this gate.
+
+**The merge arm's identification is the second limit and it is
+comparable in size**: only **21 of 40** merges have a live lane branch at
+their second parent, so the rest are answered CANNOT COMPARE by the arm
+even where the fence would resolve. That number is a property of when
+branches get deleted, not of the code — it may deserve a card of its
+own, and it is reported rather than filed because the board took two new
+ids under this lane while it ran.
+
 ### Routed, not taken
 
 - **`T-222`** filed: a SLUG token cannot be expanded inside the hook
