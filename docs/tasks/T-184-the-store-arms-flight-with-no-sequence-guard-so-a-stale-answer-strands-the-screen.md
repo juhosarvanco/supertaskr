@@ -1,6 +1,10 @@
 ---
 id: T-184
 title: The store arms flight with no sequence guard and a command that never answers leaves the latch true for ever — T-171 made the screen honest and left the store permanently able to strand it
+feature: F-03
+milestone: 4
+priority: 1
+size: M
 status: verifying
 suggested_by: "executor claude-opus-5@subagent @T-171, routed from inside the lane; its blind verifier judged this one LOAD-BEARING and said it should be carded"
 touches: [app-agent]
@@ -168,3 +172,36 @@ in one file.
   leaves the button dead for the rest of the session.
 - **`T-183` is untouched.** It is a live card in the tree with its own
   criteria, and this lane built its own card only.
+
+### The board fields this lane had to supply, and where each came from
+
+**THIS CARD WAS DISPATCHED UNTRIAGED.** It reached the lane still
+carrying `status: suggested` and none of `feature`, `milestone`,
+`priority`, `size`. The parser exempts a `suggested` card from all four,
+so the omission was invisible while the card sat on the board — and the
+`verifying` stamp the executor role mandates is exactly what makes it
+visible, because it moves the card out of the exempt status and two
+suites that parse the live tree then refuse it.
+
+Every value below is DERIVED, and the derivation is recorded so triage
+can overrule it cheaply rather than inherit it silently:
+
+- `feature: F-03` and `milestone: 4` — ROADMAP's Milestone 3 entry names
+  the post-walk findings and states in as many words that they are
+  ordinary F-03 work carrying `milestone: 4`. This card was routed out
+  of one of them, and all six siblings carry that pair.
+- `size: M` — the dispatch ran the M ceremony, the parent card is M, and
+  TASK-FORMAT's rule for a card that cannot be placed is M.
+- `priority: 1` — **the weakest of the four and the one to check.** It
+  is the parent card's, on the ground that this is the continuation its
+  verifier singled out as load-bearing. Priorities duplicate freely on
+  this board, so a duplicate is not malformed, but this is an ordering
+  judgement a lane has no standing to make well.
+
+**AND THE FIELD THAT RESOLVED IT SITS IN A DOCUMENT THIS ROLE IS TOLD
+NOT TO READ.** `milestone` is settled only by ROADMAP, and the executor
+role subtracts ROADMAP from its read set on purpose. The subtraction is
+right for its stated reason — which card deserved building is already
+settled — and it collides with a card that arrives needing a board field
+only ROADMAP carries. Recorded rather than resolved: the real repair is
+upstream, in not dispatching an untriaged card.
