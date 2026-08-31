@@ -133,9 +133,15 @@ fn numeric_id(id: &str) -> Option<u64> {
 /// The evidence is what changed.
 ///
 /// Note that this reader has **no containment check at all** — no
-/// `canonicalize`, no `starts_with`. That is what makes D2's pair
-/// observable where `walk_root`'s is not: a link here is read straight
-/// through with nothing downstream to rescue the tree.
+/// `canonicalize`, no `starts_with`. That does NOT make D2's pair
+/// observable where `walk_root`'s is not; `T-186` landed a body for
+/// `walk_root`'s pair too. What it changes is which FIXTURES work: over
+/// there only an INSIDE-pointing link can pin the pair, because
+/// `starts_with(canon_root)` refuses an outside one before the
+/// classification is reached — the defect `T-186` and `T-140-s9` both
+/// found. Here either target works, so a fixture-terminating link into a
+/// second `TempTree` is enough, and that is what
+/// `a_symlinked_component_file_is_skipped_and_never_read_through` uses.
 pub fn read_registry(root: &Path) -> Result<Vec<Component>, RegistryError> {
     let dir = root.join(REGISTRY_REL_DIR);
     let Ok(meta) = std::fs::symlink_metadata(&dir) else {
