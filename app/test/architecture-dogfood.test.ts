@@ -2305,8 +2305,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // kind `import` — and the regenerated graph carries none. The row
       // is MOVED with the story, not loosened to fit; the pair stays
       // `confirmed` because `churn-source.ts` and `rollup-source.ts`
-      // still read the watcher store, which is what the six are.
-      ["C-12", "C-10", "confirmed", 6],   // T-149: 2 -> 5; T-140: 5 -> 6; T-140-s1: 6 -> 7; T-140-s4: 7 -> 6
+      // still read the watcher store, which is what the six were.
+      // T-200 made it SEVEN: `MapView.tsx`'s line 7 changed from
+      // `import type` to a VALUE import, because the fix discriminates an
+      // ABSENCE from a REFUSAL by identity against the imported constant
+      // rather than by substring. A type-only import is not an edge; a
+      // value import is. The count moved because the coupling became real.
+      ["C-12", "C-10", "confirmed", 7],   // T-149: 2 -> 5; T-140: 5 -> 6; T-140-s1: 6 -> 7; T-140-s4: 7 -> 6; T-200: 6 -> 7
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.

@@ -11485,8 +11485,8 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:4f3aa42e3bbb242d7713b1c3db80eda78555aca5955cce40fd7014ab7e45c0af",
-      "loc": 1224,
+      "hash": "blake3:3a8b36b7dadb12fa3520d74a56ad88f45d34f8c63bdd6901ee87deda809f3a20",
+      "loc": 1275,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapView.tsx#LegendLine",
@@ -11494,8 +11494,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1217,
-            1224
+            1268,
+            1275
           ]
         },
         {
@@ -11524,8 +11524,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            165,
-            1215
+            216,
+            1266
           ]
         },
         {
@@ -11556,6 +11556,16 @@
           "range": [
             114,
             126
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#indexErrorText",
+          "name": "indexErrorText",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            211,
+            214
           ]
         },
         {
@@ -22638,8 +22648,8 @@
       "id": "f:app/test/map-view-dom.test.tsx",
       "path": "app/test/map-view-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:92f397e3b0d13180ad83cbc4ed198f20772f6e20943ac04209ada49269a6d36e",
-      "loc": 694,
+      "hash": "blake3:68474823a35238d178cbb3e5ec51a57e5fed1c06709b24a1e0dd3ffec4cff6f4",
+      "loc": 775,
       "symbols": [
         {
           "id": "s:app/test/map-view-dom.test.tsx#componentFile",
@@ -22647,8 +22657,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            38,
-            68
+            39,
+            69
           ]
         },
         {
@@ -22657,8 +22667,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            22,
-            22
+            23,
+            23
           ]
         },
         {
@@ -22667,8 +22677,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            91,
-            104
+            92,
+            105
           ]
         },
         {
@@ -22677,8 +22687,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            173,
-            177
+            174,
+            178
           ]
         },
         {
@@ -22687,8 +22697,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            106,
-            108
+            107,
+            109
           ]
         },
         {
@@ -22697,8 +22707,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            154,
-            171
+            155,
+            172
           ]
         },
         {
@@ -22707,8 +22717,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            23,
-            23
+            24,
+            24
           ]
         },
         {
@@ -22717,8 +22727,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            111,
-            152
+            112,
+            153
           ]
         },
         {
@@ -22727,8 +22737,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            70,
-            89
+            71,
+            90
           ]
         }
       ]
@@ -28979,7 +28989,8 @@
       "to": "f:app/src/lib/watcher-store.ts",
       "kind": "import",
       "symbols": [
-        "IndexOutcomePayload"
+        "IndexOutcomePayload",
+        "UNANSWERED_INDEX_MESSAGE"
       ]
     },
     {
@@ -32122,6 +32133,15 @@
     },
     {
       "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "IndexOutcomePayload",
+        "UNANSWERED_INDEX_MESSAGE"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
       "to": "p:@nputer/parser",
       "kind": "import",
       "symbols": [
@@ -34670,6 +34690,12 @@
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/architecture/MapView.tsx#centerViewport",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#indexErrorText",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -43707,7 +43733,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2453,
-    "edges": 2375
+    "symbols": 2454,
+    "edges": 2377
   }
 }
