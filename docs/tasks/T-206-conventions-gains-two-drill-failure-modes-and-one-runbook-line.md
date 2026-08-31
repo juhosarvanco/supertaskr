@@ -1,6 +1,6 @@
 ---
 id: T-206
-title: CONVENTIONS gains the FOUR drill failure modes 2026-08-31 discovered, and one runbook line that would have saved an hour of the wrong CI diagnosis
+title: CONVENTIONS gains the four drill failure modes 2026-08-31 discovered, a role-qualified scratch stem, and one runbook line that would have saved an hour of the wrong CI diagnosis
 feature: F-06
 milestone: 4
 priority: 4
@@ -167,3 +167,29 @@ rule**, and `T-204`'s first proposed refusal — *the card file must
 exist* — should be read as the narrow member of a wider class: **the
 preflight can check that every path a card NAMES is inside the fence it
 DECLARES.**
+
+## 6. THE SCRATCH STEM MUST CARRY THE ROLE, NOT ONLY THE CARD ID
+
+Disclosed by `T-194`'s blind verifier, which **destroyed the drill
+scratch its own executor had left standing for it** and said so.
+
+`docs/CONVENTIONS.md` already rules that a scratch stem is **DERIVED from
+the card id and never chosen** — written after a sibling lane clobbered
+an unnamespaced script. **That rule is right and it is one qualifier
+short**: the executor and the verifier of the same card derive the
+*identical* stem, so the second seat to run silently overwrites the
+first.
+
+**Nothing was lost this time** — the scratch was clean and detached at an
+ancestor commit — and the verifier's own summary is the point: *"that was
+luck, not design."*
+
+**The fix is one token**: the stem carries the ROLE as well as the card,
+so `T-194`'s executor and `T-194`'s verifier cannot collide. It costs
+nothing and it removes a class where the failure is silent destruction of
+another seat's evidence.
+
+**And note which direction the danger runs.** A verifier arrives *after*
+the executor and is the one holding the freshly-built drill bench it may
+need to re-derive from. The seat most likely to destroy the evidence is
+the seat least able to notice it is gone.
