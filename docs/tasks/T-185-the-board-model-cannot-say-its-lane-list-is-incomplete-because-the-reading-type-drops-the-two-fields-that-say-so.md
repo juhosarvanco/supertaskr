@@ -130,6 +130,34 @@ reading with a populated `notLanes` or with `truncated: true`.**
 
 ## Read beside
 
+## NOTE FROM `T-112-s4`'s LANE, 2026-08-31 — the fourth criterion has no file it may be written in
+
+`T-112-s4` held `board-model.ts` and `select-board.test.ts` — two of this
+card's named files — and **did not touch either**, so nothing here is
+stale on account of that lane. What it changed is the diagnosis.
+
+**A body that constructs a `hydrateJoin` reading and holds it against the
+board's `DispatchReading` has to import BOTH `dispatch-store.ts` (C-15)
+and `board-model.ts` (C-17). No test file in this repository may do that
+today**: C-15 declares no `app/test/**` path at all, and no other
+component's test file declares C-15 either, so the import would be the
+undeclared component edge `arch drift` caught at T-169. Filed as `T-190`.
+This card's `touches: [app-board, app-dispatch]` does not by itself solve
+it, because a slug expands to the registry as it stood at dispatch — so
+either take `T-190` as a `blocked_by`, or have the dispatch name the test
+file in `touches:` directly. The mechanism is written out in
+`C-18-board-root.md` and in `T-112-s6`.
+
+**AND THE STRUCTURAL CAUSE IS THE SAME ONE.** This card asks how two
+shapes for one fact drift apart unnoticed. The answer is not only that
+`board-model.ts` does not import `dispatch-store.ts` — it is that
+**nothing does**, so neither a compiler nor a suite is positioned to
+notice. That is C-15's missing test path again, and it is why the
+criterion demanding the equivalence be held BY CONSTRUCTION is the right
+criterion and is currently unbuildable.
+
+## Read beside
+
 `T-126-s2` (where the join runs — this card is inside the boundary that
 ruling names), `T-112-s4` (the registry gap that leaves this whole seam
 without a test path), and `T-033-s11` (two implementations of one fact,

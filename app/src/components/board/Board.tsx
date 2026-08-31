@@ -44,9 +44,13 @@ const DENSE_CARD_THRESHOLD = 40;
  * `dispatch_brief` is registered (`T-112-s1`) and reached by
  * `dispatch-store.ts`'s `readBrief`. `dispatch` wants a `DispatchJoin`,
  * and the join has no zero-argument command shape — that is `T-126-s2`,
- * PARKED with a ruling owed rather than a fence owed. Until it lands
- * nothing in the shipped app fills either prop, so the block still does
- * not render outside a suite; `T-112-s5` carries the account.
+ * which is UN-PARKED AND RULED (architecture sitting, 2026-08-31): the
+ * join goes to TypeScript, after the dispatch view model has a test
+ * path and not before, because shape 3 was refused on test reachability
+ * alone while shapes 1 and 2 were refused on properties no measurement
+ * can revive. Until that lands nothing in the shipped app fills either
+ * prop, so the block still does not render outside a suite;
+ * `T-112-s5` carries the account.
  */
 export function Board({
   model,
