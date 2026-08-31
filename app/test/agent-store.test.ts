@@ -812,22 +812,40 @@ describe("cancel: an idle runner disarms the store it contradicts (T-184 absorbi
     expect(reduceGenesisCancel(idle, IDLE)).toBe(idle);
   });
 
-  it("a REAL cancellation still settles only the turn it names", () => {
+  it("a REAL cancellation still settles ONLY the turn it names", () => {
     // The pre-existing behaviour, kept: `cancelled` carries a turn and
-    // acts on that turn. Only `idle`, which carries none, reaches wider.
-    const two = play([
+    // acts on that turn. Only `idle`, which carries none, reaches wider —
+    // because only `idle` is a statement about every turn at once.
+    //
+    // THE FIXTURE NEEDS TWO TURNS THE WIDENING COULD REACH, and the first
+    // draft of this body had one. Turn 1 was `completed` there, so a
+    // `cancelled` that settled EVERY running turn could not touch it and
+    // the body passed under exactly the mutant it exists to catch. It is
+    // the stranded shape from this card's own defect that supplies the
+    // second: a turn whose terminal event never arrived, still `running`,
+    // while a later turn is live.
+    const twoRunning = play([
       ev({ kind: "started", seq: 1, turn: 1 }),
-      ev({ kind: "completed", seq: 2, turn: 1, text: "one", truncatedRelay: false }),
-      ev({ kind: "started", seq: 3, turn: 2 }),
+      ev({ kind: "started", seq: 2, turn: 2 }),
     ]);
-    const after = reduceGenesisCancel(two, { kind: "cancelled", turn: 2 });
-    expect(after.turns[0]?.status).toBe("completed");
-    expect(after.turns[1]?.status).toBe("cancelled");
-    expect(isTurnInFlight(after)).toBe(false);
+    expect(twoRunning.turns.map((t) => t.status)).toEqual(["running", "running"]);
 
-    // A `cancelled` naming a turn that is not running settles nothing and
-    // comes back by identity once there is no claim left to clear.
-    expect(reduceGenesisCancel(after, { kind: "cancelled", turn: 2 })).toBe(after);
+    const after = reduceGenesisCancel(twoRunning, { kind: "cancelled", turn: 2 });
+    expect(after.turns[1]?.status).toBe("cancelled");
+    // …and the turn the runner said nothing about is left alone. A store
+    // that settled it here would be inventing a claim from an outcome
+    // that does not carry one.
+    expect(after.turns[0]?.status).toBe("running");
+
+    // `idle`, from the same fixture, DOES reach both — the distinction
+    // this body exists to draw, asserted rather than described.
+    const idled = reduceGenesisCancel(twoRunning, IDLE);
+    expect(idled.turns.map((t) => t.status)).toEqual(["cancelled", "cancelled"]);
+
+    // A `cancelled` naming a turn that is no longer running settles
+    // nothing; identity once there is no claim left to clear either.
+    const settled = reduceGenesisCancel(idled, { kind: "cancelled", turn: 2 });
+    expect(settled).toBe(idled);
   });
 
   it("THROUGH THE REAL STORE: the chord clears what the walk left set", async () => {
