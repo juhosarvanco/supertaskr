@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: "the architect/integrator seat's own three same-day failures, re-aimed at the right unit by peer session nputer-10 after @human asked whether `touches:` can decide parallel safety at all"
