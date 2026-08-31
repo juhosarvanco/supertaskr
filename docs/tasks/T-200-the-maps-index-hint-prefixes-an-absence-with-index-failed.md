@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: verifying
+status: done
 suggested_by: "executor claude-opus-5@subagent @T-192, carrying its blind verifier's CORRECTION 2 — that seat measured the rendering and ruled it out of T-192's fence; the id was allocated by the dispatching seat, not minted in-lane"
 touches: [app-map]
 blocked_by: []
@@ -386,3 +386,98 @@ code: all three logs open with
 and the root-anchor accounting, and the exit-1 pair names the owed suites
 per path. `ERR_MODULE_NOT_FOUND`, `Cannot find package` and a Node stack
 frame are all absent from every one of them.
+
+## Verdict — APPROVED (2026-08-31, claude-opus-5@subagent, verifier)
+
+Blind two-phase. Attack set written from the card at base `e6a97d2` and
+hashed **before any lane artefact was opened** —
+`f9080a364ee50200fb686bfe4b490837b41bae281dc284bb7a9450dd1247ffa8`,
+29,430 bytes, sealed 2026-08-31T17:14:53Z. Re-verified unchanged at the
+integrator seat before the merge. Measured at lane tip `1cd6c31` on a
+detached bench; nothing run in the integration checkout.
+
+### The decisive question, answered by measurement
+
+**A body renders BOTH states and requires them to differ.** `THE TWO
+STATES DO NOT RENDER THE SAME SENTENCE` renders both into one root and
+asserts `absence !== refusal`. The flatten-down mutant — stripping the
+blaming prefix from the **refusal** arm so both read calm — killed **3
+bodies**. *An absence-only pin survives that mutant; this suite does
+not.*
+
+### The near-miss, which removal-only mutants cannot produce
+
+The lane built it before the verifier asked: a genuine refusal reading
+`"index_repo: the indexer did not answer — the command was refused"`.
+Replacing `===` with `.includes("did not answer")` reds **exactly that
+one body**. Confirmed from the other direction: a meaning-preserving
+reword of the constant reds **zero** map-view bodies and the rendered
+absence text keeps its calm line. **The discriminator is IDENTITY, and it
+is pinned by a test rather than asserted by a comment.**
+
+### Drill — 7 mutants, all killed, all restored sha256-identical
+
+    M1 flatten-down                 3 reds
+    M2 restore the defect           2 reds
+    M4 helper correct, JSX rehard   2 reds
+    M5 render nothing               1 red, ALONE   <- settles vacuity
+    M3c containment                 1 red, ALONE   <- settles the matcher
+    M6t title shortened             2 reds
+    M3a reword the constant         0 in map-view  <- identity confirmed
+
+`M8` is inverted and clean: the pre-existing rejection pin was not
+deleted or softened — `toContain("index failed")` came back as
+``toBe(`index failed: ${REFUSAL}`)`` on the same fixture. **Strictly
+stronger than what it replaced.**
+
+### What the verifier contributed that the lane had not
+
+- **Its own MTIME control, which DIFFERS from `T-192`'s.** A
+  byte-identical touch of `MapView.tsx` reds **two** named bodies, not
+  T-192's one. **Inheriting that figure would have corrupted every row.**
+- **The lane's drill was FILE-SCOPED** (29 bodies) where poison shape SIX
+  asks for the whole suite. All seven mutants re-run against the full
+  1,108: no additional attributable reds. Conclusions hold; the
+  measurement was narrower than the rule and the gap is now closed.
+- **D3 re-derived with a different query** than the lane's, same answer.
+  Complete by measurement rather than by argument.
+
+### Corrections — neither blocking
+
+1. The notes say a **130**-character sentence; it is **121**. They say
+   the absence line is **31** characters; it is **32**. Neither moves a
+   conclusion, and both are figures in a document whose own standard is
+   that a figure carries its derivation.
+2. `THE TWO STATES` kills no mutant another body does not already kill.
+   **Keep it** — it guards against a future weakening of the two literals
+   to `toContain` — but it is not "the load-bearing body"; M5's and M3c's
+   targets are.
+
+### The span claim, held to the headless line
+
+Premises verified at their cited lines and the arithmetic is sound. **It
+remains a CALCULATION, not a measurement** — jsdom applies no layout. The
+lane says so itself twice and routes it to an eye. Nothing was recorded
+as measured. (`border-box` makes it 258px rather than 260px, which only
+reinforces that it is an estimate.)
+
+### Gates at the verifier's own tip
+
+app build **0** · app `npm test` **1108/1108** · parser **344/344** ·
+e2e **404/404, 7.3m** · docs-gate **exit 1 = a VERDICT, not a crash**
+(26 readers, 0 frontmatter issues, no stack frames). Security sweep
+clean: the absence arm puts LESS boundary-controlled text on screen than
+the code it replaces.
+
+### A caution recorded rather than banked
+
+The verifier's first e2e attempt returned **exit 143** — SIGTERM from its
+own harness timeout at 153/404 with **zero failures**, not a suite
+verdict. **Read as a red it would have been exactly the misattribution
+`docs/STATE.md` warns about.**
+
+### The verifier's own closing note, kept because it is the honest one
+
+*"All four phase-1 predictions held, which is a WEAKER outcome than
+getting one wrong: it means my model of the card was accurate, and the
+value came from the mutants, not the forecasts."*
