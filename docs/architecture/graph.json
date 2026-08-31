@@ -6047,8 +6047,8 @@
       "id": "f:app/src-tauri/src/agent/sessions.rs",
       "path": "app/src-tauri/src/agent/sessions.rs",
       "lang": "rust",
-      "hash": "blake3:75042a362f03d01e5a7c14ab367e8a65af2ba0daf1c2a08bd7322d14d8e32391",
-      "loc": 1358,
+      "hash": "blake3:166ce74e376afbd4734f3feb7462d171972a63c5e93ce0e080cb399b2ae5a362",
+      "loc": 1511,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/sessions.rs#DAYS_IN_MONTH",
@@ -6056,8 +6056,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            615,
-            615
+            623,
+            623
           ]
         },
         {
@@ -6066,8 +6066,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            319,
-            337
+            327,
+            345
           ]
         },
         {
@@ -6076,8 +6076,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            257,
-            275
+            265,
+            283
           ]
         },
         {
@@ -6086,8 +6086,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            30,
-            30
+            38,
+            38
           ]
         },
         {
@@ -6096,8 +6096,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            39,
-            88
+            47,
+            96
           ]
         },
         {
@@ -6106,8 +6106,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            157,
-            160
+            165,
+            168
           ]
         },
         {
@@ -6116,8 +6116,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            467,
-            467
+            475,
+            475
           ]
         },
         {
@@ -6126,8 +6126,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            32,
-            32
+            40,
+            40
           ]
         },
         {
@@ -6136,8 +6136,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            34,
-            34
+            42,
+            42
           ]
         },
         {
@@ -6146,8 +6146,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            388,
-            410
+            396,
+            418
           ]
         },
         {
@@ -6156,8 +6156,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            415,
-            429
+            423,
+            437
           ]
         },
         {
@@ -6166,8 +6166,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            235,
-            239
+            243,
+            247
           ]
         },
         {
@@ -6176,8 +6176,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            357,
-            359
+            365,
+            367
           ]
         },
         {
@@ -6186,8 +6186,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            279,
-            295
+            287,
+            303
           ]
         },
         {
@@ -6196,8 +6196,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            90,
-            154
+            98,
+            162
           ]
         },
         {
@@ -6206,8 +6206,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            617,
-            619
+            625,
+            627
           ]
         },
         {
@@ -6216,8 +6216,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            627,
-            661
+            635,
+            669
           ]
         },
         {
@@ -6226,8 +6226,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            182,
-            205
+            190,
+            213
           ]
         },
         {
@@ -6236,8 +6236,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            368,
-            383
+            376,
+            391
           ]
         },
         {
@@ -6246,8 +6246,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            208,
-            216
+            216,
+            224
           ]
         },
         {
@@ -6256,8 +6256,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            344,
-            350
+            352,
+            358
           ]
         },
         {
@@ -6266,8 +6266,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            447,
-            455
+            455,
+            463
           ]
         },
         {
@@ -6276,8 +6276,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            591,
-            599
+            599,
+            607
           ]
         },
         {
@@ -6286,8 +6286,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            170,
-            176
+            178,
+            184
           ]
         },
         {
@@ -6296,8 +6296,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            162,
-            164
+            170,
+            172
           ]
         },
         {
@@ -6306,8 +6306,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            487,
-            489
+            495,
+            497
           ]
         },
         {
@@ -6316,8 +6316,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            519,
-            568
+            527,
+            576
           ]
         },
         {
@@ -6326,8 +6326,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            664,
-            1358
+            672,
+            1511
           ]
         },
         {
@@ -6336,8 +6336,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            166,
-            168
+            174,
+            176
           ]
         },
         {
@@ -6346,8 +6346,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            602,
-            611
+            610,
+            619
           ]
         },
         {
@@ -6356,8 +6356,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            222,
-            231
+            230,
+            239
           ]
         }
       ]
