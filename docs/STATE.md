@@ -1,7 +1,7 @@
 # State
 
-Updated: 2026-08-31 at the ten-lane close — record:
-docs/checkpoints/2026-08-31-the-fence-judged-nothing.md; the
+Updated: 2026-08-31 at the fourteen-lane close — record:
+docs/checkpoints/2026-08-31-four-lanes-and-a-spec-that-tested-itself.md; the
 queue lives in T-171's record beside it.
 **NO task branches remain** (derive: the LANES command below) and the
 GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
@@ -90,16 +90,11 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   DISCIPLINE. **Never tell a lane a hook enforces its fence.**
 - **`brief.mjs` TRUNCATES piped stdout at 64 KiB** (`T-197`) — redirect
   to a file; it reds a standing e2e body no lane caused.
-- ~~The cargo cache cliff~~ **RETIRED 2026-08-31 — IT WAS NEVER THE
-  CACHE** (`T-088-s4`, landed). The watcher's startup arm had no
-  rendezvous, so a write landing first BECAME the emit-suppression
-  baseline and no emit was ever produced — **missed, not late**, which is
-  why no bound ever helped. Both seats derived it from base code; the
-  verifier reproduced the red on a **clean cache, idle machine**, base
-  failing at a CONSTANT 11.0s whatever the delay. **A 13 GiB `cargo
-  clean` was run on the old attribution.** What survives is general:
-  **read a suite's own time and re-run a body ALONE before attributing —
-  and a timing correlate is not a cause.**
+- **A TIMING CORRELATE IS NOT A CAUSE.** Read a suite's own time and
+  re-run a body ALONE before attributing. (The "cargo cache cliff" was
+  retired 2026-08-31: `T-088-s4` proved the cause was a missing
+  rendezvous, not the cache — after a 13 GiB `cargo clean` on the old
+  attribution.)
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
   build artifact no merge updates — build the parser FIRST. An unbuilt
   app tree fails `npm test` about `app/dist`.
@@ -133,7 +128,7 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-the-fence-judged-nothing.md.
+  2026-08-31-four-lanes-and-a-spec-that-tested-itself.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — two
   consumers read it; `T-182` states the rule in CONVENTIONS.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.

@@ -171,3 +171,25 @@ so this defect gets worse on exactly the days the tool is used most.
 body must SYNTHESISE its oversize input, because the live `--dispatch`
 crosses and re-crosses the buffer as lanes open and close. `T-142-s1`
 watched the red go fully green when two worktrees were removed.
+
+## THE BODY WENT GREEN AGAIN, AND THE GREEN IS THE PROOF
+
+Measured at this checkpoint with **zero lanes live**:
+
+    --dispatch > file    →  63,732 bytes
+    --dispatch | cat     →  63,732 bytes      lost: 0
+
+**The output is now UNDER the 64 KiB buffer, so nothing is truncated and
+the `dispatch-order` body passes.** Across one day it has gone red, green,
+red and green again — 69,293 → 77,712 → 63,732 bytes — tracking nothing
+but how many lanes happened to be open.
+
+**That is this card's acceptance criterion demonstrating itself.** A body
+whose oversize input is the LIVE board is green whenever the board is
+small, which is exactly the state an integrator is in when running a
+final battery — so the fix would appear unnecessary at precisely the
+moment someone checks.
+
+**Four measurements now sit either side of the boundary and none of them
+is evidence about the code.** The defect is unchanged; only the input
+moved.
