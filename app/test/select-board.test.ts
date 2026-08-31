@@ -31,6 +31,7 @@ import {
   type DispositionModel,
   type InFlightLane,
   type LaneHold,
+  type NotLaneHold,
   type TopmostCard,
 } from "../src/lib/board-model";
 
@@ -865,13 +866,43 @@ const laneHold = (taskId: string, branch: string, existsOnDisk = true): LaneHold
   existsOnDisk,
 });
 
-/** A `DispatchReading` from rows, in the shape `hydrateJoin` produces. */
+/**
+ * A `DispatchReading` from rows, with a lane list that is a COUNT and no
+ * non-lane worktrees — the quiet case every body below but two wants.
+ *
+ * **THE COMMENT HERE USED TO SAY *"in the shape `hydrateJoin` produces"*
+ * AND IT WAS FALSE (T-185).** `hydrateJoin` produces a `DispatchJoin`,
+ * which required `notLanes` and `truncated` while this fixture supplied
+ * neither — had the two types been one shape, the literal beneath the
+ * claim would not have compiled. **The claim lived in prose, so the
+ * compiler could not reach it**, and a prose assertion of type
+ * equivalence is exactly what this card says must not be what holds a
+ * seam together (the `T-033-s11` family: two implementations of one fact,
+ * with nothing positioned to notice them diverge).
+ *
+ * **WHAT REPLACES IT IS A LIMIT RATHER THAN A LOUDER CLAIM.** The two
+ * types are STILL two types and still structurally unrelated —
+ * `board-model.ts` imports no C-15 module, deliberately — so no comment
+ * here may assert they agree. Holding that agreement BY CONSTRUCTION
+ * needs one body importing both, which is a cross-component edge no lane
+ * may declare from inside `[app-board, app-dispatch]`; it is routed as
+ * `T-185-s1` and named on this card. The honest sentence is the one
+ * above: this is a `DispatchReading`, and what makes it resemble the
+ * producer's answer is a human reading two files.
+ */
 const reading = (...rows: DispatchStamp[]): DispatchReading => ({
   kind: "joined",
   rows: new Map(rows.map((r) => [r.taskId, r])),
+  notLanes: [],
+  truncated: false,
 });
 
-const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+const NO_LANES: DispatchReading = {
+  kind: "joined",
+  rows: new Map(),
+  notLanes: [],
+  truncated: false,
+};
 
 const dispositionOf = (m: DispositionModel, id: string): CardDisposition | undefined =>
   m.kind === "derived" ? m.cards.get(id) : undefined;
@@ -1244,6 +1275,155 @@ describe("the ceiling is a named constant with its own assertion (criterion 5)",
     if (four.kind !== "derived") throw new Error("unreachable");
     expect(four.ceilingReached).toBe(false);
     expect(dispositionOf(four, "T-900")?.disposition).toBe("dispatchable");
+  });
+});
+
+describe("the two facts the board's own type used to drop (T-185)", () => {
+  // **NO BODY IN THIS REPOSITORY HAD EVER CONSTRUCTED EITHER OF THESE ON
+  // THE BOARD SIDE**, which is the card's fourth criterion and the reason
+  // three Rust layers arguing for these facts could be undone here with
+  // every gate green. `app/test/dispatch-store.test.ts` (T-198) built the
+  // first two on the PRODUCER side; these are the first on the consumer's.
+  //
+  // Each body names the one-side-only mutant it kills, and each mutant
+  // reds exactly one of them — measured, not asserted, and recorded on the
+  // card. That is poison shape SIX's own remedy: a count of one IS the
+  // non-duplication.
+  const oneCard = (): ProjectParseResult =>
+    withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]);
+
+  const floorReading = (
+    notLanes: readonly NotLaneHold[],
+    truncated: boolean,
+    ...rows: DispatchStamp[]
+  ): DispatchReading => ({
+    kind: "joined",
+    rows: new Map(rows.map((r) => [r.taskId, r])),
+    notLanes,
+    truncated,
+  });
+
+  it("a populated `notLanes` REACHES the board and is named, not counted", () => {
+    // MUTANT: `notLanes: []` in `selectDispositions`' return — the exact
+    // shape of the loss this card is about, one layer up from the
+    // producer mutant `T-198` pinned.
+    const d = selectDispositions(
+      oneCard(),
+      floorReading(
+        [
+          { kind: "detached", name: "nputer-app" },
+          { kind: "notALane", name: "arch-verify" },
+        ],
+        false,
+      ),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+
+    // It arrived WHOLE — both entries, both fields. A model that carried
+    // a count would satisfy a length assertion and lose the only thing
+    // that makes the entries actionable.
+    expect(d.notLanes).toEqual([
+      { kind: "detached", name: "nputer-app" },
+      { kind: "notALane", name: "arch-verify" },
+    ]);
+    // And the board SAYS it, naming each — the producer's "reported,
+    // never dropped" is a claim about a reader, not about a field.
+    expect(d.headline).toContain("worktrees that are not lanes");
+    expect(d.headline).toContain("nputer-app · detached");
+    expect(d.headline).toContain("arch-verify · notALane");
+  });
+
+  it("a not-a-lane worktree holds no fence and counts against no ceiling", () => {
+    // MUTANT: `inFlight.length + notLanes.length >= CONCURRENCY_CEILING.max`
+    // — the plausible wrong reading of "the scan saw seven worktrees".
+    // FIVE non-lane entries is the cap exactly, so a ceiling that counted
+    // them would flip here and nowhere else in this file.
+    const d = selectDispositions(
+      oneCard(),
+      floorReading(
+        [
+          { kind: "detached", name: "w1" },
+          { kind: "detached", name: "w2" },
+          { kind: "detached", name: "w3" },
+          { kind: "detached", name: "w4" },
+          { kind: "detached", name: "w5" },
+        ],
+        false,
+      ),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.notLanes).toHaveLength(5);
+    expect(d.inFlight).toEqual([]);
+    expect(d.ceilingReached).toBe(false);
+    expect(dispositionOf(d, "T-900")?.disposition).toBe("dispatchable");
+  });
+
+  it("`truncated: true` makes the lane list a FLOOR and the headline says so", () => {
+    // MUTANT: `floorLine = ""` — the note deleted while the flag is still
+    // carried, which is what "the board cannot say its lane list is
+    // incomplete" looks like once the field exists.
+    const floor = selectDispositions(oneCard(), floorReading([], true));
+    if (floor.kind !== "derived") throw new Error("unreachable");
+    expect(floor.scanIsFloor).toBe(true);
+    expect(floor.headline).toContain("THE LANE LIST IS A FLOOR, NOT A COUNT");
+
+    // THE POSITIVE CONTROL, and it is what makes the line above evidence
+    // rather than a string that is always present: the SAME model with the
+    // SAME cards and `truncated: false` says nothing at all.
+    const count = selectDispositions(oneCard(), floorReading([], false));
+    if (count.kind !== "derived") throw new Error("unreachable");
+    expect(count.scanIsFloor).toBe(false);
+    expect(count.headline).not.toContain("FLOOR");
+  });
+
+  it("a card cleared against a FLOOR is told its clearance is a least-value", () => {
+    // MUTANT: `floorCaveat = ""` — reds this body alone, because the
+    // headline body above never reads a card's reason and this one never
+    // reads the headline.
+    const d = selectDispositions(oneCard(), floorReading([], true));
+    if (d.kind !== "derived") throw new Error("unreachable");
+    const got = dispositionOf(d, "T-900");
+    expect(got?.disposition).toBe("dispatchable");
+    expect(got?.reason).toContain("FLOOR:");
+    expect(got?.reason).toContain("and not the number that exist");
+
+    // The positive control again, on the arm that matters most: with the
+    // scan complete the same card is dispatchable with NO hedge, so the
+    // caveat is a function of the flag and not of the disposition.
+    const clean = dispositionOf(selectDispositions(oneCard(), floorReading([], false)), "T-900");
+    expect(clean?.disposition).toBe("dispatchable");
+    expect(clean?.reason).not.toContain("FLOOR:");
+  });
+
+  it("AT-CEILING takes no floor caveat, because a floor cannot unreach a cap", () => {
+    // THE ASYMMETRY, and it is the half a hedge-everything fix would get
+    // wrong. A floor can only be an UNDERCOUNT, so lanes the reader missed
+    // can only reinforce a cap that is already reached — qualifying
+    // `at-ceiling` would be a false hedge, and this body forbids one.
+    //
+    // MUTANT: append `floorCaveat` to the `at-ceiling` reason.
+    const d = selectDispositions(
+      oneCard(),
+      floorReading(
+        [],
+        true,
+        { taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] },
+        { taskId: "T-801", state: "stampSkipped", lanes: [laneHold("T-801", "task/T-801-a")] },
+        { taskId: "T-802", state: "stampSkipped", lanes: [laneHold("T-802", "task/T-802-a")] },
+        { taskId: "T-803", state: "stampSkipped", lanes: [laneHold("T-803", "task/T-803-a")] },
+        { taskId: "T-804", state: "stampSkipped", lanes: [laneHold("T-804", "task/T-804-a")] },
+      ),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.ceilingReached).toBe(true);
+    const got = dispositionOf(d, "T-900");
+    expect(got?.disposition).toBe("at-ceiling");
+    expect(got?.reason).not.toContain("FLOOR:");
+    // …while the HEADLINE still discloses the floor, so the fact is not
+    // suppressed — only the sentence a floor cannot undermine is left
+    // unqualified.
+    expect(d.headline).toContain("THE CEILING IS REACHED");
+    expect(d.headline).toContain("THE LANE LIST IS A FLOOR, NOT A COUNT");
   });
 });
 

@@ -253,8 +253,46 @@ export type BriefOutcomeView =
  * Three answers and no two of them are the same silence: a brief you may
  * copy, a REASON you may not, and an assembler that could not tell you.
  */
+/**
+ * The sentence the drawer shows when the lane scan was TRUNCATED — the
+ * dispatch half of the shell's own docs note, *"docs truncated · showing
+ * first N files"* (T-018, `App.tsx`).
+ *
+ * **THIS REPOSITORY ALREADY RULED THE CASE, AND THE DISPATCH SCAN WAS THE
+ * ONE TRUNCATION WITH NO WAY TO SAY SO (T-185).** The two are the same
+ * case — a bounded read whose answer is a floor, shown to a human who
+ * would otherwise take it for a count — and the ONLY reason the dispatch
+ * scan got no note is that the type it reached had no field for one.
+ */
+const FLOOR_NOTE =
+  "lane list truncated · this is a FLOOR, not a count — the reader hit its entry ceiling, " +
+  "so this card was cleared against the lanes it could see";
+
 export type BriefPanel =
-  | { readonly kind: "copyable"; readonly taskId: string; readonly text: string }
+  | {
+      readonly kind: "copyable";
+      readonly taskId: string;
+      readonly text: string;
+      /**
+       * {@link FLOOR_NOTE} when the lane scan was a floor, `null` when it
+       * was a count.
+       *
+       * **IT RIDES ON THIS ARM AND NOT ON THE OTHER TWO, WHICH IS A
+       * CHOICE RATHER THAN AN OMISSION.** `withheld` and `unavailable`
+       * already carry a sentence saying why nothing may be dispatched,
+       * and a floor cannot make a refusal wrong — lanes the scan missed
+       * can only make it more certain. `copyable` is the one arm that
+       * invites an ACT, and it is exactly the invitation a floor
+       * undermines: the card was cleared against a SUBSET of the lanes,
+       * so a fence it appears to clear may be held by one the scan never
+       * reached.
+       *
+       * `string | null` rather than optional, for the reason
+       * `DispatchReading.truncated` is required one module over: an
+       * omitted note and a scan that was complete must not be one value.
+       */
+      readonly floor: string | null;
+    }
   | {
       readonly kind: "withheld";
       readonly disposition: Disposition;
@@ -377,7 +415,16 @@ export function selectBriefPanel(
   if (outcome.kind !== "assembled") {
     return { kind: "unavailable", sentence: refusalSentence(outcome) };
   }
-  return { kind: "copyable", taskId: id, text: renderBrief(outcome) };
+  return {
+    kind: "copyable",
+    taskId: id,
+    text: renderBrief(outcome),
+    // TAKEN, never re-derived: `scanIsFloor` is the reading's own
+    // `truncated` carried through the frontier, and asking a second
+    // question here about whether the scan was bounded would be the
+    // T-057 divergence this whole seam is built to avoid.
+    floor: dispositions.scanIsFloor ? FLOOR_NOTE : null,
+  };
 }
 
 function findTask(model: ProjectParseResult, ref: TaskRef): TaskRecord | undefined {

@@ -438,12 +438,22 @@ describe("selectTaskDetail — the assignment flag (T-169, @human's D5 ruling)",
 // the rule sat in a module no test imports.
 
 describe("selectBriefPanel — the copyable block is gated on T-111's disposition", () => {
-  const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+  /** A scanned repository: no lane, no non-lane worktree, and a lane list
+   * that is a COUNT rather than a floor (T-185 — `truncated: false` is a
+   * claim, spelled rather than defaulted). */
+  const NO_LANES: DispatchReading = {
+    kind: "joined",
+    rows: new Map(),
+    notLanes: [],
+    truncated: false,
+  };
 
   /** A lane the reader saw, as the frontier consumes it. The FENCE it
    * holds is read from that lane's own card, so nothing here says it. */
   const laneReading = (taskId: string): DispatchReading => ({
     kind: "joined",
+    notLanes: [],
+    truncated: false,
     rows: new Map([
       [
         taskId,
@@ -598,6 +608,46 @@ describe("selectBriefPanel — the copyable block is gated on T-111's dispositio
     if (panel.kind !== "withheld") throw new Error("not withheld");
     expect(panel.disposition).toBe("blocked");
     expect(panel.reason).toContain("T-502");
+  });
+
+  it("a copyable brief off a TRUNCATED scan carries the floor note (T-185)", () => {
+    // THE CARD'S SECOND CRITERION, at the layer that decides it: where the
+    // lane scan is a floor rather than a count, the board says so — the
+    // same ruling `App.tsx` already applies to the docs tree, which this
+    // repository made four merges ago and the dispatch scan could not
+    // inherit because the type it reached had no field for the fact.
+    //
+    // MUTANT: `floor: null` unconditionally — the fix reverted while the
+    // field and the flag both survive, which is the shape a structural
+    // check cannot see.
+    const floorScan: DispatchReading = {
+      kind: "joined",
+      rows: new Map(),
+      notLanes: [],
+      truncated: true,
+    };
+    const panel = selectBriefPanel(dispatchableModel, byId("T-500"), floorScan, assembled("T-500"));
+    expect(panel.kind).toBe("copyable");
+    if (panel.kind !== "copyable") throw new Error("not copyable");
+    expect(panel.floor).not.toBeNull();
+    expect(panel.floor).toContain("lane list truncated");
+    expect(panel.floor).toContain("FLOOR, not a count");
+    // The brief itself is untouched: the note QUALIFIES the invitation, it
+    // does not edit the quotation a human is about to paste.
+    expect(panel.text).toContain("ROW 1");
+
+    // THE POSITIVE CONTROL. Same model, same card, same assembled brief,
+    // and a scan that was a COUNT: the note is `null`, so the assertion
+    // above is about the flag and not about the arm.
+    const complete = selectBriefPanel(
+      dispatchableModel,
+      byId("T-500"),
+      NO_LANES,
+      assembled("T-500"),
+    );
+    expect(complete.kind).toBe("copyable");
+    if (complete.kind !== "copyable") throw new Error("not copyable");
+    expect(complete.floor).toBeNull();
   });
 
   it("refuses to answer at all when the lane reader refused — never a free board", () => {
