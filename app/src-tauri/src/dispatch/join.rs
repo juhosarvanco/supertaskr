@@ -578,6 +578,72 @@ mod tests {
         assert!(sentences.iter().all(|s| s.len() > 20), "{sentences:?}");
     }
 
+    /// **THE FOUR SENTENCES, WHOLE — `T-195`'s body on the wire side.**
+    ///
+    /// The body above pins ONE FRAGMENT of each sentence with `contains`,
+    /// and a containment matcher is satisfied by any superstring. Measured
+    /// at `40c9b8b`, one side only, each mutation read back as `1 1` on
+    /// `git diff --numstat` and each restore proved by sha256 against
+    /// `f83ccbcb…48a9`: **all four arms survived `cargo test` at exit 0**
+    /// under a wording mutation.
+    ///
+    /// `NoWorktreesDirectory` is the one to read. Its pinned fragment —
+    /// `never registered a worktree` — IS its whole reason clause, so no
+    /// DELETION can dodge it, and a deletion-only sweep therefore scores
+    /// it safe. Appending `, probably` dodges it anyway and changes what
+    /// the user is told. **So the exposure here is not deletion, it is
+    /// EDIT**, and only an exact match closes it. That is also why this
+    /// body exists beside the fragments rather than replacing them: the
+    /// fragments were written to catch a SWAP between two arms, which they
+    /// still do.
+    ///
+    /// **ASSERTED WHOLE RATHER THAN BY PARTS, DELIBERATELY** — the choice
+    /// `T-195`'s second decision asks to be made explicitly.
+    /// [`LaneScanRefusal::sentence`]'s own doc comment calls this "THE ONLY
+    /// SPELLING OF THESE FOUR SENTENCES, AND IT TRAVELS ON THE WIRE". A pin
+    /// asserting merely that a reason is PRESENT would survive precisely
+    /// the edit that makes a refusal stop saying why — the failure family
+    /// `T-171` and `T-183` were opened for. These are user-facing strings
+    /// with no other pin under them, so changing one should cost a red and
+    /// a second look rather than nothing. Freezing the wording is the
+    /// point, not a side effect.
+    #[test]
+    fn every_refusal_sentence_is_pinned_whole_rather_than_by_a_fragment() {
+        // A `match` rather than a table keyed by index: adding an arm to
+        // the enum stops this compiling, so a new refusal cannot reach the
+        // wire unpinned. A table would silently leave it uncovered.
+        fn expected(refusal: LaneScanRefusal) -> &'static str {
+            match refusal {
+                LaneScanRefusal::NotAGitRepository => {
+                    "this folder is not a git repository, so it has no lanes to read"
+                }
+                LaneScanRefusal::GitIsAFile => {
+                    "this folder is itself a git worktree (its .git is a file), so its lanes live in the repository it was cut from"
+                }
+                LaneScanRefusal::NoWorktreesDirectory => {
+                    "this repository has never registered a worktree"
+                }
+                LaneScanRefusal::WorktreesUnreadable => {
+                    "this repository's .git/worktrees could not be read"
+                }
+            }
+        }
+
+        // Asserted non-empty before the loop is trusted: an empty corpus
+        // would make every iteration below vacuously agree (poison shape
+        // TEN, whose remedy is exactly this line).
+        assert_eq!(LANE_SCAN_REFUSALS.len(), 4);
+
+        for refusal in LANE_SCAN_REFUSALS {
+            assert_eq!(
+                refusal.sentence(),
+                expected(refusal),
+                "the wire sentence for {refusal:?} was edited and this pin was not — \
+                 if the new wording is intended, change it HERE too, deliberately"
+            );
+        }
+    }
+
     #[test]
     fn a_scan_that_refused_makes_the_join_unavailable_rather_than_all_not_dispatched() {
         let board = [
