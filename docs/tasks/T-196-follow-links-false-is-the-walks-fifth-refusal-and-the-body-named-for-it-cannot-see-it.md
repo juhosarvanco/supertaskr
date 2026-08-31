@@ -10,7 +10,7 @@ blocked_by: []
 touches: [crate-index]
 suggested_by: verifier claude-opus-5@subagent @T-186, id allocated by the integrator
 builder: claude-opus-5@subagent
-review:
+review: independent
 ---
 
 **FOUND BY `T-186`'S BLIND VERIFIER, MEASURED AT `9fe1ac3`, AND
