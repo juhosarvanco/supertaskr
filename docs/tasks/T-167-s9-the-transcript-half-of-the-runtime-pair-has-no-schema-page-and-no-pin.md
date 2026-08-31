@@ -248,13 +248,19 @@ IS OVER" is the current fact. Nothing here was blocked by it.
 
 ### Drills — the pin proved able to fail, one side at a time
 
-All three at `5fcd646`, each mutating ONE side and restored by sha256:
+A, B and C at `5fcd646`, each mutating ONE side and restored by sha256.
+**D is the fourth and it runs the other way**: it mutates what the pin is
+NOT supposed to hold, and its expected result is GREEN — it is the
+measurement behind "For the verifier" item 1 below, and it is a drill
+rather than a claim precisely because a negative like *"nothing catches
+this"* is the kind that is cheapest to assert and never test.
 
 | # | side | mutation | exit | what fired |
 |---|---|---|---|---|
 | A | code | `#[serde(rename = "atMillis")]` on `at_ms` | **101** | `…transcript-schema.md names ["atMs"]; the written line lacks them` |
 | B | doc | drop `"machine": true` from the example | **101** | the MACHINE-ASSEMBLED guard, printing the short set `{"atMs","role","text","turn"}` |
 | C | doc | respell `"atMs"` as `"at_ms"` | **101** | the camelCase guard, by name |
+| D | doc, at `a86ce9f` | delete **49 of 60 lines** — all prose, keeping the H1 and the fenced block | **0** | **nothing.** `cargo test --lib` 261/0 unchanged, method-evals 0, docs-gate **0** (does not fire) |
 
 Restoration: `sessions.rs` back to
 `aac6fd7c4facc047b96cbe9dfdbfbf88e7f9658ea5afe844a748e5628c5ce1a8`, the
@@ -284,15 +290,27 @@ exit **0** — a green over ZERO bodies, `gate-run.mjs`'s charter instance
 
 ### For the verifier
 
-1. **The prose in the new page is NOT pinned, and this is stated rather
-   than glossed.** The `json` example is checked field-for-field in both
-   directions and the file cannot be deleted without breaking the build
-   (`include_str!`). But strip the camelCase paragraph, or the whole
-   "WHICH KEY A LINE MAY LACK" bullet, leave the example intact, and
-   `cargo test`, the docs gate, method-evals and the e2e lane all stay
-   green. Two of the three facts survive prose deletion because the
-   EXAMPLE carries them (`atMs`, `machine`); the sentences explaining them
-   have no keeper. Attack that seam first.
+1. **The prose in the new page is NOT pinned, and that is MEASURED here
+   rather than reasoned — DRILL D, at `a86ce9f`.** The `json` example is
+   checked field-for-field in both directions and the file cannot be
+   deleted at all without breaking the build (`include_str!`). The prose
+   around it has no keeper anywhere, and the drill deliberately overshot
+   the claim to find out how far it goes: **49 of the page's 60 lines
+   deleted — every prose line, keeping only the H1 and the fenced block —
+   and nothing in the tree noticed.**
+
+   | instrument | on the stripped page |
+   |---|---|
+   | `cargo test --lib` (261 bodies, incl. `kit.rs`'s byte-pins) | exit **0**, 261 passed / 0 failed — unchanged |
+   | `node tools/method-evals/run.mjs` | exit **0** |
+   | `docs-gate.mjs method/runtime/transcript-schema.md` | exit **0** — it does not even FIRE |
+
+   Restored: sha256 back to `6914ba86…`, `git status --short` empty. So
+   the two FACTS survive prose deletion because the EXAMPLE carries them
+   (`atMs`, `machine`), and every SENTENCE explaining them is unheld. This
+   is the seam to attack, and the honest reading is that this card bought
+   a mechanically-checked key set and an unenforced explanation — which is
+   more than the transcript had and less than the page looks like.
 2. The `machine`-may-be-absent arm asserts `missing == ["machine"]`, which
    TRANSCRIBES one key name into the test. It is the one transcription
    left in this pin, and it is the shape T-167-s1 removed elsewhere.
