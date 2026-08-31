@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [crate-index]
 suggested_by: "architect/integrator seat, ROUTED BY T-140-s9's merge (2026-08-31) and re-measured at this seat before filing rather than transcribed from the route"
