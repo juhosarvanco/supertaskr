@@ -1,9 +1,9 @@
 # .nputer/genesis/transcript.jsonl — the genesis transcript
 
 Runtime state, not project truth: lives in .nputer/, not docs/. Losing it
-loses a chat rehydration and nothing about the project. It is the second
-of the two runtime files one module owns — sessions-schema.md next door
-documents the first — and both are losable by charter (ADR-017 clause 4).
+loses a chat rehydration and nothing about the project. It is one of the
+two runtime files under .nputer/ — sessions-schema.md next door documents
+the other — and both are losable by charter (ADR-017 clause 4).
 
 ONE JSON OBJECT PER LINE, appended and never rewritten. A line is one
 protocol HALF-turn, so a completed exchange is TWO lines carrying the
@@ -42,17 +42,19 @@ line with no interior newlines.
   chat decline to draw it in the human's own bubble without recognising
   machine text BY READING IT.
 
-- **THE KEYS ARE camelCase — `atMs`, not `at_ms`** — while the session
-  registry's own entry keys next door are snake_case. The two runtime
-  files split the same way `sessions.json` splits internally, where the
-  entry is snake_case and the pack object inside it is camelCase; the
-  split is on the wire, so a reader cannot recover it from the field
-  names alone and it is written down here instead.
+- **EVERY KEY HERE IS camelCase — `atMs`, never `at_ms`** — while the
+  session registry's entry keys next door are snake_case. **The two
+  runtime files do not share one convention, and neither does
+  `sessions.json` internally**, where a registry entry is snake_case and
+  the pack object nested inside it is camelCase. So the spelling is a
+  property of the OBJECT and not of the directory, a reader cannot infer
+  it from having read the other file, and each object's own page is where
+  it has to be written down.
 - **WHICH KEY A LINE MAY LACK, because the example shows a full one and
   says nothing about the ordinary partial ones.** Exactly one: `machine`
   is OMITTED when it is false, so an ordinary typed half-turn carries the
-  four keys above it and no fifth. **Absent means *not machine-assembled*
-  — never *unknown*** — and a reader compares against `true` rather than
+  other four keys and no fifth. **Absent means *not machine-assembled* —
+  never *unknown*** — and a reader compares against `true` rather than
   testing presence. That is also why a transcript written before the flag
   existed reads back correctly rather than ambiguously. **Every other key
   above is always written.**

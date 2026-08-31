@@ -169,33 +169,48 @@ This one names the directory.
 
 ### Gates, derived on the merge forecast this tip will have
 
-Range rule, executor form: `TREE=$(git merge-tree --write-tree 40c9b8b
-HEAD)` → `a3618ea` at exit 0 (clean); `git diff --name-only 40c9b8b
-a3618ea` → **2** paths. This notes commit adds `docs/tasks/T-167-s9-*.md`,
-so the gates below are derived on the **3-path** set the tip will carry.
+Range rule, executor form, against main `40c9b8b`: at the final tip
+`TREE=$(git merge-tree --write-tree 40c9b8b HEAD)` → `8bb5e46` at exit 0
+(a CLEAN merge), and `git diff --name-only 40c9b8b 8bb5e46` → **4**
+paths. **The set is a FIXED POINT under the remaining correction
+commit**, which touches only paths already inside it, so this figure does
+not go stale between here and the handoff. (Derived first at **2** paths
+before the notes existed and at **3** with them forecast; the fourth is
+the routed suggestion card. **The gate SET never moved — only the
+count.**)
 
 | gate | fires | trigger matched | result |
 |---|---|---|---|
-| GRAPH REGEN | YES | `.rs` outside docs/ | `index --check` exit **1**, STALE |
-| BOOT GATE | YES | `app/src-tauri/**` | see below |
-| DOCS GATE | YES | `docs/tasks/*.md` | exit **1**, FIRES, 3 suites owed |
+| GRAPH REGEN | YES | `.rs` outside docs/ | `index --check` exit **1**, STALE — the checkpoint's, not this lane's |
+| BOOT GATE | YES | `app/src-tauri/**` | exit **0**, both `[nputer]` lines |
+| DOCS GATE | YES | `docs/tasks/*.md` | exit **1**, FIRES, 3 suites owed — all green |
 | METHOD EVAL | YES | `method/**` | exit **0**; `--selftest` exit **0** |
 
-Suites, through the blessed runner from the repo root, all at ref
-`5fcd646` (read the COUNT, never the code):
+Suites, through the blessed runner from the repo root, **re-run at the
+notes tip `f4bc430`** because the routed card changes the live
+`docs/tasks` tree those readers parse — which is the one thing a
+pre-commit gate read cannot catch (read the COUNT, never the code):
 
     gate-verdict suite=parser exit=0 bodies=344  targets=1  GREEN
     gate-verdict suite=app    exit=0 bodies=1116 targets=1  GREEN
     gate-verdict suite=rust   exit=0 bodies=611  targets=18 GREEN
+    gate-verdict suite=e2e    exit=0 bodies=409  targets=1  GREEN
 
-Those three are exactly the suites the DOCS GATE named (`npm test` from
-app/, `npx vitest run` from lib/parser/, `npm test` from tools/e2e/). The
-card's own criterion — the app crate's `cargo test`, headless — is the
-`rust` row.
+All four also answered identically at `5fcd646`. Three of them are
+exactly the suites the DOCS GATE named (`npm test` from app/, `npx vitest
+run` from lib/parser/, `npm test` from tools/e2e/); the card's own
+criterion — the app crate's `cargo test`, headless — is the `rust` row.
 
 A bare `cargo test` from app/src-tauri answers **exit 0 / 607** bodies;
 the runner answers **611 over 18 targets** because it passes
 `--no-fail-fast`. Both are true and the second is the one to quote.
+
+BOOT GATE, from tools/e2e/ with `NPUTER_BOOT_PORT=16710` (derived from
+the card id, `lsof` to zero rows immediately before binding; 1420 was
+READ and held nothing, never probed and never bound): exit **0**, with
+`[nputer] project folder: /Users/ujju/Projects/nputer-T-167-s9` and
+`[nputer] window "main" created`, then the process tree stopped on
+SIGTERM.
 
 **GRAPH REGEN is owed and is NOT this lane's to discharge.**
 `docs/architecture/graph.json` is outside the fence, and the gate's own
@@ -223,7 +238,11 @@ All three at `5fcd646`, each mutating ONE side and restored by sha256:
 Restoration: `sessions.rs` back to
 `aac6fd7c4facc047b96cbe9dfdbfbf88e7f9658ea5afe844a748e5628c5ce1a8`, the
 page to `ed23328547687f24963d7c00baf5a23a36c7d264979de095c418fbb6a78517c9`,
-`git status --short` empty.
+`git status --short` empty. **The page's sha256 then moved to
+`6914ba8613fc2196e0f3408a018c22059e42d6bc54a7f12bd1d2f61f3ee0160d` at the
+prose-correction commit below** — the drills' `ed233285` is the byte state
+they were performed against, and the correction leaves the `json` EXAMPLE
+untouched, so every drill result above still describes the shipped pin.
 
 **AND A FOURTH DRILL RESULT NOBODY ASKED FOR, RECORDED BECAUSE IT COST
 THIS LANE THE WORK.** The FIRST drill run happened BEFORE the
@@ -260,6 +279,27 @@ exit **0** — a green over ZERO bodies, `gate-run.mjs`'s charter instance
    this lane did not take on its own.
 3. The old substring assertion was left in place; if the verifier reads
    two copies of one fact as the defect, that is a fair finding.
+
+### Where the brief was wrong
+
+- **The lane census was short by one.** The brief named "two other lanes
+  — `T-209` and `T-208`, all three fences pairwise disjoint". STATE's own
+  LANES command answers **four** live worktrees on task branches:
+  `T-167-s9`, **`T-195`**, `T-208`, `T-209`. `T-195` reads `status:
+  planned` on the board, which is the lapsed stamp lane-protocol rule 7
+  says to disbelieve beside a live worktree. It expands (`app-dispatch` →
+  C-15) to `app/src-tauri/src/dispatch/**`,
+  `app/src/lib/dispatch-store.ts`, `app/test/dispatch-store.test.ts` —
+  **disjoint from all six of this fence's paths**, so the omission cost
+  nothing here. It is recorded because the census, not the outcome, is
+  what row 5 asks for.
+- **The base was right.** `git merge-base main HEAD` = `d7ec96c`,
+  matching both the brief and `.nputer/lane-fence.json`.
+- **The ceremony reading was right, and by the ROW.** Derived
+  independently from `KIT_FILES` and C-14's `touch_slugs:` rather than
+  taken; see above.
+- **This card's own graph-headroom figure is stale** — recorded above
+  rather than here, because it is the CARD's error and not the brief's.
 
 ### Noticed, not done, routed
 
