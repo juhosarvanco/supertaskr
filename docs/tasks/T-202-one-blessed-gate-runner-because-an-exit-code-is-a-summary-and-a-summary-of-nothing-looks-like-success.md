@@ -259,3 +259,266 @@ these mutations; the reachable suite is the whole suite here.
   `T-201` exactly. Committed 29,121 bytes, fresh generation 32,327:
   **+3,206 bytes** for 30 new spec names. The integrator must run
   `npm run capabilities` in the merge commit.
+
+
+## Verdicts
+
+### 2026-08-31 — APPROVED WITH ASSIGNED CORRECTIONS — verifier, claude-opus-5@72a12f43
+
+#### THE FINDING: EVERY CORPUS THE SPEC CHECKS IS THE CORPUS UNDER TEST
+
+Stated first because it is the one sentence to carry out of this pass.
+**Deleting a required verdict field, deleting a whole graded suite from
+the registry, and deleting the solo lock's pid-liveness check each leave
+the suite at 31/31 GREEN** — because the bodies asserting those three
+requirements ITERATE THE VERY LISTS THAT DEFINE THEM. Empty the list and
+you delete the requirement and its test in one stroke, and the check goes
+on reporting agreement over nothing.
+
+**That is instance 5 of this card's own subject — the comparison over an
+empty corpus — reproduced inside the artefact built to catch it.** The
+runner is sound; its PROOF is what carries the defect, which is the exact
+recursion this card names. The measurements are in the mutant table below.
+
+**And the exactness half, which a removal-only drill cannot see:**
+removing the runner's name from `docs/CONVENTIONS.md` KILLS a body, but
+**adding a competing SECOND spelling survives** — so criterion 1's *"and
+no other spelling"* is a CONTAINMENT matcher. It is UNMEASURED, not merely
+unmet, and only the PAIR of mutants distinguishes the two.
+
+**This is a RULE rather than an anecdote, because two verifiers reached it
+independently on different subjects**: `T-198`'s verifier found the same
+drill mode from the other direction, and both are folded into `T-206`.
+**A drill that mutates only by REMOVAL cannot tell an exact matcher from a
+containment one — mutate in both directions, or do not claim exactness.**
+
+**Phase 1 was written, saved and hashed before the diff, the notes or any
+commit message was opened.** Attack set sha256
+`10f3178f1234d53bee05fd9385dba2c32929d8347f70dc8e228ea221a5bc9f0a`,
+sealed 2026-08-31T07:25:57Z, 17 attacks (A0–A16) derived from the card at
+its base ref `146ebb6` alone. Phase-1 toolset was `rev-parse`,
+`merge-base`, `ls-tree`, `git show <ref>:<path>` and a `status
+--porcelain` that returned empty — **no `git log`, no `git diff`**.
+
+**Contamination, self-inflicted, disclosed and then resolved to NIL:** my
+first action read the WORKING-TREE `CLAUDE.md` before I had set the
+base-ref discipline. Phase 2 settled it — `CLAUDE.md` is blob
+`03bbe07355daab00fac4472f3d32925e50d8950e` at both `146ebb6` and
+`7a8dc4b`, byte-identical, so nothing leaked. The dispatch brief named no
+executor-derived specific (no mutant number, no path count, no suite
+figure) and separated the two phases, per `roles/verifier.md` and STATE's
+"a verifier's brief carries NO lane fact".
+
+**All figures below are measured at `7a8dc4b` unless another ref is named.**
+
+#### The charter attack, and what else failed to break it
+
+The card's own subject is a runner that is vacuously green. **It is not.**
+
+- `/usr/bin/true` as the graded command — runs nothing, exits 0 —
+  → `REFUSED reason=zero-bodies`. The single sharpest discriminator
+  between "correctly refuses" and "never ran", and the runner passes it.
+- A nonexistent binary → `REFUSED could-not-run`. A child printing
+  `Running 0 tests` and exiting 0 → `REFUSED zero-bodies`.
+- **The count is not fabricated.** `gate-run.mjs parser` reported
+  `bodies=344`; run independently, `npx vitest run` in `lib/parser/`
+  reported its own `Tests 344 passed (344)`. Two sides, one number.
+- Real discrimination over real spawns: parts-not-summing → `REFUSED
+  parts-do-not-sum-to-baseline`; exit 101 with parts summing → `RED`;
+  two targets summing → `GREEN bodies=5 targets=2`.
+- **No pipe is possible rather than merely absent** — `spawnSync` with an
+  argv ARRAY and no shell, plus a metacharacter validator. Structural, not
+  a source grep. The capture is a true single-fd redirect, pinned by a
+  real interleaving body.
+- `--no-fail-fast` is enforced by `validateSuite` for the cargo family —
+  again structural, not a grep.
+- **Over-refusal is loud and distinguishable from BOTH green and red**:
+  REFUSED is exit 3, the house code for "this run is not a claim about the
+  tree", with a reason token on the line. My predicted over-refusal O1 —
+  an `isatty` pipe-detector that would refuse every mandated redirect and
+  all of CI — **does not exist here**; the runner never sniffs the stream.
+- **Security sweep (mandatory, step 3): clean.** No shell anywhere; the
+  command is only ever a frozen-registry entry and CLI arguments select
+  keys rather than supplying commands; zero new dependencies (node
+  builtins only); no network; no secrets; writes confined to `mkdtemp`
+  dirs and one advisory lock in `tmpdir` whose name is hex-derived, so no
+  traversal.
+- **Fence: COMPLIANT**, judged by reading the manifest against the diff
+  because `T-199` says the hook judges nothing. All four paths lie inside
+  `touches: [tools/e2e, docs/CONVENTIONS.md]` plus the card's own file.
+- **Both owed gates are green at the tip.** `docs-gate.mjs`, given
+  separate literal paths, named `cargo test from app/src-tauri/` and `npm
+  test from tools/e2e/`. Full e2e: **398 passed**, my own captured `$?`=0.
+  Cargo `--no-fail-fast`: **601 passed / 0 failed / 4 ignored over 18
+  targets**, and the arithmetic holds — parts sum to **605**, exactly the
+  sum of cargo's own `running N` baselines. Lib suite 4.20s, inside
+  STATE's cache-cliff band.
+- Confirmatory mutant M4 (`count.bodies === 0` → `< 0`) **KILLED, 2
+  bodies**: the centrepiece guard is genuinely pinned, by a real
+  syntax-broken spawn and by the exits-ZERO half over [0,1,101,254].
+- The `| tee` prose correction is **factually right**: the piping
+  prohibition lives in the DOCS GATE's xargs-dialect table, and the
+  BOOT GATE's "this pipeline never issues" is a release pipeline.
+
+#### The defect: four surviving mutants, and they are ONE class
+
+Every mutant below was applied one side only, read back with `git diff`,
+run unpiped with `$?` captured first, then restored with sha256 identical
+to baseline (`gate-run.mjs` `a5b533e3…`, `CONVENTIONS.md` `80ad2c76…`).
+Each ran **31 bodies, never zero** — shape TEN on my own checks.
+
+| # | mutation | expected | measured |
+|---|---|---|---|
+| M1 | drop `"bodies"` from `REQUIRED_VERDICT_FIELDS` | RED | **SURVIVED 31/31** |
+| M2 | drop `pidAlive(held.pid)` from the solo lock | RED | **SURVIVED 31/31** |
+| M5 | delete the whole `app` suite from `GRADED_SUITES` | RED | **SURVIVED 31/31** |
+| M3a | rename `gate-run.mjs` out of CONVENTIONS | RED | KILLED (1 body) |
+| M3b | ADD a competing second spelling to CONVENTIONS | RED | **SURVIVED 31/31** |
+
+**The pattern: every corpus the spec checks is the corpus under test.**
+The body proving "a verdict line missing a required field is REFUSED"
+loops over `REQUIRED_VERDICT_FIELDS` itself, so deleting a field deletes
+both the requirement and the test for it. The bodies checking the registry
+iterate over the registry, so the registry can be emptied unnoticed. **A
+comparison over a corpus that the mutation itself empties reports
+agreement and measures nothing** — which is instance 5 of this card,
+reproduced inside the artefact built to catch it.
+
+**M3a/M3b is the exactness pair, and only the pair identifies it.** The
+removal-only half kills, so the body looks strong; the addition half
+survives, which proves the matcher is CONTAINMENT. Criterion 1's second
+half — *"and no other spelling"* — is therefore unmeasured, not merely
+unmet.
+
+**M2 is the over-refusal direction and it costs a misattribution.** The
+body named *"a lock left behind by a dead process is reclaimed"* acquires,
+cleanly RELEASES (deleting the file), then re-acquires — it never
+constructs a lock left behind, so the stale branch is never entered. With
+the liveness check gone, one crashed run wedges the solo gate for `rust`
+and `e2e` permanently, and the next lane reads its own refusal as a red it
+caused.
+
+#### Assigned corrections (assigned, not performed)
+
+1. **Pin `REQUIRED_VERDICT_FIELDS` against an independent literal**, so
+   M1 dies. Criterion 3 requires that a missing field be refused; today
+   the requirement can be deleted silently, and `T-203` gates a push on
+   this token.
+2. **Pin the registry against an independent expectation**, so M5 dies.
+   Criterion 1's first half is otherwise unenforced and a graded suite can
+   fall out of the blessed runner unnoticed.
+3. **Construct a genuinely stale lock** — write a lock file holding a dead
+   pid, then acquire — so M2 dies and the "crashed run cannot wedge the
+   gate" claim is measured rather than asserted.
+4. **Rename two bodies to what they measure.** `gate-run.spec.ts:521`
+   claims *"the one spelling"* while asserting containment, and
+   `gate-run.spec.ts:473` claims a lock *"left behind by a dead process"*
+   it does not construct. **This is not cosmetic: `docs/CAPABILITIES.md`
+   is generated from these names**, so both would enter the behaviour
+   census as sentences the tree does not hold. Either rename them, or add
+   the exactness assertion the name promises.
+5. **Two stale figures in the implementation notes**, both re-derived by
+   me at `7a8dc4b`: the drill table says *"30 bodies ran every time"* —
+   the spec ships **31**; and the fresh CAPABILITIES generation is
+   **32,434 bytes**, not 32,327. The gap matters, because it locates the
+   drills as predating body 31 — which is exactly the containment matcher
+   M3b exposes. (The `−14` byte claim on CONVENTIONS is CORRECT: 147,947
+   → 147,933.)
+6. **`gate-run.spec.ts:194` exercises no product code** — it asserts that
+   a string constant defined 130 lines above contains a substring. It
+   cannot fail except by editing the constant.
+
+#### Not defects, recorded
+
+- **`tools/gates/` vs `tools/e2e/scripts/`** — the card's prose says one
+  thing and the card's own `touches:` forbids it. The lane obeyed the
+  fence and routed the move, which is the right call; the CARD should be
+  reconciled so a later reader does not hunt in `tools/gates/`.
+- **Criterion 1's second half is knowingly unmet and disclosed** — the
+  per-package bullets must stay because `workflow-parity.spec.ts` derives
+  CI's steps from exactly those bullets. I verified that dependency. The
+  collapse needs `.github/workflows/ci.yml`, outside this fence. Correctly
+  routed. **But note the blessed bullet carries no `run from <dir>/:`
+  marker, so by that spec's own account it arrives in the one shape the
+  derivation cannot see** — the one blessed command is invisible to CI
+  parity by construction.
+- **The runner's honest residual, which the notes do not name:** a child
+  that PRINTS a plausible summary having run nothing is reported GREEN
+  (measured: a forged `Running 5 tests` / `5 passed` transcript →
+  `GREEN bodies=5`). Baseline and parts both come from the same
+  transcript, so the runner's floor is the reporter's own honesty. This is
+  inherent to counting a tool's self-report and is not a defect against
+  the card — it is worth one sentence in the header.
+
+#### The integrator's obligation
+
+**`npm run capabilities:check` is RED at this tip** — exit 1, STALE,
+committed 29,121 bytes against a fresh 32,434. The lane disclosed this and
+genuinely cannot fix it inside `touches:`. But CONVENTIONS requires the
+regeneration to land in the SAME commit as whatever moved a test name, so
+**the merge commit must carry `npm run capabilities`** or the red arrives
+at the next lane detached from its cause.
+
+#### One red that is NOT this lane's, proven rather than asserted
+
+`dispatch-order.spec.ts:200` *"--dispatch runs on the live repository,
+exits 0, and WRITES NOTHING"* reds when that spec runs ALONE and passes in
+the full suite. Cause proven, not guessed: `brief.mjs --dispatch`
+redirected is **75,910 bytes and contains the BLOCKED section at byte
+72,052**; piped it is **exactly 65,536**. The assertion's substring lies
+beyond the pipe boundary. That is the standing `T-197` truncation STATE
+names as no lane's doing, and this diff moves board size in the safe
+direction. Re-measured once and attributed, per STATE.
+
+**A note on my own measurement, in this card's own spirit:** my first M4
+run exited 1 having run ZERO bodies — Playwright aborted at config load
+because I had left the port busy with my own background suite. An exit
+code called that a kill; it was not one. I discarded it and re-ran on a
+free port, where it killed 2 bodies honestly. Read the count, never the
+code — including your own.
+
+#### Gates re-run at MY OWN tip, because this verdict is a write
+
+`roles/verifier.md` step 7: prose is a code input here, so the tip this
+verdict created owes its own gates. `docs-gate.mjs`, given the card path
+as a separate literal argument, named three suites. All three measured
+AFTER the append above:
+
+- `npx vitest run` from `lib/parser/` — **344 passed**, captured `$?`=0.
+- `npm test` from `app/` — **1100 passed** (49 files), captured `$?`=0.
+- `npm test` from `tools/e2e/` — **397 passed, 1 failed**, captured `$?`=1.
+  The one failure is `dispatch-order.spec.ts:200`, the `T-197` truncation
+  body above. **Proven not to be mine:** `brief.mjs --dispatch` is
+  byte-identical before and after this append — 75,910 bytes, BLOCKED at
+  offset 72,052 both times — and this verdict's text never appears in that
+  output at all. The card's prose is not an input to `--dispatch`.
+- `docs-gate.mjs` confirms every live card's frontmatter still parses with
+  a legal status, so this append moved no board.
+
+**INSTANCES SIX AND SEVEN OF THE EXIT-CODE FAMILY, BOTH MINE, BOTH IN THE
+ACT OF VERIFYING THE CARD THAT NAMES THEM.** The card records three
+measurements of a wrapper reporting *"exit code 0"* against a script's own
+`$?` of 1, and the executor's notes add a fourth. This pass produced two
+more, and they are the card's two halves respectively:
+
+- **SIX — an exit code over ZERO BODIES, which is instance 2's shape.**
+  My first run of mutant M4 exited **1** and I nearly scored it a kill.
+  It had run NOTHING: Playwright aborted at config load because I had
+  left the lane port busy with my own background suite. An exit code
+  called that a kill; it was not one. Discarding it and re-running on a
+  free port produced an honest kill of 2 bodies. **The count is what
+  caught it, exactly as this runner argues.**
+- **SEVEN — a wrapper contradicting a captured `$?`.** The harness
+  notification for my background e2e run read *"completed (exit code 0)"*
+  while the line the script printed for itself read
+  `MYTIP E2E CAPTURED RC = 1`. **I only caught it because I printed my
+  own.**
+
+Neither was staged. The rule this runner installs locally is the rule that
+caught both, and the verifier's seat is not exempt from it: **read the
+count, never the code — including your own.**
+
+**Seven is SYSTEMATIC rather than intermittent, which is the part the
+upstream repro needs**: it recurred on **every** background run in this
+pass — three of three — each time reporting *"completed (exit code 0)"*
+against a captured `$?` of 1. A reproducer does not need to wait for it.
