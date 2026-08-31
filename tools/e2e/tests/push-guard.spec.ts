@@ -145,7 +145,14 @@ function fixture(
   // and the fence manifest are all born untracked — so without this the
   // "clean tree" control below is dirty and the body that separates the
   // two sentences can never fail.
-  writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\n");
+  // `remote.git/` is ignored because it lives INSIDE this root: without
+  // the entry `git add -A` commits it as a GITLINK, which silently makes
+  // the second commit non-empty for a reason that has nothing to do with
+  // the file it is supposed to carry. A poison drill found that by
+  // surviving — the mutant that reverted the second commit's content left
+  // the commit intact anyway, so the arm's precondition could not be
+  // killed from the side it actually depends on.
+  writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\nremote.git/\n");
   git("add", "-A");
   git("commit", "-qm", "fixture");
 
