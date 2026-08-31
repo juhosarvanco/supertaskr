@@ -427,3 +427,252 @@ should assert the PIPED byte count against the FILE byte count for one
 `--dispatch` run, because a body that only reads content is green until
 the board grows past 64 KiB again. Sibling in class to `T-143-s1`, which
 already carries "the machine-scoped check inside a spec".
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind seat):
+**APPROVED WITH ASSIGNED CORRECTIONS.** The central ruling is right and I
+reached it independently before opening the diff: `index_repo` takes a
+bound, the dialog pickers must not, and the two latches are not one
+defect. The number is derived rather than inherited, the derivation
+reproduces at my own bench, the T-057 debt is named at its site and
+routed instead of hidden, and **no `C-10 -> C-14` edge was created** —
+which was one of my two phase-1 predictions and it was WRONG in the
+lane's favour. The three corrections below are a claim that covers two
+of three commands and is stated as covering all three, a user-facing
+sentence that is rendered under a prefix contradicting it, and a body
+that pins the message's number but not its meaning. None is a reason to
+hold the lane.
+
+**PHASE 1 WAS WRITTEN BEFORE THE DIFF WAS OPENED**, per
+`method/roles/verifier.md`. Attack set saved and hashed before any lane
+artefact was read: sha256
+`caad8ddedbc77066e95113741d4858f008b0bdf261b275424d05133a085a0454`,
+17,035 bytes, sealed `2026-08-31T04:07:38Z`. Every phase-1 read was
+pinned to the base with `git show 57c1b39:<path>` / `git grep 57c1b39`;
+ROADMAP was not read (the role subtracts it). **No contamination to
+disclose** — `git log main..HEAD`, `git diff` and the working-tree copies
+were untouched until the set was sealed, and the dispatch carried no lane
+fact. The one lane-derived string I saw before sealing was the BRANCH
+NAME, which restates the card's own title and no fix shape. The dispatch
+separated its two phases correctly and named no executor-derived
+specifics.
+
+Measured at **`36f8d31`** (lane tip) unless a row says otherwise; gates
+re-run at my own tip are named with it.
+
+### What held, reproduced rather than accepted
+
+- **Tip green**: `npm test` from `app/` — **49 files, 1100 / 1100,
+  exit 0**. Independently equal to the lane's figure.
+- **The bound is load-bearing** (my mutant N1): the `Promise.race`
+  replaced by a bare `await invoke(...)`, read back with
+  `git -C … diff` — **3 failed / 1097 passed, of which 1 is the MTIME
+  artifact, so 2 attributable**: the never-answers body and the
+  timer-count body.
+- **The MTIME artifact is real, and I proved it myself** rather than
+  inheriting the lane's proof: a byte-identical `touch` of
+  `watcher-store.ts` — `git diff` empty, sha256 unchanged — reds
+  **exactly one** body, `shell-harness > is not stale`. One red is
+  therefore subtracted from every mutant row above and below.
+- **The number's derivation reproduces.** `perf.rs:97` really does
+  assert `cold_max < 1500` and call it a 3x ceiling over a 500 ms
+  criterion. My own five `index --check` runs off the release binary at
+  the tip: **270 / 239 / 244 / 244 / 246 ms** — corroborating the lane's
+  243–246 ms warm figures. 15 s is 10x the crate's ceiling; the claimed
+  ratio parity with `STARTUP_DEADLINE_MS` is arithmetically honest
+  (8000 / 778 = 10.3x).
+- **No cycle was created**, and this is the prediction I got wrong.
+  `agent-store` appears in `watcher-store.ts` only inside a comment;
+  `docs/architecture/graph.json` carries **zero**
+  `watcher-store.ts -> agent-store.ts` edges. The C-16 extraction is
+  routed with the right fence requirement (`app-shell` AND `app-agent`).
+- **Shape TEN on the new corpus**: filtering the file to the T-192
+  describe selects **6 passed | 42 skipped** — non-empty, and equal to
+  the 6 bodies claimed. Recorded because my FIRST filter attempt
+  selected **zero** bodies and still exited **0**: the trap this shape
+  exists for, met on my own check rather than on the lane's.
+- **Security sweep — clean.** Three files touched, no `package.json`, no
+  dependency added, no Tauri command added, no grant moved (`acl_pin.rs`
+  untouched), no path crosses IPC, no secret. The new message reaches the
+  DOM as a React text node and a `title` attribute; both escape.
+
+### CORRECTION 1 — `start_genesis_here` is a picker command with NO dialog, and the recorded reason does not cover it
+
+`runPicker` drives **three** commands. Two open a native dialog and await
+`rx.recv()`. **`start_genesis_here` (`src-tauri/src/lib.rs:290–318`) opens
+no dialog at all** — its own doc comment says *"with NO dialog"*. It
+claims the flight guard, reads `genesis_target()` out of Rust's own
+memory, and awaits `spawn_blocking(apply_genesis_folder)`. That is the
+`index_repo` shape wearing the picker's latch, with nobody being asked
+anything.
+
+So the site comment's *"the latch is held here only while a human is
+being asked a question"* is **false for one of the three**, and the notes'
+table states a Rust body — `begin_pick -> dialog -> spawn_blocking(...)` —
+that command does not have. Three of that table's "answers" rows
+(`Cancelled` on a dismissed dialog, `Cancelled` on a dropped callback,
+`Error` on an unusable selection) describe paths `start_genesis_here` has
+none of.
+
+**How it was missed is mechanical and worth recording**: the class
+sweep's unit was the `await invoke(` **call site** (7 hits, 3
+latch-guarded), so `runPicker` counted once. But this card's own thesis
+is that the defect is decided by the **Rust command**, not by the TS
+site — three commands hide behind that one `await`. On the call-site
+basis the notes conclude *"the class is CLOSED inside `app-shell`"*, and
+that closure is not established.
+
+**PROVED, NOT ASSERTED — my mutant N3.** I made `runPicker` bound *only*
+`start_genesis_here` (a `Promise.race` on a 15 s timer resolving an
+`error` outcome), read back with `git -C … diff`. Full app suite:
+**1 failed / 1099 passed — and the 1 is the MTIME artifact. Zero
+attributable reds.** So the "deliberately not bounded" decision is pinned
+for `pick_project_folder` and **unpinned for the one command whose
+justification is weakest**: a future editor can bound it, or reverse the
+decision, and nothing in 1100 bodies notices. Restored; sha256
+`dc738d2f74b896455473b5fd9d76da60d7e62c95f751349af6401c45f3f2cec2`,
+equal to the committed blob, worktree clean.
+
+**I am NOT asking for `start_genesis_here` to be bounded.** The decision
+is probably still right — all three share Rust's `PickInFlight`, so any
+webview bound leaves the next press answering `Busy`, which
+`reducePickOutcome` maps to `prev` by identity: exactly the silent-button
+family the lane names correctly. But **that** argument, not the
+human-at-a-dialog one, is what carries this command, and it is not the
+one written down.
+
+**Assigned** (all in fence, `app-shell`):
+1. Correct `runPicker`'s site comment and the notes' table so the three
+   commands are not described as one, and state the reason that actually
+   covers the dialog-less one.
+2. Either widen the class sweep's unit from call sites to commands, or
+   withdraw *"the class is CLOSED inside `app-shell`"*.
+3. Extend the picker-decision body to drive `start_genesis_here` too, or
+   say at the site why that command is left unpinned.
+
+### CORRECTION 2 — the bound's sentence is rendered under a prefix it was written to avoid (ROUTED: out of fence)
+
+`UNANSWERED_INDEX_MESSAGE`'s own doc comment says the wording is
+*"about TIME, not blame, because nothing was refused."* It is delivered
+as `IndexOutcomePayload { kind: "error" }`, and the sole renderer of that
+arm is `app/src/architecture/MapView.tsx:790`:
+
+    index failed: {indexOutcome.message}
+
+So a fired bound puts this on screen:
+
+> *index failed: the indexer did not answer within 15 seconds. It has not
+> been refused — it may still be running, and re-indexing is safe.*
+
+— a sentence that contradicts itself in its first three words. The span
+is `max-w-70 truncate`, so the reassuring half is probably reachable only
+through the `title` tooltip.
+
+**This is introduced by this diff, not inherited.** Before this card the
+only thing reaching that arm was a genuine rejection, for which
+*"index failed"* is accurate; the bound is the first NON-failure routed
+through it. The lane had the string in hand — `watcher-store.ts:251`
+quotes *"a premature \"index failed\""* while weighing the false
+positive — but did not carry it into the message's design.
+
+`app/src/architecture/**` is **C-12 (`app-map`)**, outside this lane's
+`app-shell` fence (`lane-fence.json`: C-05, C-10, C-16), so this is
+**ROUTED rather than assigned** — the lane could not have repaired it.
+**No id minted** (this seat mints none): a card is owed whose `touches:`
+carries `app-map`, to stop the map's error hint asserting failure for an
+outcome that is an absence — either by giving the hint a non-blaming arm
+when the message is the bound's, or by widening
+`IndexOutcomePayload` so an unanswered run is not spelled `error`. Its
+body should assert the RENDERED text, since `map-view-dom.test.tsx:674`
+pins the `index failed` prefix today and would otherwise pass either way.
+
+### CORRECTION 3 — the message's number is pinned; its meaning is not (my mutant N2)
+
+The derivation body pins `within 15 seconds` and `re-indexing is safe`,
+reasoning explicitly that *"the text is the half a user reads"*. It does
+not pin the clause that makes this an ABSENCE rather than a failure. I
+changed `"the indexer did not answer within 15 seconds"` to
+`"the indexer FAILED within 15 seconds"` — self-contradictory against its
+own next sentence, and the exact blame the site says it avoids — read
+back with `git -C … diff`, and the suite was **1 failed / 1099 passed,
+the 1 being the MTIME artifact. Zero attributable reds.**
+
+**Assigned** (same file, in fence): one further
+`expect(store.UNANSWERED_INDEX_MESSAGE).toContain("did not answer")` in
+the derivation body. One line, and it kills a mutant no sibling kills.
+
+### What I attacked and could NOT break
+
+Recorded because a verdict that lists only its hits is not a measurement.
+
+- **Criterion 2 (a rejection is not an absence)** — the race passes
+  rejections straight through to the pre-existing `catch`; the body
+  asserts the boundary's own text AND `not.toBe(UNANSWERED_INDEX_MESSAGE)`.
+  I could not construct a rejection that reports the bound.
+- **Criterion 3 (healthy answer, from the command)** — fake timers
+  installed and never advanced is a genuine discriminator: an answer from
+  the bound could not arrive at all. Strongest body in the set.
+- **The timer cleanup** — the delta-against-pre-call count with a
+  positive control ("the bound must really arm a timer") closes T-184's
+  surviving `M11-cleartimeout-removed`. I could not find a spelling that
+  leaks a timer and passes.
+- **The stale-answer question** — discarding the race's loser is right
+  here and the reason given (its graph arrives by the docs watcher, so
+  the loser holds only volatile counts) checks out against
+  `lib.rs:320–351`.
+- **The `disabled={indexing}` claim** — verified at
+  `MapView.tsx:800` and `:870`. The "permanently greyed button" the card
+  describes is real.
+- **The e2e attribution** — `git diff 57c1b39..HEAD -- tools/e2e/` is
+  empty, so `dispatch-order.spec.ts` cannot be this diff's; the
+  64 KiB-pipe mechanism is stated with both measurements and is a
+  `brief.mjs` defect correctly routed rather than widened into.
+
+### Gates at MY OWN tip
+
+My verdict is a WRITE, so the gates it moves are re-run at the tip I
+created, not at the one I was sent. `docs-gate.mjs` asked with the card
+path as a **separate literal argument** FIRES (exit 1 = it has a verdict)
+and names three suites. All three were run against the WORKING TREE
+carrying this verdict — which is this commit's content — so these figures
+belong to the tip this verdict creates and not to `36f8d31`.
+
+| where | command | exit | count |
+|---|---|---|---|
+| repo root | `docs-gate.mjs <card path, one literal arg>` | **1** | FIRES — 1 path, 3 suites owed |
+| `app/` | `npm run build` (the typecheck gate; there is no `npm run typecheck` here) | **0** | built |
+| `app/` | `npm test` | **0** | **49 files, 1100 / 1100** |
+| `lib/parser/` | `npx vitest run` | **0** | **16 files, 344 / 344** |
+| `tools/e2e/` | `npm test` (`NPUTER_E2E_PORT=14192`, derived from this card id, lsof'd to **0 rows** immediately before binding) | **1** | **1 failed / 365 passed, 4.3m** |
+
+**THE E2E RED IS THE LANE'S, ALREADY-ATTRIBUTED ONE, AND I REPRODUCED
+ITS MECHANISM RATHER THAN INHERITING IT.** Same body, same site —
+`dispatch-order.spec.ts:200`, failing at `:215`
+`expect(run.stdout).toContain("critical path:")`. `git diff
+57c1b39..HEAD -- tools/e2e/` is **empty**, so it cannot be this diff's.
+The captured stdout visibly ends **mid-filename**
+(`…T-112-s5-the-brief-prop-has-no-filler-becaus`), which is a truncation
+and not a content failure. Measured myself at this tip, same command one
+run apart:
+
+| stdout is | bytes | `critical path:` |
+|---|---|---|
+| a FILE (`> f`) | **69197** | present |
+| a PIPE (`\| cat`) | **65536** — exactly one 64 KiB buffer | **absent** |
+
+Byte-for-byte equal to the lane's table. Confirmed `brief.mjs`, routed
+correctly and not widened into. **One caution for the integrator**: the
+background-runner notification for this suite summarised it as *exit 0*
+while the script's own `code=$?`, captured before any redirect, recorded
+**1** — and the counts agree with the 1. Read the captured exit and the
+count, never a summarised one.
+
+**Not run, and owed elsewhere**: `index --check` is **exit 1 / STALE** at
+this tip (the graph regen rides the checkpoint and
+`docs/architecture/graph.json` is outside this lane's fence), and the
+BOOT GATE fires at the merge. Both are the integrator's, exactly as the
+notes state. My own five `index --check` runs are timings, not a regen.
+
+Status left at `verifying`: the merge is not this lane's, and the board
+transition is the integrating seat's.
