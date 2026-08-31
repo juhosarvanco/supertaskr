@@ -270,17 +270,27 @@ questions stay open.
 **C5 — the intermittent, recorded and withdrawn as a defect claim.**
 Suite: `npm test` from `tools/e2e/`. Bodies:
 `shell-frame.spec.ts` › *the frame holds on every screen at the declared
-default (1280x840)* and *… at the declared minimum (1024x700)*. Two
-measurements: the full suite reported **2 failed / 339 passed in 4.2m**,
-failing on the rendered `li` count in `boardWithErrors` while the
-model-side `data-failure-count` assertion immediately above it passed;
-re-run alone, **6 passed in 14.9s, exit 0**. Per STATE's
-re-run-once-then-attribute rule I attribute it to contention — the
-integration checkout was running the same suite concurrently with four
-lanes building — and **not to this diff**. The verifier could not
-reproduce any red across parser, app (×4), full cargo, `arch cycles`,
-`arch drift` and three lints, all exit 0. **Withdrawn as a claim against
-this lane; recorded here so the sighting is not lost.**
+default (1280x840)* and *… at the declared minimum (1024x700)*. Three
+measurements, in order:
+
+1. Full suite at `a00e2b5`, **2 failed / 339 passed, 4.2m** — failing on
+   the rendered `li` count in `boardWithErrors`, while the model-side
+   `data-failure-count` assertion immediately above it PASSED at the same
+   value. The model was right and only the DOM lagged, which is a timing
+   symptom rather than a data one.
+2. Those two bodies alone, same tip: **6 passed, 14.9s, exit 0.**
+3. Full suite at the corrected tip: **341 passed, exit 0, 3.7m** — run on
+   a quiet machine, exit read unpiped.
+
+Attributed to contention: the integration checkout was running the same
+suite concurrently with four lanes building. **Not attributed to this
+diff**, which is docs-and-comments only and cannot move frame geometry.
+The verifier independently could not reproduce any red across parser, app
+(×4), full cargo, `arch cycles`, `arch drift` and three lints, all exit 0.
+**Withdrawn as a claim against this lane; recorded here so the sighting
+is not lost.** Note for whoever meets it again: measurement 1's exit was
+first read THROUGH A PIPE (`| tail`), which reports `tail`'s 0 and hid
+the red — CONVENTIONS' "read every gate exit UNPIPED" earning itself.
 
 **C6 — this diff moves the index, so the checkpoint owes a graph regen.**
 `index --check` exits 0 at base and **1 at this tip**: `Board.tsx` loc
