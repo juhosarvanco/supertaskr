@@ -12,7 +12,7 @@ suggested_by: integrator nputer-4e, third graph-staleness CI red of 2026-08-30
 builder:
 verifier:
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -540,6 +540,169 @@ by design, which is what that gate is for.
 FOURTH STRIKE (2026-08-30, run on 2e4b76f's rerun): T-143-s3's merged code files pushed without their regen — masked in the original run because the cargo intermittent redded BEFORE the graph step ran, and revealed only when the rerun cleared cargo. A guard at the push would have caught it regardless of step order.
 
 Absorbs: T-181
+
+### APPROVED WITH ASSIGNED CORRECTIONS — 2026-08-31, blind verifier, claude-opus-5@subagent, measured at `47d35f4`
+
+**PHASE 1 WAS WRITTEN AND SAVED BEFORE THE DIFF, THE NOTES OR ANY COMMIT
+BODY WAS OPENED** — sha256
+`141e3de6146477a36f597a5ee19ffae5f434c2971a31d9af5ec952eb635fb179`,
+written 04:56 local, kept outside this tree. **DISCLOSURE, because the
+blindness is a discipline and not a guarantee**: deriving the merge-base
+with `git log --oneline base..HEAD` printed this lane's seven commit
+SUBJECTS, which `method/roles/verifier.md` step 0 forbids in phase 1.
+They leaked the guard's shape, that three arms were measured on a real
+remote through the wired settings command, the `remote.git/` fixture fix,
+and the final suite figures. The attack set records which of its items
+that pre-answered (one, partly) and was otherwise written from the card.
+
+**THE QUESTION THIS SEAT SETTLED BEFORE LOOKING** — is it enough to prove
+a decision module DECIDES to refuse, or must the refusal be shown to
+travel through the mechanism actually wired? Phase 1 ruled: **not
+enough**, and demanded the hook path be resolved by READING
+`.claude/settings.json` rather than typed. **The lane built that and
+more.** `runWiredHook` reads the `Bash` matcher's own command out of the
+committed settings; the three fires-control arms measure the REMOTE REF
+rather than an exit code. Proof it is load-bearing, my own mutant:
+**removing the `Bash` entry from settings.json kills 4 of 25 bodies**
+(`suite_exit=1 passed=21 failed=4`), naming both guarded arms, the wired
+body and the wiring body. Phase 1's predicted finding #2 (path typed,
+wiring unpinned) is **WRONG, in the right direction** — this is the
+strongest half of the diff.
+
+**WHAT ELSE FAILED TO BREAK IT.** Command classifier: `git -C x push`,
+`cd x && git push`, `git\tpush`, `git push2 || git push`, `git   push`
+all recognised; `git push --dry-run`, `alias gp='git push'`,
+`echo "…git push"` correctly not. Fail-open verified end to end at exits
+2, 3, null and no-cargo. `--root` **removed entirely** is killed by
+exactly ONE body (a count of one IS the non-duplication, shape SIX).
+Fence clean (4 paths in `[.claude, tools/e2e]`, 3 in always-writable
+`docs/tasks`). No injection surface: the guard spawns `cargo` and `git`
+through argv arrays, never a shell string. Non-push cost re-measured
+independently: **median 38 ms over n=20**, against the card's 39.35 ms.
+
+**FINDING 1 — THE GUARD'S OWN FALSE-RED MECHANISM IS UNPINNED, IN BOTH
+DIRECTIONS. Poison shape EIGHT (prefix form).** The shipped code is
+CORRECT; nothing is broken today. What is missing is the keeper. Drilled
+in a detached bench at `47d35f4`, one side only, diff read back with
+`git -C <bench> diff`, restored and sha256-proved each time — **baseline
+25 passed / 0 failed**:
+
+| mutant of `push-guard.mjs` | result | what it would do in production |
+|---|---|---|
+| `"--root", "../.."` → `"--root", ".."` | **SURVIVED** 25/0 | root becomes `app/` → graph MISSING → exit 1 → **refuses every push in the repo** |
+| `"--root", "../.."` → bare `"--root"` | **SURVIVED** 25/0 | cargo usage error → exit 2 → `check-inconclusive` → **allows every push, forever** |
+| `CHECK_DIR_REL_PATH` `"app/src-tauri"` → `"docs"` | **SURVIVED** 25/0 | `--root ../..` resolves above the repo → exit 1 → **refuses every push** |
+| `"--root"` deleted outright | KILLED, 1 body | (the only arm that is pinned) |
+
+The cause is one assertion: ``expect(bullet).toContain(`cargo
+${CHECK_ARGV.join(" ")}`)`` is a SUBSTRING search, and **every proper
+prefix of the documented command is also a substring of it**. Beside it,
+`expect(bullet).toContain("run from")` ties `CHECK_DIR_REL_PATH` to
+nothing at all. So the exact mechanism CONVENTIONS says four sessions
+reproduced — and which this file's own header names at length as the bug
+that *"would refuse every push in the repository"* — has no keeper, and
+it is unpinned in BOTH the over-refusing and the never-refusing
+direction. This is the guard-class defect the card exists to prevent, one
+layer up: the pin, not the guard.
+
+**FINDING 2 — A FALSE POSITIVE DOES NOT "THEN ALLOW"; ON A STALE GRAPH IT
+REFUSES.** `gitInvocations`'s docblock argues *"A FALSE POSITIVE costs a
+second and a half and then allows, because only the check can refuse."*
+That is false — the check IS the refusal, so a false positive inherits
+it. Measured against a real stale-answering shim through the real runner:
+`echo git push`, `man git push` and `grep -rn git push /tmp` each return
+**exit 2, "PUSH REFUSED"**. On a 15-probe corpus the scanner shows 5
+false positives (`echo git push`, `# git push`, `man git push`,
+`grep -rn git push /tmp`, a heredoc line) and 1 false negative
+(`/usr/bin/git push`, which the docblock DOES declare). Consequence is
+bounded — it bites only while the graph is already stale, and the refusal
+explains itself — but the reasoning shipped in the file is wrong and
+would mislead the next editor.
+
+**FINDING 3 — NOTES FIGURES, THREE STALE OR MISNAMED.** (a) *"21
+bodies"* / *"adds 21 test names"*: the file has **25** bodies, and the
+quoted derive command `grep -c 'test("'` now answers **26**, because line
+220's `.test("Bash")` matches it. SWEEP RUN, and it is a PRE-EXISTING
+class, not this lane's: `brief.spec.ts` (38 vs 35), `card-figures.spec.ts`
+(29 vs 28) and `lane-fence.spec.ts` (38 vs 37) already carry the same
+delta, and `capabilities.mjs` itself anchors on `/^\s*test\(\s*"/` so the
+GENERATOR is correct — only the convenience grep over-counts.
+(b) `capabilities:check` now reports fresh **29053** bytes, not the 28765
+recorded. (c) The N4 mechanism is misnamed: `remote.git` was **not**
+committed as a GITLINK. Reproduced independently — a *bare* repo has no
+`.git` entry, so `git add -A` records its 24 files as ordinary blobs
+(`100644`/`100755`); `git ls-tree HEAD | grep 160000` finds nothing. The
+diagnosis, the conclusion and the fix are all correct; only the word is
+wrong.
+
+**THE TWO SELF-REPORTED MUTANT DEFECTS: BOTH CLAIMS VERIFIED
+INDEPENDENTLY.** M13's class reproduced by breaking `push-guard.mjs`'s
+syntax my own way — `suite_exit=1` (RED) with **passed=0, failed=0,
+bodies ran=0**, *"No tests found."* The exit code alone says KILLED; the
+counts say VOID. N4's class reproduced from scratch: without
+`remote.git/` ignored, the fixture's second commit carries 24 extra
+files, so reverting the README leaves it non-empty and the arm's
+precondition survives. **One failed open, one failed closed, and only the
+COUNTS separate either from a real result.** The lane's rule and its
+reading of it both hold.
+
+**THE ABSORBED T-181 TRIGGER: THE ROUTING IS CORRECT AND IS NOT A SCOPE
+DODGE.** Corroborated from the primary sources without reading `T-193` or
+the notes' argument. `ADR-019 §Records`
+(`docs/decisions/019-governing-docs-rules-truths-records.md`, line 56)
+reads *"No suite, gate or generator may DEPEND on this directory's
+contents."* The operative verb is **DEPEND, not READ** — the ADR
+expressly blesses a full-content walk (`shell-frame.spec.ts`,
+`window-contract.spec.ts`) and `docs-gate.mjs` already reads filenames
+and commit times — so a guard that reads the one record a commit adds
+**and gates on what it says** lands on the forbidden side however narrow
+its corpus. The card's absorbed criterion therefore cannot be built as
+written. **The lane's "seven places" is if anything an UNDERCOUNT**: an
+independent census finds ~14 distinct statements, including three
+separate ones inside `docs/checkpoints/TEMPLATE.md` (*"NOTHING MAY READ
+THESE LINES BACK … a gate is not"*). All four prior declines
+(`T-156-s1`, `T-156-s6`, `T-157`, `T-157-s2`) and
+`session-economics.spec.ts`'s written refusal check out. Routing it for a
+RULING was the right call.
+
+**THE THREE E2E REDS ARE NOT THIS LANE'S — control run rather than
+accepted.** In my own bench at HEAD: `3 failed / 21 passed`, and the live
+list shows `T-186` holding a lane whose card is in no checkout cut before
+it. In a second bench at the BASE `bd8a8e8`, where `push-guard.spec.ts`
+does not exist: **identically `3 failed / 21 passed`, the same three
+bodies.** (A first attempt at this measured `11 failed / 13 passed` and
+was VOID — my bench had no `lib/parser/dist`; the failures named the
+missing build, not the diff. Recorded because the count alone would have
+charged nine bodies to the wrong cause.) The board also parses clean with
+the new cards — `brief.mjs --state` exit 0, zero errors — so the added
+`T-193` reds no board-reading suite.
+
+**ASSIGNED CORRECTIONS** (assigned, not performed):
+
+1. **Pin the check's spelling by EQUALITY, not containment.** Extract the
+   `cargo …` command out of the CONVENTIONS bullet with an anchored regex
+   and compare with `toBe`, and assert the bullet's *"run from …"* names
+   `CHECK_DIR_REL_PATH`. The bar is that all three mutants in Finding 1's
+   table go RED. Shape EIGHT's own remedy applies: narrow the haystack,
+   anchor on something that is not the needle.
+2. **Correct `gitInvocations`'s false-positive argument** to say that a
+   false positive is REFUSED on a stale graph, and state whether that is
+   accepted or the scanner should require `git` to be the segment's first
+   token. The behaviour change is the seat's call; the wrong sentence is
+   not.
+3. **Notes-only**: 21 → 25 bodies; the fresh-capabilities byte figure;
+   and replace "GITLINK" with the actual mechanism (a bare repo has no
+   `.git`, so its files are ordinary blobs).
+
+**Not blocking, and deliberately not folded in**: the harness's honouring
+of exit 2 is unprovable from inside this repository, as the notes
+themselves flag. That is a declared limit, correctly declared.
+
+**`review:` IS STILL EMPTY AND THIS SEAT LEFT IT SO**, because the
+dispatching seat stated it would stamp `review: independent` itself and
+record that the field was set late — its record should carry its own
+correction. `verified_by:` is stamped here. The executor was right that a
+lane may not award itself this review, and right to stop at `verifying`.
 
 ## ABSORBED AT STANDING TRIAGE SITTING #5 (2026-08-31): T-181 — the same argument, a second trigger
 
