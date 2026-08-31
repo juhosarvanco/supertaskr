@@ -237,6 +237,35 @@ which are scoped to `walk_root`'s four checks. **Routed rather than
 widened** — see below. This is `T-140-s9`'s verifier's own correction
 arriving one crate over, and it is recorded rather than quietly absorbed.
 
+### ROUTED, NOT BUILT
+
+**`T-190`** — the two sites above. Fence `crate-index`, the same as this
+card. Filed with both measurements on it, so the next lane starts from
+evidence rather than from a claim, and carrying this lane's own warning:
+**measure whether the surviving half is separately pinnable rather than
+inheriting a verdict**, because that is exactly what this card would have
+got wrong.
+
+**AND THE CARD ID IS A MACHINE-SCOPED SURFACE WITH NO KEEPER, WHICH THIS
+LANE HIT.** This suggestion was first filed as `T-189`, derived correctly
+as one past the highest id in the tree at dispatch. **`T-189` then landed
+on main from another lane while this one worked** — a different card
+entirely — so the merge would have carried TWO live cards with `id:
+T-189`, and `git merge-tree` reports NO conflict because the two files
+have different names. It was caught by re-deriving the id against main's
+tip before the final commit rather than against the base, and the card is
+now `T-190`.
+
+This is `lane-protocol.md` rule four's closing paragraph exactly: a
+surface scoped by the BOARD rather than by the checkout, where every
+written rule stays satisfied while two lanes collide, and the collision
+probability rises with parallelism while nothing warns. A construction
+beats a check here, and the id namespace has no construction — so the
+check is: **derive a new card's id against the integration tip at the
+moment you commit it, never against your base.** Worth a rule if it
+happens again; recorded rather than routed, because one sighting is an
+observation.
+
 ### WHERE THE BRIEF WAS WRONG
 
 1. **ROW 4's `base commit:` names `d41e7373`, and this lane is cut at
