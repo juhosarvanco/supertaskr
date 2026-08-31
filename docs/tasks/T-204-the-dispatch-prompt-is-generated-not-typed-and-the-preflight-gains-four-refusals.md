@@ -102,3 +102,30 @@ command can derive, or it does not go in.
 tripwire that makes the preflight run at all), `T-199` (the false
 enforcement claim), and `T-190`'s card, which carries the id-namespace
 derivation this card's refusal 4 depends on.
+
+## THE `review: independent` REFUSAL HAS NOW BEEN EARNED THREE TIMES BY THE SAME SEAT
+
+Recorded because refusal 3 above is no longer a precaution — it is a
+measured requirement, and the measurements are all this seat's.
+
+1. **`T-167-s8`** was dispatched guard-class with `review:` empty. The
+   verifier it should have had by rule then found **three mutants of the
+   guard's own `--root` constant surviving 25 passed / 0 failed** — two
+   would have refused every push in the repository, one would have
+   allowed every push for ever.
+2. **`T-186`'s verifier assigned this as its correction 5**, in as many
+   words: *"flagged so the next dispatch sets it."*
+3. **`T-194` WAS the next dispatch, and this seat did not set it.** The
+   lane stamped `independent` itself and said plainly that *"the repair
+   belongs at the dispatching seat."*
+
+**A correction written into a verdict, read by the seat it was addressed
+to, and not applied to the very next card.** That is the same interval —
+under an hour, with the finding in front of the reader — as the
+`suggested`-to-`done` field trap this seat walked into after reading the
+lane report describing it.
+
+**It is the strongest available argument for refusal 3**, and for this
+card's premise generally: an instruction that must be *remembered at
+dispatch* is not a rule, it is a resolution. The preflight is where it
+becomes a rule.

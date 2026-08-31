@@ -1,6 +1,6 @@
 ---
 id: T-197
-title: The dispatch brief SILENTLY TRUNCATES its own derivation at exactly one pipe buffer — `brief.mjs` ends at `process.exit()`, and the tool whose entire contract is a trustworthy figure loses 3,757 bytes to `| head`
+title: The dispatch brief SILENTLY TRUNCATES its own derivation at exactly one pipe buffer — `brief.mjs` ends at `process.exit()`, and the loss GROWS with the board in the tool whose entire contract is a trustworthy figure
 feature: F-06
 milestone: 4
 priority: 2
@@ -142,3 +142,32 @@ after the fix.
 **SYNTHESISE the oversize input.** A body whose subject is the live board
 is vacuous whenever the board is small, which is poison shape TEN wearing
 a regression test's costume.
+
+
+## THE TITLE'S FIGURE WAS MOVING AND IS REMOVED — the loss GROWS with the board
+
+Filed with *"loses 3,757 bytes"* in the title. **Four measurements now
+exist and the number is not stable**, because the truncation point is
+fixed at one buffer while the OUTPUT grows with the board:
+
+| ref / lane | bytes to a file | piped | lost |
+|---|---|---|---|
+| at filing | 69,293 | 65,536 | **3,757** |
+| `T-192` | 69,197 | 65,536 | 3,661 |
+| `T-198` | 70,092 | 65,536 | 4,556 |
+| `T-202` | 77,712 | 65,536 | **12,176** |
+| `T-194` | 77,634 | 65,536 | **12,098** |
+
+**The title now names the MECHANISM rather than a figure**, per this
+project's own rule that a moving number does not belong where it cannot
+be re-derived.
+
+**And the trend is the finding, not a footnote.** The loss more than
+TRIPLED in a day of ordinary board growth. Every card filed, every lane
+opened, every worktree listed pushes more of the derivation past the cut —
+so this defect gets worse on exactly the days the tool is used most.
+
+**It also sharpens the acceptance criterion already on this card**: a
+body must SYNTHESISE its oversize input, because the live `--dispatch`
+crosses and re-crosses the buffer as lanes open and close. `T-142-s1`
+watched the red go fully green when two worktrees were removed.
