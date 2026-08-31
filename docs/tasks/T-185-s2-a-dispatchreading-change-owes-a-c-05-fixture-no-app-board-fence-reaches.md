@@ -184,3 +184,47 @@ here forever at exit 0. Routed as **T-214**, not taken — the repair
 (inline the literal at both use sites to restore freshness) reds at any
 tree without the parent, so it cannot be made in a lane required to be
 green before the parent lands.
+
+### The standing-gate ledger, derived at the tree this tip WILL have
+
+The RANGE RULE's executor form —
+`TREE=$(git merge-tree --write-tree main HEAD)` (exit 0, tree
+`9af6395`) then `git diff --name-only main "$TREE"` — returns **3
+paths** at `7ad7789`: the fixture and these two cards. **The path set
+is INVARIANT under this commit**, which only re-edits a card already in
+it, so no decision below moves when this lands.
+
+| gate | trigger matched | verdict |
+|---|---|---|
+| GRAPH REGEN | `app/test/board-truth.test.tsx` | **FIRES.** `index --check` exit **1 STALE** at both `5f31611` and `7ad7789`, `~1` naming this file alone. graph.json is outside the fence and the regen is committed WITH THE CHECKPOINT — **the integrator's**. |
+| BOOT GATE | 0 of 3 paths | **NOT OWED.** No `app/src/**`, no `app/src-tauri/**`, neither manifest. `app/test/**` is in none of them. |
+| DOCS GATE | 2 of 3 paths | **FIRES**, exit **1**, naming three suites. All three run and GREEN at `7ad7789` — see below. |
+| METHOD EVAL | 0 of 3 paths | **NOT OWED.** Nothing under `method/`. |
+
+The three suites the DOCS GATE named, at `7ad7789`, each exit read
+from `$?` unpiped:
+
+- `npm test` from app/ — **0**, 50 files / **1105** passed
+- `npx vitest run` from lib/parser/ — **0**, 16 files / **344** passed
+- `npm test` from tools/e2e/ — **0**, **404** passed (5.2m), on
+  `NPUTER_E2E_PORT=18552` derived from this card's id and `lsof`'d to
+  zero rows immediately before binding, released after. The lane's
+  seven control-byte writes restored themselves: `git status` empty.
+
+Also at `7ad7789`, the CI steps that are not merge-diff gates:
+`lint:tokens` **0** (clean, 166 TOKEN files / 1065 CONTROL files),
+`capabilities:check` **0** (CURRENT, 33163 bytes), `lint:docs` **0** —
+and that 0 is the census half saying *"I was not asked"*, never
+*"nothing owed"*, which is why the spelling above was run separately.
+
+**A FRESH LANE WORKTREE CANNOT RUN THE DOCS GATE, AND IT FAILS AT
+EXIT 1.** First invocation here died with
+`ERR_MODULE_NOT_FOUND: Cannot find package 'yaml'` — tools/e2e has no
+`node_modules` in a fresh worktree, and CONVENTIONS' fresh-worktree
+ORDER names only lib/parser and app. The gate legends 3 for *"could not
+run"*, but this lands at **1**, indistinguishable by code from *"the
+gate HAS a verdict"*. That is the T-080-s4 hole — documented for a
+parse error in the gate's own two files — reached instead by a missing
+dependency, in the one place every executor is told to run it. Fixed
+here by `npm ci` from tools/e2e/ (exit 0); the exit-code hole is not
+this card's to close and is noted for whoever holds T-090's line.
