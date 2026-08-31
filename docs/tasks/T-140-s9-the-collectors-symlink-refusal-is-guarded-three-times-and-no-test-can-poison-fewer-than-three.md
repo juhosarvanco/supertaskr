@@ -10,9 +10,9 @@ suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
 touches: [app/src-tauri/src/docs_watch.rs]
 builder: claude-opus-5@subagent
-verifier:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
-verified_by:
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -344,3 +344,210 @@ at `155993f`; that file was last written by `T-140-s1`.
    excuse. The card's own carve-out — *a layer that provably cannot be
    detected even in principle should be named as such* — is the arm
    taken, and A1/A2/A4 are what earn it.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind seat):
+**APPROVED WITH ASSIGNED CORRECTIONS.** The ruling is right, the
+behaviour is provably unmoved, and the lift ledger REPRODUCES — I re-ran
+all eight arms in my own bench without reading the ledger's numbers into
+my attack set, and every row matched exit for exit, count for count and
+name for name. The three corrections below are a sweep that stopped one
+function short, a shape-SIX ask that was never put, and a wrong figure.
+None of them is a reason to hold the lane.
+
+Phase 1 was kept: attack set (**19 attacks, 10 named mutants**) written
+from the card at `155993f`, `CONVENTIONS.md`, `roles/verifier.md` and
+`docs_watch.rs` AT BASE, before the diff, the commits or the notes were
+opened. It predicted the `!meta.is_file()` shadow independently, which
+is the premise this card turns on — so the executor's correction of its
+own card is confirmed by a seat that did not read the correction first.
+**The dispatching brief did NOT leak executor-derived specifics**; it
+named the card's claims and told me to verify rather than inherit them.
+
+### WHAT I MEASURED MYSELF (bench `<scratch>/vb-T-140-s9`, detached, `CARGO_TARGET_DIR=<bench>/target`)
+
+- **BASE `155993f`**: `cargo test -p nputer` **exit 0, lib 256 passed /
+  0 failed** in 4.07s; `agent_runner` 87/0/1 ignored. Taken before the
+  lane was opened, so the delta is measured and not arithmetic.
+- **LANE `d9bfb15`**: `cargo test` **exit 0, 18 suite result lines, 0
+  failed**; lib **259 passed / 0 failed** in 4.44s. 256 + 3 = 259, and
+  all three new bodies appear in the run by name.
+- **BOOT GATE: exit 0**, on **31409** — derived `30000 + 140x10 + 9`,
+  deliberately not the lane's 21409. `lsof -nP -iTCP:31409
+  -sTCP:LISTEN` zero rows before and after. Both lines observed:
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-140-s9` and
+  `[nputer] window "main" created`. **1420 read with `lsof -nP
+  -iTCP:1420 -sTCP:LISTEN` and nothing else, before and after: zero
+  rows.**
+- **GRAPH REGEN: ASKED, not acted on.** `cargo run -p nputer-index --
+  index --check --root ../..` → **exit 1, STALE**, and every figure the
+  notes quote reproduces exactly: `files +0 -0 ~1`, `~
+  app/src-tauri/src/docs_watch.rs (content, loc 4167 -> 4385)`, 1141994
+  -> 1141995 bytes, 199 files / 2432 symbols / 2351 edges, budget 53.2%,
+  1003964 left. `graph.json` untouched and uncommitted, as the fence
+  requires.
+- **The shipped walk is semantically IDENTICAL to base.** Comments
+  stripped, the `collect_docs_tree` region at `155993f` and at `d9bfb15`
+  differ in nothing but one trailing `// escaped the project` on an
+  existing `continue;`. This changed the EVIDENCE and not the refusal,
+  so the security-adjacent behaviour owes no further drill.
+- **Fence respected**: the diff is two files, `docs_watch.rs` and this
+  card. No `graph.json`, no lockfile, no stray target dir.
+- **`ddefda4` checks out.** It exists, its blob of `docs_watch.rs`
+  hashes to `9bcf07ca…` — the exact restoration hash the notes claim —
+  and `git diff ddefda4 8c5550d` on that file is the one comment block
+  and nothing else. The ledger measured at `ddefda4` therefore describes
+  the shipped code.
+- **The A8 lifted arm terminated in FIXTURES**, verified independently
+  rather than taken: every path in my own all-five-lifted failure output
+  is a `TempTree` under `$TMPDIR`
+  (`nputer-t003-{pick-contain,subdir-symlink,symlink}-outside-…/secret.md`),
+  plus `/tmp/other/secret.md`, which is a string literal in a unit body
+  and never touched on disk. Nothing reached a real file.
+- **The class sweep's counts reproduce**: 14 `is_symlink()` sites, and 2
+  for `starts_with\(&?canon` — the second needs the notes' regex, since
+  `walk.rs:89` has no `&`. The routed `walk.rs` finding is accurate:
+  `symlinks_are_never_followed_file_or_dir` plants OUTSIDE the root, so
+  containment produces its green exactly as here.
+
+### MY LIFT LEDGER — 13 arms, run blind of the lane's, all restored and proven
+
+One side only; each mutation read back with `git -C <bench> diff` before
+the run and refused on a silent zero; each restored with `git restore
+--source=d9bfb15 --staged --worktree` and **proven by `shasum -a 256` ==
+`65b57e6eb7b9bdae3a0127391b7f6a99f421497ede7565bb856f9aee7c9cdfc8`, the
+committed blob — 13 for 13.**
+
+| mine | lifted | exit | result | red BY NAME | lane's row |
+|---|---|---|---|---|---|
+| D1 | `is_symlink` | 0 | 259/0 | nothing | A1 ✓ |
+| D2 | `!meta.is_file()` | 0 | 259/0 | nothing | A2 ✓ |
+| D3 | both link checks | 101 | 258/1 | the inside-pointing body | A3 ✓ |
+| D4 | `starts_with` | 0 | 259/0 | nothing | A4 ✓ |
+| D5 | `relative_posix`'s `.ok()?` | 101 | 257/2 | the predicate body + the one-predicate body | A5 ✓ |
+| D6 | the first three | 101 | 258/1 | the inside-pointing body | A6 ✓ |
+| D7 | all four | 101 | 256/3 | the three new; **both `*_never_followed` GREEN** | A7 ✓ |
+| D8 | all four + `docs/` prefix | 101 | 252/7 | the three new + the four walk-level symlink bodies | A8 ✓ |
+| **D9** | `is_symlink` half of **line 779** | **0** | **259/0** | **nothing** | not run |
+| **D10** | `is_symlink` half of **`is_plain_dir`** | **0** | **259/0** | **nothing** | not run |
+| **D11** | `parts.join("/")` -> `join("!")` | 101 | 221/38 | 38 bodies | not run |
+| **D12** | **line 779's guard ENTIRELY** (`if false {`) | **0** | **259/0** | **nothing** | not run |
+| **D13** | `is_plain_dir` entirely (`Ok(_) => true`) | 101 | 256/3 | `picking_a_root_whose_docs_is_a_symlink_is_refused`, `a_genesis_root_swapped_for_a_symlink_is_refused_at_arm_time`, `a_failed_genesis_pick_leaves_the_open_project_untouched` | not run |
+
+D1–D8 confirm the card's premise was an undercount and its *"killed by
+(3)"* attribution false, exactly as the notes say. D9–D13 are mine and
+are the first correction.
+
+### CORRECTION 1 — THE SWEEP STOPPED ONE FUNCTION SHORT, INSIDE ITS OWN FENCE
+
+*"One true sibling, and it is outside this fence"* is **false**. There
+are three, and two are in `docs_watch.rs` itself — both listed among the
+sweep's own 14 hits and neither classified. This is CONVENTIONS' A FIX
+NAMES ITS CLASS AND ITS SWEEP landing precisely as written: T-078 *"left
+an identical sibling a few lines away, both inside the subsection that
+announces the sweep."*
+
+- **`is_plain_dir`, line 490** — `!meta.file_type().is_symlink() &&
+  meta.is_dir()` over `fs::symlink_metadata`. The `is_symlink` half is
+  **inert for the same lstat reason as the walk's layer 1**: a link is
+  not `is_dir()` either. MEASURED (D10): rewriting the arm to `Ok(meta)
+  => meta.is_dir(),` leaves **259 passed / 0 failed, exit 0**. Yet
+  `picking_a_root_whose_docs_is_a_symlink_is_refused` and
+  `a_genesis_root_swapped_for_a_symlink_is_refused_at_arm_time` are
+  NAMED for that refusal, and D13 shows they red only when the whole
+  predicate goes. **A body named for the symlink half, pinning
+  `is_dir()`** — this card's finding, one function away, and the
+  function whose own doc comment calls itself *"the T-003 rule family's
+  one primitive."*
+- **`collect_docs_tree`'s docs_root guard, line 779** — `if
+  docs_meta.file_type().is_symlink() || !docs_meta.is_dir()`. The
+  `is_symlink` half is shadowed by `!is_dir()` **inside the same
+  expression** (D9: 259/0), which is the shape the sweep correctly
+  identified in `registry.rs`/`resolve/mod.rs` and did not look for
+  here. **And the whole guard is unpinned** (D12): replacing it with `if
+  false {` — deleting the refusal AND its `eprintln!("[nputer] watch: …
+  is not a plain directory - refusing to read it")`, the collector's
+  only loud refusal — leaves **259 passed / 0 failed, exit 0**. Every
+  body that plants a symlinked `docs/` is refused earlier by
+  `is_plain_dir` and never reaches this line. Containment still stops a
+  leak, so this is a COVERAGE hole and not a vulnerability — but it is a
+  whole refusal, not a shadowed half, unpinned on the ADR-010 boundary
+  inside this fence.
+
+TO DO: name both sites the way the walk's four are now named — one
+comment each saying which half is inert and why — add D9/D10/D12 to the
+ledger, and correct the sweep sentence to "three, two of them inside
+this fence." If pinning line 779 wants a new body, route it and say so
+rather than widening this fence.
+
+### CORRECTION 2 — SHAPE SIX WAS NEVER ASKED, AND THE LANE'S OWN A5 ROW IS THE EVIDENCE
+
+The catalogue is explicit that an assertion poison does NOT answer six
+(*"it is not vacuous in the poison sense, which is exactly why the
+discipline passed it"*), so P1–P3 do not discharge it. The ask is: name
+a mutant of the code under test the body kills, run the WHOLE suite,
+require the failing count to be **ONE**. Put, it answers:
+
+- `a_symlink_to_a_file_inside_docs_is_refused_by_the_link_checks_alone`
+  — D3, **count 1. Clean.** Record it as the shape-SIX pass it is.
+- `relative_posix_is_the_containment_predicate_the_walk_relies_on` — D5
+  count **2**; my second candidate D11 (`join("/")` -> `join("!")`)
+  count **38**. No count-1 mutant found.
+- `the_prefix_check_and_relative_posix_are_one_predicate` — killed by D5
+  (count 2, alongside the body above) and **not** by D11, because it
+  asserts only `.is_some()` and every Some-side mutant is invisible to
+  it. **Every mutant it kills, the body above also kills. That is shape
+  SIX by the catalogue's definition.** Its subject is a std-library
+  equivalence, which no first-party mutant can falsify — so the honest
+  sentence is that no unique mutant exists, which the catalogue calls
+  the finding rather than a failure.
+
+TO DO: record the ask and its three answers in the notes with the counts
+above. Do NOT delete the one-predicate body on my account — it documents
+the shadowing argument as a check and that has value — but do not leave
+it standing as if the drill had cleared it.
+
+### CORRECTION 3 — THE DIFF FIGURE IS WRONG
+
+The notes open with *"one file, +223/-6"*. `git diff --numstat
+155993f..8c5550d -- app/src-tauri/src/docs_watch.rs` gives **224 6**.
+Read **+224/-6**. Same class as this branch's own `f21b1bf` three
+commits back.
+
+### OBSERVATIONS, NOT CORRECTIONS
+
+- **The card's TITLE and FILENAME still say "guarded three times … no
+  test can poison fewer than three"**, which this lane has now measured
+  false at A7/A8 and I have reproduced. The body retracts it; the title
+  does not. Renaming strands three cards' references and a filename is
+  the orchestrator's to move — flagged for the integrator, not assigned.
+- The ledger row `!meta.is_file() alone -> … (shadowed)` is loose: that
+  line is shadowed **for symlinks only**, and is the sole refusal for
+  sockets, fifos and devices — which the lane's own site comment says
+  correctly. One word in the row would settle it.
+
+### SECURITY SWEEP — CLEAN
+
+No new input path, endpoint, secret, key, unsafe default or dependency.
+Every line added to shipped code is a comment; all three new bodies are
+inside `#[cfg(test)] mod tests`; the refusal's behaviour is proven
+byte-identical to base. Nothing to report.
+
+### INTERMITTENTS — NONE FIRED, SO NOTHING TO ATTRIBUTE
+
+`a_hostile_session_id…` (T-086-s1) and `startup_arm_watches_the_initial_root`
+(T-088-s4) passed in every green run. Lib-suite time 4.07s at base,
+4.44s at the tip, 4.09–4.98s across the drill arms — the whole pass sat
+under the 9.5s green band with two sibling lanes live, so the cache
+cliff never came near. The single 18.77s arm is D11, whose 38 deliberate
+failures are the cost.
+
+### BENCH HYGIENE
+
+Bench `<scratch>/vb-T-140-s9`, detached, `CARGO_TARGET_DIR` at
+`<bench>/target` throughout — never shared with the lane or the
+integration checkout, and removed after this verdict with the bench
+proved clean (`git status --short` empty at every arm's end). Nothing
+merged, nothing pushed, no worktree but my own bench removed.
+The lane worktree stands.
