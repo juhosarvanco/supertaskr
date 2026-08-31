@@ -53,3 +53,27 @@ half is buildable today, for two DIFFERENT reasons, and that lane routed
 both rather than widening its fence or deciding a parked ruling from
 inside a lane. Read this beside `T-126-s2`'s corroboration of the same
 date and `T-112-s4`, whose registry gap is a third, separate thing.
+
+## RULED AT THE ARCHITECTURE SITTING, 2026-08-31 — shape 3, and this card is THIRD in a forced order
+
+`T-126-s2` now carries the ruling for the whole seam; read it there. What
+binds this card:
+
+**Shape 3 (fetch in `TaskDetailPanel`) is confirmed as the direction**,
+for the reason this card already suspected — it is nearest the need and
+the drawer already knows its `taskRef`. The `brief` PROP stays as the
+test seam `app/test/board-truth.test.tsx` drives.
+
+**But its stated cost — that it makes C-09 reach C-15, an undeclared
+component edge — is now the SECOND reason to do `T-112-s4` first, not a
+separate problem.** That card opens the registry to give C-18 a test
+path; declaring this edge is an edit to the same file in the same lane's
+reach. Doing them apart means opening the registry twice.
+
+**The forced order is `T-112-s4` → `T-126-s2` → this card.** This card is
+correct that it is independent of the join's ruling and survives it; it
+is not independent of the registry gap, and neither is the join.
+
+Shape 1 (lift `openRef` to the shell) stays refused on this card's own
+argument. Shape 2 (fetch in `Board.tsx`) stays refused on that file's own
+design note.
