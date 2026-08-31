@@ -856,3 +856,35 @@ times; the RANGE RULE covers exactly this and the integrator re-derives
 at the merge, so it is deliberately not chased. `review:` is left empty:
 it is the integrator's to stamp `independent`, with the note that it was
 set late.
+
+### THE CLASS AND ITS SWEEP (docs/CONVENTIONS.md: a fix names both)
+
+**THE CLASS** is narrower than "a substring assertion" and the narrowness
+is the point: it is an assertion whose interpolated value sits at the END
+of the needle, matched against text that contains a LONGER string sharing
+that value's prefix. `--root ..` inside `--root ../..` is the instance.
+Truncate the constant and the assertion still passes, so the keeper
+cannot see a shortening — which is exactly what two of the three
+surviving mutants were.
+
+**THE SWEEP, RUN AT `618f3c0`**: `command grep -n 'toContain(`'
+tools/e2e/tests/*.spec.ts` — **24 sites across 7 spec files**
+(brief 12, docs-input-gate 3, token-scan 3, card-preflight 2,
+dispatch-order 2, boot-check-guard 1, health-bands 1).
+
+**WHAT THE SWEEP FOUND**: the acute conjunction does not obviously
+reproduce. Nearly every site carries a LITERAL SUFFIX after the
+interpolation — `${lane.taskId} touches:`, `${branch} first-parent
+commits:`, `git worktree add ${sibling} ` (trailing space),
+`${relative}:byte `, `${r.id} [` — and a suffix anchors the needle, so a
+truncated value cannot match. Most also assert against PROGRAM OUTPUT
+rather than a governing document, where the longer-prefix hazard needs a
+document that happens to contain the longer form.
+
+**WHAT THE SWEEP DID NOT DO, SAID PLAINLY**: it did not mutate those 24
+sites to confirm each one dies. It was a READ of their shape, not a
+drill, so it is evidence about the class's spread and not proof of any
+individual keeper. The one residual whose interpolation ends its needle
+is `docs-input-gate.spec.ts:336`, `toContain(`../../${capture}`)`; it is
+named here rather than assessed, because assessing it is outside this
+fence's card and would be a second card's work.
