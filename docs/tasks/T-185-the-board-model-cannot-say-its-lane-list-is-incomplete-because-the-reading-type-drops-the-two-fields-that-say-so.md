@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [app-board, app-dispatch]
 suggested_by: architect/integrator seat @ the architecture sitting of 2026-08-31, measured while ruling T-126-s2 — found by checking a claim rather than by reading code
@@ -195,3 +195,185 @@ at the producer would mean deleting `lanes.rs`'s determinism argument
 too, which is almost certainly wrong. **The likely correct answer is that
 `DispatchReading` grows both fields and the board gains its note** — but
 the lane should still make the case rather than inherit this one.
+
+## Implementation notes (executor, 2026-08-31, lane `task/T-185-dispatch-reading-fields`)
+
+Base `209e5d3`. Implementation commit `e18f3eb`; every figure below is
+measured at that ref unless it names another.
+
+### The case the card asked the lane to make, made
+
+**`DispatchReading` GROWS both fields, and they are REQUIRED.** The
+producer chain's three layers all argue for these facts and the fourth
+boundary discarded them; deleting them at the producer would delete
+`lanes.rs`'s determinism argument with them, so the loss was repaired
+rather than ratified. The reason is written at the site, in the type's
+own doc comment, and again at the producer in `dispatch-store.ts`.
+
+**REQUIRED rather than optional is the whole repair, and it is the one
+design decision this card actually turns on.** An optional `truncated`
+reads as `false` at every site that omits it — the silent floor this card
+is about, wearing a type annotation. That choice is what makes the
+out-of-fence finding below unavoidable, and it was taken knowingly.
+
+### What consumes them, and the asymmetry that is the interesting half
+
+`selectDispositions` is the one consumer and it re-decides nothing:
+
+- `truncated` -> `DispositionModel.scanIsFloor`. Every claim about there
+  being ROOM is qualified: the `dispatchable` reason gains a `FLOOR:`
+  clause, and the headline gains `THE LANE LIST IS A FLOOR, NOT A COUNT`.
+- **`at-ceiling` is deliberately NOT qualified.** A floor can only be an
+  undercount, so lanes the reader missed can only reinforce a cap that is
+  already reached. Hedging it would be a false hedge, and a body forbids
+  one (mutant M5).
+- `notLanes` -> `DispositionModel.notLanes`, named entry by entry in the
+  headline. It invalidates nothing: a worktree that is not a lane holds
+  no fence and counts against no ceiling, and a body pins that too
+  (mutant M2).
+
+**The on-screen note (criterion 2).** `BriefPanel`'s `copyable` arm gains
+`floor: string | null` and `TaskDetailPanel` renders it as
+`detail-brief-floor`, muted and factual, in `App.tsx`'s own
+`docs-truncation-note` idiom. It rides on `copyable` alone because that
+is the arm that invites an ACT — `withheld` and `unavailable` already
+refuse, and a floor cannot make a refusal wrong.
+
+### The criteria
+
+1. **MET.** Both facts reach a consumer; the reason is at the site in
+   three places (`board-model.ts`'s `DispatchReading`, its `NotLaneHold`,
+   and `dispatch-store.ts`'s two field comments).
+2. **MET.** `detail-brief-floor` renders beside the copyable brief and is
+   ABSENT — not empty — when the scan was a count. Two bodies, one each
+   way (M7 and M11).
+3. **HALF MET, HALF ROUTED as `T-185-s1`.** The false comment is gone and
+   what replaced it states the LIMIT rather than a louder claim. Holding
+   the equivalence BY CONSTRUCTION needs one body importing both C-15 and
+   C-17, which is a cross-component edge whose registry line and drift
+   fixture this fence does not reach. Not built, routed, named.
+4. **MET.** Five bodies in `select-board.test.ts`, one in
+   `select-task-detail.test.ts`, two in `detail-assignment.test.tsx` —
+   the first constructions of a populated `notLanes` and of
+   `truncated: true` on the BOARD side (`T-198` built the producer side).
+   Every one has a positive control and a mutant it uniquely kills.
+5. **MET, with one out-of-fence red.** See below.
+
+### The drill ledger — twelve mutants, one side only, sha256-restored
+
+Drilled at `e18f3eb` in this worktree, each mutation in `app/src` (never
+in a test body), read back with `git diff --unified=0` before the suite
+ran, restored with `git restore --source=e18f3eb --staged --worktree`,
+and proven by sha256 against the pre-drill hash. **All twelve restored:
+`restored=true` for every row.** No cargo is involved, so arm (c)'s
+compile-time-path hazard is absent by construction — the same shape
+`T-198` used on this seam.
+
+**READ THE DELTA, NOT THE ABSOLUTE.** The suite's standing baseline in
+this lane is `2 failed | 1111 passed (1113)`, and those two are the
+out-of-fence file below. `failed` is the raw reading; `delta` subtracts
+the standing two.
+
+| mutant, one side only | failed | delta | the body it kills |
+|---|---|---|---|
+| M9 `notLanes.length === 0` -> `true` | **1** | 1 | a populated `notLanes` REACHES the board and is named |
+| M2 ceiling counts `notLanes` | 3 | 1 | a not-a-lane worktree holds no fence |
+| M10 `floorLine` fires always | 3 | 1 | `truncated: true` makes the lane list a FLOOR |
+| M4 `floorCaveat = ""` | 3 | 1 | a card cleared against a FLOOR is told so |
+| M5 `at-ceiling` hedged too | 3 | 1 | AT-CEILING takes no floor caveat |
+| M12 the note EDITS the brief | 3 | 1 | a copyable brief off a TRUNCATED scan |
+| M7 rendered note deleted | 3 | 1 | puts the FLOOR note on screen |
+| M11 rendered note always fires | 3 | 1 | and shows NO floor note when it is a count |
+| M1 `notLanes: []` in the return | 4 | 2 | the two `notLanes` bodies |
+| M3 `floorLine = ""` | 4 | 2 | the FLOOR headline body + the at-ceiling body |
+| M6 `floor: null` in the panel | 4 | 2 | the panel-model body + the DOM body |
+| M8 CANONICAL `scanIsFloor = false` | 7 | 5 | every floor body in the card |
+
+**EVERY ONE OF THE EIGHT NEW BODIES HAS A MUTANT IT KILLS ALONE** (the
+first eight rows), which is poison shape SIX's own remedy: a count of one
+IS the non-duplication, measured rather than argued. M9's absolute of
+**1** is not a typo and is worth reading — its mutation stops
+`notLanes.length` from being evaluated at all, which incidentally
+confirms that the two standing failures are exactly that expression.
+
+### Gates, derived at `e18f3eb` over 7 paths, and re-derived at the tip
+
+The RANGE RULE's executor form: `git merge-tree --write-tree main HEAD`
+exited **0** at tree `4e093bf`, and `git diff --name-only main 4e093bf`
+returned **7** paths, all under `app/`. The notes commit adds three under
+`docs/tasks/`, so the gate set is derived against the tree the tip WILL
+have and the DOCS GATE reading below is taken there.
+
+| gate | trigger | verdict |
+|---|---|---|
+| GRAPH REGEN | `*.ts/*.tsx` outside `docs/` | **FIRES.** `index --check` **exit 1 STALE** — a real red, not the `--root` false one: it prints both counts and a `~` diff. `files +0 -0 ~7`, symbols 2453 -> 2455, edges +3 -1, bytes 1152374 -> 1153257. **The regen is the integrator's** (T-009-s1). |
+| BOOT GATE | `app/src/**` | **FIRES by the letter, NOT RUN — said loudly rather than skipped in silence.** See below. |
+| DOCS GATE | a path under `docs/` a code suite reads | **FIRES at the tip** (three files under `docs/tasks/`). Reading in the report. |
+| METHOD EVAL | `method/**` | **NOT OWED** — zero `method/` paths in the forecast. |
+
+**THE GRAPH DELTA CARRIES NO CROSS-COMPONENT EDGE, and that is the fact
+the integrator wants rather than the byte count.** All three added edges
+are internal: two `type_ref`s inside `board-model.ts`
+(`DispatchReading -> NotLaneHold`, `DispositionModel -> NotLaneHold`) and
+one re-emitted `select-board.test.ts -> board-model.ts` import whose only
+change is `NotLaneHold` joining its symbol list. **`files` stays 200**,
+so `files +0 -0` still holds and no fixture reconciliation is forecast.
+Derive it against the REGENERATED graph before running the suite rather
+than off a failure — that instruction is `C-15-dispatch.md`'s own and it
+applies here unchanged.
+
+**BOOT GATE, not run, with the reason.** Its trigger matches
+(`app/src/**`), and running it means a cold `tauri dev` — a full Tauri
+cargo build in a worktree with no `target/`, beside a live app on 1420.
+The lane's diff is pure webview TypeScript: no manifest, no Rust, no
+`app/src-tauri/**` path in the forecast, so the T-040 regression class
+this gate exists for is not reachable by it. **That is an argument, not a
+measurement, and it does not discharge the gate** — it is recorded here
+so the integrator runs it rather than inherits a silence.
+
+### THE ONE THING THIS LANE COULD NOT DO, AND IT IS A FENCE DEFECT
+
+`app/test/board-truth.test.tsx` is **C-05's** (`app-shell`) and this
+card's fence is `[app-board, app-dispatch]`. Its line 873 builds a
+`DispatchReading` as a bare structural literal — deliberately, its own
+header explains why — and a REQUIRED field addition therefore reds it:
+
+- `tsc -p tsconfig.test.json` **exit 2**: two `TS2322`s at lines 906 and
+  942, both *"missing … notLanes, truncated"*, **and nothing else in the
+  program**. Every in-fence file typechecks.
+- `npm test` **exit 1**: `2 failed | 1111 passed (1113)`,
+  `1 failed | 49 passed (50)` files. Both failures are that file's two
+  `T-112-s1` threading bodies, both a `TypeError` on `.length` of
+  `undefined`. **1105 + the 8 new bodies = 1113**, so nothing was lost.
+
+**One constant, four symptoms, and the repair is two tokens** — written
+out verbatim on `T-185-s2`, which routes the finding with its
+measurement. The lane did not apply it: `roles/executor.md` and
+`lane-protocol.md` rule 5 both forbid widening a fence from inside it,
+and `tasks/TASK-FORMAT.md` rules that a card whose criteria and fence
+disagree is a defective card rather than a hard call for the lane.
+
+**THE ALTERNATIVE WAS AVAILABLE AND WAS REFUSED ON THE CARD'S OWN
+ARGUMENT.** Optional fields keep that fixture green untouched, and they
+reintroduce exactly the defect this card names. The lane took the honest
+type and routed the fence, following the shape `T-198` used one card ago
+when it handed off `index --check` STALE by construction and named what
+the integrator owed.
+
+### For the verifier
+
+- The asymmetry (M5) is the claim most worth attacking: is `at-ceiling`
+  really sound under a floor? The argument is that a floor is an
+  undercount and `>=` is monotone in `inFlight.length`.
+- `NotLaneHold` carries `kind` and `name` only, because those are the
+  two fields ALL FOUR arms of C-15's `WorktreeEntry` share. A wider
+  mirror would not be structurally satisfied by `UnreadableEntry`.
+- The two standing red bodies are `T-185-s2`'s, not this card's, and the
+  proof is that they are in one out-of-fence file and that the tsc
+  program is otherwise clean.
+
+### Routed, never silently omitted
+
+- **`T-185-s1`** — criterion 3's by-construction half; needs C-15's
+  `depends_on:` and C-12's `architecture-dogfood.test.ts`.
+- **`T-185-s2`** — the fence defect above, with both gate readings.
