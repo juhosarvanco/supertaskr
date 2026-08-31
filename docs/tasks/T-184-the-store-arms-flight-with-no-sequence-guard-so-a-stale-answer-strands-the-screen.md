@@ -140,6 +140,15 @@ Recorded because `T-187` is exactly this card and nothing compared the
 two automatically — the collision surfaced only when the merge forecast
 conflicted.
 
+**AND THE SAME CLASS BIT THIS LANE A SECOND TIME, ON IDS.** Its two
+routed cards were filed as `T-185`/`T-186`, collided with a triage
+sitting's own `T-185`–`T-188`, were renumbered to `T-189`/`T-190`, and
+collided AGAIN — `T-189` taken on main while this lane built, `T-190`
+reserved for another lane. They are `T-191` and `T-192`. Nothing derives
+the next free id, so two seats filing concurrently both pick
+maximum-plus-one and neither can see the other. Evidence is recorded on
+`T-187`, which owns the class.
+
 ### What was decided, at the three decision points the card set
 
 **1. What the sequence token IS.** `GenesisTurn.status` — the runner's
@@ -239,10 +248,10 @@ in one file.
 
 ### Routed, not taken
 
-- **`T-189` (`app-interview`)** — re-express `T-171`'s strand fixture so
+- **`T-191` (`app-interview`)** — re-express `T-171`'s strand fixture so
   it manufactures the claim by a route this card leaves open, and add the
   screen half of the end-to-end criterion in the same body.
-- **`T-190` (`app-shell`)** — the liveness defect has a SIBLING outside
+- **`T-192` (`app-shell`)** — the liveness defect has a SIBLING outside
   this fence. `runIndexRepo` and `runPicker` in the shell store take a
   latch synchronously, `await` an unbounded command, and release in a
   `finally`; a command that never answers leaves the button dead for the
