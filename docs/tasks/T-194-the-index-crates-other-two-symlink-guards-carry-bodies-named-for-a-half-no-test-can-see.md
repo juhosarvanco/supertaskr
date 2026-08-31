@@ -97,9 +97,20 @@ Lane `/Users/ujju/Projects/nputer-T-194`, branch
 `task/T-194-the-index-crates-other-two-symlink-guards`, base **`146ebb6`**
 (not the brief's `f7366770` — see WHERE THE BRIEF WAS WRONG). Work commit
 **`a9de0e2`**, +355/−0 over four files, all inside the fence
-`app/src-tauri/crates/nputer-index`. Ceremony row: **S touching shipped
-code**, so a verifier is owed — nothing merged, nothing pushed, the lane
-worktree left standing.
+`app/src-tauri/crates/nputer-index`. **At the final tip the same four code
+files are +379/−0** — the extra 24 lines are the two comment corrections
+this lane made to its own false sentences, below. Both figures carry the
+ref they were measured at, because a stat line quoted at the wrong commit
+is how `T-163-s4` put a wrong number in its notes.
+
+**The whole diff deletes exactly two lines and neither is code**: `status:
+planned` and `review:`, replaced by this card's own stamps. Across
+`app/` the diff is **+379/−0**, which is the mechanical form of the
+"NO layer SHALL be deleted" criterion.
+
+Ceremony row: **S touching shipped code**, so a verifier is owed — nothing
+merged, nothing pushed, `main` never touched, the lane worktree left
+standing.
 
 ### THE CARD SAYS TWO SITES AND THERE ARE THREE GUARDS, WHICH IS WHERE THE ANSWER WAS HIDING
 
