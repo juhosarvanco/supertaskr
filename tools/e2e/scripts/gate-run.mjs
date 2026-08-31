@@ -107,6 +107,17 @@
  * reclaimed when its holder is gone — a crashed run must not wedge the
  * gate.
  *
+ * ── THE HONEST RESIDUAL, SAID OUT LOUD ──────────────────────────────
+ * A child that PRINTS a plausible summary having run nothing is reported
+ * GREEN: a forged `Running 5 tests` / `5 passed` transcript counts as
+ * five bodies. The baseline and the parts come from the SAME transcript,
+ * so this runner's floor is the reporter's own honesty. That is inherent
+ * to counting a tool's self-report rather than its processes; it is not
+ * a defect this card can close, and it is written here so the next
+ * reader does not take the guard for wider than it is. What the runner
+ * DOES close is every case where the tool was honest and the reader
+ * was not — which is all six of the measured instances above.
+ *
  * ── THE COMPANION RULE THIS FILE MAKES THIS REPOSITORY IMMUNE TO ─────
  * Scripts print their own `$?` last; readers trust the printed line and
  * never a wrapper's summary. Measured three times on 2026-08-31 in three

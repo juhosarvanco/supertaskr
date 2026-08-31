@@ -15,6 +15,7 @@ import {
   countPlaywright,
   formatVerdict,
   judge,
+  lockPath,
   parseVerdict,
   runSuite,
   stripAnsi,
@@ -88,6 +89,43 @@ Running 22 tests using 1 worker
 
   22 passed (3.5s)
 `;
+
+// ── THE INDEPENDENT EXPECTATIONS ─────────────────────────────────────
+//
+// EVERY LIST BELOW IS TYPED HERE, READ OFF THE CARD, AND THE
+// IMPLEMENTATION NEVER SEES IT. The separation is the whole point, and
+// it is a CORRECTION: the first version of this file looped over the
+// runner's OWN exported lists, so a mutation that DELETED a requirement
+// deleted the body that checked it and the suite stayed 31/31 green.
+//
+// A COMPARISON OVER A CORPUS THAT THE MUTATION ITSELF EMPTIES REPORTS
+// AGREEMENT AND MEASURES NOTHING — instance 5 of this card's own
+// subject, reproduced inside the artefact built to catch it. The
+// verifier found it four times: a required verdict field, a whole graded
+// suite, the lock's liveness check and the document's own spelling could
+// each be deleted with the suite none the wiser.
+//
+// THE RULE THAT COMES OUT OF IT, and it is the general one: where a body
+// asserts a requirement, the requirement must be stated somewhere the
+// implementation does not read. The expectation and the subject may not
+// share a source.
+
+/** Criterion 3 — "THE verdict line SHALL carry exit code, body count and
+ *  ref" — plus the suite it graded and the verdict it reached, without
+ *  which the token names neither its subject nor its conclusion. */
+const CRITERION_3_FIELDS = ["bodies", "exit", "ref", "suite", "verdict"] as const;
+
+/** Criterion 1 — "EVERY graded suite in docs/CONVENTIONS.md SHALL be
+ *  runnable through exactly one command". These are the four that
+ *  document grades: lib/parser, app, app/src-tauri and tools/e2e. */
+const CRITERION_1_SUITES = ["app", "e2e", "parser", "rust"] as const;
+
+/** How many times `needle` occurs in `haystack`. EXACTNESS NEEDS A COUNT:
+ *  a containment matcher cannot tell one spelling from two, which is
+ *  precisely how a competing second spelling survived. */
+function occurrences(haystack: string, needle: string): number {
+  return haystack.split(needle).length - 1;
+}
 
 // ── THE TEMP FIXTURE ─────────────────────────────────────────────────
 
@@ -191,11 +229,26 @@ test("a zero-body run that exits ZERO is refused on the same ground as one that 
   }
 });
 
-test("cargo's own doc-test target proves a zero-body run can print the word ok, which is why the count and never the word is read", () => {
-  // The last target of the real transcript is `running 0 tests` ->
-  // `test result: ok.` A green over nothing, printed by cargo itself.
-  expect(CARGO_NO_FAIL_FAST).toContain("running 0 tests");
-  expect(CARGO_NO_FAIL_FAST).toContain("test result: ok. 0 passed");
+test("a cargo target that ran nothing and printed ok is counted as zero bodies and REFUSED, because the word is not the count", () => {
+  // THIS BODY USED TO EXERCISE NO PRODUCT CODE — it asserted that a
+  // string constant declared a hundred lines above contained a
+  // substring, which cannot fail except by editing the constant.
+  //
+  // What is worth measuring is what the RUNNER does with such a target,
+  // and it is the sharpest statement of this card: cargo itself prints
+  // `test result: ok.` over `running 0 tests`. The parts agree with the
+  // baseline — 0 == 0 — so `sums` is TRUE. AGREEMENT OVER NOTHING IS
+  // STILL NOTHING, and only the body count separates them.
+  const onlyEmpty =
+    "\nrunning 0 tests\ntest result: ok. 0 passed; 0 failed; 0 ignored; " +
+    "0 measured; 0 filtered out; finished in 0.00s\n";
+  const c = countCargo(onlyEmpty);
+  expect(c.targets).toBe(1);
+  expect(c.bodies).toBe(0);
+  expect(c.sums).toBe(true); // it AGREES...
+  const v = judge({ status: 0, count: c, ref: "146ebb6", suite: "rust" });
+  expect(v.verdict).toBe("REFUSED"); // ...and is refused anyway.
+  expect(v.reason).toBe("zero-bodies");
 });
 
 // ── §THE VERDICT LINE ────────────────────────────────────────────────
@@ -215,6 +268,15 @@ test("the verdict line carries the exit code, the body count and the ref as name
   expect(parsed.value.ref).toBe("146ebb61f73ca56b30379e28a98ee1b85ecb4f90");
 });
 
+test("the runner requires exactly the five verdict fields the card names, so a requirement cannot be deleted together with its own test", () => {
+  // WITHOUT THIS BODY THE NEXT ONE IS VACUOUS. Dropping "bodies" from
+  // REQUIRED_VERDICT_FIELDS used to leave the suite 31/31 green: the
+  // loop below iterated the very list the mutation had just shortened.
+  // Here the expectation comes from the card and the runner cannot
+  // shrink to meet it.
+  expect([...REQUIRED_VERDICT_FIELDS].sort()).toEqual([...CRITERION_3_FIELDS]);
+});
+
 test("a verdict line missing any required field is REFUSED by the parser, naming the field it lacks", () => {
   const full = formatVerdict({
     suite: "e2e", exit: 0, bodies: 332, targets: 1, ref: "146ebb6", verdict: "GREEN", reason: "ok",
@@ -222,7 +284,9 @@ test("a verdict line missing any required field is REFUSED by the parser, naming
   // Delete each required field in turn. Every deletion must be refused,
   // and must NAME the field — a downstream reader (T-203) that accepted
   // a token with no `bodies` would be this card's subject one layer on.
-  for (const field of REQUIRED_VERDICT_FIELDS) {
+  // THE LOOP DRIVES OFF THE CARD'S LIST, not the runner's: that is what
+  // makes deleting a requirement fail here instead of passing quietly.
+  for (const field of CRITERION_3_FIELDS) {
     const stripped = full
       .split(" ")
       .filter((tok) => !tok.startsWith(`${field}=`))
@@ -300,6 +364,15 @@ test("no graded suite in the registry can be piped, because every argv is an arr
 
 test("the registry as shipped is valid, so the runner never has to choose between refusing itself and running dishonestly", () => {
   expect(validateRegistry()).toEqual([]);
+});
+
+test("the registry grades exactly the four suites the card names, so a graded suite cannot fall out of the blessed runner unnoticed", () => {
+  // WITHOUT THIS BODY EVERY OTHER REGISTRY CHECK IS VACUOUS. Deleting
+  // the whole `app` suite used to leave the suite 31/31 green, because
+  // every body that touched the registry ITERATED the registry — and an
+  // iteration over an emptied corpus passes by having nothing to check.
+  // Criterion 1's first half lives or dies on this comparison.
+  expect(Object.keys(GRADED_SUITES).sort()).toEqual([...CRITERION_1_SUITES]);
 });
 
 // ── §THE REDIRECT IS ONE FILE DESCRIPTOR ─────────────────────────────
@@ -471,14 +544,33 @@ test("a solo suite is REFUSED while another run holds the lock, rather than queu
 });
 
 test("a lock left behind by a dead process is reclaimed, so a crashed run cannot wedge the gate", () => {
+  // THIS BODY USED TO NOT CONSTRUCT WHAT ITS NAME CLAIMS. It acquired,
+  // cleanly RELEASED — deleting the file — and re-acquired, so the stale
+  // branch was never entered and deleting `pidAlive` from the lock left
+  // the suite 31/31 green. A crashed run would then wedge the solo gate
+  // for `rust` and `e2e` permanently, and the next lane would read its
+  // own refusal as a red it had caused.
+  //
+  // So the lock is now LEFT BEHIND, by hand, holding a pid that has
+  // certainly exited: spawnSync has already reaped the child by the time
+  // it returns. (Pid reuse could in principle resurrect it; the window
+  // is negligible and the failure direction is a refusal, not a green.)
   const root = mkdtempSync(path.join(tmpdir(), "t202-stale-"));
   try {
-    const first = acquireSolo("rust", root);
-    expect(first.ok).toBe(true);
-    if (first.ok) first.release();
-    const second = acquireSolo("rust", root);
-    expect(second.ok).toBe(true);
-    if (second.ok) second.release();
+    const dead = spawnSync(process.execPath, ["-e", "0"]);
+    const deadPid = dead.pid;
+    expect(typeof deadPid).toBe("number");
+    writeFileSync(
+      lockPath(root),
+      JSON.stringify({ pid: deadPid, suite: "rust", at: new Date().toISOString() }),
+    );
+    // The holder is gone, so the gate must open...
+    const reclaimed = acquireSolo("e2e", root);
+    expect(reclaimed.ok).toBe(true);
+    // ...and the lock must now name US, not the corpse.
+    const held = JSON.parse(readFileSync(lockPath(root), "utf8"));
+    expect(held.pid).toBe(process.pid);
+    if (reclaimed.ok) reclaimed.release();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -516,12 +608,38 @@ test("the CLI lists every graded suite with the directory it must run in", () =>
   }
 });
 
-// ── §THE DOCUMENT NAMES THIS COMMAND AND NO OTHER SPELLING ───────────
+// ── §THE DOCUMENT NAMES THE RUNNER IN EXACTLY ONE PLACE ──────────────
 
-test("docs/CONVENTIONS.md names the blessed gate-runner as the one spelling for running a graded suite", () => {
-  // The document is the other half of criterion 1: a runner nothing
-  // points at is a second spelling, not a single one.
+test("docs/CONVENTIONS.md names the blessed gate-runner in exactly one place, so one spelling is one spelling and not merely at least one", () => {
+  // THE OLD NAME PROMISED EXACTNESS AND THE BODY ASSERTED CONTAINMENT.
+  // Removing the command killed it, so it looked strong; ADDING a
+  // competing second spelling survived, which is what proves a matcher
+  // is containment. `toContain` cannot tell one spelling from two.
+  //
+  // AND THE NAME MATTERED BEYOND THE ASSERTION: docs/CAPABILITIES.md is
+  // GENERATED from these test names, so a body claiming "the one
+  // spelling" while measuring "at least one" publishes a sentence this
+  // repository does not hold.
+  //
+  // What is exact here, and true: the RUNNER is named once. Criterion
+  // 1's second half — no other suite command anywhere — is knowingly
+  // unmet and routed, because workflow-parity.spec.ts derives CI's own
+  // steps from the per-package bullets, so this body does not pretend to
+  // measure it.
   const text = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
-  expect(text).toContain("gate-run.mjs");
-  expect(text).toContain(VERDICT_TOKEN);
+  expect(occurrences(text, "gate-run.mjs")).toBe(1);
+  expect(occurrences(text, VERDICT_TOKEN)).toBe(1);
+});
+
+test("the suites the document offers the runner are exactly the suites the runner grades, so the two cannot drift apart", () => {
+  // A third independent source for criterion 1: the DOCUMENT's own list,
+  // checked against the card's, so neither the doc nor the registry can
+  // move alone.
+  const text = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
+  // `[a-z0-9|]` and not `[a-z|]`: `e2e` carries a digit, and the narrower
+  // class silently matched `parser|app|rust|e` — a partial list that
+  // would have compared four names against three.
+  const offered = text.match(/gate-run\.mjs\s+([a-z0-9|]+)`/);
+  expect(offered).not.toBeNull();
+  expect((offered?.[1] ?? "").split("|").sort()).toEqual([...CRITERION_1_SUITES]);
 });
