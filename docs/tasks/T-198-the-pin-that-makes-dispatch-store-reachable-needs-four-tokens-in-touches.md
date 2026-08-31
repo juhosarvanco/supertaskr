@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [app-dispatch, docs/architecture/components/C-15-dispatch.md, app/test/dispatch-store.test.ts, app/test/architecture-dogfood.test.ts]
 suggested_by: "T-190's executor, which met criterion 2's fence wall, measured what it costs, and derived the exact token list this card carries"
@@ -81,3 +81,337 @@ lane that can execute it. **`T-126-s2`'s `blocked_by` names this card.**
 `T-190` (which priced the wall — read its notes first), `T-112-s6` (the
 same fence-expansion trap, one component over), `T-126-s2` (the ruling
 this unblocks), and `T-110` (why structural reachability is not enough).
+
+## Implementation notes (executor, lane `task/T-198-the-pin-that-makes-dispatch-store-reachable`)
+
+**THE LANE'S BASE IS `146ebb6`, NOT THE BRIEF'S `f736677`.** Named up
+front by the dispatching seat and filed as `T-187`; `.nputer/BRIEF.md`
+row 4 derives `base commit:
+f7366770bd12d4b30191632c123edb83020cf1bd` as the newest `Checkpoint:`
+commit while this worktree sits at
+`146ebb61f73ca56b30379e28a98ee1b85ecb4f90`. **Every other derived row
+matched the tree**, including the five-path fence expansion, the three
+live lanes and the slug map. Every figure below is re-derived at
+`146ebb6` and none is transcribed from the brief or from `T-190`.
+
+**WHAT CHANGED: three files, one of them new.**
+
+- **`app/test/dispatch-store.test.ts` — NEW.** C-15's first collected
+  body: five bodies over `hydrateJoin`.
+- **`docs/architecture/components/C-15-dispatch.md`** — the `paths:`
+  line (2 → 3 entries), two corrections to prose that this lane
+  measured false, and a `T-198` section carrying the drill table.
+- **`app/test/architecture-dogfood.test.ts`** — the one body the
+  registry line reds, reconciled. **C-12's file (`app-map`)**, which is
+  why the card names it explicitly.
+
+### Criterion by criterion
+
+**1. "`dispatch-store.ts` SHALL be reachable from a body a runner
+collects, and `hydrateJoin` SHALL be driven by that body rather than
+merely imported." MET, and the second clause is the one that cost
+something.**
+
+Reachability, re-derived at this ref with `T-190`'s four forms over
+`app/src` and `app/test`:
+
+    from "…dispatch-store"             1 file   app/test/dispatch-store.test.ts
+    bare side-effect import            0
+    require("…dispatch-store")         0
+    dynamic import("…dispatch-store")  0
+
+The three zeros are correct rather than a miss — the pin imports
+statically. **POSITIVE CONTROL (shape TEN):** the identical pattern
+returns **12 files for `board-model`** and **12 for `task-detail`**, so
+the search works; and at the base commit `146ebb6` the same search
+returns **0 for `dispatch-store`**, which is the flip this card exists
+to produce. Collection is not inferred from the config: vitest reports
+`✓ test/dispatch-store.test.ts (5 tests)` by name.
+
+**2. "A one-side-only mutant of `hydrateJoin` SHALL be killed by the new
+body." MET — seven drills, table under criterion 3's drill section
+below.** The canonical mutant is the exact one `T-190`'s blind verifier
+proved survives: delete `rows.set(row.taskId, row)` so the Map is always
+empty. It reded the app suite at **exit 1, `1 failed | 49 passed (50)`,
+`2 failed | 1103 passed (1105)`**.
+
+**3. "THE registry line SHALL be declared, and the body it reds SHALL be
+reconciled in the same lane — its count moves by construction, not by
+accident." MET, and "by construction" was taken literally.**
+
+The new fixture value was derived from a **throwaway probe `it()`** run
+against the live model inside this lane's own file, with the registry
+line already in place and the file already written, and **removed before
+the commit** — the T-088 technique the dogfood file itself prescribes.
+It printed, and these are the values the fixture was written from:
+
+    registry paths        3 entries (the one that moves)
+    c15.files             6  — UNCHANGED
+    fileComponent C-15    6  — UNCHANGED
+    fileComponent.size  199  — UNCHANGED
+    c15 findings, derived.issues, project.issues, graph issues   all []
+
+**AND THAT CORRECTS `C-15-dispatch.md`'s OWN FORECAST, WHICH IS THE
+FINDING THIS CRITERION TURNED UP.** That file predicted a lane which
+also WRITES the file moves `c15?.files`, the `fileComponent` tally and
+the tree-wide count *with* the `paths:` array. **It does not.**
+`architecture-dogfood.test.ts`'s `liveModel()` parses the registry LIVE
+but reads the graph from the **committed** `docs/architecture/graph.json`,
+which a lane does not regenerate (T-009-s1). So exactly ONE assertion
+moves in-lane. `T-190`'s blind verifier reached the same result
+independently (its non-blocking observation 2), so this is two
+measurements against one forecast; the forecast's direction is right and
+only its timing is wrong, which is the dangerous shape — a lane
+budgeting for four reds and meeting one goes looking for three that were
+never coming. Corrected in place, with the forecast kept rather than
+deleted.
+
+**Reconciliation proved rather than asserted (drill 7):** reverting the
+`paths:` line ONE SIDE ONLY reds `app/test/architecture-dogfood.test.ts
+> dogfood: the nputer repo through its own derivation engine > C-15 HAS
+TERRITORY AT LAST: five files under its declared globs, D3 cleared` —
+**failing-body count 1**, exit 1. So the fixture edit is load-bearing
+and is not a cosmetic follow-on.
+
+**4. "WHERE the pin makes `T-185` or `T-195` cheaper to close, the card
+SHALL say so." MET, and the two answers differ — measured, not
+inherited.**
+
+- **`T-185` — MEASURABLY CHEAPER, and its fourth criterion is now half
+  discharged.** That criterion says a body constructing a reading with a
+  populated `notLanes` and one with `truncated: true` **has never existed
+  in this suite**. Both exist now, and neither is decorative: mutants 4
+  and 5 (`notLanes: []`, `truncated: false`) each red exactly one body.
+  What remains `T-185`'s is the half no lane may take on its own —
+  holding that reading against the board's `DispatchReading` BY
+  CONSTRUCTION needs an import of `board-model.ts` (C-17), a
+  cross-component edge C-15 does not declare and an unruled architecture
+  decision. **The file that import belongs in now exists and is
+  declared**, which is precisely what `T-185`'s own note said was
+  missing.
+- **`T-195` — CHEAPER ONLY AT THE EDGES, and `C-15-dispatch.md`'s
+  earlier paragraph is right.** Mutant 6 pins that the reason-bearing
+  field cannot be DROPPED in transit, swept over all four
+  `LaneScanRefusal` arms. **That is not `T-195`**: its exposure is the
+  sentence's post-em-dash WORDING, authored in `lanes.rs` and rendered
+  by `task-detail.ts`, neither reachable from here. `T-195`'s lane
+  should still take the presentation side, as its own first decision
+  says. What it gains is that the wire half is no longer unpinnable.
+
+**5. "Verification: headless, the app suite plus `architecture-dogfood`."
+MET.** No app was launched, no port bound, no screen read, and no
+`tauri dev`. Port 1420 was read ONCE with the one permitted command —
+`lsof -nP -iTCP:1420 -sTCP:LISTEN`, exit 1, **nothing is listening**
+(read 2026-08-31T06:44:50Z on Juhos-MacBook-Pro.local; a live fact, so it
+carries a time and a host rather than a commit). No port was derived or
+bound, because nothing in this card needed one.
+
+### The five bodies, and why each earns its place
+
+Poison shape SIX asks for a mutant a body uniquely kills. **Every body
+has one with count exactly ONE.**
+
+| body | its own mutant, count 1 |
+|---|---|
+| keys every row by its OWN task id | every key maps to the LAST row |
+| a DUPLICATE task id: the LAST row wins | first duplicate wins |
+| carries `notLanes` WHOLE | `notLanes: []` |
+| carries `truncated` | `truncated: false` |
+| the refusal arm, all four arms | the `sentence` dropped |
+
+**The first two are the pair worth reading.** They look like neighbours
+and are blind to different things: the duplicate-id body cannot see
+"every key maps to the last row" (its own expectation IS the last row)
+and the ordinary-rows body cannot see "first wins" (its fixture has no
+duplicates). **Neither covers the other, in either direction, and that
+is measured rather than argued.**
+
+The duplicate-id body pins a claim `hydrateJoin`'s own doc comment makes
+and nothing held: *"the last one would win here. That is stated rather
+than guarded."* Stated-and-unheld is how a doc comment becomes false.
+
+**The refusal sweep is ONE body over four arms on purpose** — the claim
+is that the module is OPAQUE to the refusal, and four near-identical
+bodies would be four restatements of one fact (shape SIX). Its corpus is
+asserted `toHaveLength(4)` **before** the loop is trusted, which is shape
+TEN's one-line remedy applied inside the body.
+
+**An `instanceof Map` assertion was deliberately NOT written.** The
+return type already guarantees it, so it would restate the compiler; the
+body asserts `.size`, `.get()` and `[...keys()]` instead, which are facts
+about what the loop did.
+
+### Drills — seven, all one side only, all restored and hash-proven
+
+Drilled AT A COMMIT (`dde0273`), per T-072-s1. Each mutation was checked
+to occur **exactly once** before it was applied (a substitution count is
+not the same as the intended text), the mutated text was **read back
+through `git -C <worktree> diff`**, the whole app suite was run with the
+**exit code captured before any pipe**, then
+`git restore --source=HEAD --staged --worktree -- <path>` with **both
+sides named**, and the restoration proven by sha256 against
+`git show HEAD:<path>` with `git status --porcelain --untracked-files=all`
+empty as the companion.
+
+| # | mutant, one side only | target | failing bodies | app suite |
+|---|---|---|---|---|
+| 1 | delete `rows.set(row.taskId, row)` | `dispatch-store.ts` | **2** | `1 failed \| 49 passed (50)`, `2 failed \| 1103 passed (1105)`, exit 1 |
+| 2 | every key maps to the LAST row | `dispatch-store.ts` | **1** | `1 failed \| 49 passed (50)`, `1 failed \| 1104 passed (1105)`, exit 1 |
+| 3 | first duplicate wins | `dispatch-store.ts` | **1** | same shape, exit 1 |
+| 4 | `notLanes: []` | `dispatch-store.ts` | **1** | same shape, exit 1 |
+| 5 | `truncated: false` | `dispatch-store.ts` | **1** | same shape, exit 1 |
+| 6 | refusal `sentence` dropped | `dispatch-store.ts` | **1** | same shape, exit 1 |
+| 7 | the `paths:` line reverted | `C-15-dispatch.md` | **1** | same shape, exit 1 |
+
+**COUNT 2 ON DRILL 1 IS AN ANSWER TO SHAPE SIX, NOT A MISS.** A count
+above one *"names the bodies that already cover you, in the reporter's
+own output"* — here the two Map bodies, both named above — and each of
+them still has its own count-1 mutant, so neither is a duplicate.
+
+`dispatch-store.ts` restored to
+`sha256 3bc8162eb5741d2bf520026131316fd60bb88b4c42b3fa061fa7313e14bed964`
+after every one of drills 1–6, and `C-15-dispatch.md` to
+`sha256 35d99adcda3bb233ecb08862e3cd7c74bd22d6107d4d319a3f0b9b1173c54636`
+after drill 7. **The store's hash is byte-identical to the one `T-190`'s
+blind verifier recorded for the same file in a different lane**, which
+is a free cross-lane corroboration that no drill left a residue.
+
+**SCOPE OF THE DRILLS, STATED RATHER THAN IMPLIED:** every mutant was run
+under the app suite only. They were **not** run under `cargo test`,
+`lib/parser`'s vitest or the e2e lane. "Failing-body count N" is a claim
+about `npm test` from `app/`.
+
+**NO DRILL TOUCHED AN OUT-OF-FENCE PATH.** `T-190`'s drill 2 wrote a file
+outside its fence to measure that the hook permits it; this lane did not
+repeat that, because the answer is already recorded and the write is the
+thing the fence forbids.
+
+### Gates, derived from this lane's own diff
+
+The diff is `app/test/dispatch-store.test.ts` (new),
+`app/test/architecture-dogfood.test.ts`,
+`docs/architecture/components/C-15-dispatch.md` and this card.
+
+- **DOCS GATE — FIRES.** `node tools/e2e/scripts/docs-gate.mjs
+  docs/architecture/components/C-15-dispatch.md`, run from the
+  repository root with a **separate literal path argument**: **exit 1**,
+  `FIRES — 1 path(s) under docs/ are code inputs`, naming **four**
+  suites. It also reports *"every live task card's frontmatter parses,
+  with a legal status"* and *"governing-document budgets hold"*.
+  **A FIRST RUN OF THIS GATE EXITED 1 FOR A REASON THAT WAS NOT A
+  VERDICT** — `ERR_MODULE_NOT_FOUND: yaml` — because `tools/e2e` had no
+  `node_modules` yet. That is the exact hazard the standing rule names:
+  an exit code read without its output would have been recorded as a
+  gate result. Installed (`npm ci`, exit 0) and re-run.
+- **GRAPH REGEN — FIRES, and is the integrator's.** The diff adds a
+  `.ts` outside `docs/`. `index --check` is **STALE at exit 1** in the
+  lane, by construction: `files +1 -0 ~1`, `edges +9 -0`. **All nine
+  added edges land on `app/src/lib/dispatch-store.ts` (C-15's own) or on
+  `p:vitest` (a PACKAGE edge, not a component one)**, so no
+  cross-component edge is created — derived from the index output, not
+  forecast. `arch cycles` **ACYCLIC, exit 0**, 15 components / 43
+  declared edges. `arch` **exit 0**, summary byte-identical to base:
+  `components=15 files=199 mapped=199 unmapped=0 edges=45 findings=4
+  drift_components=4`, with C-15 still `files=6 drift=-` because that
+  figure comes from the committed graph.
+- **BOOT GATE — NOT OWED.** Trigger is `app/src-tauri/**`, `app/src/**`
+  or either manifest (`app/package.json`, `app/src-tauri/Cargo.toml`).
+  This diff touches `app/test/**` and `docs/**` and none of the three.
+  **`app/src/lib/dispatch-store.ts` was mutated by six drills and
+  restored by hash; it is not in the diff** — checked against
+  `git status --porcelain --untracked-files=all`, empty.
+- **METHOD EVAL GATE — NOT OWED.** Trigger is `method/**`; zero paths.
+- **AUDIT GATE** declares no merge-diff trigger, so it is not one of
+  these.
+
+### Suites, with the counts and not only the exits
+
+Measured at this lane's ref. The base column is this worktree at
+`146ebb6` before any edit.
+
+    npm test        from app/        BASE  49 files / 1100 tests   exit 0
+    npm test        from app/        TIP   50 files / 1105 tests   exit 0
+    npm run build   from app/  (tsc x2 + vite)                     exit 0
+    npx vitest run  from lib/parser/  16 files / 344 tests         exit 0
+    cargo test --no-fail-fast   18 targets, 601 passed / 0 failed / 4 ignored   exit 0
+    npm test        from tools/e2e/   1 failed / 366 passed         exit 1
+
+**THE ONE RED IS `T-197` AND IS NOT THIS DIFF — ATTRIBUTED BY MECHANISM,
+NOT BY A RE-RUN.**
+`tools/e2e/tests/dispatch-order.spec.ts:200 › --dispatch runs on the live
+repository, exits 0, and WRITES NOTHING`, failing at line 214 on
+`toContain("BLOCKED — the unmet blocker is named")`. Measured at this
+lane's ref:
+
+    node scripts/brief.mjs --dispatch > FILE    70092 bytes   exit 0
+    node scripts/brief.mjs --dispatch | cat     65536 bytes   exit 0
+
+65,536 is the macOS pipe buffer exactly, and both exit 0 — the defect
+`T-197` cards, cause `process.exit()` against Node's asynchronous stdout.
+The three strings this spec asserts sit at bytes **66,228**
+(`BLOCKED — …`), **68,825** (`critical path:`) and **68,996**
+(`worst blocker:`) — **all three past the cut**, which is why the body
+reds and why WHICH assertion fails moves between runs (T-190 measured
+the first at 65,767 at `57c1b39`; the board has grown since).
+
+**AND THIS DIFF CONTRIBUTES ZERO BYTES TO THAT OUTPUT, WHICH IS THE
+AIRTIGHT HALF RATHER THAN AN INHERITED CLAIM.** The dispatch listing
+carries frontmatter-derived lines and live worktree facts only, never a
+card's body: four distinct phrases from these notes return **0 hits**
+each in the full 70,092-byte output, against a positive control
+(`STARTABLE NOW`) that returns 1. So nothing this card wrote could have
+pushed any assertion past the buffer. `T-190`'s lane separately proved
+the same body reds at BASE content; between the two the attribution is
+complete and **the red is not charged to this diff**.
+
+**A LIVE-ENVIRONMENT NOTE FOR THE DISPATCHING SEAT, not a defect.** This
+lane's WORKTREE (not its diff) coarsely fences four cards in that same
+listing — `T-185`, `T-112-s5`, `T-188` and `T-095` — and the tool says so
+itself for two of them: *"Both expand through C-15, so this may be the
+COARSE fence rather than a real overlap."* `T-095` is fenced only because
+this lane holds `app/test/architecture-dogfood.test.ts` through C-12.
+All four free up when this worktree is removed.
+
+**`T-190` RECORDED 1094 TESTS AT `57c1b39`; THIS LANE MEASURES 1100 AT
+`146ebb6`** — the suite grew by six between the two refs, which is why
+the correction clause asks for a re-derivation rather than a transcript.
+
+### Where the brief was wrong
+
+1. **The base commit — disclosed by the dispatcher, confirmed here.**
+   Row 4 derives `f7366770…`; the worktree is at `146ebb61f73c`. Filed
+   as `T-187`. **Every other derived row matched the tree.**
+2. **"A PreToolUse hook enforces the fence" is FALSE in this session's
+   shape, and the dispatching seat corrected it before I started.**
+   `T-199` carries it: this lane's worktree sits outside the dispatching
+   checkout's root, so `lane-fence.mjs` stands aside **unjudged**. **This
+   lane's fence was therefore kept as a DISCIPLINE, not by a mechanism** —
+   the disclosure `roles/executor.md` requires when a guarantee is really
+   a habit. Checked by hand at every commit:
+   `git status --porcelain --untracked-files=all` never showed a path
+   outside the four the fence and `alwaysWritable: ["docs/tasks"]` allow.
+3. **`C-15-dispatch.md`'s reconciliation forecast is wrong about
+   timing**, measured above. That is a repository document rather than
+   the brief, and it is corrected in this commit rather than routed.
+
+### For the verifier
+
+- **The claim most worth attacking is drill 1.** Re-cut the canonical
+  mutant yourself — delete `rows.set(row.taskId, row)` — and check it
+  reds. `T-190`'s verifier proved the SAME mutant passes the whole app
+  suite and both `tsc` programs at exit 0 with no collected body
+  importing the module; if it still passes here, this card did nothing.
+- **The second is the import census's ONE.** A one with a dead control
+  proves as little as a zero with a dead control. Re-run the positive
+  control (`board-model`, `task-detail`) and require 12 each.
+- **The third is the count-1 claim for each of the five bodies.** They
+  are what says no body here is a shape-SIX duplicate, and rows 2 and 3
+  of the drill table are the pair most likely to be wrong if any is.
+- **The fourth is my correction to `C-15-dispatch.md`'s forecast.** I
+  claim three tallies do NOT move in-lane. Re-derive with your own probe
+  rather than trusting either sentence — the file's previous text says
+  the opposite and was written by a lane that measured carefully.
+- **The GRAPH REGEN list is explicitly NOT warranted complete.** I name
+  four assertions that move at the regen; derive them from a throwaway
+  probe against the regenerated graph, because the first red hides the
+  rest.

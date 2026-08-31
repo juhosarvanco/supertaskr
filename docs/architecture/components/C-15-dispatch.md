@@ -211,3 +211,94 @@ the WIRE side; its own first decision points the other way, at
 drives and which needs none of this. **So this section is load-bearing
 for `T-185` and optional for `T-195`**, and `T-195`'s lane should read
 that as permission to take the presentation side rather than to wait.
+**THE PATH IS LAID (`T-198`, 2026-08-31).** Everything above is the
+price; this is the crossing. `app/test/dispatch-store.test.ts` is C-15's
+first collected body, the `paths:` array above carries it, and
+`app/test/architecture-dogfood.test.ts` — C-12's file, which is why the
+card named it — was reconciled in the same commit.
+
+**WHAT MAKES IT A PIN RATHER THAN AN IMPORT.** `T-110` measured four
+one-side-only producer mutants of this module surviving at exit 0, every
+one of them imported and type-checked, so structural reachability was
+never the missing thing. Seven drills, each one side only, read back
+through `git -C`, restored and proven by sha256:
+
+| mutant, one side only | failing bodies | app suite |
+|---|---|---|
+| delete `rows.set(row.taskId, row)` — the canonical gutting | **2** | 1 failed \| 49 passed (50), exit 1 |
+| every key maps to the LAST row | **1** | exit 1 |
+| first duplicate wins instead of the last | **1** | exit 1 |
+| `notLanes: []` | **1** | exit 1 |
+| `truncated: false` | **1** | exit 1 |
+| the refusal's `sentence` dropped in transit | **1** | exit 1 |
+| the `paths:` line above reverted | **1** (the dogfood body) | exit 1 |
+
+The canonical mutant is the one `T-190`'s blind verifier proved passes
+the whole app suite AND both `tsc` programs at exit 0 when no collected
+body imports this module. It now reds.
+
+**COUNT 2 IS AN ANSWER TO POISON SHAPE SIX, NOT A MISS.** The shape asks
+for a mutant a body uniquely kills; the canonical gutting is killed by
+two bodies, and the reporter NAMES them, which is what the shape says a
+count above one is for. Each of the five bodies still has a mutant of its
+own with count exactly ONE — rows 2 through 6 above — so no body here is
+a duplicate of another. Rows 2 and 3 are the pair worth reading: the
+duplicate-id body is blind to "every key maps to the last row" (its own
+expectation IS the last row) and the ordinary-rows body is blind to
+"first wins" (its fixture has no duplicates), so neither covers the
+other **in either direction**, measured rather than argued.
+
+**THE IMPORT CENSUS FLIPPED, WITH ITS POSITIVE CONTROL.** `T-190`
+measured zero importers on four forms. At `T-198`'s tip the specifier
+form returns **one file** — the new pin — and the other three still
+return none, which is correct: the pin imports statically. **Positive
+control (shape TEN):** the identical pattern returns **12 files** for
+`board-model` and **12** for `task-detail`, so the one is a fact about
+the tree. At the base commit `146ebb6` the same search returns **0**.
+
+**NO CROSS-COMPONENT EDGE, DERIVED FROM THE INDEX RATHER THAN FORECAST.**
+`index --check` reports `files +1 -0 ~1`, `edges +9 -0`, and **all nine
+land either on `app/src/lib/dispatch-store.ts` — this component's own —
+or on `p:vitest`, a PACKAGE edge and not a component one.** `arch cycles`
+is ACYCLIC at exit 0 (15 components, 43 declared edges) and `arch`'s
+summary is byte-identical to base: `components=15 files=199 mapped=199
+unmapped=0 edges=45 findings=4 drift_components=4`. C-15 still reads
+`files=6 drift=-` because that figure comes from the COMMITTED graph.
+
+**WHAT THE MERGE'S GRAPH REGEN STILL OWES, so the integrator does not
+have to re-derive it from a red.** `index --check` is STALE at exit 1 in
+the lane, by construction: a `.ts` file joined the walk and a lane does
+not regenerate the graph (T-009-s1). After the regen these move, and they
+are the reason this component's file count is quoted twice in this file:
+
+- `c15?.files` 6 → 7, `app/test/dispatch-store.test.ts` **last** in sort
+  order (`app/test/` sorts after `app/src/`);
+- the `fileComponent` C-15 filter 6 → 7;
+- `derived.fileComponent.size` 199 → 200;
+- the per-component tally row `["C-15", 6]` → `["C-15", 7]`.
+
+**That list is derived from the index delta and is NOT warranted
+complete** — the honest instruction is this file's own: derive the new
+values from a throwaway probe against the REGENERATED graph before
+running the suite, never off a failure, because the first red hides the
+ones below it.
+
+**AND IT DOES MAKE `T-185` CHEAPER, MEASURABLY.** That card's fourth
+criterion says a body constructing a reading with a populated `notLanes`
+and one with `truncated: true` has **never existed in this suite**. Two
+of them exist now, and they are pinned by mutants 4 and 5 above. What is
+still `T-185`'s is the half this file may not take: holding that reading
+against the board's `DispatchReading` **by construction** needs an import
+of `board-model.ts` (C-17), which is a cross-component edge C-15 does not
+declare and therefore an architecture decision no lane may make on its
+own. The file that import belongs in now EXISTS and is declared, which is
+the whole of what was missing.
+
+**`T-195` IS CHEAPER ONLY AT THE EDGES, AND THE EARLIER PARAGRAPH IS
+RIGHT.** Mutant 6 pins that the reason-bearing field cannot be DROPPED in
+transit, swept over all four `LaneScanRefusal` arms in one body. That is
+not `T-195`: its exposure is the sentence's post-em-dash WORDING, which
+is authored in `lanes.rs` and rendered by `task-detail.ts`, and neither is
+reachable from here. `T-195`'s lane should still take the presentation
+side; what it gains from this card is that the wire half is no longer
+unpinnable, so its third criterion's sweep has a home if it wants one.
