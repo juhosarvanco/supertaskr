@@ -10,10 +10,10 @@ blocked_by: [T-153]
 touches: [app-shell]
 suggested_by: integrator claude-opus-5 @T-088
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5@subagent
 built_by: "claude-opus-5 @fresh (executor lane)"
-verified_by:
-review:
+verified_by: claude-opus-5@subagent
+review: independent
 ---
 
 **PROMOTED at the amnesty triage, 2026-08-29.** The card's own armed
@@ -688,3 +688,157 @@ deliberate 3 s pre-arm stall, the deleted sleeps are covered from three
 directions.
 
 ## Verdicts
+
+VERDICT (2026-08-31, blind verifier claude-opus-5@subagent, independent):
+**APPROVED WITH ASSIGNED CORRECTIONS**. The card's central demand is met
+and the mechanism it called unexplained is now explained and closed. Three
+corrections are assigned below; none of them is the fix, and the third is
+worth more than this approval because it edits a governing document.
+
+**PHASE 1 WAS WRITTEN BEFORE THE DIFF WAS OPENED, AND IT IS HASHED.**
+Attack set sealed at `2026-08-31T07:30:41Z`, sha256
+`46a284e2a7beeeb9d4164d6b0f197220288b7ba249b9ed0fc774c315abcbeaf0`,
+before `git diff`, the notes or any commit message was read. Base reads
+were taken with `git show <merge-base>:<path>` only. **Contamination,
+disclosed:** `git status --porcelain` (empty) and an `ls docs/tasks/`
+pre-seal, neither revealing diff content; and POST-seal, `git worktree
+add` echoed the lane's HEAD commit subject at me — self-inflicted, after
+the line, so the guarantee holds. `git log` was never run.
+
+**THE CENTRAL QUESTION, ANSWERED FROM THE BASE CODE ALONE AND BEFORE THE
+NOTES.** It is not the build cache and it is not load. At `dd6b723`
+`spawn_watcher_thread` returns the instant after `std::thread::spawn`,
+and inside `run_watcher` the arm paths are asymmetric: `WatchCtl::Rearm`
+and `WatchCtl::ArmGenesis` each carry an `ack`, while the `initial_root`
+arm — which runs before the control loop is entered — carries none. The
+base file confesses it in the failing body's own comment (`docs_watch.rs`
+base line 2420, *"the initial arm is asynchronous (no rendezvous at
+spawn)"*) and states the contrast twelve lines later for the pick path.
+Because `rearm` resets the emit-suppression baseline FROM DISK at arm
+time, a write that lands first becomes the baseline and **no emit is ever
+produced** — so no bound of any width can collect it.
+
+**THE EXPOSURE IS TWO CALL SITES, NOT TWENTY.** Of 24 `live_state` sites
+at `dd6b723`, exactly **2** pass `Some(root)` (base lines 2418, 2939);
+the other 22 arm through the acked pick. Those two are precisely the two
+bodies this card records as red, and the module's only two
+`thread::sleep` calls sat inside those same two bodies. The sleep was the
+stand-in for the missing rendezvous.
+
+**THE DECISIVE EXPERIMENT — MY OWN, AND SWEPT RATHER THAN FIXED.** I
+injected a deterministic delay at a different point from the lane's (in
+the `thread::spawn` closure, delaying the thread's ENTRY into
+`run_watcher` — the OS-scheduling story) and swept it. Detached scratch
+worktree `/Users/ujju/T-088-s4-verify` at `7fddfca`,
+`CARGO_TARGET_DIR=<scratch>/target`, idle machine, freshly built cache:
+
+| injected delay | BASE `dd6b723` | HEAD `7fddfca` |
+|---|---|---|
+| 0 ms | green 1.27 s / 1.52 s | green 0.27 s / 0.53 s |
+| 1500 ms | **RED, exit 101**, 11.01 s / 11.02 s | green 1.78 s / 2.05 s |
+| 8000 ms | **RED, exit 101**, 11.02 s / 11.02 s | green 8.30 s / 8.54 s |
+
+Two readings settle the card. **Base's failure time is CONSTANT at 11.0 s
+whether the arm is 1.5 s late or 8 s late** — it does not track the delay,
+which is only possible if the emit never comes at all; the logs confirm it
+in the reporter's own words, `emits seen meanwhile: []`, on both named
+bodies. **HEAD's pass time tracks the injected delay linearly with a fixed
+~0.3 s offset and never cliffs** — that is the signature of a wait that
+ends on an EVENT, and it is the one thing a widened bound could not fake.
+This was reproduced on a fast, idle machine with a clean cache, so **the
+cache attribution is refuted by construction, not by argument.**
+
+**MUTANTS — mine, one side only, read back with `git diff`, restored and
+proven against a sha256 recorded BEFORE the mutation and stored outside
+the worktree.** The bench was refused once for being dirty (my own build
+log) and re-cut clean before any drill.
+
+- **M-A, barrier neutered:** the body **HANGS at every delay, including
+  0 ms** — `targets=0 passed=0 failed=0`, killed by my 40 s watchdog. The
+  barrier is not merely load-bearing; without it the new body never works.
+- **M-D, watcher thread dies mid-flight** (panic inside `handle_fs_batch`):
+  **exit 101 in 0.29 s**, message *"the watcher thread is gone while
+  waiting for a docs-changed emit where the tree carries `startup v2`"*.
+  This confirms the lane's own stated mitigation: the disconnect path is
+  immediate and well-named, so the hang risk is confined to
+  alive-but-silent.
+- Restores verified: `shasum -c` OK in every drill, worktree clean after.
+
+**WHAT FAILED TO BREAK IT.** Twenty consecutive `docs_watch::tests` runs
+under 8 CPU burners, each watchdogged because an unbounded `recv()` would
+HANG rather than red: **20 green, 0 red, 0 hung**, 59 passed every time,
+`finished in` 2.55–2.61 s (spread 0.06 s). That was aimed at two things I
+expected might break it and neither did — a residual FSEvents-registration
+race the barrier cannot close, and a rare false green bought by deleting
+five sleeps. I could not make the shipped tree flake by any means.
+
+**CRITERIA.** (1) **met** — the rendezvous is fixed at `live_state`, so all
+24 sites get it, not the 2 that failed; `WatchCtl::Ping` is sound because
+the startup arm provably precedes the loop that answers it, and it is
+`#[cfg(test)]`, so production semantics are untouched (no other module
+matches on `WatchCtl`, so the cfg'd variant cannot break an exhaustive
+match). (2) **met** — the 1200 ms negative wait keeps its bound with its
+`settle()` intact, and the diff classifies every surviving wait. (3)
+**met, and then some** — nothing was widened; `EMIT_BUDGET` was deleted and
+four 5 s waits became `try_recv()`, which is strictly stronger. (4) **met
+and independently re-measured**: bare `cargo test --no-fail-fast` from
+`app/src-tauri/`, unpiped, `$?` read before any pipe — **exit 0, 18
+targets, 601 passed / 0 failed / 4 ignored**, twice, lib `finished in`
+**4.28 s** and **4.36 s**, the second starting at 1-min loadavg **23.70**,
+far above this card's own control and deep inside the healthy band. (5)
+**met** — I confirmed `index_cmd.rs` carries a second copy of the identical
+unrendezvoused `live_state` (line 157) whose sole caller passes `None`, so
+it is latent rather than live, and its two `DEBOUNCE * 6` waits are
+negatives that correctly keep bounds.
+
+**FENCE — judged by hand, since `T-199` says nothing enforces it.**
+Two paths: `app/src-tauri/src/docs_watch.rs`, owned by `C-10` whose
+`touch_slugs` is `[app-shell]`, and this card. **Compliant.**
+
+**SECURITY SWEEP — clean.** No new input path, no endpoint, no query, no
+secret, no unsafe default, and **no dependency added** (no manifest or
+lockfile in the range). The one added surface is a test-only control
+message absent from the shipped binary.
+
+**ASSIGNED CORRECTION 1 — code, and it applies the lane's OWN rule to its
+own helper.** Deleting the bound outright means a watcher that is alive
+but permanently silent now hangs instead of failing, across **20
+`recv_until` call sites in 11 bodies**. M-A measures what that costs: no
+body name, no counts, no output at all, versus the 11 s named failure the
+same condition produced before. `cargo test` has no per-test timeout, so
+this consumes a whole CI job and reports nothing. The lane already accepts
+this exact reasoning for `entered_rx` — *"the suite would HANG instead of
+failing"* — and simply did not apply it to `recv_until`. **Restore a
+diagnostic BACKSTOP: a bound so wide it can never decide an outcome (60–120
+s against a 250 ms debounce), leaving the rendezvous to decide pass/fail
+and the clock to convert a hang into a named failure.** That keeps
+criterion 1 intact — the test of a legitimate bound is whether its VALUE
+can change the outcome, and this one's cannot.
+
+**ASSIGNED CORRECTION 2 — notes only.** The taxonomy table and correction
+clause 3 say `recv_until` had **21** call sites at `dd6b723` and that
+T-153 "added one site". Measured by three independent methods, it is
+**20 at `dd6b723` and 20 at `7fddfca`** — unchanged. The card's original
+figure of 20 was right in number; T-153 renamed the helper without moving
+the count.
+
+**ASSIGNED CORRECTION 3 — `docs/STATE.md`, and this is the one that
+matters.** Its FIRST standing hazard attributes this defect to a large
+`target/` or contending lanes and prescribes `cargo clean`. **My
+independent derivation contradicts it, and the controlled pair above
+refutes it on a clean cache under zero load.** The cache is a confounder
+that shifts arm latency past a hard-coded 1 s sleep; it never was the
+cause, which is why cleaning worked and why the cliff kept returning. A
+13 GiB `cargo clean` was run on that attribution's strength. STATE.md is
+outside this fence and is replaced from its template at each checkpoint,
+so this is assigned to the integrator: **the hazard should be retired to
+the checkpoint record as CLOSED BY MECHANISM**, with the surviving
+sentence naming the real class — *a test that starts a worker and proceeds
+without waiting for it to report READY* — and the two routes this lane
+recorded against `app-agent` and `crate-index`, where the same shape is
+still live and where one unsettled intermittent may share it.
+
+**FIGURES, WITH THEIR REFS.** Everything above is measured at base
+`dd6b723` and tip `7fddfca` and is stale the moment anything is written;
+the suite figures are `7fddfca` with `docs_watch.rs` at sha256
+`5d21d3a9fc2e4ada4db3ee731db2b306f1e2c654b0022de42a0d87e07559b637`.
