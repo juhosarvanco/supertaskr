@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: [T-209]
 touches: [.claude, tools/e2e]
 suggested_by: "the enforcement stack's layer (a) (peer session nputer-10, direction approved by @human); split out of a planned T-203 amendment by nputer-10 so the token gate stays dispatch-ready and T-210's blocker names the thing it actually waits for"
-builder:
+builder: claude-opus-5@subagent
 review: independent
 ---
 

@@ -5,11 +5,11 @@ feature: F-03
 milestone: 4
 priority: 5
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [app-agent, app-interview]
 suggested_by: standing triage sitting #4 (2026-08-30) — SPLIT from T-171
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
