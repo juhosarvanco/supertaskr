@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: "T-192's executor, which met it as an e2e red it proved was not its own; re-measured and confirmed at the architect/integrator seat before filing"
@@ -247,3 +247,186 @@ moment someone checks.
 **Four measurements now sit either side of the boundary and none of them
 is evidence about the code.** The defect is unchanged; only the input
 moved.
+
+---
+
+## Implementation notes (executor, lane `task/T-197-brief-truncation`)
+
+Every figure below is measured in the lane worktree
+`/Users/ujju/Projects/nputer-T-197` at base `209e5d3`, on Darwin 25.6.0,
+node v22.22.0, with `NPUTER_E2E_PORT=14197` (derived from the card id;
+`lsof -nP -iTCP:14197 -sTCP:LISTEN` returned zero rows immediately before
+the first bind). **No brief output was ever read through a pipe** — every
+size is a redirect to a file, counted with `wc -c`.
+
+### The defect, reproduced at the lane's own base
+
+    node tools/e2e/scripts/brief.mjs --dispatch > file   →  69,288 bytes, exit 0
+    node tools/e2e/scripts/brief.mjs --dispatch | cat    →  65,536 bytes, exit 0
+
+**3,752 bytes lost, exit 0, nothing printed.** The e2e suite at
+`209e5d3` before any change: **401 bodies, 1 failed** —
+`dispatch-order.spec.ts:200 › --dispatch runs on the live repository,
+exits 0, and WRITES NOTHING`, failing on `Expected substring: "critical
+path:"`. That is this card's standing red, inherited by every
+docs-touching lane, reproduced here rather than taken on report.
+
+### The fix
+
+`tools/e2e/scripts/brief.mjs`: the file's last statement,
+`process.exit(code)` → `process.exitCode = code`. **The cause is removed
+rather than waited out** (the card's decision 1): Node exits naturally
+once the loop is empty, which is after stdout has drained. Every child
+process this command spawns is synchronous (`execFileSync`/`spawnSync`)
+and it opens no timer, socket or watcher — verified by sweeping
+`brief.mjs`, `dispatch-brief.mjs`, `dispatch-order.mjs`,
+`card-figures.mjs`, `card-preflight.mjs`, `lane-fence.mjs` and
+`session-economics.mjs` for `setTimeout`/`setInterval`/`createServer`/
+`fs.watch`/`child_process`: two hits, both `node:child_process` imports
+of the SYNC forms. If a future arm ever leaves a handle open the command
+HANGS, which is loud; the call it replaced was silent.
+
+### TWO FINDINGS THAT CHANGE HOW THIS IS RE-MEASURED
+
+**1. THE LOSS IS A PROPERTY OF THE WRITE SHAPE, NOT ONLY OF THE READER.**
+The card records that the loss point moves with the reader. It also moves
+with the WRITER, and that half decides whether a body reproduces anything
+at all. Measured at `209e5d3` with the defect fully present:
+
+| invocation | write shape | to a file | `\| cat` | spawnSync |
+|---|---|---|---|---|
+| `--dispatch` | ONE `console.log` | 69,288 | 65,536 | 65,536 |
+| `--audit` over 200 short figures | 200 small `console.log`s | 115,079 | **115,079** | **115,079** |
+| `--audit` over ONE 90,000-char figure | ONE `console.log` | 90,822 | 65,794 | 65,794 |
+
+**A 115 KB output lost NOTHING through either reader** — twice the buffer,
+the defect entirely present, and both readers whole. The queue drains
+between small writes. **A single write past one buffer is what loses**, so
+a body that synthesises its oversize input by making it LONGER rather
+than by making one WRITE longer proves nothing. `tests/brief-flush.spec.ts`
+synthesises one 90,000-character line for exactly this reason and says so.
+
+**2. `--dispatch` CANNOT SATISFY THE "BYTE-IDENTICAL" CRITERION, BY
+CONSTRUCTION.** Its lane rows carry LIVE provenance —
+`<- read <ISO timestamp> on <host>` — so two invocations differ at char
+498 even when both are whole (measured: both 69,288 bytes, `cmp` differs
+at line 6). Byte identity is only assertable on an arm stamped with TREE
+provenance alone. `--audit` is that arm, which is the second reason the
+proof body drives it.
+
+### The margin guard, and what it immediately found
+
+`tests/brief-flush.spec.ts` derives its threshold at run time from a
+control writer of the pre-fix shape and **names the reader it derived it
+against** (`spawnSync`, one write past the buffer). In this lane's run
+that came out at **65,536 bytes, 3 of 3 samples** — not the card's
+~66,470 for the same reader, which is the card's own "there is no single
+boundary" reconfirmed rather than quoted.
+
+Against that threshold, the announced margins:
+
+    --dispatch                    69,288    3,752 PAST
+    --task T-133 --state --full   64,919      617 UNDER
+    --task T-133 --state          48,100   17,436 UNDER
+    --task T-133                  41,153   24,383 UNDER
+    --state                        6,946   58,590 UNDER
+    --card T-133                   3,799   61,737 UNDER
+
+**`--task <id> --state --full` sits 617 bytes under the line and nothing
+anywhere said so.** That is a SECOND invocation shape near the boundary,
+previously unnamed on this card or anywhere else; it is now printed on
+every suite run. The guard also discloses, every run, whether any live
+arm was past the threshold — so a green on a quiet board announces itself
+as a smoke test instead of reading as proof.
+
+### The sweep — every sibling that exits after writing, with its size
+
+Measured at `209e5d3`, stdout only, redirected to a file. `brief.mjs` was
+the ONLY member; the rest are non-members ON A MEASUREMENT.
+
+| script | measured stdout | verdict |
+|---|---|---|
+| `brief.mjs` | 69,288 B (`--dispatch`) | **THE MEMBER — fixed** |
+| `docs-gate.mjs` | 4,947 B (`--census`); 4,445 B fed all 586 tracked `docs/**.md` | non-member. Same shape as the defect, an order of magnitude under the buffer, and its answer is a fixed summary rather than one line per path — so the size does not scale with a merge diff. **Listed rather than dismissed.** |
+| `health-bands-run.mjs` | 1,939 B (exit 3, bands awaiting keepers) | non-member |
+| `gate-run.mjs` | 120 B for one suite | non-member — one `gate-verdict` line per suite, registry of four; the suite's own output goes to a FILE whose path is printed on stderr |
+| `capabilities.mjs` | 36 B (`--check`) | non-member — the GENERATOR `writeFileSync`s the document and prints ONE line, so its stdout does not track the census |
+| `lint-tokens.mjs` / `token-scan.mjs` | 105 B clean, 125 B `--selftest` | non-member (the two `token-scan` exits the wrapper cannot intercept were measured through it) |
+| `orphan-drill.mjs` | 0 B stdout on the called-wrong path (338 B stderr) | non-member |
+| `tauri-boot-check.mjs` | 0 B stdout on the refusal path (410 B stderr) | non-member |
+
+**RESIDUAL, NAMED RATHER THAN PAPERED OVER:** the last two were measured
+on their REFUSAL paths only. Their success paths spawn the app, and this
+diff owes no boot gate, so their success output is bounded by an argument
+(a fixed handful of `[nputer]` lines plus the child's last output) rather
+than by a reading. Nothing was changed in any non-member: changing a
+gate's exit statement is a control-flow change, and a measured
+non-member did not earn one.
+
+`tests/brief-flush.spec.ts`'s third body DERIVES that list from the tree
+on every run, so a ninth command that exits after writing reds by name
+and re-opens the argument instead of inheriting it.
+
+### Did any body already depend on the truncation?
+
+**No, and it was checked before the fix landed, not after.** Only one
+spec-driven invocation exceeded the buffer at base (`--dispatch`, 69,288)
+and its body FAILED rather than passing. The empirical proof is the
+body-name diff between the two full runs: **3 added, 0 removed, 0 flipped
+pass→fail.** 401 bodies / 1 failed at base → **404 bodies / 0 failed**
+with the fix.
+
+### The drill
+
+Mutated `tools/e2e/scripts/brief.mjs`'s last statement back to
+`process.exit(code)` — one side only, nothing else touched — and re-ran
+the three new bodies. **All three red, each naming the defect:**
+
+- proof body: spawnSync received **65,733** of **90,721** bytes
+- margin guard: `--dispatch` spawnSync received **65,536** of **69,288**
+- sweep: `brief.mjs` rejoined the derived set
+
+Restored and proved by sha256 over the file, identical before and after:
+`87272f4698fc2e0527869db8d1074b304834e960dc93284b4e4256e9b42c087a`.
+
+### For the verifier
+
+- **The proof body carries a POSITIVE CONTROL and it is load-bearing.**
+  A green means "the writer no longer drops the tail" only if the readers
+  CAN drop one on this machine, and this card records CI passing at
+  `5e36a0b` with the brief 928 bytes past the `| cat` line. The control
+  is a writer of the OLD shape, run through the SAME two readers, in the
+  SAME run, asserted to lose. Delete it and the file becomes a check that
+  cannot tell an absence from a refusal.
+- **The `| cat` reader recovers the writer's exit status through a FILE,
+  not through `PIPESTATUS`.** `PIPESTATUS` is a bash/zsh array and CI's
+  `/bin/sh` is `dash`, which does not carry it — the dialect hazard
+  `docs/CONVENTIONS.md` already prices. The spelling used is POSIX.
+- **The margin guard compares SIZE for the live arms and BYTES for the
+  synthesised one**, for finding 2 above. If the size comparison ever
+  fails by a small delta with no `process.exit` in `brief.mjs`, suspect
+  the worktree list moving between the two invocations before suspecting
+  the flush; the failure message says so.
+
+### Gates and what is routed
+
+- **`capabilities:check` is STALE and this lane cannot fix it.** Adding a
+  spec body regenerates `docs/CAPABILITIES.md`, which a `[tools/e2e]`
+  fence does not carry. Committed 32,841 B → fresh 33,163 B (**+322**,
+  three test-name sentences). This is `T-201` exactly, already on the
+  board with `status: planned`; it is cited rather than re-filed. **The
+  integrator regenerates** (`npm run capabilities` from tools/e2e/), in
+  the same commit per that command's own rule.
+- Nothing else was found outside the fence. The whole diff is
+  `tools/e2e/scripts/brief.mjs`, `tools/e2e/tests/brief-flush.spec.ts`
+  and this card.
+
+### Where the brief was wrong
+
+Nowhere on the mechanism, the fence or the ceremony — every claim the
+dispatch made was re-derived here and held. Two figures moved with the
+tree, as the correction clause anticipates: the brief cited `5e36a0b`'s
+66,464 bytes to a file, and at `209e5d3` the same command answers 69,288
+(the board grew and both lanes are live); and the card's ~66,470 loss
+point for `spawnSync` derived as 65,536 in this environment. Both are the
+card's own point about a moving figure, not errors in it.
