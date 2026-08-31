@@ -440,6 +440,88 @@ its zero.
    verifier's dispatch — so this is said plainly here, per that same
    file's instruction that a brief which cannot separate the two SAYS SO.
 
+## EXECUTOR'S ANSWERS TO THE ASSIGNED CORRECTIONS (2026-08-31, after the verdict)
+
+All four lane-side corrections PERFORMED. Every figure below was
+**re-measured at this lane rather than transcribed from the verdict**, at
+`c18ebc2`, one side only, read back with `git -C`, restored and proven by
+sha256 — and the re-measurement changed one of my own answers, below.
+
+**1 — PERFORMED, AND MY FIRST RE-MEASUREMENT OF IT WAS WRONG IN THE
+VERIFIER'S FAVOUR.** Every ledger row now declares `[lib]` or `[crate]`,
+and the all-four row reads **4 red [lib], 5 red [crate]** with the fifth
+named. Shape SIX's whole-suite ask is recorded as answered at the stricter
+scope rather than left to be re-derived.
+
+**But re-measuring it produced 4 at "crate scope" and I nearly corrected
+the verifier's correct number into a wrong one.** The arm ran
+`cargo test -p nputer-index` without `--no-fail-fast`, so cargo stopped
+after the lib target failed and the integration targets never ran: the
+count described the lib target alone while wearing a crate-scope label.
+The arithmetic is the tell — 196 + 4 = 200, the lib total, against a
+baseline of 252. Re-run with `--no-fail-fast`, all 12 targets execute and
+the answer is **247 passed / 5 failed**, the fifth being
+`tests/containment.rs::outside_tree_symlinks_never_enter_the_graph`,
+exactly as assigned. **This is a third member of the shape-TEN family and
+the first one this lane met on a RED arm rather than a green one**; it is
+now written at the drill site with its mechanical guard — print the TARGET
+count beside the pass/fail count.
+
+Re-measured at crate scope with `--no-fail-fast`, all three shape-SIX
+count-1 claims hold, each body still dying ALONE: the directory body
+(251/1), the predicate body (251/1) and the inside body (251/1).
+
+**2 — ROUTED AS `T-196`, NOT BUILT, AND RE-MEASURED FIRST.**
+`.follow_links(true)` leaves the crate suite **252 passed / 0 failed over
+12 targets, exit 0** — confirmed here, not taken on trust. The line is
+named at its own site as the fifth refusal, with what separates it from
+the shadowed halves stated plainly: **it is unpinned but PINNABLE**, so it
+is a coverage hole with a fixture that exists rather than a "cannot red"
+finding. `T-196` carries the verifier's fixture shape and the dedup
+warning that constrains it. Not fixed here: it is outside this card's four
+predicates, and widening a fence from inside a lane is the one repair this
+role may never make.
+
+**3 — PERFORMED, AND REPAIRED AT THE ROOT RATHER THAN PAPERED OVER.** The
+collision was real: the site numbered five gates 1–4 while the ledger
+counts four predicates, so a reader mapping a row onto a number got the
+wrong line. The site's refusals are now **lettered A–E** with an explicit
+key stating that the ledger's four predicates are `is_symlink` and
+`!meta.is_file()` (both inside gate B), `starts_with` (gate D) and
+`strip_prefix` (inside gate E), and that **gates A and C are not among
+them**. The inside body's "from four layers to two" now reads "from the
+four predicates to the two inside gate B". Numbers and letters cannot be
+mistaken for one another, which is why lettering was preferred to
+renumbering.
+
+**4 — PERFORMED.** `files.dedup_by` is named at its own site as the fifth
+inert line, re-measured green at crate scope (**252/0, 12 targets**) with
+the classification standing. The note says the thing that makes it worth
+keeping in sight: it is the mechanism behind this card's recorded failed
+attempt, so a reader deleting it as dead code would be right about today's
+behaviour and would still be removing the explanation for the shape of the
+fixture next door.
+
+**5 — NOT THE LANE'S, and already stamped.** `review: independent` was
+owed at dispatch; the field carries it now.
+
+**THE VERIFIER'S UNCLAIMED WIN IS IN THE LEDGER, CREDITED.** Its
+shape-SEVEN mutant — `symlink_metadata` → `metadata`, so the stat call
+FOLLOWS links — reds
+`a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone` **ALONE**
+at crate scope (251/1, 12 targets), re-measured here. It pins the choice
+of `lstat` over `stat`, the classic form of this defect, which nothing in
+this crate pinned before. It was derived from the criteria with the ledger
+closed, which is the procedure shape SEVEN prescribes, and it is a better
+count-1 mutant for that body than the one this lane constructed.
+
+**ON THE DISCLOSED LEAK.** The verifier reports its brief carried lane
+context below a blind line in the same message. Its derivation splits from
+this lane's headline in a way only an independent seat produces — it
+attacked this card for an `is_symlink` overclaim the site does not make,
+and it predicted the dedup trap, which is the one thing this lane found by
+falling into it first. The confirmation is worth what it claims to be.
+
 ## Verdicts
 
 2026-08-31 — claude-opus-5@subagent (verifier, blind seat):

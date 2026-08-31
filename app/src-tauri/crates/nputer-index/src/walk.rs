@@ -362,8 +362,18 @@ mod tests {
     // **EVERY ROW DECLARES ITS SCOPE, BECAUSE ONE OF THEM DIFFERS BY IT**
     // (T-186 verdict, correction 1). `[lib]` is `--lib`, this crate's
     // in-module bodies; `[crate]` is all of `-p nputer-index`, integration
-    // targets included. The rows were taken at lib scope and the verifier
-    // re-took them at crate scope; only the all-four row moves.
+    // targets included. The rows were taken at lib scope and re-taken at
+    // crate scope; only the all-four row moves.
+    //
+    // **AND A CRATE-SCOPE ROW MUST BE TAKEN WITH `--no-fail-fast`, WHICH
+    // IS NOT A DETAIL — IT IS THE DIFFERENCE BETWEEN 5 AND 4.** Without it
+    // cargo stops after the first failing target, so the integration
+    // targets never run and the count comes back describing the lib target
+    // alone while wearing a crate-scope label. Re-measuring correction 1
+    // that way produced exactly 4 and nearly "corrected" the verifier's
+    // right answer into a wrong one. The tell is mechanical: **print how
+    // many TARGETS ran.** Green runs here report 12; the fail-fast red arm
+    // reported 1.
     //
     //   is_symlink() alone        -> NOTHING reds [lib and crate].
     //                               Shadowed: see gate B.
@@ -456,6 +466,17 @@ mod tests {
     // once against a PLANTED positive so you have seen it fail.** Every
     // zero in this ledger was obtained that way; do the same to anything
     // you add to it.
+    //
+    // **AND THE SAME FAMILY HAS A THIRD MEMBER THAT BITES A RED ARM RATHER
+    // THAN A GREEN ONE, WHICH IS WHY IT IS EASY TO MISS**: a crate-scope
+    // count taken without `--no-fail-fast` stops at the first failing
+    // target, so it silently measures a fraction of what its label claims.
+    // It cost this lane a wrong "correction" to a correct figure, and the
+    // arithmetic was the giveaway — 196 + 4 is 200, the lib target's own
+    // total, not the crate's 252. **A count whose parts do not add up to
+    // the baseline is measuring a different corpus than it says.** Print
+    // the TARGET count beside the pass/fail count and the three failures
+    // above all become visible the same way.
 
     #[cfg(unix)]
     #[test]
