@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **367 behaviours** — 365 extracted sentences + 2 named-not-extracted (listed at the end) — across 31 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **401 behaviours** — 399 extracted sentences + 2 named-not-extracted (listed at the end) — across 32 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -205,6 +205,43 @@ Census: **367 behaviours** — 365 extracted sentences + 2 named-not-extracted (
 - phase noProject renders both ways in, with the accelerators named
 - the front door is styled by the real sheet, in both schemes
 - phase open leaves the front door for the board, rail and all
+
+## gate-run
+
+- the runner reports RED for a suite that really fails, so it is not a green-only instrument
+- the runner reports GREEN for a suite that really passes, so RED is a discrimination and not a constant
+- a syntax-broken mutant makes a real suite exit non-zero over zero bodies and the runner REFUSES it rather than calling it a kill
+- a zero-body run that exits ZERO is refused on the same ground as one that exits non-zero, because the defect is the emptiness and not the code
+- a cargo target that ran nothing and printed ok is counted as zero bodies and REFUSED, because the word is not the count
+- the verdict line carries the exit code, the body count and the ref as named fields
+- the runner requires exactly the five verdict fields the card names, so a requirement cannot be deleted together with its own test
+- a verdict line missing any required field is REFUSED by the parser, naming the field it lacks
+- a line that does not open with the verdict token is refused rather than parsed for whatever it happens to contain
+- the verdict line carries the graded command's exit code as data, so no wrapper's summary can contradict it
+- a suite pointed at a directory that is not its own is REFUSED, because a wrong directory answers a different question rather than failing
+- a suite pointed at a directory that does not exist at all is REFUSED with the path named
+- the repository root really has no package.json, which is the precondition that made instance one possible
+- a registry entry whose argv holds a shell metacharacter is REFUSED, naming the pipe as the reason
+- no graded suite in the registry can be piped, because every argv is an array of plain words
+- the registry as shipped is valid, so the runner never has to choose between refusing itself and running dishonestly
+- the registry grades exactly the four suites the card names, so a graded suite cannot fall out of the blessed runner unnoticed
+- the captured output preserves the true interleaving of stdout and stderr, because a record can span both
+- a cargo suite without --no-fail-fast is REFUSED, because a crate-scope count would then describe one target
+- the same failing crate reports one target fail-fast and four with --no-fail-fast, while the exit code is 101 both ways
+- the target count travels on the verdict line beside the body count, so a fail-fast truncation is visible in the token
+- a count whose parts do not sum to the run's own baseline is REFUSED rather than reported
+- a Playwright run whose reporter never printed its opening line has no baseline and is refused rather than trusted
+- a well-formed Playwright transcript counts its bodies against the reporter's own opening line
+- a colour-coded transcript counts identically to a plain one, because a reporter's escapes are not part of its arithmetic
+- stripping escapes leaves ordinary bracketed text alone, so the sanitiser cannot eat a card id
+- a solo suite is REFUSED while another run holds the lock, rather than queued behind it
+- a lock left behind by a dead process is reclaimed, so a crashed run cannot wedge the gate
+- the runner answers in this repository's four gate codes, with REFUSED distinct from both green and red
+- the CLI refuses an unknown suite name at the usage code rather than running nothing and exiting clean
+- the CLI called with no arguments exits at the usage code, so an empty invocation is never a clean run
+- the CLI lists every graded suite with the directory it must run in
+- docs/CONVENTIONS.md names the blessed gate-runner in exactly one place, so one spelling is one spelling and not merely at least one
+- the suites the document offers the runner are exactly the suites the runner grades, so the two cannot drift apart
 
 ## genesis-screen
 
