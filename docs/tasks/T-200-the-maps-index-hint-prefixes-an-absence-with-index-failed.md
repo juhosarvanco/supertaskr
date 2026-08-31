@@ -340,3 +340,49 @@ applies no layout, so nothing headless in this lane can confirm the line
 is uncut in a real webview. That is the one claim here an eye would
 settle and this seat could not, and it is the reason the whole sentence
 stays in the `title` regardless.
+
+### The e2e lane re-run at `1acec81`, because the card's own body is an input
+
+The two e2e specs that walk ALL of `docs/` — `shell-frame.spec.ts` and
+`window-contract.spec.ts` — are named by the DOCS GATE for this card's
+path, and appending notes to a card is exactly the edit that reddened a
+scroll-containment body three layers from its cause in `9c64cd8`. So the
+lane was run a SECOND time, at the tip that carries the notes rather than
+at the one that did not: **404 passed, exit 0, 4.9m** on
+`NPUTER_E2E_PORT=14200` (`lsof` zero rows before binding). Two readings,
+two card sizes, same count.
+
+### A COORDINATOR CORRECTION, CHECKED AGAINST THIS LANE'S OWN RUNS
+
+Filed mid-lane and applying to every lane today, found by `T-185-s2`'s
+executor: **the DOCS GATE can exit 1 because it CRASHED, and that is
+indistinguishable from a verdict.** `docs-gate.mjs` owns an honest
+vocabulary (`{CLEAN:0, FOUND:1, USAGE:2, CANNOT_RUN:3}`) and sets
+`CANNOT_RUN` in a catch inside `main()` — but an `ERR_MODULE_NOT_FOUND`
+at IMPORT time happens before any of the script's own code runs, so Node
+exits **1** and the contract never engages. The route in is `yaml`, a
+`tools/e2e` devDependency, and **`docs/CONVENTIONS.md`'s fresh-clone
+ORDER names lib/parser and app only** — a fresh lane worktree that
+follows it literally has no `tools/e2e/node_modules`.
+
+**IT IS THIS CARD'S OWN DEFECT WEARING AN EXIT CODE INSTEAD OF A
+SENTENCE.** The hint said *"index failed"* about a run that merely did
+not answer; the gate says *"here are your owed suites"* about a run that
+could not start. Both report the wrong state confidently, and in both the
+honest arm already exists and is simply not reached — `IndexOutcomePayload`
+has no absence arm, `EXIT.CANNOT_RUN` is unreachable from an import
+failure. This lane's repair took the first branch of that pattern and the
+routed suggestion above (widen the type) is the second one applied to the
+payload; nothing here is a fix for the gate, which is not this fence's.
+
+**CHECKED RATHER THAN ASSUMED — none of this lane's three docs-gate
+readings is a crash.** `tools/e2e/node_modules/yaml` is present, because
+this lane's setup ran `npm ci` from `tools/e2e/` as a fourth step, added
+because the DOCS GATE needs it and **not** because the fresh-clone ORDER
+says so — which is corroboration of the gap from a second lane. And the
+exits were read the way the correction prescribes, by OUTPUT and not by
+code: all three logs open with
+`docs-gate: 26 derived docs readers across 4 suites`, carry the census
+and the root-anchor accounting, and the exit-1 pair names the owed suites
+per path. `ERR_MODULE_NOT_FOUND`, `Cannot find package` and a Node stack
+frame are all absent from every one of them.
