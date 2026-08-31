@@ -85,8 +85,26 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         name != ".git" && name != "node_modules"
     });
 
-    // THE FIVE LETTERED GATES, OF ELEVEN CONSTRUCTS IN THIS FUNCTION THAT
+    // THE FIVE LETTERED GATES, OF ELEVEN MECHANISMS IN THIS FUNCTION THAT
     // CAN DROP A FILE — AND THE KEY THAT MAPS THEM ONTO THE LEDGER BELOW.
+    //
+    // **THE UNIT IS A MECHANISM, NOT A SITE, AND SAYING SO IS THE WHOLE
+    // POINT OF PUTTING A NUMBER HERE** (`T-196` verifier, correction 2). A
+    // reader who does what this heading invites — recount from source —
+    // gets a different number, and without the unit cannot tell an
+    // OMISSION from a UNIT MISMATCH, which is the one job the count was
+    // added to do. Both counts, so either recount lands:
+    //
+    //   ELEVEN MECHANISMS = 3 builder settings + 8 in-loop mechanisms.
+    //   THIRTEEN SITES    = the same 3 builder settings + 10 `continue`
+    //                       statements. FOURTEEN counting `dedup_by`,
+    //                       which is not a refusal at all.
+    //
+    // The whole difference is **gate C**: one mechanism, the allowlist,
+    // spelled as THREE `continue`s (no extension, no language for it, the
+    // language not requested). Every other in-loop mechanism is exactly one
+    // `continue`, so mechanisms and sites agree everywhere else.
+    //
     // They are LETTERED, not numbered, and that is a repair: this site had
     // five gates numbered 1..4 while T-186's ledger counts four PREDICATES,
     // so a reader who mapped a ledger row onto a site number got the wrong
@@ -134,6 +152,23 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     //     `ignore` builds every path by descending real directory entries
     //     from an already-canonical root, so no `..` and — with gates A and
     //     B standing — no unresolved link component ever reaches this line.
+    //     **AND THE SIGNATURES DECIDE IT, WHICH IS THE SHARPER ARGUMENT**
+    //     (`T-196` verifier): `read_contained(root, dir, name)` takes a
+    //     CALLER-SUPPLIED segment, so a `..` enters from outside and only
+    //     `canonicalize` collapses it; `walk_root(canon_root, languages)`
+    //     takes **no caller path at all**, so `T-208`'s attack cannot exist
+    //     here. **THE THIRD CONDITION, stated because the inertness rests on
+    //     it**: `canon_root` must actually BE canonical. It is the
+    //     parameter's documented contract, and both callers honour it — the
+    //     tests' `rels()` and the sole production caller canonicalize before
+    //     calling — but a non-canonical root would make this line load-bearing
+    //     again. Derived at `T-196`'s tip rather than assumed — `git grep
+    //     'walk_root('` returns THREE call sites: `lib.rs:261`, whose root
+    //     comes from `validate_root`, which canonicalizes at `lib.rs:420`
+    //     before any other check; and the two in this file's own tests,
+    //     which canonicalize at the call. So the condition is ENFORCED at a
+    //     single door today, not merely documented — and that door is what
+    //     a future second entry point would have to keep.
     //     **The two verdicts are not in conflict and neither transfers**;
     //     that is the family's whole lesson (T-186, T-194), applied to the
     //     call rather than to a guard.
@@ -168,9 +203,18 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     // ABOUT** — `is_symlink` and `!meta.is_file()` (both inside gate B),
     // `starts_with` (gate D) and `strip_prefix` (inside gate E). **Gates A
     // and C are NOT among them**: gate C is this crate's own addition, and
-    // gate A is the fifth letter, unpinned until `T-196` and — unlike the
-    // shadowed halves — PINNABLE, which is why it got a body and they got
-    // a finding.
+    // gate A is **the FIRST letter and the LAST of the five to be pinned** —
+    // unpinned until `T-196` and, unlike the shadowed halves, PINNABLE, which
+    // is why it got a body and they got a finding.
+    //
+    // **"FIFTH" IN THIS CARD'S TITLE COUNTS DISCOVERY ORDER, NEVER THE
+    // LETTERING, AND THIS COMMENT ONCE SAID OTHERWISE** (`T-196` verifier,
+    // correction 1). Gate A is the fifth refusal to be IDENTIFIED and the
+    // first in source; the fifth LETTER is E, `relative_posix`. The false
+    // sentence landed inside the one comment whose stated purpose is to stop
+    // a reader mis-mapping a ledger row onto a site letter — so the ordinal
+    // is spelled with its unit here, and every ordinal below should be read
+    // the same way.
     for result in builder.build() {
         let Ok(entry) = result else { continue };
         if entry.depth() == 0 {
@@ -614,9 +658,13 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn a_symlinked_directory_pointing_inside_the_root_is_never_descended() {
-        // GATE A's body (`T-196`). The walk's fifth lettered refusal, and
-        // the one `T-186` named, measured and could not pin from inside its
-        // own fence.
+        // GATE A's body (`T-196`). **The FIRST refusal in source order and
+        // the LAST of the five to be pinned** — the one `T-186` named,
+        // measured and could not pin from inside its own fence. (This line
+        // read "the walk's fifth lettered refusal" and was false: A is the
+        // first letter, E is the fifth. `T-196` verifier, correction 1 —
+        // and the sibling it names, because the same claim had been written
+        // twice in different words.)
         //
         // **EVERY CLAUSE OF "AN INSIDE-POINTING SYMLINKED DIRECTORY AIMED
         // AT A HARD-SKIPPED SUBTREE" IS LOAD-BEARING**, and the fixture is
