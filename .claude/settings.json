@@ -9,6 +9,15 @@
             "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/lane-fence-hook.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/push-guard-hook.mjs\""
+          }
+        ]
       }
     ]
   }
