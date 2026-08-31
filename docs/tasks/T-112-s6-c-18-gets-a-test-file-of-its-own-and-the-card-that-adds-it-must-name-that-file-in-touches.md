@@ -97,3 +97,10 @@ This is placement debt with a working pin, which is why it is filed at a
 priority that says so. The cost of leaving it is paid by the NEXT
 `[app-board]` card that changes `Board.tsx`'s threading and cannot update
 the pin that protects it.
+
+PREFLIGHT RULING (2026-08-31): `app/test/board-root.test.tsx` is ABSENT
+and INSIDE this card's own fence — it is the file this card CREATES, so
+the preflight's own classification (`creation target`) is the correct
+one and the finding is discharged rather than corrected. Recorded because
+the dispatch gate refuses on any finding, benign ones included, and a
+ruling is the mechanism it names for exactly this.

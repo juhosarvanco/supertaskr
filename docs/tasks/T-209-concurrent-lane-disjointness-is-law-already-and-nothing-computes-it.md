@@ -111,9 +111,17 @@ overlapping paths.
 - **A POSITIVE CONTROL SHALL prove a genuinely disjoint pair is
   ALLOWED.** A guard that refuses every dispatch is indistinguishable
   from one that works — `T-199`'s lesson.
-- **A SECOND CONTROL SHALL prove `.claude` versus `.claude/hooks/x.mjs`
-  is REFUSED** — the case naive string intersection gets wrong, and the
-  reason `within` is reused rather than rewritten.
+- **A SECOND CONTROL SHALL prove a DIRECTORY token versus a FILE beneath
+  it is REFUSED** — `.claude` against `.claude/hooks/lane-fence.mjs`, a
+  path that EXISTS rather than a placeholder. This is the case naive
+  string intersection gets wrong, and the reason `within` is reused
+  rather than rewritten.
+
+  *This criterion first named a hypothetical `x.mjs`, and the dispatch
+  preflight refused the fence write for it as a STALE PATH — correctly:
+  a criterion cannot tell a placeholder from a claim, and this card's
+  whole subject is a check that must not be talked out of a refusal.
+  Recorded rather than quietly swapped.*
 - A card with an absent or empty `touches:` SHALL be treated as the
   universal set and collide with everything.
 - THE implementation SHALL be single, with the dispatch call site built
