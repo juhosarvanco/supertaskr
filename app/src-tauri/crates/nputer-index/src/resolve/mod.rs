@@ -680,6 +680,108 @@ mod tests {
         );
     }
 
+    /// A `..` in the caller's `dir` never reads a file outside the root —
+    /// **the body that pins REFUSAL C, `path.canonicalize()`, and pins it
+    /// ALONE** (`T-208`).
+    ///
+    /// **THE ASSERTION IS AN ESCAPE, NOT A TYPE.** With C lifted this body
+    /// does not merely observe a `Some` where a `None` was wanted: the
+    /// `Some` CARRIES THE BYTES OF A FILE OUTSIDE THE ROOT, and the failure
+    /// prints them —
+    ///
+    ///     assertion `left == right` failed: a .. traversal must not escape
+    ///       left: Some("{\"loot\":1}")
+    ///      right: None
+    ///
+    /// **WHY C AND NOT D, ASSERTED IN THE FIXTURE RATHER THAN ARGUED IN A
+    /// COMMENT.** `Path::starts_with` compares COMPONENTS, so the
+    /// UNCOLLAPSED `<root>/../<sibling>/loot.json` starts with `<root>` and
+    /// clears D on its own — which this body asserts before it exercises
+    /// anything. D therefore cannot be what refuses this path, and the only
+    /// remaining candidate is the resolution C performs.
+    ///
+    /// **THE LIFTED ARM TERMINATES IN A FIXTURE, SHOWN AND NOT ASSUMED**
+    /// (`docs/CONVENTIONS.md`, LIFTING A SAFETY GUARD TO DISCRIMINATE). The
+    /// traversal is aimed at a SECOND `TempTree`, reachable as
+    /// `../<its basename>` because `TempTree` places every tree under one
+    /// parent — asserted here as `root.parent() == outside.parent()` — and
+    /// the escaped path is canonicalized and compared to the fixture file
+    /// itself, so the guard's discriminating half can reach nothing but a
+    /// temp tree that removes itself on drop. The repository's own content
+    /// is never on the path.
+    ///
+    /// **SMALLEST KILLER IS ONE SIDE.** Measured at `d7ec96c`: the crate is
+    /// 258 passed / 0 failed over 12 targets with this body on shipped code,
+    /// and 257/1 — **this body ALONE** — with `canonicalize()` replaced by
+    /// `path.to_path_buf()`. The count is ONE, at crate scope, under
+    /// `--no-fail-fast`.
+    #[test]
+    fn a_dot_dot_traversal_never_reads_outside_the_root() {
+        let t = TempTree::new("contained-traversal");
+        let outside = TempTree::new("contained-traversal-outside");
+        let root = canon_root(&t);
+        let outside_root = canon_root(&outside);
+        t.write("inside/kept.json", "{\"who\":\"inside\"}");
+        outside.write("loot.json", "{\"loot\":1}");
+
+        // POSITIVE CONTROL 1: an ordinary contained read must still SUCCEED,
+        // or the refusal below is satisfied by a function that refuses
+        // everything.
+        assert_eq!(
+            read_contained(&root, "inside", "kept.json").as_deref(),
+            Some("{\"who\":\"inside\"}"),
+            "control: an ordinary inside file must read"
+        );
+        // POSITIVE CONTROL 2: the loot IS readable when the root contains
+        // it, so the `None` below cannot be there-was-nothing-there.
+        assert_eq!(
+            read_contained(&outside_root, "", "loot.json").as_deref(),
+            Some("{\"loot\":1}"),
+            "control: the fixture the traversal aims at must be readable in its own root"
+        );
+
+        // The fixture's STATE, asserted before the guard is exercised.
+        let rel = format!(
+            "../{}",
+            outside_root
+                .file_name()
+                .expect("basename")
+                .to_str()
+                .expect("utf-8 basename")
+        );
+        assert_eq!(
+            root.parent(),
+            outside_root.parent(),
+            "TempTree places every tree under one parent, so `../<basename>` is a real sibling hop"
+        );
+        let escaped = root.join(&rel).join("loot.json");
+        let escaped_canon = escaped.canonicalize().expect("canon the traversal");
+        assert_eq!(
+            escaped_canon,
+            outside_root.join("loot.json"),
+            "the lifted arm must TERMINATE IN THE FIXTURE — pointed at one, not merely started at \
+             one — so the discriminating half can never reach repository content"
+        );
+        assert!(
+            !escaped_canon.starts_with(&root),
+            "the fixture must be OUTSIDE the root, or there is nothing here to escape"
+        );
+        // The mechanism, asserted rather than argued: UNCOLLAPSED, this path
+        // already satisfies refusal D, because `starts_with` compares
+        // COMPONENTS. So D is not what refuses it and C is.
+        assert!(
+            escaped.starts_with(&root),
+            "`Path::starts_with` compares COMPONENTS, so the uncollapsed path clears refusal D on \
+             its own — which is precisely why refusal C is load-bearing"
+        );
+
+        assert_eq!(
+            read_contained(&root, &rel, "loot.json"),
+            None,
+            "a .. traversal must not escape the root"
+        );
+    }
+
     /// A directory wearing the config file's name is refused — and this
     /// body pins the OUTCOME, not the `!meta.is_file()` half.
     ///
