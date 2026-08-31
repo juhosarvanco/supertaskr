@@ -139,7 +139,15 @@ own executor left for it.
   17 allowed warnings, zero vulnerabilities
 - `lint:docs` / `lint:tokens` — **0 / 0**; CAPABILITIES regenerated
   **29,121 → 32,841** (`T-201`'s gap, third instance)
-- **GRAPH — CURRENT**, 200 files, 2,452 symbols, 2,374 edges
+- **GRAPH — CURRENT**, 1,152,374 bytes, 200 files, **2,453 symbols,
+  2,375 edges** — *corrected 2026-08-31.* This line first read 2,452 and
+  2,374. Both were off by one and both were **wrong when written**:
+  `graph.json` last changed at `e2154e0`, before this checkpoint, and the
+  blob at `c4cf4af` itself counts 2,453 / 2,375. Nor was it a stale carry
+  from an earlier record — the prior figures were 2,448 / 2,365. It was a
+  misread of `--check`'s own output, which is the transcription STATE's
+  IN FLIGHT section forbids: **DERIVE IT, never transcribe.** Re-derive
+  with `nputer-index --check`, or off the artifact directly.
 - **HEALTH — 8 inside, 2 drifting, 0 BREACHED, 0 unread**, 4 UNKEPT
 
 **AND THE E2E GREEN IS PARTLY VACUOUS, WHICH IS RECORDED RATHER THAN
