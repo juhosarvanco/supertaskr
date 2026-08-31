@@ -8517,8 +8517,8 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:7543dc8a695e43498206bc3cbba489f5ca7dc4e836cd5f61969782a174b7a6a8",
-      "loc": 4449,
+      "hash": "blake3:216d7b254e97a09274464b672573162a66648c9478108b2f8e2e3521b76c5457",
+      "loc": 4662,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
@@ -8636,8 +8636,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            368,
-            368
+            390,
+            390
           ]
         },
         {
@@ -8656,8 +8656,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            527,
-            537
+            549,
+            559
           ]
         },
         {
@@ -8727,7 +8727,7 @@
           "exported": true,
           "range": [
             307,
-            332
+            354
           ]
         },
         {
@@ -8736,8 +8736,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            342,
-            362
+            364,
+            384
           ]
         },
         {
@@ -8746,8 +8746,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            1333,
-            1351
+            1355,
+            1373
           ]
         },
         {
@@ -8756,8 +8756,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1122,
-            1292
+            1144,
+            1314
           ]
         },
         {
@@ -8766,8 +8766,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            988,
-            1001
+            1010,
+            1023
           ]
         },
         {
@@ -8776,8 +8776,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1700,
-            1753
+            1728,
+            1781
           ]
         },
         {
@@ -8786,8 +8786,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1372,
-            1405
+            1394,
+            1427
           ]
         },
         {
@@ -8796,8 +8796,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            946,
-            948
+            968,
+            970
           ]
         },
         {
@@ -8806,8 +8806,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            928,
-            930
+            950,
+            952
           ]
         },
         {
@@ -8816,8 +8816,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            778,
-            922
+            800,
+            944
           ]
         },
         {
@@ -8826,8 +8826,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1355,
-            1365
+            1377,
+            1387
           ]
         },
         {
@@ -8836,8 +8836,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1429,
-            1499
+            1451,
+            1521
           ]
         },
         {
@@ -8846,8 +8846,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1505,
-            1552
+            1527,
+            1574
           ]
         },
         {
@@ -8856,8 +8856,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            703,
-            713
+            725,
+            735
           ]
         },
         {
@@ -8866,8 +8866,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            508,
-            510
+            530,
+            532
           ]
         },
         {
@@ -8876,8 +8876,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            370,
-            374
+            392,
+            396
           ]
         },
         {
@@ -8886,8 +8886,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            539,
-            612
+            561,
+            634
           ]
         },
         {
@@ -8896,8 +8896,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            376,
-            443
+            398,
+            465
           ]
         },
         {
@@ -8906,8 +8906,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            749,
-            757
+            771,
+            779
           ]
         },
         {
@@ -8916,8 +8916,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            677,
-            685
+            699,
+            707
           ]
         },
         {
@@ -8926,8 +8926,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            488,
-            501
+            510,
+            523
           ]
         },
         {
@@ -8936,8 +8936,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            445,
-            447
+            467,
+            469
           ]
         },
         {
@@ -8946,8 +8946,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            449,
-            454
+            471,
+            476
           ]
         },
         {
@@ -8956,8 +8956,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1008,
-            1076
+            1030,
+            1098
           ]
         },
         {
@@ -8966,8 +8966,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            691,
-            699
+            713,
+            721
           ]
         },
         {
@@ -8976,8 +8976,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            952,
-            968
+            974,
+            990
           ]
         },
         {
@@ -8986,8 +8986,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1624,
-            1682
+            1652,
+            1710
           ]
         },
         {
@@ -8996,8 +8996,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            474,
-            481
+            496,
+            503
           ]
         },
         {
@@ -9006,8 +9006,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            658,
-            660
+            680,
+            682
           ]
         },
         {
@@ -9016,8 +9016,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1554,
-            1616
+            1576,
+            1644
           ]
         },
         {
@@ -9026,8 +9026,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1297,
-            1313
+            1319,
+            1335
           ]
         },
         {
@@ -9036,8 +9036,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            933,
-            943
+            955,
+            965
           ]
         },
         {
@@ -9046,8 +9046,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1321,
-            1330
+            1343,
+            1352
           ]
         },
         {
@@ -9056,8 +9056,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1756,
-            4449
+            1784,
+            4662
           ]
         },
         {
@@ -9066,8 +9066,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            668,
-            670
+            690,
+            692
           ]
         }
       ]
@@ -19282,8 +19282,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:7c4f13452b73498d22db7b648a91677ce43ca961a90dc6bbda35148c4a1cd0bb",
-      "loc": 2660,
+      "hash": "blake3:4af593f281bb4b14493e9eb70410dae47581dfcff8520f5fdc34568967747f2b",
+      "loc": 2665,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -22066,7 +22066,7 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:0714e4c676f632d6e69ae3a651bf6020a528844bbd2dea64cab0d12bf42c17bc",
+      "hash": "blake3:16bd142395e1dd65224c0cb0846fb7a66105999780ec86fc4cbe3370242d6544",
       "loc": 808,
       "symbols": [
         {

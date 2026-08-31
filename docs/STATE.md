@@ -90,14 +90,16 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   DISCIPLINE. **Never tell a lane a hook enforces its fence.**
 - **`brief.mjs` TRUNCATES piped stdout at 64 KiB** (`T-197`) — redirect
   to a file; it reds a standing e2e body no lane caused.
-- **The cargo cache cliff** (`T-088-s4`):
-  `startup_arm_watches_the_initial_root` reds when `target/` is large or
-  lanes contend. READ THE LIB SUITE'S OWN TIME FIRST — green under 9.5s,
-  red over 14.6s. Re-run the body ALONE before attributing it; no
-  reflexive `cargo clean` WHILE A LANE IS LIVE. **With no lane live,
-  CLEAN — an attribution explains a reading and does NOT clear a breach.**
-  Fired thrice 2026-08-31; at `target/` 5.3G the suite ran 15.14s and the
-  clean took it to **3.93s**, 601/0.
+- ~~The cargo cache cliff~~ **RETIRED 2026-08-31 — IT WAS NEVER THE
+  CACHE** (`T-088-s4`, landed). The watcher's startup arm had no
+  rendezvous, so a write landing first BECAME the emit-suppression
+  baseline and no emit was ever produced — **missed, not late**, which is
+  why no bound ever helped. Both seats derived it from base code; the
+  verifier reproduced the red on a **clean cache, idle machine**, base
+  failing at a CONSTANT 11.0s whatever the delay. **A 13 GiB `cargo
+  clean` was run on the old attribution.** What survives is general:
+  **read a suite's own time and re-run a body ALONE before attributing —
+  and a timing correlate is not a cause.**
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
   build artifact no merge updates — build the parser FIRST. An unbuilt
   app tree fails `npm test` about `app/dist`.

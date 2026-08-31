@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 12
 size: M
-status: verifying
+status: done
 blocked_by: [T-153]
 touches: [app-shell]
 suggested_by: integrator claude-opus-5 @T-088
