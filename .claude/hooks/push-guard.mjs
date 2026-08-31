@@ -1,0 +1,550 @@
+/**
+ * THE PUSH ASKS THE GRAPH MECHANICALLY (T-167-s8) — the decision half.
+ *
+ * docs/STATE.md's graph line ends *"ask AGAIN after every write"*. One
+ * seat broke that three times in one day, in the same sequence each time:
+ * regen, then another edit to an indexed file, then push without
+ * re-asking. A fourth instance is on this card's own Verdicts section.
+ * The rule held in retrospect every time and at the moment never once —
+ * so it stops being a rule a hand keeps and becomes a property of the
+ * push.
+ *
+ * ── WHAT IT ASKS, AND WHAT IT REFUSES TO ASK ─────────────────────────
+ * It asks `index --check` and reads its EXIT CODE. It computes no
+ * staleness of its own, and that prohibition was added at this card's
+ * promotion for a named reason: a second implementation of the currency
+ * question is T-057's shape, and a guard that disagreed with the gate
+ * would be worse than no guard because it would teach the seat to
+ * override it. So every verdict below that says STALE says it because
+ * the check said 1, and the refusal QUOTES the check's own report rather
+ * than paraphrasing it — including the check's own `regenerate:` line,
+ * which `check.rs`'s `render` emits and this file therefore never
+ * spells.
+ *
+ * ── THE FOUR CODES ARE THE PROJECT'S, NOT THIS FILE'S ────────────────
+ * docs/CONVENTIONS.md's Rust bullet legends them for this command in as
+ * many words — 0 current, 1 STALE, 2 usage, 3 the gate could not run —
+ * and `CHECK_EXIT` below is COMPARED against that bullet by
+ * `push-guard.spec.ts` rather than trusted. ONLY 1 REFUSES. Collapsing
+ * 3 into 1 would refuse every push made without a toolchain, which is
+ * this card's third acceptance criterion and the reason the codes are
+ * read individually instead of as "non-zero".
+ *
+ * ── IT FAILS OPEN, AND THAT IS THE DESIGN ────────────────────────────
+ * A guard that cannot run says so and stands aside — the lane-fence
+ * hook's lane-less shape, for the same reason. The seat that pushes is
+ * the seat that dispatches, merges and checkpoints; a guard that can
+ * halt it on its own inability halts the project, and the first person
+ * it inconveniences turns it off. So: no cargo, no toolchain, an
+ * unreadable request, a checkout that is not this repository's, a check
+ * that exits 2 or 3 or does not start at all — every one of those is an
+ * ALLOW with the reason stated. The ONLY refusal is a check that ran and
+ * answered 1.
+ *
+ * ── NO ESCAPE HATCH, AND THE ARGUMENT IS ON THE CARD ─────────────────
+ * This card asked for an escape spelling *"for the rare intentional push
+ * of a stale graph (should not exist; argue it if found)"*, and none is
+ * shipped. The one candidate case found is a WORKING TREE whose
+ * uncommitted edits make the check STALE for a push whose COMMITS are
+ * current — and that is a SCOPE MISMATCH rather than an intentional
+ * stale push, with a one-command remedy the refusal names for you. A
+ * hatch for a case that already has a remedy is a hatch that gets used
+ * for every other case. `dirtyTree` below exists to word that refusal
+ * and reaches no verdict: the verdict is the check's exit code and
+ * nothing in this file can move it.
+ *
+ * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
+ * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
+ * worktree ninety seconds old has no `node_modules` anywhere in it. The
+ * lane facts this file needs — how a lane branch is spelled, where the
+ * manifest lives, how to read one, what containment means — are
+ * IMPORTED from `lane-fence.mjs` rather than re-spelled, because a rule
+ * with two implementations is two chances to disagree (T-057).
+ */
+
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
+
+/**
+ * The committed graph, relative to the checkout root.
+ *
+ * HELD HERE AND COMPARED RATHER THAN TRUSTED. No module inside this
+ * hook's dependency budget exports this path — `docs-scan.mjs` names it
+ * only in a comment — so this file holds it, and `push-guard.spec.ts`
+ * asserts that the REAL `index --check` run in the real tree names this
+ * same path in its own report. That is the treatment `LANE_BRANCH_RE`
+ * gets one file over: the constant is checked against the program that
+ * owns the fact, so a move reds a body by name instead of going quiet.
+ *
+ * It is used for ONE question and never for a currency judgement: can a
+ * lane regenerate the graph inside its own fence?
+ */
+export const GRAPH_REL_PATH = "docs/architecture/graph.json";
+
+/**
+ * What makes a checkout THIS repository's, derived rather than assumed.
+ *
+ * The sixth acceptance criterion says the guard shall not fire outside
+ * this repository's own checkouts. The honest test is not the directory's
+ * name — a clone can be called anything — but whether the program this
+ * guard delegates to is even present: a checkout carrying the
+ * `nputer-index` crate is a checkout where `index --check` means
+ * something, and one without it is a checkout where the guard has no
+ * question to ask. So the marker is the crate's own manifest, which is
+ * the thing `cargo run -p nputer-index` resolves.
+ */
+export const INDEX_CRATE_MANIFEST_REL_PATH = "app/src-tauri/crates/nputer-index/Cargo.toml";
+
+/**
+ * The check, spelled as docs/CONVENTIONS.md's Rust bullet spells it.
+ *
+ * `cargo run -p nputer-index -- index --check --root ../..` run from
+ * `app/src-tauri/`. THE `--root` IS LOAD-BEARING and the bullet says why
+ * at length: without it the default root is the current directory, the
+ * check looks for `app/src-tauri/docs/architecture/graph.json`, and it
+ * exits 1 — a FALSE RED that says STALE in its headline exactly like a
+ * real one. A guard that shipped that bug would refuse every push in the
+ * repository, so the flag is part of the constant rather than part of a
+ * caller.
+ */
+export const CHECK_DIR_REL_PATH = "app/src-tauri";
+
+/** @see CHECK_DIR_REL_PATH */
+export const CHECK_ARGV = Object.freeze([
+  "run",
+  "-p",
+  "nputer-index",
+  "--",
+  "index",
+  "--check",
+  "--root",
+  "../..",
+]);
+
+/**
+ * `index --check`'s four exit codes, whose AUTHORITY is
+ * docs/CONVENTIONS.md's Rust bullet — *"exit 0 current, 1 STALE, 2
+ * usage, 3 the gate could not run"* — and the crate's own `cli.rs`.
+ * `push-guard.spec.ts` reads that bullet and compares it against this
+ * object, so a renumbering reds a body rather than silently turning a
+ * refusal into an allow.
+ *
+ * ONLY `STALE` REFUSES. The other three are allows with reasons.
+ */
+export const CHECK_EXIT = Object.freeze({
+  CURRENT: 0,
+  STALE: 1,
+  USAGE: 2,
+  COULD_NOT_RUN: 3,
+});
+
+/**
+ * git's global options that take a SEPARATE value, which the subcommand
+ * scanner must step over.
+ *
+ * `git -C /some/dir push` has `push` as its third token, and a scanner
+ * that took the first non-`git` token would call `/some/dir` the
+ * subcommand and see no push at all. The `--opt=value` spellings need no
+ * entry: they carry their value in one token.
+ */
+export const GIT_GLOBAL_OPTS_WITH_VALUE = Object.freeze([
+  "-C",
+  "-c",
+  "--git-dir",
+  "--work-tree",
+  "--namespace",
+  "--exec-path",
+  "--config-env",
+]);
+
+/**
+ * Flags that make `git push` not a push.
+ *
+ * `--dry-run` and its short form say in as many words that nothing
+ * leaves the machine, and `--help` prints a manual. Guarding them would
+ * spend a second and a half of somebody's time to protect a command that
+ * pushes nothing, which is the cost this card was told to argue rather
+ * than discover.
+ */
+export const NON_PUSHING_FLAGS = Object.freeze(["--dry-run", "-n", "--help", "-h"]);
+
+/**
+ * The ALLOW codes the runner SAYS OUT LOUD.
+ *
+ * *"IF the guard cannot run THEN it SHALL say so and ALLOW, never refuse
+ * silently"* — this card's absorbed criterion, and the half that makes it
+ * different from `lane-fence.mjs`, whose every allow is silent. The
+ * distinction these four draw is between an ORDINARY allow and one where
+ * the graph went UNVERIFIED: nobody needs to hear that `ls` is not a
+ * push, and everybody needs to hear that a push went out because the
+ * check could not answer.
+ *
+ * IT IS SAID AT EXIT 0, NEVER AT A NON-ZERO CODE. Exit 2 is the
+ * documented refusal, and a guard that announced itself by exiting 1
+ * would be betting that no harness ever treats a non-zero hook as a
+ * block — a bet that fails CLOSED, which is the one direction this guard
+ * may never fail. The cost is that the notice's visibility depends on
+ * how a harness surfaces a passing hook's stderr; that is a stated limit
+ * and not a silent one.
+ */
+export const ANNOUNCED_ALLOW_CODES = Object.freeze([
+  "check-could-not-run",
+  "check-inconclusive",
+  "lane-fence-unreadable",
+  "no-command-to-read",
+]);
+
+/**
+ * @typedef {object} Decision
+ * @property {"allow" | "block"} verdict
+ * @property {string} code    a stable, greppable name for WHY
+ * @property {string} reason  the sentence the blocked session reads
+ */
+
+/** @param {string} code @param {string} reason @returns {Decision} */
+function allow(code, reason) {
+  return { verdict: "allow", code, reason };
+}
+
+/** @param {string} code @param {string} reason @returns {Decision} */
+function block(code, reason) {
+  return { verdict: "block", code, reason };
+}
+
+/**
+ * Every git SUBCOMMAND a command line invokes, in order.
+ *
+ * ── THIS IS DELIBERATELY NOT SHELL PARSING ───────────────────────────
+ * `lane-fence.mjs`'s limit 1 refuses to widen its matcher to `Bash`
+ * because finding a WRITE TARGET in a shell command means parsing shell,
+ * which answers confidently and wrongly. The question here is much
+ * smaller: this asks only whether the word `push` follows the word
+ * `git`, and it never has to be right about a path.
+ *
+ * ── A FALSE POSITIVE REFUSES, AND THIS COMMENT ONCE CLAIMED OTHERWISE ─
+ * It said a false positive *"costs a second and a half and then allows,
+ * because only the check can refuse"*. **That is false, and a blind
+ * verifier measured it false**: against a STALE graph, `echo git push`,
+ * `man git push` and `grep -rn git push /tmp` each reach exit 2 — PUSH
+ * REFUSED — through the real runner. This scanner splits on whitespace
+ * and cannot tell a quotation, a manual page or a search pattern from a
+ * command, so any segment carrying `git` and then `push` is treated as a
+ * push.
+ *
+ * **THE COST IS REAL AND IS ACCEPTED WITH ITS EYES OPEN**, bounded by
+ * three facts rather than by the scanner's accuracy: it can only refuse
+ * when the graph is ACTUALLY stale, which is a regen the seat already
+ * owes; the refusal is loud and names its reason, so a puzzled reader is
+ * one line from understanding it; and one regen clears the false positive
+ * and the true one together. What it is NOT is silent, and it is not a
+ * refusal that leaves the seat without a remedy.
+ *
+ * A FALSE NEGATIVE is a push this guard did not see, which is exactly the
+ * pre-guard state and never worse than it.
+ *
+ * ── THE LIMITS, DECLARED RATHER THAN DISCOVERED ──────────────────────
+ * A push reached through a shell ALIAS, a FUNCTION, a script file, an
+ * `eval`, or a `git` binary invoked by an absolute path is not seen
+ * here. Neither is one hidden in a quoted string this scanner splits on
+ * whitespace. Each is a hole and each is the pre-guard state; none of
+ * them is a false REFUSAL, which is the failure that would get the guard
+ * turned off.
+ *
+ * @param {string} command
+ * @returns {{ subcommand: string, tokens: string[] }[]}
+ */
+export function gitInvocations(command) {
+  /** @type {{ subcommand: string, tokens: string[] }[]} */
+  const found = [];
+  // Command separators, plus the shell line breaks a heredoc-free
+  // command uses. Backgrounding `&` is covered by splitting on `&&`'s
+  // own characters.
+  for (const segment of command.split(/[\n;|&]+/)) {
+    const tokens = segment.trim().split(/\s+/).filter((t) => t !== "");
+    for (let i = 0; i < tokens.length; i += 1) {
+      if (tokens[i] !== "git") continue;
+      let j = i + 1;
+      while (j < tokens.length) {
+        const tok = /** @type {string} */ (tokens[j]);
+        if (!tok.startsWith("-")) break;
+        j += GIT_GLOBAL_OPTS_WITH_VALUE.includes(tok) ? 2 : 1;
+      }
+      if (j < tokens.length) {
+        found.push({ subcommand: /** @type {string} */ (tokens[j]), tokens: tokens.slice(j) });
+      }
+      break;
+    }
+  }
+  return found;
+}
+
+/**
+ * Does this command line push?
+ *
+ * @param {string} command
+ * @returns {boolean}
+ */
+export function isPush(command) {
+  return gitInvocations(command).some(
+    (inv) =>
+      inv.subcommand === "push" && !inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t)),
+  );
+}
+
+/**
+ * @typedef {object} CheckResult
+ * @property {number | null} status  the check's exit code, or null when it never ran
+ * @property {string} stdout         the check's own report
+ * @property {string} stderr         cargo's build chatter, and any failure
+ * @property {string} [problem]      why it never ran at all
+ */
+
+/**
+ * Run `index --check` and hand back what it said.
+ *
+ * NOTHING IS INTERPRETED HERE. The caller reads the exit code against
+ * `CHECK_EXIT`; this function's whole job is to start the documented
+ * command in the documented directory and survive its failure to start.
+ *
+ * @param {string} root
+ * @returns {CheckResult}
+ */
+export function runCheck(root) {
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    out = spawnSync("cargo", [...CHECK_ARGV], {
+      cwd: path.join(root, CHECK_DIR_REL_PATH),
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch (err) {
+    return {
+      status: null,
+      stdout: "",
+      stderr: "",
+      problem: `cargo could not be started (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+  if (out.error !== undefined && out.error !== null) {
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      problem: `cargo could not be started (${out.error.message})`,
+    };
+  }
+  if (out.status === null) {
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      problem: `the check was killed by a signal (${String(out.signal)}) before it could answer`,
+    };
+  }
+  return {
+    status: out.status,
+    stdout: String(out.stdout ?? ""),
+    stderr: String(out.stderr ?? ""),
+  };
+}
+
+/**
+ * Is the working tree dirty, and in what?
+ *
+ * READ THE CONTRACT: this reaches NO verdict and cannot change one. It
+ * exists so a refusal can tell the seat WHICH remedy applies, because
+ * `index --check` asks about the WORKING TREE while a push carries
+ * COMMITS — so a tree with uncommitted edits to indexed files can be
+ * STALE for a push whose commits are current. That is the one case this
+ * card considered an escape hatch for and refused to ship one for; the
+ * substitute is a refusal that names `git stash` beside the regen, which
+ * needs this answer and nothing else from it.
+ *
+ * A FAILURE HERE IS SILENCE, NEVER A VERDICT. If git cannot be run the
+ * refusal simply loses a sentence.
+ *
+ * @param {string} root
+ * @returns {boolean}
+ */
+export function dirtyTree(root) {
+  try {
+    const out = spawnSync("git", ["status", "--porcelain"], {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    if (out.status !== 0) return false;
+    return String(out.stdout ?? "").trim() !== "";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @typedef {object} Request
+ * @property {string} [toolName]
+ * @property {Record<string, unknown>} [toolInput]
+ * @property {string} [cwd]
+ */
+
+/**
+ * The command a `Bash` tool call was made with, or `undefined`.
+ *
+ * @param {Record<string, unknown> | undefined} toolInput
+ * @returns {string | undefined}
+ */
+export function commandOf(toolInput) {
+  const v = toolInput?.["command"];
+  return typeof v === "string" && v !== "" ? v : undefined;
+}
+
+/**
+ * Can a lane regenerate the graph inside its own fence?
+ *
+ * THE SIXTH CRITERION SAYS TO DERIVE THIS RATHER THAN ASSUME IT, and the
+ * derivation is one line because the answer is already computed and
+ * stamped: the lane's manifest carries its expanded fence, so the
+ * question is whether any fenced domain contains the graph. It almost
+ * never does — a fence is a card's `touches:` and cards do not touch
+ * `docs/architecture/` — which is the point. Refusing a push from a lane
+ * that has no legal way to clear the refusal would leave that lane
+ * stuck, and a guard with no remedy is a guard somebody disables.
+ *
+ * @param {import("./lane-fence.mjs").Manifest} manifest
+ * @returns {boolean}
+ */
+export function laneCanRegenerate(manifest) {
+  return manifest.paths.some((domain) => within(GRAPH_REL_PATH, domain));
+}
+
+/**
+ * The whole decision.
+ *
+ * READ THE ORDER — every arm before the check is an ALLOW, and each one
+ * is a question this guard can answer without spending a second and a
+ * half. The check runs last and only for a command that really pushes,
+ * in a checkout that really is this repository's, from a seat that could
+ * really act on a refusal.
+ *
+ * @param {Request} request
+ * @param {(root: string) => CheckResult} [check]
+ * @returns {Decision}
+ */
+export function decide(request, check = runCheck) {
+  const command = commandOf(request.toolInput);
+  if (command === undefined) {
+    return allow(
+      "no-command-to-read",
+      `${request.toolName ?? "this tool"} was called with no command string this hook can read, ` +
+        "and a guard that cannot see the command cannot claim it is not a push",
+    );
+  }
+  if (!isPush(command)) {
+    return allow("not-a-push", "this command line invokes no `git push`");
+  }
+
+  const cwd = typeof request.cwd === "string" && request.cwd !== "" ? request.cwd : process.cwd();
+  const root = findCheckoutRoot(cwd);
+  if (root === undefined) {
+    return allow("not-a-repository", `${cwd} sits in no git checkout`);
+  }
+  if (!existsSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH))) {
+    return allow(
+      "not-this-repository",
+      `${root} carries no ${INDEX_CRATE_MANIFEST_REL_PATH}, so \`index --check\` is not a question ` +
+        "that can be asked here (this card's sixth criterion: the guard does not fire outside " +
+        "this repository's own checkouts)",
+    );
+  }
+
+  const headRef = readHeadRef(root);
+  if (headRef !== undefined && LANE_BRANCH_RE.test(headRef)) {
+    const read = readManifest(root);
+    if ("problem" in read) {
+      return allow(
+        "lane-fence-unreadable",
+        `${root} is on the lane branch ${headRef} and its fence manifest could not be read ` +
+          `(${read.problem}), so this guard cannot derive whether the lane could regenerate the ` +
+          "graph inside its fence — and an unanswerable question is an allow here, not a refusal",
+      );
+    }
+    if (!laneCanRegenerate(read.manifest)) {
+      return allow(
+        "lane-cannot-regenerate",
+        `${read.manifest.taskId}'s fence (${read.manifest.touchesLine}) does not reach ` +
+          `${GRAPH_REL_PATH}, so this lane cannot regenerate the graph inside it. Refusing here ` +
+          "would leave the lane no legal remedy, and the regen is the integrator's at the merge " +
+          "(docs/CONVENTIONS.md, GRAPH REGEN).",
+      );
+    }
+  }
+
+  const result = check(root);
+  if (result.status === null) {
+    return allow(
+      "check-could-not-run",
+      `THE GRAPH WAS NOT ASKED: ${result.problem ?? "the check did not run"}. The push is allowed ` +
+        "because a check that could not run is not a claim that the graph is stale — but nothing " +
+        "here has said the graph is current. Ask it by hand from " +
+        `${CHECK_DIR_REL_PATH}/: cargo ${CHECK_ARGV.join(" ")}`,
+    );
+  }
+  if (result.status === CHECK_EXIT.CURRENT) {
+    return allow("graph-current", "`index --check` exited 0: the committed graph is current");
+  }
+  if (result.status !== CHECK_EXIT.STALE) {
+    const meaning =
+      result.status === CHECK_EXIT.USAGE
+        ? "2, which is `called wrong` and never `stale`"
+        : result.status === CHECK_EXIT.COULD_NOT_RUN
+          ? "3, which is `the gate could not run` and never `stale`"
+          : `${result.status}, which is outside the four codes this gate publishes`;
+    return allow(
+      "check-inconclusive",
+      `THE GRAPH WAS NOT ASKED SUCCESSFULLY: \`index --check\` exited ${meaning}. Only exit ` +
+        `${CHECK_EXIT.STALE} means STALE, and collapsing these would refuse every push made ` +
+        "without a toolchain. The push is allowed and the graph is UNVERIFIED.\n" +
+        `${indent(result.stdout || result.stderr)}`,
+    );
+  }
+
+  const stash = dirtyTree(root)
+    ? "\n  This working tree is DIRTY, and `index --check` asks about the WORKING TREE while a " +
+      "push carries COMMITS — so if the staleness is uncommitted work, `git stash` then push, " +
+      "then `git stash pop`. If it is committed, regenerate."
+    : "";
+  return block(
+    "graph-stale",
+    "PUSH REFUSED: `index --check` exited 1 — the committed graph is STALE.\n" +
+      "  docs/STATE.md: ask the graph AGAIN after every write. This is that ask, made " +
+      "mechanically because it was missed by hand four times (T-167-s8).\n" +
+      "  the check's own report follows, VERBATIM — its `regenerate:` line is the check's, not " +
+      "this guard's copy of it:\n" +
+      `${indent(result.stdout || result.stderr)}` +
+      `  then re-run the check from ${CHECK_DIR_REL_PATH}/ and push again:\n` +
+      `    cargo ${CHECK_ARGV.join(" ")}` +
+      stash +
+      "\n  There is no override flag, deliberately (this card's fifth criterion): the one case " +
+      "argued for one had a one-command remedy, and a hatch nobody needs is a hatch that gets " +
+      "used.",
+  );
+}
+
+/**
+ * Quote a captured report without letting it impersonate this guard's
+ * own sentences — every line moves right by two columns.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function indent(text) {
+  const body = text.replace(/\s+$/, "");
+  if (body === "") return "";
+  return `${body
+    .split("\n")
+    .map((l) => `    ${l}`)
+    .join("\n")}\n`;
+}
