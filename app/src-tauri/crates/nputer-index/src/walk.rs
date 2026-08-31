@@ -52,26 +52,25 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
 
     let mut builder = ignore::WalkBuilder::new(canon_root);
     builder
-        // GATE A, AND IT IS THE ONE REFUSAL HERE THAT IS UNPINNED WHILE
-        // BEING PINNABLE (T-186 verdict, correction 2 — routed as `T-196`,
-        // NOT fixed here: it sits outside this card's four predicates and
-        // widening a fence from inside a lane is the one repair a lane may
-        // never make).
+        // GATE A — the walker never DESCENDS a link. **PINNED SINCE
+        // `T-196` by `a_symlinked_directory_pointing_inside_the_root_is_never_descended`,
+        // and UNPINNED for the whole of `T-186`** (that lane's verdict,
+        // correction 2), which routed it here rather than widening its own
+        // fence — the one repair a lane may never make.
         //
-        // Measured by the verifier at this file's own tip: flipping this to
-        // `.follow_links(true)` leaves the WHOLE crate suite GREEN —
-        // including `symlinks_are_never_followed_file_or_dir`, whose name
-        // promises exactly this refusal. **So it is the same defect this
-        // card fixes, one line above the ones it fixed**: a body named for
-        // a layer it cannot see.
+        // The measurement that made it a card, RE-DERIVED at `T-196`'s own
+        // base rather than inherited: flipping this to `.follow_links(true)`
+        // left the WHOLE crate suite GREEN — **256 passed / 0 failed over
+        // 12 targets, exit 0** at `e6a97d2`, where `T-186` measured the same
+        // nothing at 252/0 over the same 12. Nothing reds, and that includes
+        // `symlinks_are_never_followed_file_or_dir`, whose NAME promises
+        // exactly this refusal. A body named for a layer it cannot see, one
+        // line above the four `T-186` fixed.
         //
-        // It is NOT a "cannot red" finding, which is what separates it from
-        // the shadowed halves below: a fixture EXISTS and has been written
-        // — an inside-pointing symlinked DIRECTORY aimed at the
-        // hard-skipped `node_modules` subtree, so the entries it exposes
-        // are real files that canonicalize INSIDE the root and containment
-        // cannot rescue them. `T-196` carries that shape and its
-        // measurement.
+        // It was never a "cannot red" finding, which is what separated it
+        // from the shadowed halves below: the fixture EXISTS. Read the body
+        // for why it must aim at a HARD-SKIPPED subtree, and the ledger for
+        // the count-of-one that says it kills this mutant alone.
         .follow_links(false)
         .hidden(false) // tracked hidden dirs may hold real code
         .git_ignore(true)
@@ -86,11 +85,12 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         name != ".git" && name != "node_modules"
     });
 
-    // THE REFUSALS, IN SOURCE ORDER, AND THE KEY THAT MAPS THEM ONTO THE
-    // LEDGER BELOW. They are LETTERED, not numbered, and that is a repair:
-    // this site had five gates numbered 1..4 while T-186's ledger counts
-    // four PREDICATES, so a reader who mapped a ledger row onto a site
-    // number got the wrong line (T-186 verdict, correction 3).
+    // THE FIVE LETTERED GATES, OF ELEVEN CONSTRUCTS IN THIS FUNCTION THAT
+    // CAN DROP A FILE — AND THE KEY THAT MAPS THEM ONTO THE LEDGER BELOW.
+    // They are LETTERED, not numbered, and that is a repair: this site had
+    // five gates numbered 1..4 while T-186's ledger counts four PREDICATES,
+    // so a reader who mapped a ledger row onto a site number got the wrong
+    // line (T-186 verdict, correction 3).
     //
     //   gate A  `follow_links(false)`               — the walker never
     //                                                 DESCENDS a link
@@ -103,12 +103,47 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     //   and `files.dedup_by` at the very end, which is not a refusal but
     //   is inert in the same way — named at its own site below.
     //
-    // **THE LEDGER'S "ALL FOUR" MEANS THE FOUR PREDICATES THIS CARD IS
+    // **THE COUNT IS IN THIS HEADING BECAUSE THE HEADING USED TO CLAIM
+    // COMPLETENESS AND WAS NOT COMPLETE** (`T-196`, the sweep `T-194` asked
+    // for after its own accounting headed *complete* omitted
+    // `canonicalize()` and became `T-208`). It read "THE REFUSALS, IN
+    // SOURCE ORDER" over five letters. **SIX MORE CONSTRUCTS CAN DROP A
+    // FILE HERE AND NONE OF THEM IS LETTERED**, in source order:
+    //
+    //   - the IGNORE FILES — `git_ignore(true)` plus the `.nputerignore`
+    //     custom filename, with `require_git(false)` making them apply in a
+    //     non-repo tree. Pinned:
+    //     `gitignore_and_nputerignore_both_apply_without_a_git_repo`,
+    //     `nputerignore_wins_over_a_gitignore_negation`.
+    //   - the HARD SKIP in `filter_entry` — `.git` and `node_modules` by
+    //     NAME, unconditionally. Pinned:
+    //     `git_and_node_modules_are_hard_skipped_even_when_not_ignored`,
+    //     and load-bearing for gate A's own fixture.
+    //   - `let Ok(entry) = result else` — a walk error drops the entry.
+    //   - `entry.depth() == 0` — the root itself, and it is SHADOWED: the
+    //     root is a directory, so gate B refuses it one operand later.
+    //   - `let Ok(meta) = symlink_metadata(path) else` — an lstat failure.
+    //   - `let Ok(canon) = path.canonicalize() else` — **the one `T-208`
+    //     would send you to look at**, because in `read_contained` the same
+    //     call is load-bearing: `starts_with` compares COMPONENTS, so a
+    //     `..` satisfies it textually and only `canonicalize` collapses it.
+    //     **HERE IT IS INERT, MEASURED RATHER THAN ARGUED** — `T-196` ran
+    //     `let canon = path.to_path_buf();` in its place and the crate
+    //     stayed at 256/0 over 12 targets, exit 0. The reason is structural:
+    //     `ignore` builds every path by descending real directory entries
+    //     from an already-canonical root, so no `..` and — with gates A and
+    //     B standing — no unresolved link component ever reaches this line.
+    //     **The two verdicts are not in conflict and neither transfers**;
+    //     that is the family's whole lesson (T-186, T-194), applied to the
+    //     call rather than to a guard.
+    //
+    // **THE LEDGER'S "ALL FOUR" MEANS THE FOUR PREDICATES `T-186` WAS
     // ABOUT** — `is_symlink` and `!meta.is_file()` (both inside gate B),
     // `starts_with` (gate D) and `strip_prefix` (inside gate E). **Gates A
-    // and C are NOT among them**: gate C is this crate's own addition and
-    // gate A is the fifth refusal, which is UNPINNED and, unlike the
-    // shadowed halves, PINNABLE — see its site note below and `T-196`.
+    // and C are NOT among them**: gate C is this crate's own addition, and
+    // gate A is the fifth letter, unpinned until `T-196` and — unlike the
+    // shadowed halves — PINNABLE, which is why it got a body and they got
+    // a finding.
     for result in builder.build() {
         let Ok(entry) = result else { continue };
         if entry.depth() == 0 {
@@ -337,11 +372,32 @@ mod tests {
         // whole link classification lifted, and what it actually pins is
         // CONTAINMENT. Measured, not inferred; see the ledger below.
         //
-        // It KEEPS its name: two cards cite it (T-140-s9, T-186) and a
-        // rename would strand those references, which is the disposition
-        // this project takes for a stale headline whose body carries the
-        // correction. The layer the name promises is pinned by
-        // `a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone`.
+        // **WHAT IT PINS AND WHAT IT DOES NOT, NOW THAT EVERY LAYER ITS
+        // NAME REACHES HAS A KEEPER** (`T-196` finished this list; `T-186`
+        // started it):
+        //
+        //   PINS      gates D and E — containment. Lift all four of
+        //             `T-186`'s predicates and this body finally reds, at
+        //             crate scope, which is the proof.
+        //   NOT B     the link CLASSIFICATION. Lift both halves and this
+        //             stays green (T-186's ledger). Pinned instead by
+        //             `a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone`.
+        //   NOT A     `follow_links(false)`, the refusal its name most
+        //             plainly promises. Flip that to `true` and this body
+        //             stays GREEN — its `linkdir` points OUTSIDE, so a
+        //             walker that descends it meets gate D on the far side
+        //             and refuses the entries for containment, exactly as
+        //             it does today for a different reason. Measured at
+        //             `e6a97d2`: 256/0 over 12 targets, nothing red. Pinned
+        //             instead by
+        //             `a_symlinked_directory_pointing_inside_the_root_is_never_descended`,
+        //             whose link points INSIDE so containment cannot stand
+        //             in for the descent.
+        //
+        // It KEEPS its name: three cards cite it (T-140-s9, T-186, T-196)
+        // and a rename would strand those references, which is the
+        // disposition this project takes for a stale headline whose body
+        // carries the correction.
         use std::os::unix::fs::symlink;
         let t = TempTree::new("walk-symlink");
         t.write("real.ts", "export const r = 1;");
@@ -477,6 +533,91 @@ mod tests {
     // the baseline is measuring a different corpus than it says.** Print
     // the TARGET count beside the pass/fail count and the three failures
     // above all become visible the same way.
+
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_directory_pointing_inside_the_root_is_never_descended() {
+        // GATE A's body (`T-196`). The walk's fifth lettered refusal, and
+        // the one `T-186` named, measured and could not pin from inside its
+        // own fence.
+        //
+        // **EVERY CLAUSE OF "AN INSIDE-POINTING SYMLINKED DIRECTORY AIMED
+        // AT A HARD-SKIPPED SUBTREE" IS LOAD-BEARING**, and the fixture is
+        // exactly as strong as the weakest of them:
+        //
+        //   - what lies behind the link is a REAL FILE, not another link,
+        //     so gate B's classification has no grip on it;
+        //   - it canonicalizes INSIDE the root, so gates D and E cannot
+        //     rescue the case — containment is no help here, the same
+        //     property that made `T-186`'s inside-pointing body the
+        //     strongest one available there;
+        //   - and `node_modules` is hard-skipped BY NAME in `filter_entry`,
+        //     so a walker that refuses to descend the link cannot reach it
+        //     by any other route, while one that follows the link arrives
+        //     through the names `vendor`, `pkg`, `index.ts` — which the
+        //     skip never sees.
+        //
+        // Gate A is therefore the only thing between this walk and that
+        // file, and this body reds when it is lifted, alone.
+        //
+        // **THE TRAP NEXT DOOR** (`T-186`, recorded at `files.dedup_by`):
+        // an inside-pointing fixture whose target the walk ALREADY collects
+        // is collapsed by that dedup, producing byte-identical output and a
+        // surviving mutant. Aiming at a hard-skipped subtree is what keeps
+        // this fixture's path one the walk does not otherwise emit — under
+        // the lift it emits `node_modules/pkg/index.ts`, a `rel` no arm of
+        // this suite can otherwise produce.
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("walk-symlink-dir-descend");
+        t.write("real.ts", "export const r = 1;");
+        t.write("node_modules/pkg/index.ts", "export const vendored = 1;");
+        let link = t.root().join("vendor");
+        symlink(t.root().join("node_modules"), &link).expect("dir symlink");
+
+        // THE GUARD'S STATE, asserted before anything is exercised
+        // (CONVENTIONS, LIFTING A SAFETY GUARD TO DISCRIMINATE). Four
+        // facts, and together they are the argument that only gate A can
+        // refuse this file.
+        let canon_root = t.root().canonicalize().expect("canon root");
+        let meta = std::fs::symlink_metadata(&link).expect("lstat the link");
+        assert!(meta.file_type().is_symlink(), "the fixture is not a link");
+        assert!(!meta.is_dir(), "lstat must not call a link a dir");
+        // **AND THE LIFTED ARM IS PROVEN TO TERMINATE IN THE FIXTURE** —
+        // pointed at one, not merely started at one. The only link in this
+        // tree resolves back inside the tree, so a walker told to follow
+        // links can reach nothing but this `TempTree`. That is what makes
+        // lifting a containment-adjacent guard safe to measure at all.
+        let target = link.canonicalize().expect("canonicalize the link");
+        assert!(
+            target.starts_with(&canon_root),
+            "the lifted arm must terminate in the fixture, not outside it: {target:?}"
+        );
+        let behind = target.join("pkg/index.ts");
+        let behind_meta = std::fs::symlink_metadata(&behind).expect("lstat behind the link");
+        assert!(
+            behind_meta.is_file(),
+            "the entry behind the link is not a real file"
+        );
+        assert!(
+            !behind_meta.file_type().is_symlink(),
+            "the entry behind the link must not itself be a link — that would test gate B"
+        );
+
+        // The refusal. The `vendor` entry itself is a link, so gate B drops
+        // it; gate A is what stops the walk DESCENDING it.
+        assert_eq!(rels(t.root()), vec!["real.ts"]);
+
+        // POSITIVE CONTROL, built the way the producer builds it: the same
+        // name, in the same place, as a REAL directory holding a REAL file
+        // of the same content. Without it, "expected one path, got one
+        // path" is satisfied equally by a walk that refused `vendor` for
+        // its NAME, by one the hard SKIP reached after all, and by one that
+        // found nothing there — and only the first-refused-the-link reading
+        // is the property.
+        std::fs::remove_file(&link).expect("rm link");
+        t.write("vendor/pkg/index.ts", "export const vendored = 1;");
+        assert_eq!(rels(t.root()), vec!["real.ts", "vendor/pkg/index.ts"]);
+    }
 
     #[cfg(unix)]
     #[test]
