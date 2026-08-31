@@ -326,3 +326,147 @@ conflicts — the merged tree carries `blocked_by: []`, and this lane's
 prose survives intact at 147,948 bytes / 10.0035% headroom. So the five
 reds resolve at the merge; I could not run the suites against that tree
 because materialising it is the integrator's act, not this lane's.
+
+## Corroboration — instance 6, 2026-08-31 (`T-142-s1`'s lane, measured at `57c1b39`)
+
+Appended as a record, per TASK-FORMAT. Found while running the owed
+suites for `T-142-s1`; **it is not that lane's to fix and was not
+fixed**, being a distinct producer needing its own drill.
+
+**THE REMEDY ALREADY HAS AN OWNER: `T-197`**, which landed on main at
+`726d807` *while this lane was building* — found by `T-192`'s executor
+and re-measured at the architect seat. So this entry is a SECOND,
+INDEPENDENT measurement rather than a new route. It is kept here because
+the CLASS is this card's even where the FIX is T-197's, and it adds two
+facts that card does not carry.
+
+`node tools/e2e/scripts/brief.mjs --dispatch` **silently truncates its
+own output at exactly 65,536 bytes whenever its stdout is a PIPE.** It
+exits **0**, writes no stderr, and returns a report that reads as
+complete — the header, the live lanes and the whole STARTABLE section
+are all present, so nothing about it looks partial. What is missing is
+the tail: `critical path:`, `worst blocker:`, `drawn cards:`, `ready on
+blocked_by alone:` and `startable once the lanes are counted:`.
+
+Measured at `57c1b39` **on a pristine tree** (`git status --porcelain`
+= 0 lines, this lane's three edits stashed), so the attribution is not
+an argument:
+
+| stdout is | bytes | carries `critical path:` |
+|---|---|---|
+| a FILE (`1> out.txt`) | **69,302** | yes |
+| a PIPE (`spawnSync`, default `maxBuffer`) | **65,536** | no |
+| a PIPE (`spawnSync`, `maxBuffer` 64 MiB) | **65,536** | no |
+
+**It is not `maxBuffer`** — raising it to 64 MiB changes nothing, and
+65,536 is one pipe buffer exactly. The mechanism is
+`process.exit(code)` at `brief.mjs`'s last line: a pipe write is
+asynchronous, and `process.exit` discards whatever has not drained. A
+file write is synchronous, so the hand-run spelling never loses a byte
+and the defect is invisible to whoever tests it by eye.
+
+**Why it belongs on THIS card.** It is the class exactly: a command ran,
+produced no error, exited 0, and returned an answer shaped like the one
+you wanted while answering a smaller question. It is also the
+class's worst reach so far — the truncated tail is precisely the
+DECISION content (`critical path`, `worst blocker`), the report is
+`method/roles/orchestrator.md`'s own dispatch input, and every
+programmatic reader of it takes a pipe by construction while every
+human reader takes a terminal and sees the whole thing.
+
+**ADDITION ONE IS WITHDRAWN — MAIN GOT THERE FIRST, AND THIS ENTRY SAYS
+SO RATHER THAN LETTING THE OVERLAP STAND.** This entry was drafted
+claiming to answer `T-197`'s criterion 3 (*whether any suite body
+depends on the truncation — check before, not after*) by showing that
+`dispatch-order.spec.ts:200` already reds on it. **`T-190`'s lane
+reported exactly that, independently and to the same byte, and it is
+landed on main at `842521c` under T-197's own heading *"AND IT REDS A
+STANDING GATE THAT EVERY DOCS-TOUCHING LANE NOW INHERITS"*.** This lane
+could not see it — `T-197`'s card does not exist at this lane's base
+`57c1b39` — but not having known is a reason for the duplication, not a
+reason to keep it. **Three lanes reaching one finding is corroboration;
+three lanes each writing it down as news is the illegibility TASK-FORMAT's
+metabolism clause exists to prevent.**
+
+What this lane measured of that half, kept only as a second reading:
+**1 failed / 366 passed** in the full lane and **1 failed / 13 passed**
+in that spec alone at `57c1b39`; the `status` and `HEAD` arms hold and
+what fails is `toContain("critical path:")` at line 215.
+
+**ADDITION TWO — THE LOST-BYTE FIGURE IS A LIVE FACT, NOT A FUNCTION OF
+THE TREE, AND T-197 STATES IT AS THOUGH IT WERE.** That card records
+*"69,293 bytes"* and *"3,757 bytes are lost"* against the ref
+`57c1b39`. At the same ref this lane measured the file form at **69,302**
+bytes and the loss at **3,766** — because the report's own content
+includes the LIVE LANE LIST and the `startable once the lanes are
+counted:` total, which move whenever a worktree is cut or removed. The
+truncation point does not move (65,536 is one buffer), so the DELTA is
+the ref-bound half and the endpoint is not. Neither figure is wrong;
+they were read minutes apart with a different number of lanes on the
+machine. State it with the reading time, the way the PORT RULE's
+holder is stated.
+
+The board crossed
+64 KiB of `--dispatch` output at some ref nobody was watching for, so
+the red arrives attributed to whatever lane runs the suite next — which
+is the DOCS GATE's own founding story one tool over.
+
+### Instance 6, closing measurement — THE RED IS KEYED TO THE MACHINE, NOT TO THE TREE
+
+**The failing body went GREEN later in the same lane, at a LATER commit
+of the same branch, with nothing relevant changed in the tree** — and
+the reason is the finding rather than a reprieve.
+
+`T-190` and `T-192`'s worktrees were removed from this machine while
+this lane worked. `--dispatch` renders the LIVE LANES section and the
+STARTABLE list from `git worktree list`, so its own size fell:
+
+| lanes live on the machine | `--dispatch` bytes | through a pipe | `dispatch-order.spec.ts:200` |
+|---|---|---|---|
+| three (T-142-s1, T-190, T-192) | **69,302** | truncated to **65,536** | **RED** |
+| one (T-142-s1 alone) | **62,651** | **62,651**, whole | **GREEN** |
+
+**So the body passes or fails according to how many worktrees exist at
+the moment it runs.** The full e2e lane read **1 failed / 366 passed**
+early in this session and **367 passed / 0 failed** at its end, on the
+same branch, with the only intervening change being other people's
+worktrees disappearing.
+
+**WHAT IS NEW HERE AND WHAT IS NOT, stated exactly, because the
+neighbouring facts are already on main.** `T-197` (as amended at
+`842521c`) records that the truncation point is fixed at one buffer and
+that **WHAT falls past it** moves with the live lane count, so the
+failing assertion moves between runs. **This measurement is one step
+past that: the lane count decides not only WHICH assertion fails but
+WHETHER ANY DOES.** At one live lane the whole output is 62,651 bytes —
+under the buffer — so nothing is lost and the body passes outright. A
+tell that "moves between runs" reads as a flake to be re-run; a tell
+that goes fully green reads as FIXED.
+
+**THREE CONSEQUENCES, AND THE THIRD IS THE ONE THAT COSTS:**
+
+1. **"Re-run it and see" LITERALLY WORKS HERE, and is exactly the wrong
+   conclusion.** This is docs/STATE.md's *re-running until green is the
+   defect's own healing mechanism, not evidence* arriving through a
+   mechanism nobody had named: not a cache, not a clock, but the
+   MACHINE-scoped worktree list that `method/lane-protocol.md` rule 4's
+   closing clause already warns is a surface no per-checkout rule sees.
+2. **CI will not see it.** A runner has one checkout and no lanes, so
+   the output stays under the buffer and the step is green. **The defect
+   is visible only on a busy development machine**, which is the reader
+   whose figure matters most and the one with no gate.
+3. **It is a LATENT red that arrives attributed to whoever is nearest.**
+   Cut a third lane and the next session's e2e goes red in a spec about
+   dispatch order, with a diff that cannot explain it. This lane spent
+   real time proving it was not its own; the next one will too.
+
+**FOR WHOEVER TAKES `T-197`:** its criterion asking for *"one invocation
+large enough to exceed the buffer"* cannot be satisfied by running the
+live `--dispatch` — that size is a live fact that drifts under the
+machine, and a body pinned to it is green on a quiet machine and red on
+a busy one, both without a code change. **Synthesise the oversize
+output** (a fixture, or a padded fixed input) so the body asserts the
+size it feeds rather than hoping for it. That is the same poison shape
+TEN the card already cites, met from the other side: not an empty
+comparison, but one whose input silently shrank below the threshold it
+was testing.
