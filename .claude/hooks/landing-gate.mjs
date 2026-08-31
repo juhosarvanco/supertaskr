@@ -72,9 +72,17 @@
  * `touch_slugs:` field and reading it needs `yaml`. On the live board
  * those tokens are common, so a slug-fenced lane gets its RESOLVED
  * domains enforced and an announcement for everything else. Closing that
- * is `T-221`, routed rather than taken: it wants the slug map published
+ * is `T-222`, routed rather than taken: it wants the slug map published
  * in a form the hook budget can read, which is a change to what
  * `--write-fence` commits and belongs with `T-211`'s fast paths.
+ *
+ * ── AND THE SEPARATOR `within` TURNS ON IS PINNED HERE ───────────────
+ * `T-221` measured that dropping the `/` from the parser's own
+ * `sharedDomain` reds NOTHING in the repository, and named this card as
+ * a third consumer arriving on the same primitive. That card owns
+ * `sharedDomain`'s half, in `lib/parser`. THIS file's containment body
+ * pins the other half: `.claudeX/other.mjs` is OUTSIDE `.claude`, so a
+ * `within` that dropped its separator reds by name.
  *
  * ── WHAT THIS GATE CANNOT SEE, STATED SO IT IS NOT OVERSOLD ──────────
  * 1. **A lane writing ANOTHER lane's worktree never appears in its own

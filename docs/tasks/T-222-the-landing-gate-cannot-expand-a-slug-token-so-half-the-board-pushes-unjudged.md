@@ -1,5 +1,5 @@
 ---
-id: T-221
+id: T-222
 title: THE LANDING GATE CANNOT EXPAND A SLUG TOKEN, so a slug-fenced lane's out-of-fence paths are ANNOUNCED rather than refused — measured, not feared
 feature: F-06
 milestone: 4
@@ -91,5 +91,13 @@ either card.
 
 `T-212` (the gate this completes), `T-211` (the dispatch ritual this
 changes), `T-154` (why the expansion happens at dispatch and not at the
-write), `T-219` (the other open hole in the same expansion),
-`method/lane-protocol.md` rule 5.
+write), `T-219` (the other open hole in the same expansion), `T-221`
+(the other unpinned half of the same containment story — that one is
+`sharedDomain`'s separator in `lib/parser`; `T-212`'s own containment
+body now pins `within`'s), `method/lane-protocol.md` rule 5.
+
+*Filed as T-221 and renumbered: `T-221` was taken on main by another
+lane while this one ran, which is the board moving under a lane rather
+than a mistake. The id was re-derived from `git ls-tree main`, not from
+this lane's copy of `docs/tasks/` — the same class of staleness this
+card's own gate exists to remove.*
