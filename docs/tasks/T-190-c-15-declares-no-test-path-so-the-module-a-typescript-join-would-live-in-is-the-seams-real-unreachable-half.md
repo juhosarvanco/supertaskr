@@ -476,3 +476,195 @@ prescribes record-and-route, which is what happened.
   memory and the derivation said `C-12`; the file now carries the
   derivation command and the correction. Re-derive it rather than
   trusting either sentence.
+
+## Verdicts
+
+### 2026-08-31 — APPROVED — verifier claude-opus-5@subagent (blind pass)
+
+**PHASE 1 WAS WRITTEN BEFORE THE DIFF WAS OPENED.** The attack set was
+composed from the card at its base ref `57c1b39` plus the base tree
+alone, saved, and hashed **before** `git diff`, the implementation notes
+or any lane report was read:
+`sha256 9fbe22056f0ad90bac11c80bca7c88b212839350ce351a4204a4adb73f085837`,
+205 lines, sealed 2026-08-31T04:17:29Z.
+
+**CONTAMINATION, DISCLOSED — SELF-INFLICTED AND PARTIAL.** While
+orienting I ran `git log --oneline -5` and read five commit SUBJECT
+lines, three of them this lane's. `roles/verifier.md` forbids the
+executor's commit messages by name, so this was my breach and not the
+brief's — the dispatching brief was clean and carried no lane fact.
+What the subjects disclosed before I wrote the list: that the wall was
+"one exact-toEqual fixture in app-map's territory", and that the e2e red
+was `brief.mjs` losing its tail through a pipe and was pre-existing.
+**So on those two questions I am a CORROBORATOR, not an independent
+finder, and the verdict is written that way.** I did not see the diff,
+the notes, or any figure. Every number below is mine, re-derived at my
+own ref with the command recorded.
+
+**MEASURED AT:** branch tip `842521c`, base `57c1b39`. Two sibling lanes
+were live, so these are claims about this worktree at that ref.
+
+#### The central claim reproduced, independently and exactly
+
+I built my own registry mutant — a third `paths:` entry
+(`app/test/dispatch-store-t190-probe.test.ts`, matching nothing), one
+side only, read back with `git -C <dir> diff`:
+
+    npm test from app/   BASE:    49 files / 1094 tests            exit 0
+    npm test from app/   MUTANT:  1 failed | 48 passed (49)        exit 1
+                                  1 failed | 1093 passed (1094)
+
+**FAILING-BODY COUNT = 1**, and it is the body the notes name:
+`app/test/architecture-dogfood.test.ts > dogfood: the nputer repo
+through its own derivation engine > C-15 HAS TERRITORY AT LAST: five
+files under its declared globs, D3 cleared`. Restored; proven by
+`sha256 174234ea3a06067c46d2f73aadccf196e39c92f1dff0c1abb4c2fa3ddb83e0ce`
+with `git status --porcelain --untracked-files=all` empty.
+
+**OWNERSHIP RE-DERIVED, NOT TRUSTED** (the notes asked me to):
+`command grep -n '^  - app/test/architecture-dogfood' docs/architecture/components/*.md`
+returns **exactly one line, `C-12-map-pane.md:17`**. C-05's, C-09's and
+C-15's mentions are prose. **The owner is C-12, slug `app-map`** — no
+part of an `[app-dispatch]` fence. The notes' self-correction from
+`app-shell` to `app-map` lands where the tree does.
+
+#### The attack the lane did not run, and it is the one that settles criterion 2
+
+I wrote a real collected pin — `app/test/dispatch-store-t190-probe.test.ts`,
+importing `hydrateJoin` through the `@/` alias — and then gutted
+`hydrateJoin` one side only (deleted the `rows.set(row.taskId, row)`
+loop, so the Map is always empty):
+
+    mutant + my probe present     2 failed | 1094 passed (1096)   exit 1
+    mutant, tree AS THIS LANE LEAVES IT   49 files / 1094 tests   exit 0
+    mutant, npm run build (tsc x2 + vite)                         exit 0
+
+**My probe RED under the mutant, so it is a real pin and not an empty
+corpus** (poison shape TEN applied to my own check). **And with the probe
+removed, a `hydrateJoin` gutted to return an empty Map passes the entire
+app suite AND both `tsc` programs at exit 0.** So the notes' least
+comfortable sentence — *"`hydrateJoin` is still driven by nothing, and a
+one-sided mutation of it still reds no body anywhere"* — is TRUE,
+measured adversarially by someone trying to falsify it. All drills
+restored:
+`sha256 3bc8162eb5741d2bf520026131316fd60bb88b4c42b3fa061fa7313e14bed964`
+for `dispatch-store.ts`, tree clean including untracked.
+
+**AND THE SAME RUN PROVES THE ROUTED CARD IS REAL.** The pin passes the
+moment a collected path exists, so the wall is the ONLY obstacle and the
+routed card's spec is buildable as written.
+
+#### Criterion by criterion
+
+1. **MET, on the second arm.** The section states why the store is
+   unreachable, prices the fix, and names the owner. **AND THE CRITERION
+   ITSELF CARRIES A FALSE PRESUPPOSITION** — it asks the lane to state
+   why the store is *"deliberately"* unreachable, and the measurement
+   says it is **accidentally** so, an ownership artifact of T-149's
+   enumeration. The lane refused the word and said why. That is the
+   correct answer to a criterion that presupposed its own conclusion, and
+   it is exactly the trap I wrote into my phase-1 list as attack A1
+   ("declaring something deliberately unreachable when it is accidentally
+   so"). **The lane did not fall into it.**
+2. **NOT BUILT — CORRECTLY RECORDED AND ROUTED**, and I reached the same
+   ruling from the base tree before opening the diff. The fence expands
+   to `app/src-tauri/src/dispatch`, `app/src/lib/dispatch-store.ts` and
+   this registry file (`.nputer/lane-fence.json`). `app/vitest.config.ts`
+   collects `test/**/*.test.{ts,tsx}` relative to `app/`; every
+   `app/test/**` file is enumerated to C-05/C-08/C-09/C-10/C-12/C-13/C-14
+   and none to C-15; the config itself is C-05's; and a Rust body cannot
+   execute TypeScript. **No location this fence reaches is collected by
+   any runner.** `method/tasks/TASK-FORMAT.md` calls a card whose
+   criterion and fence disagree **defective by definition** and prescribes
+   record-and-route. **The defect is the CARD's, not the lane's**, and the
+   lane discharged it the way the method says to.
+3. **MET, and independently reproduced.** At `57c1b39`, over `app/src`
+   and `app/test`, a specifier regex covering `from "…"`, `require(` and
+   dynamic `import(` returns **0 files** for `dispatch-store`.
+   **POSITIVE CONTROL: the identical regex returns 12 files for
+   `board-model` and 12 for `task-detail`** — so the zero is a fact about
+   the tree and not about the search. Every occurrence of the name is a
+   doc comment or a path literal inside a census. I confirm the trap the
+   section flags: `arch`'s `C-05 -> C-15` edge is `lib.rs`'s
+   `pub mod dispatch;`, not a TypeScript import.
+4. **MET.** `cargo run -p nputer-index -- arch cycles --root ../..` from
+   `app/src-tauri/`, exit **0** captured before any pipe, ACYCLIC.
+
+#### What I attacked and FAILED to break
+
+Recorded because a verdict that lists only its hits is not a measurement.
+
+- **The empty-glob loophole.** A lane could satisfy criterion 1's first
+  arm literally by declaring a `paths:` line for a file that does not
+  exist — a declaration with no test, invisible to every gate but one.
+  **Not taken:** the frontmatter is byte-unchanged; the diff is prose.
+- **Fence compliance, read by hand** because the hook stands aside in
+  this session's shape (`lane-fence.mjs`'s declared limit 2, writes
+  landing outside the dispatching checkout's root). The diff is **two
+  files**: `docs/architecture/components/C-15-dispatch.md` (fence entry 3)
+  and this card (`alwaysWritable: ["docs/tasks"]`). **Nothing outside the
+  manifest, and nothing under `app/test/**` or `app/vitest.config.ts`.**
+  The lane's own drill 2 disclosed that the fence was kept by discipline
+  rather than by mechanism; that disclosure is owed and was made.
+- **An unruled architecture decision.** The card forbids declaring
+  `C-09 -> C-15` from inside a lane. `depends_on: [C-10]` is unchanged.
+- **Minted ids.** Zero files added; `T-185`, `T-195`, `T-112-s6`,
+  `T-126-s2` and `T-187` all exist, and `T-197` exists on `main` at
+  `726d807` though not in this lane's tree — consistent with a lane cut
+  before it was filed. The routing describes and allocates nothing.
+- **`T-126-s2` untouched**, as the card requires.
+- **The "only exact `toEqual`" claim.** I re-ran the derivation. C-11 is
+  pinned by `toContain` (`select-board.test.ts:991`) and C-05 by
+  `toContain` (`lib/parser/test/fence.test.ts:334-335`); the other
+  `toEqual`s in `select-board.test.ts` are over touch-token EXPANSIONS,
+  not a component's `paths:` array. **C-15's is the only exact `toEqual`
+  over a live component's whole array.** The claim stands.
+
+#### The e2e red is NOT this lane's, corroborated to the byte
+
+    node scripts/brief.mjs --dispatch > file    69033 bytes   exit 0
+    node scripts/brief.mjs --dispatch | cat     65536 bytes   exit 0
+
+65,536 is the pipe buffer exactly, and both exit 0. The mechanism is
+already carded as **`T-197`** on `main`; this lane corroborated rather
+than re-filed, which is what `TASK-FORMAT`'s search-before-filing rule
+asks for. **Not charged to this diff.** The half this lane adds — that
+the defect reds a standing gate every docs lane now inherits, and that
+WHICH assertion fails moves between runs so it reads as flake — is worth
+folding into `T-197`.
+
+#### Non-blocking observations (NOT failures, and they block nothing)
+
+1. `C-15-dispatch.md` says everything else the matcher-grep surfaces is
+   "over a fixture registry, not the live tree". Two of them are over
+   touch-token expansions of the **live** registry rather than a fixture.
+   The conclusion is unaffected — an expansion is not a component's
+   `paths:` array — but the sentence is looser than the derivation under
+   it.
+2. The section forecasts that a lane which also WRITES the file moves
+   `c15?.files`, the `fileComponent` tally and the tree-wide file-count
+   body. **I measured that pre-regen it does not**: with the file written
+   AND declared, the suite reported `1 failed | 49 passed (50)` — still
+   the single dogfood body. Those tallies move only after the GRAPH
+   REGEN, which the section says elsewhere but not adjacently. A next
+   lane reading the forecast may expect reds that do not appear until it
+   regenerates.
+
+Both are one-sentence clarifications inside another lane's deliverable;
+described here rather than performed, and no card id is minted for them.
+
+#### Gates this verdict's own commit owes
+
+Appending a verdict is a WRITE, so it is re-run at the tip I created and
+not at the commit I was sent — see the gate results committed with this
+entry.
+
+**VERDICT: APPROVED.** Every criterion is met or correctly
+recorded-and-routed; the fence held; the central empirical claim
+reproduces exactly under an independent drill; the import census's
+positive control passes; the one red is pre-existing and correctly
+attributed. **The strongest thing I can say about this lane is that its
+own least comfortable sentence survived a deliberate attempt to falsify
+it**, and that the two questions it flagged for me to re-derive were the
+two it had gotten wrong first and corrected — which is the disclosure
+working as intended.
