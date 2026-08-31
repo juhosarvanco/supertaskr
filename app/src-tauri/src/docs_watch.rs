@@ -329,6 +329,28 @@ pub enum WatchCtl {
         root: PathBuf,
         ack: mpsc::Sender<Result<bool, String>>,
     },
+    /// T-088-s4: a BARRIER on this control loop — no work, just an ack.
+    ///
+    /// The loop below is single-threaded and FIFO over ONE channel that
+    /// carries both control messages AND the debounced fs batches
+    /// (`spawn_watcher_thread` hands the debouncer a clone of the same
+    /// `tx`). So an answered `Ping` proves every message enqueued before
+    /// it has already been HANDLED — and a `Ping` sent immediately after
+    /// `spawn_watcher_thread` returns proves the STARTUP ARM is done,
+    /// because that arm runs before the loop is entered at all.
+    ///
+    /// That is the rendezvous the startup path never had, and its
+    /// absence — not machine speed — is what a wall-clock bound was
+    /// standing in for. `Rearm` and `ArmGenesis` have carried an `ack`
+    /// since T-007 and T-026; this is the same contract for the one arm
+    /// that had no message to hang it on.
+    ///
+    /// `#[cfg(test)]` DELIBERATELY: the shipped binary has no caller for
+    /// it, and a control message no product code sends is dead weight in
+    /// the product. The rendezvous is a property of the loop's ordering,
+    /// which is identical in both builds.
+    #[cfg(test)]
+    Ping { ack: mpsc::Sender<()> },
 }
 
 /// Managed state: the current project dir (None until one resolves or is
@@ -1609,6 +1631,12 @@ fn run_watcher(
             WatchCtl::ArmGenesis { root, ack } => {
                 let _ = ack.send(arm_genesis(&mut debouncer, &mut target, root));
             }
+            // T-088-s4: the barrier. Answering it IS the whole handler —
+            // what it proves is the FIFO position, not the work.
+            #[cfg(test)]
+            WatchCtl::Ping { ack } => {
+                let _ = ack.send(());
+            }
         }
     }
     // Keep the debouncer alive for the loop's whole lifetime.
@@ -1786,13 +1814,46 @@ mod tests {
 
     /// WatchState wired to a live watcher thread whose emits land on the
     /// returned channel (the test stand-in for the `docs-changed` event).
+    ///
+    /// **T-088-s4: IT DOES NOT RETURN UNTIL THE STARTUP ARM IS DONE.**
+    /// `spawn_watcher_thread` returns the instant the thread is spawned,
+    /// so before this card every `live_state(Some(root))` body raced its
+    /// own watcher: the writes that followed could land before the watch
+    /// was armed, and a missed event is not a late one — no bound,
+    /// however wide, ever collects it. `barrier` closes that window with
+    /// a rendezvous instead of a guess.
     fn live_state(initial: Option<PathBuf>) -> (WatchState, mpsc::Receiver<DocsSnapshot>) {
         let seq = Arc::new(AtomicU64::new(0));
         let (emit_tx, emit_rx) = mpsc::channel();
         let ctl = spawn_watcher_thread(seq.clone(), initial.clone(), move |snap| {
             let _ = emit_tx.send(snap.clone());
         });
-        (WatchState::new(initial, seq, ctl), emit_rx)
+        let state = WatchState::new(initial, seq, ctl);
+        barrier(&state);
+        (state, emit_rx)
+    }
+
+    /// Rendezvous with the watcher thread's control loop: returns only
+    /// once the loop has handled every message enqueued ahead of this
+    /// one (`WatchCtl::Ping`). Called right after the spawn, that means
+    /// "the startup arm has run".
+    ///
+    /// **NO CLOCK APPEARS HERE, AND BOTH FAILURE MODES ARE STILL
+    /// IMMEDIATE.** If the watcher thread never reached its loop, the
+    /// control receiver is already dropped and the SEND fails; if it
+    /// died between the send and the ack, the `ack` sender travels with
+    /// the dead channel's buffer and the RECV fails. A watcher that is
+    /// merely SLOW makes this call slow, which is the entire point: the
+    /// wait stretches with the machine instead of racing it.
+    fn barrier(state: &WatchState) {
+        let (ack_tx, ack_rx) = mpsc::channel();
+        state
+            .ctl
+            .send(WatchCtl::Ping { ack: ack_tx })
+            .expect("watcher thread is gone: the control channel is closed");
+        ack_rx
+            .recv()
+            .expect("watcher thread died before answering the barrier");
     }
 
     /// WatchState with a dead control channel — fine for tests that never
@@ -1809,16 +1870,75 @@ mod tests {
         apply_picked_folder(state, picked, state.begin_pick().expect("picker free"))
     }
 
-    /// How long a live body waits for the state it is about — the
-    /// pre-T-153 single-emit budget, now spent on the WHOLE wait.
-    const EMIT_BUDGET: Duration = Duration::from_secs(10);
+    /// How long a wait tolerates TOTAL SILENCE before it names itself a
+    /// hang. **NOT a deadline for the emit** — see `recv_until` below for
+    /// the discriminator, which is the whole of why this number is
+    /// allowed to exist on a card that deletes a 10-second one.
+    ///
+    /// 120 s is 480x `DEBOUNCE` and roughly 28x a healthy lib suite
+    /// (4.29-4.49 s measured across six runs at 1-minute loads of 10.69
+    /// to 22.50 on ten cores). No run that is working reaches it; the
+    /// only thing that does is a watcher that has stopped emitting.
+    const SILENCE_BACKSTOP: Duration = Duration::from_secs(120);
 
     /// Wait for the emit whose snapshot satisfies `want`, across however
-    /// many emits the backend delivers, bounded by `EMIT_BUDGET`.
+    /// many emits the backend delivers.
     ///
-    /// **THE WAIT IS THE ASSERTION.** A state that never converges fails
-    /// here, naming what was awaited and every snapshot seen meanwhile —
-    /// so a body converts `recv_emit` + `assert!(pred)` into
+    /// **T-088-s4: THE WAIT IS A RENDEZVOUS, NOT A DEADLINE.** Both ways
+    /// it can SUCCEED OR FAIL A CLAIM are EVENTS of the system under
+    /// test — the awaited emit arrives, or the watcher thread is gone
+    /// (every sender for this channel lives in the sink closure the
+    /// watcher owns, so its death disconnects us at once, with a
+    /// message). Neither is a function of how fast this machine is,
+    /// which is the property the 10-second `EMIT_BUDGET` this replaced
+    /// did not have: three suites redded here in one night because a
+    /// build cache had grown, and a fourth explained it away.
+    ///
+    /// **AND THE BUDGET WAS NOT WIDENED, DELIBERATELY** (this card's third
+    /// criterion). A wider deadline buys a slower red: the reds were 14.70
+    /// to 15.19 s against a 3.94 s healthy suite — one budget's worth of
+    /// waiting added to a run that then failed anyway — and the three
+    /// figures behind them are three different machines' worth of load,
+    /// not one number to clear.
+    ///
+    /// **AND A THIRD WAY OUT EXISTS SO THAT A HANG HAS A NAME —
+    /// `SILENCE_BACKSTOP`. READ WHY IT IS NOT THE DEADLINE THIS CARD
+    /// DELETED, BECAUSE A NUMBER HERE OTHERWISE READS AS THE CARD BEING
+    /// IGNORED.** The first cut of this fix removed the bound outright,
+    /// and that was a REGRESSION the blind verifier caught: an
+    /// alive-but-silent watcher then hung 20 call sites across 11 bodies
+    /// with **no name, no counts and no output at all**, where the same
+    /// mutant had previously failed in about 11 seconds WITH a message.
+    /// A worse failure mode was traded for a bad one.
+    ///
+    /// **THE DISCRIMINATOR IS WHETHER THE HAPPY PATH CAN REACH IT**, and
+    /// it is exactly the reasoning this module already applies to
+    /// `entered_rx` two hundred lines below — a bound kept because
+    /// removing it converts a loud failure into a hang. That reasoning
+    /// was written down there and not applied here; this is it applied.
+    ///
+    /// - the deleted `EMIT_BUDGET` was **load-calibrated**: 10 s was
+    ///   chosen as *enough time for an emit on a normal machine*, so a
+    ///   machine that fell behind exhausted it and a GREEN test went RED.
+    ///   That is the deadline the card refuses, twice.
+    /// - `SILENCE_BACKSTOP` is calibrated to be **unreachable by any run
+    ///   that is working at all**: 480x the 250 ms debounce and ~28x the
+    ///   whole healthy lib suite. Nothing that is merely slow gets here.
+    ///
+    /// **AND IT MEASURES SILENCE, NOT ELAPSED TIME** — every arriving
+    /// emit restarts the window. So a body that legitimately watches many
+    /// emits over a long stretch can never trip it, which a total budget
+    /// could. It fires only to say *"nothing has arrived AT ALL for two
+    /// minutes"*, and with the arm now rendezvoused that sentence means
+    /// the watcher is broken, not late. The panic says so in as many
+    /// words, so the next reader is not sent to look at machine load.
+    ///
+    /// The disconnect arm stays SEPARATE and immediate — the backstop
+    /// must never swallow it; a dead watcher is still named in 0.02 s.
+    ///
+    /// **THE ASSERTION IS STILL THE WAIT.** A state that never converges
+    /// fails here, naming what was awaited and every snapshot seen
+    /// meanwhile — so a body converts `recv_emit` + `assert!(pred)` into
     /// `recv_until(pred)` without weakening anything, and keeps its OTHER
     /// assertions to run against the CONVERGED snapshot.
     ///
@@ -1840,11 +1960,12 @@ mod tests {
         awaited: &str,
         want: impl Fn(&DocsSnapshot) -> bool,
     ) -> DocsSnapshot {
-        let deadline = std::time::Instant::now() + EMIT_BUDGET;
         let mut seen: Vec<String> = Vec::new();
+        let started = std::time::Instant::now();
         loop {
-            let left = deadline.saturating_duration_since(std::time::Instant::now());
-            match rx.recv_timeout(left) {
+            // The window is SILENCE, not total elapsed: re-entering
+            // `recv_timeout` after every emit restarts it.
+            match rx.recv_timeout(SILENCE_BACKSTOP) {
                 Ok(snap) => {
                     if want(&snap) {
                         return snap;
@@ -1857,9 +1978,24 @@ mod tests {
                         snap.truncated
                     ));
                 }
-                Err(_) => panic!(
-                    "waited {EMIT_BUDGET:?} for a docs-changed emit where {awaited}; \
-                     emits seen meanwhile: [{}]",
+                // The watcher thread owns the one sender for this
+                // channel, so this is "the watcher is gone", never "the
+                // machine was slow" — and it is answered IMMEDIATELY,
+                // which is the arm the backstop must not swallow.
+                Err(mpsc::RecvTimeoutError::Disconnected) => panic!(
+                    "the watcher thread is gone while waiting for a docs-changed emit \
+                     where {awaited}; emits seen meanwhile: [{}]",
+                    seen.join(" | ")
+                ),
+                Err(mpsc::RecvTimeoutError::Timeout) => panic!(
+                    "BACKSTOP: NOTHING arrived on this channel for {SILENCE_BACKSTOP:?} \
+                     while waiting for an emit where {awaited} ({:?} in this wait). \
+                     THIS IS NOT A SLOW MACHINE — the startup arm is rendezvoused and \
+                     this window is {}x the debounce, so a watcher this silent is a \
+                     BROKEN one. Look at the watcher thread and the notify backend, not \
+                     at machine load. Emits seen meanwhile: [{}]",
+                    started.elapsed(),
+                    SILENCE_BACKSTOP.as_millis() / DEBOUNCE.as_millis(),
                     seen.join(" | ")
                 ),
             }
@@ -2415,15 +2551,22 @@ mod tests {
     fn startup_arm_watches_the_initial_root() {
         let a = TempTree::new("startup-a");
         a.write("docs/tasks/T-300-s.md", "startup v1");
+        // T-088-s4: `live_state` now RENDEZVOUS with the startup arm, so
+        // the watch is armed and the baseline collected before this
+        // returns. The sentence that used to stand here — "the initial
+        // arm is asynchronous (no rendezvous at spawn), so the very first
+        // write can race the baseline collect and be suppressed" — was a
+        // true confession, and the `sleep(DEBOUNCE * 4)` beside it was a
+        // guess that the race had been won. THIS BODY IS THE ONE THE
+        // CARD IS NAMED FOR: when that guess lost, the write was MISSED
+        // rather than late, and the 10-second budget downstream then
+        // expired over an event that was never coming.
         let (_state, emits) = live_state(Some(a.root().to_path_buf()));
 
-        // The initial arm is asynchronous (no rendezvous at spawn), so the
-        // very first write can race the baseline collect and be suppressed;
-        // let that window pass, then a further change MUST emit.
+        // One write, and it MUST emit — no settling window, because
+        // there is no longer a window to settle.
         a.write("docs/tasks/T-300-s.md", "startup v2");
-        std::thread::sleep(DEBOUNCE * 4);
-        a.write("docs/tasks/T-300-s.md", "startup v3");
-        recv_until(&emits, "the tree carries `startup v3`", content_is("startup v3"));
+        recv_until(&emits, "the tree carries `startup v2`", content_is("startup v2"));
     }
 
     #[test]
@@ -2549,6 +2692,24 @@ mod tests {
     /// watcher thread parks the re-arm until the test releases it (the
     /// timeouts below only bound the FAILURE mode; the pass path never
     /// waits on wall-clock).
+    ///
+    /// **T-088-s4 CLASSIFIED THESE TWO AND LEFT THEM BOUNDED, ON
+    /// PURPOSE.** Neither is an FSEvents wait — there is no watcher
+    /// thread, no debouncer and no filesystem in this body; both are
+    /// channel handshakes between threads the test itself spawned, so
+    /// the thing a wall clock races here is two `send`s rather than the
+    /// OS. And each bound is load-bearing in the direction a rendezvous
+    /// cannot reach:
+    ///
+    /// - `entered_rx` — a plain `recv()` would be a rendezvous, but the
+    ///   regression it guards is `apply_picked_folder` never sending
+    ///   `Rearm` at all. The helper thread below still holds `entered_tx`
+    ///   in that case, so nothing disconnects and the suite would HANG
+    ///   instead of failing.
+    /// - `status_rx` — the assertion IS "does not block". That is a
+    ///   negative, and a rendezvous cannot express one, exactly as the
+    ///   1200 ms wait further down cannot be converted either. Waiting
+    ///   without a bound here would assert nothing.
     #[test]
     fn a_parked_rearm_blocks_neither_docs_snapshot_nor_leaks_the_latch() {
         let t = TempTree::new("parked-rearm");
@@ -2926,7 +3087,21 @@ mod tests {
 
     // ---- T-018: root sentinel — docs/ appears, is replaced, returns ----
 
-    /// Wait out at least one debounce round so racy arm windows settle.
+    /// The quiet period a NEGATIVE assertion needs before it can claim
+    /// "and nothing arrived".
+    ///
+    /// **T-088-s4 LEFT EXACTLY ONE CALLER, AND THE REASON IS THE SAME
+    /// ONE THE 1200 ms WAIT KEEPS ITS BOUND FOR**: a rendezvous cannot
+    /// express an absence, so the only way to assert that nothing is
+    /// coming is to spend some wall clock and look. Every OTHER caller
+    /// was waiting for something to ARRIVE, and each of those had a real
+    /// rendezvous available that it was sleeping instead of using — the
+    /// pick's `ack`, the barrier at spawn, or the previous `recv_until`,
+    /// whose return already proves the batch it came from was handled.
+    ///
+    /// This one is not load-bearing in the way the deleted ones were: it
+    /// makes the negative assertion below STRONGER (more time for a
+    /// spurious emit to show up), so a slow machine cannot fail it.
     fn settle() {
         std::thread::sleep(DEBOUNCE * 4);
     }
@@ -2936,8 +3111,11 @@ mod tests {
         // T-003-s1 case 1: launch resolves a repo with no docs/ at all.
         let t = TempTree::new("sentinel-late");
         fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        // T-088-s4: `live_state` rendezvous with the startup arm, so the
+        // FAILED docs arm and the sentinel arm that follows it have both
+        // run by the time this returns — which is what the `settle()`
+        // here used to guess at. This is the card's second named body.
         let (_state, emits) = live_state(Some(t.root().to_path_buf()));
-        settle(); // let the startup (failed) arm + sentinel arm land
 
         // docs/ appears with content. The sentinel's batch re-arms the
         // docs watch and this same batch ships the tree.
@@ -2980,7 +3158,13 @@ mod tests {
         );
         // ...and — the criterion — the watch is genuinely re-armed: an
         // in-place edit inside the NEW tree still produces an emit.
-        settle();
+        //
+        // T-088-s4: no `settle()`. The `recv_until` above IS the
+        // rendezvous. `handle_fs_batch` runs `ensure_docs_watch` FIRST
+        // and calls the sink LAST, so an emit carrying the replacement
+        // tree proves the re-arm already happened; and because that
+        // emit's collect preceded this write, this write's event cannot
+        // have been folded into the batch already consumed.
         t.write("docs/tasks/T-401-a.md", "edited in place after swap");
         recv_until(
             &emits,
@@ -3004,7 +3188,11 @@ mod tests {
         recv_until(&emits, "the empty tree ships", |snap| snap.files.is_empty());
         // Recovery armed: recreating docs/ re-arms and emits — no
         // restart, no re-pick (pre-T-018 this silence was permanent).
-        settle();
+        //
+        // T-088-s4: no `settle()`. Only a batch whose `ensure_docs_watch`
+        // took the (armed -> gone) arm can ship the empty tree, so the
+        // emit above already proves the stale handle was dropped and the
+        // sentinel is what waits for docs/ to return.
         t.write("docs/tasks/T-402-r.md", "here again");
         let emit = recv_until(&emits, "the returned tree is collected", content_is("here again"));
         assert_eq!(emit.files.len(), 1);
@@ -3060,7 +3248,14 @@ mod tests {
         // Changed content: emits, skips empty, no truncation claimed.
         t.write("docs/a.md", "v2");
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
-        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("emit");
+        // T-088-s4: `try_recv`, not a 5-second wait. `handle_fs_batch` is
+        // called HERE, on this thread, and calls the sink before it
+        // returns — so the emit is already in the channel and a bound
+        // could only ever describe a bug it cannot survive. This is
+        // STRICTLY STRONGER than the wait it replaces: it pins the
+        // synchronous contract, and it is the spelling this body's own
+        // negative assertions already use (`try_recv().is_err()`).
+        let emit = rx.try_recv().expect("the batch handler emits synchronously");
         assert!(emit.files.iter().any(|f| f.content == "v2"));
         assert_eq!(emit.skipped, vec![]);
         assert!(!emit.truncated);
@@ -3096,7 +3291,8 @@ mod tests {
         // degrade — an empty tree emits (deletion semantics), no panic.
         fs::remove_dir_all(t.root()).expect("rm root");
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
-        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("empty emit");
+        // T-088-s4: synchronous sink — `try_recv`, not a bound.
+        let emit = rx.try_recv().expect("the batch handler emits synchronously");
         assert!(emit.files.is_empty());
         // A second batch on the same dead root: suppressed, still alive.
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
@@ -3565,9 +3761,10 @@ mod tests {
         // claiming "no docs/ found" over a directory that exists.
         fs::create_dir(t.root().join("docs")).expect("mkdir docs");
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        // T-088-s4: synchronous sink — `try_recv`, not a bound.
         let emit = rx
-            .recv_timeout(Duration::from_secs(5))
-            .expect("the arm transition must emit exactly once");
+            .try_recv()
+            .expect("the arm transition must emit exactly once, synchronously");
         assert!(emit.files.is_empty(), "the empty board, rendered live");
         assert_eq!(emit.skipped_total, 0);
         assert!(!emit.truncated);
@@ -3587,7 +3784,8 @@ mod tests {
         // And the pipeline is genuinely live: real content still emits.
         t.write("docs/ROADMAP.md", "# plan");
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
-        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("content emit");
+        // T-088-s4: synchronous sink — `try_recv`, not a bound.
+        let emit = rx.try_recv().expect("the batch handler emits synchronously");
         assert_eq!(
             emit.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
             vec!["docs/ROADMAP.md"]
@@ -3787,7 +3985,10 @@ mod tests {
             apply_genesis_pick(&state, t.root()),
             PickOutcome::Genesis { .. }
         ));
-        settle(); // let the sentinel arm land
+        // T-088-s4: no `settle()`. `apply_genesis_pick` goes through
+        // `WatchCtl::ArmGenesis`, whose `ack` is sent only after
+        // `arm_genesis` has armed the sentinel — the pick's own
+        // rendezvous, which this sleep was duplicating with a guess.
 
         // The interview writes its first artifact.
         t.write("docs/NORTH_STAR.md", "# the point of this project");
@@ -4002,6 +4203,18 @@ mod tests {
         // still holds, because it was never the bug. Nothing on disk
         // changed, so nothing emits; what changed is that the truth
         // arrived WITH the switch instead of never.
+        // T-088-s4: THIS ONE KEEPS ITS BOUND, and it is the exception the
+        // card names rather than an oversight. Every other emit wait in
+        // this module now ends on an EVENT — the emit, or the watcher's
+        // death. This wait asserts that NOTHING arrives, and there is no
+        // event for an absence: the only way to look for something that
+        // is not coming is to spend wall clock and find nothing. The
+        // `settle()` above is part of the same assertion.
+        //
+        // Note which way the load sensitivity runs, because it is the
+        // opposite of the defect this card fixed: a slower machine gives
+        // a spurious emit MORE time to appear, so this bound gets
+        // stricter under load, never flakier.
         settle();
         assert!(
             emits.recv_timeout(Duration::from_millis(1200)).is_err(),
