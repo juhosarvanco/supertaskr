@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -59,6 +61,19 @@ const ipc = vi.hoisted(() => ({
   emits: [] as { name: string; payload: unknown }[],
   status: { kind: "noProject" } as unknown,
   pickOutcome: { kind: "cancelled" } as unknown,
+  /** T-192: commands that NEVER ANSWER — the returned promise is neither
+   * resolved nor rejected. Constructed rather than described, because it
+   * is the one case a `catch` cannot reach: `listenParks` above is the
+   * same idea one boundary over, and this is it for `invoke`. */
+  parked: new Set<string>(),
+  /** Settle a parked command from the outside, so a body can hold one
+   * open and then let it answer. */
+  release: null as null | ((outcome: unknown) => void),
+  /** What `index_repo` answers when it is neither parked nor refusing. */
+  indexOutcome: { kind: "indexed" } as unknown,
+  /** Set to make `index_repo` REJECT — a refusal, which is a different
+   * thing from an absence and must stay one. */
+  indexRejects: null as null | Error,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -68,6 +83,17 @@ vi.mock("@tauri-apps/api/core", () => ({
       return ipc.invokeRejects
         ? Promise.reject(new Error("docs_snapshot: the command was refused"))
         : Promise.resolve(ipc.status);
+    }
+    if (ipc.parked.has(command)) {
+      // No `resolve` is ever called unless a body reaches for `release`.
+      return new Promise((resolve) => {
+        ipc.release = resolve;
+      });
+    }
+    if (command === "index_repo") {
+      return ipc.indexRejects
+        ? Promise.reject(ipc.indexRejects)
+        : Promise.resolve(ipc.indexOutcome);
     }
     return Promise.resolve(ipc.pickOutcome);
   },
@@ -137,6 +163,10 @@ async function freshStore(): Promise<StoreModule> {
   ipc.emits = [];
   ipc.status = { kind: "noProject" };
   ipc.pickOutcome = { kind: "cancelled" };
+  ipc.parked = new Set<string>();
+  ipc.release = null;
+  ipc.indexOutcome = { kind: "indexed" };
+  ipc.indexRejects = null;
   return import("../src/lib/watcher-store");
 }
 
@@ -1090,5 +1120,261 @@ describe("the failure reaches the LOG (criteria 6 and 7)", () => {
     window.__nputerShellHarness?.applyStartupFailure("subscribe", "refused");
     expect(store.getShellState().startupFailure?.step).toBe("subscribe");
     expect(ipc.emits, "no IPC in a browser, in either direction").toEqual([]);
+  });
+});
+
+// ---- T-192: the shell store's two latches and the answer bound ---------
+
+/**
+ * T-192 — THE LIVENESS BOUND, this store's half.
+ *
+ * THE DEFECT. `runIndexRepo` and `runPicker` both take a single-flight
+ * latch SYNCHRONOUSLY, `await invoke(...)` with no bound, and release in
+ * a `finally`. A `finally` runs when a promise SETTLES: a rejection is
+ * handled by the `catch` beside it, and an ABSENCE is not — the `await`
+ * never returns, the latch is never released, the early return refuses
+ * every later press, and the affordance is dead for the session with no
+ * error anywhere.
+ *
+ * THE TWO ARE NOT THE SAME DEFECT, and these bodies pin both halves of
+ * that. What decides it is what each command AWAITS, which is a fact
+ * about the Rust rather than about the identical TypeScript: `index_repo`
+ * is `spawn_blocking(run_index)` with no deadline and nobody on the other
+ * end, while the picker's one unbounded segment is a human holding a
+ * dialog open. So the index takes a BOUND and the picker deliberately
+ * takes none — see `runPicker`'s own site for that argument.
+ *
+ * These bodies drive the REAL exported wrappers, because the wrappers are
+ * where the defect lives.
+ */
+describe("a shell command that never answers is answered for (T-192)", () => {
+  it("the bound is derived from the indexer's OWN ceiling, and pinned by its own literal", async () => {
+    const store = await freshStore();
+
+    // THE NUMBER'S REASON, MADE CHECKABLE rather than only written down.
+    // `index_repo` has no Rust-side deadline to sit above — that is the
+    // whole reason this bound is not T-184's 30 s — so what it is derived
+    // from is the indexer's own stated performance ceiling.
+    const perf = readFileSync(
+      resolvePath("src-tauri/crates/nputer-index/tests/perf.rs"),
+      "utf8",
+    );
+    const cold = /cold_max\s*<\s*(\d+)/.exec(perf);
+    expect(cold, "the cold ceiling must be findable in perf.rs").not.toBeNull();
+    // The search's own control: a regex that matched the wrong thing, or a
+    // ceiling that moved, fails HERE rather than passing quietly below.
+    expect(Number(cold![1])).toBe(1500);
+    expect(store.INDEX_ANSWER_BOUND_MS).toBeGreaterThan(Number(cold![1]));
+
+    // …and pinned by its own literal too, because a body parametrised by
+    // the constant it checks cannot pin that constant (T-063 — the very
+    // trap `STARTUP_DEADLINE_MS` above was caught in).
+    expect(store.INDEX_ANSWER_BOUND_MS).toBe(15_000);
+
+    // IT IS A SECOND DEADLINE, NOT A SECOND SPELLING OF THE FIRST. If
+    // these ever collapse to one number, one of the two derivations has
+    // been abandoned without anyone saying so.
+    expect(store.INDEX_ANSWER_BOUND_MS).not.toBe(store.STARTUP_DEADLINE_MS);
+
+    // THE SAME TRAP, ONE FIELD OVER: every other body here compares
+    // against `UNANSWERED_INDEX_MESSAGE` rather than against its text, so
+    // none of them can notice the text changing — and the text is the half
+    // a user reads. Pinned by its literal, and pinned AGAINST the number
+    // beside it, which is the drift that actually happens.
+    expect(store.UNANSWERED_INDEX_MESSAGE).toContain(
+      `within ${store.INDEX_ANSWER_BOUND_MS / 1000} seconds`,
+    );
+    expect(store.UNANSWERED_INDEX_MESSAGE).toContain("within 15 seconds");
+    expect(store.UNANSWERED_INDEX_MESSAGE).toContain("re-indexing is safe");
+    // AND THE CLAUSE THAT MAKES THIS AN ABSENCE RATHER THAN A FAILURE.
+    // The lines above pin the message's NUMBER and nothing pinned its
+    // MEANING, so "the indexer FAILED within 15 seconds" — the exact
+    // blame this constant's own site says it avoids, and a contradiction
+    // of its own next sentence — passed all 1100 bodies. Assigned by the
+    // blind verdict's mutant N2.
+    expect(store.UNANSWERED_INDEX_MESSAGE).toContain("did not answer");
+  });
+
+  it("AN INDEX THAT NEVER ANSWERS SETTLES ANYWAY, and the button comes back", async () => {
+    const store = await freshStore();
+    // The command is PARKED: neither resolved nor rejected, which is the
+    // case a `catch` cannot reach. CONSTRUCTED, not described.
+    ipc.parked.add("index_repo");
+
+    vi.useFakeTimers();
+    try {
+      const pending = store.runIndexRepo();
+      await Promise.resolve();
+      // POSITIVE CONTROL A — the latch really was taken, so "released
+      // below" is a change of state rather than a description of one.
+      expect(store.getShellState().indexing, "the latch really is held").toBe(true);
+
+      // POSITIVE CONTROL B — one millisecond short of the bound, nothing
+      // has answered. Without this the body would pass over a bound of
+      // zero, or over a mock that quietly resolved.
+      await vi.advanceTimersByTimeAsync(store.INDEX_ANSWER_BOUND_MS - 1);
+      expect(
+        await Promise.race([pending, Promise.resolve("STILL PENDING" as const)]),
+        "the bound must not have fired yet",
+      ).toBe("STILL PENDING");
+      expect(store.getShellState().indexing, "and the latch is still held").toBe(true);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+
+      // THE CRITERION IN ONE LINE: the promise settled, so the `finally`
+      // ran and the latch is released — the map's "Re-index" button is
+      // `disabled={indexing}`, so this IS the button coming back.
+      expect(store.getShellState().indexing, "the latch is released").toBe(false);
+      // …and the user is TOLD. A latch that releases silently leaves them
+      // pressing a button that already failed once.
+      expect(store.getShellState().indexOutcome).toEqual({
+        kind: "error",
+        message: store.UNANSWERED_INDEX_MESSAGE,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a REJECTED index still reports the REFUSAL, never the bound", async () => {
+    // An absence and a refusal are different things, and the bound must
+    // not turn the second into the first — the existing `catch` keeps its
+    // exact meaning.
+    const store = await freshStore();
+    ipc.indexRejects = new Error("index_repo: the command was refused");
+
+    await store.runIndexRepo();
+
+    const outcome = store.getShellState().indexOutcome;
+    expect(outcome).toMatchObject({ kind: "error" });
+    expect((outcome as { message: string }).message).toContain("the command was refused");
+    expect((outcome as { message: string }).message).not.toBe(store.UNANSWERED_INDEX_MESSAGE);
+    expect(store.getShellState().indexing).toBe(false);
+  });
+
+  it("a HEALTHY index is untouched: the answer came from the COMMAND, no clock involved", async () => {
+    const store = await freshStore();
+    ipc.indexOutcome = {
+      kind: "indexed",
+      changed: true,
+      files: 7,
+      symbols: 11,
+      edges: 13,
+      truncated: false,
+      graphBytes: 4242,
+      durationMs: 17,
+      indexedAtMs: 1_700_000_000_000,
+    };
+
+    // Fake timers are installed and NEVER advanced. If the answer below
+    // came from the bound rather than from the command it could not arrive
+    // at all — which is what makes this the bound's discriminator rather
+    // than a restatement of the test above.
+    vi.useFakeTimers();
+    try {
+      await store.runIndexRepo();
+      // The command's own stats, not an error the bound synthesised.
+      expect(store.getShellState().indexOutcome).toEqual(ipc.indexOutcome);
+      expect(store.getShellState().indexing).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("THE BOUND'S TIMER IS CLEARED ON EVERY EXIT — the claim the site makes, held", async () => {
+    // WHY THIS BODY EXISTS (T-184's FINDING 2, met on its own lane and
+    // owed by this class): the site claims the timer is cleared on every
+    // exit, and nothing else here can red that claim — `Promise.race` has
+    // already settled by then, so a surviving timer changes no OUTCOME and
+    // every other body passes either way. A guard whose failure looks
+    // exactly like success is this card's own subject, pointed at the card.
+    //
+    // The count is asserted as a DELTA against the moment before the call,
+    // never against zero, so it measures THIS bound's timer rather than
+    // the store's ambient state.
+
+    // EXIT ONE — the command answers.
+    {
+      const store = await freshStore();
+      vi.useFakeTimers();
+      try {
+        const before = vi.getTimerCount();
+
+        // POSITIVE CONTROL, and it is what makes the assertion below mean
+        // anything: the bound really does ARM a timer. Without it, a bound
+        // that never armed one would satisfy "no timer is left behind".
+        ipc.parked.add("index_repo");
+        const pending = store.runIndexRepo();
+        await Promise.resolve();
+        expect(vi.getTimerCount(), "the bound must really arm a timer").toBe(before + 1);
+
+        ipc.release!({ kind: "indexed" });
+        await pending;
+        expect(vi.getTimerCount(), "an answered command leaves no timer behind").toBe(before);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+
+    // EXIT TWO — the command throws. A rejection leaves through the same
+    // `finally`, and it is the exit a `try`/`catch` around the race would
+    // have missed. It kills no mutant exit one misses TODAY — there is one
+    // cleanup site and both exits pass through it — and it earns its place
+    // against the refactor that splits the cleanup out of the `finally`,
+    // which is the plausible future edit a single-exit body waves through.
+    {
+      const store = await freshStore();
+      vi.useFakeTimers();
+      try {
+        const before = vi.getTimerCount();
+        ipc.indexRejects = new Error("the boundary said no");
+        await store.runIndexRepo();
+        expect(store.getShellState().indexOutcome).toMatchObject({ kind: "error" });
+        expect(vi.getTimerCount(), "a rejected command leaves no timer behind").toBe(before);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  });
+
+  it("THE PICKER IS DELIBERATELY NOT BOUNDED, and this body is that decision", async () => {
+    // T-192 criterion 4, recorded as a body rather than only as prose, so
+    // that adding a bound here has to come past this test and re-read the
+    // reason at `runPicker`'s site. The picker's one unbounded segment is
+    // a native dialog standing open, i.e. a HUMAN being asked a question;
+    // bounding it would fire while that dialog is on screen, tell the user
+    // the app did not answer when it is waiting for THEM, and release this
+    // latch while Rust still holds its own — so the next press would get
+    // `Busy`, which `reducePickOutcome` maps to `prev`: a button that
+    // silently does nothing.
+    const store = await freshStore();
+
+    // POSITIVE CONTROL — the same fixture, NOT parked, really does settle
+    // and really does release the latch. Without this, "still pending"
+    // below is satisfied by a picker that never ran at all.
+    ipc.pickOutcome = { kind: "cancelled" };
+    await store.pickProjectFolder();
+    expect(store.getShellState().picking, "an answering pick releases the latch").toBe(false);
+
+    ipc.parked.add("pick_project_folder");
+    vi.useFakeTimers();
+    try {
+      const pending = store.pickProjectFolder();
+      await Promise.resolve();
+      expect(store.getShellState().picking, "the latch is taken").toBe(true);
+
+      // Well past the index bound: whatever governs the picker, it is not
+      // that number, and it is not any number.
+      await vi.advanceTimersByTimeAsync(store.INDEX_ANSWER_BOUND_MS * 4);
+      expect(
+        await Promise.race([pending, Promise.resolve("STILL PENDING" as const)]),
+        "no bound fires on the picker — the human is still deciding",
+      ).toBe("STILL PENDING");
+      expect(store.getShellState().picking, "and the latch stays with the dialog").toBe(true);
+      expect(store.getShellState().rejectedPick, "nothing was reported as a failure").toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
