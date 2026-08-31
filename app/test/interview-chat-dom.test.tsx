@@ -1576,9 +1576,26 @@ describe("the ending, and the footer that used to lie about it (T-171)", () => {
     );
   }
 
-  /** Put the store back into flight over the turn that already settled. */
+  /**
+   * Put the store back into flight over a turn the webview holds no
+   * events for.
+   *
+   * **T-191: THIS NAMED `turn: 1` AND THAT ROUTE NO LONGER EXISTS.**
+   * `T-184` gave the store a sequence guard keyed on
+   * `GenesisTurn.status`, so a status pulled for a turn that has already
+   * SETTLED is refused — which is the fix working, and it took this
+   * fixture's own positive control down with it (*"the fixture must
+   * actually reproduce the stranded claim"* went false).
+   *
+   * The defect this body renders is still reachable, because
+   * `settledTurn` can only refuse a turn it has seen settle: **turn 2 has
+   * no events here**, so the store arms over it while the RENDERED turn 1
+   * has landed. The screen must still refuse — that is what this body
+   * pins, and **the strand is a different turn number rather than a
+   * different idea.**
+   */
   async function strandTheClaim(): Promise<void> {
-    ipc.outcomes.set("genesis_status", status({ phase: "running", turn: 1 }));
+    ipc.outcomes.set("genesis_status", status({ phase: "running", turn: 2 }));
     await flush(async () => {
       await store.refreshGenesisStatus();
     });

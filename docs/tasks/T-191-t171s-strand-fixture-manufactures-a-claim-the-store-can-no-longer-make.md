@@ -1,7 +1,12 @@
 ---
 id: T-191
 title: T-171's strand fixture manufactures its claim by the exact route T-184 closed, so the body now fails on its own positive control — and the screen half of T-184's end-to-end criterion has nowhere else to live
-status: suggested
+feature: F-03
+milestone: 4
+priority: 2
+size: S
+status: done
+blocked_by: []
 suggested_by: "executor claude-opus-5@subagent @T-184, routed from inside the lane; the red is measured at both refs rather than predicted"
 touches: [app-interview]
 ---

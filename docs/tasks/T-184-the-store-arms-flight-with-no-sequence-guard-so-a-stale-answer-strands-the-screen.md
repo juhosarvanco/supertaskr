@@ -5,13 +5,13 @@ feature: F-03
 milestone: 4
 priority: 2
 size: M
-status: verifying
+status: done
 blocked_by: []
 suggested_by: "executor claude-opus-5@subagent @T-171, routed from inside the lane; its blind verifier judged this one LOAD-BEARING and said it should be carded"
 touches: [app-agent]
 absorbs: [T-183]
 builder:
-review:
+review: independent
 ---
 
 **ROUTED OUT OF `T-171`, AND ITS VERIFIER SINGLED THIS ONE OUT.** Of the

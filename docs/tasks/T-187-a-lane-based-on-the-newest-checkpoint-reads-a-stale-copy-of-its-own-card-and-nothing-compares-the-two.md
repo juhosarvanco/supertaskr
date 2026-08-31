@@ -142,3 +142,40 @@ an id derived from something lane-local cannot collide, exactly as a
 scratch port derived from the card id cannot. A check that compares the
 lane's card against main's would catch the first; only a construction
 closes the second.
+
+## CORRECTION — "a construction beats a check" IS FALSE FOR THE ID CASE, falsified by its own second instance
+
+The paragraph above closes with the remedy shape this project usually
+prefers: *"an id derived from something lane-local cannot collide,
+exactly as a scratch port derived from the card id cannot."* **`T-186`
+falsified that the hard way, by colliding a second time after adopting
+it.**
+
+Its own account, verified at this seat:
+
+> I had concluded "derive a new card's id against the integration tip
+> when you commit it." That is exactly what could not have caught
+> `T-190` — it belongs to a live lane that hasn't merged, so it is
+> **absent from main by construction**. `T-190` appears **0 times** in my
+> merged-tree forecast. The id I would have certified free genuinely IS
+> free in main, and still collides.
+
+**The disanalogy with the scratch port is the whole point.** A port is
+derived from the card id, **which the lane already holds**. A NEW card's
+id has no such seed — there is nothing lane-local to derive it from, main
+lacks every live lane's ids, and no lane may read a sibling's tree. **So
+no construction is available to a lane at all**, and the sentence above
+is wrong about this surface while remaining right about the base-commit
+surface beside it.
+
+**The answer is an ALLOCATOR, and only the dispatching seat can be one**:
+it hands a lane its routed-card ids at dispatch, or the lane files with
+no id and the seat assigns at merge. Adopted by the architect/integrator
+seat on 2026-08-31 after **five** collisions in one night.
+
+**And the backstop matters because the primary signal is absent.**
+`git merge-tree` reports **no conflict** for two cards carrying the same
+`id:` under different filenames, so a duplicate would land silently. A
+duplicate-`id:` sweep over the MERGED tree — read from the authoritative
+field, never from filenames, and run once against a planted positive so
+it cannot be vacuous — is what catches the ones that slip.
