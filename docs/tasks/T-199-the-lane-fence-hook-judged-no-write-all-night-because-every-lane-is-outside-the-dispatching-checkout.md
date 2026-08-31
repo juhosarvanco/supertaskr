@@ -119,3 +119,45 @@ attacked its own fence** could tell them apart, and one did.
 measured), `T-189` (self-integration and the concurrent ceiling, another
 pair of individually-right rules that do not name each other), and
 `method/lane-protocol.md` rule 3, which is correct and stays.
+
+## THE FIX HAS A DIRECTION NOW — judge by the TARGET, not the writer's cwd
+
+Folded in from the outgoing architect seat's fix plan (relayed
+2026-08-31, approved in direction by @human), and **verified at this ref
+before folding**:
+
+`lane-fence.mjs:870` —
+
+    export function decide(request) {
+      const cwd = typeof request.cwd === "string" && request.cwd !== ""
+        ? request.cwd : process.cwd();
+
+**The root comes from where the WRITER SITS.** That is the whole defect in
+one line: limit 2 then asks "is the target outside *that*", and for a
+sibling lane worktree the answer is always yes.
+
+**The redesign**: `decide()` resolves the **TARGET path's** repository
+root and applies **that** repository's lane fences, regardless of where
+the writer sits. A write into `/Users/ujju/Projects/nputer-T-NNN` is then
+judged by nputer's fences because the TARGET belongs to nputer — which is
+what limit 2's own intent (*"do not police unrelated files on the
+machine"*) actually wanted.
+
+**The seed already exists**: the manifest carries `"worktree"` naming the
+lane's own root, so the mapping from target → lane → fence needs no new
+derivation.
+
+**And this seat's session shape is why the limit became the common case
+rather than an edge**: a nested dispatching checkout plus sibling lane
+worktrees, which `method/lane-protocol.md` rule 3 requires. The hook's
+declared limit was written for an exception and met the default.
+
+## FOLDED IN: the shared manifest reader
+
+Also from that plan, and this seat supplied the instance: **the hook
+should EXPORT the manifest reader** rather than leaving every consumer to
+open `.nputer/lane-fence.json` itself. This seat read it with `.allow`
+when the key is `paths` and got **empty fences back for three lanes** —
+a reader that answers "no paths" is indistinguishable from a fence that
+carries none, which is this card's own subject arriving in its own
+client.
