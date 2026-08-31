@@ -377,11 +377,13 @@ FIFO ordering the rendezvous rests on is identical in both builds.
 ### THE WAIT TAXONOMY — which waits are which, and why (criterion 2)
 
 Census re-derived at my own refs: **before = `dd6b723`**, **after =
-`293915f`**.
+`e41ac9d`**. Counts EXCLUDE the `fn` definition line **and** `///` doc
+lines that mention the symbol — stating the exclusions is what correction
+3 below is about.
 
 | wait | before | after | disposition |
 |---|---|---|---|
-| `recv_until` helper (`EMIT_BUDGET` 10 s) | 21 call sites / 11 bodies | 21 call sites / 11 bodies | `recv_timeout` → **`recv()`**; `EMIT_BUDGET` **deleted, not widened** |
+| `recv_until` helper (`EMIT_BUDGET` 10 s) | **20** call sites / 11 bodies | **20** call sites / 11 bodies | `recv_timeout(EMIT_BUDGET)` → `recv_timeout(SILENCE_BACKSTOP)`; the 10 s **deadline deleted, not widened**, and replaced by a silence **backstop** that the happy path cannot reach |
 | body-level `recv_timeout` on a **synchronous** sink | 4 (at 5 s) | 0 | → **`try_recv()`** — strictly stronger |
 | body-level `recv_timeout`, failure-mode guards | 2 (10 s, 5 s) | 2 | **KEEP** — classified in the diff |
 | the deliberate **NEGATIVE** wait | 1 (1200 ms) | 1 | **KEEP** — the card's own exception |
@@ -415,15 +417,60 @@ stronger — it now pins the synchronous contract — and it is the spelling
 those same bodies already use for their negative side
 (`assert!(rx.try_recv().is_err())`).
 
-### WHAT THIS COSTS, stated rather than left to be found
+### THE COST I GOT WRONG, AND THE CORRECTION THE BLIND VERIFIER ASSIGNED
 
-A watcher that is **alive but permanently silent** now hangs a positive
-wait instead of failing it. Accepted, for two reasons: the window that
-actually produced silence is closed by the barrier, so reaching it means
-the watcher is broken rather than late; and the loud failure a real
-regression most often takes — a panicking or exiting watcher thread —
-still lands immediately via the channel disconnect, **measured at 0.02 s
-against the 10 s the deleted deadline needed** (drill D1 below).
+**This section previously argued that hanging was an acceptable price.
+It was not, and the verifier was right to reject it.** The paragraph
+that stood here said a watcher alive but permanently silent "now hangs a
+positive wait instead of failing it. Accepted, for two reasons…". Its
+mutant M-A measured what that actually costs: **no name, no counts, no
+output at all**, across **20 call sites in 11 bodies**, where the same
+mutant had previously failed in about 11 seconds WITH a message. **A bad
+failure mode was traded for a worse one, and that is a regression this
+fix introduced.**
+
+**The sharpest part of the finding is that the argument against it was
+already in my own diff.** Two hundred lines below `recv_until`, this lane
+kept `entered_rx` bounded for precisely this reason — *"`recv()` would be
+a rendezvous, but the regression it guards leaves `entered_tx` alive, so
+the suite would HANG instead of failing"* — and then did not apply that
+reasoning to its own helper.
+
+**THE REPAIR: `SILENCE_BACKSTOP`, and the discriminator that keeps it
+from being the deadline this card deletes.** A number here reads as the
+card being ignored unless the distinction is made at the site, so it is
+made at the site as well as here:
+
+| | the deleted `EMIT_BUDGET` | `SILENCE_BACKSTOP` |
+|---|---|---|
+| calibrated as | *enough time for an emit on a normal machine* — **load-calibrated** | *unreachable by any run that is working at all* |
+| value | 10 s = 40x the debounce | 120 s = **480x** the debounce, ~28x a healthy lib suite |
+| measures | **total elapsed** in the wait | **SILENCE** — every arriving emit restarts the window |
+| a slower machine | **exhausts it → a GREEN test goes RED** | never approaches it |
+| what firing means | ambiguous: slow, or broken? | **unambiguous: broken.** The arm is rendezvoused, so nothing at all for two minutes is not lateness |
+
+**A bound the happy path can reach is a deadline; a bound that can only
+ever name a hang is a diagnostic.** The first is what this card refuses
+twice. The second is what `entered_rx` already was.
+
+The **Disconnected arm stays separate and immediate** — the backstop must
+never swallow it — and that was re-drilled rather than assumed: **0.03 s**
+(D1b), unchanged from before the backstop existed.
+
+**And the backstop was proved to FIRE rather than assumed to** (drill
+M-A, the verifier's own mutant shape): the same alive-but-silent watcher
+that produced no output now fails at **120.02 s** with the body named and
+the counts printed, saying in as many words where NOT to look:
+
+    BACKSTOP: NOTHING arrived on this channel for 120s while waiting for an
+    emit where the tree carries `startup v2` (120.010021542s in this wait).
+    THIS IS NOT A SLOW MACHINE — the startup arm is rendezvoused and this
+    window is 480x the debounce, so a watcher this silent is a BROKEN one.
+    Look at the watcher thread and the notify backend, not at machine load.
+    Emits seen meanwhile: []
+
+The `480x` is computed from the two constants at runtime, so it cannot go
+stale if either moves.
 
 ### EVIDENCE
 
@@ -503,12 +550,39 @@ to be ONE.* The count is **ONE**:
 `docs_watch::tests::startup_arm_watches_the_initial_root`. That is the
 non-duplication proof, in the reporter's own output.
 
+**THE TWO DRILLS THE ASSIGNED CORRECTION ADDED**, both at `e41ac9d`:
+
+| drill | mutation (code under test) | asks | exit | result | wall |
+|---|---|---|---|---|---|
+| **D1b** | `run_watcher` returns before serving its loop (D1 re-run) | *did the backstop swallow the immediate disconnect arm?* | 101 | **0 / 1 FAILED** — *"watcher thread died before answering the barrier: RecvError"* | **0.03 s — unchanged** |
+| **M-A** | `handle_fs_batch` stops emitting, watcher stays ALIVE | *does a silent watcher now have a NAME?* | 101 | **0 / 1 FAILED, body named, counts printed** | **120.02 s** |
+
+**D1b is the regression check on the repair itself.** A backstop that
+quietly absorbed the disconnect arm would have turned a 0.02 s named
+failure into a two-minute one; it did not, and that was measured rather
+than reasoned.
+
+**M-A is the verifier's own mutant shape, re-run against the repair.**
+Before the correction it produced no name, no counts and no output. It
+now prints the message quoted above, and the run FAILS at 120.02 s — the
+backstop is live rather than a constant nobody reaches.
+
 **Restoration, proven by hash rather than asserted** (sha256 of
 `app/src-tauri/src/docs_watch.rs`, before mutation and after restore,
 identical in every drill):
 
     at 293915f: 5d21d3a9fc2e4ada4db3ee731db2b306f1e2c654b0022de42a0d87e07559b637
     at dd6b723: 5ea50baa05178773c8c9a46a9126029f79120e24d782defd0b74dbbbcfaad8ff
+    at e41ac9d: 4ab251521a832eca2f00af679df1ae258eb401c48f78eb14942718ab729942b0
+
+Each drill ran in a detached scratch worktree at a named commit with its
+own `CARGO_TARGET_DIR` inside itself; the worktree was removed after each
+round, so the machine-scoped worktree list is back to what it was.
+
+**The suite after the correction: `cargo test --no-fail-fast`, exit 0,
+18 targets, 601 passed / 0 failed / 4 ignored, lib `finished in`
+4.34 s** — the backstop changes no healthy timing, which is the whole
+claim about its being unreachable.
 
 ### WHERE THE CARD AND THE BRIEF WERE WRONG (the correction clause)
 
@@ -523,9 +597,28 @@ identical in every drill):
    `recv_emit` no longer exists; the helper is `recv_until`. The card's
    criterion survived the landing intact, because T-153 deliberately kept
    the wall clock (*"bounded by the existing timeout"*, its own finding 1).
-3. **The census moved: the card says "20 call sites across 11 bodies";
-   at `dd6b723` it is 21 call sites across the same 11 bodies.** T-153
-   renamed the helper and added one site.
+3. **RETRACTED — THIS CORRECTION WAS ITSELF WRONG AND THE CARD WAS
+   RIGHT.** It read: *"the census moved: the card says 20 call sites
+   across 11 bodies; at `dd6b723` it is 21 across the same 11 bodies —
+   T-153 renamed the helper and added one site."* **It is 20 at base and
+   20 at tip, unchanged by T-153.** The blind verifier measured it three
+   ways and assigned the correction; it was re-measured three ways here
+   and agrees. **The error was a grep that counted its own
+   documentation**: `grep -c 'recv_until('` returns **22** at both refs,
+   and I subtracted only the `fn recv_until(` definition to reach 21 —
+   but a DOC COMMENT line carries the string too, `` `recv_until(pred)` ``,
+   inside the sentence T-153 left explaining the helper. Excluding the
+   definition and the `///` lines gives **20** at both refs:
+
+       git show dd6b723:app/src-tauri/src/docs_watch.rs \
+         | grep 'recv_until(' | grep -v 'fn recv_until(' \
+         | grep -v '^\s*///' | wc -l        # -> 20
+
+   **The lesson is the one this card already teaches through its own two
+   retractions**: a count is a measurement, and a measurement needs its
+   exclusions stated. A raw `grep -c` over a file that DOCUMENTS the
+   symbol it counts is measuring the prose as well as the code — and it
+   reads as decisive precisely because it is a number.
 4. **The card treats its "six further `recv_timeout` waits" as one
    class; they are two.** Four are on a synchronous path where the emit
    is already queued — see the taxonomy above.
