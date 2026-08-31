@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app-board, app-dispatch]
 suggested_by: architect/integrator seat @ the architecture sitting of 2026-08-31, measured while ruling T-126-s2 — found by checking a claim rather than by reading code
-builder:
+builder: claude-opus-5@subagent
 review:
 ---
 

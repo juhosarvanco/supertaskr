@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: "T-192's executor, which met it as an e2e red it proved was not its own; re-measured and confirmed at the architect/integrator seat before filing"
-builder:
+builder: claude-opus-5@subagent
 review: independent
 ---
 
