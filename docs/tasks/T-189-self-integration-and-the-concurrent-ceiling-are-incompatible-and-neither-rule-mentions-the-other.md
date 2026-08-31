@@ -400,3 +400,184 @@ do not enumerate the other rule, state the CONDITION the second rule
 makes true or false, so a reader who never opens the other file still
 gets the right answer. Fixing the setup-order instance is outside this
 fence and is being filed separately by the coordinating seat.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5 @V-189 (verifier, blind two-phase):
+**APPROVED.** All five acceptance criteria met, with AC 4's body
+correctly ROUTED rather than built. Every figure below was re-derived in
+`/Users/ujju/Projects/nputer-V-189` (detached, own `CARGO_TARGET_DIR`,
+own port) at **`59a6d32`** unless another ref is named.
+
+**PHASE 1 WAS KEPT AND IS AUDITABLE.** The attack set was written from
+the card at `2eb87f7` and sealed before the diff, the lane branch, the
+notes or the executor's report were opened —
+sha256 `328180c1a8479cfa4d71e8ffb91c8e398342d7aa8094b23ae63f037f74f43629`.
+The card's headings were checked before its body: no executor
+implementation notes were present at the base ref, so the blindness was
+structural and not merely intended.
+
+### The resolution is right, and it is right on the axis I attacked hardest
+
+My strongest pre-diff attack was that a rule keyed to the LANE COUNT
+authorises self-integration in the maximum-hazard state — zero lanes on
+the board, an integrator or architect live in the checkout — because the
+LANES command cannot return a checkout that is not on a task branch.
+Derived at `2eb87f7`: the command returns **6** lanes out of **17**
+worktrees; **11 are invisible to it**, including
+`/Users/ujju/Projects/nputer` on `main`, the integration checkout itself.
+
+The card PROPOSED solitude. **The lane refused it on that measurement and
+keyed the rule to holding the integration checkout instead** — a
+condition on the world whose complement is one holder, decided at
+dispatch, defaulting to refusal. That is the shape rule 4's own prior
+lesson prescribes, and it satisfies the same file's *"a construction
+beats a check"*. The strongest attack in my set is the argument the fix
+is built on.
+
+### Criteria
+
+- **AC 1 — MET.** Stated as a condition, not an enumeration, in
+  `lane-protocol.md` rules 4 and 6 and both ceremony cells.
+- **AC 2 — MET on its second branch.** One condition covers both halves
+  and rule 4 says WHY (both are acts in one checkout) and how they differ
+  (merges SERIALISE, checkpoints CORRUPT). The *"one per SITTING"*
+  consequence checks out: the record at `2eb87f7` carries four merges.
+- **AC 3 — MET.** The override's home was verified against its cited
+  authority, `TASK-FORMAT.md:563`, *"THE OVERRIDE IS PROSE IN THE CARD
+  BODY AND NOTHING ELSE."* Faithful citation, no fourth statement. The
+  better half of the answer is that a dispatcher's *"do not merge"* is
+  now a TRANSCRIPTION rather than an override at all.
+- **AC 4 — ROUTED, NOT BUILT, AND THAT IS THE CORRECT DISPOSITION.**
+  See below.
+- **AC 5 — MET.** Headless; `tools/e2e` green at the tip.
+
+### Independent gate runs at `59a6d32` — every lane figure reproduced
+
+| command | result |
+|---|---|
+| `NPUTER_E2E_PORT=15189 npm test` (`tools/e2e/`) | **404 passed**, exit 0 |
+| `cargo test` (`app/src-tauri/`) | exit 0, **18** `test result: ok`, **0** FAILED |
+| `npx vitest run` (`lib/parser/`) | **344 passed**, exit 0 |
+| `npm test` (`app/`) | **50 files / 1105 tests**, exit 0 |
+| `node tools/method-evals/run.mjs` · `--selftest` | exit 0 · exit 0 |
+| `docs-gate.mjs` — 3 method paths | exit **0** |
+| `docs-gate.mjs` — 3 + this card | exit **1** = VERDICT |
+
+The docs gate's exit 1 was verified as a verdict and not a crash, by the
+lane's own discriminator: **7** `docs-gate:` derivation lines and **0**
+stack-trace frames. `npm ci` was run in `tools/e2e/` first, per the trap
+the lane's addendum documents. Build order `lib/parser` → `app` was
+required and run; the e2e preflight refuses without it, and that refusal
+also exits 1.
+
+### Reachability — confirmed, and more precisely than the brief I was given
+
+I was told the fix "had to land in rule 6 because a fix in rule 4 would
+have changed nothing any seat sees." That overstates it, and the lane
+does not make the error. Measured by running the assembler at
+`59a6d32`, the law reaches a real brief by **four** routes:
+
+- **ROW 10 — Prohibitions** carries rule 4 whole, including the entire
+  STANDING-NOT-THE-SEAT clause.
+- **ROW 11 — The deliverable** carries both amended ceremony cells and
+  the rule-6 paragraph.
+
+So rule 4 IS reachable — under ROW 10. What a rule-4-only fix would have
+left unchanged is **ROW 11**, the row that answers whether to merge, and
+that is exactly what the lane's notes claim. Reachable, not relocated.
+
+### The renumbering hazard I feared did not fire
+
+`numberedStep` (`dispatch-brief.mjs:400`) matches the first line opening
+`"N. "` with no content guard, so a rule inserted before 6 would silently
+re-point ROW 11 at the fence rule while its heading still read *"who
+merges and who removes the worktree"* — every future brief corrupted,
+every gate green. **The lane inserted no numbered rule.** Verified at the
+tip: `lane-protocol.md` still carries rules 1–7, rule 4 at line 51 and
+rule 6 at line 340. `T-189-s1`'s fourth criterion already asks a body to
+catch this class, which is the right place for it.
+
+The table parse survives too: only the Pipeline cells moved. The Size
+column and row ORDER are load-bearing — `session-economics.spec.ts` reads
+the table's FIRST row as the lightest tier and `brief.spec.ts:880`
+requires more than one S row — and both are green.
+
+### The drill, re-run independently and against more instruments
+
+The lane measured its mutant against `brief.mjs` alone. I re-ran it
+across every instrument class. Stripping the eight-line rule-6 clause
+(`git diff --numstat` = 8 deletions; clause occurrences **1 → 0**):
+
+- `brief.mjs` exit **0**, the answer's occurrence in ROW 11 **1 → 0**
+- `method-evals run.mjs` exit **0**; `--selftest` exit **0**
+- `docs-gate.mjs` exit **0**
+- **full `tools/e2e` suite: 404 passed, exit 0** — identical to the tip
+
+**Not one of 404 bodies, nor any gate, nor the assembler reds when the
+operative clause is deleted.** Restored naming both sides; working file
+and `HEAD` blob both
+`0b3dec1e18284bcf2c1e0e434326f52de764b373086670eeb202f5c6f9c55494`, with
+an empty `git diff --stat` as the companion. The law is UNPINNED, and the
+integrator should carry that fact forward: `T-189-s1` is the card that
+closes it.
+
+### Why the unpinned law is not a rejection
+
+`method/roles/executor.md` rules it directly: *"A criterion that cannot
+be built inside the fence is NOT built. Record it, route it as a
+suggestion naming the fence it needs, and build the rest. Widening the
+fence from inside the lane is the one repair this role may never make."*
+`lane-protocol.md` rule 5 says the same of work reaching outside
+`touches:` — *"a dispatch error, not a licence"*.
+
+This card's fence is `[method/, docs/CONVENTIONS.md]`. Every location a
+body can live in — `tools/e2e/tests/` — is outside it. **AC 4 therefore
+asked for something the card's own fence forbids, which makes it a
+DISPATCH defect and not a build defect.** The lane recorded it, routed it
+naming the exact path and the exact neighbouring body, and measured the
+gap rather than asserting it. Rejecting would punish a lane for obeying
+two role files and would require of it the one repair its role may never
+make.
+
+### Conduct
+
+Not merged: `main` does not contain `59a6d32`. Status `verifying`,
+verifier fields left empty, worktree standing — correct for the row and
+correct under the lane's own new rule, which did not grant it the seat.
+The ceremony ROW was re-derived rather than taken from the dispatch, and
+it is not the row the rule of thumb gives: `method/` REACHES a
+`KIT_FILES` entry, so this card is *touching shipped code* and owes a
+verifier. I reached that independently in phase 1 and it holds. No write
+landed outside the fence; `docs/CONVENTIONS.md` was in the fence and
+correctly left alone (`self-integrat` appears **0** times in it).
+
+### Findings that are NOT failures — filed, not blocking
+
+- **`T-189-s3`** — the holder declaration has no carrier and no expiry.
+  ROW 11 emits no holder line and no field carries one, so the
+  declaration is still hand-written; and on the verifier row the grant is
+  issued at dispatch and used after a verdict with no re-confirmation
+  point. Materially mitigated by the fail-safe default, and **not a
+  regression**: the new law only ever narrows permission relative to the
+  old one, which is why it is a suggestion.
+- **`T-189-s4`** — the kit ships the condition without its decision
+  procedure. `TASK-FORMAT.md` is a `KIT_FILES` entry and
+  `lane-protocol.md` is not, so a scaffolded project reads *"while it
+  holds the integration checkout"* with no rule telling it the holder is
+  declared rather than inferred. The obvious way to answer it from the
+  cell alone is to look around — the solitude proxy this card refused.
+  The dangling citation predates `T-189`, which strictly improved the
+  shipped bytes.
+- **For triage, no new card:** the diff adds a THIRD statement of the
+  `3–5` ceiling at `lane-protocol.md:186`. It is attributed to
+  `orchestrator.md` and the argument does not depend on the number, so it
+  is minor — but it falls inside `T-189-s2`'s scope, which that card
+  should absorb rather than leave behind.
+
+### Gate re-run at my own tip
+
+This verdict and the two suggestions are commits, and prose is a code
+input here. The figures in the table above are stamped at `59a6d32` and
+are NOT re-derived by that run; the re-run answers only whether the tip
+this verdict created is green.
