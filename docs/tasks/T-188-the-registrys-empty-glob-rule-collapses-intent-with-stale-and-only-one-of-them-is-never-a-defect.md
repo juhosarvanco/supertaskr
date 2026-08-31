@@ -115,3 +115,23 @@ it has simply never been pointed at the registry.
 zero is indistinguishable from a clean result — the same shape), and
 `T-167-s8` (a rule a careful hand breaks is a trigger's job; here the
 careful hand was @human's, at a triage, nine merges late).
+
+## THE HISTORICAL FIXTURE IS REACHABLE — verified, so the card's conditional is now definite
+
+The criterion above says the C-15 shim instance shall be the fixture *"if
+it is reachable"*. **It is**, checked at this seat rather than left for
+the lane to discover:
+
+- `0fa83da` is a reachable commit object.
+- Its diff deletes `app/src-tauri/tests/dispatch_lanes.rs` — **36 lines**.
+- `git cat-file -e 0fa83da^:app/src-tauri/tests/dispatch_lanes.rs`
+  succeeds, so the file's content is intact at the parent.
+
+So the one measured instance of a stale glob can be reconstructed exactly:
+the declared glob at the time, the file it matched, the commit that
+removed the file, and the nine merges over which the census stayed
+silent. **A check that cannot red against this fixture is not worth
+landing**, and the lane can now hold itself to that without first
+investigating whether it can.
+
+**The `if` is struck: the fixture SHALL be used.**
