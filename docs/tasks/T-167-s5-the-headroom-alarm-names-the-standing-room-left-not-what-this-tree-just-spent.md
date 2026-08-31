@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 7
 size: S
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-167-s2
 blocked_by: []
 touches: [crate-index]
@@ -169,5 +169,171 @@ which is a citation and not a write claim; the tool's own note says a
 path under no component is never refused on.
 
 ## Implementation notes
+
+Built at base `0a8dd5861f4620885d7040dea56f3e2ad6967502` (derived
+`git merge-base main HEAD`, which equalled HEAD — the lane was cut and
+not yet advanced). Implementation `4133ab8`, +429/-1 on one file.
+
+### WHERE THE CARD IS WRONG, and it is the card's own live premise
+
+**THE COMMITTED GRAPH IS NOT TRUNCATING AT THIS BASE.** The card's
+"THE DEGRADATION HALF IS LIVE AT THIS BASE, AND DERIVABLE WITHOUT A
+BUILD" section was measured at `@ 51fa31c0964c`, and every figure in it
+has moved. Re-derived at `0a8dd58` with the card's own command:
+
+    perl -0777 -ne 'print $1 if /"stats"\s*:\s*(\{[^}]*\})/' \
+      docs/architecture/graph.json
+    -> "files": 200, "symbols": 2456, "edges": 2379
+
+`truncated_symbols` and `truncated_files` are **ABSENT** — they are
+`skip_serializing_if = "Option::is_none"`, so their absence IS the
+emitter's record that it dropped nothing. `wc -c` is `1153961` against a
+budget of `2_145_959` (`IndexOptions::default`, lib.rs), leaving
+**991 486 bytes** — about seventy times the tripwire. T-140-s4 raised
+the budget between the card's ref and this one and unclamped the graph.
+
+**This does not weaken a single acceptance criterion**, and the card is
+right that it does not need to: the criteria are about what the BLOCK
+does in each state, and the states are reachable through `IndexOptions`
+in a fixture. What it does mean is that the lane could not use the live
+tree as its own demonstration, so every state below is measured on a
+fixture driven through the real `index()`/`apply_budget`, never a
+hand-built `CheckReport`.
+
+**THE CARD'S COST ESTIMATE IS ALSO LOW, in a way worth naming.** It says
+"one conditional clause, no new symbol". The SPEND half is that. The
+DROP half cannot be: `CheckReport` carried no truncation information at
+all — `fresh_stats` is `(files, symbols, edges)` — so the emitter's own
+record had to be plumbed into the struct as two new fields. That is
+still entirely inside the fence (`CheckReport` is constructed only in
+`check.rs`; derived, not assumed — `git grep CheckReport` over
+`app/src-tauri` returns nothing outside that file at this ref).
+
+### THE UNIT, stated because this family has got it wrong three times
+
+`T-194` headed one *complete* while omitting a refusal, `T-196` lettered
+five where eleven mechanisms existed, `T-208` counted four constructs
+where six existed — a unit MISMATCH rather than an omission. So:
+
+**THE DROP CLAUSE'S PRINTED COUNT IS IN FILES — files whose symbol array
+was emptied — AND NEVER IN SYMBOLS.** `apply_budget` records
+`truncated_files = all_dropped.len()`, a count of files; the number of
+symbols inside those arrays is written down nowhere and cannot be
+recovered from the emitted document, because a file with an empty
+`symbols` array is indistinguishable from a file that never had any. The
+unit is in the printed line itself (`unit: FILES whose array was
+emptied, never symbols`) and in the field's doc comment, so a reader
+cannot take it for the symbol count the absorbed half's prose implies
+("121 symbols VANISHED").
+
+**AND THE COUNT AND THE FLAG ARE TWO FACTS, NOT ONE.** `apply_budget`'s
+floor arm sets `truncated_symbols` while leaving `truncated_files`
+unset (emit.rs — the `costs.is_empty()` branch guards the count with
+`if !all_dropped.is_empty()`). So `truncated_files == 0` does NOT imply
+an untruncated emit, and a clause reading only the count would go silent
+in the worst state of all. Both are carried; the clause fires on either;
+the floor case gets its own sentence rather than printing "0 files".
+
+### The four criteria, and how each was measured
+
+1. **Drop prints whether or not the emit is over budget.** The drop is
+   derived BEFORE any budget arm. The proof is the under-budget half,
+   because the over-budget half already worked: fixture of one fat file
+   (400 symbols) and three thin ones, budget `fresh - 1000`; the emitter
+   drops the fat array and lands **1761 of 82496 bytes, 80 735 left** —
+   healthy by the tripwire's own measure, so the old function returned
+   `String::new()` and said nothing at all. It now prints GRAPH
+   TRUNCATED and, correctly, no headroom sentence.
+2. **Drop is the louder where both are present.** Placement, asserted by
+   index: `find("GRAPH TRUNCATED") < find("GRAPH HEADROOM ALARM")`, plus
+   the wording `THIS IS THE LOUD ONE`.
+3. **Spend named beside the room left, when armed.** `fresh_bytes -
+   committed_bytes`, signed (`i128`) — the negative side is the shape a
+   drop makes, and unsigned subtraction there would underflow in exactly
+   the state the block exists to shout about.
+4. **Never a zero-byte spend.** Guarded at `spend == 0`, and the third
+   half of the spend control commits the fresh graph and asserts the
+   armed block carries neither `WORKING TREE SPENDS` nor `GIVES`.
+5. **A positive control per clause** — see the drills below.
+6. **`budget_line` / `floor_line` / exit code unmoved.** The two format
+   strings `tools/e2e/tests/health-bands.spec.ts` pins BY SYMBOL are
+   byte-identical (that spec reads check.rs and asserts
+   `fn budget_line(` plus both format strings; it is outside this fence
+   and was not touched). The exit code is decided in `cli.rs` from
+   `report.is_stale()` alone and this change touches only `render`'s
+   text, so it cannot move.
+
+### Drills — four mutants, one side only, each restored by sha256
+
+Pre-drill `sha256(check.rs)` =
+`6d410796eff156fe79d51bd382b5751becaf7c9cc377bd48e61e394fac2a793e`.
+Every mutant's LANDING was decided by `git diff --no-index` against the
+pre-mutant file — not against HEAD (the tree already differed from HEAD,
+so a HEAD diff would have reported "landed" for a pattern that never
+matched) and never by the mutator's own exit. Every restoration was
+proved by sha256 equality, never by an empty diff.
+
+| mutant | what it reverts | RED |
+|---|---|---|
+| drop-reachability | healthy-headroom arm returns empty unconditionally (the pre-card defect) | **1** — `a_drop_speaks_even_at_healthy_headroom_...` |
+| drop-ordering | drop clause below the headroom sentence | **1** — `where_both_states_are_present_the_drop_outranks_...` |
+| spend-arithmetic | prints `fresh` instead of `fresh - committed` (a real figure, same for every lane) | **1** — `the_block_names_this_working_trees_own_spend_...` |
+| spend-zero-silence | the `spend == 0` guard never fires | **1** — `the_block_names_this_working_trees_own_spend_...` |
+
+**A COUNT OF ONE IN ALL FOUR, and in each case the one is this card's
+own body** — 260 other tests passed under every mutant, and no mutant
+produced a compile error (checked for `could not compile` / `error[E…]`
+specifically, because cargo's ordinary `error: test failed, to rerun`
+line on a red suite is not one and reading it as one would have hidden
+whether the mutant even built).
+
+### Gates
+
+- **GRAPH REGEN — FIRES** (`*.rs` outside docs/). Asked rather than
+  predicted, at `4133ab8`: `index --check` exits **1**, STALE, naming
+  `check.rs (content, loc 996 -> 1424, symbols 15 -> 17)`, fresh
+  `1154473` against committed `1153961` — **this lane's own spend is
+  +512 bytes**, which is the very figure the new clause prints.
+  **NOT PERFORMED, AND ROUTED**: `docs/architecture/graph.json` is
+  outside this fence (`decide()` returns `outside-the-fence`), and the
+  bullet itself says the regen commits **with the CHECKPOINT**. The
+  integrator owes it.
+- **BOOT GATE — FIRES** (`app/src-tauri/**`), and CONVENTIONS makes the
+  executor run it too. `NPUTER_BOOT_PORT=14675 npm run boot:check` from
+  tools/e2e: **exit 0**, both lines — `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-167-s5` and `[nputer] window "main"
+  created`; tree stopped on SIGTERM, and 14675 read back to zero rows,
+  so no orphaned listener.
+- **DOCS GATE — FIRES** (this commit's own `docs/tasks/` path); run
+  against the merge forecast, recorded in the report.
+- **METHOD EVAL GATE — NOT OWED**: nothing under `method/` in the diff.
+
+### For the verifier
+
+- The strongest single body is
+  `a_drop_speaks_even_at_healthy_headroom_which_is_where_it_used_to_be_silent`.
+  Its two `assert!`s on the PRECONDITIONS are load-bearing and should be
+  attacked first: if the fixture ever stops landing under budget, or
+  stops overshooting past `WARN_HEADROOM_BYTES`, the body silently
+  becomes a second test of the over-budget arm that already worked.
+- The spend control holds `fresh_bytes` constant across its two halves
+  and asserts so. A clause printing the budget, the room left, the tree
+  size or any other property of the tree passes neither half.
+- `printed_dropped_files` / `printed_spend` parse the RENDERED text, so
+  the pins are on behaviour rather than on the report's fields.
+
+### Noticed, not done
+
+- The absorbed half asked for the thinned-file LIST ("ideally"). Not
+  built: `apply_budget` discards its `all_dropped` set on return, so the
+  list is not derivable from `CheckReport` or from the emitted document
+  without changing the emitter's signature — a different blast radius
+  from a render clause. Routed as `T-167-s13` (next free `sN` under
+  T-167 at this ref — s7 was absorbed by this card, s1..s6 and s8..s12
+  exist).
+- `graph/budget-headroom-bytes` in `health-bands.config.mjs` still
+  carries T-139's `15_751` against this file's `13_921`. Already known
+  and routed by `T-167-s2` (see the `WARN_HEADROOM_BYTES` doc comment);
+  outside this fence; not re-routed.
 
 ## Verdicts
