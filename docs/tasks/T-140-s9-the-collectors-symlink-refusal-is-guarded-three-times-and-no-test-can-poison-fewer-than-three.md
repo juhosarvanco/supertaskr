@@ -551,3 +551,38 @@ integration checkout, and removed after this verdict with the bench
 proved clean (`git status --short` empty at every arm's end). Nothing
 merged, nothing pushed, no worktree but my own bench removed.
 The lane worktree stands.
+
+### GATES AT MY OWN TIP — because a verdict is a WRITE (roles/verifier.md 7)
+
+This verdict changes this card's frontmatter, so I ASKED the gate rather
+than predicting which suites that moves: `node
+tools/e2e/scripts/docs-gate.mjs <this card>` **FIRES**, naming THREE
+commands (the shape CONVENTIONS predicts for a flat `docs/tasks/T-*.md`,
+re-derived rather than quoted). All three run green at **`698aa50`**:
+
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+- `npm test` from `app/` — **exit 0, 49 files / 1077 tests**
+- `npm test` from `tools/e2e/` — **exit 0, 339 passed** (3.7m)
+- `npm run lint:docs` from `tools/e2e/` — **exit 0**: every live task
+  card's frontmatter parses with a legal status; budgets hold (4 gated,
+  0 awaiting); 166 docs-shaped sites in 33 files.
+- `npm run capabilities:check` — **exit 0, CURRENT (27138 bytes)**.
+
+**The lane is proven unpolluted by my drill.** My bench carried its own
+`CARGO_TARGET_DIR` at `<bench>/target` (2.9 GB, never shared); after
+`git worktree remove` + `rm -rf` + `prune`, `cargo test` from the LANE's
+`app/src-tauri/` is **exit 0, 18 suite result lines, 0 FAILED, lib
+259/0 in 4.38s**, with **zero** occurrences of the bench path in the
+output — the T-013 baked-`CARGO_MANIFEST_DIR` hazard did not fire. No
+`cargo clean` was needed or run. The lane worktree stands and is clean.
+
+**FOR THE INTEGRATOR — main MOVED under this pass.** It was `4ec229c`
+when I opened and `18b3738` when I closed: T-179 and T-161 both merged.
+Neither touches `app/src-tauri/src/docs_watch.rs` (`git diff --name-only
+155993f..18b3738` — 0 hits), and `155993f` is still an ancestor of main,
+so this fence merges clean; but **the graph staleness above was measured
+at `d9bfb15` against `155993f` and the range rule will name a different
+pair at the merge** — re-ask `index --check` there rather than carrying
+my figures forward. Incidentally, T-179 is the very brief defect the
+notes report under "WHERE THE BRIEF WAS WRONG" item 1; that report was
+right and is now fixed on main.
