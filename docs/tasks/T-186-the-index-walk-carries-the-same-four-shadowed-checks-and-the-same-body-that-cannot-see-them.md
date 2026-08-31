@@ -460,7 +460,8 @@ the tree moved under me). Every figure below names that ref.
 
 ### Phase 1 was written and saved before the diff was opened
 
-Attack set — 10 traps, 12 named mutants — written from the card **at the
+Attack set — **10 traps, 10 named mutants**, re-derived at the file itself
+rather than recalled — written from the card **at the
 base ref `c3fc1a1`**, `walk.rs` AT BASE, `CONVENTIONS.md`,
 `roles/verifier.md` and `docs_watch.rs`'s landed record, and saved to a
 file with `sha256
@@ -642,6 +643,47 @@ classic form of this defect — which nothing in this crate did before.
 
 ### Gates re-run at MY OWN tip, per roles/verifier.md §7
 
-See the entry below this one for the gate ledger at the tip my verdict
-created; prose is a code input and the figures above are measured at
-`9fe1ac3`, not at that tip.
+**Every figure here names its ref.** My verdict commit is a WRITE, so it
+creates a tip nobody had tested; the gate set was DERIVED by asking rather
+than predicting, and the suites were run at **`76a9ba4`** — my verdict
+commit, one path changed (`docs/tasks/T-186-…md`).
+
+`node scripts/docs-gate.mjs <abs path>` — **exit 1, FIRES**, 1 path under
+`docs/` is a code input, naming three commands. Called first with a plain
+relative path it **refused with exit 2** rather than answering, which is
+the gate working: *"a run that could not read its question is not a claim
+about the tree."* It also reports **every live task card's frontmatter
+parses, with a legal status**, and governing-document budgets hold — so
+the prose I added did not break the board.
+
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+- `npm test` from `app/` — **exit 0, 49 files / 1077 tests**
+- `npm test` from `tools/e2e/` — **exit 0, 341 passed** (3.6m), on
+  `NPUTER_E2E_PORT=31860`, DERIVED as 30000 + 186×10 and lsof'd to **zero
+  rows immediately before binding**. **1420 was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else: zero rows.**
+- `nputer-index` at my bench: **exit 0, 252 passed / 0 failed** over 12
+  targets, lib 200/0; base `walk.rs` swapped in gives lib **197/0**.
+  Cache cliff (`T-088-s4`) did not fire — the crate's own times were
+  0.05s–2.02s per target against a 9.5s green band, and no body was
+  re-run, so there is nothing to attribute.
+
+**What I did NOT re-run, and why it is named rather than skipped
+silently:** the final commit carrying THIS section changes prose inside
+an already-parsed `## Verdicts` block — no frontmatter field, no status,
+no title, no new card. The board-parsing risk verifier.md's GATE CASE
+describes lives in exactly those, and all of them were already green at
+`76a9ba4`. The re-run at the final tip is reported to the coordinator
+rather than transcribed here, because a figure quoting the tip that
+carries it cannot be written before it exists — the regress is stopped by
+naming the ref, per verifier.md's FIGURE CASE.
+
+**Drill hygiene.** Detached scratch worktree at `/private/tmp/vf-T-186`,
+stem DERIVED from the card id, its own `CARGO_TARGET_DIR` at
+`<scratch>/target`, never shared with the lane or the parent. Every arm
+one side only, read back with `git -C <scratch> diff` and refused on a
+substitution count that was not exactly 1 — **which fired once, at 0, and
+caught a probe that would otherwise have reported a clean pass over an
+unmutated tree.** All three mutated files restored and proven by sha256
+against their `9fe1ac3` blobs; both worktrees clean. **I did not merge,
+did not push, and did not touch main.**
