@@ -117,3 +117,28 @@ reproducing it there.
 `T-143-s1` owns the neighbouring class — `tools/e2e` bodies that red for
 reasons outside the diff — and this is a second member with a different
 cause.
+
+
+## THE OVERSIZE INPUT MUST BE SYNTHESISED — the live `--dispatch` CANNOT be the body's subject
+
+`T-142-s1` established this the useful way: it inherited the red, proved
+it on a pristine tree, and then **watched it go fully green with no
+relevant change** — `T-190` and `T-192`'s worktrees were removed, the
+dispatch listing fell from **69,302 to 62,651 bytes**, and the whole
+output dropped under one pipe buffer.
+
+**This card already records that WHAT falls past the buffer moves with
+the lane count. What is new is that the lane count decides whether
+ANYTHING does.** A tell that moves reads as a flake; a tell that goes
+fully green reads as **fixed**.
+
+**Consequence for this card's own criterion, and it is binding**: the
+*"one invocation large enough to exceed the buffer"* **cannot be the live
+`--dispatch`**. On a quiet machine — which is exactly when an integrator
+runs the final battery — that invocation is under the buffer, the body
+passes for the wrong reason, and it would pass identically before and
+after the fix.
+
+**SYNTHESISE the oversize input.** A body whose subject is the live board
+is vacuous whenever the board is small, which is poison shape TEN wearing
+a regression test's costume.

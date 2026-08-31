@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **366 behaviours** — 364 extracted sentences + 2 named-not-extracted (listed at the end) — across 31 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **367 behaviours** — 365 extracted sentences + 2 named-not-extracted (listed at the end) — across 31 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -188,6 +188,7 @@ Census: **366 behaviours** — 364 extracted sentences + 2 named-not-extracted (
 - EVERY SPELLING of one docs path answers the same, or is REFUSED — never `not owed`
 - THE EXIT MATRIX — all four codes survive the invocation the doc prints
 - THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED POSITIVE
+- THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST
 - ONE SPELLING, TWO PLACES — the doc and the script print the same recipe
 - THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers
 - the status vocabulary is READ from the parser, never restated here
