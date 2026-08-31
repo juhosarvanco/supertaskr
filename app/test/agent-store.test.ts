@@ -667,6 +667,57 @@ describe("the liveness bound: a command that never answers is answered for (T-18
     vi.useRealTimers();
   });
 
+  it("THE BOUND'S TIMER IS CLEARED ON EVERY EXIT — the claim the site makes, held", async () => {
+    // WHY THIS BODY EXISTS. The bound's own site claims the timer is
+    // cleared on every exit, and until this body nothing could red that
+    // claim: `Promise.race` has already settled by then, so a surviving
+    // timer changes no OUTCOME and every other body here passes either
+    // way. A guard whose failure looks exactly like success is this
+    // card's own subject, pointed at the card.
+    //
+    // The count is asserted as a DELTA against the moment before the
+    // call, never against zero, so the body measures this bound's timer
+    // rather than the runner's ambient state.
+
+    // EXIT ONE — the command answers.
+    {
+      const store = await freshStore();
+      ipc.outcomes.set("genesis_status", IDLE_STATUS);
+      await store.startGenesisListener();
+      vi.useFakeTimers();
+      const before = vi.getTimerCount();
+
+      // POSITIVE CONTROL, and it is what makes the assertion below mean
+      // anything: the bound really does ARM a timer. Without it, a bound
+      // that never set one would satisfy "no timer is left behind".
+      ipc.parked.add("genesis_send_turn");
+      const pending = store.sendGenesisTurn("held open");
+      await Promise.resolve();
+      expect(vi.getTimerCount(), "the bound must really arm a timer").toBe(before + 1);
+
+      ipc.release!({ kind: "accepted", turn: 1 });
+      expect(await pending).toEqual({ kind: "accepted", turn: 1 });
+      expect(vi.getTimerCount(), "an answered command leaves no timer behind").toBe(before);
+      vi.useRealTimers();
+    }
+
+    // EXIT TWO — the command throws. A rejection leaves through the same
+    // `finally`, and it is the exit a `try`/`catch` around the race would
+    // have missed.
+    {
+      const store = await freshStore();
+      ipc.outcomes.set("genesis_status", IDLE_STATUS);
+      await store.startGenesisListener();
+      vi.useFakeTimers();
+      const before = vi.getTimerCount();
+
+      ipc.outcomes.set("genesis_start", new Error("the boundary said no"));
+      expect(await store.startGenesis()).toMatchObject({ kind: "error" });
+      expect(vi.getTimerCount(), "a rejected command leaves no timer behind").toBe(before);
+      vi.useRealTimers();
+    }
+  });
+
   it("a REJECTION is an answer and still passes through as one", async () => {
     // An absence and a refusal are different things, and the bound must
     // not turn the second into the first — every caller's existing

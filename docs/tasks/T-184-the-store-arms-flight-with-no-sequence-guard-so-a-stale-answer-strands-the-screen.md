@@ -102,8 +102,15 @@ working control, and a cancel that fixes only the disarming leaves the
 next stale answer free to re-arm it.** Either alone is a half-fix that
 looks whole.
 
-**The folded card therefore owes four criteria, not three** — T-183's
-two are added verbatim below and neither is softened by the merge:
+**The folded card therefore owes SIX criteria** — this card's own four
+SHALL bullets above, plus T-183's two added verbatim below, neither
+softened by the merge; the verification line is a seventh bullet and not
+a criterion. **This sentence read "four criteria, not three" until
+2026-08-31**, which matched neither list: it is a triage-fold arithmetic
+slip, it was present at this lane's base ref and on `main`, and it was
+caught by the blind verifier counting bullets rather than trusting the
+prose. Corrected here on assignment. COUNT THE BULLETS, not this
+sentence — that is the habit the slip rewards.
 
 - WHEN the runner answers `{kind:"idle"}` to a cancel THE store SHALL
   clear its own flight claim rather than leaving it set, and a body SHALL
@@ -212,9 +219,18 @@ this card's own defect with the sign reversed.
 - **`cancelGenesis` is NOT bounded** while the three flight-arming
   commands are. Nothing latches behind cancel, and `CancelOutcome` has
   no error arm for a bound to answer with.
-- **A cancelled turn is settled to `cancelled` and the phase to `idle`
-  even when the phase was `failed`.** That is the pre-existing branch's
-  behaviour, kept rather than quietly widened; `lastError` survives.
+- **The phase goes to `idle` even when it was `failed` — and that is
+  KEPT behaviour on one branch and NEW behaviour on the other.** The
+  `cancelled` branch already did it before this card, so there it is an
+  inheritance. The `idle` branch did NOTHING AT ALL before this card, so
+  clearing a `failed` phase there is this lane's own choice and nothing
+  previous vouches for it. Defensible — `lastError` survives, nothing in
+  `app/src` branches on `phase === "failed"`, and the rendered
+  `data-phase` is its only consumer — but a place to LOOK, which the
+  earlier wording of this bullet would have told the next reader to skip.
+  Corrected on assignment from the blind verdict below (FINDING 3), which
+  is exactly the error it names: one sentence covering two branches that
+  do not share a history.
 
 ### The known RED this lane hands off, and why it is not a regression
 
@@ -545,3 +561,52 @@ This verdict is a WRITE, and prose is a code input here. Gates re-run at
 the tip THIS SEAT created, after committing — result recorded in the
 commit that carries this verdict.
 
+
+## Corrections performed against the blind verdict
+
+**FINDING 2 — `clearTimeout` was an unpinnable claim, and now is not.**
+One body added in `app/test/agent-store.test.ts` (in fence), asserting
+the pending-timer count returns to its PRE-CALL value on both exits the
+site claims: a command that answers, and a command that throws. The
+count is asserted as a DELTA rather than against zero, so the body
+measures this bound's own timer and not the runner's ambient state, and
+it carries a POSITIVE CONTROL — the count rising by one while the
+command is in flight — because "no timer is left behind" is otherwise
+satisfied by a bound that never armed one. The verdict's own
+`M11-cleartimeout-removed` was reconstructed and is now killed — by this
+body and by nothing else, so it satisfies poison shape SIX the way the
+verdict asked of every other body here.
+
+**AND ONE HONEST LIMIT ON THE SECOND ARM, said rather than left to be
+found.** The rejection arm does NOT kill a mutant the answered arm
+misses, and cannot: there is ONE cleanup site, a single `finally`, and
+both exits pass through it, so today the two arms are one pin with two
+entrances. It earns its place against a REFACTOR that splits the cleanup
+out of the `finally` — the shape where a `catch` returns early and the
+throw path stops clearing — which is the plausible future edit and the
+one a single-exit body would wave through. Claiming it as an independent
+pin today would be the same overstatement this card exists to punish.
+
+**The verdict's diagnosis was exactly right and is worth restating**:
+behavioural risk here is nil, because `Promise.race` has already settled
+by the time the `finally` runs, so a surviving timer changes no outcome
+and every other body passes either way. **That is precisely why only a
+body could hold the claim — a guard whose failure is indistinguishable
+from success is this card's own subject, and it was pointed back at the
+card.**
+
+**FINDING 3 — the notes sentence covering two branches with one
+history.** Corrected above. `phase: "failed"` → `"idle"` is inherited on
+the `cancelled` branch and NEW on the `idle` branch, because `idle` did
+nothing at all before this card.
+
+**THE CARD'S OWN ARITHMETIC — six criteria, not four.** Corrected in the
+absorption section above. Present at the base ref and on `main`, so it
+is the triage fold's slip rather than this lane's; corrected here on
+assignment rather than routed, because it is one sentence in the file
+already open.
+
+**NOT TOUCHED, and deliberately**: `T-191`'s one-character fixture repair
+(`turn: 1` → `2`) is outside this fence and the integrator carries it at
+the merge; the GRAPH REGEN the tip owes is the integrator's at the
+checkpoint, and `docs/architecture/graph.json` is unmodified here.
