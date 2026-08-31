@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 21
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent]
 suggested_by: integrator nputer-4e @the first green-run attempt, run 33274798983
@@ -278,8 +278,9 @@ branch: the new body is deterministic on any platform, and the old body's
 intermittency is what the fix removes, so a green ubuntu run tells you
 the fix compiles and holds there — it cannot, by itself, prove the
 intermittent is gone, because the intermittent was already rare. **The
-evidence that it is gone is the 900-run experiment above, not a CI
-tally.**
+evidence that it is gone is the DETERMINISTIC pair above — a writer
+outliving the reaped child, 30/30 lost racy and 30/30 won fixed — not a
+CI tally, and NOT the statistical rows.**
 
 ### WHERE THE BRIEF WAS WRONG
 
@@ -569,3 +570,49 @@ Two facts that sharpen the card and are recorded rather than inferred:
 every step behind cargo, including the e2e lane and the boot gate, so
 one intermittent hides a whole battery's worth of signal from the push
 it lands on.
+
+## INTEGRATOR'S ANSWER TO THE TWO CORRECTIONS (2026-08-31, at the merge)
+
+Both were notes-only; the verifier assigned no code change and this seat
+made none.
+
+**1 — PERFORMED. The closing sentence rested on the least reproducible
+half of the evidence.** The blind verifier re-ran the statistical arm at
+its own seat and got **0 empty in 1000 racy runs**, against these notes'
+7 in 900 — with post-reap latency measured at **3 µs** where this lane
+measured 88 µs. Same repository, same fix, different machine state: the
+window is real and its width is not a property of the code. **The
+DETERMINISTIC pair reproduced exactly at both seats** (a writer
+outliving the reaped child: lost 30/30 racy, won 30/30 fixed), and the
+verifier's own in-tree mutant did too — 10/10. So the proof stands and
+was never in doubt; what was wrong was pointing the conclusion at the
+arm that does not travel. Corrected above.
+
+**A statistical count over a race is a reading of a MACHINE, not of a
+tree** — this project already says so about durations and runner images,
+and this is that rule arriving at a race. The deterministic arm is the
+one to quote.
+
+**2 — DISCLOSED, which is what the finding asked for.** The drain wait
+is paid on EVERY non-cancelled turn, while the tail is READ only on the
+`ExitNonZero` arms — and the success arm performs no group kill. So a
+descendant holding the stderr pipe open can delay a **successful** turn
+by up to `kill_grace` for a tail nobody will read. It is bounded, it
+falls back to today's behaviour on expiry, and it is the price of the
+signal being real rather than a poll — but it was undisclosed, and an
+undisclosed cost is the thing this project's disclosure rules exist for.
+Recorded here rather than "fixed", because narrowing the wait to the
+failure arms would mean deciding whether the tail is wanted BEFORE the
+exit status is known, which is a different card's question.
+
+**AND THE VERIFIER'S OWN MUTANT FOUND A LINE THAT LOOKS INERT AND IS
+NOT**: deleting `let _eof = eof;` reds the new body 5/5, because Rust
+2021 closures capture only what they mention — the `move` closure must
+name the sender or it never takes ownership and the signal never fires
+at EOF. Worth reading before anyone "tidies" that line.
+
+**A HAZARD FOR THE NEXT SEAT, from the verifier's own pass**: this
+session's scratch directory is shared, and a sibling lane clobbered an
+unnamespaced drill script mid-verification. CONVENTIONS already rules
+that the scratch stem is DERIVED from the lane id and never chosen; this
+is that rule being met by a collision rather than by reading it.
