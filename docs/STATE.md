@@ -1,11 +1,11 @@
 # State
 
-Updated: 2026-08-31 at T-140-s9's close — record:
-docs/checkpoints/2026-08-31-T-140-s9-a-guard-no-test-can-see.md; the
+Updated: 2026-08-31 at the six-lane close — record:
+docs/checkpoints/2026-08-31-six-lanes-and-a-summary-of-nothing.md; the
 queue lives in T-171's record beside it.
-**ELEVEN LANES LANDED overnight and NO task branches remain** and the GRAPH HOLD IS OVER: the emit
-budget is a derived 2,145,959 with roughly a megabyte free — derive it,
-never quote it. Pre-compaction:
+**NO task branches remain** (derive: the LANES command below) and the
+GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
+megabyte free — derive it, never quote it. Pre-compaction:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
 **NOTHING IS BROKEN.** Designed non-zero exits: `npm run health` exits 3
@@ -57,8 +57,8 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
    is the CENSUS — its exit 0 means "I wasn't asked", not "nothing owed".
 3. **`T-126-s2` IS RULED**: the join goes to TypeScript; shape 3 was
    refused on TEST REACHABILITY. Blocker is **`T-190`** (C-15 has no test
-   path), not `T-112-s4`. **`blocked_by` is EMPTY until `T-190` lands** —
-   a forward reference reds the parser. An ADR is @human's to ratify.
+   path), not `T-112-s4`. Newest cards run to `T-196`; **twelve sit in
+   `suggested` and a triage sitting is owed.** An ADR is @human's.
 4. NEXT METHOD RELEASE riders: `T-112-s2`, `T-154-s3`, `T-159-s6`,
    `T-154-s4`'s sentence; `T-173`/`T-176` owe a bump.
 5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
@@ -129,7 +129,7 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-the-architecture-sitting-the-join-goes-to-typescript.md.
+  2026-08-31-six-lanes-and-a-summary-of-nothing.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — two
   consumers read it; `T-182` states the rule in CONVENTIONS.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.

@@ -2964,8 +2964,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/walk.rs",
       "path": "app/src-tauri/crates/nputer-index/src/walk.rs",
       "lang": "rust",
-      "hash": "blake3:683c5f60a17ea5b750fc09752f7120fa845e778e5c3faa2410c3299e7c827f1e",
-      "loc": 224,
+      "hash": "blake3:50952af574b8dc6e7349fd9caf59b2521b9f94a9ae983c003a1fde2bd6a30c1f",
+      "loc": 599,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/walk.rs#WalkedFile",
@@ -2983,8 +2983,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            23,
-            30
+            31,
+            38
           ]
         },
         {
@@ -2993,8 +2993,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            108,
-            224
+            227,
+            599
           ]
         },
         {
@@ -3003,8 +3003,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            42,
-            105
+            50,
+            224
           ]
         }
       ]
