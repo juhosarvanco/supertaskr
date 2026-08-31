@@ -196,10 +196,31 @@ pre-commit gate read cannot catch (read the COUNT, never the code):
     gate-verdict suite=rust   exit=0 bodies=611  targets=18 GREEN
     gate-verdict suite=e2e    exit=0 bodies=409  targets=1  GREEN
 
-All four also answered identically at `5fcd646`. Three of them are
-exactly the suites the DOCS GATE named (`npm test` from app/, `npx vitest
-run` from lib/parser/, `npm test` from tools/e2e/); the card's own
-criterion — the app crate's `cargo test`, headless — is the `rust` row.
+All four answered identically at `5fcd646`, **and again at the prose
+correction `0f0a230`, so every suite is green at the exact byte state
+being handed over**:
+
+    gate-verdict suite=parser exit=0 bodies=344  targets=1  GREEN  ref=0f0a230
+    gate-verdict suite=app    exit=0 bodies=1116 targets=1  GREEN  ref=0f0a230
+    gate-verdict suite=rust   exit=0 bodies=611  targets=18 GREEN  ref=0f0a230
+    gate-verdict suite=e2e    exit=0 bodies=409  targets=1  GREEN  ref=0f0a230
+
+Three of them are exactly the suites the DOCS GATE named (`npm test` from
+app/, `npx vitest run` from lib/parser/, `npm test` from tools/e2e/); the
+card's own criterion — the app crate's `cargo test`, headless — is the
+`rust` row.
+
+**THE ONE RESIDUAL, NAMED RATHER THAN PAPERED OVER.** The commit that
+writes THIS ledger is necessarily later than the ledger it describes, and
+that regress is structural — `roles/executor.md` says so in as many
+words: the report is written by the commit that IS the tip, so *"re-derive
+at your own tip"* is not literally performable from inside. It is BOUNDED
+here rather than left open: the merge forecast is a FIXED POINT, because
+every later commit in this lane touches only
+`docs/tasks/T-167-s9-*.md`, which is already inside the 4-path set. **So
+no later commit can change WHICH gates fire** — only which commit the body
+counts were read at. The integrator re-derives at the merge; nothing above
+is offered as a substitute for that.
 
 A bare `cargo test` from app/src-tauri answers **exit 0 / 607** bodies;
 the runner answers **611 over 18 targets** because it passes
