@@ -477,4 +477,38 @@ try {
   );
   code = EXIT.CANNOT_RUN;
 }
-process.exit(code);
+/**
+ * THE EXIT IS A CODE, NEVER A CALL (T-197). This line was
+ * `process.exit(code)`, and that single call silently truncated this
+ * command's own derivation.
+ *
+ * **Node's stdout is ASYNCHRONOUS when it is a pipe** and synchronous
+ * when it is a file or a TTY. `process.exit()` tears the process down
+ * with the write queue still draining, so to a file the write completed
+ * and to a pipe it did not — at exit 0, with no error printed, ending
+ * mid-derivation looking like a complete answer. **The tool whose whole
+ * contract is a trustworthy figure was one buffer away from lying**, and
+ * the reader who piped it into `head`, `grep` or `less` — the ordinary
+ * way anyone reads a 69 KB document — got the first 64 KiB and no signal.
+ *
+ * **THE CAUSE IS REMOVED RATHER THAN WAITED OUT.** Setting `exitCode`
+ * lets Node exit naturally once the event loop is empty, which is after
+ * stdout has drained; a deferred `process.exit()` behind a drain callback
+ * would be a second mechanism to keep correct. Every child process this
+ * command spawns is SYNCHRONOUS (`execFileSync`/`spawnSync`) and it opens
+ * no timer, socket or watcher, so there is nothing to hold the loop open.
+ *
+ * **THAT IS A PROPERTY WORTH STATING BECAUSE ITS FAILURE IS LOUD.** If a
+ * future arm ever leaves a handle open, this command HANGS — visible,
+ * attributable, and fixable — where the call it replaced would have gone
+ * on silently dropping the tail. `dispatch-brief.mjs`'s rule 2 says a
+ * figure may not leave this tool detached from its source; a truncation
+ * detaches every figure past the cut, so the quiet failure was the one
+ * this file could least afford.
+ *
+ * PINNED BY tests/brief-flush.spec.ts, whose oversize input is
+ * SYNTHESISED: the live board crosses and re-crosses one buffer as lanes
+ * open and close, so a body whose subject is the live `--dispatch` is
+ * green whenever the board is small.
+ */
+process.exitCode = code;

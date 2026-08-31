@@ -1,0 +1,531 @@
+import { spawnSync } from "node:child_process";
+import {
+  closeSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
+import { repoRoot } from "../preflight";
+import { unstampedLines } from "../scripts/dispatch-brief.mjs";
+
+/**
+ * THE BRIEF REACHES A PIPE WHOLE (T-197) — no browser.
+ *
+ * `brief.mjs` ended at `process.exit()`. **Node's stdout is ASYNCHRONOUS
+ * when it is a pipe** and synchronous when it is a file or a TTY, so the
+ * process tore down with the write queue still draining: to a file the
+ * write completed, to a pipe it did not. Exit status 0, no error printed,
+ * output ending mid-derivation looking like a complete answer — in the
+ * one tool whose entire contract is a trustworthy figure.
+ *
+ * ── WHY THE OVERSIZE INPUT IS SYNTHESISED ────────────────────────────
+ * The obvious body drives the live `--dispatch` and asserts it survives.
+ * That body is VACUOUS on a quiet machine, which is exactly the machine
+ * an integrator runs a final battery on. The card's own measurements
+ * cross the boundary in both directions inside one day — 69,293 →
+ * 77,712 → 63,732 bytes — tracking nothing but how many lanes happened
+ * to be open, and `T-142-s1` watched the red go FULLY GREEN when two
+ * worktrees were removed. A tell that moves reads as a flake; a tell
+ * that goes green reads as fixed. So the oversize input here is BUILT,
+ * and its size is a property of this file rather than of the board.
+ *
+ * ── WHY THERE IS NO BOUNDARY NUMBER IN THIS FILE ─────────────────────
+ * There is no single loss point, and pinning one pins one reader.
+ * Measured at `209e5d3` on this repository, one tree, one command:
+ *
+ *     --dispatch > file                   66,464 … 69,288 bytes (whole)
+ *     --dispatch | cat                    65,536 bytes, 8 of 8 runs
+ *     --dispatch via spawnSync            survives to ~66,470
+ *
+ * The loss point is a property of WHO IS READING, because it is a race
+ * between the reader draining the pipe and the writer exiting. And it is
+ * a property of the WRITE SHAPE too, which is the half that surprises:
+ * an arm emitting 115,079 bytes as two hundred small `console.log` calls
+ * lost NOTHING through either reader at `209e5d3` with the defect fully
+ * present, because the reader drained between the writes. One write
+ * larger than a buffer is what loses. So these bodies assert an
+ * EQUALITY between two destinations and a floor over the buffer; the
+ * only number they derive, they derive at run time and label with the
+ * reader it belongs to.
+ *
+ * ── AND A CI GREEN IS NOT EVIDENCE FOR THIS CLASS ────────────────────
+ * CI passed at `5e36a0b` with the brief already 928 bytes past the
+ * `| cat` line. A green run proves the reader won the race, not that the
+ * tail arrived. That is why the first body carries a POSITIVE CONTROL:
+ * it proves, in the same run and through the same two readers, that a
+ * writer of the OLD shape at THIS size still loses bytes here. Without
+ * it a green says "the readers could not lose" just as loudly as it says
+ * "the writer no longer drops".
+ */
+
+const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
+
+/** Generous, so `spawnSync` never becomes a second truncation mechanism. */
+const MAX_BUFFER = 64 * 1024 * 1024;
+
+/** One pipe buffer on this platform, and the FLOOR these bodies assert over. */
+const PIPE_BUFFER = 65_536;
+
+/** How much the control writer asks for: far past any plausible buffer. */
+const CONTROL_WANT = 512 * 1024;
+
+/** @see the disclosure precedent in brief.spec.ts and range-rule.spec.ts. */
+function disclose(label: string, line: string): void {
+  test.info().annotations.push({ type: label, description: line });
+  process.stdout.write(`\n  ${label}: ${line}\n`);
+}
+
+interface Scratch {
+  dir: string;
+  cleanup: () => void;
+}
+
+function scratch(stem: string): Scratch {
+  const dir = mkdtempSync(path.join(os.tmpdir(), `t197-${stem}-`));
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE TWO READER SHAPES. A body proving one leaves the other's race
+ * unproven, and the card's own measurements disagree by ~934 bytes
+ * about where the loss starts.
+ * ──────────────────────────────────────────────────────────────────── */
+
+interface Read {
+  /** what arrived at the reader */
+  bytes: number;
+  /** the reader's own text, for a byte-identity comparison */
+  text: string;
+  /** the writer's exit code as this reader saw it */
+  status: number | null;
+}
+
+/**
+ * READER ONE — `spawnSync`, which is how this suite itself reads the
+ * command, so it is the reader whose race decides whether
+ * `dispatch-order.spec.ts` reds.
+ */
+function readViaSpawnSync(argv: string[], cwd = repoRoot): Read {
+  const r = spawnSync(process.execPath, argv, {
+    cwd,
+    encoding: "utf8",
+    maxBuffer: MAX_BUFFER,
+  });
+  const text = r.stdout ?? "";
+  return { bytes: Buffer.byteLength(text, "utf8"), text, status: r.status };
+}
+
+/**
+ * READER TWO — a shell pipeline into `cat`, which is how a HUMAN reads
+ * this command: `| head`, `| grep`, `| less`. It is the reader that
+ * loses earliest and most deterministically (65,536 bytes, 8 of 8 runs
+ * against `--dispatch` at `5e36a0b`).
+ *
+ * THE WRITER'S STATUS IS RECOVERED WITHOUT A DIALECT. A pipeline's own
+ * status is `cat`'s, and `PIPESTATUS` is a bash/zsh array that `dash`
+ * — Ubuntu's `/bin/sh`, which is what CI has — does not carry at all.
+ * `docs/CONVENTIONS.md` already records what a shell dialect difference
+ * costs this project when it is assumed instead of avoided, so the
+ * writer's `$?` goes to a FILE from inside the pipeline's left side,
+ * which is POSIX and reads the same everywhere.
+ */
+function readViaCatPipe(argv: string[], dir: string, cwd = repoRoot): Read {
+  const stem = Math.random().toString(36).slice(2);
+  const out = path.join(dir, `cat-${stem}.txt`);
+  const st = path.join(dir, `cat-${stem}.status`);
+  const quoted = [process.execPath, ...argv]
+    .map((a) => `'${a.replace(/'/g, "'\\''")}'`)
+    .join(" ");
+  spawnSync(
+    "/bin/sh",
+    ["-c", `{ ${quoted} 2>/dev/null; echo $? > '${st}'; } | cat > '${out}'`],
+    { cwd, encoding: "utf8", maxBuffer: MAX_BUFFER },
+  );
+  const text = readFileSync(out, "utf8");
+  const written = Number.parseInt(readFileSync(st, "utf8").trim(), 10);
+  return {
+    bytes: Buffer.byteLength(text, "utf8"),
+    text,
+    status: Number.isInteger(written) ? written : null,
+  };
+}
+
+/**
+ * THE DESTINATION THAT CANNOT LOSE — a file. Node's stdout is
+ * SYNCHRONOUS to a file, which is the whole asymmetry this card is
+ * about, so this is the ground truth every pipe read is compared to.
+ */
+function readViaFile(argv: string[], dir: string, cwd = repoRoot): Read {
+  const out = path.join(dir, `file-${Math.random().toString(36).slice(2)}.txt`);
+  const fd = openSync(out, "w");
+  let status: number | null;
+  try {
+    status = spawnSync(process.execPath, argv, {
+      cwd,
+      stdio: ["ignore", fd, "ignore"],
+      maxBuffer: MAX_BUFFER,
+    }).status;
+  } finally {
+    closeSync(fd);
+  }
+  const text = readFileSync(out, "utf8");
+  return { bytes: statSync(out).size, text, status };
+}
+
+/**
+ * THE POSITIVE CONTROL — the shape `brief.mjs` HAD, reduced to its
+ * mechanism: one write larger than a buffer, then `process.exit()`.
+ *
+ * It is written to a scratch file rather than kept as a fixture, because
+ * a committed copy of the defect is a thing somebody eventually imports.
+ */
+function controlWriter(dir: string, want: number): string[] {
+  const file = path.join(dir, "control-writer.mjs");
+  writeFileSync(
+    file,
+    "// The pre-T-197 shape, built to be lost. ONE write, then the tear-down.\n" +
+      `process.stdout.write("c".repeat(${want}) + "\\n");\n` +
+      "process.exit(0);\n",
+    "utf8",
+  );
+  return [file];
+}
+
+/**
+ * The loss point of ONE reader, derived HERE rather than quoted. It is a
+ * race, so the smallest of several samples is taken: the conservative
+ * end of a spread is the honest threshold to announce a margin against.
+ *
+ * Returns the bytes that ARRIVED. `want` is what was written.
+ */
+function deriveLossPoint(
+  read: (argv: string[]) => Read,
+  dir: string,
+  samples = 3,
+): { arrived: number; want: number; spread: number[] } {
+  const argv = controlWriter(dir, CONTROL_WANT);
+  const spread: number[] = [];
+  for (let i = 0; i < samples; i += 1) spread.push(read(argv).bytes);
+  return { arrived: Math.min(...spread), want: CONTROL_WANT + 1, spread };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * BODY ONE — THE PROOF, on a SYNTHESISED oversize invocation.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte", () => {
+  // KILLED BY: `process.exit(code)` at the foot of brief.mjs — the line
+  // this card is about. Restore it and both readers lose the tail while
+  // the exit code stays 0 and nothing is printed about it.
+  const sc = scratch("proof");
+  try {
+    /**
+     * THE SYNTHESIS. `--audit` is the arm that takes its input from a
+     * PATH, so the size of this invocation's output is a function of a
+     * file this body writes and of nothing else — not of the board, not
+     * of the lane count, not of how many cards were filed today.
+     *
+     * ONE LONG LINE rather than many, deliberately: the audit emits one
+     * `console.log` per figure, and many small writes let the reader
+     * drain between them. Measured at `209e5d3` with the defect fully
+     * present, 200 short figures produced 115,079 bytes and lost NONE
+     * through either reader. The defect is a pending write QUEUE at
+     * exit, so the input is shaped to produce one write past a buffer.
+     */
+    const oversize = path.join(sc.dir, "synthesised-oversize.md");
+    writeFileSync(
+      oversize,
+      `# synthesised, so this body's size is not the board's\n\nfigure ${"x".repeat(90_000)} <- @ deadbee ; a source this gate cannot re-run\n`,
+      "utf8",
+    );
+    const argv = [CLI, "--audit", oversize];
+
+    /**
+     * THE POSITIVE CONTROL, FIRST. A green below means "the writer no
+     * longer drops the tail" only if this machine's readers CAN drop a
+     * tail at this size — and CI proved they sometimes cannot: it passed
+     * at `5e36a0b` with the brief already 928 bytes past the `| cat`
+     * line. Without this the whole file is a check that cannot tell an
+     * absence from a refusal.
+     */
+    const control = controlWriter(sc.dir, CONTROL_WANT);
+    const controlWant = CONTROL_WANT + 1;
+    const controlSpawn = readViaSpawnSync(control);
+    const controlCat = readViaCatPipe(control, sc.dir);
+    expect(
+      controlSpawn.bytes,
+      "the spawnSync reader did not lose a byte from a writer of the OLD shape, so a green " +
+        "below would prove nothing about the writer",
+    ).toBeLessThan(controlWant);
+    expect(
+      controlCat.bytes,
+      "the `| cat` reader did not lose a byte from a writer of the OLD shape, so a green " +
+        "below would prove nothing about the writer",
+    ).toBeLessThan(controlWant);
+
+    // GROUND TRUTH: a file destination is synchronous and cannot lose.
+    const whole = readViaFile(argv, sc.dir);
+
+    // THE FLOOR. A body run against small output passes before and after
+    // the fix, which is the vacuity this card is about (poison shape TEN).
+    expect(
+      whole.bytes,
+      "the synthesised invocation is no longer past one pipe buffer, so this body proves nothing",
+    ).toBeGreaterThan(PIPE_BUFFER);
+
+    // BOTH READER SHAPES, BYTE FOR BYTE. `--audit` stamps its lines with
+    // TREE provenance only — no live read, no timestamp — so byte
+    // identity across two invocations is a real assertion here and not a
+    // comparison of clocks.
+    const viaSpawn = readViaSpawnSync(argv);
+    const viaCat = readViaCatPipe(argv, sc.dir);
+    expect(viaSpawn.bytes, "spawnSync lost bytes the file destination received").toBe(whole.bytes);
+    expect(viaCat.bytes, "the `| cat` reader lost bytes the file destination received").toBe(
+      whole.bytes,
+    );
+    expect(viaSpawn.text).toBe(whole.text);
+    expect(viaCat.text).toBe(whole.text);
+
+    // AND THE EXIT CODE SURVIVES THE CHANGE. Removing `process.exit()`
+    // moves the code onto `process.exitCode`, so the four-code contract
+    // is re-driven through every destination rather than assumed. This
+    // invocation FINDS something (an unrunnable provenance arrow), which
+    // is exit 1 — the arm was chosen partly for that: a fix that made
+    // every run exit 0 would pass a body that only ever asked for 0.
+    expect(whole.status, "the file destination's exit code").toBe(1);
+    expect(viaSpawn.status, "spawnSync's view of the exit code").toBe(1);
+    expect(viaCat.status, "the writer's exit code out of the pipeline").toBe(1);
+
+    disclose(
+      "brief-flush PROOF",
+      `synthesised ${whole.bytes} bytes past a ${PIPE_BUFFER}-byte buffer; both readers received ` +
+        `all of them. Positive control at the same size lost ${controlWant - controlSpawn.bytes} ` +
+        `bytes via spawnSync and ${controlWant - controlCat.bytes} via \`| cat\`.`,
+    );
+  } finally {
+    sc.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * BODY TWO — THE MARGIN GUARD.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The invocations this repository actually reads. Every one of them
+ * renders through a SINGLE `console.log` per arm, which is the write
+ * shape the derived loss point below is measured against — a
+ * multi-arm invocation writes once per arm and is therefore harder to
+ * lose, never easier.
+ */
+const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
+  { label: "--dispatch", args: ["--dispatch"] },
+  { label: "--task T-133 --state --full", args: ["--task", "T-133", "--state", "--full"] },
+  { label: "--task T-133 --state", args: ["--task", "T-133", "--state"] },
+  { label: "--task T-133", args: ["--task", "T-133"] },
+  { label: "--state", args: ["--state"] },
+  { label: "--card T-133", args: ["--card", "T-133"] },
+];
+
+test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader", () => {
+  // KILLED BY: restoring `process.exit(code)` — every arm whose live size
+  // is past the derived loss point stops matching its file destination.
+  //
+  // AND IT EXISTS BECAUSE `HEAD` SAT UNDER THIRTY BYTES FROM RED WITH
+  // NOTHING SAYING SO. A 30-byte title edit to `T-212` took the brief
+  // from 66,464 to 66,494 bytes and turned `dispatch-order.spec.ts` from
+  // 14 passed to 1 failed. The approach was silent; only the arrival was
+  // loud, and it arrived three layers from its cause.
+  const sc = scratch("margin");
+  try {
+    /**
+     * THE THRESHOLD IS DERIVED, AND IT NAMES ITS READER. There is no
+     * single line to pin: `| cat` loses at 65,536 while `spawnSync`
+     * survives to roughly 66,470 on the same tree and the same command.
+     * So the number below is measured HERE, in THIS run, against a
+     * writer of the pre-fix shape, and it is reported as one reader's
+     * answer rather than as the boundary.
+     *
+     * `spawnSync` is the reader named because it is the one this suite
+     * reads with — the race that decides whether a body reds.
+     */
+    const READER = "spawnSync (node:child_process), one write past the buffer";
+    const loss = deriveLossPoint((argv) => readViaSpawnSync(argv), sc.dir);
+    expect(
+      loss.arrived,
+      "the derived loss point equals what was written, so nothing was lost and this reader " +
+        "cannot be used to derive a threshold on this machine",
+    ).toBeLessThan(loss.want);
+
+    disclose(
+      "brief-flush LOSS POINT",
+      `${loss.arrived} bytes arrive out of ${loss.want} written — derived against ${READER}; ` +
+        `samples ${loss.spread.join(", ")}. This is ONE reader's answer, never THE boundary.`,
+    );
+
+    /**
+     * THE ANNOUNCEMENT. Every arm's true size against that threshold,
+     * printed whether it is near or far — because the failure this
+     * guard exists for is an approach nobody could see.
+     */
+    let past = 0;
+    for (const arm of LIVE_ARMS) {
+      const argv = [CLI, ...arm.args];
+      const whole = readViaFile(argv, sc.dir);
+      const margin = loss.arrived - whole.bytes;
+      if (margin <= 0) past += 1;
+      disclose(
+        "brief-flush MARGIN",
+        `${arm.label}: ${whole.bytes} bytes, ${
+          margin > 0 ? `${margin} UNDER` : `${-margin} PAST`
+        } the derived loss point of ${READER}.`,
+      );
+
+      /**
+       * THE ASSERTION, on every arm and not only the big ones: what the
+       * reader receives is what the file destination received.
+       *
+       * SIZE, NOT BYTES, AND THE REASON IS NAMED. Several of these arms
+       * carry LIVE provenance — `<- read <ISO timestamp> on <host>` —
+       * so two invocations are byte-identical only by luck of the
+       * clock. The byte-for-byte comparison lives in the body above, on
+       * the arm that stamps nothing live. If this fails with a small
+       * delta and no `process.exit` in `brief.mjs`, suspect the board
+       * moving between the two runs (a worktree added or removed) before
+       * suspecting the flush.
+       */
+      const viaSpawn = readViaSpawnSync(argv);
+      expect(
+        viaSpawn.bytes,
+        `${arm.label}: spawnSync received ${viaSpawn.bytes} bytes where the file destination ` +
+          `received ${whole.bytes}`,
+      ).toBe(whole.bytes);
+      expect(
+        unstampedLines(viaSpawn.text.trimEnd()),
+        `${arm.label}: a line arrived without its stamp, which is what a cut mid-line looks like`,
+      ).toEqual([]);
+    }
+
+    /**
+     * AND THE VACUITY IS DISCLOSED RATHER THAN HIDDEN. When the board is
+     * quiet every arm sits under the loss point, and every assertion
+     * above would pass against a `brief.mjs` that still called
+     * `process.exit()`. That is precisely the state an integrator is in
+     * when running a final battery, so this run SAYS which of the two it
+     * was instead of reporting an unqualified green.
+     */
+    disclose(
+      "brief-flush COVERAGE",
+      past === 0
+        ? `no live arm is past the derived loss point today, so THIS body is a smoke test on ` +
+            `this run — the SYNTHESISED body above is the one carrying the proof.`
+        : `${past} of ${LIVE_ARMS.length} live arms are past the derived loss point, so this ` +
+            `run exercises the flush on real input as well as on the synthesised input above.`,
+    );
+  } finally {
+    sc.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * BODY THREE — THE SWEEP, pinned rather than left in prose.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/**
+ * `brief.mjs` is one entry point among several under `tools/e2e/scripts/`
+ * that write to stdout and then call `process.exit()`. The card asks the
+ * class to be SWEPT — every sibling named, and membership argued either
+ * way **with a measured size** rather than by assumption.
+ *
+ * THE ARGUMENT IS KEPT BY THIS BODY RATHER THAN BY PROSE, because prose
+ * goes stale the day a ninth script is written. The set below is DERIVED
+ * from the tree on every run, so a new command that exits after writing
+ * reds this body by name and forces the same decision to be made again.
+ *
+ * ── THE MEMBERS ──────────────────────────────────────────────────────
+ * `brief.mjs` was the only one, and is fixed. It is asserted ABSENT from
+ * the derived set, which is this card's regression pin.
+ *
+ * ── THE NON-MEMBERS, EACH WITH THE SIZE IT WAS ARGUED ON ─────────────
+ * All measured at `209e5d3` on this repository, stdout only, redirected
+ * to a file and counted — never piped, because piping is the defect.
+ *
+ *   capabilities.mjs      36 B (`--check`). The GENERATOR writes the
+ *                         document with `writeFileSync` and prints ONE
+ *                         line, so its size does not track the census.
+ *   docs-gate.mjs      4,947 B (`--census`, the whole-tree half) and
+ *                      4,445 B fed all 586 tracked docs/*.md paths — an
+ *                      upper bound no merge diff reaches. It answers
+ *                      with a fixed summary, not one line per path, so
+ *                      the count does not scale with the diff. SAME
+ *                      SHAPE AS THE DEFECT, an order of magnitude under
+ *                      the buffer; it stays listed for that reason.
+ *   gate-run.mjs         120 B for one suite — one `gate-verdict` line
+ *                        per suite requested, and the registry holds
+ *                        four. The suite's own output goes to a FILE
+ *                        whose path is printed on stderr, which is what
+ *                        keeps this bounded.
+ *   health-bands-run.mjs 1,939 B (exit 3, bands awaiting keepers).
+ *   lint-tokens.mjs        105 B clean, 125 B `--selftest`.
+ *   token-scan.mjs       the two exits `lint-tokens.mjs` cannot
+ *                        intercept, measured through that wrapper above.
+ *   orphan-drill.mjs         0 B stdout on the called-wrong path (338 B
+ *                            on stderr).
+ *   tauri-boot-check.mjs     0 B stdout on the refusal path (410 B on
+ *                            stderr).
+ *
+ * THE RESIDUAL IS NAMED RATHER THAN PAPERED OVER: the last two were
+ * measured on their REFUSAL paths only, because their success paths
+ * spawn the app and this card's diff owes no boot gate. Their success
+ * output is a fixed handful of `[nputer]` lines plus the child's last
+ * output — bounded, but bounded by an argument rather than by a reading.
+ */
+const EXITS_AFTER_WRITING = [
+  "capabilities.mjs",
+  "docs-gate.mjs",
+  "gate-run.mjs",
+  "health-bands-run.mjs",
+  "lint-tokens.mjs",
+  "orphan-drill.mjs",
+  "tauri-boot-check.mjs",
+  "token-scan.mjs",
+];
+
+test("THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set", () => {
+  // KILLED BY: restoring `process.exit(code)` at the foot of brief.mjs —
+  // it rejoins the derived set and this body names it. Also killed by a
+  // NEW command in this directory that ends the same way, which is the
+  // point: the membership argument above is re-opened rather than
+  // inherited.
+  const scriptsDir = path.join(repoRoot, "tools", "e2e", "scripts");
+  const derived: string[] = [];
+  for (const name of readdirSync(scriptsDir).filter((n) => n.endsWith(".mjs")).sort()) {
+    // CODE LINES ONLY. This card's own fix leaves a comment quoting the
+    // call it removed, and a sweep that counted comments would report
+    // the fix as the defect.
+    const code = readFileSync(path.join(scriptsDir, name), "utf8")
+      .split("\n")
+      .filter((l) => {
+        const t = l.trimStart();
+        return !t.startsWith("*") && !t.startsWith("//") && !t.startsWith("/*");
+      })
+      .join("\n");
+    if (/process\.exit\(/.test(code)) derived.push(name);
+  }
+
+  expect(
+    derived,
+    "brief.mjs is back in the class this card removed it from, or a new command joined it — " +
+      "a command that ends at process.exit() drops whatever stdout has not drained, which is " +
+      "invisible to a file and to a TTY and silent to a pipe. Set process.exitCode instead, or " +
+      "argue the new entry into the list above with a MEASURED size.",
+  ).toEqual(EXITS_AFTER_WRITING);
+  expect(derived, "brief.mjs must not exit after writing").not.toContain("brief.mjs");
+});
