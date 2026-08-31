@@ -12,8 +12,8 @@ touches: [app-board, docs/architecture/components]
 builder:
 verifier:
 built_by: claude-opus-5 @subagent-executor
-verified_by:
-review:
+verified_by: claude-opus-5 @subagent-verifier
+review: independent
 ---
 
 **MEASURED, NOT ANTICIPATED, IN T-112's POISON DRILL** (detached
@@ -210,3 +210,191 @@ whether anything imports `dispatch-store.ts` by `import`/`require`/
 value thing to re-measure independently** — if the mutant this card was
 filed on still survived, the section would be wrong about the one fact
 everything else rests on.
+
+## Verdicts
+<!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+### 2026-08-31 — `claude-opus-5@subagent` — **APPROVED WITH ASSIGNED CORRECTIONS**
+
+**PHASE 1 WAS WRITTEN AND SAVED BEFORE THE DIFF WAS OPENED**, to
+`T-112-s4-attack-set-phase1.md` in this session's scratchpad: the card at
+base `df0b550`, the registry, `.nputer/lane-fence.json`, CONVENTIONS'
+poison-drill catalogue, `TASK-FORMAT`'s defective-card clause and
+`roles/verifier.md` — then 5 per-criterion attack families, 7 planned
+mutants, and a written prediction about the premise. Only then were the
+diff, the notes, the commits and the two routed cards opened.
+
+**DISCLOSURES.** (1) My brief leaked a *shape* above its blind line: it
+directed me to "pay particular attention to any claim about a FENCE
+boundary" and to check whether TASK-FORMAT's record-and-route
+prescription "is what actually happened". No mutant number, path count or
+suite figure was named — so not the figure-leak `roles/verifier.md`
+forbids outright — but it telegraphs that this lane made a fence claim
+and routed. I re-derived the fence from the manifest and the registry
+independently; I cannot claim I would have ranked it identically
+unprompted. (2) My own first orientation command listed `docs/tasks/` and
+so showed me the filename of `T-112-s6` before phase 1 was written; I
+confirmed it absent at base, and read no part of its contents until
+phase 2. Both were recorded in the phase-1 file at the time.
+
+#### The premise: I reached the lane's conclusion independently, blind
+
+Measured in my own detached bench (`/private/tmp/vf-T-112-s4`, stem
+derived from the card id, own `CARGO_TARGET_DIR`), at **base `df0b550`**,
+one side only, each mutation read back on `git -C <dir> diff --numstat`
+before the suite and each restore proved by sha256 against
+`235645c0…4124`:
+
+| mutant | numstat | exit | failing bodies |
+|---|---|---|---|
+| baseline | — | 0 | 0 — 49 files / 1077 tests |
+| `dispatch={dispatch}` deleted | `0 1` | 1 | **2** |
+| `brief={brief}` deleted | `0 1` | 1 | **1** |
+| both deleted (**THE card's mutant**) | `0 2` | 1 | **2** |
+
+**The card's second clause is false at its own base and the mutant dies.**
+`T-112-s1` closed it in the interval. The lane reported exactly this, in
+its first commit subject, and did not manufacture the defect — which is
+the behaviour this pass existed to check. Its choice to withhold the
+counts so a blind verifier would derive its own is sound and it worked;
+correction **C4** now lands them, because a figure without its ref goes
+stale at the next write.
+
+**Criterion 2** was therefore already satisfied at base. **Criterion 3**
+is satisfied by measurement, and the lane's reading of shape SIX — that
+the count is per *mutant*, so a two-line deletion is answered per line —
+is correct. Stated plainly, as it is not on the card: the `brief` line's
+count is ONE; the `dispatch` line's is TWO, because bodies 1 and 3 both
+discriminate it.
+
+**Shape SIX asked of every body criterion 3 rests on.** Body 1
+(`…neither prop alone will do`) is killed uniquely by the `brief`-line
+mutant — count 1. Body 3 (`…the UNAVAILABLE arm rather than a brief`) is
+killed uniquely by a one-sided poison of the producer sentence in
+`task-detail.ts` — count 1, measured. Neither is a duplicate. Body 2 is
+the declared positive control; I did not construct its unique mutant and
+say so rather than implying I did.
+
+#### The fence claim: re-derived from the manifest, and it holds
+
+Not accepted from the card. `.nputer/lane-fence.json` is a **dispatch-time
+snapshot** pinned to `ref df0b550`; its `paths` carry no new `app/test/**`
+file, and `.claude/hooks/lane-fence.mjs` only ever reads that result —
+a lane fails closed on every uncertainty. So the registry line and the
+file it names provably cannot land in one lane, criterion 1's first arm
+collides with `touches:`, and `TASK-FORMAT` rules the card defective and
+prescribes record-and-route. **That is what happened**, and criterion 1's
+second arm — which *is* in fence — was discharged in the tree rather than
+routed away. Routing was not used to avoid work.
+
+**I attacked the routing itself and failed to break it.** `T-112-s6`'s
+deliverable is a `touches:` line naming a file that does not exist, so I
+expected the expander to reject it. Run through the built
+`expandFence`: `app-board => slug | app/test/board-root.test.tsx => path`,
+`unusable: []`, and the new path is reserved — a token carrying `/` or `.`
+is self-identifying and needs no existence oracle. The card is
+dispatchable as filed. `T-190` is likewise genuine: `dispatch-store.ts` is
+C-15's source under `app-dispatch`, a slug this lane does not hold.
+
+#### Gates, at the tip I was sent and in my own bench
+
+Parser suite 16 files / 344 tests exit 0 · `tsc --noEmit` exit 0 · app
+`npm run build` exit 0 · app `npm test` **49 files / 1077 tests exit 0**
+(three separate runs, all green) · `cargo test` all suites ok, 0 failed ·
+`arch cycles` exit 0 · `arch drift` exit 0 (REPORT; findings 4, unchanged
+from base). The parser's smoke test parses the live `docs/` tree with
+zero issues, which is what proves both new cards' frontmatter well-formed.
+
+**`index --check` exits 1 at the tip and 0 at base** — `Board.tsx` loc
+96→100, `TaskDetailPanel.tsx` loc 708→710. The diff touches `*.tsx`
+outside `docs/`, so CONVENTIONS' GRAPH REGEN rule fires and the
+regeneration is committed **with the CHECKPOINT** — the integrator's, not
+a lane failure. It is called out because the notes describe these two
+comment edits as inert, and they are not inert to the index.
+
+**On the intermittent the lane declined to call green: nothing about it
+reaches the tree** — not the card, not either commit message. I could not
+reproduce any red either, across every suite above. I attribute nothing
+to this diff, and correction **C5** asks for the sighting or its
+withdrawal, per STATE's re-run-once-then-attribute rule.
+
+#### The findings, and why they are corrections rather than a rejection
+
+No write leaves the manifest (`Board.tsx`, `TaskDetailPanel.tsx`,
+`C-18-board-root.md` and `docs/tasks`, all reserved); no gate reds that
+this lane owns; the premise correction is right; the routing is real and
+dispatchable. What is wrong is evidence, in a permanent registry file.
+
+**C1 — THE CYCLE MEASUREMENT DOES NOT MEASURE THE CYCLE, AND IT IS
+CAPTIONED "run rather than forecast".** `C-18-board-root.md` prints
+`arch cycles … verdict ACYCLIC exit 0` as the cost of re-homing the pin.
+I performed the re-route the sentence describes — put
+`app/test/board-truth.test.tsx` into C-18's `paths:` — and that same
+command answers **ACYCLIC, exit 0, again**: `arch cycles` reads DECLARED
+`depends_on`, and a path move declares no edge. What the path-only move
+actually buys is an `arch drift` **D4**:
+`app/test/board-truth.test.tsx  claimed_by=C-05,C-18  winner=C-05`. The
+cycle appears only after a second, unstated step — declaring `C-05` in
+C-18's `depends_on`, which honouring the observed `App` import requires —
+and then it is emphatic: **exit 1, `DECLARED CYCLE`,
+`C-05 -> C-18 -> C-05` and `C-05 -> C-13 -> C-18 -> C-05`, 2 cycles.**
+The conclusion stands; the printed evidence does not reach it. Either
+print the measurement that does, or re-caption the ACYCLIC block as the
+baseline it is. Record the D4 as the first wall, and that clearing it
+needs `C-05-app.md`, which an `[app-board]` fence cannot reach — that is
+a sharper refusal than the cycle. **The same unbacked claim is repeated in
+`T-112-s6`** ("the measurement is in `C-18-board-root.md`"); fix it there
+too, or it propagates into the card that acts on it.
+
+**C2 — THE PRINTED DERIVATION IS FALSIFIED BY THE ACT OF WRITING IT
+DOWN.** The section instructs the reader to run
+`command grep -n 'board-truth' docs/architecture/components/*.md` and says
+it answers `C-05-app.md`. At the tip it answers **two files, four lines**,
+because three of them are now the section's own prose. Verified by running
+it verbatim. `command grep -n '^  - app/test/board-truth' docs/architecture/components/*.md`
+answers exactly the one `paths:` line and survives being written down.
+
+**C3 — TWO QUOTES TRUNCATED WITHOUT ELLIPSIS, AND ONE REFERENT SWAPPED.**
+`T-169-s1`'s RESURFACES sentence is cut at "file." — dropping the half
+that names *two* remedies — and `C-05-app.md`'s T-149 note is cut before
+its parenthetical. More substantively: `T-169-s1`'s "one-file move" is
+moving the *review-badge bodies into* `board-truth.test.tsx`, and its
+re-route question named **C-08's or C-09's** `paths:`. This section
+refutes a third thing — re-homing `board-truth.test.tsx` to C-18 — then
+says "This is that customer, and this section is the decision." It decides
+one branch, not the one that card put first. Narrow the claim, or
+`T-169-s1` gets un-parked on an answer to a different question.
+
+**C4** Land the drill counts on this card with the ref they were measured
+at (`df0b550`), now that blindness has served its purpose — the table
+above may be cited. **C5** Record the intermittent — suite, body, the two
+measurements — or state that it did not recur and withdraw it. **C6** Note
+that this diff moves the index, so the checkpoint's graph regen is owed.
+
+#### Not blocking, and deliberately not filed by me
+
+**A body that cannot red.** The unavailable sentence's second half —
+everything from the em dash on — is asserted nowhere in the repository:
+deleting it from the producer in `task-detail.ts` (mutation read back
+`1 1`, restore sha-proved) leaves the app suite **green at 49/1077,
+exit 0**. Only its prefix is pinned, by `toContain` in `board-truth.test.tsx`
+— which is C-05's, while the producer is C-17's, so an `[app-board]` card
+may edit the sentence without its fence reaching the only file that pins
+it. That is `T-112-s1`'s pin, not this lane's diff. It wants a card, and I
+have not minted an id for it: this lane just paid for a `T-187` collision
+because ids are machine-scoped and every lane reads them from a stale
+checkout, and a verdict written from an older base than that lane's is
+the worst possible seat to mint from.
+
+*(My first attempt at that mutant silently no-opped — a literal em dash in
+a `perl -0777 -CSD` pattern is matched as bytes against decoded text, the
+hazard CONVENTIONS records. The numstat was empty and the suite was green;
+reported only after re-running with `\x{2014}` and reading the diff back.)*
+
+**Status left at `verifying`, deliberately.** Six corrections are ASSIGNED
+and none is performed here; `merging` would assert they had landed and
+`done` would assert a merge. `verified_by` and `review` are stamped;
+`verifier` stays empty because this seat was not pre-assigned.
+Gates re-run at the tip THIS verdict creates, not only at the one I was
+sent — figures above are ref-bound to `df0b550` (base) and `a00e2b5`
+(lane tip) as labelled.
