@@ -1093,11 +1093,26 @@ test("THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST", () => 
   expect(cards.length, "the tree has live task cards to feed the control").toBeGreaterThan(0);
   const diff = runGate([cards[0]!.path]);
   expect(diff.code, "the DIFF form on the same tree HAS a verdict").toBe(1);
-  expect(diff.out, "it fires").toContain("docs-gate: FIRES");
-  expect(diff.out, "names the suite the incident reddened").toContain(
+
+  // THE HAYSTACK IS NARROWED TO THE VERDICT, AND THIS IS A DRILL RESULT
+  // RATHER THAN A PRECAUTION (poison shape EIGHT). Written against the
+  // WHOLE output, the two assertions below both passed under a mutant
+  // that emptied the owed-command loop — because the derived-readers
+  // table printed at the top of every run already carries
+  // `[npx vitest run from lib/parser/]` five times and names
+  // `lib/parser/test/smoke.test.ts` once. The subject was deleted and
+  // the search stayed green on somebody else's copy.
+  //
+  // The remedy is shape EIGHT's own: pick the section out with an ANCHOR
+  // that is not the needle, and assert the ANCHOR's uniqueness so the
+  // haystack cannot quietly widen back to the whole file.
+  const anchor = "docs-gate: FIRES";
+  expect(diff.out.split(anchor).length - 1, "the FIRES verdict is printed exactly once").toBe(1);
+  const verdictOnly = diff.out.slice(diff.out.indexOf(anchor));
+  expect(verdictOnly, "the verdict names the suite the incident reddened").toContain(
     "npx vitest run from lib/parser/",
   );
-  expect(diff.out, "and names the BODY, which is what the census never could").toContain(
+  expect(verdictOnly, "and names the BODY, which is what the census never could").toContain(
     "lib/parser/test/smoke.test.ts",
   );
 

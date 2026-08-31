@@ -331,8 +331,14 @@ because materialising it is the integrator's act, not this lane's.
 
 Appended as a record, per TASK-FORMAT. Found while running the owed
 suites for `T-142-s1`; **it is not that lane's to fix and was not
-fixed** — routed instead, because it is a distinct producer needing its
-own drill.
+fixed**, being a distinct producer needing its own drill.
+
+**THE REMEDY ALREADY HAS AN OWNER: `T-197`**, which landed on main at
+`726d807` *while this lane was building* — found by `T-192`'s executor
+and re-measured at the architect seat. So this entry is a SECOND,
+INDEPENDENT measurement rather than a new route. It is kept here because
+the CLASS is this card's even where the FIX is T-197's, and it adds two
+facts that card does not carry.
 
 `node tools/e2e/scripts/brief.mjs --dispatch` **silently truncates its
 own output at exactly 65,536 bytes whenever its stdout is a PIPE.** It
@@ -368,12 +374,36 @@ DECISION content (`critical path`, `worst blocker`), the report is
 programmatic reader of it takes a pipe by construction while every
 human reader takes a terminal and sees the whole thing.
 
-**Live consequence, stated because a session will meet it:**
+**ADDITION ONE — `T-197`'s CRITERION 3 IS ALREADY ANSWERED, AND THE
+ANSWER IS THE DUAL OF THE ONE IT EXPECTS.** That card asks whether any
+suite body *passes* against truncated output and would change when the
+fix lands, and says to check before rather than after. Checked:
+**one body already FAILS on it.**
 `tools/e2e/tests/dispatch-order.spec.ts:200` (*"--dispatch runs on the
-live repository, exits 0, and WRITES NOTHING"*) reds on this at
+live repository, exits 0, and WRITES NOTHING"*) reds at
 `57c1b39` — **1 failed / 366 passed** in the full e2e lane, and
 **1 failed / 13 passed** running that spec alone. Re-run once as a
-second measurement, per STATE, and it reproduces. The board crossed
+second measurement, per STATE, and it reproduces. Its `status` and
+`HEAD` arms both hold; what fails is `toContain("critical path:")` at
+line 215, because that line sits in the lost tail. **So the fix is not
+neutral to the suite — it turns that body green**, and whoever takes
+T-197 should expect the lane to go from 366/1 to 367/0 rather than to
+stay unmoved.
+
+**ADDITION TWO — THE LOST-BYTE FIGURE IS A LIVE FACT, NOT A FUNCTION OF
+THE TREE, AND T-197 STATES IT AS THOUGH IT WERE.** That card records
+*"69,293 bytes"* and *"3,757 bytes are lost"* against the ref
+`57c1b39`. At the same ref this lane measured the file form at **69,302**
+bytes and the loss at **3,766** — because the report's own content
+includes the LIVE LANE LIST and the `startable once the lanes are
+counted:` total, which move whenever a worktree is cut or removed. The
+truncation point does not move (65,536 is one buffer), so the DELTA is
+the ref-bound half and the endpoint is not. Neither figure is wrong;
+they were read minutes apart with a different number of lanes on the
+machine. State it with the reading time, the way the PORT RULE's
+holder is stated.
+
+The board crossed
 64 KiB of `--dispatch` output at some ref nobody was watching for, so
 the red arrives attributed to whatever lane runs the suite next — which
 is the DOCS GATE's own founding story one tool over.
