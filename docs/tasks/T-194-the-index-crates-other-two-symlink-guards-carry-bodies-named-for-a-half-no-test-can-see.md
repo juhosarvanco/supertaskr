@@ -800,3 +800,48 @@ the same one `T-186` reached: **the derivation must include the SEAT, not
 just the card** (`nd-T-194-verify` beside `nd-T-194`), or the dispatching
 seat allocates it. Recorded here because a second instance of a shape is
 worth more than the first.
+
+### GATES RE-RUN AT THE TIP THIS VERDICT CREATED
+
+**A verdict is prose and prose is a code input**, so the gates below were
+re-derived at **`a8b1fb3`** — the commit carrying this verdict — rather
+than carried forward from `26cba92`. Every exit was captured BEFORE any
+pipe and read from my own `$?`, never from a wrapper's summary; the e2e
+notification claimed "exit code 0" while the captured `$?` was **1**,
+which is the disagreement `docs/STATE.md` warns about, sighted again.
+
+- **Merge forecast** at main: `git merge-tree --write-tree` **exit 0, no
+  conflict, 5 paths** — the lane's four code files plus this card.
+- **`docs-gate.mjs`** on those five, passed as separate literal ABSOLUTE
+  arguments: **exit 1, FIRES, 1 path under `docs/` is a code input**,
+  naming three commands. It also reports **every live task card's
+  frontmatter parses, with a legal status** — which covers this verdict's
+  own append — and that governing-document budgets hold (4 gated, 0
+  awaiting).
+- **`npx vitest run` from `lib/parser/`** — **exit 0, 16 files / 344
+  tests**.
+- **`npm test` from `app/`** — **exit 0, 49 files / 1100 tests**.
+- **`npm test` from `tools/e2e/`** — **exit 1, 366 passed / 1 failed** on
+  `NPUTER_E2E_PORT=31940`, DERIVED as 30000 + 194×10, with `lsof` showing
+  zero rows before binding.
+- **`cargo test`** was measured at `26cba92` (**605/0 over 18 targets**)
+  and is NOT re-run here: this verdict's commit touches only
+  `docs/tasks/`, and `docs-gate.mjs` derives the readers of that path as
+  the three suites above. `tests/arch.rs` reads
+  `docs/architecture/components`, which this commit does not move.
+- **BOOT GATE not re-run for the same reason** — no `app/src-tauri/**`
+  path moved in my commit. The lane measured it exit 0 on 21940.
+  **1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing
+  else, before and after every run: zero rows every time.**
+
+**THE ONE E2E RED IS `T-197` AND I PROVED IT MYSELF RATHER THAN INHERITING
+THE LANE'S ATTRIBUTION.** At this ref `brief.mjs --dispatch` **redirected**
+is **75,993 bytes** with `# BLOCKED — the unmet blocker is named` present
+at **line 205**; **piped** it is **65,536 bytes — exactly 64 KiB** with
+that section absent. Loss **10,457 bytes** at `a8b1fb3` (the lane measured
+12,098 at its own ref; the board moved between us, and both figures carry
+their ref). `T-197`'s title states **3,757** — **the defect grows with the
+board, and this is its third independent re-measurement.** And this lane's
+diff cannot reach the section by construction: **zero cards declare
+`blocked_by` containing `T-194`**, so removing this lane's work cannot put
+a BLOCKED entry back.
