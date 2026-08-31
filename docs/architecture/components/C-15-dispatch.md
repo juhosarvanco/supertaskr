@@ -5,6 +5,7 @@ layer: app
 paths:
   - app/src-tauri/src/dispatch/**
   - app/src/lib/dispatch-store.ts
+  - app/test/dispatch-store.test.ts
 depends_on: [C-10]
 decisions: [ADR-009, ADR-012, ADR-017]
 status: auto
@@ -49,7 +50,17 @@ deleted.** The `paths:` entry went with it in the eleventh triage's
 cleanup; this paragraph is kept, rewritten, because the settlement it
 records is why the entry existed at all.
 
-**WHY THIS COMPONENT DECLARES NO `app/test/**` PATH (T-190).**
+**WHY THIS COMPONENT DECLARED NO `app/test/**` PATH, AND WHAT IT COST TO
+GAIN ONE (T-190 priced it; `T-198` crossed it).**
+
+**READ THIS SECTION AS A RECORD, NOT AS THE CURRENT STATE.** The
+`paths:` array above now carries `app/test/dispatch-store.test.ts` and
+`hydrateJoin` is driven by a collected body; `T-198`'s section at the
+bottom of this file is what changed and what stayed true. Everything
+between here and there is `T-190`'s measurement, kept verbatim because
+the price it established is the reason the crossing was affordable — and
+because two of its sentences turned out to be wrong in ways worth
+keeping visible.
 
 This is the answer to `T-126-s2`'s test-reachability blocker, recorded
 here so the next lane does not re-derive it. Its sibling case is written
@@ -145,6 +156,26 @@ The drill above moved only the `paths:` array because no file existed;
 a lane that also WRITES the file moves `c15?.files`, the `fileComponent`
 tally and the tree-wide file-count body with it, and adds a `.ts` file to
 the walk, so `index --check` goes STALE until the merge's GRAPH REGEN.
+
+> **THIS PARAGRAPH IS WRONG ABOUT THE TIMING AND `T-198` MEASURED IT
+> WRONG — corrected here rather than deleted, because the forecast is
+> the kind a next lane acts on.** Those three tallies do NOT move
+> in-lane. `architecture-dogfood.test.ts`'s `liveModel()` parses the
+> registry LIVE but reads the graph from the **committed**
+> `docs/architecture/graph.json`, which a lane does not regenerate
+> (T-009-s1) — so with the registry line added AND the file written,
+> a throwaway probe at `T-198`'s ref returned `c15?.files` still SIX,
+> the `fileComponent` C-15 tally still SIX, `fileComponent.size` still
+> 199, findings `[]` and issues `[]`. **Exactly one assertion moves in
+> the lane: the `paths:` array.** The rest move at the merge's GRAPH
+> REGEN, where C-15 goes 6 → 7 files and the tree-wide count 199 → 200.
+> `T-190`'s own blind verifier reached the same result independently
+> (its non-blocking observation 2, measured as `1 failed | 49 passed
+> (50)` with the file written and declared) — so this is two
+> measurements agreeing against one forecast. The forecast's DIRECTION
+> is right and only its timing is wrong, which is exactly what makes it
+> dangerous: a lane that budgets for four reds and meets one will go
+> looking for the missing three.
 **No tally is written here on purpose** — the first red in that body
 hides the ones below it, and the file's own remedy is the T-088
 technique it documents: derive the new values from a throwaway probe
@@ -158,6 +189,15 @@ and its DIRECTION is untouched — the join goes to TypeScript behind a
 test path. What this section supplies is the price of that path,
 measured. It does not supply the path: `hydrateJoin` is still driven by
 nothing, and a one-sided mutation of it still reds no body anywhere.
+
+> **THAT LAST SENTENCE STOPPED BEING TRUE AT `T-198`, WHICH IS THE WHOLE
+> POINT OF THIS FILE'S HISTORY.** It was true when written, survived a
+> deliberate falsification attempt by `T-190`'s blind verifier, and is
+> now false by construction: `app/test/dispatch-store.test.ts` drives
+> `hydrateJoin` from a collected body, and the canonical one-side-only
+> mutant — deleting `rows.set(row.taskId, row)` — reds. See the `T-198`
+> section at the foot of this file for the mutants and their
+> failing-body counts.
 
 **IT MAKES `T-185` AND `T-195` CHEAPER, AND BY DIFFERENT AMOUNTS.**
 `T-185`'s fourth criterion asks for a body CONSTRUCTING a reading with a

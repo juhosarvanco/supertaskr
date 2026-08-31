@@ -1177,9 +1177,31 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // the cleanup @human ordered when the triage surfaced it, and it moves
     // NO file count — a glob matching nothing contributes nothing, which is
     // exactly why nine merges did not notice.
+    // 2 -> 3 AT T-198 (2026-08-31), and this is the assertion T-190 spent
+    // a whole lane pricing: it is the ONLY thing in this repository that
+    // pins C-15's globs, and the only exact `toEqual` over a live
+    // component's whole `paths:` array anywhere (C-11's and C-05's are
+    // `toContain`, which a superset satisfies). That is why C-15 could
+    // not gain a test path from inside an `[app-dispatch]` fence — this
+    // file is C-12's (`app-map`) — and why T-198's `touches:` names this
+    // file explicitly. The new entry is `app/test/dispatch-store.test.ts`,
+    // the pin that finally drives `hydrateJoin`.
+    // ONLY THIS ASSERTION MOVES IN-LANE, and that was DERIVED from a
+    // throwaway probe against the live model before this suite was run
+    // (the T-088 technique), never read off a failure. The three
+    // graph-derived assertions below — `c15?.files`, the `fileComponent`
+    // tally and the tree-wide count — are read from the COMMITTED
+    // graph.json, which a lane does not regenerate (T-009-s1). Probe at
+    // this lane's ref, with the registry line in place and the new file
+    // on disk: files still 6, fileComponent C-15 still 6, size still 199,
+    // findings [] and issues []. They move at the merge's GRAPH REGEN,
+    // where C-15 goes 6 -> 7 files and the tree-wide count 199 -> 200.
+    // **C-15-dispatch.md FORECAST THAT THEY MOVE IN-LANE AND THEY DO
+    // NOT** — that sentence is corrected in the same commit as this one.
     expect(project.components?.find((c) => c.id === "C-15")?.paths).toEqual([
       "app/src-tauri/src/dispatch/**",
       "app/src/lib/dispatch-store.ts",
+      "app/test/dispatch-store.test.ts",
     ]);
     const c15 = derived.components.find((c) => c.id === "C-15");
     expect(c15?.kind).toBe("declared");
