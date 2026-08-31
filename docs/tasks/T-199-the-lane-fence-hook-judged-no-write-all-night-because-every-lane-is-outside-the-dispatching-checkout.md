@@ -387,3 +387,56 @@ regeneration in a commit no lane can make.
   cosmetics. Each is the old code answering a question the new design
   answers differently, and each body still carries its discriminating
   half.
+
+### The correction clause — where the brief was wrong
+
+1. **THE BASE WAS `e6a97d2`, NOT `2eb87f7`.** The brief named `2eb87f7`.
+   Derived at this seat rather than argued:
+
+       git merge-base main HEAD                       e6a97d205756…
+       git merge-base --is-ancestor 2eb87f7 HEAD      exit 1  (NO)
+       git merge-base --is-ancestor e6a97d2 HEAD      exit 0  (YES)
+       main tip 2eb87f7 · this lane's tip 408c540
+
+   `2eb87f7` is main's tip, so it is the right LEFT-HAND REF for the
+   range rule's merge forecast and the wrong answer to *"what is this
+   lane's base"*. The dispatching seat volunteered the correction and
+   named the cause itself: it derived a ref from **where it was
+   standing** instead of from the thing it was describing.
+   **THAT IS THIS CARD'S DEFECT PERFORMED BY HAND.** `decide()` took the
+   repository root from `request.cwd` — where the WRITER was standing —
+   instead of from the target it was judging, and a seat writing the
+   brief FOR that card made the identical substitution in the same
+   sitting. It is the best available evidence that the defect is natural
+   rather than careless, and it is recorded here because a guard-class
+   card is worth more when the class is shown to reach humans too.
+
+2. **The brief said the hook "has never fenced anything in this
+   session's shape" — true, and incomplete in a way that matters.**
+   `.claude/settings.json` runs the hook as
+   `node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/lane-fence-hook.mjs"`,
+   and `CLAUDE_PROJECT_DIR` is the DISPATCHING session's project root —
+   so the hook binary a lane session actually executes is the
+   DISPATCHING checkout's copy. **This fix therefore arms nothing in its
+   own lane**, which is why every proof here is a subprocess drill
+   against this worktree's runner rather than an observation of the live
+   session. It arms at the merge, for sessions started after it.
+
+3. **The brief's line 786 / line 870 citations were right**, and so was
+   its warning about the five-symbol import contract: nothing in
+   `LANE_BRANCH_RE`, `findCheckoutRoot`, `readHeadRef`, `readManifest`
+   or `within` moved, and `push-guard.spec.ts` is green.
+
+4. **The card's folded-in "the hook should EXPORT the manifest reader"
+   item was ALREADY SATISFIED** at the base ref — `readManifest` is
+   exported, shape-checks and refuses rather than shrugging, and no code
+   in the tree opens `.nputer/lane-fence.json` by hand. Nothing was
+   built for it. Said plainly rather than quietly skipped.
+
+5. **A standing warning relayed mid-lane, and it did not bite here.**
+   `docs-gate.mjs` can exit 1 from an import-time crash, which is
+   indistinguishable BY CODE from its `EXIT.FOUND`. This lane ran
+   `npm ci` from `tools/e2e/` before any gate (exit 0) and every
+   docs-gate run printed its full derivation — 26 readers, the census
+   figures, and named owed suites — rather than a stack trace. The
+   exits below were read from that OUTPUT, not from the code alone.
