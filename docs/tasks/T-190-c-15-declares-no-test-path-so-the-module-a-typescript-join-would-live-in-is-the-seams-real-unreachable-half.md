@@ -285,8 +285,62 @@ are in the final commit), so the notes commit does not move the answer.
   root: **exit 1**, `FIRES — 1 path(s) under docs/ are code inputs`,
   naming four suites: `cargo test` from app/src-tauri/, `npm test` from
   app/, `npm test` from tools/e2e/, `npx vitest run` from lib/parser/.
-  All four were run. **The gate refuses a bare relative path** (exit 2,
-  "CALLED WRONG") unless run from the repository root — worth knowing.
+  All four were run, on the COMMITTED tree at `c92cbe9`:
+
+      npx vitest run  from lib/parser/     16 files                exit 0
+      npm test        from app/            49 files / 1094 tests   exit 0
+      cargo test --no-fail-fast            18 targets, 601/0/4     exit 0
+      npm test        from tools/e2e/      1 failed / 365 passed   exit 1
+
+  **The gate refuses a bare relative path** (exit 2, "CALLED WRONG")
+  unless run from the repository root — worth knowing.
+
+**THE ONE RED IS PRE-EXISTING AND IS NOT THIS DIFF — PROVED, NOT
+ASSERTED.** `tools/e2e/tests/dispatch-order.spec.ts` › *"--dispatch runs
+on the live repository, exits 0, and WRITES NOTHING"*. **My first
+attribution was WRONG and is recorded as such**: I blamed my own
+concurrent edits to this card, because the lane ran while I was writing
+these notes. It reproduced on the settled, committed tree, so that
+explanation was wrong and the real one is below.
+
+**DRILL 3 — the attribution.** Both of this lane's files were restored to
+their `57c1b39` content, one side only, and the spec re-run alone:
+
+    at BASE content   1 failed / 13 passed   exit 1   (same body)
+    at c92cbe9        1 failed / 13 passed   exit 1   (same body)
+
+Restored to `c92cbe9` and proven by sha256 — `174234ea…` for
+`C-15-dispatch.md`, `c79a4dca…` for this card — with `git status
+--porcelain` empty. **The `--dispatch` output is in fact LARGER at base
+than with my diff** (69,299 vs 69,033 bytes), because stamping this card
+`verifying` moves it to a shorter section — so if anything the diff moves
+the failure further away.
+
+**THE CAUSE, MEASURED TO THE BYTE, AND IT IS WORTH A CARD.**
+`brief.mjs --dispatch` **silently truncates its own output at the pipe
+buffer and still exits 0**:
+
+    stdout to a FILE   69033 bytes   complete    exit 0
+    stdout to a PIPE   65536 bytes   truncated   exit 0
+
+65536 is the macOS pipe buffer exactly. `tools/e2e/scripts/brief.mjs`
+ends in `process.exit(code)`, and Node's writes to a PIPE are
+ASYNCHRONOUS, so `process.exit` discards whatever has not drained. Under
+`spawnSync` the captured stdout is 65536 bytes, `status` is 0 and `error`
+is `none`, so **nothing anywhere reports the loss.** The spec reds
+because what falls off the end is the tail: `BLOCKED — the unmet blocker
+is named` sits at byte 65767 and `critical path:` at 67782. **Which
+assertion fails therefore MOVES between runs**, which is what first made
+this look like flake and is really the tell.
+
+**THE USER-FACING HALF IS WORSE THAN THE RED.** Any human or program that
+PIPES `--dispatch` — into `less`, `grep`, `tee`, a collector, CI — gets a
+dispatch answer whose BLOCKED list, critical path and worst blocker are
+simply gone, at exit 0. That is the *"A GATE READ THROUGH A PIPE REPORTS
+THE PIPE"* family with the roles reversed: here the PRODUCER loses the
+data. It is newly FIRING rather than newly written — the board crossed
+64 KiB of output as it grew (`drawn cards: 262`), and nothing watches
+that size.
 - **GRAPH REGEN — NOT OWED.** Trigger is a diff touching
   `*.ts/*.tsx/*.js/*.jsx` or `*.rs` outside `docs/`. This diff touches
   two paths, both under `docs/`, neither of those extensions.
@@ -328,6 +382,23 @@ it is outside this fence and I did not drill it.
 **(c) THE BRIEF ASSERTS AN ENFORCEMENT THE HOOK DECLINES TO PROVIDE.**
 See below; worth a card against the brief assembler rather than against
 the hook.
+
+**(d) `brief.mjs --dispatch` LOSES ITS TAIL THROUGH A PIPE, AT EXIT 0 —
+and this is the highest-value thing this lane found.** Measured above:
+69033 bytes to a file, **exactly 65536 to a pipe**, `status` 0, `error`
+none. Cause is `process.exit(code)` at the end of
+`tools/e2e/scripts/brief.mjs` against Node's asynchronous pipe writes.
+**What is lost is the BLOCKED list, the critical path and the worst
+blocker** — the half a dispatcher actually reads. It reds
+`dispatch-order.spec.ts`'s live-repository body today and will red harder
+as the board grows. The fix is to stop exiting before stdout drains
+(set the exit CODE and let the process end, or await the drain); the
+`--brief` and `--state` arms share the exit path and should be checked
+for the same loss, since they will cross 64 KiB later rather than never.
+**A regression pin belongs with it**: assert the piped byte count equals
+the file byte count, which is the only form that cannot pass by being
+under the buffer. This lane did not touch it — `tools/e2e` is outside
+this fence and `T-142-s1` holds it.
 
 ### Where the brief was wrong
 
