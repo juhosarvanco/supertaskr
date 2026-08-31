@@ -76,13 +76,16 @@
  * in a form the hook budget can read, which is a change to what
  * `--write-fence` commits and belongs with `T-211`'s fast paths.
  *
- * ── AND THE SEPARATOR `within` TURNS ON IS PINNED HERE ───────────────
- * `T-221` measured that dropping the `/` from the parser's own
- * `sharedDomain` reds NOTHING in the repository, and named this card as
- * a third consumer arriving on the same primitive. That card owns
- * `sharedDomain`'s half, in `lib/parser`. THIS file's containment body
- * pins the other half: `.claudeX/other.mjs` is OUTSIDE `.claude`, so a
- * `within` that dropped its separator reds by name.
+ * ── AND `T-221` IS NARROWER THAN IT READS, MEASURED HERE ─────────────
+ * That card says dropping the `/` from the parser's `sharedDomain` reds
+ * NOTHING in the repository, and names this card as a third consumer
+ * arriving on the same primitive. TRUE OF `sharedDomain`; NOT true of
+ * `within`, which is the primitive THIS call site actually spends.
+ * Drilled: dropping `within`'s separator reds two bodies by name —
+ * `lane-fence.spec.ts`'s "a name that merely starts the same is not
+ * inside", which pre-dates this card, and this card's own containment
+ * body. So `T-221`'s hole is `lib/parser`'s alone, and this gate does
+ * not widen it.
  *
  * ── WHAT THIS GATE CANNOT SEE, STATED SO IT IS NOT OVERSOLD ──────────
  * 1. **A lane writing ANOTHER lane's worktree never appears in its own
