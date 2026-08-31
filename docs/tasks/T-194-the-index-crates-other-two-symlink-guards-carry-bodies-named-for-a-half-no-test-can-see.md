@@ -222,18 +222,30 @@ blanks stripped) is IDENTICAL between base and tip: `registry.rs`
 **227 = 227**, `resolve/mod.rs` **398 = 398**, `tsconfig.rs` **82 = 82**
 non-comment lines, non-zero on both sides before any verdict was read.
 
-**AND MY OWN POSITIVE CONTROL WAS VACUOUS FOR ONE OF THE THREE FILES, AND
-ITS OWN FAILURE LINE IS WHAT SAID SO.** The control plants a one-token
-change and requires the comparison to detect it. It used `symlink_metadata`
-— which occurs twice in `registry.rs`'s shipped half and once in
-`resolve/mod.rs`'s, and **zero times in `tsconfig.rs`'s**, so for that
-file it planted nothing and the check reported `CONTROL FAILED`. This is
-poison shape TEN wearing the drill's costume for the third card running
-(`T-186` hit it twice, its verifier once). Re-run with `read_contained`,
-present twice there: the control detects it and base-vs-tip is still
-identical. **The lesson that generalises: a positive control needs its own
-non-empty precondition — assert the planted token OCCURS before trusting
-that the check can say no.**
+**AND MY OWN POSITIVE CONTROL WAS VACUOUS — TWICE, IN OPPOSITE
+DIRECTIONS — AND ITS OWN FAILURE LINE IS WHAT SAID SO BOTH TIMES.** The
+control plants a one-token change and requires the comparison to detect
+it.
+
+1. It first used `symlink_metadata`, which occurs twice in `registry.rs`'s
+   shipped half and once in `resolve/mod.rs`'s, and **zero times in
+   `tsconfig.rs`'s** — so for that file it planted nothing and the check
+   printed `CONTROL FAILED`.
+2. Switching the whole script to `read_contained` fixed `tsconfig.rs` and
+   **broke `registry.rs`**, which contains no such call. Same failure, other
+   end of the same list, one edit apart.
+
+This is poison shape TEN wearing the drill's costume for the third card
+running (`T-186` hit it twice, its verifier once). The landed form takes
+the control token **PER FILE and asserts its occurrence count before
+running the control** — `symlink_metadata` ×2 in `registry.rs`,
+`read_contained` ×2 in the other two — and refuses rather than reporting
+when the count is zero. **The lesson that generalises, and the reason the
+second sighting is worth more than the first: a positive control is itself
+a check, so it needs its own non-empty precondition. Assert the planted
+token OCCURS before trusting that the check can say no** — otherwise
+"fixing" a vacuous control just moves which file it is vacuous for, which
+is exactly what happened here.
 
 ### THE DRILL — 17 ARMS, EVERY ONE READ BACK, RESTORED AND PROVEN
 
@@ -386,17 +398,28 @@ false coverage."* At this ref:
 
 ### GATES — every exit read UNPIPED, every trigger DERIVED from the diff
 
+**THE WHOLE SET WAS RUN TWICE AND THE FIGURES BELOW ARE THE SECOND RUN'S,
+at the code tip `c51c83d`.** The first pass gated `7ae3357`; the two extra
+arms that falsified my own sentence then moved comments in `resolve/mod.rs`
+and `tsconfig.rs`, so every trigger fired again rather than only the docs
+half. **Every figure came back identical** — the same 605/0, the same
+`files +0 -0 ~4`, the same 344 / 1100 / 366+1, the same boot lines — which
+is what a comments-only delta should look like and is stated because it was
+checked, not assumed.
+
 The gate set is derived against **the tree this tip will have**, the merge
 forecast the RANGE RULE prescribes for the executor's position:
 `TREE=$(git merge-tree --write-tree main HEAD)` then
 `git diff --name-only main "$TREE"`, at main **`dd6b723`** — **exit 0, no
 conflict, 5 paths**: the four crate files and this card. Re-derived at the
-frozen tip `7ae3357`; unchanged. (Main advanced from `146ebb6` to
+frozen tip `7ae3357` and again at `c51c83d`; unchanged both times — 5
+paths, `merge-tree` exit 0, no conflict. (Main advanced from `146ebb6` to
 `dd6b723` while this lane worked — one docs-only commit that touches no
 path in this fence.)
 
-- **`cargo test` from `app/src-tauri/`** at `7ae3357`: **exit 0, 605
-  passed / 0 failed over 18 targets**, `--no-fail-fast`.
+- **`cargo test` from `app/src-tauri/`** at `c51c83d`: **exit 0, 605
+  passed / 0 failed over 18 targets**, `--no-fail-fast`. (Same at
+  `7ae3357`.)
 - **THE BASE WAS MEASURED, so the delta is not arithmetic**: the same
   command at `146ebb6` before anything was touched is **exit 0, 601
   passed / 0 failed over 18 targets**. 601 + 4 = 605 and the four are the
@@ -406,7 +429,8 @@ path in this fence.)
   parts add up to the whole in both directions**, which is the arithmetic
   tell `T-186` was saved by.
 - **The cargo cache cliff did not fire** (`T-088-s4`): the lib suite's own
-  time is **4.13s at base and 4.60s at the tip**, against the green band of
+  time is **4.13s at base, 4.60s at `7ae3357` and 5.33s at `c51c83d`**,
+  against the green band of
   under 9.5s, with sibling lanes live. The first build in this worktree was
   COLD, as the dispatch said it would be; that is the build, not the suite.
   No body was re-run, so there is nothing to attribute.
