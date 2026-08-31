@@ -762,23 +762,77 @@ export async function sendGenesisTurn(
   }
 }
 
+/**
+ * Apply a cancel outcome (T-184, carrying T-183's half).
+ *
+ * THE DEFECT THIS CLOSES: `idle` used to do NOTHING. The chord the footer
+ * advertises — *"⌘. to stop"* — was pressed on @human's walk against a
+ * store that had nothing to cancel, got `idle` back, and left every flag
+ * exactly where it was. A chord that silently does nothing is the failure
+ * family T-171 was written against.
+ *
+ * WHY `idle` MUST DISARM, and it is the same decision as the arming
+ * guard above rather than a second one. `idle` is the runner saying it
+ * has no turn running. That is the runner's own measurement, which is
+ * the token the screen already trusts — so a store still claiming flight
+ * against it is stale by exactly the inference `flightOf` makes on the
+ * render side. Making the store agree with the runner settles both
+ * halves of this card with one rule.
+ *
+ * AND IT MUST SETTLE THE TURNS TOO, not only the flags. `flightOf` reads
+ * `turn.status === "running"` BEFORE it reads any flag, so a store that
+ * cleared `sending`/`phase` and left a turn stuck at `running` would
+ * still show the footer claiming a turn nobody is running. Clearing the
+ * flags alone would have looked like a fix and changed nothing on screen.
+ *
+ * IDENTITY WHEN THERE IS NOTHING TO DO, which is what makes the cancel
+ * path safe to press twice: the second press finds no running turn and
+ * no claim, returns `prev` unchanged, and `setState` skips the
+ * re-render. The same contract `reduceGenesisEvent` has.
+ */
+export function reduceGenesisCancel(
+  prev: GenesisState,
+  outcome: CancelOutcomePayload,
+): GenesisState {
+  const settled = prev.turns.map((t) =>
+    t.status === "running" && (outcome.kind === "idle" || t.turn === outcome.turn)
+      ? { ...t, status: "cancelled" as const }
+      : t,
+  );
+  const turnsMoved = settled.some((t, i) => t !== prev.turns[i]);
+  if (!turnsMoved && !prev.sending && prev.phase === "idle") return prev;
+  return {
+    ...prev,
+    sending: false,
+    phase: "idle",
+    turns: turnsMoved ? settled : prev.turns,
+  };
+}
+
 /** Kill the current turn's process group. The NATIVE session survives:
- * the kill is of the turn, not the conversation. */
+ * the kill is of the turn, not the conversation.
+ *
+ * NOT BOUNDED, unlike the flight-arming commands above, and the reason is
+ * at the site: nothing latches behind this call — the screen invokes it
+ * fire-and-forget — so a command that never answers holds nothing, and
+ * the claim it would have cleared is one a real `started` armed and the
+ * runner's own start and stall deadlines still answer for. A bound here
+ * would also have to invent an outcome `CancelOutcome` does not have.
+ *
+ * THE WATERMARK GUARD ON `idle` IS THE ARMING GUARD, MIRRORED. An `idle`
+ * answer is a fact about the moment it was ASKED, and this promise can
+ * resolve after a new turn has started — in which case obeying it would
+ * cancel a turn that really is running, which is this card's own defect
+ * with the sign flipped. So the disarm applies only when no event has
+ * landed since the ask; when one has, the events are the newer truth and
+ * they are left standing. */
 export async function cancelGenesis(): Promise<CancelOutcomePayload | null> {
   if (!isTauri) return null;
+  const askedAt = state.seq;
   try {
     const outcome = await invoke<CancelOutcomePayload>("genesis_cancel");
-    if (outcome.kind === "cancelled") {
-      setState({
-        ...state,
-        sending: false,
-        phase: "idle",
-        turns: state.turns.map((t) =>
-          t.turn === outcome.turn && t.status === "running"
-            ? { ...t, status: "cancelled" }
-            : t,
-        ),
-      });
+    if (outcome.kind === "cancelled" || state.seq === askedAt) {
+      setState(reduceGenesisCancel(state, outcome));
     }
     return outcome;
   } catch {

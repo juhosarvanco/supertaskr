@@ -3,7 +3,7 @@ id: T-112-s4
 title: C-18 declares no test path, so Board.tsx's prop threading has no suite — deleting it leaves the whole app run green, measured
 feature: F-02
 milestone: 4
-priority: 25
+priority: 2
 size: S
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-112
@@ -75,3 +75,27 @@ The graph sits at **410 bytes** of headroom at `b60b06d`
 (`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
 1,040,000 budget), and this card's fence reaches indexed source. The
 sitting records the block rather than lowering the priority.
+
+## PROMOTED TO PRIORITY 2 AT THE ARCHITECTURE SITTING, 2026-08-31 — this card is now a BLOCKER for two others
+
+**Nothing about this card's own argument changed; its position did.**
+
+The sitting ruled `T-126-s2`'s seam (read the ruling there). The join
+goes to TypeScript, and shapes 1 and 2 were refused on architectural
+properties while shape 3 was refused **only** on test reachability. That
+makes the registry gap this card describes the load-bearing obstacle for
+the whole seam rather than a local annoyance:
+
+- **`T-126-s2` now declares `blocked_by: [T-112-s4]`.** Until C-18 has a
+  test path, anything the join puts in TypeScript is unpinnable by
+  construction, and `T-110` already measured what that costs — four
+  one-side-only producer mutants surviving at exit 0.
+- **`T-112-s5` needs the same file opened**, to declare the C-09 → C-15
+  edge its shape 3 requires. Two cards want one registry edit; doing them
+  apart means opening it twice.
+
+**And the seam is emptier than this card measured.** The sitting confirmed
+that nothing in `app/src` or `app/test` imports `dispatch-store.ts` at
+all, and filed `T-185` for two fields the board's reading type silently
+drops. This card's *"deleting it leaves the whole app run green"* is one
+instance of a condition that holds across the entire dispatch view model.

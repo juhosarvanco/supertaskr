@@ -5,15 +5,15 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: done
 blocked_by: []
 touches: [docs/decisions, docs/rooms]
 suggested_by: executor claude-opus-5@subagent @T-162
-builder:
+builder: claude-opus-5@subagent
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
-review:
+review: self-verified
 ---
 
 **FILED FROM T-162's OWN ARITHMETIC.** ADR-019 §Budgets legislates
@@ -102,3 +102,120 @@ one. What it now owes:
 - **Re-derive every figure**: the lines were re-based at T-162's merge,
   so the headroom numbers in this card's body are stamped at refs that
   have moved.
+
+## Implementation notes (2026-08-31, executor claude-opus-5@subagent)
+
+Lane `task/T-162-s1-the-byte-floor-lands-in-the-adr`, worktree
+`/Users/ujju/Projects/nputer-T-162-s1`, base `bd8a8e88c727` (`main` had
+moved to `a3bb22d4c47f` while the lane ran; no input below depends on
+it). Fence `[docs/decisions, docs/rooms]`, `docs/tasks` always writable.
+**Every figure in this section is re-derived at `bd8a8e88c727`**, which
+the card's own body ordered — the body's numbers are T-162's and have
+moved.
+
+**WHAT LANDED.** ADR-019 §Budgets now legislates
+`warn = landed + max(F, landed × 0.25)` with `fail = landed × 1.5`
+unchanged, and states `F` = 2 053 with the two thresholds the shape
+implies. ADR-019 addendum 5 carries the derivation, the consequence
+table and the routing.
+`docs/rooms/governing-docs.md` §THE BUDGET FORMULA gains a CARRIED
+subsection — @human's ruling text is untouched; the note is appended
+beneath it.
+
+**THE DERIVATION OF `F`, WHICH IS THE WHOLE DECISION.** The ruling fixed
+the SHAPE ("one ordinary merge's growth for the smallest governed
+document … the same shape `check::WARN_HEADROOM_BYTES` uses") and left
+the VALUE to be measured. That precedent
+(`app/src-tauri/crates/nputer-index/src/check.rs`) is the **mean of the
+positive single-commit growths**, stated with median and max beside it.
+Applied here: for each first-parent commit changing the file,
+`git cat-file -s $c:<file>` minus the same at its first parent, positives
+kept, mean taken. `docs/STATE.md` is the smallest governed document on
+all three readings (landed 6 772, size at this ref 7 571, target 12 KB),
+giving 147 positive growths summing 301 751 → **`F` = 2 053** (median
+842, max 12 039). No creation event is in the series.
+
+**THE CHOICE OF DOCUMENT WAS NOT FREE, AND THE CHECK THAT SETTLED IT.**
+The ruling's derivation rule says *smallest governed document*; its
+motivation says *ROADMAP is the case the floor exists for*. Those pick
+different files at this ref. Deriving from ROADMAP gives `F` = 1 058,
+which binds where `landed < 4 232` — **no governed document is under
+that, so the ruling would change nothing at all.** A derivation that
+reduces a ruling to a no-op is a wrong derivation, so the lane followed
+the derivation rule and routed the discrepancy to @human in the room
+rather than picking a number that made ROADMAP bind. **This is the one
+thing the lane could not settle.**
+
+**WHAT IT MOVES.** One line: `docs/STATE.md`'s warn, 8 465 → 8 825
+(+360). ROADMAP, ARCHITECTURE and CONVENTIONS stay on the proportional
+term, unchanged. STATE's live headroom goes 894 → 1 254 bytes — **less
+than one ordinary STATE merge (2 053)**, which is stated plainly because
+the alternative is to inflate `F` until it reads better. Its health band
+moves 10.56% → 14.21% of the warn line, off the 10% drift edge it is
+currently sitting half a point above.
+
+**AND THE CARD'S OWN PREMISE SURVIVED RE-DERIVATION, WITH ONE REVERSAL.**
+The arithmetic holds. But the body's *"ROADMAP … the file whose runway is
+shortest"* is no longer true: at this ref STATE has 894 bytes of headroom
+against ROADMAP's 1 906. `docs/CONVENTIONS.md` is also already at
+145 583 bytes against a 131 514 landing — **+14 069 in the day since
+T-162 re-based it**, which corroborates the velocity claim the card was
+filed on.
+
+**WHAT WAS NOT BUILT, AND IT IS HALF THE RULING.** The per-merge delta
+budget. @human refused it explicitly; the lane did not reopen it.
+`fail` was likewise left alone — the ruling replaced the `warn` formula
+and said nothing about `fail`, and a lane does not widen a ruling.
+
+**ROUTED: `T-162-s2`** (`touches: [tools/e2e]`, `blocked_by: [T-162-s1]`).
+The dispatch-time call to split this card was CHECKED, not trusted, and
+it was right: `DOC_BUDGETS` and every prose statement of the old formula
+live under `tools/e2e` — `docs-scan.mjs` (the table, its doc-comment and
+the RE-LANDED comment) and `health-bands.config.mjs` (two comments that
+argue *against* a byte floor and rest on a "headroom is EXACTLY 20% of
+the warn line by construction" invariant this ruling breaks — STATE now
+lands at 23.3%). `docs/STATE-template.md` mentions `DOC_BUDGETS` but
+states no formula, so it needs nothing. **`tools/e2e` was held by the
+live lane `T-167-s8` (`[.claude, tools/e2e]`) at this ref**, so routing
+was also the only option that could run tonight.
+
+## Integrator review (self, per the ceremony row `S, diff outside shipped code`)
+
+No blind verifier is owed on this row, so this half is the executor's and
+is stamped as `review: self-verified`. **What was actually checked:**
+
+- **The ruling was read at its source**, not from the dispatch prompt —
+  `docs/rooms/governing-docs.md` §THE BUDGET FORMULA — and both halves
+  were honoured: floor added, delta budget not built.
+- **The precedent was read before it was imitated** — `check.rs`'s
+  `WARN_HEADROOM_BYTES` is a mean of positive growths, which is why `F`
+  is a mean and not a median. Had it been a median, `F` would have been
+  842 and the floor would have bound nothing.
+- **The vacuity check** above — the reason the derivation is defensible
+  rather than merely literal.
+- **The blast radius was measured, not assumed**: a sweep for every site
+  stating `× 1.25` across `*.md`/`*.mjs`/`*.ts`/`*.rs`, and a sweep for
+  anything under `tools/e2e` that reads `docs/decisions` or `docs/rooms`.
+  Nothing asserts on the text of either file, so the diff cannot red an
+  assertion; the two Playwright specs that walk all of `docs/` read bytes
+  for layout only.
+- **Gates**: `npm run lint:docs` from tools/e2e/, and the DOCS GATE's own
+  fire/not-owed question answered from the real diff rather than assumed.
+
+**WHAT THIS REVIEW COULD NOT DO, said rather than left to be found:**
+
+- **It is not independent.** The same seat derived `F` and reviewed the
+  derivation. The vacuity check is the strongest evidence on offer and it
+  is still self-produced.
+- **It did not run the suite the DOCS GATE owes.** The gate fires for this
+  diff and owes `npm test from tools/e2e/` — a Playwright suite needing a
+  built app bundle, which this docs-only lane did not build. It is owed at
+  the MERGE and left to the integrating seat, flagged rather than skipped
+  quietly.
+- **It cannot confirm @human's intent** where the ruling's derivation rule
+  and its motivation diverge. The lane followed the operative half and
+  wrote the question down in the room; only @human can close it.
+- **`F` is a snapshot.** It is a mean over this repository's whole
+  first-parent record for one file; it will move as the record grows, and
+  ADR-019 §Budgets says it is re-derived at the next landing pass rather
+  than treated as constant.

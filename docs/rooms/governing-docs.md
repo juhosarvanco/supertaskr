@@ -497,3 +497,33 @@ line again under the floor.
 smallest governed document, measured at the implementing lane's own ref —
 the same shape `check::WARN_HEADROOM_BYTES` already uses in the crate.
 A round number here would be the defect this room exists to avoid.
+
+### CARRIED (2026-08-31, `T-162-s1`) — `F` = 2 053, and one thing for @human to look at
+
+The ruling above is now decision text: **ADR-019 §Budgets** carries the
+formula and **addendum 5** carries the derivation, the consequence table
+and the two thresholds that fall out of the shape. `F` = **2 053 bytes**,
+the mean of `docs/STATE.md`'s 147 positive first-parent growths at
+`bd8a8e88c727` (median 842, max 12 039). It moves exactly one line —
+STATE's warn, 8 465 → 8 825 — and leaves the other three on the
+proportional term. The half of the ruling that is NOT built stays not
+built, with the revisit condition as written.
+
+The `DOC_BUDGETS` table and the health-band comments that still state the
+old formula are outside that lane's fence and are routed as **`T-162-s2`**
+(fenced `tools/e2e`). Until it lands the code holds the TIGHTER line,
+which is the safe direction.
+
+**ONE THING THIS LANE COULD NOT SETTLE, LEFT FOR @human RATHER THAN
+DECIDED.** The ruling's derivation rule says *the smallest governed
+document*; its motivation says *ROADMAP is the case the floor exists
+for*. At the implementing ref those pick different files — STATE is
+smaller on landed size, current size and target, and now also has the
+shorter runway (894 bytes against ROADMAP's 1 906), which reverses the
+reading the motivation was written from. The lane followed the
+**derivation rule**, because it is the operative half and because
+deriving from ROADMAP yields `F` = 1 058, which binds for no document at
+all and would make this ruling a no-op. **If what was wanted was a floor
+that reaches ROADMAP, `F` has to come from somewhere other than "one
+ordinary merge of the smallest document"** — that is a second ruling, not
+something a lane may pick, and it is left here rather than guessed.

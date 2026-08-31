@@ -1,8 +1,16 @@
 ---
 id: T-126-s2
 title: The join is the half F-04 actually renders and it has no zero-argument shape — the board's stamps are parsed in TypeScript and a joining command would have to take them inbound
-status: parked
+feature: F-04
+milestone: 4
+priority: 3
+size: M
+status: planned
+blocked_by: [T-112-s4]
+touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
+builder:
+review:
 ---
 
 **T-126's criterion 6 fired, and it fired on the JOIN rather than on the
@@ -98,3 +106,75 @@ state), the frontier (`selectDispositions`), the presentation
 pinned in `app/test/board-truth.test.tsx`, killing the mutant `T-112-s4`
 measured. The drawer's dispatch block renders correctly under that pin
 and cannot render in the shipped app.
+
+## THE RULING — architecture sitting, 2026-08-31, architect seat at `a3bb22d`
+
+**UN-PARKED: the condition fired.** The eleventh triage said *"UN-PARK
+WHEN: a consumer needs to render the four lane states."* `T-112-s1`
+registered `dispatch_brief` and wired `dispatch-store.ts` to it, so the
+consumer exists. This card asked for a ruling before a fence; here it is.
+
+### Shape 1 and shape 2 are refused on properties that CANNOT be fixed
+
+**Shape 1 — stamps inbound — is dead.** ADR-012 puts narrowness in the
+command's own signature and a `Vec<BoardStamp>` argument is caller input
+crossing the boundary. No measurement can revive it, because nothing
+about the repository's test coverage is what makes it wrong.
+
+**Shape 2 — parse the board in Rust — is dead.** It is a second card
+parser, which is `T-057`'s rule, and the harm is not hypothetical:
+`T-033-s11` records two engines already disagreeing about one registry
+for `non_code`. Also unfixable-by-measurement, and for the same reason.
+
+### Shape 3 is refused on TEST REACHABILITY, and that is a different KIND of objection
+
+`T-110`'s rejection was measured, not aesthetic: four one-side-only
+producer mutants survived `npm run build` and `npm test` at exit 0,
+because `app/vitest.config.ts` collects `test/**` only and **no file
+imports `dispatch-store.ts`.**
+
+**This sitting re-measured that, expecting it to have healed, and it has
+not — it is worse than `T-110` recorded:**
+
+- Nothing under `app/src` or `app/test` imports `dispatch-store.ts`. Not
+  by `import`, not by `require`, not by dynamic `import()`.
+- Its exported `hydrateJoin` is referenced exactly once outside its own
+  file, and **the reference is a doc comment** in
+  `app/test/select-board.test.ts` — a fixture that hand-builds *"the
+  shape `hydrateJoin` produces"* without calling it, and produces a
+  different shape. That is filed as `T-185`.
+
+### The asymmetry IS the ruling
+
+Shapes 1 and 2 are refuted by architectural properties, which do not
+decay and cannot be bought off. **Shape 3 is refuted by a property a lane
+can fix.** An objection with a remedy and two objections without is not a
+three-way choice; it is one option and a price.
+
+**THE JOIN GOES TO TYPESCRIPT — after, and only after, the dispatch view
+model has a test path.** Doing it in the other order reproduces `T-110`
+exactly, and this project has already paid for that lesson once.
+
+### The order is therefore FORCED, and this card is not first
+
+- **`T-112-s4` is this card's BLOCKER, not its sibling.** C-18 declares
+  no test path, so `[app-board]` cannot add one without editing the
+  registry, and `Board.tsx`'s prop threading is deletable with the whole
+  app run green — measured on that card. Until that is fixed, anything
+  put in TypeScript here is unpinnable by construction. `blocked_by` now
+  says so.
+- **Then this card.**
+- **Then `T-112-s5`**, whose own shape 3 (fetch in `TaskDetailPanel`)
+  needs the C-09 → C-15 edge declared — a registry edit in the same file
+  `T-112-s4` already opens.
+
+### A note on how this ruling was nearly got wrong
+
+The sitting opened with `grep -l dispatch-store app/test/`, which
+returned two files and looked like the refutation had healed. **Both were
+false positives**: one match is a comment, the other a path string
+literal inside a registry census. A census satisfied by a MENTION rather
+than by a USE is a failure family this repository has now met in five
+places, and it very nearly booked an architecture decision. The check
+that settled it was grepping for `import`/`require`/`import(` rather than
+for the module's name.

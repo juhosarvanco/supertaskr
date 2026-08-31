@@ -9,10 +9,12 @@ import {
   emptyGenesisState,
   isTurnInFlight,
   reduceGenesisEvent,
+  reduceGenesisCancel,
   reduceGenesisOutcome,
   settledTurn,
   type GenesisEvent,
   type GenesisState,
+  type CancelOutcomePayload,
   type GenesisStatusPayload,
   type GenesisTurn,
 } from "../src/lib/agent-store";
@@ -47,15 +49,22 @@ const ipc = vi.hoisted(() => ({
   /** The `genesis-turn` handler the store registered. */
   onGenesisTurn: null as null | ((event: { payload: GenesisEvent }) => void),
   outcomes: new Map<string, unknown>(),
-  /** Commands that answer with a promise nobody ever resolves — the
-   * never-answers case, which is not the same as a rejection. */
+  /** Commands that answer with a promise nobody resolves until this
+   * file says so — the never-answers case, which is not the same as a
+   * rejection, and the LATE-answer case, which is neither. */
   parked: new Set<string>(),
+  /** Resolves the most recently parked call, for the late-answer case. */
+  release: null as null | ((value: unknown) => void),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (command: string, args?: unknown) => {
     ipc.invoke(command, args);
-    if (ipc.parked.has(command)) return new Promise(() => {});
+    if (ipc.parked.has(command)) {
+      return new Promise((resolve) => {
+        ipc.release = resolve as (value: unknown) => void;
+      });
+    }
     const outcome = ipc.outcomes.get(command);
     return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
   },
@@ -79,6 +88,7 @@ async function freshStore(): Promise<typeof import("../src/lib/agent-store")> {
   ipc.outcomes.clear();
   ipc.parked.clear();
   ipc.onGenesisTurn = null;
+  ipc.release = null;
   vi.resetModules();
   return import("../src/lib/agent-store");
 }
@@ -745,5 +755,125 @@ describe("the pair, end to end: the walk that stranded T-171's fixture (T-184)",
     expect(store.isTurnInFlight(store.getGenesisState())).toBe(true);
     expect(store.getGenesisState().phase).toBe("running");
     expect(store.getGenesisState().staleFlightClaim).toBeNull();
+  });
+});
+
+/**
+ * T-184, CARRYING T-183's HALF — THE STORE REFUSING TO DISARM.
+ *
+ * The other direction of the same surface. Above, the store arms a claim
+ * the turn evidence contradicts; here, it holds a claim the RUNNER
+ * contradicts. `cancelGenesis` used to do nothing at all when the runner
+ * answered `{kind:"idle"}`, so the escape the footer advertises was
+ * pressed on the walk against a store with nothing to cancel and left
+ * every flag where it was.
+ *
+ * The fold's own argument is that one decision settles both halves: the
+ * runner's measurement outranks the store's flag, whichever way the
+ * disagreement points. These bodies are what makes that checkable.
+ */
+describe("cancel: an idle runner disarms the store it contradicts (T-184 absorbing T-183)", () => {
+  const IDLE: CancelOutcomePayload = { kind: "idle" };
+
+  it("AN IDLE ANSWER CLEARS THE CLAIM THE STORE WAS STILL HOLDING", () => {
+    // The stranded shape, built from real events: a turn opened and its
+    // terminal event never came.
+    const stranded = play([ev({ kind: "started", seq: 1, turn: 1 })]);
+
+    // POSITIVE CONTROL, and the criterion asks for it by name: the claim
+    // must actually be SET first, or "nothing is claiming flight
+    // afterwards" is satisfied by there having been nothing there.
+    expect(isTurnInFlight(stranded), "the claim must be set before the cancel").toBe(true);
+    expect(stranded.turns[0]?.status).toBe("running");
+
+    const after = reduceGenesisCancel(stranded, IDLE);
+    expect(isTurnInFlight(after)).toBe(false);
+    expect(after.sending).toBe(false);
+    expect(after.phase).toBe("idle");
+    // AND THE TURN TOO, not only the flags. `flightOf` reads the turn's
+    // status BEFORE any flag, so a store that cleared the flags and left
+    // this at "running" would still have the footer claiming a turn.
+    expect(after.turns[0]?.status).toBe("cancelled");
+  });
+
+  it("THE CANCEL PATH IS SAFE TO INVOKE TWICE — the second press is identity", () => {
+    const stranded = play([ev({ kind: "started", seq: 1, turn: 1 })]);
+    const once = reduceGenesisCancel(stranded, IDLE);
+    const twice = reduceGenesisCancel(once, IDLE);
+    // BY IDENTITY, not by deep equality: a user who pressed a chord that
+    // appeared to do nothing presses it again, and the second press must
+    // not even re-render.
+    expect(twice).toBe(once);
+    expect(isTurnInFlight(twice)).toBe(false);
+    expect(twice.turns[0]?.status).toBe("cancelled");
+
+    // …and it is identity from a genuinely idle store as well.
+    const idle = emptyGenesisState();
+    expect(reduceGenesisCancel(idle, IDLE)).toBe(idle);
+  });
+
+  it("a REAL cancellation still settles only the turn it names", () => {
+    // The pre-existing behaviour, kept: `cancelled` carries a turn and
+    // acts on that turn. Only `idle`, which carries none, reaches wider.
+    const two = play([
+      ev({ kind: "started", seq: 1, turn: 1 }),
+      ev({ kind: "completed", seq: 2, turn: 1, text: "one", truncatedRelay: false }),
+      ev({ kind: "started", seq: 3, turn: 2 }),
+    ]);
+    const after = reduceGenesisCancel(two, { kind: "cancelled", turn: 2 });
+    expect(after.turns[0]?.status).toBe("completed");
+    expect(after.turns[1]?.status).toBe("cancelled");
+    expect(isTurnInFlight(after)).toBe(false);
+
+    // A `cancelled` naming a turn that is not running settles nothing and
+    // comes back by identity once there is no claim left to clear.
+    expect(reduceGenesisCancel(after, { kind: "cancelled", turn: 2 })).toBe(after);
+  });
+
+  it("THROUGH THE REAL STORE: the chord clears what the walk left set", async () => {
+    const store = await freshStore();
+    ipc.outcomes.set("genesis_status", IDLE_STATUS);
+    await store.startGenesisListener();
+    ipc.onGenesisTurn!({ payload: { kind: "started", seq: 1, turn: 1 } });
+    expect(
+      store.isTurnInFlight(store.getGenesisState()),
+      "the fixture must really reproduce the held claim",
+    ).toBe(true);
+
+    ipc.outcomes.set("genesis_cancel", { kind: "idle" });
+    expect(await store.cancelGenesis()).toEqual({ kind: "idle" });
+    expect(store.isTurnInFlight(store.getGenesisState())).toBe(false);
+    expect(store.getGenesisState().turns[0]?.status).toBe("cancelled");
+
+    // Pressed again, as a user who saw nothing happen would.
+    const before = store.getGenesisState();
+    expect(await store.cancelGenesis()).toEqual({ kind: "idle" });
+    expect(store.getGenesisState()).toBe(before);
+  });
+
+  it("A STALE IDLE IS REFUSED: an answer events have overtaken cannot cancel a live turn", async () => {
+    // The arming guard mirrored. An `idle` is a fact about the moment it
+    // was ASKED; obeying one that resolves after a new turn has started
+    // would cancel a turn that really is running — this card's own defect
+    // with the sign reversed.
+    const store = await freshStore();
+    ipc.outcomes.set("genesis_status", IDLE_STATUS);
+    await store.startGenesisListener();
+    ipc.onGenesisTurn!({ payload: { kind: "started", seq: 1, turn: 1 } });
+
+    // The cancel is asked and PARKED, a NEW turn starts while it is in
+    // flight, and only THEN does the cancel answer — the late answer
+    // itself, constructed rather than stood in for.
+    ipc.parked.add("genesis_cancel");
+    const pending = store.cancelGenesis();
+    await Promise.resolve();
+    ipc.onGenesisTurn!({ payload: { kind: "started", seq: 2, turn: 2 } });
+    expect(ipc.release, "the cancel must really be parked").not.toBeNull();
+    ipc.release!({ kind: "idle" });
+    expect(await pending).toEqual({ kind: "idle" });
+
+    // Turn 2 really is running, so the stale idle is refused.
+    expect(store.getGenesisState().turns[1]?.status).toBe("running");
+    expect(store.isTurnInFlight(store.getGenesisState())).toBe(true);
   });
 });
