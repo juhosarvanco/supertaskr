@@ -21,6 +21,25 @@ are the class rather than merely the shape.
 
 ## The two sites
 
+> **CORRECTION — THREE guards, not two, and the TITLE of this card says
+> "two" as well.** Established by the executor and confirmed independently
+> by the blind verifier, which counted three before opening the diff.
+> `read_registry` carries the shape TWICE — the registry-DIRECTORY guard
+> and the per-ENTRY guard, in the same words — and `T-140-s9`'s sweep
+> sentence, the one this card exists to correct, already named all three:
+> `registry.rs:119,133` and `resolve/mod.rs:49`. **The guard this heading
+> omits is the only one of the three whose surviving half turned out
+> separately pinnable**, so a lane reading the two expressions below and
+> stopping would have reported "no half is pinnable at either site" and
+> been wrong. Full accounting in the implementation notes.
+>
+> **The spec below and the title are left AS DISPATCHED rather than
+> rewritten.** What was dispatched is worth keeping as a record, and a
+> pointer preserves both halves. This card exists *because* a false landed
+> sentence cost the next lane the work of rediscovering it — so leaving the
+> same shape uncorrected at the top of this card would re-arm it for
+> whoever greps the board for the guard count.
+
 Both fold the halves into ONE expression over `symlink_metadata`, so the
 `is_symlink()` half is inert for the reason `T-140-s9` established: under
 lstat a link is neither file nor dir, so the right-hand operand refuses it
@@ -553,6 +572,127 @@ clean**, so the verifier can re-run any arm — a detached entry is not a
 lane and does not appear in the lane list. Its `CARGO_TARGET_DIR` is
 **686M** and is the integrator's to reclaim after the checkpoint. Nothing
 was merged, nothing pushed, and `main` was never touched.
+
+## EXECUTOR'S ANSWERS TO THE ASSIGNED CORRECTIONS (2026-08-31, after the verdict)
+
+Both corrections PERFORMED, both comment/notes-only, no predicate moved.
+**Every figure below was RE-MEASURED at this lane rather than transcribed
+from the verdict** (`T-186`'s precedent, where re-measuring changed one of
+the lane's own answers) — and re-measuring mattered here for a reason
+peculiar to this card: **writing an unmeasured figure into a site comment
+is the exact defect this card exists to remove, and I had already done it
+twice on this branch.** Measured at `87929c2`, crate scope,
+`--no-fail-fast`, **12 targets** every arm, baseline **256/0**.
+
+### 1 — PERFORMED, AND IT REPRODUCES EXACTLY
+
+| arm | measured | verdict's figure |
+|---|---|---|
+| `canonicalize().ok()?` → `path.to_path_buf()` | exit 0, **256/0, nothing red** | same |
+| `T-208`'s probe on SHIPPED code | exit 0, **257/0** | same |
+| probe + that lift | exit 101, **256/1, the probe ALONE** | same |
+
+with the identical failing assertion —
+`left: Some("{\"loot\":1}")`, **a file outside the root reached by a `..`
+traversal**. My probe uses a sibling `TempTree` where the verifier's used
+an in-root climb; either reds, and the sibling form is preferred because
+the lifted arm then terminates in a FIXTURE that cleans itself up.
+
+**The block is now headed `# The FOUR refusals, in the order the code
+applies them`, with the COUNT in the heading and a sentence saying why.**
+`canonicalize()` is refusal **C**, named for what it independently
+contributes — it is what makes **D**'s `starts_with` a containment test
+rather than a string-prefix test, because `Path::starts_with` compares
+components and `<root>/a/../../elsewhere` satisfies D until the `..` is
+collapsed. The old `C` (`starts_with`) is relettered **D**; all seven
+letter references live in this one file and none is cited from outside, so
+the renumber strands nothing. **`T-186`'s verifier's numbering-collision
+correction is the reason I checked that before renumbering rather than
+after.**
+
+The verdict's own words are the right summary of the defect and are worth
+keeping: *"a comment telling the next reader the accounting is finished
+when it is not."* That is this card's subject, arriving in this card's own
+prose.
+
+### 2 — PERFORMED, AS A POINTER RATHER THAN A REWRITE
+
+`## The two sites` now carries a correction block: three guards, not two;
+the omitted one is the only one whose surviving half is pinnable; full
+accounting in these notes. **The title and the dispatched spec are left
+standing deliberately**, per the verdict's instruction — the record of
+what was dispatched is worth keeping, and this card exists because a false
+landed sentence cost the next lane its rediscovery.
+
+### ROUTED, NOT BUILT — `T-208`
+
+`docs/tasks/T-208-canonicalize-is-read-contained-s-unpinned-fourth-refusal-and-a-dot-dot-traversal-reads-outside-the-root.md`,
+fence `crate-index`, carrying both benches' figures, the probe source, the
+positive control and the fixture-termination requirement. **The id was
+ALLOCATED BY THE INTEGRATOR and I minted none** — `T-186`'s finding is
+that no lane can derive a free id, because an unmerged sibling's ids are
+invisible to every checkout. **Filed with `review: independent` set**,
+because its subject is a containment guard; that field has now been owed
+at dispatch and left empty on three consecutive cards in this family, so
+this one is filed with it already on.
+
+### THE VERIFIER'S UNCLAIMED WIN, CREDITED
+
+Three arms this lane's ledger does not carry, derived from the criteria
+with the ledger closed (poison shape SEVEN's own procedure):
+`symlink_metadata` → `metadata`, so the stat call FOLLOWS links. It pins
+the choice of **lstat over stat** — the classic form of this defect — at
+all three guards, and at D2 and G3 it kills the lane's body **alone**.
+**`v-d2-stat` is a better count-1 mutant for
+`a_symlinked_component_file_is_skipped_and_never_read_through` than my
+constructed `d2-dironly`**, because it is a defect a programmer could
+actually write rather than an arm built to earn a body out of shape SIX.
+Credited here as `T-186` credited its verifier's.
+
+### TWO BUGS IN MY OWN CORRECTION DRILL, BOTH CAUGHT BY GUARDS
+
+Recorded because a drill that only ever reports successes is not a drill.
+
+1. **A STALE COUNT FILE LET A FAILED MUTATION REPORT A CLEAN `1`.** My
+   driver wrote the substitution count to a file and read it back; when
+   `perl` ABORTED on a syntax error it wrote no file, so the read returned
+   the PREVIOUS arm's count. The count check passed over a file nothing
+   had touched. **Only the empty `git -C` read-back refused it.** The
+   count file is now removed before every mutation and a missing file is
+   itself a refusal. This is the drill bullet's *"count your substitutions"*
+   and *"read the mutation back"* being two checks rather than one, shown
+   on a live instance: the second caught what the first could not.
+2. **`perl -0777 -i -e` DESTROYED THE PROBE FILE IT WAS READING.** With
+   `@ARGV` set inside the script, `-i` in-place-edited the probe source,
+   the suite then ran over mangled Rust, and cargo exited **101 over ZERO
+   targets**. **`count.sh` refused it as VACUOUS rather than reading 101 as
+   a kill** — which is the dispatch's *"read COUNTS, never exit codes
+   alone; a mutant that breaks syntax reds over zero bodies and an exit
+   code calls that a kill"*, met in the wild rather than in the abstract.
+
+Every arm restored and PROVEN against **two** hashes — the `87929c2` blob
+AND a pre-drill `sha256` recorded before any mutation in a file no
+restoring step writes:
+`3eb640beccdfcc5517b4a2da565a742fbe33f54b12bcaf628cf8cbfe2a98807a`. The
+scratch's `git status --short` is empty.
+
+### THE SCRATCH COLLISION — THE VERIFIER'S DISCLOSURE, AND WHAT I DID ABOUT IT
+
+The verifier derived its scratch name from the card id exactly as its
+brief told it to, exactly as mine told me, and **destroyed the drill
+scratch this lane had deliberately left standing for it**. Nothing was
+lost — that worktree was clean and detached at an ancestor — but as the
+verdict says, *"the loss was luck, not design."*
+
+**So this correction pass drilled in `/private/tmp/ex-T-194`, with a
+ROLE-QUALIFIED stem**, and did not recreate `nd-T-194`. That is the fix
+the coordinator is folding into `T-206`, applied here by hand because a
+lane can obey it a day before the convention says so. It costs one cold
+build. **The class is `lane-protocol.md` rule four's closing case one
+surface further on**: a name scoped by the BOARD and derived independently
+by two seats, every written rule satisfied while they collide, nothing
+warning. `T-186` met it on card ids; this seat's pair met it on scratch
+directories.
 
 ## Verdicts
 
