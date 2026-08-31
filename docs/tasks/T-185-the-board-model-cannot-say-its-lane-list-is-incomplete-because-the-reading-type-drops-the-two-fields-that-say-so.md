@@ -134,3 +134,36 @@ reading with a populated `notLanes` or with `truncated: true`.**
 ruling names), `T-112-s4` (the registry gap that leaves this whole seam
 without a test path), and `T-033-s11` (two implementations of one fact,
 measured).
+
+## THE PRODUCER CHAIN IS THREE LAYERS DEEP AND EVERY ONE OF THEM PRESERVES BOTH FACTS ON PURPOSE
+
+Added at the same sitting, after following the fields back to their
+source. **This is not a TypeScript-side oversight; it is a complete,
+argued producer chain whose last boundary discards the result.**
+
+- **`lanes.rs`** sets `truncated` in two places — on a read error and on
+  the entry ceiling — and its doc comment says a repository that exceeds
+  the ceiling *"gets a FLOOR with `truncated: true`."* That file also
+  carries an **argued rejection of the obvious repair**: truncating as the
+  collection is built is called *"the WRONG one"*, because truncating
+  before the sort *"returns whichever entries the filesystem happened to
+  hand back first, which trades a deterministic answer for a smaller
+  `Vec`."* The flag exists so a bounded answer can still be an HONEST one.
+- **`join.rs`** partitions the scan and its `LaneRegistration::of` comment
+  reads: *"`None` for every entry that is not a lane — those are **carried
+  whole** in `DispatchJoin::Joined::not_lanes` rather than dropped."*
+- **`hydrateJoin`** carries both across the wire verbatim.
+- **`DispatchReading` has nowhere to put either**, and the board renders
+  from that.
+
+**So a design decision argued at length in Rust — that a truncated answer
+must announce itself rather than silently shrink — is undone at the
+TypeScript boundary by a type with two fewer fields.** Three sites say
+"never dropped" and "the answer is a floor"; the fourth drops them.
+
+That is the strongest available argument that the loss is UNINTENDED, and
+it narrows this card's first decision considerably: deleting the fields
+at the producer would mean deleting `lanes.rs`'s determinism argument
+too, which is almost certainly wrong. **The likely correct answer is that
+`DispatchReading` grows both fields and the board gains its note** — but
+the lane should still make the case rather than inherit this one.
