@@ -23,7 +23,7 @@ pub(crate) struct WalkedFile {
 ///
 /// **AND IT IS A CONTAINMENT PREDICATE, NOT ONLY A FORMATTER** (T-186).
 /// `strip_prefix(base).ok()?` returns `None` for every path outside
-/// `base`, which is `walk_root`'s layer 4 and the line that still refuses
+/// `base`, which is `walk_root`'s gate E and the line that still refuses
 /// an escaped path when the explicit `starts_with` above it is lifted.
 /// Softening the `?` to a lossy join would leave that check the only
 /// containment in the walk, silently. Pinned by
@@ -52,6 +52,26 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
 
     let mut builder = ignore::WalkBuilder::new(canon_root);
     builder
+        // GATE A, AND IT IS THE ONE REFUSAL HERE THAT IS UNPINNED WHILE
+        // BEING PINNABLE (T-186 verdict, correction 2 — routed as `T-196`,
+        // NOT fixed here: it sits outside this card's four predicates and
+        // widening a fence from inside a lane is the one repair a lane may
+        // never make).
+        //
+        // Measured by the verifier at this file's own tip: flipping this to
+        // `.follow_links(true)` leaves the WHOLE crate suite GREEN —
+        // including `symlinks_are_never_followed_file_or_dir`, whose name
+        // promises exactly this refusal. **So it is the same defect this
+        // card fixes, one line above the ones it fixed**: a body named for
+        // a layer it cannot see.
+        //
+        // It is NOT a "cannot red" finding, which is what separates it from
+        // the shadowed halves below: a fixture EXISTS and has been written
+        // — an inside-pointing symlinked DIRECTORY aimed at the
+        // hard-skipped `node_modules` subtree, so the entries it exposes
+        // are real files that canonicalize INSIDE the root and containment
+        // cannot rescue them. `T-196` carries that shape and its
+        // measurement.
         .follow_links(false)
         .hidden(false) // tracked hidden dirs may hold real code
         .git_ignore(true)
@@ -66,15 +86,38 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         name != ".git" && name != "node_modules"
     });
 
+    // THE REFUSALS, IN SOURCE ORDER, AND THE KEY THAT MAPS THEM ONTO THE
+    // LEDGER BELOW. They are LETTERED, not numbered, and that is a repair:
+    // this site had five gates numbered 1..4 while T-186's ledger counts
+    // four PREDICATES, so a reader who mapped a ledger row onto a site
+    // number got the wrong line (T-186 verdict, correction 3).
+    //
+    //   gate A  `follow_links(false)`               — the walker never
+    //                                                 DESCENDS a link
+    //   gate B  `is_symlink() || !meta.is_file()`   — TWO predicates in
+    //                                                 one statement
+    //   gate C  extension + language allowlist
+    //   gate D  `canon.starts_with(canon_root)`
+    //   gate E  `relative_posix(..)`                — the load-bearing
+    //                                                 containment
+    //   and `files.dedup_by` at the very end, which is not a refusal but
+    //   is inert in the same way — named at its own site below.
+    //
+    // **THE LEDGER'S "ALL FOUR" MEANS THE FOUR PREDICATES THIS CARD IS
+    // ABOUT** — `is_symlink` and `!meta.is_file()` (both inside gate B),
+    // `starts_with` (gate D) and `strip_prefix` (inside gate E). **Gates A
+    // and C are NOT among them**: gate C is this crate's own addition and
+    // gate A is the fifth refusal, which is UNPINNED and, unlike the
+    // shadowed halves, PINNABLE — see its site note below and `T-196`.
     for result in builder.build() {
         let Ok(entry) = result else { continue };
         if entry.depth() == 0 {
             continue; // the root itself
         }
         let path = entry.path();
-        // LAYER 1 — the link classification, beyond `follow_links(false)`
-        // above. This is the layer `symlinks_are_never_followed_file_or_dir`
-        // is NAMED after.
+        // GATE B — the link classification, beyond gate A above. This is
+        // the gate `symlinks_are_never_followed_file_or_dir` is NAMED
+        // after.
         //
         // **THE `is_symlink()` HALF IS INERT, AND THAT IS A FACT ABOUT
         // `symlink_metadata` RATHER THAN ABOUT THE TESTS** (T-186,
@@ -100,9 +143,9 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         if meta.file_type().is_symlink() || !meta.is_file() {
             continue;
         }
-        // LAYER 2 — the allowlist, by extension and by requested language.
+        // GATE C — the allowlist, by extension and by requested language.
         // **IT READS THE ENTRY'S OWN NAME AND NEVER ITS TARGET**, so it can
-        // rescue nothing layer 1 refuses: a link called `x.ts` carries an
+        // rescue nothing gate B refuses: a link called `x.ts` carries an
         // allowlisted name whatever it points at. That asymmetry is this
         // crate's and not `docs_watch`'s, and it is why T-186 could not
         // inherit that lane's "undetectable by construction" verdict — the
@@ -117,7 +160,7 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         if !languages.contains(&lang) {
             continue;
         }
-        // LAYER 3 — containment after canonicalization, which resolves the
+        // GATE D — containment after canonicalization, which resolves the
         // whole chain, so this is what an ESCAPED path meets.
         //
         // **THIS AND `relative_posix`'s `strip_prefix` ARE ONE PREDICATE
@@ -145,8 +188,8 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
         if !canon.starts_with(canon_root) {
             continue;
         }
-        // LAYER 4 — and the containment that is actually LOAD-BEARING
-        // rather than a restatement: with layer 3 lifted, THIS is what
+        // GATE E — and the containment that is actually LOAD-BEARING
+        // rather than a restatement: with gate D lifted, THIS is what
         // still refuses an escaped path. Its stated job is formatting; its
         // real job is this. Pinned by
         // `relative_posix_is_the_containment_predicate_the_walk_relies_on`.
@@ -161,6 +204,21 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     }
 
     files.sort_by(|a, b| a.rel.cmp(&b.rel));
+    // **AND THIS LINE IS INERT TOO, WHICH FINISHES THE PATTERN THE REST OF
+    // THIS FUNCTION NOW NAMES** (T-186 verdict, correction 4). Deleting the
+    // dedup leaves the crate suite green: with every gate above standing,
+    // no two accepted entries can share a `rel`, because each `rel` is
+    // derived from a distinct canonical path. It is not a refusal and it
+    // guards nothing today.
+    //
+    // It is named here anyway, because it is the exact mechanism behind
+    // this card's recorded FAILED ATTEMPT: it is what silently collapses
+    // the duplicate a lifted gate B would produce, and therefore what makes
+    // the obvious inside-pointing fixture — `alias.ts -> real.ts` — vacuous.
+    // A reader deleting it as dead code would not be wrong about today's
+    // behaviour and would still be removing the thing that explains why the
+    // fixture next door is shaped the way it is. See
+    // `a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone`.
     files.dedup_by(|a, b| a.rel == b.rel);
     files
 }
@@ -274,8 +332,8 @@ mod tests {
     fn symlinks_are_never_followed_file_or_dir() {
         // **THE NAME IS THE OUTCOME, NOT THE LAYER** (T-186). Both links
         // below point into a SECOND, OUTSIDE tree, so every entry they
-        // produce canonicalizes out of the root and layers 3/4 refuse it
-        // without layer 1 ever mattering — this body stays GREEN with the
+        // produce canonicalizes out of the root and gates D/E refuse it
+        // without gate B ever mattering — this body stays GREEN with the
         // whole link classification lifted, and what it actually pins is
         // CONTAINMENT. Measured, not inferred; see the ledger below.
         //
@@ -298,24 +356,53 @@ mod tests {
     // THE LIFT LEDGER (T-186). Every row RUN, not reasoned, in a detached
     // scratch worktree at this file's own commit with its own
     // `CARGO_TARGET_DIR`; each arm mutated ONE side, read the mutation
-    // back with `git -C`, ran the crate's lib suite unpiped, restored and
-    // proved the restoration by sha256.
+    // back with `git -C`, ran the suite unpiped, restored and proved the
+    // restoration by sha256.
     //
-    //   is_symlink() alone        -> NOTHING reds. Shadowed: see layer 1.
-    //   !meta.is_file() alone     -> 1 red, the directory body, ALONE.
+    // **EVERY ROW DECLARES ITS SCOPE, BECAUSE ONE OF THEM DIFFERS BY IT**
+    // (T-186 verdict, correction 1). `[lib]` is `--lib`, this crate's
+    // in-module bodies; `[crate]` is all of `-p nputer-index`, integration
+    // targets included. The rows were taken at lib scope and the verifier
+    // re-took them at crate scope; only the all-four row moves.
+    //
+    //   is_symlink() alone        -> NOTHING reds [lib and crate].
+    //                               Shadowed: see gate B.
+    //   !meta.is_file() alone     -> 1 red, the directory body, ALONE
+    //                               [lib and crate].
     //   both link checks          -> 2 red, the directory and inside
     //                               bodies; `symlinks_are_never_followed_
-    //                               file_or_dir` stays GREEN.
-    //   starts_with alone         -> NOTHING reds. Shadowed: see layer 3.
-    //   relative_posix's ok()?    -> 1 red, the predicate body, ALONE.
-    //   all four together         -> 4 red, and only HERE does
+    //                               file_or_dir` stays GREEN [lib, crate].
+    //   starts_with alone         -> NOTHING reds [lib and crate].
+    //                               Shadowed: see gate D.
+    //   relative_posix's ok()?    -> 1 red, the predicate body, ALONE
+    //                               [lib and crate].
+    //   all four together         -> **4 red [lib], 5 red [crate]** — the
+    //                               fifth is `tests/containment.rs::
+    //                               outside_tree_symlinks_never_enter_the_graph`.
+    //                               At either scope this is where
     //                               `symlinks_are_never_followed_file_or_dir`
-    //                               finally notice — which is the proof
+    //                               finally notices, which is the proof
     //                               that what it pins is containment.
-    //   classification -> is_dir  -> 1 red, the inside body ALONE (the
-    //                               count-1 mutant that answers poison
-    //                               shape SIX for it: symlinks pass,
-    //                               directories still skipped).
+    //   classification -> is_dir  -> 1 red, the inside body ALONE [lib and
+    //                               crate] (a count-1 mutant answering
+    //                               poison shape SIX for it: symlinks
+    //                               pass, directories still skipped).
+    //   symlink_metadata->metadata-> 1 red, the inside body ALONE [crate].
+    //                               The stat call FOLLOWS links, so the
+    //                               fixture resolves to a real file and is
+    //                               accepted. Derived from the CRITERIA
+    //                               with this ledger closed (poison shape
+    //                               SEVEN) by the blind verifier, not by
+    //                               the lane — it pins the choice of
+    //                               `lstat` over `stat`, the classic form
+    //                               of this defect, which nothing in this
+    //                               crate pinned before.
+    //
+    // **AND SHAPE SIX'S ASK IS ANSWERED AT THE STRICTER SCOPE.** The
+    // catalogue asks for the WHOLE suite, not the lib suite; all three
+    // count-1 claims above were re-put across every target of this crate
+    // and each body still dies ALONE. Recorded here rather than left for
+    // the next reader to re-derive.
     //
     // **WHERE THIS CRATE PARTS COMPANY WITH `docs_watch.rs`, AND IT IS THE
     // REASON T-186 MEASURED INSTEAD OF INHERITING A VERDICT.** One crate
@@ -326,7 +413,7 @@ mod tests {
     //
     // Only the `is_symlink()` half is undetectable here. `!meta.is_file()`
     // has a fixture of its own, and the reason is structural rather than
-    // lucky: **layer 2 filters on the entry's own NAME, where the
+    // lucky: **gate C filters on the entry's own NAME, where the
     // collector filtered on a RESOLVED PATH.** So a directory called
     // `<name>.ts` — allowlisted extension, requested language,
     // canonicalizes to itself, formats to a relative path — clears every
@@ -377,22 +464,22 @@ mod tests {
         // INSIDE the root, so canonicalization lands it squarely under
         // `canon_root` and BOTH containment layers pass it happily. Only
         // the link classification can refuse it. That takes the shadow
-        // from four layers to two, which is the strongest body that can
+        // from the four predicates to the two inside gate B, which is the
         // exist here.
         //
         // **AND THE TARGET MUST BE A FILE THE WALK DOES NOT OTHERWISE
         // COLLECT, WHICH IS THE TRAP THIS CRATE ADDS.** Aim the link at an
         // allowlisted inside file instead — `alias.ts` -> `real.ts` — and
-        // a lifted layer 1 pushes `real.ts` a SECOND time, where
+        // a lifted gate B pushes `real.ts` a SECOND time, where
         // `files.dedup_by(|a, b| a.rel == b.rel)` at the end of the walk
         // collapses it: byte-identical output, mutant survives, body
         // useless. That attempt was RUN before this one was written
         // (T-186's drill, arm B3) rather than reasoned away.
         //
         // The `.md` target is what makes the refusal observable, and it is
-        // the truer statement besides: with layer 1 lifted the walk emits
-        // `notes.md` TAGGED `Lang::Ts`, because layer 2 read the LINK's
-        // name and layer 3 read the TARGET's path. A markdown file
+        // the truer statement besides: with gate B lifted the walk emits
+        // `notes.md` TAGGED `Lang::Ts`, because gate C read the LINK's
+        // name and gate D read the TARGET's path. A markdown file
         // indexed as TypeScript is the shape of the defect this guard
         // prevents.
         use std::os::unix::fs::symlink;
@@ -444,7 +531,7 @@ mod tests {
         assert!(!meta.is_file(), "a directory is not a file");
         assert!(
             !meta.file_type().is_symlink(),
-            "the fixture must not be a link — that would test layer 1"
+            "the fixture must not be a link — that would test gate B"
         );
 
         assert_eq!(rels(t.root()), vec!["real.ts"]);
