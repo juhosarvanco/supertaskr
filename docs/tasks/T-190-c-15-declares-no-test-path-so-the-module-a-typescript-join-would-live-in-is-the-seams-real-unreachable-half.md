@@ -668,3 +668,28 @@ own least comfortable sentence survived a deliberate attempt to falsify
 it**, and that the two questions it flagged for me to re-derive were the
 two it had gotten wrong first and corrected — which is the disclosure
 working as intended.
+
+#### Gates at the verifier's OWN tip (`2e8fb00`), not at the commit reviewed
+
+`node tools/e2e/scripts/docs-gate.mjs <this card>` run from the
+repository root with a SEPARATE LITERAL path argument (a variable holding
+the path is not split by zsh and the gate answers "1 path(s)" plausibly
+and wrongly): **exit 1 — FIRES**, naming three suites. `cargo test` is
+NOT owed: this commit's only path is under `docs/tasks`, and the
+`docs/architecture/components` reader that would owe it is not triggered.
+
+    npm test      from app/          49 files / 1094 tests      exit 0
+    npx vitest run from lib/parser/  16 files / 344 tests       exit 0
+    npm test      from tools/e2e/    1 failed / 365 passed      exit 1
+
+The gate also reports **"every live task card's frontmatter parses, with
+a legal status"** — the specific hazard `roles/verifier.md` warns a prose
+commit can create, checked rather than assumed.
+
+**THE ONE RED IS `T-197` AND IS NOT THIS COMMIT'S.**
+`tools/e2e/tests/dispatch-order.spec.ts:200 › --dispatch runs on the live
+repository, exits 0, and WRITES NOTHING`. Attributed by direct mechanism
+measurement rather than by a re-run: `node scripts/brief.mjs --dispatch`
+redirected to a FILE is 69,033 bytes and PIPED is exactly 65,536, both at
+exit 0. That is the pipe buffer, the cause is `process.exit()` against
+Node's async stdout, and it is already carded on `main` at `726d807`.
