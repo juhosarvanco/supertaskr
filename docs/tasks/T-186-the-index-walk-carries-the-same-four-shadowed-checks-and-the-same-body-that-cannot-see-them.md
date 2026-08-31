@@ -237,6 +237,126 @@ which are scoped to `walk_root`'s four checks. **Routed rather than
 widened** — see below. This is `T-140-s9`'s verifier's own correction
 arriving one crate over, and it is recorded rather than quietly absorbed.
 
+### THE DRILL, AND THE PROOF THAT EVERY ARM WAS PUT BACK
+
+Drilled in a detached scratch worktree at `/private/tmp/nd-T-186`, cut at
+`e71198f` — the work COMMITTED FIRST, so a restore cannot pass itself off
+as a revert — carrying its own `CARGO_TARGET_DIR` at `<scratch>/target`,
+under the one name `.gitignore` excludes, never shared with the lane.
+
+Each arm: mutate ONE side only with `perl` at an absolute path; **read the
+mutation back with `git -C <scratch> diff`**, never a bare `git diff`,
+with the arm refusing on a substitution count that is not exactly 1 or on
+an empty read-back; run the suite UNPIPED into its own log and capture
+`$?` before anything else; restore with
+`git restore --source=e71198f --staged --worktree`; prove by `shasum
+-a 256`.
+
+**Every arm restored and proven: the working file hashes to
+`0a2ead5a9a4663bcf4b688c65c862e824bccdf991767c1cd2bb5c3f62af16a3b`, the
+`e71198f` blob, after every single one, and the scratch's
+`git status --short` is empty at the end.**
+
+The arms are the ledger in `walk.rs`'s own test module — seven lifts of
+the code under test, four assertion poisons (one per body, each dying
+ALONE, so no body is vacuous by its own value), one recorded ATTEMPT that
+deliberately does not red, and two sweep arms outside this card's
+criteria. **The lifted arm TERMINATED IN A FIXTURE, verified rather than
+assumed** (CONVENTIONS, LIFTING A SAFETY GUARD TO DISCRIMINATE): the only
+path leaked by the all-four arm is a `TempTree` under the system temp dir,
+and the repository's own path occurs in that output **zero** times.
+
+**`e71198f` and the shipped tip differ on `walk.rs` by the ledger comment
+block and nothing else**, checked mechanically — every changed line
+between them is a comment — so the ledger measured at `e71198f` describes
+the code that ships.
+
+### GATES — every exit read UNPIPED, every gate DERIVED from the diff
+
+The gate set is derived against **the tree this tip will have**, the
+merge forecast the RANGE RULE prescribes for the executor's position:
+`git merge-tree --write-tree <main> HEAD` at main `8443a78`, exit 0, no
+conflict — **3 paths**, `walk.rs` plus this card and `T-190`. The last
+commit of this lane is the one carrying this section, and it adds no path
+outside `docs/tasks/`, so it moves no trigger and this derivation still
+describes the tip.
+
+- **`cargo test`** from `app/src-tauri/` at `df52adb`: **exit 0**, 18
+  suite result lines, **0 FAILED**. Lib **260 passed / 0 failed** in
+  4.91s; `nputer-index` lib **200 passed / 0 failed**; `agent_runner`
+  88/0/1 ignored.
+- **The base was MEASURED, so the delta is not arithmetic**: the same
+  suite at `c3fc1a1` before anything was touched is **exit 0**, lib 260/0
+  in 4.10s, `nputer-index` lib **197/0**. 197 + 3 = 200, and the three are
+  named above.
+- **The cargo cache cliff did not fire** (`T-088-s4`): the lib suite's own
+  time is 4.10s at base and 4.91s at the tip, against the green band of
+  under 9.5s, measured with sibling lanes live.
+  `startup_arm_watches_the_initial_root` passed in every green run, and
+  `a_hostile_session_id…` (`T-086-s1`) likewise. Neither was re-run, so
+  there is nothing to attribute.
+- **GRAPH REGEN FIRES** (`walk.rs` is `*.rs` outside `docs/`), so it was
+  **ASKED and NOT acted on** — `graph.json` is outside this fence.
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  `app/src-tauri/`: **exit 1, STALE**, and the staleness is exactly this
+  lane's one file — `files +0 -0 ~1`,
+  `~ app/src-tauri/crates/nputer-index/src/walk.rs (content, loc 224 -> 454)`.
+  **Nothing the graph emits moved**: 199 files, 2436 symbols, 2351 edges
+  and 1143153 bytes are identical on the committed and fresh sides, which
+  is what a comments-and-tests diff should look like. Budget 1143153 of
+  2145959 (53.3%), 1002806 left. It is a REAL red, not the `--root`
+  false red: the second line prints both counts and a `~` file diff rather
+  than `committed: MISSING`. **The integrator regenerates and commits it
+  at the checkpoint; this lane did not.**
+- **BOOT GATE FIRES** (`app/src-tauri/**`): **exit 0**, on the port
+  DERIVED from the card id — `T-186` → 20000 + 186×10 = **21860**, never
+  defaulted. `lsof` gave zero rows immediately before binding, and both
+  startup lines arrived, naming this lane's own folder:
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-186` and
+  `[nputer] window "main" created`. **1420 was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, before and after
+  every run: zero rows every time.**
+- **DOCS GATE FIRES** — this card's own frontmatter (`status`,
+  `built_by`) and `T-190` are paths under `docs/` that code suites READ.
+  Derived by ASKING rather than predicting: `docs-gate.mjs` on the
+  forecast's path list answers **2 path(s)** and names three commands.
+  All three green at `df52adb`:
+  - `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+  - `npm test` from `app/` — **exit 0, 49 files / 1077 tests**
+  - `npm test` from `tools/e2e/` — **exit 0, 341 passed** (4.3m), on
+    `NPUTER_E2E_PORT=31860`, DERIVED as 30000 + 186×10 and lsof'd to zero
+    rows before binding
+  - `npm run lint:docs` — **exit 0**: every live task card's frontmatter
+    parses with a legal status; budgets hold (4 gated, 0 awaiting)
+  - `npm run capabilities:check` — **exit 0, CURRENT (27333 bytes)**; no
+    e2e spec name moved, so `docs/CAPABILITIES.md` needed no regeneration
+  - `npm run lint:tokens` — **exit 0, clean**
+- **METHOD EVAL GATE: not owed** — no path under `method/` in the
+  forecast's 3.
+- **AUDIT GATE** names a gate and declares no merge-diff trigger, so it is
+  not one of these.
+
+**THE E2E LANE WAS RUN TWICE AND ONLY THE SECOND RUN IS QUOTED.** The
+first run was in flight when this lane renamed `T-189` to `T-190` and
+edited this card — both paths that e2e bodies read. It came back 341
+passed, but **a gate run against a tree that moved under it is not a claim
+about the tree**, so it was discarded rather than reported, the tree was
+committed, and the suite re-run against a frozen `df52adb`. Same count,
+honestly obtained the second time.
+
+**TWO OF THIS LANE'S OWN CHECKS WERE VACUOUS AND THE NON-EMPTY
+PRECONDITION CAUGHT BOTH** (poison shape TEN — an empty comparison
+reports agreement). A `diff` of the shipped half against base compared two
+EMPTY files and exited 0, because zsh's `:a` modifier had mangled
+`$ref:app/...` in a `git show`; and a duplicate-card-id check ran over an
+empty corpus for the same class of reason. Both were caught by printing
+the corpus size BEFORE reading the verdict, and both were then re-run with
+a planted positive control. The repaired forms are what the two claims
+above rest on: **the shipped half of `walk.rs` is 73 non-empty lines on
+each side and IDENTICAL once comments are stripped** (control: a planted
+one-token change reds it), and the merged tree carries **416 parsed card
+ids with zero duplicates** (control: a planted duplicate is reported).
+
 ### ROUTED, NOT BUILT
 
 **`T-190`** — the two sites above. Fence `crate-index`, the same as this
