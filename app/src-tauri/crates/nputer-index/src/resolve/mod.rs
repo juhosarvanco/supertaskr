@@ -40,7 +40,7 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 /// are never followed, and the canonical path must stay under the root —
 /// same rules as every other read (T-003 idiom).
 ///
-/// # The FOUR refusals, in the order the code applies them (T-194)
+/// # The FOUR lettered refusals, of SIX constructs that can drop the read
 ///
 /// **THE COUNT IS IN THE HEADING ON PURPOSE, AND THIS BLOCK IS WHY.** Its
 /// first version enumerated three — A, B and D below — under a heading
@@ -52,6 +52,32 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 /// defect this whole family exists to correct** — this card's own subject
 /// is a landed sentence that was false in exactly that way. A stated count
 /// makes the omission visible to the next reader who counts.
+///
+/// **AND A COUNT WITH NO UNIT CANNOT DO THAT JOB — the repair `T-196`'s
+/// verifier wrote for `walk_root` (its correction 2), applied here by
+/// `T-208` because the SIBLING got it and the site that STARTED the thread
+/// did not.** The heading read *"The FOUR refusals"* over four letters
+/// while SIX constructs in this function can drop the read, so a reader
+/// doing what the heading invites — recount from source — got a different
+/// number with no way to tell an OMISSION from a UNIT MISMATCH, which is
+/// the one job the count was added to do. **Recounted hostile at `d7ec96c`,
+/// nothing is omitted.** Both counts, so either recount lands:
+///
+///   FOUR LETTERED REFUSALS  = A, B, C, D — the checks this function makes
+///                             ON PURPOSE, and the unit the heading counts.
+///   SIX CONSTRUCTS          = those four plus TWO unlettered error arms.
+///   FIVE STATEMENTS         = the same six, A and B sharing one `if`.
+///
+/// The two unlettered ones, in source order: **`symlink_metadata(&path)
+/// .ok()?`**, an lstat failure — also the ordinary way every caller asks
+/// *is there a `package.json` here?* — and the trailing
+/// **`read_to_string(&canon).ok()`**, which is additionally **what shadows
+/// refusal B**; B's bullet already turns on that and it is the same
+/// construct. Neither is a safety refusal, which is why neither is
+/// lettered; both can still drop a read, which is why a recount finds them.
+/// **And C is one construct doing TWO jobs** — an error arm AND a
+/// resolution — of which only the resolution is pinned; C's own bullet
+/// carries the mutant that separates them.
 ///
 /// `T-140-s9` corrected the same shape in `docs_watch.rs` and `T-186` in
 /// this crate's `walk_root`, and between them they left the reading rule
@@ -83,30 +109,45 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 ///   `starts_with`, and IS read through. That is what
 ///   `an_inside_pointing_symlink_is_refused_by_the_link_classification`
 ///   below pins — a count-2 mutant, because neither half alone reaches it.
-/// - **C — `path.canonicalize()` is LOAD-BEARING AND UNPINNED, and it is
-///   the refusal the first version of this block left out.** What it
-///   independently contributes is not its `.ok()?` arm but the
+/// - **C — `path.canonicalize()` is LOAD-BEARING, it is the refusal the
+///   first version of this block left out, and `T-208` PINNED it.** What
+///   it independently contributes is not its `.ok()?` arm but the
 ///   RESOLUTION it performs before D reads the result: `Path::starts_with`
 ///   compares COMPONENTS, so `<root>/inside/../../elsewhere/x` textually
 ///   starts with `<root>` and satisfies D on its own. **Only
 ///   `canonicalize` collapses the `..`.** Without it D is a prefix test
 ///   wearing a containment test's name, and every `..` in a caller's `dir`
 ///   walks straight out of the root.
-///   **MEASURED at `87929c2`, and re-measured at this lane rather than
-///   carried across from the verdict:** replacing it with
-///   `path.to_path_buf()` leaves the crate at **256 passed / 0 failed over
-///   12 targets, exit 0 — NOTHING RED.** No body in this crate sees it.
-///   **It is UNPINNED but PINNABLE, which is a different finding from B's
-///   and must not be read as one.** A probe asserting
-///   `read_contained(&root, "../<sibling tree>", "loot.json") == None`
-///   PASSES on shipped code (**257/0**) and reds on that lift **alone**
-///   (**256/1**), with `left: Some("{\"loot\":1}")` — the reader returning
-///   the contents of a file OUTSIDE the root. So this is a coverage hole
-///   with a fixture that exists, not a cannot-red finding.
-///   **The body is `T-208`'s and is deliberately NOT landed here**, on the
-///   precedent `T-186` set when it routed `.follow_links(true)` as `T-196`
-///   instead of widening its own fence: widening a fence from inside a
-///   lane is the one repair this role may never make.
+///   **THE PREMISE, RE-DERIVED AT `d7ec96c` RATHER THAN CARRIED ACROSS**
+///   (`T-194` recorded 256/0 at `87929c2`; main moved under it, which is
+///   why a quoted count is re-run and not transcribed): with
+///   `path.to_path_buf()` in its place and NO probe, the crate is **257
+///   passed / 0 failed over 12 targets, exit 0 — NOTHING RED.** That is
+///   what unpinned looked like, and it was never a cannot-red finding —
+///   which is the distinction B's bullet exists to keep separate.
+///   **IT IS NOW PINNED, BY ONE BODY, WITH A COUNT OF ONE.**
+///   `a_dot_dot_traversal_never_reads_outside_the_root` in the test module
+///   below passes on shipped code (**258/0 over 12 targets, exit 0**) and
+///   reds on that lift **ALONE** (**257 passed / 1 failed, exit 101**) with
+///   `left: Some("{\"loot\":1}")`. **The failure is an ESCAPE, not a
+///   type**: the value it prints is the CONTENT of a file outside the root,
+///   which `read_contained` returned to its caller.
+///   **AND IT IS THE RESOLUTION THE BODY SEES, NOT THE `.ok()?` ARM —
+///   MEASURED, because the first sentence of this bullet used to ARGUE
+///   it.** A second one-side mutant that KEEPS the error arm and discards
+///   only the resolution — `{ let _ = path.canonicalize().ok()?;
+///   path.to_path_buf() }` — reds the same single body with the same loot
+///   at `d7ec96c`: **257/1, exit 101.** So the two jobs this one construct
+///   does are separated by measurement, and the pinned half is named.
+///   **THE SAME CALL IS INERT ONE MODULE OVER, AND THE SIGNATURE DECIDES
+///   IT RATHER THAN ANALOGY** (`T-196`, whose verifier drew this):
+///   `read_contained(root, dir, name)` takes a CALLER-SUPPLIED segment, so
+///   a `..` enters from outside and only this line collapses it;
+///   `walk_root(canon_root, languages)` takes NO caller path at all — every
+///   path is generated by descending real entries from a canonical root —
+///   so this attack cannot exist there, and `T-196` measured it inert at
+///   both its refs. **Neither verdict transfers. That is this family's
+///   whole lesson, applied to a CALL rather than to a guard.**
 /// - **D — `canon.starts_with(root)` is load-bearing, and it is the
 ///   reason an OUTSIDE-pointing link proves nothing about A or B.**
 ///   `symlinked_tsconfig_is_never_read` (`tsconfig.rs`) aims its link at a
@@ -119,8 +160,12 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 ///   of it. Its name is kept — `T-186` and `T-194` cite it — and what it
 ///   actually asserts is stated at its own site.
 ///   **D depends on C and the two are not interchangeable**: C decides
-///   WHAT path D is asked about, so lifting C leaves D answering a
-///   question about a path that never existed.
+///   WHAT path D is asked about, so lifting C leaves D truthfully
+///   answering a question about the wrong path — the UNCOLLAPSED one,
+///   which starts with the root on components and resolves outside it.
+///   `T-208`'s body asserts exactly that of its own fixture before it
+///   exercises anything, which is what makes its refusal attributable to
+///   C rather than to D.
 pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<String> {
     let path = if dir.is_empty() {
         root.join(name)
@@ -141,13 +186,17 @@ pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<Strin
     // is what makes D below a containment test instead of a string-prefix
     // test, because `Path::starts_with` compares components and
     // `<root>/a/../../elsewhere` starts with `<root>` until the `..` is
-    // collapsed. LOAD-BEARING AND UNPINNED: lifting it to
-    // `path.to_path_buf()` leaves this crate 256/0 with nothing red, while
-    // a `..` traversal then reads a file outside the root. The pin is
-    // `T-208`'s — unpinned but PINNABLE, routed rather than built here.
+    // collapsed. LOAD-BEARING, AND PINNED SINCE `T-208` BY
+    // `a_dot_dot_traversal_never_reads_outside_the_root`: lifting it to
+    // `path.to_path_buf()` left this crate 257/0 with NOTHING RED before
+    // that body existed, and reds that body ALONE now — 257/1, exit 101,
+    // carrying the contents of a file outside the root. Measured at
+    // `d7ec96c`; the RESOLUTION is the pinned half, not the `.ok()?` arm.
     let canon = path.canonicalize().ok()?;
     // Refusal D — load-bearing, the one an outside link meets first, and
-    // only as strong as C: it judges whatever path C handed it.
+    // only as strong as C: it judges whatever path C handed it. The body
+    // named above asserts that directly — UNCOLLAPSED, its traversal path
+    // clears this line on components alone.
     if !canon.starts_with(root) {
         return None;
     }
