@@ -105,26 +105,55 @@ Lane `task/T-185-s2-c05-fixture`, base `70d09ad`, tip `5f31611` before
 this commit. ONE file changed: `app/test/board-truth.test.tsx`,
 +17/-2 — inside the 44-path manifest and inside nothing else's.
 
-**THE CARD'S REPAIR IS RIGHT, AND ONLY HALF OF IT IS A TYPE FIX.** I
-judged the two values before typing them, which is what the diff is for:
+**THE CARD'S REPAIR IS RIGHT, AND THE VALUES WERE JUDGED RATHER THAN
+TYPED** — but my first account of WHY was measurably wrong, and the
+correction is the more useful half.
 
-- `truncated: false` IS LOAD-BEARING. `selectDispositions` reads it as
-  `scanIsFloor` (`board-model.ts:1254` at T-185's tip); under `true`
-  every claim it makes about there being ROOM goes unsound and T-400's
-  disposition can move, so the constant would stop naming the quiet
-  state its own docstring names. `false` is required, not chosen.
-- `notLanes: []` IS INERT, by the frontier's own sentence at
-  `board-model.ts:1250` — *"a worktree that is not a lane reserves
-  nothing"*. No body here can tell `[]` from a populated list. Noted
-  honestly at the site: a real repository always has at least its
-  primary checkout as a non-lane worktree, so `[]` is the literal
-  reading of *"holding no lane"* rather than a faithful census — and
-  choosing a populated list would add a claim these three bodies do
-  not make.
+**WHAT I FIRST WROTE, AND WHAT REFUTED IT.** I claimed
+`truncated: false` was LOAD-BEARING and `notLanes: []` INERT, reasoning
+from `selectDispositions` reading `truncated` as `scanIsFloor`
+(`board-model.ts:1254`). The source reading is exact and the model
+output genuinely differs — `floorCaveat` at 1471, `floorLine` at 1526 —
+but **the contrast does not exist at any level a test can see.** Caught
+at review, then reproduced here at forecast ref `18971ef` (this lane's
+tip merged with `task/T-185-dispatch-reading-fields`), each mutation
+one side only and restored sha256-identical (`75cbb00b…db587`):
 
-Both reasons are written INTO the constant's docstring rather than
-here, because the next person to widen the type reads the fixture and
-not this card.
+| drill | mutation | build | test |
+|---|---|---|---|
+| D | `truncated: false` -> `true` | **0** | **0**, 50 files / 1113 passed |
+| E | `notLanes: []` -> one populated `NotLaneHold` | **0** | **0**, 50 files / 1113 passed |
+| F | `truncated` DROPPED | **2**, 2×TS2322 | **0**, 50 files / **1113 passed** |
+| G | `notLanes` DROPPED | **2**, 2×TS2322 | **1**, `2 failed \| 1111 passed`, 1 failed file |
+
+**D refutes the claim I made.** No body can tell `false` from `true`.
+`false` is still the right value — it names the quiet state the
+constant exists for — but on the fixture's own meaning, not on any
+instrument.
+
+**AND F/G INVERT THE ASYMMETRY I WROTE.** Dropping `notLanes` reds BOTH
+gates; dropping `truncated` reds ONLY the type, because a missing
+boolean is falsy and slides silently into the `false` branch while the
+suite stays at 1113. **`truncated` is precisely the field that reads as
+`false` and says nothing — the silent floor `T-185` exists to remove,
+reproduced in miniature inside the fixture that card repairs.** The
+docstring now says that instead, because the next person to widen the
+type reads the fixture and not this card.
+
+**AND THE PRINTED REPAIR RESTS ON A `readonly` NOBODY NAMED.** `as
+const` types `notLanes` as `readonly []`, assignable only because
+`board-model.ts:713` declares `readonly notLanes: readonly
+NotLaneHold[]`. Confirmed with the project's own compiler on a two-line
+control: the same literal against a mutable `NotLaneHold[]` fails
+`TS2322` — *"the type `readonly []` is `readonly` and cannot be
+assigned to the mutable type"* — while the readonly form passes. Had
+the parent declared the mutable form, the card's printed line would
+have red at the parent-landed tree. Now noted at the site.
+
+`notLanes: []` stays, with the one honesty kept from the first draft: a
+real repository always has at least its primary checkout as a non-lane
+worktree, so `[]` is the literal reading of *"holding no lane"* rather
+than a faithful census — and E shows no body can tell.
 
 ### The gates, and the one that fired
 
@@ -180,10 +209,17 @@ one side only:
 So the answer to *"what body would catch it if a future change made
 `NO_LANES` wrong again"* is: `npm run build`, and only against a
 WIDENING. A field REMOVED from `DispatchReading` leaves a stale key
-here forever at exit 0. Routed as **T-214**, not taken — the repair
-(inline the literal at both use sites to restore freshness) reds at any
-tree without the parent, so it cannot be made in a lane required to be
-green before the parent lands.
+here forever at exit 0. Routed as **T-214**, not taken.
+
+**AND MY REASON FOR NOT TAKING IT WAS OVER-NARROW, WHICH IS ITSELF
+WORTH THE LINE.** I wrote that the repair *"cannot be made in a lane
+required green before the parent"*. That is true of INLINING the
+literal — it reds at any pre-parent tree — and false of the GOAL. A
+runtime key-set assertion over `NO_LANES` is in-fence and green at both
+trees, and would catch a stale key without waiting for anything. The
+card now carries inlining as one option rather than the option; I did
+not build either, because closing the residual is not this card's
+acceptance criterion and the choice deserves its own judgement.
 
 ### The standing-gate ledger, derived at the tree this tip WILL have
 
