@@ -33,6 +33,42 @@
  * consulted only for a checkout whose OWN HEAD is a lane branch, so a
  * stray manifest still locks nobody out of anything.
  *
+ * ── THE ROOT COMES FROM THE TARGET, NOT FROM THE WRITER (T-199) ──────
+ * v2 asked `findCheckoutRoot(request.cwd)` — where the WRITER SITS — and
+ * that one line made the whole guard inert in the shape this project
+ * actually dispatches. `method/lane-protocol.md` rule 3 REQUIRES a lane
+ * worktree to be a SIBLING of the repository, and the dispatching seat
+ * runs from a nested checkout under `.claude/worktrees/`; a subagent
+ * inherits the dispatching session's project root, so every lane write
+ * was "outside the checkout" and limit 2 allowed it UNJUDGED. Not
+ * denied, not permitted-with-a-carve: NEVER EVALUATED. Seven lanes ran
+ * one night believing this file enforced their fences and it enforced
+ * nothing; their compliance was DISCIPLINE, and a lane that drilled its
+ * own fence is the only reason anybody found out (T-190, then T-199).
+ *
+ * MEASURED AT THE LIVE CONFIGURATION BEFORE THE CHANGE, dispatching seat
+ * at `<repo>/.claude/worktrees/<name>` and lane at `../nputer-T-199`:
+ * writes to that lane's `docs/ROADMAP.md`, `app/src/main.tsx`,
+ * `docs/NORTH_STAR.md` and `.claude/hooks/lane-fence.mjs` — three of the
+ * four far outside its `touches: [.claude, tools/e2e]` — ALL FOUR
+ * allowed, code `outside-the-checkout`.
+ *
+ * SO `decide` NOW RESOLVES THE **TARGET PATH'S** REPOSITORY and applies
+ * THAT repository's fences, wherever the writer happens to sit. A write
+ * into `…/nputer-T-NNN/x` is judged by the lane living there because the
+ * TARGET belongs to it — which is what limit 2's own intent (*"do not
+ * police unrelated files on the machine"*) actually wanted all along.
+ * The writer's cwd keeps exactly one job: resolving a RELATIVE target,
+ * and answering a request that carries no path at all (limit 8).
+ *
+ * AND THE COST IS IN LIMIT 2 BELOW rather than buried: a write into a
+ * lane's tree is now judged by THAT LANE'S fence whoever is writing, so
+ * an architect reaching into a live lane meets the same rule as that
+ * lane's own executor. The hook still has no term separating the two —
+ * but the design this replaces allowed BOTH unconditionally, so every
+ * write this tightens was previously UNJUDGED and none was previously
+ * refused.
+ *
  * ── ZERO DEPENDENCIES, AND THAT IS THE WHOLE DESIGN ──────────────────
  * The first draft of this card expanded the fence AT HOOK TIME through
  * `@nputer/parser`, which cannot work: a fresh lane worktree has nothing
@@ -93,11 +129,31 @@
  * whose refusal depends on a payload shape being recognised is a guard
  * that fails OPEN on the day the shape moves.
  *
- * ALLOW is exit 0 with NOTHING PRINTED, and that is not laziness: an
- * explicit `permissionDecision: "allow"` would SHORT-CIRCUIT the harness's
- * own permission flow and auto-approve writes the human would otherwise
- * be asked about. This hook exists to subtract permission, never to grant
- * it. So it refuses, or it stands aside.
+ * A JUDGED ALLOW is exit 0 with NOTHING PRINTED, and that is not
+ * laziness: an explicit `permissionDecision: "allow"` would SHORT-CIRCUIT
+ * the harness's own permission flow and auto-approve writes the human
+ * would otherwise be asked about. This hook exists to subtract
+ * permission, never to grant it. So it refuses, or it stands aside.
+ *
+ * ── AN UNJUDGED WRITE SAYS SO (T-199) ────────────────────────────────
+ * EVERY LIMIT BELOW ENDS IN AN ALLOW, and that is exactly what made this
+ * file's inertness survive seven lanes: *"a fence that judges nothing and
+ * a fence that approves everything are byte-identical from outside"*. So
+ * a `Decision` now carries `judged`, and the four codes that DECLINE to
+ * judge — `not-a-repository` (limit 2), `not-judged-detached` (limit 3),
+ * `not-judged-lane-list` (limit 4) and `no-path-to-judge` (limit 5) —
+ * set it FALSE. Every other verdict, allow or block, is a judgement this
+ * function made and sets it TRUE.
+ *
+ * THE RUNNER PRINTS A DECLINE ON **stderr** AT EXIT 0, prefixed
+ * `LANE FENCE (not judged)` so one grep finds refusals and declines
+ * together. stderr rather than stdout for the reason above and no other:
+ * stdout is the channel a harness PARSES for a permission decision, so
+ * an allow that speaks there could grant. Nothing on stderr can.
+ * THE LIMIT OF THAT, DECLARED: a hook's exit-0 stderr is not in the main
+ * transcript, so this makes a decline AUDITABLE rather than LOUD. What it
+ * removes is the byte-identity — a decline is now distinguishable from a
+ * judged allow by a consumer, by a spec, and by anyone who looks.
  *
  * ── THE HONEST LIMITS, DECLARED RATHER THAN DISCOVERED ───────────────
  * 1. BASH-MEDIATED WRITES ARE NOT COVERED. A `sed -i`, a `>` redirect or
@@ -106,22 +162,30 @@
  *    means parsing shell to find a write target, which answers
  *    confidently and wrongly — the failure `fence.ts` refuses one layer
  *    up.
- * 2. A PATH OUTSIDE THE LANE'S OWN CHECKOUT IS ALLOWED — and so is one
- *    outside the LANE-LESS seat's own checkout, by the same rule. The
- *    scratchpad, `/tmp`, a drill worktree and a SIBLING LANE'S TREE all
- *    sit outside, and a manifest's domains are repository-relative, so
- *    there is nothing to judge them against. Blocking every out-of-tree
- *    write would break the poison drill this project requires.
- *    **AND THE SIBLING-LANE HALF IS DELIBERATE NOW THAT THE LANE LIST IS
- *    IN HAND**: `liveLanes` knows every lane's worktree path, so mapping
- *    an absolute write INTO a lane's tree onto that lane's fence would
- *    be four lines. It is not taken, because the hook has no term that
- *    separates an architect reaching into a lane from THE LANE'S OWN
- *    EXECUTOR writing into it from a shell parked elsewhere — a live
- *    shape, and the one this very card was built in. A guard that
- *    refuses the executor it exists to serve is worse than the hole.
- * 3. A DETACHED CHECKOUT IS NOT JUDGED AT ALL. The lane-less arm reads
- *    the writing checkout's branch, and a detached HEAD names none: the
+ * 2. A PATH IN NO GIT CHECKOUT AT ALL IS NOT JUDGED — and that is the
+ *    WHOLE of this limit now (T-199 narrowed it). The scratchpad, `/tmp`
+ *    and a working directory the human keeps outside any repository are
+ *    reachable, because a manifest's domains are repository-relative and
+ *    there is genuinely nothing to judge such a path against. An
+ *    unrelated repository elsewhere on the machine is reached by the
+ *    same reasoning one step later: it IS a checkout, so it is rooted
+ *    and asked, and its own lane list — empty — allows the write.
+ *    THIS LIMIT USED TO READ *"a path outside the WRITING checkout"*,
+ *    which is the sentence T-199 exists to delete. It was written for an
+ *    exception and met the default: with lane worktrees as siblings
+ *    (lane-protocol rule 3) and the dispatching seat nested, EVERY lane
+ *    write was outside the writing checkout and none was ever judged.
+ *    **WHAT THE NARROWING COSTS, NAMED**: a SIBLING LANE'S TREE is no
+ *    longer outside anything — a write into it is judged by THAT LANE'S
+ *    fence. The hook still has no term separating an architect reaching
+ *    into a lane from THE LANE'S OWN EXECUTOR writing in from a shell
+ *    parked elsewhere, so both meet that lane's fence and neither meets
+ *    a rule written for it. That is the honest residue, and it is
+ *    strictly tighter than the alternative it replaces, which allowed
+ *    both without looking. The poison drill is untouched: it runs in a
+ *    DETACHED worktree and limit 3 covers it by construction.
+ * 3. A DETACHED CHECKOUT IS NOT JUDGED AT ALL. Lane-ness is read off the
+ *    TARGET checkout's branch, and a detached HEAD names none: the
  *    poison drill is REQUIRED to be run in a detached scratch worktree
  *    (docs/CONVENTIONS.md, POISON DRILL) and its whole job is mutating
  *    the very files a live lane holds, so judging a detached checkout
@@ -163,6 +227,15 @@
  *    would over-refuse the seat that may not be stopped on a
  *    case-sensitive volume — so it is declared rather than papered
  *    over, and the fix is a routed question.
+ * 8. A REQUEST WITH NO READABLE PATH HAS NO TARGET TO ROOT FROM, so it
+ *    is the one question the WRITER's cwd still answers (T-199). The
+ *    asymmetry above is preserved exactly: a writer sitting in a lane is
+ *    REFUSED `unreadable-request`, because inside a lane an unanswerable
+ *    question fails closed; any other writer is DECLINED
+ *    `no-path-to-judge`, because the seat that may not be stopped fails
+ *    open. It is a real hole in this session's shape — a lane executor's
+ *    cwd is the DISPATCHING checkout, so its unreadable request takes
+ *    the lane-less answer — and it is a decline, so it says so.
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -269,7 +342,26 @@ export const WRITE_TOOL_PATH_FIELDS = Object.freeze([
  * @property {"allow" | "block"} verdict
  * @property {string} code   a stable, greppable name for WHY
  * @property {string} reason the sentence the blocked session reads
+ * @property {boolean} judged did this function actually evaluate a
+ *   fence? FALSE means it declined — see `decline` below.
  */
+
+/**
+ * The set of codes this file answers with WITHOUT judging a fence.
+ *
+ * EXPORTED SO A SPEC CAN ASSERT THE PARTITION rather than re-listing it
+ * (T-199). A code that reaches an allow through one of the header's
+ * limits belongs here; every other verdict, allow or block, is a
+ * judgement. The whole point is that the two are no longer
+ * indistinguishable: seven lanes ran against a fence that judged nothing
+ * and produced output byte-identical to a fence that worked.
+ */
+export const DECLINE_CODES = Object.freeze([
+  "not-a-repository",
+  "not-judged-detached",
+  "not-judged-lane-list",
+  "no-path-to-judge",
+]);
 
 /**
  * @param {string} code
@@ -277,7 +369,22 @@ export const WRITE_TOOL_PATH_FIELDS = Object.freeze([
  * @returns {Decision}
  */
 function allow(code, reason) {
-  return { verdict: "allow", code, reason };
+  return { verdict: "allow", code, reason, judged: true };
+}
+
+/**
+ * An allow this function reached WITHOUT judging any fence.
+ *
+ * A SEPARATE CONSTRUCTOR AND NOT A FLAG ARGUMENT, so the declining
+ * branches are greppable as a set and a new one cannot be added by
+ * forgetting a parameter.
+ *
+ * @param {string} code
+ * @param {string} reason
+ * @returns {Decision}
+ */
+function decline(code, reason) {
+  return { verdict: "allow", code, reason, judged: false };
 }
 
 /**
@@ -286,7 +393,7 @@ function allow(code, reason) {
  * @returns {Decision}
  */
 function block(code, reason) {
-  return { verdict: "block", code, reason };
+  return { verdict: "block", code, reason, judged: true };
 }
 
 /**
@@ -750,41 +857,32 @@ export function targetOf(toolInput) {
  *
  * EVERY REFUSAL HERE RESTS ON SOMETHING READ, AND EVERY UNCERTAINTY IS
  * AN ALLOW — the inverse of the lane arm, for the reason in this file's
- * header. A detached checkout is not judged at all (limit 3), a path
- * outside this checkout is not judged (limit 2), a lane whose manifest
- * cannot be read reserves nothing (limit 4), and a checkout git itself
- * records as mid-merge is free (`INTEGRATION_IN_PROGRESS_MARKERS`).
+ * header. A detached checkout is not judged at all (limit 3), a lane
+ * whose manifest cannot be read reserves nothing (limit 4), and a
+ * checkout git itself records as mid-merge is free
+ * (`INTEGRATION_IN_PROGRESS_MARKERS`).
+ *
+ * `root` IS THE TARGET'S CHECKOUT AND NOT THE WRITER'S (T-199), so this
+ * arm answers for the repository the write LANDS in. A path in no
+ * checkout at all never reaches here — `decide` declines it before
+ * choosing an arm, which is all that survives of limit 2.
  *
  * @param {Request} request
- * @param {string} root
+ * @param {string} root      the TARGET's checkout root, not the writer's
  * @param {string | undefined} headRef
+ * @param {string} abs       the target, already resolved and absolute
  * @returns {Decision}
  */
-function laneLessVerdict(request, root, headRef) {
+function laneLessVerdict(request, root, headRef, abs) {
   if (headRef === undefined) {
-    return allow(
-      "not-a-lane",
+    return decline(
+      "not-judged-detached",
       `${root} names no branch, so it is a detached checkout — a drill, a scratch tree or the ` +
         "human's app — and limit 3 leaves it unjudged",
     );
   }
   const seat = `${root} is on ${headRef}, which is not a ${"task/T-NNN-<slug>"} lane branch`;
-
-  const target = targetOf(request.toolInput);
-  if (target === undefined) {
-    return allow(
-      "no-path-to-judge",
-      `${seat}, and ${request.toolName ?? "this tool"} was called with no path this hook can read ` +
-        `(it looks for ${WRITE_TOOL_PATH_FIELDS.join(", ")}). Outside a lane that is an allow and ` +
-        "inside one it is a refusal: the seat that may be stopped fails closed, and the seat that " +
-        "may not fails open.",
-    );
-  }
-  const abs = path.resolve(root, target);
   const rel = path.relative(root, abs).split(path.sep).join("/");
-  if (rel === "" || rel.startsWith("../")) {
-    return allow("outside-the-checkout", `${abs} is outside ${root} (limit 2 in this file's header)`);
-  }
 
   /** @type {{ lane: { branch: string, worktree: string, manifest: Manifest }, domain: string, carve: { domain: string, why: string } } | undefined} */
   let carved;
@@ -796,7 +894,7 @@ function laneLessVerdict(request, root, headRef) {
     // The lane list is a read of a live environment and this seat is the
     // one that may not be stopped: an administration directory this hook
     // cannot walk is an allow, never a repository-wide refusal.
-    return allow("not-a-lane", `${seat}, and its lane list could not be read`);
+    return decline("not-judged-lane-list", `${seat}, and its lane list could not be read`);
   }
   for (const lane of lanes) {
     const domain = lane.manifest.paths.find((d) => within(rel, d));
@@ -844,15 +942,68 @@ function laneLessVerdict(request, root, headRef) {
 }
 
 /**
+ * The verdict when the request carries NO path this hook can read.
+ *
+ * THE ONE QUESTION THE TARGET CANNOT ANSWER, so it is the one question
+ * the WRITER's cwd still answers (limit 8). Both directions are exactly
+ * v2's: a writer sitting in a lane is refused, because inside a lane an
+ * unanswerable question fails closed; every other writer is DECLINED,
+ * because the seat that may not be stopped fails open.
+ *
+ * IT IS A DECLINE AND NOT A JUDGED ALLOW, which is the half T-199 adds:
+ * a lane executor's cwd is the DISPATCHING checkout in this project's
+ * dispatch shape, so its unreadable request takes the lane-less answer
+ * and slips a fence that would otherwise hold. That is a real hole, it
+ * cannot be closed from a request with no path in it, and a hole that
+ * announces itself is the whole difference between this file and the one
+ * that judged nothing for seven lanes.
+ *
+ * @param {Request} request
+ * @param {string} cwd
+ * @returns {Decision}
+ */
+function noTargetVerdict(request, cwd) {
+  const root = findCheckoutRoot(cwd);
+  const headRef = root === undefined ? undefined : readHeadRef(root);
+  if (headRef !== undefined && LANE_BRANCH_RE.test(headRef)) {
+    return block(
+      "unreadable-request",
+      `LANE FENCE: ${request.toolName ?? "this tool"} was called with no path this hook can read ` +
+        `(it looks for ${WRITE_TOOL_PATH_FIELDS.join(", ")}), and it was called from ${root}, ` +
+        `which is on the lane branch ${headRef}. Inside a lane an unreadable request is a ` +
+        "refusal and never a shrug: a fence that answers `no overlap` when it means `I do not " +
+        "know` is worse than one that refuses (lib/parser/src/fence.ts).",
+    );
+  }
+  return decline(
+    "no-path-to-judge",
+    `${request.toolName ?? "this tool"} was called with no path this hook can read (it looks for ` +
+      `${WRITE_TOOL_PATH_FIELDS.join(", ")}), and ${cwd} holds no lane — so there is neither a ` +
+      "target to root a fence from nor a lane to refuse on behalf of. Outside a lane that is an " +
+      "allow and inside one it is a refusal: the seat that may be stopped fails closed, and the " +
+      "seat that may not fails open (limit 8 in this file's header).",
+  );
+}
+
+/**
  * The whole decision.
  *
- * READ THE ORDER, IT IS THE MECHANISM. Lane-ness is settled FIRST and
- * from the BRANCH alone, so which of the two seats is writing is decided
- * before any manifest is opened — the lane's own below, every live
- * lane's in `laneLessVerdict`. That is the positive control the card
- * asks for, and it is why the arms below never had to change when the
- * second seat arrived: an allow is a decision this function made, not a
- * mechanism that failed to arm.
+ * READ THE ORDER, IT IS THE MECHANISM. The TARGET is resolved first, its
+ * repository second, and lane-ness third — from THAT repository's
+ * BRANCH alone, so which of the two rules applies is decided before any
+ * manifest is opened: the target checkout's own below, every live lane's
+ * in `laneLessVerdict`. An allow is then a decision this function made
+ * rather than a mechanism that failed to arm, which is the claim T-199
+ * found to be false of the previous order.
+ *
+ * THE ORDER MOVED AND THAT IS THE FIX. v2 settled the repository from
+ * the WRITER's cwd, which reads as harmless until you notice that a
+ * lane worktree is required to be a SIBLING of the repository and that
+ * the dispatching seat is nested inside it: every lane write then landed
+ * in a tree the writer's root did not contain, and the out-of-checkout
+ * allow — written for the scratchpad — swallowed the whole guard. The
+ * repository a write belongs to is a property of WHERE IT LANDS, and
+ * nothing about where the writer is parked.
  *
  * IT IS ALSO WHY A STRAY MANIFEST CANNOT LOCK ANYONE OUT, WHICH SURVIVED
  * THE WIDENING. A manifest is read for a checkout only when THAT
@@ -869,13 +1020,28 @@ function laneLessVerdict(request, root, headRef) {
  */
 export function decide(request) {
   const cwd = typeof request.cwd === "string" && request.cwd !== "" ? request.cwd : process.cwd();
-  const root = findCheckoutRoot(cwd);
+
+  const target = targetOf(request.toolInput);
+  if (target === undefined) return noTargetVerdict(request, cwd);
+
+  // THE ONE REMAINING JOB OF `cwd`: a relative target is relative to the
+  // writer, and nothing else in this function is.
+  const abs = path.resolve(cwd, target);
+  // FROM THE TARGET'S OWN DIRECTORY, because the target is a FILE and
+  // the file need not exist yet. The innermost `.git` wins, which is the
+  // right answer for a checkout nested inside another one — the
+  // dispatching seat under `.claude/worktrees/` is exactly that shape.
+  const root = findCheckoutRoot(path.dirname(abs));
   if (root === undefined) {
-    return allow("not-a-repository", `${cwd} sits in no git checkout, so it is not a lane`);
+    return decline(
+      "not-a-repository",
+      `${abs} sits in no git checkout, so no lane's fence is repository-relative to it (limit 2 ` +
+        "in this file's header)",
+    );
   }
   const headRef = readHeadRef(root);
   if (headRef === undefined || !LANE_BRANCH_RE.test(headRef)) {
-    return laneLessVerdict(request, root, headRef);
+    return laneLessVerdict(request, root, headRef, abs);
   }
   const branch = headRef.replace(/^refs\/heads\//, "");
 
@@ -918,26 +1084,12 @@ export function decide(request) {
     );
   }
 
-  const target = targetOf(request.toolInput);
-  if (target === undefined) {
-    return block(
-      "unreadable-request",
-      `LANE FENCE: ${request.toolName ?? "this tool"} was called with no path this hook can read ` +
-        `(it looks for ${WRITE_TOOL_PATH_FIELDS.join(", ")}). Inside a lane an unreadable request ` +
-        "is a refusal and never a shrug: a fence that answers `no overlap` when it means `I do " +
-        "not know` is worse than one that refuses (lib/parser/src/fence.ts).",
-    );
-  }
-
-  const abs = path.resolve(root, target);
+  // NO OUT-OF-CHECKOUT BRANCH HERE ANY MORE, AND ITS ABSENCE IS THE
+  // FIX (T-199). `root` is derived FROM `abs`, so `rel` cannot escape it
+  // and the old `rel.startsWith("../")` allow was not merely unused — it
+  // was the arm every lane write took. An allow no mutation can kill is
+  // an allow no test can prove, so it is gone rather than left inert.
   const rel = path.relative(root, abs).split(path.sep).join("/");
-  if (rel === "" || rel.startsWith("../")) {
-    return allow(
-      "outside-the-checkout",
-      `${abs} is outside ${root}, and this manifest's domains are repository-relative — there is ` +
-        "nothing here to judge it against (limit 2 in this file's header)",
-    );
-  }
 
   for (const domain of manifest.alwaysWritable) {
     if (within(rel, domain)) {

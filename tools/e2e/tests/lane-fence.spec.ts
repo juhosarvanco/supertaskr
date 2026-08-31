@@ -14,7 +14,9 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
+import { createHash } from "node:crypto";
 import {
+  DECLINE_CODES,
   INTEGRATION_SEAT_PATHS,
   LANE_BRANCH_RE,
   MANIFEST_REL_PATH,
@@ -29,6 +31,7 @@ import {
   touchesLineOf,
   within,
 } from "../../../.claude/hooks/lane-fence.mjs";
+import * as laneFenceHook from "../../../.claude/hooks/lane-fence.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
@@ -319,7 +322,8 @@ test("a DETACHED worktree is not a lane, and the drill it stands for is not bloc
 
   const inDrill = ask(fx.drill, path.join(fx.drill, "app/src/main.tsx"));
   expect(inDrill.verdict, inDrill.reason).toBe("allow");
-  expect(inDrill.code).toBe("not-a-lane");
+  expect(inDrill.code).toBe("not-judged-detached");
+  expect(inDrill.judged, "limit 3 is a DECLINE and must say so").toBe(false);
   // The discriminating half: the same relative path in the LANE is
   // refused, so this allow is a decision and not an inert hook.
   expect(ask(fx.lane, path.join(fx.lane, "app/src/main.tsx")).verdict).toBe("block");
@@ -512,21 +516,34 @@ test("in a lane, a request with no readable path is refused rather than waved th
   expect(decide({ toolName: "Write", cwd: fx.repo, toolInput: {} }).verdict).toBe("allow");
 });
 
-test("a path outside the lane's own checkout is allowed, and the limit is declared", async () => {
+test("a path in NO git checkout is not judged, and the narrowed limit is declared", async () => {
   const fx = makeFixture();
   await arm(fx);
   const elsewhere = path.join(scratchRoot(), "notes.md");
+  expect(findCheckoutRoot(elsewhere), "the scratch path sits inside some repository").toBe(
+    undefined,
+  );
 
+  // THE SCRATCHPAD AND /tmp ARE WHAT LIMIT 2 IS FOR, and all that is
+  // left of it after T-199: the target sits in no repository, so no
+  // manifest's repository-relative domains reach it.
   const verdict = ask(fx.lane, elsewhere);
   expect(verdict.verdict, verdict.reason).toBe("allow");
-  expect(verdict.code).toBe("outside-the-checkout");
+  expect(verdict.code).toBe("not-a-repository");
+  expect(verdict.judged, "a decline that reports itself as a judgement is the T-199 defect").toBe(
+    false,
+  );
   // The guard is still armed in the same call — the discriminating half.
   expect(ask(fx.lane, path.join(fx.lane, "app/src/main.tsx")).code).toBe("outside-the-fence");
   // The limit is not merely true, it is WRITTEN where the next reader is.
   const header = readFileSync(path.join(repoRoot, ".claude/hooks/lane-fence.mjs"), "utf8");
-  expect(header, "the out-of-checkout limit is no longer declared in the hook's header").toContain(
-    "A PATH OUTSIDE THE LANE'S OWN CHECKOUT IS ALLOWED",
+  expect(header, "the narrowed limit 2 is no longer declared in the hook's header").toContain(
+    "A PATH IN NO GIT CHECKOUT AT ALL IS NOT JUDGED",
   );
+  expect(
+    header,
+    "the header still claims the limit T-199 deleted — the sentence that made the guard inert",
+  ).not.toContain("A PATH OUTSIDE THE LANE'S OWN CHECKOUT IS ALLOWED");
   expect(header, "the Bash limit the card asks for is not declared").toContain(
     "BASH-MEDIATED WRITES ARE NOT COVERED",
   );
@@ -878,7 +895,8 @@ test("a DETACHED checkout is not judged, so the poison drill may mutate what a l
   // path to the integration checkout must not reach a detached tree.
   const inDrill = ask(fx.drill, path.join(fx.drill, "tools/e2e/tests/fixture.spec.ts"));
   expect(inDrill.verdict, inDrill.reason).toBe("allow");
-  expect(inDrill.code).toBe("not-a-lane");
+  expect(inDrill.code).toBe("not-judged-detached");
+  expect(inDrill.judged, "limit 3 is a DECLINE and must say so").toBe(false);
   expect(inDrill.reason, "the detached limit is not named in the answer").toContain("detached");
   // The discriminating half: the SAME path, the SAME repository, from
   // the checkout that holds a branch — refused.
@@ -1116,15 +1134,15 @@ test("what the lane-less seat may write, a LANE still may not — the two seats 
   expect(inLane.code).toBe("outside-the-fence");
   expect(inLane.reason).toContain(ROUTE);
 
-  // AND WHAT THE TWO SEATS SHARE, because docs/CONVENTIONS.md now claims
-  // it of both: a path outside the writing checkout is unjudged in
-  // either. The lane-less side of that sentence had no body until this
-  // line, and an undriven arm is a claim nothing checks.
+  // AND WHAT THE TWO SEATS SHARE: a path in NO repository is unjudged
+  // whoever asks. That is all of limit 2 after T-199 — the WRITER's
+  // checkout stopped being the term, so where the asker sits no longer
+  // moves this answer at all.
   const elsewhere = path.join(scratchRoot(), "notes.md");
   expect(ask(fx.repo, elsewhere).code, "limit 2 does not hold for the seat with no lane").toBe(
-    "outside-the-checkout",
+    "not-a-repository",
   );
-  expect(ask(fx.lane, elsewhere).code).toBe("outside-the-checkout");
+  expect(ask(fx.lane, elsewhere).code).toBe("not-a-repository");
   // Discriminating: the same seat, a path INSIDE it that a lane holds.
   expect(ask(fx.repo, path.join(fx.repo, "tools/e2e/x.ts")).code).toBe("held-by-a-live-lane");
 });
@@ -1178,4 +1196,272 @@ test("a suffixed card id survives every derivation that once truncated it — th
   expect(laneIdOf("refs/heads/task/T-153-inotify-sentinels", branchRe)).toBe("T-153");
   // And the armed hook still reads a suffixed branch as a lane at all.
   expect(LANE_BRANCH_RE.test("refs/heads/task/T-153-s5-clock-restore-guard")).toBe(true);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE SHAPE THIS PROJECT ACTUALLY DISPATCHES (T-199)
+ *
+ * Everything above this line drives the guard from a writer sitting IN
+ * the checkout it is judging. That is not how this project dispatches,
+ * and the difference is the whole card: `method/lane-protocol.md` rule 3
+ * REQUIRES a lane worktree to be a SIBLING of the repository, the
+ * dispatching seat runs from a checkout NESTED under `.claude/worktrees/`,
+ * and a subagent inherits the dispatching session's project root. So the
+ * writer's checkout never contained the target, `decide` rooted on the
+ * WRITER, and every lane write for seven lanes took an allow written for
+ * the scratchpad — never denied, never permitted-with-a-carve, NEVER
+ * EVALUATED.
+ *
+ * A GUARD THAT REFUSES EVERYTHING IS INDISTINGUISHABLE FROM ONE THAT
+ * WORKS, so no body below asserts a refusal alone. Each is paired with a
+ * write that must still LAND, through the same runner, in the same
+ * fixture, in the same run.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The dispatching seat: a checkout NESTED inside the repository, on a
+ * branch that is not a lane.
+ *
+ * THE NESTING IS THE POINT AND NOT DECORATION. With the seat inside the
+ * repository and the lane beside it, `path.relative(seat, lane)` climbs
+ * out — which is exactly the condition the deleted limit tested, and
+ * exactly why it fired on every ordinary write instead of on an
+ * exception. A fixture whose seat sat in `repo` itself could not
+ * reproduce the defect at all.
+ */
+function addDispatchSeat(fx: Fixture): string {
+  const seat = path.join(fx.repo, ".claude/worktrees/session");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", "claude/session-fixture", seat]);
+  return seat;
+}
+
+/** A file's bytes as a digest, or the string `absent`. */
+function digest(file: string): string {
+  return existsSync(file) ? createHash("sha256").update(readFileSync(file)).digest("hex") : "absent";
+}
+
+/**
+ * THE HARNESS CONTRACT, PERFORMED RATHER THAN ASSERTED.
+ *
+ * `.claude/settings.json` wires the runner as a PreToolUse command hook,
+ * and `lane-fence-hook.mjs`'s own header states the contract: exit 2
+ * refuses the tool call, exit 0 lets it proceed. So this function IS the
+ * harness for the width of one write — it runs the real runner as a real
+ * subprocess with the real request on stdin, and performs the write ONLY
+ * on exit 0.
+ *
+ * WHY NOT ASSERT `decide`'s RETURN VALUE. Because a decision function
+ * that answers `block` while the file still changes on disk is precisely
+ * the failure this card is made of, one layer up: for seven lanes this
+ * hook answered correctly for every write it was ASKED about and was
+ * asked about none of them. `T-167-s8` shipped its push guard proved
+ * against a real bare remote in three arms — a real attempt, a real
+ * refusal, and the protected thing asserted UNCHANGED — and that shape
+ * is the one borrowed here.
+ */
+function harnessWrite(
+  cwd: string,
+  filePath: string,
+  content: string,
+): { status: number | null; stdout: string; stderr: string; wrote: boolean } {
+  const hook = path.join(repoRoot, ".claude/hooks/lane-fence-hook.mjs");
+  const ran = spawnSync(process.execPath, [hook], {
+    input: JSON.stringify({
+      hook_event_name: "PreToolUse",
+      tool_name: "Write",
+      cwd,
+      tool_input: { file_path: filePath },
+    }),
+    encoding: "utf8",
+  });
+  const wrote = ran.status === 0;
+  if (wrote) {
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, content, "utf8");
+  }
+  return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, wrote };
+}
+
+test("a lane's OUT-OF-FENCE write is refused in the sibling/nested shape, and the file is UNCHANGED", async () => {
+  const fx = makeFixture();
+  const manifest = await arm(fx);
+  const seat = addDispatchSeat(fx);
+
+  // THE SHAPE FIRST, because the defect was a configuration and not a
+  // rule. Assert the fixture really has the geometry that broke the
+  // guard, or the refusal below proves nothing about the live world.
+  const seatHead = readHeadRef(seat);
+  expect(findCheckoutRoot(seat), "the nested seat's own .git pointer was not followed").toBe(seat);
+  expect(seatHead).toBe("refs/heads/claude/session-fixture");
+  expect(LANE_BRANCH_RE.test(seatHead ?? ""), "the seat is on a lane branch").toBe(false);
+  expect(findCheckoutRoot(fx.lane)).toBe(fx.lane);
+  expect(
+    path.relative(seat, fx.lane).startsWith(".."),
+    "the lane is INSIDE the writer's checkout — this fixture cannot reproduce the defect",
+  ).toBe(true);
+  expect(manifest.paths, "the fixture fence would have allowed the drill anyway").not.toContain(
+    "app/src",
+  );
+
+  // ARM 1 — A REAL ATTEMPT, from the seat that really dispatches.
+  const target = path.join(fx.lane, "app/src/main.tsx");
+  const before = digest(target);
+  expect(before, "the fixture's protected file is missing").not.toBe("absent");
+  const refused = harnessWrite(seat, target, "export const main = 'BREACHED';\n");
+
+  // ARM 2 — A REAL REFUSAL, at the exit code the harness obeys.
+  expect(refused.status, `the write was not refused: ${refused.stderr}`).toBe(2);
+  expect(refused.stderr).toContain("LANE FENCE");
+  expect(refused.stderr).toContain(FIXTURE_ID);
+  expect(refused.stderr).toContain("app/src/main.tsx");
+  expect(refused.stderr).toContain(ROUTE);
+  expect(refused.stdout, "a refusal that prints on stdout depends on being parsed").toBe("");
+
+  // ARM 3 — THE PROTECTED THING, UNCHANGED. Not "the function returned
+  // block": the bytes on disk, and the lane's own git status.
+  expect(refused.wrote).toBe(false);
+  expect(digest(target), "the refusal did not stop the write").toBe(before);
+  expect(git(fx.lane, ["status", "--porcelain", "--", "app/src"]).trim()).toBe("");
+});
+
+test("THE POSITIVE CONTROL: the same seat's IN-FENCE write is allowed and LANDS", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const seat = addDispatchSeat(fx);
+
+  // A GUARD THAT REFUSES EVERYTHING PASSES THE BODY ABOVE. This is the
+  // half it cannot pass, and the card names it as the point: a body that
+  // only proves in-fence writes succeed passes identically against a
+  // hook that judges nothing, and a body that only proves out-of-fence
+  // writes fail passes identically against a hook that refuses
+  // everything. Both arms, one fixture, one runner, one run.
+  const inFence = path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts");
+  const was = readFileSync(inFence, "utf8");
+  const now = "export const spec = 199;\n";
+  expect(now, "the control writes the bytes that were already there").not.toBe(was);
+
+  const allowed = harnessWrite(seat, inFence, now);
+  expect(allowed.status, allowed.stderr).toBe(0);
+  expect(allowed.stdout, "an allow that speaks on stdout can GRANT").toBe("");
+  expect(allowed.stderr, "a JUDGED allow is silent — only a decline speaks").toBe("");
+  expect(allowed.wrote).toBe(true);
+  expect(readFileSync(inFence, "utf8"), "the allowed write did not reach the disk").toBe(now);
+
+  // The unfenceable directory too: every card's protocol writes there,
+  // and a guard that stopped the closing stamp is a guard turned off.
+  const card = path.join(fx.lane, "docs/tasks/T-902-a-suggestion-this-lane-files.md");
+  const filed = harnessWrite(seat, card, "---\nid: T-902\n---\n");
+  expect(filed.status, filed.stderr).toBe(0);
+  expect(existsSync(card), "docs/tasks stopped being always-writable").toBe(true);
+
+  // AND THE DISCRIMINATION, same seat and same process boundary: a hook
+  // that allowed those two because it judges nothing would allow this.
+  const breach = harnessWrite(fx.lane, path.join(fx.lane, "docs/ROADMAP.md"), "BREACHED\n");
+  expect(breach.status, "the guard is inert — every write is passing").toBe(2);
+  expect(readFileSync(path.join(fx.lane, "docs/ROADMAP.md"), "utf8")).not.toContain("BREACHED");
+});
+
+test("the root comes from the TARGET, so the verdict does not move with the writer", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const seat = addDispatchSeat(fx);
+
+  // ONE TARGET, SIX WRITER LOCATIONS, ONE ANSWER. This is the defect
+  // stated as an invariant: `decide` rooted on `request.cwd`, so the
+  // verdict below moved with the writer and answered `outside-the-
+  // checkout` from five of these six.
+  const outside = path.join(fx.lane, "app/src/main.tsx");
+  const inside = path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts");
+  for (const from of [fx.lane, seat, fx.repo, fx.drill, scratchRoot(), os.tmpdir()]) {
+    const refusal = ask(from, outside);
+    expect(refusal.code, `an out-of-fence write asked from ${from}`).toBe("outside-the-fence");
+    expect(refusal.judged).toBe(true);
+    expect(ask(from, inside).code, `an in-fence write asked from ${from}`).toBe("inside-the-fence");
+  }
+
+  // AND A RELATIVE TARGET IS STILL THE WRITER'S TO RESOLVE — the one job
+  // `cwd` keeps. Asked from the lane, `app/src/main.tsx` is that lane's
+  // file and is refused; asked from the seat it is the seat's own file,
+  // which no lane holds.
+  expect(ask(fx.lane, "app/src/main.tsx").code).toBe("outside-the-fence");
+  expect(ask(seat, "app/src/main.tsx").code).toBe("not-a-lane");
+});
+
+test("an unjudged write SAYS SO — a decline is distinguishable from a judged allow", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const seat = addDispatchSeat(fx);
+
+  // THE PARTITION IS DECLARED AND EXHAUSTIVE. Every limit in the hook's
+  // header ends in an allow, which is how an inert fence produced output
+  // byte-identical to a working one across seven lanes.
+  const judged = ask(seat, path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts"));
+  expect(judged.judged).toBe(true);
+  expect(DECLINE_CODES, "a judged verdict is being reported as a decline").not.toContain(
+    judged.code,
+  );
+  const declined = ask(seat, path.join(scratchRoot(), "notes.md"));
+  expect(declined.verdict).toBe("allow");
+  expect(declined.judged).toBe(false);
+  expect(DECLINE_CODES).toContain(declined.code);
+  expect(ask(fx.drill, path.join(fx.drill, "app/src/main.tsx")).judged).toBe(false);
+
+  // AT THE RUNNER, THROUGH THE REAL PROCESS BOUNDARY. Without the pair,
+  // "the hook printed nothing" is what BOTH a working fence and an inert
+  // one look like — the sentence this whole card is made of.
+  const hook = path.join(repoRoot, ".claude/hooks/lane-fence-hook.mjs");
+  const call = (cwd: string, filePath: string) =>
+    spawnSync(process.execPath, [hook], {
+      input: JSON.stringify({
+        hook_event_name: "PreToolUse",
+        tool_name: "Write",
+        cwd,
+        tool_input: { file_path: filePath },
+      }),
+      encoding: "utf8",
+    });
+
+  const quiet = call(seat, path.join(fx.lane, "tools/e2e/tests/fixture.spec.ts"));
+  expect(quiet.status, quiet.stderr).toBe(0);
+  expect(quiet.stderr, "a judged allow speaks, so a decline cannot be told from one").toBe("");
+  expect(quiet.stdout).toBe("");
+
+  const loud = call(seat, path.join(scratchRoot(), "notes.md"));
+  expect(loud.status, "a decline must not change which writes proceed").toBe(0);
+  expect(loud.stdout, "a decline on stdout could be parsed as a permission GRANT").toBe("");
+  expect(loud.stderr, "the decline is silent — the defect's own signature").toContain(
+    "LANE FENCE (not judged)",
+  );
+  expect(loud.stderr).toContain("not-a-repository");
+});
+
+test("the push guard's import list from this module is a contract, and it still holds", () => {
+  // `.claude/hooks/push-guard.mjs` takes five symbols from this module
+  // rather than re-spelling them (T-057). Git merges a rename on one
+  // side and a use on the other perfectly cleanly, and the push guard
+  // then breaks at a push instead of here — so the list is asserted by
+  // NAME against the live exports.
+  const src = readFileSync(path.join(repoRoot, ".claude/hooks/push-guard.mjs"), "utf8");
+  const found = /import\s*\{([^}]*)\}\s*from\s*"\.\/lane-fence\.mjs"/.exec(src);
+  expect(found, "push-guard.mjs no longer imports from lane-fence.mjs at all").not.toBeNull();
+  const imported = (found?.[1] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  expect(imported.length, "the import list could not be read").toBeGreaterThan(0);
+  expect(
+    imported,
+    "a symbol the push guard depends on has been dropped from its own import list",
+  ).toEqual(
+    expect.arrayContaining([
+      "LANE_BRANCH_RE",
+      "findCheckoutRoot",
+      "readHeadRef",
+      "readManifest",
+      "within",
+    ]),
+  );
+  // COMPARED AGAINST THE LIVE MODULE, not against a second copy of the
+  // list: a rename here reds by name instead of at somebody's push.
+  expect(Object.keys(laneFenceHook)).toEqual(expect.arrayContaining(imported));
 });

@@ -6,11 +6,27 @@
  * reads the harness's request off stdin, asks `lane-fence.mjs`, and
  * answers with an EXIT CODE:
  *
- *   0  stand aside — silently, so the harness's own permission flow runs
- *      untouched. This hook subtracts permission and never grants it.
+ *   0  stand aside — SILENTLY when the decision was a JUDGEMENT, so the
+ *      harness's own permission flow runs untouched. This hook subtracts
+ *      permission and never grants it.
+ *   0  with a line on stderr when `decide` DECLINED to judge.
  *   2  refuse, with the reason on stderr, which is the documented
  *      blocking mechanism and the one that does not depend on a
  *      structured payload being recognised.
+ *
+ * ── AN UNJUDGED WRITE SAYS SO (T-199) ────────────────────────────────
+ * Every limit in `decide`'s header ends in an ALLOW, and a fence that
+ * judges nothing produces output byte-identical to one that works —
+ * which is how this guard stayed inert across seven lanes with nobody
+ * noticing. So a decision carrying `judged: false` prints its reason on
+ * stderr, prefixed `LANE FENCE (not judged)` so ONE grep finds refusals
+ * and declines together, and still exits 0.
+ *
+ * STDERR AND NOT STDOUT, for the same reason the allow arm is silent at
+ * all: stdout is the channel a harness PARSES for a permission decision,
+ * so an allow that speaks there could GRANT. Nothing on stderr can. The
+ * exit code does not move, so which writes proceed does not move either
+ * — only whether a decline leaves a trace.
  *
  * Execution lives HERE and the decision lives in the module beside it, so
  * importing the decision is side-effect-free — the `lint-tokens.mjs`
@@ -67,5 +83,8 @@ const decision = decide(request());
 if (decision.verdict === "block") {
   process.stderr.write(`${decision.reason}\n`);
   process.exit(2);
+}
+if (!decision.judged) {
+  process.stderr.write(`LANE FENCE (not judged) ${decision.code}: ${decision.reason}\n`);
 }
 process.exit(0);
