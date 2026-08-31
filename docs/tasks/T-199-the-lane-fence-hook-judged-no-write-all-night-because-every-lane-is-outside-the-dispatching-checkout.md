@@ -440,3 +440,26 @@ regeneration in a commit no lane can make.
    docs-gate run printed its full derivation — 26 readers, the census
    figures, and named owed suites — rather than a stack trace. The
    exits below were read from that OUTPUT, not from the code alone.
+
+### One digest, stated precisely so it is not misread
+
+`af80bded166641a6180e1273f2f8931321062bf8397b46c34dc2b600ea8b0566` is
+the RESTORATION proof of the two mutant drills — the sha256 of
+`.claude/hooks/lane-fence.mjs` immediately before mutant 1 was armed and
+again after each mutant was reverted, identical all three times, with
+`grep -c MUTANT` at 0.
+
+**It is NOT this lane's tip digest.** One comment line was corrected
+after the drills (a cross-reference reading `limit 5` where the new limit
+is numbered 8), so the committed file is
+`14cd5aa2e75fbf9149ab725b66da905c8404fbb7a3f2fa989ef7f7384af2b488` and
+the whole difference is:
+
+    62c62
+    <  * and answering a request that carries no path at all (limit 5).
+    ---
+    >  * and answering a request that carries no path at all (limit 8).
+
+A comment, no executable byte, and the suite was re-run green afterwards.
+Recorded because a digest quoted without saying WHICH tree it belongs to
+is the figure-without-a-ref failure this project keeps paying for.
