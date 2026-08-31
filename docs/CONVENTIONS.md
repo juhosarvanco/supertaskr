@@ -1780,6 +1780,34 @@
   bullet the derivation cannot see. Until it lands, this is the only
   place the command is written down, and adding it above without that
   same commit's `LOCAL_ONLY` entry fails the lane by name.
+- THE CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:` (T-182) — the
+  commit that adds a record under `docs/checkpoints/` carries a subject
+  beginning with that literal. **IT IS NOT A STYLE RULE: TWO RULES PARSE
+  THE MARKER, AND BOTH DEGRADE IN SILENCE WITHOUT IT.**
+  **CONSUMER ONE IS IN THIS FILE** — the DISPATCH bullet above
+  (`T-014-s3, seven-for-seven`), which picks a lane's base by it; its
+  reasoning is NOT restated here. That bullet's naming phrase is spelled
+  around rather than quoted, because `rawBullet`
+  (tools/e2e/scripts/dispatch-brief.mjs) demands ONE bullet carry it —
+  this lane's first draft tripped exactly that.
+  **CONSUMER TWO IS THE TRIAGE BAND'S WINDOW** — `newestCheckpoint` in
+  tools/e2e/scripts/health-bands.mjs, anchoring
+  `triage/net-arrivals-per-window` in health-bands.config.mjs beside it.
+  **THE FAILURE IS INVISIBLE FROM OUTSIDE, WHICH IS WHY IT IS WRITTEN
+  DOWN.** To both, an absent marker is indistinguishable from a night
+  with no checkpoint: the window does not advance, the base names an
+  older commit, and both keep reporting success. At `bd8a8e8` over
+  `4e08d29..b737b53`, **12 of 13 first-parent record-adding commits
+  carried no `Checkpoint:` subject** —
+  `git log --first-parent --diff-filter=A <range> -- docs/checkpoints/`.
+  **IT IS A CONVENTION HERE ONLY BECAUSE THE TRIGGER IS OUT OF FENCE.**
+  The event to assert on is the COMMIT THAT ADDS A RECORD — already the
+  second trigger `T-167-s8` absorbed from `T-181` — so it joins there
+  rather than growing a second mechanism, needing `tools/e2e` and
+  `.claude`, which `[docs/CONVENTIONS.md]` cannot reach. **ROUTED to
+  `T-167-s8`** with two facts: `--grep=^Checkpoint:` matches ANY line of
+  a message, so a SUBJECT guard is strictly narrower than the band's own
+  reader; and `newestCheckpoint` had no spec at `bd8a8e8`.
 - POISON DRILL (ratified at T-054; until then it was pure oral
   tradition — "poison", "vacuous" and "mutation" appeared nowhere in
   this file or in method/roles/, verified at the 2026-08-17 triage): at
