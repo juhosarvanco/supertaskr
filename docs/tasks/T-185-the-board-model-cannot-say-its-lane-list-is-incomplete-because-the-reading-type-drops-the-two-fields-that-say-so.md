@@ -377,3 +377,74 @@ the integrator owed.
 - **`T-185-s1`** — criterion 3's by-construction half; needs C-15's
   `depends_on:` and C-12's `architecture-dogfood.test.ts`.
 - **`T-185-s2`** — the fence defect above, with both gate readings.
+
+### The suites the DOCS GATE named, run
+
+`node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only main 0f4e21e)`
+— **exit 1, FIRES**, 3 paths under `docs/`, owing three suites. Its
+FIRST invocation exited 1 with `ERR_MODULE_NOT_FOUND: yaml` on a fresh
+worktree, which is that gate's ONE named hole — *"READ THE MESSAGE, NOT
+THE CODE"*: exit 1 there means COULD NOT RUN, not "has a verdict". It was
+re-run after `npm ci` in tools/e2e and the reading below is that run's.
+
+| suite the gate named | reading |
+|---|---|
+| `npx vitest run` from lib/parser/ | **exit 0**, 344 passed (16 files) |
+| `npm test` from app/ | **exit 1**, 2 failed \| 1111 passed (1113) — both in `board-truth.test.tsx`, see above |
+| `npm test` from tools/e2e/ | **exit 1**, 1 failed \| 400 passed — `dispatch-order.spec.ts`, and it is NOT this lane's |
+
+Also run and green, none of them owed by a trigger this diff matches:
+`npm run lint:tokens` **exit 0** (TOKEN 165 files, CONTROL 1058),
+`npm run capabilities:check` **exit 0 CURRENT**, `npm run typecheck` from
+tools/e2e **exit 0**, `npx tsc --noEmit` from lib/parser **exit 0**,
+`arch cycles` **exit 0 ACYCLIC** (15 components, 43 declared edges —
+unmoved, this lane edits no registry file).
+
+### THE E2E RED IS `T-197`'s AND HERE IS THE PROOF RATHER THAN THE CLAIM
+
+`tools/e2e/tests/dispatch-order.spec.ts:200` fails at
+`expect(run.stdout).toContain("critical path:")`, and its captured stdout
+ends MID-TOKEN at `T`. Measured at `cca2002`:
+
+    node tools/e2e/scripts/brief.mjs --dispatch > file    exit 0, 69289 bytes
+      contains "critical path:"  1     contains "worst blocker:"  1
+    node tools/e2e/scripts/brief.mjs --dispatch | cat > file   65536 bytes
+      contains "critical path:"  0     contains "worst blocker:"  0
+
+**65536 is 64 KiB exactly**, and the piped file ends on the same
+mid-token `T` the spec's capture shows. The tool's own output carries
+both asserted strings; the PIPE destroys them. That is `T-197` by name.
+
+**AND IT DOES NOT DEPEND ON THIS LANE'S CARDS.** Measured against a
+DETACHED scratch checkout of this lane's own base `209e5d3`, driven
+through `brief.mjs --root`, so the base tree is read with no file of this
+lane's in it:
+
+    base tree 209e5d3   69280 bytes, exit 0, both strings present
+    this tip  cca2002   69289 bytes
+    delta                   +9 bytes
+    base overage over the 64 KiB cap   +3744 bytes
+
+**The base was already 3,744 bytes past the cliff and this lane moved it
+by 9** — 0.24% of an overage that predates the lane entirely. The two
+routed cards are `status: suggested` and are not in the dispatch order at
+all, so they contribute nothing to that stream. The scratch checkout was
+detached, stemmed from this card's id, and removed after the reading.
+
+This lane's forecast contains **zero** paths under `tools/`, which is
+`T-197`'s fence. Reported, not chased.
+
+### The class sweep criterion 3 implies
+
+**CLASS: a prose comment asserting that two types are one shape.** One
+search, over `app/src`, `app/test` and `lib/parser/src`, for a claim
+about the shape `hydrateJoin`/`DispatchJoin` produces. **ONE live
+instance, and it is the one this card names** — at the tip the only hit
+is this lane's own retraction quoting the old text.
+
+**The sweep is shown capable of finding something before its zero is
+written down**: the identical query at the base ref `209e5d3` returns
+`select-board.test.ts:868`, the original false claim. The four surviving
+`Structurally satisfied by` comments are the HONEST form — they assert a
+direction of assignability, not an equality, and `DispatchReading` <-
+`DispatchJoin` still holds and is now TIGHTER by two fields.
