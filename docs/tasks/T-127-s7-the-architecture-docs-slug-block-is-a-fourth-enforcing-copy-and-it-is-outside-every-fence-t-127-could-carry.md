@@ -229,3 +229,34 @@ name the derivation, so the next reader derives instead of trusting.
   `docs/ARCHITECTURE.md` and NOT `brief.spec.ts`, which reaches it
   through that helper — exactly `T-127-s8` item 1, unchanged. It cost
   nothing HERE only because all four live in the same owed suite.
+
+### The drill — the unpinnedness is MEASURED, not asserted
+
+Run at the commit (`02c0c0e`), so a restore cannot pass itself off as a
+revert (T-072-s1). **One side only: the DOCUMENT was mutated and no
+assertion was touched.**
+
+- **Mutant**: the entire repaired paragraph deleted from
+  `docs/ARCHITECTURE.md`.
+- **Landing decided by `git diff`, never by the mutator**: `1 file
+  changed, 16 deletions(-)`, 16 removed lines and 0 added, and the
+  working sha256 moved
+  `96d648c7048598de78126cdff88ebc860e5e77e179b0d13b5925848ba468a95f`
+  -> `b8242413506a402c8c722d7961e9f0ff10be0e0c02aa4b33649c5bf681edda76`.
+- **Result**: `gate-run.mjs e2e` -> `exit=0 bodies=420 verdict=GREEN
+  ref=02c0c0e`. **Every one of the 420 bodies passed with the paragraph
+  gone.** The suite that holds all four of this file's readers cannot
+  tell the repaired paragraph from its absence.
+- **Restoration proved rather than asserted**, both sides named:
+  `git restore --source=02c0c0e --staged --worktree --
+  docs/ARCHITECTURE.md` -> exit 0, and the working file's sha256 is
+  `96d648c7048598de78126cdff88ebc860e5e77e179b0d13b5925848ba468a95f`,
+  equal to `git show HEAD:docs/ARCHITECTURE.md`'s. Empty `git diff` and
+  empty `git status --porcelain` are recorded as COMPANIONS to that
+  hash, never as alternatives to it (T-092-s4).
+
+**The drill's finding is a negative and it is the point**: this
+paragraph is pinned by nothing, exactly as the old one was, and the edit
+does not change that. Pinning prose is what row 5 rules against; naming
+the derivation is the substitute, and it works on the READER rather than
+on a gate.
