@@ -2180,8 +2180,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/resolve/mod.rs",
       "path": "app/src-tauri/crates/nputer-index/src/resolve/mod.rs",
       "lang": "rust",
-      "hash": "blake3:452dfc70c8d0e470c5487abdcd283d581ba5a82e5d6f3513d410b114a3b0fea1",
-      "loc": 718,
+      "hash": "blake3:2c818751c401ece9ff4a12e5eb8fa5bbbfe522152d164c65f0df865cb6d991df",
+      "loc": 869,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/resolve/mod.rs#EdgeAcc",
@@ -2189,8 +2189,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            309,
-            323
+            358,
+            372
           ]
         },
         {
@@ -2199,8 +2199,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            238,
-            242
+            287,
+            291
           ]
         },
         {
@@ -2209,8 +2209,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            166,
-            169
+            215,
+            218
           ]
         },
         {
@@ -2219,8 +2219,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            161,
-            164
+            210,
+            213
           ]
         },
         {
@@ -2239,8 +2239,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            546,
-            565
+            595,
+            614
           ]
         },
         {
@@ -2249,8 +2249,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            601,
-            603
+            650,
+            652
           ]
         },
         {
@@ -2259,8 +2259,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            572,
-            584
+            621,
+            633
           ]
         },
         {
@@ -2269,8 +2269,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            605,
-            614
+            654,
+            663
           ]
         },
         {
@@ -2279,8 +2279,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            303,
-            307
+            352,
+            356
           ]
         },
         {
@@ -2289,8 +2289,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            171,
-            236
+            220,
+            285
           ]
         },
         {
@@ -2309,8 +2309,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            124,
-            155
+            169,
+            204
           ]
         },
         {
@@ -2319,8 +2319,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            329,
-            544
+            378,
+            593
           ]
         },
         {
@@ -2329,8 +2329,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            244,
-            301
+            293,
+            350
           ]
         },
         {
@@ -2349,8 +2349,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            617,
-            718
+            666,
+            869
           ]
         },
         {
