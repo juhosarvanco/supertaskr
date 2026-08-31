@@ -5,11 +5,11 @@ feature: F-04
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185 (2026-08-31) — a DISPATCH ERROR found from inside the lane and routed, never repaired there
 touches: [app-shell]
-builder:
+builder: claude-opus-5@subagent
 verifier:
 built_by:
 verified_by:
