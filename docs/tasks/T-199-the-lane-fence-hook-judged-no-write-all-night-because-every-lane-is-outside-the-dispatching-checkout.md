@@ -5,11 +5,11 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: "T-190's executor, which DRILLED THE FENCE ITSELF and found the write succeeded; re-derived from the hook's source at the architect/integrator seat before filing"
-builder:
+builder: claude-opus-5@subagent
 review: independent
 ---
 

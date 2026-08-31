@@ -5,11 +5,11 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md]
 suggested_by: "architect/integrator seat, 2026-08-31 — reported by T-182's executor, which obeyed a dispatch prompt that contradicted its own derived brief and flagged the conflict rather than silently picking one"
-builder:
+builder: claude-opus-5@subagent
 review:
 ---
 
