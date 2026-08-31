@@ -158,6 +158,10 @@
   recorded from the other side, where merging an `app/src-tauri/**` card
   into a checkout with a live dev server restarts the human's window.
   RUN THE LANE IN A WORKTREE and it touches nothing the human sees.
+- THE BLESSED GATE-RUNNER (T-202): `node tools/e2e/scripts/gate-run.mjs
+  parser|app|rust|e2e` from the repo root is the ONE spelling for a
+  graded reading; its `gate-verdict` line carries the exit code, the
+  BODY COUNT and the ref. READ THE COUNT, NEVER THE CODE.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
@@ -1179,12 +1183,8 @@
     `--write-fence` in the same invocation: no manifest is written for
     a card whose claims fell. IT IS DELIBERATELY NOT IN "Build & test"
     above, for the reason the METHOD EVAL GATE gives about its own
-    runner — `deriveExpectedSteps` in
-    tools/e2e/tests/workflow-parity.spec.ts reads exactly the
-    `run from <dir>/:` bullets that section carries and reds by name on
-    a command it cannot map to a CI step, which is a two-package edit
-    T-160's fence did not reach — so the command lives beside the ritual
-    it serves, and wiring it into CI is a routed suggestion.
+    runner — a two-package edit T-160's fence did not reach. Wiring it
+    into CI is a routed suggestion.
     A PreToolUse hook wired in
     `.claude/settings.json` then reads that file at every Edit/Write
     with no dependency a freshly cut worktree lacks. FOUR ANSWERS FOR A
@@ -1728,8 +1728,8 @@
   `cargo test` and `index --check` from app/src-tauri/ and `npm test`
   from tools/e2e/, all three of which that checkpoint already ran.
   Capture them with a redirect and read `$?` from the gate itself; a
-  bare `| tee` hands you tee's status, which every gate bullet above
-  forbids in as many words. The record's own `Gate runtime:` total is
+  bare `| tee` hands you tee's status, which the DOCS GATE forbids in
+  as many words. The record's own `Gate runtime:` total is
   `machinery/gate-seconds`'s only reading, and its `Cold start:` and
   `Drift incidents:` lines are the two docs/NORTH_STAR.md indicators'
   only markers — **owed by the SESSION every time rather than by whoever
