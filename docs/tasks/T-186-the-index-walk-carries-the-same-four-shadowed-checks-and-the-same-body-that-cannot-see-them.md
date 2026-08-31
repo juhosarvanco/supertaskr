@@ -5,12 +5,15 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [crate-index]
 suggested_by: "architect/integrator seat, ROUTED BY T-140-s9's merge (2026-08-31) and re-measured at this seat before filing rather than transcribed from the route"
 builder:
-review:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
+review: independent
 ---
 
 **ROUTED OUT OF `T-140-s9`, AND RE-MEASURED BEFORE FILING.** That lane
@@ -113,3 +116,672 @@ failed attempts at its site, exactly as `T-140-s9` landed.
 `T-140-s9` (the same finding, corrected, with both failed poison
 attempts recorded at their site — read it FIRST, it will save this lane a
 day), and `app/src-tauri/src/docs_watch.rs` as it stands after that merge.
+
+## Implementation notes (2026-08-31, executor claude-opus-5@subagent)
+
+Lane `/Users/ujju/Projects/nputer-T-186`, branch
+`task/T-186-the-index-walk-carries-the-same-shadowed-checks`, base
+`c3fc1a1`. One file of shipped code, `walk.rs`, the whole fence. Ceremony
+row: **S touching shipped code**, so a verifier is owed — nothing merged,
+nothing pushed, the lane worktree left standing.
+
+### THE ANSWER TO THE CARD'S OPEN QUESTION IS *NO*, AND THAT IS THE FINDING
+
+The card forbade assuming `T-140-s9`'s "undetectable by construction"
+verdict and named the reason: this walk filters on extension and language
+between the link check and containment. **Measured, that difference is
+real and it goes the card's way.** One crate over, BOTH halves of the link
+classification are undetectable and the honest landing was a body that
+cannot red. Here:
+
+- `is_symlink()` alone is still undetectable, and provably so — `meta`
+  comes from `symlink_metadata`, under which a link is never `is_file()`,
+  so the right-hand operand always fires. No fixture can separate them.
+- **`!meta.is_file()` IS separately detectable here**, which its sibling
+  was not. Layer 2 filters on the entry's own NAME rather than on a
+  resolved path, so a DIRECTORY called `<name>.ts` clears every later
+  predicate — allowlisted extension, requested language, canonicalizes to
+  itself, formats to a relative path — and would be emitted to the parser
+  as a source file. That is a body, and it reds on that lift alone.
+
+**Had this lane reasoned from the sibling in either direction it would
+have been wrong.** "It was impossible there" would have cost the walk a
+body it turns out to support.
+
+### THE RULING: every layer stays, and the EVIDENCE is what changed
+
+No line was deleted. `T-140-s9`'s reasoning holds unchanged and was not
+re-litigated: a provably behaviour-neutral line buys exactly zero
+discrimination by leaving, while costing a visible containment statement
+on an ADR-010 boundary. So each of the four layers is now NAMED at its
+site for what it independently contributes, the `starts_with` is named as
+restatement rather than left to read as depth, `relative_posix`'s doc
+comment says it is a containment predicate rather than a formatter, and
+the *"belt-and-suspenders beyond `follow_links(false)`"* claim — the same
+false claim of independence, in the same words, that `T-140-s9` ruled was
+itself the defect — is gone.
+
+**The shipped walk is semantically identical to base.** Every line added
+outside `#[cfg(test)] mod tests` is a comment; the refusal did not move.
+
+### THE FAILED ATTEMPT, RECORDED AT ITS SITE AS THE CARD REQUIRES
+
+The obvious inside-pointing fixture — aim the link at an allowlisted
+inside file, `alias.ts` -> `real.ts` — **cannot detect the lift, and this
+lane ran it rather than reasoning about it.** A lifted layer 1 pushes
+`real.ts` a second time and `files.dedup_by(|a, b| a.rel == b.rel)` at the
+end of the walk collapses the duplicate: byte-identical output, mutant
+survives, body useless. Under that fixture the inside body stays GREEN
+while its sibling body reds. The landed fixture therefore aims at a file
+the walk does NOT otherwise collect (`notes.md`), which is also the truer
+statement: with layer 1 lifted the walk emits `notes.md` tagged
+`Lang::Ts`, because layer 2 read the LINK's name and layer 3 read the
+TARGET's path. **This is the trap this crate adds and `docs_watch` has
+no equivalent of**; it is recorded in the body so the next reader does not
+repeat it.
+
+### POISON SHAPE SIX — ASKED FOR ALL THREE NEW BODIES, AND ALL THREE PASS
+
+The catalogue's form, not the assertion poison: name a mutant of the code
+under test the body kills, run the whole suite, require the failing count
+to be ONE.
+
+- the directory body — the `!meta.is_file()` lift. **Count 1.**
+- the predicate body — the `relative_posix` `.ok()?` lift. **Count 1.**
+- the inside-symlink body — no single-half lift reaches it, so this lane
+  constructed one instead: replace the whole classification with a
+  directory-only skip (`if meta.is_dir()`), under which symlinks pass and
+  directories are still refused. **Count 1.** Without that arm the body's
+  smallest killer is the both-halves lift, which the directory body also
+  kills — i.e. it would have been shape SIX by the catalogue's definition,
+  and the arm is what earns it out of that rather than an argument.
+
+**No fourth body was written for the `starts_with`/`strip_prefix`
+equivalence, deliberately.** `docs_watch`'s
+`the_prefix_check_and_relative_posix_are_one_predicate` already pins that
+std-library property, and bare `cargo test` runs both workspace crates —
+so the equivalence IS pinned on the merge path. A second copy in this
+crate would kill no mutant the first does not, which is the shape the
+catalogue tells us to decline rather than add. The site comment cites the
+existing body by name instead.
+
+### THE CLASS AND THE SWEEP — AND THE SWEEP DOES NOT COME BACK CLEAN
+
+**The class**: a refusal whose removal is shadowed by a later check
+computing the same outcome, with a test NAMED for the shadowed half — so
+the suite reports coverage it does not have.
+
+The search was **shown capable of both hitting and missing before its
+result was written down**: the containment pattern against a planted line
+matched (exit 0), and a one-token variant matched nothing (exit 1).
+
+Inside this fence, `is_symlink()` appears in shipped code at three sites
+beyond `walk_root`. `tests/perf.rs` is a fixture copier, not shipped
+behaviour. The other two are **the class, and they are not fixed here**:
+
+- `arch/registry.rs::read_registry` — `is_symlink() || !meta.is_dir()`,
+  and `a_registry_directory_that_is_a_symlink_is_refused_not_followed`
+  is named for the half. **MEASURED: lifting that half leaves the whole
+  crate suite green, exit 0.**
+- `resolve/mod.rs::read_contained` — `is_symlink() || !meta.is_file()`,
+  with `symlinked_tsconfig_is_never_read` named for the half.
+  **MEASURED: lifting that half leaves the whole crate suite green,
+  exit 0.**
+
+**THIS CORRECTS A SENTENCE IN `T-140-s9`'S LANDED SWEEP.** That record
+classified both sites as *"same shape, no false coverage"* on the ground
+that *"no body is named for the half"*. At this ref that clause is false
+for both, and the two arms above are the evidence. The shadowing halves of
+its classification were right; the coverage half was not.
+
+Both are inside this fence but outside this card's acceptance criteria,
+which are scoped to `walk_root`'s four checks. **Routed rather than
+widened** — see below. This is `T-140-s9`'s verifier's own correction
+arriving one crate over, and it is recorded rather than quietly absorbed.
+
+### THE DRILL, AND THE PROOF THAT EVERY ARM WAS PUT BACK
+
+Drilled in a detached scratch worktree at `/private/tmp/nd-T-186`, cut at
+`e71198f` — the work COMMITTED FIRST, so a restore cannot pass itself off
+as a revert — carrying its own `CARGO_TARGET_DIR` at `<scratch>/target`,
+under the one name `.gitignore` excludes, never shared with the lane.
+
+Each arm: mutate ONE side only with `perl` at an absolute path; **read the
+mutation back with `git -C <scratch> diff`**, never a bare `git diff`,
+with the arm refusing on a substitution count that is not exactly 1 or on
+an empty read-back; run the suite UNPIPED into its own log and capture
+`$?` before anything else; restore with
+`git restore --source=e71198f --staged --worktree`; prove by `shasum
+-a 256`.
+
+**Every arm restored and proven: the working file hashes to
+`0a2ead5a9a4663bcf4b688c65c862e824bccdf991767c1cd2bb5c3f62af16a3b`, the
+`e71198f` blob, after every single one, and the scratch's
+`git status --short` is empty at the end.**
+
+The arms are the ledger in `walk.rs`'s own test module — seven lifts of
+the code under test, four assertion poisons (one per body, each dying
+ALONE, so no body is vacuous by its own value), one recorded ATTEMPT that
+deliberately does not red, and two sweep arms outside this card's
+criteria. **The lifted arm TERMINATED IN A FIXTURE, verified rather than
+assumed** (CONVENTIONS, LIFTING A SAFETY GUARD TO DISCRIMINATE): the only
+path leaked by the all-four arm is a `TempTree` under the system temp dir,
+and the repository's own path occurs in that output **zero** times.
+
+**`e71198f` and the shipped tip differ on `walk.rs` by the ledger comment
+block and nothing else**, checked mechanically — every changed line
+between them is a comment — so the ledger measured at `e71198f` describes
+the code that ships.
+
+### GATES — every exit read UNPIPED, every gate DERIVED from the diff
+
+The gate set is derived against **the tree this tip will have**, the
+merge forecast the RANGE RULE prescribes for the executor's position:
+`git merge-tree --write-tree <main> HEAD` at main `8443a78`, exit 0, no
+conflict — **3 paths**, `walk.rs` plus this card and `T-194`. The last
+commit of this lane is the one carrying this section, and it adds no path
+outside `docs/tasks/`, so it moves no trigger and this derivation still
+describes the tip.
+
+- **`cargo test`** from `app/src-tauri/` at `df52adb`: **exit 0**, 18
+  suite result lines, **0 FAILED**. Lib **260 passed / 0 failed** in
+  4.91s; `nputer-index` lib **200 passed / 0 failed**; `agent_runner`
+  88/0/1 ignored.
+- **The base was MEASURED, so the delta is not arithmetic**: the same
+  suite at `c3fc1a1` before anything was touched is **exit 0**, lib 260/0
+  in 4.10s, `nputer-index` lib **197/0**. 197 + 3 = 200, and the three are
+  named above.
+- **The cargo cache cliff did not fire** (`T-088-s4`): the lib suite's own
+  time is 4.10s at base and 4.91s at the tip, against the green band of
+  under 9.5s, measured with sibling lanes live.
+  `startup_arm_watches_the_initial_root` passed in every green run, and
+  `a_hostile_session_id…` (`T-086-s1`) likewise. Neither was re-run, so
+  there is nothing to attribute.
+- **GRAPH REGEN FIRES** (`walk.rs` is `*.rs` outside `docs/`), so it was
+  **ASKED and NOT acted on** — `graph.json` is outside this fence.
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  `app/src-tauri/`: **exit 1, STALE**, and the staleness is exactly this
+  lane's one file — `files +0 -0 ~1`,
+  `~ app/src-tauri/crates/nputer-index/src/walk.rs (content, loc 224 -> 491)`.
+  **Nothing the graph emits moved**: 199 files, 2436 symbols, 2351 edges
+  and 1143153 bytes are identical on the committed and fresh sides, which
+  is what a comments-and-tests diff should look like. Budget 1143153 of
+  2145959 (53.3%), 1002806 left. It is a REAL red, not the `--root`
+  false red: the second line prints both counts and a `~` file diff rather
+  than `committed: MISSING`. **The integrator regenerates and commits it
+  at the checkpoint; this lane did not.**
+- **BOOT GATE FIRES** (`app/src-tauri/**`): **exit 0**, on the port
+  DERIVED from the card id — `T-186` → 20000 + 186×10 = **21860**, never
+  defaulted. `lsof` gave zero rows immediately before binding, and both
+  startup lines arrived, naming this lane's own folder:
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-186` and
+  `[nputer] window "main" created`. **1420 was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, before and after
+  every run: zero rows every time.**
+- **DOCS GATE FIRES** — this card's own frontmatter (`status`,
+  `built_by`) and `T-194` are paths under `docs/` that code suites READ.
+  Derived by ASKING rather than predicting: `docs-gate.mjs` on the
+  forecast's path list answers **2 path(s)** and names three commands.
+  All three green at `df52adb`:
+  - `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+  - `npm test` from `app/` — **exit 0, 49 files / 1077 tests**
+  - `npm test` from `tools/e2e/` — **exit 0, 341 passed** (4.3m), on
+    `NPUTER_E2E_PORT=31860`, DERIVED as 30000 + 186×10 and lsof'd to zero
+    rows before binding
+  - `npm run lint:docs` — **exit 0**: every live task card's frontmatter
+    parses with a legal status; budgets hold (4 gated, 0 awaiting)
+  - `npm run capabilities:check` — **exit 0, CURRENT (27333 bytes)**; no
+    e2e spec name moved, so `docs/CAPABILITIES.md` needed no regeneration
+  - `npm run lint:tokens` — **exit 0, clean**
+- **METHOD EVAL GATE: not owed** — no path under `method/` in the
+  forecast's 3.
+- **AUDIT GATE** names a gate and declares no merge-diff trigger, so it is
+  not one of these.
+
+**AND EVERY GATE WAS RE-RUN AGAIN AFTER THE VERDICT CORRECTIONS**, at
+`4fa7665`, because those moved `walk.rs` and added `T-196` — a 4-path
+forecast now, `merge-tree` exit 0. All green: `cargo test` **exit 0, 601
+passed / 0 failed over 18 targets** (lib 260/0 in 5.87s, `nputer-index`
+200/0, `--no-fail-fast` so the target count is the whole workspace);
+`docs-gate.mjs` **exit 1, FIRES, 3 paths**, naming the same three
+commands; parser **344**; app **1077**; e2e **341** in 3.5m on 31860;
+`lint:docs` and `capabilities:check` exit 0; **BOOT GATE exit 0** on 21860
+with both startup lines; `index --check` **exit 1 STALE** on this lane's
+one file — `~ walk.rs (content, loc 224 -> 599)`, with files, symbols,
+edges and bytes still identical on both sides. **That `loc` figure moves
+with every comment edit and is quoted at the ref it was measured at; the
+integrator re-asks the gate at the merge rather than carrying it
+forward.** 1420 read with `lsof` and nothing else throughout: zero rows,
+before and after, every run.
+
+**EVERY GATE WAS ALSO RE-RUN AFTER THE `T-194` RENUMBER, AND THOSE FIGURES
+ARE THE RE-RUN'S.** The renumber moved two paths under
+`docs/tasks/` and one comment block in `walk.rs`, so the whole trigger set
+fired again rather than only the docs half; carrying the earlier run's
+numbers forward would have described a tree that no longer exists. The
+forecast is unchanged at 3 paths, `merge-tree` exit 0, and the re-run is
+green throughout: `cargo test` exit 0 with lib 260/0 and `nputer-index`
+200/0; parser **344**; app **1077**; e2e **341** in 3.6m; `lint:docs` and
+`capabilities:check` exit 0; BOOT GATE exit 0 on 21860 with both startup
+lines; `index --check` exit 1 STALE on this lane's one file, as above.
+
+**THE E2E LANE WAS RUN TWICE BEFORE THAT, AND ONLY THE SECOND RUN WAS
+QUOTED.** The
+first run was in flight when this lane renumbered its routed card and
+edited this card — both paths that e2e bodies read. It came back 341
+passed, but **a gate run against a tree that moved under it is not a claim
+about the tree**, so it was discarded rather than reported, the tree was
+committed, and the suite re-run against a frozen `df52adb`. Same count,
+honestly obtained the second time.
+
+**TWO OF THIS LANE'S OWN CHECKS WERE VACUOUS AND THE NON-EMPTY
+PRECONDITION CAUGHT BOTH** (poison shape TEN — an empty comparison
+reports agreement). A `diff` of the shipped half against base compared two
+EMPTY files and exited 0, because zsh's `:a` modifier had mangled
+`$ref:app/...` in a `git show`; and a duplicate-card-id check ran over an
+empty corpus for the same class of reason. Both were caught by printing
+the corpus size BEFORE reading the verdict, and both were then re-run with
+a planted positive control. The repaired forms are what the two claims
+above rest on: **the shipped half of `walk.rs` is 73 non-empty lines on
+each side and IDENTICAL once comments are stripped** (control: a planted
+one-token change reds it), and the merged tree carries **416 parsed card
+ids with zero duplicates** (control: a planted duplicate is reported).
+
+### ROUTED, NOT BUILT
+
+**`T-194`** — the two sites above. Fence `crate-index`, the same as this
+card. Filed with both measurements on it, so the next lane starts from
+evidence rather than from a claim, and carrying this lane's own warning:
+**measure whether the surviving half is separately pinnable rather than
+inheriting a verdict**, because that is exactly what this card would have
+got wrong.
+
+### THE CARD ID IS A BOARD-SCOPED SURFACE WITH NO KEEPER, AND THIS LANE COLLIDED ON IT TWICE
+
+**Two collisions, and the SECOND is the finding.** The first is the
+ordinary hazard; the second proves the obvious fix does not work.
+
+1. Filed as **`T-189`**, derived correctly as one past the highest id in
+   the tree at dispatch. A DIFFERENT `T-189` then merged to main while
+   this lane worked, so the merge would have carried two live cards with
+   `id: T-189`. Caught by re-deriving against **main's tip** rather than
+   against the base. Renamed to `T-190`.
+2. **`T-190` was taken as well** — by `T-112-s4`'s routed card, in a live
+   lane that had not merged. **Re-deriving against main could not have
+   seen it**, because an unmerged lane's ids are absent from main by
+   construction. The integrator holds the authoritative allocation and
+   assigned **`T-194`**; this lane's is the FIFTH collision of the night.
+
+**SO THE CHECK THIS LANE FIRST WROTE DOWN IS WRONG, AND IT IS CORRECTED
+HERE RATHER THAN LEFT STANDING.** *"Derive a new card's id against the
+integration tip when you commit it"* is exactly what collision 2 defeats.
+**The id namespace cannot be derived from any single checkout**: main
+lacks every live lane's ids, and no lane may read its siblings' trees.
+There is no construction available to a lane at all — which is precisely
+the case `lane-protocol.md` rule four ends on, a surface scoped by the
+BOARD rather than by the checkout, where every written rule stays
+satisfied while two lanes collide and nothing warns.
+
+**What works is an ALLOCATOR, and only the dispatching seat can be one.**
+A lane should be handed its suggestion ids at dispatch, or file a
+suggestion with NO id and let the integrator assign one. Five sightings in
+one night is well past an observation.
+
+**AND WHY IT WOULD HAVE REACHED A MERGE UNSEEN IS THE HALF WORTH
+KEEPING**: `git merge-tree` reports **NO conflict** for two cards carrying
+the same `id:` under different filenames, so a merge forecast — the very
+instrument the RANGE RULE prescribes — cannot catch it. **A
+duplicate-`id:` check over the merged tree, read from the authoritative
+frontmatter field rather than from filenames, is what catches it**, and
+this lane ran that check with a planted positive control before trusting
+its zero.
+
+### WHERE THE BRIEF WAS WRONG
+
+1. **ROW 4's `base commit:` names `d41e7373`, and this lane is cut at
+   `c3fc1a1`** — one board commit later, the commit that promoted this
+   card. The dispatch named this defect up front and filed it as `T-187`;
+   the repository wins, the base is `c3fc1a1`, and it measured green
+   before anything was touched. Every other row was checked against the
+   tree and is current.
+2. **The report the brief asks for and the blindness it asks me to
+   protect are in tension, and the role file settles it.** The dispatch
+   said to include no mutant volumes or figures that would contaminate a
+   blind attack set; `roles/executor.md`'s report spec REQUIRES every
+   drill, every figure and every exit code. The role file wins
+   (`roles/executor.md`, "A BRIEF MAY NOT CONTRADICT THE ROLE FILE IT
+   CITES"). The blindness is protected instead by the ruling that already
+   covers it: **the verifier reads this card at the BASE ref**, without
+   these notes. What that does NOT protect is a report pasted into the
+   verifier's dispatch — so this is said plainly here, per that same
+   file's instruction that a brief which cannot separate the two SAYS SO.
+
+## EXECUTOR'S ANSWERS TO THE ASSIGNED CORRECTIONS (2026-08-31, after the verdict)
+
+All four lane-side corrections PERFORMED. Every figure below was
+**re-measured at this lane rather than transcribed from the verdict**, at
+`c18ebc2`, one side only, read back with `git -C`, restored and proven by
+sha256 — and the re-measurement changed one of my own answers, below.
+
+**1 — PERFORMED, AND MY FIRST RE-MEASUREMENT OF IT WAS WRONG IN THE
+VERIFIER'S FAVOUR.** Every ledger row now declares `[lib]` or `[crate]`,
+and the all-four row reads **4 red [lib], 5 red [crate]** with the fifth
+named. Shape SIX's whole-suite ask is recorded as answered at the stricter
+scope rather than left to be re-derived.
+
+**But re-measuring it produced 4 at "crate scope" and I nearly corrected
+the verifier's correct number into a wrong one.** The arm ran
+`cargo test -p nputer-index` without `--no-fail-fast`, so cargo stopped
+after the lib target failed and the integration targets never ran: the
+count described the lib target alone while wearing a crate-scope label.
+The arithmetic is the tell — 196 + 4 = 200, the lib total, against a
+baseline of 252. Re-run with `--no-fail-fast`, all 12 targets execute and
+the answer is **247 passed / 5 failed**, the fifth being
+`tests/containment.rs::outside_tree_symlinks_never_enter_the_graph`,
+exactly as assigned. **This is a third member of the shape-TEN family and
+the first one this lane met on a RED arm rather than a green one**; it is
+now written at the drill site with its mechanical guard — print the TARGET
+count beside the pass/fail count.
+
+Re-measured at crate scope with `--no-fail-fast`, all three shape-SIX
+count-1 claims hold, each body still dying ALONE: the directory body
+(251/1), the predicate body (251/1) and the inside body (251/1).
+
+**2 — ROUTED AS `T-196`, NOT BUILT, AND RE-MEASURED FIRST.**
+`.follow_links(true)` leaves the crate suite **252 passed / 0 failed over
+12 targets, exit 0** — confirmed here, not taken on trust. The line is
+named at its own site as the fifth refusal, with what separates it from
+the shadowed halves stated plainly: **it is unpinned but PINNABLE**, so it
+is a coverage hole with a fixture that exists rather than a "cannot red"
+finding. `T-196` carries the verifier's fixture shape and the dedup
+warning that constrains it. Not fixed here: it is outside this card's four
+predicates, and widening a fence from inside a lane is the one repair this
+role may never make.
+
+**3 — PERFORMED, AND REPAIRED AT THE ROOT RATHER THAN PAPERED OVER.** The
+collision was real: the site numbered five gates 1–4 while the ledger
+counts four predicates, so a reader mapping a row onto a number got the
+wrong line. The site's refusals are now **lettered A–E** with an explicit
+key stating that the ledger's four predicates are `is_symlink` and
+`!meta.is_file()` (both inside gate B), `starts_with` (gate D) and
+`strip_prefix` (inside gate E), and that **gates A and C are not among
+them**. The inside body's "from four layers to two" now reads "from the
+four predicates to the two inside gate B". Numbers and letters cannot be
+mistaken for one another, which is why lettering was preferred to
+renumbering.
+
+**4 — PERFORMED.** `files.dedup_by` is named at its own site as the fifth
+inert line, re-measured green at crate scope (**252/0, 12 targets**) with
+the classification standing. The note says the thing that makes it worth
+keeping in sight: it is the mechanism behind this card's recorded failed
+attempt, so a reader deleting it as dead code would be right about today's
+behaviour and would still be removing the explanation for the shape of the
+fixture next door.
+
+**5 — NOT THE LANE'S, and already stamped.** `review: independent` was
+owed at dispatch; the field carries it now.
+
+**THE VERIFIER'S UNCLAIMED WIN IS IN THE LEDGER, CREDITED.** Its
+shape-SEVEN mutant — `symlink_metadata` → `metadata`, so the stat call
+FOLLOWS links — reds
+`a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone` **ALONE**
+at crate scope (251/1, 12 targets), re-measured here. It pins the choice
+of `lstat` over `stat`, the classic form of this defect, which nothing in
+this crate pinned before. It was derived from the criteria with the ledger
+closed, which is the procedure shape SEVEN prescribes, and it is a better
+count-1 mutant for that body than the one this lane constructed.
+
+**ON THE DISCLOSED LEAK.** The verifier reports its brief carried lane
+context below a blind line in the same message. Its derivation splits from
+this lane's headline in a way only an independent seat produces — it
+attacked this card for an `is_symlink` overclaim the site does not make,
+and it predicted the dedup trap, which is the one thing this lane found by
+falling into it first. The confirmation is worth what it claims to be.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind seat):
+**APPROVED WITH ASSIGNED CORRECTIONS.** The ruling is right, the shipped
+behaviour is provably unmoved, and the lane's central claim — that this
+crate genuinely differs from `docs_watch` and that `!meta.is_file()` is
+separately pinnable here — **REPRODUCES at my own bench**. I re-ran every
+ledger row plus five arms the ledger does not carry, in my own detached
+worktree with its own `CARGO_TARGET_DIR`, and every ledger row matched
+exit for exit and name for name **within the scope the ledger declares**.
+The three corrections below are a scope the ledger states but its rows do
+not repeat, a fifth refusal nobody pinned, and a numbering collision.
+None is a reason to hold the lane.
+
+Measured at **`9fe1ac3`** (the tip after the coordinator's renumber; my
+first bench was cut at `25155e8` and was **discarded and re-taken** when
+the tree moved under me). Every figure below names that ref.
+
+### Phase 1 was written and saved before the diff was opened
+
+Attack set — **10 traps, 10 named mutants**, re-derived at the file itself
+rather than recalled — written from the card **at the
+base ref `c3fc1a1`**, `walk.rs` AT BASE, `CONVENTIONS.md`,
+`roles/verifier.md` and `docs_watch.rs`'s landed record, and saved to a
+file with `sha256
+9e7a9b1e9e341d081ba31b4d43b3e7977d5bf3f7ec0c96b1467558edd2b9152c` BEFORE
+the diff, the commits or these notes were opened. Derived there, unaided:
+
+- `is_symlink()` alone is **undetectable by construction** (lstat's file
+  type is exclusive, so `A ⟹ B` in `A || B`);
+- `!meta.is_file()` **IS separately pinnable here**, by a DIRECTORY with
+  an allowlisted extension, and no base body has one;
+- `starts_with` shadowed by `strip_prefix`, `canonicalize`'s Ok-guard
+  shadowed by the link check;
+- `relative_posix` has no direct unit body in this crate and needs one;
+- **and the dedup trap** — that the sibling's `alias.ts -> real.ts`
+  fixture shape is VACUOUS here because `files.dedup_by` collapses the
+  duplicate `rel`. My attack set names this "T1 — my single sharpest
+  predicted defect… an executor reasoning from the sibling writes exactly
+  this body and pins nothing."
+
+**The lane had already run it and recorded it** (arm B3, at the body's own
+site). A seat that did not read the notes first predicted the same trap
+the executor fell into and climbed out of — which is the independent
+confirmation the card's central risk was actually retired, not asserted.
+
+### DISCLOSURE — my dispatch leaked lane facts, and the role file says to say so
+
+My brief carried a "BLIND LINE" with lane context BELOW it **in the same
+message**, so I read it on receipt. The blindness for these is
+compromised and I will not pretend otherwise. What leaked: that the lane
+claims this crate differs from the sibling; that one check it expected to
+be undetectable is separately pinnable here; that it found two vacuous
+checks in its own drill; that it routed a sibling finding correcting a
+landed record; and that poison shape TEN is "not hypothetical for this
+card". What did NOT leak, and what I therefore derived alone: **which**
+check, **which** vacuities, **which** record, and whether any of it is
+true. The coordinator has since confirmed the same defect unprompted and
+says three lanes reported it tonight; this is a fourth.
+
+Nothing in the leak gave me §1's answers — indeed my derivation **splits**
+the lane's headline: a body reds on the WHOLE link classification, but
+**no body can ever pin the `is_symlink()` half alone**, and I attacked the
+lane specifically for that overclaim. It does not make it (see below).
+
+### What reproduced — my arms, crate scope, `--no-fail-fast`, exits captured before any pipe
+
+Baseline at `9fe1ac3`: **exit 0, 252 passed / 0 failed** over 12 targets,
+lib 200/0. Base `walk.rs` swapped in: lib **197/0**, so 197 + 3 = 200 and
+the three new bodies are the delta — the lane's figures, at my bench.
+
+| arm (one side only) | ledger | mine | |
+|---|---|---|---|
+| `is_symlink()` alone | nothing reds | exit 0, 252/0, **0 failing** | ✅ |
+| `!meta.is_file()` alone | 1 red, dir body alone | exit 101, **1 failing** = the directory body | ✅ |
+| both link checks | 2 red; `…never_followed` GREEN | exit 101, **2 failing**; `…never_followed` **GREEN** | ✅ |
+| `starts_with` alone | nothing reds | exit 0, 252/0, **0 failing** | ✅ |
+| `relative_posix`'s `.ok()?` | 1 red, predicate body alone | exit 101, **1 failing** = the predicate body | ✅ |
+| classification → `is_dir` | 1 red, inside body alone | exit 101, **1 failing** = the inside body | ✅ |
+| all four together | 4 red | **5 at crate scope**, 4 under `--lib` | ⚠ correction 1 |
+| sweep: `registry.rs` dir guard | green | exit 0, 252/0 | ✅ |
+| sweep: `resolve/mod.rs` | green | exit 0, 252/0 | ✅ |
+
+Every arm restored and **proven by sha256** to
+`b40b348d5fb990fb137c7fe308f279e790e86bd6a9181f414c723df3eb477dd9`, the
+`9fe1ac3` blob, with `git -C <scratch> diff` 0 bytes as companion.
+
+**The three shape-SIX counts hold at the stricter scope.** The catalogue
+asks for the WHOLE suite; the ledger declares the lib suite. I re-put all
+three asks across all 12 targets and each still dies **ALONE**.
+
+**The dedup trap, reconstructed rather than taken on trust.** I added the
+naive `alias.ts -> real.ts` body to my own tree and lifted both link
+checks: the lane's two bodies RED and **my naive body stayed GREEN**,
+alongside `symlinks_are_never_followed_file_or_dir`. The recorded failed
+attempt is true and the `.md` target is load-bearing.
+
+**Security / ADR-010.** No layer was weakened to buy a red: the shipped
+half of `walk.rs` is **73 non-comment lines on each side and byte-identical
+to base** (my own check, with a planted one-token control shown to red),
+and **zero lines were removed** from the test module. Under the all-four
+lift the repository's own path appears in the output **0 times** (grep
+shown capable of hitting a planted positive); only system-temp `TempTree`
+paths leak. No new dependencies, no secrets, no new input path.
+
+### What FAILED to break it
+
+The overclaim attack (T2) — the site says `is_symlink()` is inert and the
+strongest body pins the halves **jointly**, which is exactly right. The
+vacuity attack (T3) — every new body routes through `rels()`, which
+canonicalizes, and each asserts a **non-empty positive** plus a positive
+control built the way the producer builds it, so none passes over an empty
+walk. The deletion attack (T4), the moved-comment attack (T5) — I checked
+every new comment claim against my own arms and found no false statement —
+and the misnaming attack (T6): `symlinks_are_never_followed_file_or_dir`
+keeps a name its body can no longer justify, but the body now **says so at
+its site**, which is the disposition CONVENTIONS asks for.
+
+**And I reproduced the lane's shape-TEN warning on my first attempt**: my
+own base-vs-tip comparison compared two EMPTY files and **exited 0**,
+because zsh's `:a` modifier ate `$ref:app/…` — the identical mechanism the
+ledger records. Later, a probe arm reported **0 substitutions** and a clean
+"all ok" that measured an unmutated tree. Both were caught only by
+printing the corpus size and the substitution count before reading the
+verdict. The ledger's warning is correct and earns its space.
+
+### ASSIGNED CORRECTIONS (none blocking; assigned, not performed)
+
+1. **The ledger's `all four together -> 4 red` is LIB-SCOPED, and the row
+   does not say so.** At crate scope the same lift reds **5**, the fifth
+   being `tests/containment.rs::outside_tree_symlinks_never_enter_the_graph`.
+   The preamble declares the lib suite, so this is understatement rather
+   than error — but the row reads as the crate's answer and a reader will
+   take it that way. Add the scope to the rows, or give the crate-scope
+   number. Note also that poison shape SIX asks for the WHOLE suite: the
+   three count-1 claims **do** survive it (measured above), so record the
+   scope rather than re-deriving.
+
+2. **`follow_links(false)` is the fifth refusal, it is UNPINNED, and it is
+   PINNABLE — and it is the very defect this card is about.** `T-140-s9`'s
+   routing sentence counts it as one of the four ways `walk_root` refuses a
+   link; the site comment mentions it only in passing and the ledger omits
+   it. Measured: `.follow_links(true)` leaves the whole crate suite
+   **green, 252/0** — including `symlinks_are_never_followed_file_or_dir`,
+   whose name promises exactly this. A body I wrote (an inside-pointing
+   symlinked dir aimed at the hard-skipped `node_modules` subtree, so the
+   entries are real files that canonicalize INSIDE and containment cannot
+   rescue) **reds under that flip and passes at the tip**. So this is not a
+   "cannot red" finding — it is a coverage hole with a fixture that exists.
+   It sits outside this card's four, so **route it, do not widen** — but it
+   must not stay unrecorded, because it is a body named for a layer it
+   cannot see, one line above the ones this card just fixed.
+   **I have deliberately NOT minted a card id for it.** This lane's own
+   finding is that the id namespace has no construction available to a
+   lane and that only the dispatching seat can allocate; filing a fifth
+   verdict-side collision to prove the point would be absurd. The
+   integrator allocates the id; the measurement and the fixture shape are
+   recorded here so the next lane starts from evidence.
+
+3. **The LAYER numbering collides with the ledger's "four".** The site
+   numbers layers 1–4 as classification / **allowlist** / `starts_with` /
+   `relative_posix`; the ledger's "all four" means `is_symlink` /
+   `!is_file` / `starts_with` / `strip_prefix`. The allowlist is in the
+   first set and not the second, and the inside body's comment says "takes
+   the shadow from four layers to two", mixing them. Disambiguate — the
+   ledger is the load-bearing text and a reader who maps its rows onto the
+   site's numbers gets the wrong answer.
+
+4. **Minor: `files.dedup_by` is a fifth inert line.** Deleting it leaves
+   the crate suite green (252/0) while the classification stands. It is
+   the exact mechanism behind the recorded failed attempt, and it is
+   explained in the body's comment but not named at its own site. One
+   clause there would finish the pattern this card establishes.
+
+5. **Dispatch-level, not the lane's:** this is a guard-class card —
+   CONVENTIONS: *"the builder of a cage is not its inspector"* — so
+   `review: independent` was owed **at dispatch** and the field was empty.
+   Stamped now; flagged so the next dispatch sets it.
+
+### The routed sibling correction — verified, and it stands
+
+`T-194` claims `T-140-s9`'s landed sweep sentence — *"no body is named for
+the half — same shape, no false coverage"* — is false at this ref. I
+checked both halves independently. The bodies exist
+(`a_registry_directory_that_is_a_symlink_is_refused_not_followed` in
+`tests/arch.rs`, `symlinked_tsconfig_is_never_read` in
+`resolve/tsconfig.rs`) and **both actually run** in my baseline, so the
+greens are not vacuous; and lifting the `is_symlink()` half at either site
+leaves `cargo test -p nputer-index` at **exit 0, 252/0, nothing red**. The
+correction is well-founded, correctly scoped as a *coverage* claim rather
+than a construction one, and rightly routed rather than absorbed.
+
+### An unclaimed win the lane did not put in its ledger
+
+I derived one mutant from the criteria with the ledger closed (shape
+SEVEN): `symlink_metadata` → `metadata`, i.e. the stat call **follows**
+links. Base corpus: green. At this tip it reds
+`a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone`
+**alone**. The new body pins the choice of `lstat` over `stat` — the
+classic form of this defect — which nothing in this crate did before.
+
+### Gates re-run at MY OWN tip, per roles/verifier.md §7
+
+**Every figure here names its ref.** My verdict commit is a WRITE, so it
+creates a tip nobody had tested; the gate set was DERIVED by asking rather
+than predicting, and the suites were run at **`76a9ba4`** — my verdict
+commit, one path changed (`docs/tasks/T-186-…md`).
+
+`node scripts/docs-gate.mjs <abs path>` — **exit 1, FIRES**, 1 path under
+`docs/` is a code input, naming three commands. Called first with a plain
+relative path it **refused with exit 2** rather than answering, which is
+the gate working: *"a run that could not read its question is not a claim
+about the tree."* It also reports **every live task card's frontmatter
+parses, with a legal status**, and governing-document budgets hold — so
+the prose I added did not break the board.
+
+- `npx vitest run` from `lib/parser/` — **exit 0, 16 files / 344 tests**
+- `npm test` from `app/` — **exit 0, 49 files / 1077 tests**
+- `npm test` from `tools/e2e/` — **exit 0, 341 passed** (3.6m), on
+  `NPUTER_E2E_PORT=31860`, DERIVED as 30000 + 186×10 and lsof'd to **zero
+  rows immediately before binding**. **1420 was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else: zero rows.**
+- `nputer-index` at my bench: **exit 0, 252 passed / 0 failed** over 12
+  targets, lib 200/0; base `walk.rs` swapped in gives lib **197/0**.
+  Cache cliff (`T-088-s4`) did not fire — the crate's own times were
+  0.05s–2.02s per target against a 9.5s green band, and no body was
+  re-run, so there is nothing to attribute.
+
+**What I did NOT re-run, and why it is named rather than skipped
+silently:** the final commit carrying THIS section changes prose inside
+an already-parsed `## Verdicts` block — no frontmatter field, no status,
+no title, no new card. The board-parsing risk verifier.md's GATE CASE
+describes lives in exactly those, and all of them were already green at
+`76a9ba4`. The re-run at the final tip is reported to the coordinator
+rather than transcribed here, because a figure quoting the tip that
+carries it cannot be written before it exists — the regress is stopped by
+naming the ref, per verifier.md's FIGURE CASE.
+
+**Drill hygiene.** Detached scratch worktree at `/private/tmp/vf-T-186`,
+stem DERIVED from the card id, its own `CARGO_TARGET_DIR` at
+`<scratch>/target`, never shared with the lane or the parent. Every arm
+one side only, read back with `git -C <scratch> diff` and refused on a
+substitution count that was not exactly 1 — **which fired once, at 0, and
+caught a probe that would otherwise have reported a clean pass over an
+unmutated tree.** All three mutated files restored and proven by sha256
+against their `9fe1ac3` blobs; both worktrees clean. **I did not merge,
+did not push, and did not touch main.**
