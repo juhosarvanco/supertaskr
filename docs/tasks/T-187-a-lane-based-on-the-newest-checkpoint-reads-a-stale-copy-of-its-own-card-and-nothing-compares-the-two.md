@@ -105,3 +105,40 @@ both fail quietly — this is a third failure mode of the same prefix) and
 over eleven lanes). **Note that `tools/e2e` was held by a live `T-167-s8`
 lane when this card was filed**, which is why it was filed rather than
 fixed on the spot.
+
+## TWO MORE INSTANCES IN ONE NIGHT, from `T-184`'s lane — and the second is a DIFFERENT SURFACE of this class
+
+Recorded here rather than carded, because this card already owns the
+class: **a lane and main hold different truths and nothing compares
+them.** Both were met live inside one lane on 2026-08-31.
+
+**Instance two — the card, exactly this card's mechanism.** `T-184`'s
+lane was cut from the newest `Checkpoint:` and therefore read its card
+as it stood BEFORE the standing triage sitting that absorbed `T-183`
+into it. The dispatch summary described the absorbed card; the tree
+carried the un-absorbed one; the executor contract makes the tree the
+authority. So the lane correctly built the smaller card, named the
+disagreement, and only found the absorption when its own merge forecast
+CONFLICTED on its card file. **The catch was a merge conflict, not a
+check** — and a docs-only divergence that had merged cleanly would have
+produced no conflict and no signal at all.
+
+**Instance three — the card ID, which this card's mechanism does not
+cover but its CLASS does.** Nothing derives the next free card id. Two
+seats filing concurrently both read the board's current maximum and both
+pick maximum-plus-one, and the collision is invisible until a merge
+because each seat's own tree is internally consistent. Measured: that
+lane filed two routed cards as `T-185`/`T-186`, found on taking main in
+that a triage sitting had already filed `T-185`–`T-188`, renumbered to
+`T-189`/`T-190`, and was then told that `T-189` had ALSO been taken on
+main while it worked and `T-190` was reserved for another lane. **Three
+allocations, two collisions, one night.** They are now `T-191`/`T-192`.
+
+**WHY THE ID CASE IS WORTH THE SENTENCE.** The base-commit case above is
+a lane reading stale INPUT. The id case is two seats writing stale
+OUTPUT into the same namespace. The remedy shape is the same and it is
+the one this project already prefers — **a construction beats a check**:
+an id derived from something lane-local cannot collide, exactly as a
+scratch port derived from the card id cannot. A check that compares the
+lane's card against main's would catch the first; only a construction
+closes the second.
