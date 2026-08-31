@@ -553,3 +553,250 @@ clean**, so the verifier can re-run any arm — a detached entry is not a
 lane and does not appear in the lane list. Its `CARGO_TARGET_DIR` is
 **686M** and is the integrator's to reclaim after the checkpoint. Nothing
 was merged, nothing pushed, and `main` was never touched.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind seat):
+**APPROVED WITH ASSIGNED CORRECTIONS.** The ruling is right, the shipped
+behaviour is provably unmoved, and the lane's central claim — that two
+guards of IDENTICAL TEXT classify oppositely because of what their
+downstream predicates read — **reproduces at my own bench on every arm**.
+Two corrections follow, one of them a load-bearing refusal in
+`read_contained` that nobody pins; neither is a reason to hold the lane.
+
+**Measured at `26cba92`** (the lane tip as dispatched). Every figure below
+names that ref. My own verdict commit moves `docs/`, so the gate figures
+in the last section are re-derived at the tip I created and named there.
+
+### PHASE 1 WAS WRITTEN, SAVED AND HASHED BEFORE THE DIFF WAS OPENED
+
+Attack set at
+`<scratch>/T-194-ATTACK-SET-PHASE1.md`, sha256
+**`686d87fb3d9e57c800cee254add03ae505685fc651e5a3603c5628e4e80a820d`**,
+re-verified unchanged at verdict time (`shasum -c` OK), so it can be
+audited as written-before rather than assembled-after.
+
+Built from the merge-base `146ebb6` only, with `rev-parse`, `merge-base`,
+`ls-tree`, `git archive`, `git grep <ref>` and `git show "<ref>":<path>`.
+**No `git log`, no `git diff`, no branch-tip read of any file.**
+
+**Contamination, disclosed including self-inflicted:** my first extraction
+wrote `git show $B:app/...` unquoted, zsh applied the `:a` history
+modifier and mangled the ref. It **errored** rather than producing a file
+— nothing was read from the tip — and was re-run quoted. This is the same
+family member `T-186` recorded, failing loudly here because a mangled ref
+is not a valid object. The only tip-side fact I could not avoid is the
+branch name, which restates the card's own (miscounted) title.
+
+### I COUNTED THE GUARDS MYSELF AND GOT THREE, BEFORE LOOKING
+
+`git grep 'is_symlink' 146ebb6 -- <crate>` gives three shipped sites
+outside `walk.rs`, and **`read_registry` carries the shape twice** — the
+registry-directory guard and the per-entry guard, in the same words. The
+card's prose enumerates two. My phase-1 note reads: *"A lane reading the
+two quoted expressions and stopping would have reported 'no half is
+separately pinnable at either site' and been wrong."*
+
+**The lane found the third guard independently and reached the same
+conclusion**, and its notes say so in the same terms. That was the primary
+attack of this pass and it did not land.
+
+### MY DERIVATION WENT 13 FOR 13 AGAINST MY OWN MUTANTS
+
+Derived from base code with the diff closed, then measured. Own detached
+worktree, own `CARGO_TARGET_DIR`, one side only, occurrence count asserted
+`== 1` BEFORE substituting, read back with `git -C`, restored, and proven
+by sha256 **against hashes recorded before any mutation in a file no
+restoring step writes**. Crate scope, `--no-fail-fast`, **12 targets**
+every arm; baseline `26cba92` = **exit 0, 256 passed / 0 failed**.
+
+| my arm | predicted (blind) | measured | reds |
+|---|---|---|---|
+| `v-d1-symlink` | nothing | 0 / 256/0 | none |
+| `v-d1-isdir` | nothing — `read_dir` shadows it | 0 / 256/0 | none |
+| `v-d1-both` | 1, the arch body | 101 / 255/1 | `a_registry_directory_that_is_a_symlink_is_refused_not_followed` |
+| `v-d1-stat` † | 1, the arch body | 101 / 255/1 | same, **alone** |
+| `v-d2-symlink` | nothing | 0 / 256/0 | none |
+| `v-d2-isfile` | **REDS — the card's whole yield** | 101 / 255/1 | `a_directory_wearing_a_component_files_name_is_skipped` **alone** |
+| `v-d2-both` | reds | 101 / 254/2 | both registry bodies |
+| `v-d2-stat` † | 1, the symlink body | 101 / 255/1 | `a_symlinked_component_file_is_skipped_and_never_read_through` **alone** |
+| `v-g3-symlink` | nothing | 0 / 256/0 | none |
+| `v-g3-isfile` | **nothing — `read_to_string().ok()` shadows it** | 0 / 256/0 | **none — THE FINDING, confirmed** |
+| `v-g3-both` | 1, the inside body; tsconfig GREEN | 101 / 255/1 | inside body **alone**; `symlinked_tsconfig_is_never_read` **green** |
+| `v-g3-contain` | — | 0 / 256/0 | none |
+| `v-g3-stat` † | 1, the inside body | 101 / 255/1 | inside body **alone** |
+| `v-g3-allthree` (two-sided) | tsconfig reds only here | 101 / 254/2 | inside body + `symlinked_tsconfig_is_never_read` |
+
+† **Three arms the lane's ledger does not carry**, derived from the
+criteria with the ledger closed: `symlink_metadata` → `metadata`, so the
+stat call FOLLOWS links. It pins the choice of lstat over stat — the
+classic form of this defect — at all three guards, and at D2 and G3 it
+kills the lane's body **alone**. `v-d2-stat` is a better count-1 mutant
+for `a_symlinked_component_file_is_skipped_and_never_read_through` than
+the lane's constructed `d2-dironly`, because it is a real defect a
+programmer could write rather than an arm built to earn the body out of
+shape SIX. Offered, not assigned — the same shape as `T-186`'s verifier's
+unclaimed win, and `T-186` credited that one in its ledger.
+
+**So the card's open question is answered and the answer is not uniform**:
+the `is_symlink()` half is inert at all three guards, and the surviving
+half is separately pinnable at exactly ONE of them — the guard the card's
+prose omitted. Two textually identical `|| !meta.is_file()` halves land on
+opposite sides, and the difference is entirely downstream: in
+`read_registry` the tail maps the error to a DISTINCT variant
+(`Malformed`), in `read_contained` it maps to `None`, the very value the
+guard returns. **`T-186`'s thesis holds literally, and this card is its
+cleanest instance.**
+
+### WHAT FAILED TO BREAK IT, REPORTED AS THE BRIEF REQUIRES
+
+- **`v-g3-isfile` and `v-g3-contain` both leave 256/0.** I could not
+  construct any single-side lift at `read_contained` that reds anything.
+  The lane's "cannot red" finding is not a failure of imagination — I
+  reached it independently from the base code and then failed to beat it.
+- **The tsconfig body could not be made to red by either mechanism
+  alone**, only by both. **My phase-1 wording was the imprecise one**: I
+  wrote *"containment alone produces its green"*, carried over from
+  `T-186`, and `v-g3-contain` falsifies it exactly as the lane's own
+  `g3-contain` falsified it for the lane. The lane wrote that sentence,
+  measured it, and corrected it at three sites before I arrived. **My
+  derivation was corrected by measurement in the lane's favour**, and I
+  record that rather than quietly adopting its wording.
+- **Nothing deleted:** `git diff --numstat` over `app/` is **+379 / −0**.
+  The whole diff's only two deletions are this card's own frontmatter
+  stamps. AC5 satisfied mechanically.
+- **Shipped behaviour unmoved:** each file's half above `#[cfg(test)]`,
+  comments stripped, is IDENTICAL base→tip — `registry.rs` 227 = 227,
+  `resolve/mod.rs` 398 = 398, `tsconfig.rs` 82 = 82. **With a per-file
+  positive control that had to be repaired before it was trusted**: my
+  first control planted with BSD `sed`'s `0,/re/` form, which silently did
+  nothing and reported CONTROL FAILED for all three files. Re-planted with
+  `perl` and gated on a precondition asserting the plant LANDED; all three
+  then detect it. Shape TEN on my own check, caught by printing the corpus
+  before reading the verdict.
+- **My own driver was wrong once and its control caught it.** Its
+  "exactly 1 substitution" test could never fire, because `perl -0777
+  s///` without `/g` substitutes only the first match and always reports
+  0 or 1 — an over-broad pattern would have passed. Fixed to count
+  occurrences with `/g` first; it now refuses at 0 (no match), at 3
+  (ambiguous) and on a DIRTY file, each demonstrated before any arm was
+  believed.
+- **Exactness in both directions**, since a removal-only mutant cannot
+  distinguish an exact matcher from a containment one: `v-d2-both` adds a
+  member to `ids` and reds; `v-exact-fewer` (`Some("md")` → `Some("mdx")`)
+  removes every member and reds **26** bodies including both new registry
+  bodies, so their `assert_eq!` and their positive controls are
+  load-bearing in both directions.
+- **Security sweep clean.** No manifest touched (`Cargo.toml`,
+  `Cargo.lock`, `package.json` all untouched — no dependency entered), no
+  new `unsafe`, process, network or env surface in the diff, no secrets.
+  Every added line in shipped code is a comment or inside
+  `#[cfg(test)] mod tests`.
+- **Fence compliant, judged by reading the manifest** rather than by
+  trusting a hook (`T-199`): `crate-index` is `C-07`'s
+  `app/src-tauri/crates/nputer-index/**`, and all four code paths are
+  inside it; the fifth path is this card.
+- **Shape SIX asked of all four new bodies.** Three answer at count 1
+  (`v-d2-isfile`, `v-d2-stat`, `v-g3-both`), each dying ALONE. The fourth
+  has no such mutant and the lane declares it rather than hiding it.
+- **Workspace scope at `26cba92`: exit 0, 605 passed / 0 failed over 18
+  targets**, lib 260/0 in **6.25s** against the under-9.5s green band, so
+  the cache cliff (`T-088-s4`) did not fire with sibling lanes live.
+- **The one e2e red is `T-197` and not this lane's.** `docs/STATE.md`
+  names it in advance — *"it reds a standing e2e body no lane caused"* —
+  and the lane's own re-measurement (12,098 bytes lost, against `T-197`'s
+  title figure of 3,757) is worth carrying to that card.
+
+### CORRECTION 1 — `read_contained`'s REFUSAL ACCOUNTING IS PRESENTED AS COMPLETE AND OMITS A LOAD-BEARING, UNPINNED REFUSAL
+
+The new block is headed *"The refusals, each NAMED for what it
+independently contributes"* and enumerates **A**, **B**, **C**. A reader
+takes that as the complete set. **`path.canonicalize()` is a fourth
+refusal, it is load-bearing, and nothing pins it** — which is the same
+class of defect this whole family exists to correct: a comment telling the
+next reader the accounting is finished when it is not.
+
+**Measured, not argued**, at `26cba92`:
+
+- `v-g3-nocanon` — `let canon = path.canonicalize().ok()?;` →
+  `let canon = path.to_path_buf();` — **exit 0, 256 passed / 0 failed, 12
+  targets, NOTHING RED.** No body in the crate sees it.
+- It is **PINNABLE**, and I wrote the body rather than asserting one
+  exists. A probe asserting
+  `read_contained(&root, "inside/../../probe-outside", "loot.json") == None`
+  **passes on shipped code** and **reds on that lift alone**, with
+  `left: Some("{\"loot\":1}")` — the reader returns the contents of a file
+  **outside the root**. `Path::starts_with` compares components, so
+  `<root>/inside/../../probe-outside/loot.json` textually starts with
+  `<root>` and only `canonicalize` collapses the `..`.
+
+This is **unpinned but PINNABLE** — a coverage hole with a fixture that
+exists, not a "cannot red" finding — which is exactly the distinction
+`T-186` drew when it routed `.follow_links(true)` as `T-196` instead of
+widening its own fence. **Same call here.**
+
+**Lane-side (assigned):** name `canonicalize()` at its own site as the
+fourth refusal, state that it is what defeats a `..` traversal, and state
+that it is unpinned-but-pinnable with the arm above. Correct the block's
+promise of completeness. **Comment-only; no predicate moves.**
+
+**Board-side (NOT assigned to this lane, and I mint no id):** the body
+belongs in a routed card, not in this fence. The integrator holds the
+allocation — `T-186` established that no lane can derive a free id,
+because an unmerged sibling's ids are invisible to every checkout.
+
+### CORRECTION 2 — THE CARD'S SPEC HALF STILL SAYS "TWO" AT THE TIP
+
+The title and `## The two sites` are false at `26cba92`, and the notes
+correct them ~200 lines below. This card exists **because a landed
+sentence in `T-140-s9`'s sweep was false and cost the next lane the
+work of rediscovering it**; leaving the same shape at the top of this
+card re-arms it for whoever greps the board for the guard count.
+
+**Assigned:** add one line under `## The two sites` pointing at the notes'
+correction — *"three guards, not two; `read_registry` carries the shape
+twice — see the implementation notes"*. **Do not rewrite the dispatched
+spec**: the record of what was dispatched is worth keeping, and a pointer
+preserves both. Notes-only.
+
+### NOT CORRECTIONS
+
+- **`review: independent` was stamped by the lane itself**, which the lane
+  correctly calls the weakest possible form of it. It was owed at
+  dispatch; `T-186`'s verifier assigned exactly this repair and the next
+  dispatch did not apply it. **The repair belongs at the dispatching seat,
+  not here** — this is its second consecutive sighting.
+- **`a_directory_wearing_the_config_files_name_is_refused` is landed
+  though it kills no mutant.** I tried and failed to poison it and reached
+  the lane's conclusion independently. `docs/CONVENTIONS.md` rules the
+  case — *"a body that cannot red is the finding"* — and requires it be
+  NAMED for what it pins. It is: the name says the OUTCOME (*is refused*),
+  and the doc comment states outright that it does not pin a half.
+  Correctly landed.
+- **Both pre-existing body names are KEPT.** `T-140-s9`'s ruling 4 and the
+  fact that `T-186`, this card and `graph.json` cite them make a rename a
+  reference-stranding change. Each now says at its site what it asserts,
+  which is what the criteria asked for.
+
+### A HAZARD THIS SEAT CREATED, DISCLOSED
+
+**The verifier's scratch name and the executor's are DERIVED FROM THE SAME
+CARD ID, so they collide by construction.** My brief told me to derive
+scratch names from `T-194`; so had the lane's. I created
+`/private/tmp/nd-T-194` with `rm -rf` first and **destroyed the drill
+scratch the lane had deliberately left standing for me to re-run its
+arms in**.
+
+**Nothing was lost** — checked rather than hoped: the lane's scratch was
+clean and detached at `a9de0e2`, and `a9de0e2`, `7ae3357`, `c51c83d` and
+`26cba92` are all ancestors of the branch tip. Only a regenerable
+`CARGO_TARGET_DIR` went. But the loss was luck, not design: had that
+worktree been dirty, the evidence would have been unrecoverable.
+
+**This is the `T-186` card-id collision one surface over** — a namespace
+scoped by the BOARD, derived independently by two seats, with every
+written rule satisfied while they collide and nothing warns. The remedy is
+the same one `T-186` reached: **the derivation must include the SEAT, not
+just the card** (`nd-T-194-verify` beside `nd-T-194`), or the dispatching
+seat allocates it. Recorded here because a second instance of a shape is
+worth more than the first.
