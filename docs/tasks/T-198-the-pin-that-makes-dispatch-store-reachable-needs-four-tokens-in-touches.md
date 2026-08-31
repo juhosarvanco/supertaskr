@@ -638,3 +638,37 @@ did not do. `status`, `review:` and `verified_by` are stamped on
 completion and are left to the integrator; the GRAPH REGEN at merge is
 owed and the lane's list of what moves is explicitly not warranted
 complete.
+
+### Step 7 — the gates re-run at the tip THIS VERDICT created (`743f35b`)
+
+`method/roles/verifier.md` step 7: appending a verdict is a WRITE, and it
+creates a tip nobody has tested. The docs gate names what this card's own
+prose owes — **three suites, and correctly not `cargo test`**, since no
+cargo reader reads `docs/tasks`:
+
+    npm test        from app/         50 files / 1105 tests   exit 0
+    npx vitest run  from lib/parser/  16 files / 344 tests    exit 0
+    npm test        from tools/e2e/   1 failed / 366 passed   exit 1  (T-197, unchanged)
+    docs-gate.mjs (the card, absolute literal path)  0 frontmatter issue(s);
+      "every live task card's frontmatter parses, with a legal status";
+      "governing-document budgets hold"              exit 1 (a verdict)
+
+**THE GATE CASE IS CLOSED**: this verdict's prose did not break the
+frontmatter it sits under, and the e2e figure is byte-for-byte the one
+measured before the commit — same count, same body — so nothing this
+verdict wrote moved a suite.
+
+**COLLECTION, DERIVED AT BOTH ENDS RATHER THAN INHERITED.** Files matching
+the runner's own `test/**/*.test.{ts,tsx}` include: **49 at base
+`146ebb6`, 50 at `743f35b`** (`git ls-tree`), and the runner independently
+reports 50 passed files. Two routes, same answer.
+
+**ONE SHAPE-TEN NEAR-MISS IN MY OWN INSTRUMENTATION, DISCLOSED RATHER THAN
+DROPPED.** My first wait for the tip e2e run tested for an exit-marker file
+that **still existed from the earlier run** — a check that would have
+reported a 10:13 result against a 10:16 commit. I caught it on the mtimes
+before any figure was recorded, removed the marker and re-waited; the
+number above is from the real post-commit run (log stamped 10:21:04). It
+is recorded because this brief required shape TEN of every check
+**including my own**, and an unrecorded near-miss and an unrun check look
+identical to the next reader.
