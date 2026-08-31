@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e]
 suggested_by: "architect/integrator seat, 2026-08-31 — met while dispatching T-112-s4, not read: the card had been amended two commits above its own derived base"

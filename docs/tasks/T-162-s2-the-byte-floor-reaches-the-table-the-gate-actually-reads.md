@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: [T-162-s1]
 touches: [tools/e2e]
 suggested_by: executor claude-opus-5@subagent @T-162-s1

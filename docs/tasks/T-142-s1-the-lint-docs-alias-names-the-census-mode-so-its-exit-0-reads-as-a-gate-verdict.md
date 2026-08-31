@@ -1,10 +1,16 @@
 ---
 id: T-142-s1
 title: "The `lint:docs` alias runs the DOCS GATE's CENSUS mode, which names no owed suite and exits 0 — so the one command whose name sounds like the general question is the one that cannot answer it"
-status: suggested
+feature: F-06
+milestone: 4
+priority: 3
+size: S
+status: planned
 suggested_by: executor claude-opus-5 @T-142
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
+builder:
+review:
 ---
 
 **Class parent: `T-142`** (a query ran, produced no error, returned an

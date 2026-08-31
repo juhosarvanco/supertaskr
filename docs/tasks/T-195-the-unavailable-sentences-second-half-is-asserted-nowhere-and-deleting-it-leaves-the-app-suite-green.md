@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [app-dispatch]
 suggested_by: "architect/integrator seat, allocating an id for a finding MEASURED by T-112-s4's lane, which declined to mint one itself"

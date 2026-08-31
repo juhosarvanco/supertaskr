@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [app-board, app/test/board-root.test.tsx]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FORMAT's "a criterion that cannot be built inside the fence is recorded and routed"

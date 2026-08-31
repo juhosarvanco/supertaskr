@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [app-board, docs/architecture/components]
 suggested_by: "architect/integrator seat, 2026-08-31 — found by checking whether an existing ruling covered a suspected gap; it covered half of it"

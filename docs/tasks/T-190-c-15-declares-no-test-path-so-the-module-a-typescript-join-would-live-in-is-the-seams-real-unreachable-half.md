@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [app-dispatch, docs/architecture/components/C-15-dispatch.md]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — derived while discharging that card's registry criterion, not anticipated by it

@@ -1,8 +1,16 @@
 ---
 id: T-112-s5
 title: The brief prop has no filler even once the join lands — the open-card ref is Board.tsx's own useState, so the shell that mounts the board cannot know which card to ask a brief for
-status: suggested
+feature: F-04
+milestone: 4
+priority: 4
+size: M
+status: planned
+blocked_by: [T-190]
 suggested_by: executor claude-opus-5@subagent @T-112-s1
+touches: [app-board, docs/architecture/components]
+builder:
+review:
 ---
 
 **MEASURED WHILE BUILDING `T-112-s1`, AND IT IS NOT THE JOIN.** The join's

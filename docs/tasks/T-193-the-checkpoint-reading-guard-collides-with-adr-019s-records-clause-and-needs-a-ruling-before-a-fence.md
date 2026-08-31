@@ -1,9 +1,16 @@
 ---
 id: T-193
 title: The absorbed T-181 trigger cannot be built as written — a guard that reads a checkpoint record's CONTENTS is what ADR-019's Records clause forbids, and this needs a RULING before it needs a fence
-status: suggested
+feature: F-06
+milestone: 4
+priority: 3
+size: S
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-167-s8, routed from inside the lane: the criterion is unbuildable as written, not merely out of fence"
 touches: [.claude, tools/e2e]
+blocked_by: []
+builder:
+review:
 ---
 
 **CLASS PARENT: `T-167-s8`** (this is its absorbed T-181 half, unbuilt).
