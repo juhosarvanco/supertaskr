@@ -66,6 +66,11 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
+import {
+  INTEGRATION_BRANCH,
+  laneLandingVerdict,
+  mergeLandingVerdict,
+} from "./landing-gate.mjs";
 
 /**
  * The committed graph, relative to the checkout root.
@@ -194,6 +199,7 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
   "check-inconclusive",
   "lane-fence-unreadable",
   "no-command-to-read",
+  "landing-gate-cannot-compare",
 ]);
 
 /**
@@ -201,6 +207,8 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
  * @property {"allow" | "block"} verdict
  * @property {string} code    a stable, greppable name for WHY
  * @property {string} reason  the sentence the blocked session reads
+ * @property {string[]} [notices] things said ALONGSIDE the verdict rather
+ *   than instead of it — see `decide`
  */
 
 /** @param {string} code @param {string} reason @returns {Decision} */
@@ -429,11 +437,34 @@ export function laneCanRegenerate(manifest) {
  * in a checkout that really is this repository's, from a seat that could
  * really act on a refusal.
  *
+ * ── TWO GUARDS, ONE DECISION, AND WHY THE SECOND ONE SPEAKS TWICE ────
+ * T-212 adds THE LANDING GATE on the same hook — `T-207`'s precedent,
+ * one hook, two arms, one artifact per meaning. Its REFUSAL returns
+ * immediately, because a push carrying a path outside its fence must not
+ * land whatever the graph says. Its CANNOT-COMPARE does not return at
+ * all: it is collected as a NOTICE and said alongside whatever verdict
+ * the graph check then reaches. Returning it would silently retire the
+ * graph guard for every lane whose fence this hook cannot fully expand,
+ * which is the shape where one guard quietly eats another.
+ *
  * @param {Request} request
  * @param {(root: string) => CheckResult} [check]
  * @returns {Decision}
  */
 export function decide(request, check = runCheck) {
+  /** @type {string[]} */
+  const notices = [];
+  const decision = decideWith(request, check, notices);
+  return notices.length === 0 ? decision : { ...decision, notices };
+}
+
+/**
+ * @param {Request} request
+ * @param {(root: string) => CheckResult} check
+ * @param {string[]} notices  collected, and attached by `decide`
+ * @returns {Decision}
+ */
+function decideWith(request, check, notices) {
   const command = commandOf(request.toolInput);
   if (command === undefined) {
     return allow(
@@ -462,6 +493,15 @@ export function decide(request, check = runCheck) {
 
   const headRef = readHeadRef(root);
   if (headRef !== undefined && LANE_BRANCH_RE.test(headRef)) {
+    // THE LANDING GATE FIRST, AND BEFORE THE MANIFEST IS EVEN OPENED
+    // (T-212). It reads no manifest by construction — its fence comes off
+    // the card as committed on the integration branch — so the arms below
+    // cannot decide it, and the `lane-cannot-regenerate` allow two of them
+    // down would return before it ever ran.
+    const landing = laneLandingVerdict(root, headRef);
+    if (landing.verdict === "block") return landing;
+    if (ANNOUNCED_ALLOW_CODES.includes(landing.code)) notices.push(landing.reason);
+
     const read = readManifest(root);
     if ("problem" in read) {
       return allow(
@@ -480,6 +520,14 @@ export function decide(request, check = runCheck) {
           "(docs/CONVENTIONS.md, GRAPH REGEN).",
       );
     }
+  } else if (headRef === `refs/heads/${INTEGRATION_BRANCH}`) {
+    // THE OTHER MOMENT A PATH CAN LAND (T-212): a merge arriving on the
+    // integration branch. The push arm above never sees it — the lane
+    // that wrote it may have been refused, fixed, and merged by a seat
+    // that is not on a lane branch at all.
+    const landing = mergeLandingVerdict(root, headRef);
+    if (landing.verdict === "block") return landing;
+    if (ANNOUNCED_ALLOW_CODES.includes(landing.code)) notices.push(landing.reason);
   }
 
   const result = check(root);

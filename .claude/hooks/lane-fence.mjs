@@ -522,31 +522,50 @@ export function readHeadRef(root) {
 }
 
 /**
- * The card's `touches:` line, verbatim, from a card's frontmatter.
+ * One frontmatter line, verbatim, from a card's own frontmatter block.
  *
- * ONE EXTRACTION, TWO CALLERS, AND THE SPEC PROVES THEY AGREE. The writer
- * stamps what IT read; this reads the card again at write time and
- * compares the two strings. A second implementation of "which line is the
- * touches line" would be two chances to disagree, so
- * `lane-fence.spec.ts` runs both over EVERY live card and requires
- * character-identical answers.
+ * SCOPED TO THE FRONTMATTER ON PURPOSE: a card's BODY routinely quotes a
+ * `touches:` line (T-212's does), and a body match would make the stamp
+ * compare against prose.
  *
- * Scoped to the frontmatter block on purpose: a card's BODY routinely
- * quotes a `touches:` line (this one does), and a body match would make
- * the stamp compare against prose.
+ * THIS IS THE ONE FRONTMATTER-LINE READER IN THE HOOK BUDGET, and it is
+ * generic in the FIELD rather than copied per field. `touchesLineOf`
+ * below is this function with `touches` bound, and `landing-gate.mjs`
+ * spends it for `id` — a second scanner for the second field would be two
+ * chances to disagree about where the frontmatter ends, and the two
+ * callers would disagree only on the malformed cards nobody tests.
  *
  * @param {string} text the card file's whole content
+ * @param {string} field the frontmatter key, without its colon
  * @returns {string | undefined} the line, trimmed of trailing whitespace
  */
-export function touchesLineOf(text) {
+export function frontmatterLineOf(text, field) {
   const lines = text.split(/\r?\n/);
   if (lines[0] !== "---") return undefined;
   for (let i = 1; i < lines.length; i += 1) {
     const line = /** @type {string} */ (lines[i]);
     if (line === "---") return undefined;
-    if (line.startsWith("touches:")) return line.replace(/\s+$/, "");
+    if (line.startsWith(`${field}:`)) return line.replace(/\s+$/, "");
   }
   return undefined;
+}
+
+/**
+ * The card's `touches:` line, verbatim, from a card's frontmatter.
+ *
+ * ONE EXTRACTION, THREE CALLERS, AND THE SPEC PROVES THEY AGREE. The
+ * writer stamps what IT read; the write-time arm reads the card again and
+ * compares the two strings; `landing-gate.mjs` reads it a third time off
+ * the card AS COMMITTED ON MAIN. A second implementation of "which line
+ * is the touches line" would be chances to disagree, so
+ * `lane-fence.spec.ts` runs the callers over EVERY live card and requires
+ * character-identical answers.
+ *
+ * @param {string} text the card file's whole content
+ * @returns {string | undefined} the line, trimmed of trailing whitespace
+ */
+export function touchesLineOf(text) {
+  return frontmatterLineOf(text, "touches");
 }
 
 /**
