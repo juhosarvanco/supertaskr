@@ -1038,6 +1038,82 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   }
 });
 
+test("THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST", () => {
+  // T-142-s1. THE INSTRUMENT WAS NEVER MISSING, which is why this body
+  // asserts about ORDER and wording rather than about a new refusal.
+  // `npm run lint:docs` is `--census`: it runs the WHOLE-TREE half and
+  // judges no diff, so it can never reach the FIRES branch — that branch
+  // is guarded on `paths.length > 0`. Its disclaimer used to print in the
+  // MIDDLE of the run, ABOVE the frontmatter and budget sentences, so a
+  // clean census ENDED on "every live task card's frontmatter parses,
+  // with a legal status" and exit 0: a reassuring sentence, then a code
+  // whose header legend is about a diff nobody judged. An architect seat
+  // read that pairing, set a `blocked_by:` naming a card that existed
+  // only inside another lane, and pushed; CI reddened in the parser
+  // suite. The gate had the answer the whole time and printed it where a
+  // reader had already stopped.
+  const census = runGate(["--census"]);
+  expect(census.code, "a clean whole-tree census is still 0 — no code moved").toBe(0);
+  expect(census.out, "this mode cannot reach the FIRES branch at all").not.toContain("FIRES");
+
+  // THE PROPERTY IS POSITIONAL. "The disclaimer is present" was already
+  // true and was not enough: it was present three lines from the end,
+  // under two sentences that read as a clean bill of health.
+  const verdict = census.out.indexOf("NO OWED-SUITE VERDICT");
+  const frontmatter = census.out.indexOf("frontmatter parses");
+  const budgets = census.out.indexOf("governing-document budgets hold");
+  expect(verdict, "the census prints its own verdict").toBeGreaterThan(-1);
+  expect(frontmatter, "the whole-tree sentences are still printed").toBeGreaterThan(-1);
+  expect(budgets, "both of them").toBeGreaterThan(-1);
+  expect(
+    verdict,
+    "the verdict comes AFTER them, so a reader who stops at the end has read it",
+  ).toBeGreaterThan(Math.max(frontmatter, budgets));
+  expect(
+    census.out.slice(verdict),
+    "and nothing reassuring is printed after it",
+  ).not.toMatch(/frontmatter parses|budgets hold/);
+
+  // AND IT LEGENDS ITS OWN CODE, because the header cannot: 0 means two
+  // different things in the two modes, and only the mode knows which.
+  expect(census.out, "it still says no diff was judged").toContain("no diff judged");
+  expect(census.out).toContain('means "I was not asked"');
+  expect(census.out, "and names the reading it is NOT").toContain('never "nothing owed"');
+
+  // THE POSITIVE CONTROL, and this half is what makes the half above
+  // evidence rather than a hope: a census naming no owed suite because
+  // the gate is BROKEN is indistinguishable from one naming none because
+  // it was NOT ASKED. So the same gate, on the same tree, is asked the
+  // other question through the DIFF form — and it must answer.
+  //
+  // The card is DERIVED from the live tree rather than typed, and the
+  // list is asserted non-empty first (poison shape TEN): a control built
+  // out of an empty corpus agrees with everything.
+  const cards = liveTaskCards() as { path: string }[];
+  expect(cards.length, "the tree has live task cards to feed the control").toBeGreaterThan(0);
+  const diff = runGate([cards[0]!.path]);
+  expect(diff.code, "the DIFF form on the same tree HAS a verdict").toBe(1);
+  expect(diff.out, "it fires").toContain("docs-gate: FIRES");
+  expect(diff.out, "names the suite the incident reddened").toContain(
+    "npx vitest run from lib/parser/",
+  );
+  expect(diff.out, "and names the BODY, which is what the census never could").toContain(
+    "lib/parser/test/smoke.test.ts",
+  );
+
+  // AND CONVENTIONS LEGENDS THE SAME CODE, pinned against the TOOL above
+  // rather than against a second sentence: a doc that legends an exit
+  // this gate no longer returns is T-057's failure one layer up, and it
+  // is the copy a session reads before it reads the gate. Poison shape
+  // EIGHT wants a narrowed haystack or a uniqueness floor; the bullet IS
+  // the narrowest anchor here, so this takes the COUNT and says so.
+  const legend = "MEANS *I WAS NOT ASKED*, NEVER *NOTHING OWED*";
+  expect(
+    DOCS_GATE_BULLET!.split(legend).length - 1,
+    "the DOCS GATE bullet legends this mode's exit exactly once",
+  ).toBe(1);
+});
+
 test("ONE SPELLING, TWO PLACES — the doc and the script print the same recipe", () => {
   // T-057 as a pin rather than as a hope. The DOCS GATE bullet and
   // `docs-gate.mjs`'s header each print the invocation an integrator is

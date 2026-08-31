@@ -42,12 +42,23 @@
  * (T-064-s7), which is why that shape is refused by name.
  *
  * `npm run lint:docs` from tools/e2e/ is the NAMED form and CI's step
- * (T-090). It runs the WHOLE-TREE half — the frontmatter vocabulary, the
- * root-anchor account and the unlinkable-reader tripwire — and judges NO
+ * (T-090). It runs the WHOLE-TREE half and judges NO
  * diff, because a workflow has no "merge's diff" to be handed and this
- * tool will not compute one. Both incidents this gate was built for
+ * tool will not compute one. WHICH CHECKS THAT HALF IS, READ OFF `main`
+ * BELOW RATHER THAN OFF THIS SENTENCE (T-142-s1): the closed list this
+ * paragraph used to print named three and had already gone stale — the
+ * ADR-019 byte budgets and the STATE-staleness check are in that half
+ * too, and each of them can move `found`. Both incidents this gate was built for
  * (`9c64cd8`, `fede266`) live in the half CI now holds; the DIFF half is
  * still the integrator's hand run, and the bullet says so.
+ *
+ * THE NAME IS WIDER THAN THE MODE, AND THAT IS THE HAZARD (T-142-s1):
+ * `lint:docs` sounds like the general question about this repository's
+ * docs, and it is the one invocation that cannot answer it. The alias
+ * cannot be renamed from inside this package — CI's step and
+ * `workflow-parity.spec.ts`'s `CI_SEQUENCE` entry spell it too — so what
+ * is fixed here is the OUTPUT: the mode's own verdict is the last thing
+ * printed, and it names the half it did not answer.
  *
  * `node tools/e2e/scripts/docs-gate.mjs --census` prints the derivation
  * and judges no diff — the figures docs/CONVENTIONS.md used to carry as
@@ -69,8 +80,18 @@
  * EXIT CODES — the house contract, the same four `index --check` and
  * `boot:check` use, so "stale" and "could not tell you" are never the
  * same number:
- *   0  ran, and the diff owes nothing: no changed path reaches a reader
- *      and every live card's frontmatter is legal.
+ *   0  ran, and the question it was ASKED came back clean — WHICH IS NOT
+ *      ONE QUESTION, and this line used to pretend it was (T-142-s1).
+ *      GIVEN PATHS it means "the diff owes nothing": no changed path
+ *      reaches a reader and every whole-tree check passed. GIVEN
+ *      `--census` ALONE no diff was judged at all, so the 0 is the
+ *      WHOLE-TREE half's answer and NEVER an owed-suite verdict — "I was
+ *      not asked", not "nothing owed". The census mode SAYS so in its own
+ *      last line, because a code cannot carry two meanings and this one
+ *      was being read as the wrong one: a seat took a clean `--census`
+ *      for a clean gate, pushed a `blocked_by:` naming a card that did
+ *      not exist, and CI reddened in `lib/parser/test/smoke.test.ts` —
+ *      which the DIFF form names BY NAME on that same tree.
  *   1  ran and FOUND something: suites are owed, or a card is illegal,
  *      or the root-anchor account disagrees with the tree, or several.
  *      Read the message — they are printed apart.
@@ -296,28 +317,31 @@ function main(argv) {
     found += unlinked.length;
   }
 
-  if (paths.length === 0) {
-    // Only reachable WITH the census flag: without it, zero paths is the
-    // failed range refused above.
-    console.log(`\ndocs-gate: ${CENSUS_FLAG} — the derivation above, no diff judged.`);
-  } else if (gate.docsPaths.length === 0) {
-    console.log(
-      `\ndocs-gate: ${paths.length} changed path(s) given, none under docs/ — this gate is not owed.`,
-    );
-  } else if (!gate.fires) {
-    console.log(
-      `\ndocs-gate: ${gate.docsPaths.length} path(s) under docs/, none of them read by any suite.`,
-    );
-  } else {
-    console.error(
-      `\ndocs-gate: FIRES — ${gate.docsPaths.length} path(s) under docs/ are code inputs. Run:`,
-    );
-    for (const cmd of gate.commands) console.error(`  ${cmd}`);
-    for (const entry of gate.byPath) {
-      if (entry.readers.length === 0) continue;
-      console.error(`  ${entry.path}  <- ${entry.readers.join(", ")}`);
+  // THE DIFF VERDICT, and it is printed only when a diff was actually
+  // handed over. The CENSUS's verdict used to be a fourth arm of this
+  // chain and is no longer here: it moved to the END of this function
+  // (T-142-s1), because it is the one verdict a reader has to meet AFTER
+  // the whole-tree checks below rather than three lines above them.
+  if (paths.length > 0) {
+    if (gate.docsPaths.length === 0) {
+      console.log(
+        `\ndocs-gate: ${paths.length} changed path(s) given, none under docs/ — this gate is not owed.`,
+      );
+    } else if (!gate.fires) {
+      console.log(
+        `\ndocs-gate: ${gate.docsPaths.length} path(s) under docs/, none of them read by any suite.`,
+      );
+    } else {
+      console.error(
+        `\ndocs-gate: FIRES — ${gate.docsPaths.length} path(s) under docs/ are code inputs. Run:`,
+      );
+      for (const cmd of gate.commands) console.error(`  ${cmd}`);
+      for (const entry of gate.byPath) {
+        if (entry.readers.length === 0) continue;
+        console.error(`  ${entry.path}  <- ${entry.readers.join(", ")}`);
+      }
+      found += 1;
     }
-    found += 1;
   }
 
   if (issues.length > 0) {
@@ -397,6 +421,36 @@ function main(argv) {
       for (const r of staleAgainst) console.error(`  ${r}`);
       found += staleAgainst.length;
     }
+  }
+
+  // THE CENSUS'S VERDICT IS THE LAST WORD, AND IT NAMES THE HALF IT DID
+  // NOT ANSWER (T-142-s1). It used to print in the MIDDLE of this
+  // function, above the frontmatter, budget and STATE checks, so a clean
+  // census ENDED on "every live task card's frontmatter parses, with a
+  // legal status" and exit 0 — a reassuring sentence and a code whose
+  // legend at the top of this file is about a diff nobody judged. That
+  // pairing is what an architect seat read before setting a `blocked_by:`
+  // naming a card that existed only inside another lane; CI then reddened
+  // in `lib/parser/test/smoke.test.ts`, which the DIFF form of this same
+  // gate names BY NAME on that same tree.
+  //
+  // NOTHING HERE REFUSES ANYTHING NEW, deliberately: the finding was
+  // never a missing check. The instrument existed, it worked, and its
+  // true sentence was printed where a reader had already stopped reading,
+  // with a number after it that answers a different question. So the
+  // sentence moved to where a reader stops, and it now says WHICH
+  // question its exit code answers. Every code this file can return is
+  // unchanged for every input.
+  if (paths.length === 0) {
+    console.log(
+      `\ndocs-gate: ${CENSUS_FLAG} — the derivation above, no diff judged. THIS RUN ` +
+        `ANSWERED THE WHOLE-TREE HALF ONLY (${found} finding(s)) AND COMPUTED NO ` +
+        "OWED-SUITE VERDICT, so its exit is that half's answer alone: a " +
+        `${EXIT.CLEAN} here means "I was not asked", never "nothing owed".\n` +
+        "  This mode is what `npm run lint:docs` from tools/e2e runs, and what CI's step runs.\n" +
+        "  For the owed-suite verdict, hand this same script the RANGE RULE's own changed\n" +
+        "  paths — the DOCS GATE bullet in docs/CONVENTIONS.md prints the one spelling.",
+    );
   }
 
   return found > 0 ? EXIT.FOUND : EXIT.CLEAN;

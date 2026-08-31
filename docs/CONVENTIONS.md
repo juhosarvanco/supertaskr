@@ -1508,17 +1508,17 @@
   refused as ambiguous rather than guessed at, because resolving it
   either way just moves the false-clean to the other spelling.
   **`npm run lint:docs` FROM tools/e2e IS THE NAMED FORM AND CI'S STEP**
-  (T-090). BE PRECISE ABOUT WHAT THAT BUYS, because the difference is the
-  whole of what is still owed by hand: the CI step runs the WHOLE-TREE
-  half — every live card's frontmatter, the root-anchor account, the
-  unlinkable-reader tripwire — and judges NO diff, because a workflow has
-  no "merge's diff" to be handed and this tool will not compute one. Both
-  incidents this gate exists for (`9c64cd8`, `fede266`) are in the half
-  CI now holds. THE DIFF HALF IS STILL A RITUAL: nothing but the
-  integrator running the two lines above makes a merge answer for the
-  suites it owes. IF it cannot run THEN say so LOUDLY in the checkpoint,
-  naming the reason and the exit code; a skipped gate is news, never
-  silence.
+  (T-090), AND IT BUYS HALF: it runs the WHOLE-TREE half and judges NO
+  diff, because a workflow has no "merge's diff" to be handed and this
+  tool will not compute one. Both incidents it exists for (`9c64cd8`,
+  `fede266`) are in the half CI now holds. THE DIFF HALF IS STILL A
+  RITUAL: nothing but the integrator running the two lines above makes a
+  merge answer for the suites it owes. **AND ITS EXIT 0 MEANS *I WAS NOT
+  ASKED*, NEVER *NOTHING OWED*** (T-142-s1): no diff is judged, so no
+  owed-suite verdict exists to be clean. Read its LAST LINE: it names the
+  half it answered. IF it cannot run THEN say so LOUDLY in the
+  checkpoint, naming the reason and the exit code; a skipped gate is
+  news, never silence.
   `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it
   runs inside the lane TODAY, which makes this the one standing gate
   whose written form is already held by something other than discipline.

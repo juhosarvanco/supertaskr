@@ -326,3 +326,54 @@ conflicts — the merged tree carries `blocked_by: []`, and this lane's
 prose survives intact at 147,948 bytes / 10.0035% headroom. So the five
 reds resolve at the merge; I could not run the suites against that tree
 because materialising it is the integrator's act, not this lane's.
+
+## Corroboration — instance 6, 2026-08-31 (`T-142-s1`'s lane, measured at `57c1b39`)
+
+Appended as a record, per TASK-FORMAT. Found while running the owed
+suites for `T-142-s1`; **it is not that lane's to fix and was not
+fixed** — routed instead, because it is a distinct producer needing its
+own drill.
+
+`node tools/e2e/scripts/brief.mjs --dispatch` **silently truncates its
+own output at exactly 65,536 bytes whenever its stdout is a PIPE.** It
+exits **0**, writes no stderr, and returns a report that reads as
+complete — the header, the live lanes and the whole STARTABLE section
+are all present, so nothing about it looks partial. What is missing is
+the tail: `critical path:`, `worst blocker:`, `drawn cards:`, `ready on
+blocked_by alone:` and `startable once the lanes are counted:`.
+
+Measured at `57c1b39` **on a pristine tree** (`git status --porcelain`
+= 0 lines, this lane's three edits stashed), so the attribution is not
+an argument:
+
+| stdout is | bytes | carries `critical path:` |
+|---|---|---|
+| a FILE (`1> out.txt`) | **69,302** | yes |
+| a PIPE (`spawnSync`, default `maxBuffer`) | **65,536** | no |
+| a PIPE (`spawnSync`, `maxBuffer` 64 MiB) | **65,536** | no |
+
+**It is not `maxBuffer`** — raising it to 64 MiB changes nothing, and
+65,536 is one pipe buffer exactly. The mechanism is
+`process.exit(code)` at `brief.mjs`'s last line: a pipe write is
+asynchronous, and `process.exit` discards whatever has not drained. A
+file write is synchronous, so the hand-run spelling never loses a byte
+and the defect is invisible to whoever tests it by eye.
+
+**Why it belongs on THIS card.** It is the class exactly: a command ran,
+produced no error, exited 0, and returned an answer shaped like the one
+you wanted while answering a smaller question. It is also the
+class's worst reach so far — the truncated tail is precisely the
+DECISION content (`critical path`, `worst blocker`), the report is
+`method/roles/orchestrator.md`'s own dispatch input, and every
+programmatic reader of it takes a pipe by construction while every
+human reader takes a terminal and sees the whole thing.
+
+**Live consequence, stated because a session will meet it:**
+`tools/e2e/tests/dispatch-order.spec.ts:200` (*"--dispatch runs on the
+live repository, exits 0, and WRITES NOTHING"*) reds on this at
+`57c1b39` — **1 failed / 366 passed** in the full e2e lane, and
+**1 failed / 13 passed** running that spec alone. Re-run once as a
+second measurement, per STATE, and it reproduces. The board crossed
+64 KiB of `--dispatch` output at some ref nobody was watching for, so
+the red arrives attributed to whatever lane runs the suite next — which
+is the DOCS GATE's own founding story one tool over.
