@@ -39,6 +39,88 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 /// Contained read of `<root>/<dir>/<name>`: symlinks (file or dir target)
 /// are never followed, and the canonical path must stay under the root —
 /// same rules as every other read (T-003 idiom).
+///
+/// # The FOUR refusals, in the order the code applies them (T-194)
+///
+/// **THE COUNT IS IN THE HEADING ON PURPOSE, AND THIS BLOCK IS WHY.** Its
+/// first version enumerated three — A, B and D below — under a heading
+/// that read as the complete set, and **silently omitted
+/// `canonicalize()`, the one refusal here that stops a path escape.** This
+/// card's blind verifier caught it; the correction is C, and it is
+/// re-measured below rather than transcribed. **A comment telling the next
+/// reader that the accounting is finished when it is not is precisely the
+/// defect this whole family exists to correct** — this card's own subject
+/// is a landed sentence that was false in exactly that way. A stated count
+/// makes the omission visible to the next reader who counts.
+///
+/// `T-140-s9` corrected the same shape in `docs_watch.rs` and `T-186` in
+/// this crate's `walk_root`, and between them they left the reading rule
+/// this block obeys: **two guards with identical text are not the same
+/// guard.** What decides whether a half is separately pinnable is what the
+/// predicates DOWNSTREAM read — a property of the surrounding function,
+/// not of the line. Every classification below was MEASURED at this site
+/// (`T-194`'s ledger) and none of it is inherited from either sibling.
+///
+/// - **A — `is_symlink()` is INERT, and undetectable by construction.**
+///   `meta` comes from `symlink_metadata` (lstat), under which a link is
+///   neither `is_file()` nor `is_dir()`, so `!meta.is_file()` beside it
+///   already refuses every link. `A ⟹ B` inside `A || B`: no fixture can
+///   separate them, here or anywhere this idiom appears.
+/// - **B — `!meta.is_file()` is INERT TOO, but shadowed DOWNSTREAM rather
+///   than by its sibling.** This is where this site DIFFERS from
+///   `walk_root`, and it is why the sibling's verdict could not be
+///   carried across: `walk_root` filters on the entry's own NAME after the
+///   classification, so a directory called `<name>.ts` clears every later
+///   predicate and IS separately pinnable there. Here the next thing that
+///   touches the path is `read_to_string`, which fails on every non-file,
+///   non-symlink type that does not block — so a directory wearing the
+///   config file's name returns `None` with this half lifted exactly as it
+///   does with it in place. **The attempted body is recorded in the test
+///   module below rather than landed**, per `docs/CONVENTIONS.md`: a body
+///   that cannot red is the finding.
+/// - **A and B TOGETHER are load-bearing, and only jointly.** With both
+///   lifted, an inside-pointing link is canonicalized, clears
+///   `starts_with`, and IS read through. That is what
+///   `an_inside_pointing_symlink_is_refused_by_the_link_classification`
+///   below pins — a count-2 mutant, because neither half alone reaches it.
+/// - **C — `path.canonicalize()` is LOAD-BEARING AND UNPINNED, and it is
+///   the refusal the first version of this block left out.** What it
+///   independently contributes is not its `.ok()?` arm but the
+///   RESOLUTION it performs before D reads the result: `Path::starts_with`
+///   compares COMPONENTS, so `<root>/inside/../../elsewhere/x` textually
+///   starts with `<root>` and satisfies D on its own. **Only
+///   `canonicalize` collapses the `..`.** Without it D is a prefix test
+///   wearing a containment test's name, and every `..` in a caller's `dir`
+///   walks straight out of the root.
+///   **MEASURED at `87929c2`, and re-measured at this lane rather than
+///   carried across from the verdict:** replacing it with
+///   `path.to_path_buf()` leaves the crate at **256 passed / 0 failed over
+///   12 targets, exit 0 — NOTHING RED.** No body in this crate sees it.
+///   **It is UNPINNED but PINNABLE, which is a different finding from B's
+///   and must not be read as one.** A probe asserting
+///   `read_contained(&root, "../<sibling tree>", "loot.json") == None`
+///   PASSES on shipped code (**257/0**) and reds on that lift **alone**
+///   (**256/1**), with `left: Some("{\"loot\":1}")` — the reader returning
+///   the contents of a file OUTSIDE the root. So this is a coverage hole
+///   with a fixture that exists, not a cannot-red finding.
+///   **The body is `T-208`'s and is deliberately NOT landed here**, on the
+///   precedent `T-186` set when it routed `.follow_links(true)` as `T-196`
+///   instead of widening its own fence: widening a fence from inside a
+///   lane is the one repair this role may never make.
+/// - **D — `canon.starts_with(root)` is load-bearing, and it is the
+///   reason an OUTSIDE-pointing link proves nothing about A or B.**
+///   `symlinked_tsconfig_is_never_read` (`tsconfig.rs`) aims its link at a
+///   second `TempTree`, so the link is refused TWICE OVER — by A+B and by
+///   D — and **either refusal suffices alone**. Measured: it stays GREEN
+///   under the full A+B lift, GREEN under a D lift, and reds only when
+///   BOTH go. **So "containment alone produces its green" is FALSE**, and
+///   this lane wrote that sentence down before measuring it; the honest
+///   statement is that the body pins a disjunction and can name no member
+///   of it. Its name is kept — `T-186` and `T-194` cite it — and what it
+///   actually asserts is stated at its own site.
+///   **D depends on C and the two are not interchangeable**: C decides
+///   WHAT path D is asked about, so lifting C leaves D answering a
+///   question about a path that never existed.
 pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<String> {
     let path = if dir.is_empty() {
         root.join(name)
@@ -46,10 +128,26 @@ pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<Strin
         root.join(dir).join(name)
     };
     let meta = std::fs::symlink_metadata(&path).ok()?;
+    // Refusals A and B. Both are individually shadowed (A by its own
+    // sibling, B by `read_to_string` below) and the PAIR is not: it is the
+    // only thing standing between an inside-pointing link and a read
+    // through it. NOT DELETED, and `T-140-s9`'s ruling is why — a provably
+    // behaviour-neutral line on an ADR-010 boundary buys zero
+    // discrimination by leaving and costs a visible containment statement.
     if meta.file_type().is_symlink() || !meta.is_file() {
         return None;
     }
+    // REFUSAL C, and it is a refusal rather than a conversion — this line
+    // is what makes D below a containment test instead of a string-prefix
+    // test, because `Path::starts_with` compares components and
+    // `<root>/a/../../elsewhere` starts with `<root>` until the `..` is
+    // collapsed. LOAD-BEARING AND UNPINNED: lifting it to
+    // `path.to_path_buf()` leaves this crate 256/0 with nothing red, while
+    // a `..` traversal then reads a file outside the root. The pin is
+    // `T-208`'s — unpinned but PINNABLE, routed rather than built here.
     let canon = path.canonicalize().ok()?;
+    // Refusal D — load-bearing, the one an outside link meets first, and
+    // only as strong as C: it judges whatever path C handed it.
     if !canon.starts_with(root) {
         return None;
     }
@@ -513,4 +611,108 @@ fn entry_for<'a>(
         symbols: BTreeSet::new(),
         reexport: None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::TempTree;
+
+    /// The root must be CANONICAL before it is handed to `read_contained`:
+    /// on macOS `std::env::temp_dir()` is `/var/...`, a symlink to
+    /// `/private/var/...`, so an uncanonicalized root makes
+    /// `canon.starts_with(root)` fail for every inside path and every
+    /// assertion below would pass for the wrong reason.
+    fn canon_root(t: &TempTree) -> PathBuf {
+        t.root().canonicalize().expect("canon")
+    }
+
+    /// The refusal `read_contained`'s A+B pair actually delivers, exercised
+    /// with a link CONTAINMENT CANNOT RESCUE.
+    ///
+    /// **This is the body `symlinked_tsconfig_is_never_read` looks like but
+    /// is not.** That one aims its link at a second `TempTree`, so
+    /// `canon.starts_with(root)` refuses it before the link classification
+    /// is consulted; it stays green with both halves of that classification
+    /// lifted. Here the link AND its target are inside the root, so
+    /// `canonicalize` succeeds, containment holds, and the classification is
+    /// the only thing left standing.
+    ///
+    /// **Smallest killer is a TWO-side lift, and that is a measured
+    /// property of the code rather than a weakness of the fixture**
+    /// (`T-194`): lifting `is_symlink()` alone leaves `!meta.is_file()`
+    /// refusing the link under lstat, and lifting `!meta.is_file()` alone
+    /// leaves `is_symlink()` refusing it. No fixture can do better.
+    #[cfg(unix)]
+    #[test]
+    fn an_inside_pointing_symlink_is_refused_by_the_link_classification() {
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("contained-inside-link");
+        let root = canon_root(&t);
+        t.write("real/payload.json", "{\"who\":\"real\"}");
+
+        // POSITIVE CONTROL, built the way the producer builds it: the same
+        // call against the real file must SUCCEED. Without it "expected
+        // None, got None" is satisfied equally by refused-for-the-right
+        // -reason, refused-for-the-wrong-reason, and nothing-was-there.
+        assert_eq!(
+            read_contained(&root, "real", "payload.json").as_deref(),
+            Some("{\"who\":\"real\"}"),
+            "control: an ordinary inside file must read, or the refusal below proves nothing"
+        );
+
+        symlink(root.join("real/payload.json"), root.join("payload.json")).expect("symlink");
+        // Assert the fixture's STATE before exercising it (CONVENTIONS,
+        // LIFTING A SAFETY GUARD TO DISCRIMINATE): a plain copy here would
+        // make the body pass while testing nothing.
+        let meta = std::fs::symlink_metadata(root.join("payload.json")).expect("stat the link");
+        assert!(meta.file_type().is_symlink(), "the fixture is not a link");
+        assert!(
+            root.join("payload.json").canonicalize().expect("canon target").starts_with(&root),
+            "the fixture must canonicalize INSIDE the root, or containment refuses it and the \
+             link classification is never reached — the exact defect this body exists to avoid"
+        );
+
+        assert_eq!(
+            read_contained(&root, "", "payload.json"),
+            None,
+            "a link is not repo content, whatever it points at"
+        );
+    }
+
+    /// A directory wearing the config file's name is refused — and this
+    /// body pins the OUTCOME, not the `!meta.is_file()` half.
+    ///
+    /// **RECORDED FAILED ATTEMPT, and it is the finding this card was sent
+    /// to get** (`T-194`, `docs/CONVENTIONS.md` — *"a body that cannot red
+    /// is the finding"*). `T-186` found `!meta.is_file()` separately
+    /// pinnable in `walk_root` by exactly this fixture shape, and the
+    /// obvious move is to carry that verdict one file over. **Measured
+    /// here, it does not hold**: with `!meta.is_file()` lifted this body
+    /// stays GREEN, because the next thing to touch the path is
+    /// `read_to_string`, which fails on a directory and produces the same
+    /// `None` the guard would have. The half is shadowed DOWNSTREAM, and no
+    /// fixture at this site can separate the two.
+    ///
+    /// It is kept rather than deleted because the OUTCOME is worth pinning
+    /// and because the next reader will otherwise re-run the same attempt.
+    /// What it does NOT do is pin a half, and it does not claim to.
+    #[test]
+    fn a_directory_wearing_the_config_files_name_is_refused() {
+        let t = TempTree::new("contained-dir");
+        let root = canon_root(&t);
+        t.write("real/payload.json", "{\"who\":\"real\"}");
+        std::fs::create_dir_all(root.join("payload.json")).expect("mkdir");
+
+        assert_eq!(
+            read_contained(&root, "real", "payload.json").as_deref(),
+            Some("{\"who\":\"real\"}"),
+            "control: an ordinary inside file must read"
+        );
+        assert_eq!(
+            read_contained(&root, "", "payload.json"),
+            None,
+            "a directory is not a config file"
+        );
+    }
 }

@@ -182,6 +182,32 @@ fn drift_flags_land_only_on_ids_the_findings_name() {
     assert_eq!(model.drift_ids(), ordered, "flags come back in id order");
 }
 
+/// **WHAT THIS BODY ACTUALLY PINS IS THE PAIR, NOT THE HALF IT IS NAMED
+/// FOR** (`T-194`, measured).
+///
+/// `read_registry`'s directory guard is `is_symlink() || !meta.is_dir()`
+/// and BOTH halves are individually inert — `is_symlink()` because lstat
+/// makes `!meta.is_dir()` refuse every link anyway, and `!meta.is_dir()`
+/// because `read_dir` on the next statement fails on every non-dir type
+/// that half could catch and returns the SAME `DirMissing`. Measured:
+/// lifting either half alone leaves the whole crate suite green, this body
+/// among it. It reds on the TWO-side lift, where `read_dir` follows the
+/// link and the registry is read through it.
+///
+/// So the name overclaims about the LAYER while staying true about the
+/// OUTCOME. The name is KEPT — `T-186` and `T-194` cite it, and
+/// `T-140-s9`'s ruling 4 says a rename strands those references — and this
+/// note is the correction, exactly as those two cards landed theirs.
+///
+/// **The lifted arm of this body terminates in REPO CONTENT rather than a
+/// fixture**: the link aims at this repository's own
+/// `docs/architecture/components`, so a two-side lift makes the reader
+/// read the live registry. It is a read-only read and nothing writes
+/// through it, but `docs/CONVENTIONS.md`'s LIFTING A SAFETY GUARD TO
+/// DISCRIMINATE calls that a property to CHECK rather than assume, so it
+/// is checked and stated here rather than discovered later. The
+/// fixture-terminating bodies for the ENTRY guard one scope down live in
+/// `registry.rs`'s own test module.
 #[test]
 fn a_registry_directory_that_is_a_symlink_is_refused_not_followed() {
     #[cfg(unix)]

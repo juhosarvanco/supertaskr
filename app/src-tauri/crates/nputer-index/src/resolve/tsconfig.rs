@@ -205,6 +205,41 @@ mod tests {
         assert!(idx.nearest("b").expect("b").base_url.is_none());
     }
 
+    /// **WHAT THIS BODY ACTUALLY PINS IS CONTAINMENT, NOT THE LINK
+    /// CLASSIFICATION** (`T-194`, measured).
+    ///
+    /// The link is aimed at a SECOND `TempTree`, so the target
+    /// canonicalizes OUT of the root and `read_contained` refuses it TWICE
+    /// OVER — once at the link classification, once at
+    /// `canon.starts_with(root)`. **Measured, all three arms** (`T-194`):
+    ///
+    /// - classification (`is_symlink() || !meta.is_file()`) lifted: **GREEN**
+    /// - containment (`starts_with`) lifted: **GREEN**
+    /// - BOTH lifted: **REDS**
+    ///
+    /// So this body is NOT vacuous — it reds on a three-predicate lift —
+    /// but it can distinguish **neither** mechanism, because either one
+    /// suffices on its own. It pins the disjunction and can name no part
+    /// of it, which is why a reader takes its name for a claim about the
+    /// link check and gets nothing of the sort.
+    ///
+    /// **The obvious summary of this is wrong and was measured before it
+    /// was written**: *"containment alone produces its green"* is what
+    /// this lane first wrote down, and lifting containment alone leaves
+    /// the body GREEN, so containment is not what produces it either.
+    /// `T-140-s9` met this instrument defect in `docs_watch.rs` and
+    /// `T-186` in `walk_root`; this is the third sighting and the most
+    /// thoroughly shadowed of the three.
+    ///
+    /// **The name is KEPT deliberately.** `T-140-s9`'s ruling 4 applies:
+    /// cards outside this fence cite it by name (`T-186`, `T-194`) and a
+    /// rename strands those references, so the body says at its site what
+    /// it asserts — the OUTCOME, not the layer.
+    ///
+    /// The body that DOES pin the classification is
+    /// `resolve::tests::an_inside_pointing_symlink_is_refused_by_the_link_classification`,
+    /// whose link canonicalizes INSIDE the root so containment cannot
+    /// rescue it.
     #[cfg(unix)]
     #[test]
     fn symlinked_tsconfig_is_never_read() {
