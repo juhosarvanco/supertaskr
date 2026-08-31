@@ -302,6 +302,51 @@ test("the registry as shipped is valid, so the runner never has to choose betwee
   expect(validateRegistry()).toEqual([]);
 });
 
+// ── §THE REDIRECT IS ONE FILE DESCRIPTOR ─────────────────────────────
+
+test("the captured output preserves the true interleaving of stdout and stderr, because a record can span both", () => {
+  // THIS BODY EXISTS BECAUSE THE DEFECT WAS REAL AND COST A BAND ITS
+  // AUTHORITY. The runner first buffered the two streams separately and
+  // concatenated them, which puts every stderr line after every stdout
+  // line. cargo splits ONE record across both — `Running unittests
+  // src/lib.rs` is progress on stderr, `finished in Xs` is the harness on
+  // stdout — so health-bands.mjs reported suite/lib-seconds as UNREAD: a
+  // band losing its reading because of how a runner captured, not
+  // because of anything in the tree.
+  const dir = mkdtempSync(path.join(tmpdir(), "t202-interleave-"));
+  try {
+    // The emitter goes in a FILE, not in `node -e`: an inline script is
+    // dense with `;` `(` `'`, and the runner's own metacharacter guard
+    // refuses an argv holding any of them. That refusal is correct — it
+    // is what §NO PIPE pins — so the fixture obeys it.
+    const emitter = path.join(dir, "emit.mjs");
+    writeFileSync(
+      emitter,
+      "process.stderr.write('FIRST-on-stderr\\n');\n" +
+        "process.stdout.write('SECOND-on-stdout\\n');\n" +
+        "process.stderr.write('THIRD-on-stderr\\n');\n",
+    );
+    writeFileSync(path.join(dir, "marker"), "");
+    const suite = {
+      id: "interleave",
+      cwd: dir,
+      sentinel: "marker",
+      argv: [process.execPath, emitter],
+      family: "playwright" as const,
+      solo: false,
+      why: "pins the single-fd redirect",
+    };
+    const { output } = runSuite(suite, { root: dir });
+    // The verdict is REFUSED (this fixture runs no bodies) — which is
+    // correct, and beside the point. What is pinned is the ORDER.
+    expect(output.indexOf("FIRST-on-stderr")).toBeGreaterThanOrEqual(0);
+    expect(output.indexOf("FIRST-on-stderr")).toBeLessThan(output.indexOf("SECOND-on-stdout"));
+    expect(output.indexOf("SECOND-on-stdout")).toBeLessThan(output.indexOf("THIRD-on-stderr"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ── §CARGO: --no-fail-fast AND THE TARGET COUNT ──────────────────────
 
 test("a cargo suite without --no-fail-fast is REFUSED, because a crate-scope count would then describe one target", () => {

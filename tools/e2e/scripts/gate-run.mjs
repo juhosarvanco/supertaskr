@@ -119,7 +119,15 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -665,20 +673,30 @@ export function runSuite(suite, opts = {}) {
 
   const dir = mkdtempSync(path.join(tmpdir(), `gate-run-${suite.id}-`));
   const outputPath = path.join(dir, "output.txt");
+  const fd = openSync(outputPath, "w");
   try {
-    // NO SHELL, NO PIPE. stdio 'pipe' here is node's OS pipe to THIS
-    // process, not a shell pipeline — nothing sits between the child and
-    // its status, which is the whole distinction instance 1 turns on.
+    // A TRUE REDIRECT — `> file 2>&1`, expressed as ONE file descriptor
+    // handed to the child for BOTH streams. No shell, so no pipeline; and
+    // no buffering through this process either.
+    //
+    // THE SINGLE FD IS NOT A DETAIL, AND THIS RUNNER GOT IT WRONG FIRST.
+    // Buffering the two streams separately and concatenating them
+    // (`stdout + stderr`) LOSES THE INTERLEAVING, and cargo splits one
+    // record across both: `Running unittests src/lib.rs` is cargo's own
+    // progress on stderr, its `finished in Xs` is the harness on stdout.
+    // Concatenated, the marker and its number land in different halves of
+    // the file, and `health-bands.mjs` reported `suite/lib-seconds` as
+    // UNREAD — a band losing its authority because of how a runner
+    // captured, not because of anything in the tree. Measured at 4531223;
+    // after the fix the same run reads 0 unread bands where it read 1.
     const r = spawnSync(command, suite.argv.slice(1), {
       cwd,
-      encoding: "utf8",
       env: { ...process.env, ...(opts.env ?? {}) },
-      maxBuffer: 64 * 1024 * 1024,
+      stdio: ["ignore", fd, fd],
     });
-    const output = `${r.stdout ?? ""}${r.stderr ?? ""}`;
-    writeFileSync(outputPath, output);
+    closeSync(fd);
     if (r.error) {
-      return { ...refuse(`could-not-run: ${r.error.message}`), output, outputPath };
+      return { ...refuse(`could-not-run: ${r.error.message}`), outputPath };
     }
     // CAPTURE FIRST, READ AFTERWARDS — in that order, always.
     const status = r.status ?? -1;
@@ -686,6 +704,11 @@ export function runSuite(suite, opts = {}) {
     const count = countBodies(suite.family, readBack);
     return { verdict: judge({ status, count, ref, suite: suite.id }), output: readBack, outputPath };
   } finally {
+    try {
+      closeSync(fd);
+    } catch {
+      /* already closed on the success path */
+    }
     release();
   }
 }
