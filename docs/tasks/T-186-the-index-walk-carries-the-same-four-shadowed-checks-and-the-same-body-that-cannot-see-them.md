@@ -10,8 +10,10 @@ blocked_by: []
 touches: [crate-index]
 suggested_by: "architect/integrator seat, ROUTED BY T-140-s9's merge (2026-08-31) and re-measured at this seat before filing rather than transcribed from the route"
 builder:
+verifier: claude-opus-5@subagent
 built_by: claude-opus-5@subagent
-review:
+verified_by: claude-opus-5@subagent
+review: independent
 ---
 
 **ROUTED OUT OF `T-140-s9`, AND RE-MEASURED BEFORE FILING.** That lane
@@ -437,3 +439,209 @@ its zero.
    these notes. What that does NOT protect is a report pasted into the
    verifier's dispatch — so this is said plainly here, per that same
    file's instruction that a brief which cannot separate the two SAYS SO.
+
+## Verdicts
+
+2026-08-31 — claude-opus-5@subagent (verifier, blind seat):
+**APPROVED WITH ASSIGNED CORRECTIONS.** The ruling is right, the shipped
+behaviour is provably unmoved, and the lane's central claim — that this
+crate genuinely differs from `docs_watch` and that `!meta.is_file()` is
+separately pinnable here — **REPRODUCES at my own bench**. I re-ran every
+ledger row plus five arms the ledger does not carry, in my own detached
+worktree with its own `CARGO_TARGET_DIR`, and every ledger row matched
+exit for exit and name for name **within the scope the ledger declares**.
+The three corrections below are a scope the ledger states but its rows do
+not repeat, a fifth refusal nobody pinned, and a numbering collision.
+None is a reason to hold the lane.
+
+Measured at **`9fe1ac3`** (the tip after the coordinator's renumber; my
+first bench was cut at `25155e8` and was **discarded and re-taken** when
+the tree moved under me). Every figure below names that ref.
+
+### Phase 1 was written and saved before the diff was opened
+
+Attack set — 10 traps, 12 named mutants — written from the card **at the
+base ref `c3fc1a1`**, `walk.rs` AT BASE, `CONVENTIONS.md`,
+`roles/verifier.md` and `docs_watch.rs`'s landed record, and saved to a
+file with `sha256
+9e7a9b1e9e341d081ba31b4d43b3e7977d5bf3f7ec0c96b1467558edd2b9152c` BEFORE
+the diff, the commits or these notes were opened. Derived there, unaided:
+
+- `is_symlink()` alone is **undetectable by construction** (lstat's file
+  type is exclusive, so `A ⟹ B` in `A || B`);
+- `!meta.is_file()` **IS separately pinnable here**, by a DIRECTORY with
+  an allowlisted extension, and no base body has one;
+- `starts_with` shadowed by `strip_prefix`, `canonicalize`'s Ok-guard
+  shadowed by the link check;
+- `relative_posix` has no direct unit body in this crate and needs one;
+- **and the dedup trap** — that the sibling's `alias.ts -> real.ts`
+  fixture shape is VACUOUS here because `files.dedup_by` collapses the
+  duplicate `rel`. My attack set names this "T1 — my single sharpest
+  predicted defect… an executor reasoning from the sibling writes exactly
+  this body and pins nothing."
+
+**The lane had already run it and recorded it** (arm B3, at the body's own
+site). A seat that did not read the notes first predicted the same trap
+the executor fell into and climbed out of — which is the independent
+confirmation the card's central risk was actually retired, not asserted.
+
+### DISCLOSURE — my dispatch leaked lane facts, and the role file says to say so
+
+My brief carried a "BLIND LINE" with lane context BELOW it **in the same
+message**, so I read it on receipt. The blindness for these is
+compromised and I will not pretend otherwise. What leaked: that the lane
+claims this crate differs from the sibling; that one check it expected to
+be undetectable is separately pinnable here; that it found two vacuous
+checks in its own drill; that it routed a sibling finding correcting a
+landed record; and that poison shape TEN is "not hypothetical for this
+card". What did NOT leak, and what I therefore derived alone: **which**
+check, **which** vacuities, **which** record, and whether any of it is
+true. The coordinator has since confirmed the same defect unprompted and
+says three lanes reported it tonight; this is a fourth.
+
+Nothing in the leak gave me §1's answers — indeed my derivation **splits**
+the lane's headline: a body reds on the WHOLE link classification, but
+**no body can ever pin the `is_symlink()` half alone**, and I attacked the
+lane specifically for that overclaim. It does not make it (see below).
+
+### What reproduced — my arms, crate scope, `--no-fail-fast`, exits captured before any pipe
+
+Baseline at `9fe1ac3`: **exit 0, 252 passed / 0 failed** over 12 targets,
+lib 200/0. Base `walk.rs` swapped in: lib **197/0**, so 197 + 3 = 200 and
+the three new bodies are the delta — the lane's figures, at my bench.
+
+| arm (one side only) | ledger | mine | |
+|---|---|---|---|
+| `is_symlink()` alone | nothing reds | exit 0, 252/0, **0 failing** | ✅ |
+| `!meta.is_file()` alone | 1 red, dir body alone | exit 101, **1 failing** = the directory body | ✅ |
+| both link checks | 2 red; `…never_followed` GREEN | exit 101, **2 failing**; `…never_followed` **GREEN** | ✅ |
+| `starts_with` alone | nothing reds | exit 0, 252/0, **0 failing** | ✅ |
+| `relative_posix`'s `.ok()?` | 1 red, predicate body alone | exit 101, **1 failing** = the predicate body | ✅ |
+| classification → `is_dir` | 1 red, inside body alone | exit 101, **1 failing** = the inside body | ✅ |
+| all four together | 4 red | **5 at crate scope**, 4 under `--lib` | ⚠ correction 1 |
+| sweep: `registry.rs` dir guard | green | exit 0, 252/0 | ✅ |
+| sweep: `resolve/mod.rs` | green | exit 0, 252/0 | ✅ |
+
+Every arm restored and **proven by sha256** to
+`b40b348d5fb990fb137c7fe308f279e790e86bd6a9181f414c723df3eb477dd9`, the
+`9fe1ac3` blob, with `git -C <scratch> diff` 0 bytes as companion.
+
+**The three shape-SIX counts hold at the stricter scope.** The catalogue
+asks for the WHOLE suite; the ledger declares the lib suite. I re-put all
+three asks across all 12 targets and each still dies **ALONE**.
+
+**The dedup trap, reconstructed rather than taken on trust.** I added the
+naive `alias.ts -> real.ts` body to my own tree and lifted both link
+checks: the lane's two bodies RED and **my naive body stayed GREEN**,
+alongside `symlinks_are_never_followed_file_or_dir`. The recorded failed
+attempt is true and the `.md` target is load-bearing.
+
+**Security / ADR-010.** No layer was weakened to buy a red: the shipped
+half of `walk.rs` is **73 non-comment lines on each side and byte-identical
+to base** (my own check, with a planted one-token control shown to red),
+and **zero lines were removed** from the test module. Under the all-four
+lift the repository's own path appears in the output **0 times** (grep
+shown capable of hitting a planted positive); only system-temp `TempTree`
+paths leak. No new dependencies, no secrets, no new input path.
+
+### What FAILED to break it
+
+The overclaim attack (T2) — the site says `is_symlink()` is inert and the
+strongest body pins the halves **jointly**, which is exactly right. The
+vacuity attack (T3) — every new body routes through `rels()`, which
+canonicalizes, and each asserts a **non-empty positive** plus a positive
+control built the way the producer builds it, so none passes over an empty
+walk. The deletion attack (T4), the moved-comment attack (T5) — I checked
+every new comment claim against my own arms and found no false statement —
+and the misnaming attack (T6): `symlinks_are_never_followed_file_or_dir`
+keeps a name its body can no longer justify, but the body now **says so at
+its site**, which is the disposition CONVENTIONS asks for.
+
+**And I reproduced the lane's shape-TEN warning on my first attempt**: my
+own base-vs-tip comparison compared two EMPTY files and **exited 0**,
+because zsh's `:a` modifier ate `$ref:app/…` — the identical mechanism the
+ledger records. Later, a probe arm reported **0 substitutions** and a clean
+"all ok" that measured an unmutated tree. Both were caught only by
+printing the corpus size and the substitution count before reading the
+verdict. The ledger's warning is correct and earns its space.
+
+### ASSIGNED CORRECTIONS (none blocking; assigned, not performed)
+
+1. **The ledger's `all four together -> 4 red` is LIB-SCOPED, and the row
+   does not say so.** At crate scope the same lift reds **5**, the fifth
+   being `tests/containment.rs::outside_tree_symlinks_never_enter_the_graph`.
+   The preamble declares the lib suite, so this is understatement rather
+   than error — but the row reads as the crate's answer and a reader will
+   take it that way. Add the scope to the rows, or give the crate-scope
+   number. Note also that poison shape SIX asks for the WHOLE suite: the
+   three count-1 claims **do** survive it (measured above), so record the
+   scope rather than re-deriving.
+
+2. **`follow_links(false)` is the fifth refusal, it is UNPINNED, and it is
+   PINNABLE — and it is the very defect this card is about.** `T-140-s9`'s
+   routing sentence counts it as one of the four ways `walk_root` refuses a
+   link; the site comment mentions it only in passing and the ledger omits
+   it. Measured: `.follow_links(true)` leaves the whole crate suite
+   **green, 252/0** — including `symlinks_are_never_followed_file_or_dir`,
+   whose name promises exactly this. A body I wrote (an inside-pointing
+   symlinked dir aimed at the hard-skipped `node_modules` subtree, so the
+   entries are real files that canonicalize INSIDE and containment cannot
+   rescue) **reds under that flip and passes at the tip**. So this is not a
+   "cannot red" finding — it is a coverage hole with a fixture that exists.
+   It sits outside this card's four, so **route it, do not widen** — but it
+   must not stay unrecorded, because it is a body named for a layer it
+   cannot see, one line above the ones this card just fixed.
+   **I have deliberately NOT minted a card id for it.** This lane's own
+   finding is that the id namespace has no construction available to a
+   lane and that only the dispatching seat can allocate; filing a fifth
+   verdict-side collision to prove the point would be absurd. The
+   integrator allocates the id; the measurement and the fixture shape are
+   recorded here so the next lane starts from evidence.
+
+3. **The LAYER numbering collides with the ledger's "four".** The site
+   numbers layers 1–4 as classification / **allowlist** / `starts_with` /
+   `relative_posix`; the ledger's "all four" means `is_symlink` /
+   `!is_file` / `starts_with` / `strip_prefix`. The allowlist is in the
+   first set and not the second, and the inside body's comment says "takes
+   the shadow from four layers to two", mixing them. Disambiguate — the
+   ledger is the load-bearing text and a reader who maps its rows onto the
+   site's numbers gets the wrong answer.
+
+4. **Minor: `files.dedup_by` is a fifth inert line.** Deleting it leaves
+   the crate suite green (252/0) while the classification stands. It is
+   the exact mechanism behind the recorded failed attempt, and it is
+   explained in the body's comment but not named at its own site. One
+   clause there would finish the pattern this card establishes.
+
+5. **Dispatch-level, not the lane's:** this is a guard-class card —
+   CONVENTIONS: *"the builder of a cage is not its inspector"* — so
+   `review: independent` was owed **at dispatch** and the field was empty.
+   Stamped now; flagged so the next dispatch sets it.
+
+### The routed sibling correction — verified, and it stands
+
+`T-194` claims `T-140-s9`'s landed sweep sentence — *"no body is named for
+the half — same shape, no false coverage"* — is false at this ref. I
+checked both halves independently. The bodies exist
+(`a_registry_directory_that_is_a_symlink_is_refused_not_followed` in
+`tests/arch.rs`, `symlinked_tsconfig_is_never_read` in
+`resolve/tsconfig.rs`) and **both actually run** in my baseline, so the
+greens are not vacuous; and lifting the `is_symlink()` half at either site
+leaves `cargo test -p nputer-index` at **exit 0, 252/0, nothing red**. The
+correction is well-founded, correctly scoped as a *coverage* claim rather
+than a construction one, and rightly routed rather than absorbed.
+
+### An unclaimed win the lane did not put in its ledger
+
+I derived one mutant from the criteria with the ledger closed (shape
+SEVEN): `symlink_metadata` → `metadata`, i.e. the stat call **follows**
+links. Base corpus: green. At this tip it reds
+`a_symlink_to_an_inside_file_is_refused_by_the_link_checks_alone`
+**alone**. The new body pins the choice of `lstat` over `stat` — the
+classic form of this defect — which nothing in this crate did before.
+
+### Gates re-run at MY OWN tip, per roles/verifier.md §7
+
+See the entry below this one for the gate ledger at the tip my verdict
+created; prose is a code input and the figures above are measured at
+`9fe1ac3`, not at that tip.
