@@ -75,10 +75,14 @@ pub(crate) fn parent_dir_of(rel: &str) -> &str {
 /// - **C — `canon.starts_with(root)` is load-bearing, and it is the
 ///   reason an OUTSIDE-pointing link proves nothing about A or B.**
 ///   `symlinked_tsconfig_is_never_read` (`tsconfig.rs`) aims its link at a
-///   second `TempTree`, so containment alone produces that body's green
-///   and it stays GREEN under the full A+B lift. Its name is kept —
-///   `T-186` and `T-194` cite it — and what it actually asserts is stated
-///   at its own site.
+///   second `TempTree`, so the link is refused TWICE OVER — by A+B and by
+///   C — and **either refusal suffices alone**. Measured: it stays GREEN
+///   under the full A+B lift, GREEN under a C lift, and reds only when
+///   BOTH go. **So "containment alone produces its green" is FALSE**, and
+///   this lane wrote that sentence down before measuring it; the honest
+///   statement is that the body pins a disjunction and can name no member
+///   of it. Its name is kept — `T-186` and `T-194` cite it — and what it
+///   actually asserts is stated at its own site.
 pub(crate) fn read_contained(root: &Path, dir: &str, name: &str) -> Option<String> {
     let path = if dir.is_empty() {
         root.join(name)

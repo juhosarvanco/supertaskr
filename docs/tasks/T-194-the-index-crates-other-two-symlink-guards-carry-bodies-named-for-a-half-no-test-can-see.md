@@ -149,12 +149,29 @@ direction the two prior cards did not have a name for.
 
 `symlinked_tsconfig_is_never_read` (`resolve/tsconfig.rs`) aims its link
 at a **second `TempTree`**, so the target canonicalizes out of the root and
-`canon.starts_with(root)` refuses it before the link classification is
-consulted. **Measured: with BOTH halves of that classification lifted the
-body is still `ok`.** It cannot see the half it is named for, and it
-cannot see the pair either — containment alone produces its green. That is
-strictly worse than `T-186`'s `walk_root` body, which at least reds on the
-two-side lift, and it is the same defect `T-140-s9` met in `docs_watch.rs`.
+the link is refused TWICE OVER — once by the classification, once by
+`canon.starts_with(root)`. **Measured: with BOTH halves of that
+classification lifted the body is still `ok`.** It cannot see the half it
+is named for, and it cannot see the pair either. That is strictly worse
+than `T-186`'s `walk_root` body, which at least reds on the two-side lift,
+and it is the same defect `T-140-s9` met in `docs_watch.rs`.
+
+**AND THE OBVIOUS EXPLANATION FOR IT IS WRONG — I WROTE IT DOWN, THEN
+MEASURED IT, AND IT FAILED.** *"Containment alone produces that body's
+green"* is the sentence this lane first landed in three places, carried
+straight over from `T-186`'s finding about `walk_root`. **Lifting
+containment alone leaves the body GREEN too** (arm `g3-contain`, 256/0,
+exit 0), because the link classification still refuses the link. Both
+mechanisms are individually sufficient, so neither "produces" the green
+and the body can name neither. It reds only when BOTH are lifted (arm
+`g3-allthree`, 254/2), which at least proves it is not vacuous.
+
+**This is the card's own thesis turning on the lane that was writing it.**
+The instruction was not to inherit a sibling's verdict; I obeyed that for
+the three guards I was sent to measure and then quietly inherited one for
+the body BESIDE them, on the strength of the fixture looking identical to
+`T-186`'s. It took one arm to falsify and I had already committed the
+sentence. Corrected at all three sites rather than softened.
 
 `a_registry_directory_that_is_a_symlink_is_refused_not_followed`
 (`tests/arch.rs`) is the milder case: it reds on D1's two-side lift, so it
@@ -218,7 +235,7 @@ identical. **The lesson that generalises: a positive control needs its own
 non-empty precondition — assert the planted token OCCURS before trusting
 that the check can say no.**
 
-### THE DRILL — 15 ARMS, EVERY ONE READ BACK, RESTORED AND PROVEN
+### THE DRILL — 17 ARMS, EVERY ONE READ BACK, RESTORED AND PROVEN
 
 Detached scratch worktree `/private/tmp/nd-T-194`, cut at **`a9de0e2`**
 (the work COMMITTED FIRST, so a restore cannot pass itself off as a
@@ -262,6 +279,14 @@ crate scope is 12 targets, the lib target alone is 1.
 | `p-reglink` | assertion `vec!["C-01"]` → `vec!["C-02"]` | 101 | 12 | 255/1 | itself, alone |
 | `p-inside` | assertion `None` → `Some(String::new())` | 101 | 12 | 255/1 | itself, alone |
 | `p-condir` | assertion `None` → `Some(String::new())` | 101 | 12 | 255/1 | itself, alone |
+| `g3-contain` | `!canon.starts_with(root)` → `false` | 0 | 12 | 256/0 | **none — falsified my own sentence** |
+| `g3-allthree` | classification AND containment → `false` | 101 | 12 | 254/2 | the inside body + `symlinked_tsconfig_is_never_read` |
+
+The last two arms were added AFTER the first fifteen, when re-reading my
+own criteria showed I had asserted a shadow relationship
+(*"containment alone produces its green"*) without measuring it. `g3-contain`
+falsified it; `g3-allthree` establishes the body is not vacuous. **Seventeen
+arms in total, counting the driver control.**
 
 **Every arm restored and PROVEN by sha256** against its `a9de0e2` blob —
 `registry.rs`
