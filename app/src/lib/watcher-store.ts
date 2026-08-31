@@ -209,6 +209,69 @@ export type StartupStep = "subscribe" | "snapshot" | "deadline";
 export const STARTUP_DEADLINE_MS = 8_000;
 
 /**
+ * T-192: the bound on `index_repo`, and it is A DIFFERENT DEADLINE FROM
+ * THE ONE ABOVE rather than a second spelling of it. `STARTUP_DEADLINE_MS`
+ * covers the startup handshake — `listen("docs-changed")` plus the first
+ * snapshot — and this covers one `index_repo` round trip. Two windows,
+ * two measurements, two numbers; one constant serving both would make
+ * either figure a lie about the other's work.
+ *
+ * WHY THE COMMAND NEEDS A BOUND AT ALL. `runIndexRepo` takes the
+ * `indexing` latch synchronously, awaits the command, and releases in a
+ * `finally` — and a `finally` runs when a promise SETTLES. A rejection is
+ * handled (the `catch` beside it); an ABSENCE is not, because the `await`
+ * never returns, so the latch is never released and the early return
+ * refuses every later press. The map's "Re-index" button is
+ * `disabled={indexing}` (`src/architecture/MapView.tsx`), so the cost is
+ * a permanently greyed button under a hint reading "indexing…" for the
+ * rest of the session, with no error anywhere. THE ONLY HONEST REPAIR IS
+ * TO STOP WAITING — T-184's sentence, and this is its sibling defect.
+ *
+ * WHERE THE NUMBER COMES FROM, so it is derived rather than picked, and
+ * IT IS NOT T-184's NUMBER. That bound is 30 s because the agent runner
+ * sets `start_timeout: 30s` and `probe_timeout: 10s` in
+ * `src-tauri/src/agent/runner.rs`, and a command that waits on the probe
+ * must not give up before the Rust side has had its budget. `index_repo`
+ * NEVER TOUCHES THE RUNNER and has no Rust-side deadline of any kind: it
+ * is `spawn_blocking(run_index).await` with no timeout
+ * (`src-tauri/src/lib.rs`) and `IndexOptions` carries no time field, so
+ * there is no runner deadline here to sit above. Borrowing 30 s would be
+ * a derivation from a subsystem this command never enters.
+ *
+ * What the tree DOES state about this window is the indexer's own
+ * performance criterion: `crates/nputer-index/tests/perf.rs` asserts a
+ * cold index under 1 500 ms and calls that its own "generous 3x ceiling"
+ * over a 500 ms criterion. Measured here on this repository at
+ * `57c1b39`, five `index --check` runs off a release build: 670 ms cold,
+ * then 243 / 245 / 243 / 244 ms warm.
+ *
+ * 15 s is 10x the crate's own cold ceiling and 22x the worst run measured
+ * here — the same ratio `STARTUP_DEADLINE_MS` above takes over its own
+ * worst padded bound, and taken for the same reason. The margin is
+ * deliberately lopsided towards "too long": a premature "index failed" is
+ * a claim about a run that was going to succeed, while a late one merely
+ * arrives after the user has started wondering.
+ *
+ * AND THE FALSE POSITIVE IS CHEAP, which is what makes a bounded figure
+ * acceptable at all. The command's own answer carries only volatile
+ * stats — the refreshed graph arrives independently, as a `docs-changed`
+ * snapshot (see `runIndexRepo`) — so a raced-out run that lands anyway
+ * still delivers its graph. What the bound costs is that run's counts in
+ * the header hint, and nothing else.
+ */
+export const INDEX_ANSWER_BOUND_MS = 15_000;
+
+/** The answer this side gives on behalf of an `index_repo` that did not
+ * (T-192). `error` is already a member of `IndexOutcomePayload`, so the
+ * bound needs no new outcome arm and the map's existing
+ * `indexOutcome.kind === "error"` branch puts it on screen unchanged. The
+ * wording follows `startupStepPhrase`'s deadline arm: about TIME, not
+ * blame, because nothing was refused. */
+export const UNANSWERED_INDEX_MESSAGE =
+  "the indexer did not answer within 15 seconds. It has not been " +
+  "refused — it may still be running, and re-indexing is safe.";
+
+/**
  * T-063: the event that carries a startup failure to the Tauri process's
  * stdio, where a WKWebView `console.error` provably cannot reach. The
  * listener is `app.listen(STARTUP_FAILED_EVENT, …)` in
@@ -1209,6 +1272,33 @@ export async function startGenesisHere(): Promise<void> {
  * `commitPickOutcome`, which is this function minus the `invoke`).
  */
 async function runPicker(command: string): Promise<void> {
+  // T-192: DELIBERATELY NOT BOUNDED, and the reason is recorded here
+  // because the sibling latch twelve lines down IS bounded and the next
+  // reader will otherwise take this for the oversight it looks like.
+  //
+  // THE SHAPE IS IDENTICAL TO `runIndexRepo`'s AND THE DEFECT IS NOT,
+  // which is decided by what each command AWAITS rather than by the
+  // TypeScript, and was read off the Rust rather than assumed. The three
+  // picker commands in `src-tauri/src/lib.rs` answer on every path they
+  // have: a held latch answers `Busy`; a dismissed dialog — or one whose
+  // callback is DROPPED — answers `Cancelled`, because `rx.recv().await`
+  // yields `None` when the sender goes; an unusable selection answers
+  // `Error`; a panicking blocking task answers `Error` through
+  // `unwrap_or_else`; and the re-arm behind the dialog is itself bounded
+  // Rust-side by `REARM_TIMEOUT` (10 s, `docs_watch.rs`). The ONE segment
+  // with no bound is the dialog standing open, which is a HUMAN deciding.
+  // `index_repo` has no such excuse: it is `spawn_blocking(run_index)`
+  // with no deadline anywhere and nobody on the other end.
+  //
+  // AND A BOUND HERE WOULD MANUFACTURE THE FAILURE THIS CARD EXISTS TO
+  // CLOSE. Firing while the folder dialog is still on screen would tell
+  // the user the app did not answer when it is waiting for THEM, and
+  // release this latch while Rust still holds its own — so the next press
+  // reaches `begin_pick`, gets `Busy`, and `reducePickOutcome` returns
+  // `prev`: a button that silently does nothing, which is the family
+  // T-171 and T-183 were written against. The latch is held here only
+  // while a human is being asked a question, and that is what a
+  // single-flight latch is for.
   if (!isTauri || shell.picking) return;
   setShell({ picking: true });
   try {
@@ -1308,12 +1398,44 @@ export function keepCurrentProject(): void {
 export async function runIndexRepo(): Promise<void> {
   if (!isTauri || shell.indexing) return;
   setShell({ indexing: true });
+  // T-192: THE BOUND. The race is written out here rather than imported,
+  // and that is a component-boundary answer rather than a preference —
+  // see `INDEX_ANSWER_BOUND_MS` for the number and the notes on T-192 for
+  // why `agent-store.ts`'s `withAnswerBound` is not imported (it would add
+  // a file edge to the `C-10 -> C-14` tangle @human ruled must be
+  // EXTRACTED rather than declared — C-10's own file, 2026-08-25). The
+  // duplication is real and is routed, not denied.
+  //
+  // The loser is DISCARDED, unlike `runStartup`'s hand-written race above,
+  // and the difference is what each loser HOLDS: that one is carrying a
+  // live subscription and can still heal the app, so it must be governed
+  // rather than dropped. This one carries volatile counts whose graph
+  // arrives by another road, so dropping it costs the header hint and
+  // nothing else — and dropping it is what makes a late answer unable to
+  // overwrite a newer run's stats, which is T-184's stale-answer defect
+  // declined rather than re-invented.
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const outcome = await invoke<IndexOutcomePayload>("index_repo");
+    const outcome = await Promise.race([
+      invoke<IndexOutcomePayload>("index_repo"),
+      new Promise<IndexOutcomePayload>((resolve) => {
+        timer = setTimeout(
+          () => resolve({ kind: "error", message: UNANSWERED_INDEX_MESSAGE }),
+          INDEX_ANSWER_BOUND_MS,
+        );
+      }),
+    ]);
     setShell({ indexOutcome: outcome });
   } catch (err) {
+    // A REJECTION IS NOT AN ABSENCE and still lands here unchanged, so a
+    // refused index keeps reporting the refusal rather than the bound.
     setShell({ indexOutcome: { kind: "error", message: String(err) } });
   } finally {
+    // Cleared on every exit — answered, unanswered or thrown. A dangling
+    // fifteen-second timer per press would make the bound observable in a
+    // way it should not be; the pending-timer count is asserted back to
+    // its pre-call value in `startup-recovery.test.ts`.
+    if (timer !== undefined) clearTimeout(timer);
     setShell({ indexing: false });
   }
 }
