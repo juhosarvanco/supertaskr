@@ -9,6 +9,8 @@ status: done
 blocked_by: []
 suggested_by: "executor claude-opus-5@subagent @T-184, routed from inside the lane; the red is measured at both refs rather than predicted"
 touches: [app-interview]
+builder: claude-opus-5 @integrator
+review: self-verified
 ---
 
 **ROUTED OUT OF `T-184`, WHICH COULD NOT REACH IT AND HANDS OFF A KNOWN
@@ -70,3 +72,20 @@ than `stranded`.
   the turn evidence contradicts (refused at the store now) and a claim
   the turn evidence cannot speak to (still refused at the screen).
 - Verification: headless, the app suite.
+
+## `review: self-verified`, AND THE STAMP IS DELIBERATELY NOT `independent`
+
+The field was **missing entirely** until this checkpoint — an oversight,
+since this card was stamped `done` when the repair landed and the
+frontmatter was never completed.
+
+The repair was carried by the INTEGRATOR at `T-184`'s merge, because that
+lane's fence mechanically excluded the file. **`T-184`'s blind verifier
+SPECIFIED and MEASURED it** — it confirmed the fence refused the path,
+that routing was the only in-protocol option, and that the fix was one
+value restoring 51/51. **But nobody independently reviewed the
+integrator's implementation**, and the control that makes it trustworthy
+(`turn: 1` fails, `turn: 2` passes) was run by the seat that wrote it.
+
+So `self-verified` is the accurate stamp, and it is recorded with its
+reasoning rather than left to read as a default.

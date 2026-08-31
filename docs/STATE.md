@@ -1,7 +1,7 @@
 # State
 
-Updated: 2026-08-31 at the six-lane close — record:
-docs/checkpoints/2026-08-31-six-lanes-and-a-summary-of-nothing.md; the
+Updated: 2026-08-31 at the ten-lane close — record:
+docs/checkpoints/2026-08-31-the-fence-judged-nothing.md; the
 queue lives in T-171's record beside it.
 **NO task branches remain** (derive: the LANES command below) and the
 GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
@@ -93,13 +93,15 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   `startup_arm_watches_the_initial_root` reds when `target/` is large or
   lanes contend. READ THE LIB SUITE'S OWN TIME FIRST — green under 9.5s,
   red over 14.6s. Re-run the body ALONE before attributing it; no
-  reflexive `cargo clean`, lanes may be building. Fired 2026-08-31 at
-  16.21s and passed alone in 1.27s.
+  reflexive `cargo clean` WHILE A LANE IS LIVE. **With no lane live,
+  CLEAN — an attribution explains a reading and does NOT clear a breach.**
+  Fired thrice 2026-08-31; at `target/` 5.3G the suite ran 15.14s and the
+  clean took it to **3.93s**, 601/0.
 - **A merged main can fail `npm run build`**: `lib/parser/dist` is a
   build artifact no merge updates — build the parser FIRST. An unbuilt
   app tree fails `npm test` about `app/dist`.
 - **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
-- **Three narrower hazards MOVED to this checkpoint's record** rather
+- **FIVE narrower hazards MOVED to the checkpoint records** rather
   than deleted, per this file's contract: `T-086-s1`'s 1-in-22 body,
   `T-111-s9`'s misnamed token-scan totals, and app/'s absent
   `typecheck` script.
@@ -116,13 +118,8 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   `<scratch>/target`, stem DERIVED from the card id** (`T-133-s5`) — the
   directory is shared between sessions, and a VERIFIER cuts its own,
   because a bench carries artefacts.
-- **Ports are machine-wide** (`T-132-s6`): explicit, lsof-read at zero
-  rows immediately before binding; a probe reserves nothing.
 - **The RANGE RULE decides which two commits "the merge's diff" means**
   (CONVENTIONS) — the integrator's pair and the executor's differ.
-- **After merging a lane, REMOVE ITS WORKTREE BEFORE the verdict
-  corrections** — guard limit 6: git drops its mid-merge marker at the
-  merge commit while the worktree keeps the fence.
 - **A PUSH CANCELS THE RUNNING CI JOB** — four superseded overnight by
   one seat's rapid pushes. Commit stamps freely; batch the PUSH.
 - **THE BOOT GATE AND THE HEALTH BANDS ARE OWED AT EVERY CHECKPOINT**
@@ -133,7 +130,7 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-six-lanes-and-a-summary-of-nothing.md.
+  2026-08-31-the-fence-judged-nothing.md.
   **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — two
   consumers read it; `T-182` states the rule in CONVENTIONS.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
