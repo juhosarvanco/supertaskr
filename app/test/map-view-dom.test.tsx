@@ -665,7 +665,6 @@ describe("the header hint (volatile stats from the outcome, never the file)", ()
       (container.querySelector("[data-testid=map-reindex]") as HTMLButtonElement).disabled,
     ).toBe(true);
   });
-
 });
 
 // ---- T-200: an ABSENCE is not a FAILURE, as RENDERED -------------------

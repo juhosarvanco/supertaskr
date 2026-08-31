@@ -275,3 +275,68 @@ none. Each is stated with the exact paths and slugs a card would need.
   own wording (`"did not answer"`, `"within 15 seconds"`,
   `"re-indexing is safe"`) and is OUTSIDE this fence — untouched, and
   still green in the 1108.
+
+### The DOCS GATE at the tip, and the two reds that were MINE and not this diff's
+
+The notes commit put `docs/tasks/T-200-*.md` in the merge's diff, so the
+gate fired where it had not at `7cd5823`. **Read AFTER committing,
+because a gate read before a commit does not catch what the commit
+creates.** At `453e42a`: `merge-tree` exit **0**, **3 paths**, gate exit
+**1** — *"FIRES — 1 path(s) under docs/ are code inputs"* — owing three
+commands, run in this order:
+
+| owed suite | exit | count |
+|---|---|---|
+| `npx vitest run` from `lib/parser/` | **0** | 16 files, **344 / 344** |
+| `npm test` from `tools/e2e/` | **0** | **404 passed**, 5.3m, on `NPUTER_E2E_PORT=14200` (derived from the card id; `lsof` read **zero rows** immediately before it bound) |
+| `npm test` from `app/` | **1**, then **0** after a rebuild | 50 files, **1108 / 1108** |
+
+**T-192's STANDING E2E RED IS GONE.** That card measured 1 failed / 365
+passed and pinned the cause in `brief.mjs` (`process.exit` discarding an
+undrained 64 KiB pipe). At `453e42a` the lane is 404 / 404 at exit 0, so
+whatever fixed it landed between — reported because a lane that inherits
+a green where its predecessor recorded a red should say so rather than
+let the improvement look like its own.
+
+**THE APP SUITE'S TWO REDS ARE THE DRILL'S FOOTPRINT — ATTRIBUTED, NOT
+RE-RUN UNTIL GREEN.** `map-t1-t2-dom.test.tsx` and
+`map-tasks-lens-dom.test.tsx` each carry a BUILD-FRESHNESS probe —
+*"the build is newer than the sources it is evidence about"* — and both
+failed with `dist/ predates src/architecture/MapView.tsx`. The cause is
+mechanical and is this seat's: `npm run build` ran BEFORE the mutation
+drill, and the drill's final `cp` of the pristine copy back over
+`MapView.tsx` moved that file's mtime past `dist/`. The boot check does
+not repair it — `tauri dev` runs vite in DEV and never writes `app/dist`.
+The source was byte-identical at the green run and the red one (the
+`sha256` in the drill ledger above is the proof). `npm run build` then
+`npm test` from `app/` at the final tree: **0** and **0**, 50 files,
+**1108 / 1108**.
+
+This is the standing hazard *"`npm run build` from `app/` is a gate, not
+a step"* arriving from its other side — here the SUITE reported what the
+stale BUILD had caused, and reading only the suite would have sent a
+verifier hunting a defect in the map's CSS.
+
+Four more commands, none of them merge-diff gates but all of them CI
+steps, run only after the e2e lane had restored its seven control bytes:
+`npm run lint:tokens -- --selftest` **0** · `npm run lint:tokens` **0**
+(*clean*, TOKEN 166 files, CONTROL 1064 tracked text files) ·
+`npm run capabilities:check` **0** (*CURRENT*, 33163 bytes — this diff
+moves no `tools/e2e/tests/` name, so the census could not move) ·
+`npm run typecheck` from tools/e2e **0**.
+
+### CORRECTION to the span budget above — the tokens, not a guess
+
+The notes say *"≈36 monospace characters"*. **Derived from the tokens
+rather than estimated**, at `453e42a`, it is about **39**:
+`--spacing-unit: 0.25rem` (`app/src/styles/tokens.css:382`), so
+`max-w-70` is 17.5rem = 280px; `px-2.5` takes 10px a side, leaving 260px;
+`--text-xs-size: 0.6875rem` = **11px**, not the 12px the first estimate
+assumed (`tokens.css:359`); `--font-mono-stack` leads with Geist Mono
+(`tokens.css:352`), whose advance is the usual 0.6em = 6.6px. 260 / 6.6 ≈
+**39**, so the 31-character line sits ~8 characters inside the cap rather
+than ~5. **IT IS STILL A CALCULATION AND NOT A MEASUREMENT** — jsdom
+applies no layout, so nothing headless in this lane can confirm the line
+is uncut in a real webview. That is the one claim here an eye would
+settle and this seat could not, and it is the reason the whole sentence
+stays in the `title` regardless.
