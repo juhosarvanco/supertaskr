@@ -485,3 +485,34 @@ discovered:
 - **This is a self-verified pass.** `review: self-verified` is stamped
   because that is the value that names the missing guarantee honestly;
   nothing here claims informational blindness.
+
+### A CORRECTION THIS LANE MAKES AGAINST ITS OWN SUITE TABLE
+
+The table above records the e2e lane at **366 passed / 1 failed, exit
+1**, and calls the failure inherited. **Re-run at this lane's own tip
+`a6d56d3`, it is 367 passed / 0 failed, exit 0** — and the difference is
+not a re-run-until-green, it is the inherited defect proving itself.
+
+`T-190` and `T-192`'s worktrees were removed from this machine between
+the two runs. `brief.mjs --dispatch` renders the LIVE LANES section and
+the STARTABLE list from `git worktree list`, so its own output shrank
+from **69,302** bytes to **62,651** — **below one 65,536-byte pipe
+buffer**, so nothing truncates and `dispatch-order.spec.ts:200` passes.
+Same branch, same tree, no relevant code change; only the machine's
+worktree count moved.
+
+**BOTH READINGS ARE KEPT AND NEITHER IS THE HONEST ONE ALONE.** 366/1 is
+what a busy machine measures and 367/0 is what a quiet one does. The
+figure that reproduces is the THRESHOLD, not either tally: the body reds
+whenever `--dispatch` exceeds a pipe buffer and passes whenever it does
+not, and how many lanes are live decides which. Recorded in full on
+`T-142` as instance 6's closing measurement, with the consequence for
+whoever takes `T-197`: **that card's "one invocation large enough to
+exceed the buffer" cannot be the live `--dispatch`**, because that size
+is a live fact and a body pinned to it is green on a quiet machine and
+red on a busy one, both with no code change.
+
+**This is why the e2e result is reported as a threshold rather than as a
+number, and why the earlier table was left standing rather than
+rewritten** — a lane that quietly replaces its own red with a later
+green has destroyed the evidence that the red was real.

@@ -407,3 +407,52 @@ The board crossed
 64 KiB of `--dispatch` output at some ref nobody was watching for, so
 the red arrives attributed to whatever lane runs the suite next — which
 is the DOCS GATE's own founding story one tool over.
+
+### Instance 6, closing measurement — THE RED IS KEYED TO THE MACHINE, NOT TO THE TREE
+
+**The failing body went GREEN later in the same lane, at a LATER commit
+of the same branch, with nothing relevant changed in the tree** — and
+the reason is the finding rather than a reprieve.
+
+`T-190` and `T-192`'s worktrees were removed from this machine while
+this lane worked. `--dispatch` renders the LIVE LANES section and the
+STARTABLE list from `git worktree list`, so its own size fell:
+
+| lanes live on the machine | `--dispatch` bytes | through a pipe | `dispatch-order.spec.ts:200` |
+|---|---|---|---|
+| three (T-142-s1, T-190, T-192) | **69,302** | truncated to **65,536** | **RED** |
+| one (T-142-s1 alone) | **62,651** | **62,651**, whole | **GREEN** |
+
+**So the body passes or fails according to how many worktrees exist at
+the moment it runs.** The full e2e lane read **1 failed / 366 passed**
+early in this session and **367 passed / 0 failed** at its end, on the
+same branch, with the only intervening change being other people's
+worktrees disappearing.
+
+**THREE CONSEQUENCES, AND THE THIRD IS THE ONE THAT COSTS:**
+
+1. **"Re-run it and see" LITERALLY WORKS HERE, and is exactly the wrong
+   conclusion.** This is docs/STATE.md's *re-running until green is the
+   defect's own healing mechanism, not evidence* arriving through a
+   mechanism nobody had named: not a cache, not a clock, but the
+   MACHINE-scoped worktree list that `method/lane-protocol.md` rule 4's
+   closing clause already warns is a surface no per-checkout rule sees.
+2. **CI will not see it.** A runner has one checkout and no lanes, so
+   the output stays under the buffer and the step is green. **The defect
+   is visible only on a busy development machine**, which is the reader
+   whose figure matters most and the one with no gate.
+3. **It is a LATENT red that arrives attributed to whoever is nearest.**
+   Cut a third lane and the next session's e2e goes red in a spec about
+   dispatch order, with a diff that cannot explain it. This lane spent
+   real time proving it was not its own; the next one will too.
+
+**FOR WHOEVER TAKES `T-197`:** its criterion asking for *"one invocation
+large enough to exceed the buffer"* cannot be satisfied by running the
+live `--dispatch` — that size is a live fact that drifts under the
+machine, and a body pinned to it is green on a quiet machine and red on
+a busy one, both without a code change. **Synthesise the oversize
+output** (a fixture, or a padded fixed input) so the body asserts the
+size it feeds rather than hoping for it. That is the same poison shape
+TEN the card already cites, met from the other side: not an empty
+comparison, but one whose input silently shrank below the threshold it
+was testing.
