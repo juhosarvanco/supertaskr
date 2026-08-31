@@ -5,11 +5,11 @@ feature: F-02
 milestone: 4
 priority: 3
 size: S
-status: building
+status: planned
 blocked_by: []
 touches: [app-board, app/test/board-root.test.tsx]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FORMAT's "a criterion that cannot be built inside the fence is recorded and routed"
-builder: claude-opus-5@subagent
+builder:
 review:
 ---
 
@@ -104,3 +104,31 @@ the preflight's own classification (`creation target`) is the correct
 one and the finding is discharged rather than corrected. Recorded because
 the dispatch gate refuses on any finding, benign ones included, and a
 ruling is the mechanism it names for exactly this.
+
+## DISPATCH REFUSED 2026-08-31 — the fence cannot reach two criterion paths
+
+The dispatch preflight refused the fence write, and it was right:
+
+    UNCOVERED CRITERION PATH line 80: app/vitest.config.ts
+      — reserved by app-shell, which this fence does not carry
+    UNCOVERED CRITERION PATH line 88: app/test/board-truth.test.tsx
+      — reserved by app-shell, which this fence does not carry
+
+`touches:` is `[app-board, app/test/board-root.test.tsx]`. Both named
+paths belong to **C-05 (`app-shell`)**.
+
+**THIS IS `T-185`'S SHAPE, CAUGHT BEFORE THE LANE WAS CUT RATHER THAN
+AFTER IT BUILT.** `T-185` reached a C-05 fixture its fence could not
+touch, was rejected for a regression it was forbidden to repair, and cost
+a whole second card (`T-185-s2`) to discharge. Here the preflight refused
+at dispatch and cost nothing.
+
+**What the next dispatch must decide, and it is a judgement not a
+widening:** a criterion names a path for two different reasons — because
+the work WRITES it, or because the argument CITES it. If these are cited,
+the criteria should say so and the fence is already right. If they are
+written, the fence needs `app-shell` and the card should say why a
+board-root test reaches the shell's config. Do not widen on reflex; the
+preflight's own note draws exactly this distinction.
+
+Stamp returned to `planned`; no lane was cut and nothing was built.
