@@ -6,7 +6,7 @@ milestone: 4
 priority: 3
 size: M
 status: planned
-blocked_by: [T-203]
+blocked_by: [T-212]
 touches: [tools/e2e, method/lane-protocol.md]
 suggested_by: "peer session nputer-10's enforcement stack (relayed 2026-08-31, approved in direction by @human); the self-violation found by this seat's flag and then sharpened by nputer-10 into the event list below"
 builder:
@@ -43,7 +43,10 @@ enable.
 
 **Layer (a), the landing gate, carries correctness alone in the
 meantime**, which is why the stack ordered it first and why this card is
-`blocked_by: [T-203]` rather than racing it.
+`blocked_by: [T-212]` rather than racing it. (At filing this pointed at
+`T-203`, which was to be amended to carry the gate; the gate is `T-212`
+now, split out so the token gate stays dispatch-ready — the blocker
+points at the thing itself.)
 
 ## The event list — what re-chmods, and when
 
@@ -92,11 +95,11 @@ further than it measures is this project's most repeated defect.
 
 ## Read beside
 
-`T-203` (the landing gate, which carries correctness until this lands and
-which this card is blocked on), `T-209` (the dispatch guard, same
-manifest), `T-199` (the UX layer — the real-time refusal), `T-025-s4`
-(which established the bash string as unparseable), and
-`method/lane-protocol.md:182`.
+`T-212` (the landing gate, which carries correctness until this lands and
+which this card is blocked on), `T-203` (the token gate on the same
+hook), `T-209` (the dispatch guard, same manifest), `T-199` (the UX
+layer — the real-time refusal), `T-025-s4` (which established the bash
+string as unparseable), and `method/lane-protocol.md:182`.
 
 ## A note on provenance
 

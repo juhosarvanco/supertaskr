@@ -117,7 +117,7 @@ overlapping paths.
 - A card with an absent or empty `touches:` SHALL be treated as the
   universal set and collide with everything.
 - THE implementation SHALL be single, with the dispatch call site built
-  here and the push and merge call sites named for `T-203` — three
+  here and the push and merge call sites named for `T-212` — three
   copies is `T-057`.
 - **This card is GUARD-CLASS**: `review: independent`, set at filing.
 - Verification: headless.
@@ -136,7 +136,7 @@ this card exists.
 
 `method/lane-protocol.md:182` **first** — it is the law this mechanises
 and it is already complete, including the six-for-six measurement.
-`T-199` (the write-time fence), `T-203` (which takes the push and merge
+`T-199` (the write-time fence), `T-212` (which takes the push and merge
 call sites), `T-167-s8` (mechanical versus memory-held), `T-207` (the
 decay pattern), `T-057` (one rule, one implementation).
 

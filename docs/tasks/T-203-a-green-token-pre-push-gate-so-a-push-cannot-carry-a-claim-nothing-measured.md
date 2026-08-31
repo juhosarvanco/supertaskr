@@ -54,6 +54,13 @@ design: the cost of a full battery is paid once per push rather than once
 per commit, and the token is what makes "I ran the gates" a fact rather
 than a claim.
 
+**A SECOND ARM RIDES THIS HOOK AND IS NOT THIS CARD: the LANDING GATE**
+(`T-212`) — at a LANE push, the merge-base-to-tip diff intersected with
+the card's expanded fence, refusing any out-of-fence path. Split to its
+own card so this one stays dispatch-ready: that gate needs `T-209`'s
+intersection and this card does not. One hook, two arms, two cards —
+`T-207`'s own precedent, one artifact per meaning.
+
 ## What a fix decides
 
 1. **Where the token lives.** It must not be committable — a token in the
@@ -90,9 +97,10 @@ than a claim.
 ## Read beside
 
 `T-202` (which produces the token — this card is blocked on it),
-`T-167-s8` (the guard whose shape this extends, landed and verified), and
-`docs/CONVENTIONS.md`'s edit-script-is-a-gate bullet, which this card
-makes mechanical.
+`T-167-s8` (the guard whose shape this extends, landed and verified),
+`T-212` (the landing gate, this hook's other arm), `T-209` (the
+intersection that arm calls), and `docs/CONVENTIONS.md`'s
+edit-script-is-a-gate bullet, which this card makes mechanical.
 
 ## `review: independent` SET AT FILING, not left for a dispatch to remember
 
