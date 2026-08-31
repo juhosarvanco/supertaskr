@@ -5,13 +5,13 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: integrator nputer-4e, third graph-staleness CI red of 2026-08-30
 builder:
 verifier:
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review:
 ---
@@ -120,7 +120,234 @@ itself when one is tried. Every other claim class ran clean; the figures
 are printed in this sitting's record.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+**BUILT AT `b8dcb37`, MEASURED THERE, IN THE LANE
+`/Users/ujju/Projects/nputer-T-167-s8` CUT FROM `bd8a8e8`.** The PUSH
+trigger shipped. The ABSORBED trigger did NOT, and that is a finding
+rather than an omission — it is routed as **`T-185`** and the reason is
+below.
+
+### What landed
+
+- `.claude/hooks/push-guard.mjs` — the decision. Zero non-builtin
+  imports; the lane facts it needs (`LANE_BRANCH_RE`, `readManifest`,
+  `readHeadRef`, `findCheckoutRoot`, `within`) are IMPORTED from
+  `lane-fence.mjs` rather than re-spelled.
+- `.claude/hooks/push-guard-hook.mjs` — the runner. Exit 2 refuses,
+  exit 0 allows, and an allow that left the graph UNVERIFIED prints its
+  reason at exit 0 (`ANNOUNCED_ALLOW_CODES`).
+- `.claude/settings.json` — a `Bash` matcher beside the existing
+  `Edit|Write|NotebookEdit` one. The fence hook's entry is untouched.
+- `tools/e2e/tests/push-guard.spec.ts` — 21 bodies, no browser.
+
+### Each criterion, with its evidence
+
+1. **Refuse a stale push, regen command verbatim** — MET. The refusal
+   quotes `index --check`'s own stdout, which carries the `regenerate:`
+   line `check.rs`'s `render` emits; this guard holds no copy of that
+   command. Body *"a STALE graph refuses the push and quotes the check's
+   own regenerate line"*; mutant **M12** (drop the quote) kills it.
+2. **Verdict from the check's exit code, never re-derived** — MET. Body
+   *"the guard reads the exit code and not the report's words"* drives
+   both crossings: a CURRENT exit with a STALE report allows, a STALE
+   exit with a CURRENT report refuses. Nothing in the guard computes
+   staleness. Nothing cheaper than the full check is run: **the cheap
+   pre-filters are all questions about the SEAT** (is this a push, is
+   this repository ours, can this lane regenerate), never about currency.
+3. **Could-not-run is not staleness** — MET. Only exit 1 refuses. Exits
+   2 and 3 allow and say so; a `cargo` that never starts allows and says
+   so. Bodies for each; mutant **M2** (collapse 3 into stale) and **M7**
+   (absent toolchain refuses) kill them.
+4. **The wall-clock cost, measured at this ref, argued against the
+   frequency of a push** — MET, below.
+5. **The escape** — NO ESCAPE SHIPPED, argued below.
+6. **Where it does not fire** — MET, DERIVED, below.
+7. **Positive control both directions over a fixture** — MET. Every
+   verdict body drives the REAL runner as a subprocess over a git
+   repository built under `mkdtemp`, with a FAKE `cargo` first on PATH
+   whose exit code the fixture chooses. This repository's own graph is
+   never made stale. The shim writes a marker when it runs, so *"the
+   check was NOT spawned"* is asserted as well as *"it was"*.
+
+### THE COST, MEASURED AT `b8dcb37` ON Mac.lan, node v22.22.0
+
+Two numbers, because the guard has two paths:
+
+| what | n | median | p95 |
+|---|---|---|---|
+| a Bash call that is NOT a push | 100 | **39.35 ms** | 40.62 ms |
+| a push whose seat cannot act (lane arm) | 100 | **39.70 ms** | 43.21 ms |
+
+Both are node's own startup and nothing else — the same ~39 ms
+`lane-fence.mjs`'s header measures for its runner, and for the same
+reason: the decision is reached before the filesystem is touched.
+
+And the path that actually asks, measured END TO END through the real
+runner against the real `index --check` in a detached checkout at
+`b8dcb37` with its own `CARGO_TARGET_DIR` (exit 0, graph current):
+
+- **COLD** (the crate not yet built): **7.68 s**, one time per checkout.
+- **WARM**: **1.51 / 1.48 / 1.51 s**.
+- The check ALONE, three runs in the lane: 1.65 / 1.38 / 1.63 s.
+- `cargo build -p nputer-index` from cold in the lane: **9.50 s**.
+
+**THE ARGUMENT.** The card was right to name this as the thing that gets
+a guard disabled, and the fear does not survive the measurement: the
+crate carries **no tauri dependency** (ADR-015), so its cold build is ten
+seconds and not the minutes CONVENTIONS' cargo-cache-cliff hazard warns
+about for the app workspace. Against the frequency of a push — batched by
+standing order, because *"A PUSH CANCELS THE RUNNING CI JOB"*
+(docs/STATE.md) — a second and a half is cheaper than one superseded CI
+run, and far cheaper than the four graph-currency reds this card
+enumerates. **The tax that needed watching was not the check but the
+MATCHER**: a `Bash` hook fires on every command in the session, and 39 ms
+of node startup on a non-push is the price of the whole guard on the
+common path.
+
+### THE ESCAPE: NONE SHIPPED, AND THE CANDIDATE ARGUED
+
+The card asked for the spelling *"for the rare intentional push of a
+stale graph (should not exist; argue it if found)"*. One candidate was
+found and it is **refused as a hatch**: `index --check` asks about the
+WORKING TREE while a push carries COMMITS, so a tree with uncommitted
+edits to indexed files can be STALE for a push whose commits are current.
+**That is a SCOPE MISMATCH, not an intentional stale push** — and its
+remedy is one command (`git stash`), which the refusal now NAMES when it
+detects a dirty tree. A hatch for a case that already has a one-command
+remedy is a hatch that gets used for every other case. `dirtyTree` reaches
+no verdict and cannot change one; mutant **M13** proves the sentence is
+load-bearing (1 failed / 20 passed).
+
+**AND THE MECHANISM WOULD HAVE BEEN THE INTERESTING HALF, so it is
+recorded for whoever revisits this**: the criterion's *"on the command
+line rather than in an environment default"* is enforceable exactly by
+reading the escape out of the COMMAND STRING and never out of
+`process.env` — an inline `VAR=x git push` is visible to the hook, and a
+profile-exported one is not distinguishable from a default. That is the
+construction to use IF an escape is ever ruled necessary.
+
+### CRITERION 6, DERIVED RATHER THAN ASSUMED
+
+- **Outside this repository's checkouts**: the test is whether
+  `app/src-tauri/crates/nputer-index/Cargo.toml` is present — the crate
+  the guard delegates to. A checkout without it is one where
+  `index --check` is not a question that can be asked. Not the directory
+  name, which a clone can change.
+- **A lane's own push**: the manifest already carries the lane's expanded
+  fence, so the question is containment — does any fenced domain hold
+  `docs/architecture/graph.json`? `laneCanRegenerate` asks exactly that.
+  **THE ANSWER FOR ESSENTIALLY EVERY LANE IS NO**, this one included
+  (`[.claude, tools/e2e]`), so a lane is not refused: it has no legal way
+  to clear the refusal, the regen is the integrator's at the merge, and a
+  guard with no remedy is a guard somebody disables. **Both directions are
+  driven** — a fence of `[docs/architecture]` IS asked and IS refused.
+
+### THE DRILL — 17 OF 17, AND ONE OF THEM WAS VACUOUS FIRST
+
+Detached scratch worktree `/private/tmp/nd-T-167-s8` at the NAMED commit
+`b8dcb37`, own `CARGO_TARGET_DIR` at `<scratch>/target`, stem derived from
+the card id. Every mutant: ONE SIDE ONLY (always the code, never an
+assertion, never a shared literal), diff read back with `git -C <bench>
+diff`, suite run, RED required, restored with `git restore
+--source=b8dcb37 --staged --worktree --`, proved by **sha256** against
+`git show b8dcb37:<path>`. **17 killed, 0 survived, every restore
+sha256-ok, bench `git status` CLEAN afterwards.**
+
+**M13 WAS A FALSE KILL ON ITS FIRST RUN AND IS RECORDED AS SUCH**, because
+this is the failure the drill's own rule exists to catch. The mutation
+produced a nested ternary with no final `:`, so the module never parsed,
+playwright never loaded, and the run was RED with **`0 failed` and no
+passed count at all** — a red over zero bodies, which is the mirror of
+CONVENTIONS' *"an exit 0 over zero bodies is not a pass"*. The tell was
+the missing passed count. Re-run with a valid one-token mutation
+(`dirtyTree(root)` → `false`): **1 failed / 20 passed**, naming the
+dirty-tree body. The rule that caught it is *"confirm the mutated TEXT is
+what you intended rather than only that a substitution COUNT was
+non-zero"*.
+
+### WHAT WAS NOT BUILT: THE ABSORBED T-181 TRIGGER — ROUTED AS `T-185`
+
+**It is not a fence problem. It is a collision with a ratified @human
+decision, and the lane is not the seat that resolves it.** The absorbed
+criterion requires a guard that REFUSES a commit unless a record under
+`docs/checkpoints/` carries certain text. `ADR-019 §Records` says: *"No
+suite, gate or generator may DEPEND on this directory's contents."*
+
+The clause is **unamended** (ADR-020's own `## Supersedes / amends` reads
+*"Amends nothing"*; ADR-019's four addenda re-affirm it) and is restated
+in **seven** places, including `docs/checkpoints/TEMPLATE.md`'s own
+*"**NOTHING MAY READ THESE LINES BACK** … A reporter a human or a
+checkpointing integrator runs BY HAND over the records is fine; **a gate
+is not.**"* The room that produced it moved in the LOOSENING direction
+(*"NO DEPENDENCY, not as no walk"*) and still lands the wrong side of
+this. **Four cards have already declined this exact build** — `T-156-s1`,
+`T-156-s6`, `T-157`, `T-157-s2` — and `tools/e2e/tests/session-economics.spec.ts`
+carries a lane's written refusal in its docblock.
+
+**NEITHER T-181, NOR THE ABSORPTION BLOCK, NOR THE TRIAGE RECORD CITES
+THE CLAUSE.** `T-185` carries the evidence, the one distinction that might
+survive a ruling (a pre-commit guard reads only the record in the commit
+under judgement, so it cannot red retroactively and lacks the hazard the
+clause protects against), and **a shape that needs no ruling at all**:
+key the trigger on the FILENAME — the contact `docs-gate.mjs` already has
+and Addendum 2 blessed — and demand the reading in the COMMIT MESSAGE,
+which CONVENTIONS already prescribes for the METHOD EVAL GATE for a
+directly applicable reason. Had that been the written criterion it was
+buildable in this lane.
+
+### THE INTEGRATOR-REVIEW HALF, TAKEN BY THIS SEAT — AND ITS LIMIT
+
+`touches: [.claude, tools/e2e]` reaches no shipped slug (CONVENTIONS,
+THE SHIPPED PARTITION names `tools/e2e` as the settling case for NOT
+SHIPPED), so the ceremony row is **S, diff outside shipped code**.
+
+**WHAT I REVIEWED**: that the diff stays inside the fence (four paths, all
+under `.claude` or `tools/e2e`); that no constant is held without being
+compared to an authority (the four exit codes against CONVENTIONS' own
+legend, the command against its bullet, both paths against the live
+tree); that the fence hook's matcher and behaviour are untouched; that
+every verdict body drives the real runner rather than a stub; that both
+directions of every allow are controlled by a refusal in the same fixture
+shape; and that the guard fails OPEN on every uncertainty.
+
+**WHAT I COULD NOT REVIEW, AND IT IS THE HALF THAT MATTERS**: whether the
+guard notices the right things. I chose what it refuses, I chose what it
+stands aside for, and I wrote the bodies that agree with me. A guard's
+characteristic defect looks exactly like success.
+
+**AND THE FORMAT AGREES WITH THAT AND THE DISPATCH DID NOT.**
+`method/tasks/TASK-FORMAT.md`: *"**A GUARD-CLASS CARD REQUIRES `review:
+independent`, AND THE FIELD IS SET AT DISPATCH.** Where the card's SUBJECT
+is a guard — a hook, a gate, a keeper, a lint, a permission check …
+anything whose job is to REFUSE … **the builder of a cage is not its
+inspector.**"* This card's subject is a hook whose job is to refuse; by
+that rule's own test (*"Ask what the card is ABOUT, not what it
+touches"*) it is guard-class. **`review:` was EMPTY at dispatch, and the
+dispatch summary said no verifier was owed.** The ceremony ROW and the
+guard-class rule live in the same file and answer different questions —
+the row settles whether a separate INTEGRATOR is owed, the guard-class
+rule settles whose hand may hold the REVIEW — so this lane stamps
+`verifying` rather than `done` and leaves the verifier fields empty. **A
+lane does not get to award itself the review its own format says another
+hand must hold**, and stamping `done` would claim a guarantee that was
+never taken.
+
+### CORRECTIONS TO THE DISPATCH BRIEF
+
+1. **`lanes live right now: none` was stale.** At `2026-08-31T~01:30Z` on
+   Mac.lan there were FOUR live lanes: this one, `T-162-s1`
+   (`[docs/decisions, docs/rooms]`), `T-182` (`[docs/CONVENTIONS.md]`) and
+   `T-184` (`app-agent`). All disjoint from this fence, so the dispatch
+   was still sound — but the brief's own rule says a live-environment
+   fact is re-read at dispatch, and this one had moved.
+2. **The e2e lane's default port was NOT free.** 14520 was held by
+   another lane's server (`node`, pid 56458, `127.0.0.1:14520`), so this
+   lane ran on **14678** and the drill bench on **14679**, both derived
+   from the card id and both lsof-read to zero rows before use. This is
+   `lane-protocol.md` rule 4's MACHINE-scoped surface in the wild: four
+   lanes with disjoint fences, disjoint trees and disjoint indexes still
+   contend for one defaulted port.
+3. **`review:` was empty on a guard-class card** — see above.
 
 ## Verdicts
 
