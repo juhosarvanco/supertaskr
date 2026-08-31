@@ -283,11 +283,22 @@ GATE not owed** (no `method/**`). **DOCS GATE FIRES.**
 | `npm run health` (tools/e2e) | 3 | designed — 3 unread, 4 unkept; 7 inside, 0 drifting, 0 breached |
 | DOCS GATE, RANGE RULE pair | 1 | FIRES — owed `cargo test` + `npm test` from tools/e2e/ |
 | `cargo test` (app/src-tauri) | **0** | 598 passed, 0 failed, 4 ignored; lib suite **4.10s**, under the 9.5s cliff |
-| `npx vitest run` (lib/parser) | 1 | 343/344 — the ONE failure is the inherited dangling reference |
-| `npm test` (tools/e2e) | 1 | 337 passed, 4 failed (4.6m) — all four inherited, see below |
+| `npx vitest run` (lib/parser) | 1 | 343 passed, 1 failed — the inherited dangling reference |
+| `npm test` (tools/e2e) | 1 | 337 passed, 4 failed (4.6m) — all inherited |
+| `npm test` (app) | 1 | 1075 passed, 2 failed — both inherited |
 
-**THE FIVE RED BODIES ARE INHERITED FROM THE BASE, PROVEN THREE WAYS
-RATHER THAN ASSERTED**, and none is mine:
+**A CORRECTION THIS LANE MADE AGAINST ITSELF, AND IT IS THIS CARD'S OWN
+CLASS.** The DOCS GATE run at the CONVENTIONS-only diff named TWO owed
+suites, and the notes above were first written to that answer. Re-run
+at the FINAL tip — once `docs/tasks` had entered the diff — it named
+**four**, adding `npm test from app/` and `npx vitest run from
+lib/parser/`. A gate answer is a function of the diff it was asked
+about, and the earlier answer was true of a diff that was no longer
+mine. The fourth suite was then run rather than inferred, and it is the
+one that found two more inherited bodies.
+
+**THE SEVEN RED BODIES ARE INHERITED FROM THE BASE, PROVEN RATHER THAN
+ASSERTED**, and none is mine:
 
 1. base `8443a78` already carries `blocked_by: [T-190]` at line 9 of
    `T-126-s2`;
@@ -300,6 +311,13 @@ RATHER THAN ASSERTED**, and none is mine:
 The four e2e failures are `parse-error-details` counts (60→61 three
 times, 1→2 once) — the signature the DOCS GATE bullet already records
 for `9c64cd8`, a board change surfacing in bodies about frame geometry.
+The app suite's two name the cause outright (*"no live card names a
+blocker that does not exist"*), and its log mentions `T-190` **4**
+times and this lane's two new cards **0** times. The parser suite
+stayed at exactly **1 failed / 343 passed** before and after those two
+cards were added — the count did not move 1→2, which is what shows they
+are clean by the REFERENCE-RESOLVING instrument and not merely by the
+frontmatter one.
 
 **Merge forecast against current main `8df0dcc`** (the role file's
 preferred form, since a lane's own tip cannot answer for the commit
