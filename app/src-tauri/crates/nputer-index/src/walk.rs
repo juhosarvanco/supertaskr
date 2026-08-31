@@ -128,8 +128,9 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     //     call is load-bearing: `starts_with` compares COMPONENTS, so a
     //     `..` satisfies it textually and only `canonicalize` collapses it.
     //     **HERE IT IS INERT, MEASURED RATHER THAN ARGUED** — `T-196` ran
-    //     `let canon = path.to_path_buf();` in its place and the crate
-    //     stayed at 256/0 over 12 targets, exit 0. The reason is structural:
+    //     `let canon = path.to_path_buf();` in its place at BOTH refs and
+    //     the crate stayed green: 256/0 over 12 targets at `e6a97d2`, 257/0
+    //     over 12 with gate A's body added. The reason is structural:
     //     `ignore` builds every path by descending real directory entries
     //     from an already-canonical root, so no `..` and — with gates A and
     //     B standing — no unresolved link component ever reaches this line.
@@ -463,6 +464,56 @@ mod tests {
     //                               `lstat` over `stat`, the classic form
     //                               of this defect, which nothing in this
     //                               crate pinned before.
+    //
+    // **THE GATE A ROWS, ADDED BY `T-196`** — the refusal `T-186` measured,
+    // named and routed rather than pinned. Same discipline and the same
+    // bench shape: a DETACHED scratch worktree at a named commit with its
+    // own `CARGO_TARGET_DIR` at `<scratch>/target`, one side mutated per
+    // arm, the mutation read back with `git -C ... diff` before the suite
+    // ran, restored with `git restore --source=<ref> --staged --worktree`
+    // and the restoration proved by sha256 against `git show <ref>:`.
+    // **CRATE SCOPE, `--no-fail-fast`, 12 TARGETS EVERY ARM** — the flag
+    // and the printed target count are what keep these numbers about the
+    // crate rather than about the lib target, per the warning above.
+    //
+    //   follow_links -> true       -> BEFORE this body existed: NOTHING
+    //   [at `e6a97d2`]                reds. exit 0, **256/0 over 12**. The
+    //                                 card's premise, RE-DERIVED at this
+    //                                 lane's own base rather than inherited
+    //                                 — `T-186` measured the same nothing
+    //                                 at 252/0, four bodies having landed
+    //                                 between the refs. The figure moved;
+    //                                 the finding did not.
+    //   follow_links -> true       -> AFTER: exit 101, **256 passed / 1
+    //   [at this body's commit]       failed over 12**, and the one failure
+    //                                 is THIS BODY, ALONE — poison shape
+    //                                 SIX's ask answered mechanically, at
+    //                                 the whole-suite scope the catalogue
+    //                                 requires. `symlinks_are_never_
+    //                                 followed_file_or_dir` and
+    //                                 `tests/containment.rs::outside_tree_
+    //                                 symlinks_never_enter_the_graph` both
+    //                                 stay GREEN under it: their links
+    //                                 point OUTSIDE, so a walker that
+    //                                 descends them meets gate D on the far
+    //                                 side. **That is why this fixture had
+    //                                 to point INSIDE.** The failure is the
+    //                                 whole finding:
+    //                                   left: ["node_modules/pkg/index.ts",
+    //                                          "real.ts"]
+    //                                  right: ["real.ts"]
+    //   canonicalize -> to_path_buf-> NOTHING reds. exit 0, **256/0 at
+    //   [both refs]                   `e6a97d2`, 257/0 at this body's
+    //                                 commit**. Taken because `T-208` found
+    //                                 this same call LOAD-BEARING in
+    //                                 `read_contained` one module over, and
+    //                                 an accounting that omitted it there
+    //                                 became a card. **HERE IT IS INERT**,
+    //                                 and structurally so — see the gate
+    //                                 key above. Recorded, not routed: a
+    //                                 provably behaviour-neutral line is
+    //                                 the `starts_with` case, not the
+    //                                 `T-208` case.
     //
     // **AND SHAPE SIX'S ASK IS ANSWERED AT THE STRICTER SCOPE.** The
     // catalogue asks for the WHOLE suite, not the lib suite; all three
