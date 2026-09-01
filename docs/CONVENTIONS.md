@@ -210,6 +210,14 @@
   ("347 when the verifier re-stamped it") is HISTORY and cannot go
   stale; a present-tense value can. Derived by a blind verifier from a
   defect it had already been shown three times.
+  **AND HERE IS WHY THE PEOPLE WRITING THIS RULE DOWN KEEP BREAKING IT.**
+  Five instances landed on one card in one sitting, **twice inside a table
+  built to demonstrate the rule** — which is not carelessness. **`main` is
+  the natural way to write "and it is still true NOW", and "now" is the
+  one thing a committed document cannot hold.** So when you reach for a
+  moving symbol, you are reaching for a tense, not a ref: say `currently`
+  in words with NO figure beside it, or pin the sha and let the sentence
+  be about that commit forever.
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.

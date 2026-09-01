@@ -61,7 +61,15 @@ to 441, because committing this card added a card to the board it counts.
 IT CITED.** It said a census of the board *"cannot be pinned by care"* —
 a verifier measured that and it is false:
 
-    live flat T-*.md at 57f2962 -> 441   c5c2b47 -> 441   main -> 441
+    live flat T-*.md at 57f2962 -> 441   c5c2b47 -> 441   c733d75 -> 441
+
+*(That third column said `main` for one commit — **the second time on this
+card that a bare `main` appeared inside a table built to demonstrate the
+rule against it.** Caught by the verifier, who declined to ask for the
+amendment and pointed at the pattern instead: `main` is the natural way to
+write "and it is still true NOW", and **"now" is the one thing a committed
+document cannot hold.** That is why the rule keeps being broken by the
+people writing it down, and it is in `docs/CONVENTIONS.md`.)*
 
 **A census IS pinnable.** It moves only when a card is added or removed,
 and a card's own creation is a one-time +1; after that commit the figure
