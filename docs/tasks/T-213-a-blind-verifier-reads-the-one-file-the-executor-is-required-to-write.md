@@ -102,3 +102,66 @@ survived — *"I read the executor's notes, not the diff; `brief.mjs` and
 remedy: *"that call is yours, not mine."* **A contaminated verifier that
 announces itself is worth more than a clean one that does not know it is
 contaminated**, and the protocol should make that the cheap path.
+
+## CORROBORATION — 2026-09-01, A SECOND CHANNEL, AND THIS ONE IS NOT IN THE REPOSITORY AT ALL
+
+Appended per TASK-FORMAT rather than filed beside. It matters because it
+shows the hole is **wider than the ref**, which is what this card
+currently reads as being about.
+
+### The instance
+
+`T-210`'s blind verifier, unprompted, in its phase 1:
+
+> My session scratchpad is shared across sessions and its directory
+> listing incidentally exposed **filenames** belonging to this lane's
+> executor — `T-210-notes.md`, `T-210-drill-ledger.json`,
+> `T-210-dogfood.sh`, `T-210-suggestion-draft.md` — and others. I opened
+> none of them and will not before phase 2. Names only, no content.
+> Recording it rather than pretending the listing did not happen.
+
+**The filenames alone carry lane context.** `drill-ledger.json` says a
+drill happened AND was recorded as an artifact. `dogfood.sh` says the
+implementation was run against a real tree rather than a fixture.
+`suggestion-draft` says something was routed rather than absorbed. A
+verifier assembling its attack set has learned three facts about the
+diff before opening it.
+
+### Why it belongs on THIS card and not beside it
+
+This card's finding is that *"read only the card"* is blind only when the
+worktree sits at the base ref — the leak channel being the REF. This
+instance has nothing to do with the ref, the worktree, or the
+repository. **The channel is a shared scratch directory on the host**,
+which no wording of the reading instruction reaches and which the
+dispatching seat did not think about when it sent two agents into the
+same session.
+
+So the generalisation this card should carry is not *cut the bench at the
+base*. It is: **blindness is a property of every channel between the two
+seats, and the instruction enumerates one of them.** The base ref closes
+the loudest channel. It does not close the others, and nobody had
+enumerated the others.
+
+### Attribution
+
+The dispatching seat's defect, not the verifier's. It dispatched an
+executor and its verifier into a shared scratchpad without considering
+that a directory listing is a channel. **The verifier handled it exactly
+right** — opened nothing, declared it before the verdict, and named the
+specific filenames so the leak's size is auditable rather than a vague
+admission.
+
+**Fifth leak into a blind phase in this sitting**, and the first that was
+not something the dispatcher SAID. The other four — lane ports, card line
+counts, tip lengths, shipped-code knowledge — were all fixable by writing
+a better brief. This one is not.
+
+### What a fix would have to reach
+
+- A scratch location DERIVED per agent rather than shared per session —
+  the same construction-over-check rule `T-217` records, applied to a
+  directory instead of a port.
+- Or an explicit instruction that a verifier does not list its own scratch
+  directory, which is the weaker answer: it asks a seat to not-look rather
+  than removing the thing to look at.
