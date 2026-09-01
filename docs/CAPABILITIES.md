@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **536 behaviours** — 534 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **547 behaviours** — 545 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -134,6 +134,17 @@ Census: **536 behaviours** — 534 extracted sentences + 2 named-not-extracted (
 - a discrepancy answers ONE and a preflight that could not run answers THREE
 - a failed preflight GATES the fence write — no manifest for a card whose claims fell
 - a ruling discharges at a token boundary — suffixes and .map twins stay refused
+- a TRUE marked claim PASSES, and the three counts are printed apart
+- T-211's instance: the flag the frozen list does not carry is CAUGHT
+- T-203's instance is a CASE POLICY, and all three of its readings are pinned
+- T-210's instance is REPORTED, never merged into what was checked
+- the near miss: a TRUE quote under the WRONG file name is a finding
+- a marker nobody can evaluate refuses AND counts NOT CHECKABLE, never HELD
+- a marker-shaped line the prose reader cannot see is REPORTED, never a claim
+- a quoted-claim finding is dischargeable by a dated ruling naming its quote
+- the marker is read through a bullet and emphasis, and the FIRST quoted run is the needle
+- the file check collapses the wrap on both sides and keeps the capitals
+- the unmarked report is paragraph-scoped, and a marker's own needle is not in it
 
 ## checkout-currency
 

@@ -172,6 +172,24 @@ export const CLAIM_CLASSES = Object.freeze([
       "commit written in any form but the published stamp: prose like 'at commit <hash>' is " +
       "invisible, only the '@ <hash>' spelling is read (the verdict's first correction)",
   },
+  {
+    key: "quotes",
+    checks:
+      "every CARD CLAIM marker — a quoted string plus the tracked file the card names as its " +
+      "source — read against that file's own bytes at HEAD, whitespace collapsed on both sides " +
+      "so a hard-wrapped document still matches, and compared with the capitals the card wrote",
+    refuses:
+      "a marked quote the named file does not contain, a marker whose source is not a tracked " +
+      "file at HEAD, and a marker no quoted string can be read out of",
+    cannot:
+      "any assertion the card did not MARK, and the unmarked ones are COUNTED and LISTED rather " +
+      "than passed over: a quoted sentence beside a path the card names could have been marked " +
+      "and was not, and a quoted sentence naming no source at all — an assertion about a " +
+      "platform, a version or a runtime — is not a string in any file, so it belongs to the " +
+      "verifier's phase-one ground truth and is reported here rather than settled. It opens ONE " +
+      "named file and never the tree, so a true quote under a wrong file name is a finding and " +
+      "not a pass; and it judges OCCURRENCE, never meaning",
+  },
 ]);
 
 /**
@@ -246,6 +264,329 @@ export const CRITERIA_HEADING = /^#{2,}\s+Acceptance criteria\s*$/i;
  * that permits.
  */
 export const PREFLIGHT_RULING = /^\s*PREFLIGHT RULING \((\d{4}-\d{2}-\d{2})\):\s*(\S.*)$/;
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE MARKED CLAIM (T-230) — the one shape this preflight can settle
+ * about a card's SENTENCES rather than its structure.
+ *
+ * THE CARD CHOSE THE CHEAP SHAPE ON PURPOSE, and said what it does not
+ * reach: *"the cheap shape is a quoted string plus the file it claims to
+ * be in; the expensive shape is parsing prose. Prefer the cheap one and
+ * say what it does not reach."* So a card ASKS for a check by writing
+ * one plain body line:
+ *
+ *     CARD CLAIM (docs/CONVENTIONS.md): "an edit script's success is a GATE"
+ *
+ * ── WHY OPT-IN IS WHAT MAKES IT ABLE TO REFUSE ───────────────────────
+ * The other arms here are automatic and therefore had to be measured
+ * narrow before they could refuse anything. This one is written by the
+ * author, so refusing on it costs nobody an unasked-for refusal: the
+ * marker IS the request. That is the whole of why the CHECKED half
+ * refuses and the UNMARKED half only reports.
+ *
+ * ── AND THE GRAMMAR IS THE RULING'S, NOT A SECOND ONE ────────────────
+ * `PREFLIGHT RULING (<date>):` already publishes this shape — a
+ * parenthesised SOURCE, a colon, a payload — so this is a second member
+ * of one family rather than a new dialect. The bracketed half is a date
+ * there and a file here, which is exactly the difference between the two
+ * questions.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The marker, read from the PROSE reading — so a marker written inside a
+ * fenced or indented block is NOT a claim.
+ *
+ * **THAT IS THE OPPOSITE CHOICE FROM `card-figures.mjs`'s `card:` STAMP,
+ * AND THE REASON IS THE HAZARD EACH ONE ACTUALLY HAS.** A `card:` stamp
+ * is audited inside transcripts because nobody quotes one by accident. A
+ * marker of this shape gets quoted constantly — by the notes that
+ * document it, by the card that filed it, by any room arguing about it —
+ * so reading raw blocks would turn documentation ABOUT the marker into
+ * live claims. A fenced or indented block is how a document says *this
+ * is an example*, and the escape-hatch that opens is closed by REPORTING
+ * every sighting the prose reader could not see rather than by widening
+ * the reader (see `unseenMarkers`).
+ *
+ * A leading list bullet and surrounding emphasis are accepted, because
+ * the ruling's own history is that the natural way to write one is the
+ * way that silently does nothing (T-160's verdict, correction four).
+ */
+export const CARD_CLAIM = /^\s{0,3}(?:[-*]\s+)?\**CARD CLAIM \(([^)\n]{1,200})\):\s*(\S.*)$/;
+
+/** The marker's opening, loose, for the sighting report. */
+export const CARD_CLAIM_LOOSE = /CARD CLAIM\s*\(/;
+
+/**
+ * A quoted run: straight or typographic double quotes. **THE NEEDLE THIS
+ * FINDS IS THE FIRST ONE IN THE PAYLOAD**, stated rather than left to be
+ * discovered, so a marker carrying two quoted runs has one deterministic
+ * reading.
+ */
+export const QUOTED_RUN = /"([^"\n]+)"|“([^”\n]+)”/g;
+
+/**
+ * The same question asked of a MARKER's payload, where a backticked run
+ * counts too.
+ *
+ * **TWO CONSTANTS FOR ONE-LOOKING QUESTION, WITH THE REASON MEASURED**
+ * (T-057 forbids a second copy of one derivation; these are two
+ * derivations). Inside a marker the author has already said *this is the
+ * needle*, and this repository writes a flag or an identifier in
+ * backticks — the `T-211` instance is exactly that shape. In ORDINARY
+ * PROSE a backticked run is how this project writes every path, command
+ * and symbol it mentions: over the live board the double-quoted runs
+ * number in the thousands and the backticked ones would swamp them, so
+ * the unmarked report would be unreadable and therefore unread.
+ */
+export const MARKED_NEEDLE = /"([^"\n]+)"|“([^”\n]+)”|`([^`\n]+)`/g;
+
+/**
+ * The shortest quoted run the unmarked report treats as an assertion.
+ * Measured over the live board: below this the hits are initials, single
+ * words and punctuation samples rather than sentences anybody meant as a
+ * claim.
+ */
+export const MIN_QUOTE_CHARS = 4;
+
+/**
+ * Whitespace collapsed, both sides of every comparison.
+ *
+ * **THIS IS LOAD-BEARING AND THE RULE IS THIS REPOSITORY'S OWN.** Every
+ * governing document here is hard-wrapped at about seventy columns, so a
+ * phrase search is a search for a line break nobody chose — docs/
+ * CONVENTIONS.md's A CITATION NAMES A SYMBOL, NOT A LINE carries the
+ * measurement and the remedy in one sentence: *"search the COLLAPSED
+ * text, the way every mechanical reader of this file does before it
+ * matches anything."* Without this the arm would refuse a card quoting a
+ * sentence that IS in the file, which is the one failure a guard may not
+ * have.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function collapse(text) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** How much of a quoted run the unmarked listing prints before eliding. */
+export const QUOTE_CLIP_CHARS = 72;
+
+/**
+ * A quoted run, cut to one printed line.
+ *
+ * **THE ELISION IS A DISPLAY RULE AND IS MARKED AS ONE.** The listing is
+ * a census of what was NOT checked, so the reader needs one line per
+ * claim more than they need the whole sentence; nothing compares against
+ * this string, and every string that IS compared — the marked needles —
+ * is printed whole.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function clip(text) {
+  return text.length <= QUOTE_CLIP_CHARS ? text : `${text.slice(0, QUOTE_CLIP_CHARS)}...`;
+}
+
+/**
+ * @typedef {object} MarkedClaim
+ * @property {number} line
+ * @property {string} source  the path the marker names, backticks stripped
+ * @property {string} quote   the needle, "" when no quoted run was found
+ * @property {string} payload everything after the colon, as written
+ */
+
+/**
+ * Every CARD CLAIM marker the card's prose carries.
+ *
+ * @param {string} cardText
+ * @returns {MarkedClaim[]}
+ */
+export function cardClaims(cardText) {
+  /** @type {MarkedClaim[]} */
+  const out = [];
+  for (const { line, text } of cardLines(cardText).lines) {
+    const m = CARD_CLAIM.exec(text);
+    if (m === null) continue;
+    const payload = /** @type {string} */ (m[2]).trim();
+    const first = [...payload.matchAll(MARKED_NEEDLE)][0];
+    const quote = first === undefined ? "" : (first[1] ?? first[2] ?? first[3] ?? "");
+    out.push({
+      line,
+      source: /** @type {string} */ (m[1]).trim().replace(/^`+|`+$/g, ""),
+      quote: collapse(quote),
+      payload,
+    });
+  }
+  return out;
+}
+
+/**
+ * Every line that LOOKS like a marker and is not read as one — a marker
+ * inside a fenced or indented block, or one whose punctuation missed.
+ *
+ * **A SIGHTING IS REPORTED AND NEVER REFUSED ON**, because the same
+ * shape is how this marker gets documented, and a guard that refuses its
+ * own documentation is a guard somebody turns off. What it removes is
+ * the SILENCE: T-160's verdict recorded that a ruling written as a list
+ * item is invisible to its reader and the author cannot tell, and that
+ * failure is the reason this function exists one card later.
+ *
+ * @param {string} cardText
+ * @returns {{ line: number, text: string }[]}
+ */
+export function unseenMarkers(cardText) {
+  const body = cardBody(cardText);
+  const offset = cardText.slice(0, cardText.length - body.length).split(/\r?\n/).length - 1;
+  const raw = body.split(/\r?\n/);
+  const prose = proseOnly(body).split(/\r?\n/);
+  /** @type {{ line: number, text: string }[]} */
+  const out = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const line = /** @type {string} */ (raw[i] ?? "");
+    if (!CARD_CLAIM_LOOSE.test(line)) continue;
+    if (CARD_CLAIM.test(/** @type {string} */ (prose[i] ?? ""))) continue;
+    out.push({ line: offset + i + 1, text: collapse(line) });
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} LooseQuote
+ * @property {number} line
+ * @property {string} text
+ * @property {boolean} nearPath a repository path sits in the same paragraph
+ */
+
+/**
+ * Every quoted run the card did NOT mark, split by whether a repository
+ * path sits in the same paragraph.
+ *
+ * **THE PARAGRAPH IS THE UNIT AND THE HARD WRAP IS WHY.** A card wrapped
+ * at seventy columns puts the quote on one line and the file it is about
+ * on the next, so a line-scoped join answers about the typesetting. Both
+ * were measured over the live board: paragraph scope names roughly
+ * half of all quoted runs, at a per-card median a reader can act on,
+ * where the line-scoped join names a fifth of them and drops the ones
+ * the wrap split.
+ *
+ * @param {string} cardText
+ * @param {PathOracle} oracle
+ * @returns {LooseQuote[]}
+ */
+export function unmarkedQuotes(cardText, oracle) {
+  const { lines } = cardLines(cardText);
+  /** @type {LooseQuote[]} */
+  const out = [];
+  /** @type {CardLine[]} */
+  let para = [];
+  const flush = () => {
+    if (para.length === 0) return;
+    const joined = para.map((l) => l.text).join("\n");
+    let nearPath = false;
+    for (const m of joined.matchAll(REPO_PATH_TOKEN)) {
+      const token = /** @type {string} */ (m[1]).replace(/[.,;:)\]}`'"]+$/, "");
+      if (oracle.tops.has(/** @type {string} */ (token.split("/")[0]))) {
+        nearPath = true;
+        break;
+      }
+    }
+    for (const l of para) {
+      if (CARD_CLAIM.test(l.text)) continue;
+      for (const m of l.text.matchAll(QUOTED_RUN)) {
+        const text = collapse(/** @type {string} */ (m[1] ?? m[2] ?? ""));
+        if (text.length < MIN_QUOTE_CHARS) continue;
+        out.push({ line: l.line, text, nearPath });
+      }
+    }
+    para = [];
+  };
+  for (const l of lines) {
+    if (l.text.trim() === "") {
+      flush();
+      continue;
+    }
+    para.push(l);
+  }
+  flush();
+  return out;
+}
+
+/**
+ * @typedef {object} ClaimVerdict
+ * @property {"held" | "false" | "unreadable" | "untracked" | "directory"} state
+ * @property {string} detail
+ */
+
+/**
+ * Does the file the marker names contain the string the marker quotes?
+ *
+ * **CASE-SENSITIVE, AND THE DIRECTION OF THE ERROR IS THE ARGUMENT.**
+ * This repository's capitals are load-bearing — docs/CONVENTIONS.md asks
+ * a citation to carry *"its ORDINAL and its own capitals"* — and the
+ * founding instance turns on exactly that: the sentence a card claimed a
+ * governing document *"ALREADY SAYS"* is today in that document in a
+ * different voice, so a case-folded matcher would report HELD for a
+ * document that says something else. A case difference is a real
+ * discrepancy, it is dischargeable by a dated ruling on the card, and
+ * the alternative error is silent. The case-insensitive answer is
+ * reported in the DETAIL, so the author is told which of the two they
+ * are looking at rather than left to search.
+ *
+ * @param {string} root
+ * @param {PathOracle} oracle
+ * @param {MarkedClaim} claim
+ * @returns {ClaimVerdict}
+ */
+export function checkClaim(root, oracle, claim) {
+  if (claim.quote === "") {
+    return {
+      state: "unreadable",
+      detail:
+        "the marker carries no quoted string, so there is no needle to look for. A check the " +
+        "author asked for and nobody could read is not a check that passed.",
+    };
+  }
+  const rel = claim.source.replace(/^\.\//, "").replace(/\/+$/, "");
+  if (!oracle.tracked.has(rel)) {
+    if (oracle.dirs.has(rel)) {
+      return {
+        state: "directory",
+        detail: "the source names a directory, and a directory holds no string to be quoted from.",
+      };
+    }
+    return {
+      state: "untracked",
+      detail:
+        "no tracked file sits at that path at HEAD, so the source this claim rests on cannot be " +
+        "opened. An untracked source is not a file whose contents this checkout can vouch for.",
+    };
+  }
+  let haystack;
+  try {
+    haystack = readFileSync(path.join(root, rel), "utf8");
+  } catch (err) {
+    throw new CardPreflightError(
+      `card-preflight: ${rel} is tracked at HEAD and could not be read — ` +
+        `${err instanceof Error ? err.message : String(err)}. This run is not a claim about the ` +
+        "card; it is a claim about this checkout.",
+    );
+  }
+  const flat = collapse(haystack);
+  if (flat.includes(claim.quote)) {
+    return { state: "held", detail: `the named file contains it at HEAD, whitespace collapsed.` };
+  }
+  const folded = flat.toLowerCase().includes(claim.quote.toLowerCase());
+  return {
+    state: "false",
+    detail: folded
+      ? "the named file does not contain it as written — a case-insensitive search DOES find it, " +
+        "so the capitals are the discrepancy. Quote the document's own capitals, or rule the " +
+        "difference on the card."
+      : "the named file does not contain it at HEAD, whitespace collapsed on both sides. Only " +
+        "that ONE file was opened: a string that lives somewhere else in the tree is exactly the " +
+        "near miss this arm exists to catch.",
+  };
+}
 
 /**
  * WHICH SLUG OWNS A PATH — the live slug map, read the other way round.
@@ -973,6 +1314,119 @@ export async function preflight(ctx, options = {}) {
     );
   }
   recs.push(blank());
+
+  /* ── CLASS SIX — the quoted claims (T-230) ──────────────────────── */
+  recs.push(
+    note("CLAIM CLASS quotes — every MARKED quote, read against the one file the card names"),
+  );
+  const viaQuotes = `${card.file}, its CARD CLAIM markers, against the named file at HEAD`;
+  const marked = cardClaims(cardText).map((claim) => ({
+    claim,
+    verdict: checkClaim(ctx.root, oracle, claim),
+  }));
+  const heldClaimsList = marked.filter((m) => m.verdict.state === "held");
+  const falseClaims = marked.filter((m) => m.verdict.state === "false");
+  const uncheckable = marked.filter(
+    (m) => m.verdict.state !== "held" && m.verdict.state !== "false",
+  );
+  recs.push(
+    value(`marked claims: ${marked.length}`, tree(ctx, viaQuotes)),
+    value(`  CHECKED and HELD: ${heldClaimsList.length}`, tree(ctx, viaQuotes)),
+    value(`  CHECKED and FALSE: ${falseClaims.length}`, tree(ctx, viaQuotes)),
+    value(`  NOT CHECKABLE: ${uncheckable.length}`, tree(ctx, viaQuotes)),
+    note("  THREE COUNTS AND NEVER ONE. A census that adds what it checked to what it could not"),
+    note("  check reports coverage it does not have, which is the defect this project has already"),
+    note("  paid for twice — and a sum would hide the whole of what this arm cannot reach."),
+  );
+  for (const m of heldClaimsList) {
+    recs.push(
+      value(
+        `CHECKED and HELD line ${m.claim.line}: ${m.claim.source} contains "${m.claim.quote}"`,
+        tree(ctx, viaQuotes),
+      ),
+    );
+  }
+  for (const m of falseClaims) {
+    recs.push(
+      value(
+        `QUOTED CLAIM NOT IN FILE line ${m.claim.line}: ${m.claim.source} does not contain ` +
+          `"${m.claim.quote}"`,
+        tree(ctx, viaQuotes),
+      ),
+      note(`  ${m.verdict.detail}`),
+    );
+    raise(
+      m.claim.quote,
+      `QUOTED CLAIM NOT IN FILE at ${card.file} line ${m.claim.line}: the card marks ` +
+        `"${m.claim.quote}" as a quote from ${m.claim.source}, and ${m.verdict.detail}`,
+    );
+  }
+  for (const m of uncheckable) {
+    recs.push(
+      value(
+        `NOT CHECKABLE line ${m.claim.line}: ${m.verdict.state} source ${m.claim.source}`,
+        tree(ctx, viaQuotes),
+      ),
+      note(`  ${m.verdict.detail}`),
+    );
+    raise(
+      m.claim.source === "" ? m.claim.payload : m.claim.source,
+      `UNCHECKABLE CARD CLAIM at ${card.file} line ${m.claim.line}: the marker names ` +
+        `${JSON.stringify(m.claim.source)} and ${m.verdict.detail} A marker is a REQUEST for a ` +
+        "check, so one nobody can evaluate is counted NOT CHECKABLE and refuses as well — the " +
+        "alternative is a card that asks to be checked, is not, and reads as though it were.",
+    );
+  }
+  for (const s of unseenMarkers(cardText)) {
+    recs.push(
+      value(
+        `marker-shaped line the prose reader does not see, line ${s.line}: ${s.text}`,
+        tree(ctx, `${card.file}, its raw body against its prose reading`),
+      ),
+      note("  an example in a block reads as an example and is not a claim; a marker meant as a"),
+      note("  claim has to be a plain body line. Reported rather than refused on, because this is"),
+      note("  also exactly how the marker gets documented."),
+    );
+  }
+  const loose = unmarkedQuotes(cardText, oracle);
+  const besidePath = loose.filter((q) => q.nearPath);
+  const noSource = loose.filter((q) => !q.nearPath);
+  recs.push(
+    value(
+      `quoted and NOT marked, beside a path this card names: ${besidePath.length}`,
+      tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
+    ),
+    value(
+      `quoted and NOT marked, naming no source at all: ${noSource.length}`,
+      tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
+    ),
+  );
+  for (const q of besidePath) {
+    recs.push(
+      value(
+        `NOT CHECKED, a path is named nearby, line ${q.line}: "${clip(q.text)}"`,
+        tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
+      ),
+    );
+  }
+  for (const q of noSource) {
+    recs.push(
+      value(
+        `NOT CHECKED, no source named, line ${q.line}: "${clip(q.text)}"`,
+        tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
+      ),
+    );
+  }
+  recs.push(
+    note("  EVERY UNMARKED QUOTE IS LISTED AND NONE OF THEM IS REFUSED ON. The first set could"),
+    note("  have named a source and did not: mark it and this arm will settle it. The second set"),
+    note("  names none, and some of it never could — an assertion about a platform, a version or"),
+    note("  a runtime is not a string in a file, and the honest answer for that class is the"),
+    note("  verifier's phase-one ground truth rather than a scanner pretending to settle it."),
+    note("  This list carries quotations as well as assertions and does not separate them, which"),
+    note("  is the prose parsing the cheap shape was chosen to avoid."),
+    blank(),
+  );
 
   /* ── THE RULINGS ────────────────────────────────────────────────── */
   const ruled = rulings(cardText);
