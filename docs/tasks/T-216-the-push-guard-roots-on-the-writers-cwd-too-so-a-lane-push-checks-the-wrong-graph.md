@@ -69,7 +69,25 @@ wrongly"). So the honest options are narrower and each costs something:
 - WHERE the guard cannot identify the pushed repository, the decline
   SHALL be observable rather than silent (`T-199`'s third criterion,
   applied to the guard beside it).
+- **THE ONE-CARD-VERSUS-TWO RULING SHALL BE ARGUED, NOT MERELY STATED**,
+  and SHALL name what it leaves behind, so a narrowing is visible rather
+  than silent. **A split is legitimate; a split is not a route to
+  softening the four criteria above it.**
+- WHERE the implementation leans on an ANCESTRY test it SHALL state the
+  limit recorded below: ancestry is answerable from a stale checkout only
+  because a WORKTREE shares refs, and a stale CLONE consults a stale
+  `main` and answers wrongly.
 - Verification: headless.
+
+**THE LAST TWO WERE APPENDED BELOW THIS SECTION AND ARE NOW INSIDE IT.**
+Everything that parses a card scopes to this heading, and the parser's
+`splitSections` DROPS content under unknown `##` headings entirely — so
+two normative SHALLs sat where no mechanism could see them and a
+preflight would have passed the card green with them uncounted.
+**Measured, not assumed: 5 SHALLs in the card, 3 inside this section,
+before the move.** It is the CARD AUDIT class one turn later — the same
+gap, now swallowing requirements about the WORK rather than claims about
+the world.
 
 ## CARD AUDIT — 2026-09-01, the first run of orchestrator 5b's new step
 
@@ -201,10 +219,7 @@ That is the right call and it leaves a divergence between brief and card,
 which TASK-FORMAT says is resolved on the card. **Resolved here, in the
 card's favour, because the argued ruling is what was actually wanted:**
 
-- THE ruling SHALL be argued, not merely stated — one card or two, with
-  the reason.
-- IT SHALL name what it leaves behind, so a narrowing is visible rather
-  than silent.
-- **A SPLIT IS NOT A ROUTE TO SOFTENING THE FOUR ORIGINAL CRITERIA.**
-  Ruling "two cards" is legitimate; using the ruling to drop scope this
-  card already carries is not.
+**These three obligations now live in `## Acceptance criteria` above,
+where the machinery can see them. They were here, below every heading a
+parser reads, until this card`s verifier measured that they were
+invisible.**
