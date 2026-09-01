@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **420 behaviours** — 418 extracted sentences + 2 named-not-extracted (listed at the end) — across 33 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **443 behaviours** — 441 extracted sentences + 2 named-not-extracted (listed at the end) — across 34 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -301,6 +301,32 @@ Census: **420 behaviours** — 418 extracted sentences + 2 named-not-extracted (
 
 - real Enter on a focused blocker chip re-targets without closing
 - real Space on a focused blocker chip re-targets without closing
+
+## landing-gate
+
+- the integration branch this gate reads is docs/CONVENTIONS.md's, not this hook's
+- the integration-ref candidates are dispatch-brief's, spelling for spelling
+- locating a card by its FILENAME agrees with its frontmatter id, over the whole board
+- every live card's `touches:` line is the one shape this gate reads
+- `touchesLineOf` is `frontmatterLineOf` bound to one field, over every live card
+- containment is `within`'s, including the case string equality gets wrong
+- the expansion is the parser's own `expandFence`, answer for answer
+- a lane branch's card id takes the SUFFIX when the branch carries one
+- THE POSITIVE CONTROL: one armed lane, refused then allowed, remote asserted both ways
+- the refusal names EVERY out-of-fence path, not the first one
+- a NON-lane push is unaffected by this arm
+- a checkpoint sync is not charged with main's own paths — the diff is merge-base-to-tip
+- a lane that has NOT synced is not charged with main's paths either
+- a card with an ABSENT `touches:` has its push refused WHOLE
+- a card with an EMPTY `touches:` has its push refused WHOLE
+- a manifest edited INSIDE the lane does not widen this gate
+- a lane editing its OWN card's `touches:` does not widen this gate either
+- a lane whose card is not on the integration branch is refused, never widely allowed
+- an unresolvable token makes the gate say it did NOT judge, and never that it looked
+- a checkout that carries no board is SILENT, not announced — the gate has no question there
+- THE MERGE MOMENT: a merge carrying an out-of-fence path is refused, then a clean one lands
+- the merge's fence is read from its FIRST parent, so a widened card in the merge does not widen it
+- a merge whose lane branch is gone is announced as unjudged, never allowed silently
 
 ## lane-fence
 

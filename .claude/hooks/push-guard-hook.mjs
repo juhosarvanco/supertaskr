@@ -68,6 +68,11 @@ function request() {
 }
 
 const decision = decide(request());
+// NOTICES ARE SAID WHATEVER THE VERDICT IS, and before it. A landing-gate
+// cannot-compare is not a verdict about this push — it is a statement
+// that part of it went UNJUDGED — so it must reach the seat whether the
+// graph check then allowed or refused (T-212).
+for (const notice of decision.notices ?? []) process.stderr.write(`${notice}\n`);
 if (decision.verdict === "block") {
   process.stderr.write(`${decision.reason}\n`);
   process.exit(2);
