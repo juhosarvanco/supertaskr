@@ -235,6 +235,19 @@
   sentence**: a MECHANISM belongs in a governing document (this file has
   room; STATE does not), a record takes the INSTANCE, and shaving words
   is how a rule ends up in neither (T-146, T-225).
+- **RUN A GIT-FIXTURE SUITE ONCE IN A BORROWED ENVIRONMENT BEFORE YOU
+  BELIEVE IT.** A local green proves the suite passes *on the machine
+  that wrote it*, which is the weakest claim available. One line
+  reproduces the runner's git environment — no global identity, no
+  default-branch setting:
+
+      HOME=$(mktemp -d) GIT_CONFIG_GLOBAL=/dev/null \
+      GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch \
+      GIT_CONFIG_VALUE_0=master npx playwright test tests/<spec>
+
+  **It would have caught both of the CI reds this rule was written
+  from**, in seconds, before either push. A suite that is green here and
+  red there is not flaky; it is measuring the machine.
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an

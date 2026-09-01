@@ -211,3 +211,46 @@ Fixed at nine call sites across `push-guard`, `push-checks` and
 `gate-run`, and **verified under BOTH branch settings** — 95 passing with
 `main` and 95 with `master`. Written into `docs/CONVENTIONS.md` as a rule
 rather than left in this record (`T-146`).
+
+## FOURTH INSTANCE, SAME NIGHT — `user.email`, AND I FIXED ITS SIBLING WITHOUT SWEEPING
+
+Appended rather than filed beside, per TASK-FORMAT.
+
+Hours after the `init.defaultBranch` instance above was fixed, CI went
+red again on two `lane-lock.spec.ts` bodies:
+
+    Error: the sync failed: Committer identity unknown
+    *** Please tell me who you are.
+
+**The fixture's own `git()` helper passed `-c user.email` and
+`-c user.name` correctly.** Two `git merge` calls bypassed that helper
+with a raw `spawnSync`, so they inherited the MACHINE's global identity —
+present on this developer's box, absent on a CI runner.
+
+Same class, same night, same file family: **a fixture reading machine
+config instead of stating what it needs.**
+
+### The part that is worth more than the fix
+
+**I fixed the branch-name instance and did not sweep for siblings.** The
+diagnosis named the class correctly — *a value global to the machine that
+a test defaulted instead of specifying* — and then the remedy was applied
+to exactly the one call the failure pointed at. Git identity is the same
+class, in the same suite, and it was sitting there.
+
+**A class named and a class swept are different acts, and only the second
+one ends anything.** Cost: a second red CI cycle and a second push.
+
+### The construction that closes both
+
+Neither instance needed a better rule — the rule was already written.
+What was missing was a way to ASK the other environment. One line:
+
+    HOME=$(mktemp -d) GIT_CONFIG_GLOBAL=/dev/null \
+    GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch \
+    GIT_CONFIG_VALUE_0=master npx playwright test tests/<spec>
+
+Run against the fixed suite: **13 passed.** Run against either defect it
+reproduces the exact CI failure in seconds. Now in `docs/CONVENTIONS.md`
+as a rule, because a machine-scoped surface is not closed by remembering
+it — it is closed by making the other machine cheap to ask.

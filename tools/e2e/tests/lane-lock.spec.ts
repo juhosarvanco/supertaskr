@@ -85,21 +85,19 @@ function scratchRoot(): string {
   return dir;
 }
 
+// THE FIXTURE'S IDENTITY, IN ONE PLACE AND PASSED TO EVERY COMMITTING
+// CALL. A raw `spawnSync("git", …)` that skips these inherits the
+// MACHINE's global identity — present on a developer's box, absent on a
+// CI runner — so the same body passes here and fails there with
+// `Committer identity unknown`. Two merges below did exactly that, and
+// it is T-217's class: a fixture reading machine config instead of
+// stating what it needs, the same shape as an unpinned default branch.
+const IDENT = ["-c", "user.email=t210@example.invalid", "-c", "user.name=T-210 fixture"];
+
 function git(cwd: string, args: string[]): string {
-  return execFileSync(
-    "git",
-    [
-      "-C",
-      cwd,
-      "-c",
-      "user.email=t210@example.invalid",
-      "-c",
-      "user.name=T-210 fixture",
-      ...NO_BACKGROUND_MAINTENANCE,
-      ...args,
-    ],
-    { encoding: "utf8" },
-  );
+  return execFileSync("git", ["-C", cwd, ...IDENT, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+    encoding: "utf8",
+  });
 }
 
 const ID = "T-910";
@@ -547,7 +545,7 @@ test("THE CHECKPOINT SYNC SUCCEEDS with the layer active — drop, merge, re-arm
   //    commit, never the merge commit, merged into the lane's own branch.
   const merge = spawnSync(
     "git",
-    ["-C", fx.lane, ...NO_BACKGROUND_MAINTENANCE, "merge", "--no-edit", checkpoint],
+    ["-C", fx.lane, ...IDENT, ...NO_BACKGROUND_MAINTENANCE, "merge", "--no-edit", checkpoint],
     { encoding: "utf8" },
   );
   expect(merge.status, `the sync failed: ${merge.stderr}`).toBe(0);
@@ -604,7 +602,7 @@ test("a checkpoint sync SILENTLY DISARMS the layer when the drop is skipped — 
   const checkpoint = landAndCheckpoint(fx, "export const main = 3;\n");
   const merge = spawnSync(
     "git",
-    ["-C", fx.lane, ...NO_BACKGROUND_MAINTENANCE, "merge", "--no-edit", checkpoint],
+    ["-C", fx.lane, ...IDENT, ...NO_BACKGROUND_MAINTENANCE, "merge", "--no-edit", checkpoint],
     { encoding: "utf8" },
   );
   expect(merge.status, `git took an EACCES from the lock: ${merge.stderr}`).toBe(0);
