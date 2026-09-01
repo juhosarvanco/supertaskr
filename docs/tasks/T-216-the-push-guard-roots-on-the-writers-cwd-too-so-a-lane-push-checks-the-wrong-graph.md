@@ -223,3 +223,55 @@ card's favour, because the argued ruling is what was actually wanted:**
 where the machinery can see them. They were here, below every heading a
 parser reads, until this card`s verifier measured that they were
 invisible.**
+
+## A FIGURE, A WRONG DIAGNOSIS OF IT, AND A WRONG DIAGNOSIS OF THAT
+
+Three seats' worth of correction on one number, kept because the last
+turn is the interesting one.
+
+**The measurements**, at this card's own refs:
+
+    ref        grep -c SHALL    grep -o '\bSHALL\b'
+    aea2255          5                  5
+    40c1d50          8                  6
+
+**The inflator is the PLURAL, not line counting.** `SHALL` matches
+`SHALLs`, and the paragraph added at `40c1d50` carried two: *"two
+normative SHALLs sat where no mechanism could see them"* and *"5 SHALLs
+in the card."* Six requirements plus two plural mentions is eight.
+
+> **The paragraph written to DOCUMENT the invisible-SHALLs defect is what
+> inflated the SHALL count.**
+
+`\bSHALL\b` — the form `isEars` already uses — answers 6.
+
+### What each seat got wrong, in order
+
+1. **The dispatcher reported "8 and 8, zero outside."** Internally
+   consistent, and section-scoped at that ref `grep -c` is also 8,
+   because the plural-bearing paragraph was inside the section. **The
+   load-bearing half — ZERO OUTSIDE — was correct, and the move had
+   worked.**
+2. **The verifier read the discrepancy as undermining the claim.** It did
+   not.
+3. **The dispatcher diagnosed its own figure as `grep -c` counting lines,
+   multi-line bullets counting twice.** FALSE — the two methods agree at
+   `aea2255`.
+4. **The verifier diagnosed the dispatcher's figure as repeated from
+   memory rather than derived.** Also false. It was measured; the method
+   was just wider than the mechanism.
+
+**Only step 4's author measured before writing step 4's correction was
+needed** — which is how the plural was found at all.
+
+### Why it is on the card rather than left in the exchange
+
+Because the wrong diagnosis reached a COMMIT MESSAGE (`b6f694e`) and
+commits do not change. Anyone reading that message will find a root cause
+this card can now say is false. Nothing wrong ever reached the criteria —
+checked, and the only greps in this card are the `findCheckoutRoot(cwd)`
+citation and the audit's own point about greps over line numbers.
+
+**And a verifier that corrects its own hashed record against its own
+interest is worth more than one that is never wrong**, which is the
+reason this section exists rather than a quiet fix.
