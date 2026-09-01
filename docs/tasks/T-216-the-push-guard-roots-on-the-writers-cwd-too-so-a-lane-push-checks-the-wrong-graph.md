@@ -107,8 +107,11 @@ had succeeded.
 **The guard never ran. Not once, across an entire sitting of pushes.**
 
 The dispatching session's project directory is a git WORKTREE checked out
-at `4ec229c` — **334 commits behind main**, predating `T-199`, `T-203`,
-`T-209` and `T-212`. Its `.claude/settings.json` registers only the
+at `4ec229c` — **334 behind main at `9eb3ec8`, 335 at `4c33125`**
+(two seats read those two numbers an hour apart and BOTH WERE RIGHT; a
+bare count here manufactures a disagreement between correct readings,
+which is the third time in two days an unanchored figure has done that) —
+predating `T-199`, `T-203`, `T-209` and `T-212`. Its `.claude/settings.json` registers only the
 lane-fence hook, and `.claude/hooks/push-guard-hook.mjs` **does not exist
 there at all.**
 
