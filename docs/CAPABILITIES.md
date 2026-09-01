@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **503 behaviours** — 501 extracted sentences + 2 named-not-extracted (listed at the end) — across 36 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **535 behaviours** — 533 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -134,6 +134,41 @@ Census: **503 behaviours** — 501 extracted sentences + 2 named-not-extracted (
 - a discrepancy answers ONE and a preflight that could not run answers THREE
 - a failed preflight GATES the fence write — no manifest for a card whose claims fell
 - a ruling discharges at a token boundary — suffixes and .map twins stay refused
+
+## checkout-currency
+
+- THE SIMULATOR'S OWN POSITIVE CONTROL: a checkout that registers a Bash hook has it RUN, and the marker proves it
+- THE MEASURED INSTANCE: a checkout registering no Bash matcher consults ZERO hooks on a push, and the push still happens
+- ARM B: a registration that looks fully configured but whose hook FILE is absent FAILS OPEN — node starts, exits 1, and 1 is not 2
+- ARM B is REFUSED by the catcher, which an inspection of the registration alone would pass
+- the live repository's own registration is the shape the fixture models: a Bash matcher pointing at a hook file that EXISTS
+- the fixture's HEAD IS an ancestor of the integration tip, and IS behind it — the motivating instance's own properties, measured
+- A REACHABILITY TEST PASSES THE MOTIVATING INSTANCE AND THE CATCHER REFUSES IT — both measured in one fixture
+- the catcher is not a commit COUNT either: a checkout behind only on files no guard is made of is CURRENT
+- THE CATCHER FIRES FROM OUTSIDE: the judged checkout carries no copy of it, no hooks, and is not written to
+- a checkout with NO settings.json at all is refused, naming every hook the integration branch registers
+- THE POSITIVE CONTROL: a checkout at the tip is CURRENT, in the same fixture that refuses its stale sibling
+- the stale-clone limit is stated in the ARTIFACT, and printed on every run whatever the verdict
+- THE LIMIT DEMONSTRATED: the same stale content answers CURRENT from a stale clone and STALE from a sharing vantage
+- THE REFERENCE COMES FROM THE VANTAGE, PROVEN AGAINST A TARGET WHOSE OWN `main` DISAGREES
+- THE THIRD VERDICT: a vantage that cannot see the judged HEAD answers UNKNOWN, never CURRENT
+- a matcher selects by the harness's own rule: a regex over the tool name, an empty matcher is a wildcard, an uncompilable one selects nothing
+- a registration is read out of settings.json with its event, its matcher and the program it names
+- the guard surface is `.claude`, and it is the surface the arm actually walks
+- the CLI answers in the house's four codes: 0 current, 1 a verdict, 2 called wrong
+- the CLI's default VANTAGE is this file's own checkout, never the current directory
+- THE CATCHER IS WIRED: the dispatch ritual's arming step INVOKES it, and a stale session checkout reaches the seat cutting the lane
+- A STALE SESSION CHECKOUT IS A FINDING: the arming step reports it where a dispatch's refusals are read
+- THE WIRING'S POSITIVE CONTROL: the same arming step says CURRENT for a current checkout, and adds no finding
+- PRODUCTION'S OWN ENVIRONMENT: with CLAUDE_PROJECT_DIR UNSET, a stale session checkout IS caught at arm time
+- a DECLARED checkout still wins over the derived one — the two signals have an order, and it is said
+- UNANSWERED is reserved for the case that genuinely has no signal — outside this repository altogether
+- THE SWEEP NEEDS NOTHING DECLARED: it names a stale checkout no environment variable and no cwd could have pointed at
+- THE SWEEP AT ARM TIME: a stale sibling checkout is named even when the checkout being typed in is CURRENT
+- the repository probe is ONE fact checked twice — the catcher and the push guard ask with the same path
+- sessionCheckout derives the WORKTREE ROOT, never the raw working directory, and never outside this repository
+- the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it
+- the exported EXIT object is the single authority — the npm script re-types no number
 
 ## crescendo
 

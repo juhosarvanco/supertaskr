@@ -4,13 +4,13 @@ title: The shared scratchpad has no per-lane naming, so one seat's script silent
 feature: F-06
 milestone: 4
 priority: 3
-status: suggested
+status: done
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 builder:
 verifier:
-built_by:
+built_by: architect/integrator seat
 verified_by:
 review:
 ---
@@ -90,3 +90,23 @@ bullet beside the PORT RULE is the cheap one.
   attached is one the next seat reads as advice.
 - Verification: headless — this is a documentation fix and no code change
   should be invented for it.
+
+## Disposition — DONE at the T-216-s1 merge, 2026-09-01
+
+**Closed by writing the bullet it asked for**, beside the PORT RULE in
+`docs/CONVENTIONS.md`, as the card's own disposition hint prescribed:
+*"promote, and ride it on the next card that opens docs/CONVENTIONS.md —
+it is one bullet beside the port rule."*
+
+**Written directly at the integration seat rather than through a lane**,
+and recorded as such: the class was already ruled by `lane-protocol.md`
+rule 4, the ask was a SPELLING and not a mechanism, the fence
+(`docs/CONVENTIONS.md`) was disjoint from every live lane, and the four
+suites plus the docs gate are the check.
+
+**HELD UNTIL AFTER THE VERDICT, DELIBERATELY.** `docs/CONVENTIONS.md` is
+read by seven specs and a verifier was mid-re-verification; moving that
+document would have handed it a red of the dispatcher's to attribute.
+That is rule 4's own *"a second runner CERTIFIES"* reasoning applied to a
+DOCUMENT rather than a suite, and it is the reason this card closed at the
+merge rather than an hour earlier.

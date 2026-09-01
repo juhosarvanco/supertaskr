@@ -292,6 +292,21 @@
   advisory DB — the one network-touching command; idempotent since
   T-153-s13, because the cargo cache restores ~/.cargo/bin and a
   restored binary once stopped every run at this step).
+- **SCRATCH RULE — NAME EVERY SCRATCH FILE FOR THE LANE THAT OWNS IT**
+  (`<purpose>-<card id>.<ext>`, e.g. `battery-T-216-s1.sh`). **The
+  scratchpad is ONE directory shared by every seat a session spawns**, so
+  a defaulted filename is a machine-scoped surface exactly like a port,
+  and `method/lane-protocol.md` rule 4 already rules the class — *derive
+  from the lane, never default*. **The spelling is here because the class
+  was ruled and the spelling was not**, which is the same gap the PORT
+  RULE below closes for ports. Measured: an executor and a verifier each
+  wrote `battery.sh`; the executor ran what it believed was its own and
+  drove the VERIFIER'S bench, at the verifier's ref, appending to its
+  ledger. **Two legs ran and `gate-run`'s solo lock REFUSED the other
+  two**, naming the holding pid (T-088-s4 working as designed) — the only
+  thing in the tree that recorded a second runner at all. **The collision
+  is symmetric and the fault is the DISPATCHER'S**: whoever hands two
+  seats one directory owns it.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config

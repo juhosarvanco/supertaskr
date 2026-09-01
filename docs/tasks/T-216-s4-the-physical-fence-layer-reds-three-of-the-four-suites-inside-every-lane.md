@@ -4,7 +4,7 @@ title: The physical fence layer reds THREE of the four suites inside every lane 
 feature: F-06
 milestone: 4
 priority: 2
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
 touches: [tools/e2e, app/src-tauri]
@@ -130,3 +130,23 @@ run the battery" and there should not be one.
   bits — a fixture that measures the layer must not be built out of a
   tree the layer has already touched.
 - Verification: headless.
+
+## Triage — PROMOTED at the T-216-s1 merge, 2026-09-01
+
+**Promoted at the stamp while the context was hot** (orchestrator 2), and
+it is the highest-value of the two because of WHAT it costs: **no lane can
+measure its own battery.** Three of four suites red inside any fence
+excluding `app/`, `lib/` and `method/`, from `EACCES`/`PermissionDenied`
+raised by T-210's physical layer against four bodies that write tracked
+files.
+
+**Confirmed from the other direction at this merge**: the same suites run
+GREEN in the unarmed integration checkout. That is the third-direction pin
+this project used for T-216's own reds — armed lane red, unarmed tip
+green, unarmed integration green — so the attribution is to the ARMING and
+not to any diff.
+
+**Its sharpest sub-finding is that T-210's own positive control is
+defeated by T-210**: `lane-lock.spec.ts` builds its fixture with
+`cpSync`, which copies mode bits, so the control inherits the very
+read-only state it exists to detect.

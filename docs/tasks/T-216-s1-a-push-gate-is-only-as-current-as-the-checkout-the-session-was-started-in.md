@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-216
 blocked_by: []
 touches: [.claude, tools/e2e, .github]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
