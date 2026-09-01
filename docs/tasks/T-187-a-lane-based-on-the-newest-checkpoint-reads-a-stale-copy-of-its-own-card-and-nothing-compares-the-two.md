@@ -179,3 +179,48 @@ seat on 2026-08-31 after **five** collisions in one night.
 duplicate-`id:` sweep over the MERGED tree — read from the authoritative
 field, never from filenames, and run once against a planted positive so
 it cannot be vacuous — is what catches the ones that slip.
+
+## CORROBORATION — 2026-09-01, from `T-223`'s lane: the stale copy is not only the lane's OWN card, and it reaches a SUITE
+
+Appended rather than filed beside, per `method/tasks/TASK-FORMAT.md`:
+this card owns the class. **The instance widens it in two directions at
+once, which is why it is worth attaching.**
+
+**ONE — the stale card is a SIBLING's, not the lane's own.** This card's
+mechanism is stated about the card the brief is FOR. A lane also carries
+a base-old copy of every OTHER live lane's card, and
+`tools/e2e/scripts/dispatch-brief.mjs` computes fence disjointness by
+crossing a MACHINE-scoped list (the live worktrees, read now) with a
+CHECKOUT-scoped one (the card files in the tree it runs in, read at the
+base). So the ledger's verdict is a function of the reader's BASE, and a
+sibling's fence narrowed on main after this lane was cut is invisible
+here.
+
+**TWO — the consequence is a RED, not merely a stale instruction.** Two
+`session-economics.spec.ts` bodies spawn `brief.mjs` against the live
+repository and assert exit 0, so the manufactured finding fails them —
+and the refusal NAMES SIBLING LANES, so the lane that meets it
+reasonably concludes the dispatch was defective when the wave was
+disjoint the whole time.
+
+**MEASURED, both sides, in one detached bench on Mac.lan, same minute,
+same live worktree list — the ONLY variable is the checkout's card
+copies:**
+
+    session-economics.spec.ts at 28924c7 (T-223's base)  2 failed / 8 passed, exit 1
+    session-economics.spec.ts at aad0cf7 (main's tip)    10 passed,           exit 0
+
+The one card that moved: `T-230` declares `touches: [tools/e2e]` at
+`28924c7` and `touches: [tools/e2e/scripts/card-preflight.mjs,
+tools/e2e/tests/card-preflight.spec.ts, tools/e2e/fixtures]` at
+`aad0cf7`. Five findings, one stale line.
+
+**WHAT THIS ADDS TO THE REMEDY.** This card's remedy is about the brief
+telling a dispatching seat that a card moved above its derived base. The
+same comparison would serve a LANE and a SUITE: any reader crossing the
+live worktree list with card copies is making a claim about main using a
+tree that is not main, and the honest forms are to read those cards from
+the integration ref (which is what `landing-gate.mjs` already does for
+exactly this reason) or to say WHICH ref the card set was read at, so a
+finding can be attributed instead of believed. The symptom half is
+corroborated on `T-143-s1`.

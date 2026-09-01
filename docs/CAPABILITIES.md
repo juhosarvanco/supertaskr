@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **535 behaviours** — 533 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **536 behaviours** — 534 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -362,6 +362,7 @@ Census: **535 behaviours** — 533 extracted sentences + 2 named-not-extracted (
 - a manifest edited INSIDE the lane does not widen this gate
 - a lane editing its OWN card's `touches:` does not widen this gate either
 - a lane whose card is not on the integration branch is refused, never widely allowed
+- THE DISCLOSED LIMIT, MEASURED: a lane moves local `main` with `update-ref` and this gate follows it
 - an unresolvable token makes the gate say it did NOT judge, and never that it looked
 - a checkout that carries no board is SILENT, not announced — the gate has no question there
 - THE MERGE MOMENT: a merge carrying an out-of-fence path is refused, then a clean one lands

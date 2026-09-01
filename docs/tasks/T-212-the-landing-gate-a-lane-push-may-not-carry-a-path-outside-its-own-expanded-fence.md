@@ -58,6 +58,32 @@ matches a lane branch —
    widening lands — but the ABSOLUTE was wrong, which is exactly what
    rule 5 means by *"a guard described as total is worse than no
    guard."* `T-223` owns the behaviour change;
+
+   *AND THE PROPERTY THIS STEP ACTUALLY RESTS ON, WRITTEN BESIDE THE
+   STRUCK CLAUSE RATHER THAN OVER IT* (`T-223`, 2026-09-02 — a record is
+   appended, never rewritten). **Main is the ref the lane's own COMMITS
+   cannot move.** That is narrower than the struck clause, it is all this
+   step needs, and it is what git actually guarantees: committing on a
+   lane branch advances the LANE branch, so no commit a lane makes —
+   including one that rewrites its own card's `touches:`, and including
+   one that rewrites the manifest — changes what `main` NAMES. The two
+   bodies that measure it are `landing-gate.spec.ts`'s *"a manifest
+   edited INSIDE the lane does not widen this gate"* and *"a lane editing
+   its OWN card's `touches:` does not widen this gate either"*. What a
+   lane CAN do is move the ref without committing at all, and that is now
+   a DISCLOSED LIMIT rather than a contradicted absolute — limit 6 in
+   `landing-gate.mjs`'s header, driven end to end by that spec's *"THE
+   DISCLOSED LIMIT, MEASURED: a lane moves local `main` with
+   `update-ref` and this gate follows it"*. `T-223` also WEIGHED
+   preferring `refs/remotes/origin/main` here and REFUSED the reorder:
+   measured at git 2.50.1 from a lane worktree, `git update-ref
+   refs/remotes/origin/main` and a plain `git fetch .
+   +<sha>:refs/remotes/origin/main` both exit 0, so that ref carries no
+   checked-out-elsewhere guard at all and the reorder would have been a
+   weaker guard wearing a stronger one's costume — and it would refuse a
+   lane widened by the route this gate's own `ROUTE` text prescribes,
+   since a fast-path-A amendment reaches origin only after a push and a
+   fetch;
 3. intersect with **`T-209`'s one implementation** — this card takes the
    push call site; the integrator ritual takes the merge call site on
    the RANGE RULE's integrator pair; a second copy of the intersection

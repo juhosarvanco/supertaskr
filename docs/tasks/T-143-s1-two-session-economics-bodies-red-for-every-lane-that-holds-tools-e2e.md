@@ -242,3 +242,60 @@ the schedule, not the diff.
 Filed as a corroboration and NOT as a sibling card, per
 `method/tasks/TASK-FORMAT.md`: *"a second instance is worth more attached
 to the first than filed beside it."*
+
+## CORROBORATION — 2026-09-01, from `T-223`'s lane: the same two bodies, and the trigger is REF SKEW rather than the live lane list
+
+**A FOURTH INSTANCE, AND THE NEW INFORMATION IS THAT THE MACHINE'S LANE
+LIST WAS INNOCENT.** Every instance above turns on something true of the
+repository at the moment the suite ran — a live lane holding the fixture
+card's fence, or a lane whose card could not be read. This one turns on
+something true only of the CHECKOUT THE SUITE RAN IN.
+
+`brief.mjs` crosses a MACHINE-scoped list (the live worktrees) with a
+CHECKOUT-scoped one (the card files in the tree it runs in), so its
+disjointness verdict is a function of the reader's BASE. In `T-223`'s
+lane, based at `28924c7`, it refused with five findings:
+
+    fences are not disjoint: T-216-s4 tools/e2e/tests/token-scan.spec.ts
+      against T-230 tools/e2e
+    fences are not disjoint: T-216-s4 tools/e2e/tests/lane-lock.spec.ts
+      against T-230 tools/e2e
+    fences are not disjoint: T-223 tools/e2e/tests/landing-gate.spec.ts
+      against T-230 tools/e2e
+    fences are not disjoint: T-223 tools/e2e/scripts/dispatch-brief.mjs
+      against T-230 tools/e2e
+    fences are not disjoint: T-230 tools/e2e
+      against T-236 tools/e2e/scripts/docs-scan.mjs
+
+**Every one of those five is an artefact of one stale card.** `T-230`
+declares `touches: [tools/e2e]` at `28924c7` and
+`touches: [tools/e2e/scripts/card-preflight.mjs,
+tools/e2e/tests/card-preflight.spec.ts, tools/e2e/fixtures]` at main
+`aad0cf7` — narrowed in a stamp commit that landed after this lane was
+cut. **At main's card set the whole wave is pairwise disjoint**, and
+there is no finding to report.
+
+**MEASURED BOTH WAYS IN ONE DETACHED BENCH, ON THE SAME MACHINE AND IN
+THE SAME MINUTE**, so the live worktree list is held constant and the
+only variable is the checkout's own card copies:
+
+    session-economics.spec.ts at 28924c7  ->  2 failed / 8 passed, exit 1
+    session-economics.spec.ts at aad0cf7  ->  10 passed,           exit 0
+
+**SO THE PRECONDITION THESE BODIES DEPEND ON IS NARROWER THAN THIS CARD
+HAS RECORDED AND ALSO STRICTLY HARDER TO MEET.** Not *"no live lane
+holds my fixture card's fence"*, not *"the live lane list is READABLE"*,
+but **"this checkout's copy of every live lane's card is current with
+main"** — which no lane can secure, because `method/lane-protocol.md`
+rule 2 requires it to be cut from a known-green base and the board moves
+between checkpoints. That is `T-187`'s mechanism (a lane reads a stale
+copy of a card) arriving in a SUITE rather than in a brief, and it is
+corroborated there too.
+
+**THE PRACTICAL COST IS THE ATTRIBUTION, NOT THE RED.** A lane meeting
+these two bodies sees a refusal naming SIBLING LANES and reasonably
+concludes the dispatch was defective; the wave was in fact disjoint the
+whole time, and the seat that narrowed `T-230` had already done the
+right thing. Arm 3 (synthesise the fixture repository) is the only arm
+of the three above that removes this too, because a synthesised
+repository has both a lane list and a card set of its own.

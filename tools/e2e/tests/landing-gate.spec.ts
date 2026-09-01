@@ -602,6 +602,92 @@ test("a lane whose card is not on the integration branch is refused, never widel
   expect(remoteRef(fx, fx.laneRef)).toBe(before);
 });
 
+test("THE DISCLOSED LIMIT, MEASURED: a lane moves local `main` with `update-ref` and this gate follows it", () => {
+  // THE TWO BODIES ABOVE PROVE WHAT A LANE'S COMMITS CANNOT DO; THIS ONE
+  // PROVES WHAT A LANE'S REF WRITES CAN (T-223). `integrationRefCandidates`
+  // resolves the LOCAL branch first, so the fence this gate enforces is
+  // whatever the card says at whatever commit local `main` names — and
+  // moving a local ref writes no commit, which is exactly why the header's
+  // old claim ("a ref the lane cannot move") was false. The property the
+  // gate actually rests on is narrower and true: no COMMIT the lane makes
+  // moves that ref.
+  //
+  // Nothing here is a proposal to close the hole — it takes a deliberate
+  // plumbing command and the same seat could `--no-verify` past the hook
+  // entirely. The body exists so the limit is MEASURED rather than argued,
+  // and so it reds if a future change ever makes the gate immune by
+  // accident and leaves the header claiming a weakness it no longer has.
+  const fx = fixture("local-ref-rewrite");
+  const before = remoteRef(fx, fx.laneRef);
+  const narrow = git(fx.root, "rev-parse", "main").trim();
+
+  // The WIDER card, committed on a branch of its own. Committing it here
+  // rather than on the lane is what makes the ref write the only act under
+  // test: at this moment `main` still declares `[tools/e2e]`.
+  // The token is a FILE and not the bare `docs`, deliberately: measured
+  // here, `expandFence` answers `docs` UNUSABLE (it would swallow the
+  // unfenceable `docs/tasks`), and a fence carrying an unusable token
+  // reaches this gate's announced cannot-compare — which allows the push
+  // for a reason that has nothing to do with the ref this body moved.
+  git(fx.root, "checkout", "-q", "-b", "widened", "main");
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs/ARCHITECTURE.md]");
+  const wide = commit(fx, {}, "a card that fences docs/ARCHITECTURE.md as well");
+  git(fx.root, "checkout", "-q", fx.lane);
+
+  // ARM ONE — an ordinary refusal, with `main` where the dispatcher left
+  // it. Without this the allow below could be a gate that never armed.
+  commit(fx, { "docs/ARCHITECTURE.md": "outside the fence main declares\n" }, "outside");
+  const laneTip = git(fx.root, "rev-parse", "HEAD").trim();
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "the fixture did not reproduce an ordinary refusal").toBe(true);
+  expect(refusal.stderr).toContain("docs/ARCHITECTURE.md");
+  expect(refusal.stderr, "the refusal read a fence that is not main's").toContain("touches: [tools/e2e]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(before);
+
+  // THE ASYMMETRY, EXECUTED RATHER THAN QUOTED. `main` is checked out in a
+  // SECOND worktree, which is the state a real lane is in and the state
+  // that arms the porcelain's guard: `git branch -f` refuses, `git
+  // update-ref` does not. A fixture on one worktree would measure neither.
+  const wtRoot = mkdtempSync(path.join(os.tmpdir(), "T-223-main-worktree-"));
+  SCRATCH.push(wtRoot);
+  git(fx.root, "worktree", "add", "--quiet", path.join(wtRoot, "main"), "main");
+  const porcelain = spawnSync(
+    "git",
+    ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "branch", "-f", "main", wide],
+    { encoding: "utf8" },
+  );
+  expect(porcelain.status, "`git branch -f` moved a branch checked out in another worktree").not.toBe(0);
+  expect(String(porcelain.stderr), "the refusal was not the checked-out-elsewhere guard").toContain(
+    "used by worktree",
+  );
+  expect(git(fx.root, "rev-parse", "main").trim(), "the refused porcelain moved main anyway").toBe(narrow);
+
+  // …and the plumbing that carries no such guard.
+  git(fx.root, "update-ref", "refs/heads/main", wide);
+  expect(git(fx.root, "rev-parse", "main").trim(), "`git update-ref` did not move main").toBe(wide);
+
+  // ARM TWO — the SAME lane commit, pushed again. Nothing about the lane
+  // changed between the two attempts, which is the assertion that makes
+  // this a measurement of the ref and not of anything else.
+  expect(git(fx.root, "rev-parse", "HEAD").trim(), "the lane moved between the two attempts").toBe(
+    laneTip,
+  );
+  const followed = pushThroughGuard(fx, fx.laneRef);
+  expect(
+    followed.refused,
+    `the gate did not follow the moved ref, so this limit no longer exists and the header ` +
+      `claims a weakness it does not have: ${followed.stderr}`,
+  ).toBe(false);
+  // AND IT ENFORCED THE WIDENED FENCE RATHER THAN FAILING TO JUDGE IT. An
+  // announced cannot-compare would allow the same push for a completely
+  // different reason, and reading that as "the fence moved" is the mistake
+  // this assertion exists to refuse.
+  expect(followed.stderr, "the allow was a cannot-compare, not an enforced widened fence").not.toContain(
+    "DID NOT JUDGE",
+  );
+  expect(remoteRef(fx, fx.laneRef), "the followed push did not reach the remote").not.toBe(before);
+});
+
 /* ───────────── the third verdict: cannot compare, said out loud ──────── */
 
 test("an unresolvable token makes the gate say it did NOT judge, and never that it looked", () => {
