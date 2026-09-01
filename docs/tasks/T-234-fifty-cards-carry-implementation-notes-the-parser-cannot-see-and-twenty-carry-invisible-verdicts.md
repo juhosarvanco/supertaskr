@@ -32,18 +32,45 @@ own practice produced — matches nothing, and the section vanishes.
 
 ## The census, measured through the real parser, not by grep
 
-Parsed all 440 live cards with `splitSections` and compared against the
-headings actually present in each body:
+Parsed every live card with `splitSections` and compared against the
+headings actually present in each body. **Measured at `c5c2b47`; re-derive
+rather than quote:**
 
-    live cards                                              440
+    live cards (flat docs/tasks/T-*.md)                     441
     cards whose notes heading the parser CANNOT see           50
     cards whose verdict heading the parser CANNOT see         20
+    cards in BOTH sets                                        12
+    UNION — cards losing at least one section                 58
 
-**Eleven percent of the board has implementation notes that no program can
-read**, and one card in twenty two has an unreadable verdict. Confirmed on
-a single card end to end: sections present were `[preamble,
-acceptanceCriteria]` only, and `implementationNotes` came back `DROPPED`
-with the text sitting in the file, perfectly legible to a human.
+**Thirteen percent of the board loses a section the file visibly
+contains.** Confirmed on a single card end to end: sections present were
+`[preamble, acceptanceCriteria]` only, and `implementationNotes` came back
+`DROPPED` with the text sitting in the file, perfectly legible to a human.
+
+**THE DENOMINATOR IS `docs/tasks/T-*.md` FLAT, WHICH IS THE PROJECT'S OWN
+DEFINITION OF LIVE** (`brief.mjs --state` uses it). `docs/tasks/rejected/`
+holds a further 41 cards; including them inflates both the numerator and
+the denominator and answers a different question. Two seats censused this
+independently and disagreed at 58/441 against 67/479 — **the whole gap was
+the rejected directory**, and neither figure was arithmetically wrong.
+
+**AND THIS CARD'S OWN DENOMINATOR MOVED WHILE IT WAS BEING WRITTEN**, from
+440 to 441, because committing this card added a card to the board it was
+counting. That is `docs/CONVENTIONS.md`'s moving-tip rule in its purest
+form: **a census of the board, stated in a document committed to the
+board, cannot be pinned by care.** Hence the ref above and the re-derive
+criterion below.
+
+## Two headings that are not spellings at all
+
+    T-025-s4  ## Verdicts Queues for the next standing sitting with this evidence.
+    T-123     ## Verdicts (continued) — THE SECOND PASS
+
+The first is a prose sentence that acquired a `##` — the heading swallowed
+the line, and that card's entire verdicts section is unreachable. **Both
+are inside the 20.** A tolerant matcher must decide deliberately whether
+it accepts these; a normalisation that swallows the first would be reading
+a typo as an intent.
 
 ## Why nothing has ever gone red
 
