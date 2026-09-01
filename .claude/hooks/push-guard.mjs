@@ -30,7 +30,7 @@
  * this card's third acceptance criterion and the reason the codes are
  * read individually instead of as "non-zero".
  *
- * ── IT FAILS OPEN, AND THAT IS THE DESIGN ────────────────────────────
+ * ── IT FAILS OPEN ON INABILITY, AND THAT IS THE DESIGN ───────────────
  * A guard that cannot run says so and stands aside — the lane-fence
  * hook's lane-less shape, for the same reason. The seat that pushes is
  * the seat that dispatches, merges and checkpoints; a guard that can
@@ -38,8 +38,27 @@
  * it inconveniences turns it off. So: no cargo, no toolchain, an
  * unreadable request, a checkout that is not this repository's, a check
  * that exits 2 or 3 or does not start at all — every one of those is an
- * ALLOW with the reason stated. The ONLY refusal is a check that ran and
- * answered 1.
+ * ALLOW with the reason stated. The only GRAPH refusal is a check that
+ * ran and answered 1.
+ *
+ * ── THREE ARMS, AND THE THIRD ONE FAILS CLOSED (T-203) ───────────────
+ * This file began as one guard and now carries three. The paragraph above
+ * is the GRAPH arm's rule and stays the rule for two of the three:
+ *
+ *   THE GRAPH (T-167-s8) — `index --check` said 1. Fails open otherwise.
+ *   THE LANDING GATE (T-212) — a path outside the card's fence. Its
+ *     cannot-compare is a NOTICE, never a verdict.
+ *   THE PUSH BATTERY (T-203) — the CHEAP CHECKS, which fail open when
+ *     they cannot run, and the VERDICT TOKEN, WHICH DOES NOT.
+ *
+ * A MISSING TOKEN REFUSES, and the asymmetry is this card's first
+ * criterion rather than drift. Every other arm allows when it cannot
+ * ANSWER a question; an absent token is not an unanswered question, it is
+ * the answer — nothing was measured — and it is exactly the state this
+ * guard exists to catch. A guard that allowed there would pass its own
+ * subject. The remedy is one command, the refusal prints it, and the cost
+ * is real: the full battery is paid once per PUSH, which is this card's
+ * whole design (commits stay fast; pushes become unlyable).
  *
  * ── NO ESCAPE HATCH, AND THE ARGUMENT IS ON THE CARD ─────────────────
  * This card asked for an escape spelling *"for the rare intentional push
@@ -65,7 +84,14 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
+import {
+  TOKEN_REL_PATH,
+  headTree,
+  judgeToken,
+  readToken,
+} from "./gate-token.mjs";
 import {
   INTEGRATION_BRANCH,
   laneLandingVerdict,
@@ -201,6 +227,51 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
   "no-command-to-read",
   "landing-gate-cannot-compare",
 ]);
+// T-203's TWO ANNOUNCEMENTS ARE DELIBERATELY NOT IN THAT LIST, and the
+// reason is what the list actually is. It is a FILTER on a Decision's own
+// `code`, consulted when a returned decision might or might not deserve
+// saying; the cheap checks' `could not run` and the token's `no tree to
+// key against` are NOTICES, which `decide` collects and the runner prints
+// whatever the verdict is. Adding them would put two entries in a list
+// nothing consults, and a census with dead rows is a census a reader
+// stops trusting. Each is greppable by its own opening sentence instead.
+
+/**
+ * THE CHEAP CHECKS (T-203) — the script, the flag and the four codes.
+ *
+ * ── WHY A SUBPROCESS AND NOT AN IMPORT ───────────────────────────────
+ * The checks read the whole live board, which needs `docs-scan.mjs` and
+ * `dispatch-brief.mjs`. Importing those here would load them on EVERY
+ * `Bash` tool call in a session, and this hook's stated property is that
+ * a command which is not a push costs node's startup and a regex. So they
+ * are SPAWNED, exactly as `cargo` is, and exactly as `landing-gate.mjs`
+ * spawns its expander.
+ *
+ * ── THE CODES ARE READ INDIVIDUALLY, FOR `index --check`'S REASON ────
+ * Only 1 refuses. Collapsing 3 (`the checks could not run`) into 1 would
+ * turn an inability into a verdict and refuse every push made in a
+ * checkout where the script is absent — which includes every checkout
+ * that is not this repository's.
+ *
+ * ── WHOSE COPY RUNS: THE HOOK'S OWN ──────────────────────────────────
+ * Resolved against this file's URL rather than against the judged root,
+ * because the hook itself is loaded from the DISPATCHING checkout while
+ * the root it judges may be a lane worktree. The script takes `--root`
+ * and judges the tree it is pointed at, so the two are separate on
+ * purpose: one implementation of the rules, applied to whichever tree is
+ * being pushed.
+ */
+export const CHEAP_CHECKS_PATH = fileURLToPath(
+  new URL("../../tools/e2e/scripts/push-checks.mjs", import.meta.url),
+);
+
+/** @see CHEAP_CHECKS_PATH */
+export const CHEAP_CHECKS_EXIT = Object.freeze({
+  CLEAN: 0,
+  FOUND: 1,
+  USAGE: 2,
+  COULD_NOT_RUN: 3,
+});
 
 /**
  * @typedef {object} Decision
@@ -360,6 +431,64 @@ export function runCheck(root) {
 }
 
 /**
+ * Run the cheap checks against `root` and hand back what they said.
+ *
+ * NOTHING IS INTERPRETED HERE, the same contract `runCheck` has: this
+ * starts the documented script and survives its failure to start, and the
+ * caller reads the exit code against `CHEAP_CHECKS_EXIT`.
+ *
+ * @param {string} root
+ * @returns {CheckResult}
+ */
+export function runCheapChecks(root) {
+  if (!existsSync(CHEAP_CHECKS_PATH)) {
+    return {
+      status: null,
+      stdout: "",
+      stderr: "",
+      problem: `${CHEAP_CHECKS_PATH} is not present in this checkout`,
+    };
+  }
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    out = spawnSync(process.execPath, [CHEAP_CHECKS_PATH, "--root", root], {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch (err) {
+    return {
+      status: null,
+      stdout: "",
+      stderr: "",
+      problem: `the cheap checks could not be started (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+  if (out.error !== undefined && out.error !== null) {
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      problem: `the cheap checks could not be started (${out.error.message})`,
+    };
+  }
+  if (out.status === null) {
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      problem: `the cheap checks were killed by a signal (${String(out.signal)}) before answering`,
+    };
+  }
+  return {
+    status: out.status,
+    stdout: String(out.stdout ?? ""),
+    stderr: String(out.stderr ?? ""),
+  };
+}
+
+/**
  * Is the working tree dirty, and in what?
  *
  * READ THE CONTRACT: this reaches NO verdict and cannot change one. It
@@ -447,24 +576,63 @@ export function laneCanRegenerate(manifest) {
  * graph guard for every lane whose fence this hook cannot fully expand,
  * which is the shape where one guard quietly eats another.
  *
+ * ── THREE ARMS NOW, AND THE ORDER IS THE DESIGN (T-203) ──────────────
+ * The graph arm above is joined by the CHEAP CHECKS and the VERDICT
+ * TOKEN, and both run BEFORE every arm that can return early — including
+ * `lane-cannot-regenerate`, which is an allow. *"Unconditionally"* is
+ * this card's own word and it is a claim about control flow, not about
+ * intent: a check placed after an early allow is a check that does not
+ * run for the seats that take it.
+ *
+ * They also run before the GRAPH check, which is the expensive one. A
+ * push that is going to be refused for a dangling `blocked_by` should not
+ * first spend a second and a half compiling a Rust crate to be told
+ * something else.
+ *
+ * ── THE TOKEN ARM FAILS CLOSED, WHICH THE GRAPH ARM DOES NOT ─────────
+ * Every other arm in this file allows when it cannot answer, and the
+ * header above argues that at length. THE TOKEN IS THE EXCEPTION, BY THIS
+ * CARD'S FIRST CRITERION AND NOT BY DRIFT: a missing token is not an
+ * inability, it is the ABSENCE OF A MEASUREMENT, and allowing there would
+ * make the guard vacuous — it would pass exactly the state it exists to
+ * catch. The remedy is one command and the refusal prints it.
+ *
+ * What still fails OPEN is the guard's own inability to KEY the question:
+ * a checkout whose `HEAD^{tree}` git will not name has no tree to compare
+ * against, so there is nothing to be strict about, and that arm is
+ * announced rather than silent.
+ *
+ * ── AND THE FALSE-POSITIVE COST ROSE, WHICH IS SAID RATHER THAN HIDDEN
+ * `gitInvocations` is a whitespace scanner, and its header records that
+ * `echo git push` and `man git push` reach the refusal. Under the graph
+ * arm alone that cost was bounded by a real staleness the seat already
+ * owed. Under the token arm it is not: a stray `git push` inside a quoted
+ * string is refused whenever the battery has not been run against HEAD's
+ * tree, which is most of the time. THE SCANNER IS NOT WIDENED OR
+ * NARROWED HERE — it is a landed guard's and changing it is another
+ * card's — but the new cost is stated so the next reader meets it in a
+ * comment instead of in a refusal.
+ *
  * @param {Request} request
  * @param {(root: string) => CheckResult} [check]
+ * @param {(root: string) => CheckResult} [cheap]
  * @returns {Decision}
  */
-export function decide(request, check = runCheck) {
+export function decide(request, check = runCheck, cheap = runCheapChecks) {
   /** @type {string[]} */
   const notices = [];
-  const decision = decideWith(request, check, notices);
+  const decision = decideWith(request, check, cheap, notices);
   return notices.length === 0 ? decision : { ...decision, notices };
 }
 
 /**
  * @param {Request} request
  * @param {(root: string) => CheckResult} check
+ * @param {(root: string) => CheckResult} cheap
  * @param {string[]} notices  collected, and attached by `decide`
  * @returns {Decision}
  */
-function decideWith(request, check, notices) {
+function decideWith(request, check, cheap, notices) {
   const command = commandOf(request.toolInput);
   if (command === undefined) {
     return allow(
@@ -492,23 +660,105 @@ function decideWith(request, check, notices) {
   }
 
   const headRef = readHeadRef(root);
-  if (headRef !== undefined && LANE_BRANCH_RE.test(headRef)) {
+  const onLane = headRef !== undefined && LANE_BRANCH_RE.test(headRef);
+  if (onLane) {
     // THE LANDING GATE FIRST, AND BEFORE THE MANIFEST IS EVEN OPENED
     // (T-212). It reads no manifest by construction — its fence comes off
     // the card as committed on the integration branch — so the arms below
-    // cannot decide it, and the `lane-cannot-regenerate` allow two of them
-    // down would return before it ever ran.
-    const landing = laneLandingVerdict(root, headRef);
+    // cannot decide it.
+    const landing = laneLandingVerdict(root, /** @type {string} */ (headRef));
     if (landing.verdict === "block") return landing;
     if (ANNOUNCED_ALLOW_CODES.includes(landing.code)) notices.push(landing.reason);
+  } else if (headRef === `refs/heads/${INTEGRATION_BRANCH}`) {
+    // THE OTHER MOMENT A PATH CAN LAND (T-212): a merge arriving on the
+    // integration branch. The push arm above never sees it — the lane
+    // that wrote it may have been refused, fixed, and merged by a seat
+    // that is not on a lane branch at all.
+    const landing = mergeLandingVerdict(root, headRef);
+    if (landing.verdict === "block") return landing;
+    if (ANNOUNCED_ALLOW_CODES.includes(landing.code)) notices.push(landing.reason);
+  }
 
+  // ── THE CHEAP CHECKS (T-203), UNCONDITIONALLY ──────────────────────
+  // Ahead of the lane arms below, which can ALLOW and return, and ahead
+  // of the graph check, which costs a second and a half.
+  const cheapResult = cheap(root);
+  if (cheapResult.status === null) {
+    notices.push(
+      `THE CHEAP CHECKS WERE NOT RUN: ${cheapResult.problem ?? "they did not run"}. Nothing here ` +
+        "has said this push's board is coherent — an inability is not a verdict, in either " +
+        "direction. Ask them by hand: node tools/e2e/scripts/push-checks.mjs",
+    );
+  } else if (cheapResult.status === CHEAP_CHECKS_EXIT.FOUND) {
+    return block(
+      "cheap-checks-found",
+      "PUSH REFUSED: the cheap pre-push checks FOUND something. Each of these fired on this " +
+        "project AFTER the commit that created it, and each one reached a push.\n" +
+        "  their own report follows, VERBATIM:\n" +
+        `${indent(cheapResult.stderr || cheapResult.stdout)}` +
+        "  These run on every push regardless of the verdict token, and there is no override " +
+        "flag: they cost milliseconds, and every remedy is an edit the seat was already going " +
+        "to make.",
+    );
+  } else if (cheapResult.status !== CHEAP_CHECKS_EXIT.CLEAN) {
+    notices.push(
+      `THE CHEAP CHECKS DID NOT ANSWER: push-checks.mjs exited ${cheapResult.status}, which is ` +
+        `${cheapResult.status === CHEAP_CHECKS_EXIT.USAGE ? "`called wrong`" : "`they could not run`"}` +
+        " and never a finding. The push is allowed and the board is UNJUDGED.\n" +
+        `${indent(cheapResult.stderr || cheapResult.stdout)}`,
+    );
+  }
+
+  // ── THE VERDICT TOKEN (T-203) ──────────────────────────────────────
+  // The only arm in this file that refuses on an ABSENCE. See `decide`.
+  const tree = headTree(root);
+  if (tree === undefined) {
+    notices.push(
+      `THE VERDICT TOKEN WAS NOT CHECKED: git would not name ${root}'s HEAD tree, so there is no ` +
+        "key to compare a token against. The push is allowed and the graded suites are " +
+        "UNVERIFIED.",
+    );
+  } else {
+    const read = readToken(root);
+    const judgement = judgeToken({
+      ...("token" in read ? { token: read.token } : { problem: read.problem }),
+      tree,
+    });
+    if (judgement.state !== "fresh") {
+      return block(
+        judgement.code,
+        `PUSH REFUSED: ${judgement.detail}.\n` +
+          "  A push is a claim that the gates were run. This guard is what makes that a FACT " +
+          "rather than a claim — three commits landed on this project in one night after a gate " +
+          "that had already failed, each time because the exit was read AFTER the commit.\n" +
+          "  Run the blessed gate-runner from the repository root, then push:\n" +
+          "    node tools/e2e/scripts/gate-run.mjs --all\n" +
+          `  It writes ${TOKEN_REL_PATH}, keyed by the tree it ran against. RUN IT LAST: a commit ` +
+          "made after a green run changes the tree and stales the token, which is the honest " +
+          "answer rather than an inconvenience.\n" +
+          "  There is no override flag, deliberately — T-167-s8 shipped its guard without one " +
+          "and this card was told to follow that unless a measured reason appeared. None did.",
+      );
+    }
+    // A FRESH TOKEN IS SILENT. This file's own rule: an ORDINARY allow
+    // says nothing, and only an allow that left something UNVERIFIED
+    // announces itself. A line on every good push is a line nobody reads
+    // by the third one.
+  }
+
+  // ── CAN THIS LANE EVEN CLEAR A GRAPH REFUSAL? ──────────────────────
+  // Both arms are about the GRAPH CHECK and nothing else, so they sit
+  // beside it rather than up with the landing gate (T-203 moved them; the
+  // verdict each reaches for each input is unchanged).
+  if (onLane) {
     const read = readManifest(root);
     if ("problem" in read) {
       return allow(
         "lane-fence-unreadable",
-        `${root} is on the lane branch ${headRef} and its fence manifest could not be read ` +
-          `(${read.problem}), so this guard cannot derive whether the lane could regenerate the ` +
-          "graph inside its fence — and an unanswerable question is an allow here, not a refusal",
+        `${root} is on the lane branch ${String(headRef)} and its fence manifest could not be ` +
+          `read (${read.problem}), so this guard cannot derive whether the lane could regenerate ` +
+          "the graph inside its fence — and an unanswerable question is an allow here, not a " +
+          "refusal",
       );
     }
     if (!laneCanRegenerate(read.manifest)) {
@@ -520,14 +770,6 @@ function decideWith(request, check, notices) {
           "(docs/CONVENTIONS.md, GRAPH REGEN).",
       );
     }
-  } else if (headRef === `refs/heads/${INTEGRATION_BRANCH}`) {
-    // THE OTHER MOMENT A PATH CAN LAND (T-212): a merge arriving on the
-    // integration branch. The push arm above never sees it — the lane
-    // that wrote it may have been refused, fixed, and merged by a seat
-    // that is not on a lane branch at all.
-    const landing = mergeLandingVerdict(root, headRef);
-    if (landing.verdict === "block") return landing;
-    if (ANNOUNCED_ALLOW_CODES.includes(landing.code)) notices.push(landing.reason);
   }
 
   const result = check(root);
