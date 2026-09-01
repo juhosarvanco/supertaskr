@@ -330,3 +330,163 @@ ids under this lane while it ran.
   here: another lane's worktree (`T-210`'s), a push of a ref that is not
   HEAD, uncommitted work, and a push reached through an alias or a
   script (`gitInvocations`' declared ceiling).
+
+---
+
+## Verdicts
+
+2026-09-01 — claude-opus-5@subagent (verifier, BLIND TWO-PHASE,
+`review: independent`): **APPROVED.**
+
+**THE BLINDNESS WAS KEPT AND IS AUDITABLE.** The attack set was written
+from the card at its base `0a8dd58` plus `T-209`, `method/lane-protocol.md`
+rule 5, CONVENTIONS' RANGE RULE and `roles/verifier.md` — and SEALED at
+sha256 `6257af6c6a56b70438ccd9516e51f5f8b50af5afa8c52c6377cf7eb688e3ceee`
+before the diff, the notes, the branch or any spec was opened. The card's
+headings were checked first for `T-213`'s hazard: none present at
+`0a8dd58`. Lane context arrived in a second message, after the seal.
+
+### The gates, at the commit under review `f093b7a`, each exit read from its output
+
+| gate | exit | figure |
+|---|---|---|
+| `tools/e2e` full suite (`NPUTER_E2E_PORT=22212`) | **0** | **443 passed**, 23 of them `landing-gate.spec.ts` |
+| `lib/parser` `npx vitest run` | **0** | **344 passed** |
+| `app` `npm test` | **0** | **1119 passed** |
+| `docs-gate.mjs`, repo root, 9 separate literal paths | **1 = FIRES** | **7 `docs-gate:` lines, 0 stack frames** — a verdict, not a crash |
+
+The first e2e attempt exited **1** and it was NOT a red: `app/node_modules
+is missing`, a config-load precondition. Cleared through the ADR-011 order
+(`lib/parser` ci+build, then `app` ci+build, both 0). Recorded because the
+exit alone would have been charged to this diff.
+
+### Every criterion, reproduced rather than accepted
+
+- **Refusal, naming every out-of-fence path** — proved, and the body
+  additionally asserts the refusal does NOT name the in-fence path.
+- **THE POSITIVE CONTROL** — met at the standard `T-209` set. One body,
+  one armed lane, refuse-then-allow, remote ref asserted UNCHANGED on the
+  refusal and MOVED on the allow. **Re-drilled independently**: the
+  decisive mutant (`rangePaths` returns no paths) reds **7 bodies
+  including the positive control itself**, 41 passed — so an ALLOW here
+  cannot be a mechanism that failed to arm. Anchor asserted unique before
+  mutation; restored and **verified by sha256 against the pre-mutant file**
+  (`0b0b8094b9d05263072bf1468b2345064bbafa9a6505822a4708225461e7f548`),
+  never by `--numstat` and never against HEAD.
+- **Non-lane push unaffected** — proved, and asserted silent.
+- **merge-base-to-tip** — both range bodies MEASURE their own precondition
+  (that the prescribed and forbidden ranges actually disagree on that
+  fixture) before pushing. The unsynced body is the one that matters and
+  the surviving poison drill that produced it is the honest finding.
+- **Absent/empty `touches:` refused whole** — proved, both halves.
+- **Fence from MAIN** — two separate bodies, manifest and card, and the
+  decisive mutant reds both.
+- **The intersection imported** — `within` is imported from
+  `lane-fence.mjs`, which is the primitive `T-209`'s notes twice rule
+  correct for this one-directional question. No second derivation.
+  Driven directly: `tools/e2e-old/x.ts` is OUTSIDE fence `tools/e2e`.
+- **Three-arm fire proof** — and the fixture runs the command
+  `.claude/settings.json` actually wires, which closes the gap between
+  "the module refuses" and "the armed guard refuses".
+- **`--no-renames`, `-z`, no `--diff-filter`** — the three diff-derivation
+  false-ALLOWs my attack set aimed at (a rename hiding its source, a
+  filtered deletion, a quoted path) are all closed, each reasoned in place.
+
+### The lane's own figures, re-derived at my refs
+
+420 cards / **0** id-filename mismatches, and **317 of 317** `touches:`
+lines in the single-line flow shape, both at `0a8dd58`. `push-guard.mjs`
+restored to `e7cfaa41…` — matches the committed file exactly.
+
+### Where my sealed rulings were WRONG, said before the ones where they held
+
+1. **`excluded` does not subtract here.** My attack set demanded it. The
+   parser's `excluded` is *the card's own file carved out of a directory
+   domain*, not a deny-list, so admitting it is correct. Wrong assumption
+   about this codebase, not a defect in the build.
+2. **The merge arm's ref-derived identification is sounder than I ruled.**
+   I predicted retrospective coverage near zero because rule 6 deletes the
+   branch. Rule 6 deletes the **worktree**, not the branch. Derived over
+   the 40 most recent first-parent merges at `fcdae0c` with this gate's own
+   `LANE_BRANCH_RE`: **22 judgeable, 18 with no ref, 0 ambiguous.** The
+   executor reported 21 at the same ref hours earlier; neither is wrong,
+   and that is the point — **the number is a live property of branch-cleanup
+   state, not of the code**, and should be reported with a clock and not
+   only a ref.
+
+### CANNOT-COMPARE AS AN ANNOUNCED ALLOW: the executor nominated it, and I do not reject it
+
+My sealed ruling was that the third verdict must REFUSE at landing. On
+the merits, against my own list:
+
+1. **Rule 5's letter is satisfied.** Its objection is to a fence that
+   answers "no overlap" when it means "I do not know". This gate answers
+   `THE LANDING GATE DID NOT JUDGE …`, names the unresolvable tokens AND
+   every path it could not judge, and closes "which is not a claim that
+   they are inside the fence". Three verdicts exist and are
+   distinguishable; rule 5 does not itself require the third to be a
+   refusal.
+2. **The measurement I did not have when I sealed the list is decisive.**
+   19 of 40 real merges carry a slug token the hook budget cannot expand.
+   A refusal would block roughly half of real lane pushes, and a guard
+   routinely cleared with `--no-verify` teaches the bypass. My own
+   "`--no-verify` exists, so refusing is cheap" argument reverses at that
+   frequency.
+3. **It is mechanically distinguishable, not merely prose** — a distinct
+   `code` in the exported, spec-pinned `ANNOUNCED_ALLOW_CODES`, carried as
+   `notices` so it stands ALONGSIDE the graph verdict instead of replacing
+   it, and written unconditionally by the hook.
+4. **My carve-out was honoured one level finer than I asked.** I required
+   that an internal cannot-compare not hide inside the harness's fail-open
+   concession. The lane split absent QUESTION (no integration ref, no
+   board, no remote — ordinary SILENT allow) from unanswered QUESTION
+   (announced), and pinned the split in `push-guard.spec.ts`.
+
+Residual risk, named not charged: the announcement is exit 0, so nothing
+consumes it and it decays by `T-207`'s pattern. That is the project's
+pre-existing announced-allow contract, and `T-222` is the card that makes
+the refusal affordable.
+
+### FINDINGS — none blocking, two filed, one owed as a correction
+
+- **The drill ledger's sha256 is a figure without a ref.** It reads
+  `eca6da94…`; the committed file is `0b0b8094…`. Derived: `eca6da94` is
+  the file at `ad942b6`/`6f6cd3b` — the drills' own refs — and it moved
+  twice after. **Closed here rather than charged**: both post-drill deltas
+  are inside the `/* */` module header, and with block comments stripped
+  the code is byte-identical at both refs (`08845ea97880ea0d…`), so all 11
+  drills still bind. This is `roles/verifier.md`'s FIGURE CASE landing on
+  the executor. **One line owed: give that hash its ref.** (The notes also
+  say "24 bodies"; `landing-gate.spec.ts` declares and runs **23**.)
+- **`T-223` filed** — "main is a ref the lane cannot move" is false, and
+  it is asserted in this card's build step 2 and repeated at
+  `landing-gate.mjs:29`. Reproduced: `git branch -f main` refuses from a
+  lane worktree, `git update-ref refs/heads/main` is ACCEPTED, and
+  `integrationRefCandidates` tries LOCAL main first. The floor is
+  unchanged — a seat that can do that can `--no-verify` — but a guard must
+  not state an absolute it does not have.
+- **`T-224` filed** — a `touches:` amendment rides in under the
+  unfenceable directory. Both arms correctly admit every `docs/tasks`
+  path, so the amendment pushes, merges, lands on main, and is the card of
+  record from the next push onward. That is `T-211`'s fast path A taken
+  unilaterally from inside the lane, which this gate's own `ROUTE` text
+  reserves to triage, and it reaches a SIBLING's card too. Named in
+  neither this card's "cannot see" section nor the module header's four
+  limits.
+
+### Owed at the merge, not here
+
+`capabilities:check` is **1 STALE** (`T-218`) — the integrator runs
+`npm run capabilities` in the merge commit, where every regeneration in
+`git log -- docs/CAPABILITIES.md` has landed. `T-216` governs this arm's
+rooting and is disclosed in the module header rather than fixed, correctly.
+
+### Bench hygiene (`T-220`)
+
+Three whole-line `git worktree list` set differences across this pass, all
+at **count 15 → 15**: `nputer-V-167s5` `7b712c1`→`d17258e`, then
+`nputer-V-175` and its bench `a7eb25a`→`f4cbc62`, then `nputer` itself
+`cac24d6`→`a5ad66f`. **An entry MUTATING IN PLACE** — invisible to a count
+and to a path-only set difference alike. `main` moved twice under this
+verification (`fcdae0c` → `cac24d6` → `a5ad66f`), which is why every
+figure above carries its ref.
