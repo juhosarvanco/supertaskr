@@ -54,12 +54,56 @@ the denominator and answers a different question. Two seats censused this
 independently and disagreed at 58/441 against 67/479 — **the whole gap was
 the rejected directory**, and neither figure was arithmetically wrong.
 
-**AND THIS CARD'S OWN DENOMINATOR MOVED WHILE IT WAS BEING WRITTEN**, from
-440 to 441, because committing this card added a card to the board it was
-counting. That is `docs/CONVENTIONS.md`'s moving-tip rule in its purest
-form: **a census of the board, stated in a document committed to the
-board, cannot be pinned by care.** Hence the ref above and the re-derive
-criterion below.
+**THIS CARD'S OWN DENOMINATOR MOVED WHILE IT WAS BEING WRITTEN**, from 440
+to 441, because committing this card added a card to the board it counts.
+
+**AND THE FIRST ACCOUNT OF THAT, WRITTEN HERE, OVER-GENERALISED THE RULE
+IT CITED.** It said a census of the board *"cannot be pinned by care"* —
+a verifier measured that and it is false:
+
+    live flat T-*.md at 57f2962 -> 441   c5c2b47 -> 441   main -> 441
+
+**A census IS pinnable.** It moves only when a card is added or removed,
+and a card's own creation is a one-time +1; after that commit the figure
+is stable, and `441 at c5c2b47` stays true. That is
+`docs/CONVENTIONS.md`'s form 1 working exactly as written.
+
+**The two classes are different and conflating them makes the rule read
+broader than it is:**
+
+- **A distance to a moving tip** changes at EVERY commit to the branch, so
+  pinning genuinely cannot catch it. That is the class CONVENTIONS names.
+- **A census** can only fail to be pinned by measuring BEFORE the commit
+  that ships it. **A sequencing trap, not an impossibility** — measure
+  after, or state the ref, and it holds.
+
+## PARTIAL INVISIBILITY IS THE WORSE FAILURE, AND NINE CARDS HAVE IT
+
+Nine live cards carry a dropped heading **beside a bare one that
+parses** — 3 notes, 6 verdicts, measured at `c5c2b47`. The section
+therefore renders, and renders COMPLETE.
+
+`T-123` is the worked example:
+
+    line  462   ## Verdicts                              <- parsed
+    line 1225   ## Verdicts (continued) — THE SECOND PASS <- dropped
+
+The parsed section is 15,564 characters and does **not** contain the
+second pass. A reader gets a full verdicts section, no empty space, and
+**no signal whatever that a second verification pass exists and is
+missing.**
+
+**Total invisibility at least shows an absence. Partial invisibility shows
+a complete-looking section that is not complete** — which is worse,
+because nothing prompts anybody to look. Any fix must decide what happens
+to a second same-named section rather than only what happens to a
+decorated one.
+
+*(Counted three times here before it reproduced: once with a regex that
+let `verdicts?` match a bare `## Verdicts` via its own trailing `s` — 165
+false positives — and once too narrow to see singular `## Verdict:`
+decorations at all — 4. The figure below is the one that reproduces
+another seat's independent count.)*
 
 ## Two headings that are not spellings at all
 
@@ -118,6 +162,11 @@ defect.
   a known section name that the parser does not resolve to that section.
   **The gate SHALL be shown to red against at least one of the fifty cards
   in the census above before the fix, and green after.**
+- The fix SHALL state what happens to a SECOND heading resolving to a
+  section already filled, and a body SHALL cover the partial-invisibility
+  case. **A fix that resolves only the total case leaves the nine cards
+  whose section renders complete while missing content, and those are the
+  ones no reader can be prompted to check.**
 - The census SHALL be re-derived at the fixing ref rather than transcribed
   from this card — the figures above carry their measurement and go stale
   like any other.
