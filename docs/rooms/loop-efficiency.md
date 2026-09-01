@@ -104,7 +104,24 @@ measured; the advice they carry (treat REFUSED as a wait, not a red) is
 harmless because REFUSED cannot occur across checkouts. The weak spot
 this leaves is the one the seat actually demonstrated: **a dispatcher
 writes covering messages from memory, and nothing checks them** — which
-is T-230's class one seat up, and T-204's subject.
+is T-230's class one seat up, and T-204's subject. A second instance
+the same night: the seat relayed a verifier's phase-1 reading (that the
+token scanner's root could not be redirected) into a fence widening,
+and the executor's own reading of the repository refuted it — a copied
+module resolves its root to the fixture it sits in — so the granted path
+went unspent. A relayed fact is a claim; say whose.
+
+**13. Serial stamping bakes every earlier lane's base with its later
+siblings' PRE-narrowing fences.** The ritual stamps one card, cuts, arms,
+then stamps the next, so lane one's checkout carries lane four's card as
+it stood before lane four's fence was narrowed. `brief.mjs` computes
+disjointness from the live worktree list crossed with the cards IN THE
+CHECKOUT IT RUNS IN, so two session-economics bodies red in the earlier
+lanes and pass at main — measured in T-216-s4's and T-223's lanes at
+23:00Z, green at aad0cf7 with nothing else changed. T-143-s1 and T-187
+own the class. The construction is cheap: amend every card of a wave on
+the integration branch BEFORE the first stamp, so every base carries
+every sibling's final fence, and T-239's arm does exactly that first.
 
 **12. A seat's own edit tooling is a hazard the method does not name.**
 This seat's first triage pass swallowed the frontmatter delimiter of six

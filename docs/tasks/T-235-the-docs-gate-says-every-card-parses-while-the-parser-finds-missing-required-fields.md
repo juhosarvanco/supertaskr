@@ -96,3 +96,5 @@ frontmatter parses, with a legal status"* while lib/parser's smoke test
 (`npx vitest run test/smoke.test.ts`) exited 1 with 12 `missing-field`
 issues on exactly those three files; after `git mv` into rejected/ it
 exited 0. Same two readers, same order, same false green first.
+
+THIRD MEASURED INSTANCE, 2026-09-02 (T-216-s4's lane, reported by its executor): two findings filed as `T-216-s4-s1` and `T-216-s4-s2` took `npx vitest run` from lib/parser and `npm test` from app/ RED on a commit whose whole diff was markdown, because the parser accepts ONE suffix level; `docs-gate.mjs` over the same tree answered *"every live task card's frontmatter parses, with a legal status"*. A third rule the gate does not read — the id's shape — and the same false green first. The fix on the card SHALL cover id shape beside the placement fields, or say it does not.
