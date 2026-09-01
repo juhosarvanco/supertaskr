@@ -16,14 +16,21 @@ import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CLAIM_CLASSES,
+  cardClaims,
+  checkClaim,
+  collapse,
   dischargedBy,
   NOT_A_CLAIM_CLASS,
   componentOwners,
   ownersOf,
+  pathOracle,
   preflight,
   refClaims,
   rulings,
+  unmarkedQuotes,
+  unseenMarkers,
 } from "../scripts/card-preflight.mjs";
+import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
 import { context, render } from "../scripts/dispatch-brief.mjs";
 import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
 
@@ -111,6 +118,12 @@ interface Planted {
   blockedBy?: string;
   /** Replaces the whole criteria section, heading included, when given. */
   noCriteria?: boolean;
+  /**
+   * Extra tracked files, written before the fixture's own commit. The
+   * source a CARD CLAIM marker names has to BE a tracked file at HEAD,
+   * so a body that plants a marker plants its source with it.
+   */
+  files?: { rel: string; content: string }[];
 }
 
 function writeFixtureFile(root: string, rel: string, content: string): void {
@@ -274,6 +287,7 @@ function makeFixture(planted: Planted = {}): Fixture {
   writeFixtureFile(repo, `${SLUG_PATH}/lens.ts`, "export const lens = 1;\n");
   writeFixtureFile(repo, `${OTHER_SLUG_PATH}/dogfood.test.ts`, "export const dogfood = 1;\n");
   writeFixtureFile(repo, ".gitignore", "dist/\n");
+  for (const f of planted.files ?? []) writeFixtureFile(repo, f.rel, f.content);
   git(repo, ["add", "-A"]);
   // THE SUBJECT IS A CHECKPOINT ON PURPOSE: the brief's own lane row
   // reads its base commit off the newest `Checkpoint:` on the
@@ -559,7 +573,7 @@ test("every run prints which claim classes it checked and which it cannot", asyn
     // rows — a body that looped the constant for EVERYTHING could not
     // tell an empty constant from a printed table (T-063, poison shape
     // FIVE). So the cardinality is pinned here, off the constant.
-    expect(CLAIM_CLASSES.length, "the claim-class table lost a member").toBe(5);
+    expect(CLAIM_CLASSES.length, "the claim-class table lost a member").toBe(6);
     expect(NOT_A_CLAIM_CLASS.length, "the not-a-claim-class list lost a member").toBe(4);
     for (const c of CLAIM_CLASSES) {
       expect(text, `${c.key} did not print what it checks`).toContain(c.checks);
@@ -764,4 +778,370 @@ test("a ruling discharges at a token boundary — suffixes and .map twins stay r
     "a suffixed id must not discharge its parent's finding").toBeUndefined();
   expect(dischargedBy(rule(`PREFLIGHT RULING (2026-08-30): ${subject}, because reasons.`), subject),
     "trailing punctuation that does not extend the token still discharges").toBeDefined();
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * CLAIM CLASS SIX — THE CARD'S SENTENCES (T-230)
+ *
+ * The preflight validated a card's STRUCTURE and nothing validated its
+ * ASSERTIONS: three of the four cards dispatched on 2026-09-01 carried
+ * a false claim about this repository and all four preflights ran
+ * GREEN. What is added is one opt-in marker — a quoted string plus the
+ * tracked file the card names as its source — and the split the card's
+ * second criterion demands: CHECKED-AND-HELD and NOT-CHECKABLE are
+ * different facts and are never one count.
+ *
+ * EVERY BODY BELOW CARRIES ITS TWIN. A checker that refuses everything
+ * and a checker that refuses nothing both satisfy a one-sided body, so
+ * each plant is asserted beside the same fixture one mutation away.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The instance T-230's table gives that card id, or a loud failure. */
+function instance(cardId: string) {
+  const found = DATED_INSTANCES.find((i) => i.card === cardId);
+  if (found === undefined) throw new Error(`no dated instance for ${cardId}`);
+  return found;
+}
+
+/** A fixture carrying one marked claim and the file that claim names. */
+function markedFixture(marker: string, files: { rel: string; content: string }[]) {
+  return makeFixture({ body: [marker], files });
+}
+
+test("a TRUE marked claim PASSES, and the three counts are printed apart", async () => {
+  // THE POSITIVE CONTROL THE THIRD CRITERION ASKS FOR BY NAME, and the
+  // body a checker "made to report everything unverifiable" has to fail:
+  // a validator that flags every card is indistinguishable from one that
+  // works, so the HELD count is asserted NON-ZERO and the other two at
+  // zero. Turn the classifier into one that reports everything and all
+  // three assertions move at once.
+  const fx = markedFixture(TRUE_CLAIM.marker, [
+    { rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText },
+  ]);
+  const { findings, text } = await run(fx);
+
+  expect(findings, `a TRUE quoted claim was refused:\n${joined(findings)}`).toEqual([]);
+  expect(text).toContain("CHECKED and HELD: 1");
+  expect(text).toContain("CHECKED and FALSE: 0");
+  expect(text).toContain("NOT CHECKABLE: 0");
+  expect(text).toContain(`CHECKED and HELD line`);
+  expect(text).toContain(TRUE_CLAIM.quote);
+
+  // AND THE QUOTE SPANS A HARD WRAP IN THE SOURCE, which is how every
+  // quotation from a document in this repository is written. A matcher
+  // that compared raw bytes would refuse it, so this is the collapse
+  // rule asserted through the whole arm rather than only in its unit.
+  expect(TRUE_CLAIM.sourceText, "the fixture stopped spanning a wrap").not.toContain(
+    TRUE_CLAIM.quote,
+  );
+  expect(collapse(TRUE_CLAIM.sourceText)).toContain(TRUE_CLAIM.quote);
+});
+
+test("T-211's instance: the flag the frozen list does not carry is CAUGHT", async () => {
+  const i = instance("T-211");
+  const files = [{ rel: i.source, content: i.sourceText }];
+  const caught = await run(markedFixture(i.marker, files));
+  expect(joined(caught.findings)).toContain("QUOTED CLAIM NOT IN FILE");
+  expect(joined(caught.findings)).toContain(i.needle);
+  expect(joined(caught.findings)).toContain(i.source);
+
+  // THE DISCRIMINATING HALF IS IN THE SAME FILE: a flag the frozen list
+  // DOES carry is held, so the arm reads the list rather than refusing
+  // every flag anybody quotes.
+  const real = await run(
+    markedFixture("CARD CLAIM (tools/e2e/scripts/brief.mjs): `--preflight`", files),
+  );
+  expect(real.findings, `a true flag claim was refused:\n${joined(real.findings)}`).toEqual([]);
+  expect(real.text).toContain("CHECKED and HELD: 1");
+});
+
+test("T-203's instance is a CASE POLICY, and all three of its readings are pinned", async () => {
+  // THE DISPATCH NOTE WAS WRONG AND THE CORRECTION IS WHAT THIS BODY
+  // CARRIES. The card was dispatched saying the quote is absent from the
+  // governing document; it is there, in capitals, so a case-sensitive
+  // search reads zero and a folded one reads one. That makes the
+  // instance a policy question and this body states the policy: match
+  // AS WRITTEN, and name the folded answer in the detail so the author
+  // can tell a discrepancy from a disagreement about capitals.
+  const i = instance("T-203");
+
+  // ARM ONE — the document that genuinely does not carry it. This is the
+  // instance as the card describes it, and it refuses without a case
+  // hint, so the hint discriminates rather than decorating every miss.
+  const absent = await run(markedFixture(i.marker, [{ rel: i.source, content: i.sourceText }]));
+  expect(joined(absent.findings)).toContain("QUOTED CLAIM NOT IN FILE");
+  expect(joined(absent.findings)).toContain(i.needle);
+  expect(joined(absent.findings)).not.toContain("case-insensitive search DOES find it");
+
+  // ARM TWO — the document as it stands, saying it in its own capitals.
+  // A folded matcher calls this HELD; this one refuses and says exactly
+  // why, which is the whole difference between a guard and a mood.
+  const cased = await run(
+    markedFixture(T203_CASE.marker, [{ rel: T203_CASE.source, content: T203_CASE.sourceText }]),
+  );
+  expect(joined(cased.findings)).toContain("QUOTED CLAIM NOT IN FILE");
+  expect(joined(cased.findings)).toContain("case-insensitive search DOES find it");
+  expect(T203_CASE.sourceText, "the fixture stopped carrying the shouted form").toContain(
+    T203_CASE.asWritten,
+  );
+
+  // ARM THREE — the card quoting the document's OWN capitals HOLDS. The
+  // policy has to have a green side, or "match as written" is
+  // indistinguishable from "refuse every quote from this file".
+  const asWritten = await run(
+    markedFixture(T203_CASE.markerAsWritten, [
+      { rel: T203_CASE.source, content: T203_CASE.sourceText },
+    ]),
+  );
+  expect(
+    asWritten.findings,
+    `the document's own sentence was refused:\n${joined(asWritten.findings)}`,
+  ).toEqual([]);
+  expect(asWritten.text).toContain("CHECKED and HELD: 1");
+});
+
+test("T-210's instance is REPORTED, never merged into what was checked", async () => {
+  // THE CARD RULES THIS CLASS OUT BY NAME: a claim about a platform's
+  // behaviour is not mechanically checkable, and the honest answer is to
+  // route it to the verifier's phase-1 ground truth rather than pretend
+  // a scanner can settle it. So the measurement is the DISPOSITION: it
+  // is counted, it is listed, it refuses nothing, and it never appears
+  // as something the preflight checked.
+  const i = instance("T-210");
+  expect(i.marker, "the platform instance acquired a marker it cannot have").toBe("");
+  const { findings, text } = await run(makeFixture({ body: [i.prose] }));
+
+  expect(findings, `an unmarkable assertion refused a dispatch:\n${joined(findings)}`).toEqual([]);
+  expect(text).toContain("quoted and NOT marked, naming no source at all: 1");
+  expect(text).toContain("NOT CHECKED, no source named");
+  expect(text).toContain(i.needle);
+  // THE CENSUS HALF OF THE SECOND CRITERION: it is not counted as
+  // checked, and the two are never one number.
+  expect(text).toContain("marked claims: 0");
+  expect(text).toContain("CHECKED and HELD: 0");
+  expect(text).toContain("phase-one ground truth");
+
+  // THE DISCRIMINATOR: the same sentence in a paragraph that names a
+  // file lands in the OTHER unchecked class, so the split is a reading
+  // of the paragraph rather than a label on every quote.
+  const beside = await run(
+    makeFixture({ body: [`${i.prose} See docs/GOVERNING.md.`], files: [
+      { rel: "docs/GOVERNING.md", content: TRUE_CLAIM.sourceText },
+    ] }),
+  );
+  expect(beside.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(beside.text).toContain("quoted and NOT marked, naming no source at all: 0");
+});
+
+test("the near miss: a TRUE quote under the WRONG file name is a finding", async () => {
+  // The fifth criterion, and the whole of what separates a file-scoped
+  // check from a substring search over the tree: the string IS in the
+  // repository, in a file the fixture also plants, and the marker names
+  // a different one. A tree-wide search passes this card.
+  const files = [
+    { rel: NEAR_MISS.holder, content: NEAR_MISS.holderText },
+    { rel: NEAR_MISS.named, content: NEAR_MISS.namedText },
+  ];
+  expect(collapse(NEAR_MISS.holderText), "the holder stopped holding it").toContain(
+    NEAR_MISS.quote,
+  );
+  expect(collapse(NEAR_MISS.namedText), "the named file gained the quote").not.toContain(
+    NEAR_MISS.quote,
+  );
+
+  const wrong = await run(markedFixture(NEAR_MISS.marker, files));
+  expect(joined(wrong.findings)).toContain("QUOTED CLAIM NOT IN FILE");
+  expect(joined(wrong.findings)).toContain(NEAR_MISS.named);
+  expect(joined(wrong.findings)).toContain("near miss");
+
+  // ONE TOKEN AWAY: the same quote, the file that really holds it, and
+  // the card passes. Without this half the body is satisfied by a
+  // checker that refuses every quoted claim there is.
+  const right = await run(markedFixture(NEAR_MISS.correctMarker, files));
+  expect(right.findings, `the correctly sourced twin was refused:\n${joined(right.findings)}`)
+    .toEqual([]);
+  expect(right.text).toContain("CHECKED and HELD: 1");
+});
+
+test("a marker nobody can evaluate refuses AND counts NOT CHECKABLE, never HELD", async () => {
+  // A MARKER IS A REQUEST FOR A CHECK. One that names no tracked file,
+  // or carries no quoted string, is a request nobody could answer — so
+  // it is counted apart from what was checked (the second criterion) and
+  // refuses as well, because the alternative is a card that asked to be
+  // checked, was not, and reads as though it had been.
+  const noSource = await run(markedFixture('CARD CLAIM (docs/NEVER-EXISTED.md): "anything"', []));
+  expect(joined(noSource.findings)).toContain("UNCHECKABLE CARD CLAIM");
+  expect(noSource.text).toContain("NOT CHECKABLE: 1");
+  expect(noSource.text).toContain("CHECKED and HELD: 0");
+
+  const noQuote = await run(
+    markedFixture("CARD CLAIM (docs/GOVERNING.md): it says the thing about pipes", [
+      { rel: "docs/GOVERNING.md", content: TRUE_CLAIM.sourceText },
+    ]),
+  );
+  expect(joined(noQuote.findings)).toContain("UNCHECKABLE CARD CLAIM");
+  expect(joined(noQuote.findings)).toContain("no quoted string");
+  expect(noQuote.text).toContain("NOT CHECKABLE: 1");
+
+  // A DIRECTORY IS ITS OWN ANSWER rather than a missing file, because
+  // the repair is different: name the file inside it.
+  const dir = await run(markedFixture('CARD CLAIM (docs/tasks): "anything"', []));
+  expect(joined(dir.findings)).toContain("directory");
+
+  // AND THE TWIN: a marker that CAN be evaluated is not in this class at
+  // all, so the three counts discriminate rather than label.
+  const fine = await run(
+    markedFixture(TRUE_CLAIM.marker, [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }]),
+  );
+  expect(fine.text).toContain("NOT CHECKABLE: 0");
+});
+
+test("a marker-shaped line the prose reader cannot see is REPORTED, never a claim", async () => {
+  // THE SILENT-FORMATTING HOLE, CLOSED IN THE ONLY DIRECTION IT CAN BE.
+  // A ruling written as an indented line is invisible to its reader and
+  // the author cannot tell (T-160's verdict, correction 4). The same
+  // shape here would be worse, because documentation ABOUT this marker
+  // is written in exactly the blocks the prose reader blanks — so an
+  // unseen marker is REPORTED rather than promoted to a claim.
+  const quoted = await run(
+    makeFixture({
+      body: [
+        "The form is one plain body line:",
+        "",
+        '    CARD CLAIM (docs/NEVER-EXISTED.md): "an example, not a claim"',
+      ],
+    }),
+  );
+  expect(quoted.findings, `an example became a claim:\n${joined(quoted.findings)}`).toEqual([]);
+  expect(quoted.text).toContain("marker-shaped line the prose reader does not see");
+  expect(quoted.text).toContain("marked claims: 0");
+
+  // THE DISCRIMINATING HALF: the same marker unindented IS a claim, and
+  // this one names a file that does not exist, so it refuses. Without
+  // it, "an indented marker is not a claim" is satisfied by a reader
+  // that sees no markers at all.
+  const live = await run(
+    makeFixture({ body: ['CARD CLAIM (docs/NEVER-EXISTED.md): "an example, not a claim"'] }),
+  );
+  expect(joined(live.findings)).toContain("UNCHECKABLE CARD CLAIM");
+  expect(unseenMarkers("---\nid: x\n---\n\nCARD CLAIM (a/b): \"c\"\n")).toEqual([]);
+});
+
+test("a quoted-claim finding is dischargeable by a dated ruling naming its quote", async () => {
+  // The refusal rides the rails the other five classes already have: a
+  // discrepancy is corrected, or ruled acceptable ON the card, dated,
+  // naming the finding's own subject.
+  const i = instance("T-203");
+  const files = [{ rel: i.source, content: i.sourceText }];
+  const ruled = await run(
+    makeFixture({
+      files,
+      body: [
+        i.marker,
+        "",
+        `PREFLIGHT RULING (2026-09-01): "${i.needle}" is quoted from the version this card was`,
+        "written against; carried deliberately.",
+      ],
+    }),
+  );
+  expect(ruled.findings, `\n${joined(ruled.findings)}`).toEqual([]);
+  expect(ruled.text).toContain("RULED (2026-09-01)");
+
+  // AND A RULING NAMING A DIFFERENT QUOTE DISCHARGES NOTHING, which is
+  // what keeps the ruling from becoming an amnesty for the class.
+  const other = await run(
+    makeFixture({
+      files,
+      body: [i.marker, "", "PREFLIGHT RULING (2026-09-01): something else entirely is carried."],
+    }),
+  );
+  expect(other.findings.length, `\n${joined(other.findings)}`).toBe(1);
+  expect(other.text).toContain("discharges nothing at this ref");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE PURE HALVES OF CLASS SIX, DRIVEN DIRECTLY
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("the marker is read through a bullet and emphasis, and the FIRST quoted run is the needle", () => {
+  const card = [
+    "---",
+    "id: T-903",
+    "---",
+    "",
+    'CARD CLAIM (docs/A.md): "the plain form"',
+    '- CARD CLAIM (docs/B.md): "through a bullet"',
+    '**CARD CLAIM (`docs/C.md`): "through emphasis, with a backticked source"**',
+    'CARD CLAIM (docs/D.md): the flag `--first` is spelled "second here"',
+    "",
+  ].join("\n");
+  const found = cardClaims(card);
+  expect(found.map((c) => c.source)).toEqual(["docs/A.md", "docs/B.md", "docs/C.md", "docs/D.md"]);
+  expect(found.map((c) => c.quote)).toEqual([
+    "the plain form",
+    "through a bullet",
+    "through emphasis, with a backticked source",
+    "--first",
+  ]);
+});
+
+test("the file check collapses the wrap on both sides and keeps the capitals", () => {
+  const root = scratchRoot();
+  git(root, ["init", "--initial-branch=main", "--quiet"]);
+  writeFixtureFile(root, "docs/GOVERNING.md", TRUE_CLAIM.sourceText);
+  git(root, ["add", "-A"]);
+  git(root, ["commit", "-m", "Checkpoint: one document", "--quiet"]);
+  const oracle = pathOracle(root);
+  const claim = (quote: string, source = "docs/GOVERNING.md") => ({
+    line: 1,
+    source,
+    quote,
+    payload: quote,
+  });
+
+  // ACROSS THE WRAP: the sentence is two lines in the file and one in
+  // the card, and it HOLDS.
+  expect(checkClaim(root, oracle, claim(TRUE_CLAIM.quote)).state).toBe("held");
+  // THE SAME SENTENCE SHOUTED IS A DISCREPANCY, and the detail says so
+  // rather than leaving the author to search.
+  const shouted = checkClaim(root, oracle, claim(TRUE_CLAIM.quote.toUpperCase()));
+  expect(shouted.state).toBe("false");
+  expect(shouted.detail).toContain("case-insensitive");
+  // AND A SENTENCE NOTHING IN THE FILE SAYS IS FALSE WITHOUT THE CASE
+  // HINT, so the hint discriminates rather than decorating every miss.
+  const absent = checkClaim(root, oracle, claim("a sentence this document never carried"));
+  expect(absent.state).toBe("false");
+  expect(absent.detail).not.toContain("case-insensitive");
+  expect(checkClaim(root, oracle, claim("x", "docs/GONE.md")).state).toBe("untracked");
+  expect(checkClaim(root, oracle, claim("x", "docs")).state).toBe("directory");
+  expect(checkClaim(root, oracle, claim("")).state).toBe("unreadable");
+});
+
+test("the unmarked report is paragraph-scoped, and a marker's own needle is not in it", () => {
+  const root = scratchRoot();
+  git(root, ["init", "--initial-branch=main", "--quiet"]);
+  writeFixtureFile(root, "docs/GOVERNING.md", "anything\n");
+  git(root, ["add", "-A"]);
+  git(root, ["commit", "-m", "Checkpoint: one document", "--quiet"]);
+  const oracle = pathOracle(root);
+  const card = [
+    "---",
+    "id: T-903",
+    "---",
+    "",
+    'The rule is "quoted across the wrap" and it lives in',
+    "docs/GOVERNING.md, two lines below the heading.",
+    "",
+    'A paragraph that names no file at all, quoting "a platform behaviour".',
+    "",
+    'CARD CLAIM (docs/GOVERNING.md): "a marked needle"',
+    "",
+    'Short ones like "abc" are below the floor and are not assertions.',
+    "",
+  ].join("\n");
+  const loose = unmarkedQuotes(card, oracle);
+  expect(loose.map((q) => q.text)).toEqual(["quoted across the wrap", "a platform behaviour"]);
+  // THE WRAP IS THE WHOLE REASON THE PARAGRAPH IS THE UNIT: the quote is
+  // on one line and the path it is about is on the next.
+  expect(loose.map((q) => q.nearPath)).toEqual([true, false]);
 });
