@@ -75,7 +75,7 @@ function board(
       env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
     });
   };
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   git("config", "user.email", "fixture@example.invalid");
   git("config", "user.name", "T-203 fixture");
   mkdirSync(path.join(root, "docs/tasks"), { recursive: true });

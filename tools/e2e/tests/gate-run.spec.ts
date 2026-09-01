@@ -681,7 +681,7 @@ test("the suites the document offers the runner are exactly the suites the runne
  */
 function tokenRepo(name: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), `t203-token-${name}-`));
-  execFileSync("git", ["init", "-q", dir], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", dir], { stdio: "pipe" });
   gitIn(dir, "config", "user.email", "fixture@example.invalid");
   gitIn(dir, "config", "user.name", "T-203 fixture");
   writeFileSync(path.join(dir, "README.md"), "one\n");

@@ -206,6 +206,22 @@
   by one seat's rapid pushes. Commit stamps freely; BATCH THE PUSH. (With
   T-203's token gate the batching is doubly worth it — each push wants a
   fresh four-suite battery anyway.)
+- **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
+  `gh run view <id> --log-failed` on anything red. Batching exists so CI
+  gets to FINISH, which buys nothing if nobody looks: main sat RED for
+  roughly five hours across two distinct failures while a seat pushed
+  over both, reporting "all four suites green" — true locally, and not
+  the claim that mattered. **A LOCAL BATTERY AND CI ARE DIFFERENT
+  MEASUREMENTS AND ONLY ONE OF THEM RUNS ON A MACHINE THAT IS NOT
+  YOURS.**
+- **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
+  never bare `git init`. `init.defaultBranch` is MACHINE config — this
+  developer's says `main`, the CI runner's says `master` — so an
+  unpinned fixture builds a different repository on each, and the
+  landing gate then resolves a different ref, judges a different range
+  and reaches a different verdict. Green here, red there, and the diff
+  explains nothing. Seven fixtures already pinned it and three new ones
+  did not; that asymmetry is what made it look like a platform bug.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —

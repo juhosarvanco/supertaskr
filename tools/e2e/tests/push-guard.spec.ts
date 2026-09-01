@@ -182,7 +182,7 @@ function fixture(
   const git = (...args: string[]): void => {
     execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { stdio: "pipe" });
   };
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   git("config", "user.email", "fixture@example.invalid");
   git("config", "user.name", "T-167-s8 fixture");
 
@@ -216,7 +216,7 @@ function fixture(
   // sits inside this fixture's own mkdtemp root; nothing leaves the
   // machine and no network is touched.
   const remote = path.join(root, "remote.git");
-  execFileSync("git", ["init", "-q", "--bare", remote], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", "--bare", remote], { stdio: "pipe" });
   git("remote", "add", "origin", remote);
   git("push", "-q", "origin", "HEAD:refs/heads/main");
   // The commit the guarded push WOULD carry. It is deliberately made
@@ -768,7 +768,7 @@ function boardFixture(
       env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
     });
   };
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   git("config", "user.email", "fixture@example.invalid");
   git("config", "user.name", "T-203 fixture");
   mkdirSync(path.join(root, CHECK_DIR_REL_PATH), { recursive: true });
@@ -790,7 +790,7 @@ function boardFixture(
   git("commit", "-qm", "the board");
 
   const remote = path.join(root, "remote.git");
-  execFileSync("git", ["init", "-q", "--bare", remote], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", "--bare", remote], { stdio: "pipe" });
   git("remote", "add", "origin", remote);
   git("push", "-q", "origin", "HEAD:refs/heads/main");
 
@@ -832,7 +832,7 @@ test("writeToken makes its own token un-committable in a repository NOBODY armed
   // `git add -A` would stage.
   const root = mkdtempSync(path.join(os.tmpdir(), "T-203-unarmed-"));
   SCRATCH.push(root);
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   writeFileSync(path.join(root, "tracked.txt"), "tracked\n");
   execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
     ...NO_BACKGROUND_MAINTENANCE, "add", "-A"], { stdio: "pipe" });
@@ -884,7 +884,7 @@ test("the ignore file the TOKEN writer leaves on disk is the one imported ignore
   // claims the other's half.
   const root = mkdtempSync(path.join(os.tmpdir(), "T-203-one-home-"));
   SCRATCH.push(root);
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   const { ignoreFile } = writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
   expect(readFileSync(ignoreFile, "utf8")).toBe(RUNTIME_DIR_IGNORE);
   expect(RUNTIME_DIR_IGNORE, "an ignore file that does not ignore everything").toContain("*");
@@ -1135,7 +1135,7 @@ test("a checkout whose HEAD tree git will not name is announced, and allowed", (
   // it is announced rather than silent.
   const root = mkdtempSync(path.join(os.tmpdir(), "T-203-unborn-"));
   SCRATCH.push(root);
-  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
   writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
   expect(headTree(root), "the precondition: git names no tree here").toBeUndefined();
