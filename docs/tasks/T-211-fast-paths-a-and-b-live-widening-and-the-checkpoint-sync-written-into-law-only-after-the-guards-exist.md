@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: [T-209, T-212]
 touches: [method/lane-protocol.md, method/roles/executor.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md, docs/CONVENTIONS.md]
 suggested_by: "@human's two questions on the fence design (2026-08-31): what a lane does when it discovers an out-of-fence need mid-flight, and whether waiting on another lane can ever be sound; mechanics by peer session nputer-10; accepted by the architect seat"

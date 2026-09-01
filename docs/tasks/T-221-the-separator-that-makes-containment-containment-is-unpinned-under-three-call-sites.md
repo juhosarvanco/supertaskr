@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [lib-parser]
 suggested_by: "T-209's blind verifier, as suggestion S1 in its APPROVED verdict; re-raised by it after T-212 was dispatched onto the same primitive, and confirmed at the architect/integrator seat"

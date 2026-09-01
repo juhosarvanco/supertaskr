@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); the instances are this seat's own, measured the same night"
