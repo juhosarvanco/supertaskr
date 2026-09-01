@@ -13,6 +13,7 @@ import {
   touchesTokens,
 } from "../../../.claude/hooks/landing-gate.mjs";
 import { frontmatterLineOf, touchesLineOf, within } from "../../../.claude/hooks/lane-fence.mjs";
+import { GREEN, REQUIRED_SUITES, writeToken } from "../../../.claude/hooks/gate-token.mjs";
 import { integrationRefCandidates, laneSpellings } from "../scripts/dispatch-brief.mjs";
 import { conventionsText } from "../scripts/docs-scan.mjs";
 import { loadParser } from "../scripts/dispatch-order.mjs";
@@ -160,12 +161,24 @@ function fixture(name: string, opts: FxOptions = {}): Fx {
   return { root, remote, lane, laneRef: `refs/heads/${lane}`, card, cut };
 }
 
-/** Write a card whose frontmatter `id:` and filename agree, as every live card's does. */
+/**
+ * Write a card whose frontmatter `id:` and filename agree, as every live
+ * card's does — AND whose placement fields are present, as every live
+ * non-suggested card's are.
+ *
+ * The placement set arrived at T-203 and was not decoration: the pre-push
+ * cheap checks read the whole board, and these cards carried `status:
+ * building` with none of the four fields `lib/parser/src/task.ts` requires
+ * of any status but `suggested` and `parked`. They were cards the parser
+ * would refuse, standing in for cards it would not, and the new check
+ * found them on its first run against this file.
+ */
 function writeCard(root: string, rel: string, id: string, touches: string | null): void {
   mkdirSync(path.join(root, path.dirname(rel)), { recursive: true });
   writeFileSync(
     path.join(root, rel),
-    `---\nid: ${id}\ntitle: a fixture card\nstatus: building\n` +
+    `---\nid: ${id}\ntitle: a fixture card\nfeature: F-01\nmilestone: 1\n` +
+      `priority: 1\nsize: S\nstatus: building\n` +
       (touches === null ? "" : `touches: ${touches}\n`) +
       `---\n\nA card the landing gate reads.\n`,
   );
@@ -197,7 +210,39 @@ function remoteRef(fx: Fx, ref: string): string | undefined {
  * invokes refuses", which are two different claims and only the second is
  * the guard.
  */
+/**
+ * SAY THAT THE GATES WERE RUN AGAINST THIS EXACT TREE (T-203).
+ *
+ * The same hook now carries a THIRD arm: a push whose verdict token is
+ * missing or stale is refused before this file's own arm is ever reached.
+ * That is not a change to the landing gate — it is a new precondition on
+ * every push in this repository, and a fixture that did not express it
+ * would be measuring the token arm while reading as though it measured
+ * this one.
+ *
+ * It is written HERE rather than at fixture-build time on purpose: a body
+ * commits and then pushes, and the token is keyed by HEAD's TREE, so one
+ * planted before those commits would be stale by the time it mattered.
+ * Refreshing it at the push is also the honest model of the workflow the
+ * guard prescribes — run the battery LAST, then push.
+ */
+function gatesWereRun(root: string): void {
+  writeToken(
+    root,
+    REQUIRED_SUITES.map((suite) => ({
+      suite,
+      exit: 0,
+      bodies: 7,
+      targets: 1,
+      verdict: GREEN,
+      reason: "ok",
+      ref: git(root, "rev-parse", "HEAD").trim(),
+    })),
+  );
+}
+
 function runWiredHook(fx: Fx, command: string): { status: number | null; stderr: string } {
+  gatesWereRun(fx.root);
   const settings = JSON.parse(
     readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8"),
   ) as { hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] } };

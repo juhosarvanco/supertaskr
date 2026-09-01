@@ -18,7 +18,19 @@ import {
   isPush,
   laneCanRegenerate,
 } from "../../../.claude/hooks/push-guard.mjs";
-import { MANIFEST_REL_PATH, MANIFEST_VERSION } from "../../../.claude/hooks/lane-fence.mjs";
+import {
+  MANIFEST_REL_PATH,
+  MANIFEST_VERSION,
+  RUNTIME_DIR_IGNORE,
+} from "../../../.claude/hooks/lane-fence.mjs";
+import {
+  GREEN,
+  REQUIRED_SUITES,
+  RUNTIME_DIR,
+  TOKEN_REL_PATH,
+  headTree,
+  writeToken,
+} from "../../../.claude/hooks/gate-token.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
@@ -112,6 +124,46 @@ interface Fixture {
 }
 
 /**
+ * THE TOKEN STATE A FIXTURE IS BORN IN (T-203).
+ *
+ * `fresh` is the DEFAULT and every pre-T-203 body in this file depends on
+ * it. That is not a convenience: the token arm fails closed, so a fixture
+ * with no token refuses BEFORE the graph is ever asked, and every body
+ * about the graph would then be measuring the token arm while reading as
+ * though it measured the graph. A fixture models a repository whose
+ * battery has been run; the bodies below opt into the other four states
+ * deliberately, one each.
+ */
+type TokenState = "fresh" | "missing" | "stale" | "red" | "partial";
+
+/** A tree hash no repository has, for the STALE case. */
+const FOREIGN_TREE = "0".repeat(40);
+
+/** One suite's entry, as the runner would have written it. */
+function suiteVerdict(suite: string, verdict: string, ref: string) {
+  return {
+    suite,
+    exit: verdict === GREEN ? 0 : 1,
+    bodies: 7,
+    targets: 1,
+    verdict,
+    reason: verdict === GREEN ? "ok" : "suite-reported-failure",
+    ref,
+  };
+}
+
+/** Put `state`'s token into a fixture that has just finished committing. */
+function plantToken(root: string, state: TokenState): void {
+  if (state === "missing") return;
+  const ref = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const suites = state === "partial" ? REQUIRED_SUITES.slice(0, 1) : REQUIRED_SUITES;
+  const verdicts = suites.map((s) =>
+    suiteVerdict(s, state === "red" && s === REQUIRED_SUITES[REQUIRED_SUITES.length - 1] ? "RED" : GREEN, ref),
+  );
+  writeToken(root, verdicts, state === "stale" ? { tree: FOREIGN_TREE } : {});
+}
+
+/**
  * A git repository that looks enough like this one for the guard to
  * recognise it, with a `cargo` on its own PATH answering `code`.
  *
@@ -123,7 +175,7 @@ function fixture(
   name: string,
   code: number,
   report: string,
-  opts: { nputer?: boolean; branch?: string; fence?: string[] } = {},
+  opts: { nputer?: boolean; branch?: string; fence?: string[]; token?: TokenState } = {},
 ): Fixture {
   const root = mkdtempSync(path.join(os.tmpdir(), `T-167-s8-${name}-`));
   SCRATCH.push(root);
@@ -194,6 +246,10 @@ function fixture(
       }),
     );
   }
+  // AFTER the last commit, deliberately: the token is keyed by HEAD's
+  // TREE, so a token planted before the second commit would be stale in
+  // every fixture and the default would silently stop being `fresh`.
+  plantToken(root, opts.token ?? "fresh");
   return { root, remote, unpushed, marker: writeCargoShim(root, code, report) };
 }
 
@@ -511,6 +567,14 @@ test("an allow that left the graph unverified is announced; an ordinary one is s
   // reached because the gate had no question to ask in that checkout at
   // all, which is this file's own `not-this-repository` shape and is
   // silent. The body below drives both halves of that split.
+  // T-203 ADDED TWO THINGS THIS GUARD SAYS OUT LOUD AND NEITHER IS HERE,
+  // which is a claim about what this list IS rather than an omission. It
+  // is a FILTER on a returned Decision's own code; the cheap checks'
+  // `could not run` and the token arm's `no tree to key against` are
+  // NOTICES, printed whatever the verdict is, so a row here would be a
+  // row nothing consults. Two bodies further down drive them and require
+  // their sentences, which is the property a row here would only have
+  // described.
   expect([...ANNOUNCED_ALLOW_CODES].sort()).toEqual([
     "check-could-not-run",
     "check-inconclusive",
@@ -655,6 +719,496 @@ test("the refusal travels through the WIRED command, not through a path this spe
 
   const current = fixture("wired-current", CHECK_EXIT.CURRENT, CURRENT_REPORT);
   expect(runWiredHook(current, "git push origin main").status).toBe(0);
+});
+
+/* ═══════════════ T-203 — THE VERDICT TOKEN AND THE CHEAP CHECKS ═════
+ *
+ * Everything above this line is T-167-s8's graph arm and T-212's landing
+ * arm. Below it is the third arm: a push may not carry a claim nothing
+ * measured.
+ *
+ * ── THE ONE PLACE THIS FILE'S FAIL-OPEN DOCTRINE IS INVERTED ─────────
+ * Every allow above is a guard standing aside because it could not
+ * answer. The token arm REFUSES on an absence, so the positive control
+ * matters more here than anywhere else in this file: a guard that refuses
+ * everything is indistinguishable from one that works, and the fixture's
+ * default token state exists so that every body below has one.
+ */
+
+/** `--root`-shaped fixture carrying a real board the cheap checks read. */
+interface BoardFixture extends Fixture {
+  /** The card the fixture planted, for a body to name in its assertion. */
+  card: string;
+}
+
+/**
+ * A fixture whose `docs/` tree is a real board, so the cheap checks have
+ * something to find — or, in the control, provably nothing.
+ *
+ * `record` builds the SECOND measured instance: `docs/STATE.md` committed
+ * first, a checkpoint record committed AFTER it. The commit dates are set
+ * EXPLICITLY, and that is load-bearing rather than tidy — git's committer
+ * timestamps have one-second granularity, so two commits made in the same
+ * second TIE, and `staleStateRecords` passes a tie by design. A fixture
+ * that relied on wall-clock ordering would fail to build its own defect
+ * on a fast machine and the body would go green over nothing.
+ */
+function boardFixture(
+  name: string,
+  opts: { blocker?: string; record?: boolean; token?: TokenState } = {},
+): BoardFixture {
+  const root = mkdtempSync(path.join(os.tmpdir(), `T-203-${name}-`));
+  SCRATCH.push(root);
+  let clock = 0;
+  const git = (...args: string[]): void => {
+    clock += 60;
+    const at = `2026-09-01T00:${String(clock / 60).padStart(2, "0")}:00Z`;
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      stdio: "pipe",
+      env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+    });
+  };
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  git("config", "user.email", "fixture@example.invalid");
+  git("config", "user.name", "T-203 fixture");
+  mkdirSync(path.join(root, CHECK_DIR_REL_PATH), { recursive: true });
+  mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
+  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
+  writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\nremote.git/\n");
+
+  mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
+  const card = "docs/tasks/T-901-a-well-formed-card.md";
+  writeFileSync(
+    path.join(root, card),
+    "---\nid: T-901\ntitle: a well-formed card\nfeature: F-01\nmilestone: 1\n" +
+      `priority: 1\nsize: S\nstatus: planned\nblocked_by: [${opts.blocker ?? ""}]\n` +
+      "touches: [tools/e2e]\n---\n\nbody\n",
+  );
+  mkdirSync(path.join(root, "docs/checkpoints"), { recursive: true });
+  writeFileSync(path.join(root, "docs/STATE.md"), "# State\n");
+  git("add", "-A");
+  git("commit", "-qm", "the board");
+
+  const remote = path.join(root, "remote.git");
+  execFileSync("git", ["init", "-q", "--bare", remote], { stdio: "pipe" });
+  git("remote", "add", "origin", remote);
+  git("push", "-q", "origin", "HEAD:refs/heads/main");
+
+  // The unpushed commit. When `record` is set it IS the defect: a
+  // checkpoint record landing without STATE being regenerated beside it.
+  if (opts.record === true) {
+    writeFileSync(path.join(root, "docs/checkpoints/2026-09-01-record.md"), "# Record\n");
+  } else {
+    writeFileSync(path.join(root, "README.md"), "second commit\n");
+  }
+  git("add", "-A");
+  git("commit", "-qm", "the commit a guarded push would carry");
+  const unpushed = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+
+  plantToken(root, opts.token ?? "fresh");
+  return { root, remote, unpushed, card, marker: writeCargoShim(root, CHECK_EXIT.CURRENT, CURRENT_REPORT) };
+}
+
+/* ───────────── the token's own contract ─────────────────────────── */
+
+test("writeToken makes its own token un-committable in a repository NOBODY armed", () => {
+  // THE CARD'S FIRST DECISION, AND THE BODY THAT REPLACES ONE THAT WAS
+  // GREEN BY CONSTRUCTION.
+  //
+  // The first version of this assertion asked `git check-ignore` in
+  // `repoRoot` — a LANE WORKTREE, where the dispatcher had already
+  // written `.nputer/.gitignore` at arm time. So it passed without
+  // `writeToken` doing anything, and no mutant of `gate-token.mjs` could
+  // red it. Worse, on a fresh clone the subject and its own negative
+  // control BOTH returned 1: a control that degenerates to its subject,
+  // which is the one outcome a control exists to exclude. A verifier
+  // reproduced `?? .nputer/` and `git add -A` offering the token.
+  //
+  // So the question is now asked in a repository this suite builds and
+  // nobody arms, and it is asked of the three things that actually
+  // matter: what `check-ignore` says, what `git status` shows, and what
+  // `git add -A` would stage.
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-unarmed-"));
+  SCRATCH.push(root);
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  writeFileSync(path.join(root, "tracked.txt"), "tracked\n");
+  execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
+    ...NO_BACKGROUND_MAINTENANCE, "add", "-A"], { stdio: "pipe" });
+  execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
+    ...NO_BACKGROUND_MAINTENANCE, "commit", "-qm", "one"], { stdio: "pipe" });
+
+  // THE PRECONDITION, ASSERTED: nothing here ignores `.nputer/` yet. This
+  // is what makes the assertions below a measurement of `writeToken`
+  // rather than of whoever built the fixture.
+  expect(
+    spawnSync("git", ["-C", root, "check-ignore", "-q", TOKEN_REL_PATH]).status,
+    "the fixture already ignores the token, so this body cannot see writeToken do it",
+  ).not.toBe(0);
+
+  writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+
+  expect(
+    spawnSync("git", ["-C", root, "check-ignore", "-q", TOKEN_REL_PATH]).status,
+    `${TOKEN_REL_PATH} is not ignored — a committable token can be stale-but-matching`,
+  ).toBe(0);
+  // The control, in the same call shape and IN THE SAME REPOSITORY: a
+  // tracked path answers non-zero. On the tree that shipped the defect
+  // this line and the one above both answered 1.
+  expect(spawnSync("git", ["-C", root, "check-ignore", "-q", "tracked.txt"]).status).not.toBe(0);
+
+  // AND THE TWO COMMANDS A SEAT ACTUALLY RUNS, because `check-ignore`
+  // answers about a path and these answer about the repository.
+  const status = execFileSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8" });
+  expect(status, "the token shows up as untracked — `git add -A` would take it").not.toContain(
+    RUNTIME_DIR,
+  );
+  const staged = execFileSync("git", ["-C", root, "add", "-A", "--dry-run"], { encoding: "utf8" });
+  expect(staged, "`git add -A` offers to commit the verdict token").not.toContain(RUNTIME_DIR);
+});
+
+test("the ignore file the TOKEN writer leaves on disk is the one imported ignore string", () => {
+  // T-057, and this file's own footnote about re-exports dressed up as
+  // cross-checks: there is no second constant to compare against, so what
+  // is checked is the ROUND TRIP through this writer onto disk.
+  //
+  // THE NAME SAYS `TOKEN WRITER` BECAUSE THAT IS ALL THIS BODY DRIVES.
+  // An earlier spelling claimed "the fence writer and the token writer
+  // both use it" while exercising one of them — a name outrunning its
+  // body, which is how a reader comes to believe a property has a keeper
+  // it does not have. The FENCE writer's half of the same round trip is
+  // covered in `lane-fence.spec.ts`, which reads its written file back
+  // and compares it to `MANIFEST_DIR_IGNORE` — the alias for this very
+  // constant. The property is covered across two specs, and neither body
+  // claims the other's half.
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-one-home-"));
+  SCRATCH.push(root);
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  const { ignoreFile } = writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(ignoreFile, "utf8")).toBe(RUNTIME_DIR_IGNORE);
+  expect(RUNTIME_DIR_IGNORE, "an ignore file that does not ignore everything").toContain("*");
+});
+
+test("an ignore file already on disk is left alone, so an armed lane is never clobbered", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-armed-"));
+  SCRATCH.push(root);
+  mkdirSync(path.join(root, RUNTIME_DIR), { recursive: true });
+  const ignoreFile = path.join(root, RUNTIME_DIR, ".gitignore");
+  writeFileSync(ignoreFile, "# a dispatcher wrote this\n*\n");
+  writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(ignoreFile, "utf8")).toBe("# a dispatcher wrote this\n*\n");
+  // The control: the same call into a directory with NO ignore file
+  // writes one, so "left alone" is a discrimination and not inaction.
+  const bare = mkdtempSync(path.join(os.tmpdir(), "T-203-bare-"));
+  SCRATCH.push(bare);
+  writeToken(bare, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(path.join(bare, RUNTIME_DIR, ".gitignore"), "utf8")).toBe(RUNTIME_DIR_IGNORE);
+});
+
+test("a missing token refuses the push and names the one command that fixes it", () => {
+  const fx = fixture("token-missing", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  expect(existsSync(path.join(fx.root, TOKEN_REL_PATH))).toBe(false);
+
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("nothing has been measured in this checkout");
+  expect(run.stderr).toContain("node tools/e2e/scripts/gate-run.mjs --all");
+  // AND THE GRAPH WAS NEVER ASKED. The token arm runs first, so a push
+  // that is going to be refused does not spend a second and a half
+  // compiling a crate to be told something else.
+  expect(checkWasSpawned(fx), "the expensive check must not have run").toBe(false);
+});
+
+test("a token whose tree is not HEAD's refuses as STALE, naming both trees", () => {
+  const fx = fixture("token-stale", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "stale" });
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("STALE against HEAD's tree");
+  expect(run.stderr).toContain(FOREIGN_TREE);
+  expect(run.stderr).toContain(String(headTree(fx.root)));
+});
+
+test("a token recording a red suite refuses, and says which suite", () => {
+  const fx = fixture("token-red", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "red" });
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("records a suite that RAN AND FAILED");
+  expect(run.stderr).toContain(String(REQUIRED_SUITES[REQUIRED_SUITES.length - 1]));
+});
+
+test("a token that graded some of the battery is refused as INCOMPLETE", () => {
+  // A partial token is not a lie — it says exactly what it measured. It
+  // is the READER that would lie by accepting it as "the gates are
+  // green", which is this card's title in one sentence.
+  const fx = fixture("token-partial", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "partial" });
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("graded suites");
+  for (const suite of REQUIRED_SUITES.slice(1)) expect(run.stderr).toContain(suite);
+});
+
+test("a suite the runner DECLINED to grade refuses as unmeasured, not as red", () => {
+  // THE TOOLCHAIN CASE, DECIDED AND WRITTEN DOWN. With no `cargo`,
+  // gate-run records `rust` REFUSED; that push is genuinely unmeasured
+  // and is refused. What it must not say is that the suite FAILED —
+  // that would send a seat to debug a run that never happened.
+  const fx = fixture("token-unmeasured", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(
+    fx.root,
+    REQUIRED_SUITES.map((s) =>
+      s === "rust"
+        ? { suite: s, exit: -1, bodies: 0, targets: 0, verdict: "REFUSED",
+            reason: "could-not-run: spawnSync cargo ENOENT", ref }
+        : suiteVerdict(s, GREEN, ref),
+    ),
+  );
+  const run = runHook(fx, "git push");
+  expect(run.status, "an ungraded suite must still refuse — nothing measured it").toBe(2);
+  expect(run.stderr).toContain("DECLINED TO GRADE");
+  expect(run.stderr).toContain("could-not-run");
+  expect(run.stderr, "an ungraded suite must not be reported as a failure").not.toContain(
+    "RAN AND FAILED",
+  );
+
+  // THE CONTROL, in the same fixture shape: a suite that really did run
+  // and fail says the opposite thing. Without it, "not red" is satisfied
+  // by a guard that never says red at all.
+  const failed = fixture("token-really-red", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "red" });
+  const failedRun = runHook(failed, "git push");
+  expect(failedRun.status).toBe(2);
+  expect(failedRun.stderr).toContain("RAN AND FAILED");
+  expect(failedRun.stderr).not.toContain("DECLINED TO GRADE");
+});
+
+test("a battery run over uncommitted work does not certify the tree it is keyed to", () => {
+  // C-7. The suites execute against the WORKING TREE; the token is keyed
+  // to HEAD^{tree}. Run dirty, discard the dirt, push — and a green token
+  // would certify content no commit carries. The dirt is recorded at
+  // write time, so the key's claim has something standing behind it.
+  const fx = fixture("token-dirty", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  writeFileSync(path.join(fx.root, "README.md"), "uncommitted edit the suites would have seen\n");
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+
+  const run = runHook(fx, "git push");
+  expect(run.status, "a battery run over uncommitted work must not certify HEAD's tree").toBe(2);
+  expect(run.stderr).toContain("does not describe what its suites ran against");
+
+  // THE CONTROL: discard the dirt and re-run the battery, and the same
+  // fixture pushes. This is also the remedy the refusal names.
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "checkout", "--", "README.md"], {
+    stdio: "pipe",
+  });
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+  expect(runHook(fx, "git push").status, "a clean re-run must be accepted").toBe(0);
+});
+
+test("an UNTRACKED file is not counted as dirt, because a scratch note is not a measurement problem", () => {
+  // THE BOUND ON THE CHECK ABOVE, and the residual is stated rather than
+  // implied: an untracked file does not change HEAD^{tree} either, and
+  // counting it would refuse a push over a stray note — which is how a
+  // guard gets turned off. What this does NOT see is an untracked NEW
+  // TEST FILE, which can change what a suite executes without moving the
+  // key. Narrow, named, and it self-corrects the moment it is added.
+  const fx = fixture("token-untracked", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  writeFileSync(path.join(fx.root, "scratch-note.txt"), "a note, untracked\n");
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+  expect(runHook(fx, "git push").status, fx.root).toBe(0);
+});
+
+test("an amend that changes only the message keeps the token; one that changes a file does not", () => {
+  // THE CARD'S SECOND DECISION, MEASURED IN BOTH DIRECTIONS. The tree
+  // hash names the CONTENT the suites graded, so a reworded commit is
+  // still that content and a rewritten file is not.
+  const fx = fixture("token-amend", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const git = (...args: string[]): void => {
+    execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, ...args], { stdio: "pipe" });
+  };
+  const treeBefore = headTree(fx.root);
+
+  git("commit", "-q", "--amend", "-m", "the same tree under a different message");
+  expect(headTree(fx.root), "an amended message must not move the tree").toBe(treeBefore);
+  expect(runHook(fx, "git push").status, "the token still describes this content").toBe(0);
+
+  writeFileSync(path.join(fx.root, "README.md"), "amended content\n");
+  git("add", "-A");
+  git("commit", "-q", "--amend", "-m", "a different tree");
+  expect(headTree(fx.root)).not.toBe(treeBefore);
+  const after = runHook(fx, "git push");
+  expect(after.status, "a changed file must stale the token").toBe(2);
+  expect(after.stderr).toContain("STALE against HEAD's tree");
+});
+
+/* ───────────── the cheap checks, on their own measured instances ──── */
+
+test("an unresolvable blocked_by refuses the push — the first measured instance", () => {
+  const fx = boardFixture("cheap-blocker", { blocker: "T-999" });
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("dangling-blocker");
+  expect(run.stderr).toContain("T-999");
+  expect(run.stderr).toContain(fx.card);
+});
+
+test("a record newer than STATE refuses the push — the second measured instance", () => {
+  const fx = boardFixture("cheap-record", { record: true });
+  const run = runHook(fx, "git push");
+  expect(run.status).toBe(2);
+  expect(run.stderr).toContain("state-stale");
+  expect(run.stderr).toContain("2026-09-01-record.md");
+});
+
+test("a coherent board is not refused — the cheap checks' positive control", () => {
+  // THE CONTROL THE TWO BODIES ABOVE ARE WORTHLESS WITHOUT. Same builder,
+  // same guard, no planted defect: the push is allowed. Without this,
+  // both refusals are satisfied by a checker that refuses every board.
+  const fx = boardFixture("cheap-clean");
+  const run = runHook(fx, "git push");
+  expect(run.status, run.stderr).toBe(0);
+  expect(run.stderr).not.toContain("push-checks");
+});
+
+test("the cheap checks run even where the guard would otherwise allow and return", () => {
+  // "UNCONDITIONALLY" IS A CLAIM ABOUT CONTROL FLOW. A lane whose fence
+  // cannot reach the graph is an ALLOW that returns before the check —
+  // so if the cheap checks sat below it they would not run for the seats
+  // that take it, which is most lanes. This body puts the fixture on a
+  // lane branch with a fence that cannot reach the graph AND a dangling
+  // blocker, and requires the refusal.
+  const fx = boardFixture("cheap-under-lane-allow", { blocker: "T-999" });
+  execFileSync("git", ["-C", fx.root, "checkout", "-q", "-b", "task/T-901-lane"], { stdio: "pipe" });
+  mkdirSync(path.join(fx.root, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
+  writeFileSync(
+    path.join(fx.root, MANIFEST_REL_PATH),
+    JSON.stringify({
+      version: MANIFEST_VERSION,
+      taskId: "T-901",
+      branch: "refs/heads/task/T-901-lane",
+      card: "docs/tasks/T-901-a-well-formed-card.md",
+      touchesLine: "touches: [tools/e2e]",
+      paths: ["tools/e2e"],
+      excluded: [],
+      alwaysWritable: ["docs/tasks"],
+    }),
+  );
+  const run = runHook(fx, "git push");
+  expect(run.status, "the lane's cannot-regenerate allow must not have eaten the cheap checks").toBe(2);
+  expect(run.stderr).toContain("dangling-blocker");
+});
+
+test("cheap checks that could not run are announced, and allow", () => {
+  // The other half of the four-code reading: 3 is an inability, never a
+  // finding, and collapsing them would refuse every push in a checkout
+  // where the script is absent.
+  const fx = fixture("cheap-cannot-run", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const cannotRun = (): { status: null; stdout: string; stderr: string; problem: string } => ({
+    status: null,
+    stdout: "",
+    stderr: "",
+    problem: "the checker is not present in this checkout",
+  });
+  const decision = decide(
+    { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    cannotRun,
+  );
+  expect(decision.verdict).toBe("allow");
+  expect(decision.notices?.join("\n")).toContain("THE CHEAP CHECKS WERE NOT RUN");
+  // The control: the SAME fixture refuses when the checker FINDS one.
+  const found = decide(
+    { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    () => ({ status: 1, stdout: "", stderr: "  [dangling-blocker] planted" }),
+  );
+  expect(found.verdict).toBe("block");
+  expect(found.code).toBe("cheap-checks-found");
+});
+
+test("a checkout whose HEAD tree git will not name is announced, and allowed", () => {
+  // THE ONE PLACE THE TOKEN ARM FAILS OPEN. A missing token is an answer
+  // — nothing was measured — and refuses. A missing KEY is an inability:
+  // there is no tree to compare a token against, so there is nothing to
+  // be strict about. A repository with no commit at all is that case, and
+  // it is announced rather than silent.
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-unborn-"));
+  SCRATCH.push(root);
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
+  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
+  expect(headTree(root), "the precondition: git names no tree here").toBeUndefined();
+
+  const decision = decide(
+    { toolName: "Bash", toolInput: { command: "git push" }, cwd: root },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    () => ({ status: 0, stdout: "", stderr: "" }),
+  );
+  expect(decision.verdict).toBe("allow");
+  expect(decision.notices?.join("\n")).toContain("THE VERDICT TOKEN WAS NOT CHECKED");
+  // The control: give the same checkout a commit and no token, and the
+  // arm refuses — so the allow above is the missing KEY and not a token
+  // arm that never fires.
+  execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
+    ...NO_BACKGROUND_MAINTENANCE, "commit", "-q", "--allow-empty", "-m", "one"], { stdio: "pipe" });
+  expect(headTree(root)).toBeDefined();
+  const after = decide(
+    { toolName: "Bash", toolInput: { command: "git push" }, cwd: root },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    () => ({ status: 0, stdout: "", stderr: "" }),
+  );
+  expect(after.verdict).toBe("block");
+  expect(after.code).toBe("token-missing");
+});
+
+/* ─── THE TOKEN ARM FIRES: measured on the REMOTE, not on an exit code ─
+ *
+ * T-167-s8's three-arm shape, repeated for this card's own guard, and
+ * repeated rather than reused because the property is different: what a
+ * STALE TOKEN did, not what a stale graph did.
+ */
+
+test("WITHOUT the guard, a stale token reaches the remote — the defect, reproduced", () => {
+  const fx = fixture("token-fires-unguarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "stale" });
+  expect(remoteTip(fx), "the remote must start one commit behind").not.toBe(fx.unpushed);
+
+  execFileSync(
+    "git",
+    ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "origin", "HEAD:refs/heads/main"],
+    { stdio: "pipe" },
+  );
+
+  expect(remoteTip(fx), "unguarded, the unmeasured commit lands — this is the red").toBe(fx.unpushed);
+});
+
+test("WITH the guard, the same stale token never reaches the remote", () => {
+  const fx = fixture("token-fires-guarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "stale" });
+  const before = remoteTip(fx);
+  expect(before).not.toBe(fx.unpushed);
+
+  const { refused, pushed } = pushThroughGuard(fx);
+
+  expect(refused, "the wired hook must refuse").toBe(true);
+  expect(pushed).toBe(false);
+  expect(remoteTip(fx), "the unmeasured commit must NOT have landed").toBe(before);
+  expect(remoteTip(fx)).not.toBe(fx.unpushed);
+});
+
+test("WITH the guard, a fresh green token still reaches the remote — the positive control", () => {
+  // THE ARM THIS CARD SAYS MATTERS MORE THAN THE OTHER TWO. A guard that
+  // refuses everything satisfies both bodies above, and this is the only
+  // body that can tell them apart. Same builder, same wired hook, same
+  // remote — the one difference is a token that is present, complete,
+  // keyed to HEAD's own tree and green.
+  const fx = fixture("token-fires-clean", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(remoteTip(fx)).not.toBe(fx.unpushed);
+
+  const { refused, pushed } = pushThroughGuard(fx);
+
+  expect(refused, "a fresh green token must not be refused").toBe(false);
+  expect(pushed).toBe(true);
+  expect(remoteTip(fx), "the measured push must land").toBe(fx.unpushed);
 });
 
 test("the guard is wired into .claude/settings.json on the Bash matcher", () => {

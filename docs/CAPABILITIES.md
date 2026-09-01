@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **443 behaviours** — 441 extracted sentences + 2 named-not-extracted (listed at the end) — across 34 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **479 behaviours** — 477 extracted sentences + 2 named-not-extracted (listed at the end) — across 35 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -248,6 +248,11 @@ Census: **443 behaviours** — 441 extracted sentences + 2 named-not-extracted (
 - the CLI lists every graded suite with the directory it must run in
 - docs/CONVENTIONS.md names the blessed gate-runner in exactly one place, so one spelling is one spelling and not merely at least one
 - the suites the document offers the runner are exactly the suites the runner grades, so the two cannot drift apart
+- the suites a push must have measured are exactly the suites this runner grades, so neither can move alone
+- a real run's verdict survives the round trip into the token and is judged GREEN against the tree it ran at
+- a RED verdict is recorded rather than dropped, so a red run is never mistaken for a run nobody made
+- a second run MERGES into the token rather than replacing it, because the battery is run in pieces
+- a token written where it cannot be written is said out loud and changes no verdict
 
 ## genesis-screen
 
@@ -407,6 +412,20 @@ Census: **443 behaviours** — 441 extracted sentences + 2 named-not-extracted (
 - real Enter on a focused card trigger opens its panel
 - real Space on a focused card trigger opens its panel
 
+## push-checks
+
+- the statuses these checks treat as minimal are the ones lib/parser/src/task.ts calls minimal
+- the placement fields these checks require are the ones the parser requires of a non-minimal card
+- a blocked_by naming no live card is FOUND, and one naming a live card is not
+- a card stamped out of suggested without its four placement fields is FOUND; a suggestion is not
+- a checkpoint record committed after STATE is FOUND, and the same commit as STATE is not
+- the docs gate and the push checks ask ONE implementation, so they cannot disagree about the tie
+- the CLI exits FOUND on a defective board and CLEAN on a coherent one
+- a --root that is not a directory is CALLED WRONG, never a clean board
+- an unknown argument is CALLED WRONG rather than silently ignored
+- a checkout that is not a git repository at all cannot run the checks, and says so
+- this repository's own board passes every cheap check, over a board proved non-empty first
+
 ## push-guard
 
 - the four exit codes are docs/CONVENTIONS.md's, not this hook's
@@ -433,6 +452,26 @@ Census: **443 behaviours** — 441 extracted sentences + 2 named-not-extracted (
 - WITH the guard, the same stale graph never reaches the remote
 - WITH the guard, a current graph still reaches the remote
 - the refusal travels through the WIRED command, not through a path this spec typed
+- writeToken makes its own token un-committable in a repository NOBODY armed
+- the ignore file the TOKEN writer leaves on disk is the one imported ignore string
+- an ignore file already on disk is left alone, so an armed lane is never clobbered
+- a missing token refuses the push and names the one command that fixes it
+- a token whose tree is not HEAD's refuses as STALE, naming both trees
+- a token recording a red suite refuses, and says which suite
+- a token that graded some of the battery is refused as INCOMPLETE
+- a suite the runner DECLINED to grade refuses as unmeasured, not as red
+- a battery run over uncommitted work does not certify the tree it is keyed to
+- an UNTRACKED file is not counted as dirt, because a scratch note is not a measurement problem
+- an amend that changes only the message keeps the token; one that changes a file does not
+- an unresolvable blocked_by refuses the push — the first measured instance
+- a record newer than STATE refuses the push — the second measured instance
+- a coherent board is not refused — the cheap checks' positive control
+- the cheap checks run even where the guard would otherwise allow and return
+- cheap checks that could not run are announced, and allow
+- a checkout whose HEAD tree git will not name is announced, and allowed
+- WITHOUT the guard, a stale token reaches the remote — the defect, reproduced
+- WITH the guard, the same stale token never reaches the remote
+- WITH the guard, a fresh green token still reaches the remote — the positive control
 - the guard is wired into .claude/settings.json on the Bash matcher
 
 ## range-rule

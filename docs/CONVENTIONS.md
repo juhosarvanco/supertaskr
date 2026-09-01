@@ -162,6 +162,34 @@
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
   graded reading; its `gate-verdict` line carries the exit code, the
   BODY COUNT and the ref. READ THE COUNT, NEVER THE CODE.
+- **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
+  records its verdict in `.nputer/gate-verdict.json`, keyed on
+  `HEAD^{tree}` per suite, and `push-guard.mjs` refuses a push whose four
+  suites are not all GREEN against the tree being pushed. **So the
+  battery is run LAST, after every commit** — otherwise the token names a
+  tree that is no longer yours. The refusals are distinct and each prints
+  its remedy: `token-incomplete` (a suite never ran), `token-red` (a
+  suite RAN AND FAILED), `token-unmeasured` (the runner DECLINED TO
+  GRADE — no toolchain), `token-stale` (wrong tree), `token-unkeyed`
+  (tracked files were dirty when it was minted). **A checkout without
+  cargo cannot push, deliberately**: an unrun suite is unmeasured, and
+  that is disclosed at the refusal rather than hidden behind a wrong
+  label.
+- **AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP** (`18d8166`): never
+  chain a commit after a scripted edit — read the diff back FIRST. This
+  bullet exists because the rule was earned, recorded ONLY in checkpoint
+  records, and then broken three times by seats able to quote it. That is
+  the T-146 class, and the reason a MECHANISM belongs in a governing
+  document while a record takes the INSTANCE.
+- **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
+  `--include`, so a habit-formed invocation fails on a flag that works
+  everywhere else. Use `command grep`; sweep NULs with `perl -0777`.
+  Landed here from a checkpoint record for the reason the bullet above
+  gives.
+- **A PUSH CANCELS THE RUNNING CI JOB.** Four were superseded overnight
+  by one seat's rapid pushes. Commit stamps freely; BATCH THE PUSH. (With
+  T-203's token gate the batching is doubly worth it — each push wants a
+  fresh four-suite battery anyway.)
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —

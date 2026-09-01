@@ -118,6 +118,17 @@
  * DOES close is every case where the tool was honest and the reader
  * was not — which is all six of the measured instances above.
  *
+ * ── THE VERDICT IS ALSO LEFT WHERE A LATER PROCESS CAN ASK (T-203) ───
+ * The line below is trustworthy to whoever is reading the terminal, and
+ * to nobody else — so the same verdicts are written to `.nputer/`'s
+ * runtime token, keyed by the TREE the suites ran against, and the
+ * pre-push guard refuses a push whose token is missing, stale or red.
+ * That file's own header carries the argument for the tree hash and for
+ * why the token may never be committable. Every verdict is recorded,
+ * including RED and REFUSED ones: a writer that saved only the greens
+ * would make a red run indistinguishable from a run nobody made, which is
+ * this file's charter one layer downstream.
+ *
  * ── THE COMPANION RULE THIS FILE MAKES THIS REPOSITORY IMMUNE TO ─────
  * Scripts print their own `$?` last; readers trust the printed line and
  * never a wrapper's summary. Measured three times on 2026-08-31 in three
@@ -142,6 +153,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TOKEN_REL_PATH, writeToken } from "../../../.claude/hooks/gate-token.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -724,6 +736,44 @@ export function runSuite(suite, opts = {}) {
   }
 }
 
+// ── THE TOKEN ────────────────────────────────────────────────────────
+
+/**
+ * Leave these verdicts where a later, unrelated process can ask (T-203).
+ *
+ * EVERY VERDICT IS RECORDED, INCLUDING THE BAD ONES. A writer that saved
+ * only GREEN runs would make a red run indistinguishable from a run
+ * nobody made, which is this file's own charter one layer downstream —
+ * and the push guard can only say WHICH of those two it is refusing if
+ * the red is on the record.
+ *
+ * A TOKEN THAT CANNOT BE WRITTEN NEVER CHANGES A VERDICT. The suites'
+ * answer is the suites', and nothing about a file may move it; the
+ * failure is said out loud instead, because the guard downstream will
+ * then refuse for want of a token and the seat should meet the reason
+ * here rather than there.
+ *
+ * @param {Verdict[]} verdicts
+ * @param {string} [root]
+ * @returns {{ written: boolean, message: string }}
+ */
+export function recordVerdicts(verdicts, root = repoRoot) {
+  try {
+    const { path: tokenFile } = writeToken(root, verdicts);
+    const message = `gate-run: verdict token written to ${tokenFile}\n`;
+    process.stderr.write(message);
+    return { written: true, message };
+  } catch (err) {
+    const message =
+      `gate-run: THE VERDICT TOKEN COULD NOT BE WRITTEN to ${TOKEN_REL_PATH} ` +
+      `(${err instanceof Error ? err.message : String(err)}). The verdicts still stand — this is ` +
+      "a claim about the file, not about the suites — but nothing downstream can read them, so a " +
+      "push will be refused for want of a token.\n";
+    process.stderr.write(message);
+    return { written: false, message };
+  }
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────
 
 const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-202)
@@ -733,6 +783,9 @@ const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-
   node tools/e2e/scripts/gate-run.mjs --all        every graded suite
 
 suites: ${Object.keys(GRADED_SUITES).join(", ")}
+
+Every run also writes its verdicts to ${TOKEN_REL_PATH}, keyed by the tree
+they ran against; the pre-push guard reads that token (T-203).
 
 exit: 0 every suite GREEN · 1 a suite is RED · 2 called wrong ·
       3 REFUSED — no verdict this runner would stand behind`;
@@ -773,6 +826,7 @@ function main(argv) {
     verdicts.push(verdict);
     if (outputPath) process.stderr.write(`gate-run: ${n} output at ${outputPath}\n`);
   }
+  recordVerdicts(verdicts);
   // THE VERDICT LINES ARE PRINTED LAST, so the last thing a reader sees
   // is the thing they should trust.
   for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);

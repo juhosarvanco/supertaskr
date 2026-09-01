@@ -4,6 +4,7 @@ import {
   LANE_BRANCH_RE,
   MANIFEST_REL_PATH,
   MANIFEST_VERSION,
+  RUNTIME_DIR_IGNORE,
   readManifest,
   touchesLineOf,
 } from "../../../.claude/hooks/lane-fence.mjs";
@@ -80,9 +81,17 @@ import { boardFiles, knownPathOracle, loadParser } from "./dispatch-order.mjs";
  */
 export class LaneFenceFinding extends Error {}
 
-/** The self-ignoring file written beside the manifest. See the header. */
-export const MANIFEST_DIR_IGNORE =
-  "# T-154: the lane fence manifest is a runtime file, never a commit.\n*\n";
+/**
+ * The self-ignoring file written beside the manifest. See the header.
+ *
+ * IT IS NO LONGER SPELLED HERE (T-203). `.nputer/` acquired a second
+ * writer — the gate-runner's verdict token — and a directory whose
+ * non-committability depends on a string each writer keeps its own copy
+ * of is one disagreement away from committing a runtime file. The one
+ * home is the hook this module already imports its other lane facts from;
+ * this name stays as its alias so nothing that reads it has to move.
+ */
+export const MANIFEST_DIR_IGNORE = RUNTIME_DIR_IGNORE;
 
 /**
  * @typedef {object} LaneFenceManifest

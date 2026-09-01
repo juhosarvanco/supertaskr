@@ -97,13 +97,15 @@ opens with `Checkpoint:`** (T-182).
   this seat read exit **254** as green four times. **Redirect, capture
   `$?`, THEN look.** Suite chains go in GUARDED SCRIPT FILES
   (`cd <abs> || exit N`).
-- **THE PUSH GUARD IS REGISTERED AND FAILS OPEN BY DESIGN** — its own
-  words: *the ONLY refusal is a check that ran and answered 1.* So
-  "nothing gates a push" is FALSE and "a push is guarded" OVERSTATES;
-  T-203 EXTENDS it, T-216 fixes its rooting. Also: a gate read BEFORE a
-  commit misses what the commit creates, and the guard roots on the
-  WRITER's cwd while the hook loads from the DISPATCHING checkout — so a
-  lane never arms its own fix.
+- **EVERY PUSH NOW OWES THE FULL FOUR-SUITE BATTERY, RUN LAST** (T-203).
+  `gate-run` mints a token keyed on `HEAD^{tree}`; the guard refuses
+  unless all four are GREEN against the tree you are pushing, so a commit
+  after the battery stales it. Refusals name themselves —
+  `token-incomplete`, `-red`, `-unmeasured`, `-stale`, `-unkeyed`. **No
+  cargo means no push, deliberately.** The GRAPH arm still fails open on
+  its own inability: the discriminator is WHOSE inability it is. T-216
+  fixes the rooting — the guard roots on the WRITER's cwd while the hook
+  loads from the DISPATCHING checkout, so a lane never arms its own fix.
 - **A BLIND VERIFIER'S WORKTREE IS CUT AT THE BASE REF, NEVER THE TIP**
   (T-213) — a tip carries the executor's notes, including sections
   addressed to the verifier. **Lane context goes in a SECOND message**:
@@ -124,19 +126,16 @@ opens with `Checkpoint:`** (T-182).
   LITERAL PATHS**: zsh splits an unquoted command substitution but NOT a
   variable, so a variable hands the gate every path as ONE and it
   answers "1 path(s)" — plausible and wrong.
-- **FIVE TOOLING TRAPS, moved to the 09-01 record under "Tooling traps"
-  rather than deleted** — the `grep` shim, the scripted edit that must
-  be read back before committing, scratch-worktree construction
-  (T-133-s5), the RANGE RULE (CONVENTIONS), and the push that cancels
-  the running CI job. Read them once; they do not change.
+- **THE FIVE TOOLING TRAPS ARE IN `docs/CONVENTIONS.md`** — moved there
+  2026-09-01 on T-146's rule: **a MECHANISM lives in a governing
+  document, a record takes the INSTANCE**, and STATE is byte-capped.
 - **BOOT GATE AND HEALTH BANDS ARE OWED AT EVERY CHECKPOINT** (T-046,
   T-156). Health takes **`--readings`** over captured output, and **the
   `--` is load-bearing** or npm eats the flag (exit 2). **A lane's token
   meter exists ONLY in its notification** — capture it when the lane
   reports or it is unrecoverable.
-- **NARROWER HAZARDS LIVE IN THE RECORDS** per this file's contract:
-  T-086-s1's 1-in-22 body, T-111-s9's token-scan totals, app/'s absent
-  `typecheck`, the cleared CI billing block.
+- **NARROWER HAZARDS LIVE IN THE RECORDS**: T-086-s1's 1-in-22 body,
+  T-111-s9's token-scan totals, app/'s absent `typecheck`.
 
 ## The records
 

@@ -1,9 +1,10 @@
-import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   EXIT,
   GRADED_SUITES,
@@ -17,11 +18,21 @@ import {
   judge,
   lockPath,
   parseVerdict,
+  recordVerdicts,
   runSuite,
   stripAnsi,
   validateRegistry,
   validateSuite,
 } from "../scripts/gate-run.mjs";
+import {
+  GREEN,
+  REQUIRED_SUITES,
+  TOKEN_REL_PATH,
+  TOKEN_VERSION,
+  headTree,
+  judgeToken,
+  readToken,
+} from "../../../.claude/hooks/gate-token.mjs";
 
 /**
  * THE BLESSED GATE-RUNNER'S POSITIVE CONTROL (T-202) — no browser.
@@ -642,4 +653,183 @@ test("the suites the document offers the runner are exactly the suites the runne
   const offered = text.match(/gate-run\.mjs\s+([a-z0-9|]+)`/);
   expect(offered).not.toBeNull();
   expect((offered?.[1] ?? "").split("|").sort()).toEqual([...CRITERION_1_SUITES]);
+});
+
+// ── §THE VERDICT TOKEN (T-203) ───────────────────────────────────────
+//
+// The verdict LINE above is trustworthy to whoever is reading the
+// terminal and to nobody else. These bodies are about the half that a
+// later, unrelated process can ask: the token this runner leaves behind,
+// and whether it says enough to be worth asking.
+//
+// WHAT THEY DELIBERATELY DO NOT DO IS RUN THE CLI. `main` writes at this
+// repository's OWN root, so a body that drove it would clobber the live
+// checkout's token — half-populating it, which fails closed and is safe,
+// but costs whoever ran the suite a re-run of the whole battery. So the
+// bodies below drive `recordVerdicts`, which is the exact function `main`
+// calls and the whole of what it does with a verdict; the single call
+// site inside `main` is the one link they do not cover, and it is one
+// line. That limit is stated rather than papered over.
+
+/**
+ * A throwaway git repository with one commit, for the tree key.
+ *
+ * `NO_BACKGROUND_MAINTENANCE` is SPREAD at every use site, not merely
+ * imported (T-178, and git-fixture.spec.ts's census reds by name when it
+ * is not): a `git commit` detaches a maintenance grandchild into the very
+ * `.git` this fixture's teardown is about to walk.
+ */
+function tokenRepo(name: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), `t203-token-${name}-`));
+  execFileSync("git", ["init", "-q", dir], { stdio: "pipe" });
+  gitIn(dir, "config", "user.email", "fixture@example.invalid");
+  gitIn(dir, "config", "user.name", "T-203 fixture");
+  writeFileSync(path.join(dir, "README.md"), "one\n");
+  gitIn(dir, "add", "-A");
+  gitIn(dir, "commit", "-qm", "one");
+  return dir;
+}
+
+/** @see tokenRepo */
+function gitIn(dir: string, ...args: string[]): void {
+  execFileSync("git", ["-C", dir, ...NO_BACKGROUND_MAINTENANCE, ...args], { stdio: "pipe" });
+}
+
+/** Teardown that reports a race as the FIXTURE's finding, never as the
+ *  body's (T-178). */
+function dropRepo(dir: string): void {
+  removeGitFixture(dir, "gate-run");
+}
+
+/** The token, or a throw naming why there is none. A body that silently
+ *  judged `undefined` would be asserting about an absence. */
+function tokenOf(repo: string) {
+  const read = readToken(repo);
+  if (!("token" in read)) throw new Error(`no readable token in ${repo}: ${JSON.stringify(read)}`);
+  return read.token;
+}
+
+/** One suite's verdict, in the shape `runSuite` produces. */
+function entryFor(suite: string, verdict: "GREEN" | "RED") {
+  return {
+    suite,
+    exit: verdict === "GREEN" ? 0 : 1,
+    bodies: verdict === "GREEN" ? 3 : 12,
+    targets: 1,
+    ref: "deadbee",
+    verdict,
+    reason: verdict === "GREEN" ? "ok" : "suite-reported-failure",
+  };
+}
+
+test("the suites a push must have measured are exactly the suites this runner grades, so neither can move alone", () => {
+  // THE CONSTANT IS HELD IN THE HOOK AND COMPARED HERE, which is the
+  // treatment `LANE_BRANCH_RE` and `GRAPH_REL_PATH` already get: the
+  // guard may not import this registry (it loads on every Bash call in a
+  // session), so the two are pinned to each other by a body instead. Add
+  // a graded suite without widening the required set and this reds by
+  // name, rather than the guard silently accepting a token that grades
+  // one suite fewer than the repository has.
+  expect([...REQUIRED_SUITES].sort()).toEqual(Object.keys(GRADED_SUITES).sort());
+});
+
+test("a real run's verdict survives the round trip into the token and is judged GREEN against the tree it ran at", () => {
+  const { dir, cleanup } = makeFixture(
+    "import { test, expect } from '@playwright/test';\n" +
+      "test('this body passes', () => { expect(1).toBe(1); });\n",
+  );
+  const repo = tokenRepo("roundtrip");
+  try {
+    // A REAL SUITE, REALLY RUN — the verdict is the runner's own, not a
+    // literal this body typed, so the token's shape is checked against
+    // what `runSuite` actually produces.
+    const { verdict } = runSuite(fixtureSuite(dir), { root: dir });
+    expect(verdict.verdict).toBe("GREEN");
+
+    const written = recordVerdicts([verdict], repo);
+    expect(written.written, written.message).toBe(true);
+
+    const token = tokenOf(repo);
+    expect(token.version).toBe(TOKEN_VERSION);
+    expect(token.suites["fixture"]?.bodies).toBe(verdict.bodies);
+    expect(token.suites["fixture"]?.exit).toBe(verdict.exit);
+
+    const tree = String(headTree(repo));
+    expect(
+      judgeToken({ token, tree, required: ["fixture"] }).state,
+      "a token written at this tree is fresh at this tree",
+    ).toBe("fresh");
+
+    // AND IT STALES WHEN THE TREE MOVES — the same token, one commit
+    // later. Without this the body above is satisfied by a judge that
+    // says `fresh` to everything.
+    writeFileSync(path.join(repo, "README.md"), "two\n");
+    gitIn(repo, "add", "-A");
+    gitIn(repo, "commit", "-qm", "two");
+    expect(judgeToken({ token, tree: String(headTree(repo)), required: ["fixture"] }).state).toBe(
+      "stale",
+    );
+  } finally {
+    cleanup();
+    dropRepo(repo);
+  }
+});
+
+test("a RED verdict is recorded rather than dropped, so a red run is never mistaken for a run nobody made", () => {
+  // THE WRITER'S OWN CHARTER. A green-only writer would leave a red run
+  // looking exactly like an absent one, which is this runner's founding
+  // observation ("a summary of nothing is indistinguishable from a
+  // summary of success") one layer downstream.
+  const repo = tokenRepo("red");
+  try {
+    recordVerdicts([entryFor("parser", "RED")], repo);
+    const token = tokenOf(repo);
+    expect(token.suites["parser"]?.verdict).toBe("RED");
+    expect(token.suites["parser"]?.bodies).toBe(12);
+    const judged = judgeToken({ token, tree: String(headTree(repo)), required: ["parser"] });
+    expect(judged.state).toBe("red");
+    expect(judged.detail).toContain("parser");
+    // The control: the same suite recorded GREEN is judged fresh, so
+    // `red` above is a discrimination and not a constant. `GREEN` is the
+    // hook's own exported word, so a rename there reds this rather than
+    // quietly turning every judgement green.
+    recordVerdicts([entryFor("parser", GREEN as "GREEN")], repo);
+    expect(
+      judgeToken({ token: tokenOf(repo), tree: String(headTree(repo)), required: ["parser"] }).state,
+    ).toBe("fresh");
+  } finally {
+    dropRepo(repo);
+  }
+});
+
+test("a second run MERGES into the token rather than replacing it, because the battery is run in pieces", () => {
+  const repo = tokenRepo("merge");
+  try {
+    recordVerdicts([entryFor("parser", "GREEN")], repo);
+    recordVerdicts([entryFor("rust", "GREEN")], repo);
+    const token = tokenOf(repo);
+    expect(Object.keys(token.suites).sort()).toEqual(["parser", "rust"]);
+    // A seat that ran two of the four has measured two of the four, and
+    // the token says so — the guard refuses it as INCOMPLETE rather than
+    // this writer pretending otherwise.
+    expect(judgeToken({ token, tree: String(headTree(repo)) }).state).toBe("incomplete");
+  } finally {
+    dropRepo(repo);
+  }
+});
+
+test("a token written where it cannot be written is said out loud and changes no verdict", () => {
+  // The failure is a claim about the FILE, never about the suites. A
+  // directory where the token's own path must be a file is the cheapest
+  // real instance of that.
+  const repo = tokenRepo("unwritable");
+  try {
+    mkdirSync(path.join(repo, TOKEN_REL_PATH), { recursive: true });
+    const out = recordVerdicts([entryFor("parser", "GREEN")], repo);
+    expect(out.written).toBe(false);
+    expect(out.message).toContain("THE VERDICT TOKEN COULD NOT BE WRITTEN");
+    expect(out.message).toContain("this is a claim about the file, not about the suites");
+  } finally {
+    dropRepo(repo);
+  }
 });

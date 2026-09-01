@@ -221,7 +221,7 @@
  *    the safe direction here, exactly as it is for GRAPH REGEN.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { regexEnd } from "./token-scan.mjs";
@@ -2600,6 +2600,54 @@ export function taskCardIssues(entries, { statuses, parseYaml }) {
     }
   }
   return issues.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/** Where the checkpoint records live, and the one file that is not one. */
+export const CHECKPOINTS_DIR = "docs/checkpoints";
+/** The document a record obliges to be regenerated in the same commit. */
+export const STATE_DOC = "docs/STATE.md";
+
+/**
+ * Checkpoint records committed AFTER `docs/STATE.md` was last committed —
+ * ADR-019 §Records / docs-protocol.md rule 4, step 1 without step 2.
+ *
+ * IT LIVES HERE RATHER THAN IN ITS FIRST CALLER (T-203), which is the
+ * treatment `DOC_BUDGETS` got at T-156 and for the identical reason: a
+ * second reader arrived. `docs-gate.mjs` asks this at a merge; the push
+ * guard's cheap checks ask it at a push, which is the moment the rule
+ * actually fired twice in one night AFTER the commit that broke it. A
+ * rule written twice is two chances to disagree (T-057), and these two
+ * would have disagreed about the tie.
+ *
+ * COMMITTED HISTORY ONLY, and the tie PASSES. A mid-ritual working tree —
+ * the record written and not yet committed, STATE regenerated and not yet
+ * staged — must never false-red, and the correct flow puts the record and
+ * the regenerated STATE in ONE commit, where the two timestamps are equal.
+ *
+ * @param {string} [root]
+ * @returns {string[]}  record basenames newer than STATE, sorted
+ */
+export function staleStateRecords(root = repoRoot) {
+  const dir = path.join(root, CHECKPOINTS_DIR);
+  if (!existsSync(dir)) return [];
+  /** @param {string} rel @returns {number | null} */
+  const lastCommitSec = (rel) => {
+    const out = execFileSync("git", ["log", "-1", "--format=%ct", "--", rel], {
+      cwd: root,
+      encoding: "utf8",
+    }).trim();
+    return out === "" ? null : Number(out);
+  };
+  const stateAt = lastCommitSec(STATE_DOC);
+  if (stateAt === null) return [];
+  /** @type {string[]} */
+  const stale = [];
+  for (const rec of readdirSync(dir)) {
+    if (!rec.endsWith(".md") || rec === "TEMPLATE.md") continue;
+    const recAt = lastCommitSec(`${CHECKPOINTS_DIR}/${rec}`);
+    if (recAt !== null && recAt > stateAt) stale.push(rec);
+  }
+  return stale.sort();
 }
 
 /** docs/CONVENTIONS.md, read off the tree. The gate's own doc is a
