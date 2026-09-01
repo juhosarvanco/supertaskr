@@ -246,6 +246,26 @@ No test body was added or changed by this diff, so the POISON DRILL is
 restoration is trivial (nothing in the repository was mutated — the
 whole drill lives in the scratchpad).
 
+### Gates, derived from this lane's own diff
+
+The diff is 7 files: 5 method/docs law files, this card, and one routed
+suggestion. **GRAPH REGEN — not owed**: no `*.ts/*.tsx/*.js/*.jsx` or
+`*.rs` path in the diff. **BOOT GATE — not owed**: nothing under
+`app/src-tauri/**` or `app/src/**` and neither manifest. **METHOD EVAL
+GATE — FIRES** (`method/**`): `node tools/method-evals/run.mjs` exit
+**0**, 6 model-free evals — a non-zero body count, read as well as the
+exit. **DOCS GATE — FIRES**, asked with the changed paths as separate
+literal arguments: 3 paths under `docs/` are code inputs, and it names
+four suites, every one of which was run.
+
+**THE FIRST ASK OF THE DOCS GATE EXITED 1 AND WAS NOT A VERDICT** — a
+fresh worktree has nothing installed, and the gate died on
+`ERR_MODULE_NOT_FOUND: 'yaml'` with a node stack trace. That is
+docs/STATE.md's standing hazard reproduced exactly: **an exit 1 may mean
+the gate could not run.** Setup in the CONVENTIONS order (parser `npm
+ci` + `npm run build`, then `tools/e2e` `npm ci`, then app `npm install`
++ `npm run build`) and it answered with gate lines.
+
 ### For the verifier
 
 - The integrator sentence was written only after reading that whole

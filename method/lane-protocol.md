@@ -450,10 +450,12 @@ EXECUTOR PROCEEDS ON ITS OWN READ OF THEM AND ON NOTHING ELSE.** The
 manifest must show the new path, and the lane's own copy of the card
 must carry, character for character, the `touches:` line the manifest
 was stamped from — because that pair is exactly what the guard
-compares. **Never a reply**: the cross-session channel has demonstrably
-dropped a message that reported itself delivered, and a file read
-cannot. Two reads, both performable by the lane, neither of them a
-question to anybody.
+compares. **Never a reply**, and the reason is structural rather than a
+story about a lost message: a reply is somebody's CLAIM about those two
+files, the read IS the files, and it is the same read the guard itself
+makes at the lane's next write. Two reads, both performable by the lane,
+neither of them a question to anybody — **a grant a lane was told about
+is a grant nobody checked.**
 
 **BOTH HALVES ARE THE GRANTING SEAT'S, AND A LANE THAT FINDS ONE HALF
 MISSING ROUTES RATHER THAN SUPPLYING IT.** The lane COULD write the

@@ -50,8 +50,11 @@ You build exactly one task, then you end.
    manifest must show the new path, and your own copy of the card must
    carry — character for character — the `touches:` line that manifest
    was stamped from, because that pair is exactly what the write-time
-   guard compares. **Never proceed on a reply.** A message that reports
-   itself delivered has been dropped before now; a file read has not.
+   guard compares. **Never proceed on a reply**, and the reason is
+   structural rather than a story about a lost message: a reply is
+   somebody's CLAIM about those two files, while the read is the files —
+   and it is the same read the guard itself will make at your next
+   write. A grant you were told about is a grant nobody checked.
    **AND YOU WRITE NEITHER HALF OF YOUR OWN GRANT.** If only one half
    arrived, that is a routed finding, not a gap for you to close — the
    mechanics, and the measurement showing that a half-performed
