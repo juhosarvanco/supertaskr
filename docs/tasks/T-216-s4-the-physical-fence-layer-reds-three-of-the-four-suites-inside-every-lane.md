@@ -372,3 +372,205 @@ again at 349/349 and 1131/1131. **Filed here rather than as a third
 card**: the parser's message is already exact, and the reason it took a
 battery to find is that the gate which reads frontmatter does not read
 ids.
+
+## Verdicts
+
+### V-216-s4 — 2026-09-02, claude-opus-5[1m]@subagent (verifier seat V-T-216-s4): **APPROVED** at `1757f330a4249fc5d90f0e28b14c044ff26799be`
+
+Measured in the verifier bench `/Users/ujju/Projects/nputer-V-T-216-s4`, detached,
+with `NPUTER_E2E_PORT=25216` and `CARGO_TARGET_DIR` unset. **Blindness: CLOCK-SHAPED.**
+The bench was cut alongside the lane and phase 1 ran while no diff existed; the attack
+set and the ground truth were written and `shasum -a 256`-stamped before the tip
+existed (`attack-V-T-216-s4.md` `3653282…`, re-stamped after the fence amendment;
+`ground-V-T-216-s4.md` `fe021ff…`). I declined nothing, because there was nothing to
+decline. **Read AFTER this verdict was drafted, and disclosed rather than denied:** the
+card's `## Implementation notes`, the two routed cards' bodies, and the branch's commit
+messages. One leak before drafting: `git checkout --detach` printed the tip's subject
+line, which I did not seek and could not suppress.
+
+#### The criteria
+
+**AC1 — a lane whose fence excludes `app/`, `lib/` and `method/` reaches a green
+`gate-run e2e` and `gate-run rust` with its physical layer ARMED. MET for `rust`; MET
+for `e2e` up to three failures that are measured, at the BASE ref, to be nothing to do
+with this diff.** The armed state was reproduced by chmod in the bench, never in a real
+lane, using this repository's own `within()` and `trackedFiles()`, over the AMENDED
+six-path fence (`tracked=1135 locked=647 writable=488`, arithmetic closing).
+
+| suite | base `e648590` ARMED | tip `1757f33` ARMED | tip UNARMED |
+|---|---|---|---|
+| parser | 0 / 349 GREEN | — | 0 / 349 GREEN |
+| app | 0 / 1131 GREEN | — | 0 / 1131 GREEN |
+| rust | **101 / 631 RED, 2 failed** | **0 / 632 GREEN** | 0 / 632 GREEN |
+| e2e | **1 / 535 RED, 5 failed** | 1 / 536 RED, 3 failed | 1 / 536 RED, 2 failed |
+
+All four instances the card names are closed, and so is a **fifth this card never
+named**: `token-scan.spec.ts`'s *P6 reds a planted bare motion utility…*, whose plant
+target `tools/e2e/fixtures/shell.ts` is outside this lane's own fence. Phase 1 recorded
+that body failing under the five-path fence at the base ref, before the diff existed;
+it passes now.
+
+**The three residual e2e failures are attributed, each measured at the base ref:**
+- `session-economics.spec.ts:179` and `:365` — REF SKEW. `brief.mjs` computes lane
+  disjointness from the live worktree list crossed with the card files *in the checkout
+  it runs in*; at `e648590` the sibling cards still carry pre-narrowing `tools/e2e`
+  tokens. At main's card set the same four fences give **0 pairwise overlaps** under
+  this repository's own `within()`. Present unarmed at base and at tip.
+- `lane-lock.spec.ts` *the DISPATCH STEP arms it* — `checkout-currency` STALE: this
+  bench is **16 commits behind main and does not contain `33e50b8`**, the newest main
+  commit touching `.claude`. Main advanced past that commit DURING this sitting, between
+  my 23:15 unarmed run (green) and my 23:23 armed run (red). **Re-measured alone at the
+  BASE ref `e648590` at 23:31: it fails there too, same finding, same commit named.**
+  Base red, tip red, one cause, and the cause is a fact about this machine's refs.
+
+Body counts rose (**e2e 535 → 536, rust 631 → 632**) and no `test.skip`, `test.fixme`,
+`.skip(` or `#[ignore]` appears anywhere in the diff. `gate-run`'s `judge()` refuses only
+on zero-bodies and on parts≠baseline, so a skip would have read GREEN at a smaller
+denominator; the counts are what rule that out, which is why phase 1 stamped them.
+
+**AC2 — a body changed to write a copy keeps its restoration proof, and a positive
+control shows it can still fail. MET.** The per-file sha256 and the microsecond-bounded
+`expectClocksRestored` survive intact over the fixture, and the live-tree half of the
+old proof is re-aimed as `expectUntouched` (hash plus `git diff --quiet`). Drilled, one
+side only, mutation read back from `git diff`, restoration sha256-proved, tree clean
+after every cycle:
+- `.md` added to `CONTROL_BINARY_EXTENSIONS` → the seven-roots body REDS.
+- `workflows` added to `SKIP_DIRS`, dropping exactly one first-party root → REDS.
+- the printed byte offset moved by one → REDS, and **it is the only body that dies:
+  kill count 1.** That is the containment answer. `CONTROL covers every tracked suffix
+  class…` dies under the first two and survives the third; the seven-roots body dies
+  under all three. Neither kill set contains the other, so both are load-bearing and the
+  rewrite did not collapse this body into a restatement.
+- `expectUntouched`'s expected side replaced by a constant hash → both bodies that call
+  it RED, so the live-tree guard is reached and compares real bytes.
+
+**AC3 — the `lane-lock.spec.ts` fixture does not inherit the lane's own mode bits. MET,
+and met in the one way that could be checked.** Phase 1 pre-committed that this was the
+criterion most likely to be satisfied by an assertion that cannot fail, because the
+property is invisible wherever the tree is 644 — which is the integration checkout, this
+bench, CI, and every detached drill worktree. Both new controls **manufacture the hostile
+precondition** instead of leaning on the ambient tree, and both therefore kill their
+mutant in an UNARMED tree:
+- `common::copy_dir` loses `unlock(&dst)`; whole `cargo test --no-fail-fast` in a
+  detached drill worktree with its own `CARGO_TARGET_DIR` at `<scratch>/target`:
+  **kill count 1**, `a_materialized_fixture_is_writable_even_when_its_source_is_read_only`
+  alone. **The two repaired bodies stayed GREEN under that mutant**, which is the diff's
+  own claim that neither can be the repair's control, measured.
+- `copyIntoFixture` loses `unlockTree` → *the fixture does NOT inherit the mode bits of
+  the tree it is copied from* REDS.
+- **DATA MUTANT**, where the property lives: the manufactured source `0o444 → 0o644`.
+  The body REDS at its own precondition assertion, so the read-only literal is
+  load-bearing and the control cannot pass over a source that was never read-only.
+
+The criterion says *the fixture*, not *the method copy*, and all five copy sites are
+covered: `cpSync` and the four `copyFileSync` calls now go through one mode-stripping
+helper. `| 0o200` rather than a flat mode, so git's executable bit is untouched and the
+armed tree stays `git status`-clean. `unlockTree` returns on a symlink, following
+`lane-lock.mjs`'s own `lstat` precedent.
+
+**AC4 — headless. MET.** Nothing was clicked, typed into or screenshotted. The boot gate,
+owed by the `app/src-tauri/**` paths, opens and closes its own window and is not screen
+control (@human's 2026-08-16 ruling): `NPUTER_BOOT_PORT=26216 npm run boot:check` →
+**exit 0**, both `[nputer]` startup lines. 1420 read with `lsof -nP -iTCP:1420
+-sTCP:LISTEN` only; no listener, never probed by binding.
+
+#### The granted path, unspent — and I checked the reading rather than taking it
+
+The fence was widened in flight to `tools/e2e/scripts/token-scan.mjs` on my own phase-1
+finding, so that finding is an input to the contract I am judging and I do not get to
+accept the result because I caused it. **The file carries a ZERO diff.** The lane's
+reading — that a copied module resolves its root to the fixture it sits in, so no
+override is needed — HOLDS, verified independently of the suite: a copy of the scanner
+and its wrapper under `<scratch>/tools/e2e/scripts/` reports `CONTROL 4 tracked text
+files`, reds at **exit 1** naming `AGENTS.md:byte 3: U+0000` in the FIXTURE, and leaves
+the live tree clean. I also confirmed the non-obvious line it rests on: with one TOKEN
+root absent the walk throws and the wrapper exits **3, GATE COULD NOT RUN** — which is
+why `TOKEN_ROOT_DIRS` is created empty rather than omitted.
+
+This is the better outcome. My re-stamped attack set called an environment-readable root
+on this scanner a REJECTED-level hazard: `npm run lint:tokens` is CI's first step, and a
+gate that can be pointed elsewhere exits 0 over an empty tree. **No root override, no new
+argument, and no `process.env` read appears anywhere in the diff.** The hazard was never
+opened.
+
+#### Security sweep — mandatory, and answered item by item
+
+No `chmod`/`set_permissions`/`umask` in the diff can reach a path under the repository
+root: every call site targets a `mkdtemp`/`TempTree` path, and `lane-lock.spec.ts` pins
+the one-directionality explicitly (*the live tree is never chmodded*, plus a content
+assertion on the source). `releaseLaneLock` and `--release` appear only in prose — no
+code path disarms the layer. `make_read_only` targets a `TempTree` removed on `Drop`, and
+unlink is authorised by the parent directory, so an interrupted run leaves no read-only
+residue. No `shell: true`, no `sh -c`; argv arrays throughout. **No dependency added** —
+no `package.json`, lockfile or `Cargo.toml` in the diff. No secrets. Nothing swallows an
+`EACCES` or tolerates a read-only tree. Fixtures live under `os.tmpdir()`, are registered
+and removed through `removeGitFixture` in `afterAll` (T-178), and the scratch stem is
+DERIVED from the card (`nputer-T-216-s4-token-scan-`) per the SCRATCH RULE. Fixture
+repositories pin `--initial-branch=main` and carry `NO_BACKGROUND_MAINTENANCE`; the
+token-scan fixture commits nothing, so it needs no committer identity, and its comment
+says why.
+
+#### Gates, and what this lane does NOT owe
+
+`npx tsc --noEmit` from lib/parser **0** · `npm run typecheck` from tools/e2e **0** ·
+`npm run lint:tokens` **0** (TOKEN 173 files, CONTROL 1117) · `--selftest` **0** ·
+`npm run lint:docs` **0** · `npm run boot:check` **0**. The DOCS GATE, handed the three
+changed `docs/tasks` paths, FIRES and names `npm test` from app/, `npm test` from
+tools/e2e and `npx vitest run` from lib/parser — all three run above — and reports every
+live card's frontmatter parsing with a legal status and the governing-document budgets
+holding.
+
+Two gates are STALE and **both are the integrator's, not this lane's**:
+`cargo run -p nputer-index -- index --check --root ../..` exits **1**, `files +0 -0 ~2`,
+naming the two Rust test files this diff edits (`common/mod.rs`, symbols 9 → 10) — GRAPH
+REGEN belongs to the checkpoint, and T-211 rules that a lane never updates the pins.
+`npm run capabilities:check` exits **1**, 44961 → 45036 bytes, for the one added e2e body
+name; `docs/CAPABILITIES.md` is outside this fence, so per T-201 the lane reports it and
+the integrator regenerates it in the merge commit.
+
+**News for the integrator, not a defect:** `git merge-tree --write-tree <main> HEAD`
+exits **1 with a CONFLICT** — read `$?` first, as CONVENTIONS requires — in the card file
+alone, because main added `## FENCE WIDENED IN FLIGHT` at `aad0cf7` and the lane adopted
+it from its own base. The resolution is mechanical: the `touches:` line and that whole
+section are **byte-identical** between `main` and `1757f33` (section sha256 `f295071…`),
+and the lane's `.nputer/lane-fence.json` `touchesLine` matches the amended card exactly,
+so nothing here would refuse with `re-expand`. `lane-lock --status` in the lane reports
+**ARMED, 647 outside the fence, 647 read-only, no drift and no stray** — fast path A's
+re-apply was performed, not skipped.
+
+#### One finding that is not a failure, filed rather than folded in
+
+**`T-216-s8`**, `status: suggested`: `T-216-s7`'s sweep is recorded over `app/test`,
+`lib/parser/test`, `tools/e2e/tests` and the indexer crate, and `tools/method-evals/`
+is outside that scope — `lib/fixture-root.mjs` `cpSync`s `method/`,
+`docs/architecture` and the live docs and adapters straight out of the checkout and
+then hands each eval a generic `write(rel, text)` into that same tree. **Measured, not
+asserted, and it does not red today**: `node tools/method-evals/run.mjs --set
+model-free` is exit 0 over 6 evals both unarmed and with the layer armed in this bench.
+It is a latent site with no keeper, the same shape `T-216-s7` already records for
+`perf.rs`'s `#[ignore]`d body, and it belongs in that card's scope rather than in a
+verdict.
+
+**A second finding was DROPPED as a duplicate rather than filed.** The
+`brief.mjs`-exit-0 coupling behind the `session-economics` pair is already
+`T-143-s1` (`planned`), whose title names the mechanism exactly, with `T-187`
+(`planned`) holding the ref-skew class. A third would be the defect the triage
+bullet exists to prevent.
+
+#### What I read after drafting, and what it changed
+
+Read only once the above was written: the card's `## Implementation notes`, the two
+routed cards' bodies, and the branch's commit messages. **Nothing in them changed this
+verdict**, and one thing is worth recording: the notes reach the same FOUR corrections
+to this card's prose that my phase-1 ground truth reached blind — three suites is two,
+the Rust instances inherit modes rather than writing tracked files, the census is a
+census of one fence with a fifth body under this one, and the `COPYFILE_*`
+parenthetical is loose about the reason. Two seats, no contact, one answer. The lane's
+armed baseline (`5 failed / 530 passed`) is the number my own fence-B run measured
+independently at the same ref. The notes also carry a stronger pin on the ref skew than
+mine — sibling cards swapped from `e648590` to `aad0cf7` with nothing else moved, 2
+failed becoming 10 passed — and one hazard I would otherwise have missed: the routed
+findings were first filed as `T-216-s4-s1`/`-s2`, which the parser refuses as ids while
+`docs-gate.mjs` still reports frontmatter clean, because the id format is not what that
+half reads. Renamed before the tip; `gate-run parser` 349/349 and `gate-run app`
+1131/1131 confirm it here.
