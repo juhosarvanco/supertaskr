@@ -60,6 +60,52 @@
  * is real: the full battery is paid once per PUSH, which is this card's
  * whole design (commits stay fast; pushes become unlyable).
  *
+ * ── AND ALL THREE ARMS ASK ABOUT THE TREE THE PUSH CARRIES (T-216) ───
+ * Every arm above is a question, and until this card each of them was
+ * asked in `findCheckoutRoot(request.cwd)` — WHERE THE WRITER SITS. In
+ * this project's dispatch shape that is the DISPATCHING checkout for
+ * every lane, so `cd <lane> && git push` had its graph, its board, its
+ * fence and its T-203 token all judged in a tree the push does not
+ * contain. Not unjudged: MISJUDGED, in both directions, and confidently.
+ *
+ * `pushCwds` below replaces the assumption with EVIDENCE — git's own
+ * `-C`, a `cd <literal>` chained to the push with `&&`, or a working
+ * directory nothing moved — and where the line offers none, the guard
+ * judges NOTHING and says so as `push-repository-unresolved`. THE COST
+ * IS STATED RATHER THAN DISCOVERED: a push spelled outside those two
+ * constructs is now UNJUDGED where it used to be MISJUDGED, and the
+ * refusal names the spelling that restores it. That is a trade of a
+ * wrong answer for no answer, which is the only direction this guard is
+ * allowed to fail — and it is the same trade the section below makes.
+ *
+ * THE COST HAS A SECOND HALF, and an early draft of this card claimed
+ * only the first. CROSS-CHECKOUT, nothing is lost: the retired verdict
+ * was about a tree the push does not carry. SAME-CHECKOUT BUT
+ * UNRESOLVABLE, a CORRECT verdict is retired — the writer's cwd really
+ * was the answer, and the old rooting was accidentally right. Measured
+ * at 7 of 7 spellings on one fixture; the table is on the card. It is
+ * taken deliberately, because keeping those seven means GUESSING that an
+ * unreadable line did not move the cwd, and nothing distinguishes
+ * *"unreadable and it stayed"* from *"unreadable and it left"* — that is
+ * what unreadable means.
+ *
+ * ── AND IT WIDENS THIS FILE'S THREAT MODEL, WHICH IS SAID OUT LOUD ───
+ * `runCheck` spawns `cargo` with its cwd inside the judged root. Until
+ * this card that root came only from the HARNESS (`request.cwd`); it can
+ * now come from the COMMAND TEXT — a `-C` or a `cd` the seat typed — so
+ * a Bash command can steer where this hook starts a build tool. The
+ * bound is `INDEX_CRATE_MANIFEST_REL_PATH`, checked BEFORE the spawn:
+ * the directory must carry this repository's own indexer crate manifest,
+ * and `cargo` itself is still resolved off PATH rather than out of that
+ * tree. THE RESIDUAL IS NAMED RATHER THAN DISMISSED: a directory that
+ * satisfies that check still supplies the `Cargo.toml`, the workspace
+ * and the `.cargo/config.toml` the spawned cargo reads, and those can
+ * influence what a build runs. It is NOT a privilege escalation — a seat
+ * that can write `cd <x> && git push` can run anything in `<x>` directly,
+ * with the same rights and without this hook — but it is a wider surface
+ * than a guard rooted on the harness had, and whoever next decides what
+ * may root this file should meet that fact here.
+ *
  * ── A CHECKOUT WITH NO TOOLCHAIN CANNOT PUSH, AND THAT IS DECIDED ────
  * Written down because it is a consequence nobody would predict from the
  * arms above, and because THIS FILE ARGUES THE OPPOSITE TWELVE LINES UP.
@@ -103,7 +149,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
@@ -223,6 +269,50 @@ export const GIT_GLOBAL_OPTS_WITH_VALUE = Object.freeze([
 export const NON_PUSHING_FLAGS = Object.freeze(["--dry-run", "-n", "--help", "-h"]);
 
 /**
+ * Words that move the shell's working directory (T-216).
+ *
+ * A push has NO TARGET PATH — which is the whole reason this card is not
+ * `T-199`'s fix copied one file over. The repository a `git push` acts on
+ * is named by the command's own `-C`, by a `cd` earlier in the same shell
+ * line, or by the shell's cwd, and only the first two are written down
+ * anywhere this hook can read. These three words are how the third one
+ * gets moved, and finding one is how this guard learns to DOUBT its own
+ * root rather than to guess a new one.
+ */
+export const CWD_MOVING_WORDS = Object.freeze(["cd", "pushd", "popd"]);
+
+/**
+ * git options and environment variables that RE-POINT the repository
+ * without moving the shell's cwd.
+ *
+ * `-C` is deliberately NOT here: it moves the cwd and this guard follows
+ * it, by git's own chaining rule. These re-point the git directory, the
+ * work tree or the namespace INDEPENDENTLY of each other, so the tree a
+ * push then carries is not a directory this guard can name — it is a
+ * combination it does not model. One is enough to make the answer
+ * unknowable, and an unknowable answer is declared rather than invented.
+ */
+export const GIT_REPOINTING_OPTS = Object.freeze(["--git-dir", "--work-tree", "--namespace"]);
+
+/** @see GIT_REPOINTING_OPTS */
+export const GIT_REPOINTING_ENV_RE =
+  /^(GIT_DIR|GIT_WORK_TREE|GIT_COMMON_DIR|GIT_OBJECT_DIRECTORY|GIT_CEILING_DIRECTORIES)=/;
+
+/**
+ * What makes a token's VALUE unknowable without running the shell.
+ *
+ * THIS IS THE LINE BETWEEN READING AND GUESSING, and it is drawn wide on
+ * purpose. `cd /Users/ujju/Projects/nputer-T-216` is not a parse: it is
+ * one literal word whose value is itself. `cd "$LANE"`, `cd ~/x`,
+ * `cd $(pwd)` and `cd lane-*` are values only a shell knows, and
+ * `T-025-s4` ruled that a `PreToolUse` hook cannot be the shell. A token
+ * carrying any of these is not resolved and not approximated — it makes
+ * the whole line UNRESOLVED, which costs an announced allow and never a
+ * refusal.
+ */
+export const UNRESOLVABLE_TOKEN_RE = /[$`"'\\*?[\]{}~()!<>]/;
+
+/**
  * The ALLOW codes the runner SAYS OUT LOUD.
  *
  * *"IF the guard cannot run THEN it SHALL say so and ALLOW, never refuse
@@ -247,6 +337,15 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
   "lane-fence-unreadable",
   "no-command-to-read",
   "landing-gate-cannot-compare",
+  // T-216. THE MEMBERSHIP TEST IS THIS LIST'S OWN: an ALLOW reached with
+  // a question UNANSWERED. Here the unanswered question is the first one
+  // — WHICH REPOSITORY — so every other question went unasked with it,
+  // which makes this the loudest member rather than an exception to the
+  // rule. Its silent sibling `push-repository-unresolved-outside` is
+  // deliberately absent for `not-this-repository`'s reason: outside this
+  // repository's checkouts the guard has nothing to say, and saying it
+  // anyway is how a notice becomes noise nobody reads.
+  "push-repository-unresolved",
 ]);
 // T-203's TWO ANNOUNCEMENTS ARE DELIBERATELY NOT IN THAT LIST, and the
 // reason is what the list actually is. It is a FILTER on a Decision's own
@@ -353,16 +452,14 @@ function block(code, reason) {
  * turned off.
  *
  * @param {string} command
- * @returns {{ subcommand: string, tokens: string[] }[]}
+ * @returns {{ subcommand: string, tokens: string[], globals: string[], segment: number }[]}
  */
 export function gitInvocations(command) {
-  /** @type {{ subcommand: string, tokens: string[] }[]} */
+  /** @type {{ subcommand: string, tokens: string[], globals: string[], segment: number }[]} */
   const found = [];
-  // Command separators, plus the shell line breaks a heredoc-free
-  // command uses. Backgrounding `&` is covered by splitting on `&&`'s
-  // own characters.
-  for (const segment of command.split(/[\n;|&]+/)) {
-    const tokens = segment.trim().split(/\s+/).filter((t) => t !== "");
+  const segs = segments(command);
+  for (let s = 0; s < segs.length; s += 1) {
+    const tokens = /** @type {{ tokens: string[] }} */ (segs[s]).tokens;
     for (let i = 0; i < tokens.length; i += 1) {
       if (tokens[i] !== "git") continue;
       let j = i + 1;
@@ -372,12 +469,58 @@ export function gitInvocations(command) {
         j += GIT_GLOBAL_OPTS_WITH_VALUE.includes(tok) ? 2 : 1;
       }
       if (j < tokens.length) {
-        found.push({ subcommand: /** @type {string} */ (tokens[j]), tokens: tokens.slice(j) });
+        found.push({
+          subcommand: /** @type {string} */ (tokens[j]),
+          tokens: tokens.slice(j),
+          // T-216 needs the tokens this scanner STEPS OVER, because `-C`
+          // is among them and `-C` is where a push names its own
+          // repository. They were discarded before; nothing about the
+          // stepping-over changed.
+          globals: tokens.slice(i + 1, j),
+          segment: s,
+        });
       }
       break;
     }
   }
   return found;
+}
+
+/**
+ * The command line's segments, each with THE SEPARATOR THAT PRECEDED IT.
+ *
+ * ── ONE SPLITTER, TWO READERS (T-216, and T-057's rule) ──────────────
+ * `gitInvocations` asks *"is there a push"* and never cared which
+ * separator joined what. `pushCwds` asks *"what is the working directory
+ * AT the push"*, and there the separator is load-bearing: `&&` means the
+ * left side SUCCEEDED, and nothing else does. Two splitters would be two
+ * chances to segment a line differently, so there is one, and the
+ * segmentation it produces is BYTE-FOR-BYTE the one `gitInvocations`
+ * always produced — `&&` and `||` are consumed whole by the alternation
+ * before the character class can take them apart, exactly as the old
+ * `[\n;|&]+` consumed them whole.
+ *
+ * The first segment's separator is the empty string: nothing preceded it.
+ *
+ * @param {string} command
+ * @returns {{ sep: string, tokens: string[] }[]}
+ */
+export function segments(command) {
+  // The capture group is what keeps the separators; `String.split` with
+  // one group alternates content, separator, content, …
+  const parts = command.split(/(&&|\|\||[\n;|&]+)/);
+  /** @type {{ sep: string, tokens: string[] }[]} */
+  const out = [];
+  let sep = "";
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = /** @type {string} */ (parts[i]);
+    if (i % 2 === 1) {
+      sep = part;
+      continue;
+    }
+    out.push({ sep, tokens: part.trim().split(/\s+/).filter((t) => t !== "") });
+  }
+  return out;
 }
 
 /**
@@ -391,6 +534,260 @@ export function isPush(command) {
     (inv) =>
       inv.subcommand === "push" && !inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t)),
   );
+}
+
+/**
+ * WHICH WORKING DIRECTORY DOES THE PUSH ACTUALLY RUN IN? (T-216)
+ *
+ * ── THE DEFECT THIS REPLACES ─────────────────────────────────────────
+ * `decide` used to answer this with `findCheckoutRoot(request.cwd)` — the
+ * WRITER's seat — which is `T-199`'s defect class in the guard next door.
+ * In this project's dispatch shape a lane session's `request.cwd` is the
+ * DISPATCHING checkout, so `cd <lane> && git push` had its graph, its
+ * board, its fence and its verdict token all judged **in a tree the push
+ * does not contain**: a different HEAD, a different `graph.json`, a
+ * different `HEAD^{tree}` for T-203's token to be keyed against. The
+ * verdict could be green over stale commits and red over current ones,
+ * and in both directions it was a CONFIDENT answer about somebody else's
+ * tree. That is worse than no answer, which is why the remedy below is
+ * not "root somewhere else" but "root only on evidence".
+ *
+ * ── IT IS NOT `T-199`'s FIX, BECAUSE A PUSH HAS NO TARGET PATH ───────
+ * A write names the file it writes. A push names nothing: the repository
+ * it acts on comes from the command's own `-C`, from a `cd` earlier in
+ * the same shell line, or from the shell's cwd. So this function does not
+ * PARSE the line — `lane-fence.mjs`'s limit 1 and `T-025-s4` both rule
+ * that out, and `gitInvocations`'s own header records what a whitespace
+ * scanner cannot see. It reads only the two constructs whose effect is
+ * FULLY DETERMINED by the text, and declares everything else unresolved:
+ *
+ *   1. `git -C <dir> push` — git's own option, applied by git's own
+ *      chaining rule (later relative `-C`s resolve against earlier ones).
+ *      This is not an inference about the shell; it is what git does.
+ *   2. `cd <literal> && … && git push` — the shell's cwd at the push,
+ *      when every step to it is spelled out and joined by `&&`.
+ *   3. Neither — nothing moved the cwd, so `request.cwd` IS the push's
+ *      cwd, which is what the old code assumed unconditionally and what
+ *      it is still right about.
+ *
+ * ── WHY `&&` IS LOAD-BEARING AND `;` IS NOT ALLOWED ──────────────────
+ * This is the whole argument for reading a `cd` at all. Under `&&`, IF
+ * THE PUSH RUNS THEN THE `cd` SUCCEEDED — the shell guarantees it, so a
+ * `cd` into a directory the guard resolved is a cwd the guard KNOWS.
+ * Under `;` it does not: `cd /gone ; git push` runs the push in the OLD
+ * directory, and a guard that followed the `cd` there would judge a tree
+ * the push never touches — this card's own defect, reintroduced by its
+ * own fix. Under `||` the `cd` may not have run at all. So a single
+ * non-`&&` separator anywhere between the first `cd` and the push makes
+ * the line UNRESOLVED, and `cd /a || cd /b && git push` — where the
+ * naive walk lands on `/b` and the shell lands on `/a` — is the worked
+ * example that fixes the rule.
+ *
+ * ── EVERYTHING ELSE IS DOUBT, AND DOUBT IS DECLARED ──────────────────
+ * A bare `cd` (the shell's `$HOME`), `cd -`, a `cd` with a value carrying
+ * any of `UNRESOLVABLE_TOKEN_RE`, a `pushd`/`popd`, a `cd` word anywhere
+ * but at the head of its segment, a `--git-dir`/`--work-tree`/
+ * `--namespace`, a `GIT_DIR=…` prefix, a resolved directory that is not
+ * there, or two pushes disagreeing about where they run. None of these is
+ * approximated. Each returns `unresolved` WITH ITS OWN SENTENCE, and
+ * `decide` turns that into an announced ALLOW — never a refusal, because
+ * not knowing which repository a push acts on is THIS GUARD'S OWN
+ * INABILITY, and this file's header spends a section on why an inability
+ * may not become a verdict. The seat is told the spelling this guard can
+ * read exactly: `git -C <dir> push`.
+ *
+ * THE RESIDUAL IS REAL AND IS STATED: a lane push spelled with anything
+ * outside the two constructs above goes UNJUDGED where it used to be
+ * MISJUDGED. That is a trade of a wrong answer for no answer plus a loud
+ * sentence, which is the only direction this guard is allowed to fail.
+ *
+ * @param {string} command
+ * @param {string} writerCwd  the shell's own cwd — `request.cwd`
+ * @returns {{ dirs: string[] } | { unresolved: string }}
+ */
+export function pushCwds(command, writerCwd) {
+  const segs = segments(command);
+  /** @type {Map<number, { globals: string[] }>} */
+  const pushes = new Map();
+  for (const inv of gitInvocations(command)) {
+    if (inv.subcommand !== "push") continue;
+    if (inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t))) continue;
+    pushes.set(inv.segment, { globals: inv.globals });
+  }
+
+  let dir = writerCwd;
+  let movedAt = -1;
+  /** @type {string[]} */
+  const dirs = [];
+  for (let s = 0; s < segs.length; s += 1) {
+    const seg = /** @type {{ sep: string, tokens: string[] }} */ (segs[s]);
+    const push = pushes.get(s);
+    if (push !== undefined) {
+      // THE CHAIN IS CHECKED AT THE PUSH, over the whole span, because a
+      // broken separator ANYWHERE after a `cd` can leave the shell in a
+      // directory the walk above never visited.
+      if (movedAt >= 0) {
+        for (let k = 1; k <= s; k += 1) {
+          if (/** @type {{ sep: string }} */ (segs[k]).sep !== "&&") {
+            return {
+              unresolved:
+                "a `cd` reaches this push through a separator that is not `&&`, so the shell's " +
+                "own working directory at the push is not determined by the text",
+            };
+          }
+        }
+      }
+      // The environment prefix sits BEFORE the word `git`, so it is in
+      // the segment and not in the invocation's globals — and it moves
+      // the repository exactly as `--git-dir` does.
+      const env = seg.tokens.find((t) => GIT_REPOINTING_ENV_RE.test(t));
+      if (env !== undefined) {
+        return {
+          unresolved: `\`${env.slice(0, env.indexOf("="))}\` re-points the repository from the environment`,
+        };
+      }
+      const named = repointedBy(dir, push.globals);
+      if ("unresolved" in named) return named;
+      dirs.push(named.dir);
+      continue;
+    }
+    if (seg.tokens.length === 0) continue;
+    const head = /** @type {string} */ (seg.tokens[0]);
+    if (!CWD_MOVING_WORDS.includes(head)) {
+      // A `cd` that is not the segment's own command — `sudo cd`,
+      // `echo cd /x`, a `--grep cd` — is not read, and is not ignored
+      // either. The word is evidence that this scanner is out of its
+      // depth, which is a thing to SAY rather than to step past.
+      if (seg.tokens.some((t) => CWD_MOVING_WORDS.includes(t))) {
+        return {
+          unresolved:
+            `a \`${/** @type {string} */ (seg.tokens.find((t) => CWD_MOVING_WORDS.includes(t)))}\` ` +
+            "appears somewhere this scanner cannot read it as a command",
+        };
+      }
+      continue;
+    }
+    if (head !== "cd") {
+      return { unresolved: `\`${head}\` moves the working directory to a place this line never names` };
+    }
+    const operands = seg.tokens.slice(1).filter((t) => t !== "--");
+    if (operands.length !== 1) {
+      return {
+        unresolved:
+          operands.length === 0
+            ? "a bare `cd` moves to the shell's `$HOME`, which is not in this command"
+            : "a `cd` with more than one operand",
+      };
+    }
+    const target = /** @type {string} */ (operands[0]);
+    if (target === "-") {
+      return { unresolved: "`cd -` moves to a directory only the shell remembers" };
+    }
+    if (UNRESOLVABLE_TOKEN_RE.test(target)) {
+      return { unresolved: `\`cd ${target}\` is a value only a shell knows` };
+    }
+    const moved = path.resolve(dir, target);
+    if (!isDirectory(moved)) {
+      return { unresolved: `\`cd ${target}\` resolves to ${moved}, which is not a directory now` };
+    }
+    dir = moved;
+    movedAt = s;
+  }
+
+  if (dirs.length === 0) {
+    // UNREACHABLE FROM `decide`, which asks `isPush` first, and kept
+    // anyway: this function is exported and a caller that skipped that
+    // gate must get an answer it can act on rather than an empty list.
+    return { unresolved: "this line carries no `git push` for a working directory to be found for" };
+  }
+  const distinct = [...new Set(dirs)];
+  if (distinct.length > 1) {
+    return {
+      unresolved: `this line pushes from ${String(distinct.length)} different working directories`,
+    };
+  }
+  return { dirs: distinct };
+}
+
+/**
+ * Apply the push invocation's OWN git options to the cwd it inherits.
+ *
+ * `-C` is followed because it is git's own instruction to start
+ * somewhere else, and it is chained the way git chains it: each value
+ * resolved against the one before, an absolute value replacing them.
+ * `--git-dir`, `--work-tree` and `--namespace` are NOT followed —
+ * they re-point the repository independently of the working directory,
+ * so the tree the push then carries is a combination this guard does not
+ * model, and a guard that answered anyway would be inventing evidence.
+ *
+ * @param {string} from    the cwd the invocation starts in
+ * @param {string[]} globals  the tokens between `git` and `push`
+ * @returns {{ dir: string } | { unresolved: string }}
+ */
+export function repointedBy(from, globals) {
+  let dir = from;
+  for (let k = 0; k < globals.length; k += 1) {
+    const tok = /** @type {string} */ (globals[k]);
+    const eq = tok.indexOf("=");
+    const bare = eq === -1 ? tok : tok.slice(0, eq);
+    if (GIT_REPOINTING_OPTS.includes(bare)) {
+      return { unresolved: `\`${bare}\` re-points the repository away from any directory this guard can name` };
+    }
+    if (GIT_REPOINTING_ENV_RE.test(tok)) {
+      return { unresolved: `\`${bare}\` re-points the repository from the environment` };
+    }
+    if (tok !== "-C") {
+      if (GIT_GLOBAL_OPTS_WITH_VALUE.includes(tok)) k += 1;
+      continue;
+    }
+    const value = globals[k + 1];
+    k += 1;
+    if (value === undefined || UNRESOLVABLE_TOKEN_RE.test(value)) {
+      return { unresolved: "a `-C` whose value is not a literal path" };
+    }
+    dir = path.resolve(dir, value);
+  }
+  if (!isDirectory(dir)) {
+    return { unresolved: `the push would run in ${dir}, which is not a directory now` };
+  }
+  return { dir };
+}
+
+/**
+ * Is this a directory that exists? A `statSync` this file can afford
+ * because it runs only after `isPush` has already said yes.
+ *
+ * @param {string} p
+ * @returns {boolean}
+ */
+function isDirectory(p) {
+  try {
+    return statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Are these two paths the same directory?
+ *
+ * COMPARED THROUGH `realpathSync` because a macOS `/var` is a symlink to
+ * `/private/var`, and two spellings of one directory would otherwise
+ * make this guard announce a divergence that does not exist. A path that
+ * cannot be resolved falls back to its lexical form, which is the
+ * comparison this replaced and is never worse than it.
+ *
+ * @param {string} a @param {string} b @returns {boolean}
+ */
+function sameDirectory(a, b) {
+  const real = (/** @type {string} */ p) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return path.resolve(p);
+    }
+  };
+  return real(a) === real(b);
 }
 
 /**
@@ -666,10 +1063,51 @@ function decideWith(request, check, cheap, notices) {
     return allow("not-a-push", "this command line invokes no `git push`");
   }
 
+  // ── WHICH CHECKOUT DOES THIS PUSH ACT ON? (T-216) ──────────────────
+  // NOT `findCheckoutRoot(request.cwd)`, which is where the WRITER sits
+  // and, in this project's dispatch shape, is the DISPATCHING checkout
+  // for every lane. See `pushCwds` for the whole argument; the short
+  // version is that this guard now roots on EVIDENCE — git's own `-C`,
+  // or a fully determined `cd … &&` chain, or the writer's cwd when
+  // nothing moved it — and where there is no evidence it judges NOTHING
+  // rather than judging a tree the push does not carry.
   const cwd = typeof request.cwd === "string" && request.cwd !== "" ? request.cwd : process.cwd();
-  const root = findCheckoutRoot(cwd);
+  const resolved = pushCwds(command, cwd);
+  if ("unresolved" in resolved) {
+    // THE SIXTH CRITERION STILL HOLDS: outside this repository's own
+    // checkouts the guard does not fire, and does not narrate either.
+    // The writer's cwd cannot say where the push LANDS, but it can say
+    // whether this seat is anywhere near this project — which is the
+    // only question this arm needs it for.
+    const writerRoot = findCheckoutRoot(cwd);
+    const ours =
+      writerRoot !== undefined &&
+      existsSync(path.join(writerRoot, INDEX_CRATE_MANIFEST_REL_PATH));
+    if (!ours) {
+      return allow(
+        "push-repository-unresolved-outside",
+        `this push's repository could not be identified (${resolved.unresolved}) and ${cwd} is ` +
+          "not in one of this repository's checkouts either, so there is nothing here to say",
+      );
+    }
+    return allow(
+      "push-repository-unresolved",
+      "NOTHING ABOUT THIS PUSH WAS JUDGED: this guard could not identify the repository it acts " +
+        `on — ${resolved.unresolved}.\n` +
+        "  A push names no target the way a write does, so this guard reads only what the text " +
+        "DETERMINES: a `-C`, or a `cd <literal>` chained to the push with `&&`, or an unmoved " +
+        "working directory. It will not guess the rest, because the guess it used to make was " +
+        `${cwd} — the seat's own directory — and judging the wrong tree is how a green verdict ` +
+        "gets attached to a stale push (T-216).\n" +
+        "  The graph, the board, the fence and the verdict token are ALL UNVERIFIED for this " +
+        "push. Spell it so this guard can read it, and it is judged exactly:\n" +
+        "    git -C <the checkout being pushed> push",
+    );
+  }
+  const pushCwd = /** @type {string} */ (resolved.dirs[0]);
+  const root = findCheckoutRoot(pushCwd);
   if (root === undefined) {
-    return allow("not-a-repository", `${cwd} sits in no git checkout`);
+    return allow("not-a-repository", `${pushCwd} sits in no git checkout`);
   }
   if (!existsSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH))) {
     return allow(
@@ -677,6 +1115,23 @@ function decideWith(request, check, cheap, notices) {
       `${root} carries no ${INDEX_CRATE_MANIFEST_REL_PATH}, so \`index --check\` is not a question ` +
         "that can be asked here (this card's sixth criterion: the guard does not fire outside " +
         "this repository's own checkouts)",
+    );
+  }
+
+  // ── A VERDICT ABOUT SOMEWHERE ELSE SAYS SO (T-216) ─────────────────
+  // Before this card the judged tree was ALWAYS the seat's own, so every
+  // refusal below could say "this checkout" and be right. Now it can be
+  // a lane the seat merely named, and the same sentences would be read
+  // against the wrong directory by the person reading them. So the one
+  // fact that changed is stated, and ONLY when it actually differs —
+  // the ordinary push, where the seat pushes its own checkout, stays
+  // silent, which is this file's rule for an ordinary allow.
+  const writerRoot = findCheckoutRoot(cwd);
+  if (writerRoot === undefined || !sameDirectory(writerRoot, root)) {
+    notices.push(
+      `THIS PUSH IS JUDGED IN ${root}, NOT IN ${cwd}. Every sentence below — the graph, the ` +
+        "board, the fence, the verdict token — is about that tree, because that is the tree the " +
+        "push carries (T-216).",
     );
   }
 

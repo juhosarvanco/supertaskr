@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **492 behaviours** — 490 extracted sentences + 2 named-not-extracted (listed at the end) — across 36 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **503 behaviours** — 501 extracted sentences + 2 named-not-extracted (listed at the end) — across 36 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -488,6 +488,17 @@ Census: **492 behaviours** — 490 extracted sentences + 2 named-not-extracted (
 - WITHOUT the guard, a stale token reaches the remote — the defect, reproduced
 - WITH the guard, the same stale token never reaches the remote
 - WITH the guard, a fresh green token still reaches the remote — the positive control
+- a `cd <lane> && git push` runs the check in the LANE, not in the dispatching checkout
+- the two checkouts a lane push straddles answer DIFFERENTLY — the defect, reproduced
+- a lane whose OWN battery never ran is refused, though the dispatcher's is green
+- WITH the fixed rooting, a fully measured lane push still reaches the remote
+- a `git -C <lane> push` is judged in the lane too, and it is the spelling the refusal names
+- a spelling this guard cannot read judges NOTHING, and says so
+- an unresolvable push outside this repository's checkouts is silent
+- `;` and `||` after a `cd` are not `&&`, and the guard judges nothing there
+- the working directory at the push is read only where the text determines it
+- the separator scan is the one gitInvocations always used
+- `-C` is followed and the options that re-point a repository are not
 - the guard is wired into .claude/settings.json on the Bash matcher
 
 ## range-rule
