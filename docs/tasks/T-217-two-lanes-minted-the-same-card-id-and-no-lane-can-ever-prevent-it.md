@@ -122,3 +122,44 @@ second, in the merge commit, with its cross-references updated in the
 same commit. Neither lane is edited while a verifier is drilling its
 tree — that is the `T-202` data-loss shape and it is not repeated for a
 bookkeeping fix.
+
+## CORROBORATION — 2026-09-01 at `a014b81`, THE SAME DEFECT ON A DIFFERENT RESOURCE
+
+Appended rather than filed beside, per TASK-FORMAT: a second instance is
+worth more attached to the first, because the pair is the evidence that
+the class is real.
+
+**THE e2e PORT IS DEFAULTED, NOT DERIVED.** `tools/e2e/preflight.ts:28`
+reads `NPUTER_E2E_PORT` and falls back to **14520 for every checkout on
+the machine**. Three lanes were live when this was measured, two of them
+owing that suite through the docs gate. Nothing in the harness derives
+the port from the lane; nothing warns; and two lanes taking 14520
+together produce a failure that looks like a flaky test in both.
+
+**This is this card's own sentence, unchanged: a lane cannot see another
+lane, so no lane can pick a unique value — and a DEFAULT is the shape
+that makes every lane pick the SAME one.** An id collision needs two
+lanes to choose alike; a port collision needs only two lanes to not
+choose at all.
+
+### What makes it a corroboration and not a restatement
+
+The id case had no obvious construction — this card had to invent one.
+Here the construction already exists, is written down in
+`docs/STATE.md` (*derive scratch ports FROM THE CARD ID*), was applied by
+a verifier last night (port 15175 for `T-175`), and the harness still
+defaults. **So the gap is not that nobody knew the rule. The gap is that
+the RULE and the TOOLING are separate objects, and only one of them was
+fixed.** That distinction is what this instance adds, and it widens what
+a fix here has to cover: a derivation the docs prescribe and the default
+path ignores is not a derivation anybody uses under pressure.
+
+### Attribution, because an unattributed finding reads as advice
+
+Found by the architect/integrator seat immediately after dispatching
+three lanes with a brief that NAMED this exact class — *reach for the
+construction, not the check* — and then handed all three a suite whose
+default violates it. Corrected in-flight by giving each lane its own
+derived port (`15000 +` the card's number). **The brief checked that the
+lanes knew the rule; it never checked that the tooling obeyed it**, and
+that is the fifth instance of this class in two days.
