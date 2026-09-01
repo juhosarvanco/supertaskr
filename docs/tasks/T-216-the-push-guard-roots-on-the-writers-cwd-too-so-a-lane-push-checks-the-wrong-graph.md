@@ -17,7 +17,10 @@ review: independent
 `lane-fence.mjs`'s `decide` by rooting on the TARGET rather than on
 `request.cwd`. `.claude/hooks/push-guard.mjs` still roots on the writer:
 
-`.claude/hooks/push-guard.mjs:449`
+`.claude/hooks/push-guard.mjs`, in the arm that resolves the checkout
+(derive it: `grep -n "findCheckoutRoot(cwd)"` — it was line 449 when this
+card was filed and T-203 has since moved it, which is why the citation is
+now a SEARCH and not a number):
 
     const cwd = typeof request.cwd === "string" && request.cwd !== "" ? request.cwd : process.cwd();
     const root = findCheckoutRoot(cwd);
@@ -67,3 +70,30 @@ wrongly"). So the honest options are narrower and each costs something:
   SHALL be observable rather than silent (`T-199`'s third criterion,
   applied to the guard beside it).
 - Verification: headless.
+
+## CARD AUDIT — 2026-09-01, the first run of orchestrator 5b's new step
+
+Audited at the dispatching seat BEFORE the stamp, per `orchestrator.md`
+5b. Every factual claim checked against the tree at `e9f21a6`:
+
+| claim | verdict |
+|---|---|
+| `push-guard.mjs` still roots on `request.cwd` | **HOLDS** — the quoted two lines are verbatim in the tree |
+| the rooting decides four things incl. which checkout `index --check` runs in | **HOLDS** |
+| `blocked_by: [T-199]` is met | **HOLDS** — T-199 `done` |
+| the code sits at **line 449** | **FALSE** — line 449 now reads `stdout: String(out.stdout ?? "")` |
+
+**`T-203` inserted roughly 220 lines above it, and nothing updated this
+card.** The code moved to 669–670. The citation was corrected to a
+`grep` rather than a number, which is the form `docs/STATE.md` asks for:
+*a line number is a coordinate in a mutable object that fails silently,
+still pointing at a real line, just the wrong rule.*
+
+**The card's substance is untouched** — the defect is real and still
+present. What the audit caught is a stale coordinate that would have sent
+an executor to an unrelated line in a file it was about to change.
+
+**And this is the case 5b was written from.** A preflight validates
+structure and would have passed this card green; nothing checks a
+sentence about the world. `T-230` is the construction that would have
+caught it mechanically.
