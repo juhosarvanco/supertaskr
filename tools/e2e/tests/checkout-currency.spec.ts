@@ -1,5 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -7,6 +14,7 @@ import {
   DEFAULT_INTEGRATION_REF,
   EXIT,
   GUARD_SURFACE,
+  REPOSITORY_PROBE_REL_PATH,
   SETTINGS_REL_PATH,
   STALE_CLONE_LIMIT,
   defaultVantage,
@@ -17,7 +25,11 @@ import {
   matcherSelects,
   registrationOf,
   render,
+  sessionCheckout,
+  sweep,
+  worktreesOf,
 } from "../scripts/checkout-currency.mjs";
+import { INDEX_CRATE_MANIFEST_REL_PATH } from "../../../.claude/hooks/push-guard.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -149,7 +161,11 @@ interface Fixture {
  * different repository on a different machine (docs/CONVENTIONS.md).
  */
 function motivatingFixture(name: string): Fixture {
-  const root = mkdtempSync(path.join(os.tmpdir(), `T-216-s1-${name}-`));
+  // REAL PATH, NOT THE `mkdtemp` ONE. On macOS `os.tmpdir()` is `/var/…`,
+  // a symlink to `/private/var/…`, and `git worktree list` reports the
+  // RESOLVED path — so a sweep's answer and a fixture's own idea of where
+  // it is would never compare equal. Found by the sweep body.
+  const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), `T-216-s1-${name}-`)));
   SCRATCH.push(root);
   const repo = path.join(root, "repo");
   mkdirSync(repo, { recursive: true });
@@ -171,6 +187,12 @@ function motivatingFixture(name: string): Fixture {
   // "different repository" body compare a repository against itself. Found
   // by the body that needs two genuinely unrelated object stores.
   writeFileSync(path.join(repo, "fixture.txt"), `${name}\n`);
+  // THE REPOSITORY PROBE — what makes this scratch tree a checkout of
+  // "this repository" to `sessionCheckout`. Without it the derived signal
+  // correctly declines the fixture, which is the guard working and a
+  // fixture that does not model what it claims to.
+  mkdirSync(path.dirname(path.join(repo, REPOSITORY_PROBE_REL_PATH)), { recursive: true });
+  writeFileSync(path.join(repo, REPOSITORY_PROBE_REL_PATH), '[package]\nname = "nputer-index"\n');
   writeFileSync(path.join(repo, SETTINGS_REL_PATH), SETTINGS_BEFORE);
   writeFileSync(path.join(repo, ".claude", "hooks", "lane-fence-hook.mjs"), "// fence hook\n");
   writeFileSync(path.join(repo, "README.md"), "before the guard\n");
@@ -768,11 +790,25 @@ const BRIEF = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
  */
 const LIVE_CARD = "T-216-s1";
 
-function runBrief(args: string[], projectDir?: string): { status: number | null; out: string; err: string } {
+/**
+ * Drive the real arming step.
+ *
+ * `projectDir` sets `CLAUDE_PROJECT_DIR`; **passing `undefined` UNSETS
+ * it, which is PRODUCTION'S OWN ENVIRONMENT** — the variable is exported
+ * to hook commands and not to Bash tool calls, so a seat typing the
+ * arming step at its shell has no such variable. `cwd` defaults to this
+ * repository because that is where the ritual is run from; a body that
+ * needs the other production signal moves it.
+ */
+function runBrief(
+  args: string[],
+  projectDir?: string,
+  cwd: string = repoRoot,
+): { status: number | null; out: string; err: string } {
   const env = { ...process.env };
   if (projectDir === undefined) delete env["CLAUDE_PROJECT_DIR"];
   else env["CLAUDE_PROJECT_DIR"] = projectDir;
-  const r = spawnSync(process.execPath, [BRIEF, ...args], { cwd: repoRoot, env, encoding: "utf8" });
+  const r = spawnSync(process.execPath, [BRIEF, ...args], { cwd, env, encoding: "utf8" });
   return { status: r.status, out: r.stdout ?? "", err: r.stderr ?? "" };
 }
 
@@ -826,18 +862,144 @@ test("THE WIRING'S POSITIVE CONTROL: the same arming step says CURRENT for a cur
   );
 });
 
-test("an UNDECLARED session checkout is said out loud and charged to nobody — the arm never guesses a target", () => {
-  // KILLED BY: falling back to the command's working directory, which is
-  // how this arm first reported a scratch FIXTURE as a stale session
-  // checkout and took a body in card-preflight.spec.ts red with it. A
-  // harness sets CLAUDE_PROJECT_DIR; a bare shell does not, and a verdict
-  // about a checkout no session was started in is an invented one.
-  const run = runBrief(["--task", LIVE_CARD, "--preflight"]);
-  expect(run.out, "the arm still speaks").toContain("THE SESSION'S OWN CHECKOUT");
-  expect(run.out, "and says the question could not be asked").toContain("UNANSWERED");
-  expect(run.err, "and charges nobody with being stale").not.toContain(
+test("PRODUCTION'S OWN ENVIRONMENT: with CLAUDE_PROJECT_DIR UNSET, a stale session checkout IS caught at arm time", () => {
+  // KILLED BY: reading the session checkout from CLAUDE_PROJECT_DIR
+  // alone — which is what the first build did, and what it was REJECTED
+  // for. That variable is exported to hook commands and NOT to Bash tool
+  // calls, so the arming step a seat actually types has no such variable;
+  // the previous build took its "nothing declared" branch every time and
+  // the only path to a STALE verdict was reachable from a fixture.
+  //
+  // THIS BODY'S ENVIRONMENT IS THE PRODUCTION ONE, not a fixture's: the
+  // variable is unset, and the only signal is where the command is run
+  // FROM. That is exactly what a seat has.
+  const fx = motivatingFixture("production-env");
+  const run = runBrief(["--task", "T-999", "--preflight"], undefined, fx.stale);
+
+  expect(run.out, "the arm reached a verdict with nothing declared").toContain("verdict: stale");
+  expect(run.out, "about the checkout the command was run from").toContain(fx.stale);
+  expect(run.out, "and says which signal it derived it from, never claiming it was declared").toContain(
+    "derived",
+  );
+
+  // AND THE SAME ENVIRONMENT REACHES THE FINDINGS SUMMARY. `T-999` names
+  // no live card, so the invocation above ends at "called wrong" before
+  // that summary is printed — which is a property of THAT arm and not of
+  // this one. A live card carries the same derivation all the way to the
+  // place a dispatcher reads refusals. `--root` names the repository the
+  // brief is ABOUT; the cwd is where the seat is SITTING, and the
+  // catcher must use the second — conflating them is what once reported
+  // a scratch fixture as a stale session checkout.
+  const live = runBrief(["--task", LIVE_CARD, "--preflight", "--root", repoRoot], undefined, fx.stale);
+  expect(live.err, "with nothing declared, it is a FINDING and the dispatch does not pass quietly").toContain(
     "the checkout this session was started in is STALE",
   );
+});
+
+test("a DECLARED checkout still wins over the derived one — the two signals have an order, and it is said", () => {
+  // KILLED BY: dropping the CLAUDE_PROJECT_DIR branch, or by letting the
+  // derived signal override it. Where the harness DID export the
+  // variable it is authoritative, and the render must not call it
+  // "derived" — a reader has to be able to tell an authoritative answer
+  // from an inferred one.
+  const fx = motivatingFixture("declared-wins");
+  const run = runBrief(["--task", "T-999", "--preflight"], fx.stale, repoRoot);
+  expect(run.out).toContain("verdict: stale");
+  expect(run.out, "the declared checkout is the one judged, not the cwd").toContain(fx.stale);
+  expect(run.out, "and the source is named as declared").toContain("declared");
+});
+
+test("UNANSWERED is reserved for the case that genuinely has no signal — outside this repository altogether", () => {
+  // KILLED BY: widening the unanswered branch back to "no
+  // CLAUDE_PROJECT_DIR", which is production and would certify the gap
+  // this card was rejected for. The branch must survive for the case it
+  // is true of, and this body pins that case to one that is NOT
+  // production: a working directory in no checkout of this repository.
+  const outside = mkdtempSync(path.join(os.tmpdir(), "T-216-s1-outside-"));
+  SCRATCH.push(outside);
+  const run = runBrief(["--task", "T-999", "--preflight"], undefined, outside);
+  expect(run.out, "the arm still speaks").toContain("THE SESSION'S OWN CHECKOUT");
+  expect(run.out, "and says there was no signal to derive one from").toContain("UNANSWERED");
+  expect(run.err, "charging nobody with being stale").not.toContain(
+    "the checkout this session was started in is STALE",
+  );
+  expect(run.out, "while the sweep, which needs no signal at all, still ran").toContain(
+    "EVERY CHECKOUT OF THIS REPOSITORY ON THIS MACHINE",
+  );
+});
+
+test("THE SWEEP NEEDS NOTHING DECLARED: it names a stale checkout no environment variable and no cwd could have pointed at", () => {
+  // KILLED BY: a sweep that judges only the resolved target, and by one
+  // that reads its checkout list from anywhere but git's own worktree
+  // administration. This is the half that cannot be defeated by a wrong
+  // signal — the session's checkout is in the list by construction.
+  const fx = motivatingFixture("sweep");
+  const results = sweep({ vantage: fx.repo });
+  const seen = new Map(results.map((r) => [r.checkout, r.decision.verdict]));
+
+  expect(seen.get(fx.stale), "the stale worktree, named without being pointed at").toBe("stale");
+  expect(seen.get(fx.current), "and the current one is NOT — the sweep discriminates").toBe(
+    "current",
+  );
+  expect(seen.get(fx.behindOnlyChurn), "nor is one behind on files no guard is made of").toBe(
+    "current",
+  );
+  expect(
+    results.length,
+    "every worktree of the repository is in the answer, not a subset",
+  ).toBe(worktreesOf(fx.repo).length);
+});
+
+test("THE SWEEP AT ARM TIME: a stale sibling checkout is named even when the checkout being typed in is CURRENT", () => {
+  // KILLED BY: running the sweep only when the target resolution failed.
+  // This is the hole the derived signal leaves and the reason the sweep
+  // exists: a seat typing the arming step in the CURRENT checkout while
+  // its session lives in a stale worktree is the motivating instance's
+  // own shape, and the target arm alone answers "fine" for it.
+  const run = runBrief(["--task", "T-999", "--preflight"], undefined, repoRoot);
+  expect(run.out, "the checkout being typed in is current").toContain("verdict: current");
+  expect(run.out, "and the sweep ran anyway").toContain(
+    "EVERY CHECKOUT OF THIS REPOSITORY ON THIS MACHINE",
+  );
+  // This repository's own worktree list is a live fact, so the body
+  // asserts the MECHANISM rather than a machine's contents: every
+  // checkout git reports is judged and reported by name.
+  const listed = worktreesOf(repoRoot);
+  expect(listed.length, "git reports at least this lane and the integration checkout").toBeGreaterThan(1);
+  for (const w of listed) {
+    expect(run.out, `the sweep names ${w.path}`).toContain(w.path);
+  }
+});
+
+test("the repository probe is ONE fact checked twice — the catcher and the push guard ask with the same path", () => {
+  // KILLED BY: either constant moving without the other. A second copy of
+  // a fact is two facts unless something compares them; this is the
+  // comparison.
+  expect(REPOSITORY_PROBE_REL_PATH).toBe(INDEX_CRATE_MANIFEST_REL_PATH);
+  expect(existsSync(path.join(repoRoot, REPOSITORY_PROBE_REL_PATH)), "and it is a real path").toBe(
+    true,
+  );
+});
+
+test("sessionCheckout derives the WORKTREE ROOT, never the raw working directory, and never outside this repository", () => {
+  // KILLED BY: returning `cwd` itself (which the verdict explicitly did
+  // not want and the code refuses), and by dropping the
+  // repository probe so any git checkout on the machine qualifies.
+  const nested = path.join(repoRoot, "tools", "e2e", "scripts");
+  const derived = sessionCheckout({}, nested);
+  expect(derived?.path, "a deep cwd resolves to the worktree ROOT").toBe(repoRoot);
+  expect(derived?.source).toBe("derived");
+
+  const declared = sessionCheckout({ CLAUDE_PROJECT_DIR: repoRoot }, nested);
+  expect(declared?.source, "and a declared one is not called derived").toBe("declared");
+
+  const outside = mkdtempSync(path.join(os.tmpdir(), "T-216-s1-nonrepo-"));
+  SCRATCH.push(outside);
+  execFileSync("git", ["init", "-q", "-b", "main", outside], { stdio: "pipe" });
+  expect(
+    sessionCheckout({}, outside),
+    "a git checkout that is not THIS repository yields no target at all",
+  ).toBeUndefined();
 });
 
 test("the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it", () => {

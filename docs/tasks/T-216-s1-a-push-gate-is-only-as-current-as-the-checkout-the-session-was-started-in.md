@@ -219,7 +219,15 @@ defect is routed as **T-232** rather than folded in here.
   defect this card exists to end.
 - Verification: headless.
 
-## Implementation notes (executor, 2026-09-01)
+## Implementation notes
+
+*(executor, 2026-09-01. **The heading is BARE on purpose.** The parser
+matches this section on the exact key `implementation notes`, so a
+parenthetical in the HEADING makes `splitSections` drop everything under
+it and `app/src/lib/task-detail.ts` renders nothing — measured by the
+verifier as `implementationNotes: DROPPED`. A `##` heading on a card is a
+code input; the date goes in the body. The parenthetical form is live on
+many cards and that class is filed separately, not here.)*
 
 Built at `task/T-216-s1-stale-checkout-catcher`. Card read at `87b134d`
 (the third amendment); the lane's copy of this file was brought forward
@@ -304,3 +312,80 @@ the fence) or a dishonest entry in `workflow-parity.spec.ts`'s
 - `STALE_CLONE_LIMIT` is printed on EVERY run, whatever the verdict.
 - The suite's two remaining reds and the rust suite's two are NOT this
   card's: they are `T-216-s4`, filed here.
+
+### After rejection 1 — the arm could not reach a verdict where it runs
+
+**The verdict was right and the defect was mine.** The arm read
+`CLAUDE_PROJECT_DIR` and nothing else. That variable is exported to HOOK
+commands and NOT to Bash tool calls, so the arming step a seat actually
+TYPES took the "nothing declared" branch every time; the only path to a
+STALE verdict was reachable from a fixture. **And the body at
+`checkout-currency.spec.ts:829` pinned that branch as correct using the
+unset-variable configuration, which IS production — the suite certified
+the gap instead of catching it.** That is this card's own subject
+committed one level up, and it is why the rejection was a rejection and
+not a filed suggestion.
+
+**Two halves, and only the second one is un-defeatable.**
+
+**1. `sessionCheckout()` — the target is DERIVED, in a stated order.**
+`CLAUDE_PROJECT_DIR` where the harness exports it; otherwise the
+WORKTREE ROOT containing the command's working directory, and only when
+that root carries `REPOSITORY_PROBE_REL_PATH` — the same file
+`push-guard.mjs` asks the same question with, with a body asserting the
+two constants are equal so the copy is checked rather than trusted.
+**Never raw `cwd`**, which the verdict explicitly did not want and which
+would invent a target. The render names the SOURCE, so a reader can tell
+an authoritative answer from an inferred one. Measured in production's
+own environment — variable unset, cwd = the motivating worktree:
+
+    exit 1 · verdict stale · 4ec229c · 352 behind · arms A + B
+
+**2. `sweep()` — the half that needs nothing declared.** Every way of
+naming *the session's own checkout* can be wrong: a variable the shell
+does not carry, a working directory the seat moved, a flag nobody
+passed. The sweep asks a different question — **which checkouts of this
+repository, on this machine, load stale guards?** — off `git worktree
+list --porcelain` read in the vantage, which `method/lane-protocol.md`
+rule 7 already makes the authority on what exists. The session's
+checkout is in that answer BY CONSTRUCTION, because a session is started
+in a checkout of this repository. Measured live, needing nothing
+declared and no checkout's cooperation:
+
+    SWEEP: 6 of 9 checkout(s) load STALE guards
+      CURRENT  /Users/ujju/Projects/nputer
+      CURRENT  /Users/ujju/Projects/nputer-T-216-s1
+      CURRENT  /Users/ujju/Projects/V-216-s1
+      STALE    …/.claude/worktrees/adoring-nash-028cf4 @ 4ec229c   <- the card's own instance
+      STALE    /Users/ujju/Projects/nputer-app, /private/tmp/nd-T-140-s4,
+               /Users/ujju/Projects/arch-verify, …/mystifying-maxwell-c6045b,
+               /Users/ujju/Projects/V-s2-A
+
+Three CURRENT beside six STALE is the sweep's own positive control: it
+discriminates rather than refusing everything.
+
+**WHY NOT THE EXPLICIT FLAG, which was the safer of the two routes
+offered.** It is the same failure wearing new clothes, for two reasons.
+The mechanical one: the ritual that would pass it is spelled in
+`docs/CONVENTIONS.md`, outside this fence — so this lane could ship the
+flag and not the passing, which the verdict itself calls decorative. The
+structural one is worse: **a flag asks the party under test to declare
+the property under test**, and a seat working out of a stale checkout is
+precisely the seat that does not know it is. *A construction beats a
+check* is this project's own rule, and here it points at the sweep.
+
+**WHAT REFUSES AND WHAT REPORTS, argued rather than assumed.** A stale
+RESOLVED TARGET is a finding and the dispatch answers 1. The SWEEP
+reports. Making every stale checkout on the machine a refusal would red
+every dispatch forever — `arch-verify` is permanently 900+ commits
+behind and nobody is going to move it — and a gate that is always red is
+the gate this project learns to ignore. That is the same argument the
+guard-surface arm already makes against a raw commit count.
+
+**The residual, stated rather than left to be found.** `sessionCheckout`
+source 2 still has the verdict's named hole: a seat typing the arming
+step in some OTHER checkout gets a target verdict about that one. The
+sweep is what covers it — that seat still sees its stale worktree named
+— but the FINDING (and therefore the exit code) follows the target, not
+the sweep. Closing that would mean refusing on the sweep, which the
+paragraph above refuses on its own evidence.

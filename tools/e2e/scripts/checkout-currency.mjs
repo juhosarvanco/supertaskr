@@ -54,12 +54,20 @@
  * `defaultVantage()` resolves against `import.meta.url`. A vantage taken
  * from `process.cwd()` would be whatever directory the shell happens to
  * sit in, which in this project's own dispatch shape is frequently the
- * stale side. The default target, symmetrically, is `CLAUDE_PROJECT_DIR`
- * — the checkout whose `settings.json` the HARNESS loaded — because that
- * is the thing whose currency is in question, and it is routinely NOT
- * the directory the ritual's commands are typed in. When the two resolve
- * to one checkout the render says so out loud: a checkout judging itself
- * has answered a weaker question than it looks like it answered.
+ * stale side. The TARGET is `sessionCheckout()` — read that function for
+ * the two signals it derives it from, and for the rejection that put it
+ * there. When vantage and target resolve to one checkout the render says
+ * so out loud: a checkout judging itself has answered a weaker question
+ * than it looks like it answered.
+ *
+ * ── AND ONE CHECKOUT IS NOT THE WHOLE QUESTION: `sweep` IS ────────────
+ * Every way of naming *the session's own checkout* can be wrong — an
+ * environment variable a shell does not carry, a working directory the
+ * seat moved, a flag nobody passed. `sweep` asks the question that needs
+ * none of them: **which checkouts of this repository, on this machine,
+ * load stale guards?** It reads git's own worktree administration, so
+ * the session's checkout is in the answer by construction. That is the
+ * construction this project's own rule prefers to a check.
  *
  * ── REACHABILITY IS NOT THE QUESTION, AND THAT IS MEASURED ───────────
  * From T-216-s1's card, at `06ca1c5`:
@@ -318,14 +326,86 @@ export function defaultVantage() {
 }
 
 /**
- * The checkout to judge: the one whose `settings.json` the HARNESS
- * loaded, which is `CLAUDE_PROJECT_DIR` when the harness set it.
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {string}
+ * The probe that says a directory is a checkout of THIS repository —
+ * the same file `push-guard.mjs` asks the same question with, and a
+ * keeper asserts the two constants are equal rather than trusting that
+ * they stay so. A second copy with a checker is one fact checked twice;
+ * without one it is two facts.
  */
-export function defaultTarget(env = process.env) {
-  const dir = env["CLAUDE_PROJECT_DIR"];
-  return typeof dir === "string" && dir !== "" ? path.resolve(dir) : process.cwd();
+export const REPOSITORY_PROBE_REL_PATH = "app/src-tauri/crates/nputer-index/Cargo.toml";
+
+/**
+ * @typedef {object} SessionCheckout
+ * @property {string} path
+ * @property {"declared" | "derived"} source  how it was found, said out loud
+ * @property {string} how                     the exact signal, for the render
+ */
+
+/**
+ * WHICH CHECKOUT WAS THIS SESSION STARTED IN — derived, never declared by
+ * the party under test, and never `process.cwd()` raw.
+ *
+ * ── WHY THIS FUNCTION EXISTS AT ALL, WHICH IS A REJECTION ─────────────
+ * An earlier build read `CLAUDE_PROJECT_DIR` and nothing else. **That
+ * variable is exported to HOOK commands and NOT to Bash tool calls**,
+ * measured with a positive control in one session:
+ *
+ *     hook command     CLAUDE_PROJECT_DIR = <the project dir>
+ *     Bash tool call   CLAUDE_PROJECT_DIR = UNSET   (env | grep -c => 0)
+ *
+ * The arming step is TYPED AT A SHELL, so in production the arm took its
+ * "nothing was declared" branch every time and the only path that could
+ * reach a STALE verdict was reachable from a fixture. A correct catcher
+ * that is called and always declines is the same defect as one nothing
+ * calls, one level up — which is this card's own subject, committed by
+ * this card.
+ *
+ * ── THE TWO SOURCES, IN ORDER, AND WHY NEITHER IS A FLAG ──────────────
+ * 1. `CLAUDE_PROJECT_DIR` — authoritative where it exists.
+ * 2. The WORKTREE ROOT containing `cwd` — never raw `cwd`, and only when
+ *    that root is a checkout of THIS repository. In production a
+ *    session's shell starts in its own project directory, so this
+ *    resolves to the thing in question; measured from a real session's
+ *    shell, `git rev-parse --show-toplevel` returned that session's own
+ *    worktree at the motivating commit.
+ *
+ * **A THIRD SOURCE — AN EXPLICIT FLAG THE RITUAL PASSES — IS DELIBERATELY
+ * REFUSED, AND THE REASON IS THIS PROJECT'S OWN RULE POINTING AT IT.**
+ * *A construction beats a check*: a flag fires only when a seat remembers
+ * to pass it, and the fact it would be passing is exactly the fact the
+ * seat working out of a stale checkout does not have. It asks the party
+ * under test to declare the property under test. The sweep below is the
+ * construction that needs nobody to remember anything.
+ *
+ * ── AND SOURCE 2 HAS A HOLE, WHICH THE SWEEP CLOSES RATHER THAN HIDES ─
+ * A seat that types the arming step in some OTHER checkout gets a verdict
+ * about that one — and if that other checkout is current, the answer is a
+ * false reassurance in exactly the motivating instance's shape. This
+ * function does not fix that and must not be read as fixing it. `sweep`
+ * does, by judging every checkout of this repository on the machine.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {string} [cwd]
+ * @returns {SessionCheckout | undefined}
+ */
+export function sessionCheckout(env = process.env, cwd = process.cwd()) {
+  const declared = env["CLAUDE_PROJECT_DIR"];
+  if (typeof declared === "string" && declared !== "") {
+    return {
+      path: path.resolve(declared),
+      source: "declared",
+      how: "CLAUDE_PROJECT_DIR, which the harness exports to hook commands",
+    };
+  }
+  const top = git(cwd, ["rev-parse", "--show-toplevel"]);
+  if (top.status !== 0 || top.out === "") return undefined;
+  const root = path.resolve(top.out);
+  if (!existsSync(path.join(root, REPOSITORY_PROBE_REL_PATH))) return undefined;
+  return {
+    path: root,
+    source: "derived",
+    how: "the worktree root containing this command's working directory, never the directory itself",
+  };
 }
 
 /**
@@ -342,6 +422,68 @@ function commonDirOf(root) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Every checkout of this repository on this machine, read off git's own
+ * worktree administration from the vantage.
+ *
+ * **THIS IS A FACT ON DISK, NOT A MEMORY** (`method/lane-protocol.md`
+ * rule 7), and it is the whole reason the sweep cannot be defeated: it
+ * needs no environment variable, no flag, no cwd and no cooperation from
+ * any checkout in it. A session is started in a checkout of this
+ * repository, so the session's checkout is in this list by construction —
+ * whether or not anybody could name it.
+ *
+ * @param {string} vantage
+ * @returns {{ path: string, head: string, branch: string }[]}
+ */
+export function worktreesOf(vantage) {
+  const r = git(vantage, ["worktree", "list", "--porcelain"]);
+  if (r.status !== 0) return [];
+  /** @type {{ path: string, head: string, branch: string }[]} */
+  const found = [];
+  /** @type {{ path: string, head: string, branch: string } | null} */
+  let current = null;
+  for (const line of r.out.split("\n")) {
+    if (line.startsWith("worktree ")) {
+      if (current !== null) found.push(current);
+      current = { path: path.resolve(line.slice("worktree ".length)), head: "", branch: "" };
+    } else if (line.startsWith("HEAD ") && current !== null) {
+      current.head = line.slice("HEAD ".length);
+    } else if (line.startsWith("branch ") && current !== null) {
+      current.branch = line.slice("branch ".length);
+    }
+  }
+  if (current !== null) found.push(current);
+  return found;
+}
+
+/**
+ * Judge EVERY checkout of this repository on this machine.
+ *
+ * The arm-time question is not really *"is MY checkout stale?"* — a seat
+ * that could answer that reliably would not need this tool. It is
+ * **"which checkouts on this machine load stale guards?"**, and that one
+ * is answerable without knowing which of them a session is sitting in.
+ * A DETACHED checkout is included on purpose: the measured instance was a
+ * worktree nobody would have called a lane, and a session can be started
+ * in any of them.
+ *
+ * @param {object} [options]
+ * @param {string} [options.vantage]
+ * @param {string} [options.integrationRef]
+ * @returns {{ checkout: string, head: string, branch: string, decision: Decision }[]}
+ */
+export function sweep(options = {}) {
+  const vantage = path.resolve(options.vantage ?? defaultVantage());
+  const integrationRef = options.integrationRef ?? DEFAULT_INTEGRATION_REF;
+  return worktreesOf(vantage).map((w) => ({
+    checkout: w.path,
+    head: w.head,
+    branch: w.branch,
+    decision: judge({ vantage, target: w.path, integrationRef }),
+  }));
 }
 
 // ── the three arms ─────────────────────────────────────────────────────
@@ -541,7 +683,8 @@ function guardSurfaceArm({ vantage, target, integrationRef, targetHead }, findin
  */
 export function judge(options = {}) {
   const vantage = path.resolve(options.vantage ?? defaultVantage());
-  const target = path.resolve(options.target ?? defaultTarget());
+  const session = options.target === undefined ? sessionCheckout() : undefined;
+  const target = path.resolve(options.target ?? session?.path ?? process.cwd());
   const integrationRef = options.integrationRef ?? DEFAULT_INTEGRATION_REF;
 
   /** @type {Finding[]} */
@@ -553,6 +696,7 @@ export function judge(options = {}) {
     vantage,
     target,
     integrationRef,
+    targetSource: options.target !== undefined ? "given" : (session?.source ?? "fallback"),
     selfJudged: path.resolve(vantage) === path.resolve(target),
   };
 
@@ -670,11 +814,41 @@ export function render(d) {
   return lines;
 }
 
+/**
+ * The sweep's lines: one per checkout, stale ones named in full.
+ *
+ * @param {ReturnType<typeof sweep>} results
+ * @returns {string[]}
+ */
+export function renderSweep(results) {
+  const stale = results.filter((r) => r.decision.verdict === "stale");
+  const lines = [
+    `checkout-currency SWEEP: ${String(stale.length)} of ${String(results.length)} checkout(s) ` +
+      "of this repository load STALE guards",
+  ];
+  for (const r of results) {
+    const codes = r.decision.findings.map((f) => f.code).join(", ");
+    lines.push(
+      `  ${r.decision.verdict.toUpperCase().padEnd(7)} ${r.checkout} @ ${r.head.slice(0, 7)}` +
+        `${codes === "" ? "" : ` — ${codes}`}`,
+    );
+  }
+  if (stale.length > 0) {
+    lines.push(
+      "  A SESSION STARTED IN ANY CHECKOUT ABOVE MARKED STALE RUNS THE GUARDS THAT CHECKOUT " +
+        "CARRIES, WHICH ARE NOT THE ONES THIS PROJECT REGISTERS. This list is read off git's " +
+        "own worktree administration, so it needs nothing declared and no checkout's " +
+        "cooperation — which is why it still names a checkout no environment variable could.",
+    );
+  }
+  return lines;
+}
+
 // ── the CLI ────────────────────────────────────────────────────────────
 
 const USAGE =
   "usage: node tools/e2e/scripts/checkout-currency.mjs [--checkout <path>] " +
-  "[--vantage <path>] [--integration-ref <ref>] [--json]";
+  "[--vantage <path>] [--integration-ref <ref>] [--sweep] [--json]";
 
 /**
  * @param {string[]} argv  the arguments after the script name
@@ -686,10 +860,15 @@ export function main(argv, out = (l) => process.stdout.write(`${l}\n`), err = (l
   /** @type {Record<string, string>} */
   const opts = {};
   let json = false;
+  let wantsSweep = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--json") {
       json = true;
+      continue;
+    }
+    if (arg === "--sweep") {
+      wantsSweep = true;
       continue;
     }
     if (arg === "--checkout" || arg === "--vantage" || arg === "--integration-ref") {
@@ -704,6 +883,24 @@ export function main(argv, out = (l) => process.stdout.write(`${l}\n`), err = (l
     }
     err(`checkout-currency: unknown argument ${JSON.stringify(arg)}\n${USAGE}`);
     return EXIT.USAGE;
+  }
+
+  if (wantsSweep) {
+    try {
+      const results = sweep({
+        ...(opts["--vantage"] === undefined ? {} : { vantage: opts["--vantage"] }),
+        ...(opts["--integration-ref"] === undefined
+          ? {}
+          : { integrationRef: opts["--integration-ref"] }),
+      });
+      const stale = results.filter((r) => r.decision.verdict === "stale");
+      if (json) out(JSON.stringify(results, null, 2));
+      else for (const line of renderSweep(results)) (stale.length === 0 ? out : err)(line);
+      return stale.length === 0 ? EXIT.CLEAN : EXIT.FOUND;
+    } catch (e) {
+      err(`checkout-currency: SWEEP COULD NOT RUN — ${errText(e)}.`);
+      return EXIT.CANNOT_RUN;
+    }
   }
 
   /** @type {Decision} */
