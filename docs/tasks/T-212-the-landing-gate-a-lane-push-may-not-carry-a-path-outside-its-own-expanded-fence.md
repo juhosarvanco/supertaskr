@@ -39,10 +39,25 @@ matches a lane branch —
    lane widen its own gate by editing its own `touches:`, which
    `lane-protocol.md:182` already forbids ("a fence is not widened from
    inside the lane it fences" — the architect seat flagged this hole
-   before it shipped). Main is a ref the lane cannot move, and it is
+   before it shipped). Main is ~~a ref the lane cannot move, and it is~~
    exactly where a fast-path-A widening lands, because the widening act
    is a card amendment COMMITTED on main plus `--write-fence`
    (`T-211`);
+
+   *THE STRUCK CLAUSE IS FALSE AND IS RECORDED RATHER THAN QUIETLY
+   SWAPPED.* `integrationRefCandidates` tries the LOCAL `main` first, and
+   local `main` IS movable from inside a lane worktree. Reproduced twice
+   — by this card's verifier, and again by its executor in a throwaway
+   repository with `main` checked out in worktree A and a lane branch in
+   worktree B, run from B: `git branch -f main <sha>` is refused
+   (*"cannot force update the branch 'main' used by worktree at …"*)
+   while `git update-ref refs/heads/main <sha>` is ACCEPTED, exit 0, and
+   main moves. `git branch -f` carries the checked-out-elsewhere guard;
+   `update-ref` does not. The rest of the step stands — reading from the
+   integration branch is still right, and it is still where a legitimate
+   widening lands — but the ABSOLUTE was wrong, which is exactly what
+   rule 5 means by *"a guard described as total is worse than no
+   guard."* `T-223` owns the behaviour change;
 3. intersect with **`T-209`'s one implementation** — this card takes the
    push call site; the integrator ritual takes the merge call site on
    the RANGE RULE's integrator pair; a second copy of the intersection
@@ -61,6 +76,28 @@ not get the widest licence).
 diff.** That vector is `T-210`'s, and the two cards state each other's
 blind spots on purpose — a guard trusted further than it measures is
 this project's most repeated defect.
+
+**A `touches:` AMENDMENT RIDES IN UNDER THE UNFENCEABLE DIRECTORY AND
+WIDENS THE NEXT PUSH** (`T-224`, found by this card's verifier and
+undisclosed here until it was). Both arms admit every changed path under
+`docs/tasks` — they must, since that is where every card's dispatch stamp
+and closing stamp are written, and it is what makes these very notes
+performable. So the two bodies proving that a lane editing its own card
+does not widen THIS push are true and are **not the whole account**: the
+amendment is itself an admitted path, so it pushes, it merges, and from
+the next push onward this gate reads the widened `touches:` as the card
+of record. That is `T-211`'s fast path A — which this gate's own refusal
+text reserves to triage — taken unilaterally one merge later, and the
+same route reaches **a sibling's** card, so lane A can widen lane B's
+fence. `T-224` owns the fix and it is precise: judge the `touches:` LINE
+across the range rather than the file. The directory stays unfenceable.
+
+**AND THE LOCAL INTEGRATION REF IS MOVABLE FROM INSIDE A LANE**
+(`T-223`) — see the correction under build step 2 above.
+
+*Both were absent from this section until the verdict, which is the
+defect this section exists to prevent: a limits paragraph that omits the
+guard's own bypass is the shape this project keeps finding.*
 
 ## Acceptance criteria
 
@@ -136,7 +173,12 @@ path can LAND, plus the spec:
 - **`lane-fence.mjs`** — `touchesLineOf` now delegates to a generic
   `frontmatterLineOf(text, field)`, so the gate's `id:` read and the
   `touches:` read are ONE scanner rather than two.
-- **`tools/e2e/tests/landing-gate.spec.ts`** — 24 bodies.
+- **`tools/e2e/tests/landing-gate.spec.ts`** — **23** bodies
+  (`grep -c '^test(' tools/e2e/tests/landing-gate.spec.ts`, and 23
+  `✓` lines in the run). The first draft of these notes said 24: a
+  figure carried across from a full-suite delta instead of derived from
+  the file, which is the arithmetic this project's own rule against
+  transcribed figures exists to stop.
 
 ### THE EXPANSION PROBLEM THE CARD DOES NOT NAME, AND HOW IT IS SOLVED
 
@@ -241,8 +283,19 @@ expander and the parser's own `expandFence` and requires
 
 Every drill asserted its anchor matched EXACTLY ONCE, then asserted
 `git diff --numstat` showed the change, then restored to a
-byte-identical tree (`landing-gate.mjs` sha256 `eca6da94…`,
-`push-guard.mjs` `e7cfaa41…`, `git status` clean after each).
+byte-identical tree, `git status` clean after each.
+
+**THE RESTORE HASHES CARRY THEIR REFS**, which the first draft of this
+ledger omitted — a hash without one is a figure whose subject moves, and
+this one did: `landing-gate.mjs` sha256 **`eca6da94…` AT `ad942b6`**,
+where the first ten drills ran; `push-guard.mjs` **`e7cfaa41…` at
+`ad942b6`**, still current; `lane-fence.mjs` **`ac322c73…` at `208f730`**,
+where the eleventh ran. `landing-gate.mjs` is `0b0b8094…` at `f093b7a`
+and moves again with this verdict's corrections. **Every delta since
+`ad942b6` is inside the `/* */` module header** — comment-stripped, the
+code is byte-identical — so all eleven drills still bind to the shipped
+behaviour. The verifier derived and closed this rather than charging it;
+the missing refs were the defect, not the drills.
 
 | mutant | reds |
 |---|---|
@@ -291,12 +344,27 @@ is **19 of 40 merges** rather than the token census's rough share, and
 it is the single largest limit on this gate.
 
 **The merge arm's identification is the second limit and it is
-comparable in size**: only **21 of 40** merges have a live lane branch at
-their second parent, so the rest are answered CANNOT COMPARE by the arm
-even where the fence would resolve. That number is a property of when
-branches get deleted, not of the code — it may deserve a card of its
-own, and it is reported rather than filed because the board took two new
-ids under this lane while it ran.
+comparable in size**: **21 of 40** merges had a live lane branch at their
+second parent when this was run, so the rest are answered CANNOT COMPARE
+by the arm even where the fence would resolve.
+
+**THAT FIGURE NEEDS A CLOCK AS WELL AS A REF, AND THIS IS THE CORRECTION
+THAT SAYS SO.** The verifier derived **22** where this lane derived 21,
+at a different moment, and neither is wrong: the count is a live property
+of BRANCH-CLEANUP STATE, not of the code. `lane-protocol.md` rule 6 has
+the integrator remove the **WORKTREE** — it does not delete the branch —
+so lane branches accumulate and this number DRIFTS UPWARD until somebody
+prunes, then falls. Read at **2026-09-01, main `fcdae0c`: 21 of 40**;
+re-derive it before quoting it, exactly as docs/STATE.md's LANES line
+demands of every lane fact. The verifier's own R3 predicted retrospective
+coverage near zero on the belief that rule 6 deletes the branch, and
+retracted it for this reason — recorded because the retraction is the
+part worth carrying.
+
+The limit may deserve a card of its own; it is reported rather than filed
+because the board took **four** new ids under this lane while it ran
+(`T-221` by another lane, `T-222` by this one after a collision, `T-223`
+and `T-224` by the verifier).
 
 ### Routed, not taken
 
@@ -315,8 +383,24 @@ ids under this lane while it ran.
   plus this card's own body. `T-221`'s hole is `lib/parser`'s alone.
 - **`T-216`** governs this arm exactly as it governs the graph arm: the
   root is the WRITER's cwd. Not fixed here; both arms share it, and
-  fixing one would leave the file with two rootings.
+  fixing one would leave the file with two rootings. *The verdict judges
+  this rooting CORRECT for this arm — at a lane push the writer's cwd IS
+  the lane worktree — so T-216's concern lands on the graph arm and not
+  on this one.*
 - **`T-218`**: `capabilities:check` red, integrator regenerates.
+
+### Filed by the verifier, disclosed here (the verdict's three corrections)
+
+- **`T-224`** — the transitive widening: a `touches:` amendment rides in
+  under the unfenceable directory and is the card of record from the next
+  push on. Now in this card's "cannot see" section and in the module
+  header's limits, where its absence was the real finding.
+- **`T-223`** — local `main` is movable from a lane with `update-ref`.
+  The false absolute is struck at build step 2 and corrected in the
+  module header; reproduced independently by this executor before
+  writing the correction.
+- The ledger hashes now carry their refs, and the body count is derived
+  from the file (**23**, not 24).
 
 ### For the verifier
 

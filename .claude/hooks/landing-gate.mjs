@@ -26,10 +26,30 @@
  * tip, because `method/lane-protocol.md` rule 5 rules that "a fence is
  * not widened from inside the lane it fences" and a gate reading a card
  * the lane authored is precisely that widening. From
- * `git show <integration>:docs/tasks/…`, a ref the lane cannot move —
- * and exactly where a legitimate widening lands, since the widening act
- * is a card amendment COMMITTED on main plus a re-run of `--write-fence`
- * (`T-211`).
+ * `git show <integration>:docs/tasks/…`, which is where a legitimate
+ * widening lands, since the widening act is a card amendment COMMITTED
+ * on main plus a re-run of `--write-fence` (`T-211`).
+ *
+ * **AND THAT REF IS NOT BEYOND THE LANE'S REACH, WHICH THIS PARAGRAPH
+ * ASSERTED AND WHICH IS FALSE.** It said main was "a ref the lane cannot
+ * move." `integrationRefCandidates` tries the LOCAL `main` FIRST, and
+ * local `main` is movable from inside a lane worktree — reproduced at
+ * this card's verification and again by its executor, in a throwaway
+ * repository with `main` checked out in one worktree and a lane branch
+ * in another:
+ *
+ *     git branch -f main <sha>      -> fatal: cannot force update the
+ *                                      branch 'main' used by worktree at …
+ *     git update-ref refs/heads/main <sha>  -> ACCEPTED, exit 0, main moved
+ *
+ * `git branch -f` carries the checked-out-elsewhere guard; `update-ref`
+ * does not. So a lane CAN point local `main` at a commit whose copy of
+ * its own card carries a wider `touches:`, and this gate will expand
+ * THAT fence. It is not a hole an ordinary lane falls into — it takes a
+ * deliberate plumbing command, and a seat willing to run it could reach
+ * for `git push --no-verify` instead — but the absolute was wrong, and
+ * a guard that states an absolute it does not have is rule 5's *"a guard
+ * described as total is worse than no guard."* `T-223` owns the fix.
  *
  * **THE LANE'S OWN CARD IS STILL ITS OWN TO WRITE**, and that is not a
  * contradiction: rule 5 puts every card outside every fence including its
@@ -101,6 +121,20 @@
  * 4. A push reached through an alias, a function, a script or an `eval`
  *    is not seen at all, which is `gitInvocations`' declared ceiling and
  *    the pre-guard state rather than a regression from it.
+ * 5. **A `touches:` AMENDMENT RIDES IN UNDER THE UNFENCEABLE DIRECTORY,
+ *    AND WIDENS THE NEXT PUSH.** `judgePaths` admits every changed path
+ *    under `docs/tasks` — it must, since that is where every card's
+ *    dispatch stamp and closing stamp are written. So the two bodies
+ *    proving a lane cannot widen THIS push by editing its own card are
+ *    true and are not the whole account: the amendment is itself an
+ *    ADMITTED path, so it pushes, it merges, and from the next push
+ *    onward this gate reads the widened `touches:` as the card of
+ *    record. That is `T-211`'s fast path A — which this file's own
+ *    `ROUTE` text reserves to triage — taken unilaterally, one merge
+ *    later, and the same route reaches a SIBLING's card. `T-224` owns
+ *    the fix and it is precise: judge the `touches:` LINE across the
+ *    range rather than the file, using the `frontmatterLineOf` this
+ *    module already imports. The directory stays unfenceable.
  */
 
 import { spawnSync } from "node:child_process";
