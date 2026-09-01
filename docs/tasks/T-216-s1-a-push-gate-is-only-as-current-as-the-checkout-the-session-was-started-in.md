@@ -401,3 +401,271 @@ sweep is what covers it — that seat still sees its stale worktree named
 — but the FINDING (and therefore the exit code) follows the target, not
 the sweep. Closing that would mean refusing on the sweep, which the
 paragraph above refuses on its own evidence.
+
+## Verdicts
+
+### APPROVED — 2026-09-01 — claude-opus-5@subagent — re-verification, measured at `aff1616`
+
+Scope as agreed after the rejection: the target-resolution path, a body asserting a
+stale checkout IS caught with `CLAUDE_PROJECT_DIR` unset, and whatever the fix
+disturbs. Criteria 1–4 were met at `202d31d` and are not re-litigated here. The
+executor's report and reasoning were again not read.
+
+**THE BLOCKING DEFECT IS FIXED, and the proof is the motivating instance itself.**
+`sessionCheckout()` now takes `CLAUDE_PROJECT_DIR` where the harness exports it and
+otherwise derives the WORKTREE ROOT containing the command's working directory,
+gated on a probe that the root is a checkout of this repository. Run in production's
+own shape — variable unset, cwd inside the stale checkout, which is what a session
+has:
+
+    (cd <the 4ec229c worktree> && env -u CLAUDE_PROJECT_DIR \
+       node tools/e2e/scripts/brief.mjs --task T-216-s1 --preflight)
+
+    exit 1
+    verdict: stale
+    judged:  /Users/…/.claude/worktrees/adoring-nash-028cf4
+             <- derived: the worktree root containing this command's working
+                directory, never the directory itself
+    the checkout this session was started in is STALE [registration-missing] …
+    the checkout this session was started in is STALE [hook-absent] …
+    the checkout this session was started in is STALE [guard-surface-behind] …
+
+Three findings reaching the summary a dispatcher reads, and the dispatch answers 1.
+At `202d31d` the identical invocation printed `UNANSWERED` and charged nobody.
+
+**AND THE SWEEP ANSWERS THE HARDER VERSION OF THE QUESTION.** The dispatching seat
+asked whether the fix would name its own session checkout *without being told the
+path exists*. Run from a checkout that is NOT the stale one, with nothing declared:
+
+    stale: /Users/…/.claude/worktrees/adoring-nash-028cf4 @ 4ec229c
+           — registration-missing, hook-absent, guard-surface-behind
+
+Named unprompted, off `git worktree list --porcelain`, needing no variable, no flag
+and no working directory. That is the half that cannot be defeated by mis-naming the
+session, and it is a better answer than either route this verdict proposed.
+
+**THE BODY I ASKED FOR EXISTS AND IS LOAD-BEARING.** `PRODUCTION'S OWN ENVIRONMENT:
+with CLAUDE_PROJECT_DIR UNSET, a stale session checkout IS caught at arm time` runs
+with the variable deleted and cwd as the only signal. A mutant killing ONLY the cwd
+derivation — `git(cwd, ["rev-parse","--show-toplevel"])` replaced by a failure, the
+declared branch and the sweep left intact, landing read from `git diff` — kills
+exactly three bodies (865, 953, 984) and leaves 29 passing. Disjoint from the
+wiring mutant's kill set at `202d31d` (779/804/816), so neither body is a
+restatement of the other.
+
+**Four suites GREEN at `aff1616`**, my own runner: parser **349**, app **1131**,
+rust **631/18**, e2e **535**. The e2e delta reconciles exactly — 529 + 7 added
+bodies − 1 removed (the old "never guesses a target" body, correctly retired
+because the arm now derives).
+
+**Security: clean, and it matters more than last pass** because `sweep()` now
+touches every checkout on the machine. The catcher performs **zero writes** —
+no `writeFileSync`, `mkdirSync`, `rmSync` or `appendFileSync` anywhere in it — and
+carries no `shell: true`, no `exec`, no network, no new dependency, no secrets. The
+porcelain parser prefix-matches and resolves paths rather than splitting on
+whitespace.
+
+### Residual, disclosed and NOT blocking
+
+Where a seat runs the arming step from a checkout that is not its session's project
+directory, the resolved target is that other checkout, and the session's own stale
+checkout appears in the SWEEP — which reports rather than refuses, so the dispatch
+exits 0. Measured: this machine currently has **6** checkouts the sweep calls stale,
+so refusing on a sweep row would red essentially every dispatch, and the code argues
+exactly that. It is the same reasoning that keeps the guard-surface arm from being a
+commit count, and it is right. The residual is narrow — a session's shell cwd is its
+project directory unless someone deliberately moves it — and it is now LOUD in every
+case rather than silent in the ordinary one, which is what this card asked for.
+
+Observation, not a finding: the sweep adds ~1.2 s to an arming step across 9
+worktrees. Fine for a once-per-dispatch command; recorded because `T-154-s2` measured
+the fence walk's cost for the opposite reason and someone will compare them.
+
+### A disclosure about this verdict's own measurements
+
+A second runner executed suites in this bench during the previous pass — both seats
+wrote a battery script at the same defaulted name in a shared scratchpad, and the
+lane ran what it believed was its own. The token it left stamps all four legs at
+`395c867`, which IS this seat's verdict tip, and its parser/app/e2e figures match
+what this verdict reported. **Agreement is exactly the case lane-protocol rule 4
+calls invisible**, so the gate line was re-measured under a script unique to this
+seat rather than accepted: parser **349**, app **1131**, e2e **529** at `395c867`,
+unchanged. What did record the intrusion was this bench's own solo lock, which
+REFUSED rust and named the holding pid — `T-088-s4`'s machinery working as designed.
+The prior verdict below stands unamended.
+
+### REJECTED — 2026-09-01 — claude-opus-5@subagent — measured at `202d31d`, bench `/Users/ujju/Projects/V-216-s1`
+
+**The blindness on this pass was a fact about the CLOCK, not a discipline I
+kept.** This bench was cut alongside the lane from the same base commit
+(orchestrator 5c), so there was no diff to decline to read. The attack set was
+sealed at `sha256 3347c3ac30d2acf1e6e92bf02dc3fd3cc6187f51d9d2824473a9604b6a7c65c9`
+before the ground truth beside it was measured and before any implementation
+existed; it has not been modified since. Frontmatter is untouched — `verifying`
+is a lane state and not this seat's to move.
+
+**FOUR SUITES GREEN AT `202d31d`**, measured at this bench after a fresh install
+and an `app/` build: parser **349**, app **1131**, rust **631/18**, e2e **529**
+(base 503; +26 is this spec's own body count exactly). *The first battery's reds
+were MINE and are recorded so nobody re-derives them: an uninstalled bench —
+`Cannot find package 'yaml'`, `vitest: command not found`, and 14 app bodies
+asserting a `app/dist` that had never been built. None reached the diff.*
+
+**Criteria 1–4: MET, and three of them exceeded.**
+
+- **1** is answered the way the card demands and the way a blind attack set
+  demanded before it existed: `consult()` selects and SPAWNS, a marker file the
+  hook itself writes proves the simulator can observe a consultation, and the
+  measured instance's empty selection is then read off *the same function*. The
+  push is real — a bare fixture remote's ref is compared against `fx.staleHead`,
+  so "the push happened" is observed and not inferred from exit 0.
+- **2** holds: judged from a vantage the target does not control, target carries
+  no copy of the catcher and is not written to. Verified live — this bench judged
+  the actual motivating worktree and returned STALE with three findings.
+- **3** is not merely stated, it is DEMONSTRATED: one content, two vantages, two
+  verdicts. The limit's remedy (`--integration-ref origin/main` after a fetch)
+  matches an independent phase-1 measurement that a fetch repairs `origin/main`
+  and NOT local `main` — the subtlety is right.
+- **4** runs the naive reachability check, observes it answer "fine", and watches
+  the catcher refuse the same checkout in the same fixture; `behind-but-current`
+  is its non-contained positive control and would die against a `count > 0`
+  implementation. Distance is derived at the ref under test, never typed.
+
+**Security: clean.** `spawnSync` with argv arrays throughout, no `shell: true`,
+no network, no writes to the judged checkout, no new dependency (the one
+`package.json` line is a script), no secrets.
+
+---
+
+### Criterion 5 is the rejection: the LETTER is enforced, the PURPOSE is not
+
+The wiring is real and mechanically pinned. A mutant that removes only the
+invocation — `} else if (wantsPreflight || fenceWorktree !== "")` → `} else if
+(false)`, `checkout-currency.mjs` untouched, landing read from `git diff` — kills
+exactly three bodies (779, 804, 816) and leaves the other 23 passing. Disjoint
+kill sets. Criterion 5's own words are satisfied.
+
+**But the arm cannot reach a verdict in production.** `brief.mjs` resolves the
+checkout to judge from `CLAUDE_PROJECT_DIR` alone, and refuses to judge without
+it. That variable is exported to HOOK commands and NOT to Bash tool calls —
+measured, with a positive control in the same session:
+
+    hook command       CLAUDE_PROJECT_DIR = <the project dir>    (control: it exists)
+    Bash tool call     CLAUDE_PROJECT_DIR = <UNSET>              (env | grep -c => 0)
+
+So the ordinary act — a seat typing the arming step at its own shell — takes the
+UNANSWERED branch every time. Reproduced at this bench, both halves of the same
+command:
+
+    # production: a Bash tool call has no CLAUDE_PROJECT_DIR
+    env -u CLAUDE_PROJECT_DIR node tools/e2e/scripts/brief.mjs --task T-999 --preflight
+      expected (this card): the stale session checkout is caught, LOUDLY, at arm time
+      actual:               "UNANSWERED: no session checkout was declared" — judged
+                            nothing; zero occurrences of "is STALE" on stdout or stderr
+
+    # the same command, with the variable the FIXTURE supplies
+    CLAUDE_PROJECT_DIR=<the motivating worktree> node tools/e2e/scripts/brief.mjs \
+        --task T-999 --preflight
+      actual:               verdict: stale, three findings
+
+Same command, same stale checkout; the only difference is a variable production
+never sets. **The path that produces STALE at arm time is reachable only from a
+fixture.** On the next dispatch out of a stale checkout — this card's own
+motivating instance — the seat is told nothing and the sitting proceeds.
+
+**And the suite certifies the gap rather than catching it.** The body at
+`checkout-currency.spec.ts:829` pins UNANSWERED-and-charge-nobody as correct
+using the unset-variable fixture, which IS production. It will stay green
+forever while the arm never fires. That is why this is a rejection and not a
+filed suggestion: the card exists to end "a correct catcher that nothing calls",
+and what shipped is a correct catcher that is called and always declines. For the
+motivating instance the outcome is identical — nobody is told.
+
+**The executor's reasoning is not in evidence here and was not read** (role file:
+the diff and the card, nothing else). The refusal to fall back to `process.cwd()`
+is argued in the code itself and the argument is sound: a bare `cwd` would invent
+a target and report a verdict about a checkout no session was started in.
+**Nothing below asks for that fallback.**
+
+### The signal IS available, and the fix is small
+
+Measured from a real session's shell, cwd being its own project directory:
+
+    git rev-parse --show-toplevel  ->  /Users/…/.claude/worktrees/adoring-nash-028cf4
+    that checkout's HEAD           ->  4ec229c        (the motivating instance itself)
+
+Two routes, and **a control I propose is mine to check, so here is what is wrong
+with mine:**
+
+1. **Explicit, and the safer one** — `brief.mjs` takes `--session-checkout <path>`
+   and the arming ritual passes it. Cannot judge the wrong tree. Costs a ritual
+   change, and an unpassed flag degrades to today's UNANSWERED, so it needs the
+   ritual updated in the same breath or it is decorative.
+2. **Derived** — resolve the WORKTREE ROOT containing cwd (not raw cwd), and
+   judge it only when it carries `.claude/settings.json`. **Its failure mode is
+   real**: a seat running the arming step from some other checkout gets a verdict
+   about that one. That is a narrower version of the same hazard the code already
+   refuses, and I am not claiming it is clean — it is the trade to argue, not the
+   answer to adopt.
+
+Either way the body that would make it stick is one this suite does not have:
+**an arm-time test whose environment is production's — `CLAUDE_PROJECT_DIR`
+unset — asserting that a stale session checkout IS caught.** Today that
+configuration is asserted to catch nothing.
+
+### A second, smaller defect in the diff — the notes are invisible to the board
+
+This card's notes heading is `## Implementation notes (executor, 2026-09-01)`.
+The parser matches that section on the exact key `implementation notes`, so the
+parenthetical matches nothing, and `splitSections` drops the content under an
+unknown `##` heading entirely. `app/src/lib/task-detail.ts` reads
+`sections.implementationNotes`, so **the notes will not render in the detail
+pane.** No suite reds — the docs gate checks frontmatter, not section names — so
+this one is silent:
+
+    normalise("Implementation notes (executor, 2026-09-01)")
+      -> "implementation notes (executor, 2026-09-01)"   != "implementation notes"
+
+**CORRECTION, and it makes the item BIGGER rather than smaller — this verdict
+first said "every other card spells the heading bare", and that was wrong.** It
+was read off a `grep | uniq -c | head -8` whose groups were keyed on LINE NUMBER
+and truncated at eight rows; every surviving row happened to be a bare spelling.
+A universal claim taken from a truncated sample.
+
+**THE CENSUS IS T-234'S AND IS NOT RESTATED HERE** — a second copy of a list
+drifts from the first, and this project has watched that happen. Measured at
+`c5c2b47`: **441 live cards, 50 notes dropped, 20 verdicts dropped, 12 in both,
+union 58.** I re-derived all five and they hold.
+
+**So this lane did NOT introduce the defect — it followed established
+practice**, and the item is a board-wide class with a census rather than a
+rejection item against this diff. It is recorded here for the mechanism, not
+charged to this lane.
+
+**A residual those five figures do not carry, offered to T-234.** The strict
+count asks "is the content unreachable", and 9 further cards sit between yes and
+no — 3 notes, 6 verdicts — carrying a decorated heading *beside* a bare one. Their
+content is PARTLY visible, and that is arguably the worse failure: `T-123` has
+`## Verdicts` at 462 and `## Verdicts (continued) — THE SECOND PASS` at 1225, so a
+reader gets a verdicts section, no empty space, and **no signal at all that a
+second pass exists and is missing.** Total invisibility at least shows a gap.
+
+**And the VERDICT half is the worse half.** `verdicts` is the only key the parser
+knows, so every decorated singular spelling is dropped — `verdict: approved`,
+`verdict — approved at c50bbf9, 2026-09-01`, `verdict (2026-08-30, blind factless
+verifier …)` and some twenty more. **Verdicts that no longer render are a heavier
+loss than notes that do not**, on a board that is the interface. (This verdict
+uses the bare `## Verdicts` and parses — checked, not assumed.)
+
+Still the THIRD instance of one class on this card: an amendment note glued into
+the criteria under a `###`, an amendment section invisible under an unknown `##`,
+and now the notes. **A `##` heading on a card is a code input.**
+
+### Not blocking, filed as observations only
+
+- `checkout-currency.spec.ts:337` asserts the fixture has no Bash matcher with
+  `not.toContain('"Bash"')`; a matcher spelled `"Bash|Write"` would slip that
+  string check. It guards a fixture the same file writes, so nothing rests on it
+  today.
+- The three-verdict design (current / stale / unknown) and the refusal to turn an
+  inability into a verdict are the right shape and should survive the fix.
