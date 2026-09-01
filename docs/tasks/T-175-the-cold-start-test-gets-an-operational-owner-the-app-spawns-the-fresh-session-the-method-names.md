@@ -404,3 +404,95 @@ re-deriving; 1 is what this tree measures.**
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+## DELTA RE-VERIFICATION (2026-09-01, same blind verifier, at `e961071`)
+
+**THE ASSIGNED CORRECTION IS DISCHARGED, THE TWO UNASSIGNED CHANGES ARE BOTH
+CORRECT, AND THE LEDGER DISAGREEMENT IS SETTLED — NEITHER SEAT WAS WRONG.**
+Verdict stands: **APPROVED**. Everything below is measured at `e961071` in this
+seat's own bench, one side only, sha256-landed and sha256-restored, tree clean
+after all four drills.
+
+### 1. The keeper does what it was assigned to do
+
+**D9** (the Rust producer's heading, `"GAPS:"` → `"FINDINGS:"`) now reds
+**1 Rust body + 1 TS body** — `the_cold_start_prompt_asks_for_named_gaps_and_never_a_score`
+(exit 101) and `an answer written to the PRODUCER's heading is split by the
+SHIPPED parser` (exit 1). **Both were 0 at `a7eb25a`.** The extraction fails
+loudly rather than skipping when the declaration moves, and the keeper is not
+parametrised by what it checks: the value is read out of Rust source and then
+used to DRIVE the shipped parser, so agreement is measured in both directions.
+
+### 2. The unassigned vacuity fix is a strengthening, not a loosening
+
+`cold.contains(COLD_START_GAPS_HEADING)` → `cold.contains("GAPS:")` closes
+T-063's catalogued vacuity in place. Before, that body could not red on a
+constant move; under D9 it now does. An existing pin changed, and it changed in
+the only direction a pin may.
+
+### 3. The collapse — NO ASSERTION WAS TRADED, and the merge direction is right
+
+Both assertions survive inside the merged body; the ASSERTION SET is unchanged
+and only the BODY COUNT moved from two to one. Whether that was correct is
+decided by **kill-set containment, not by a count**, and it is measured here
+rather than argued:
+
+**Mutant C1** — both declarations moved to the SAME parser-hostile value,
+`"GAPS: "` (trailing space); neither file is an assertion. Result: the
+**comparison PASSES** (they agree) and the **split FAILS** — *"the reader
+answered the second half: expected false to be true"*. So the split kills a
+mutant the comparison cannot, while every mutant that kills the comparison also
+kills the split (the split's fixture is BUILT from the Rust value and parsed
+with the TypeScript one). **The kill sets are strictly nested: comparison ⊂
+split.** The comparison was therefore the body killing no unique mutant —
+shape SIX's own definition — and keeping its assertion as the legible half
+inside the survivor is the blessed disposition, not a trade.
+
+**AND THIS RECONCILES WITH THE LANE THAT DECIDED THE OPPOSITE TONIGHT, WITHOUT
+EITHER BEING WRONG.** Two bodies reddening under one mutant is a prompt to
+ASK, never a verdict. The question is whether either kill set CONTAINS the
+other. Where neither does, both bodies are load-bearing and both stay — that
+lane's ruling, and the count-of-one is correctly read there as a per-body
+existence requirement. Where one contains the other, the contained body is a
+restatement — this lane's case, measured above. **A count of one is a property
+of a WELL-CHOSEN mutant, not an invariant every mutant must satisfy.**
+
+One observation, not a change: the comparison runs first and MASKS the split on
+every drift (D9's output carries only the comparison's message). That is the
+right ordering — same diagnosis, better sentence — but it means the split
+half's liveness rests on drills like C1 rather than on failure output.
+
+### 4. THE LEDGER DISAGREEMENT IS SETTLED: it is mutation SITE, not target scoping
+
+Both figures are correct. They are two different mutations of two different
+lines, and the lane's re-derivation was right that target scoping does not
+explain it. Measured at `e961071` under the FULL `cargo test`:
+
+| mutant | site | result |
+|---|---|---|
+| **M1a** | `mod.rs:1122` — the DERIVATION, `let docs = project_dir.join(COLD_START_CWD_REL)` → `project_dir.clone()` | **exit 101, 2 bodies** — the central one **and** `a_cold_start_over_a_project_with_no_docs_is_typed_and_spawns_nothing` |
+| **M1b** | `mod.rs:1163` — the USE, `project_dir: docs` → `project_dir: project_dir.clone()` | **exit 101, 1 body** — the central one only |
+
+**The derivation feeds TWO things** — the `docs.is_dir()` guard and the child's
+cwd — so mutating it also stops `NoDocs` firing; mutating only the use leaves
+the guard intact. This seat mutated the derivation and measured 2; the lane
+mutated the use and measured 1. **Both belong on the card WITH THEIR SITES**,
+because the disagreement was never about the tree — it was about which line the
+word "cwd" names, and the answer is that one binding carries two properties.
+That also confirms the two bodies are not restatements: they are two properties
+sharing one expression.
+
+The lane's posture was the right one — it named the unexplained figure and left
+the means to settle it rather than declaring the other seat wrong.
+
+### 5. Gates at `e961071`, this seat's own bench
+
+- `cargo test` from `app/src-tauri/` — **exit 0**: 268 lib · 95 passed / 1 ignored.
+- `npm test` from `app/` — **exit 0**, **50 files / 1131 tests** (+1, the keeper).
+- Tree **clean** after M1a, M1b, D9 and C1; every restoration proved by sha256
+  against `e961071`, both sides named on the restore.
+
+**The card still does not close.** Criteria 2, 4 and 5 MET; 1 and 3 half —
+derivations built and pinned, render and registration routed to `T-175-s1`,
+whose premise is now corrected to carry only the join. A person finishing an
+interview still cannot run the cold-start test.
