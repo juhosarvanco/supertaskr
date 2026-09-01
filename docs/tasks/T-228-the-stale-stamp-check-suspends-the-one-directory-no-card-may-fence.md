@@ -123,3 +123,20 @@ manifest and card happen to agree.* The verifier then reproduced it at a
 separate bench, tested the counter-argument above until it failed, and
 supplied the three-stage order. Neither seat could write the fix; both
 were right not to.
+
+## A COUPLING T-210 CREATES, NAMED BEFORE IT BITES — 2026-09-01
+
+`T-210`'s lane wrote a body that probes `decide()` inside exactly this
+card's window, and wrote it carefully: it uses the **newly-granted path
+rather than the card**, so it asserts the refusal this card's second
+criterion PRESERVES BY NAME. Its verifier audited that forward-
+compatibility and it holds — this card can land without reding it.
+
+**One residual.** That body also asserts `.code === "stale-stamp"`. So an
+implementation of this card that RENAMES the code — even while keeping
+the behaviour identical — reds a body in `tools/e2e`, which is outside
+this card's own fence.
+
+Named here rather than discovered at that lane's gate: **keep the code
+string `stale-stamp`, or plan the two-act change** the fast-path law now
+describes. Nobody has to guess.
