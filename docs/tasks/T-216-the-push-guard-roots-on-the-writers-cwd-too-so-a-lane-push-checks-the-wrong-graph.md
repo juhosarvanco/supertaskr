@@ -59,6 +59,16 @@ wrongly"). So the honest options are narrower and each costs something:
 
 ## Acceptance criteria
 
+**THE LAST TWO WERE APPENDED BELOW THIS SECTION AND ARE NOW INSIDE IT.**
+Everything that parses a card scopes to this heading, and the parser's
+`splitSections` DROPS content under unknown `##` headings entirely — so
+two normative SHALLs sat where no mechanism could see them and a
+preflight would have passed the card green with them uncounted.
+**Measured, not assumed: 5 SHALLs in the card, 3 inside this section,
+before the move.** It is the CARD AUDIT class one turn later — the same
+gap, now swallowing requirements about the WORK rather than claims about
+the world.
+
 - A body SHALL demonstrate the defect: a real lane worktree, a real
   `cd <lane> && git push`, and the check demonstrably run against a
   DIFFERENT checkout than the one being pushed.
@@ -78,16 +88,6 @@ wrongly"). So the honest options are narrower and each costs something:
   because a WORKTREE shares refs, and a stale CLONE consults a stale
   `main` and answers wrongly.
 - Verification: headless.
-
-**THE LAST TWO WERE APPENDED BELOW THIS SECTION AND ARE NOW INSIDE IT.**
-Everything that parses a card scopes to this heading, and the parser's
-`splitSections` DROPS content under unknown `##` headings entirely — so
-two normative SHALLs sat where no mechanism could see them and a
-preflight would have passed the card green with them uncounted.
-**Measured, not assumed: 5 SHALLs in the card, 3 inside this section,
-before the move.** It is the CARD AUDIT class one turn later — the same
-gap, now swallowing requirements about the WORK rather than claims about
-the world.
 
 ## CARD AUDIT — 2026-09-01, the first run of orchestrator 5b's new step
 
