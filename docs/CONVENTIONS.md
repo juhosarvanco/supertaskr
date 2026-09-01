@@ -78,25 +78,23 @@
   strength of that; until this step existed nothing on the merge path
   asked whether the committed bytes still matched a fresh generation,
   and the census went stale repeatedly — the occasions are ENUMERATED on
-  that card rather than counted here. It writes nothing and
-  byte-compares — exit 0 CURRENT, 1 STALE naming the regeneration
-  command, 2 called wrong, 3 the gate could not run) ·
+  that card. It writes nothing and byte-compares — exit 0 CURRENT, 1
+  STALE naming the regeneration command, 2 called wrong, 3 the gate
+  could not run) ·
   `npm run capabilities` (T-138-s1 — REGENERATES that document, and it is
   the command `--check` names when it reds. LOCAL ONLY and never a CI
   step: run inside the runner a generator rewrites the very file the
-  check judges, exits 0 and gates nothing, which is the known-vacuous
-  keeper NORTH_STAR's bar prices as a stop-the-line defect. The
-  regeneration has to land in a COMMIT, and in the SAME commit as
-  whatever moved a test name — otherwise the check reds on the next
-  lane, layers from its cause. **WHOSE COMMIT: THE INTEGRATOR'S, AT THE
-  MERGE — the same owner the GRAPH REGEN bullet already names for the
-  graph** (T-201, absorbing T-218 and T-216-s2). Since T-210 a lane's
-  fence leaves docs/CAPABILITIES.md read-only, so a lane that adds,
-  renames or removes a test body cannot regenerate the census and does
-  not try: it REPORTS the stale census in its handoff, and the
-  integrator regenerates it in the merge commit, before the checkpoint.
-  When the integrator forgets, CI's census-currency step reds on that
-  push — e67cb44 on 2026-09-01, repaired at cf9d462) ·
+  check judges, exits 0 and gates nothing — the known-vacuous keeper
+  NORTH_STAR's bar prices as a stop-the-line defect. The regeneration
+  lands in a COMMIT, in the SAME commit as whatever moved a test name.
+  **WHOSE COMMIT: THE INTEGRATOR'S, AT THE MERGE — the same owner the
+  GRAPH REGEN bullet names for the graph** (T-201, absorbing T-218 and
+  T-216-s2): since T-210 a lane's fence leaves docs/CAPABILITIES.md
+  read-only, so a lane that adds, renames or removes a test body REPORTS
+  the stale census in its handoff and the integrator regenerates it in
+  the merge commit, before the checkpoint; when the integrator forgets,
+  CI's census-currency step reds on that push — e67cb44 on 2026-09-01,
+  repaired at cf9d462) ·
   `npm run boot:orphan-drill` (T-061 — the shipped procedure that proves
   the boot check's child-exit path signals its captured process group and
   leaves no orphaned vite listener; LOCAL ONLY, deliberately, and the CI
@@ -108,50 +106,42 @@
   1420 is refused, not borrowed). Exit 0 booted · 1 the boot failed,
   with the child's last output quoted · 2 the port is busy · 3 the check
   REFUSED to run before probing or spawning anything. THE ORPHAN DRILL
-  ANSWERS IN THE SAME FOUR CODES, which is why it needed no legend of its
-  own: 0 clean, 1 the leak, 2 called wrong, 3 the drill could not run.
-  **CODE 3 HAS TWO REASONS AND THIS LEGEND USED TO NAME ONE** (T-061-s5):
+  ANSWERS IN THE SAME FOUR CODES: 0 clean, 1 the leak, 2 called wrong, 3
+  the drill could not run. **CODE 3 HAS TWO REASONS** (T-061-s5):
   `NPUTER_BOOT_PORT` is 1420 or not a port at all, OR the committed
-  build config the scratch-port overlay is DERIVED from cannot be read.
-  There is deliberately no fallback for the second, because the only
-  value to fall back to is the committed port and on this repository
-  that is 1420 — a fallback would boot this check onto the human's app.
-  Both refusals happen before anything is probed or spawned. THE TOKEN
-  LINT HAS THREE CODES, the second row T-078 promised, written at
-  T-080's merge. **0** the gate ran and found nothing, naming both
-  corpora and their counts. **1** the gate RAN and FOUND something: a
-  hit in the tree, or a selftest failure, which is a hit against the
-  gate's own evidence. **3** the gate COULD NOT RUN, so the run is not a
-  claim about the tree at all — every throw out of `token-scan.mjs`
-  lands here and the wrapper prints `lint-tokens: GATE COULD NOT RUN`
-  followed by a line saying so in as many words. **2** is deliberately
-  UNUSED, reserved for `usage` — the meaning `index --check` gives it —
-  so adding flag validation later renumbers nothing a checkpoint has
+  build config the scratch-port overlay is DERIVED from cannot be read —
+  deliberately no fallback for the second, because the only value to
+  fall back to is the committed port, 1420, and a fallback would boot
+  this check onto the human's app. Both refusals happen before anything
+  is probed or spawned. THE TOKEN LINT HAS THREE CODES (T-078's second
+  row, written at T-080's merge): **0** the gate ran and found nothing,
+  naming both corpora and their counts; **1** the gate RAN and FOUND
+  something — a hit in the tree, or a selftest failure; **3** the gate
+  COULD NOT RUN, so the run is not a claim about the tree at all — every
+  throw out of `token-scan.mjs` lands here and the wrapper prints
+  `lint-tokens: GATE COULD NOT RUN`. **2** is deliberately UNUSED,
+  reserved for `usage` — the meaning `index --check` gives it — so
+  adding flag validation later renumbers nothing a checkpoint has
   quoted. The AUTHORITY is the frozen `EXIT` object in
-  tools/e2e/scripts/token-scan.mjs, which owns the codes beside the gate
-  that produces them, and the wrapper IMPORTS it rather than re-typing
-  the numbers (until T-080 the two answers SHARED code 1, in the step CI
-  runs FIRST against a bare checkout — the measurement is on T-058's and
-  T-080's cards). THE CATCH IS TOTAL AND IS NEVER A RESCUE: exit 3 still
-  FAILS the step, and `process.exit` inside the scanner is not
+  tools/e2e/scripts/token-scan.mjs, which the wrapper IMPORTS rather
+  than re-typing (until T-080 the two answers SHARED code 1 — T-058's
+  and T-080's cards). THE CATCH IS TOTAL AND IS NEVER A RESCUE: exit 3
+  still FAILS the step, and `process.exit` inside the scanner is not
   interceptable by the wrapper, so a genuine hit cannot be relabelled as
-  a gate that did not run. ONE HOLE REMAINS, NAMED RATHER THAN PAPERED
-  OVER (T-080-s4): a parse error in the gate's own two files means Node
-  never links them, so the wrapper's `try` never runs and the process
-  exits 1, not 3. READ THE MESSAGE, NOT THE CODE is still the advice —
-  the three outcomes look nothing alike on stdout.
+  a gate that did not run. ONE HOLE REMAINS, NAMED (T-080-s4): a parse
+  error in the gate's own two files means Node never links them, so the
+  wrapper's `try` never runs and the process exits 1, not 3. READ THE
+  MESSAGE, NOT THE CODE — the three outcomes look nothing alike.
   THE LANE WRITES INTO TRACKED FILES WHILE IT RUNS, AND ONE OF THEM IS
-  UNDER docs/ (T-093). `npm test` here plants a control byte into seven
-  tracked files across four packages and restores them, sha256 per file
-  plus an empty diff; the list is owned by
-  tools/e2e/tests/token-scan.spec.ts's *"one runtime-built control byte
-  reds all seven first-party roots at exact byte offsets"* and is
-  deliberately NOT copied here. What is unrecorded is the SIDE EFFECT
-  while it runs: docs/ is the tree the app's watcher is armed over, so
-  running the lane in the MAIN checkout beside a live `npm run tauri
-  dev` writes docs/NORTH_STAR.md twice within milliseconds, and the
-  human's board can observe a snapshot in which that file is one byte
-  longer — the class T-081's checkpoint recorded from the other side.
+  UNDER docs/ (T-093): `npm test` plants a control byte into seven
+  tracked files across four packages and restores them, sha256-proved
+  (the list is owned by tools/e2e/tests/token-scan.spec.ts's *"one
+  runtime-built control byte reds all seven first-party roots at exact
+  byte offsets"* and is deliberately NOT copied here). docs/ is the tree
+  the app's watcher is armed over, so the lane run in the MAIN checkout
+  beside a live `npm run tauri dev` writes docs/NORTH_STAR.md twice
+  within milliseconds and the human's board can observe a one-byte
+  snapshot (the class T-081's checkpoint recorded from the other side).
   RUN THE LANE IN A WORKTREE and it touches nothing the human sees.
 - THE BLESSED GATE-RUNNER (T-202): `node tools/e2e/scripts/gate-run.mjs
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
@@ -328,44 +318,39 @@
   ONE READ-ONLY COMMAND ANSWERS EVERY QUESTION ABOUT 1420, AND NOTHING
   ELSE MAY BE USED: `lsof -nP -iTCP:1420 -sTCP:LISTEN` names the holder,
   its pid and its STACK in one line. **Never bind-probe 1420 to learn
-  whether it is held** — two independent agents did on 2026-08-19, both
-  harmlessly and both unnecessarily. The prohibition is on the syscall,
-  not the intent: holding 1420 for a sub-millisecond window to prove it
-  is busy is still taking 1420 from the human. The rule above governs
-  the LANE's tooling, which is why this is stated separately — it
-  governs the hand.
+  whether it is held** — two agents did on 2026-08-19, harmlessly and
+  unnecessarily. The prohibition is on the syscall, not the intent:
+  holding 1420 for a sub-millisecond window to prove it is busy is still
+  taking 1420 from the human. The rule above governs the LANE's tooling,
+  which is why this is stated separately — it governs the hand.
   **THAT SENTENCE IS WHERE THE LANE/HAND DISTINCTION IS STATED, AND IT
   IS LOAD-BEARING** (T-093): the hand's other rules are gathered in
   A CITATION NAMES A SYMBOL, NOT A LINE under Gotchas, and this clause
-  is the pointer that keeps them findable. Two more of them sit here,
-  because they are about this command and about how it gets typed.
+  is the pointer that keeps them findable. Two more sit here, because
+  they are about this command and how it gets typed.
   **NEVER PUT A BACKTICK INSIDE A SHELL STRING** — single-quote a
   command name, or omit it; a heredoc quoted as `<<'EOF'` suppresses
   substitution too. In `sh`, `bash` and `zsh` a backtick is COMMAND
   SUBSTITUTION, so this repository's own house style, a command name in
   backticks, IS the hazard: copying that spelling into a shell LABEL is
-  the natural motion and the one motion that executes, it is SILENT
-  when the substitution succeeds, and it defeats the rule at the exact
-  point the rule is being obeyed. T-082's own executor started a real
-  model turn that way while building the card whose whole subject is
-  that this happens (the cost is on that card). Same precedent as the
-  1420 probe above: the rule is on the SYSCALL, not the intent.
+  the natural motion and the one motion that executes, SILENT when the
+  substitution succeeds. T-082's own executor started a real model turn
+  that way while building the card whose subject is that this happens.
+  Same precedent as the 1420 probe: the rule is on the SYSCALL.
   **`lsof` IS THE AUTHORITY AND A `bind()` PROBE IS THE CONFIRMING HALF,
   NEVER THE PRIMARY.** On a port holding client-side TIME_WAIT peers,
   `lsof` returns ZERO ROWS while a plain `bind()` without `SO_REUSEADDR`
-  still fails EADDRINUSE — a real false red, measured on port 14768.
-  AND UNFILTERED `lsof` IS EQUALLY BLIND: TIME_WAIT sockets have no
-  owning process, so dropping `-sTCP:LISTEN` "to be safer" buys nothing.
-  For 1420 there is no bind half at all — read the port and stop.
+  still fails EADDRINUSE (a real false red, on port 14768); and
+  UNFILTERED `lsof` is equally blind, since TIME_WAIT sockets have no
+  owning process, so dropping `-sTCP:LISTEN` buys nothing. For 1420
+  there is no bind half at all — read the port and stop.
   THE FACT THEY WERE DEMONSTRATING, RECORDED SO NOBODY DEMONSTRATES IT
   AGAIN: the human's vite listens on **`[::1]:1420` — IPv6 loopback —
   and nothing listens on IPv4**, so an IPv4-only probe of 1420 comes
   back FREE while the app is running. **A free IPv4 probe is not
-  evidence the app is down**, and any check that concludes otherwise is
-  wrong rather than lucky. `tauri-boot-check.mjs` already probes `::1`
-  THEN `127.0.0.1` and carries a comment naming this hazard; that is the
-  shape to copy, and scratch ports must be probed on BOTH stacks for the
-  same reason.
+  evidence the app is down.** `tauri-boot-check.mjs` probes `::1` THEN
+  `127.0.0.1` and carries a comment naming this hazard; that is the
+  shape to copy, and scratch ports must be probed on BOTH stacks.
 - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
   commands, ENFORCING since the repo's first push (2026-08-29).
   tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from
@@ -375,28 +360,24 @@
   drifts. (1) `npm ci` for app/ where local setup says `npm install` —
   lockfile-exact installs in CI, everywhere. (2) `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
-  install chromium` — the Linux system libs a fresh runner lacks.
-  BOTH ARE ENVIRONMENT DIFFERENCES, and that is the whole list: T-054
-  closed the two that were only CI spelling a documented command a
-  second way (T-045-s1). The token lint runs as
-  `npm run lint:tokens -- --selftest` then `npm run lint:tokens` from
-  tools/e2e — the job's FIRST step, ahead of every `npm ci`, because
-  `npm run` needs no installed node_modules (it only extends PATH) and
-  `token-scan.mjs` is deliberately zero-dependency — and two steps,
+  install chromium` — the Linux system libs a fresh runner lacks. BOTH
+  ARE ENVIRONMENT DIFFERENCES, and that is the whole list (T-054 closed
+  the two that were only CI spelling a documented command a second way,
+  T-045-s1). The token lint runs as `npm run lint:tokens -- --selftest`
+  then `npm run lint:tokens` from tools/e2e — the job's FIRST step,
+  ahead of every `npm ci`, because `npm run` needs no installed
+  node_modules and `token-scan.mjs` is zero-dependency — and two steps,
   because `--selftest` short-circuits the walk. THE DOCS GATE runs as
-  `npm run lint:docs` from tools/e2e and it CANNOT hold the token lint's
+  `npm run lint:docs` from tools/e2e and CANNOT hold the token lint's
   position — do not "fix" the ordering (T-090): `docs-gate.mjs` imports
-  `yaml`, a tools/e2e devDependency chosen because it is the SAME
-  package lib/parser parses task cards with, so a block parses for both
-  or for neither (T-057). It therefore sits immediately after `npm ci`
-  in tools/e2e and before that package's other steps — the earliest
-  position its own dependency allows and still ahead of the 250MB
-  browser download; `scripts/docs-scan.mjs` stays zero-dependency so
-  the constraint belongs to the wrapper alone, and its header says so.
-  The boot check runs as `xvfb-run -a npm run boot:check` from
-  tools/e2e: the wrapper is real, since a headless runner has no
-  display, but what it wraps is the documented command rather than a
-  second spelling of it. CI also runs
+  `yaml`, the SAME package lib/parser parses task cards with so a block
+  parses for both or for neither (T-057), so it sits immediately after
+  tools/e2e's `npm ci` and ahead of the 250MB browser download;
+  `scripts/docs-scan.mjs` stays zero-dependency so the constraint
+  belongs to the wrapper alone. The boot check runs as
+  `xvfb-run -a npm run boot:check` from tools/e2e — a real wrapper,
+  since a headless runner has no display, around the documented command.
+  CI also runs
   `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
   (the dev-tool setup above — guarded, because the cargo cache restores
   ~/.cargo/bin and a restored binary is the happy path, T-153-s13), and
@@ -407,33 +388,27 @@
   until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
   which reports rather than gates, nor
   `cargo run -p nputer-index -- arch cycles --root ../..`, which
-  answers ACYCLIC since T-127-s6 closed the last declared cycle (the
-  enforcing copy is `cargo test`'s exact-set census, T-127), nor
+  answers ACYCLIC since T-127-s6 (the enforcing copy is `cargo test`'s
+  exact-set census, T-127), nor
   `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`,
   which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
-  (T-061-s5, ruled here): it opens a window and builds the app, so it
-  roughly DOUBLES the boot step's cost, and it deliberately SIGKILLs a
-  process mid-boot, which on a shared runner is a different risk profile
-  from a laptop — a REGRESSION drill rather than a release gate, whose
-  property cannot drift without somebody editing
-  `tauri-boot-check.mjs`'s exit path, so it takes the disposition
-  `index --watch` and `arch` already have.
+  (T-061-s5, ruled here): it opens a window and builds the app, roughly
+  DOUBLING the boot step's cost, and it deliberately SIGKILLs a process
+  mid-boot, a different risk profile on a shared runner — a REGRESSION
+  drill rather than a release gate, whose property cannot drift without
+  somebody editing `tauri-boot-check.mjs`'s exit path.
   THE CENSUS-CURRENCY GATE runs as `npm run capabilities:check` from
   tools/e2e, immediately AFTER `npm run typecheck` and BEFORE the browser
-  download (T-153-s8; each placement decided by a measurement on that
-  card). It cannot hold the token lint's bare-checkout position — not
-  for the DOCS GATE's reason but because it resolves a templated test
-  name by IMPORTING a `.mjs` out of tests/, where two scripts import
-  `yaml`, so the bare-checkout property is a fact about the SPECS and
-  the edit that would falsify it lands in a spec file. It runs before
-  the browser download by `index --check`'s own argument (a stale census
-  takes under a second and should not wait behind minutes of setup),
-  and after `npm run typecheck` because the generator reads the same
-  spec files `tsc` validates. CI deliberately does NOT run
-  `npm run capabilities`, the GENERATOR, for the gate's own integrity:
-  run in the runner it rewrites the file the check judges, exits 0, and
-  certifies its own output. The regeneration stays a hand run, and
-  `--check` prints it by name when it reds.
+  download (T-153-s8, each placement decided by a measurement on that
+  card): not in the token lint's bare-checkout position, because it
+  resolves a templated test name by IMPORTING a `.mjs` out of tests/
+  where scripts import `yaml`, so that property is a fact about the
+  SPECS; before the browser download by `index --check`'s own argument;
+  after `npm run typecheck` because the generator reads the same spec
+  files `tsc` validates. CI deliberately does NOT run
+  `npm run capabilities`, the GENERATOR: run in the runner it rewrites
+  the file the check judges, exits 0, and certifies its own output. The
+  regeneration stays a hand run, and `--check` prints it by name.
   ONE TYPOGRAPHIC RULE GOVERNS EVERY EDIT TO THIS SECTION, and it lives
   in THIS bullet because this is what the next editor of ci.yml opens
   (T-054, promoted at T-078): the four per-package bullets separate
@@ -441,32 +416,27 @@
   separated segments only until the first one that does not open with a
   backtick. **A MIDDLE DOT therefore belongs BETWEEN commands, or AFTER
   the last one — NEVER inside a command's parenthetical**, where it ends
-  the list early and every command behind it quietly leaves CI parity.
-  This clause NAMES that character without typing it, and the section's
-  in-parenthetical legends use commas for the same reason; the tools/e2e
-  bullet's own `Exit 0 booted` legend sits after its LAST command rather
-  than beside its own, which is structure and not decoration. THE COST
-  is stated as a DELTA and re-measured when the bullets grow: a
-  separator inside the `index --check` parenthetical drops the section's
-  exposed commands by FIVE (T-054, T-078, ADR-019 phase 5). AND THE
-  TRUNCATION IS NOT MOSTLY SILENT, which is what tells you how to check
-  your own edit: the derivation runs in BOTH directions, so every
-  command the SPEC claims and the doc stops exposing reds BY NAME. **A
-  command the DOC gains that the spec does not yet claim is the case it
-  is LOUDEST about** — `deriveExpectedSteps`' `for (const key of
-  doc.keys())` loop pushes a problem naming the command and both
-  dispositions open to it; the sentence that once said the opposite
-  here is retracted (T-090, absorbing T-084-s2, walked into it on
-  purpose while adding `npm run lint:docs`). **WHAT IS SILENT IS A
-  SHAPE, NEVER A DIRECTION**: a command the derivation cannot SEE. An
-  INDENTED bullet and a fenced block are named by `structuralProblems`
-  (T-045's verifier found both); the third is a command written into a
-  bullet carrying no `run from <dir>/:` marker — invisible to every loop
-  by construction, and pinned by a fixture in the spec. **So a NEW
-  command is still the edit to ENUMERATE rather than eyeball**: the lane
-  can only speak about commands it can see, and a new command is exactly
-  the thing that arrives in an unread shape. Change a command here,
-  change it there, or the lane fails.
+  the list early and every command behind it quietly leaves CI parity;
+  this clause NAMES that character without typing it, the section's
+  in-parenthetical legends use commas, and the tools/e2e bullet's own
+  `Exit 0 booted` legend sits after its LAST command, which is structure
+  and not decoration. THE COST is a DELTA, re-measured when the bullets
+  grow: a separator inside the `index --check` parenthetical drops the
+  section's exposed commands by FIVE (T-054, T-078, ADR-019 phase 5).
+  AND THE TRUNCATION IS NOT MOSTLY SILENT: the derivation runs in BOTH
+  directions, so every command the SPEC claims and the doc stops
+  exposing reds BY NAME, and **a command the DOC gains that the spec
+  does not yet claim is the case it is LOUDEST about** —
+  `deriveExpectedSteps`' `for (const key of doc.keys())` loop names the
+  command and both dispositions open to it (the sentence that once said
+  the opposite here is retracted, T-090 absorbing T-084-s2). **WHAT IS
+  SILENT IS A SHAPE, NEVER A DIRECTION**: a command the derivation
+  cannot SEE — an INDENTED bullet and a fenced block, both named by
+  `structuralProblems`, and a command in a bullet carrying no
+  `run from <dir>/:` marker, invisible by construction and pinned by a
+  fixture in the spec. **So a NEW command is still the edit to ENUMERATE
+  rather than eyeball**: the lane can only speak about commands it can
+  see. Change a command here, change it there, or the lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -474,35 +444,32 @@
   method/ formats are version-bumped (currently v0.1.8) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
-  changelog at T-162): the per-clause itemisation is RECORD-shaped, a
-  second copy is a second chance to disagree, and the AUTHORITY for
-  what a version says is `method/` itself at that tag.
+  changelog at T-162): the per-clause itemisation is RECORD-shaped, and
+  the AUTHORITY for what a version says is `method/` itself at that tag.
   v0.1.8 (T-159, 2026-08-30) — the METABOLISM release: one bump owning
   every method-text change ADR-020 and its reviews earned, plus the
-  parked riders whose resurfacing condition named it. Itemised clause by
-  clause on T-159's card and in docs/checkpoints/2026-08-30-T-159.md.
+  parked riders whose resurfacing condition named it; itemised on
+  T-159's card and in docs/checkpoints/2026-08-30-T-159.md.
   v0.1.7 (ADR-019, 2026-08-27) — method/docs-protocol.md added, the
-  three-tier governing-docs contract. Itemised in
+  three-tier governing-docs contract; itemised in
   docs/checkpoints/2026-08-27-adr019-compaction.md.
   **WHAT A BUMP IS OWED FOR — SETTLED HERE, BECAUSE "FORMATS" HAS BEEN
   READ BOTH WAYS AND A LANE CANNOT DECIDE IT FROM INSIDE ITS OWN
   FENCE** (T-145-s2; T-104 ruled the call belongs to triage BEFORE
   dispatch). The trigger is NOT the word *format*. **Two tests, either
   one sufficient.** (1) **SHIPPED BYTES** — the change alters a file the
-  kit MATERIALIZES into another project. Derive that set from
+  kit MATERIALIZES into another project; derive that set from
   `KIT_FILES` in app/src-tauri/src/agent/kit.rs at your own ref, never
-  from a directory name: the boundary runs THROUGH method/, and
+  from a directory name — the boundary runs THROUGH method/, and
   lane-protocol.md and roles/integrator.md are not in the table while
   every adapter and template is. (2) **GRAMMAR** — the change alters
   what a card, a room, a brief or a role may SAY: a field, a status, a
   normative table, a contract row. **An adapter takes test 1 and fails
-  test 2**: a scaffolded ARTIFACT rather than a format, and it still
-  ships, so it is owed a bump. **A purely editorial change to an
+  test 2** and is still owed a bump; **a purely editorial change to an
   unshipped method file — a typo, a reflow, a citation repair — is owed
-  no bump** and rides the next one. Deciding this before dispatch is
+  none** and rides the next one. Deciding this before dispatch is
   triage's, and a card whose fence cannot reach all three stamps CANNOT
-  take it: say so on the card rather than leaving the lane to discover
-  it.
+  take it: say so on the card.
   **A BUMP IS A THREE-FILE COMMIT AND THE THIRD FILE IS RUST** (T-078-s3
   arm 1, taken at T-089). The three are: this stamp; the `(v<version>`
   stamp in method/interview/plan-interview.md's Output heading; and
@@ -511,52 +478,46 @@
   against, off disk, on every `cargo test`. So a fence of
   `[method/, docs/CONVENTIONS.md]` can change method/ and CANNOT bump
   it: moving either stamp alone reds that test by name (T-089 measured
-  both sides in a fresh worktree, exit 101 each). **The two asserts are
-  ORDERED, and that is the trap**: a const-only bump reds on the
-  plan-interview arm and NEVER reaches the CONVENTIONS arm, so fixing
-  only the file a panic names yields a SECOND red, not a green — move
-  both doc stamps and the const in ONE commit. **THREE PLACES ARE
-  PINNED AND AN OPEN SET IS NOT — CITE THE SHAPE, NOT THE TALLY.** Every
-  other occurrence of the version is a REFERENCE no test reads, of two
-  kinds wanting opposite treatment: **a reference that CLAIMS THE
-  CURRENT VERSION goes stale and moves with the bump; a FIXTURE that
-  merely needs some version string does not**, and moving those is
-  churn. **DERIVE THE LIST, NEVER QUOTE IT**:
+  both sides, exit 101 each). **The two asserts are ORDERED**: a
+  const-only bump reds on the plan-interview arm and NEVER reaches the
+  CONVENTIONS arm, so fixing only the file a panic names yields a SECOND
+  red — move both doc stamps and the const in ONE commit. **THREE
+  PLACES ARE PINNED AND AN OPEN SET IS NOT — CITE THE SHAPE, NOT THE
+  TALLY.** Every other occurrence of the version is a REFERENCE no test
+  reads, of two kinds wanting opposite treatment: **a reference that
+  CLAIMS THE CURRENT VERSION goes stale and moves with the bump; a
+  FIXTURE that merely needs some version string does not**, and moving
+  those is churn. **DERIVE THE LIST, NEVER QUOTE IT**:
   `git grep -n "0\.1\.[0-9]"` from the repo root prints every one at
-  your own ref, and this bullet deliberately states no count. **AND
-  THEY ARE NOT ALL INSIDE ANY ONE FENCE**: a
+  your own ref. **AND THEY ARE NOT ALL INSIDE ANY ONE FENCE**: a
   `[method/, docs/CONVENTIONS.md, app-agent]` fence reaches the three
-  pinned places and this file's own references, and does NOT reach
+  pinned places and this file's references, and does NOT reach
   docs/ARCHITECTURE.md, the component file or the app suites. Route
   what you cannot reach.
   **AND THE VERSION STAMP IS NOT THE ONLY THING PINNED IN THAT FILE —
   ITS BANKING TABLE IS TRANSCRIBED INTO TYPESCRIPT AND ASSERTED CELL BY
-  CELL** (found by T-159 walking into it). `BANKING_MAP` in
-  app/src/genesis/genesis-derive.ts is a verbatim copy of
-  method/interview/plan-interview.md's stage table, and
-  `every_cell_of_the_9_row_table_matches_plan_interview_md_verbatim` in
-  app/test/genesis-derive.test.ts reds on ANY change to ANY cell. **So
+  CELL** (T-159). `BANKING_MAP` in app/src/genesis/genesis-derive.ts is
+  a verbatim copy of method/interview/plan-interview.md's stage table,
+  and `every_cell_of_the_9_row_table_matches_plan_interview_md_verbatim`
+  in app/test/genesis-derive.test.ts reds on ANY change to ANY cell — so
   the canonical bump fence can move the file's version stamp and CANNOT
-  move a row of its table** — one file, two fences, the per-path lesson
-  `KIT_FILES` already teaches. **The reader is in `app/`, so a
+  move a row of its table. **The reader is in `app/`, so a
   `method/`-only lane will not run it by reflex** — run `npm test` from
-  app/ whenever your diff touches that table, and read the assertion
-  rather than the count.
+  app/ whenever your diff touches that table, and read the assertion.
   **A BUMP NOW OWES A FOURTH THING, AND IT IS NOT A FILE** (T-155,
   ADR-020 decision 2). The METHOD EVAL GATE below is RUN against the new
   method text and its result is RECORDED IN THE BUMP'S OWN COMMIT
   MESSAGE; `node tools/method-evals/run.mjs --bump` prints the block and
   names the runner that produced it. A stamp proves the three files
   moved together and nothing else — it is satisfied perfectly by a
-  rewrite that degrades every session the method produces. **WHY NOT A
-  FOURTH FILE**: it would have to be regenerated, would go stale between
-  the bump and the merge, and would then be a figure with no keeper; a
-  commit message is stamped at the ref it was measured at and cannot
-  drift. **AND THE MODEL-IN-LOOP HALF IS THE HALF THAT ONLY RUNS HERE**:
-  token-expensive and nondeterministic, so deliberately not on the
-  per-merge trigger, which leaves the bump as the ONE moment it is owed
-  — and the `--bump` block says whether the evals ran or were skipped,
-  because the two read exactly the same afterwards.
+  rewrite that degrades every session the method produces; a fourth
+  FILE would go stale between bump and merge and be a figure with no
+  keeper, where a commit message is stamped at the ref it was measured
+  at. **AND THE MODEL-IN-LOOP HALF ONLY RUNS HERE**: token-expensive and
+  nondeterministic, so not on the per-merge trigger, which leaves the
+  bump as the ONE moment it is owed — and the `--bump` block says
+  whether the evals ran or were skipped, because the two read the same
+  afterwards.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - THE MERGE INTO MAIN IS @human'S GATE, BY DESIGN AND NOT BY ACCIDENT
@@ -582,65 +543,55 @@
   lane's tooling. The other is the PORT RULE's `lsof` clause, and the
   DISTINCTION IS STATED THERE, in the sentence beginning *"The rule
   above governs the LANE's tooling"*; the hand's remaining rules are
-  gathered HERE, because a session that has just been surprised by its
-  own shell needs one place to read, and a hand rule filed among tooling
-  rules is a rule nobody applies (T-093).
+  gathered HERE, because a hand rule filed among tooling rules is a rule
+  nobody applies (T-093).
   **A MISS IS NOT A REFUTATION, AND THERE ARE AT LEAST THREE CAUSES.**
   An empty result is the answer you were hoping for, which is precisely
   why it is the one to distrust. Each cause is stated as a MECHANISM and
   never as a tool's message, because the message is not guaranteed to
   survive the shell: this harness resolves `grep` to a SHELL FUNCTION
-  carrying `-I`, and the one line that would have given the game away
-  never reached the transcript. IF another cause is found THEN it joins
-  this list rather than replacing it. T-093's card carries the
-  measurements, all at `bc2d82a` in a detached drill worktree.
-  **ONE, THE SCOPE** — this bullet's own `git grep`-from-a-subdirectory
-  sentence above, listed as a member of the set and deliberately NOT
-  restated. Re-running from the ROOT fixes this one, which is what makes
+  carrying `-I`. IF another cause is found THEN it joins this list.
+  T-093's card carries the measurements, at `bc2d82a`.
+  **ONE, THE SCOPE** — the `git grep`-from-a-subdirectory sentence
+  above. Re-running from the ROOT fixes this one, which is what makes
   the other two worse — they give the SAME answer from anywhere, over a
   file somebody has just edited.
   **TWO, A CONTROL BYTE IN THE FILE.** One literal NUL makes a file
   BINARY to every binary-skipping searcher while it still compiles,
-  still renders and still passes its suites: the real `/usr/bin/grep`
-  answers with a count at exit 0 and prints `Binary file … matches`,
-  while the shell-function `grep` this harness installs answers EXIT 1
-  WITH NO OUTPUT over the same bytes — the same code a genuinely absent
-  string gives. WHAT TO RUN NEXT, rather than waiting for a `Binary
-  file` line that may never arrive: `file(1)`, which says `data`, and
-  then `npm run lint:tokens` from tools/e2e, which needs no
-  `node_modules`, runs against a bare checkout, and names the byte and
-  its offset at exit 1. THE GATE IS NOT THE GAP; the advice was.
+  renders and passes its suites: the real `/usr/bin/grep` prints
+  `Binary file … matches` at exit 0, while the shell-function `grep`
+  this harness installs answers EXIT 1 WITH NO OUTPUT over the same
+  bytes — the code a genuinely absent string gives. WHAT TO RUN NEXT:
+  `file(1)`, which says `data`, and then `npm run lint:tokens` from
+  tools/e2e, which needs no `node_modules`, runs against a bare
+  checkout, and names the byte and its offset at exit 1. THE GATE IS
+  NOT THE GAP; the advice was.
   **THREE, A HARD WRAP ACROSS THE PHRASE.** Every governing document
   here is wrapped at about 70 columns, so a phrase search is a search
   for a line break you did not choose: the head of a wrapped sentence
-  is found at exit 0, and extending the needle one word past the break
-  returns nothing at exit 1. THIS CLAUSE DELIBERATELY TYPES NO NEEDLE,
-  because writing one here would satisfy the search it is about — **and
-  the wrap point moves**: two compactions have re-broken the same
-  sentence while the mechanism reproduced exactly, which is why the rule
-  describes the WRAP and never a needle. WHAT TO RUN NEXT: shorten the
-  needle until it cannot span a break, or search the COLLAPSED text, the
-  way every mechanical reader of this file does before it matches.
-  **`file --mime` IS NOT THE CHEAP VERSION OF THE GATE**, and briefs and
-  verdicts have carried it as though it were. `charset=binary` is
-  legitimate evidence for U+0000 and for almost nothing else: one U+000B
-  planted into this file left `file --mime` reporting
+  is found at exit 0, and the needle one word past the break returns
+  nothing at exit 1. THIS CLAUSE TYPES NO NEEDLE, because writing one
+  here would satisfy the search it is about — **and the wrap point
+  moves** with every reflow, which is why the rule describes the WRAP
+  and never a needle. WHAT TO RUN NEXT: shorten the needle until it
+  cannot span a break, or search the COLLAPSED text, the way every
+  mechanical reader of this file does before it matches.
+  **`file --mime` IS NOT THE CHEAP VERSION OF THE GATE**:
+  `charset=binary` is legitimate evidence for U+0000 and for almost
+  nothing else — one U+000B planted into this file left `file --mime` reporting
   `text/plain; charset=utf-8` UNCHANGED and both greps still finding the
   needle, while `npm run lint:tokens` named the byte and exited 1. THE
   C0 SET P5 REJECTS IS `scanControlSource` in
   tools/e2e/scripts/token-scan.mjs — READ IT THERE, never transcribed
-  into prose, because a set written twice is two chances to disagree.
-  The cheap version of the gate IS the gate.
+  into prose. The cheap version of the gate IS the gate.
   **A COMMENT THAT RESTATES A MEASURED FIGURE IS A SECOND
-  IMPLEMENTATION**, which is this bullet's own lesson one category over:
-  of T-074's six corrections exactly ONE had a mechanical reader, and it
-  lived in a different npm package from the comment it contradicted,
-  which is how the two disagreed for weeks. SO WHERE A FIGURE IS
-  ASSERTED SOMEWHERE, CITE THE ASSERTION BY NAME INSTEAD OF RESTATING
-  ITS VALUE: *"the lens takes the rest; `interview.spec.ts`'s `the split
-  is 640 + the lens at >=1024` measures it"* cannot go stale, because
-  the only thing it claims is that a test exists. **THE GATE FOR THIS IS
-  REFUSED IN WRITING**, so the next reader inherits the decision: a lint
+  IMPLEMENTATION** (of T-074's six corrections exactly ONE had a
+  mechanical reader, in a different npm package from the comment it
+  contradicted). SO WHERE A FIGURE IS ASSERTED SOMEWHERE, CITE THE
+  ASSERTION BY NAME INSTEAD OF RESTATING ITS VALUE: *"the lens takes the
+  rest; `interview.spec.ts`'s `the split is 640 + the lens at >=1024`
+  measures it"* cannot go stale, because the only thing it claims is
+  that a test exists. **THE GATE FOR THIS IS REFUSED IN WRITING**: a lint
   that grepped comments for digit runs would fire constantly on prose
   that is fine, and the honest narrow version — flag a comment quoting a
   figure in the same file as an assertion of a DIFFERENT value — is
@@ -697,8 +648,7 @@
   stop at the slug set —
   `git grep -l '^touch_slugs: \[\]' docs/architecture/components/`
   names those components at your own ref, and THE COUNT IS NOT WRITTEN
-  HERE because it has already moved once (T-163 added a second empty
-  line and the sentence here was false until `T-163-s3`). A slug is the
+  HERE because it has already moved once (`T-163-s3`). A slug is the
   usual SPELLING of "does it ship?", never the question itself — the
   question is whether the bytes REACH the product.
   **SHIPPED — any bare `method/` path that REACHES a `KIT_FILES` entry**
@@ -715,31 +665,28 @@
   ceremony narrows with it.
   **SHIPPED — a bare path into the `paths:` of a SLUGLESS component
   whose bytes REACH the built app** (T-163, @human's architecture
-  ruling of 2026-08-30, which took C-11's `touch_slugs:` from
-  `[app-shell, app-board]` to `[]`; the FIELD is the authority, so
-  derive it — `grep -h '^touch_slugs:'
+  ruling of 2026-08-30, which took C-11's `touch_slugs:` to `[]`; the
+  FIELD is the authority — `grep -h '^touch_slugs:'
   docs/architecture/components/C-11-design-tokens.md`). A design-tokens
-  change now enters a lane as `touches: [app/src/styles]` or
-  `[app/src/assets]` — its own bare PATH, in the spelling C-11's own
-  body publishes — and it SHIPS, by the same REACHES test the clause
-  above uses for the kit: `app/src/index.css` (C-05, slug `app-shell`)
-  `@import`s `./styles/tokens.css` and `./styles/fonts.css`, and
-  `fonts.css` `url()`s `../assets/fonts/*.woff2`, so those bytes are
-  compiled into every build. **READING AN EMPTY `touch_slugs:` AS "NOT
-  SHIPPED" IS THE TRAP THIS CLAUSE CLOSES**: the ruling removed a fence
-  SPELLING, not a byte from the bundle. And it does NOT generalise to
-  every empty line — C-01 is slugless too, and its `method/**` ships
-  only as far as the clause above says it does. Ask each slugless
-  component's territory the REACHES question separately.
+  change enters a lane as `touches: [app/src/styles]` or
+  `[app/src/assets]` — its own bare PATH, in the spelling C-11's body
+  publishes — and it SHIPS by the same REACHES test: `app/src/index.css`
+  (C-05, slug `app-shell`) `@import`s `./styles/tokens.css` and
+  `./styles/fonts.css`, and `fonts.css` `url()`s
+  `../assets/fonts/*.woff2`, so those bytes are compiled into every
+  build. **READING AN EMPTY `touch_slugs:` AS "NOT SHIPPED" IS THE TRAP
+  THIS CLAUSE CLOSES**: the ruling removed a fence SPELLING, not a byte
+  from the bundle — and it does NOT generalise to every empty line; C-01
+  is slugless too, and its `method/**` ships only as far as the clause
+  above says. Ask each slugless component's territory the REACHES
+  question separately.
   **NOT SHIPPED — every bare path no SHIPPED clause above reaches**:
   `docs/**`, `.github/`, `tools/e2e` (YES to "is it code?", NO to "does
   it ship?" — the case this rule exists to settle), and the `method/`
   files the kit leaves behind, `lane-protocol.md` and
   `roles/integrator.md` among them. **`non_code:` IS A DIFFERENT AXIS
-  AND IS NEVER SUBSTITUTED**: C-11 is `non_code: true`, claims NO slug
-  since T-163, and ships anyway — two flags that both look like "not
-  product", shipped under the clause above regardless, which is the
-  whole point: neither field is the shipped-ness test.
+  AND IS NEVER SUBSTITUTED**: C-11 is `non_code: true`, claims NO slug,
+  and ships anyway — neither field is the shipped-ness test.
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
@@ -830,39 +777,35 @@
   | lint CONTROL — P5, over RAW bytes | `git ls-files -z` minus `SKIP_DIRS` minus `CONTROL_BINARY_EXTENSIONS`, same file (T-058) | every TRACKED first-party text file — docs, method, .github, Rust, both lockfiles, dotfiles and extensionless fixtures included |
   | the PARSER's live docs | lib/parser/src/project.ts, pinned by lib/parser/test/smoke.test.ts | docs/tasks/`T-*.md` and docs/architecture/components/`C-*.md`, both FLAT and non-recursive, plus docs/ROADMAP.md |
 
-  WHAT THAT MEANS AT A DIFF, which is when the question is always asked:
-  a new `.ts` under tools/ is seen by TOKEN and CONTROL and NOT by the
-  graph (tools/ is `.nputerignore`d); a new `.rs` is seen by CONTROL AND
-  BY THE GRAPH, and it is a CODE INPUT to `cargo test` besides (T-010,
-  `T-010-s1`). The AUTHORITY column has survived every change unmoved
-  while this table's enumerations went stale three times, each caught by
-  a lane and not one by a gate (`T-010-s1`, `T-079-s1`, T-086): a
-  signpost goes stale and the authority does not, which is this bullet's
-  design and ADR-019's Law 2 in one row.
-  A new `.md` under docs/ is seen by CONTROL, and by the PARSER only if
-  it is a flat `docs/tasks/T-*.md` or `docs/architecture/components/
-  C-*.md`. THIS FILE is seen by CONTROL only — the parser never reads it
-  — **but live readers sit OUTSIDE all four walks and this file is one
-  of the things they read, so an edit here can red a suite no row above
-  can see** (T-078-s6, retracted and replaced at T-086: a reader list
-  cannot be closed by prose, because prose is not what adds the next
-  one). **WHICH READERS IS A DERIVATION, NEVER A SENTENCE**:
+  WHAT THAT MEANS AT A DIFF: a new `.ts` under tools/ is seen by TOKEN
+  and CONTROL and NOT by the graph (tools/ is `.nputerignore`d); a new
+  `.rs` is seen by CONTROL AND BY THE GRAPH, and it is a CODE INPUT to
+  `cargo test` besides (T-010, `T-010-s1`). The AUTHORITY column has
+  survived every change unmoved while this table's enumerations went
+  stale three times, each caught by a lane and none by a gate
+  (`T-010-s1`, `T-079-s1`, T-086) — ADR-019's Law 2 in one row. A new
+  `.md` under docs/ is seen by CONTROL, and by the PARSER only if it is
+  a flat task card or component file. THIS FILE is seen by CONTROL only
+  — the parser never reads it — **but live readers sit OUTSIDE all four
+  walks and this file is one of the things they read, so an edit here
+  can red a suite no row above can see** (T-078-s6, replaced at T-086: a
+  reader list cannot be closed by prose). **WHICH READERS IS A
+  DERIVATION, NEVER A SENTENCE**:
   `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
   prints every derived reader with its suite, and the same gate run on
   your own diff — the DOCS GATE bullet below carries the one spelling —
   prints the suites your edit OWES. Run one of them before you hand
-  off; do not count from this page, which has been wrong about it at
-  every ref anyone checked. Two mechanisms stay named as SHAPES: the
-  E2E lane parses the "Build & test" section (an edit to a command
-  bullet can red workflow-parity.spec.ts), and the CARGO suite reads
-  this file off disk on every run —
+  off; do not count from this page. Two mechanisms stay named as
+  SHAPES: the E2E lane parses the "Build & test" section (an edit to a
+  command bullet can red workflow-parity.spec.ts), and the CARGO suite
+  reads this file off disk on every run —
   `snapshot_version_matches_the_live_method_stamps` in
   app/src-tauri/src/agent/kit.rs asserts the
   `currently v<METHOD_SNAPSHOT_VERSION>` stamp in the FIRST gotcha
   above against a Rust `const`, so the method version is an ENFORCED
   PIN and a `[docs/CONVENTIONS.md, method/]` fence cannot carry a
   format bump (T-078-s3). AND THE COUNTS ARE PRINTED, NEVER PINNED:
-  `npm run lint:tokens` reports both corpora on every run; DERIVE THE
+  `npm run lint:tokens` reports both corpora on every run — DERIVE THE
   COUNT AT YOUR OWN REF (T-078-s4).
 - THE RANGE RULE: WHICH TWO COMMITS "THE MERGE'S DIFF" MEANS, AND IT IS
   A DIFFERENT PAIR BEFORE THE MERGE EXISTS (T-083, correcting the single
@@ -1056,73 +999,60 @@
   --test self_graph -- --ignored` — and commit docs/architecture/graph.json
   **with the CHECKPOINT**.
   **`*.rs` WAS ADDED 2026-08-25 AND THE GAP IT CLOSES WAS LIVE FOR ONE
-  NIGHT** (`T-123-s5`, architect, at main `8776326`). T-010's merge made
-  `Lang::for_extension("rs")` answer `Some`, so Rust joined the walk —
-  and this trigger still named only the four TS/JS suffixes, which is
-  the ONE direction the "deliberately wider than the walk" argument
-  below does not protect: a trigger wider than the walk over-fires
-  harmlessly, a trigger NARROWER than the walk **misses a real
-  movement**. T-123's rebuild measured it — a Rust-only diff moved the
-  graph while this trigger matched **0 of 9** paths, with two Rust-only
-  lanes in flight; that card carries the figures. THE STANDING LESSON IS
-  THE ONE THE BULLET ALREADY GAVE: the suffix list is a signpost that
-  goes stale the day a language is added, and `index --check` is the
-  authority — **ASK THE GATE**, which is why the gap cost nothing.
-  **"The merge's diff" is the PAIR OF COMMITS THE RANGE RULE above
-  names, and it is not the same pair before the merge exists as at it**
-  — that bullet states the reason once for both gates, and names the
-  notation that spells the forbidden range while looking like a
-  refinement of the prescribed one. **THE TRIGGER IS DELIBERATELY WIDER
-  THAN THE WALK, AND THE REGEN IS A NO-OP UNLESS AN INDEXED FILE MOVED**
-  (T-054-s1, closed here). No suffix rule can match the walk: see THE
-  FOUR WALKS above — `.nputerignore` excludes docs/, tools/ AND the
-  indexer's own fixture trees, so a diff confined to `tools/**` MATCHES
-  this trigger and CANNOT move the graph by construction (T-054's own
-  branch and T-058's merge are the two measured examples, both
-  byte-identical regens). DO NOT NARROW THE WORDING TO CHASE THE WALK —
-  a trigger that restates `.nputerignore` goes stale the day that file
-  changes, and over-firing is the SAFE direction. **ASK THE GATE INSTEAD
-  OF PREDICTING**: `cargo run -p nputer-index -- index --check --root
-  ../..` from app/src-tauri answers "did an indexed file move?" in about
-  a second, and it is the same command the CI step runs. A regen that
-  changes nothing costs a minute and PROVES it; a regen skipped on a
-  guess proves nothing.
+  NIGHT** (`T-123-s5`): T-010's merge made `Lang::for_extension("rs")`
+  answer `Some`, so Rust joined the walk while this trigger still named
+  only the four TS/JS suffixes — the ONE direction the "wider than the
+  walk" argument below does not protect, since a trigger NARROWER than
+  the walk **misses a real movement** (T-123's rebuild measured a
+  Rust-only diff moving the graph while this trigger matched 0 of 9
+  paths). THE STANDING LESSON IS THE ONE THE BULLET ALREADY GAVE: the
+  suffix list is a signpost that goes stale the day a language is added,
+  and `index --check` is the authority — **ASK THE GATE**, which is why
+  the gap cost nothing. **"The merge's diff" is the PAIR OF COMMITS THE
+  RANGE RULE above names, and it is not the same pair before the merge
+  exists as at it** — that bullet states the reason once for both
+  gates. **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE
+  REGEN IS A NO-OP UNLESS AN INDEXED FILE MOVED** (T-054-s1): no suffix
+  rule can match the walk — see THE FOUR WALKS above — because
+  `.nputerignore` excludes docs/, tools/ AND the indexer's own fixture
+  trees, so a diff confined to `tools/**` MATCHES this trigger and
+  CANNOT move the graph by construction (T-054's branch and T-058's
+  merge are the measured examples). DO NOT NARROW THE WORDING TO CHASE
+  THE WALK — a trigger that restates `.nputerignore` goes stale the day
+  that file changes, and over-firing is the SAFE direction. **ASK THE
+  GATE INSTEAD OF PREDICTING**: `cargo run -p nputer-index -- index
+  --check --root ../..` from app/src-tauri answers "did an indexed file
+  move?" in about a second, and it is the same command the CI step
+  runs. A regen that changes nothing costs a minute and PROVES it; a
+  regen skipped on a guess proves nothing.
   WHAT RETIRED is the obligation to hand-run the byte-comparison
   afterwards: `index --check` is a written CI step and the ENFORCING
-  copy since the repo's first push on 2026-08-29 (`git remote` returns
-  `origin`, github.com/juhosarvanco/nputer, and ci.yml executes on every
-  push of main — T-054-s4 closed at that push), and **the INTEGRATOR
-  STILL RUNS IT BY HAND at the checkpoint and records the verdict
-  there**. WHAT DID NOT RETIRE is the regen — `--check` DETECTS a stale
-  graph, it never produces a fresh one, so the integrator still
-  regenerates and still commits the result; a green CI is what proves
-  they did. WHY THE CHECKPOINT AND NOT THE MERGE: the checkpoint edits
+  copy since the repo's first push on 2026-08-29 (T-054-s4 closed at
+  that push), and **the INTEGRATOR STILL RUNS IT BY HAND at the
+  checkpoint and records the verdict there**. WHAT DID NOT RETIRE is
+  the regen — `--check` DETECTS a stale graph, it never produces a fresh
+  one. WHY THE CHECKPOINT AND NOT THE MERGE: the checkpoint edits
   INDEXED fixture files (app/test/architecture-dogfood.test.ts and
   app/test/map-dogfood-render.test.tsx), so a graph regenerated into the
-  merge commit is stale again the moment those are reconciled — measured
-  at T-050, where `index --check` exits 1 at the merge and 0 at the
-  checkpoint. The rule read "with the merge" for twenty-nine regens
-  while every integrator did the other thing; this is the practice,
-  written down (T-014-s3).
+  merge commit is stale again the moment those are reconciled (T-050:
+  `index --check` exit 1 at the merge, 0 at the checkpoint). The rule
+  read "with the merge" for twenty-nine regens while every integrator
+  did the other thing; this is the practice, written down (T-014-s3).
   **AND THE PIN RECONCILIATION IS INTEGRATION-SEAT WORK: A LANE NEVER
-  UPDATES THE PINS** (T-211, recorded rather than measured — the rule
-  both seats have been applying from memory across every merge that
-  moved a count). The dogfood fixtures a merge moves — the ids, the
-  declared count, the relation table, the rendered node and edge totals
-  — are reconciled AT THE CHECKPOINT, by whoever holds the integration
-  checkout, and never inside the lane whose merge moved them: **a lane
-  re-pinning its own counts is asserting a total for a tree that does
-  not exist yet** — its own, not the merged one — and the number it
-  writes is stale the moment any other lane lands. A lane that finds a
-  pin wrong states it in its notes and leaves the file alone. **READ
-  THIS AS THE MERGE-MOVED CASE AND NOT AS DECLARING A COMPONENT ABOVE**,
-  which is the one way a LANE legitimately writes those same files: a
-  lane that declares a component moved the three fixtures with its OWN
-  diff, inside its own fence, and reconciles all three there exactly as
-  that bullet says — a MERGE REGEN alone moves only the two app
-  fixtures. What this rule forbids is a lane reconciling what somebody
-  ELSE's merge moved. IF the regen cannot run THEN say so LOUDLY in the
-  checkpoint, naming the reason — a skipped gate is news, never silence.
+  UPDATES THE PINS** (T-211). The dogfood fixtures a merge moves — the
+  ids, the declared count, the relation table, the rendered node and
+  edge totals — are reconciled AT THE CHECKPOINT, by whoever holds the
+  integration checkout, never inside the lane whose merge moved them:
+  **a lane re-pinning its own counts is asserting a total for a tree
+  that does not exist yet**, stale the moment any other lane lands. A
+  lane that finds a pin wrong states it in its notes and leaves the file
+  alone. **READ THIS AS THE MERGE-MOVED CASE AND NOT AS DECLARING A
+  COMPONENT ABOVE**, the one way a LANE legitimately writes those same
+  files: a lane that declares a component moved the three fixtures with
+  its OWN diff and reconciles all three there; a MERGE REGEN alone moves
+  only the two app fixtures. IF the regen cannot run THEN say so LOUDLY
+  in the checkpoint, naming the reason — a skipped gate is news, never
+  silence.
 - THE LANE PROTOCOL — the generic rules are `method/lane-protocol.md`
   and are NOT restated here (T-089). That file rules one task/one
   branch/one worktree, the base commit, the sibling worktree, the
@@ -1135,28 +1065,24 @@
     `git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>`, and
     the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
     THIS REPO and the older `tNNN-…` one is not a mistake to fix**: the
-    two sets OVERLAP rather than succeed each other, so there is no
-    cutover id to cite — derive the pair at your own ref, never quote it
-    (the census at `4d2f03c` is on T-089's card).
+    two sets overlap rather than succeed each other, so there is no
+    cutover id to cite — derive the pair at your own ref (T-089's card
+    holds the census at `4d2f03c`).
   - the BRANCH IS KEPT after the merge and only the WORKTREE is removed
-    (`git worktree remove`), which is why `git branch` lists every lane
-    this repo has ever run and `git worktree list` lists only the live
-    ones. `git worktree list` is therefore the authority on which fences
-    are held right now — the board's `status: building` is not, while
-    the dispatch stamp is lapsed (the STAMP bullet's own history in
-    method/tasks/TASK-FORMAT.md). **BUT READ IT AS ENTRIES ON A
-    `task/T-NNN-*` BRANCH, NOT AS A ROW COUNT**: a detached entry is not
-    a lane — a poison-drill checkout holds no fence and is named after
-    no card (T-089 measured one beside its own lane) — so filter on the
-    branch, and expect other lanes' scratch worktrees beside yours. **AND
-    ONE DETACHED ENTRY IS PERMANENT RATHER THAN TRANSIENT — THE HUMAN'S
-    APP CHECKOUT `../nputer-app`** (T-052, @human's ruling of
-    2026-08-25; the bullet below has the account). It is detached ON
-    PURPOSE, holds no fence, is named after no card, and is NOT a lane:
-    do not count it or try to remove it after a merge. **DERIVE WHETHER
-    IT EXISTS FROM `git worktree list`, NEVER FROM THIS FILE** — a
-    worktree's existence is a LIVE-ENVIRONMENT fact like a pid, and the
-    sentence that once claimed one here was falsified within the hour.
+    (`git worktree remove`), so `git branch` lists every lane this repo
+    has ever run and `git worktree list` lists only the live ones — and
+    is therefore the authority on which fences are held right now; the
+    board's `status: building` is not, while the dispatch stamp is
+    lapsed (method/tasks/TASK-FORMAT.md's STAMP bullet). **READ IT AS
+    ENTRIES ON A `task/T-NNN-*` BRANCH, NOT AS A ROW COUNT**: a detached
+    entry is not a lane — a poison-drill checkout holds no fence and is
+    named after no card — so filter on the branch and expect other
+    lanes' scratch worktrees beside yours. **ONE DETACHED ENTRY IS
+    PERMANENT — THE HUMAN'S APP CHECKOUT `../nputer-app`** (T-052; the
+    bullet below has the account): detached ON PURPOSE, no fence, no
+    card, NOT a lane; never count it or remove it after a merge. **DERIVE
+    WHETHER IT EXISTS FROM `git worktree list`, NEVER FROM THIS FILE** —
+    a worktree's existence is a LIVE-ENVIRONMENT fact like a pid.
   - A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT: no
     node_modules in any of the three packages, no `lib/parser/dist`, no
     `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
@@ -1165,10 +1091,9 @@
     app test files read the built bundle off `app/dist`, so `npm test`
     from app/ on an unbuilt worktree fails a handful of bodies — every
     message about a build being stale or absent rather than about the
-    tree — and is whole again after `npm run build`. DERIVE the counts
-    at your own ref: the figures transcribed here went stale under
-    suite growth (12-of-840-in-five when measured at `4d2f03c`). CI
-    never sees it because ci.yml orders app build before app suite; a
+    tree — and is whole again after `npm run build`. DERIVE the count
+    at your own ref (12-of-840 when measured at `4d2f03c`). CI never
+    sees it because ci.yml orders app build before app suite; a
     hand-run lane does.
   - **THE BRIEF IS ASSEMBLED BY THE ASSEMBLER, AND THIS IS THE SPELLING
     method/roles/orchestrator.md 5b POINTS AT** (`T-133-s3`: the RULE
@@ -1180,112 +1105,99 @@
     and paste what it emits. Every row comes back with the source that
     row names and the ref or reading time it was derived at, and a row
     the command cannot derive is printed as NOT DERIVED with its source
-    rather than filled in. A rule that depends on a reader remembering
-    has a failure mode — every brief written on 2026-08-25 obeyed 5b's
-    contract clause and broke the one after it — and a construction
-    does not: this command refuses to emit a figure it did not derive.
+    rather than filled in — a construction, where every brief written
+    from memory on 2026-08-25 broke the clause after the one it quoted.
   - **THE FENCE IS A PROPERTY AT THE MOMENT OF THE WRITE, NOT ONLY A
     DISCIPLINE AT THE HANDOFF** (T-154, ADR-020 decision 1). After
     cutting the lane and before briefing the session, the dispatcher
     runs `node tools/e2e/scripts/brief.mjs --task T-NNN --write-fence
     <the lane worktree>`: it expands the card's `touches:` through the
     parser's ONE fence implementation and leaves the answer in the lane
-    as `.nputer/lane-fence.json`.
-    **AND THE STEP BEFORE IT IS THE PREFLIGHT** (T-160): the dispatch
-    ritual is derive the brief, PREFLIGHT the card, write the fence,
-    stamp and cut, and
-    `node tools/e2e/scripts/brief.mjs --task T-NNN --preflight` run from
-    the repository root re-derives at HEAD every claim the card makes
-    that IS derivable — the paths it names, the fence it declares
-    through the live slug map, the figures it stamps, its `blocked_by:`
-    against live statuses, its `@ <hash>` ref stamps — and refuses the
-    dispatch on any that no longer holds, in `--write-fence`'s own
-    refusal shape and at the same four exit codes. It judges no
-    DESIRABILITY and says so on every run; a discrepancy is either
-    corrected or ruled acceptable ON THE CARD, dated, with a
-    `PREFLIGHT RULING (<date>):` line naming that finding's own SUBJECT
-    rather than its class — and the ruling's FORM is load-bearing
-    (T-160's verdict, correction four): a plain, unindented body line.
-    A ruling written as a `- ` list item, indented, or inside a fenced
-    block is invisible to the reader and the finding stays refused. A
-    failed preflight also GATES `--write-fence` in the same invocation.
-    IT IS DELIBERATELY NOT IN "Build & test" above, for the reason the
-    METHOD EVAL GATE gives about its own runner; wiring it into CI is a
-    routed suggestion.
+    as `.nputer/lane-fence.json`. **AND THE STEP BEFORE IT IS THE
+    PREFLIGHT** (T-160): the ritual is derive the brief, PREFLIGHT the
+    card, write the fence, stamp and cut —
+    `node tools/e2e/scripts/brief.mjs --task T-NNN --preflight` from the
+    repository root re-derives at HEAD every claim the card makes that
+    IS derivable (paths, the fence through the live slug map, stamped
+    figures, `blocked_by:` against live statuses, `@ <hash>` ref stamps)
+    and refuses the dispatch on any that no longer holds, in
+    `--write-fence`'s refusal shape and exit codes; it judges no
+    DESIRABILITY and says so. A discrepancy is corrected or ruled
+    acceptable ON THE CARD, dated, with a `PREFLIGHT RULING (<date>):`
+    line naming the finding's own SUBJECT — as a plain, unindented body
+    line, because a ruling written as a `- ` list item, indented, or
+    inside a fenced block is invisible to the reader (T-160's verdict,
+    correction four). A failed preflight also GATES `--write-fence`. Not
+    in "Build & test", for the reason the METHOD EVAL GATE gives about
+    its own runner; wiring it into CI is a routed suggestion.
     A PreToolUse hook wired in `.claude/settings.json` then reads that
-    file at every Edit/Write with no dependency a freshly cut worktree
-    lacks. FOUR ANSWERS FOR A LANE, AND THE AUTHORITY IS `decide` IN
+    file at every Edit/Write with no dependency a fresh worktree lacks.
+    FOUR ANSWERS FOR A LANE, AND THE AUTHORITY IS `decide` IN
     `.claude/hooks/lane-fence.mjs` RATHER THAN THIS PAGE: a checkout not
     on a lane branch is ALLOWED — the integrator, the architect and
-    every detached drill, which is the positive control that keeps a
-    refusal distinguishable from an absence; a lane branch with NO
-    manifest is REFUSED, because that is a dispatch that skipped its
-    step; a path inside the manifest or under the unfenceable
-    `docs/tasks/` is allowed; anything else is refused, naming the
-    fence, the path and the route. A card whose `touches:` no longer
-    matches the manifest's stamp refuses with `re-expand`, so a fence
-    cannot be widened from inside the lane it fences —
+    every detached drill, the positive control that keeps a refusal
+    distinguishable from an absence; a lane branch with NO manifest is
+    REFUSED, a dispatch that skipped its step; a path inside the
+    manifest or under the unfenceable `docs/tasks/` is allowed; anything
+    else is refused, naming the fence, the path and the route. A card
+    whose `touches:` no longer matches the manifest's stamp refuses with
+    `re-expand`, so a fence cannot be widened from inside the lane —
     `method/lane-protocol.md` rule 5, made mechanical.
     **AND THE SEAT WITH NO LANE IS SEEN TOO** (`T-154-s2`; @human ruled
-    those writes IN SCOPE on 2026-08-30, and two of the three incidents
-    T-154 cites were that shape). A checkout that is NOT on a lane
-    branch — this one above all — is refused a write to any
-    repository-relative path some LIVE lane's manifest reserves, read
-    off git's own worktree administration with no subprocess (the
-    timing is on that card). **THE CARVE-OUTS ARE CRITERIA AND NEVER
-    THE HOOK'S JUDGEMENT**: `docs/tasks/` stays unfenceable (every
-    manifest carries it, as `alwaysWritable`, so the dispatch and
-    closing stamps are safe), a card's own file is outside every fence
-    (its `excluded`), and this seat's own standing writes are never a
-    lane's to veto — exactly `docs/STATE.md` and `docs/checkpoints`, no
-    more. ONE CRITERION IS THE HOOK'S OWN AND IS NOT IN THE RULING'S
-    LIST: a checkout git itself records as mid-merge, mid-rebase,
-    mid-revert or mid-cherry-pick is free, because resolving a lane's
-    merge is an Edit inside that lane's fence by construction, and a
-    guard forbidding the act that CONSUMES a fence is a guard somebody
-    turns off. **AND IT CLOSES BEFORE THE LANE DOES**: git drops the
-    marker at the merge COMMIT and a clean merge never writes one, while
-    rule 6 keeps the worktree until after the CHECKPOINT — so an Edit
-    into a just-merged fence is refused for that whole window, which is
-    where this project's verdict corrections land. Remove the worktree
-    before the reconciling writes (`T-154-s2`).
+    those writes IN SCOPE on 2026-08-30): a checkout NOT on a lane branch
+    — this one above all — is refused a write to any repository-relative
+    path some LIVE lane's manifest reserves, read off git's own worktree
+    administration with no subprocess. **THE CARVE-OUTS ARE CRITERIA AND
+    NEVER THE HOOK'S JUDGEMENT**: `docs/tasks/` stays unfenceable (every
+    manifest carries it as `alwaysWritable`, so the dispatch and closing
+    stamps are safe), a card's own file is outside every fence (its
+    `excluded`), and this seat's own standing writes are never a lane's
+    to veto — exactly `docs/STATE.md` and `docs/checkpoints`, no more.
+    ONE CRITERION IS THE HOOK'S OWN: a checkout git records as
+    mid-merge, mid-rebase, mid-revert or mid-cherry-pick is free,
+    because resolving a lane's merge is an Edit inside that fence by
+    construction, and a guard forbidding the act that CONSUMES a fence
+    is a guard somebody turns off. **AND IT CLOSES BEFORE THE LANE
+    DOES**: git drops the marker at the merge COMMIT while rule 6 keeps
+    the worktree until after the CHECKPOINT, so an Edit into a
+    just-merged fence is refused for that window, where this project's
+    verdict corrections land — remove the worktree before the
+    reconciling writes (`T-154-s2`).
     **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write
     and stays protocol-covered. A path OUTSIDE the writing checkout is
     allowed in BOTH seats, the manifest's domains being
     repository-relative: the scratchpad, a drill tree and a sibling
-    lane's own tree are all reachable — the last deliberately, because
-    nothing separates an architect reaching into a lane from THAT LANE'S
-    OWN EXECUTOR writing into it from a shell parked elsewhere. A
-    DETACHED checkout is not judged at all, so the poison drill may go
-    on mutating the very files a live lane holds and the human's app
-    checkout stays free. A live lane whose manifest this seat cannot
-    read reserves nothing here — that refusal belongs to the lane's own
-    arm, at its own first write. And the hook FAILS OPEN in exactly one
-    shape, the harness's own contract rather than this guard's choice: a
-    command hook whose script cannot be LOCATED never starts, which
-    takes `CLAUDE_PROJECT_DIR` unset AND a shell cwd outside any
-    checkout carrying the hook, both wrong at once (T-154's merge).
-    The manifest is a RUNTIME file carrying a self-ignoring `.gitignore`
-    beside it: one that reached the integration branch would hand every
-    checkout one lane's permanently stale fence.
+    lane's own tree are all reachable, the last deliberately, since
+    nothing separates an architect reaching into a lane from that lane's
+    own executor writing from a shell parked elsewhere. A DETACHED
+    checkout is not judged at all, so the poison drill may mutate the
+    files a live lane holds and the human's app checkout stays free. A
+    live lane whose manifest this seat cannot read reserves nothing here
+    — that refusal belongs to the lane's own arm. And the hook FAILS
+    OPEN in exactly one shape, the harness's own contract: a command
+    hook whose script cannot be LOCATED never starts, which takes
+    `CLAUDE_PROJECT_DIR` unset AND a shell cwd outside any checkout
+    carrying the hook, both wrong at once. The manifest is a RUNTIME
+    file carrying a self-ignoring `.gitignore` beside it: one that
+    reached the integration branch would hand every checkout one lane's
+    permanently stale fence.
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052 — ten instances across
-  2026-08-16/24, escalating from cosmetic to fatal, itemised on that
-  card). **The generic rules are `method/roles/integrator.md`'s "The
-  checkout you merge into may be in use" and are NOT restated here** —
-  that file rules the fresh install, the dependency-artifact channel,
-  the checkpoint record and the no-scratch-files rule, and leaves every
-  mechanism to the project. These are this project's mechanisms.
+  2026-08-16/24, itemised on that card). **The generic rules are
+  `method/roles/integrator.md`'s "The checkout you merge into may be in
+  use" and are NOT restated here** — that file rules the fresh install,
+  the dependency-artifact channel, the checkpoint record and the
+  no-scratch-files rule, and leaves every mechanism to the project.
+  These are this project's mechanisms.
   **THE APP'S TWO TRIGGER SETS ARE DIFFERENT SETS.** `tauri dev`
   rebuilds and RELAUNCHES the binary on a change under
   `app/src-tauri/**`; a change under `app/src/**` goes to vite HMR and
   the window is never replaced — and the relaunch fires at the
   WORKING-TREE WRITE, seconds ahead of the commit an integrator would
   date it by. BOOT GATE's trigger is a THIRD set (what could stop the
-  app BOOTING, not what reaches an open window); derive none from
-  another.
+  app BOOTING); derive none from another.
   **ANCHOR THE PROCESS MATCH OR THE MEASUREMENT LIES**:
   `ps | grep 'target/debug/nputer'` matches `nputer-index` as a
   substring, so an integrator's own graph-gate run reads exactly like a
@@ -1293,11 +1205,11 @@
   `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'`.
   **THE FRESH INSTALL IS THE ONE CHANNEL THAT CORRUPTS RATHER THAN
   INTERRUPTS.** `npm ci` removes `app/node_modules` while the human's
-  vite serves out of it. A running vite SURVIVES the removal — it serves
-  already-transformed modules from memory — but what the NEXT read needs
-  is destroyed, `node_modules/.vite` deleted and not recreated, and
-  `tauri dev` is more than vite, so nothing licenses running the install
-  beside a live app. The rule stands on the WINDOW, not on a kill.
+  vite serves out of it; a running vite SURVIVES the removal, but what
+  the NEXT read needs is destroyed (`node_modules/.vite` deleted and not
+  recreated) and `tauri dev` is more than vite, so nothing licenses
+  running the install beside a live app. The rule stands on the WINDOW,
+  not on a kill.
   DETECT AND REFUSE, in the T-046 form: read the holder with
   `lsof -nP -iTCP:<port> -sTCP:LISTEN`, and for 1420 that is the ONLY
   command permitted (see PORT RULE) — **never bind-probe, and never
@@ -1305,40 +1217,36 @@
   socket you read, and what has to happen first. On no hit, PROCEED: a
   refusal that fires whether or not the app is up cannot tell the two
   apart, which is the NEGATIVE ASSERTION rule below applied to a
-  procedure instead of to a test body.
+  procedure.
   **`lib/parser/dist` REACHES THE RUNNING APP WITH NOTHING UNDER `app/`
   IN THE DIFF.** The app depends on `@nputer/parser` through
   `file:../lib/parser`, which npm installs as a SYMLINK, so the built
-  `dist/` the running vite serves is the parser's own directory and not
-  a copy: a lib-only merge that rebuilds it changes what the app is
-  serving (instance 5 moved the board's model badges under the human).
-  So the question is never "does my diff name a file the app owns" but
-  **"which build outputs does the running app read"**, and the
-  fresh-clone ORDER at the top of this file is where that is answered.
-  A docs-only diff is not exempt either — an integrator who runs the
+  `dist/` the running vite serves is the parser's own directory: a
+  lib-only merge that rebuilds it changes what the app is serving
+  (instance 5). So the question is never "does my diff name a file the
+  app owns" but **"which build outputs does the running app read"** —
+  the fresh-clone ORDER at the top of this file answers it, and a
+  docs-only diff is not exempt, because an integrator who runs the
   install order runs the parser build.
   **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION** (the
-  unexplained `zz-scope-probe.ts` of instance 9 is why the rule is
-  written rather than assumed), **and a lane worktree parked INSIDE the
-  tree is the same violation in a larger shape**:
+  unexplained `zz-scope-probe.ts` of instance 9), **and a lane worktree
+  parked INSIDE the tree is the same violation in a larger shape**:
   `git worktree add ../nputer-T-NNN` typed while the shell sits in
-  `tools/e2e` lands in `tools/`, silently — git has no opinion about
-  where a worktree goes. Cut worktrees with an ABSOLUTE path, or verify
-  the cwd first. **NAME YOUR PATHS; never `git add -A` and never
-  `git commit -a` in the main checkout** — a parked worktree makes
-  `git add -A` a thousand-file stage. Scratch work belongs in a
-  DETACHED sibling worktree with its own name, or outside the
-  repository entirely; an unexplained file found here is RECORDED in
-  the checkpoint and LEFT — its provenance is evidence, and deleting it
-  destroys the only copy of the question.
+  `tools/e2e` lands in `tools/`, silently. Cut worktrees with an
+  ABSOLUTE path, or verify the cwd first. **NAME YOUR PATHS; never
+  `git add -A` and never `git commit -a` in the main checkout** — a
+  parked worktree makes `git add -A` a thousand-file stage. Scratch work
+  belongs in a DETACHED sibling worktree with its own name, or outside
+  the repository; an unexplained file found here is RECORDED in the
+  checkpoint and LEFT — its provenance is evidence.
   **@HUMAN'S RULING 2026-08-25 — THE SECOND CHECKOUT IS ADOPTED AND THE
   MECHANISM IS A DETACHED WORKTREE.** The criteria, quoted because they
   decide which arguments count: *"It doesn't bother me as a user if the
   app restarts. The only thing I'm concerned about is if something
-  breaks or if development work suffers."* The restart is therefore not
-  a cost; what survives is the fresh-install BREAKAGE channel above and
-  cargo's target-dir THROUGHPUT channel, and the detached checkout
-  closes both. Setup, when the tree is quiet:
+  breaks or if development work suffers."* The restart is not a cost;
+  what survives is the fresh-install BREAKAGE channel above and cargo's
+  target-dir THROUGHPUT channel, and the detached checkout closes both.
+  Setup, when the tree is quiet:
 
       git worktree add --detach ../nputer-app main
 
@@ -1353,9 +1261,8 @@
   survives. Whether it exists, where 1420's holder runs from, and the
   two target-dir mtimes are LIVE-ENVIRONMENT facts — re-derive them
   (`git -C ../nputer-app rev-parse HEAD`, `lsof -p <pid>`), never quote
-  them. **AND IT EXCUSES NOTHING ABOVE**: the ruling ratifies every rule
-  in this bullet INDEPENDENTLY of the second checkout, so they bind
-  whether or not `../nputer-app` exists.
+  them. **AND IT EXCUSES NOTHING ABOVE**: every rule in this bullet
+  binds whether or not `../nputer-app` exists.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE
@@ -1413,14 +1320,13 @@
   GRAPH REGEN fires on `*.ts/*.tsx/*.js/*.jsx` OUTSIDE docs/, BOOT GATE
   on `app/src/**`, `app/src-tauri/**` or a manifest, so a commit whose
   whole diff is `docs/tasks/*.md` matches NEITHER — and it has redded a
-  suite twice: `9c64cd8` (two card titles opened with a backtick, both
-  cards silently unparseable, the board got SHORTER and four
-  scroll-containment bodies redded) and `fede266` (a `status:` outside
-  the parser's vocabulary took the app suite to 830 of 831 on a diff of
-  ONE markdown file, T-081-s9). **Both were found three layers from the
-  cause by somebody who was not looking**: the failure mode is a red
-  that arrives detached from its edit and gets attributed to whatever
-  lane is nearest.
+  suite twice, `9c64cd8` (two card titles opening with a backtick, both
+  cards silently unparseable, four scroll-containment bodies red) and
+  `fede266` (a `status:` outside the parser's vocabulary, the app suite
+  at 830 of 831 on a diff of ONE markdown file, T-081-s9), **both found
+  three layers from the cause by somebody who was not looking**: the
+  failure mode is a red that arrives detached from its edit and gets
+  attributed to whatever lane is nearest.
   RUN IT — from the repo root, and this is THE ONE SPELLING, character
   for character the same string `tools/e2e/scripts/docs-gate.mjs`'s own
   header prints (T-057: a recipe in two places is two chances to
@@ -1436,13 +1342,12 @@
   could not run — the same four codes `index --check` and `boot:check`
   use.
   **THERE IS NO `xargs` IN THAT SPELLING AND THAT IS THE POINT** (T-090,
-  absorbing T-061-s3; the BSD column measured at `9b03ae6` against
-  `/usr/bin/xargs`, the GNU piped column on ubuntu-24.04 by CI runs
-  33259394002 and 33260414204, read into this table by T-153-s6). A pipe
-  through `xargs` destroys two of the four codes, in the direction the
-  codes exist to prevent, and destroys them DIFFERENTLY on the two
-  platforms. THE MATRIX, each code produced deliberately and each
-  observed code read from `$?` on an unpiped command:
+  absorbing T-061-s3; BSD measured at `9b03ae6` against `/usr/bin/xargs`,
+  the GNU piped column on ubuntu-24.04 by CI runs 33259394002 and
+  33260414204, read in by T-153-s6). A pipe through `xargs` destroys two
+  of the four codes, in the direction the codes exist to prevent, and
+  DIFFERENTLY on the two platforms. THE MATRIX, each code produced
+  deliberately and read from `$?` on an unpiped command:
 
   | the gate means | `$(…)` form, BSD | `$(…)` form, GNU | piped, BSD | piped, GNU |
   |---|---|---|---|---|
@@ -1451,73 +1356,63 @@
   | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
 
-  **THE HAZARD IS PLATFORM-SCOPED, AND IT IS NOT THE SAME HAZARD ON THE
-  TWO PLATFORMS.** Under BSD the pipe HIDES a failed range as a clean
-  gate: every utility exit collapses to **1**, and on EMPTY input the
-  utility is never invoked so the pipeline exits **0** — silence wearing
-  a clean gate's costume. Under GNU nothing is hidden and what is
-  destroyed is the IDENTITY of the codes, since 1, 2 and 3 all arrive as
-  123 (GNU `xargs` RUNS the utility once on empty input, so the gate
-  reaches its own empty-list refusal at 2 and GNU maps that to 123 —
-  where this table, filled in from BSD, once predicted 0; T-153-s6
-  carries both runs). `tools/e2e/scripts/xargs-dialect.mjs` PROBES the
-  dialect at run time — two observables, never `process.platform` — so
-  the bodies that execute the piped column read the column for the
-  dialect they measured. The `$(…)` column has no `xargs` process in it,
-  so nothing platform-dependent stands between this gate's
-  `process.exit` and the shell that reads it. **THAT ASYMMETRY IS THE
-  ARGUMENT**: a spelling whose correctness has to be re-measured per
-  platform is one nobody will re-measure.
+  Under BSD the pipe HIDES a failed range as a clean gate — every
+  utility exit collapses to **1**, and on EMPTY input the utility is
+  never invoked so the pipeline exits **0**. Under GNU nothing is hidden
+  and the IDENTITY of the codes is destroyed instead, 1, 2 and 3 all
+  arriving as 123 (GNU `xargs` RUNS the utility on empty input, so the
+  gate's own empty-list refusal at 2 becomes 123 — where this table,
+  filled in from BSD, once predicted 0).
+  `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect at run time,
+  two observables and never `process.platform`, so the bodies that
+  execute the piped column read the column for the dialect they
+  measured; the `$(…)` column has no `xargs` process in it at all.
+  **THAT ASYMMETRY IS THE ARGUMENT**: a spelling whose correctness must
+  be re-measured per platform is one nobody will re-measure.
   **AN EMPTY PATH LIST IS EXIT 2, NOT EXIT 0** (T-084-s6), and the `$(…)`
-  form is what makes that remedy reachable: a FAILED range substitutes
-  to nothing, which is zero arguments. THREE MORE SHAPES REACH EXIT 2
-  rather than a clean answer, each once answered "not owed" at 0: an
-  argument that is EMPTY or BLANK (`"$(git diff …)"` on a failed range
-  is a list of length ONE, T-064-s7); an argument carrying NEWLINES (the
-  same quoting on a range that SUCCEEDED, T-064-s7); and a path that
-  resolves OUTSIDE this repository, which is what `../../docs/…` typed
-  from tools/e2e/ used to mean (T-101-s3). A `./`-prefixed or ABSOLUTE
-  spelling is normalised to its root-relative form and answered; a PLAIN
-  relative path away from the repo root is refused as ambiguous.
+  form is what makes that reachable: a FAILED range substitutes to
+  nothing, which is zero arguments. THREE MORE SHAPES REACH EXIT 2, each
+  once answered "not owed" at 0: an argument that is EMPTY or BLANK
+  (`"$(git diff …)"` on a failed range is a list of length ONE,
+  T-064-s7); an argument carrying NEWLINES (the same quoting on a range
+  that SUCCEEDED, T-064-s7); and a path resolving OUTSIDE this
+  repository, which is what `../../docs/…` typed from tools/e2e/ used to
+  mean (T-101-s3). A `./`-prefixed or ABSOLUTE spelling is normalised
+  and answered; a PLAIN relative path away from the repo root is refused
+  as ambiguous.
   **`npm run lint:docs` FROM tools/e2e IS THE NAMED FORM AND CI'S STEP**
-  (T-090), AND IT BUYS HALF: the WHOLE-TREE half, judging NO diff,
-  because a workflow has no "merge's diff" to be handed. Both incidents
+  (T-090), AND IT BUYS HALF — the WHOLE-TREE half, judging NO diff,
+  because a workflow has no "merge's diff" to be handed; both incidents
   above are in that half. THE DIFF HALF IS STILL A RITUAL: nothing but
   the integrator running the two lines above makes a merge answer for
   the suites it owes. **AND ITS EXIT 0 MEANS *I WAS NOT ASKED*, NEVER
   *NOTHING OWED*** (T-142-s1): read its LAST LINE, which names the half
   it answered. IF it cannot run THEN say so LOUDLY in the checkpoint,
-  naming the reason and the exit code; a skipped gate is news, never
-  silence. `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing
-  copy and runs inside the lane, which makes this the one standing gate
-  whose written form is held by something other than discipline.
+  naming the reason and the exit code.
+  `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and
+  runs inside the lane.
   THE READER SET IS DERIVED FROM THE TREE, NEVER LISTED — a hand list is
-  the defect T-058 and T-080 each spent a card on. **THE DERIVATION'S
-  AUTHORITY IS `tools/e2e/scripts/docs-scan.mjs`'s OWN `THE DERIVATION`
-  HEADER, NOT THIS PARAGRAPH** (T-162 corrected a superseded wording
-  here: T-085 subsumed the old two-halves rule under ONE containment
-  test, so that a docs path written relative to a PACKAGE directory and
-  holding no root is SEEN). The SHAPE is two arms. A DOCS SITE: a
+  the defect T-058 and T-080 each spent a card on — and **THE
+  DERIVATION'S AUTHORITY IS `tools/e2e/scripts/docs-scan.mjs`'s OWN
+  `THE DERIVATION` HEADER, NOT THIS PARAGRAPH** (T-162 corrected a
+  superseded wording here: T-085 subsumed the old two-halves rule under
+  ONE containment test so that a docs path written relative to a PACKAGE
+  directory is SEEN). The SHAPE is two arms — a DOCS SITE, a
   path-forming call whose docs-shaped literal RESOLVES inside this
-  repository's docs/. Or a CALL SITE: a call that HANDS the repository
-  root to a first-party function which spends it on a docs path —
-  `lib/parser/test/smoke.test.ts` spells no docs path and calls
-  `parseProject(repoRoot)`, and with the literal arm alone a one-line
-  ROADMAP edit owed the e2e lane at exit 0 while the parser suite went
-  red unnamed (T-084's card carries both counts). Two discriminators
-  survive the widening: `tools/e2e/fixtures/shell.ts` stays out
-  TEXTUALLY (its literal is not docs-shaped) and
-  `lib/parser/test/files.test.ts` BY CONTAINMENT (its base is its own
-  fixtures directory), which is what keeps fixture readers out of the
-  set. **A file that does BOTH and cannot be linked is REPORTED, never
-  dropped**, and the reporting arm follows IMPORTS as well as local
-  bindings. **NO COUNT IS TRANSCRIBED INTO THIS BULLET**: the census it
-  once carried read twelve where the tree held eleven, green and wrong,
-  relayed into two further documents. Run
-  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root —
-  it prints the site census, the reader set with the arm that found
-  each, the root-anchor classification and the residual, and it cannot
-  be stale because it is not written down.
+  repository's docs/; or a CALL SITE, a call that HANDS the repository
+  root to a first-party function which spends it on a docs path
+  (`lib/parser/test/smoke.test.ts` calls `parseProject(repoRoot)` and
+  spells no docs path; with the literal arm alone a one-line ROADMAP
+  edit owed the e2e lane while the parser suite went red unnamed,
+  T-084). Fixture readers stay out by the same test —
+  `lib/parser/test/files.test.ts` resolves OUTSIDE `<root>/docs`. **A
+  file that does BOTH and cannot be linked is REPORTED, never dropped**,
+  and the reporting arm follows IMPORTS as well as local bindings. **NO
+  COUNT IS TRANSCRIBED INTO THIS BULLET** — the census it once carried
+  was green and wrong: `node tools/e2e/scripts/docs-gate.mjs --census`
+  from the repo root prints the site census, the reader set with the
+  arm that found each, the root-anchor classification and the residual,
+  and cannot be stale because it is not written down.
   THE FOUR SUITES the derived readers sit in, listed so a reader knows
   the shape and re-derivable so nobody quotes them: `npm test from app/`
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own
@@ -1525,25 +1420,22 @@
   whole of docs/, graph and all) and `cargo test from app/src-tauri/`
   (docs/CONVENTIONS.md on every run, plus the component registry). The
   card that opened this named one suite; the tree says all four.
-  THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately: on this
-  tree EVERY path under docs/ reaches a reader — two lane specs walk all
-  of it — so narrowing the TRIGGER would be a lie, and what is
-  proportional is the ANSWER. The gate at `c4c15c8` answered ONE command
-  for `docs/rooms/*.md`, TWO for this file and THREE for a flat task
-  card; **those are the answer's SHAPE and not its census** (T-086) — a
-  new reader in a fourth suite moves any of them without touching this
-  page. Ask the gate; do not predict.
+  THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately: EVERY path
+  under docs/ reaches a reader (two lane specs walk all of it), so
+  narrowing the TRIGGER would be a lie, and what is proportional is the
+  ANSWER — at `c4c15c8` ONE command for `docs/rooms/*.md`, TWO for this
+  file, THREE for a flat task card, **the answer's SHAPE and not its
+  census** (T-086). Ask the gate; do not predict.
   THE OTHER HALF IS THE FRONTMATTER, asked of the WHOLE TREE and not
   only of the diff: every live flat `docs/tasks/T-*.md` must parse, and
   its `status:` must be in the parser's vocabulary, which the gate READS
   out of `lib/parser/src/types.ts` rather than restating (T-057) — one
-  status vocabulary, and a ninth status added there is honoured here
-  with no edit. It names the FILE, the FIELD and the near miss.
+  status vocabulary, honoured here with no edit when a ninth is added
+  there. It names the FILE, the FIELD and the near miss.
   `.nputerignore` IS UNTOUCHED AND THAT IS DELIBERATE: it excludes
   docs/ because the graph is CODE-derived, so `index --check` is not the
-  gate that missed this and indexing docs/ would have caught neither
-  incident. The exclusion is asserted in the spec so "we decided" cannot
-  be mistaken for "we forgot".
+  gate that missed this; the exclusion is asserted in the spec so "we
+  decided" cannot be mistaken for "we forgot".
 - METHOD EVAL GATE (T-155, ADR-020 decision 2 — the FOURTH standing gate,
   and the one the three above exclude BY CONSTRUCTION): at any merge whose
   diff touches `method/**`, run the model-free eval set and RECORD its
@@ -1554,13 +1446,12 @@
   `method/**`-only diff against the three triggers: GRAPH REGEN wants a
   code suffix OUTSIDE docs/, BOOT GATE wants `app/src/**`,
   `app/src-tauri/**` or a manifest, the DOCS GATE wants a path under
-  `docs/`. A method-only diff matches NONE of them, so until this bullet
-  the method files were the one code input in this tree that no trigger
-  named. They ARE pinned — `app/src-tauri/src/agent/kit.rs` compiles a
-  subset of method/ into the genesis kit and reds on a byte drift — but
-  **A BYTE PIN AND A TESTED EFFECT ARE DIFFERENT CLAIMS**, which is the
-  whole of why this gate exists: a rewrite of a role file satisfies the
-  pin by being committed, and changes what every session produces.
+  `docs/`. A method-only diff matches NONE of them. The method files ARE
+  pinned — `app/src-tauri/src/agent/kit.rs` compiles a subset of method/
+  into the genesis kit and reds on a byte drift — but **A BYTE PIN AND A
+  TESTED EFFECT ARE DIFFERENT CLAIMS**: a rewrite of a role file
+  satisfies the pin by being committed, and changes what every session
+  produces.
   RUN IT — from the repo root, and this is THE ONE SPELLING, character
   for character the same string `tools/method-evals/run.mjs`'s own header
   prints:
@@ -1573,52 +1464,44 @@
   frozen `EXIT` object in tools/method-evals/lib/exit.mjs, which the
   runner IMPORTS rather than re-typing the numbers. ZERO DEPENDENCIES
   AND NO INSTALL: like the token lint it reads no `node_modules`
-  anywhere, so it answers against a bare checkout and cannot be silenced
-  by the install being what broke.
+  anywhere, so it answers against a bare checkout.
   THE TWO SETS ARE TWO COSTS, NOT TWO STYLES. `--set model-free` is
   deterministic, spends no tokens, and is the half THIS trigger owes.
   `--set model-in-loop` samples a nondeterministic process, so its
-  verdict is a PASS RATE against a declared threshold and never a single
-  pass/fail; it is owed at a METHOD VERSION BUMP and on schedule, never
-  per-commit, and the bump obligation is in the first gotcha of this
-  section. **A REPLAYED MODEL-IN-LOOP RUN IS NOT A MEASUREMENT**: the
-  suite ships a replay runner so the expensive path is exercised for
-  free, and its pass rate is 1.00 by construction — every result line
-  and the `--bump` block name the RUNNER for exactly that reason.
-  THE POSITIVE CONTROL IS PART OF THE SUITE AND IS RUN, NEVER ASSUMED:
-  `--selftest` degrades each eval's own contract on a COPY and requires
-  the eval to detect it — this file's own A NEGATIVE ASSERTION NEEDS A
-  POSITIVE CONTROL applied to the checker.
+  verdict is a PASS RATE against a declared threshold; it is owed at a
+  METHOD VERSION BUMP and on schedule, never per-commit (the first gotcha
+  of this section). **A REPLAYED MODEL-IN-LOOP RUN IS NOT A
+  MEASUREMENT**: the replay runner's pass rate is 1.00 by construction,
+  and every result line and the `--bump` block name the RUNNER for
+  exactly that reason. THE POSITIVE CONTROL IS PART OF THE SUITE AND IS
+  RUN, NEVER ASSUMED: `--selftest` degrades each eval's own contract on
+  a COPY and requires the eval to detect it — A NEGATIVE ASSERTION NEEDS
+  A POSITIVE CONTROL applied to the checker.
   IT IS NOT IN "Build & test" ABOVE, DELIBERATELY, AND THE REASON IS
   MECHANICAL: `deriveExpectedSteps` in
   tools/e2e/tests/workflow-parity.spec.ts reads EXACTLY the
   `run from <dir>/:` bullets that section carries and reds by name on a
   fifth, so exposing the command there is a two-package edit — that spec
-  plus ci.yml — which T-155's fence reached neither of. The command
-  therefore lives beside the gate it serves, where GRAPH REGEN's own
-  regen command already lives. Wiring it into CI is `T-155-s1`, and
-  until that lands this gate is a written ritual with one tripwire, not
-  a gate CI holds. IF the suite cannot run THEN say so LOUDLY in the
-  checkpoint, naming the reason and the exit code — a skipped gate is
-  news, never silence.
+  plus ci.yml — which T-155's fence reached neither of; the command lives
+  beside the gate it serves, as GRAPH REGEN's own regen command does.
+  Wiring it into CI is `T-155-s1`, and until that lands this gate is a
+  written ritual with one tripwire. IF the suite cannot run THEN say so
+  LOUDLY in the checkpoint, naming the reason and the exit code — a
+  skipped gate is news, never silence.
   AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
   residual, taken at T-159): a `method/**` diff now matches a trigger,
-  and it still owes `cargo test` that no trigger names. `kit.rs`
-  `include_str!`s a SUBSET of method/ into `nputer_lib`, so editing one
-  of those paths forces a recompile and two cargo bodies read `method/`
-  off disk and assert against it —
+  and it still owes `cargo test` that no trigger names — `kit.rs`
+  `include_str!`s a SUBSET of method/ into `nputer_lib`, and two cargo
+  bodies read `method/` off disk and assert against it,
   `every_compiled_entry_matches_its_method_file_byte_for_byte` and
   `the_snapshot_table_covers_every_method_scaffold_file`. **THE
   BOUNDARY RUNS THROUGH `method/`, SO THE DIRECTORY NAME ANSWERS
-  NOTHING**: lane-protocol.md and roles/integrator.md are outside the
-  table while every adapter and docs-template is inside it. DERIVE which
-  paths from `KIT_FILES` at your own ref and run `cargo test` when your
-  diff hits one; widening this gate's trigger to fire cargo stays that
-  card's, because it needs the reader census re-run and the root-anchor
-  ledger re-asserted rather than a word changed in a trigger.
+  NOTHING**: DERIVE which paths from `KIT_FILES` at your own ref and run
+  `cargo test` when your diff hits one; widening this gate's trigger to
+  fire cargo stays that card's.
 - HEALTH BANDS AT THE CHECKPOINT (T-156, ADR-020 decision 3; this bullet
-  is the half that card's `[tools/e2e]` fence could not write, routed and
-  taken as `T-156-s1`) — **A REPORTER, NOT A FIFTH STANDING GATE, AND THE
+  is the half that card's `[tools/e2e]` fence could not write, taken as
+  `T-156-s1`) — **A REPORTER, NOT A FIFTH STANDING GATE, AND THE
   DISTINCTION IS THE POINT**: no tier acts on its answer, it declares no
   merge-diff trigger, and it is enumerated with `index --watch`, `arch`
   and the orphan drill rather than with the four gates above.
@@ -1627,9 +1510,8 @@
       npm run health
       npm run health -- --readings <the checkpoint's captured output>
 
-  **THE `--` IS LOAD-BEARING AND ITS ABSENCE IS LOUD** (measured at
-  `8c210b2`; the same npm behaviour the PORT RULE bullet measures on
-  `npm run tauri dev -- --config`): without it npm warns, eats the flag
+  **THE `--` IS LOAD-BEARING AND ITS ABSENCE IS LOUD** (the same npm
+  behaviour the PORT RULE bullet measures): without it npm eats the flag
   and hands the script the bare path, which it refuses — *"this command
   takes flags, never paths"* — at exit 2. Four codes again: 0 clean, 1 a
   band is BREACHED, 2 called wrong, 3 the run could not read what it
@@ -1638,61 +1520,52 @@
   the breach it did read. The AUTHORITY is the frozen `EXIT` object in
   tools/e2e/scripts/health-bands.mjs, and the LIMITS are data in
   tools/e2e/scripts/health-bands.config.mjs, tuned by TRIAGE and never
-  by the session that trips them — that file's header is the argument
-  and is not restated here.
+  by the session that trips them — that file's header is the argument.
   **EXIT 3 IS THE DESIGNED ANSWER TODAY, NOT A BREAKAGE**: four bands are
   declared with no keeper and are named on every run, docs/STATE.md says
-  so in as many words, and the two failures this bullet exists to
-  prevent are reading that 3 as clean and "fixing" it.
+  so, and the two failures this bullet exists to prevent are reading
+  that 3 as clean and "fixing" it.
   WHAT THE CHECKPOINT OWES, AND THE RECORD TEMPLATE CARRIES THE SHAPE
   (docs/checkpoints/TEMPLATE.md, Gates and Metrics): the CENSUS LINE and
   the EXIT, read unpiped, plus the readings that turn the three
   readings-authority bands from UNREAD into a reading — the output of
   `cargo test` and `index --check` from app/src-tauri/ and `npm test`
-  from tools/e2e/, all three of which that checkpoint already ran.
-  Capture them with a redirect and read `$?` from the gate itself; a
-  bare `| tee` hands you tee's status. The record's own `Gate runtime:`
-  total is `machinery/gate-seconds`'s only reading, and its `Cold
-  start:` and `Drift incidents:` lines are the two docs/NORTH_STAR.md
-  indicators' only markers — **owed by the SESSION every time rather
-  than by whoever noticed a problem**, because a cold start that went
-  badly is exactly the one nobody writes up and a denominator that
-  collects successes only is worse than no band.
+  from tools/e2e/, all of which that checkpoint already ran; capture
+  them with a redirect and read `$?` from the gate itself, since a bare
+  `| tee` hands you tee's status. The record's own `Gate runtime:` total
+  is `machinery/gate-seconds`'s only reading, and its `Cold start:` and
+  `Drift incidents:` lines are the two docs/NORTH_STAR.md indicators'
+  only markers — **owed by the SESSION every time rather than by
+  whoever noticed a problem**, because a denominator that collects
+  successes only is worse than no band.
   **THE GRAPH BAND'S READING IS THE INTEGRATOR'S AND A LANE CANNOT HOLD
-  IT HONESTLY** — stated beside the command because that is where it is
-  met. `index --check` is `graph/budget-headroom-bytes`'s authority, and
-  a worktree that has built anything with cargo has its own target
-  directory inside the graph walk (`T-153-s3`, `T-111-s10`), so a lane's
-  number is about the lane. Take it from the checkout the merge is
-  integrated in, or record the band as not read and say which.
+  IT HONESTLY**: `index --check` is `graph/budget-headroom-bytes`'s
+  authority, and a worktree that has built anything with cargo has its
+  own target directory inside the graph walk (`T-153-s3`, `T-111-s10`),
+  so a lane's number is about the lane. Take it from the checkout the
+  merge is integrated in, or record the band as not read and say which.
   **AND NOTHING MAY SCAN THE RECORDS FOR ANY OF THIS** (ADR-019's Records
   clause): the marker reaches the command hand-carried into `--readings`
-  at the checkpoint that wrote it, which is the hand reporter that clause
-  already allows, and never as a walk of docs/checkpoints/.
-  THE CI DISPOSITION, DECIDED HERE RATHER THAN LEFT TO THE NEXT EDITOR
-  (`T-156-s1`): **LOCAL ONLY**, the disposition `index --watch`, `arch`
-  and `npm run boot:orphan-drill` already have. Three reasons, the first
-  decisive: it exits 3 at every ref while any band is unkept, so a step
-  would red every push for no actionable signal — the AUDIT GATE
-  POLICY's own argument against `--deny warnings`, one layer up;
-  second, the readings that make the run informative are the OUTPUTS of
-  steps the job already runs, so a step would either report three bands
-  UNREAD or need the job rewired to capture and re-feed them; third, a
-  scheduled reporter would re-run the whole pipeline to produce those
-  readings, and `on: schedule` is not one of the three triggers
-  workflow-parity pins ci.yml to. **Revisit this when the exit code can
-  move** — `T-156-s4`'s subject — and not before.
+  at the checkpoint that wrote it, never as a walk of docs/checkpoints/.
+  THE CI DISPOSITION (`T-156-s1`): **LOCAL ONLY**, the disposition
+  `index --watch`, `arch` and `npm run boot:orphan-drill` already have —
+  it exits 3 at every ref while any band is unkept, so a step would red
+  every push for no actionable signal (the AUDIT GATE POLICY's argument
+  against `--deny warnings`, one layer up); the readings that make it
+  informative are the OUTPUTS of steps the job already runs; and a
+  scheduled reporter would re-run the whole pipeline, on a trigger
+  workflow-parity does not pin ci.yml to. **Revisit this when the exit
+  code can move** — `T-156-s4`'s subject — and not before.
   IT IS NOT IN "Build & test" ABOVE, DELIBERATELY, AND THE REASON IS
-  MECHANICAL — the same one the METHOD EVAL GATE bullet states, and the
-  same trap T-090 walked into while adding `npm run lint:docs`.
+  MECHANICAL — the one the METHOD EVAL GATE bullet states, and the trap
+  T-090 walked into while adding `npm run lint:docs`:
   `deriveExpectedSteps` in tools/e2e/tests/workflow-parity.spec.ts makes
   every command in those four bullets either a CI step or an argued
-  `LOCAL_ONLY` entry, and both dispositions live in that spec: adding
-  `npm run health` to the tools/e2e command bullet alone reds that spec
-  by name (measured on `T-156-s1`). So the doc half and the spec half
-  are ONE commit across two packages, `T-156-s1`'s fence reached one of
-  them, and the listing is routed as **`T-156-s5`**. Until it lands,
-  this is the only place the command is written down.
+  `LOCAL_ONLY` entry, so adding `npm run health` to the tools/e2e
+  command bullet alone reds that spec by name (measured on `T-156-s1`).
+  The doc half and the spec half are ONE commit across two packages,
+  routed as **`T-156-s5`**; until it lands, this is the only place the
+  command is written down.
 - THE CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:` (T-182) — the
   commit that adds a record under `docs/checkpoints/` carries a subject
   beginning with that literal. **IT IS NOT A STYLE RULE: TWO RULES PARSE
@@ -1715,224 +1588,167 @@
   `T-167-s8`** with two facts: `--grep=^Checkpoint:` matches ANY line of
   a message, so a SUBJECT guard is strictly narrower than the band's own
   reader; and `newestCheckpoint` had no spec at `bd8a8e8`.
-- POISON DRILL (ratified at T-054; until then it was oral tradition —
-  "poison", "vacuous" and "mutation" appeared nowhere in this file or in
-  method/roles/): at any task that ADDS OR CHANGES a test body — the
-  executor before handing off, the verifier before a verdict, the
-  integrator before a checkpoint — MUTATE every new or changed assertion
-  so that it ought to fail, RUN its suite, and require the RED. MUTATE
-  ONE SIDE ONLY: the code under test OR the assertion, never a literal
-  the two SHARE; and confirm the mutated TEXT is what you intended rather
-  than only that a substitution COUNT was non-zero. Then restore, and
-  PROVE the restoration rather than asserting it: `git show HEAD:<path>
+- POISON DRILL (ratified at T-054; until then "poison", "vacuous" and
+  "mutation" appeared nowhere in this file or in method/roles/): at any
+  task that ADDS OR CHANGES a test body — the executor before handing
+  off, the verifier before a verdict, the integrator before a checkpoint
+  — MUTATE every new or changed assertion so that it ought to fail, RUN
+  its suite, and require the RED. MUTATE ONE SIDE ONLY: the code under
+  test OR the assertion, never a literal the two SHARE; and confirm the
+  mutated TEXT is what you intended rather than only that a substitution
+  COUNT was non-zero — a symmetric mutation produces a green
+  indistinguishable from a vacuous assertion, and a `perl -0777`
+  mutation once counted one substitution and changed nothing observable
+  (T-078), so READ THE MUTATION BACK with `git diff` before you run the
+  suite. Then restore, and PROVE the restoration: `git show HEAD:<path>
   | shasum -a 256` against the working file. The generic judging rules —
   kill-set containment, the site the property lives, a DATA mutant where
-  the property is data — are method/roles/verifier.md step 2b and are
-  not restated here.
+  the property is data — are method/roles/verifier.md step 2b.
   **THE SHA256 IS THE PROOF AND AN EMPTY `git diff -- <path>` IS A
   COMPANION, NEVER AN ALTERNATIVE** (T-092-s4): `git checkout <commit>
   -- <path>` writes the INDEX as well as the worktree, so a following
-  bare `git checkout -- <path>` restores FROM THE MUTATION'S OWN SOURCE,
-  and `git diff` with no range compares the worktree to that index — 0
-  bytes, on the wrong file. Name both sides when you restore —
-  `git restore --source=<commit> --staged --worktree -- <path>` — and
-  keep the hash, which is immune to either.
-  **DRILL AT A COMMIT** (T-072-s1) — commit the work FIRST, then mutate,
-  because **A RESTORE CANNOT TELL ITSELF FROM A REVERT**: both proofs
-  above are satisfied perfectly by a restore that threw away work HEAD
-  never saw (that card carries the measured instance). Committing first
-  closes that mechanism; it does not close the staged-index one above,
-  which is why the hash is the proof. The scratch-SNAPSHOT alternative —
-  copy aside, mutate, copy back — needs its OWN proof, `cmp` against the
-  snapshot, because `git show HEAD:` cannot see it.
+  bare `git checkout -- <path>` restores FROM THE MUTATION'S OWN SOURCE
+  and a rangeless `git diff` reports 0 bytes on the wrong file. Restore
+  with `git restore --source=<commit> --staged --worktree -- <path>` and
+  keep the hash. **DRILL AT A COMMIT** (T-072-s1): a restore cannot tell
+  itself from a revert, and both proofs are satisfied by a restore that
+  threw away work HEAD never saw; the scratch-SNAPSHOT alternative needs
+  its OWN proof, `cmp` against the snapshot.
   **AND RESTORING A FIXTURE MEANS ITS BYTES AND ITS CLOCK** (T-079-s3,
   T-130-s1): sibling bodies read the MTIME, and `git diff --quiet`
   answers from the index's cached stat info. Restore the clock through
-  the SECONDS form, never through a `Date` — `utimesSync(target,
-  stats.atimeMs / 1000, stats.mtimeMs / 1000)` carries the fraction
-  where the `stats.atime, stats.mtime` form writes back a ROUNDED
-  timestamp. **THE LOSSY FORM SELF-HEALS, WHICH IS WHY THIS IS A RULE**:
-  it leaves the file on a whole millisecond, so the next run rounds to a
-  no-op and passes — red once, green forever after in that checkout, and
-  **re-running until green is the defect's own healing mechanism, not
-  evidence.** The same fixed point defeats a POISON of a clock assertion
-  (T-153-s5 measures the pair), so **before poisoning an assertion over
-  PERSISTENT state, put that state back to a condition the suite did not
-  create.** The round-trip's precision is scoped by the libuv VERSION,
-  not the platform — microseconds under v1.51.0, the hack deleted in
-  v1.52.0 (T-153-s5, verdict correction 1) — so **an assertion demanding
-  more than microsecond agreement is measuring the measuring host**:
-  print `process.versions.uv` beside any such figure. A `ctime` move
-  after a byte-exact restore was seen ONCE and not reproduced in 24
-  cycles; it is an observation, not a mechanism, and changes no advice —
-  prove restoration BY HASH.
+  the SECONDS form — `utimesSync(target, stats.atimeMs / 1000,
+  stats.mtimeMs / 1000)` — never through a `Date`, which writes back a
+  ROUNDED timestamp. **THE LOSSY FORM SELF-HEALS**: it leaves the file on
+  a whole millisecond, so the next run rounds to a no-op and passes —
+  red once, green forever after, and **re-running until green is the
+  defect's own healing mechanism, not evidence.** The same fixed point
+  defeats a POISON of a clock assertion (T-153-s5), so **before poisoning
+  an assertion over PERSISTENT state, put that state back to a condition
+  the suite did not create.** The round-trip's precision is scoped by
+  the libuv VERSION, not the platform (microseconds under v1.51.0; that
+  card carries both versions' bounds), so print `process.versions.uv`
+  beside any figure that depends on it. A `ctime` move after a
+  byte-exact restore was seen once and never reproduced; prove
+  restoration BY HASH, which is immune either way.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
   **A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
-  NON-EMPTY** (poison shape TEN below), and **A COMMAND QUOTED AS PROOF
-  IS SHOWN CAPABLE OF FAILING** (T-078-s11): a diff-based check NAMES
-  ITS RANGE, and a search-based one is run once against a PLANTED HIT
-  before its zero is written down. `git diff` with NO RANGE compares the
-  WORKING TREE to the INDEX, so on a clean tree that diff is 0 bytes
-  whatever the branch added — the worked instance is on T-078-s11.
+  NON-EMPTY** (shape TEN), and **A COMMAND QUOTED AS PROOF IS SHOWN
+  CAPABLE OF FAILING** (T-078-s11): a diff-based check NAMES ITS RANGE —
+  `git diff` with NO RANGE compares the WORKING TREE to the INDEX, 0
+  bytes on any clean tree — and a search-based one is run once against
+  a PLANTED HIT before its zero is written down.
   **DRILL IN A DETACHED SCRATCH WORKTREE AT A NAMED COMMIT, AND GIVE IT
   ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF — AT `<scratch>/target`, NOT
-  AT A NAME YOU CHOSE** (T-013-s7 arm (c), taken at T-013's merge; it
-  has bitten four agents, T-145-s3 the latest). Several Rust bodies
-  resolve the repository from `env!("CARGO_MANIFEST_DIR")`, baked in at
-  COMPILE time and not fingerprinted by cargo, so binaries the DRILL
-  compiled — carrying the DRILL's path — are reused by the parent
-  afterwards; T-013's card carries the wreckage (a bulk `cargo test`
-  failure naming a deleted directory, `cargo clean -p` and a multi-GiB
-  rebuild as the fix). **Where `cargo clean` is prohibited — it is,
-  here, whenever another lane may be building — the recovery is to
-  `touch` EVERY workspace `.rs` (mtime only) and rebuild** (T-145-s3);
-  touching only the file the panic NAMED yields a SECOND red, because
-  each integration-test binary bakes its own copy of the path. **And the
-  pollution runs the other way**: a mutant can look DEAD against a stale
-  binary that never saw it. **The directory's NAME is not free, because
-  the graph walk can see it** (T-111-s10, T-153-s3): `.gitignore`
-  excludes `target/` and nothing else, so a target dir under any other
-  name is INDEXED and `index --check` answers confidently and wrongly —
-  phantom files and a phantom package node, both cards carry the
-  readings — and **`files +0 -0` is the sentence a checkpoint decides
-  on**, so a phantom `+3` buys a reconciliation nobody owes. Teaching the
-  walk to skip any directory carrying cargo's `CACHEDIR.TAG` is the
-  CLASS fix and `crate-index`'s code, not this bullet's. **Drilling in
-  place is not the remedy**: the in-place argument is true of the
-  INSTANCE and not of the CLASS, and an interrupted drill leaves the
-  branch dirty for every concurrent reader. Detached worktree PLUS its
-  own target directory, not either.
+  AT A NAME YOU CHOSE** (T-013-s7 arm (c); four agents bitten, T-145-s3
+  the latest). Several Rust bodies bake `env!("CARGO_MANIFEST_DIR")` in
+  at COMPILE time, which cargo does not fingerprint, so binaries the
+  DRILL compiled are reused by the parent afterwards (T-013's card has
+  the wreckage) — and the pollution runs the other way too: a mutant can
+  look DEAD against a stale binary that never saw it. Where `cargo
+  clean` is prohibited — it is, whenever another lane may be building —
+  the recovery is to `touch` EVERY workspace `.rs` and rebuild
+  (T-145-s3); touching only the file the panic NAMED yields a second
+  red. The directory's NAME is not free: `.gitignore` excludes `target/`
+  and nothing else, so a target dir under any other name is INDEXED and
+  `index --check` answers confidently and wrongly with phantom files
+  (T-111-s10, T-153-s3) — and **`files +0 -0` is the sentence a
+  checkpoint decides on**. Skipping any directory carrying cargo's
+  `CACHEDIR.TAG` is the CLASS fix and `crate-index`'s code. Drilling in
+  place is not the remedy: true of the INSTANCE, not the CLASS, and an
+  interrupted drill leaves the branch dirty for every concurrent reader.
   **AND THE SCRATCH IDENTITY IS DERIVED FROM THE LANE, NEVER CHOSEN**
-  (T-092, measured across four lanes — that card holds the census). The
-  scratch directory is SHARED between concurrent sessions, whatever its
-  UUID suggests, and naming the WORKTREE per-lane is not enough — T-110
-  did and still had its driver and results files overwritten by a
-  sibling. So DERIVE ONE STEM FROM THE LANE ID, the way `../nputer-T-NNN`
-  derives the lane worktree from the card, and spend it on the worktree,
-  its `CARGO_TARGET_DIR`, the driver script AND every results file — one
-  stem, every artefact, cut at a SHORT root (`T-133-s5`). **The driver's
-  guard SHALL recognise its OWN drill rather than the shared prefix** —
-  three sessions guarded the prefix and answered *"is this A drill"*.
-  **A DERIVED PATH IS A CONSTRUCTION AND A FIXED PATH IS THE DEFECT.**
-  **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED**: a fresh
-  worktree has no `app/dist`, and the bodies that read the shipped
-  bundle fail on its absence with a message about the build — DERIVE the
-  count at your own ref. Build first, then baseline, then mutate.
+  (T-092 holds the four-lane census). The scratch directory is SHARED
+  between concurrent sessions whatever its UUID suggests, and naming the
+  WORKTREE per-lane is not enough (T-110's driver and results files were
+  overwritten by a sibling): DERIVE ONE STEM FROM THE LANE ID and spend
+  it on the worktree, its `CARGO_TARGET_DIR`, the driver AND every
+  results file, cut at a SHORT root (`T-133-s5`); the driver's guard
+  SHALL recognise its OWN drill rather than the shared prefix. **A
+  DERIVED PATH IS A CONSTRUCTION AND A FIXED PATH IS THE DEFECT.** And
+  the app suite needs `npm run build` before it can be drilled — build,
+  baseline, then mutate; derive the unbuilt-body count at your own ref.
   IF a body cannot be poisoned — it asserts a constant, or every
-  mutation is one the test already makes — THEN say so and name it,
-  because a body that cannot red is the finding: this practice caught
-  SIX vacuous assertions in one night (T-057). WHY ONE-SIDEDNESS IS A
-  RULE (T-078, measured on the drill's own verifier): a literal living
-  once in the producer and once in each assertion moved on both sides
-  under a global substitution, three substitutions counted correctly,
-  and the suite stayed GREEN — **a symmetric mutation produces a green
-  indistinguishable from a vacuous assertion**, wearing the drill's own
-  costume; the same session's `perl -0777` mutation of a DOC counted one
-  substitution and changed nothing, because without a UTF-8 output layer
-  perl emitted a raw byte. The count was right and the TEXT was wrong,
-  so READ THE MUTATION BACK — `git diff` it — before you run the suite.
-  It stays a DISCIPLINE rather than a gate because nothing can automate
-  "would this have failed". WHAT THE DRILL CANNOT SEE (T-057): poisoning
-  proves a body RUNS and that its value MATTERS; it does NOT prove the
-  body is not a DUPLICATE — T-057's replacement positive was
-  character-identical to a test three cases above it and still redded
-  under an expected-value poison, because the CRITERION had named a
-  positive the suite already had. SO: after the drill reds, ask the
-  second question — does any OTHER test already drive this exact call?
+  mutation is one the test already makes — THEN say so and name it: a
+  body that cannot red is the finding (six vacuous assertions in one
+  night, T-057). It stays a DISCIPLINE rather than a gate because
+  nothing can automate "would this have failed". WHAT THE DRILL CANNOT
+  SEE (T-057): poisoning proves a body RUNS and that its value MATTERS;
+  it does NOT prove the body is not a DUPLICATE — a CARD can specify a
+  duplicate into existence and a faithful executor will build it. SO:
+  after the drill reds, ask whether any OTHER test already drives this
+  exact call.
   THE CATALOGUE OF SHAPES A VALUE POISON PASSES. Cite them by number —
   other cards do. **IT IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED
-  HERE** (T-092): minting a second one for a shape that already has one
-  is the defect the catalogue exists to prevent. **ENTRIES LIVE HERE FOR
-  FIVE THROUGH ELEVEN ONLY** (T-092-s5): ONE to FOUR are the *matcher
-  moved, value fixed* family, named before this catalogue existed, and
-  their histories live in the cards. Each entry carries its TELL,
-  whether it has a MECHANICAL REMEDY, and the card the instance lives
-  on.
+  HERE** (T-092); **ENTRIES LIVE HERE FOR FIVE THROUGH ELEVEN ONLY**
+  (T-092-s5) — ONE to FOUR are the *matcher moved, value fixed* family,
+  named before this catalogue existed, and their histories live in the
+  cards. Each entry carries its TELL, whether it has a MECHANICAL
+  REMEDY, and the card the instance lives on.
   **SHAPE FIVE — the assertion SET has no cardinality or coverage floor,
   so deleting an assertion deletes its own failure.** TELL: a printed
   count that falls with a deletion and stays green (T-058-s2, absorbed
-  by T-080: `token-scan.mjs`'s `selftest()` stayed green as each
-  positive sample was deleted). A printed count is not a pin. MECHANICAL
-  REMEDY: YES — a coverage floor per pattern id, or a cardinality pin,
-  the shape `MUST_TOKEN_COVER` already uses one rung up.
+  by T-080). MECHANICAL REMEDY: YES — a coverage floor per pattern id,
+  or a cardinality pin, the shape `MUST_TOKEN_COVER` uses.
   **SHAPE SIX — a body that reds under an expected-value poison while
-  killing no mutant another test does not already kill.** TELL: the
-  drill passes and every mutant the body kills is already killed
-  elsewhere (T-057-s1, absorbed by T-072: the duplicate positive above).
-  SIX HAS NO MECHANICAL REMEDY — the drill has to ASK, and this is the
-  asking (T-072-s2): do NOT ask "is this a duplicate?" — **name a
-  mutation of the code under test that this body kills, run the WHOLE
-  suite under it, and require the failing-body count to be ONE.** A
-  count of one IS the non-duplication; a count above one names the
-  bodies that already cover you; if no such mutant exists, THAT is the
-  finding. Both are DISTINCT from ONE to FOUR, whose one tell is that
-  the matcher moved and the value did not.
+  killing no mutant another test does not already kill.** TELL: every
+  mutant the body kills is already killed elsewhere (T-057-s1, absorbed
+  by T-072). NO MECHANICAL REMEDY — the drill has to ASK, and the asking
+  is (T-072-s2): **name a mutation of the code under test that this
+  body kills, run the WHOLE suite under it, and require the failing-body
+  count to be ONE**; a count above one names the bodies that already
+  cover you, and if no such mutant exists THAT is the finding.
   **SHAPE SEVEN — a mutant NO BODY KILLS, because the mutant set was
-  derived from the PINS rather than from the CRITERIA.** The exact dual
-  of six, and worth more, because a redundant body costs nothing and
-  this costs the criterion. TELL: "zero survivors" reported against a
-  mutant set every member of which aims at something a pin already
-  names. NO MECHANICAL REMEDY, but a PROCEDURE: derive the mutants from
-  the acceptance criteria **with the test file closed**, and mutate
-  every clause the pins do not mention — a criterion's PLURAL first.
-  Named by `T-076` and sighted since; DERIVE THE SIGHTING COUNT AT YOUR
-  OWN REF — `git grep -il "shape seven" -- docs/` from the repo root.
+  derived from the PINS rather than from the CRITERIA.** The dual of
+  six, and worth more, because this costs the criterion. TELL: "zero
+  survivors" against a mutant set every member of which aims at a pin.
+  NO MECHANICAL REMEDY, but a PROCEDURE: derive the mutants from the
+  acceptance criteria **with the test file closed**, and mutate every
+  clause the pins do not mention — a criterion's PLURAL first. Named by
+  `T-076`; `git grep -il "shape seven" -- docs/` counts the sightings.
   **SHAPE EIGHT — an assertion that SEARCHES a corpus has no uniqueness
-  floor, so one duplicate anywhere in the corpus keeps it green with its
-  own subject deleted.** `String::contains`, `toContain` and
-  `.includes()` are satisfied by ANY occurrence, and a whole-file
-  haystack is one anybody may add to. TELL: the assertion pins *that the
+  floor, so one duplicate anywhere keeps it green with its own subject
+  deleted.** `String::contains`, `toContain` and `.includes()` are
+  satisfied by ANY occurrence. TELL: the assertion pins *that the
   string exists somewhere* while every reader takes it to pin *the
-  sentence*. THE DRILL THAT SHOWS IT (T-092): rewriting the pinned
-  sentence alone FAILS; plant a second copy FIRST and then rewrite it
-  and it **PASSES**. **The likeliest author of that second copy is
+  sentence* — plant a second copy FIRST and then rewrite the sentence
+  and it PASSES (T-092). **The likeliest author of that second copy is
   documentation ABOUT the pin**, which is why the live-readers paragraph
-  above writes `currently v<METHOD_SNAPSHOT_VERSION>` with a placeholder
-  rather than the literal. Distinct from ONE-to-FOUR (nothing moved
-  here), FIVE (the HAYSTACK gained a member, not the SET lost one) and
-  SIX (this body DOES kill a unique mutant, until a duplicate appears).
+  above writes `currently v<METHOD_SNAPSHOT_VERSION>` with a placeholder.
   MECHANICAL REMEDY: YES — **NARROW THE HAYSTACK** to the line or
-  section actually pinned, picking it out with an ANCHOR that is not the
-  needle, and assert the ANCHOR's own uniqueness. A bare occurrence
-  count reds the same drill but **is a number with no keeper**: the
-  first legitimate second copy reds it and the cheapest repair is to
-  bump the 1 to a 2. Prefer the anchor; reach for the count only where
-  no anchor exists, and say which you chose. Worked twice:
-  `snapshot_version_matches_the_live_method_stamps` (kit.rs), and
+  section pinned, with an ANCHOR that is not the needle, and assert the
+  ANCHOR's own uniqueness; a bare occurrence count is a number with no
+  keeper (the first legitimate second copy reds it and the cheap repair
+  is bumping the 1 to a 2). Worked twice:
+  `snapshot_version_matches_the_live_method_stamps` (kit.rs) and
   `the_only_production_path_to_the_transcript_is_the_bounded_one`
-  (agent/mod.rs), which cuts the file to its production half.
+  (agent/mod.rs).
   **SHAPE NINE — a mutation that MOVES a generated row between families
   leaves the cardinality invariant, so a COUNT floor is blind to it.**
-  **The ordinal is RATIFIED here, not minted**: `T-080` and `T-083` call
-  it nine in landed text and `T-095` carries the shape. TELL: it is an
-  argument against FIVE's own remedy — a cardinality floor answers
-  DELETION and says nothing about reclassification (`T-080`, `T-095`
-  §TWO carry the measurement). MECHANICAL REMEDY: YES, but a CONTENT
-  floor rather than a count, DERIVED FROM THE TREE rather than from a
+  RATIFIED here, not minted: `T-080` and `T-083` call it nine and
+  `T-095` carries the shape. TELL: an argument against FIVE's remedy — a
+  cardinality floor answers DELETION and nothing else. MECHANICAL
+  REMEDY: YES, a CONTENT floor DERIVED FROM THE TREE, never a
   hand-written class list.
   **SHAPE TEN — an empty comparison reports AGREEMENT.** The producer
-  fails, both sides come back empty, and `cmp` calls it a match. TELL: a
-  comparison nothing proved had anything on either side of it (two
-  sightings in one lane, `T-083-s3`: a `git merge-tree --write-tree`
-  that exited 1 where a tree OID was expected, and a loop that
-  word-splits under `bash` and not under `zsh`). TEN IS EIGHT'S OPPOSITE
-  END AND THEY ARE DELIBERATELY NOT FOLDED TOGETHER: a corpus that
-  GAINED a member wants an upper floor, one with NO members a lower one.
-  MECHANICAL REMEDY: YES, one line, and the proof clause above carries
-  it.
+  fails, both sides come back empty, and `cmp` calls it a match. TELL:
+  a comparison nothing proved had anything on either side (`T-083-s3`:
+  a `merge-tree --write-tree` that exited 1, and a loop that word-splits
+  under `bash` and not `zsh`). Eight's opposite end, deliberately not
+  folded: a corpus that GAINED a member wants an upper floor, one with
+  NO members a lower one. MECHANICAL REMEDY: YES, one line, carried by
+  the proof clause above.
   **SHAPE ELEVEN — an order assertion whose WITNESS IS BUFFERED dates
-  nothing.** A body claims A precedes B and picks as witness an event
-  whose emission is DEFERRED, so the witness arrives late whatever the
-  code does (`T-081-s5`: a text-delta witness COALESCED by
+  nothing** (`T-081-s5`: a text-delta witness COALESCED by
   `flush_pending` passed under the very batching mutant it was written
   to detect; the fix was a witness EMITTED rather than buffered). TELL,
   and it is the rule: **when a test asserts A precedes B, ask whether
-  B's arrival time is a property of B or of the TRANSPORT. If the
-  transport can hold B, B cannot date A.** NO MECHANICAL REMEDY —
-  choosing the witness is the judgement; name the witness's emission
-  path in the body so the next reader can check it.
+  B's arrival time is a property of B or of the TRANSPORT; if the
+  transport can hold B, B cannot date A.** NO MECHANICAL REMEDY — name
+  the witness's emission path in the body so the next reader can check
+  it.
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
   somebody looks: T-078's fix session found three of its own, fixed each
