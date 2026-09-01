@@ -4461,8 +4461,8 @@
       "id": "f:app/src-tauri/src/agent/adapter.rs",
       "path": "app/src-tauri/src/agent/adapter.rs",
       "lang": "rust",
-      "hash": "blake3:56cb3951cdc6363de5647b08db6a0700dead7b37591f3820a28de0d4c4ea1854",
-      "loc": 2100,
+      "hash": "blake3:4c900bd9b52bad848ce2f6605ec834bfee58d53cd67ebe61f6c921fe49a845ce",
+      "loc": 2363,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/adapter.rs#ADAPTERS",
@@ -4490,8 +4490,18 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            590,
-            609
+            706,
+            725
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#CLAUDE_COLD_START_V1",
+          "name": "CLAUDE_COLD_START_V1",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            259,
+            302
           ]
         },
         {
@@ -4510,8 +4520,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            423,
-            499
+            539,
+            615
           ]
         },
         {
@@ -4520,8 +4530,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            370,
-            391
+            486,
+            507
           ]
         },
         {
@@ -4530,8 +4540,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            854,
-            930
+            970,
+            1046
           ]
         },
         {
@@ -4540,8 +4550,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            936,
-            952
+            1052,
+            1068
           ]
         },
         {
@@ -4550,8 +4560,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            716,
-            716
+            832,
+            832
           ]
         },
         {
@@ -4560,8 +4570,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            722,
-            729
+            838,
+            845
           ]
         },
         {
@@ -4570,8 +4580,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            319,
-            357
+            435,
+            473
           ]
         },
         {
@@ -4580,8 +4590,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            260,
-            267
+            376,
+            383
           ]
         },
         {
@@ -4600,8 +4610,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            217,
-            231
+            333,
+            347
           ]
         },
         {
@@ -4610,8 +4620,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            245,
-            256
+            361,
+            372
           ]
         },
         {
@@ -4620,8 +4630,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            544,
-            544
+            660,
+            660
           ]
         },
         {
@@ -4635,13 +4645,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#SPAWNABLE",
+          "name": "SPAWNABLE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            314,
+            314
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/agent/adapter.rs#SPAWN_ELEMENT_MAX_LEN",
           "name": "SPAWN_ELEMENT_MAX_LEN",
           "kind": "const",
           "exported": true,
           "range": [
-            830,
-            830
+            946,
+            946
           ]
         },
         {
@@ -4650,8 +4670,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            551,
-            582
+            667,
+            698
           ]
         },
         {
@@ -4660,8 +4680,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            504,
-            506
+            620,
+            622
           ]
         },
         {
@@ -4670,8 +4690,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1010,
-            1032
+            1126,
+            1148
           ]
         },
         {
@@ -4680,8 +4700,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            841,
-            843
+            957,
+            959
           ]
         },
         {
@@ -4690,8 +4710,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            963,
-            983
+            1079,
+            1099
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/adapter.rs#cold_start_adapter",
+          "name": "cold_start_adapter",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            317,
+            319
           ]
         },
         {
@@ -4700,8 +4730,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            523,
-            529
+            639,
+            645
           ]
         },
         {
@@ -4710,8 +4740,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            1034,
-            1089
+            1150,
+            1205
           ]
         },
         {
@@ -4720,8 +4750,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            611,
-            620
+            727,
+            736
           ]
         },
         {
@@ -4730,8 +4760,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            731,
-            752
+            847,
+            868
           ]
         },
         {
@@ -4740,8 +4770,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            233,
-            241
+            349,
+            357
           ]
         },
         {
@@ -4750,8 +4780,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            622,
-            661
+            738,
+            777
           ]
         },
         {
@@ -4760,8 +4790,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1117,
-            1133
+            1233,
+            1249
           ]
         },
         {
@@ -4770,8 +4800,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1095,
-            1102
+            1211,
+            1218
           ]
         },
         {
@@ -4790,8 +4820,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1136,
-            2100
+            1252,
+            2363
           ]
         },
         {
@@ -4800,8 +4830,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            779,
-            797
+            895,
+            913
           ]
         },
         {
@@ -4810,8 +4840,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            687,
-            707
+            803,
+            823
           ]
         }
       ]
@@ -4820,9 +4850,19 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:c4c3522afd8b0f26c5e1a0a0fddff6b272409c9e4bd50c55266c6b078b965e9f",
-      "loc": 735,
+      "hash": "blake3:a90b7a46fb4a11adfc6a4fd4a04d2e63ca23b7dcadaeccd6e96ac26d72f74f72",
+      "loc": 893,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#COLD_START_GAPS_HEADING",
+          "name": "COLD_START_GAPS_HEADING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            372,
+            372
+          ]
+        },
         {
           "id": "s:app/src-tauri/src/agent/kit.rs#KIT_FILES",
           "name": "KIT_FILES",
@@ -4871,6 +4911,16 @@
           "range": [
             37,
             37
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/kit.rs#assemble_cold_start_prompt",
+          "name": "assemble_cold_start_prompt",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            396,
+            416
           ]
         },
         {
@@ -4999,8 +5049,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            370,
-            735
+            419,
+            893
           ]
         },
         {
@@ -5019,8 +5069,8 @@
       "id": "f:app/src-tauri/src/agent/mod.rs",
       "path": "app/src-tauri/src/agent/mod.rs",
       "lang": "rust",
-      "hash": "blake3:65d2245a4e4a89dd8c9d339b111b3f10e28017106a113bf76b2d14a5a75f9b19",
-      "loc": 1940,
+      "hash": "blake3:3b2bbaa5059257dc6ad9595f2b91b2b0eded9b33bfe82cfcf603784d3b7f6157",
+      "loc": 2248,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/mod.rs#AgentState",
@@ -5028,8 +5078,28 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            173,
-            181
+            281,
+            297
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#COLD_START_CWD_REL",
+          "name": "COLD_START_CWD_REL",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            146,
+            146
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#COLD_START_TURN",
+          "name": "COLD_START_TURN",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            155,
+            155
           ]
         },
         {
@@ -5038,8 +5108,48 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            107,
-            112
+            120,
+            125
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#ColdInner",
+          "name": "ColdInner",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            300,
+            306
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#ColdStartOutcome",
+          "name": "ColdStartOutcome",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            182,
+            203
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#ColdStartPhase",
+          "name": "ColdStartPhase",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            160,
+            171
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#ColdStartReading",
+          "name": "ColdStartReading",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            219,
+            228
           ]
         },
         {
@@ -5048,8 +5158,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            50,
-            50
+            63,
+            63
           ]
         },
         {
@@ -5058,8 +5168,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            126,
-            137
+            234,
+            245
           ]
         },
         {
@@ -5068,8 +5178,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            142,
-            152
+            250,
+            260
           ]
         },
         {
@@ -5078,8 +5188,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            758,
-            785
+            884,
+            911
           ]
         },
         {
@@ -5088,8 +5198,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            720,
-            720
+            846,
+            846
           ]
         },
         {
@@ -5098,8 +5208,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            116,
-            120
+            129,
+            133
           ]
         },
         {
@@ -5108,8 +5218,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            92,
-            103
+            105,
+            116
           ]
         },
         {
@@ -5118,8 +5228,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            56,
-            88
+            69,
+            101
           ]
         },
         {
@@ -5128,8 +5238,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            163,
-            163
+            271,
+            271
           ]
         },
         {
@@ -5138,8 +5248,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            27,
-            27
+            40,
+            40
           ]
         },
         {
@@ -5148,8 +5258,28 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            933,
-            947
+            1059,
+            1073
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#cold_start",
+          "name": "cold_start",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1108,
+            1173
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#cold_start_status",
+          "name": "cold_start_status",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1180,
+            1189
           ]
         },
         {
@@ -5158,8 +5288,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            625,
-            711
+            751,
+            837
           ]
         },
         {
@@ -5168,8 +5298,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            183,
-            266
+            308,
+            392
           ]
         },
         {
@@ -5178,8 +5308,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            154,
-            158
+            262,
+            266
           ]
         },
         {
@@ -5188,8 +5318,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            268,
-            272
+            394,
+            398
           ]
         },
         {
@@ -5198,8 +5328,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            165,
-            169
+            273,
+            277
           ]
         },
         {
@@ -5208,8 +5338,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            803,
-            836
+            929,
+            962
           ]
         },
         {
@@ -5218,8 +5348,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            28,
-            28
+            41,
+            41
           ]
         },
         {
@@ -5228,8 +5358,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            462,
-            490
+            588,
+            616
           ]
         },
         {
@@ -5238,8 +5368,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            501,
-            598
+            627,
+            724
           ]
         },
         {
@@ -5248,8 +5378,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            29,
-            29
+            42,
+            42
           ]
         },
         {
@@ -5258,8 +5388,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            841,
-            907
+            967,
+            1033
           ]
         },
         {
@@ -5268,8 +5398,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            30,
-            30
+            43,
+            43
           ]
         },
         {
@@ -5278,8 +5408,18 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            31,
-            31
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/mod.rs#spawn_cold_start",
+          "name": "spawn_cold_start",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1203,
+            1255
           ]
         },
         {
@@ -5288,8 +5428,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            952,
-            1047
+            1260,
+            1355
           ]
         },
         {
@@ -5298,8 +5438,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            279,
-            445
+            405,
+            571
           ]
         },
         {
@@ -5308,8 +5448,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            910,
-            922
+            1036,
+            1048
           ]
         },
         {
@@ -5318,8 +5458,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1050,
-            1940
+            1358,
+            2248
           ]
         },
         {
@@ -5328,8 +5468,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            741,
-            753
+            867,
+            879
           ]
         }
       ]
@@ -6694,8 +6834,8 @@
       "id": "f:app/src-tauri/src/bin/fake_agent.rs",
       "path": "app/src-tauri/src/bin/fake_agent.rs",
       "lang": "rust",
-      "hash": "blake3:d652f0d17a1a50d952560c337d1e79dd5ad957ae3e0c072fe51c9371c0a3cc34",
-      "loc": 1386,
+      "hash": "blake3:401998f08f321e7b4bd6546498c2a750879b552474ed7c8496d2e9611958db0d",
+      "loc": 1432,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/bin/fake_agent.rs#Ending",
@@ -6703,8 +6843,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            1104,
-            1114
+            1150,
+            1160
           ]
         },
         {
@@ -6713,8 +6853,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            1279,
-            1284
+            1325,
+            1330
           ]
         },
         {
@@ -6723,8 +6863,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            967,
-            967
+            1013,
+            1013
           ]
         },
         {
@@ -6733,8 +6873,28 @@
           "kind": "const",
           "exported": true,
           "range": [
-            1041,
-            1041
+            1087,
+            1087
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/bin/fake_agent.rs#WALK_MAX_DEPTH",
+          "name": "WALK_MAX_DEPTH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            951,
+            951
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/bin/fake_agent.rs#WALK_MAX_ENTRIES",
+          "name": "WALK_MAX_ENTRIES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            950,
+            950
           ]
         },
         {
@@ -6743,8 +6903,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1032,
-            1037
+            1078,
+            1083
           ]
         },
         {
@@ -6753,8 +6913,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1192,
-            1218
+            1238,
+            1264
           ]
         },
         {
@@ -6763,8 +6923,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1289,
-            1299
+            1335,
+            1345
           ]
         },
         {
@@ -6773,8 +6933,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1076,
-            1088
+            1122,
+            1134
           ]
         },
         {
@@ -6783,8 +6943,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1062,
-            1074
+            1108,
+            1120
           ]
         },
         {
@@ -6793,8 +6953,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1323,
-            1347
+            1369,
+            1393
           ]
         },
         {
@@ -6803,8 +6963,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1375,
-            1386
+            1421,
+            1432
           ]
         },
         {
@@ -6813,8 +6973,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1090,
-            1100
+            1136,
+            1146
           ]
         },
         {
@@ -6823,8 +6983,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1049,
-            1060
+            1095,
+            1106
           ]
         },
         {
@@ -6843,8 +7003,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            945,
-            955
+            991,
+            1001
           ]
         },
         {
@@ -6853,8 +7013,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1244,
-            1268
+            1290,
+            1314
           ]
         },
         {
@@ -6863,8 +7023,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1354,
-            1373
+            1400,
+            1419
           ]
         },
         {
@@ -6873,8 +7033,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            924,
-            941
+            925,
+            944
           ]
         },
         {
@@ -6883,8 +7043,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1123,
-            1176
+            1169,
+            1222
           ]
         },
         {
@@ -6893,8 +7053,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            957,
-            961
+            1003,
+            1007
           ]
         },
         {
@@ -6903,8 +7063,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            999,
-            1017
+            1045,
+            1063
           ]
         },
         {
@@ -6913,8 +7073,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            975,
-            992
+            1021,
+            1038
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/bin/fake_agent.rs#walk_cwd",
+          "name": "walk_cwd",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            968,
+            987
           ]
         }
       ]
@@ -9533,8 +9703,8 @@
       "id": "f:app/src-tauri/tests/agent_runner.rs",
       "path": "app/src-tauri/tests/agent_runner.rs",
       "lang": "rust",
-      "hash": "blake3:f8029a714eb0618489be4624fe2fc59fa70ffd38c22a7d63e486c81071272bec",
-      "loc": 6001,
+      "hash": "blake3:a29dc18f4f15196e1c14ae8cd785bceda4779a32c3b4ffebd3249e88c96426c6",
+      "loc": 6406,
       "symbols": [
         {
           "id": "s:app/src-tauri/tests/agent_runner.rs#BRAND_PACK",
@@ -9564,6 +9734,26 @@
           "range": [
             41,
             41
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#COLD_CANARIES",
+          "name": "COLD_CANARIES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            6028,
+            6032
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#ColdCanaries",
+          "name": "ColdCanaries",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            6022,
+            6026
           ]
         },
         {
@@ -9747,6 +9937,46 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cold_start_asked_for_mid_interview_is_busy_and_spawns_no_second_child",
+          "name": "a_cold_start_asked_for_mid_interview_is_busy_and_spawns_no_second_child",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6391,
+            6406
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cold_start_leaves_the_interview_finished_and_writes_nothing_to_the_project",
+          "name": "a_cold_start_leaves_the_interview_finished_and_writes_nothing_to_the_project",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6252,
+            6290
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cold_start_over_a_project_with_no_docs_is_typed_and_spawns_nothing",
+          "name": "a_cold_start_over_a_project_with_no_docs_is_typed_and_spawns_nothing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6337,
+            6356
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_cold_start_that_cannot_resolve_a_cli_is_typed_and_leaves_the_offer_standing",
+          "name": "a_cold_start_that_cannot_resolve_a_cli_is_typed_and_leaves_the_offer_standing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6299,
+            6329
+          ]
+        },
+        {
           "id": "s:app/src-tauri/tests/agent_runner.rs#a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
           "name": "a_cooperative_group_releases_the_owning_poll_well_inside_the_grace",
           "kind": "fn",
@@ -9794,6 +10024,16 @@
           "range": [
             2531,
             2547
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#a_failing_cold_start_settles_typed_and_the_offer_comes_back",
+          "name": "a_failing_cold_start_settles_typed_and_the_offer_comes_back",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6365,
+            6386
           ]
         },
         {
@@ -10477,6 +10717,26 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_cold_project",
+          "name": "plant_cold_project",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6037,
+            6052
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#plant_docs_only",
+          "name": "plant_docs_only",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6060,
+            6067
+          ]
+        },
+        {
           "id": "s:app/src-tauri/tests/agent_runner.rs#plant_pack",
           "name": "plant_pack",
           "kind": "fn",
@@ -10517,6 +10777,16 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#read_visible",
+          "name": "read_visible",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6084,
+            6088
+          ]
+        },
+        {
           "id": "s:app/src-tauri/tests/agent_runner.rs#real_cli_smoke_records_the_stream_schema",
           "name": "real_cli_smoke_records_the_stream_schema",
           "kind": "fn",
@@ -10554,6 +10824,16 @@
           "range": [
             341,
             353
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#settle_cold",
+          "name": "settle_cold",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6070,
+            6082
           ]
         },
         {
@@ -10704,6 +10984,26 @@
           "range": [
             2328,
             2392
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_cold_start_argv_and_prompt_hand_the_child_no_route_out",
+          "name": "the_cold_start_argv_and_prompt_hand_the_child_no_route_out",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6185,
+            6240
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/agent_runner.rs#the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it",
+          "name": "the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            6100,
+            6179
           ]
         },
         {
@@ -14187,8 +14487,8 @@
       "id": "f:app/src/genesis/crescendo.ts",
       "path": "app/src/genesis/crescendo.ts",
       "lang": "ts",
-      "hash": "blake3:42d87f9e3e78d5dba01cc01b05831882faf96c3847d21bf251c9792b06c6c92c",
-      "loc": 372,
+      "hash": "blake3:558871f27ea0b54188e912778c683ab057fdc27a28d8ee2a8f593d9107d5f487",
+      "loc": 517,
       "symbols": [
         {
           "id": "s:app/src/genesis/crescendo.ts#BoardReadiness",
@@ -14198,6 +14498,56 @@
           "range": [
             48,
             67
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#COLD_START_GAPS_HEADING",
+          "name": "COLD_START_GAPS_HEADING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            373,
+            373
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#ColdStartAnswer",
+          "name": "ColdStartAnswer",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            375,
+            388
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#ColdStartOffer",
+          "name": "ColdStartOffer",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            451,
+            463
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#ColdStartPhase",
+          "name": "ColdStartPhase",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            353,
+            353
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#ColdStartReading",
+          "name": "ColdStartReading",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            355,
+            363
           ]
         },
         {
@@ -14246,8 +14596,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            348,
-            348
+            493,
+            493
           ]
         },
         {
@@ -14256,8 +14606,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            346,
-            346
+            491,
+            491
           ]
         },
         {
@@ -14278,6 +14628,16 @@
           "range": [
             81,
             94
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#coldStartOffer",
+          "name": "coldStartOffer",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            465,
+            485
           ]
         },
         {
@@ -14316,8 +14676,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            364,
-            372
+            509,
+            517
           ]
         },
         {
@@ -14338,6 +14698,16 @@
           "range": [
             113,
             119
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#splitColdStartAnswer",
+          "name": "splitColdStartAnswer",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            410,
+            432
           ]
         }
       ]
@@ -19965,8 +20335,8 @@
       "id": "f:app/test/crescendo.test.ts",
       "path": "app/test/crescendo.test.ts",
       "lang": "ts",
-      "hash": "blake3:1925dfcebb2adce9d5192ef6b67227806330e0926a003f4664097e38f4045bac",
-      "loc": 512,
+      "hash": "blake3:7b4208f7f956b68aabf449d26fd8149fafc3930a2cdf96a18d638a7965c90c03",
+      "loc": 777,
       "symbols": [
         {
           "id": "s:app/test/crescendo.test.ts#NORTH_STAR",
@@ -19974,8 +20344,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            40,
-            47
+            47,
+            54
           ]
         },
         {
@@ -19984,8 +20354,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            49,
-            58
+            56,
+            65
           ]
         },
         {
@@ -19994,8 +20364,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            99,
-            102
+            106,
+            109
           ]
         },
         {
@@ -20004,8 +20374,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            88,
-            88
+            95,
+            95
           ]
         },
         {
@@ -20014,8 +20384,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            458,
-            474
+            465,
+            481
           ]
         },
         {
@@ -20024,8 +20394,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            61,
-            79
+            68,
+            86
           ]
         },
         {
@@ -20034,8 +20404,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            84,
-            86
+            91,
+            93
           ]
         },
         {
@@ -20044,8 +20414,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            89,
-            97
+            96,
+            104
           ]
         },
         {
@@ -20054,8 +20424,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            204,
-            216
+            211,
+            223
           ]
         }
       ]
@@ -30686,15 +31056,20 @@
       "to": "f:app/src/genesis/crescendo.ts",
       "kind": "import",
       "symbols": [
+        "COLD_START_GAPS_HEADING",
+        "ColdStartPhase",
+        "ColdStartReading",
         "HOUR_FORM_FROM_MINUTES",
         "MINUTE_MS",
         "boardReadiness",
+        "coldStartOffer",
         "completionOf",
         "completionSafely",
         "crescendo",
         "elapsedLabel",
         "flightOf",
-        "showsBoard"
+        "showsBoard",
+        "splitColdStartAnswer"
       ]
     },
     {
@@ -30725,6 +31100,22 @@
         "openBoardFromGenesis",
         "resetDocsForProjectSwitch",
         "selectScreen"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "resolve"
       ]
     },
     {
@@ -36685,6 +37076,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/crescendo.ts#ColdStartOffer",
+      "to": "s:app/src/genesis/crescendo.ts#ColdStartAnswer",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#ColdStartReading",
+      "to": "s:app/src/genesis/crescendo.ts#ColdStartPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/crescendo.ts#CompletionReading",
       "to": "s:app/src/genesis/crescendo.ts#CompletionBlocker",
       "kind": "type_ref",
@@ -36718,6 +37121,30 @@
       "from": "s:app/src/genesis/crescendo.ts#boardReadiness",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#coldStartOffer",
+      "to": "s:app/src/genesis/crescendo.ts#ColdStartOffer",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#coldStartOffer",
+      "to": "s:app/src/genesis/crescendo.ts#ColdStartReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#coldStartOffer",
+      "to": "s:app/src/genesis/crescendo.ts#CompletionReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#coldStartOffer",
+      "to": "s:app/src/genesis/crescendo.ts#splitColdStartAnswer",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -36819,6 +37246,12 @@
     {
       "from": "s:app/src/genesis/crescendo.ts#showsBoard",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#splitColdStartAnswer",
+      "to": "s:app/src/genesis/crescendo.ts#ColdStartAnswer",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -43786,7 +44219,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2458,
-    "edges": 2379
+    "symbols": 2495,
+    "edges": 2388
   }
 }

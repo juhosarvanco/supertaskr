@@ -5999,3 +5999,408 @@ fn an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume
         Some("us.anthropic.claude-sonnet-4@20240620:0")
     );
 }
+
+// ==== T-175: the cold-start test's restriction ==========================
+//
+// **WHAT THESE BODIES PROVE AND WHAT THEY DO NOT, said once, here, rather
+// than left for a reader to infer from a test name.** The cold-start
+// restriction has two halves and this repository owns exactly one of
+// them. The half it owns is the SURFACE THE APP HANDS THE CHILD: which
+// directory it is started in, which argv it carries, which environment it
+// gets, and which bytes reach its stdin. That half is measured below, in
+// the same dump channel `the_child_gets_the_allowlist_and_never_a_secret`
+// has used since T-025 — the fake writes down everything it was handed,
+// and since T-175 that includes the contents of the working directory it
+// was stood up in. The half this repository does NOT own is what a real
+// CLI would do with an absolute path typed into its own `Read` tool;
+// `adapter::CLAUDE_COLD_START_V1`'s doc comment carries that residual
+// beside the grants, in the voice `validate_resolved_program` uses for
+// "the gate checks SHAPE, never identity".
+
+/// Everything a cold reader must not be able to see, planted in one
+/// project so a single walk can answer for all of it.
+struct ColdCanaries {
+    docs: &'static str,
+    transcript: &'static str,
+    root: &'static str,
+}
+
+const COLD_CANARIES: ColdCanaries = ColdCanaries {
+    docs: "CANARY-IN-DOCS-the-cold-reader-must-see-this",
+    transcript: "CANARY-IN-TRANSCRIPT-the-cold-reader-must-never-see-this",
+    root: "CANARY-ABOVE-DOCS-the-cold-reader-must-never-see-this",
+};
+
+/// Plant a project that looks like one the interview just finished: a
+/// docs tree with content, a `.nputer/` runtime directory holding the
+/// interview transcript, and a file at the root beside `docs/`.
+fn plant_cold_project(project: &Path) {
+    fs::create_dir_all(project.join("docs/tasks")).expect("mk docs");
+    fs::write(
+        project.join("docs/NORTH_STAR.md"),
+        format!("# North star\n\n{}\n", COLD_CANARIES.docs),
+    )
+    .expect("write docs");
+    fs::create_dir_all(project.join(".nputer/genesis")).expect("mk runtime");
+    fs::write(
+        project.join(".nputer/genesis/transcript.jsonl"),
+        format!("{{\"turn\":1,\"role\":\"user\",\"text\":\"{}\"}}\n", COLD_CANARIES.transcript),
+    )
+    .expect("write transcript");
+    fs::write(project.join("README.md"), format!("# a sibling of docs/\n\n{}\n", COLD_CANARIES.root))
+        .expect("write root file");
+}
+
+/// The docs half of [`plant_cold_project`] and NOTHING ELSE — for the
+/// bodies whose subject is the interview's own `.nputer/` state. Planting
+/// the canary transcript over a real one is how the first draft of
+/// `a_cold_start_leaves_the_interview_finished_…` came to assert against
+/// an empty list: `read_transcript` parses, so a hand-written line without
+/// the schema's fields reads as no lines at all.
+fn plant_docs_only(project: &Path) {
+    fs::create_dir_all(project.join("docs/tasks")).expect("mk docs");
+    fs::write(
+        project.join("docs/NORTH_STAR.md"),
+        format!("# North star\n\n{}\n", COLD_CANARIES.docs),
+    )
+    .expect("write docs");
+}
+
+/// Poll the cold-start reading until it leaves `Running`.
+fn settle_cold(agent: &agent::AgentState) -> agent::ColdStartReading {
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
+    loop {
+        let reading = agent::cold_start_status(agent);
+        if reading.phase != agent::ColdStartPhase::Running {
+            return reading;
+        }
+        if Instant::now() >= deadline {
+            panic!("the cold-start turn never settled: {reading:?}");
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn read_visible(dump: &Path, turn: usize) -> Vec<String> {
+    let raw = fs::read_to_string(turn_dump(dump, turn).join("visible.json"))
+        .unwrap_or_else(|err| panic!("turn-{turn} visible dump: {err}"));
+    serde_json::from_str(&raw).expect("visible.json parses")
+}
+
+/// **THE CENTRAL BODY: THE COLD READER IS STOOD UP IN `docs/` AND ITS
+/// WHOLE WORLD IS `docs/`.**
+///
+/// Three canaries, planted in three places, and the walk answers for all
+/// of them at once. The POSITIVE control is load-bearing and comes first:
+/// the docs canary MUST be reachable, because a body that only asserted
+/// absences would be green over a child started in an empty directory,
+/// green over a walk that silently failed, and green over a cold start
+/// that never spawned at all.
+#[test]
+fn the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it() {
+    let h = harness("coldstart", Options::default());
+    plant_cold_project(&h.project);
+
+    match agent::cold_start(&h.watch, &h.agent) {
+        agent::ColdStartOutcome::Started => {}
+        other => panic!("expected Started, got {other:?}"),
+    }
+    let reading = settle_cold(&h.agent);
+    assert_eq!(reading.phase, agent::ColdStartPhase::Done, "{reading:?}");
+
+    // --- the cwd IS the docs tree, exactly ---------------------------
+    let cwd = read_dump(&h.dump, 1, "cwd.txt");
+    let docs = h.project.join("docs");
+    assert_eq!(
+        fs::canonicalize(&cwd).expect("the child's cwd resolves"),
+        fs::canonicalize(&docs).expect("the docs tree resolves"),
+        "the cold reader must be started IN docs/, not in the project that contains it"
+    );
+    // AND NOT THE PROJECT ROOT — the near miss, spelled out, because
+    // `<project>` and `<project>/docs` differ by five characters and a
+    // containment matcher cannot tell them apart.
+    assert_ne!(
+        fs::canonicalize(&cwd).expect("the child's cwd resolves"),
+        fs::canonicalize(&h.project).expect("the project resolves"),
+        "the project root is the one cwd this surface may never have"
+    );
+
+    // --- the walk: the positive first --------------------------------
+    let visible = read_visible(&h.dump, 1);
+    assert!(
+        visible.iter().any(|p| p == "NORTH_STAR.md"),
+        "the docs tree must be reachable - without this the absences below are vacuous: {visible:?}"
+    );
+    assert!(
+        visible.iter().any(|p| p == "tasks"),
+        "the whole docs subtree is the reading surface, not just its top file: {visible:?}"
+    );
+
+    // --- and now the absences, each named ----------------------------
+    for forbidden in [".nputer", "transcript.jsonl", "README.md"] {
+        assert!(
+            !visible.iter().any(|p| p == forbidden || p.contains(forbidden)),
+            "{forbidden:?} is above the cold reader's cwd and must not be reachable from it: \
+             {visible:?}"
+        );
+    }
+    assert!(
+        !visible.iter().any(|p| p.starts_with("..")),
+        "the walk must not have escaped upward: {visible:?}"
+    );
+
+    // --- the canaries themselves, in every channel the app controls --
+    let argv = read_argv(&h.dump, 1);
+    let env = read_env(&h.dump, 1);
+    let stdin = read_dump(&h.dump, 1, "stdin.txt");
+    for (channel, text) in [
+        ("argv", argv.join(" ")),
+        ("env", env.values().cloned().collect::<Vec<_>>().join(" ")),
+        ("stdin", stdin.clone()),
+    ] {
+        assert!(
+            !text.contains(COLD_CANARIES.transcript),
+            "the interview transcript reached the cold reader's {channel}"
+        );
+        assert!(
+            !text.contains(COLD_CANARIES.root),
+            "a file beside docs/ reached the cold reader's {channel}"
+        );
+    }
+    // THE CANARIES ARE REAL: they are on disk where they were planted,
+    // so "not found" above is a fact about reach rather than about a
+    // string nobody ever wrote.
+    assert!(fs::read_to_string(h.project.join(".nputer/genesis/transcript.jsonl"))
+        .expect("the transcript is on disk")
+        .contains(COLD_CANARIES.transcript));
+    assert!(fs::read_to_string(h.project.join("README.md"))
+        .expect("the root file is on disk")
+        .contains(COLD_CANARIES.root));
+}
+
+/// **THE ARGV AND THE PROMPT HAND THE CHILD NO ROUTE OUT** — read off the
+/// child's own dump rather than off the adapter table, so this body
+/// answers "what was spawned" and not "what was declared".
+#[test]
+fn the_cold_start_argv_and_prompt_hand_the_child_no_route_out() {
+    let h = harness("coldargv", Options::default());
+    plant_cold_project(&h.project);
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Started));
+    assert_eq!(settle_cold(&h.agent).phase, agent::ColdStartPhase::Done);
+
+    let argv = read_argv(&h.dump, 1);
+    // PRESENT: the print-mode stream, so the absences below are not
+    // absences over an empty argv.
+    assert!(argv.iter().any(|a| a == "-p"), "{argv:?}");
+    assert!(argv.iter().any(|a| a == "stream-json"), "{argv:?}");
+    // ABSENT, one reason each.
+    assert!(
+        !argv.iter().any(|a| a == "--add-dir" || a.starts_with("--add-dir=")),
+        "--add-dir would grant a directory beside the cwd, and the cwd is the restriction: {argv:?}"
+    );
+    assert!(
+        !argv.iter().any(|a| a == "--permission-mode"),
+        "a cold reader writes nothing and takes no permission mode: {argv:?}"
+    );
+    assert!(
+        !argv.iter().any(|a| a == "--allowedTools"),
+        "nothing is pre-approved on this surface: {argv:?}"
+    );
+    assert!(
+        !argv.iter().any(|a| a == "--resume"),
+        "a resumed cold start has read something: {argv:?}"
+    );
+    let denied = argv
+        .iter()
+        .position(|a| a == "--disallowedTools")
+        .map(|i| argv[i + 1..].to_vec())
+        .expect("the cold surface carries a denial list");
+    assert!(
+        denied.iter().any(|d| d == "Bash"),
+        "Bash is the escape hatch this surface exists to close: {denied:?}"
+    );
+
+    // THE PROMPT NAMES NO PATH. Its own unit pin lives in `kit.rs`; this
+    // one asserts the prompt that actually reached a child's stdin,
+    // which is the assertion an interpolation bug would have to survive.
+    let stdin = read_dump(&h.dump, 1, "stdin.txt");
+    assert!(stdin.contains("COLD READER"), "the cold prompt reached stdin: {stdin:?}");
+    assert!(
+        !stdin.contains(&h.project.display().to_string()),
+        "the cold prompt must not name the project directory: {stdin:?}"
+    );
+    assert!(!stdin.contains('/'), "no path may appear in the cold prompt at all: {stdin:?}");
+    // …and the CONTROL that makes that mean something: the INTERVIEW's
+    // prompt, over the same project, does name it.
+    assert!(
+        nputer_lib::agent::kit::assemble_kickoff(&h.project)
+            .contains(&h.project.display().to_string()),
+        "the interview's kickoff names the project - if it stopped, the line above is vacuous"
+    );
+}
+
+/// **OFFERED, NEVER GATED: A COLD START LEAVES THE FINISHED PROJECT
+/// FINISHED** (the 2026-08-30 triage ruling, and criterion 4's second
+/// clause).
+///
+/// Every input the completion panel derives from is captured before the
+/// cold start and compared after it: the interview's own status, the
+/// session registry's bytes, and the transcript's bytes. A cold start
+/// that moved any of them would make the board un-finish itself the
+/// moment somebody accepted the offer.
+#[test]
+fn a_cold_start_leaves_the_interview_finished_and_writes_nothing_to_the_project() {
+    let h = harness("coldnogate", Options::default());
+    // A real interview turn first, so there is a finished interview to
+    // leave alone rather than an empty one.
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_completed(&h.events);
+    let before = settle(&h.agent);
+    assert_eq!(before.phase, Phase::Idle);
+    // DOCS ONLY: the transcript this body is about is the one the turn
+    // above wrote, and clobbering it is not a way to leave it alone.
+    plant_docs_only(&h.project);
+    let registry_before = fs::read_to_string(h.project.join(".nputer/sessions.json")).ok();
+    let transcript_before = sessions::read_transcript(&h.project);
+    assert!(!transcript_before.is_empty(), "there is a transcript to leave alone");
+
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Started));
+    let reading = settle_cold(&h.agent);
+    assert_eq!(reading.phase, agent::ColdStartPhase::Done);
+
+    let after = agent::status(&h.agent);
+    assert_eq!(after.phase, Phase::Idle, "the interview's phase must not move");
+    assert_eq!(after.turn, before.turn, "a cold start is not an interview turn");
+    assert_eq!(after.native_session_id, before.native_session_id);
+    assert!(after.last_error.is_none(), "a cold start files no interview error");
+
+    assert_eq!(
+        fs::read_to_string(h.project.join(".nputer/sessions.json")).ok(),
+        registry_before,
+        "the cold start must not touch the session registry"
+    );
+    let transcript_after = sessions::read_transcript(&h.project);
+    assert_eq!(
+        transcript_after.iter().map(|l| (l.turn, l.role.clone(), l.text.clone())).collect::<Vec<_>>(),
+        transcript_before.iter().map(|l| (l.turn, l.role.clone(), l.text.clone())).collect::<Vec<_>>(),
+        "the cold reader's answer must never enter the interview's transcript"
+    );
+    // The answer IS available — through its own reading, and only there.
+    assert!(reading.answer.is_some(), "the explain-back is what the pane renders");
+}
+
+/// **A COLD START THAT CANNOT FIND A CLI COSTS NOTHING**, and the proof
+/// that it costs nothing is that the offer still works afterwards.
+///
+/// The typed variant alone would be satisfied by a run that also stranded
+/// the single-flight latch — which is exactly how a "typed failure" turns
+/// into a dead affordance. So the second call is the assertion.
+#[test]
+fn a_cold_start_that_cannot_resolve_a_cli_is_typed_and_leaves_the_offer_standing() {
+    let h = harness("coldnocli", Options::default());
+    plant_cold_project(&h.project);
+    let cfg = RunnerConfig {
+        binary_override: None,
+        path_override: Some("/nputer-empty-path".into()),
+        probe_login_shell: false,
+        ..RunnerConfig::default()
+    };
+    let (tx, _rx) = mpsc::channel();
+    let agent = agent::AgentState::new(cfg, move |e| {
+        let _ = tx.send(e);
+    });
+
+    match agent::cold_start(&h.watch, &agent) {
+        agent::ColdStartOutcome::CliNotFound { probed } => {
+            assert!(!probed.is_empty(), "the outcome says what was looked at");
+            assert!(probed.iter().any(|p| p.contains("claude")));
+        }
+        other => panic!("expected CliNotFound, got {other:?}"),
+    }
+    // NO AFFORDANCE WAS SPENT: the reading is untouched, and asking again
+    // reaches the same refusal rather than `Busy`.
+    let reading = agent::cold_start_status(&agent);
+    assert_eq!(reading.phase, agent::ColdStartPhase::Idle, "{reading:?}");
+    assert!(reading.started_at_ms.is_none(), "a refusal that spawned nothing started nothing");
+    assert!(
+        matches!(agent::cold_start(&h.watch, &agent), agent::ColdStartOutcome::CliNotFound { .. }),
+        "the latch must be released by a refusal, or the offer is dead after one press"
+    );
+}
+
+/// **A PROJECT WITH NO `docs/` IS A TYPED REFUSAL AND SPAWNS NOTHING.**
+///
+/// The absence of a turn dump is the assertion that no child ran: the
+/// fake writes its dump before it emits a byte, so a dump directory that
+/// never appeared is a process that never started.
+#[test]
+fn a_cold_start_over_a_project_with_no_docs_is_typed_and_spawns_nothing() {
+    let h = harness("colddocsless", Options::default());
+    assert!(!h.project.join("docs").exists(), "this harness plants no docs tree");
+
+    match agent::cold_start(&h.watch, &h.agent) {
+        agent::ColdStartOutcome::NoDocs { rel } => assert_eq!(rel, "docs"),
+        other => panic!("expected NoDocs, got {other:?}"),
+    }
+    assert!(
+        !turn_dump(&h.dump, 1).exists(),
+        "no child may be spawned into a directory that does not exist"
+    );
+    assert_eq!(agent::cold_start_status(&h.agent).phase, agent::ColdStartPhase::Idle);
+    // And the refusal is REVERSIBLE by the one action that helps: make
+    // the docs tree, ask again.
+    fs::create_dir_all(h.project.join("docs")).expect("mk docs");
+    fs::write(h.project.join("docs/NORTH_STAR.md"), "# north star\n").expect("write docs");
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Started));
+    assert_eq!(settle_cold(&h.agent).phase, agent::ColdStartPhase::Done);
+}
+
+/// **A FAILING COLD START SETTLES TYPED, AND THE OFFER COMES BACK.**
+///
+/// The fake exits nonzero; the reading must carry the runner's own typed
+/// error rather than a phase with no reason, and a second run must be
+/// accepted — the affordance rule, measured on the failure path where it
+/// is easiest to lose.
+#[test]
+fn a_failing_cold_start_settles_typed_and_the_offer_comes_back() {
+    let h = harness("coldfail", Options { scenario: "nonzero", ..Options::default() });
+    plant_cold_project(&h.project);
+
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Started));
+    let reading = settle_cold(&h.agent);
+    assert_eq!(reading.phase, agent::ColdStartPhase::Failed, "{reading:?}");
+    assert!(
+        matches!(reading.error, Some(TurnError::ExitNonZero { .. })),
+        "the reading carries the runner's own classification: {:?}",
+        reading.error
+    );
+    assert!(reading.answer.is_none(), "a failed run shows no answer");
+    assert!(reading.finished_at_ms.is_some(), "a settled run says when it settled");
+
+    // THE INTERVIEW IS UNTOUCHED BY THE FAILURE TOO — the completion
+    // panel must not stand down because a cold read failed.
+    assert!(agent::status(&h.agent).last_error.is_none());
+    // And the offer is live again.
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Started));
+    assert_eq!(settle_cold(&h.agent).phase, agent::ColdStartPhase::Failed);
+}
+
+/// **ONE CHILD AT A TIME, SHARED WITH THE INTERVIEW** — asking for a cold
+/// start mid-turn is `Busy`, not a second process group.
+#[test]
+fn a_cold_start_asked_for_mid_interview_is_busy_and_spawns_no_second_child() {
+    let h = harness("coldbusy", Options { scenario: "hang", ..Options::default() });
+    fs::create_dir_all(h.project.join("docs")).expect("mk docs");
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    wait_for(&h.events, "started", |e| matches!(e, RunEvent::Started { .. }));
+
+    assert!(matches!(agent::cold_start(&h.watch, &h.agent), agent::ColdStartOutcome::Busy));
+    assert_eq!(
+        agent::cold_start_status(&h.agent).phase,
+        agent::ColdStartPhase::Idle,
+        "a Busy refusal must not arm the cold-start reading"
+    );
+    assert!(!turn_dump(&h.dump, 2).exists(), "no second child was spawned");
+
+    agent::cancel(&h.agent);
+}

@@ -202,6 +202,122 @@ pub fn planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_V1
 }
 
+/// THE COLD-START READER (T-175) — the same agent CLI, a different world.
+///
+/// `method/interview/plan-interview.md` ends: *"Then: cold-start test. A
+/// fresh session reads only docs/ and explains the project back. Gaps in
+/// its answer are gaps in the docs — fix and repeat."* The interview
+/// session is disqualified BY CONSTRUCTION — it holds the whole interview
+/// in context, and the blindness IS the test — so the app spawns a second
+/// session, and **the reading restriction is a property of the SPAWN
+/// rather than a sentence in the prompt.**
+///
+/// **THIS IS NOT A SECOND AGENT, AND [`ADAPTERS`] IS DELIBERATELY
+/// UNCHANGED.** ADR-017 clause 6 fixes the v1 adapter SET at one
+/// declarative entry — which agent CLIs this build supports — and that is
+/// still `claude`, one entry. What this const adds is a second ARGV
+/// SURFACE over that one agent, which is why it lives beside `ADAPTERS`
+/// instead of inside it and why [`SPAWNABLE`] exists: the security sweeps
+/// iterate SPAWNABLE, so a surface that is not an agent cannot slip past a
+/// pin keyed to the agent set.
+///
+/// **WHAT IS GRANTED, AND WHAT THE ABSENCES BUY.** Every difference from
+/// [`CLAUDE_V1`] is a subtraction, and each one is load-bearing:
+///
+/// - **no `--add-dir`, and the cwd is the project's `docs/` tree** — the
+///   whole of the restriction, and the only half this code owns. `docs/`
+///   is not a directory the session is asked to stay inside; it is the
+///   directory it is started in, so `.nputer/` (the interview transcript,
+///   the session registry, the materialized kit) and every other sibling
+///   of `docs/` sit ABOVE its working directory rather than beside it.
+/// - **no `--permission-mode`** — `acceptEdits` auto-accepts writes inside
+///   the cwd, and a cold reader writes nothing. Leaving the flag off keeps
+///   the CLI's default, which under `-p` has no one to ask.
+/// - **no `--allowedTools`** — nothing is pre-approved. [`CLAUDE_V1`]'s six
+///   Bash patterns are the KIT's imperative surface (scaffolding a
+///   project); reading docs back needs none of it.
+/// - **`--disallowedTools` denies the seven tools whose whole purpose is
+///   reaching past the working directory** — `Bash` above all, which is
+///   how `cat ../.nputer/genesis/transcript.jsonl` would have been
+///   spelled, plus the three writers and the two web verbs, plus `Task`
+///   (a subagent is a second context this surface cannot vouch for).
+///   Denying by name MEASURABLY bites — the T-025-s4 captures recorded
+///   `WebFetch`/`WebSearch` refused on exactly this flag.
+///
+/// **THE RESIDUAL, STATED HERE RATHER THAN DISCOVERED LATER**, in the same
+/// voice [`EFFECTIVE_GRANT_TABLES`] uses and for the same reason. Table
+/// three is live on this surface too: this adapter passes no `--settings`
+/// and no `--setting-sources`, so **whatever the user's own CLI
+/// configuration allows is in this session's surface as well** — a user
+/// whose settings grant `Bash` has granted it here, and no argv on this
+/// table takes it back. Closing that means passing `--setting-sources`,
+/// which also drops the user's hooks and project settings and is ROUTED to
+/// @human on T-025-s4 rather than taken here. What this table proves is
+/// the SHAPE of what the app hands the child; what the CLI then does with
+/// its own configuration is the CLI's, exactly as
+/// `validate_resolved_program` checks shape and never identity.
+pub const CLAUDE_COLD_START_V1: AgentAdapter = AgentAdapter {
+    key: "claude",
+    binary: "claude",
+    min_major: 2,
+    spawn_args: &[
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--include-partial-messages",
+        "--verbose",
+        "--disallowedTools",
+        "Bash",
+        "Edit",
+        "Write",
+        "NotebookEdit",
+        "WebFetch",
+        "WebSearch",
+        "Task",
+    ],
+    // **IDENTICAL TO THE SPAWN TEMPLATE, WHICH IS HOW THIS SURFACE
+    // REFUSES TO RESUME.** There is no `--resume` and no
+    // [`SESSION_ID_SLOT`] here, so no argv this adapter can assemble
+    // continues a previous session — a cold start that resumed anything
+    // would have read something, and a session that read something is not
+    // cold. The property is structural rather than a caller's discipline:
+    // `argv(Some(id))` on this table yields the fresh spawn, and
+    // `the_cold_start_surface_cannot_resume_anything` pins it.
+    resume_args: &[
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--include-partial-messages",
+        "--verbose",
+        "--disallowedTools",
+        "Bash",
+        "Edit",
+        "Write",
+        "NotebookEdit",
+        "WebFetch",
+        "WebSearch",
+        "Task",
+    ],
+    parse: ParseMode::StreamJsonV1,
+};
+
+/// EVERY argv template this build can put on a command line — the agent
+/// set ([`ADAPTERS`], ADR-017 clause 6) plus [`CLAUDE_COLD_START_V1`],
+/// which is a second surface over the same agent rather than a new one.
+///
+/// **THE SECURITY SWEEPS ITERATE THIS AND NOT `ADAPTERS`** (T-175). A pin
+/// keyed to the agent SET answers a question about which CLIs are
+/// supported; the bypass ban, the flag-shape sweep and the
+/// data-borne-flag check are questions about which BYTES reach an
+/// `execve`, and those two sets stopped being the same the moment a second
+/// template existed.
+pub const SPAWNABLE: &[&AgentAdapter] = &[&CLAUDE_V1, &CLAUDE_COLD_START_V1];
+
+/// The adapter the cold-start reader runs under (T-175).
+pub fn cold_start_adapter() -> &'static AgentAdapter {
+    &CLAUDE_COLD_START_V1
+}
+
 // ---- T-124: the observed refusals, classified where the grants live ----
 //
 // T-101 put the CLI's denial rows on screen, and on their first real day
@@ -1149,9 +1265,13 @@ mod tests {
     ];
 
     /// Every argv string any adapter can ever produce, spawn and resume.
+    ///
+    /// **`SPAWNABLE`, NOT `ADAPTERS` (T-175).** The agent set is one entry
+    /// and the ARGV TEMPLATE set is two; this function is about bytes that
+    /// reach an `execve`, so it walks the larger of the two.
     fn all_argv_strings() -> Vec<String> {
         let mut out = Vec::new();
-        for adapter in ADAPTERS {
+        for adapter in SPAWNABLE {
             out.push(adapter.binary.to_string());
             out.extend(adapter.argv(None).expect("the spawn template assembles"));
             for id in REAL_IDS {
@@ -1208,7 +1328,7 @@ mod tests {
         // Template plus every substituted value. An element may begin with
         // `-` only by BEING one of the template's own flags; a value
         // position that begins with `-` is a flag arriving as data.
-        for adapter in ADAPTERS {
+        for adapter in SPAWNABLE {
             for (template, assembled) in [
                 (adapter.spawn_args, adapter.argv(None).expect("spawn assembles")),
             ]
@@ -1562,7 +1682,7 @@ mod tests {
 
         // The whole shipped argv still assembles, which is the half that
         // stops this from being a gate nobody can pass.
-        for adapter in ADAPTERS {
+        for adapter in SPAWNABLE {
             adapter.argv(None).expect("the spawn template assembles");
             for id in REAL_IDS {
                 adapter.argv(Some(id)).expect("a real id assembles");
@@ -1699,6 +1819,149 @@ mod tests {
         }
         let denied: Vec<&str> = argv[end + 1..].iter().map(String::as_str).collect();
         assert_eq!(denied, vec!["WebFetch", "WebSearch"]);
+    }
+
+    /// T-175: THE COLD-START SURFACE GRANTS NOTHING, AND EVERY ABSENCE IS
+    /// ASSERTED BESIDE THE PRESENCE THAT MAKES THE ASSERTION REAL.
+    ///
+    /// A body that only checked absences would be green over an empty
+    /// argv, so this one first pins the shape that IS there (the
+    /// print-mode stream the runner parses) and then the four things that
+    /// must not be.
+    #[test]
+    fn the_cold_start_surface_grants_no_directory_no_mode_and_no_tool() {
+        let argv = CLAUDE_COLD_START_V1.argv(None).expect("the cold template assembles");
+
+        // PRESENT: the print-mode stream `run_turn` reads. Without this
+        // the absences below would be vacuous.
+        assert_eq!(
+            argv.iter().map(String::as_str).collect::<Vec<_>>(),
+            vec![
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--include-partial-messages",
+                "--verbose",
+                "--disallowedTools",
+                "Bash",
+                "Edit",
+                "Write",
+                "NotebookEdit",
+                "WebFetch",
+                "WebSearch",
+                "Task",
+            ],
+            "the cold-start argv is this table and nothing else; every addition is a grant"
+        );
+
+        // ABSENT, one reason each.
+        assert!(
+            !argv.iter().any(|a| a == "--add-dir" || a.starts_with("--add-dir=")),
+            "--add-dir would hand the cold reader a directory beside its cwd, and its cwd is \
+             the whole restriction (T-175)"
+        );
+        assert!(
+            !argv.iter().any(|a| a == "--permission-mode" || a.starts_with("--permission-mode=")),
+            "the cold reader writes nothing, so it takes no permission mode - acceptEdits would \
+             auto-approve writes into the docs tree it is reading"
+        );
+        assert!(
+            !argv.iter().any(|a| a == "--allowedTools" || a.starts_with("--allowedTools=")),
+            "nothing is pre-approved on this surface; the kit's six Bash patterns scaffold a \
+             project and a cold reader scaffolds nothing"
+        );
+        assert!(
+            !argv.iter().any(|a| a == "--resume" || a == SESSION_ID_SLOT),
+            "a resumed cold start has read something, and a session that read something is not cold"
+        );
+
+        // The denial list, exactly. `Bash` is the load-bearing member:
+        // it is how `cat ../.nputer/genesis/transcript.jsonl` would have
+        // been spelled from inside `docs/`.
+        let start =
+            argv.iter().position(|a| a == "--disallowedTools").expect("a denial list is present");
+        let denied: Vec<&str> = argv[start + 1..].iter().map(String::as_str).collect();
+        assert_eq!(
+            denied,
+            vec!["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Task"],
+            "narrowing this list is a security change and widening it is the same change twice"
+        );
+        assert!(denied.contains(&"Bash"), "Bash is the escape hatch this surface exists to close");
+    }
+
+    /// T-175: THE COLD-START SURFACE CANNOT RESUME ANYTHING, AND IT IS THE
+    /// TEMPLATE THAT REFUSES RATHER THAN THE CALLER.
+    ///
+    /// `mod.rs` passes `resume: None`, but a caller's discipline is not a
+    /// property. This body asks the adapter for a resume argv over the
+    /// real observed id shapes and asserts what comes back is the FRESH
+    /// spawn — no `--resume`, no slot, no id — so the only way to make
+    /// this surface continue a session is to edit its template, which
+    /// reds this line by name.
+    #[test]
+    fn the_cold_start_surface_cannot_resume_anything() {
+        let fresh = CLAUDE_COLD_START_V1.argv(None).expect("the cold template assembles");
+        for id in REAL_IDS {
+            let asked = CLAUDE_COLD_START_V1.argv(Some(id)).expect("a real id assembles");
+            assert_eq!(asked, fresh, "asking this surface to resume yields the fresh spawn");
+            assert!(
+                !asked.iter().any(|a| a == id),
+                "the id {id:?} must not reach a cold-start argv element: {asked:?}"
+            );
+        }
+        assert!(
+            !CLAUDE_COLD_START_V1.resume_args.contains(&SESSION_ID_SLOT),
+            "the cold-start resume template carries no session-id slot"
+        );
+        assert!(
+            !CLAUDE_COLD_START_V1.resume_args.contains(&"--resume"),
+            "the cold-start resume template carries no --resume"
+        );
+    }
+
+    /// T-175: THE COLD-START SURFACE IS INSIDE THE SECURITY SWEEPS AND
+    /// OUTSIDE THE AGENT SET, WHICH IS THE WHOLE POINT OF TWO LISTS.
+    ///
+    /// ADR-017 clause 6 fixes the v1 AGENT set at one declarative entry;
+    /// the bypass ban is about BYTES reaching an `execve`. This body pins
+    /// that the two lists say different things on purpose, so a later
+    /// reader cannot "tidy" one into the other in either direction — and
+    /// it is the body that reds if a third template is added and forgotten
+    /// by `SPAWNABLE`.
+    #[test]
+    fn every_spawnable_template_is_swept_and_the_agent_set_is_still_one() {
+        // The agent set's own SIZE is pinned by
+        // `the_table_is_one_entry_and_the_bypass_ban_is_executable`; this
+        // body asserts the RELATIONSHIP between the two lists, which is
+        // the fact that would otherwise have no keeper.
+        assert!(SPAWNABLE.len() > ADAPTERS.len(), "SPAWNABLE is the strictly larger list");
+        // BY TEMPLATE, NEVER BY ADDRESS. `const` is inlined at each use
+        // site, so `std::ptr::eq` over two references to one const is a
+        // coin flip — the first draft of this body asserted it and reddened
+        // over a membership that was in fact correct.
+        let templates: Vec<&[&str]> = SPAWNABLE.iter().map(|s| s.spawn_args).collect();
+        for adapter in ADAPTERS {
+            assert!(
+                templates.contains(&adapter.spawn_args),
+                "every agent-set entry is swept: {} is missing from SPAWNABLE",
+                adapter.key
+            );
+        }
+        assert!(
+            templates.contains(&CLAUDE_COLD_START_V1.spawn_args),
+            "the cold-start surface must be swept - it is not in ADAPTERS, so SPAWNABLE is the \
+             only list that reaches it"
+        );
+        assert_ne!(
+            CLAUDE_COLD_START_V1.spawn_args, CLAUDE_V1.spawn_args,
+            "the two templates must actually differ, or the membership above is one entry twice"
+        );
+        // And the sweep that matters actually walks it: every string the
+        // cold template can produce is in `all_argv_strings`.
+        let swept = all_argv_strings();
+        for arg in CLAUDE_COLD_START_V1.argv(None).expect("the cold template assembles") {
+            assert!(swept.contains(&arg), "{arg:?} escaped the bypass sweep");
+        }
     }
 
     /// T-025-s4: THE EFFECTIVE GRANT IS THREE TABLES AND EXACTLY ONE OF
