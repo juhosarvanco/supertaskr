@@ -5,11 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: [T-212]
-touches: [.claude, tools/e2e]
+touches: [.claude/hooks/landing-gate.mjs, tools/e2e/tests/landing-gate.spec.ts, tools/e2e/scripts/dispatch-brief.mjs]
 suggested_by: "T-212's independent verifier, from a reproduction: the card's build step 2 and `landing-gate.mjs`'s module header both assert main is a ref the lane cannot move, and `git update-ref` accepts exactly that write where `git branch -f` refuses it"
-builder: unassigned
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -72,3 +73,25 @@ habit of pinning a constant against the program that owns it.
 `T-212` (the gate), `method/lane-protocol.md` rule 5 (the law, and the
 disclosure obligation), `T-153-s9` (why the candidate order is what it
 is), `T-216` (the other open rooting question on the same hook).
+
+## DISPATCH, 2026-09-02 — the stamp, and what the audit found
+
+**Fence narrowed at dispatch to three files by path**: the hook, its
+spec, and `tools/e2e/scripts/dispatch-brief.mjs`, because the candidate
+order is OWNED there and a body asserts the hook's copy identical to it
+(landing-gate.spec.ts, "the integration-ref candidates are
+dispatch-brief's, spelling for spelling"), so a reorder is a two-file
+edit and both are in the fence. Three sibling lanes run tonight
+(T-216-s4, T-230, T-236); none touches these files.
+
+**Audit (orchestrator 5b)**: `integrationRefCandidates` at 2489853 returns
+`[branch, origin/<branch>, refs/remotes/origin/<branch>]` — local first,
+as the card claims. The `git update-ref` versus `git branch -f` claim is
+a platform claim and is the verifier's phase-1 ground truth to measure,
+not this seat's to assert.
+
+**Ceremony**: size S, and the card is guard-class, so `review:
+independent` binds: executor, then verifier; the executor does NOT
+integrate its own work tonight — this lane does not hold the integration
+checkout, stamps `verifying`, reports ready-to-merge with branch and tip,
+and leaves its worktree standing (lane-protocol rules 4 and 6).
