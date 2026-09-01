@@ -194,25 +194,21 @@
   when written. **Cite a rule by its ORDINAL and its own capitals.**
 - **AND A DISTANCE TO A MOVING TIP CANNOT BE STATED AT ALL IN A DOCUMENT
   COMMITTED TO THAT TIP'S BRANCH** — with or without a ref, because
-  **pinning is itself a commit and the commit moves the number.** One
-  card typed a count against `main` three times, each correction written
-  by the seat that had just made the previous one; the fourth instance
-  was a sentence measuring 348 that shipped at 349, **the delta being
-  exactly the commit carrying the sentence.** "Carry your ref" does not
-  reach that case — it reads as repairable. **THREE FORMS SURVIVE: both
-  endpoints pinned to fixed shas, the derive command with NO answer
+  **pinning is itself a commit and the commit moves the number**: a
+  sentence measuring 348 shipped at 349, the delta being exactly the
+  commit carrying the sentence, after three corrections each written by
+  the seat that had just made the previous one. **THREE FORMS SURVIVE:
+  both endpoints pinned to fixed shas, the derive command with NO answer
   beside it, or omission.** A past reading bound to a named occasion
   ("347 when the verifier re-stamped it") is HISTORY and cannot go
-  stale; a present-tense value can. Derived by a blind verifier from a
-  defect it had already been shown three times.
-  **AND HERE IS WHY THE PEOPLE WRITING THIS RULE DOWN KEEP BREAKING IT.**
-  Five instances landed on one card in one sitting, **twice inside a table
-  built to demonstrate the rule** — which is not carelessness. **`main` is
-  the natural way to write "and it is still true NOW", and "now" is the
-  one thing a committed document cannot hold.** So when you reach for a
-  moving symbol, you are reaching for a tense, not a ref: say `currently`
-  in words with NO figure beside it, or pin the sha and let the sentence
-  be about that commit forever.
+  stale; a present-tense value can. **AND HERE IS WHY THE PEOPLE WRITING
+  THIS RULE DOWN KEEP BREAKING IT**: `main` is the natural way to write
+  "and it is still true NOW", and "now" is the one thing a committed
+  document cannot hold — five instances landed on one card in one
+  sitting, twice inside a table built to demonstrate the rule. So when
+  you reach for a moving symbol, you are reaching for a tense, not a
+  ref: say `currently` in words with NO figure beside it, or pin the
+  sha and let the sentence be about that commit forever.
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.
@@ -227,22 +223,22 @@
   gets to FINISH, which buys nothing if nobody looks: main sat RED for
   roughly five hours across two distinct failures while a seat pushed
   over both, reporting "all four suites green" — true locally, and not
-  the claim that mattered. **A LOCAL BATTERY AND CI ARE DIFFERENT
-  MEASUREMENTS AND ONLY ONE OF THEM RUNS ON A MACHINE THAT IS NOT
-  YOURS.**
+  the claim that mattered (the 2026-09-01 records). **A LOCAL BATTERY
+  AND CI ARE DIFFERENT MEASUREMENTS AND ONLY ONE OF THEM RUNS ON A
+  MACHINE THAT IS NOT YOURS.**
 - **NEVER TYPE A PATH YOU CAN DERIVE.** `find`, `git ls-files`, or the
   `scripts` block of the relevant `package.json` answers "where does this
   live" in one command. Three paths were INVENTED in a single sitting —
-  `boot-gate.mjs` (the gate is `npm run boot:check`), a method-eval path
-  run from the wrong directory, and the blessed gate-runner placed under
-  `.claude/hooks/` when it lives in `tools/e2e/scripts/`. **The third
-  shipped inside a VERIFIER'S BRIEF**, so an agent spent part of its
-  blind phase correcting its own instructions. Each surfaced as an exit 1
-  that was a stack trace rather than a verdict. **And this bullet is
-  itself pinned**: the runner is NAMED once in this file and a body
-  requires exactly that, so cite it by description here rather than by
-  filename — the seat that wrote this rule tripped that body twice in one
-  session, the second time inside the paragraph warning about it.
+  a gate script that does not exist (the gate is `npm run boot:check`),
+  a method-eval path run from the wrong directory, and the blessed
+  gate-runner placed under `.claude/hooks/` when it lives in
+  `tools/e2e/scripts/`; **the third shipped inside a VERIFIER'S BRIEF**,
+  so an agent spent part of its blind phase correcting its own
+  instructions. Each surfaced as an exit 1 that was a stack trace rather
+  than a verdict. **And this bullet is itself pinned**: the runner is
+  NAMED once in this file and a body requires exactly that, so cite it
+  by description here rather than by filename — the seat that wrote
+  this rule tripped that body twice in one session.
 - **FIT A BYTE-BANDED DOCUMENT IN ONE WRITE, NOT IN A LOOP.** Draft into
   a scratch file, `wc -c` it, cut to the target, THEN write. `docs/STATE.md`
   was edited SEVEN times in one sitting to fit its warn line, and every
@@ -259,25 +255,23 @@
 
       GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null npm test
 
-  **It would have caught both of the CI reds this rule was written
-  from**, in seconds, before either push. Measured after the fixes: 492
-  passed, exit 0. A suite green here and red there is not flaky; it is
-  measuring the machine.
-  **DO NOT CLOBBER `HOME` TO GET THERE.** The first version of this rule
-  did (`HOME=$(mktemp -d)`) and reddened **54 browser bodies**, because
-  Playwright caches its browsers under `~/`. Suppressing git's config
-  files is the whole of what is wanted; moving the home directory
-  changes an unrelated axis and the failures look like findings. The
-  wrong recipe was caught by running it — which is this bullet's own
-  point applied to itself.
+  It would have caught both of the CI reds this rule was written from,
+  in seconds, before either push. A suite green here and red there is
+  not flaky; it is measuring the machine. **DO NOT CLOBBER `HOME` TO GET
+  THERE.** The first version of this rule did (`HOME=$(mktemp -d)`) and
+  reddened 54 browser bodies, because Playwright caches its browsers
+  under `~/`: suppressing git's config files is the whole of what is
+  wanted, and the wrong recipe was caught by running it — this bullet's
+  own point applied to itself.
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an
   unpinned fixture builds a different repository on each, and the
   landing gate then resolves a different ref, judges a different range
   and reaches a different verdict. Green here, red there, and the diff
-  explains nothing. Seven fixtures already pinned it and three new ones
-  did not; that asymmetry is what made it look like a platform bug.
+  explains nothing; the asymmetry between the fixtures that pinned it
+  and the three new ones that did not is what made it look like a
+  platform bug.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
@@ -307,16 +301,14 @@
   scratchpad is ONE directory shared by every seat a session spawns**, so
   a defaulted filename is a machine-scoped surface exactly like a port,
   and `method/lane-protocol.md` rule 4 already rules the class — *derive
-  from the lane, never default*. **The spelling is here because the class
-  was ruled and the spelling was not**, which is the same gap the PORT
-  RULE below closes for ports. Measured: an executor and a verifier each
-  wrote `battery.sh`; the executor ran what it believed was its own and
-  drove the VERIFIER'S bench, at the verifier's ref, appending to its
-  ledger. **Two legs ran and `gate-run`'s solo lock REFUSED the other
-  two**, naming the holding pid (T-088-s4 working as designed) — the only
-  thing in the tree that recorded a second runner at all. **The collision
-  is symmetric and the fault is the DISPATCHER'S**: whoever hands two
-  seats one directory owns it.
+  from the lane, never default*; the spelling is here because the class
+  was ruled and the spelling was not, the same gap the PORT RULE below
+  closes for ports. Measured (T-216-s5): an executor and a verifier each
+  wrote `battery.sh`; the executor drove the VERIFIER'S bench at the
+  verifier's ref, and `gate-run`'s solo lock, refusing two legs and
+  naming the holding pid, was the only thing in the tree that recorded a
+  second runner at all. **The collision is symmetric and the fault is
+  the DISPATCHER'S**: whoever hands two seats one directory owns it.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
@@ -664,37 +656,32 @@
   even for granted permissions; only config JSON, e.g. the CSP, is
   string-findable). Prove the webview surface with regenerated
   gen/schemas/capabilities.json plus a runtime ACL probe (T-007
-  verdict correction). Since T-021 that proof is PINNED, not
-  re-derived per task: `app/src-tauri/src/acl_pin.rs` re-resolves the
-  shipped gen/schemas through tauri's own resolver on every
-  `cargo test` and fails with a `+`/`-` grant diff if the 92-grant
-  `core:default` set moves. A deliberate grant is added by re-pinning
-  EXPECTED_GRANTS in the same commit, with the sweep — never by
-  deleting or muting the test (see ADR-012 for why the set stays
-  empty of app grants).
+  verdict correction). Since T-021 that proof is PINNED, not re-derived
+  per task: `app/src-tauri/src/acl_pin.rs` re-resolves the shipped
+  gen/schemas through tauri's own resolver on every `cargo test` and
+  fails with a `+`/`-` grant diff if the `core:default` set moves. A
+  deliberate grant is added by re-pinning EXPECTED_GRANTS in the same
+  commit, with the sweep — never by deleting or muting the test (see
+  ADR-012 for why the set stays empty of app grants).
 - DECLARING A COMPONENT moves THREE live-registry fixtures, not two
   (T-024-s5, ratified at the 2026-08-16 second triage after the
-  omission cost T-024 a rejection and the lesson recurred at T-025's
-  merge): `lib/parser/test/smoke.test.ts` (the exact id array over
-  this repo's live docs/ tree), `app/test/architecture-dogfood.test.ts`
-  (ids, declared count, findings, the relation table, drift/
-  declaredOnly) and `app/test/map-dogfood-render.test.tsx` (rendered
-  node + edge counts). Reconcile all three, changed never loosened. A
-  MERGE REGEN alone moves only the two app fixtures — the parser pin
-  holds unless the REGISTRY itself changed. The knowledge used to live
-  only in a T-008 commit message and behind a task fence reading "zero
-  diff under lib/parser/**".
+  omission cost T-024 a rejection): `lib/parser/test/smoke.test.ts` (the
+  exact id array over this repo's live docs/ tree),
+  `app/test/architecture-dogfood.test.ts` (ids, declared count,
+  findings, the relation table, drift/declaredOnly) and
+  `app/test/map-dogfood-render.test.tsx` (rendered node + edge counts).
+  Reconcile all three, changed never loosened. A MERGE REGEN alone moves
+  only the two app fixtures — the parser pin holds unless the REGISTRY
+  itself changed.
   **MOVING A `touch_slugs:` FIELD IS A DIFFERENT EDIT AND MOVES A
-  DIFFERENT SET, AND THIS BULLET DID NOT SAY SO UNTIL `T-163-s3`.**
-  DERIVE that set, never transcribe it — a transcribed set goes stale
-  exactly the way the SHIPPED PARTITION's C-11 clause did:
+  DIFFERENT SET** (`T-163-s3`). DERIVE that set, never transcribe it:
   `node tools/e2e/scripts/docs-gate.mjs docs/architecture/components/C-NN-*.md`
   names the owed SUITES at your own ref, and it names more suites than
   the two the three fixtures above live in. **The three above can all
-  be GREEN while other bodies in those same suites red**, which is what
-  T-163 measured moving exactly one field — so run each suite the gate
-  names IN FULL; the gate answers at suite granularity and the file
-  list it prints is not the set of bodies that move. One consumer sits
+  be GREEN while other bodies in those same suites red** — T-163
+  measured it moving exactly one field — so run each suite the gate
+  names IN FULL; the gate answers at suite granularity and the file list
+  it prints is not the set of bodies that move. One consumer sits
   outside every suite: docs/ARCHITECTURE.md's prose slug BLOCK copies
   this field and must move with it — `brief.mjs --task` compares the
   two and says in one line whether they agree at your ref.
@@ -766,42 +753,35 @@
   board's parse-error badge) — move the file, don't "fix" the parser;
   the flat-glob exclusion and the loud trap are both pinned in
   lib/parser/test/rejected-exclusion.test.ts.
-  THE FOURTH QUESTION, ANSWERED AT T-084 BECAUSE A VERIFIER ASKED IT IN
-  THE FRONTMATTER: **"resolved by other work" is not a fourth move and
-  `closed` is not a ninth status.** It is a DISPOSITION, and disposition
-  belongs to TRIAGE — T-083's integrator ruled it and T-081's applied
-  it, leaving a discharged finding at `status: suggested` because
-  "discharging a finding is not the integrator's call to record as
-  promoted, parked or rejected". So: a finding whose work was resolved
+  THE FOURTH QUESTION, ANSWERED AT T-084: **"resolved by other work" is
+  not a fourth move and `closed` is not a ninth status.** It is a
+  DISPOSITION, and disposition belongs to TRIAGE (T-083's integrator
+  ruled it and T-081's applied it): a finding whose work was resolved
   elsewhere KEEPS `status: suggested` and records the discharge in its
   own body — a `closed_by:` line naming the commit is the shape
   `T-081-s7` uses — and TRIAGE then makes one of the three moves above,
-  normally promotion (`Absorbs:` plus removal), which is what "resolved
-  by other work" already means once the resolving task can name it.
-  ADDING A STATUS IS A METHOD CHANGE, NOT A PARSE FIX: the vocabulary is
-  ratified in method/tasks/TASK-FORMAT.md and lives in exactly one place
-  in code, `lib/parser/src/types.ts`, which the DOCS GATE below READS
-  rather than restates. Do not add a status to make one file parse — and
-  note that a fence able to add one honestly would have to carry a
-  method version bump, whose third file is Rust (T-078-s3).
+  normally promotion (`Absorbs:` plus removal). ADDING A STATUS IS A
+  METHOD CHANGE, NOT A PARSE FIX: the vocabulary is ratified in
+  method/tasks/TASK-FORMAT.md and lives in exactly one place in code,
+  `lib/parser/src/types.ts`, which the DOCS GATE below READS rather than
+  restates. Do not add a status to make one file parse — and a fence
+  able to add one honestly would have to carry a method version bump,
+  whose third file is Rust (T-078-s3).
 - The genesis kit is ratified in method/roles/planner.md +
   method/interview/plan-interview.md (ratified v0.1.5, T-023 — a
   RATIFICATION record like the suggestion-triage bullet's own
   `(v0.1.4, T-016)`, NOT a claim about the current method version, which
-  the first gotcha above owns): interview output
-  is INCREMENTALLY BANKED — the stage → artifact table in
-  plan-interview.md is normative and gets transcribed by programs
-  (T-024 stage inference, T-025 kit packaging); changing it is a
-  method version bump, and code reading it must be kept in sync.
-  "pushing back:" is a rendering hint, never load-bearing; the
-  transcript is not record. docs-templates/ are scaffolded VERBATIM —
-  examples live inside HTML comments. The trap that made those comments
-  load-bearing is CLOSED since T-030 (2026-08-17, absorbing T-023-s1):
-  parseRoadmap blanks every `<!-- … -->` span before matching lines, so
-  a column-0 `- F-01:` example row inside a comment yields neither a
-  phantom feature nor a roadmap-error, and the examples no longer have
-  to be indented to stay invisible (pinned in
-  lib/parser/test/roadmap.test.ts, template shape included). The
+  the first gotcha above owns): interview output is INCREMENTALLY
+  BANKED — the stage → artifact table in plan-interview.md is normative
+  and gets transcribed by programs (T-024 stage inference, T-025 kit
+  packaging); changing it is a method version bump, and code reading it
+  must be kept in sync. "pushing back:" is a rendering hint, never
+  load-bearing; the transcript is not record. docs-templates/ are
+  scaffolded VERBATIM — examples live inside HTML comments, and since
+  T-030 (absorbing T-023-s1) parseRoadmap blanks every `<!-- … -->`
+  span before matching lines, so a column-0 `- F-01:` example row inside
+  a comment yields neither a phantom feature nor a roadmap-error (pinned
+  in lib/parser/test/roadmap.test.ts, template shape included). The
   templates stay comment-wrapped REGARDLESS — a comment is how an
   example says it is an example, and the parser's tolerance is a safety
   net, not a licence to ship live-looking rows in a scaffold.
@@ -823,24 +803,20 @@
   occludes the header's exempt controls and keyboard reach is
   sufficient by design (human ruling 2026-08-16, closing T-020-s1;
   tools/e2e/tests/panel-exempt-controls.spec.ts pins the occlusion as a
-  tripwire, so un-occluding it fails loudly).
+  tripwire).
 - A RENDER-PHASE REF STAMP is legitimate only under three conditions,
   all three of them (T-042 criterion 4, the architect's ruling on
-  T-024-s3; precedent T-012's render-time layout cache, live example
-  `app/src/genesis/GenesisPane.tsx`'s `logRef` write and the header
-  comment above it). The fold must be GUARDED — returning `prev` BY
-  IDENTITY for the already-observed and stale cases, so a StrictMode
-  double-render and every unrelated re-render are no-ops; BOUNDED —
-  what it feeds must tolerate a discarded concurrent render, here a
-  pulse window whose start moves by a few ms, cosmetic and
-  self-healing; and DERIVED FROM PROPS THE RENDER ALREADY HAS — no I/O,
-  no subscription, no second source of truth. Miss one and lift the
+  T-024-s3; live example `app/src/genesis/GenesisPane.tsx`'s `logRef`
+  write and the header comment above it). The fold must be GUARDED —
+  returning `prev` BY IDENTITY for the already-observed and stale cases,
+  so a StrictMode double-render and every unrelated re-render are
+  no-ops; BOUNDED — what it feeds must tolerate a discarded concurrent
+  render, here a pulse window whose start moves by a few ms, cosmetic
+  and self-healing; and DERIVED FROM PROPS THE RENDER ALREADY HAS — no
+  I/O, no subscription, no second source of truth. Miss one and lift the
   state instead. Relocating such a log into a store is a change of
-  SOURCE, not of mechanism, and it earns its cost when a SECOND
-  CONSUMER appears — not before: T-027's planning pass proved there is
-  none (its per-turn baseline diff is a different WINDOW over the same
-  evidence, not the same log), and moving state across a component
-  boundary to serve nobody is cost without benefit.
+  SOURCE, not of mechanism, and it earns its cost when a SECOND CONSUMER
+  appears — not before (T-027's planning pass proved there is none).
 - THE FOUR WALKS — which one sees this file? (T-078, closing an open
   question every integrator was re-deriving.) This repo walks its own
   tree FOUR different ways and no two of them agree. The AUTHORITY column
@@ -1383,58 +1359,50 @@
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE
-  SENTENCE — THE TWO DISAGREE, AND THIS LANE IS THE INSTANCE** (T-089).
-  The rule bans a MERGE commit, and the reason is a stale graph; a
+  SENTENCE — THE TWO DISAGREE** (T-089, itself dispatched from a
+  docs-only commit four after the newest checkpoint, obeying the reason
+  while failing the letter, with `index --check` exit 0 at the base).
+  The rule bans a MERGE commit, and the reason is a stale graph: a merge
+  commit carries a graph the checkpoint has not regenerated yet (see
+  GRAPH REGEN above), so a lane cut from one inherits a stale graph and
+  a red `index --check` through no fault of its own — T-014 is the
+  counter-example, cut from a merge with four sibling lanes dispatched
+  into the same window; T-027 is the worked example the other way. A
   non-merge commit later than the checkpoint carries the checkpoint's
   graph and is safe ON THAT COUNT. **But "safe" is all its gates green,
   not only the graph**: a docs-only non-merge commit can still red a
-  code suite through FRONTMATTER (the DOCS GATE), which no graph argument
-  covers — so this holds by PRACTICE, verified (every non-merge
-  first-parent commit between checkpoints on main is docs-only with green
-  gates), NOT by property; nothing forbids a source commit between
-  checkpoints. T-089 was itself dispatched from `4d2f03c`,
-  which is FOUR docs-only commits after the newest checkpoint `2036fb2`
-  and is not a merge — obeying the reason while failing the letter, with
-  `index --check` exit 0 at the base. What the bullet means is: cut from
-  a commit whose gates are green, which the newest `Checkpoint:` always
-  is and a merge commit never is. A merge commit carries a graph the
-  checkpoint has not regenerated yet (see GRAPH REGEN above), so a lane
-  cut from one inherits a stale graph and a red `index --check` through
-  no fault of its own. T-014 is the counter-example — cut from the merge
-  `5927adc`, it inherited exactly that, and four sibling lanes were
-  dispatched into the same window; T-027 is the seventh worked example
-  the other way, cut from the checkpoint `e92056a` with a current graph
-  and no inherited red. This rule is what makes the window HARMLESS; the
-  CI gate above is what makes it VISIBLE. Both, not either.
+  code suite through FRONTMATTER (the DOCS GATE), which no graph
+  argument covers — so this holds by PRACTICE, verified, NOT by
+  property; nothing forbids a source commit between checkpoints. What
+  the bullet means is: cut from a commit whose gates are green, which
+  the newest `Checkpoint:` always is and a merge commit never is. This
+  rule is what makes the window HARMLESS; the CI gate above is what
+  makes it VISIBLE. Both, not either.
 - BOOT GATE (T-046, ratified at the 2026-08-16 triage on T-040-s1 +
   T-020-s3): at any merge whose diff touches `app/src-tauri/**`,
   `app/src/**` or either manifest (app/package.json,
   app/src-tauri/Cargo.toml) — **and "the merge's diff" is the PAIR OF
   COMMITS THE RANGE RULE above names, which is a DIFFERENT pair before
   the merge exists than at it.** That bullet carries this gate's own
-  oldest worked example (T-027, re-measured at `dc3ef5b`: 9 paths
-  against 36) and the twelve merges on which the wrong pair changed a
-  gate's answer, eight of them this gate's. Then run
-  the boot check —
-  `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
-  tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
-  in the checkpoint. The four exit codes are legended in the tools/e2e
-  commands bullet under "Build & test" above: 0 booted · 1 the boot
-  failed · 2 the port is busy · 3 the override was refused.
-  IF the check cannot run THEN say so LOUDLY in the
-  checkpoint, naming the reason and the exit code — a skipped gate is
-  news, never silence. It exists because `cargo run` is the ONE command
-  this pipeline never issues: T-040, a one-line manifest regression that
-  stopped the app launching at all, passed an executor, an adversarial
-  verifier and an integrator, each of whom ran `cargo test`, `cargo
-  build` and three consecutive full suites — all of which are perfectly
-  happy with two binaries. THE EXECUTOR RUNS IT TOO, on the same
-  trigger, before handing off (T-046 criterion 6): a red the executor's
-  own fence forbids fixing is still news, and news at build time is
-  cheaper than news after a merge — file it as a suggestion and say so
-  in the notes. Running it is NOT screen control (@human ruling
-  2026-08-16): the app opens and closes its own window; nothing is
-  clicked, typed into, screenshotted, or read off the screen.
+  oldest worked example (T-027) and the twelve merges on which the wrong
+  pair changed a gate's answer, eight of them this gate's. Then run the
+  boot check — `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check`
+  from tools/e2e/ — and RECORD the result (exit code, both `[nputer]`
+  lines) in the checkpoint; the four exit codes are legended in the
+  tools/e2e commands bullet under "Build & test" above. IF the check
+  cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
+  the exit code — a skipped gate is news, never silence. It exists
+  because `cargo run` is the ONE command this pipeline never issues:
+  T-040, a one-line manifest regression that stopped the app launching
+  at all, passed an executor, an adversarial verifier and an integrator,
+  each of whom ran `cargo test`, `cargo build` and three consecutive
+  full suites — all perfectly happy with two binaries. THE EXECUTOR RUNS
+  IT TOO, on the same trigger, before handing off (T-046 criterion 6): a
+  red the executor's own fence forbids fixing is still news, and news at
+  build time is cheaper than news after a merge — file it as a
+  suggestion and say so in the notes. Running it is NOT screen control
+  (@human ruling 2026-08-16): the app opens and closes its own window;
+  nothing is clicked, typed into, screenshotted, or read off the screen.
 - DOCS GATE (T-084 — the third standing gate, and the one the two above
   exclude BY CONSTRUCTION): at any merge whose diff touches a path under
   `docs/` that a code suite READS, run the suites that read it, and
@@ -1728,28 +1696,22 @@
 - THE CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:` (T-182) — the
   commit that adds a record under `docs/checkpoints/` carries a subject
   beginning with that literal. **IT IS NOT A STYLE RULE: TWO RULES PARSE
-  THE MARKER, AND BOTH DEGRADE IN SILENCE WITHOUT IT.**
-  **CONSUMER ONE IS IN THIS FILE** — the DISPATCH bullet above
-  (`T-014-s3, seven-for-seven`), which picks a lane's base by it; its
-  reasoning is NOT restated here. That bullet's naming phrase is spelled
-  around rather than quoted, because `rawBullet`
-  (tools/e2e/scripts/dispatch-brief.mjs) demands ONE bullet carry it —
-  this lane's first draft tripped exactly that.
-  **CONSUMER TWO IS THE TRIAGE BAND'S WINDOW** — `newestCheckpoint` in
-  tools/e2e/scripts/health-bands.mjs, anchoring
+  THE MARKER, AND BOTH DEGRADE IN SILENCE WITHOUT IT.** CONSUMER ONE IS
+  IN THIS FILE — the DISPATCH bullet above, which picks a lane's base by
+  it; that bullet's naming phrase is spelled around rather than quoted,
+  because `rawBullet` (tools/e2e/scripts/dispatch-brief.mjs) demands ONE
+  bullet carry it. CONSUMER TWO IS THE TRIAGE BAND'S WINDOW —
+  `newestCheckpoint` in tools/e2e/scripts/health-bands.mjs, anchoring
   `triage/net-arrivals-per-window` in health-bands.config.mjs beside it.
-  **THE FAILURE IS INVISIBLE FROM OUTSIDE, WHICH IS WHY IT IS WRITTEN
-  DOWN.** To both, an absent marker is indistinguishable from a night
-  with no checkpoint: the window does not advance, the base names an
-  older commit, and both keep reporting success. At `bd8a8e8` over
-  `4e08d29..b737b53`, **12 of 13 first-parent record-adding commits
-  carried no `Checkpoint:` subject** —
-  `git log --first-parent --diff-filter=A <range> -- docs/checkpoints/`.
-  **IT IS A CONVENTION HERE ONLY BECAUSE THE TRIGGER IS OUT OF FENCE.**
-  The event to assert on is the COMMIT THAT ADDS A RECORD — already the
-  second trigger `T-167-s8` absorbed from `T-181` — so it joins there
-  rather than growing a second mechanism, needing `tools/e2e` and
-  `.claude`, which `[docs/CONVENTIONS.md]` cannot reach. **ROUTED to
+  To both, an absent marker is indistinguishable from a night with no
+  checkpoint: the window does not advance, the base names an older
+  commit, and both keep reporting success — at `bd8a8e8` most
+  record-adding commits carried no such subject, and
+  `git log --first-parent --diff-filter=A <range> -- docs/checkpoints/`
+  derives the count at any ref. **IT IS A CONVENTION HERE ONLY BECAUSE
+  THE TRIGGER IS OUT OF FENCE**: the event to assert on is the COMMIT
+  THAT ADDS A RECORD, already `T-167-s8`'s second trigger, so the guard
+  joins there rather than growing a second mechanism — **ROUTED to
   `T-167-s8`** with two facts: `--grep=^Checkpoint:` matches ANY line of
   a message, so a SUBJECT guard is strictly narrower than the band's own
   reader; and `newestCheckpoint` had no spec at `bd8a8e8`.
@@ -1973,16 +1935,16 @@
   path in the body so the next reader can check it.
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
-  somebody looks. T-078's fix session found three of its own, fixed each
-  where it stood, and in two cases left an identical sibling a few lines
-  away — **both inside the subsection that announces the sweep**, and one
-  outlived the branch that fixed the other. Both were one `git grep` from
-  complete. So: NAME the class, run ONE search for it, and record the
-  result **even when it is empty** — an unrecorded sweep and an unrun one
-  are indistinguishable to the next reader, which is "a skipped gate is
-  news" one layer up. **And the sweep is shown capable of failing before
-  its zero is written down** (the POISON DRILL's proof clause), because a
-  search that finds nothing is what a finished job looks like.
+  somebody looks: T-078's fix session found three of its own, fixed each
+  where it stood, and twice left an identical sibling a few lines away —
+  both inside the subsection that announced the sweep, and both one
+  `git grep` from complete. So: NAME the class, run ONE search for it,
+  and record the result **even when it is empty** — an unrecorded sweep
+  and an unrun one are indistinguishable to the next reader, which is
+  "a skipped gate is news" one layer up. **And the sweep is shown
+  capable of failing before its zero is written down** (the POISON
+  DRILL's proof clause), because a search that finds nothing is what a
+  finished job looks like.
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
   at T-078). A test that asserts something is REFUSED must first prove
   the fixture would otherwise have been ACCEPTED: a bare "expected
@@ -2018,16 +1980,15 @@
   project has, and most are safe only because their lifted behaviour
   touches fixtures — a property to CHECK, never to assume.
 - THE E2E LANE'S HONEST SCOPE (T-049-s1, recorded rather than coded —
-  arms 1 and 2 below stay available and were deliberately not taken):
+  the two arms below stay available and were deliberately not taken):
   tools/e2e covers what a BROWSER can reach, and Tauri-gated
   affordances are jsdom-plus-@human territory. Two live instances,
-  neither a defect and both correct about what a browser can do:
-  `runPicker` opens with a not-Tauri early return, so an accelerator's
-  ACTION is unobservable in the served bundle — the lane can prove a
-  chord was CLAIMED, never that it was OBEYED — and both header buttons
-  are gated behind `isTauriRuntime()`, so the one screen where they live
-  is the one screen the lane cannot show. T-027 and T-028 made this
-  bigger by adding whole screens whose actions are all IPC. So do not
+  neither a defect: `runPicker` opens with a not-Tauri early return, so
+  an accelerator's ACTION is unobservable in the served bundle — the
+  lane can prove a chord was CLAIMED, never that it was OBEYED — and
+  both header buttons are gated behind `isTauriRuntime()`, so the one
+  screen where they live is the one screen the lane cannot show; T-027
+  and T-028 added whole screens whose actions are all IPC. So do not
   read a green lane as coverage of an IPC path: the Rust suite, the boot
   gate and @human's eye are what cover those. The two unused arms are a
   DEV-only attempt counter and rendering the gated pair disabled in
