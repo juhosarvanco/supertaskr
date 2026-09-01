@@ -198,16 +198,28 @@ Neither refuses anything — they are prose in a table — which is the
 report doing exactly what the first criterion asks of it.
 
 **MEASURED OVER THE LIVE BOARD before the thresholds were chosen**, the
-way this module's own header requires. Across 436 live cards there are
-5,334 double-quoted runs in prose, median 4 per card; paragraph-scoped
-against the tracked tree, 2,399 of them sit beside a repository path
-(median 2 per card, max 49) and 2,935 name no source at all. The
-paragraph is the unit because the hard wrap puts the quote on one line
-and the file it is about on the next; a line-scoped join finds 455 and
-drops exactly the ones the wrap split. A backticked run counts inside a
-MARKER and not in the unmarked report, because in ordinary prose this
-project backticks every path, command and symbol it mentions and the
-report would be unreadable and therefore unread.
+way this module's own header requires. **Every figure below is stamped
+at `cc08ea5`, this lane's own ref, and each was ALSO taken at the base
+`74ca530` before a line was written** — the two readings differ by
+exactly the two suggestion cards this lane files, which is the arithmetic
+that says the delta is mine and not the board's:
+
+    live cards                                    438  <- @ cc08ea5 (436 at 74ca530)
+    double-quoted runs in card PROSE            5,338  <- @ cc08ea5 (5,334 at 74ca530)
+    of those, beside a path, PARAGRAPH-scoped   2,401  <- @ cc08ea5 (2,399 at 74ca530)
+    of those, naming no source at all           2,937  <- @ cc08ea5 (2,935 at 74ca530)
+    the same join taken LINE-scoped                455  <- @ cc08ea5 (455 at 74ca530)
+
+Per card the paragraph-scoped set has a median of 2 and a maximum of 49
+(`docs/tasks/T-078-…`, @ `cc08ea5`). **The paragraph is the unit because
+the hard wrap puts the quote on one line and the file it is about on the
+next**: the line-scoped join is the same number at both refs and drops
+exactly the ones the wrap split. A backticked run counts inside a MARKER
+and not in the unmarked report, because in ordinary prose this project
+backticks every path, command and symbol it mentions and the report would
+be unreadable and therefore unread. **Re-derive rather than quoting**:
+both scans are one pass over `cardLines()` across `git ls-files
+docs/tasks/T-*.md`, and they move with the board.
 
 **FOR THE VERIFIER, four things to attack.**
 1. The refusing half is opt-in, so its blast radius is bounded by
