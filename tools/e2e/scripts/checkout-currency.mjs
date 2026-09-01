@@ -14,6 +14,32 @@
  * matcher and which carried no `push-guard-hook.mjs` at all. **Every
  * push that sitting was ungated**, and nothing said so.
  *
+ * ── "REGISTERED" IS NOT A PROXY FOR "RUNS": TWO ARMS, NOT ONE ────────
+ * There are TWO ways a checkout fails to consult the guard, and from
+ * outside they are indistinguishable:
+ *
+ *     A. no Bash matcher registered at all      -> nothing is invoked
+ *     B. matcher registered, hook FILE absent   -> node starts, exits 1
+ *
+ * Measured at this project's integration seat, `CLAUDE_PROJECT_DIR`
+ * resolving correctly and only the `.mjs` missing — ONE fault, not two:
+ * `exit = 1`, `cannot find module` on stderr. **THE PORTABLE HALF IS THE
+ * EXIT CODE: 1 is not 2, so the harness does not block, and that holds
+ * whatever the path, platform or node version.** The stderr byte count is
+ * NOT portable and is deliberately not quoted here — two seats measured
+ * two different numbers and both were right, because the message carries
+ * the path. **A byte count carries its path the way a figure carries its
+ * ref.** So arm B FAILS OPEN while looking fully configured, and a
+ * catcher that read `.claude/settings.json` and found the registration
+ * present would pass a checkout in arm B — the arm that survives an
+ * inspection of the registration.
+ *
+ * `registrationArm` therefore answers BOTH: the `registration-missing`
+ * finding is arm A and the `hook-absent` finding is arm B, and arm B is
+ * checked by walking the REFERENCE's script list against the target's
+ * DISK. The measured motivating instance is arm A; arm B is the one that
+ * would otherwise be invisible.
+ *
  * ── WHY IT CANNOT LIVE IN THE GUARD ──────────────────────────────────
  * A STALE guard runs, so it could announce itself. An ABSENT guard runs
  * nothing, and ABSENT is the half that was measured. Any announcement

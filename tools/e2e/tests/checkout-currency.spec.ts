@@ -165,6 +165,12 @@ function motivatingFixture(name: string): Fixture {
 
   // ── the pre-guard era ───────────────────────────────────────────────
   mkdirSync(path.join(repo, ".claude", "hooks"), { recursive: true });
+  // EVERY FIXTURE'S COMMITS MUST BE UNIQUE. Two fixtures built in the
+  // same second, with the same content, the same messages and the same
+  // fixed identity produce IDENTICAL commit SHAs — which silently makes a
+  // "different repository" body compare a repository against itself. Found
+  // by the body that needs two genuinely unrelated object stores.
+  writeFileSync(path.join(repo, "fixture.txt"), `${name}\n`);
   writeFileSync(path.join(repo, SETTINGS_REL_PATH), SETTINGS_BEFORE);
   writeFileSync(path.join(repo, ".claude", "hooks", "lane-fence-hook.mjs"), "// fence hook\n");
   writeFileSync(path.join(repo, "README.md"), "before the guard\n");
@@ -354,6 +360,57 @@ test("THE MEASURED INSTANCE: a checkout registering no Bash matcher consults ZER
     encoding: "utf8",
   }).trim();
   expect(landed, "and it landed").toBe(fx.staleHead);
+});
+
+test("ARM B: a registration that looks fully configured but whose hook FILE is absent FAILS OPEN — node starts, exits 1, and 1 is not 2", () => {
+  // KILLED BY: nothing in the catcher — this body measures the HARNESS's
+  // behaviour, and it is the fact the catcher's second arm exists for.
+  // It reproduces the amendment's own measurement in a fixture: one
+  // fault, not two, and the failure looks like a configured checkout.
+  const fx = motivatingFixture("arm-b-fails-open");
+  // The registration is COMPLETE here — this is the tip's own settings.
+  writeFileSync(path.join(fx.current, SETTINGS_REL_PATH), SETTINGS_AFTER);
+  execFileSync("rm", ["-f", path.join(fx.current, ".claude", "hooks", "push-guard-hook.mjs")]);
+
+  const consulted = consult(fx.current, PUSH_REQUEST);
+  expect(consulted.selected, "the harness DOES select a guard — the registration is there").toHaveLength(
+    1,
+  );
+  expect(consulted.spawned, "and it DOES start").toHaveLength(1);
+  expect(
+    consulted.spawned[0]!.status,
+    "node exits 1 on a module it cannot find — and 1 is not the harness's blocking code",
+  ).toBe(1);
+  expect(
+    consulted.spawned[0]!.status,
+    "so nothing refuses the push: this arm fails OPEN while looking configured",
+  ).not.toBe(2);
+});
+
+test("ARM B is REFUSED by the catcher, which an inspection of the registration alone would pass", () => {
+  // KILLED BY: a presence check that walks the TARGET's registration
+  // rather than the reference's disk, and by dropping the disk check
+  // altogether. This is the arm the amendment says survives a
+  // registration inspection — so the inspection is RUN here and observed
+  // to pass, in the same breath as the catcher refusing.
+  const fx = motivatingFixture("arm-b-caught");
+  writeFileSync(path.join(fx.current, SETTINGS_REL_PATH), SETTINGS_AFTER);
+  execFileSync("rm", ["-f", path.join(fx.current, ".claude", "hooks", "push-guard-hook.mjs")]);
+
+  const inspection = hooksFor(readFileSync(path.join(fx.current, SETTINGS_REL_PATH), "utf8"), {
+    toolName: "Bash",
+  });
+  expect(inspection, "an inspection of the REGISTRATION finds the guard present").toHaveLength(1);
+
+  const d = judge({ vantage: fx.repo, target: fx.current });
+  expect(codes(d), "and the catcher refuses anyway, on the file that is not there").toEqual([
+    "hook-absent",
+  ]);
+  expect(
+    d.findings[0]!.detail,
+    "naming the program, so the reader knows which guard did not run",
+  ).toContain("push-guard-hook.mjs");
+  expect(d.verdict).toBe("stale");
 });
 
 test("the live repository's own registration is the shape the fixture models: a Bash matcher pointing at a hook file that EXISTS", () => {
@@ -664,6 +721,88 @@ test("the CLI's default VANTAGE is this file's own checkout, never the current d
     encoding: "utf8",
   });
   expect(r.stderr + r.stdout, "the run names the vantage it used").toContain(repoRoot);
+});
+
+// ── criterion 5: the catcher is WIRED, not merely present ──────────────
+
+const BRIEF = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
+
+/**
+ * A card that is live on this board, used only to reach the arm that
+ * reports findings — `--preflight` refuses an id with no card BEFORE the
+ * findings summary, which is the body above's subject rather than this
+ * one's. It is this card's own id, so a lane that renames it reds here
+ * with a message that says which file moved.
+ */
+const LIVE_CARD = "T-216-s1";
+
+function runBrief(args: string[], projectDir?: string): { status: number | null; out: string; err: string } {
+  const env = { ...process.env };
+  if (projectDir === undefined) delete env["CLAUDE_PROJECT_DIR"];
+  else env["CLAUDE_PROJECT_DIR"] = projectDir;
+  const r = spawnSync(process.execPath, [BRIEF, ...args], { cwd: repoRoot, env, encoding: "utf8" });
+  return { status: r.status, out: r.stdout ?? "", err: r.stderr ?? "" };
+}
+
+test("THE CATCHER IS WIRED: the dispatch ritual's arming step INVOKES it, and a stale session checkout reaches the seat cutting the lane", () => {
+  // KILLED BY: removing the `judgeCheckout()` call from brief.mjs while
+  // checkout-currency.mjs stays exactly where it is. That is the card's
+  // fifth criterion in one sentence — a correct catcher that nothing
+  // calls satisfies every other criterion on this card, and a blind
+  // attack set found exactly that before any of this existed.
+  const fx = motivatingFixture("wired");
+  const run = runBrief(["--task", "T-999", "--preflight"], fx.stale);
+
+  expect(run.out, "the arming step emits the catcher's own block").toContain(
+    "THE SESSION'S OWN CHECKOUT",
+  );
+  expect(run.out, "with its verdict about the checkout the harness loaded settings from").toContain(
+    "verdict: stale",
+  );
+  expect(run.out, "naming the checkout it judged").toContain(fx.stale);
+  expect(run.out, "and the vantage it judged from, which is NOT that checkout").toContain(repoRoot);
+
+  // AND IT RUNS BEFORE THE CARD IS EVEN LOOKED UP. `T-999` names no live
+  // card, so this invocation ends at "called wrong" — and the seat has
+  // still been told. A guard that speaks only on the happy path is one
+  // nobody hears at the moment it matters.
+  expect(run.status, "the invocation still ends the way it would have").toBe(EXIT.USAGE);
+});
+
+test("A STALE SESSION CHECKOUT IS A FINDING: the arming step reports it where a dispatch's refusals are read", () => {
+  // KILLED BY: dropping `sessionFindings` from brief.mjs's findings list —
+  // which would leave the block printed and the dispatch passing quietly,
+  // the exact half-measure that makes a guard decorative.
+  const fx = motivatingFixture("wired-finding");
+  const run = runBrief(["--task", LIVE_CARD, "--preflight"], fx.stale);
+  expect(run.err, "the finding reaches the summary a dispatcher reads").toContain(
+    "the checkout this session was started in is STALE",
+  );
+  expect(run.err, "naming the arm that caught it").toContain("hook-absent");
+});
+
+test("THE WIRING'S POSITIVE CONTROL: the same arming step says CURRENT for a current checkout, and adds no finding", () => {
+  // KILLED BY: a wiring that reports STALE unconditionally, which every
+  // assertion in the body above would be satisfied by.
+  const run = runBrief(["--task", "T-999", "--preflight"], repoRoot);
+  expect(run.out).toContain("THE SESSION'S OWN CHECKOUT");
+  expect(run.out, "this checkout is current against its own integration branch").toContain(
+    "verdict: current",
+  );
+  expect(run.err, "so nothing is reported as stale").not.toContain(
+    "the checkout this session was started in is STALE",
+  );
+});
+
+test("the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it", () => {
+  // KILLED BY: emitting the block on every invocation, which would make
+  // the body above pass for a reason that has nothing to do with arming
+  // a lane. `--state` reads; `--preflight` and `--write-fence` arm.
+  const run = runBrief(["--state"], repoRoot);
+  expect(run.out.length, "the command still did its work").toBeGreaterThan(0);
+  expect(run.out, "and did not run the arm-time catcher").not.toContain(
+    "THE SESSION'S OWN CHECKOUT",
+  );
 });
 
 test("the exported EXIT object is the single authority — the npm script re-types no number", () => {

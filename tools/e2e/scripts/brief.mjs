@@ -99,6 +99,7 @@ import {
   treeProv,
   value,
 } from "./dispatch-brief.mjs";
+import { STALE_CLONE_LIMIT, judge as judgeCheckout } from "./checkout-currency.mjs";
 import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
@@ -214,6 +215,80 @@ async function main(argv) {
     taskId,
     full,
   });
+
+  /**
+   * ARM SEVEN — THE STALE-CHECKOUT CATCHER, AT ARM TIME (T-216-s1).
+   *
+   * A `PreToolUse` hook is only as current as the checkout the SESSION
+   * was started in, and an ABSENT hook cannot announce itself — so the
+   * catcher has to run WHERE THE GUARD IS NOT. **This is that place.**
+   * The dispatch ritual's arming steps are `--preflight` and
+   * `--write-fence`; both run here, from THIS checkout's own copy of the
+   * catcher, against the checkout the harness loaded its settings from.
+   *
+   * IT RUNS BEFORE THE CARD IS EVEN LOOKED UP, so a dispatch that fails
+   * for any other reason has still been told. A guard that speaks only on
+   * the happy path is one nobody hears at the moment it matters.
+   *
+   * WHAT IT JUDGES AND FROM WHERE ARE BOTH DEFAULTS, AND BOTH ARE
+   * LOAD-BEARING: the TARGET is `CLAUDE_PROJECT_DIR` (else this command's
+   * own working directory) and the VANTAGE is the checkout that file
+   * lives in. In the measured instance those were two DIFFERENT
+   * checkouts — the ritual's commands typed in the current integration
+   * checkout while the session's settings came from a worktree hundreds
+   * of commits behind — which is exactly the split this arm sees.
+   *
+   * A STALE verdict JOINS THE FINDINGS and the dispatch answers 1. An
+   * UNKNOWN one does not: it means a question could not be ASKED — no
+   * local integration branch, a directory that is not a checkout — and
+   * turning an inability into a verdict is the failure every other arm
+   * of this command already refuses.
+   *
+   * @type {string[]}
+   */
+  const sessionFindings = [];
+  if (wantsPreflight || fenceWorktree !== "") {
+    const currency = judgeCheckout();
+    console.log(
+      render([
+        note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
+        value(
+          `verdict: ${currency.verdict}`,
+          liveProv(ctx.at, ctx.host, "checkout-currency.mjs, run from this checkout's own copy"),
+        ),
+        value(
+          `judged: ${String(currency.figures["target"])}`,
+          liveProv(ctx.at, ctx.host, "CLAUDE_PROJECT_DIR, else this command's working directory"),
+        ),
+        value(
+          `from: ${String(currency.figures["vantage"])}`,
+          liveProv(ctx.at, ctx.host, "the checkout checkout-currency.mjs itself lives in"),
+        ),
+        // EVERY LINE BELOW IS A STAMPED VALUE AND NOT A NOTE, because
+        // this module refuses a note that carries a digit — a figure with
+        // no ref is the defect this whole command exists to stop, and a
+        // hash inside a finding is a figure like any other.
+        ...currency.findings.map((f) =>
+          value(
+            `STALE [${f.code}] ${f.detail}`,
+            liveProv(ctx.at, ctx.host, "checkout-currency.mjs, judging that checkout's own disk"),
+          ),
+        ),
+        ...currency.unanswered.map((f) =>
+          value(
+            `UNANSWERED [${f.code}] ${f.detail}`,
+            liveProv(ctx.at, ctx.host, "checkout-currency.mjs, a question it could not ask"),
+          ),
+        ),
+        note(STALE_CLONE_LIMIT),
+      ]),
+    );
+    for (const f of currency.findings) {
+      sessionFindings.push(
+        `the checkout this session was started in is STALE [${f.code}] — ${f.detail}`,
+      );
+    }
+  }
 
   if (taskId !== "") {
     if (ctx.card === undefined) {
@@ -484,6 +559,7 @@ async function main(argv) {
 
   const findings = [
     ...ctx.findings,
+    ...sessionFindings,
     ...preflightFindings,
     ...fenceFindings,
     ...cardFindings,
