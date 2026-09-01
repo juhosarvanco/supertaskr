@@ -33,16 +33,44 @@ three were held, and the three were chosen by ARITHMETIC.**
 ## Why this is a defect and not a budget
 
 The obvious reading is *the board is too full, prune it*. That reading is
-wrong, and the measurement says so: **the queue's capacity is not a
-function of how much work exists.** It is a function of how many bytes of
-card TITLE and provenance the brief prints, against a buffer size chosen
-by whoever called `spawnSync`. A cluster of seven short-titled cards
-would have fit. This cluster did not, because its titles are long —
-**and its titles are long because this project requires a title to state
-the finding rather than name a topic.**
+wrong: **the queue's capacity is not a function of how much work
+exists**, it is a function of how many bytes the brief prints per card
+against a buffer size chosen by whoever called `spawnSync`.
 
-So the ceiling penalises exactly the cards the method asks for. That is
-the shape of the defect.
+### THE FIRST DIAGNOSIS ON THIS CARD WAS WRONG, AND THE MEASUREMENT IS KEPT
+
+This card was filed saying the cluster overflowed because its TITLES are
+long, and that *a cluster of seven short-titled cards would have fit* —
+with the flourish that the ceiling therefore penalises exactly the
+stating-the-finding titles this method requires. **It was an unmeasured
+counterfactual and it is false.** Measured at `ed92057` across all 92
+planned cards:
+
+    title length, planned cards      min 32, median 169, max 250
+    the seven in question, total     1,237 bytes
+    seven MEDIAN-length titles       1,183 bytes
+    difference                          54 bytes
+
+    measured promotion cost          4,515 bytes  (~645 per card)
+    of which title                                (~177 per card)
+
+**Fifty-four bytes.** These seven are barely above median, and title
+length accounts for about 1% of the overshoot. Seven median cards would
+have overflowed too.
+
+**THE REAL COST IS THE ~468 BYTES PER CARD THAT IS NOT TITLE** — the
+per-row provenance the brief prints so that every figure names its
+source. That is a feature of this tool, not an accident, and it is what
+makes the ceiling arrive at ~100 dispatchable cards regardless of how
+anybody writes.
+
+So the defect is not that the method's titles are expensive. **It is that
+a per-card cost the tool pays deliberately meets a buffer nobody chose
+deliberately**, and the two were never reconciled.
+
+The wrong version is kept rather than edited away because it changes what
+a fix targets: shortening titles would have bought 54 bytes and felt like
+progress.
 
 ## THE FAILURE IS SILENT, WHICH IS THE PART THAT COSTS
 
@@ -90,7 +118,10 @@ that exists and one that reaches the person holding the decision.
    what is dispatchable NOW; a card blocked by a live lane is not. The
    filter is derivable — `T-209` already computes it — and it is the
    difference between a list that grows with the board and one that
-   grows with the ready work.
+   grows with the ready work. **The corrected measurement above makes
+   this the strongest of the three**: at ~645 bytes per card, the ceiling
+   sits near 100 dispatchable cards whatever anybody writes, and 92 are
+   planned today. Filtering is the only lever that scales.
 3. **What the tool does when it is near the boundary.** `T-167-s5`
    landed a headroom alarm for the graph budget and the shape transfers:
    the brief should DISCLOSE its own margin, so a reader meets the
