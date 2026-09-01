@@ -71,6 +71,48 @@ you know is in docs/. You are disposable at any moment.
    control, anything whose job is to refuse — the builder of a cage is
    not its inspector, and the field is set at this stamp rather than
    left to the default (tasks/TASK-FORMAT.md owns the field).
+   **AUDIT THE CARD'S ASSERTIONS BEFORE THE STAMP, BECAUSE AN ASSEMBLER
+   CHECKS STRUCTURE AND NOTHING CHECKS CLAIMS.** A preflight validates
+   what it can DERIVE — the file exists, the fence expands, the blocker
+   is met. It cannot judge a sentence asserting something about the
+   repository: *"the conventions already say X"*, *"the guard exposes
+   flag Y"*, *"this will fail with error Z."* Read the card's factual
+   claims and confirm each against the tree. **Measured on this method's
+   own project: three of four cards dispatched in one sitting carried a
+   false assertion and every preflight ran green.** One named a
+   command-line flag no binary accepts; one asserted a governing document
+   says something it has never said; one predicted a failure mode the
+   platform does not have. **Two were then found TWICE — once by the
+   executor mid-build, once by the verifier — and the third was inherited
+   by the executor without noticing.** Correcting a card costs minutes
+   here and an execution round trip afterwards.
+5c. **CUT THE VERIFIER'S BENCH WHEN YOU CUT THE LANE, NEVER WHEN THE LANE
+   REPORTS.** A blind phase 1 — read the card at its base ref, write the
+   attack set, stamp it — consumes NOTHING the executor produces: it
+   needs the card and the base, and both exist at dispatch. Running it
+   afterwards makes it serial dead time at the end of every lane.
+   **Measured across four lanes in one sitting: phase 1 took 7.5, 7.3,
+   9.9 and 10.8 minutes, every minute of it after the executor had
+   finished** — about thirty-five minutes of waiting, against executor
+   runs of fifteen to a hundred and five minutes it could have overlapped
+   entirely.
+   **AND IT IS STRONGER EARLY, NOT MERELY CHEAPER.** Blindness stops
+   depending on a seat declining to look and becomes a property of the
+   clock: at dispatch there is no diff to read. roles/verifier.md records
+   three verifiers in three lanes disclosing that they kept this rule BY
+   HAND; a bench cut before anything exists to see removes the temptation
+   rather than asking for restraint.
+   **THE ORDER IS AUDIT, THEN STAMP, THEN BOTH AT ONCE.** The attack set
+   is written against the card the executor will build to, so a card
+   corrected by the audit above must be corrected BEFORE the bench is
+   cut. An attack set stamped against a card that then changes is
+   measuring a contract nobody holds.
+   **WHAT MUST NOT MOVE: THE ATTACK SET NEVER REACHES THE EXECUTOR.** It
+   enumerates ways to satisfy the card's letter while failing its
+   purpose. An executor holding it builds against a checklist, the
+   verifier can no longer be surprised, and *did it survive* becomes
+   trivially yes. **Early is a SCHEDULING change and never a SHARING
+   one.**
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

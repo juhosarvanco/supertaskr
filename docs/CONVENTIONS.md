@@ -214,6 +214,23 @@
   the claim that mattered. **A LOCAL BATTERY AND CI ARE DIFFERENT
   MEASUREMENTS AND ONLY ONE OF THEM RUNS ON A MACHINE THAT IS NOT
   YOURS.**
+- **NEVER TYPE A PATH YOU CAN DERIVE.** `find`, `git ls-files`, or the
+  `scripts` block of the relevant `package.json` answers "where does this
+  live" in one command. Three paths were INVENTED in a single sitting —
+  `boot-gate.mjs` (the gate is `npm run boot:check`), a method-eval path
+  run from the wrong directory, and `gate-run.mjs` placed in
+  `.claude/hooks/` when it lives in `tools/e2e/scripts/`. **The third
+  shipped inside a VERIFIER'S BRIEF**, so an agent spent part of its
+  blind phase correcting its own instructions. Each surfaced as an exit 1
+  that was a stack trace rather than a verdict.
+- **FIT A BYTE-BANDED DOCUMENT IN ONE WRITE, NOT IN A LOOP.** Draft into
+  a scratch file, `wc -c` it, cut to the target, THEN write. `docs/STATE.md`
+  was edited SEVEN times in one sitting to fit its warn line, and every
+  edit re-triggered the specs that read it — the largest single waste of
+  that session. **And when it will not fit, the answer is not a smaller
+  sentence**: a MECHANISM belongs in a governing document (this file has
+  room; STATE does not), a record takes the INSTANCE, and shaving words
+  is how a rule ends up in neither (T-146, T-225).
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an

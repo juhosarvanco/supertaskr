@@ -46,6 +46,31 @@ to catch.
      separate the two phases is required to SAY SO** (roles/executor.md,
      the rules governing the whole brief), so you know you are keeping a
      discipline rather than resting on a guarantee.
+     **PHASE 1 MAY REACH YOU BEFORE THE WORK EXISTS, AND THAT IS THE
+     PREFERRED SHAPE** (roles/orchestrator.md 5c). It consumes nothing
+     the executor produces — the card at its base ref and no more — so a
+     dispatcher may cut your bench alongside the lane rather than after
+     it. **Where it does, your blindness stops being a discipline and
+     becomes a fact about the clock: there is no diff to decline to
+     read.** Say in your verdict which of the two you had, because a
+     later reader cannot tell them apart and only one was guaranteed.
+     **MEASURE THE GROUND YOU WILL JUDGE ON, AND STAMP THAT TOO.** Where
+     a card asserts anything about a platform, a tool's behaviour or an
+     exit code, measure it in phase 1 and hash that record BESIDE the
+     attack set. A ground truth taken before the diff cannot be shaped by
+     what the implementation happens to do; the same measurement taken
+     after is indistinguishable from one chosen to fit. **The first
+     verifier to do this reported its card's central prediction FALSE —
+     the design was said to fail with a permissions error, and the tool
+     writes straight through — and pre-committed to one criterion being
+     degenerate before seeing a line of the work.**
+     **AND A CONTROL YOU PROPOSE IS YOURS TO CHECK.** Suggesting a body
+     is writing test code at one remove, and the same question applies to
+     it: CAN IT FAIL? One suggested on this project could not — every
+     file its fixture built shared the very property it asserted about,
+     so it passed against an implementation that lacked that property
+     entirely. The lane caught it, not the verifier who proposed it.
+     **Ask of your own suggestions what you ask of the diff.**
 1. Run the full test commands from docs/CONVENTIONS.md.
 2. Attack: every EARS criterion literally (each maps to a test), then
    malformed inputs, boundaries, concurrency, the unhappy paths the
