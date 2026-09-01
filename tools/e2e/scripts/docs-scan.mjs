@@ -2723,7 +2723,12 @@ export const DOC_BUDGETS = Object.freeze({
   // and 2026-08-29 landings used.
   "docs/ROADMAP.md": { landed: 9801, warn: 12252, fail: 14702 },
   "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  "docs/CONVENTIONS.md": { landed: 131514, warn: 164393, fail: 197271 },
+  // RE-LANDED 2026-09-02 (T-236, ADR-019 addendum 6). CONVENTIONS only:
+  // `git cat-file -s d01b24f:docs/CONVENTIONS.md` = 117502, warn =
+  // ceil(landed + max(F, landed x 0.25)) with F = 2053 (addendum 5 — the
+  // floor binds only below 4F, so here it is ceil(landed x 1.25)), fail =
+  // ceil(landed x 1.5), the same rounding every landing has used.
+  "docs/CONVENTIONS.md": { landed: 117502, warn: 146878, fail: 176253 },
 });
 
 /** Every live task card as a `{path, content}` entry, read off the tree
