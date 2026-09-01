@@ -292,6 +292,21 @@
   advisory DB — the one network-touching command; idempotent since
   T-153-s13, because the cargo cache restores ~/.cargo/bin and a
   restored binary once stopped every run at this step).
+- **THE DISPATCH RITUAL IS SERIAL: cut ONE worktree, arm it, READ THE
+  MANIFEST BACK, then cut the next.** T-209's guard refuses a dispatch
+  against a lane whose fence it cannot read — *an unread fence is not
+  "disjoint from everything"* — and refused four at once when a seat cut
+  all four before arming any. **AND STAMP `status: building` BEFORE YOU
+  CUT** (T-226): two consecutive cards merged with zero conflicts against
+  a three-way conflict in all three that stamped after. Moved here from
+  docs/STATE.md, which is byte-capped and was the only document holding
+  it — a MECHANISM belongs in a governing document (T-146).
+- **E2E PORT — DERIVE IT PER LANE: `NPUTER_E2E_PORT=15000+<card number>`.**
+  The default 14520 is MACHINE-WIDE, so every concurrent lane takes the
+  same one; `E2E_PORT` binds NOTHING. `lsof` to zero rows before binding,
+  and never 1420. Third member of this family, beside the SCRATCH RULE and
+  the PORT RULE: same class, same remedy — **a construction beats a
+  check** (lane-protocol rule 4, T-217).
 - **SCRATCH RULE — NAME EVERY SCRATCH FILE FOR THE LANE THAT OWNS IT**
   (`<purpose>-<card id>.<ext>`, e.g. `battery-T-216-s1.sh`). **The
   scratchpad is ONE directory shared by every seat a session spawns**, so

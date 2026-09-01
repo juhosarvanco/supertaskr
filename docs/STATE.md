@@ -1,10 +1,12 @@
 # State
 
-Updated: 2026-09-01 at the T-216 close — **"the T-216 record"** is the
-newest file in docs/checkpoints/; three from the same day sit beside it.
-**NO task branches remain** (derive: LANES), nothing is outstanding, and
-**CI IS GREEN at the tip** — a separate claim from a local battery, and
-one that was FALSE for five hours while four batteries said otherwise.
+Updated: 2026-09-01 at the T-216-s1 close — the newest file in
+docs/checkpoints/ is **the catcher/sweep record**; four from that day sit
+beside it. **NO task branches remain** (derive: LANES), nothing is
+outstanding. **CI IS A SEPARATE CLAIM FROM A LOCAL BATTERY AND MUST BE
+READ**: main went RED twice in the closing hour, both times minutes after
+four suites reported green here. **ASK `gh run list` BEFORE BELIEVING THE
+TREE.**
 
 **NOTHING IS BROKEN.** Designed non-zero: `npm run health` **3** while
 bands await keepers (T-156-s1/s2) — never read it as clean, never "fix"
@@ -30,12 +32,8 @@ opens with `Checkpoint:`** (T-182).
   — a detached entry is NOT a lane. **The dispatch ritual and its order
   are orchestrator 5b/5c's**, read there, not restated here. Never read
   the ledger's FREE column as a verdict (T-143).
-- **THE RITUAL IS SERIAL: cut ONE worktree, arm it, READ THE MANIFEST
-  BACK, then cut the next.** T-209's guard refuses a dispatch against a
-  lane whose fence it cannot read — *an unread fence is not "disjoint
-  from everything"* — and refused four at once when this seat cut all
-  four first. **STAMP BEFORE YOU CUT** (T-226): two consecutive cards
-  merged clean, against a conflict in all three that stamped after.
+- **THE RITUAL IS SERIAL AND YOU STAMP BEFORE YOU CUT** — CONVENTIONS
+  carries both rules and the measurements that bought them.
 - **DISJOINTNESS IS OVER EXPANDED PATH SETS, NEVER TOKENS** (rule 5,
   carrying its measurement: six lanes, every block a naming collision,
   not one real collision). **T-209 COMPUTES IT** — ask the guard, never
@@ -44,10 +42,8 @@ opens with `Checkpoint:`** (T-182).
   names the one permitted command and forbids the probe; do not restate
   it here. `../nputer-app` is detached ON PURPOSE: not a lane.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
-- **E2E PORT: THE DEFAULT IS MACHINE-WIDE, SO EVERY CONCURRENT LANE
-  TAKES 14520.** SET `NPUTER_E2E_PORT=15000+<card number>` per lane;
-  `E2E_PORT` binds NOTHING. lsof to zero rows before binding, never
-  1420. Derive, never check (T-217's corroboration).
+- **E2E PORT AND SCRATCH FILENAMES ARE CONVENTIONS' RULES**, beside the
+  PORT RULE — one family, derived per lane, never defaulted (T-217).
 - GRAPH: `cargo run -p nputer-index -- index --check --root ../..` from
   app/src-tauri/ — ASK IT, never predict, ask AGAIN after every write.
   Never trust it from inside a drill worktree (T-153-s3).
@@ -60,9 +56,10 @@ opens with `Checkpoint:`** (T-182).
    here named two dead lanes and missed two live ones (T-142).
 2. **THE ENFORCEMENT STACK IS COMPLETE** — write, dispatch, landing and
    push all refuse; fast paths are law; the physical layer catches what a
-   hook cannot. The cards and their measurements: the 09-01 records.
-   Next: **T-216-s1**, then T-222/T-223/T-224. **T-229 and T-230 pay for
-   themselves** — one prevents a rejection class, one a dispatch class.
+   hook cannot. **NEXT IS `T-216-s4`, BEFORE ANY OTHER CARD: three of four
+   suites are red inside ANY lane fence, so no lane can measure its own
+   battery** and the integrator does it by hand. **The rest of the order,
+   with its reasoning: the newest record's Next section.**
 3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
    decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
    rest on it, and dropping it reds nothing.
@@ -71,12 +68,9 @@ opens with `Checkpoint:`** (T-182).
    asked".
 5. **T-126-s2 IS RULED** — join to TypeScript, shape 3 refused on TEST
    REACHABILITY. **NO BLOCKER IS NAMED HERE, EVER**: `blocked_by` IS READ
-   FROM THE CARD (T-138), because this line once named a blocker that had
-   closed while the card named a different one.
-6. **TRIAGE PART DONE, THE REST BLOCKED BY BYTES** (T-225): promotions
-   chosen by ARITHMETIC rather than merit, and suggestions now DRIFTING
-   on their own band. Counts derived, not quoted; **the rider list is in
-   the T-216 record.**
+   FROM THE CARD (T-138).
+6. **TRIAGE BLOCKED BY BYTES** (T-225): promotions chosen by ARITHMETIC
+   rather than merit; suggestions DRIFTING. Riders: the T-216 record.
 7. **@human holds; no card is cut from these** — the FORM (reopened),
    the STEERING SPLIT (T-180 parked), T-025-s4's three permission
    questions, T-162-s1's byte floor, T-131, and @human's eye on the
@@ -92,24 +86,33 @@ opens with `Checkpoint:`** (T-182).
   flag, and the flag still refuses without a path. **An exit that is
   right for the wrong reason ends the search**, which is why this file
   states causes and not just codes.
-- **A LOCAL BATTERY AND CI ARE DIFFERENT MEASUREMENTS** — only one of
-  them runs somewhere else. `gh run list` after every batch; borrow the
-  environment before believing a green (CONVENTIONS). **A CLASS NAMED AND
-  A CLASS SWEPT ARE DIFFERENT ACTS.** The five red hours that earned both
-  sentences: the 09-01 records.
+- **A LOCAL BATTERY AND CI ARE DIFFERENT MEASUREMENTS** — only one runs
+  somewhere else. `gh run list` after every batch; borrow the environment
+  first (CONVENTIONS). **A CLASS NAMED AND A CLASS SWEPT ARE DIFFERENT
+  ACTS.** **THE HOST'S WORKTREE LIST DIFFERS TOO** — `> 1` is true here
+  and false on a runner; rule 4 names that list machine-scoped beside the
+  port. Instances: the 09-01 records.
+- **THREE WRITES THAT RED THE TREE AND NO CHEAP GATE SEES.** A TEST RENAME
+  owes `npm run capabilities` in the same commit (CAPABILITIES is
+  generated from spec names, T-216-s2). A TRIAGE STAMP owes the placement
+  fields, required only above `suggested`/`parked` — and the docs gate
+  reports frontmatter clean over a tree the parser calls broken (T-235). A
+  PROSE COMMIT stales the push token.
 - **REACH FOR THE CONSTRUCTION, NOT THE CHECK** — lane-protocol rule 4,
   which carries the class in full.
-- **A WORKTREE ENTRY MUTATES IN PLACE.** A count cannot see a moved
-  board; a path-only set difference cannot either. Compare whole
-  `git worktree list` lines, **commit column included**.
+- **A WORKTREE ENTRY MUTATES IN PLACE** — compare whole
+  `git worktree list` lines, **commit column included**; a count and a
+  path-only set difference are both blind to a moved board.
 - **SUITE CHAINS GO IN GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
   Pipe, docs-gate-path and line-number traps: CONVENTIONS.
 - **EVERY PUSH OWES THE FOUR-SUITE BATTERY, RUN LAST** (T-203) — ~6 min
   warm, e2e 93% of it; **no cargo means no push, deliberately.** T-216
   fixed the rooting: the guard now roots on EVIDENCE and declares what it
   cannot place. **BUT A HOOK IS ONLY AS CURRENT AS THE CHECKOUT THE
-  SESSION STARTED IN** (T-216-s1), and a session started in a stale
-  worktree pushes ungated while believing otherwise.
+  SESSION STARTED IN. T-216-s1 SHIPPED THE DETECTOR — the sweep in
+  `brief.mjs --preflight` names every checkout on this machine and whether
+  it loads current guards. RUN IT BEFORE YOU TRUST A PUSH**: the seat that
+  dispatched it had been ungated for a day and did not know.
 - **CUT THE VERIFIER'S BENCH AT THE BASE REF, AND CUT IT WITH THE LANE**
   — phase 1 needs nothing the executor makes, so blindness becomes a
   fact about the clock rather than a discipline (orchestrator 5c,
