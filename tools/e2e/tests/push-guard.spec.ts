@@ -868,12 +868,20 @@ test("writeToken makes its own token un-committable in a repository NOBODY armed
   expect(staged, "`git add -A` offers to commit the verdict token").not.toContain(RUNTIME_DIR);
 });
 
-test("the ignore string has ONE home, and the fence writer and the token writer both use it", () => {
+test("the ignore file the TOKEN writer leaves on disk is the one imported ignore string", () => {
   // T-057, and this file's own footnote about re-exports dressed up as
   // cross-checks: there is no second constant to compare against, so what
-  // is checked is the ROUND TRIP through each writer onto disk. Both
-  // arrive at byte-identical files because both import one string; a
-  // second copy reappearing anywhere reds this by inequality.
+  // is checked is the ROUND TRIP through this writer onto disk.
+  //
+  // THE NAME SAYS `TOKEN WRITER` BECAUSE THAT IS ALL THIS BODY DRIVES.
+  // An earlier spelling claimed "the fence writer and the token writer
+  // both use it" while exercising one of them — a name outrunning its
+  // body, which is how a reader comes to believe a property has a keeper
+  // it does not have. The FENCE writer's half of the same round trip is
+  // covered in `lane-fence.spec.ts`, which reads its written file back
+  // and compares it to `MANIFEST_DIR_IGNORE` — the alias for this very
+  // constant. The property is covered across two specs, and neither body
+  // claims the other's half.
   const root = mkdtempSync(path.join(os.tmpdir(), "T-203-one-home-"));
   SCRATCH.push(root);
   execFileSync("git", ["init", "-q", root], { stdio: "pipe" });

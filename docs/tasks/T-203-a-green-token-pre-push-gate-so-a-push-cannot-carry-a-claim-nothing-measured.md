@@ -281,6 +281,212 @@ FILE — is named in the code and self-corrects when it is added.**
 **FINDING 3 — the card's own opening quote.** Corrected in place at the
 top of this card, with the derivation.
 
+## THE POISON DRILL LEDGER — 14 mutants at `9b572f2`, 0 survivors
+
+**IT IS HERE BECAUSE A FIGURE WITHOUT A KEEPER IS A CLAIM** (the verdict
+of 2026-09-01). The drill ran, and its result lived only in a report to
+the coordinator — so a verifier could read that M3 *aborted* but could
+not confirm it ABORTED rather than was REPORTED as aborting. That is the
+same defect this lane already recorded about a byte count, arriving from
+the other side. Every row below is transcribed from the run's own
+`drill-ledger.json`, not retyped from memory: each landing is what `diff`
+printed, each kill list is the runner's own body names, each restore is a
+sha256 taken before the mutation and compared after.
+
+**HOW THE HARNESS REFUSES TO LIE.** A mutant whose pattern does not match
+**aborts the whole run** rather than printing `survived` — the failure
+mode this project has hit four times in one night. A mutant whose `diff`
+shows no change aborts too. Both restore the file first.
+
+**THE ORDER IS THE RUN ORDER**, which is why `M10` is last: `M11`–`M14`
+were appended to the array ahead of it when the rejection's fixes landed.
+
+### M3 ABORTED ON ITS FIRST RUN, AND THAT IS THE ROW WORTH READING
+
+After the rejection's fixes rewrote the red arm into a red/unmeasured
+split, `M3`'s pattern `if (entry.verdict !== GREEN) {` no longer existed.
+The harness stopped the entire drill at that point:
+
+```
+M1 token-missing arm allows: exit=1 failed=2 passed=43 restored=true
+M2 token staleness never detected: exit=1 failed=4 passed=80 restored=true
+ABORT M3 token redness never detected: pattern matched 0 times in .claude/hooks/gate-token.mjs, expected exactly 1
+```
+
+Exit **9**, no ledger written, and `git status --porcelain` **0 dirty
+paths** afterwards — the abort restores before it exits. A mutator that
+had merely *reported* would have printed `survived` and left a stale
+pattern pointing at code that no longer exists, which is how a drill
+comes to certify a property nothing tests. `M3` was then retargeted at
+the site the property moved to (`if (red.length > 0) {`) and the full
+set re-run; that re-run is the ledger below.
+
+### The 14 rows
+#### M1 token-missing arm allows
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- state: "missing",`
+  - `+ state: "fresh",`
+- **died** (2 body/bodies; the run also reported 43 passed):
+  - `tests/push-guard.spec.ts:901:1 › a missing token refuses the push and names the one command that fixes it`
+  - `tests/push-guard.spec.ts:1122:1 › a checkout whose HEAD tree git will not name is announced, and allowed`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M2 token staleness never detected
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (entry.tree !== tree) {`
+  - `+ if (false && entry.tree !== tree) {`
+- **died** (4 body/bodies; the run also reported 80 passed):
+  - `tests/gate-run.spec.ts:736:1 › a real run's verdict survives the round trip into the token and is judged GREEN against the tree it ran at`
+  - `tests/push-guard.spec.ts:915:1 › a token whose tree is not HEAD's refuses as STALE, naming both trees`
+  - `tests/push-guard.spec.ts:1014:1 › an amend that changes only the message keeps the token; one that changes a file does not`
+  - `tests/push-guard.spec.ts:1177:1 › WITH the guard, the same stale token never reaches the remote`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M3 token redness never detected
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (red.length > 0) {`
+  - `+ if (false && red.length > 0) {`
+- **died** (3 body/bodies; the run also reported 81 passed):
+  - `tests/gate-run.spec.ts:778:1 › a RED verdict is recorded rather than dropped, so a red run is never mistaken for a run nobody made`
+  - `tests/push-guard.spec.ts:924:1 › a token recording a red suite refuses, and says which suite`
+  - `tests/push-guard.spec.ts:943:1 › a suite the runner DECLINED to grade refuses as unmeasured, not as red`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M4 an incomplete token passes
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (missing.length > 0) {`
+  - `+ if (false && missing.length > 0) {`
+- **died** (2 body/bodies; the run also reported 82 passed):
+  - `tests/gate-run.spec.ts:805:1 › a second run MERGES into the token rather than replacing it, because the battery is run in pieces`
+  - `tests/push-guard.spec.ts:932:1 › a token that graded some of the battery is refused as INCOMPLETE`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M5 dangling blockers never reported
+
+- **site** `tools/e2e/scripts/push-checks.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (cards.has(id)) continue;`
+  - `+ if (true) continue;`
+- **died** (4 body/bodies; the run also reported 52 passed):
+  - `tests/push-checks.spec.ts:143:1 › a blocked_by naming no live card is FOUND, and one naming a live card is not`
+  - `tests/push-checks.spec.ts:226:1 › the CLI exits FOUND on a defective board and CLEAN on a coherent one`
+  - `tests/push-guard.spec.ts:1039:1 › an unresolvable blocked_by refuses the push — the first measured instance`
+  - `tests/push-guard.spec.ts:1066:1 › the cheap checks run even where the guard would otherwise allow and return`
+- **restored** — sha256 `7926d205b888bafd…` before mutation, identical after: **yes**
+
+#### M6 placement gaps never reported
+
+- **site** `tools/e2e/scripts/push-checks.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (missing.length === 0) continue;`
+  - `+ if (true) continue;`
+- **died** (1 body/bodies; the run also reported 10 passed):
+  - `tests/push-checks.spec.ts:162:1 › a card stamped out of suggested without its four placement fields is FOUND; a suggestion is not`
+- **restored** — sha256 `7926d205b888bafd…` before mutation, identical after: **yes**
+
+#### M7 a record newer than STATE is never reported
+
+- **site** `tools/e2e/scripts/docs-scan.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (recAt !== null && recAt > stateAt) stale.push(rec);`
+  - `+ if (false && recAt !== null && recAt > stateAt) stale.push(rec);`
+- **died** (2 body/bodies; the run also reported 97 passed):
+  - `tests/push-checks.spec.ts:179:1 › a checkpoint record committed after STATE is FOUND, and the same commit as STATE is not`
+  - `tests/push-guard.spec.ts:1048:1 › a record newer than STATE refuses the push — the second measured instance`
+- **restored** — sha256 `9212db603df239e8…` before mutation, identical after: **yes**
+
+#### M8 the cheap checks stop being unconditional
+
+- **site** `.claude/hooks/push-guard.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- const cheapResult = cheap(root);`
+  - `+ const cheapResult = onLane ? { status: 0, stdout: '', stderr: '' } : cheap(root);`
+- **died** (1 body/bodies; the run also reported 44 passed):
+  - `tests/push-guard.spec.ts:1066:1 › the cheap checks run even where the guard would otherwise allow and return`
+- **restored** — sha256 `574bbaa53d2d2d79…` before mutation, identical after: **yes**
+
+#### M9 only GREEN verdicts reach the token
+
+- **site** `tools/e2e/scripts/gate-run.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- const { path: tokenFile } = writeToken(root, verdicts);`
+  - `+ const { path: tokenFile } = writeToken(root, verdicts.filter((v) => v.verdict === "GREEN"));`
+- **died** (1 body/bodies; the run also reported 38 passed):
+  - `tests/gate-run.spec.ts:778:1 › a RED verdict is recorded rather than dropped, so a red run is never mistaken for a run nobody made`
+- **restored** — sha256 `9948e0d899445c56…` before mutation, identical after: **yes**
+
+#### M11 writeToken stops arming the runtime directory
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (!existsSync(ignoreFile)) writeFileSync(ignoreFile, RUNTIME_DIR_IGNORE, "utf8");`
+  - `+ if (false) writeFileSync(ignoreFile, RUNTIME_DIR_IGNORE, "utf8");`
+- **died** (3 body/bodies; the run also reported 42 passed):
+  - `tests/push-guard.spec.ts:816:1 › writeToken makes its own token un-committable in a repository NOBODY armed`
+  - `tests/push-guard.spec.ts:871:1 › the ignore string has ONE home, and the fence writer and the token writer both use it`
+  - `tests/push-guard.spec.ts:885:1 › an ignore file already on disk is left alone, so an armed lane is never clobbered`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M12 a token written over a dirty tree is accepted
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (unkeyed.length > 0) {`
+  - `+ if (false && unkeyed.length > 0) {`
+- **died** (1 body/bodies; the run also reported 44 passed):
+  - `tests/push-guard.spec.ts:977:1 › a battery run over uncommitted work does not certify the tree it is keyed to`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M13 the working tree is never seen as dirty
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- return String(out.stdout ?? "").trim() !== "";`
+  - `+ return false;`
+- **died** (1 body/bodies; the run also reported 44 passed):
+  - `tests/push-guard.spec.ts:977:1 › a battery run over uncommitted work does not certify the tree it is keyed to`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M14 REFUSED collapses back into RED
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- if (entry.verdict === "REFUSED") unmeasured.push(`${s} (${detail})`);`
+  - `+ if (false) unmeasured.push(`${s} (${detail})`);`
+- **died** (1 body/bodies; the run also reported 44 passed):
+  - `tests/push-guard.spec.ts:943:1 › a suite the runner DECLINED to grade refuses as unmeasured, not as red`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+#### M10 a later run replaces the token instead of merging
+
+- **site** `.claude/hooks/gate-token.mjs`
+- **landing, read from `git diff`** — one line out, one in:
+  - `- const suites = "token" in prior ? { ...prior.token.suites } : {};`
+  - `+ const suites = {};`
+- **died** (1 body/bodies; the run also reported 38 passed):
+  - `tests/gate-run.spec.ts:805:1 › a second run MERGES into the token rather than replacing it, because the battery is run in pieces`
+- **restored** — sha256 `417dfe75c45997ac…` before mutation, identical after: **yes**
+
+**Totals at `9b572f2`: 14 mutants, 14 killed, 0 survivors, 0 unrestored,
+and `git status --porcelain` clean after the run.** The two aims this
+project separates are both met: every mutant died, and each died AT THE
+SITE THE PROPERTY LIVES rather than somewhere downstream.
+
+**WHAT THE DRILL COULD NOT REACH, NAMED RATHER THAN IMPLIED.** The
+pre-fix ignore-file defect was invisible to every mutant of mine, because
+the body asserting it was green BY CONSTRUCTION in the only tree the
+drill ever ran in — an armed lane worktree. A drill can only kill what
+its environment permits to fail. That is why `M11`'s three bodies now run
+in a repository nobody armed, and why they were run against the pre-fix
+writer FIRST, where all three failed.
 ### Owed at the merge, outside this lane's fence
 
 - **`docs/CAPABILITIES.md` REGENERATION.** `npm run capabilities:check`
