@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 priority: 1
 size: L
-status: planned
+status: building
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e/scripts/docs-scan.mjs, docs/decisions/019-governing-docs-rules-truths-records.md]
 suggested_by: "the architect seat, 2026-09-02 — item 1 of docs/rooms/loop-efficiency.md, filed after @human asked for the loop's weak spots and ruled 'apply all of your current loop efficiency suggestions'"
-builder:
-verifier:
+builder: claude-fable-5-1@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
@@ -140,3 +140,21 @@ T-146 (why a mechanism belongs in a governing document and an instance
 in a record), T-111-s12 (a column-zero `- ` inside a bullet splits it
 silently — the executor's own hazard while cutting), and
 docs/rooms/loop-efficiency.md item 1.
+
+## DISPATCH, 2026-09-02 — the stamp
+
+**Ceremony L**: the planning pass is the card's own section above,
+written at the seat before dispatch; executor, then an independent
+verifier, then the integrator. The executor seat is claude-fable-5-1
+because the work is judgement over prose with many pins, and a rejection
+cycle on a 158 KB document costs more than the stronger seat does.
+
+**Fence as filed**: `docs/CONVENTIONS.md`, `tools/e2e/scripts/docs-scan.mjs`
+and ADR-019's file. Three sibling lanes run concurrently (T-216-s4,
+T-223, T-230); none touches these files, and T-229 — which will move the
+version stamp in the same document — waits until this card lands.
+
+**Holder**: this lane does NOT hold the integration checkout and does
+not merge; it stamps `verifying`, reports ready-to-merge with branch and
+tip, and leaves its worktree standing. The compaction RECORD under
+docs/checkpoints/ is the integrator's at the merge, not this lane's.
