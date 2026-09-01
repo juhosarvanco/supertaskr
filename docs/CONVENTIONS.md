@@ -1072,7 +1072,28 @@
   at T-050, where `index --check` exits 1 at the merge and 0 at the
   checkpoint. The rule read "with the merge" for twenty-nine regens
   while every integrator did the other thing; this is the practice,
-  written down (T-014-s3). IF the regen cannot run THEN say so LOUDLY in
+  written down (T-014-s3).
+  **AND THE PIN RECONCILIATION IS INTEGRATION-SEAT WORK: A LANE NEVER
+  UPDATES THE PINS** (T-211, recorded rather than measured — the rule
+  both seats have been applying from memory across every merge that
+  moved a count). The dogfood fixtures a merge moves — the ids, the
+  declared count, the relation table, the rendered node and edge totals
+  — are reconciled AT THE CHECKPOINT, by whoever holds the integration
+  checkout, and never inside the lane whose merge moved them. The
+  reason is the same one that puts the regen at the checkpoint rather
+  than the merge: **a lane re-pinning its own counts is asserting a
+  total for a tree that does not exist yet** — its own, not the merged
+  one — and the number it writes is stale the moment any other lane
+  lands. A lane that finds a pin wrong states it in its notes and
+  leaves the file alone.
+  **READ THIS AS THE MERGE-MOVED CASE AND NOT AS DECLARING A COMPONENT
+  ABOVE**, which is the one way a LANE legitimately writes those same
+  files: a lane that declares a component moved the three fixtures with
+  its OWN diff, inside its own fence, and reconciles all three there
+  exactly as that bullet says. The two do not overlap — that bullet's
+  own sentence draws the line, since a MERGE REGEN alone moves only the
+  two app fixtures. What this rule forbids is a lane reconciling what
+  somebody ELSE's merge moved. IF the regen cannot run THEN say so LOUDLY in
   the checkpoint, naming the reason — a skipped gate is news, never
   silence.
 - THE LANE PROTOCOL — the generic rules are `method/lane-protocol.md`

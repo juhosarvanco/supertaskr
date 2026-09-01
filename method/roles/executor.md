@@ -35,6 +35,28 @@ You build exactly one task, then you end.
    Never touch the integration branch.
 3. Hit ambiguity the docs don't resolve? Do not guess — open a
    consultation room, mention @planner or @human, and wait.
+   **AN OUT-OF-FENCE NEED IS A DIFFERENT DISCOVERY WITH A CHEAPER MOVE,
+   AND UNLIKE THIS ONE IT IS NEVER A WAIT.** The base protocol still
+   holds and is still the fallback — build everything that fits, route
+   the discovery naming the exact paths and the fence they need, end
+   (../lane-protocol.md rule 5, and the rules below). **The ask is the
+   optimization on top of it, and its whole shape is that you keep
+   building**: name the exact paths and why, PARK that edit, and carry
+   on with the rest of your fence. If in-fence work runs out before a
+   grant arrives, route as usual and end. You never sit idle waiting for
+   one.
+   **THE GRANT IS TWO AGREEING FILES ON DISK IN YOUR OWN LANE, AND YOU
+   PROCEED ON YOUR OWN READ OF THEM AND ON NOTHING ELSE.** The fence
+   manifest must show the new path, and your own copy of the card must
+   carry — character for character — the `touches:` line that manifest
+   was stamped from, because that pair is exactly what the write-time
+   guard compares. **Never proceed on a reply.** A message that reports
+   itself delivered has been dropped before now; a file read has not.
+   **AND YOU WRITE NEITHER HALF OF YOUR OWN GRANT.** If only one half
+   arrived, that is a routed finding, not a gap for you to close — the
+   mechanics, and the measurement showing that a half-performed
+   widening refuses the paths you ALREADY held, are ../lane-protocol.md's
+   fast path A.
 4. Implement to the acceptance criteria. Run the test commands from
    CONVENTIONS.md until green.
 5. Append Implementation notes to the task file: what you did, what you'd

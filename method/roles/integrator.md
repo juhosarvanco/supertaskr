@@ -131,6 +131,25 @@ ordinal is stable until somebody inserts, and silent when it moves.
    that the ordinary case still passes — an atomic stamp-and-commit
    under a running integrator, which is blessed elsewhere in this
    method — is made on the page.
+   **AND EVERY REPAIR NAMED ABOVE IS MECHANICAL, WHICH IS WHAT HID THE
+   ONE CASE THIS STEP MOST NEEDS TO ANSWER.** A figure, a fixture, a
+   count, a citation: each is a text edit whose correctness is checkable
+   by re-running the thing that produced it, and the ordering above
+   sends every one of them through the authority question first. **A
+   BEHAVIOURAL defect the merge introduces is not in that class, and the
+   authority question already decides it — writing code to repair one is
+   a LANE write, and this seat holds no lane, no fence and no
+   verifier.** So a merge that breaks BEHAVIOUR is REFUSED and the
+   finding FILED, however plainly you can see the fix and however small
+   it looks. **This is what step 2 means by "your problem to catch":
+   catching is the whole of the duty**, and the repair belongs to a lane
+   with a fence over it and a verifier behind it. Concretely: the merge
+   does not go on to a checkpoint — undo it if it has not landed, and
+   take the revert play (../lane-protocol.md) if it has — the finding
+   goes on the card, and the card goes back to a lane. **Refusing costs
+   a rebuild; patching ships code behind an approval nobody gave it**,
+   and it does so in the one commit this method reviews least, since the
+   executor's fence and the verifier's read both happened on the branch.
    **IT IS THE COMPANION TO THE RULE THAT DISPOSITION IS NOT YOURS**
    (tasks/TASK-FORMAT.md, "THERE IS NO FOURTH MOVE"): that rule says what
    an integrator may not CLOSE, this one says what it may FIX, and the two

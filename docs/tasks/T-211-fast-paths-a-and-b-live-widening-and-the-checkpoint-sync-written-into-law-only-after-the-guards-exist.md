@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: verifying
 blocked_by: [T-209, T-212]
 touches: [method/lane-protocol.md, method/roles/executor.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md, docs/CONVENTIONS.md]
 suggested_by: "@human's two questions on the fence design (2026-08-31): what a lane does when it discovers an out-of-fence need mid-flight, and whether waiting on another lane can ever be sound; mechanics by peer session nputer-10; accepted by the architect seat"
@@ -138,3 +138,130 @@ checkpoint-subject rule that makes the sync target derivable), `T-207`
 (why a resolution must be a mechanism), and the six-for-six measurement
 inside rule 5 — the reason neither fast path ever decides anything on
 tokens.
+
+## Implementation notes (executor, 2026-09-01)
+
+Base `9d56b47402c8b5c55b36f35e8da1d6f2a7f418de`; branch
+`task/T-211-lane`. Every figure below carries the ref or the
+time-and-host it was taken at.
+
+### What landed, by file
+
+- **`method/lane-protocol.md`** — a new section, *The two fast paths —
+  when a fence has to move while a lane is live*, placed after *Why the
+  branch carries the dispatch stamp and the lane does not* and before
+  *The revert play*. A SECTION and not an eighth rule: rules 1–7 are
+  per-lane invariants, these are plays, and rule 5 is already the
+  longest thing in the file. It carries both paths with the base
+  protocol named as the fallback of each, the manifest-as-grant rule,
+  the two-writes finding, all-or-nothing with the `ours` refusal and its
+  reason, the merge-tree exit typing, and the tripwire with its own
+  holes published.
+- **`method/roles/executor.md`** — step 3 gains the ask protocol: park
+  the edit, keep building, proceed only on the lane's own read-back,
+  route when in-fence work runs out, and write neither half of your own
+  grant.
+- **`method/tasks/TASK-FORMAT.md`** — the widening clause (*A CRITERION
+  MAY NOT ORDER WORK OUTSIDE ITS OWN CARD'S `touches:`*) gains the
+  mid-flight arm, plus the sentence that a card being outside every
+  fence is not a licence to move this one field from inside the lane.
+  Names no paths and no commands, which that file requires of itself
+  twice.
+- **`method/roles/integrator.md`** — step 3 gains the behavioural
+  refusal, placed immediately after the authority ordering it extends.
+- **`docs/CONVENTIONS.md`** — the pin-reconciliation sentence inside
+  GRAPH REGEN's *WHY THE CHECKPOINT AND NOT THE MERGE* clause, which is
+  where that bullet already names the two dogfood fixtures a checkpoint
+  reconciles, with an explicit boundary against DECLARING A COMPONENT
+  above it.
+
+### Three things the card says that the repository does not — all measured
+
+1. **`T-209`'s `--intersect` is not a flag.** `brief.mjs`'s frozen
+   `FLAGS` list at this base carries `--task --role --root --state
+   --dispatch --card --audit --preflight --write-fence --full --help`
+   and no `--intersect`. The intersection is `laneDisjointness` in
+   `tools/e2e/scripts/lane-fence.mjs`, called as the LAST guard inside
+   `buildLaneFence` — so `--write-fence` refuses to write a manifest at
+   all when the fence overlaps a live lane. **The criterion "NO tooling
+   is owed" therefore HOLDS**: nothing is missing, the card's spelling
+   is wrong. The law is written to the real mechanism — the widening IS
+   the re-expansion, and the intersection is a step nobody can skip
+   rather than one somebody performs.
+2. **"on a ref the lane cannot move" is retracted by the guard that
+   sentence cites.** `.claude/hooks/landing-gate.mjs`'s own header says
+   it asserted exactly that and that it is false: `git branch -f`
+   carries the checked-out-elsewhere guard, `git update-ref
+   refs/heads/main <sha>` does not and was accepted, reproduced twice.
+   `T-223` owns the fix. The law here therefore says the landing check
+   reads the fence from the integration branch — where a legitimate
+   widening lands — and claims no absolute about reachability.
+3. **The merge-tree exit typing in the card is wrong in the costly
+   direction.** Measured at git 2.50.1 (Apple Git-155) on a throwaway
+   repository: a clean forecast exits 0 with a tree oid on stdout; a
+   real conflict exits **1** with the tree oid THEN the conflict lines;
+   **a ref that does not exist also exits 1**, with an EMPTY stdout and
+   the complaint on stderr; an unknown option exits 129. So "1 is
+   CONFLICT, above 1 is UNKNOWN" would route an instrument failure into
+   the tripwire — the exact harm the card names, arriving through the
+   code the card declares safe. The law uses the OUTPUT with the code:
+   the forecast ran if and only if it produced a tree. That is
+   docs/STATE.md's own standing reading rule applied to one more
+   instrument, not a second rule. **Routed as `T-211-s1`** for the
+   RANGE RULE's copy of the same spelling, which is untouched here and
+   outside this card's criteria.
+
+### The drill — the two-acts finding, and it is sharper than the ask
+
+`.claude/hooks/lane-fence.mjs`'s `decide` reads the card with
+`readFileSync(path.join(root, manifest.card))` where `root =
+findCheckoutRoot(path.dirname(abs))` — the checkout the WRITE LANDS IN,
+which for a lane's own write is the lane worktree — and compares that
+line against `manifest.touchesLine`, which `buildLaneFence` stamped from
+the INTEGRATION checkout's copy. Two readers, two places.
+
+Driven rather than reasoned: a synthetic lane checkout in this session's
+scratchpad (`.git` file → gitdir with `HEAD` on a `task/T-…-lane` ref, a
+manifest stamped from the WIDE line, a card carrying the NARROW one),
+`decide` called directly.
+
+| state | target | verdict |
+|---|---|---|
+| act one only | the newly granted path | **block** `stale-stamp` |
+| act one only | a path the lane ALREADY held | **block** `stale-stamp` |
+| both acts | the newly granted path | allow `inside-the-fence` |
+| both acts | a path the lane already held | allow `inside-the-fence` |
+| both acts | a never-granted path | **block** `outside-the-fence` |
+| both acts | the card's own file | allow `always-writable` |
+
+**The second row is the finding.** A widening delivered to one reader
+out of two does not fail to grant — it stops the lane dead on paths it
+was already building in. Rows five and six are the positive control: the
+fence still refuses what it was never widened to, and the card's own
+directory stays writable throughout, so row one is a refusal rather than
+an absence.
+
+No test body was added or changed by this diff, so the POISON DRILL is
+**not owed**; the drill above is the card's own verification and its
+restoration is trivial (nothing in the repository was mutated — the
+whole drill lives in the scratchpad).
+
+### For the verifier
+
+- The integrator sentence was written only after reading that whole
+  section. It **extends**: the section's own *ASK WHO MAY WRITE THE FIX
+  BEFORE YOU ASK WHEN IT BECAME FALSE* already subordinates the parent
+  test to authority and already rules that *a defect you may not write
+  the fix for is FILED whatever its vintage*; every repair it names is
+  mechanical (a figure, a fixture, a count, a citation); and step 2
+  calls the post-merge suite the integrator's *"problem to catch"*.
+  Nothing there says who repairs a BEHAVIOURAL break. No contradiction
+  was found, so nothing was routed under that criterion.
+- **This card's `status:` line will conflict at the merge, and it is
+  nobody's mistake.** The base `9d56b47` carries `planned`, the
+  integration branch carried `building` at `a014b81a` (the dispatch
+  stamp landed after this lane was cut), and this lane now carries
+  `verifying`. That is the latent two-writer case
+  `tasks/TASK-FORMAT.md`'s dispatch-stamp bullet describes; the
+  resolution is `verifying`, which is what the merge is supposed to
+  carry.

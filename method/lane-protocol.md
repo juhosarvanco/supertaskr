@@ -377,6 +377,204 @@ conventional. A stamp written inside the lane and a stamp written on the
 integration branch are two edits to one line, and the merge has to be
 resolved by hand.
 
+## The two fast paths — when a fence has to move while a lane is live
+
+**THE BASE PROTOCOL IS THE LAW AND STAYS THE FALLBACK OF BOTH PATHS.**
+An executor that discovers an out-of-fence need builds everything that
+fits inside its fence, records the discovery naming the exact paths and
+the fence they need, routes it, and ends (rule 5, roles/executor.md).
+That answer is complete on its own and costs one handoff. **The two
+paths below are optimizations layered on it, and neither is a way for a
+lane to WAIT**: under both, the lane keeps building the whole time, so
+no lane ever blocks idle anywhere in this design.
+
+**THEY ARE WRITTEN DOWN ONLY BECAUSE THE REFUSALS THAT MAKE THEM SAFE
+EXIST, AND THAT ORDER IS THE POINT RATHER THAN A SCHEDULING ACCIDENT.**
+A widening decided by whoever remembers which lanes are live is the
+decayed instrument rule 5 already measured failing — six lanes, every
+block a naming collision — and law that lands before its enforcement is
+a false document that reads exactly like a true one. Three refusals
+carry these paths: an out-of-fence WRITE is refused at the write, an
+overlapping DISPATCH is refused when the fence is expanded, and an
+out-of-fence LANDING is refused against the fence the card declares on
+the integration branch. **Name the ones your own project actually holds
+when you adopt this section, and claim no others** — every sentence
+below is only as sound as the refusal under it.
+
+### Fast path A — widening a live fence, when nothing overlaps
+
+**THE ASK IS NOT A PAUSE.** The executor names the exact paths and why
+it needs them, PARKS that edit, and KEEPS BUILDING everything else
+inside its fence. If in-fence work runs out before a grant arrives, it
+routes under the base protocol and ends. The fast path expires; it
+never becomes a wait.
+
+**THE GRANT IS THE DISPATCH STEP PERFORMED AGAIN, NEVER A DIFFERENT
+ACT.** The granting seat amends the card's `touches:` and re-expands
+that lane's fence with the project's own dispatch-time expansion.
+Nothing new is built for this and nothing new is trusted: that
+expansion already refuses to write a manifest for a fence overlapping a
+live lane, so the intersection is not a step somebody performs — it is
+a step somebody cannot skip. **A re-run over a lane that already has a
+manifest is an ordinary case and not a collision with itself**; an
+expansion that cannot tell those apart is not yet ready to carry this
+path.
+
+**AND THE AMENDMENT IS TWO WRITES, NOT ONE, BECAUSE MORE THAN ONE
+READER READS THE CARD AND THEY READ IT FROM DIFFERENT PLACES.** The
+expansion reads the card from the INTEGRATION CHECKOUT, which is what
+keeps the grant the granting seat's. A landing check reads it from the
+INTEGRATION BRANCH, which is where a legitimate widening lands. **The
+write-time guard reads it from the checkout the write LANDS IN — the
+lane's own working tree — and compares that copy against the line the
+manifest was stamped from.** So the amendment goes onto the integration
+branch AND into the lane's working copy of the card, in that order,
+because the expansion happens between them.
+
+**THE HALF-PERFORMED WIDENING IS WORSE THAN NO WIDENING, AND THAT IS
+MEASURED RATHER THAN REASONED.** Driving a write-time guard of this
+shape over a lane whose card had been amended on the integration branch
+and whose manifest had been re-expanded, while the lane's own copy of
+the card still carried the old line: the guard refused the newly
+granted path AND **every path the lane already held**, as a stale
+stamp. A widening delivered to one reader out of two does not fail to
+grant — it STOPS THE LANE DEAD, on the paths it was already building
+in, for a reason no one is looking for. Both were allowed again the
+moment the lane's copy carried the amendment; a never-granted path
+stayed refused, and the card's own file stayed writable throughout,
+which is the positive control that keeps the first result a refusal
+rather than an absence.
+
+**SO THE GRANT IS TWO AGREEING FILES ON DISK IN THE LANE, AND THE
+EXECUTOR PROCEEDS ON ITS OWN READ OF THEM AND ON NOTHING ELSE.** The
+manifest must show the new path, and the lane's own copy of the card
+must carry, character for character, the `touches:` line the manifest
+was stamped from — because that pair is exactly what the guard
+compares. **Never a reply**: the cross-session channel has demonstrably
+dropped a message that reported itself delivered, and a file read
+cannot. Two reads, both performable by the lane, neither of them a
+question to anybody.
+
+**BOTH HALVES ARE THE GRANTING SEAT'S, AND A LANE THAT FINDS ONE HALF
+MISSING ROUTES RATHER THAN SUPPLYING IT.** The lane COULD write the
+lane-side half — every card is outside every fence including its own
+(rule 5) — and it must not. Be exact about why, because the obvious
+reason is the wrong one: writing that half cannot widen anything, since
+the manifest governs the path set and is outside every fence. **The
+rule is about EVIDENCE, not escalation.** A lane that completes its own
+grant is the one party that cannot afterwards tell a grant that was
+made from a grant that was half-made, and the refusal it silences is
+the only signal that something went wrong upstream.
+
+### Fast path B — the checkpoint sync, when the blocker lands in time
+
+Where a lane is fenced out by work another lane holds, and that lane
+merges, checkpoints and gives up its worktree before this one runs out
+of in-fence work, the intersection now passes and the fence can move.
+**The sync is what makes the widened lane's green a claim about a tree
+that will actually exist.**
+
+**THE SYNC TARGET IS THE COMMIT THE OTHER INTEGRATION ENDED AT — THE
+CHECKPOINT, NOT THE MERGE — AND IT IS DERIVED, NEVER REMEMBERED.** Rule
+2 gives the reason already: a merge commit is the state *before* the
+integrator finished, so a lane that syncs one inherits the stale half.
+How a checkpoint commit is recognised is the project's own spelling to
+publish; ask for it at your own ref rather than carrying it.
+
+**DRY-RUN THE SYNC MECHANICALLY AND READ THE ANSWER BEFORE ACTING ON
+IT** — `git merge-tree --write-tree`, the same forecast this method's
+integrator step already runs before every merge, with `$?` read
+unpiped and first.
+
+**THE ANSWER IS THREE-VALUED — CLEAN, CONFLICT, UNKNOWN — AND THE TYPE
+IS NOT THE EXIT CODE ALONE. THAT CORRECTION IS THE FIRST THING
+MEASUREMENT DID TO THIS RULE.** The natural typing, and the one this
+section was drafted with, reads it straight off the code: 0 clean, 1
+conflict, above 1 the instrument itself failed. **It is wrong in the
+one direction that costs.** Measured at git 2.50.1: a forecast against
+a ref that does not exist exits **1** — character for character the
+conflict code — printing its complaint on stderr and NOTHING on stdout,
+while a genuine conflict exits 1 having printed the merged tree's
+object id on stdout first. An unknown option exits 129, which the
+naive typing does catch. **So the discriminator is the OUTPUT together
+with the code, never the code alone: the forecast RAN if and only if it
+produced a tree.** This is not a new rule — it is this method's
+standing reading rule (an exit 1 may mean the check COULD NOT RUN; a
+verdict prints a verdict and a failure prints a complaint) applied to
+one instrument. Derive the shape at your own version rather than
+trusting this paragraph's.
+
+**UNKNOWN ROUTES; IT NEVER PROCEEDS AND IT NEVER FIRES THE TRIPWIRE.**
+A miscast instrument failure sends a seat hunting a fence violation
+that never happened, which is worse than a missed conflict: the missed
+conflict surfaces at the real merge, and the phantom breach spends a
+seat's whole session on an invariant that was never broken.
+
+**CLEAN → widen the fence by fast path A, then the lane merges the
+checkpoint commit into its own branch.** After a clean sync the lane's
+diff, its merge base and every gate derivation recompute against the
+new base — which is also what stops a landing check charging the lane
+with the paths the sync brought in.
+
+**ALL OR NOTHING. NEVER A PARTIAL FILE PICK.** A mixed base makes the
+lane's green a claim about a tree that will never exist, and the subset
+argument defeats itself: the only files worth picking are the ones the
+lane depends on, which is exactly where the risk lives, so the safe
+subset is the worthless subset.
+
+**AND NEVER A CONFLICT RESOLVED AS `ours`.** A merge commit is a CLAIM
+of reconciliation. Taking `ours` silently reverts the landed lane's
+work at the final merge — an exit 0 for a reconciliation nobody
+performed, which is strictly worse than the conflict it hid, because
+the conflict was visible.
+
+**AFTER A CLEAN SYNC, BREAKAGE IS THE LANE'S WORK BY CONSTRUCTION.**
+The lane asked for the new base, so what the new base breaks in the
+lane's own work is the lane's to adapt, in fence. A fix that needs
+paths the fence does not carry re-enters fast path A, which now passes
+by construction — the lane that held those paths has ended. **A red the
+lane did not cause is attributed against the synced commit and ROUTED**,
+never repaired: the lane holds no fence over it, and a lane that
+quietly fixes somebody else's red spends its own verification on work
+nobody reviewed.
+
+### The tripwire, and the honest size of it
+
+**A CONFLICT IN THAT DRY-RUN IS NOT BAD LUCK.** Where the three
+refusals above are actually enforced, disjoint enforced write-sets
+cannot textually conflict — so a CONFLICT is EVIDENCE that an invariant
+was breached somewhere. Route it and investigate. **Never resolve it
+locally**, which buries the evidence inside a merge commit that then
+reads as a reconciliation.
+
+**AND THE TRIPWIRE IS ONLY AS TRUE AS THE ENFORCEMENT UNDER IT, WHICH
+IS WHY ITS HOLES ARE PUBLISHED HERE RATHER THAN DISCOVERED.** A write
+that reaches disk without passing through the guarded write tools — a
+redirect, an in-place edit, a script — is outside the write refusal by
+construction (rule 5 states that limit already), and every such write
+is a way for two disjoint fences to conflict honestly. **A tripwire
+believed wider than it is sends a seat hunting a violation that never
+happened**, which is the same cost as the miscast instrument failure
+above, arriving by a different road. State what your project enforces;
+claim nothing beyond it.
+
+### The standing warning both paths are an instance of
+
+**A RULE THAT NAMES A HAZARD DOES NOT MAKE THE TOOLING OBEY IT.**
+Everything above is prose, and every step of it is performed by a
+command somebody wrote separately. Three times while this section was
+being written the prose and the machinery disagreed, and in all three
+the prose was the confident half: a widening described as ONE act that
+the guard makes TWO; an intersection cited as a flag of its own, which
+no command has, because it lives inside the expansion instead; an exit
+code typed by argument that the instrument spends on its own failures
+too. **None of the three was a defect in the machinery.** Each was a
+rule written from what its author expected the machinery to do, by
+authors who had read the machinery. So when you adopt these paths,
+DERIVE every step against the commands your project actually has and
+write down what they actually refuse — **a fast path is only as fast as
+its slowest guard, and only as safe as the one it does not have.**
+
 ## The revert play — the undo, written before the first bad merge
 
 **A merge that should not have landed is not a rare event; it is an
