@@ -435,23 +435,30 @@ test("the fixture's HEAD IS an ancestor of the integration tip, and IS behind it
   // divergent branch), which would silently turn every body below into
   // the degenerate "an unreachable HEAD is caught" the card forbids.
   const fx = motivatingFixture("properties");
-  const ancestor = spawnSync(
-    "git",
-    ["-C", fx.repo, "merge-base", "--is-ancestor", fx.staleHead, fx.tip],
-    { encoding: "utf8" },
-  );
+  // READ OFF THE WORKTREE ITSELF, never off the variable that built it —
+  // the subject of this body is the checkout the other bodies judge, and
+  // a fixture whose stale worktree quietly moved to the tip would leave
+  // every one of them asserting the degenerate case the card forbids.
+  const head = execFileSync("git", ["-C", fx.stale, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  const ancestor = spawnSync("git", ["-C", fx.repo, "merge-base", "--is-ancestor", head, fx.tip], {
+    encoding: "utf8",
+  });
   expect(ancestor.status, "the stale HEAD IS an ancestor of the tip — as 4ec229c was of main").toBe(
     0,
   );
+  // DERIVED HERE, NEVER TYPED: a distance measured against anything that
+  // moves is stale before it is read (this card's own fourth criterion).
   const behind = Number(
-    execFileSync("git", ["-C", fx.repo, "rev-list", "--count", `${fx.staleHead}..${fx.tip}`], {
+    execFileSync("git", ["-C", fx.repo, "rev-list", "--count", `${head}..${fx.tip}`], {
       encoding: "utf8",
     }).trim(),
   );
   expect(behind, "and it is genuinely behind").toBeGreaterThan(0);
   const containsGuard = spawnSync(
     "git",
-    ["-C", fx.repo, "merge-base", "--is-ancestor", fx.guardCommit, fx.staleHead],
+    ["-C", fx.repo, "merge-base", "--is-ancestor", fx.guardCommit, head],
     { encoding: "utf8" },
   );
   expect(containsGuard.status, "and it predates the commit that registered the guard").toBe(1);
