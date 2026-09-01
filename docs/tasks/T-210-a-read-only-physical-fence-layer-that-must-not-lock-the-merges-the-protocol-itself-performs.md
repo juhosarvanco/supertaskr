@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: planned
+status: building
 blocked_by: [T-212]
 touches: [tools/e2e, method/lane-protocol.md]
 suggested_by: "peer session nputer-10's enforcement stack (relayed 2026-08-31, approved in direction by @human); the self-violation found by this seat's flag and then sharpened by nputer-10 into the event list below"
