@@ -8,7 +8,7 @@ priority: 2
 status: building
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
-touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
+touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, tools/e2e/scripts/token-scan.mjs, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -180,3 +180,16 @@ not merge; it stamps `verifying`, reports ready-to-merge with its branch
 and tip, and leaves its worktree standing (lane-protocol rules 4 and 6).
 review: independent, set at this stamp — the subject is the physical
 fence layer, a guard.
+
+## FENCE WIDENED IN FLIGHT, 2026-09-02 — fast path A, the dispatch step performed again
+
+Added `tools/e2e/scripts/token-scan.mjs`: the scanner derives its
+repository root from its own module path with no argument and no
+environment override, so the card's decision-1 remedy for instance 1 —
+plant the control byte into scratch COPIES and scan those — cannot be
+written without a root override in the scanner, and the scanner was
+outside the fence. Measured by the verifier's phase-1 ground truth at
+the base ref, before any diff existed. Re-expanded through
+`brief.mjs --write-fence` against the live lanes (T-223, T-230, T-236):
+disjoint. The lane's own copy of this card carries the same line,
+character for character; the grant is those two files on disk.
