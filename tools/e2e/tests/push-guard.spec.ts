@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -12,11 +12,15 @@ import {
   GRAPH_REL_PATH,
   INDEX_CRATE_MANIFEST_REL_PATH,
   NON_PUSHING_FLAGS,
+  UNRESOLVABLE_TOKEN_RE,
   commandOf,
   decide,
   gitInvocations,
   isPush,
   laneCanRegenerate,
+  pushCwds,
+  repointedBy,
+  segments,
 } from "../../../.claude/hooks/push-guard.mjs";
 import {
   MANIFEST_REL_PATH,
@@ -86,14 +90,25 @@ test.afterAll(() => {
   for (const dir of SCRATCH) removeGitFixture(dir, "push-guard");
 });
 
-/** A `cargo` shim: records that it ran, prints `report`, exits `code`. */
+/**
+ * A `cargo` shim: records that it ran AND WHERE, prints `report`, exits
+ * `code`.
+ *
+ * THE `$PWD` LINE IS T-216's WHOLE MEASUREMENT. That card's first
+ * criterion asks for the check *"demonstrably run against a DIFFERENT
+ * checkout than the one being pushed"*, and `existsSync(marker)` cannot
+ * answer it — one shim on one PATH answers for every checkout that
+ * reaches it. `runCheck` spawns cargo with `cwd` set to
+ * `<root>/app/src-tauri`, so the shim's own `$PWD` names the root the
+ * guard chose, mechanically and without the guard being asked.
+ */
 function writeCargoShim(root: string, code: number, report: string): string {
   const bin = path.join(root, "bin");
   mkdirSync(bin, { recursive: true });
   const marker = path.join(root, "cargo-was-run.txt");
   writeFileSync(
     path.join(bin, "cargo"),
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> ${JSON.stringify(marker)}\n` +
+    `#!/bin/sh\nprintf 'cwd=%s\\nargv=%s\\n' "$PWD" "$*" >> ${JSON.stringify(marker)}\n` +
       `cat <<'REPORT'\n${report}\nREPORT\nexit ${code}\n`,
     { mode: 0o755 },
   );
@@ -330,6 +345,31 @@ function runHook(fx: Fixture, command: string): { status: number | null; stderr:
 /** Did the shim run? */
 function checkWasSpawned(fx: Fixture): boolean {
   return existsSync(fx.marker);
+}
+
+/**
+ * WHICH directories did the check run in? (T-216)
+ *
+ * Real paths, because macOS resolves `/var` to `/private/var` and a
+ * shell's `$PWD` and node's `mkdtemp` disagree about which spelling to
+ * use — a body comparing the two literally is red for a reason that has
+ * nothing to do with the guard.
+ */
+function checkRanIn(fx: Fixture): string[] {
+  if (!existsSync(fx.marker)) return [];
+  return readFileSync(fx.marker, "utf8")
+    .split("\n")
+    .filter((l) => l.startsWith("cwd="))
+    .map((l) => l.slice("cwd=".length));
+}
+
+/** The path a `$PWD` would print for `p`. @see checkRanIn */
+function real(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return path.resolve(p);
+  }
 }
 
 /* ───────────── the constants, compared against their authorities ─────── */
@@ -575,12 +615,22 @@ test("an allow that left the graph unverified is announced; an ordinary one is s
   // row nothing consults. Two bodies further down drive them and require
   // their sentences, which is the property a row here would only have
   // described.
+  // T-216 ADDED ONE AND DELIBERATELY LEFT ITS SIBLING OUT, which is the
+  // same split this list already draws twice. `push-repository-unresolved`
+  // is an ALLOW reached with the FIRST question unanswered — which
+  // repository — so every other question went unasked with it.
+  // `push-repository-unresolved-outside` is the same inability in a
+  // checkout that is not this repository's, and is silent for
+  // `not-this-repository`'s reason: outside our own checkouts the guard
+  // has nothing to say. The two bodies at the end of this file drive both
+  // halves of that split.
   expect([...ANNOUNCED_ALLOW_CODES].sort()).toEqual([
     "check-could-not-run",
     "check-inconclusive",
     "landing-gate-cannot-compare",
     "lane-fence-unreadable",
     "no-command-to-read",
+    "push-repository-unresolved",
   ]);
   // Announced: the check answered a code that is not a verdict.
   const spoke = fixture("announced", CHECK_EXIT.COULD_NOT_RUN, "[nputer-index] no");
@@ -1209,6 +1259,425 @@ test("WITH the guard, a fresh green token still reaches the remote — the posit
   expect(refused, "a fresh green token must not be refused").toBe(false);
   expect(pushed).toBe(true);
   expect(remoteTip(fx), "the measured push must land").toBe(fx.unpushed);
+});
+
+/* ═══════════ T-216 — THE TREE THE PUSH ACTUALLY CARRIES ═════════════
+ *
+ * Everything above judges `findCheckoutRoot(request.cwd)` and is right to,
+ * because every fixture above pushes the checkout its request names. This
+ * section is about the shape where those two come apart: a lane worktree,
+ * a real `cd <lane> && git push`, and a `request.cwd` that is the
+ * DISPATCHING checkout — which is what this project's dispatch actually
+ * hands a lane session.
+ *
+ * ── THE POSITIVE CONTROL CARRIES MORE WEIGHT THAN THE REFUSAL ────────
+ * The defect here is symmetric, and that is what makes it dangerous: the
+ * old rooting could say GREEN over a lane nothing measured AND RED over a
+ * lane that was fully measured. So a body that only proves the refusal
+ * proves nothing — a guard that refused every lane push would pass it.
+ * Both directions are driven below, and the second one is measured ON THE
+ * REMOTE, because "a legitimate push still passes" is a claim about what
+ * landed and not about an exit code.
+ *
+ * ── MEASURED AGAINST THE UNFIXED CODE BEFORE THE FIX ─────────────────
+ * These bodies were run against `push-guard.mjs` as it stood at the base
+ * ref, and the ledger is stamped on the card. Six of the seven checks red
+ * there, including both halves of the positive control. The one that does
+ * NOT discriminate on its exit code alone is the unresolved arm — the old
+ * guard allowed that push too, by judging the dispatcher — which is why
+ * that body requires the SENTENCE and not just the code.
+ */
+
+interface LaneFixture extends Fixture {
+  /** The linked worktree, on a lane branch — the tree the push carries. */
+  lane: string;
+  /** The lane's own commit, which exists in no other checkout. */
+  laneTip: string;
+}
+
+/**
+ * A dispatching checkout AND a sibling lane worktree with its own commit.
+ *
+ * THE LANE'S OWN COMMIT IS LOAD-BEARING. T-203's token is keyed to
+ * `HEAD^{tree}`, so if the lane sat at the dispatcher's commit the two
+ * checkouts would share a tree and "the token is fresh HERE" would be
+ * satisfied by the wrong checkout's key. One commit in the lane makes the
+ * two trees genuinely different, so a token that verifies is a token that
+ * verifies THIS tree.
+ *
+ * Identity and branch are PINNED on every call — `init -b main` and
+ * `-c user.*` — because `init.defaultBranch` and the global identity are
+ * MACHINE config, absent on CI, and a fixture that inherits them is green
+ * locally and red in the one place that matters.
+ */
+function laneFixture(
+  name: string,
+  opts: { dispatcher?: TokenState; lane?: TokenState; fence?: string[] } = {},
+): LaneFixture {
+  const base = fixture(name, CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: opts.dispatcher ?? "fresh",
+  });
+  const lane = `${base.root}-lane`;
+  SCRATCH.push(lane);
+  const git = (dir: string, ...args: string[]): void => {
+    execFileSync(
+      "git",
+      ["-C", dir, ...NO_BACKGROUND_MAINTENANCE, "-c", "user.email=fixture@example.invalid",
+        "-c", "user.name=T-216 fixture", ...args],
+      { stdio: "pipe" },
+    );
+  };
+  git(base.root, "worktree", "add", "-q", "-b", "task/T-901-a-real-lane", lane);
+  writeFileSync(path.join(lane, "lane-work.txt"), "the lane's own work\n");
+  git(lane, "add", "-A");
+  git(lane, "commit", "-qm", "the commit this lane's push would carry");
+  const laneTip = execFileSync("git", ["-C", lane, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+
+  if (opts.fence !== undefined) {
+    mkdirSync(path.join(lane, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
+    writeFileSync(
+      path.join(lane, MANIFEST_REL_PATH),
+      JSON.stringify({
+        version: MANIFEST_VERSION,
+        taskId: "T-901",
+        branch: "refs/heads/task/T-901-a-real-lane",
+        card: "docs/tasks/T-901-fixture.md",
+        touchesLine: `touches: [${opts.fence.join(", ")}]`,
+        paths: opts.fence,
+        excluded: [],
+        alwaysWritable: ["docs/tasks"],
+      }),
+    );
+  }
+  plantToken(lane, opts.lane ?? "fresh");
+  return { ...base, lane, laneTip };
+}
+
+/** Drive the real runner with `request.cwd` at the DISPATCHING checkout. */
+function runHookFromDispatcher(
+  fx: LaneFixture,
+  command: string,
+): { status: number | null; stderr: string } {
+  const out = spawnSync(
+    process.execPath,
+    [path.join(repoRoot, ".claude", "hooks", "push-guard-hook.mjs")],
+    {
+      input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: fx.root }),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${path.join(fx.root, "bin")}${path.delimiter}${process.env["PATH"] ?? ""}`,
+      },
+    },
+  );
+  return { status: out.status, stderr: String(out.stderr ?? "") };
+}
+
+test("a `cd <lane> && git push` runs the check in the LANE, not in the dispatching checkout", () => {
+  // THIS CARD'S FIRST CRITERION, MEASURED RATHER THAN ARGUED: a real lane
+  // worktree, a real `cd <lane> && git push`, and the check's own `$PWD`
+  // naming which checkout it was asked in. Both tokens are fresh so the
+  // flow reaches the graph arm at all, and the lane's fence reaches
+  // `docs/architecture` so `lane-cannot-regenerate` does not allow first.
+  const fx = laneFixture("t216-which-tree", { fence: ["docs/architecture"] });
+  const run = runHookFromDispatcher(fx, `cd ${fx.lane} && git push origin HEAD:refs/heads/main`);
+
+  expect(checkWasSpawned(fx), "the guard never asked the graph at all").toBe(true);
+  const ran = checkRanIn(fx);
+  expect(ran, `the check ran nowhere the shim could see: ${run.stderr}`).not.toEqual([]);
+  for (const dir of ran) {
+    expect(dir, "the check was run in a checkout the push does not carry").toBe(
+      path.join(real(fx.lane), CHECK_DIR_REL_PATH),
+    );
+  }
+  // And the divergence is SAID, because every sentence the guard prints
+  // now describes a directory the reading seat is not sitting in.
+  expect(run.stderr).toContain("THIS PUSH IS JUDGED IN");
+  expect(run.stderr).toContain(fx.lane);
+
+  // THE DISCRIMINATING HALF, in the SAME fixture with the SAME shim on
+  // the SAME PATH: a bare push from the same seat runs the check in the
+  // DISPATCHING checkout. So the check's directory is a function of the
+  // COMMAND and not of the fixture — which is what "run against a
+  // different checkout than the one being pushed" has to mean to be a
+  // measurement rather than a coincidence.
+  runHookFromDispatcher(fx, "git push origin HEAD:refs/heads/main");
+  expect(checkRanIn(fx), "the two commands must not have been judged in one tree").toContain(
+    path.join(real(fx.root), CHECK_DIR_REL_PATH),
+  );
+});
+
+test("the two checkouts a lane push straddles answer DIFFERENTLY — the defect, reproduced", () => {
+  // THE DEFECT, MADE PERMANENT RATHER THAN REMEMBERED. The old rooting
+  // cannot be shipped beside the new one, so what this body pins is the
+  // condition that made it a defect: one repository, two checkouts, two
+  // DIFFERENT verdicts, and a seat whose `request.cwd` is the first while
+  // its command pushes the second. The old code returned the FIRST answer
+  // for the SECOND command; that is the whole card in one body.
+  const fx = laneFixture("t216-defect", { dispatcher: "fresh", lane: "missing" });
+  const headOf = (dir: string): string =>
+    execFileSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+
+  // THE PRECONDITION, ASSERTED: without genuinely different trees the two
+  // verdicts below could agree for reasons that have nothing to do with
+  // rooting, and this body would be green over nothing.
+  expect(headOf(fx.root), "the two checkouts share a HEAD").not.toBe(headOf(fx.lane));
+  expect(headTree(fx.root), "the two checkouts share a tree").not.toBe(headTree(fx.lane));
+
+  // Pushing the DISPATCHER: judged there, and allowed.
+  const atDispatcher = runHookFromDispatcher(fx, "git push origin HEAD:refs/heads/main");
+  expect(atDispatcher.status, "the dispatcher's own battery is green").toBe(0);
+
+  // The SAME seat, the SAME `request.cwd`, a command that pushes the
+  // LANE: judged there, and refused. Two answers, one seat.
+  const atLane = runHookFromDispatcher(fx, `cd ${fx.lane} && git push origin HEAD:refs/heads/main`);
+  expect(atLane.status, "the lane's own battery never ran").toBe(2);
+  expect(atLane.stderr).toContain(fx.lane);
+});
+
+test("a lane whose OWN battery never ran is refused, though the dispatcher's is green", () => {
+  // THE GREEN-OVER-UNMEASURED DIRECTION. Under the old rooting this push
+  // was ALLOWED: the dispatcher's token is fresh, and the dispatcher is
+  // what the guard looked at. The commits leaving the machine were the
+  // lane's, and nothing had measured them.
+  const fx = laneFixture("t216-green-over-unmeasured", { dispatcher: "fresh", lane: "missing" });
+  expect(existsSync(path.join(fx.root, TOKEN_REL_PATH)), "the dispatcher IS measured").toBe(true);
+  expect(existsSync(path.join(fx.lane, TOKEN_REL_PATH)), "the lane is NOT").toBe(false);
+
+  const run = runHookFromDispatcher(fx, `cd ${fx.lane} && git push origin HEAD:refs/heads/main`);
+  expect(run.status, "a push nothing measured must be refused").toBe(2);
+  expect(run.stderr).toContain("nothing has been measured in this checkout");
+  // "This checkout" is now a directory the seat is not in, so it is named.
+  expect(run.stderr).toContain(fx.lane);
+});
+
+test("WITH the fixed rooting, a fully measured lane push still reaches the remote", () => {
+  // THE POSITIVE CONTROL, AND THE ARM THAT MATTERS MOST HERE. The other
+  // direction of the same defect: under the old rooting this push was
+  // REFUSED — for the dispatcher's missing token, a fact about a tree the
+  // push does not carry — and a lane that had run its whole battery could
+  // not push. A guard that refuses every lane push satisfies the body
+  // above and fails this one, which is the only reason that body means
+  // anything.
+  const fx = laneFixture("t216-legitimate", { dispatcher: "missing", lane: "fresh" });
+  const before = execFileSync("git", ["-C", fx.remote, "rev-parse", "refs/heads/main"], {
+    encoding: "utf8",
+  }).trim();
+  expect(before, "the remote must start behind the lane's own commit").not.toBe(fx.laneTip);
+
+  const run = runHookFromDispatcher(fx, `cd ${fx.lane} && git push origin HEAD:refs/heads/main`);
+  expect(run.status, `a measured lane must not be refused: ${run.stderr}`).toBe(0);
+
+  // MEASURED ON THE REMOTE, not on the exit code: the harness contract is
+  // that anything but 2 proceeds, so the push is then actually made.
+  execFileSync(
+    "git",
+    ["-C", fx.lane, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "origin", "HEAD:refs/heads/main"],
+    { stdio: "pipe" },
+  );
+  const after = execFileSync("git", ["-C", fx.remote, "rev-parse", "refs/heads/main"], {
+    encoding: "utf8",
+  }).trim();
+  expect(after, "the legitimate push must land").toBe(fx.laneTip);
+});
+
+test("a `git -C <lane> push` is judged in the lane too, and it is the spelling the refusal names", () => {
+  // The other construct that DETERMINES the repository, and the one the
+  // unresolved arm sends a seat to. Same fixture shape, same divergence,
+  // no `cd` involved at all.
+  const fx = laneFixture("t216-dash-c", { dispatcher: "fresh", lane: "missing" });
+  const run = runHookFromDispatcher(fx, `git -C ${fx.lane} push origin HEAD:refs/heads/main`);
+  expect(run.status, "the lane's own absent token must decide this push").toBe(2);
+  expect(run.stderr).toContain(fx.lane);
+
+  // THE CONTROL: the same fixture, pushing the DISPATCHER, is allowed —
+  // so the refusal above is about which tree, not about the fixture.
+  const bare = runHookFromDispatcher(fx, "git push origin HEAD:refs/heads/main");
+  expect(bare.status, "the dispatcher's own push is measured and must pass").toBe(0);
+  expect(bare.stderr, "a push of one's own checkout announces no divergence").toBe("");
+});
+
+test("a spelling this guard cannot read judges NOTHING, and says so", () => {
+  // THE THIRD CRITERION, applied to the guard beside T-199's. Where the
+  // repository is not determined by the text, the guard does not fall
+  // back to the writer's cwd — that fallback IS the defect — and it does
+  // not refuse either, because not knowing which repository a push acts
+  // on is this guard's own inability and this file's header spends a
+  // section on why an inability may not become a verdict.
+  const fx = laneFixture("t216-unresolved", { dispatcher: "fresh", lane: "missing" });
+  const run = runHookFromDispatcher(fx, 'cd "$LANE" && git push origin HEAD:refs/heads/main');
+  expect(run.status, "an unresolvable spelling must never refuse").toBe(0);
+  expect(run.stderr).toContain("NOTHING ABOUT THIS PUSH WAS JUDGED");
+  expect(run.stderr, "the refusal must name the spelling that restores the guard").toContain(
+    "git -C",
+  );
+  expect(checkWasSpawned(fx), "nothing may be judged, including the graph").toBe(false);
+
+  // THE CONTROL THIS BODY IS WORTHLESS WITHOUT — and the one arm whose
+  // EXIT CODE alone did not discriminate against the unfixed guard, which
+  // allowed this push too by judging the dispatcher. The same fixture,
+  // spelled so the guard can read it, refuses.
+  const readable = runHookFromDispatcher(
+    fx,
+    `cd ${fx.lane} && git push origin HEAD:refs/heads/main`,
+  );
+  expect(readable.status, "the same push, spelled readably, is judged and refused").toBe(2);
+});
+
+test("an unresolvable push outside this repository's checkouts is silent", () => {
+  // THE SIXTH CRITERION SURVIVES THE NEW ARM. A seat that is not in one
+  // of this repository's checkouts gets no narration, for
+  // `not-this-repository`'s reason: we have nothing to say there, and a
+  // notice on every unrelated push is a notice nobody reads.
+  const outside = fixture("t216-outside", CHECK_EXIT.CURRENT, CURRENT_REPORT, { nputer: false });
+  const d = decide({ toolName: "Bash", toolInput: { command: 'cd "$X" && git push' }, cwd: outside.root }, () => {
+    throw new Error("the check must not be reached for an unresolved push");
+  });
+  expect(d.verdict).toBe("allow");
+  expect(d.code).toBe("push-repository-unresolved-outside");
+  expect(ANNOUNCED_ALLOW_CODES).not.toContain(d.code);
+
+  // THE CONTROL: the same unreadable command from a seat that IS in one
+  // of this repository's checkouts speaks. Without it, "silent" is
+  // satisfied by an arm that never says anything at all.
+  const inside = fixture("t216-inside", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const spoke = decide({ toolName: "Bash", toolInput: { command: 'cd "$X" && git push' }, cwd: inside.root }, () => {
+    throw new Error("the check must not be reached for an unresolved push");
+  });
+  expect(spoke.code).toBe("push-repository-unresolved");
+  expect(ANNOUNCED_ALLOW_CODES).toContain(spoke.code);
+});
+
+test("`;` and `||` after a `cd` are not `&&`, and the guard judges nothing there", () => {
+  // THE SEPARATOR RULE, ON ITS OWN. A poison drill put this body here: a
+  // mutant that accepted ANY separator between a `cd` and the push was
+  // killed only by the resolver's table, whose kill set was CONTAINED by
+  // the `-C` mutant's — so the rule had no body that could tell those two
+  // failures apart. This one is aimed at the site the property lives on
+  // and driven end to end through the real runner.
+  //
+  // The rule is the shell's, not a preference: under `&&`, IF THE PUSH
+  // RUNS THEN THE `cd` SUCCEEDED. Under `;` a failed `cd` leaves the push
+  // in the directory it started in, and under `||` the `cd` may not have
+  // run at all — so in both the working directory is not determined by
+  // the text, and following it would reintroduce this card's own defect.
+  const fx = laneFixture("t216-separator", { dispatcher: "fresh", lane: "missing" });
+  const push = "git push origin HEAD:refs/heads/main";
+
+  const and = runHookFromDispatcher(fx, `cd ${fx.lane} && ${push}`);
+  expect(and.status, "`&&` determines the directory, so the lane is judged").toBe(2);
+
+  for (const sep of [";", "||"]) {
+    const run = runHookFromDispatcher(fx, `cd ${fx.lane} ${sep} ${push}`);
+    expect(run.status, `\`${sep}\` must not be read as \`&&\``).toBe(0);
+    expect(run.stderr, `\`${sep}\` declined silently`).toContain(
+      "NOTHING ABOUT THIS PUSH WAS JUDGED",
+    );
+  }
+});
+
+/* ───────────── the resolver's own contract, as a table ─────────────── */
+
+test("the working directory at the push is read only where the text determines it", () => {
+  const here = repoRoot;
+  const up = path.dirname(here);
+  // RESOLVED: each of these has exactly one working directory the shell
+  // can reach, and it is written in the command.
+  for (const [command, want] of [
+    ["git push", here],
+    ["npm test && git push", here],
+    ["git add -A; git commit -m x; git push", here],
+    [`git -C ${up} push`, up],
+    [`cd ${up} && git push`, up],
+    [`cd ${up} && cd ${here} && git push`, here],
+    // git's own chaining rule: a later relative `-C` resolves against
+    // the earlier one, and an absolute one replaces it.
+    [`git -C ${up} -C ${path.basename(here)} push`, here],
+    // Two pushes agreeing about where they run is one answer.
+    [`cd ${up} && git push origin a && git push origin b`, up],
+  ] as const) {
+    const got = pushCwds(command, here);
+    expect(got, `${command} was not resolved: ${JSON.stringify(got)}`).toEqual({ dirs: [want] });
+  }
+
+  // UNRESOLVED: each of these is a working directory only a running shell
+  // knows. None of them refuses; each one costs an announced allow.
+  for (const command of [
+    `cd ${up} ; git push`, //          `;` runs the push even if the cd failed
+    `cd ${up} || git push`, //         the cd may not have run at all
+    `cd ${up} && ls || git push`, //   the push is reached BY the cd failing
+    'cd "$LANE" && git push', //       a value only a shell knows
+    "cd ~/x && git push",
+    "cd $(pwd) && git push",
+    "cd && git push", //               the shell's $HOME
+    "cd - && git push", //             a directory only the shell remembers
+    `pushd ${up} && git push`,
+    `echo cd ${up} && git push`, //    a `cd` this scanner cannot read
+    "git --git-dir=/x push",
+    "git --work-tree=/x push",
+    "GIT_DIR=/x git push",
+    "cd /no-such-directory-T-216 && git push",
+    `cd ${up} && git push origin a && cd ${here} && git push origin b`,
+  ]) {
+    const got = pushCwds(command, here);
+    expect("unresolved" in got, `${command} was resolved to ${JSON.stringify(got)}`).toBe(true);
+    expect(
+      "unresolved" in got ? got.unresolved : "",
+      `${command} declined without saying why`,
+    ).not.toBe("");
+  }
+});
+
+test("the separator scan is the one gitInvocations always used", () => {
+  // T-057: `segments` replaced `gitInvocations`'s own inline split, and
+  // the claim made in its header is that the SEGMENTATION is unchanged
+  // and only the separators are newly kept. That claim is checked here
+  // against the old expression written out literally, so a widened or
+  // narrowed splitter reds by name instead of quietly changing which
+  // commands are seen as pushes.
+  for (const command of [
+    "git push",
+    "npm test && git push",
+    "git add -A; git commit -m x; git push",
+    "a | b || c && d & e\nf",
+    "cd /tmp && git push origin main",
+    "",
+  ]) {
+    const wasSplitAs = command
+      .split(/[\n;|&]+/)
+      .map((s) => s.trim().split(/\s+/).filter((t) => t !== ""));
+    expect(segments(command).map((s) => s.tokens), command).toEqual(wasSplitAs);
+  }
+  // And the separators really are kept, which is the only thing that is new.
+  expect(segments("a && b || c ; d").map((s) => s.sep)).toEqual(["", "&&", "||", ";"]);
+});
+
+test("`-C` is followed and the options that re-point a repository are not", () => {
+  const here = repoRoot;
+  expect(repointedBy(here, [])).toEqual({ dir: here });
+  expect(repointedBy(here, ["-C", path.dirname(here)])).toEqual({ dir: path.dirname(here) });
+  // A `-c` carries a VALUE and must be stepped over, not read as a path.
+  expect(repointedBy(here, ["-c", "user.name=x"])).toEqual({ dir: here });
+  expect(repointedBy(here, ["--no-pager"])).toEqual({ dir: here });
+  for (const globals of [
+    ["--git-dir", "/x"],
+    ["--git-dir=/x"],
+    ["--work-tree", "/x"],
+    ["--namespace", "x"],
+    ["-C", "$LANE"],
+    ["-C"],
+  ]) {
+    expect("unresolved" in repointedBy(here, globals), JSON.stringify(globals)).toBe(true);
+  }
+  // The line between reading and guessing is a constant, and it is drawn
+  // over VALUES rather than over shapes.
+  for (const t of ['"$X"', "~/x", "$(pwd)", "a*b", "`x`", "a'b'", "{a,b}"]) {
+    expect(UNRESOLVABLE_TOKEN_RE.test(t), t).toBe(true);
+  }
+  expect(UNRESOLVABLE_TOKEN_RE.test("/Users/x/Projects/nputer-T-216")).toBe(false);
+  expect(UNRESOLVABLE_TOKEN_RE.test("../nputer-T-216")).toBe(false);
 });
 
 test("the guard is wired into .claude/settings.json on the Bash matcher", () => {
