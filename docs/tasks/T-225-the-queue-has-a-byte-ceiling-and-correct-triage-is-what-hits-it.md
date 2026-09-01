@@ -5,11 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/dispatch-order.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief-flush.spec.ts, tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/brief.spec.ts]
 suggested_by: "the architect/integrator seat, 2026-09-01 — met during the triage sitting docs/STATE.md said was owed, measured rather than predicted"
-builder:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -172,3 +173,38 @@ verifier at ab873e0: 200 small console.logs lose 49 KB against a slow
 reader and nothing against a fast one. Keep the one-long-line synthesis
 exactly as it is. This card already opens that spec, so the rider costs
 one comment.
+
+## DISPATCH, 2026-09-02 — the stamp, and what the audit found
+
+**Fence narrowed at dispatch to six files by path**: the three scripts
+that assemble and print the dispatch arm (`dispatch-order.mjs`,
+`dispatch-brief.mjs`, `brief.mjs`) and the three specs that read them
+(`brief-flush.spec.ts`, `dispatch-order.spec.ts`, `brief.spec.ts`).
+T-223 released `dispatch-brief.mjs` at its merge; nothing live holds any
+of the six.
+
+**Audit (orchestrator 5b) — the card's mechanism is partly stale, and
+the card is worth more, not less, for knowing it.** Since T-197 landed,
+`brief.mjs` no longer exits before its stdout drains, and
+`brief-flush.spec.ts`'s margin guard asserts that spawnSync receives
+exactly what a file destination receives — PAST the loss point as well
+as under it. Measured at 2489853 with four lanes in flight: `--dispatch`
+printed 86,872 bytes against the 65,536-byte line, the guard disclosed
+"PAST" and every body stayed green, and this seat's battery went green
+three times at that size. So the truncation the card opens with no
+longer occurs for a fast reader; what remains is exactly the card's own
+three decisions — the SLOW-reader residual (decision 1), the
+dispatchable-now filter that stops the print growing with the board
+(decision 2, the one that scales), and the margin DISCLOSED in the
+brief's own output rather than only in a spec (decision 3). Build to
+those, and re-measure the size at your own ref rather than the card's.
+
+**Absorbed rider T-197-s1** rides here because this lane opens
+`brief-flush.spec.ts`: the two prose sites that say write SHAPE decides
+the loss say SLOW READER instead, with T-197's notes corrected by an
+appended line, never an edit.
+
+**Holder**: this lane does NOT hold the integration checkout and does
+not merge; it stamps `verifying`, reports ready-to-merge with branch and
+tip, and leaves its worktree standing. Ceremony row M, guard-class,
+review independent.
