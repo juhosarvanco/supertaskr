@@ -44,9 +44,10 @@ opens with `Checkpoint:`** (T-182).
   IPv6 loopback, so an IPv4 probe answers FREE while it runs).
   `../nputer-app` is detached ON PURPOSE: not a lane.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
-- E2E PORT: `NPUTER_E2E_PORT` (default 14520) — `E2E_PORT` binds
-  NOTHING. Derive scratch ports FROM THE CARD ID; lsof to zero rows
-  immediately before binding.
+- **E2E PORT: THE DEFAULT IS MACHINE-WIDE, SO EVERY CONCURRENT LANE
+  TAKES 14520.** SET `NPUTER_E2E_PORT=15000+<card number>` per lane;
+  `E2E_PORT` binds NOTHING. lsof to zero rows before binding, never
+  1420. Derive, never check (T-217's corroboration).
 - GRAPH: `cargo run -p nputer-index -- index --check --root ../..` from
   app/src-tauri/ — ASK IT, never predict, ask AGAIN after every write.
   Never trust it from inside a drill worktree (T-153-s3).
