@@ -79,8 +79,14 @@ line number.)*
 
 Added by the dispatch audit, 2026-09-01, measured at `06ca1c5`:
 
-    git merge-base --is-ancestor 4ec229c main   -> YES, ancestor
-    git rev-list --count 4ec229c..main          -> 344
+    git merge-base --is-ancestor 4ec229c 06ca1c5   -> YES, ancestor
+    git rev-list --count 4ec229c..06ca1c5          -> 344
+
+*(Both rows said `main` when written and the count read 344. `main` has
+moved five times since, to 348. **Third instance of one defect on one
+card** — the criterion, the amendment's demonstration table, and this
+audit block, each written by the seat that had just corrected the
+previous one. Pinned to the sha the line already named.)*
 
 **The motivating checkout PASSES an ancestry test.** Being an ancestor of
 the tip is not a defect a stale checkout has — it is the definition of
@@ -111,17 +117,24 @@ Not prescribed — the mechanism is the card's to choose:
 ## Amendment, 2026-09-01, after dispatch — two corrections to the criteria below
 
 **A FIGURE WENT STALE INSIDE THE CRITERION ADDED TO FORBID STALE FIGURES.**
-The reachability criterion was written naming a literal distance. Measured:
+The reachability criterion was written naming a literal distance:
 
-    git rev-list --count 4ec229c..06ca1c5      -> 344
-    git rev-list --count 4ec229c..main         -> 346
-    git rev-list --count 4ec229c..origin/main  -> 344
+    git rev-list --count 4ec229c..06ca1c5  -> 344   (fixed sha: stable)
 
-**The typed number was already wrong by two**, and it moves with every
-commit. It is now DERIVED in the criterion rather than stated. **A figure
-in an acceptance criterion is a figure like any other: it carries its ref
-or it goes.** This is T-216's own line-number correction, re-earned one
-card later by the seat that wrote it.
+**The typed number was already wrong against a moving symbol**, and it is
+now DERIVED in the criterion rather than stated. **A figure in an
+acceptance criterion is a figure like any other: it carries its ref or it
+goes.** This is T-216's own line-number correction, re-earned one card
+later by the seat that wrote it.
+
+**AND THE TABLE THAT DEMONSTRATED IT CONTAINED A ROW WITH NO REF, WHICH
+DECAYED WHILE THIS CARD WAS BEING WRITTEN.** The original table carried a
+`4ec229c..main` row. It read 346 when written, 347 when the verifier
+re-stamped it, and 348 an hour later — because `main` moves with every
+commit this dispatch itself makes. The rows anchored to a fixed sha never
+moved. **The row is deleted rather than re-pinned**: it measured nothing
+the stable rows do not, and a demonstration of "carry your ref" that has
+to be re-pinned to stay true is making the opposite point.
 
 **A CATCHER NOTHING INVOKES SATISFIED EVERY CRITERION.** A blind phase-1
 attack set, written before any implementation existed, found that criteria
@@ -146,13 +159,25 @@ outside they are indistinguishable:
 Measured at the integration seat, `CLAUDE_PROJECT_DIR` resolving correctly
 and only the `.mjs` missing — **one fault, not two**:
 
-    exit=1, stderr 761 bytes ("cannot find module")
+    exit = 1  ("cannot find module")
 
-Exit 1 is not exit 2, so the harness does not block: **arm B fails open
-while looking fully configured.** A catcher that reads
+**THE PORTABLE HALF IS THE EXIT CODE: 1 IS NOT 2, SO THE HARNESS DOES NOT
+BLOCK.** That is what the argument rests on and it is independent of path,
+platform and node version. The stderr byte count is NOT portable and is
+deliberately not quoted here as a bare number — it is
+`701 + len(path)` on node v22.22.0, exact at four path lengths and
+re-derived independently at three. Two seats measured 881 and 761 and both
+were right, at paths of 180 and 60 characters. **A byte count carries its
+path the way a figure carries its ref.**
+
+**Arm B fails open while looking fully configured.** A catcher that reads
 `.claude/settings.json` and finds the registration present would pass a
 checkout in arm B. The measured motivating instance is arm A; **arm B is
 the one that survives an inspection of the registration.**
+
+*(Letters are local to this note. The verification's own ground truth
+labels these arms differently — this note's arm B is that document's arm
+C. **Map by description, never by letter.**)*
 
 `docs/CONVENTIONS.md` currently asserts this shape needs two faults at
 once and that the process never starts. Both are false, and that document
@@ -172,9 +197,10 @@ defect is routed as **T-232** rather than folded in here.
   for a HEAD which is an ancestor of the integration tip SHALL be shown
   to REFUSE the motivating instance, whose HEAD is an ancestor of the
   tip and hundreds of commits behind it. **The distance SHALL be DERIVED
-  at the ref under test and never typed** — see the amendment note below.
-  A test asserting only "an unreachable HEAD is caught" is degenerate
-  against this card and SHALL be treated as absent.
+  at the ref under test and never typed**, because a distance measured
+  against a moving symbol is stale before it is read. A test asserting
+  only "an unreachable HEAD is caught" is degenerate against this card
+  and SHALL be treated as absent.
 - The catcher SHALL be WIRED, not merely present. A body SHALL establish
   that the ordinary act it guards — cutting a session, opening a sitting,
   running CI — actually INVOKES it, and SHALL fail if the catcher is
