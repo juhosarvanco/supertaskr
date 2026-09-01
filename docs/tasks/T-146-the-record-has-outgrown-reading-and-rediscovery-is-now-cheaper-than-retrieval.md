@@ -157,3 +157,45 @@ there by the same legal move.
 Whoever takes this card re-fences it, per its own instruction. This
 corroboration argues the fence should reach `docs/` and the ADR, not
 `lib-parser` or `tools/e2e`.
+
+### CORRECTION TO THE PARAGRAPH ABOVE, SAME DAY — IT OVERSTATED
+
+The self-accusation above is too strong, and the seat that wrote it is
+correcting it rather than leaving a harsher figure standing. **An
+overstated self-criticism is still a wrong figure in the log.**
+
+`T-203`'s blind verifier was asked to test the conclusion rather than
+accept it, precisely because the dispatching seat had a stake in it. Its
+answer:
+
+> What you did tonight is not the failure mode, and the difference is
+> **the pointer.**
+
+`docs-protocol.md` rule 6 makes moving content to a record the
+**prescribed** remedy for a byte breach, and STATE's own contract records
+that the remedy has always been *a POINTER where a list had grown.* That
+move left one: STATE still carries the five traps **itemised** — the grep
+shim, the scripted edit that must be read back, scratch-worktree
+construction, the RANGE RULE, the push that cancels CI — each named, with
+the record named. A rule still reachable from the governing document.
+
+The edit-script rule is a different case: **it never had a
+governing-document line at all.** It went from a commit straight into
+records.
+
+**So the accurate generalisation is narrower than the one above.** Not
+*a rule in a record is a rule nobody obeys*, but:
+
+> **A MOVE THAT LEAVES NO POINTER CONVERTS A RULE INTO AN ARCHIVE
+> ENTRY.**
+
+The pointer is the discriminator, and it is what separates the
+prescribed remedy from the failure this card is about.
+
+**What this does NOT weaken:** the lane's conclusion stands unchanged —
+the CONVENTIONS bullet needs WRITING, not updating — and so does this
+corroboration's argument that a MECHANISM's home is a governing document
+while a record takes the INSTANCE. The contract and this card still
+disagree about which of those a byte breach may move. That disagreement
+is the finding; the dispatcher's own move was the prescribed remedy
+working, and is evidence about the pointer rule rather than against it.
