@@ -3,7 +3,7 @@ id: T-219
 title: A fence that CONTAINS the unfenceable directory is not refused — only one that IS it, so a bare `docs` token holds `docs/tasks` and rule 5's mechanical refusal is half-built
 feature: F-06
 milestone: 4
-priority: 20
+priority: 2
 size: S
 status: suggested
 blocked_by: []
@@ -75,3 +75,22 @@ rule 5 are each relying on the other to catch this case.
 `method/lane-protocol.md` rule 5, `lib/parser/src/fence.ts` (`sharedDomain`,
 `UNFENCEABLE_PATHS`), `T-134` (which built the module), `T-111` F7 (where
 the pair was first seen), `T-209` (which needed the answer).
+
+## TRIAGE, 2026-09-01 — DISPOSITION IS **PROMOTE**, AND IT IS NOT APPLIED
+
+Triaged at the architect seat this date. The finding is real, its
+evidence reproduces, and its blocker has landed. **The disposition is
+PROMOTE and the stamp still reads `suggested`** — held for one reason
+that is not about this card:
+
+**THE DISPATCH BRIEF HAS NO ROOM.** `brief.mjs --dispatch` emits 60,731
+bytes against a 65,536-byte spawn buffer at `a014b81`. Promoting the
+seven correct suggestions in this cluster costs **4,515 bytes** and
+leaves **290** — inside the boundary that silently truncates, and the
+same boundary that reddened a lane's own gate earlier in this window.
+Four went through; this one is the arithmetic's remainder, not triage's.
+
+**READ THIS AS A TOOL LIMIT, NEVER AS A VERDICT ON THE FINDING.** A card
+held back by a byte ceiling looks identical on the board to one triage
+declined, and that is the thing this paragraph exists to prevent. Filed
+as `T-225`; when it lands, promote this card without re-triaging it.

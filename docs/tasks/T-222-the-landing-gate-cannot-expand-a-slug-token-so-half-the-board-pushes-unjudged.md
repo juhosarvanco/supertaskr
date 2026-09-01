@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: suggested
+status: planned
 blocked_by: [T-212]
 touches: [tools/e2e, .claude]
 suggested_by: "T-212's executor, from its own build: the landing gate expands `touches:` through the parser's own `expandFence`, and `expandFence` needs `ComponentRecord[]` to resolve a SLUG — which needs the frontmatter parser, which needs `yaml`, which the hook dependency budget excludes"

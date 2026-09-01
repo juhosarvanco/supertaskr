@@ -65,3 +65,22 @@ silence — which is the shape of `T-199` itself one document over.
   hook's header the way the branch spelling already is, rather than kept
   in step by hand.
 - Verification: headless.
+
+## TRIAGE, 2026-09-01 — DISPOSITION IS **PROMOTE**, AND IT IS NOT APPLIED
+
+Triaged at the architect seat this date. The finding is real, its
+evidence reproduces, and its blocker has landed. **The disposition is
+PROMOTE and the stamp still reads `suggested`** — held for one reason
+that is not about this card:
+
+**THE DISPATCH BRIEF HAS NO ROOM.** `brief.mjs --dispatch` emits 60,731
+bytes against a 65,536-byte spawn buffer at `a014b81`. Promoting the
+seven correct suggestions in this cluster costs **4,515 bytes** and
+leaves **290** — inside the boundary that silently truncates, and the
+same boundary that reddened a lane's own gate earlier in this window.
+Four went through; this one is the arithmetic's remainder, not triage's.
+
+**READ THIS AS A TOOL LIMIT, NEVER AS A VERDICT ON THE FINDING.** A card
+held back by a byte ceiling looks identical on the board to one triage
+declined, and that is the thing this paragraph exists to prevent. Filed
+as `T-225`; when it lands, promote this card without re-triaging it.
