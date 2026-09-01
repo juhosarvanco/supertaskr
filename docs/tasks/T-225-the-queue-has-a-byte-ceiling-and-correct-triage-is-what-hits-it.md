@@ -160,3 +160,15 @@ and `T-209` (which already computes the dispatchable-now filter criterion
 saying the disposition is PROMOTE and naming this card as the reason it
 is not applied. **When this lands, promote them without re-triaging** —
 their merits were settled on 2026-09-01 and nothing about them changed.
+
+## Absorbs: T-197-s1 (2026-09-02)
+
+Correct the two prose sites that say write SHAPE decides truncation loss —
+T-197's implementation notes (a record: append the correction, never edit
+it) and the comment in `tools/e2e/tests/brief-flush.spec.ts` — to say the
+loss is decided by a SLOW READER: bytes are lost iff they are still
+queued in userland when `process.exit()` runs. Measured by T-197's
+verifier at ab873e0: 200 small console.logs lose 49 KB against a slow
+reader and nothing against a fast one. Keep the one-long-line synthesis
+exactly as it is. This card already opens that spec, so the rider costs
+one comment.

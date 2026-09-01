@@ -1,7 +1,7 @@
 ---
 id: T-197-s2
 title: --dispatch byte-identity is recoverable by normalising its fixed-width stamps, so the live arms could assert bytes rather than size
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-197-verify
 ---
 
@@ -33,3 +33,8 @@ the middle, which is one of the three mutant directions a truncation
 body should survive. Low value while the synthesised body carries the
 real proof; worth doing if the live-arm assertion ever becomes the
 primary one.
+
+**REJECTED 2026-09-02 — declined, in the filer's own words**: *"not a
+defect … low value while the synthesised body carries the real proof"*;
+resurfaces only if the live-arm assertion becomes primary, which T-225
+decides.

@@ -164,8 +164,12 @@ defect.
   gate can read. **Silently dropping SHALL NOT remain an option**, whichever
   is chosen.
 - WHERE tolerant matching is chosen, the normalisation SHALL be stated in
-  `method/tasks/TASK-FORMAT.md` so a card author can predict it, and the
-  three key names SHALL remain the only recognised sections.
+  `method/tasks/TASK-FORMAT.md` so a card author can predict it — IF that
+  file is outside the fence at dispatch THEN the lane SHALL record the
+  exact sentence, route it as a suggestion naming the fence it needs, and
+  say so (triage 2026-09-02: that file ships, and its edit rides the next
+  method bump); the three key names SHALL remain the only recognised
+  sections either way.
 - A gate SHALL fail on a card whose body contains a heading beginning with
   a known section name that the parser does not resolve to that section.
   **The gate SHALL be shown to red against at least one of the fifty cards
@@ -179,3 +183,17 @@ defect.
   from this card — the figures above carry their measurement and go stale
   like any other.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Criterion 3 rewritten as a ROUTE at the seat**: the TASK-FORMAT sentence
+rides the next method bump (T-229 owes it); the fence stays
+`[lib/parser, tools/e2e]`. Guard-class, review independent already set.

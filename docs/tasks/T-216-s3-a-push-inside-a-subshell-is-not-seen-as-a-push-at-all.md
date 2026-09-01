@@ -118,3 +118,18 @@ change has not done the work.**
   comments as one it handles — the misleading-declaration half is in scope
   even if the scanner is left exactly as it is.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Holds at cf9d462** (claim-check: `segments()` splits on whitespace with
+no paren stripping, and the declared-limits header still omits the
+subshell family). Promote at normal priority; the argument is cost, as
+the card itself says.

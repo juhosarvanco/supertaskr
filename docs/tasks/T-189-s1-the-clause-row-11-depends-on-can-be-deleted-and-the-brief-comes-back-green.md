@@ -2,6 +2,13 @@
 id: T-189-s1
 title: The clause ROW 11 depends on can be deleted and the brief comes back GREEN — nothing in the tree reds when the self-integration condition is removed
 status: suggested
+feature: F-06
+milestone: 4
+priority: 3
+size: S
+blocked_by: []
+touches: [tools/e2e]
+review: independent
 suggested_by: "executor claude-opus-5 @T-189, 2026-08-31 — AC 4 asked for a body and tools/e2e/tests/ is outside T-189's fence"
 ---
 
@@ -51,3 +58,18 @@ resolves to more than one row.
 `T-189`'s implementation notes (the drill and the ROW 11 derivation),
 `tools/e2e/scripts/dispatch-brief.mjs:2040`, and `T-202`'s verdict on
 specs that grade their own corpus.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Placement fields written at the seat** (F-06, m4, p3, S,
+`[tools/e2e]`, review independent — a keeper over a deletable clause is
+guard-class). The body pins ROW 11's clause against a literal typed from
+T-189's criteria, never against the document it grades.

@@ -94,3 +94,18 @@ Four went through; this one is the arithmetic's remainder, not triage's.
 held back by a byte ceiling looks identical on the board to one triage
 declined, and that is the thing this paragraph exists to prevent. Filed
 as `T-225`; when it lands, promote this card without re-triaging it.
+
+## CORROBORATION, 2026-09-02 — T-227, absorbed here as a second instance of `expandFence`'s silence
+
+T-227 (now under docs/tasks/rejected/, its evidence kept there) measured
+at d6fd4ad, with positive controls on both halves: `compareFences`
+iterates `a.tokens × b.tokens`, so a card with an EMPTY `touches:`
+produces zero witnesses and reads DISJOINT FROM EVERYTHING to T-209's
+dispatch guard, while the write hook refuses every path — the two halves
+disagree in the safe direction, and `expandFence` reports no issue and no
+`unusable` entry either way. Latent because every dispatchable card
+declares a fence, and one promotion of a minimal suggestion away from
+live. When this card is promoted its criteria SHALL include: IF a card's
+`touches:` is empty THEN `expandFence` SHALL refuse it, naming the card,
+and the dispatch guard SHALL never report it disjoint. Same mechanism,
+same file, one refusal short.

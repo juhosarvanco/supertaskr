@@ -8,7 +8,7 @@ size: S
 status: suggested
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1 phase 1 ground truth, 2026-09-01; re-derived independently at the integration seat before filing"
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -96,3 +96,17 @@ DOCUMENT; `T-216-s1` builds the catcher.
 - WHERE the corrected sentence retains the "proven at verification"
   provenance, it SHALL name the ref at which the claim was re-measured.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Fence widened at the seat to `[tools/e2e, docs/CONVENTIONS.md]`**:
+three of its four criteria edit that document. Claim-check at cf9d462:
+the FAILS OPEN sentence still reads the two-fault shape, unchanged.

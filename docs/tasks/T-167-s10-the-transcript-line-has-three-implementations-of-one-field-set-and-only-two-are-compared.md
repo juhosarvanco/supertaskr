@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **FOUND WHILE BUILDING T-167-s9, NOT FIXED THERE.** That card asked for a
@@ -77,3 +77,34 @@ Nothing on the merge path checks that the next hand does.
   it, and SHALL carry a positive control, per the shape T-167-s1 and
   T-167-s9 already use.
 - Verification: headless, `npm test` from app/.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Absorbs T-167-s12** — the section below. `review: independent` set.
+
+## Absorbs: T-167-s12 (2026-09-02)
+
+Add the one-line VALUE assert on the PARSED example —
+`assert_eq!(example["machine"], true, …)` in `transcript_line_keys`
+(app/src-tauri/src/agent/sessions.rs) — so `"machine": false` in
+`method/runtime/transcript-schema.md`'s example reds `cargo test` naming
+the page and the value. Measured by T-167-s9's verifier at 07831da: that
+mutation left `cargo test --lib` at 261 passed, exit 0. The second-example
+redesign T-167-s12 offered is REFUSED as scope: it redesigns the pin's
+expected side, and the one-liner closes the measured hole.
+
+Criteria added by the absorption:
+
+- WHEN the page's example carries `"machine": false` THEN `cargo test`
+  from app/src-tauri SHALL red, naming the page and the value.
+- THE new assertion SHALL be shown able to fail by that drill, with the
+  restoration proved by sha256.
+- THE existing guards and both comparison directions SHALL be unchanged.

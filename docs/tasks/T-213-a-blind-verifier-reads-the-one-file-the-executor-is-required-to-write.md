@@ -165,3 +165,5 @@ a better brief. This one is not.
 - Or an explicit instruction that a verifier does not list its own scratch
   directory, which is the weaker answer: it asks a seat to not-look rather
   than removing the thing to look at.
+
+PREFLIGHT RULING (2026-09-02): the heading at line 106, "A SECOND CHANNEL, AND THIS ONE IS NOT IN THE REPOSITORY AT ALL", enumerates the channels through which blindness leaks on THIS card — the ref and the message — and is not an ordinal over this repository's history; the preflight's census-claim arm read the ordinal, and the count it wants is two channels named on this page, both above.

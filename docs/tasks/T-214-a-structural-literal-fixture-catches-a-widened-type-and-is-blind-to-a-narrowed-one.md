@@ -6,11 +6,11 @@ milestone: 4
 priority: 3
 size: S
 status: suggested
-blocked_by: [T-185]
+blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185-s2 (2026-08-31) — measured in-lane with two one-sided drills, not taken because the repair cannot be green before its blocker lands
 touches: [app-shell]
 builder:
-review:
+review: independent
 ---
 
 **THE CLAIM AND THE MEASUREMENT DISAGREE.**
@@ -72,3 +72,18 @@ another). Whoever takes this should ask which of them are checked
 against a type that can narrow, and fix the header's sentence in the
 same commit — a comment that overstates a guarantee is the half that
 gets read.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**`blocked_by` cleared at the seat**: T-185 is done, and the card itself
+ruled the blocker bound option 1 only. `review: independent` set (a
+fixture guard). Take option 2 — assert the key set at runtime — unless
+the lane measures option 1 cheaper.

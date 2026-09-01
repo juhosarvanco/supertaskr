@@ -8,7 +8,7 @@ size: S
 status: suggested
 suggested_by: "the architect/integrator seat, 2026-09-01 — met while dispatching T-216-s1, measured rather than predicted"
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -89,3 +89,18 @@ is not on the board while a sub-card of it is.
   refusal (`task/T-NNN-<slug>`) does not mention sub-cards at all, while
   the regex has handled them since it was written.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Fence widened at the seat to `[tools/e2e, docs/CONVENTIONS.md]`**:
+criterion 4 reconciles the published lane spelling and that file was
+outside the fence — a card whose criterion and fence disagree is a
+defective card (TASK-FORMAT), and this is the repair.

@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **FOUND WHILE BUILDING T-167-s5, AND DELIBERATELY NOT BUILT THERE.**
@@ -72,3 +72,16 @@ list is printed by the gate and never committed.
 - THE change SHALL NOT move `check::drop_clause`'s COUNT or its printed
   unit — `T-167-s5` pinned both, and the list is an addition beside
   them rather than a replacement for them.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Holds**; F-06 p4 `[crate-index]`; `review: independent` set, because
+the drop clause is the gate's own report.

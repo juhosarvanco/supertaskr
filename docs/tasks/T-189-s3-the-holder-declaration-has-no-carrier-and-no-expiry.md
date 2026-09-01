@@ -2,6 +2,13 @@
 id: T-189-s3
 title: The holder declaration T-189 rests on has no carrier and no expiry — the assembler emits no holder line, and a grant issued at dispatch is used after a verdict
 status: suggested
+feature: F-06
+milestone: 4
+priority: 3
+size: S
+blocked_by: []
+touches: [tools/e2e, method/lane-protocol.md]
+review: independent
 suggested_by: "verifier claude-opus-5 @V-189, 2026-08-31 — measured at 59a6d32 while approving T-189; not a defect in T-189's diff, which only ever narrows permission"
 ---
 
@@ -85,3 +92,23 @@ no gate trigger names.
 `T-189`'s implementation notes, `method/lane-protocol.md` rule 4's
 STANDING-NOT-THE-SEAT clause, `roles/orchestrator.md` 5b, and `T-189-s1`
 (which pins the clause; this card supplies the thing to pin).
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Placement fields written at the seat** (F-06, m4, p3, S,
+`[tools/e2e, method/lane-protocol.md]`, review independent).
+**RULED, so the lane does not have to**: the carrier is the brief's
+deliverable row (row 11), which the assembler emits as a HOLDER line —
+whether this lane holds the integration checkout, yes or no — and prints
+NOT DERIVED where it cannot say; the grant holds from dispatch until the
+verdict lands, and the dispatcher re-confirms it in the message that
+sends the verdict, so no lane infers solitude at any moment. No new
+frontmatter field.

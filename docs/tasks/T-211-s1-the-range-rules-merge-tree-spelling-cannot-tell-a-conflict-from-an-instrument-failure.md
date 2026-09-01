@@ -6,10 +6,11 @@ milestone: 4
 priority: 2
 size: S
 status: suggested
-touches: [docs/CONVENTIONS.md]
+blocked_by: []
+touches: [docs/CONVENTIONS.md, tools/e2e]
 suggested_by: "T-211's executor, which measured the exit codes while writing fast path B's exit typing into method/lane-protocol.md; class parent T-083 (the RANGE RULE's owner). DISPOSITION HINT: promote — it is one sentence in an existing bullet, and the bullet is the one every gate derivation in this repository routes through."
 builder:
-review:
+review: independent
 ---
 
 **MEASURED, NOT ARGUED.** At git 2.50.1 (Apple Git-155), on a throwaway
@@ -102,3 +103,21 @@ belong on one card: that law types on whether a tree was PRODUCED, which
 is spelling-invariant. Typing on the oid — the obvious alternative, and
 the more precise-looking one — would have produced a rule no two seats
 could reproduce, while looking stricter than the rule that works.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Fence widened at the seat to `[docs/CONVENTIONS.md, tools/e2e]`**:
+range-rule.spec.ts reads the RANGE RULE bullet, so its reader may have to
+move with the sentence. `blocked_by: []` added; `review: independent`
+set, because the bullet is the recipe every gate derivation routes
+through. The three-valued reading is already law in lane-protocol's fast
+path B; this card is the RANGE RULE's pointer to it plus the
+discriminator sentence — a tree oid on stdout, never the exit code alone.

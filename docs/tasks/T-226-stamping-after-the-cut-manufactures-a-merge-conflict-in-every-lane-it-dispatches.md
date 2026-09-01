@@ -1,7 +1,7 @@
 ---
 id: T-226
 title: STAMPING AFTER THE CUT MANUFACTURES A THREE-WAY CONFLICT IN EVERY LANE IT DISPATCHES — orchestrator 5b's ordering is load-bearing for a reason the rule never states, and the seat that inverted it recorded the inversion as harmless
-status: suggested
+status: parked
 suggested_by: "the architect/integrator seat, 2026-09-01 — inverted the ordering, recorded it as costing nothing, and was corrected by the first lane to report; measured at 3a842e2 across all three lanes of that dispatch"
 ---
 
@@ -74,3 +74,14 @@ visibility defects, and this card's sibling in that it was found by the
 seat that caused it), `T-209` (refusal as mechanism, and the model for
 the second bullet above), and `method/roles/orchestrator.md` step 5b,
 cited by ordinal.
+
+## PARKED, 2026-09-02
+
+The ordering half is law now — orchestrator 5b, CONVENTIONS' serial-ritual
+bullet, STATE — and measured holding on two consecutive cards. The
+refusal half (`brief.mjs --write-fence` refusing a lane whose card is not
+stamped `building` on the integration branch) is one check in the
+fence-write arm. RESURFACES when a card next opens that arm — T-222 does,
+publishing the slug map through it — and is offered to that lane as a
+rider; IF T-222 lands without it THEN promote this card at that
+checkpoint.

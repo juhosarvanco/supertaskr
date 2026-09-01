@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **CLASS PARENT: `T-185`, and this is its fourth acceptance criterion's
@@ -84,3 +84,21 @@ architecture decision no lane may make on its own."*
 `T-198` (the crossing that made C-15 collected, and the drill ledger
 this card's body would extend), `T-190` (the wall it priced), and
 `C-15-dispatch.md`'s own closing section, which is this card's spec.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**RULED: the edge is C-15 → C-17**, declared in C-15's registry entry as
+a TEST-ONLY dependency with the reason beside it — the dispatch reading
+is asserted against the board model; production `dispatch-store.ts`
+imports nothing from C-17. The lane runs `arch cycles` and reconciles
+`cargo test`'s exact-set census and the dogfood fixture in the same
+commit; IF `arch cycles` names a cycle THEN the lane stops and routes.
+The fence already reaches all four paths. `review: independent` set.

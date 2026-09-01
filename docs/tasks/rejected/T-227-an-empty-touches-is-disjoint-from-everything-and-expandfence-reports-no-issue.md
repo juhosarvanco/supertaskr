@@ -1,7 +1,7 @@
 ---
 id: T-227
 title: An empty `touches:` expands to a fence that is DISJOINT FROM EVERYTHING and can write NOTHING, and expandFence reports no issue for it — latent today, because every one of the 95 dispatchable cards happens to declare one
-status: suggested
+status: rejected
 suggested_by: "the architect/integrator seat, 2026-09-01 — opened by T-221's blind verifier reporting that sharedDomain is reachable only through compareFences' tokens[] loop; probed read-only at d6fd4ad with positive controls on both halves"
 ---
 
@@ -77,3 +77,8 @@ in the same function and whose verifier surfaced the `tokens[]` routing
 this card rests on), and `T-222` — the closest sibling in KIND: a fence
 path the gate ANNOUNCES rather than refuses, which is the same silence in
 a different place.
+
+**REJECTED 2026-09-02 — absorbed, not declined**: a second instance of
+T-219's class (`expandFence`'s silence), appended there as a dated
+corroboration in the same commit as this move; the criterion it asks for
+is written on T-219 for its promotion.

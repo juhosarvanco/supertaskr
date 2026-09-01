@@ -117,3 +117,16 @@ in `app/test/crescendo.test.ts`.
   **What is still owed here is the JOIN** — one declaration, carried over
   the boundary, so the keeper becomes unnecessary rather than merely
   green. Delete the keeper only in the commit that lands the join.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Holds**; F-03 p4, the fence already reaches all three components, and
+the ceremony row is "touching shipped code", so a verifier is owed.

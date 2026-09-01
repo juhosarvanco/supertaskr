@@ -1,7 +1,7 @@
 ---
 id: T-189-s4
 title: The kit ships the self-integration CONDITION without the half that says how to answer it — a scaffolded project reads "while it holds the integration checkout" and has no rule telling it not to infer solitude
-status: suggested
+status: rejected
 suggested_by: "verifier claude-opus-5 @V-189, 2026-08-31 — measured at 59a6d32 while approving T-189; the dangling citation predates that card, which strictly improved the shipped bytes"
 ---
 
@@ -82,3 +82,7 @@ and `cargo test` owed with no gate trigger naming it.
 `docs/CONVENTIONS.md`'s SHIPPED PARTITION bullet, `T-147` (which drew the
 partition), `T-145` (the incident it exists to prevent), and `T-189`'s
 implementation notes.
+
+**REJECTED 2026-09-02 — absorbed, not declined**: a second instance of
+T-174's class (the kit cites a method it does not ship), appended there as
+a dated corroboration in the same commit as this move.

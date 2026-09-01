@@ -81,3 +81,19 @@ covering message may not contradict it.
   worktree that already exists, or SHALL be shown to be harmless when it
   does.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Holds at 1cd2c8d, and it bit tonight**: the base row derives the newest
+`Checkpoint:` commit, which is 43e776a — a commit whose own e2e battery
+was RED (inherited from the retired seat, repaired at 85dda6d) — so
+tonight's lanes are cut from the green tip and the covering message
+overrides the row. A live instance, recorded here rather than filed.

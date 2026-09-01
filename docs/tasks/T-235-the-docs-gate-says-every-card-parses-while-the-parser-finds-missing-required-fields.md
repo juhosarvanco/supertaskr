@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "the architect/integrator seat, 2026-09-01 — met by reddening main's own merge commit, with the docs gate green over the same tree minutes earlier"
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e, lib/parser]
 builder:
 verifier:
 built_by:
@@ -75,3 +75,24 @@ lesson.
   a stamp raising a card out of `suggested`/`parked` SHALL be refused, or
   warned, when the placement fields the new status requires are absent.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**Fence widened at the seat to `[tools/e2e, lib/parser]`** so criterion
+3's shared path — the parser's own validation — is reachable.
+
+**SECOND MEASURED INSTANCE, 2026-09-02, at this seat.** Stamping three
+suggestions `rejected` in place made four placement fields mandatory.
+`docs-gate.mjs` over that tree printed *"every live task card's
+frontmatter parses, with a legal status"* while lib/parser's smoke test
+(`npx vitest run test/smoke.test.ts`) exited 1 with 12 `missing-field`
+issues on exactly those three files; after `git mv` into rejected/ it
+exited 0. Same two readers, same order, same false green first.

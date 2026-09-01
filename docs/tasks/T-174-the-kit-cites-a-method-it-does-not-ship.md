@@ -93,3 +93,17 @@ The graph sits at **410 bytes** of headroom at `b60b06d`
 (`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
 1,040,000 budget), and this card's fence reaches indexed source. The
 sitting records the block rather than lowering the priority.
+
+## CORROBORATION, 2026-09-02 — T-189-s4, absorbed here as a second instance
+
+T-189-s4 (now under docs/tasks/rejected/, its argument kept there) found
+this card's class from the other end: `method/tasks/TASK-FORMAT.md` SHIPS,
+and its ceremony cell now cites lane-protocol rules 4 and 6 — a file
+`KIT_FILES` never materializes — so a scaffolded project receives the
+self-integration CONDITION without its decision procedure, and the
+obvious way to answer "do I hold it?" from the cell alone is the solitude
+proxy T-189 measured and refused. Add to this card's decision: whether the
+answer is to ship lane-protocol.md or to move the holder's decision
+procedure into a file already shipped, argued rather than assumed, and a
+sweep at the fixing ref for every shipped file that cites an unshipped
+one, derived rather than transcribed from the 14-entry count.

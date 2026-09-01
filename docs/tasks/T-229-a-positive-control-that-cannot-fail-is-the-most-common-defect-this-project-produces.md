@@ -110,3 +110,28 @@ four times reads as understood rather than as open.
 
 **Nothing was recording it.** That is the same failure as `T-146`'s, in
 the same sitting, by the same seat.
+
+## Absorbs: T-167-s11, T-189-s2 (2026-09-02) — riders on the method bump this card owes
+
+This card edits `method/tasks/TASK-FORMAT.md` and `method/roles/`, both
+SHIPPED bytes, so it owes the method version bump (v0.1.9): the three
+stamps — the first gotcha of docs/CONVENTIONS.md, the Output heading of
+method/interview/plan-interview.md, and `METHOD_SNAPSHOT_VERSION` in
+app/src-tauri/src/agent/kit.rs — moved in ONE commit, and
+`node tools/method-evals/run.mjs --bump` recorded in that commit's
+message. Its fence is widened at dispatch to reach those three files.
+Two editorial riders ride the same bump:
+
+- **T-167-s11**: `method/roles/executor.md`'s report row offers the two
+  restoration proofs as an either/or — *"a sha256 or an empty per-path
+  diff"* — and docs/CONVENTIONS.md's POISON DRILL bullet already retracted
+  the alternative, because the empty diff passes on a failed restore
+  (measured on T-167-s9's lane, where it certified a destruction the
+  sha256 caught). Make it a conjunction: the sha256 is the proof and the
+  empty diff a companion. Sweep the other role files for the same
+  either/or and record the result even if empty.
+- **T-189-s2**: the 3–5 concurrent ceiling is stated in
+  `method/roles/orchestrator.md` step 4 and in `method/tasks/TASK-FORMAT.md`'s
+  Parallelism guardrails, neither citing the other. RULED: TASK-FORMAT
+  owns the value — it is the field's home and it ships — and
+  orchestrator.md cites it. Keep the why in one place.

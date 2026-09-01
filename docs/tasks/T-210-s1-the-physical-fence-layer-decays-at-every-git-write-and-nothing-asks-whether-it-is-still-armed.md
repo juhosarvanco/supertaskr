@@ -10,7 +10,7 @@ blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: "T-210's executor, 2026-09-01 — found by measuring the failure its own card predicted and meeting a quieter one instead"
 builder:
-review:
+review: independent
 ---
 
 **CLASS PARENT: none found.** Searched the board at `e7c277a`; `T-212`
@@ -38,3 +38,21 @@ existing**: a lane writing ANOTHER lane's worktree never enters the
 writing lane's diff, so only the read-only bit stops it, and a lane whose
 layer has decayed is a lane whose neighbours can be edited without trace.
 Note `T-216`'s rooting hazard, which decides where such a check can live.
+
+## TRIAGE, 2026-09-02 — DISPOSITION IS PROMOTE, AND IT IS NOT APPLIED
+
+Triaged at the architect seat at 1cd2c8d. The stamp stays `suggested` for
+T-225's reason and no other: `brief.mjs --dispatch` printed 60,040 bytes
+at 85dda6d against the 65,536-byte loss point, a promotion costs about
+645 bytes, and the in-flight sections of the wave dispatched tonight
+spend the rest. T-225 is dispatched as soon as T-216-s4 lands; when
+T-225 lands, promote this card without re-triaging it. Read this as a
+tool limit, never as a verdict on the finding.
+
+**RULED: ANNOUNCE, not REFUSE.** The landing gate is the total check and
+the physical layer is its backstop, so a decayed layer is ANNOUNCED on
+the push path with the re-arm command (`lane-lock.mjs --status` already
+names the drift), on T-212's own announced-allow precedent for CANNOT
+COMPARE. A refusal would block every lane after every git write until a
+hand re-armed it, which is a guard somebody turns off. `review:
+independent` set at the seat: the subject is a guard.
