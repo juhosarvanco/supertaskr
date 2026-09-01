@@ -614,6 +614,31 @@ test("THE LIMIT DEMONSTRATED: the same stale content answers CURRENT from a stal
   expect(fromRepo.figures["sharedRefs"], "and the run says the refs were shared").toBe(true);
 });
 
+test("THE REFERENCE COMES FROM THE VANTAGE, PROVEN AGAINST A TARGET WHOSE OWN `main` DISAGREES", () => {
+  // KILLED BY: reading the reference registration from the TARGET instead
+  // of the vantage — a swap every other body in this file SURVIVES,
+  // because a stale WORKTREE shares refs and answers `main` identically
+  // from either side. A poison drill found exactly that hole: the fixture
+  // that models the motivating instance cannot separate these two reads.
+  // A stale CLONE can, and that is the whole reason this body exists.
+  const fx = motivatingFixture("reference-side");
+  const clone = staleClone(fx, fx.staleHead);
+  expect(
+    execFileSync("git", ["-C", clone, "show", `main:${SETTINGS_REL_PATH}`], { encoding: "utf8" }),
+    "asked on the TARGET's own refs, `main` hands back the pre-guard registration",
+  ).toContain("Edit|Write|NotebookEdit");
+  expect(
+    execFileSync("git", ["-C", clone, "show", `main:${SETTINGS_REL_PATH}`], { encoding: "utf8" }),
+    "and no Bash matcher — so a reference read from that side sees no gap at all",
+  ).not.toContain('"Bash"');
+
+  const d = judge({ vantage: fx.repo, target: clone });
+  expect(
+    codes(d),
+    "the catcher reads its reference from the VANTAGE, so both registration arms still fire",
+  ).toEqual(expect.arrayContaining(["registration-missing", "hook-absent"]));
+});
+
 test("THE THIRD VERDICT: a vantage that cannot see the judged HEAD answers UNKNOWN, never CURRENT", () => {
   // KILLED BY: rounding `unanswered` down to `current` (two verdicts
   // instead of three), and by an arm that reports shared refs without
