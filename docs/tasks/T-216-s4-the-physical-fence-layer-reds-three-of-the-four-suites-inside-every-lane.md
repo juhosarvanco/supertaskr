@@ -574,3 +574,25 @@ findings were first filed as `T-216-s4-s1`/`-s2`, which the parser refuses as id
 `docs-gate.mjs` still reports frontmatter clean, because the id format is not what that
 half reads. Renamed before the tip; `gate-run parser` 349/349 and `gate-run app`
 1131/1131 confirm it here.
+
+#### Addendum, same date and seat — the figure re-derived at the tip this verdict created
+
+**A COUNT IN A VERDICT IS A CLAIM ABOUT A TREE, AND MY OWN COMMIT MOVED THE TREE.** The
+three-residual-failure figure above is measured at `1757f33` and stays true there. At
+`7771c28` — this verdict and `T-216-s8`, committed — `gate-run parser` is **0 / 349
+GREEN** and `gate-run app` is **0 / 1131 GREEN**, so the prose broke no board reader and
+both new card ids parse; `gate-run e2e` is **1 / 536 RED with SIX failures**, three more
+than at `1757f33`.
+
+**The three extra are environmental too, and pinned by moving no variable but the
+clock**: `card-preflight.spec.ts:670`, `checkout-currency.spec.ts:852` and
+`checkout-currency.spec.ts:953` all fail **identically at the pre-commit tip `1757f33`**
+when re-run at 23:47Z (3 failed / 49 passed). They join the `--write-fence` body in the
+same family: this bench is 16 commits behind a `main` that advanced twice during this
+sitting, and those bodies assert against the live refs and the machine's live worktree
+list, which other seats are changing continuously tonight. **The verdict is unchanged.**
+Six residual e2e failures, none of them this diff's, every one re-measured either at the
+card's base `e648590` or at the pre-commit tip.
+
+**The honest reading of that number is that it is not a property of this branch.** It is
+why `gate-run`'s ref field exists, and why this addendum names one.
