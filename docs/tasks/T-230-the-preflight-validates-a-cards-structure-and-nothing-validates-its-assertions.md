@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/fixtures]
 suggested_by: "the architect/integrator seat, 2026-09-01 — measured across the sitting's four dispatches, and routed after @human asked whether verification's first phase belongs before dispatch"
@@ -119,7 +119,137 @@ exact edit and route it. Three sibling lanes run concurrently
 docs/CONVENTIONS.md at 2489853 (`grep -c` reads 0), as the card says.
 The T-210 platform claim is the verifier's phase-1 ground truth.
 
+**THE SECOND HALF OF THAT AUDIT WAS WRONG AND IS RETRACTED HERE, ON
+THIS LANE'S COPY** (the dispatching seat corrected it from the
+integration branch mid-build, and the correction reproduces at this
+lane's own ref `c120f1d`). The T-203 quote is NOT absent: line 190 of
+docs/CONVENTIONS.md opens the bullet in that document's own capitals, so
+`grep -c` reads 0 and `grep -ic` reads 1. **The instance is a CASE
+POLICY, not an absence**, which changes what the second criterion is
+asking for rather than whether it can be met — see the implementation
+notes, where the policy is stated and its three readings are pinned.
+
 **Holder**: this lane does NOT hold the integration checkout and does
 not merge; it stamps `verifying`, reports ready-to-merge with branch and
 tip, and leaves its worktree standing. review: independent, on the card
 since filing — the subject is a guard.
+
+## Implementation notes
+
+**WHAT LANDED: a SIXTH claim class, `quotes`, and one opt-in marker.** A
+card asks for a check by writing one plain body line —
+`CARD CLAIM (<tracked file>): "<quoted string>"` — and the arm opens that
+ONE file and answers whether the string is in it. Everything else in the
+class is REPORTED. The module is `tools/e2e/scripts/card-preflight.mjs`;
+`tools/e2e/scripts/brief.mjs` needed NO edit, because the arm's findings
+already flow into the wrapper's exit 1 and into the `--write-fence` gate,
+so the fence held with nothing to route.
+
+**DECISION ONE — REFUSE versus DISCLOSE, on the card's own reasoning.**
+The card's second section says a false *"this document already says X"*
+is checkable and a preflight that finds it false and stays silent is the
+silence this project converts into refusals. So: **a CHECKED claim found
+false REFUSES**, and **everything the arm could not evaluate DISCLOSES**.
+What makes the refusing half safe is that the marker is OPT-IN — the
+author wrote it, so a refusal is the answer to a question that was asked,
+and the over-fire trap that forced every other arm here to be measured
+narrow does not exist. That is the whole argument, and it is why the
+unmarked half only ever reports.
+
+**DECISION TWO — the case policy, which the dispatch audit got wrong.**
+Retracted above and re-measured at `c120f1d`: `grep -c` reads 0 and
+`grep -ic` reads 1 on docs/CONVENTIONS.md line 190. **The matcher is
+CASE-SENSITIVE, and the folded answer is named in the finding's own
+detail.** A card claiming a document *"already says"* a sentence has made
+a claim about what the document says, and a heading in that document's
+own capitals is not the same sentence as a lowercase rule in running
+prose — a folded matcher calls them one and passes. The error a
+case-sensitive matcher makes is VISIBLE, dischargeable by a dated
+`PREFLIGHT RULING` on the card, and the reader is told which of the two
+they are looking at; the error a folded matcher makes is silent, which is
+the failure this whole card exists to end. All three readings are pinned
+as bodies: absent, present-but-shouted, and quoted in the document's own
+capitals.
+
+**DECISION THREE — whitespace collapses on BOTH sides.** Every governing
+document here wraps at about seventy columns, so a card quoting a
+sentence quotes it unwrapped. docs/CONVENTIONS.md's A CITATION NAMES A
+SYMBOL prescribes the remedy in as many words. Without it the arm would
+refuse a card quoting a sentence that IS in the file, which is the one
+error a guard may not make. `TRUE_CLAIM`'s fixture quote spans a wrap on
+purpose so the property is measured rather than described.
+
+**THE THREE DATED INSTANCES are fixtures in
+`tools/e2e/fixtures/card-claims.ts`,** each carrying the bytes its source
+holds in the fixture tree. Two are marked and CAUGHT; the third — the
+platform claim — is REPORTED, because this card's own first section rules
+that class out by name and routes it to the verifier's phase-1 ground
+truth. Its body therefore measures the DISPOSITION: counted, listed,
+refusing nothing, and never appearing as something the preflight checked.
+**The second instance names a governing document of its own rather than
+docs/CONVENTIONS.md**, because the spec's fixture helper copies the LIVE
+document into every fixture repository and a body written against it
+would pass or fail with tonight's edits.
+
+**RUN ON ITS OWN CARD, at `c120f1d`, the arm named both of this card's
+founding false assertions unprompted**: the T-203 quote at line 31 and
+the T-210 platform claim at line 32, both under *quoted and NOT marked*.
+Neither refuses anything — they are prose in a table — which is the
+report doing exactly what the first criterion asks of it.
+
+**MEASURED OVER THE LIVE BOARD before the thresholds were chosen**, the
+way this module's own header requires. Across 436 live cards there are
+5,334 double-quoted runs in prose, median 4 per card; paragraph-scoped
+against the tracked tree, 2,399 of them sit beside a repository path
+(median 2 per card, max 49) and 2,935 name no source at all. The
+paragraph is the unit because the hard wrap puts the quote on one line
+and the file it is about on the next; a line-scoped join finds 455 and
+drops exactly the ones the wrap split. A backticked run counts inside a
+MARKER and not in the unmarked report, because in ordinary prose this
+project backticks every path, command and symbol it mentions and the
+report would be unreadable and therefore unread.
+
+**FOR THE VERIFIER, four things to attack.**
+1. The refusing half is opt-in, so its blast radius is bounded by
+   authorship — but a MALFORMED marker also refuses (no quoted string, an
+   untracked source, a directory). That is deliberate: a marker is a
+   request, and one nobody can read is not a check that passed. It is the
+   most arguable call in the diff.
+2. The marker is read from the PROSE reading, the opposite of
+   `card-figures.mjs`'s `card:` stamp. The reason is that documentation
+   ABOUT this marker is written in exactly the blocks the prose reader
+   blanks, so a raw reading would turn every explanation of it into a live
+   claim — including this card's. The escape hatch that opens is closed by
+   REPORTING every marker-shaped line the prose reader could not see.
+3. The unmarked listing prints one line per quote. On the largest live
+   card that is 49 lines. It is a report and it is never summed with what
+   was checked, but it is the part most likely to be judged too loud.
+4. `clip()` elides the DISPLAY of an unmarked quote at 72 characters.
+   Nothing compares against a clipped string, and every string that IS
+   compared is printed whole.
+
+**POISON DRILL: 16 mutants, all in the code under test, one side only,
+run against the whole spec in a detached worktree at `c120f1d` with a
+lane-derived stem, each restored and PROVED by sha256 against the
+committed blob.** No mutant survived. No new body's kill set is contained
+in any other body's, and seven of the twelve new-or-changed assertions
+kill a mutant that no other body kills — including the two the criteria
+name directly: the checker made to report everything unverifiable dies to
+seven bodies (the positive control among them), and refusing on every
+unmarked quote dies to exactly ONE, the T-210 instance. The counts, the
+mutations and the restoration hashes are in the report.
+
+**CORROBORATIONS RATHER THAN NEW CARDS.** `T-160-s1` already owns *the
+preflight is a written ritual with no tripwire* — this card adds an arm
+to a command nothing on the merge path runs, which makes that card
+stronger and is not a second one. `T-160-s2` owns *a claim written inside
+a fenced or indented block is invisible to the preflight*; a dated
+evidence line is appended there, because for this marker the invisibility
+is now REPORTED and that is evidence the class's remedy is cheap.
+
+**A STALE CENSUS IS REPORTED, NEVER REGENERATED.** This lane adds eleven
+test names to `tools/e2e/tests/card-preflight.spec.ts`, so
+`docs/CAPABILITIES.md` is stale at this tip and `npm run capabilities:check`
+reds by design. docs/CAPABILITIES.md is outside this fence; the
+regeneration is the integrator's, in the merge commit, before the
+checkpoint.

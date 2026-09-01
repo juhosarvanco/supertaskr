@@ -77,3 +77,29 @@ over-fire over the live board before choosing.
   taking it, and SHALL record the residual either way.
 - IF the rule is refused THEN the refusal SHALL be written where the
   next reader is, beside the `cannot:` row that already names the hole.
+
+## Corroboration, 2026-09-01 (executor claude-opus-5@subagent @T-230, at `c120f1d`)
+
+**A SECOND INSTANCE OF THIS CLASS ARRIVED WITH T-230's NEW MARKER, AND
+ONE HALF OF THE REMEDY WAS CHEAP ENOUGH TO TAKE ON THE SPOT.** T-230 adds
+a `CARD CLAIM (<file>): "<string>"` marker read from the same PROSE
+reading this card is about, so a marker written inside a fenced or
+indented block is invisible in exactly the way a criterion is.
+
+The choice made there, and the evidence it offers this card: **the block
+reading was NOT widened, and the invisibility was made VISIBLE instead.**
+`unseenMarkers` in `tools/e2e/scripts/card-preflight.mjs` scans the RAW
+body for marker-shaped lines the prose reading did not see and REPORTS
+each with its line — never refusing on one, because documentation ABOUT
+the marker is written in exactly those blocks and a guard that refuses
+its own documentation is a guard somebody turns off.
+
+**What this is evidence FOR**, since this card's first criterion asks for
+a measurement either way: the reporting half costs a few lines and no
+over-fire at all, because it makes no claim about the tree — it only says
+*this line looks like a marker and nothing read it as one*. That is
+strictly weaker than the narrow rule this card is weighing, and it closes
+the half that is silent to the AUTHOR. Whoever takes this card should
+decide whether the same reporting shape answers the criterion case too,
+before paying for a widened reading whose over-fire still has to be
+measured.
