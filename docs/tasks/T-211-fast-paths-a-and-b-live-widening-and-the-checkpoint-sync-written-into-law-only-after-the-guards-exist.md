@@ -257,11 +257,22 @@ whole drill lives in the scratchpad).
   calls the post-merge suite the integrator's *"problem to catch"*.
   Nothing there says who repairs a BEHAVIOURAL break. No contradiction
   was found, so nothing was routed under that criterion.
-- **This card's `status:` line will conflict at the merge, and it is
+- **This card's `status:` line conflicts at the merge, and it is
   nobody's mistake.** The base `9d56b47` carries `planned`, the
   integration branch carried `building` at `a014b81a` (the dispatch
   stamp landed after this lane was cut), and this lane now carries
   `verifying`. That is the latent two-writer case
   `tasks/TASK-FORMAT.md`'s dispatch-stamp bullet describes; the
   resolution is `verifying`, which is what the merge is supposed to
-  carry.
+  carry. **Forecast, not predicted**: at main `d6fd4ad` and lane
+  `fd8c827`, `git merge-tree --write-tree d6fd4ad fd8c827` exits **1**
+  having printed tree `37fb1ff` — so the instrument RAN — and names
+  exactly ONE conflicting file, this card, with every fenced path
+  merging clean.
+- **That forecast found a gap in the tripwire text this card commissioned,
+  and it was closed in-lane.** The tripwire rests on *disjoint enforced
+  write-sets cannot textually conflict*, and the unfenceable directory
+  is outside every enforced write-set by construction — so a conflict
+  THERE is ordinary and must not fire it. This lane is its own worked
+  example. The section now says to check the conflicting PATHS against
+  the fences before concluding anything.

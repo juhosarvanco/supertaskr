@@ -547,6 +547,23 @@ was breached somewhere. Route it and investigate. **Never resolve it
 locally**, which buries the evidence inside a merge commit that then
 reads as a reconciliation.
 
+**AND IT FIRES ON THE ENFORCED WRITE-SETS ONLY, WHICH EXCLUDES THE ONE
+PLACE TWO LANES ARE SUPPOSED TO COLLIDE.** The unfenceable directory
+every card writes to, and each card's own file, are outside every fence
+by construction (rule 5) — so they are outside the premise as well, and
+a conflict there is ORDINARY. It is not rare, either: the dispatch stamp
+and the closing stamp are two writers on one frontmatter line whenever
+the stamp lands after the branch is cut, which
+`tasks/TASK-FORMAT.md`'s dispatch-stamp bullet already describes.
+**Measured while this section was being written**, on the very lane that
+wrote it: its own forecast came back CONFLICT, in exactly one file — the
+card — on exactly the `status:` line, with every fenced path merging
+clean. **A tripwire that fires there teaches a project to ignore it**,
+which costs more than the tripwire is worth. Check the conflicting PATHS
+against the fences before you conclude anything: a conflict inside an
+enforced write-set is the evidence; a conflict in the unfenceable set is
+the protocol working.
+
 **AND THE TRIPWIRE IS ONLY AS TRUE AS THE ENFORCEMENT UNDER IT, WHICH
 IS WHY ITS HOLES ARE PUBLISHED HERE RATHER THAN DISCOVERED.** A write
 that reaches disk without passing through the guarded write tools — a
