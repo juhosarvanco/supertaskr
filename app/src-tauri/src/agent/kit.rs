@@ -658,14 +658,29 @@ mod tests {
     /// T-175: THE PROMPT ASKS FOR NAMED GAPS AND REFUSES A SCORE.
     ///
     /// Criterion 3 makes the gaps the actionable output — "the method's
-    /// fix-and-repeat loop, not a score" — and the heading is a shared
-    /// constant precisely so the pane's parser and this text cannot drift.
+    /// fix-and-repeat loop, not a score".
+    ///
+    /// **THE HEADING IS PINNED AS A BARE LITERAL, NOT THROUGH THE
+    /// CONSTANT, AND THE FIRST DRAFT OF THIS BODY GOT THAT WRONG.** It
+    /// read `cold.contains(COLD_START_GAPS_HEADING)` — a test PARAMETRISED
+    /// BY THE CONSTANT IT CHECKS, which is T-063's catalogued vacuity:
+    /// move the constant and the prompt moves with it, so the assertion
+    /// re-states itself in the new spelling and stays green while the
+    /// TypeScript parser — which matches its own copy — silently stops
+    /// splitting the answer. Measured: mutating this constant alone left
+    /// `cargo test` AND `npm test` both at exit 0 while criterion 3's
+    /// output stopped working. The literal below is what closes the
+    /// producer's half; `app/test/crescendo.test.ts`'s
+    /// `the cold reader's heading is ONE string…` closes the agreement
+    /// between the two copies.
     #[test]
     fn the_cold_start_prompt_asks_for_named_gaps_and_never_a_score() {
         let cold = assemble_cold_start_prompt();
         assert!(
-            cold.contains(COLD_START_GAPS_HEADING),
-            "the prompt must ask for the answer's actionable half under the shared heading"
+            cold.contains("GAPS:"),
+            "the prompt must ask for the answer's actionable half under the heading the pane's \
+             parser looks for - written out here rather than read from the constant, so moving \
+             the constant reds this line instead of renaming it"
         );
         assert!(
             cold.contains("explain the project back"),

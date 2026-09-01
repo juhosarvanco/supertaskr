@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   boardReadiness,
@@ -9,6 +11,7 @@ import {
   flightOf,
   showsBoard,
   splitColdStartAnswer,
+  COLD_START_GAPS_HEADING,
   HOUR_FORM_FROM_MINUTES,
   MINUTE_MS,
   type ColdStartPhase,
@@ -693,5 +696,82 @@ describe("coldStartOffer — offered at completion, and gating nothing in either
       offered: true,
       state: "available",
     });
+  });
+});
+
+// ---- T-175: the keeper for the heading's two declarations ---------------
+
+describe("the cold reader's heading is ONE string with two declarations", () => {
+  /**
+   * **THE SURVIVOR THIS BODY EXISTS FOR, MEASURED BEFORE IT WAS WRITTEN.**
+   * `COLD_START_GAPS_HEADING` is declared twice: in
+   * `app/src-tauri/src/agent/kit.rs`, which is AUTHORITATIVE because the
+   * cold-start prompt is assembled from it, and again in
+   * `src/genesis/crescendo.ts`, which is the MIRROR the parser matches
+   * against. Mutating the Rust producer alone — sha256-landed,
+   * sha256-restored — left `cargo test` at exit 0 AND `npm test` at exit
+   * 0 over 1130 bodies, while the shipped parser turned
+   * `gaps: [2 items], gapsNamed: true` into `gaps: [], gapsNamed: false`.
+   * Criterion 3's actionable output stops working and nothing anywhere
+   * goes red. Two copies of one fact, with no keeper.
+   *
+   * **THE JOIN IS OUT OF FENCE AND THE KEEPER IS NOT, WHICH IS THE WHOLE
+   * POINT.** Making the two into one string means carrying it across the
+   * IPC boundary, and that boundary is `app-shell` (`T-175-s1`). Reading
+   * the producer OFF THE TREE needs nothing but a file read, and this
+   * suite's C-13 siblings — `architecture-dogfood`, `map-dogfood-render`
+   * — already do exactly that.
+   *
+   * **IT IS DELIBERATELY NOT PARAMETRISED BY THE THING IT CHECKS**
+   * (T-063's vacuity, which the first Rust-side body walked into): the
+   * value is EXTRACTED from Rust source and then used to drive the real
+   * parser, so agreement is measured rather than assumed in either
+   * direction.
+   */
+  const KIT_RS = resolve("src-tauri/src/agent/kit.rs");
+
+  /** The Rust producer's own value, read off the tree. */
+  function rustHeading(): string {
+    const source = readFileSync(KIT_RS, "utf8");
+    const declaration = /pub const COLD_START_GAPS_HEADING: &str = "([^"]*)";/.exec(source);
+    // LOUD, never a skip: a renamed constant or a moved file must fail
+    // here rather than quietly stop comparing anything.
+    expect(
+      declaration,
+      `no COLD_START_GAPS_HEADING declaration found in ${KIT_RS} — if it was renamed or moved, ` +
+        "this keeper must be re-pointed, not deleted: it is the only thing joining the prompt " +
+        "the Rust side writes to the parser the pane runs",
+    ).not.toBeNull();
+    return declaration![1]!;
+  }
+
+  // ONE BODY, TWO ASSERTIONS, AND IT WAS TWO BODIES FOR ONE DRILL. The
+  // string comparison and the end-to-end split both red on every drift in
+  // either direction, so as separate bodies they were two descriptions of
+  // one rule — the shape this project refuses. The comparison stays as
+  // the LEGIBLE half (it names the two spellings in the failure message)
+  // and the split stays as the PROPERTY half; neither is a body of its own.
+  it("an answer written to the PRODUCER's heading is split by the SHIPPED parser", () => {
+    expect(
+      rustHeading(),
+      "kit.rs assembles the cold-start prompt from its own constant and crescendo.ts matches " +
+        "against this one; when they differ the reader is asked for a section the pane cannot find",
+    ).toBe(COLD_START_GAPS_HEADING);
+
+    // The property rather than the string: build the fixture out of what
+    // Rust actually asks for, then run the real parser over it. This reds
+    // in BOTH drift directions — a producer that moves and a mirror that
+    // moves — because only one of the two is used on each side.
+    const answer = [
+      "A habit tracker for one founder who forgets.",
+      "",
+      rustHeading(),
+      "- ARCHITECTURE and ADR-002 disagree about who exits.",
+      "- B-1 is referenced and no such file exists.",
+    ].join("\n");
+    const split = splitColdStartAnswer(answer);
+    expect(split.gapsNamed, "the parser found the section the prompt asked for").toBe(true);
+    expect(split.gaps).toHaveLength(2);
+    expect(split.explainBack).toBe("A habit tracker for one founder who forgets.");
   });
 });

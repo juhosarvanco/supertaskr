@@ -98,8 +98,22 @@ in `app/test/crescendo.test.ts`.
   completion, that the gaps are the actionable output, and that NO SCORE
   of any kind appears — the vocabulary sweep that file already applies to
   the dispatch fence is the shape.
-- **THE SHARED CONSTANT SHALL STOP BEING TWO COPIES.**
+- **THE SHARED CONSTANT SHALL STOP BEING TWO COPIES — AND THE KEEPER FOR
+  IT IS ALREADY BUILT, SO ONLY THE JOIN IS LEFT HERE.**
   `COLD_START_GAPS_HEADING` exists in `kit.rs` (authoritative, the prompt
-  is assembled from it) and again in `crescendo.ts` (the mirror). One
-  pin comparing them, in the suite that can see both, is what this
-  repository's own rule about two copies of one fact asks for.
+  is assembled from it) and again in `crescendo.ts` (the mirror).
+  **T-175's first pass routed the whole thing here on a premise that was
+  wrong, and the verifier corrected it**: the JOIN needs the value
+  carried across IPC and is genuinely `app-shell`, but a KEEPER needs
+  only a file read, and `app/test/crescendo.test.ts` is C-13 — inside
+  T-175's own fence, with C-13 siblings already reading the tree. So the
+  keeper was built on T-175 (`the cold reader's heading is ONE string
+  with two declarations`): it extracts the Rust literal off disk,
+  compares it to the mirror, then drives the SHIPPED parser with the
+  producer's own string, so it reds in both drift directions. Before it
+  existed, moving the Rust producer alone left `cargo test` AND
+  `npm test` at exit 0 while criterion 3's actionable output silently
+  stopped working.
+  **What is still owed here is the JOIN** — one declaration, carried over
+  the boundary, so the keeper becomes unnecessary rather than merely
+  green. Delete the keeper only in the commit that lands the join.

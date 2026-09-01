@@ -320,10 +320,87 @@ restatements and both were separated rather than explained: the
 phase-mapping body no longer covers `failed`, and the near-miss body no
 longer restates `gapsNamed`.
 
+### THE ASSIGNED CORRECTION (2026-09-01) — a shape SEVEN survivor, and a routing premise that was wrong
+
+**The survivor.** `COLD_START_GAPS_HEADING` was declared twice — `kit.rs`
+(authoritative; the prompt is assembled from it) and `crescendo.ts` (the
+mirror the parser matches). Mutating the **Rust producer alone**,
+sha256-landed and sha256-restored: `cargo test` **exit 0** and `npm test`
+**exit 0 over 1130 bodies** — **zero bodies red on either side** — while
+the shipped parser turned `gaps: [2], gapsNamed: true` into
+`gaps: [], gapsNamed: false`. Criterion 3's actionable output stops
+working and nothing anywhere goes red.
+
+**And the Rust body that looked like the pin was T-063's catalogued
+vacuity — a test PARAMETRISED BY THE CONSTANT IT CHECKS.**
+`the_cold_start_prompt_asks_for_named_gaps_and_never_a_score` read
+`cold.contains(COLD_START_GAPS_HEADING)`, so moving the constant moved
+the prompt AND the assertion together and it re-stated itself in the new
+spelling. The TS bodies use bare literals, so the drift was silent in the
+one direction that ships. **Fixed here**: that line now reads
+`cold.contains("GAPS:")`, written out rather than read from the constant.
+
+**THE ROUTING PREMISE WAS WRONG.** The first pass routed this whole item
+to `T-175-s1` as out-of-fence. The **join** is — it needs the value
+carried across IPC, which is `app-shell`. A **keeper** is not: it needs a
+file read, and `app/test/crescendo.test.ts` is **C-13, inside this
+fence**, with C-13 siblings (`architecture-dogfood`,
+`map-dogfood-render`) already `readFileSync`-ing off the tree. Built
+there as `the cold reader's heading is ONE string with two declarations`:
+it EXTRACTS the Rust literal off disk (failing loudly, never skipping, if
+the declaration is not found), compares it to the mirror, and then drives
+the SHIPPED parser with the producer's own string — so it reds in both
+drift directions and is not parametrised by what it checks. `T-175-s1`
+now carries only the join.
+
+### THE HARNESS FINDING FROM VERIFICATION, third member of a family this lane contributed two to
+
+The verification pass's first attempt at the adapter mutant **landed
+textually and was semantically inert**: `spawn_cold_start` re-fetches the
+adapter, so the edit reached only CLI resolution. sha256 said "landed"
+and it WAS landed — only the kill count revealed it had measured nothing.
+**The oracle proves the bytes moved, never that the mutation reached the
+property.** Beside this lane's own two — `git diff --numstat` is
+unchanged for a one-line-for-one-line swap, and a runner string ending in
+`; cd $LANE` makes `$?` the `cd`'s — the rule is that a drill owes THREE
+proofs: that the bytes moved, that the suite actually ran, and that
+something died.
+
+### Drills added by this pass
+
+| # | mutated (one side) | bodies red |
+|---|---|---|
+| D9 | the Rust producer's heading constant only | **1 Rust** (`…asks_for_named_gaps…`, on the bare literal) + **1 TS** (the keeper). Both were **0** before this pass. |
+| D1-REDO | `cold_start`'s cwd → the project root, asked of the **whole** `cargo test` | **1** |
+
+D9 first redded 1 Rust + **2** TS: the keeper's string comparison and its
+end-to-end split were separate bodies and both died on every drift in
+either direction, which is one rule described twice. Collapsed into one
+body — the comparison kept as the legible half, the split as the
+property.
+
+**ONE LEDGER DISCREPANCY, UNRESOLVED AND FLAGGED RATHER THAN SMOOTHED.**
+The verification pass records the cwd mutation redding **2** bodies; this
+lane records **1**. The obvious explanation was that the original drill
+ran `cargo test --test agent_runner` — one target, the lib target never
+asked — so it was re-run against the **full** `cargo test` at this tip:
+still exactly **1**
+(`the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it`),
+exit 101. Command and tree named so the other side can be re-derived
+rather than argued: `perl -0777 -pi -e` swapping `project_dir: docs,` for
+`project_dir: project_dir,` in `app/src-tauri/src/agent/mod.rs`, then
+`cargo test` from `app/src-tauri/`. **The 2 is the figure that needs
+re-deriving; 1 is what this tree measures.**
+
 ### Noticed, not done
 
 - `app/src-tauri/src/arch_cmd.rs:2` has an unused `Path` import warning
   at base `0a8dd58`, unrelated to this diff and outside this fence.
+- **THE CARD DOES NOT CLOSE.** Criteria 2, 4 and 5 are met; 1 and 3 are
+  HALF — the derivations are built and pinned, the render and the
+  registration are routed to `T-175-s1`. Stated without softening:
+  **a person finishing an interview still cannot run the cold-start
+  test.**
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
