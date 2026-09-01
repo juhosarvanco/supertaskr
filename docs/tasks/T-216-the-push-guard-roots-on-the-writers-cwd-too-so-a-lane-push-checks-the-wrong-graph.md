@@ -97,3 +97,52 @@ an executor to an unrelated line in a file it was about to change.
 structure and would have passed this card green; nothing checks a
 sentence about the world. `T-230` is the construction that would have
 caught it mechanically.
+
+## A LIVE INSTANCE, MEASURED AT DISPATCH — AND IT IS WORSE THAN THIS CARD SAYS
+
+Found at the integration seat on 2026-09-01, hours after `T-203` landed
+the push gate, while checking why a push with a demonstrably STALE token
+had succeeded.
+
+**The guard never ran. Not once, across an entire sitting of pushes.**
+
+The dispatching session's project directory is a git WORKTREE checked out
+at `4ec229c` — **334 commits behind main**, predating `T-199`, `T-203`,
+`T-209` and `T-212`. Its `.claude/settings.json` registers only the
+lane-fence hook, and `.claude/hooks/push-guard-hook.mjs` **does not exist
+there at all.**
+
+Driven directly, the guard is correct in both checkouts:
+
+    request.cwd = the session's worktree  -> block, `token-missing`
+    request.cwd = the checkout pushed from -> block, `token-stale`
+                  (HEAD tree eeb7236…, token recorded 88d8550…)
+
+**Both refusals are right. Nothing invoked either of them.**
+
+### Why this widens the card
+
+This card's finding is that the guard ROOTS on the writer's cwd, so it
+judges the wrong tree. That presumes the guard runs. **The stronger case
+is that the hook is LOADED from the session's project directory, so a
+session sitting in a stale checkout runs a stale guard — or, as here, no
+guard at all.**
+
+A rooting fix cannot reach this. A guard absent from the checkout that
+loads it has no cwd to root on.
+
+### What it means for anything this card builds
+
+**A push gate is only as current as the checkout the session was started
+in**, and nothing announces the gap. The seat believed it was gated for a
+whole sitting and reported pushes as "judged" that were never seen. What
+saved the tree was a HABIT — running `gate-run --all` by hand and reading
+it — which is exactly the substitute the guard exists to replace.
+
+Whoever builds this decides whether that is this card's problem or a
+sibling's, and **says which** rather than leaving it. A candidate shape:
+the guard announces its own provenance — which checkout it was loaded
+from and whether that checkout is an ancestor of the integration branch —
+so an absent or stale guard is LOUD instead of silent. That is the
+project's standing preference for a refusal over a silence, applied to
+the guard's own installation.
