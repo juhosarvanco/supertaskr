@@ -1,38 +1,28 @@
 # State
 
-Updated: 2026-08-31 at the seven-card close — record:
-docs/checkpoints/2026-08-31-the-fence-is-armed-and-six-verifiers-refuted-the-lanes-they-approved.md;
-the queue lives in T-171's record beside it.
-**NO task branches remain** (derive: the LANES command below) and the
-GRAPH HOLD IS OVER: the emit budget is a derived 2,145,959 with roughly a
-megabyte free — derive it, never quote it. Pre-compaction:
-docs/checkpoints/2026-08-27-backfill-STATE.md.
+Updated: 2026-09-01 at the eight-card close. Its record — **"the 09-01
+record"** wherever this file points at one — is the newest file in
+docs/checkpoints/. **NO task branches remain** (derive: LANES) and no
+verification is outstanding.
 
-**NOTHING IS BROKEN.** A CI outage on 2026-08-31 was an account BILLING
-block whose reason lived ONLY in check-run ANNOTATIONS; cleared.
-**A GATE READ BEFORE A COMMIT DOES NOT CATCH WHAT THE COMMIT CREATES** —
-`lint:docs` went 0 then 1 on one tree, because committing a record is
-what makes STATE stale (rule 4). Read it AGAIN after committing, until
-`T-203` gates the push.
-**AND AN EXIT 1 MAY MEAN THE GATE COULD NOT RUN.** `docs-gate.mjs`'s
-`CANNOT_RUN: 3` sits in a catch inside `main()`, so an IMPORT failure
-exits 1 — which that gate spells `FOUND`. **READ THE OUTPUT**: a verdict
-prints `docs-gate:` lines, a crash prints a stack trace. Three instances
-in one day, one of them this seat's own wrong path. Designed non-zero:
-`npm run health` 3 while bands await keepers (T-156-s1/s2). **Re-run a
-suspect ONCE, then ATTRIBUTE** — never re-run until green and call that
-evidence.
+**NOTHING IS BROKEN.** Designed non-zero: `npm run health` **3** while
+bands await keepers (T-156-s1/s2) — never read it as clean, never "fix"
+it. **AND AN EXIT 1 MAY MEAN THE GATE COULD NOT RUN**: `docs-gate.mjs`'s
+`CANNOT_RUN: 3` sits in a catch inside `main()`. **READ THE OUTPUT, NOT
+THE CODE** — a verdict prints gate lines, a crash prints a stack trace.
+Four instances, two an invented path: the boot gate is `npm run
+boot:check`; `boot-gate.mjs` does not exist. **Re-run a suspect ONCE,
+then ATTRIBUTE.**
 
 ## The contract this file is under
 
 REPLACED at every checkpoint from docs/STATE-template.md, AFTER the
-record is written, in the SAME commit (ADR-019). A figure appears here
+record is written, in the SAME commit (ADR-019). STATE keeps the
+MECHANISM; the INSTANCE is stamped in the record. A figure appears here
 only with its derive command. **When the byte band warns, content MOVES
-to the record — a hazard is never deleted to fit.** This file breached
-its band once overnight and drifted twice more; each time the remedy was
-a POINTER where a list had grown.
-**AND THE COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — the triage
-band's window and CONVENTIONS' dispatch base both read it (`T-182`).
+to the record — a hazard is never deleted to fit**, and the remedy every
+time has been a POINTER where a list had grown. **The commit subject
+opens with `Checkpoint:`** (T-182).
 
 ## Live right now — derive, never quote
 
@@ -40,16 +30,19 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
   — a detached entry is NOT a lane. Dispatch = brief → PREFLIGHT →
   `--write-fence` → read the manifest back → launch. Never read the
   ledger's FREE column as a verdict (T-143).
-- **CONCURRENT LANES: disjointness is over EXPANDED PATH SETS, NEVER
-  tokens** — lane-protocol rule 5, which already carries the
-  measurement: six lanes, every block a naming collision, **not one real
-  collision**. NOTHING COMPUTES IT (`T-209`); this seat asserted it from
-  memory three times in one conversation and was wrong three times.
-- THE HUMAN'S APP: 1420 is read with
-  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and NOTHING else — never
-  bind-probe, never connect (the vite is on IPv6 loopback, so an IPv4
-  probe answers FREE while it runs). `../nputer-app` is detached ON
-  PURPOSE: not a lane.
+- **THE RITUAL IS SERIAL: cut ONE worktree, arm it, READ THE MANIFEST
+  BACK, then cut the next.** T-209's guard refuses a dispatch against a
+  lane whose fence it cannot read — *an unread fence is not "disjoint
+  from everything"* — and refused four at once when this seat cut all
+  four first.
+- **DISJOINTNESS IS OVER EXPANDED PATH SETS, NEVER TOKENS** (rule 5,
+  carrying its measurement: six lanes, every block a naming collision,
+  not one real collision). **T-209 COMPUTES IT** — ask the guard, never
+  assert it. `touches:` is a permission declaration, never an oracle.
+- THE HUMAN'S APP: 1420 is read with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+  and NOTHING else — never bind-probe, never connect (the vite is on
+  IPv6 loopback, so an IPv4 probe answers FREE while it runs).
+  `../nputer-app` is detached ON PURPOSE: not a lane.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
 - E2E PORT: `NPUTER_E2E_PORT` (default 14520) — `E2E_PORT` binds
   NOTHING. Derive scratch ports FROM THE CARD ID; lsof to zero rows
@@ -62,84 +55,90 @@ band's window and CONVENTIONS' dispatch base both read it (`T-182`).
 
 <KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
 
-1. IN FLIGHT: **DERIVE IT, never transcribe** — `brief.mjs --dispatch`.
-   A hand-kept list here named two dead lanes and missed two live ones
-   inside one sitting (`T-142`).
-2. **ASK THE DOCS GATE WHICH SUITES A CHANGE OWES**: `node
-   tools/e2e/scripts/docs-gate.mjs <changed paths>`. `npm run lint:docs`
-   is the CENSUS — its exit 0 means "I wasn't asked", not "nothing owed".
-3. **`T-126-s2` IS RULED**: the join goes to TypeScript; shape 3 was
-   refused on TEST REACHABILITY. Blocker is **`T-190`** (C-15 has no test
-   path), not `T-112-s4`. Newest cards run to `T-196`; **twelve sit in
-   `suggested` and a triage sitting is owed.** An ADR is @human's.
-4. NEXT METHOD RELEASE riders: `T-112-s2`, `T-154-s3`, `T-159-s6`,
-   `T-154-s4`'s sentence; `T-173`/`T-176` owe a bump.
-5. @human holds, and NOTHING is cut from these: the **FORM** (REOPENED
-   2026-08-31 — the ruled answer leaves every authoring act a file edit
-   and @human wants customization without opening files); the **STEERING
-   SPLIT** (`T-180` parked on it); T-025-s4's three permission questions;
-   and **thirty seconds of @human's eye on the interview's new ending at
-   a narrow width** — jsdom applies no breakpoints.
-6. **D5 IS RULED BUT NOT ENFORCED** — nothing passes `--model`, so an
-   assignment is honoured only by the dispatching session.
-7. **WHAT A DISPATCHER WRITES FROM MEMORY IS THE HALF THAT IS WRONG** —
-   nine instances overnight. Point at the derivation. **A verifier's
-   brief carries NO lane fact: a "blind line" inside one message is not
-   one, because the agent reads the whole prompt. Send lane context in a
-   SECOND message, after the attack set is saved.**
+1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
+   here named two dead lanes and missed two live ones (T-142).
+2. **THE STACK IS 3 GATES OF 4** — WRITE (T-199), DISPATCH (T-209),
+   LANDING (T-212) all refuse. Queue: **T-203** (push gate), then
+   **T-211** (the only pair fence-disjoint from T-203), then **T-210**
+   (`.claude` collides with both).
+3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
+   decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
+   rest on it, and dropping it reds nothing.
+4. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <separate
+   literal paths>`; `lint:docs` is the CENSUS, exit 0 means "I wasn't
+   asked".
+5. **T-126-s2 IS RULED** — join goes to TypeScript, shape 3 refused on
+   TEST REACHABILITY; blocker is **T-190**, not T-112-s4.
+6. **TRIAGE IS OWED** — cards run to T-224, twenty in `suggested`.
+   Release riders: T-112-s2, T-154-s3, T-159-s6, T-154-s4's sentence;
+   T-173/T-176 owe a bump. **D5 ruled, NOT enforced** (no `--model`).
+7. **@human holds; no card is cut from these** — the FORM (reopened),
+   the STEERING SPLIT (T-180 parked), T-025-s4's three permission
+   questions, T-162-s1's byte floor, T-131, and @human's eye on the
+   interview's narrow-width ending (jsdom applies no breakpoints, so no
+   suite here can answer it).
 
 ## Standing hazards — the section that saves the hour
 
-- **A GATE READ THROUGH A PIPE REPORTS THE PIPE**, so a hard failure
-  reads as a clean pass: `false | tail -1` → 0, `pipefail` → 1. There is
-  **no root `package.json`** (scripts live in `tools/e2e/`); this seat
-  read exit **254** as green four times. **Redirect, capture `$?`, THEN
-  look.**
-- **THE FENCE JUDGES A WRITE NOW, AND STILL NOT A PUSH** (`T-199` in,
-  `T-216` open): `decide()` resolves the TARGET's root, so a sibling
-  lane's out-of-fence write is REFUSED. `push-guard.mjs:449` still roots
-  on the writer's cwd, and the hook loads from the DISPATCHING checkout,
-  so a lane never arms its own fix. Say what is enforced, not more.
+- **REACH FOR THE CONSTRUCTION, NOT THE CHECK.** A machine-scoped
+  surface bit FOUR times in one night — `git worktree list` in a gate
+  (T-220), a defaulted port, a shared scratch filename, `pgrep -f
+  playwright` matching sibling lanes forever — and rule 4 names the
+  class, read by every seat that walked into it. A check's answer
+  includes every other tenant; a construction (port from the card id, a
+  marker the job owns, a board snapshotted once) cannot see them.
+- **A WORKTREE ENTRY MUTATES IN PLACE.** A count cannot see a moved
+  board; a path-only set difference cannot either. Compare whole
+  `git worktree list` lines, **commit column included**.
+- **A GATE READ THROUGH A PIPE REPORTS THE PIPE** — `false | tail -1` →
+  0. There is **no root `package.json`** (scripts live in `tools/e2e/`);
+  this seat read exit **254** as green four times. **Redirect, capture
+  `$?`, THEN look.** Suite chains go in GUARDED SCRIPT FILES
+  (`cd <abs> || exit N`).
+- **NOTHING GATES THE PUSH YET** (T-203/T-216 open), and two things
+  follow. A gate read BEFORE a commit does not catch what the commit
+  creates — committing a record is what makes STATE stale, so read it
+  AGAIN after. And the fence judges a WRITE and a LANDING but not a
+  push: `push-guard.mjs:449` roots on the writer's cwd and the hook
+  loads from the DISPATCHING checkout, so a lane never arms its own fix.
+- **A BLIND VERIFIER'S WORKTREE IS CUT AT THE BASE REF, NEVER THE TIP**
+  (T-213) — a tip carries the executor's notes, including sections
+  addressed to the verifier. **Lane context goes in a SECOND message**:
+  a "blind line" inside one message is not blindness, because the agent
+  reads the whole prompt. The four leaks: the 09-01 record.
+- **A LINE NUMBER IS A FIGURE** — a coordinate in a mutable object that
+  fails silently, still pointing at a real line, just the wrong rule.
+  Two falsified by merges in one night. Cite by ORDINAL.
+- **POISON DRILLS: KILL-SET CONTAINMENT, NOT THE COUNT** (shape SIX,
+  settled by measurement). The third proof is *something died **at the
+  site the property lives*** — the failure mode is AIMING, not
+  accounting. Read a mutant's landing from `git diff`, never from the
+  mutator's report.
 - **A TIMING CORRELATE IS NOT A CAUSE.** Read a suite's own time and
-  re-run a body ALONE before attributing. (The "cargo cache cliff" was
-  retired 2026-08-31: `T-088-s4` proved the cause was a missing
-  rendezvous, not the cache — after a 13 GiB `cargo clean` on the old
-  attribution.)
-- **A merged main can fail `npm run build`**: `lib/parser/dist` is a
-  build artifact no merge updates — build the parser FIRST. An unbuilt
-  app tree fails `npm test` about `app/dist`.
-- **Suite chains go in GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
-- **FIVE narrower hazards MOVED to the checkpoint records** rather
-  than deleted, per this file's contract: `T-086-s1`'s 1-in-22 body,
-  `T-111-s9`'s misnamed token-scan totals, and app/'s absent
-  `typecheck` script.
-- **PASS THE DOCS GATE SEPARATE LITERAL PATHS.** zsh splits an unquoted
-  COMMAND SUBSTITUTION but NOT a variable, so a variable hands the gate
-  every path as ONE and it answers "1 path(s)" — plausible and wrong.
-  `T-192` read this line as naming only one direction and hit the other.
-- **This shell's `grep` is a shim** carrying `-I` and rejecting
-  `--include` — use `command grep`; sweep NULs with `perl -0777`.
-- **An edit script's success is a GATE, not a step** (`18d8166`): never
-  chain a commit after a scripted edit — read the diff back first. Broken
-  twice in 24h, once by the seat that had just written the rule down.
-- **Scratch worktrees: SHORT root, detached, own `CARGO_TARGET_DIR` at
-  `<scratch>/target`, stem DERIVED from the card id** (`T-133-s5`) — the
-  directory is shared between sessions, and a VERIFIER cuts its own,
-  because a bench carries artefacts.
-- **The RANGE RULE decides which two commits "the merge's diff" means**
-  (CONVENTIONS) — the integrator's pair and the executor's differ.
-- **A PUSH CANCELS THE RUNNING CI JOB** — four superseded overnight by
-  one seat's rapid pushes. Commit stamps freely; batch the PUSH.
-- **THE BOOT GATE AND THE HEALTH BANDS ARE OWED AT EVERY CHECKPOINT**
-  (T-046, T-156), and health takes **`--readings`** over the captured
-  `cargo test`, `index --check` and e2e output — without it three bands
-  answer UNREAD and the run is not a claim about the tree.
+  re-run a body ALONE before attributing. **A merged main can fail
+  `npm run build`**: `lib/parser/dist` is a build artifact no merge
+  updates — build the parser FIRST. **And pass the docs gate SEPARATE
+  LITERAL PATHS**: zsh splits an unquoted command substitution but NOT a
+  variable, so a variable hands the gate every path as ONE and it
+  answers "1 path(s)" — plausible and wrong.
+- **FIVE TOOLING TRAPS, moved to the 09-01 record under "Tooling traps"
+  rather than deleted** — the `grep` shim, the scripted edit that must
+  be read back before committing, scratch-worktree construction
+  (T-133-s5), the RANGE RULE (CONVENTIONS), and the push that cancels
+  the running CI job. Read them once; they do not change.
+- **BOOT GATE AND HEALTH BANDS ARE OWED AT EVERY CHECKPOINT** (T-046,
+  T-156). Health takes **`--readings`** over captured output, and **the
+  `--` is load-bearing** or npm eats the flag (exit 2). **A lane's token
+  meter exists ONLY in its notification** — capture it when the lane
+  reports or it is unrecoverable.
+- **NARROWER HAZARDS LIVE IN THE RECORDS** per this file's contract:
+  T-086-s1's 1-in-22 body, T-111-s9's token-scan totals, app/'s absent
+  `typecheck`, the CI billing block (cleared).
 
 ## The records
 
-- docs/checkpoints/ — append-only, one per integration. Current:
-  2026-08-31-four-lanes-and-a-spec-that-tested-itself.md.
-  **A CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:`** — two
-  consumers read it; `T-182` states the rule in CONVENTIONS.
+- docs/checkpoints/ — append-only, one per integration; the 09-01 record
+  is the newest, the seven-card record beside it at 2026-08-31.
+  Pre-compaction: 2026-08-27-backfill-STATE.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
