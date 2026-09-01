@@ -99,10 +99,20 @@ copies are one amendment rather than two edits.
 MOVE THIS FIELD FROM INSIDE THE LANE.** A lane may write to its own
 card — that is how its stamps and its notes are performable at all —
 and this field is the one line on it the lane never writes, for the
-reason the whole single-writer rule exists. It is also, measurably, the
-one that would not help: the fence a lane is judged by is the expanded
-manifest, so an edit here moves nothing except the guard's ability to
-tell a real grant from a half-delivered one.
+reason the whole single-writer rule exists. **It is also the edit that
+would not help, and the reason has to cover BOTH moments a guard looks,
+because they do not read the same copy.** At the WRITE, the fence in
+force is the one the granting seat already expanded, and the lane's
+copy of this line is consulted only as a STAMP — a check that the card
+has not moved under that expansion. At the LANDING, the fence is
+expanded FRESH from the card as committed on the INTEGRATION BRANCH,
+which is a copy the lane is not the writer of. So an edit here widens
+nothing at either moment, and all it can move is a guard's ability to
+tell a real grant from a half-delivered one. **Giving only the
+write-time half would generalise one guard's mechanism to a moment it
+does not govern** — the conclusion would survive and the reason would
+not, which is the shape of a rule that stays right until somebody
+reasons from it.
 
 **WHY THE CLAUSE IS HERE AND NOT IN THE EXECUTOR'S FILE.** Putting it
 there would be a third sentence telling the reader to refuse, in a file

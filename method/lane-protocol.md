@@ -440,10 +440,30 @@ granted path AND **every path the lane already held**, as a stale
 stamp. A widening delivered to one reader out of two does not fail to
 grant — it STOPS THE LANE DEAD, on the paths it was already building
 in, for a reason no one is looking for. Both were allowed again the
-moment the lane's copy carried the amendment; a never-granted path
-stayed refused, and the card's own file stayed writable throughout,
-which is the positive control that keeps the first result a refusal
-rather than an absence.
+moment the lane's copy carried the amendment, while a never-granted
+path stayed refused: **that PAIR is the positive control**, and it is a
+pair because only the two together separate a refusal from an absence.
+
+**AND THE WINDOW REFUSES THE CARD ITSELF, WHICH MAKES THE REMEDY THIS
+SECTION PRESCRIBES UNPERFORMABLE WHILE IT IS OPEN.** The stamp
+comparison happens BEFORE the unfenceable carve-out is consulted, so
+while the two copies disagree there is no allow at all — not the fence,
+not the card, not a new file in the directory no card may fence.
+Measured in the same drill, in the state the first reading of it never
+asked about: the card's own file and a fresh suggestion file both
+refused, with the same stale stamp. **So ROUTING — which is notes on
+the card and a suggestion beside it, both in that directory
+(roles/executor.md) — cannot be WRITTEN during the window.** Say that
+to the reader rather than letting them find it: a lane that meets the
+refusal, reaches for the prescribed remedy and is refused again will
+conclude the guard is broken, and it is not. The move is to REPORT the
+half-delivered widening to the seat that owes the other half, which
+needs no write at all; the notes go in once the window closes.
+**THIS IS DOCUMENTED RATHER THAN REPAIRED, AND DELIBERATELY.** Whether
+that carve-out should precede the stamp comparison is a question about
+a guard's own ordering, and a lane holding no fence over that guard is
+the last seat that should answer it — which is the rule this whole
+section exists to serve, turned on the section itself.
 
 **SO THE GRANT IS TWO AGREEING FILES ON DISK IN THE LANE, AND THE
 EXECUTOR PROCEEDS ON ITS OWN READ OF THEM AND ON NOTHING ELSE.** The
@@ -549,22 +569,40 @@ was breached somewhere. Route it and investigate. **Never resolve it
 locally**, which buries the evidence inside a merge commit that then
 reads as a reconciliation.
 
-**AND IT FIRES ON THE ENFORCED WRITE-SETS ONLY, WHICH EXCLUDES THE ONE
-PLACE TWO LANES ARE SUPPOSED TO COLLIDE.** The unfenceable directory
-every card writes to, and each card's own file, are outside every fence
-by construction (rule 5) — so they are outside the premise as well, and
-a conflict there is ORDINARY. It is not rare, either: the dispatch stamp
-and the closing stamp are two writers on one frontmatter line whenever
-the stamp lands after the branch is cut, which
-`tasks/TASK-FORMAT.md`'s dispatch-stamp bullet already describes.
-**Measured while this section was being written**, on the very lane that
-wrote it: its own forecast came back CONFLICT, in exactly one file — the
-card — on exactly the `status:` line, with every fenced path merging
-clean. **A tripwire that fires there teaches a project to ignore it**,
-which costs more than the tripwire is worth. Check the conflicting PATHS
-against the fences before you conclude anything: a conflict inside an
-enforced write-set is the evidence; a conflict in the unfenceable set is
-the protocol working.
+**AND IT FIRES ON THE ENFORCED WRITE-SETS ONLY, WHICH EXCLUDES THREE
+CLASSES WHERE A CONFLICT IS THE PROTOCOL WORKING.** Check the
+conflicting PATHS against those classes before you conclude anything.
+
+1. **The unfenceable directory every card writes to.** Outside every
+   fence by construction (rule 5), so outside the premise as well.
+2. **Each card's own file.** Same construction, and the collision is
+   not rare: the dispatch stamp and the closing stamp are two writers
+   on one frontmatter line whenever the stamp lands after the branch is
+   cut, which `tasks/TASK-FORMAT.md`'s dispatch-stamp bullet already
+   describes. **Measured while this section was being written**, on the
+   very lane that wrote it: its own forecast came back CONFLICT, in
+   exactly one file — the card — on exactly the `status:` line, with
+   every fenced path merging clean.
+3. **The integration seat's own standing writes** — the state document
+   it regenerates at every checkpoint, and the checkpoint record
+   itself. **THIS CLASS IS DIFFERENT IN KIND FROM THE FIRST TWO AND IS
+   THE ONE THAT WOULD HAVE COST A SESSION.** The others are outside
+   every fence; this one a card MAY name, so a conflict here lands
+   INSIDE an enforced write-set and the rule above would call it the
+   evidence. It is not. A fence says which paths are the LANE's to
+   write; it never gave the lane exclusivity over the writes that seat
+   owes on every integration, and a project that enforces the fence
+   between seats already has to encode this class for exactly that
+   reason. **And fast path B walks straight into it**: the sync target
+   IS a checkpoint commit, so those paths are on the right-hand side
+   essentially every time. Measured on this method's own project: every
+   one of the last ten checkpoint commits touched both the state
+   document and the checkpoint record.
+
+**A TRIPWIRE THAT FIRES ON ANY OF THE THREE TEACHES A PROJECT TO IGNORE
+IT**, which costs more than the tripwire is worth. A conflict inside an
+enforced write-set and outside all three classes is the evidence;
+anything else is the protocol working.
 
 **AND THE TRIPWIRE IS ONLY AS TRUE AS THE ENFORCEMENT UNDER IT, WHICH
 IS WHY ITS HOLES ARE PUBLISHED HERE RATHER THAN DISCOVERED.** A write

@@ -229,17 +229,42 @@ manifest stamped from the WIDE line, a card carrying the NARROW one),
 |---|---|---|
 | act one only | the newly granted path | **block** `stale-stamp` |
 | act one only | a path the lane ALREADY held | **block** `stale-stamp` |
+| act one only | the card's own file | **block** `stale-stamp` |
+| act one only | a NEW suggestion file under the tasks dir | **block** `stale-stamp` |
 | both acts | the newly granted path | allow `inside-the-fence` |
 | both acts | a path the lane already held | allow `inside-the-fence` |
 | both acts | a never-granted path | **block** `outside-the-fence` |
 | both acts | the card's own file | allow `always-writable` |
 
-**The second row is the finding.** A widening delivered to one reader
-out of two does not fail to grant — it stops the lane dead on paths it
-was already building in. Rows five and six are the positive control: the
-fence still refuses what it was never widened to, and the card's own
-directory stays writable throughout, so row one is a refusal rather than
-an absence.
+**Row two is the finding.** A widening delivered to one reader out of
+two does not fail to grant — it stops the lane dead on paths it was
+already building in.
+
+**ROWS THREE AND FOUR ARE THE VERIFIER'S, AND THEY FALSIFIED A SENTENCE
+THIS CARD'S FIRST PASS SHIPPED.** That pass claimed the card's own file
+"stayed writable THROUGHOUT" and called that the positive control — but
+the drill had only ever run that cell in the `both acts` state, and in
+the half-performed state it is FALSE. `decide()` returns on the
+stale-stamp comparison BEFORE it reaches the `alwaysWritable` loop, so
+while the window is open there is no allow path at all. Re-measured
+here independently before the repair; the two new rows are that
+measurement. **The valid control is the pair rows five-to-seven make**:
+allowed once the amendment arrives, still refused where it was never
+granted.
+**AND THE SECOND-ORDER CONSEQUENCE IS THE HALF THAT MATTERED.** Both
+new passages prescribe ROUTING as the remedy, and routing under
+`roles/executor.md` step 5 is notes on the card plus a suggestion
+beside it — **both under the very directory the window refuses.** The
+law was telling a reader to perform a write that cannot be performed
+while the window is open. It now says so, and names the move that needs
+no write: report the half-delivered widening to the seat that owes the
+other half.
+**`decide()`'s ordering is DOCUMENTED, NOT FIXED**, and that is not a
+ruling on whether it should be. `.claude` is another live lane's fence
+and this lane holds none over it; whether the unfenceable carve-out
+ought to precede the stamp comparison is raised for routing rather than
+answered here — the routing rule working, on a lane that can only route
+at all because its own manifest and card agree.
 
 No test body was added or changed by this diff, so the POISON DRILL is
 **not owed**; the drill above is the card's own verification and its
@@ -296,3 +321,50 @@ ci` + `npm run build`, then `tools/e2e` `npm ci`, then app `npm install`
   THERE is ordinary and must not fire it. This lane is its own worked
   example. The section now says to check the conflicting PATHS against
   the fences before concluding anything.
+
+## Rebuild after verdict 1 — REJECTED (2026-09-01)
+
+Three clauses, all inside the fence, none touching the substance of
+either fast path. Every premise was re-derived here before the repair
+rather than taken from the verdict.
+
+1. **The positive control was claimed for a state it was never measured
+   in, and in that state it is false.** Repaired in `lane-protocol.md`
+   fast path A and in the drill table above; the routing-window
+   consequence is now stated in the law, because a reader who meets the
+   refusal and reaches for the prescribed remedy will be refused again
+   and conclude the guard is broken.
+2. **The tripwire's carve-out was one class short.** It named the
+   unfenceable directory and each card's own file — both outside every
+   fence BY CONSTRUCTION — and missed the integration seat's own
+   standing writes, which a card MAY fence, so a conflict there lands
+   INSIDE an enforced write-set and the old text would have called it
+   the evidence. Fast path B walks straight into it: the sync target IS
+   a checkpoint commit. **Re-derived at main `53fe498`**: of the last
+   ten `Checkpoint:` commits, `docs/STATE.md` appears in **10/10** and
+   `docs/checkpoints/` in **10/10** (`graph.json` 3/10,
+   `CAPABILITIES.md` 2/10). The hook already holds this class as
+   `INTEGRATION_SEAT_PATHS = ["docs/STATE.md", "docs/checkpoints"]`.
+   The tripwire now names three classes, with the third marked as
+   different in kind.
+   **ONE SUPPORTING FIGURE DID NOT REPRODUCE AND IS NOT CARRIED.** The
+   verdict cited NINE live cards declaring `docs/STATE.md` or
+   `docs/checkpoints` in their own `touches:`. Derived here two ways —
+   over the working tree at base `9d56b47`, and file by file over
+   `git ls-tree 53fe498 -- docs/tasks` (470 cards) — the answer is
+   **2** at both refs (`T-156-s1`, `T-157`). The finding does not rest
+   on the count and the law states none: a count in a normative
+   document is a line number by another name
+   (`tasks/TASK-FORMAT.md`). Recorded because the correction clause
+   asks for it, not as a challenge to the finding.
+3. **One reason generalised the write guard's mechanism to a moment it
+   does not govern.** `TASK-FORMAT.md` said *the fence a lane is judged
+   by is the expanded manifest* — true at the WRITE, false at the
+   LANDING, which expands the card as committed on the integration
+   branch and reads no manifest. Conclusion kept, reason now given for
+   both moments.
+
+Not taken, and named rather than silently skipped: **`decide()`'s
+ordering is not this lane's to change** — `.claude` is another live
+lane's fence. Whether the unfenceable carve-out should precede the
+stamp comparison is reported for routing.
