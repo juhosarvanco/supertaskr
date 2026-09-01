@@ -149,3 +149,62 @@ from and whether that checkout is an ancestor of the integration branch —
 so an absent or stale guard is LOUD instead of silent. That is the
 project's standing preference for a refusal over a silence, applied to
 the guard's own installation.
+
+## THE CANDIDATE REMEDY ABOVE IS DEFECTIVE, AND ITS OWN INSTANCE IS THE PROOF
+
+Found by this card's blind verifier reading the section above BEFORE any
+implementation existed, and it corrects the dispatching seat that wrote
+it.
+
+**"An absent or stale guard is LOUD instead of silent" treats two unlike
+halves as one.**
+
+- A **STALE** guard RUNS. It can read its own `import.meta.url`, announce
+  which checkout it came from, and refuse or disclose. Provenance works.
+- An **ABSENT** guard runs NOTHING. The measured checkout registers no
+  `Bash` matcher at all, so there is no place for an announcement to come
+  from.
+
+**And ABSENT is the half that was measured** — *"does not exist there at
+all."* So the proposed remedy covers the case that did not happen and
+misses the case that did.
+
+Anything that catches an absent guard must run **where the guard is
+not**: in settings, in the dispatch ritual, or on the integration side.
+**That is, by construction, a sibling's problem** — so this card's own
+text carries evidence for the two-card ruling, whichever way the lane
+goes.
+
+### And the ancestry half has a limit that must be stated if it is used
+
+The candidate's second clause — *whether that checkout is an ancestor of
+the integration branch* — is answerable from a stale checkout **only
+because a WORKTREE SHARES REFS**. Measured: from the session worktree at
+`4ec229c`, `main` resolves to `4c33125`, a commit its own HEAD does not
+contain.
+
+**In a stale CLONE the same query consults a stale `main` and answers
+wrongly** — the guard asking the stale thing whether it is stale. Any
+implementation leaning on ancestry states that limit or inherits it
+silently.
+
+## THE BRIEF ASKED FOR MORE THAN THIS CARD DID, AND THE CARD IS NOW THE STRICTER ONE
+
+The dispatching brief asked the executor to rule on one-card-versus-two,
+**argue its reason, and name what it leaves behind.** The section above
+required only *"decides ... and says which."* The verifier caught the gap
+and correctly re-stamped to grade against the CARD, treating the extra as
+credit rather than a pass mark — *"I won't hold the executor to a
+sentence that exists only in your message to me."*
+
+That is the right call and it leaves a divergence between brief and card,
+which TASK-FORMAT says is resolved on the card. **Resolved here, in the
+card's favour, because the argued ruling is what was actually wanted:**
+
+- THE ruling SHALL be argued, not merely stated — one card or two, with
+  the reason.
+- IT SHALL name what it leaves behind, so a narrowing is visible rather
+  than silent.
+- **A SPLIT IS NOT A ROUTE TO SOFTENING THE FOUR ORIGINAL CRITERIA.**
+  Ruling "two cards" is legitimate; using the ruling to drop scope this
+  card already carries is not.
