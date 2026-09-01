@@ -90,7 +90,18 @@
   keeper NORTH_STAR's bar prices as a stop-the-line defect. The
   regeneration has to land in a COMMIT, and in the SAME commit as
   whatever moved a test name — otherwise the check reds on the next lane,
-  layers from its cause, which is the DOCS GATE's own founding story) ·
+  layers from its cause, which is the DOCS GATE's own founding story.
+  **WHOSE COMMIT: THE INTEGRATOR'S, AT THE MERGE — the same owner the
+  GRAPH REGEN bullet already names for the graph** (T-201, absorbing
+  T-218 and T-216-s2). Since T-210 a lane's fence leaves
+  docs/CAPABILITIES.md read-only, so a lane that adds, renames or
+  removes a test body cannot regenerate the census and does not try:
+  it REPORTS the stale census in its handoff, and the integrator
+  regenerates it in the merge commit, before the checkpoint. Measured on
+  four lanes, four fences and four seats in one day, every one reported
+  it and none could fix it. When the integrator forgets, CI's
+  census-currency step reds on that push, which is what e67cb44 did on
+  2026-09-01 and cf9d462 repaired) ·
   `npm run boot:orphan-drill` (T-061 — the shipped procedure that proves
   the boot check's child-exit path signals its captured process group and
   leaves no orphaned vite listener; LOCAL ONLY, deliberately, and the CI

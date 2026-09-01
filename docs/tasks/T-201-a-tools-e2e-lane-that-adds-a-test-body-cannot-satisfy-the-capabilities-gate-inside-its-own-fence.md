@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/tasks/TASK-FORMAT.md]
 suggested_by: "T-142-s1's executor, which hit it and described the structural half rather than filing it; id allocated by the architect/integrator seat"
-builder:
-review:
+builder: architect seat
+built_by: claude-fable-5-1 @architect seat, 2026-09-02
+review: self-verified
 ---
 
 **MET BY A LANE THAT COULD NOT DISCHARGE ITS OWN GATE**, and it named the
@@ -79,3 +80,50 @@ could have avoided it.**
 `T-142-s1` (both instances, both handled correctly), and `T-199` — the
 other case where two individually-correct rules leave a lane unable to
 satisfy something it is told it owns.
+
+## Implementation notes
+
+**DONE AT THE SEAT, 2026-09-02, under the T-216-s5 precedent.** The ask
+was a SPELLING — whose commit carries the census regeneration — and the
+class was already ruled by the GRAPH REGEN bullet's shape, so the
+sentence was written directly into `docs/CONVENTIONS.md` rather than
+through a lane: no lane was live, the fence was disjoint from everything,
+and the four suites plus the docs gate are the check.
+
+Absorbs: T-218, T-216-s2. T-218's four measured instances (the lanes of
+T-199, T-209, T-210 and T-216-s1) and T-216-s2's fifth (the rename at
+e67cb44, repaired at cf9d462) are this card's evidence; both bodies stay
+readable at `git show 85dda6d:docs/tasks/<their file names>`.
+
+The criteria, each answered:
+
+- **Stated in exactly one place**: the `npm run capabilities` clause of
+  the tools/e2e command bullet in docs/CONVENTIONS.md. It REFERENCES the
+  GRAPH REGEN bullet as the owner's precedent and restates nothing.
+- **Which answer**: the INTEGRATOR obligation, at the merge commit, before
+  the checkpoint. A `touches:` convention was refused because a card
+  cannot know at dispatch whether it will add a body; adding
+  docs/CAPABILITIES.md to `alwaysWritable` was refused because a lane
+  regenerating mid-flight embeds its own board state in a shared file.
+  `method/tasks/TASK-FORMAT.md` is untouched, so no method bump is owed.
+- **The dispatch tells the lane**: the brief's row 7 transcribes that
+  bullet verbatim, and the executor's report already owes every command's
+  exit, so a stale `capabilities:check` reaches the integrator as a
+  reported reading rather than as a discovery.
+- **When the integrator forgets**: CI's census-currency step reds on that
+  push — e67cb44 did exactly that on 2026-09-01 (run 33556715639) and
+  cf9d462 repaired it. The push that forgot is the one named; the next
+  lane no longer inherits the red silently.
+
+Not taken here: T-216-s2's second criterion asked that the lane's REPORT
+obligation be written into `method/roles/executor.md`. That file ships
+and a change to what a role must say is a method bump; the report's own
+every-command rule already carries the obligation, so nothing is written
+there. If a lane ever fails to report a stale census, that is the finding
+to file.
+
+## Verdicts
+
+2026-09-02, self-verified at the architect seat: the four-suite battery
+and the docs gate at the commit that lands this card are the only check
+it took, and `review: self-verified` says so.
