@@ -382,6 +382,18 @@ behind and nobody is going to move it — and a gate that is always red is
 the gate this project learns to ignore. That is the same argument the
 guard-surface arm already makes against a raw commit count.
 
+**A COLLISION THIS LANE CAUSED WHILE MEASURING THE FIX, RECORDED HERE
+BECAUSE IT IS THIS SEAT'S.** The scratchpad is shared with every other
+live seat. This lane and the verifier's bench both wrote a battery runner
+called `battery.sh`; the verifier's landed second, and this lane then ran
+it — against the verifier's checkout, at a ref that was not this tip,
+appending four exit lines to the verifier's own ledger and overwriting
+its suite logs. Two legs ran there; **the other two were REFUSED by
+`gate-run`'s solo lock**, which is the machinery working (T-088-s4). The
+figures below were re-measured afterwards under a lane-derived name. The
+class is `method/lane-protocol.md` rule 4's machine-scoped surface, the
+missing half is a SPELLING, and it is filed as `T-216-s5`.
+
 **The residual, stated rather than left to be found.** `sessionCheckout`
 source 2 still has the verdict's named hole: a seat typing the arming
 step in some OTHER checkout gets a target verdict about that one. The
