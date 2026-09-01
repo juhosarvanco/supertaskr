@@ -53,6 +53,33 @@ had touched nothing related, and that had to prove the red was not its
 own. The margin is now the thinnest it has been while three lanes are
 live.
 
+## THE SHIPPED ORACLE AGREES, WHICH IS WHY THE FIGURES ABOVE ARE USABLE
+
+Confirmed against `brief-flush.spec.ts`'s own disclosure at `4f3549f`,
+443 passed, exit 0 — the guard computes this independently of the seat
+that filed this card:
+
+    --dispatch:              63,817 bytes,  1,719 UNDER the loss point
+    --task T-133 --state:    55,692 bytes,  9,844 UNDER
+    --task T-133:            47,289 bytes, 18,247 UNDER
+    --state:                  8,402 bytes, 57,134 UNDER
+
+**`--dispatch` is the only arm near its boundary, and it is the one a
+dispatcher runs every time.** The other three have an order of magnitude
+of room, so a fix must not be measured on them: an arm with 57 KiB spare
+proves nothing about the arm with 1.7.
+
+This section exists because a figure this seat measured earlier in the
+same window did NOT reproduce against the shipped oracle — a `[bin]`
+zero-path claim taken with the parser's component map where the oracle
+uses `git ls-files`. These four agree, and that is stated rather than
+assumed.
+
+**AND NOTE WHERE THE DISCLOSURE LIVES.** The margin is computed by the
+SPEC, not by the brief. A dispatcher who never runs e2e never sees it —
+which is criterion 2 below, and is the difference between a measurement
+that exists and one that reaches the person holding the decision.
+
 ## What a fix decides
 
 1. **Whether `--dispatch` should stream rather than be buffered.** A
