@@ -342,8 +342,32 @@ this file is a project's actual name.
    is not a parsing problem at all. So after the manifest is written,
    make every TRACKED file OUTSIDE that fence READ-ONLY in that lane's
    worktree. A stray write then fails with `EACCES` from the kernel,
-   needing no intent analysis and covering every writer equally — the
-   redirect, the in-place edit, the script and the build tool alike.
+   needing no intent analysis.
+   **AND THE EDGE OF THAT COVERAGE BELONGS IN THE SAME BREATH AS THE
+   PROMISE, NOT FOUR SENTENCES LATER.** What a mode bit refuses is an
+   OPEN FOR WRITING on the existing file — a `>` redirect, an append, any
+   program that opens the path and writes it. What it does NOT touch is a
+   writer that creates a NEW file and RENAMES over the target, because a
+   rename is authorised by the PARENT DIRECTORY, and the directory is
+   deliberately left writable by the rule below. Measured four ways:
+
+       >  redirect onto a 0444 file, writable dir   REFUSED, intact
+       sed -i     on a 0444 file, writable dir      exit 0, CHANGED
+       mv -f      onto a 0444 file, writable dir    exit 0, replaced
+       sed -i     on a writable file, 0555 dir      REFUSED
+
+   **SO THE CANONICAL IN-PLACE EDIT GOES STRAIGHT THROUGH THIS LAYER** —
+   and an earlier draft of this very paragraph promised the opposite,
+   listing the in-place edit among what it covers, four sentences before
+   its own limits corrected it. That is the failure this rule's own
+   *"a guard described as total is worse than no guard"* names, committed
+   in the paragraph that quotes it. The first line above is the POSITIVE
+   CONTROL, without which the other three would only be saying nothing was
+   locked; the fourth shows WHY rather than merely that, since `sed -i`
+   writes a temporary file and renames it. **Classify a writer by HOW IT
+   WRITES, never by what it is called** — and note that the landing check
+   catches exactly this residue, because a renamed-over file is a content
+   change in the lane's own diff.
    **FILES ONLY, NEVER DIRECTORIES**, and all three reasons are
    load-bearing rather than tidy. The runtime directory a lane's own
    tooling writes to is created at the worktree ROOT, so a read-only root
@@ -363,9 +387,11 @@ this file is a project's actual name.
    lane's out-of-fence files are read-only to everybody. Conversely a
    landing check covers what the physical layer cannot: content that
    arrives through a path where the mode bit was legitimately dropped.
-   **AND THE PHYSICAL LAYER'S OWN LIMITS ARE FOUR, MEASURED RATHER THAN
-   REASONED.** It stops MODIFICATION of an existing out-of-fence tracked
-   file and nothing else. **CREATION is not blocked** — directories stay
+   **AND THE PHYSICAL LAYER'S OWN LIMITS ARE FIVE, MEASURED RATHER THAN
+   REASONED.** **THE RENAME CASE ABOVE IS THE FIRST OF THEM**, and the
+   sharpest, because it defeats the tool a reader is likeliest to reach
+   for. So: it stops an OPEN FOR WRITING on an existing out-of-fence
+   tracked file, and nothing else. **CREATION is not blocked** — directories stay
    writable, by the rule above. **DELETION is not blocked** — `rm` in a
    writable directory succeeds whatever the file's mode. **GIT IS NOT
    FENCED BY IT AT ALL**: measured at git 2.50.1, a merge writes straight

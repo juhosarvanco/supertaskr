@@ -21,10 +21,14 @@ import { trackedFiles } from "./docs-scan.mjs";
  * `method/lane-protocol.md` rule 5 publishes the consequence as a LIMIT:
  * *"a write mediated by a shell — a redirect, a `sed -i`, a script — does
  * not pass through [the write tools], and stays covered by this protocol
- * and by nothing else."* This module is the "nothing else". It asks the
- * filesystem the question no parser can answer: out-of-fence TRACKED
- * files in a lane worktree are made read-only, so a stray write fails
- * with `EACCES` whoever the writer is and whatever it meant.
+ * and by nothing else."* This module is PART of that "nothing else", and
+ * the qualifier is load-bearing rather than modest: it answers the
+ * REDIRECT and the script, and it does NOT answer the `sed -i` the very
+ * same sentence names. **See L0 below** — a mode bit refuses an open for
+ * writing, and `sed -i` renames. It asks the filesystem the question no
+ * parser can answer: out-of-fence TRACKED files in a lane worktree are
+ * made read-only, so a stray write that OPENS one fails with `EACCES`
+ * whoever the writer is and whatever it meant.
  *
  * ── THE CARD PREDICTED ITS OWN DEFECT AND MEASUREMENT MOVED IT ───────
  * The card was filed on the reasoning that a git merge writes tracked
@@ -74,6 +78,26 @@ import { trackedFiles } from "./docs-scan.mjs";
  * sufficient alone (`docs/CONVENTIONS.md`: a guard trusted further than
  * it measures is this project's most repeated defect).
  *
+ * - **L0 A WRITER THAT RENAMES IS NOT BLOCKED, AND THIS IS THE LIMIT
+ *   MOST LIKELY TO BE MISREAD.** A mode bit refuses an OPEN FOR WRITING
+ *   on the existing file. It says nothing about REPLACING that file by
+ *   rename, which the PARENT DIRECTORY authorises — and the directory is
+ *   deliberately left writable, for the three reasons above. So the
+ *   canonical in-place edit goes straight through. Measured:
+ *
+ *       >  redirect onto 0444, writable dir     REFUSED, intact
+ *       sed -i     on 0444, writable dir        exit 0, CHANGED
+ *       mv -f      onto 0444, writable dir      exit 0, replaced
+ *       sed -i     on a writable file, 0555 dir REFUSED
+ *
+ *   The first line is the positive control; the fourth shows WHY rather
+ *   than merely that — `sed -i` writes a temp file and renames it.
+ *   **Classify a writer by HOW IT WRITES, never by what it is called.**
+ *   `T-212`'s landing gate catches the residue, because a renamed-over
+ *   file is a content change in the lane's own diff. Pinned portably by
+ *   `lane-lock.spec.ts` on the RENAME MECHANISM rather than on one
+ *   platform's `sed` flag spelling; the `sed` figures above are this
+ *   platform's and are recorded with it.
  * - **L1 CREATION IS NOT BLOCKED.** Directories stay writable, so a new
  *   out-of-fence file can be created. `T-212`'s landing gate sees it —
  *   it appears in the lane's own diff.
@@ -88,8 +112,23 @@ import { trackedFiles } from "./docs-scan.mjs";
  *   and a speed bump for a determined one.
  * - **L5 IT DOES NOT TRAVEL.** Mode bits below the executable bit are not
  *   in the tree, so this is per-worktree and per-machine, and `git
- *   status` stays clean under it — which is required, or the layer would
- *   dirty every lane it armed.
+ *   status` stays clean under it.
+ *
+ * **L5's CLEAN-TREE HALF IS LOAD-BEARING FOR SOMETHING THIS MODULE NEVER
+ * ARGUES, AND THAT IS WHY IT IS PINNED RATHER THAN ASSERTED.** The
+ * reasoning throughout this file is about RESTORE FIDELITY — record the
+ * mode found, hand it back exactly — and clearing bits from the found
+ * mode (`mode & ~0o222`) falls out of that. But it also decides a
+ * question in a different file: an absolute `chmod 0444` would change the
+ * mode of every tracked EXECUTABLE, which git DOES record, dirtying the
+ * tree; `T-203`'s gate-runner would then see tracked dirt and decline the
+ * verdict token, and the push guard would refuse every push — the layer
+ * silently disabling the gate that shipped hours before it. **That chain
+ * is closed here as a CONSEQUENCE of restore fidelity and not by an
+ * argument aimed at it**, which is exactly the shape that rots quietly.
+ * So `lane-lock.spec.ts` asserts `git status --porcelain` is EMPTY under
+ * an armed layer, and the ledger body plants a tracked `100755` file and
+ * requires the ledger to carry `755`. Two bodies, one for each half.
  *
  * The complement is exact and is the reason both layers are kept: the
  * LANDING GATE cannot see a lane writing ANOTHER lane's worktree, because

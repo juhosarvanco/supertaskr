@@ -113,6 +113,18 @@ const IN_FENCE_PATH = "tools/e2e/tests/fixture.spec.ts";
 const IN_FENCE_SLUG = `${SLUG_PATH}/lens.ts`;
 const OUT_OF_FENCE = "app/src/main.tsx";
 const OUT_OF_FENCE_2 = "method/roles/executor.md";
+/**
+ * A TRACKED EXECUTABLE, OUT OF FENCE, AND IT IS THE FIXTURE'S ONLY ONE.
+ *
+ * Without it the clean-tree assertion pins nothing: git records the
+ * executable bit and nothing below it, so an absolute `chmod 0444`
+ * mutant leaves a tree of 644 files looking identical to the mode-derived
+ * lock, and the assertion passes for both. This repository's own two
+ * tracked 755 files are `bin/app-dev.mjs` and a `tools/method-evals`
+ * runner — neither is copied into this fixture, which is exactly how a
+ * body can look like a pin and be one for nobody.
+ */
+const OUT_OF_FENCE_EXEC = "method/scripts/fixture-exec.sh";
 /** What no card may fence — the unfenceable directory, rule 5. */
 const UNFENCEABLE = CARD;
 
@@ -208,6 +220,8 @@ function makeFixture(touchesLine = TOUCHES): Fixture {
   writeFixtureFile(repo, IN_FENCE_SLUG, "export const lens = 1;\n");
   writeFixtureFile(repo, OUT_OF_FENCE, "export const main = 1;\n");
   writeFixtureFile(repo, IN_FENCE_PATH, "export const spec = 1;\n");
+  writeFixtureFile(repo, OUT_OF_FENCE_EXEC, "#!/bin/sh\necho fixture\n");
+  chmodSync(path.join(repo, OUT_OF_FENCE_EXEC), 0o755);
   git(repo, ["add", "-A"]);
   // "Checkpoint:" IS LOAD-BEARING IN THE SUBJECT: the brief derives a
   // lane's base by finding the newest checkpoint commit on the integration
@@ -298,6 +312,76 @@ test("out-of-fence TRACKED files go read-only and in-fence files stay writable",
   // build can write its ignored trees.
   for (const dir of ["", "app", "app/src", "docs", "docs/tasks", "method", "tools/e2e"]) {
     expect(writable(path.join(fx.lane, dir)), `directory ${dir || "<root>"}`).toBe(true);
+  }
+
+  // AND THE TREE STAYS CLEAN, WHICH IS NOT COSMETIC. git records the
+  // executable bit and nothing below it, so clearing WRITE bits is
+  // invisible to it — but only because the lock is computed from the mode
+  // it FOUND. An absolute `chmod 0444` would rewrite every tracked
+  // EXECUTABLE's mode, dirty the tree, and make T-203's gate-runner see
+  // tracked dirt and decline the verdict token — so the push guard would
+  // refuse every push, this layer silently disabling the gate that
+  // shipped hours before it. That chain is closed by restore fidelity
+  // rather than by any argument aimed at it, which is the shape that rots
+  // quietly, so it is pinned here rather than trusted.
+  // THE EXECUTABLE BIT SURVIVES, which is the half git can see and
+  // therefore the half that could dirty the tree. 755 -> 555, never 444.
+  expect(lstatSync(path.join(fx.lane, OUT_OF_FENCE_EXEC)).mode & 0o777).toBe(0o555);
+  expect(git(fx.lane, ["status", "--porcelain"]), "the armed lane must be clean").toBe("");
+});
+
+test("a writer that RENAMES is NOT blocked — the coverage edge, pinned so the prose cannot drift back", async () => {
+  // THE PROSE PROMISED THE OPPOSITE ONCE. An earlier draft of rule 5's
+  // block listed "the in-place edit" among what this layer covers, four
+  // sentences before its own limits paragraph corrected it — the exact
+  // failure that rule's "a guard described as total is worse than no
+  // guard" names. This body is why that cannot come back quietly.
+  //
+  // IT PINS THE MECHANISM, NOT ONE TOOL'S FLAG SPELLING. `sed -i` is the
+  // canonical instance and its measured figures live in the header and in
+  // rule 5, with the platform named — but BSD `sed` needs `-i ''` and GNU
+  // `sed` needs bare `-i`, and this suite runs on both. A body that
+  // encoded one spelling would measure the runner. `mv` IS the mechanism
+  // `sed -i` uses internally, and it is one program on both.
+  const fx = makeFixture();
+  await arm(fx);
+  const target = path.join(fx.lane, OUT_OF_FENCE);
+
+  // ARMED FIRST, ASSERTED FIRST — and this is the POSITIVE CONTROL for
+  // the whole body: without it, the successes below would only be saying
+  // nothing was locked.
+  expect(writable(target)).toBe(false);
+  const refused = bashWrite(target, "opened for writing\n");
+  expect(refused.status, "an OPEN for writing must still be refused").not.toBe(0);
+
+  // THE EDGE: create a new file and rename it over the locked target. The
+  // rename is authorised by the PARENT DIRECTORY, which this layer
+  // deliberately leaves writable, so it succeeds.
+  const replacement = path.join(fx.lane, "tools/e2e/replacement-T-210.txt");
+  writeFileSync(replacement, "renamed over the lock\n", "utf8");
+  const mv = spawnSync("mv", ["-f", replacement, target], { encoding: "utf8" });
+  expect(mv.status, `mv over a locked file; stderr: ${mv.stderr}`).toBe(0);
+  expect(readFileSync(target, "utf8"), "the locked file WAS replaced").toBe(
+    "renamed over the lock\n",
+  );
+
+  // AND WHY, rather than merely that: make the PARENT DIRECTORY read-only
+  // and the same rename is refused. That is what identifies the directory
+  // as the authority — and it is the reason this layer must never lock
+  // one, since a locked directory breaks `git worktree remove` and the
+  // runtime directory both.
+  const dir = path.dirname(target);
+  const second = path.join(fx.lane, "tools/e2e/second-T-210.txt");
+  writeFileSync(second, "blocked by the directory\n", "utf8");
+  chmodSync(dir, 0o555);
+  try {
+    const blocked = spawnSync("mv", ["-f", second, target], { encoding: "utf8" });
+    expect(blocked.status, "a read-only PARENT refuses the rename").not.toBe(0);
+    expect(readFileSync(target, "utf8")).toBe("renamed over the lock\n");
+  } finally {
+    // Restored unconditionally, or the fixture teardown cannot remove the
+    // tree — the same property this layer relies on for event 4.
+    chmodSync(dir, 0o755);
   }
 });
 
@@ -630,6 +714,15 @@ test("the unfenceable directory is NEVER locked — including inside T-228's sta
     toolInput: { file_path: path.join(fx.lane, OUT_OF_FENCE) },
   });
   expect(blocked.verdict, "T-228's window must actually be open here").toBe("block");
+  // ONE RESIDUAL COUPLING, NAMED FOR WHOEVER TAKES T-228. The VERDICT
+  // above survives that card by its own second criterion, which preserves
+  // refusal on the newly granted path by name. The CODE is a weaker
+  // guarantee: an implementation that reordered the checks correctly but
+  // RENAMED this code would red this body, with nothing here explaining
+  // why. It is asserted anyway — a block for the wrong reason is not the
+  // state this body claims to have set up — but if you are reading this
+  // from inside T-228, the fix is to update this string, not to delete
+  // the assertion.
   expect(blocked.code).toBe("stale-stamp");
 
   // AND THE PHYSICAL LAYER STILL ALLOWS THE CARD. This card does not FIX
