@@ -5,12 +5,14 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: verifying
+status: done
 blocked_by: [T-212]
 touches: [.claude/hooks/landing-gate.mjs, tools/e2e/tests/landing-gate.spec.ts, tools/e2e/scripts/dispatch-brief.mjs]
 suggested_by: "T-212's independent verifier, from a reproduction: the card's build step 2 and `landing-gate.mjs`'s module header both assert main is a ref the lane cannot move, and `git update-ref` accepts exactly that write where `git branch -f` refuses it"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
