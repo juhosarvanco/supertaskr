@@ -108,6 +108,30 @@ Not prescribed — the mechanism is the card's to choose:
 - Where the answer is no, is it LOUD — at arm time, before the sitting,
   rather than at the push it failed to guard?
 
+## Amendment, 2026-09-01, after dispatch — two corrections to the criteria below
+
+**A FIGURE WENT STALE INSIDE THE CRITERION ADDED TO FORBID STALE FIGURES.**
+The reachability criterion was written naming a literal distance. Measured:
+
+    git rev-list --count 4ec229c..06ca1c5      -> 344
+    git rev-list --count 4ec229c..main         -> 346
+    git rev-list --count 4ec229c..origin/main  -> 344
+
+**The typed number was already wrong by two**, and it moves with every
+commit. It is now DERIVED in the criterion rather than stated. **A figure
+in an acceptance criterion is a figure like any other: it carries its ref
+or it goes.** This is T-216's own line-number correction, re-earned one
+card later by the seat that wrote it.
+
+**A CATCHER NOTHING INVOKES SATISFIED EVERY CRITERION.** A blind phase-1
+attack set, written before any implementation existed, found that criteria
+1, 2 and 4 all pass against a correct catcher that is never called. The
+card had no criterion requiring it to be WIRED; there is now one.
+
+Also corrected: the reachability bullet is the **fourth** criterion. Both
+dispatch briefs called it the fifth, counting past `Verification:
+headless`.
+
 ## Acceptance criteria
 
 - A body SHALL demonstrate the measured instance: a checkout registering
@@ -120,7 +144,15 @@ Not prescribed — the mechanism is the card's to choose:
   in the artifact, not only in this card.
 - The catcher SHALL NOT rest on reachability alone. A check that passes
   for a HEAD which is an ancestor of the integration tip SHALL be shown
-  to REFUSE the motivating instance, whose HEAD is an ancestor 344
-  commits behind. A test asserting only "an unreachable HEAD is caught"
-  is degenerate against this card and SHALL be treated as absent.
+  to REFUSE the motivating instance, whose HEAD is an ancestor of the
+  tip and hundreds of commits behind it. **The distance SHALL be DERIVED
+  at the ref under test and never typed** — see the amendment note below.
+  A test asserting only "an unreachable HEAD is caught" is degenerate
+  against this card and SHALL be treated as absent.
+- The catcher SHALL be WIRED, not merely present. A body SHALL establish
+  that the ordinary act it guards — cutting a session, opening a sitting,
+  running CI — actually INVOKES it, and SHALL fail if the catcher is
+  removed from that path while its own file remains. A correct catcher
+  that nothing calls satisfies every criterion above and is the exact
+  defect this card exists to end.
 - Verification: headless.
