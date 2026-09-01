@@ -561,3 +561,47 @@ Filed as T-236-s4.
 suggestion are commits, and prose is a code input here): recorded in the
 commit that carries them.
 
+
+#### V-236 step 7 — the gates my own commits could move, re-run at my own tip
+
+Verdict and T-236-s4 committed at **`dd0b1c9`**; battery re-run there in
+the same bench. Figures stated with their ref, since my own commits moved
+the thing they count.
+
+    parser 349 GREEN · app 1131 GREEN · rust 631 GREEN · e2e 531/535
+    lint:docs 0 · lint:tokens clean (CONTROL 1119, +1 = my card) ·
+    capabilities:check CURRENT · health 3 (designed)
+
+**Four e2e reds at `dd0b1c9`, none of them mine, and I measured that
+rather than assuming it.** `lane-lock.spec.ts:812` fails at the base
+`3170247`. The other three — `card-preflight.spec.ts:670`,
+`checkout-currency.spec.ts:852` and `:953` — fail **identically when re-run
+alone at `560bac3`**, the very ref where the full battery had them green an
+hour earlier. Same tree, opposite answers: the variable is the MACHINE, not
+the commit. `checkout-currency` sweeps the host's worktree list and asks
+which checkouts load current guards, so it moves when a bench is
+re-detached or a lane gains a commit — lane-protocol rule 4's machine-scoped
+class, and STATE's *"THE HOST'S WORKTREE LIST DIFFERS TOO"*. Recorded
+because the honest reading of a body that flips at a fixed ref is
+"environment", and an integrator re-running this will see them too.
+
+**ONE BAND MOVED AND IT WAS MINE.** `triage/live-suggestions` goes 20 → 21
+cards and crosses its 20 drift line (breach is 40) — T-236-s4 is the 21st
+live suggestion. Disclosed rather than left for the checkpoint to
+attribute: the band is a REPORTER, the crossing is arithmetic, and the
+remedy is triage, not this lane. The docs-headroom bands are unchanged by
+my commits; CONVENTIONS' stays inside at 20.0%.
+
+**CONTAINMENT ACROSS ALL FOUR DRILLS ON THIS CARD**, judged after reading
+the notes: the executor's A (`docs/checkpoints` cut from the carve-out
+sentence → `lane-fence.spec.ts` *"the carve-out set this hook holds…"*, 1
+of 53) and B (stamp → `v0.1.9` → `cargo test`
+`snapshot_version_matches_the_live_method_stamps`, exit 101), and my D1
+(`docs-input-gate.spec.ts:674`, 1 of 43) and D2
+(`range-rule.spec.ts:91 scoreboard-path-for-path`, 1 of 25). Four
+singleton kill sets in four different readers across two languages;
+**no kill set contains another**, so all four are load-bearing and none is
+a restatement. The executor's disclosure that its first attempt at A was a
+silent no-op — a perl pattern assuming a wrap the text does not have, spec
+green at 53/53, caught by reading the mutation back — is the POISON DRILL's
+own rule self-applied, and it is the reason to believe the second attempt.
