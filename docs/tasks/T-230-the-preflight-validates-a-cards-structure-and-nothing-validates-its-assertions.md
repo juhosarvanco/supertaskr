@@ -5,12 +5,14 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/fixtures]
 suggested_by: "the architect/integrator seat, 2026-09-01 — measured across the sitting's four dispatches, and routed after @human asked whether verification's first phase belongs before dispatch"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
