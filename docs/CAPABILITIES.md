@@ -164,7 +164,7 @@ Census: **535 behaviours** — 533 extracted sentences + 2 named-not-extracted (
 - a DECLARED checkout still wins over the derived one — the two signals have an order, and it is said
 - UNANSWERED is reserved for the case that genuinely has no signal — outside this repository altogether
 - THE SWEEP NEEDS NOTHING DECLARED: it names a stale checkout no environment variable and no cwd could have pointed at
-- THE SWEEP AT ARM TIME: a stale sibling checkout is named even when the checkout being typed in is CURRENT
+- THE SWEEP AT ARM TIME: the arming step RUNS it, and names every checkout git reports
 - the repository probe is ONE fact checked twice — the catcher and the push guard ask with the same path
 - sessionCheckout derives the WORKTREE ROOT, never the raw working directory, and never outside this repository
 - the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it
