@@ -950,7 +950,7 @@ test("THE SWEEP NEEDS NOTHING DECLARED: it names a stale checkout no environment
   ).toBe(worktreesOf(fx.repo).length);
 });
 
-test("THE SWEEP AT ARM TIME: a stale sibling checkout is named even when the checkout being typed in is CURRENT", () => {
+test("THE SWEEP AT ARM TIME: the arming step RUNS it, and names every checkout git reports", () => {
   // KILLED BY: running the sweep only when the target resolution failed.
   // This is the hole the derived signal leaves and the reason the sweep
   // exists: a seat typing the arming step in the CURRENT checkout while
@@ -965,7 +965,16 @@ test("THE SWEEP AT ARM TIME: a stale sibling checkout is named even when the che
   // asserts the MECHANISM rather than a machine's contents: every
   // checkout git reports is judged and reported by name.
   const listed = worktreesOf(repoRoot);
-  expect(listed.length, "git reports at least this lane and the integration checkout").toBeGreaterThan(1);
+  // NON-VACUITY ONLY, and `>= 1` rather than `> 1` DELIBERATELY: git always
+  // reports the checkout you are in, and NOTHING ELSE IS GUARANTEED. This
+  // read once asserted `> 1` and passed only because the machine that ran
+  // it happened to hold lanes; CI checks out ONE worktree and it failed
+  // there. `method/lane-protocol.md` rule 4 names "the host's list of
+  // worktrees" as a machine-scoped surface in those words — this body
+  // DEFAULTED it. The sibling-discrimination claim is proven by
+  // construction in THE SWEEP NEEDS NOTHING DECLARED above, on a fixture
+  // that builds its own stale, current and churn-only checkouts.
+  expect(listed.length, "git always reports at least the checkout we are in").toBeGreaterThanOrEqual(1);
   for (const w of listed) {
     expect(run.out, `the sweep names ${w.path}`).toContain(w.path);
   }
