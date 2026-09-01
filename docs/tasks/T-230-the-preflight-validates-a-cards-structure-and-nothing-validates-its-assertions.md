@@ -5,11 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/fixtures]
 suggested_by: "the architect/integrator seat, 2026-09-01 — measured across the sitting's four dispatches, and routed after @human asked whether verification's first phase belongs before dispatch"
-builder:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -101,3 +102,24 @@ remembering has a failure mode while a construction does not** — the
 sentence is in 5b itself, four paragraphs up from the new one. This card
 is the construction. Until it lands, the habit is what there is, and it
 should be read as an admission rather than a solution.
+
+## DISPATCH, 2026-09-02 — the stamp, and what the audit found
+
+**Fence narrowed at dispatch to three paths**: the preflight module
+(`tools/e2e/scripts/card-preflight.mjs`, which owns the `--preflight`
+arm the brief wrapper dispatches to), its spec, and `tools/e2e/fixtures`
+for the three instance fixtures the criteria demand. `brief.mjs` itself
+is OUTSIDE the fence tonight: if the wrapper must change, record the
+exact edit and route it. Three sibling lanes run concurrently
+(T-216-s4, T-223, T-236); none touches these paths.
+
+**Audit (orchestrator 5b)**: `brief.mjs` freezes its flag list
+(`const FLAGS = Object.freeze([...])`, an unknown flag exits 2) at
+2489853, as the T-211 instance says; the T-203 quote is absent from
+docs/CONVENTIONS.md at 2489853 (`grep -c` reads 0), as the card says.
+The T-210 platform claim is the verifier's phase-1 ground truth.
+
+**Holder**: this lane does NOT hold the integration checkout and does
+not merge; it stamps `verifying`, reports ready-to-merge with branch and
+tip, and leaves its worktree standing. review: independent, on the card
+since filing — the subject is a guard.
