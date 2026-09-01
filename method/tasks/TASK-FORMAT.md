@@ -76,6 +76,44 @@ route it as a suggestion naming the fence it needs, and say so.* That is a
 criterion a lane can satisfy exactly instead of approximately, and it
 keeps the finding rather than losing it.
 
+**AND "BEFORE DISPATCH" IS NO LONGER THE ONLY MOMENT: THE FIELD HAS A
+MID-FLIGHT ARM, AND IT IS THE SAME ACT RATHER THAN A LOOSER ONE.** A
+LIVE lane's `touches:` may be widened while that lane builds, and the
+widening is the dispatch step performed again — **an amendment to this
+field COMMITTED ON THE INTEGRATION BRANCH, plus a re-expansion of that
+lane's fence, which refuses the whole act unless the widened fence is
+disjoint from every other live lane.** Never a chat grant, never a
+reply, and never a hand-edited fence manifest. The amendment has to
+reach the integration branch because that is the copy a landing check
+reads and the copy the expansion is made from — **and it has to reach
+the lane's own working copy as well, because the guard at the write
+reads the card from the checkout the write lands in.** A widening
+delivered to one of those readers and not the other does not merely
+fail to grant: it refuses the paths the lane ALREADY held. The
+mechanics, the read-back that constitutes the grant, and that
+measurement are `lane-protocol.md`'s fast path A; **this clause is the
+FIELD's half** — that `touches:` moves at all while a lane holds it,
+that moving it is this seat's act and no lane's, and that the two
+copies are one amendment rather than two edits.
+**A LANE'S OWN FILE STAYING OUTSIDE EVERY FENCE IS NOT A LICENCE TO
+MOVE THIS FIELD FROM INSIDE THE LANE.** A lane may write to its own
+card — that is how its stamps and its notes are performable at all —
+and this field is the one line on it the lane never writes, for the
+reason the whole single-writer rule exists. **It is also the edit that
+would not help, and the reason has to cover BOTH moments a guard looks,
+because they do not read the same copy.** At the WRITE, the fence in
+force is the one the granting seat already expanded, and the lane's
+copy of this line is consulted only as a STAMP — a check that the card
+has not moved under that expansion. At the LANDING, the fence is
+expanded FRESH from the card as committed on the INTEGRATION BRANCH,
+which is a copy the lane is not the writer of. So an edit here widens
+nothing at either moment, and all it can move is a guard's ability to
+tell a real grant from a half-delivered one. **Giving only the
+write-time half would generalise one guard's mechanism to a moment it
+does not govern** — the conclusion would survive and the reason would
+not, which is the shape of a rule that stays right until somebody
+reasons from it.
+
 **WHY THE CLAUSE IS HERE AND NOT IN THE EXECUTOR'S FILE.** Putting it
 there would be a third sentence telling the reader to refuse, in a file
 that already says so twice, and it would reproduce the very defect it
