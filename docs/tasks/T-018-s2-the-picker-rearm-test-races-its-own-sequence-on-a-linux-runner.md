@@ -1,9 +1,17 @@
 ---
 id: T-018-s2
 title: The picker-rearm test races its own sequence counter on a Linux runner — one sighting, on a docs-only diff, in the suite that owns the watcher
-status: parked
+feature: F-02
+milestone: 4
+priority: 2
+size: S
+status: planned
+blocked_by: []
 suggested_by: integrator nputer-4e @loop-sitting stamps push, CI run 33304351040 (2026-08-30)
-touches: [app-shell]
+touches: [app/src-tauri/src/docs_watch.rs]
+builder:
+verifier:
+review: independent
 ---
 
 `docs_watch::tests::picker_rearms_the_watcher_onto_the_new_root`
@@ -37,3 +45,23 @@ observation-side, neither a product defect on any evidence so far.
 Joins `T-161` on the push watch-list until then: named intermittents, observation-side, no product defect on any evidence so far.
 
 SECOND SIGHTING (2026-08-30, CI run on 2e4b76f — a docs-only diff again): same assertion, `from_b.seq > picked.seq`, same body. THE RESURFACING CONDITION IS MET. Promoted at this sighting: feature F-02, milestone 4, priority 5, size S, touches [app-shell] — the ask stands as filed (derive the ordering the watcher actually promises and pin THAT, or wait for the CONVERGED state). Two sightings, both on diffs that cannot touch the watcher; rerun-as-measurement pending on the second.
+
+THIRD SIGHTING (2026-09-02, CI run 33566291111 on 4018a7b — a docs-only diff for the third time: three cards and a room): same body, same assertion `from_b.seq > picked.seq` at src/docs_watch.rs:2622, ubuntu-24.04, cargo suite 267 passed / 1 failed. Local battery at the same ref: rust 631 bodies GREEN. Re-run once as the measurement (attempt 2 of that run); whatever it reads, the class has three sightings on three diffs that cannot reach the watcher.
+
+## TRIAGE, 2026-09-02 — PROMOTED, AND THIS TIME THE STAMP MOVED
+
+The 2026-08-30 note above declared the promotion in prose and never
+moved the frontmatter: the card sat at `status: parked` with no
+placement fields through a second and now a third sighting — a
+half-applied stamp, T-235's shape from the other side (a note without
+its fields). Applied at the seat now: F-02, milestone 4, **priority 2
+rather than the 5 the note named**, because each sighting reds main on a
+push that cannot have caused it and costs a re-run and a seat's
+attribution; size S; fence narrowed by path to the file that holds the
+body, `app/src-tauri/src/docs_watch.rs`; `review: independent` because
+the fix is to an assertion that must be shown able to fail on Linux
+without being able to fail by clock — the ceremony row is "S touching
+shipped code" either way. The ask stands as filed: derive the ordering
+the watcher actually promises between the `picked` reply and the first
+post-re-arm emit, pin THAT, and show the pin red under the mutant that
+makes the tie legal.
