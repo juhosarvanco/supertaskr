@@ -285,10 +285,13 @@ top of this card, with the derivation.
 
 - **`docs/CAPABILITIES.md` REGENERATION.** `npm run capabilities:check`
   exits 1 — committed **36,429** bytes against a fresh generation of
-  **38,897** bytes, measured at this lane's tip. The regeneration is the
-  integrator's step and lands in the merge commit (the practice at
-  `8422407`, `4cb2313`, `a2b53e3`, `75093ce`); `docs/CAPABILITIES.md` is
-  outside `[.claude, tools/e2e]`.
+  **39,429** bytes **at `489f6b9`**. The regeneration is the integrator's
+  step and lands in the merge commit (the practice at `8422407`,
+  `4cb2313`, `a2b53e3`, `75093ce`); `docs/CAPABILITIES.md` is outside
+  `[.claude, tools/e2e]`. **RE-DERIVE IT AT THE MERGE — this figure has
+  now moved three times inside one lane** (38,897 at `9cdcffe`, 39,007 at
+  `1987be9`, 39,429 here), once per batch of spec names added, which is
+  precisely why a byte count is worthless without the ref it was taken at.
 - **`docs/CONVENTIONS.md` gets no bullet for this gate.** The BLESSED
   GATE-RUNNER bullet still describes the runner without its token, and
   nothing in that file yet tells a seat that a push now needs one. Routed:
