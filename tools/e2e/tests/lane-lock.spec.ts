@@ -611,20 +611,32 @@ test("the unfenceable directory is NEVER locked — including inside T-228's sta
   // line the manifest was not stamped from. That is the half-performed
   // widening T-211 describes and T-228 measured.
   writeFileSync(path.join(fx.lane, CARD), cardText(`${TOUCHES.slice(0, -1)}, ${OUT_OF_FENCE}]`), "utf8");
+
+  // THE WINDOW IS OPEN — asserted, not assumed, because this body's claim
+  // is about what THIS layer does in a state the hook is already refusing.
+  //
+  // THE PROBE IS THE NEWLY-GRANTED PATH AND NOT THE CARD, DELIBERATELY.
+  // The obvious probe is the card itself, and it would couple this body to
+  // exactly the behaviour `T-228` is filed to CHANGE: that card's first
+  // criterion is that a write to the unfenceable directory be ALLOWED in
+  // this state, so a body asserting `stale-stamp` on the card would red the
+  // day T-228 lands, on an unrelated lane, for no defect. The newly granted
+  // path is the half T-228 preserves BY NAME — *"the half-performed grant
+  // SHALL STILL BE REFUSED on the newly granted path"* — so it says the
+  // window is open and goes on saying it afterwards.
   const blocked = decide({
     toolName: "Write",
     cwd: fx.lane,
-    toolInput: { file_path: path.join(fx.lane, CARD) },
+    toolInput: { file_path: path.join(fx.lane, OUT_OF_FENCE) },
   });
-  // THE WINDOW IS OPEN — asserted, not assumed, because this body's claim
-  // is about what THIS layer does in a state the hook is already refusing.
   expect(blocked.verdict, "T-228's window must actually be open here").toBe("block");
   expect(blocked.code).toBe("stale-stamp");
 
-  // AND THE PHYSICAL LAYER STILL ALLOWS IT. This card does not FIX T-228 —
-  // the hook still refuses the Write tool — it declines to add a second,
-  // physical copy of the same trap, so a lane stuck in the window still
-  // has somewhere to file the finding that explains why it is stuck.
+  // AND THE PHYSICAL LAYER STILL ALLOWS THE CARD. This card does not FIX
+  // T-228 — today the hook refuses the Write tool on this very file — it
+  // declines to add a SECOND, physical copy of the same trap, so a lane
+  // stuck in the window still has somewhere to file the finding that
+  // explains why it is stuck.
   expect(writable(path.join(fx.lane, CARD)), "the lane's own card").toBe(true);
   const filed = bashWrite(
     path.join(fx.lane, "docs/tasks/T-912-routed-from-inside-the-window.md"),
