@@ -247,8 +247,25 @@ async function main(argv) {
    * @type {string[]}
    */
   const sessionFindings = [];
-  if (wantsPreflight || fenceWorktree !== "") {
-    const currency = judgeCheckout();
+  const declared = process.env["CLAUDE_PROJECT_DIR"];
+  if ((wantsPreflight || fenceWorktree !== "") && (declared === undefined || declared === "")) {
+    // THE SESSION DID NOT SAY WHICH CHECKOUT IT LOADED ITS SETTINGS FROM,
+    // AND THAT IS NOT A PASS. Falling back to this command's working
+    // directory would INVENT a target — a `--root` pointed at a fixture,
+    // a shell parked anywhere — and report a verdict about a checkout no
+    // session was ever started in. Three verdicts, never two: this is the
+    // unaskable question, said out loud and charged to nobody.
+    console.log(
+      render([
+        note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
+        note("UNANSWERED: no session checkout was declared, so this arm judged nothing. A"),
+        note("harness sets CLAUDE_PROJECT_DIR; a bare shell does not, and this command will"),
+        note("not guess a target from its own working directory. Run the catcher directly"),
+        note("against the checkout you mean: npm run session:check -- --checkout <path>."),
+      ]),
+    );
+  } else if (wantsPreflight || fenceWorktree !== "") {
+    const currency = judgeCheckout({ target: declared });
     console.log(
       render([
         note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),

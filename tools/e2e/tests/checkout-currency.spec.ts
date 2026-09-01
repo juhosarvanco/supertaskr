@@ -794,6 +794,20 @@ test("THE WIRING'S POSITIVE CONTROL: the same arming step says CURRENT for a cur
   );
 });
 
+test("an UNDECLARED session checkout is said out loud and charged to nobody — the arm never guesses a target", () => {
+  // KILLED BY: falling back to the command's working directory, which is
+  // how this arm first reported a scratch FIXTURE as a stale session
+  // checkout and took a body in card-preflight.spec.ts red with it. A
+  // harness sets CLAUDE_PROJECT_DIR; a bare shell does not, and a verdict
+  // about a checkout no session was started in is an invented one.
+  const run = runBrief(["--task", LIVE_CARD, "--preflight"]);
+  expect(run.out, "the arm still speaks").toContain("THE SESSION'S OWN CHECKOUT");
+  expect(run.out, "and says the question could not be asked").toContain("UNANSWERED");
+  expect(run.err, "and charges nobody with being stale").not.toContain(
+    "the checkout this session was started in is STALE",
+  );
+});
+
 test("the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it", () => {
   // KILLED BY: emitting the block on every invocation, which would make
   // the body above pass for a reason that has nothing to do with arming
