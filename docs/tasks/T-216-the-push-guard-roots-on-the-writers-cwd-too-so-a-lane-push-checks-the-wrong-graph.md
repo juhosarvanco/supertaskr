@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: [T-199]
 touches: [.claude, tools/e2e]
 suggested_by: "T-199's executor, which was told to treat push-guard.mjs's import list as a contract and found the same defect CLASS in the file's own rooting while checking it"
