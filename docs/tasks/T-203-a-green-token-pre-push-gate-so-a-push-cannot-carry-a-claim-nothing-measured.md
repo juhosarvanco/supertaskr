@@ -480,6 +480,18 @@ and `git status --porcelain` clean after the run.** The two aims this
 project separates are both met: every mutant died, and each died AT THE
 SITE THE PROPERTY LIVES rather than somewhere downstream.
 
+**ONE BODY NAME IN `M11` NO LONGER EXISTS, AND THE LEDGER IS DELIBERATELY
+NOT EDITED TO MATCH.** `M11`'s kill list records *"the ignore string has
+ONE home, and the fence writer and the token writer both use it"*. That
+body was renamed AFTER this drill ran — to *"the ignore file the TOKEN
+writer leaves on disk is the one imported ignore string"* — because its
+name claimed both writers while the body drives one. **A ledger is a
+record of a run at a ref, not a description of the current tree**, so
+correcting the transcription would make it a tidier document and a false
+one. The name dangles on purpose and this sentence is its pointer: a
+reader grepping for it finds nothing, and would otherwise read that as a
+DELETED body rather than a renamed one.
+
 **WHAT THE DRILL COULD NOT REACH, NAMED RATHER THAN IMPLIED.** The
 pre-fix ignore-file defect was invisible to every mutant of mine, because
 the body asserting it was green BY CONSTRUCTION in the only tree the
