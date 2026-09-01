@@ -92,17 +92,19 @@ asking `gh run list` for the last run's verdict before allowing the next
 push, so a red main cannot be pushed over twice in an evening, which is
 what happened at 53da881 and e67cb44.
 
-**11. The blessed gate-runner's solo lock is machine-wide, so four
-concurrent lanes cannot certify at once.** `gate-run.mjs` refuses a run
-while any other run holds `nputer-gate-run-<key>.lock` in the OS temp
-directory (T-088-s4, working as designed for one checkout). Tonight four
-lanes and four benches share the machine, so every final battery
-serialises behind whichever seat got there first, and a seat that reads
-REFUSED as red misattributes. Lane-protocol rule 4 names exactly this
-class: a surface scoped by the machine where the isolation is by
-checkout. The construction is a lock keyed by the worktree the runner
-was invoked in, with the machine-wide lock kept only for two runners in
-ONE checkout, which is the collision it was built for.
+**11. RETRACTED, and kept because the retraction is the lesson.** This
+item first claimed the gate-runner's solo lock was machine-wide and
+would serialise four concurrent lanes. It is not: `lockPath(root)` in
+`gate-run.mjs` keys the lock to the repository root, so two checkouts
+never block each other, and at 22:21Z two `gate-run.mjs e2e` processes
+were running at once, one in the integration checkout and one in a
+verifier's bench. T-216-s5's collision was two seats sharing ONE bench.
+The claim reached all eight covering messages of the wave before it was
+measured; the advice they carry (treat REFUSED as a wait, not a red) is
+harmless because REFUSED cannot occur across checkouts. The weak spot
+this leaves is the one the seat actually demonstrated: **a dispatcher
+writes covering messages from memory, and nothing checks them** — which
+is T-230's class one seat up, and T-204's subject.
 
 **12. A seat's own edit tooling is a hazard the method does not name.**
 This seat's first triage pass swallowed the frontmatter delimiter of six

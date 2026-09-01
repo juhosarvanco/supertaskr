@@ -115,8 +115,12 @@ exact edit and route it. Three sibling lanes run concurrently
 
 **Audit (orchestrator 5b)**: `brief.mjs` freezes its flag list
 (`const FLAGS = Object.freeze([...])`, an unknown flag exits 2) at
-2489853, as the T-211 instance says; the T-203 quote is absent from
-docs/CONVENTIONS.md at 2489853 (`grep -c` reads 0), as the card says.
+2489853, as the T-211 instance says. CORRECTED AT 4018a7b: the T-203
+quote is PRESENT in docs/CONVENTIONS.md in different casing — line 190
+opens the bullet "AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP", so
+`grep -c` of the card's casing reads 0 and `grep -ic` reads 1. The first
+version of this note asserted absence with a grep this seat never ran;
+the instance is a CASE-POLICY question and the lane was told so.
 The T-210 platform claim is the verifier's phase-1 ground truth.
 
 **Holder**: this lane does NOT hold the integration checkout and does
