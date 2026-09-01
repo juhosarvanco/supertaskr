@@ -75,6 +75,25 @@ to catch.
 2. Attack: every EARS criterion literally (each maps to a test), then
    malformed inputs, boundaries, concurrency, the unhappy paths the
    criteria imply but don't spell out.
+2b. **JUDGING A DRILL: KILL-SET CONTAINMENT, NEVER THE COUNT.** Two
+   bodies are both load-bearing when NEITHER kill set contains the
+   other; where one contains the other, the contained body is a
+   restatement. **A kill count of one is a property of a well-chosen
+   mutant, not an invariant every mutant must satisfy** — two lanes once
+   acted oppositely on this and both were right, and the containment
+   test is what separated them.
+   **AND THE THIRD PROOF IS THAT SOMETHING DIED AT THE SITE THE PROPERTY
+   LIVES.** *The bytes moved, the suite ran, something died* is satisfied
+   by a mutant aimed anywhere; **the failure mode is AIMING, not
+   accounting**, and the verifier that established this had its own first
+   mutant satisfy all three literally while measuring nothing.
+   **READ A MUTANT'S LANDING FROM `git diff`, NEVER FROM THE MUTATOR'S
+   OWN REPORT** — a pattern that silently fails to match reports
+   "survived", and `--numstat` is blind to a one-for-one swap.
+   **WHERE THE PROPERTY LIVES IN DATA, THE MUTANT IS A DATA MUTANT.** A
+   body proving a fixture is DERIVED rather than typed cannot be graded
+   by code mutants: its kill set will look contained and it is not. A
+   code-only drill mis-grades a derivation guard BY CONSTRUCTION.
 3. Security sweep — a large share of AI-generated code ships flaws, so
    this pass is mandatory, not optional: injection points on any new
    input path, authz on any new endpoint or query, secrets or keys in

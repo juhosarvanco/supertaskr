@@ -1,9 +1,10 @@
 # State
 
-Updated: 2026-09-01 at the three-lane close — **"the 09-01 record"** is
-the newest file in docs/checkpoints/; the eight-card record sits beside
-it. **NO task branches remain** (derive: LANES) and no verification is
-outstanding.
+Updated: 2026-09-01 at the T-210 close — **"the 09-01 record"** is the
+newest file in docs/checkpoints/; two more from the same day sit beside
+it. **NO task branches remain** (derive: LANES), nothing is outstanding,
+and **CI IS GREEN** — which is a separate claim from a local battery and
+was FALSE for five hours while four batteries said otherwise.
 
 **NOTHING IS BROKEN.** Designed non-zero: `npm run health` **3** while
 bands await keepers (T-156-s1/s2) — never read it as clean, never "fix"
@@ -58,11 +59,11 @@ opens with `Checkpoint:`** (T-182).
 
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
-2. **THE STACK IS CLOSED BUT FOR ONE GATE**: WRITE (T-199), DISPATCH
-   (T-209), LANDING (T-212) and PUSH (T-203) all refuse, with the fast
-   paths law (T-211). **`T-210` is the remainder and is STARTABLE** —
-   it collided with both live lanes all night and the board is empty.
-   Then **T-216**, then T-222/T-223/T-224.
+2. **THE STACK IS COMPLETE**: WRITE (T-199), DISPATCH (T-209), LANDING
+   (T-212), PUSH (T-203) all refuse; fast paths are law (T-211); the
+   PHYSICAL layer (T-210) catches the shell writes a hook cannot see.
+   Next: **T-216**, then T-222/T-223/T-224. **T-229 and T-230 pay for
+   themselves** — one prevents a rejection class, one a dispatch class.
 3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
    decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
    rest on it, and dropping it reds nothing.
@@ -85,36 +86,32 @@ opens with `Checkpoint:`** (T-182).
 
 ## Standing hazards — the section that saves the hour
 
-- **REACH FOR THE CONSTRUCTION, NOT THE CHECK.** A check's answer
-  includes every other tenant on the machine; a construction — a port
-  from the card id, a marker the job owns, a board snapshotted once —
-  cannot see them at all. Rule 4 names the class and every seat that
-  walked into it had read the rule: it bit FOUR times in one night, and
-  the four are in the 09-01 record.
+- **A LOCAL BATTERY AND CI ARE DIFFERENT MEASUREMENTS**: main was RED
+  five hours while four batteries said GREEN, twice, from fixtures
+  inheriting MACHINE git config. `gh run list` after every batch; borrow
+  the environment before believing a green (CONVENTIONS). **A CLASS
+  NAMED AND A CLASS SWEPT ARE DIFFERENT ACTS** — the second red was the
+  first one's sibling, left standing after a correct diagnosis.
+- **REACH FOR THE CONSTRUCTION, NOT THE CHECK** — lane-protocol rule 4,
+  which carries the class in full. It bit FIVE times in one sitting,
+  every seat having read the rule first.
 - **A WORKTREE ENTRY MUTATES IN PLACE.** A count cannot see a moved
   board; a path-only set difference cannot either. Compare whole
   `git worktree list` lines, **commit column included**.
 - **SUITE CHAINS GO IN GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
   Pipe, docs-gate-path and line-number traps: CONVENTIONS.
-- **EVERY PUSH NOW OWES THE FULL FOUR-SUITE BATTERY, RUN LAST** (T-203).
-  `gate-run` mints a token keyed on `HEAD^{tree}`; the guard refuses
-  unless all four are GREEN against the tree you are pushing, so a commit
-  after the battery stales it. Refusals name themselves —
-  `token-incomplete`, `-red`, `-unmeasured`, `-stale`, `-unkeyed`. **No
-  cargo means no push, deliberately.** The GRAPH arm still fails open on
-  its own inability: the discriminator is WHOSE inability it is. T-216
-  fixes the rooting — the guard roots on the WRITER's cwd while the hook
-  loads from the DISPATCHING checkout, so a lane never arms its own fix.
-- **A BLIND VERIFIER'S WORKTREE IS CUT AT THE BASE REF, NEVER THE TIP**
-  (T-213) — a tip carries the executor's notes, including sections
-  addressed to the verifier. **Lane context goes in a SECOND message**:
-  a "blind line" inside one message is not blindness, because the agent
-  reads the whole prompt. The four leaks: the 09-01 record.
-- **POISON DRILLS: KILL-SET CONTAINMENT, NOT THE COUNT** (shape SIX,
-  settled by measurement). The third proof is *something died **at the
-  site the property lives*** — the failure mode is AIMING, not
-  accounting. Read a mutant's landing from `git diff`, never from the
-  mutator's report.
+- **EVERY PUSH OWES THE FOUR-SUITE BATTERY, RUN LAST** (T-203) — ~6 min
+  warm, e2e 93% of it; **no cargo means no push, deliberately.** The
+  refusal names and the reasoning: CONVENTIONS. T-216 fixes the rooting
+  — the guard roots on the WRITER's cwd while the hook loads from the
+  DISPATCHING checkout, so a lane never arms its own fix.
+- **CUT THE VERIFIER'S BENCH AT THE BASE REF, AND CUT IT WITH THE LANE**
+  — phase 1 needs nothing the executor makes, so blindness becomes a
+  fact about the clock rather than a discipline (orchestrator 5c,
+  verifier.md, T-213). **Lane context goes in a SECOND message.**
+- **POISON DRILLS: kill-set CONTAINMENT, the site the property lives,
+  and a DATA mutant where the property is data** — the rules and their
+  measurements now live in method/roles/verifier.md step 2b.
 - **A TIMING CORRELATE IS NOT A CAUSE.** Read a suite's own time and
   re-run a body ALONE before attributing. **A merged main can fail
   `npm run build`**: `lib/parser/dist` is a build artifact no merge
@@ -123,10 +120,9 @@ opens with `Checkpoint:`** (T-182).
   2026-09-01 on T-146's rule: **a MECHANISM lives in a governing
   document, a record takes the INSTANCE**, and STATE is byte-capped.
 - **BOOT GATE AND HEALTH BANDS ARE OWED AT EVERY CHECKPOINT** (T-046,
-  T-156). Health takes **`--readings`** over captured output, and **the
-  `--` is load-bearing** or npm eats the flag (exit 2). **A lane's token
-  meter exists ONLY in its notification** — capture it when the lane
-  reports or it is unrecoverable.
+  T-156). Health takes **`--readings`**, and the **`--` is load-bearing**
+  or npm eats the flag (exit 2). **A lane's token meter exists ONLY in
+  its notification** — capture it as the lane reports.
 - **NARROWER HAZARDS LIVE IN THE RECORDS**: T-086-s1's 1-in-22 body,
   T-111-s9's token-scan totals, app/'s absent `typecheck`.
 
