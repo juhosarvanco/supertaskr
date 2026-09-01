@@ -308,6 +308,79 @@ a standalone integrator commit, never a lane's own. **Run
 the third instance of the class `T-218` already owns, and it is recorded
 as a corroboration on that card rather than filed again.
 
+### VERDICT CORRECTION, 2026-09-01 — the coverage claim named the one writer it does not stop
+
+**APPROVED with a required prose correction, and the finding was real.**
+Rule 5's added block promised the layer covers *"every writer equally —
+the redirect, THE IN-PLACE EDIT, the script and the build tool alike"*.
+That is false at this platform for the second item in its own list, and
+the block's own limits paragraph contradicted it four sentences later.
+**It is the failure that rule's own *"a guard described as total is worse
+than no guard"* names, committed in the paragraph that quotes it.**
+
+Re-measured at this seat rather than taken on trust:
+
+    >  redirect onto a 0444 file, writable dir   REFUSED, intact
+    sed -i     on a 0444 file, writable dir      exit 0, CHANGED
+    mv -f      onto a 0444 file, writable dir    exit 0, replaced
+    rm -f      a 0444 file, writable dir         exit 0, gone
+    sed -i     on a writable file, 0555 dir      REFUSED
+
+**A mode bit refuses an OPEN FOR WRITING. It says nothing about
+replacing the file by RENAME**, which the PARENT DIRECTORY authorises and
+which this layer deliberately leaves writable — so `sed -i`, which writes
+a temporary file and renames it, goes straight through. The redirect line
+is the positive control; the `0555` line is why rather than merely that.
+Both files now state that discriminator **in the same breath as the
+promise**, `lane-lock.mjs` gains **L0** as the limit most likely to be
+misread, and the rule's opening sentence narrows from "it stops
+MODIFICATION" to "it stops an OPEN FOR WRITING".
+
+**PINNED SO THE PROSE CANNOT DRIFT BACK**, and pinned on the MECHANISM
+rather than on a tool: BSD `sed` needs `-i ''`, GNU `sed` needs bare
+`-i`, this suite runs on both, and a body encoding one spelling would be
+measuring the runner. `mv` is the mechanism `sed -i` uses internally and
+is one program on both. The suite is **13** bodies now.
+
+### Supplementary drill, at `c677442` — including one mutant that measures nothing
+
+| # | site mutated | kills |
+|---|---|---|
+| N1 | absolute `chmod 0444` instead of clearing bits from the mode FOUND | 3 |
+| N2 | drop the `!st.isFile()` guard, intending to lock directories | **0 — INERT** |
+| N3 | also `chmod 0555` the parent directory | 5, incl. the new rename body |
+
+**N2 IS REPORTED AS A FAILED MUTANT RATHER THAN QUIETLY DROPPED, AND IT
+IS THE INFORMATIVE ONE.** It could not express its own defect: the corpus
+is `git ls-files`, which **names no directory at all**, so `plan.lock`
+holds only files and that guard never sees one. Files-only is carried BY
+THE CORPUS, not by the `isFile()` check — which is what the verifier
+reported from the other side, and which N3 confirms by expressing the
+negation where the property actually lives. A mutant that survives
+because its defect is unreachable at that site measures nothing about the
+guard, and saying so is worth more than the count.
+
+### The chain I closed without arguing it
+
+The coordinator asked whether I had dodged a specific failure: an
+absolute `chmod 0444` would change the mode of tracked EXECUTABLES —
+which git DOES record — dirtying the tree, so `T-203`'s gate-runner would
+see tracked dirt, decline the verdict token, and the push guard would
+refuse every push. **This layer would have silently disabled the gate
+that merged hours before it.** It is closed, but as a CONSEQUENCE of
+restore fidelity (`mode & ~0o222` clears bits from the mode FOUND) rather
+than by any argument aimed at it — `trackedDirt` and the token appear
+nowhere in my reasoning. **That is the shape that rots quietly, so it is
+argued now** in `lane-lock.mjs`'s L5 and asserted in the suite.
+
+**AND THE ASSERTION THAT PINS IT WAS VACUOUS WHEN FIRST WRITTEN.** A
+`git status --porcelain` check catches a 0444 mutant only if the tree
+holds a tracked EXECUTABLE; every file this fixture built was 644, and
+this repository's own two 755 files (`bin/app-dev.mjs` and a
+`tools/method-evals` runner) are not among those it copies in. So the
+fixture now plants one out of fence, and N1 kills the body. Before the
+plant it did not — a body that looked like a pin and was one for nobody.
+
 ### Routed
 
 - **`T-218`** — corroborated with this lane's instance, dated.
