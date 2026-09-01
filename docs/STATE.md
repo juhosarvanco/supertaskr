@@ -59,19 +59,21 @@ opens with `Checkpoint:`** (T-182).
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
 2. **THE STACK IS 3 GATES OF 4** — WRITE (T-199), DISPATCH (T-209),
-   LANDING (T-212) all refuse. Queue: **T-203** (push gate), then
-   **T-211** (the only pair fence-disjoint from T-203), then **T-210**
-   (`.claude` collides with both).
+   LANDING (T-212) refuse. T-203 (push gate) + T-211 dispatched
+   2026-09-01; **T-210 goes last**, colliding with both.
 3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
    decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
    rest on it, and dropping it reds nothing.
 4. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <separate
    literal paths>`; `lint:docs` is the CENSUS, exit 0 means "I wasn't
    asked".
-5. **T-126-s2 IS RULED** — join goes to TypeScript, shape 3 refused on
-   TEST REACHABILITY; blocker is **T-190**, not T-112-s4.
-6. **TRIAGE IS OWED** — cards run to T-224, twenty in `suggested`.
-   Release riders: T-112-s2, T-154-s3, T-159-s6, T-154-s4's sentence;
+5. **T-126-s2 IS RULED** — join to TypeScript, shape 3 refused on TEST
+   REACHABILITY. **NO BLOCKER IS NAMED HERE**: this line said T-190 long
+   after T-190 closed while the card said T-198. **`blocked_by` IS READ
+   FROM THE CARD** — T-138's whole lesson, re-earned.
+6. **TRIAGE PART DONE, THE REST BLOCKED BY BYTES** (T-225): three cards
+   carry a recorded PROMOTE that cannot be applied. Counts derived, not
+   quoted. Riders: T-112-s2, T-154-s3, T-159-s6, T-154-s4's sentence;
    T-173/T-176 owe a bump. **D5 ruled, NOT enforced** (no `--model`).
 7. **@human holds; no card is cut from these** — the FORM (reopened),
    the STEERING SPLIT (T-180 parked), T-025-s4's three permission
@@ -81,13 +83,12 @@ opens with `Checkpoint:`** (T-182).
 
 ## Standing hazards — the section that saves the hour
 
-- **REACH FOR THE CONSTRUCTION, NOT THE CHECK.** A machine-scoped
-  surface bit FOUR times in one night — `git worktree list` in a gate
-  (T-220), a defaulted port, a shared scratch filename, `pgrep -f
-  playwright` matching sibling lanes forever — and rule 4 names the
-  class, read by every seat that walked into it. A check's answer
-  includes every other tenant; a construction (port from the card id, a
-  marker the job owns, a board snapshotted once) cannot see them.
+- **REACH FOR THE CONSTRUCTION, NOT THE CHECK.** A check's answer
+  includes every other tenant on the machine; a construction — a port
+  from the card id, a marker the job owns, a board snapshotted once —
+  cannot see them at all. Rule 4 names the class and every seat that
+  walked into it had read the rule: it bit FOUR times in one night, and
+  the four are in the 09-01 record.
 - **A WORKTREE ENTRY MUTATES IN PLACE.** A count cannot see a moved
   board; a path-only set difference cannot either. Compare whole
   `git worktree list` lines, **commit column included**.
@@ -134,12 +135,11 @@ opens with `Checkpoint:`** (T-182).
   reports or it is unrecoverable.
 - **NARROWER HAZARDS LIVE IN THE RECORDS** per this file's contract:
   T-086-s1's 1-in-22 body, T-111-s9's token-scan totals, app/'s absent
-  `typecheck`, the CI billing block (cleared).
+  `typecheck`, the cleared CI billing block.
 
 ## The records
 
 - docs/checkpoints/ — append-only, one per integration; the 09-01 record
-  is the newest, the seven-card record beside it at 2026-08-31.
-  Pre-compaction: 2026-08-27-backfill-STATE.md.
+  is the newest. Pre-compaction: 2026-08-27-backfill-STATE.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
