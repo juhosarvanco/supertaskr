@@ -305,7 +305,7 @@
   The default 14520 is MACHINE-WIDE, so every concurrent lane takes the
   same one; `E2E_PORT` binds NOTHING. `lsof` to zero rows before binding,
   and never 1420. Third member of this family, beside the SCRATCH RULE and
-  the PORT RULE: same class, same remedy — **a construction beats a
+  the PORT RULE, one class and one remedy — **a construction beats a
   check** (lane-protocol rule 4, T-217).
 - **SCRATCH RULE — NAME EVERY SCRATCH FILE FOR THE LANE THAT OWNS IT**
   (`<purpose>-<card id>.<ext>`, e.g. `battery-T-216-s1.sh`). **The
