@@ -862,8 +862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/check.rs",
       "path": "app/src-tauri/crates/nputer-index/src/check.rs",
       "lang": "rust",
-      "hash": "blake3:4357b8d2ed8de81490455a030f690a949175398d0ec0dba3f8400454914d90f2",
-      "loc": 996,
+      "hash": "blake3:bb013def6f831baa6d99ee9f8f519b3e0527d9f8c57db2d066a1822113bee022",
+      "loc": 1556,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#CheckReport",
@@ -872,7 +872,7 @@
           "exported": true,
           "range": [
             44,
-            71
+            95
           ]
         },
         {
@@ -901,8 +901,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            378,
-            378
+            413,
+            413
           ]
         },
         {
@@ -911,8 +911,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            235,
-            254
+            270,
+            289
           ]
         },
         {
@@ -921,8 +921,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            85,
-            148
+            109,
+            183
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#drop_clause",
+          "name": "drop_clause",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            530,
+            556
           ]
         },
         {
@@ -931,8 +941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            527,
-            538
+            699,
+            710
           ]
         },
         {
@@ -941,8 +951,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            276,
-            304
+            311,
+            339
           ]
         },
         {
@@ -951,8 +961,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            395,
-            434
+            445,
+            510
           ]
         },
         {
@@ -961,8 +971,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            73,
-            77
+            97,
+            101
           ]
         },
         {
@@ -971,8 +981,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            541,
-            547
+            713,
+            719
           ]
         },
         {
@@ -981,8 +991,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            156,
-            220
+            191,
+            255
           ]
         },
         {
@@ -991,8 +1001,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            436,
-            476
+            608,
+            648
           ]
         },
         {
@@ -1001,8 +1011,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            478,
-            525
+            650,
+            697
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#spend_clause",
+          "name": "spend_clause",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            579,
+            606
           ]
         },
         {
@@ -1011,8 +1031,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            550,
-            996
+            722,
+            1556
           ]
         }
       ]
@@ -43766,7 +43786,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2456,
+    "symbols": 2458,
     "edges": 2379
   }
 }

@@ -68,6 +68,30 @@ pub struct CheckReport {
     /// can DERIVE that limit at every run instead of a document quoting
     /// a number measured on somebody else's tree.
     pub floor_bytes: usize,
+    /// THE EMITTER'S OWN RECORD OF WHAT *IT* DROPPED from a fresh index
+    /// of this tree (T-167-s5), read straight off `stats.truncated_files`.
+    ///
+    /// **THE UNIT IS FILES WHOSE SYMBOL ARRAY WAS EMPTIED — NEVER
+    /// SYMBOLS**, and the distinction is the reason this field is named
+    /// the long way. `apply_budget` drops whole symbol ARRAYS largest
+    /// first and counts the FILES it emptied; the number of symbols that
+    /// went with them is not recorded anywhere and cannot be recovered
+    /// from the emitted document, because a file with an empty array is
+    /// indistinguishable from a file that never had symbols. A clause
+    /// that printed this figure as a symbol count would be a unit
+    /// mismatch rather than an omission — the failure mode this family
+    /// has now hit three times (T-194, T-196, T-208).
+    pub fresh_truncated_files: usize,
+    /// `stats.truncated_symbols` as the emitter set it on a fresh index.
+    ///
+    /// Carried BESIDE the count rather than derived from it, because the
+    /// two are not the same fact. `apply_budget`'s floor arm sets this
+    /// flag while leaving `truncated_files` unset — the state where the
+    /// document is over budget and there was nothing left to empty — so
+    /// `truncated_files == 0` does NOT imply an untruncated emit, and a
+    /// clause reading only the count would go silent in exactly the worst
+    /// state.
+    pub fresh_truncated_symbols: bool,
 }
 
 impl CheckReport {
@@ -92,6 +116,11 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
     let committed_bytes = std::fs::read(&graph_path);
 
     let fresh_stats = (fresh.stats.files, fresh.stats.symbols, fresh.stats.edges);
+    // T-167-s5: the emitter's own record of what it dropped, read once
+    // here and carried, so the alarm never has to re-derive a fact the
+    // emit already wrote down. See the field docs for the UNIT.
+    let fresh_truncated_files = fresh.stats.truncated_files.unwrap_or(0);
+    let fresh_truncated_symbols = fresh.stats.truncated_symbols.unwrap_or(false);
     let Ok(committed_raw) = committed_bytes else {
         return Ok(CheckReport {
             stale: Some(Staleness::Missing),
@@ -102,6 +131,8 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             fresh_stats,
             budget_bytes: opts.max_graph_bytes,
             floor_bytes,
+            fresh_truncated_files,
+            fresh_truncated_symbols,
         });
     };
 
@@ -115,6 +146,8 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             fresh_stats,
             budget_bytes: opts.max_graph_bytes,
             floor_bytes,
+            fresh_truncated_files,
+            fresh_truncated_symbols,
         });
     }
 
@@ -144,6 +177,8 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
         fresh_stats,
         budget_bytes: opts.max_graph_bytes,
         floor_bytes,
+        fresh_truncated_files,
+        fresh_truncated_symbols,
     })
 }
 
@@ -384,6 +419,21 @@ pub const WARN_HEADROOM_BYTES: usize = 13_921;
 /// on every run would be a banner, and a banner is read exactly as well
 /// as the stat line this exists to escape.
 ///
+/// **WITH ONE EXCEPTION, ADDED BY T-167-s5, AND THE EXCEPTION IS NOT A
+/// WEAKENING OF THAT RULE BUT ITS OTHER HALF.** A drop makes this block
+/// speak at ANY headroom (see [`drop_clause`]), because "plenty of room
+/// left" is what a successful truncation looks like from here:
+/// `apply_budget` empties whole symbol arrays, so the pass that brings a
+/// document under the ceiling routinely overshoots and hands this
+/// function a large, healthy, entirely misleading number. The block is
+/// still not a banner — it is silent on every run where nothing was
+/// dropped and the room is fine, which is the ordinary run.
+///
+/// **AND THE BLOCK NOW CARRIES A NUMBER THAT IS THE READER'S OWN** (see
+/// [`spend_clause`]): everything else it prints is a property of the tree
+/// and therefore the same for every lane, which is the habituation this
+/// doc comment warns about one paragraph up.
+///
 /// IT DOES NOT TOUCH THE EXIT CODE, and that is a decision rather than an
 /// omission. Exit 1 means the gate's own negative verdict — the committed
 /// graph is stale (`crate::cli`'s exit-code contract) — and a graph with
@@ -398,28 +448,53 @@ fn headroom_alarm(report: &CheckReport) -> String {
     }
     let used = report.fresh_bytes;
     let budget = report.budget_bytes;
+    // THE DROP IS DERIVED BEFORE ANY BUDGET ARM, and that placement is
+    // the whole of T-167-s5's first criterion. Both degradation sentences
+    // in this file used to live inside `used > budget` arms, so under
+    // budget the word could not be printed at all — and under budget with
+    // symbols dropped is not a rare corner, it is the state truncation
+    // CREATES: `apply_budget` empties whole arrays, so the pass that
+    // brings a document under the ceiling routinely overshoots and leaves
+    // plenty of room. Measured at the T-169 merge regen: 34 160 bytes
+    // left, alarm silent, and the emitter had just dropped.
+    let drop = drop_clause(report);
+    let spend = spend_clause(report);
+
     // Over budget FIRST: the headroom is negative there, and on unsigned
     // bytes the subtraction below would either underflow or be skipped.
     // The state past the ceiling must be the loudest, never the quietest.
     if used > budget {
         return format!(
             "[nputer-index]\n\
+             {drop}\
              [nputer-index] !! GRAPH HEADROOM ALARM - there is none left: this index is {} bytes past the\n\
              [nputer-index] !! ceiling and the emitter is ALREADY dropping symbol arrays to fit\n\
              [nputer-index] !! (stats.truncated_symbols / truncated_files carry the count). Nothing is red\n\
              [nputer-index] !! because nothing failed - the graph is valid, and smaller than the tree it\n\
              [nputer-index] !! describes. THE VERDICT ABOVE IS UNAFFECTED: this is the room left, not the\n\
              [nputer-index] !! answer. The threshold and what measured it: check::WARN_HEADROOM_BYTES.\n\
+             {spend}\
              [nputer-index]\n",
             used - budget
         );
     }
     let left = budget - used;
     if left >= WARN_HEADROOM_BYTES {
-        return String::new();
+        // HEALTHY HEADROOM IS NOT A REASON TO BE SILENT ABOUT A DROP.
+        // This is the arm the absorbed T-167-s7 was filed against: the
+        // emit came in under the ceiling *by dropping*, so the one number
+        // that used to print here said "plenty of room" about a map that
+        // had already stopped answering. The drop still speaks; the
+        // headroom sentence correctly does not, because there is nothing
+        // wrong with the headroom.
+        if drop.is_empty() {
+            return String::new();
+        }
+        return format!("[nputer-index]\n{drop}{spend}[nputer-index]\n");
     }
     format!(
         "[nputer-index]\n\
+         {drop}\
          [nputer-index] !! GRAPH HEADROOM ALARM - {left} bytes left, under the {WARN_HEADROOM_BYTES}-byte tripwire.\n\
          [nputer-index] !! That threshold is ONE ORDINARY MERGE's growth of this graph, measured over this\n\
          [nputer-index] !! repository's own history - so the NEXT code lane can be the one that crosses,\n\
@@ -429,7 +504,104 @@ fn headroom_alarm(report: &CheckReport) -> String {
          [nputer-index] !! THE VERDICT ABOVE IS UNAFFECTED: this is the room left, not the answer, and\n\
          [nputer-index] !! moving either number to quiet it is a value call rather than a fix.\n\
          [nputer-index] !! The threshold and what measured it: check::WARN_HEADROOM_BYTES.\n\
+         {spend}\
          [nputer-index]\n"
+    )
+}
+
+/// THE LOUDER HALF OF THE BLOCK (T-167-s5, absorbing `T-167-s7`): what
+/// the emitter DROPPED from a fresh index of this tree.
+///
+/// Sits ABOVE the headroom sentence wherever both print, and that order
+/// is a decision rather than a layout. Low headroom is a warning about
+/// the NEXT merge; a drop is this merge's map already lying by omission,
+/// and a block that let a reader take the second for the first would
+/// have failed the card that asked for it. The two are not alternatives
+/// and the drop is never the relief: dropping is precisely HOW an emit
+/// that would have been over budget comes in under it.
+///
+/// **THE PRINTED UNIT IS FILES, AND THE LINE SAYS SO.** `truncated_files`
+/// counts symbol ARRAYS emptied, one per file; the symbols inside them
+/// are not counted anywhere and cannot be recovered from the emitted
+/// document. Naming the unit in the output is the cheap half of the
+/// repair this family has had to make three times running (T-194, T-196,
+/// T-208), and the expensive half is not printing a number whose unit the
+/// reader has to guess.
+fn drop_clause(report: &CheckReport) -> String {
+    if !report.fresh_truncated_symbols && report.fresh_truncated_files == 0 {
+        return String::new();
+    }
+    // The floor: `apply_budget` set the flag and recorded no file count
+    // because it had nothing left to empty. Printing "0 files" here would
+    // be a smaller claim than the truth.
+    if report.fresh_truncated_files == 0 {
+        return "[nputer-index] !! GRAPH TRUNCATED - a fresh index of this tree set stats.truncated_symbols and\n\
+                [nputer-index] !! recorded NO file count, which is apply_budget's FLOOR: it had nothing left to\n\
+                [nputer-index] !! empty and emitted the over-budget document anyway. Degradation is finished\n\
+                [nputer-index] !! here, so the headroom sentence below is the lesser of the two states.\n"
+            .to_string();
+    }
+    let files = report.fresh_truncated_files;
+    let plural = if files == 1 { "" } else { "s" };
+    format!(
+        "[nputer-index] !! GRAPH TRUNCATED - a fresh index of this tree DROPPED the symbol arrays of\n\
+         [nputer-index] !! {files} file{plural} to fit the budget (unit: FILES whose array was emptied, never\n\
+         [nputer-index] !! symbols - stats.truncated_files). The map is now smaller than the tree it\n\
+         [nputer-index] !! describes and will answer \"no symbols\" for files that have them.\n\
+         [nputer-index] !! THIS IS THE LOUD ONE. Low headroom warns about the next merge; this is the\n\
+         [nputer-index] !! map already lying by omission, and an emit that came in under the ceiling\n\
+         [nputer-index] !! by DROPPING is not relief. T-140-s1 is the fix, and its urgency is measured\n\
+         [nputer-index] !! in dropped files rather than in bytes left.\n"
+    )
+}
+
+/// THE NUMBER THAT IS THE READER'S OWN (T-167-s5): what THIS working tree
+/// would spend, beside the standing room left.
+///
+/// `budget_line` and the headroom sentence both name a property of the
+/// TREE, not of the reader's diff — very nearly the same number for every
+/// lane that runs this gate until the payload shape moves — and a number
+/// that is the same for everybody is read once and then becomes
+/// wallpaper. The difference between a fresh index and the committed
+/// graph is the one figure here that moved BECAUSE OF the reader, so it
+/// is the one that cannot go stale on them.
+///
+/// SILENT AT ZERO, ON PURPOSE, and that is an acceptance criterion rather
+/// than a nicety: on a current graph the two sizes are equal by
+/// construction, so a clause that printed unconditionally would print
+/// "0" on every green run — which is the same wallpaper one column over.
+///
+/// **THE ARITHMETIC IS SIGNED AND THE NEGATIVE SIDE IS THE POINT.** A
+/// fresh index SMALLER than the committed graph is the shape a drop
+/// makes, so unsigned subtraction here would underflow into a
+/// preposterous figure in exactly the state the block above exists to
+/// shout about.
+fn spend_clause(report: &CheckReport) -> String {
+    // A MISSING committed graph reports 0 bytes, and "spends 1 037 788
+    // against nothing" is a fiction rather than a spend.
+    if report.committed_bytes == 0 {
+        return String::new();
+    }
+    let fresh = report.fresh_bytes as i128;
+    let committed = report.committed_bytes as i128;
+    let spend = fresh - committed;
+    if spend == 0 {
+        return String::new();
+    }
+    if spend < 0 {
+        return format!(
+            "[nputer-index] !! AND THIS WORKING TREE GIVES {} BYTES BACK: a fresh index is {fresh} bytes\n\
+             [nputer-index] !! against the committed graph's {committed}. A map that shrank is only good\n\
+             [nputer-index] !! news if the tree shrank with it - read it against any GRAPH TRUNCATED line\n\
+             [nputer-index] !! above before taking it for relief.\n",
+            -spend
+        );
+    }
+    format!(
+        "[nputer-index] !! AND THIS WORKING TREE SPENDS {spend} OF IT: a fresh index is {fresh} bytes\n\
+         [nputer-index] !! against the committed graph's {committed}. THAT number is yours - the room\n\
+         [nputer-index] !! left above is the same for every lane and goes stale on the reader; this one\n\
+         [nputer-index] !! moved because of your diff.\n"
     )
 }
 
@@ -943,6 +1115,394 @@ mod tests {
         assert!(
             !text.contains("bytes left, under the"),
             "the under-budget wording must not survive the budget being spent:\n{text}"
+        );
+    }
+
+    /// The dropped-FILE count, read back out of the rendered block.
+    /// Named for its unit, because the unit is the thing this family has
+    /// got wrong three times (T-194, T-196, T-208).
+    fn printed_dropped_files(text: &str) -> usize {
+        let tail = text
+            .split("DROPPED the symbol arrays of\n[nputer-index] !! ")
+            .nth(1)
+            .unwrap_or_else(|| panic!("no drop clause in:\n{text}"));
+        tail.split(' ')
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| panic!("unparseable drop count in:\n{text}"))
+    }
+
+    /// The spend, read back out of the rendered block.
+    fn printed_spend(text: &str) -> i128 {
+        let tail = text
+            .split("WORKING TREE SPENDS ")
+            .nth(1)
+            .unwrap_or_else(|| panic!("no spend clause in:\n{text}"));
+        tail.split(' ')
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| panic!("unparseable spend in:\n{text}"))
+    }
+
+    /// T-167-s5's POSITIVE CONTROL FOR THE DROP CLAUSE: ONE TREE EMITTED
+    /// AT TWO BUDGETS, dropping at one and not at the other, with the
+    /// block differing accordingly.
+    ///
+    /// **THE ARMED HALF IS DELIBERATELY UNDER BUDGET WITH ROOM TO
+    /// SPARE**, and that is the whole body rather than a detail of the
+    /// fixture. Before this card both degradation sentences in this file
+    /// lived inside `used > budget` arms, so the state proved here — the
+    /// emitter dropped, and the emit is comfortably under the ceiling —
+    /// printed NOTHING, and printed nothing precisely because the drop
+    /// had succeeded. `apply_budget` empties whole symbol arrays, so the
+    /// pass that brings a document under the budget overshoots: here it
+    /// drops one fat file and lands tens of thousands of bytes clear,
+    /// which the old block read as health. A control driven through the
+    /// OVER-budget path would have passed against the unchanged
+    /// function and proved nothing at all.
+    #[test]
+    fn a_drop_speaks_even_at_healthy_headroom_which_is_where_it_used_to_be_silent() {
+        let t = TempTree::new("check-drop");
+        // One fat symbol array and three thin ones. The emitter drops
+        // largest-first, so the fat file is what goes, and it is big
+        // enough that losing it clears the tripwire several times over.
+        let fat: String = (0..400)
+            .map(|i| format!("export const s{i:03} = {i};\n"))
+            .collect();
+        t.write("src/fat.ts", &fat);
+        for i in 0..3 {
+            t.write(&format!("src/thin{i}.ts"), "export const alpha = 1;\n");
+        }
+
+        // ROOMY: the default budget, and nothing is dropped.
+        let roomy = check(&opts(t.root())).unwrap();
+        assert_eq!(
+            (roomy.fresh_truncated_files, roomy.fresh_truncated_symbols),
+            (0, false),
+            "the silent half must really be untruncated: {roomy:?}"
+        );
+        let quiet = render(&roomy, ".");
+        assert!(
+            !quiet.contains("GRAPH TRUNCATED"),
+            "an untruncated emit must not cry truncation:\n{quiet}"
+        );
+
+        // ARMED: the SAME TREE, a budget a little under what it wants.
+        let tight = IndexOptions {
+            max_graph_bytes: roomy.fresh_bytes - 1_000,
+            ..opts(t.root())
+        };
+        let dropped = check(&tight).unwrap();
+        assert!(
+            dropped.fresh_truncated_files > 0,
+            "the armed half must really have dropped something: {dropped:?}"
+        );
+
+        // THE TWO PRECONDITIONS THAT MAKE THIS THE UNPRINTED STATE: the
+        // emit came in UNDER its budget, and the room left is healthy by
+        // the tripwire's own measure. Both must hold, or this body is
+        // re-proving the over-budget arm that already worked.
+        assert!(
+            dropped.fresh_bytes <= tight.max_graph_bytes,
+            "the drop must have brought the emit under budget: {dropped:?}"
+        );
+        let left = tight.max_graph_bytes - dropped.fresh_bytes;
+        assert!(
+            left >= WARN_HEADROOM_BYTES,
+            "and it must have overshot past the tripwire, or the headroom \
+             sentence would print and this is the old arm: {left} left"
+        );
+
+        let loud = render(&dropped, ".");
+        assert!(
+            loud.contains("GRAPH TRUNCATED"),
+            "a dropped emit must say so at ANY headroom:\n{loud}"
+        );
+        assert!(
+            !loud.contains("GRAPH HEADROOM ALARM"),
+            "the headroom really is fine here, and claiming otherwise \
+             would be a second false alarm:\n{loud}"
+        );
+        assert_eq!(
+            printed_dropped_files(&loud),
+            dropped.fresh_truncated_files,
+            "the printed count must BE stats.truncated_files, not a re-derivation:\n{loud}"
+        );
+        assert!(
+            loud.contains("unit: FILES whose array was emptied, never"),
+            "a count without its unit cannot tell an omission from a mismatch:\n{loud}"
+        );
+    }
+
+    /// T-167-s5, ASSIGNED CORRECTION 1: the guard is a DISJUNCTION, and
+    /// this is the half no body held.
+    ///
+    /// `fresh_truncated_symbols` and `fresh_truncated_files` are two
+    /// facts rather than one — `apply_budget`'s floor arm sets the flag
+    /// and leaves the count unset, because it had nothing to empty — and
+    /// the field's own doc comment says a clause reading only the count
+    /// would go silent in exactly the worst state. The code was right and
+    /// the claim was unpinned: narrowing the guard to
+    /// `if report.fresh_truncated_files == 0` left the suite at 261
+    /// passed / 0 failed (crate scope), measured before this body existed.
+    ///
+    /// THE REACHING FIXTURE IS SYMBOL-LESS FILES, and that is the whole
+    /// trick: `costs` collects only files with a non-empty symbol array,
+    /// so a tree with none sends `apply_budget` straight down its
+    /// `costs.is_empty()` branch on the FIRST pass. Nothing is ever
+    /// emptied, `all_dropped` stays empty, the count is never recorded —
+    /// and the flag is set anyway, because the document is over budget
+    /// and truncation has nothing left to give.
+    #[test]
+    fn the_flag_alone_still_speaks_when_no_file_count_was_ever_recorded() {
+        let t = TempTree::new("check-drop-floor");
+        for i in 0..6 {
+            // No exports: a file the walk indexes and the extractor
+            // finds no symbols in, so nothing is ever droppable.
+            t.write(&format!("src/f{i}.ts"), "// nothing to export here\n");
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 200,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+
+        // THE DISJUNCTION'S LIVE BRANCH, asserted as a pair: the flag is
+        // set and the count is genuinely absent. A fixture that recorded
+        // a count would be re-proving the other half.
+        assert_eq!(
+            (report.fresh_truncated_files, report.fresh_truncated_symbols),
+            (0, true),
+            "the fixture must reach the floor arm with NO file count: {report:?}"
+        );
+        assert_eq!(
+            report.fresh_stats.1, 0,
+            "and must really have had no symbols to drop: {report:?}"
+        );
+
+        let text = render(&report, ".");
+        assert!(
+            text.contains("GRAPH TRUNCATED"),
+            "a set flag must speak even with no count beside it — a guard \
+             reading only the count goes silent in the worst state:\n{text}"
+        );
+        assert!(
+            text.contains("recorded NO file count"),
+            "and must say which of the two facts it has, not print a \
+             fabricated count:\n{text}"
+        );
+        assert!(
+            !text.contains("DROPPED the symbol arrays of"),
+            "nothing was emptied here, so the counted wording would be a \
+             claim the emitter never made:\n{text}"
+        );
+        // Still the louder of the two, by the same placement rule.
+        assert!(
+            text.find("GRAPH TRUNCATED").unwrap() < text.find("GRAPH HEADROOM ALARM").unwrap(),
+            "the floor is the most serious state of all and must lead:\n{text}"
+        );
+    }
+
+    /// T-167-s5, ASSIGNED CORRECTION 2: the NEGATIVE spend arm — this
+    /// card's own named case, and the one its three original halves all
+    /// missed by running with `fresh > committed` or `spend == 0`.
+    ///
+    /// Measured before this body existed: `if spend < 0` mutated to
+    /// `if false` survived at 261 passed / 0 failed (crate scope). The
+    /// cost is not coverage. `spend` is `i128` precisely because a fresh
+    /// index SMALLER than the committed graph is the shape a drop makes,
+    /// and a later refactor to `usize` or `saturating_sub` would restore
+    /// either an underflowed preposterous figure or a silent zero — the
+    /// wallpaper criterion 4 bans — with the whole suite green.
+    #[test]
+    fn a_fresh_index_smaller_than_the_committed_graph_reads_as_giving_back() {
+        let t = TempTree::new("check-spend-negative");
+        for i in 0..8 {
+            t.write(&format!("src/f{i}.ts"), "export const alpha = 1;\n");
+        }
+        // The committed graph is the BIGGER tree's; then the tree loses
+        // files, so a fresh index is smaller than what is on disk.
+        let bigger = stable_json(&index(&opts(t.root())).unwrap());
+        for i in 4..8 {
+            std::fs::remove_file(t.root().join(format!("src/f{i}.ts"))).unwrap();
+        }
+        let fresh_bytes = check(&opts(t.root())).unwrap().fresh_bytes;
+        assert!(
+            fresh_bytes < bigger.len(),
+            "the committed graph must really be the larger one: {fresh_bytes} vs {}",
+            bigger.len()
+        );
+
+        let path = t.root().join(GRAPH_REL_PATH);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, &bigger).unwrap();
+
+        let armed = IndexOptions {
+            max_graph_bytes: fresh_bytes + 10,
+            ..opts(t.root())
+        };
+        let report = check(&armed).unwrap();
+        assert_eq!(report.fresh_bytes, fresh_bytes, "only the committed side moved");
+        let text = render(&report, ".");
+        assert!(
+            text.contains("GRAPH HEADROOM ALARM"),
+            "the spend rides an armed block:\n{text}"
+        );
+
+        let given_back = bigger.len() - fresh_bytes;
+        assert!(
+            text.contains(&format!("GIVES {given_back} BYTES BACK")),
+            "the negative side must print the magnitude, re-derived here \
+             ({given_back}), rather than an underflowed figure or nothing:\n{text}"
+        );
+        assert!(
+            !text.contains("WORKING TREE SPENDS"),
+            "a tree that shrank must not read as one that spent:\n{text}"
+        );
+        assert!(
+            text.contains("only good\n[nputer-index] !! news if the tree shrank with it"),
+            "and must not read as relief, which is the state this card is \
+             about with the sign flipped:\n{text}"
+        );
+    }
+
+    /// T-167-s5 criterion 2: where BOTH states are present the drop is
+    /// the louder, and loudness here is placement — the drop sits above
+    /// the headroom sentence, the way T-167-s2 put the whole block above
+    /// the stat line it was escaping.
+    ///
+    /// A graph smaller than the tree it describes is not relief, and a
+    /// block that let a reader take it for relief has failed. The order
+    /// is the mechanism by which it does not.
+    #[test]
+    fn where_both_states_are_present_the_drop_outranks_the_headroom_line() {
+        let t = TempTree::new("check-drop-order");
+        for i in 0..8 {
+            t.write(
+                &format!("src/f{i}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 400,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+        assert!(
+            report.fresh_truncated_symbols,
+            "the fixture must really have truncated: {report:?}"
+        );
+        assert!(
+            report.fresh_bytes > 400,
+            "and must really be over budget, so BOTH sentences print: {report:?}"
+        );
+        let text = render(&report, ".");
+        let drop_at = text
+            .find("GRAPH TRUNCATED")
+            .unwrap_or_else(|| panic!("no drop clause in:\n{text}"));
+        let headroom_at = text
+            .find("GRAPH HEADROOM ALARM")
+            .unwrap_or_else(|| panic!("no headroom clause in:\n{text}"));
+        assert!(
+            drop_at < headroom_at,
+            "the drop is the more serious state and must be read first:\n{text}"
+        );
+        assert!(
+            text.contains("THIS IS THE LOUD ONE"),
+            "and must say which of the two it is, not merely sit above it:\n{text}"
+        );
+    }
+
+    /// T-167-s5's POSITIVE CONTROL FOR THE SPEND CLAUSE: ONE TREE AT TWO
+    /// COMMITTED GRAPHS, with the printed spend differing by exactly the
+    /// difference between them.
+    ///
+    /// The fresh index is held CONSTANT across the two halves and only
+    /// the committed side moves, which is what makes the difference
+    /// between the two printed spends a measurement rather than a
+    /// coincidence: a clause that printed the tree's size, the budget,
+    /// the room left, or any other property of this tree would print the
+    /// SAME number in both halves and cannot pass.
+    ///
+    /// The third half is the criterion against wallpaper: on a CURRENT
+    /// graph the two sizes are equal by construction, and a clause that
+    /// printed "0" there would be the same number for everybody one
+    /// column over from the one this card came to fix.
+    #[test]
+    fn the_block_names_this_working_trees_own_spend_and_never_a_zero() {
+        let t = TempTree::new("check-spend");
+        for i in 0..4 {
+            t.write(&format!("src/f{i}.ts"), "export const alpha = 1;\n");
+        }
+        // TWO COMMITTED PAYLOADS for one tree: index at two earlier
+        // states, keep both, then finish the tree so the fresh index is
+        // a constant from here on.
+        let older = stable_json(&index(&opts(t.root())).unwrap());
+        t.write("src/f4.ts", "export const alpha = 1;\n");
+        let newer = stable_json(&index(&opts(t.root())).unwrap());
+        t.write("src/f5.ts", "export const alpha = 1;\n");
+        assert!(
+            newer.len() > older.len(),
+            "the two committed graphs must differ in size to be a control: \
+             {} vs {}",
+            older.len(),
+            newer.len()
+        );
+
+        // Arm the alarm: the spend rides the block, it does not create
+        // one. Ten bytes of room, the same shape T-167-s2's control uses.
+        let fresh_bytes = check(&opts(t.root())).unwrap().fresh_bytes;
+        let armed = IndexOptions {
+            max_graph_bytes: fresh_bytes + 10,
+            ..opts(t.root())
+        };
+        let path = t.root().join(GRAPH_REL_PATH);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+
+        let mut spends = Vec::new();
+        for payload in [&older, &newer] {
+            std::fs::write(&path, payload).unwrap();
+            let report = check(&armed).unwrap();
+            assert_eq!(
+                report.fresh_bytes, fresh_bytes,
+                "only the committed side may move between the halves"
+            );
+            let text = render(&report, ".");
+            assert!(
+                text.contains("GRAPH HEADROOM ALARM"),
+                "the spend rides an armed block:\n{text}"
+            );
+            let printed = printed_spend(&text);
+            assert_eq!(
+                printed,
+                fresh_bytes as i128 - payload.len() as i128,
+                "the printed spend must BE fresh minus committed:\n{text}"
+            );
+            spends.push(printed);
+        }
+
+        // THE MEASUREMENT: the two spends differ by exactly the
+        // difference between the two committed graphs.
+        assert_eq!(
+            spends[0] - spends[1],
+            newer.len() as i128 - older.len() as i128,
+            "one tree at two committed graphs: the spends must differ by \
+             exactly what the graphs do ({spends:?})"
+        );
+
+        // NEVER A ZERO: the committed graph is now the fresh one.
+        let current = index(&armed).unwrap();
+        crate::write_graph(&current, &path).unwrap();
+        let green = check(&armed).unwrap();
+        assert!(!green.is_stale(), "the third half must be the green path: {green:?}");
+        let text = render(&green, ".");
+        assert!(
+            text.contains("GRAPH HEADROOM ALARM"),
+            "the block must still be armed, or this proves nothing:\n{text}"
+        );
+        assert!(
+            !text.contains("WORKING TREE SPENDS") && !text.contains("WORKING TREE GIVES"),
+            "a clause that says 0 every time is the wallpaper this card is against:\n{text}"
         );
     }
 
