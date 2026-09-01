@@ -67,7 +67,55 @@ pub fn materialize_fixture(name: &str) -> TempTree {
     tree
 }
 
-fn copy_dir(from: &Path, to: &Path) {
+/// Give the OWNER the write bit back on a materialized file, keeping
+/// every other bit the copy carries (T-216-s4).
+///
+/// `fs::copy` copies the source's permission bits. Since T-210 a lane
+/// worktree's tracked files OUTSIDE its fence are `-r--r--r--`, and
+/// `tests/fixtures/**` is outside almost every fence — so a fixture
+/// materialized inside a lane arrived read-only and every body that then
+/// EDITS the temp tree panicked with `PermissionDenied` instead of
+/// running. Two bodies did, measured at `e648590` in this repository's
+/// own lane for `T-216-s4`: `a_cycle_planted_into_a_fixture_reds_the_real
+/// _process_and_is_named_as_a_path` (cli.rs) and
+/// `incremental_reindex_after_an_edit_matches_a_fresh_index` (golden.rs),
+/// the second one panicking inside `TempTree::write` here rather than in
+/// its own file.
+///
+/// THE COPY IS THIS PROCESS'S OWN SCRATCH, removed on drop, so nothing
+/// here wants the checkout's modes: a fixture materialized to be EDITED
+/// is materialized writable. `| 0o200` rather than
+/// `Permissions::set_readonly(false)`, which on Unix sets the write bit
+/// for every class that can read — the exec bit and the group/other bits
+/// a fixture may carry stay exactly as the copy found them.
+fn unlock(path: &Path) {
+    let mut perms = fs::metadata(path)
+        .expect("stat materialized fixture file")
+        .permissions();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = perms.mode();
+        perms.set_mode(mode | 0o200);
+    }
+    #[cfg(not(unix))]
+    {
+        perms.set_readonly(false);
+    }
+    fs::set_permissions(path, perms).expect("unlock materialized fixture file");
+}
+
+/// Copy a tree into a scratch destination, applying the materialization
+/// renames and `unlock`ing every file it writes.
+///
+/// PUBLIC so the read-only-source property has a body of its own: the
+/// defect only reproduces when the SOURCE is read-only, which the live
+/// `tests/fixtures/**` tree is in a lane and is not anywhere else — a
+/// control that leaned on the ambient tree would be green in the very
+/// checkout a drill runs in. `golden.rs`'s
+/// `a_materialized_fixture_is_writable_even_when_its_source_is_read_only`
+/// manufactures the source instead.
+pub fn copy_dir(from: &Path, to: &Path) {
     for entry in fs::read_dir(from).expect("read fixture dir") {
         let entry = entry.expect("fixture entry");
         let name = entry.file_name();
@@ -89,6 +137,7 @@ fn copy_dir(from: &Path, to: &Path) {
             copy_dir(&src, &dst);
         } else {
             fs::copy(&src, &dst).expect("copy fixture file");
+            unlock(&dst);
         }
     }
 }

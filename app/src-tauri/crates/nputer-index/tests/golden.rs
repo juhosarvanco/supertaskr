@@ -290,3 +290,77 @@ fn incremental_reindex_after_an_edit_matches_a_fresh_index() {
     assert_eq!(warm_after_edit, fresh);
     assert!(warm_after_edit.contains("\"alpha-new\"") || warm_after_edit.contains("alpha-new.ts"));
 }
+
+/// Clear every write bit — the PORTABLE spelling, so this control needs no
+/// `cfg` and therefore cannot quietly vanish on a platform.
+fn make_read_only(path: &Path) {
+    let mut perms = std::fs::metadata(path)
+        .expect("stat the manufactured source")
+        .permissions();
+    perms.set_readonly(true);
+    std::fs::set_permissions(path, perms).expect("chmod the manufactured source read-only");
+}
+
+fn is_writable(path: &Path) -> bool {
+    !std::fs::metadata(path)
+        .expect("stat")
+        .permissions()
+        .readonly()
+}
+
+/// THE POSITIVE CONTROL FOR `common::copy_dir`'s UNLOCK (T-216-s4).
+///
+/// The body above EDITS a materialized fixture, and `fs::copy` copies the
+/// source's permission bits — so under T-210's physical fence layer, which
+/// makes every tracked file OUTSIDE a lane's fence `-r--r--r--`, it
+/// panicked with `PermissionDenied` inside `common/mod.rs`'s
+/// `TempTree::write` rather than running. `cli.rs`'s
+/// `a_cycle_planted_into_a_fixture_reds_the_real_process_and_is_named_as_a_path`
+/// is the same defect one file over. Both are repaired in `common::unlock`,
+/// and NEITHER of them can be that repair's control: they are green with
+/// the repair and green without it in any checkout the layer has not
+/// touched.
+///
+/// SO THE SOURCE IS MANUFACTURED READ-ONLY HERE RATHER THAN FOUND
+/// READ-ONLY, and that is the whole design of this body. The defect's
+/// precondition is a property of the CHECKOUT, not of the tree: in the
+/// integration checkout, and in the detached worktree a poison drill runs
+/// in (docs/CONVENTIONS.md), `tests/fixtures/**` is `644` — so a mutant
+/// that deleted the unlock would SURVIVE against the ambient tree and the
+/// drill would report a kill it never made. Building the mode into the
+/// fixture makes this body kill that mutant in every checkout, armed or
+/// not.
+#[test]
+fn a_materialized_fixture_is_writable_even_when_its_source_is_read_only() {
+    // NOT a docs-shaped literal, deliberately: `docs-scan.mjs` classifies
+    // docs-shaped path literals in Rust sources as DOCS SITES, and a
+    // fixture path that is really a temp-tree path has no business in that
+    // census. The property under test is a MODE, and a mode has no opinion
+    // about the spelling of the path carrying it.
+    const REL: &str = "registry/C-01-core.md";
+    let source = common::TempTree::new("ro-source");
+    source.write(REL, "---\nid: C-01\nname: Core\n---\n");
+    let planted = source.root().join(REL);
+    make_read_only(&planted);
+    // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED: a filesystem that
+    // ignored the chmod would satisfy every assertion below for a reason
+    // that has nothing to do with the property.
+    assert!(
+        !is_writable(&planted),
+        "the manufactured source must be read-only, or this control controls nothing"
+    );
+
+    let tree = common::TempTree::new("ro-copy");
+    common::copy_dir(source.root(), tree.root());
+    let copy = tree.root().join(REL);
+
+    assert!(
+        is_writable(&copy),
+        "a materialized fixture inherited its source's read-only mode"
+    );
+    // AND THE MODE IS NOT THE CLAIM — THE WRITE IS. This is the exact call
+    // the two repaired bodies make, so a permission model where the bit and
+    // the syscall disagree is answered by the syscall.
+    std::fs::write(&copy, "---\nid: C-01\ndepends_on: [C-02]\n---\n")
+        .expect("a materialized fixture must be editable");
+}
