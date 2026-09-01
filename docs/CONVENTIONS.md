@@ -1,5 +1,14 @@
 # Conventions
 
+Compacted under ADR-019 (docs/rooms/governing-docs.md): every bullet
+is a RULE with its provenance citation and at most one worked example;
+the instance narratives — re-measurements, second examples, the story
+of a rule broken after it was written — live on the card or record the
+citation names. Landings: 2026-08-27 (the record is
+docs/checkpoints/2026-08-27-adr019-compaction.md), T-162 (2026-08-30)
+and T-236 (2026-09-02, whose pre-compaction text is
+`git show 3170247:docs/CONVENTIONS.md`).
+
 ## Build & test
 - Fresh-clone ORDER (T-003, ADR-011): lib/parser FIRST — `npm ci` +
   `npm run build` from lib/parser/ — then set up app/. The app
@@ -52,14 +61,13 @@
 - AUDIT GATE POLICY (human ruling 2026-08-16, closing T-020-s2): the
   gate is VULNERABILITIES — they exit non-zero and stop the lane
   (proven: a crafted lock pinning `time 0.1.44` → exit 1,
-  RUSTSEC-2020-0071). Informational warnings stay NON-gating. Today's
+  RUSTSEC-2020-0071). Informational warnings stay NON-gating. The
   baseline, audited 2026-08-16 over 472 locked crates with cargo-audit
-  0.22.2: **0 vulnerabilities / 17 informational warnings** — 16
-  `unmaintained` + 1 `unsound`, all transitive under Tauri v2's
-  GTK3/glib stack plus `proc-macro-error` and the `unic-*` family,
-  nothing ours to re-pin. Warning-count drift is reviewed BY EYE
-  against that baseline, not enforced by exit code; `--deny warnings`
-  would red CI permanently for no actionable signal.
+  0.22.2: **0 vulnerabilities / 17 informational warnings**, all
+  transitive under Tauri v2's GTK3/glib stack and nothing ours to
+  re-pin. Warning-count drift is reviewed BY EYE against that baseline,
+  not enforced by exit code; `--deny warnings` would red CI permanently
+  for no actionable signal.
 - tools/e2e (the real-input E2E lane, T-020 — the repo's THIRD npm
   package, self-contained per the ADR-011 family), run from tools/e2e/:
   `npm ci` · `npm test` (the lane — Playwright drives the app's dev
@@ -75,12 +83,11 @@
   `npm run capabilities:check` (T-153-s8 — the CENSUS-CURRENCY GATE and a
   CI step. docs/CAPABILITIES.md is GENERATED from the test names in
   tools/e2e/tests/, and CLAUDE.md sends every session to it first on the
-  strength of that; until this step existed nothing on the merge path
-  asked whether the committed bytes still matched a fresh generation,
-  and the census went stale repeatedly — the occasions are ENUMERATED on
-  that card. It writes nothing and byte-compares — exit 0 CURRENT, 1
-  STALE naming the regeneration command, 2 called wrong, 3 the gate
-  could not run) ·
+  strength of that; until this step existed the census went stale
+  repeatedly with no instrument in between — the occasions are
+  ENUMERATED on that card. It writes nothing and byte-compares — exit 0
+  CURRENT, 1 STALE naming the regeneration command, 2 called wrong, 3
+  the gate could not run) ·
   `npm run capabilities` (T-138-s1 — REGENERATES that document, and it is
   the command `--check` names when it reds. LOCAL ONLY and never a CI
   step: run inside the runner a generator rewrites the very file the
@@ -111,18 +118,16 @@
   `NPUTER_BOOT_PORT` is 1420 or not a port at all, OR the committed
   build config the scratch-port overlay is DERIVED from cannot be read —
   deliberately no fallback for the second, because the only value to
-  fall back to is the committed port, 1420, and a fallback would boot
-  this check onto the human's app. Both refusals happen before anything
-  is probed or spawned. THE TOKEN LINT HAS THREE CODES (T-078's second
-  row, written at T-080's merge): **0** the gate ran and found nothing,
-  naming both corpora and their counts; **1** the gate RAN and FOUND
-  something — a hit in the tree, or a selftest failure; **3** the gate
-  COULD NOT RUN, so the run is not a claim about the tree at all — every
-  throw out of `token-scan.mjs` lands here and the wrapper prints
+  fall back to is the committed port, 1420. Both refusals happen before
+  anything is probed or spawned. THE TOKEN LINT HAS THREE CODES (T-078's
+  second row, written at T-080's merge): **0** the gate ran and found
+  nothing, naming both corpora and their counts; **1** the gate RAN and
+  FOUND something — a hit in the tree, or a selftest failure; **3** the
+  gate COULD NOT RUN, so the run is not a claim about the tree at all —
+  every throw out of `token-scan.mjs` lands here and the wrapper prints
   `lint-tokens: GATE COULD NOT RUN`. **2** is deliberately UNUSED,
-  reserved for `usage` — the meaning `index --check` gives it — so
-  adding flag validation later renumbers nothing a checkpoint has
-  quoted. The AUTHORITY is the frozen `EXIT` object in
+  reserved for `usage` — the meaning `index --check` gives it. The
+  AUTHORITY is the frozen `EXIT` object in
   tools/e2e/scripts/token-scan.mjs, which the wrapper IMPORTS rather
   than re-typing (until T-080 the two answers SHARED code 1 — T-058's
   and T-080's cards). THE CATCH IS TOTAL AND IS NEVER A RESCUE: exit 3
@@ -140,9 +145,8 @@
   byte offsets"* and is deliberately NOT copied here). docs/ is the tree
   the app's watcher is armed over, so the lane run in the MAIN checkout
   beside a live `npm run tauri dev` writes docs/NORTH_STAR.md twice
-  within milliseconds and the human's board can observe a one-byte
-  snapshot (the class T-081's checkpoint recorded from the other side).
-  RUN THE LANE IN A WORKTREE and it touches nothing the human sees.
+  within milliseconds under the human's board. RUN THE LANE IN A
+  WORKTREE and it touches nothing the human sees.
 - THE BLESSED GATE-RUNNER (T-202): `node tools/e2e/scripts/gate-run.mjs
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
   graded reading; its `gate-verdict` line carries the exit code, the
@@ -151,22 +155,21 @@
   also writes that same verdict to a token beside the fence manifest in
   `.nputer/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
   refuses a push whose four suites are not all GREEN against the tree
-  being pushed. **So the
-  battery is run LAST, after every commit** — otherwise the token names a
-  tree that is no longer yours. The refusals are distinct and each prints
-  its remedy: `token-incomplete` (a suite never ran), `token-red` (a
-  suite RAN AND FAILED), `token-unmeasured` (the runner DECLINED TO
-  GRADE — no toolchain), `token-stale` (wrong tree), `token-unkeyed`
-  (tracked files were dirty when it was minted). **A checkout without
-  cargo cannot push, deliberately**: an unrun suite is unmeasured, and
-  that is disclosed at the refusal rather than hidden behind a wrong
-  label.
+  being pushed. **So the battery is run LAST, after every commit** —
+  otherwise the token names a tree that is no longer yours. The refusals
+  are distinct and each prints its remedy: `token-incomplete` (a suite
+  never ran), `token-red` (a suite RAN AND FAILED), `token-unmeasured`
+  (the runner DECLINED TO GRADE — no toolchain), `token-stale` (wrong
+  tree), `token-unkeyed` (tracked files were dirty when it was minted).
+  **A checkout without cargo cannot push, deliberately**: an unrun suite
+  is unmeasured, and that is disclosed at the refusal rather than hidden
+  behind a wrong label.
 - **AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP** (`18d8166`): never
-  chain a commit after a scripted edit — read the diff back FIRST. This
-  bullet exists because the rule was earned, recorded ONLY in checkpoint
-  records, and then broken three times by seats able to quote it. That is
-  the T-146 class, and the reason a MECHANISM belongs in a governing
-  document while a record takes the INSTANCE.
+  chain a commit after a scripted edit — read the diff back FIRST. The
+  rule was earned, recorded ONLY in checkpoint records, and then broken
+  three times by seats able to quote it: the T-146 class, and the reason
+  a MECHANISM belongs in a governing document while a record takes the
+  INSTANCE.
 - **A GATE READ THROUGH A PIPE REPORTS THE PIPE**, so a hard failure
   reads as a clean pass: `false | tail -1` exits 0, and `pipefail` is not
   on by default. **Redirect to a file, capture `$?`, THEN look.** One
@@ -186,28 +189,23 @@
   COMMITTED TO THAT TIP'S BRANCH** — with or without a ref, because
   **pinning is itself a commit and the commit moves the number**: a
   sentence measuring 348 shipped at 349, the delta being exactly the
-  commit carrying the sentence, after three corrections each written by
-  the seat that had just made the previous one. **THREE FORMS SURVIVE:
-  both endpoints pinned to fixed shas, the derive command with NO answer
-  beside it, or omission.** A past reading bound to a named occasion
-  ("347 when the verifier re-stamped it") is HISTORY and cannot go
-  stale; a present-tense value can. **AND HERE IS WHY THE PEOPLE WRITING
-  THIS RULE DOWN KEEP BREAKING IT**: `main` is the natural way to write
-  "and it is still true NOW", and "now" is the one thing a committed
-  document cannot hold — five instances landed on one card in one
-  sitting, twice inside a table built to demonstrate the rule. So when
-  you reach for a moving symbol, you are reaching for a tense, not a
-  ref: say `currently` in words with NO figure beside it, or pin the
-  sha and let the sentence be about that commit forever.
+  commit carrying it. **THREE FORMS SURVIVE: both endpoints pinned to
+  fixed shas, the derive command with NO answer beside it, or
+  omission.** A past reading bound to a named occasion is HISTORY and
+  cannot go stale; a present-tense value can. **AND HERE IS WHY THE
+  PEOPLE WRITING THIS RULE DOWN KEEP BREAKING IT**: `main` is the
+  natural way to write "and it is still true NOW", and "now" is the one
+  thing a committed document cannot hold — five instances landed on one
+  card in one sitting, twice inside a table built to demonstrate the
+  rule. So when you reach for a moving symbol, you are reaching for a
+  tense, not a ref: say `currently` in words with NO figure beside it,
+  or pin the sha and let the sentence be about that commit forever.
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.
-  Landed here from a checkpoint record for the reason the bullet above
-  gives.
-- **A PUSH CANCELS THE RUNNING CI JOB.** Four were superseded overnight
-  by one seat's rapid pushes. Commit stamps freely; BATCH THE PUSH. (With
-  T-203's token gate the batching is doubly worth it — each push wants a
-  fresh four-suite battery anyway.)
+- **A PUSH CANCELS THE RUNNING CI JOB.** Commit stamps freely; BATCH THE
+  PUSH — and with T-203's token gate each push wants a fresh four-suite
+  battery anyway.
 - **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
   `gh run view <id> --log-failed` on anything red. Batching exists so CI
   gets to FINISH, which buys nothing if nobody looks: main sat RED for
@@ -218,25 +216,20 @@
   MACHINE THAT IS NOT YOURS.**
 - **NEVER TYPE A PATH YOU CAN DERIVE.** `find`, `git ls-files`, or the
   `scripts` block of the relevant `package.json` answers "where does this
-  live" in one command. Three paths were INVENTED in a single sitting —
-  a gate script that does not exist (the gate is `npm run boot:check`),
-  a method-eval path run from the wrong directory, and the blessed
-  gate-runner placed under `.claude/hooks/` when it lives in
-  `tools/e2e/scripts/`; **the third shipped inside a VERIFIER'S BRIEF**,
-  so an agent spent part of its blind phase correcting its own
-  instructions. Each surfaced as an exit 1 that was a stack trace rather
-  than a verdict. **And this bullet is itself pinned**: the runner is
-  NAMED once in this file and a body requires exactly that, so cite it
-  by description here rather than by filename — the seat that wrote
-  this rule tripped that body twice in one session.
+  live" in one command. Three paths were INVENTED in a single sitting,
+  one of them inside a VERIFIER'S BRIEF, so an agent spent part of its
+  blind phase correcting its own instructions; each surfaced as an exit
+  1 that was a stack trace rather than a verdict. **And this bullet is
+  itself pinned**: the runner is NAMED once in this file and a body
+  requires exactly that, so cite it by description here rather than by
+  filename.
 - **FIT A BYTE-BANDED DOCUMENT IN ONE WRITE, NOT IN A LOOP.** Draft into
-  a scratch file, `wc -c` it, cut to the target, THEN write. `docs/STATE.md`
-  was edited SEVEN times in one sitting to fit its warn line, and every
-  edit re-triggered the specs that read it — the largest single waste of
-  that session. **And when it will not fit, the answer is not a smaller
-  sentence**: a MECHANISM belongs in a governing document (this file has
-  room; STATE does not), a record takes the INSTANCE, and shaving words
-  is how a rule ends up in neither (T-146, T-225).
+  a scratch file, `wc -c` it, cut to the target, THEN write —
+  `docs/STATE.md` was once edited SEVEN times in one sitting to fit its
+  warn line, every edit re-triggering the specs that read it. **And when
+  it will not fit, the answer is not a smaller sentence**: a MECHANISM
+  belongs in a governing document, a record takes the INSTANCE, and
+  shaving words is how a rule ends up in neither (T-146, T-225).
 - **RUN THE SUITE ONCE IN A BORROWED GIT ENVIRONMENT BEFORE YOU BELIEVE
   IT.** A local green proves it passes *on the machine that wrote it*,
   which is the weakest claim available. Two variables reproduce a
@@ -268,7 +261,7 @@
   hundreds of MB, deliberately outside the tree) and
   `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
   for `cargo audit`, run from app/src-tauri/ (fetches the RUSTSEC
-  advisory DB — the one network-touching command; idempotent since
+  advisory DB — the one network-touching command; guarded since
   T-153-s13, because the cargo cache restores ~/.cargo/bin and a
   restored binary once stopped every run at this step).
 - **THE DISPATCH RITUAL IS SERIAL: cut ONE worktree, arm it, READ THE
@@ -276,10 +269,10 @@
   against a lane whose fence it cannot read — *an unread fence is not
   "disjoint from everything"* — and refused four at once when a seat cut
   all four before arming any. **AND STAMP `status: building` BEFORE YOU
-  CUT** (T-226): two consecutive cards merged with zero conflicts against
-  a three-way conflict in all three that stamped after. Moved here from
-  docs/STATE.md, which is byte-capped and was the only document holding
-  it — a MECHANISM belongs in a governing document (T-146).
+  CUT** (T-226): cards that stamped after the cut met a three-way
+  conflict at the merge that cards stamped before did not. Moved here
+  from docs/STATE.md — a MECHANISM belongs in a governing document
+  (T-146).
 - **E2E PORT — DERIVE IT PER LANE: `NPUTER_E2E_PORT=15000+<card number>`.**
   The default 14520 is MACHINE-WIDE, so every concurrent lane takes the
   same one; `E2E_PORT` binds NOTHING. `lsof` to zero rows before binding,
@@ -334,9 +327,9 @@
   SUBSTITUTION, so this repository's own house style, a command name in
   backticks, IS the hazard: copying that spelling into a shell LABEL is
   the natural motion and the one motion that executes, SILENT when the
-  substitution succeeds. T-082's own executor started a real model turn
-  that way while building the card whose subject is that this happens.
-  Same precedent as the 1420 probe: the rule is on the SYSCALL.
+  substitution succeeds (T-082's own executor started a real model turn
+  that way). Same precedent as the 1420 probe: the rule is on the
+  SYSCALL.
   **`lsof` IS THE AUTHORITY AND A `bind()` PROBE IS THE CONFIRMING HALF,
   NEVER THE PRIMARY.** On a port holding client-side TIME_WAIT peers,
   `lsof` returns ZERO ROWS while a plain `bind()` without `SO_REUSEADDR`
@@ -394,21 +387,20 @@
   which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
   (T-061-s5, ruled here): it opens a window and builds the app, roughly
   DOUBLING the boot step's cost, and it deliberately SIGKILLs a process
-  mid-boot, a different risk profile on a shared runner — a REGRESSION
-  drill rather than a release gate, whose property cannot drift without
-  somebody editing `tauri-boot-check.mjs`'s exit path.
+  mid-boot — a REGRESSION drill rather than a release gate, whose
+  property cannot drift without somebody editing
+  `tauri-boot-check.mjs`'s exit path.
   THE CENSUS-CURRENCY GATE runs as `npm run capabilities:check` from
   tools/e2e, immediately AFTER `npm run typecheck` and BEFORE the browser
   download (T-153-s8, each placement decided by a measurement on that
   card): not in the token lint's bare-checkout position, because it
-  resolves a templated test name by IMPORTING a `.mjs` out of tests/
-  where scripts import `yaml`, so that property is a fact about the
-  SPECS; before the browser download by `index --check`'s own argument;
-  after `npm run typecheck` because the generator reads the same spec
-  files `tsc` validates. CI deliberately does NOT run
-  `npm run capabilities`, the GENERATOR: run in the runner it rewrites
-  the file the check judges, exits 0, and certifies its own output. The
-  regeneration stays a hand run, and `--check` prints it by name.
+  IMPORTS a `.mjs` out of tests/ where scripts import `yaml`; before the
+  browser download by `index --check`'s own argument; after
+  `npm run typecheck` because the generator reads the same spec files
+  `tsc` validates. CI deliberately does NOT run `npm run capabilities`,
+  the GENERATOR: run in the runner it rewrites the file the check
+  judges, exits 0, and certifies its own output. The regeneration stays
+  a hand run, and `--check` prints it by name.
   ONE TYPOGRAPHIC RULE GOVERNS EVERY EDIT TO THIS SECTION, and it lives
   in THIS bullet because this is what the next editor of ci.yml opens
   (T-054, promoted at T-078): the four per-package bullets separate
@@ -419,9 +411,8 @@
   the list early and every command behind it quietly leaves CI parity;
   this clause NAMES that character without typing it, the section's
   in-parenthetical legends use commas, and the tools/e2e bullet's own
-  `Exit 0 booted` legend sits after its LAST command, which is structure
-  and not decoration. THE COST is a DELTA, re-measured when the bullets
-  grow: a separator inside the `index --check` parenthetical drops the
+  `Exit 0 booted` legend sits after its LAST command. THE COST is a
+  DELTA: a separator inside the `index --check` parenthetical drops the
   section's exposed commands by FIVE (T-054, T-078, ADR-019 phase 5).
   AND THE TRUNCATION IS NOT MOSTLY SILENT: the derivation runs in BOTH
   directions, so every command the SPEC claims and the doc stops
@@ -435,8 +426,8 @@
   `structuralProblems`, and a command in a bullet carrying no
   `run from <dir>/:` marker, invisible by construction and pinned by a
   fixture in the spec. **So a NEW command is still the edit to ENUMERATE
-  rather than eyeball**: the lane can only speak about commands it can
-  see. Change a command here, change it there, or the lane fails.
+  rather than eyeball.** Change a command here, change it there, or the
+  lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -484,12 +475,11 @@
   red — move both doc stamps and the const in ONE commit. **THREE
   PLACES ARE PINNED AND AN OPEN SET IS NOT — CITE THE SHAPE, NOT THE
   TALLY.** Every other occurrence of the version is a REFERENCE no test
-  reads, of two kinds wanting opposite treatment: **a reference that
-  CLAIMS THE CURRENT VERSION goes stale and moves with the bump; a
-  FIXTURE that merely needs some version string does not**, and moving
-  those is churn. **DERIVE THE LIST, NEVER QUOTE IT**:
-  `git grep -n "0\.1\.[0-9]"` from the repo root prints every one at
-  your own ref. **AND THEY ARE NOT ALL INSIDE ANY ONE FENCE**: a
+  reads: **a reference that CLAIMS THE CURRENT VERSION goes stale and
+  moves with the bump; a FIXTURE that merely needs some version string
+  does not**, and moving those is churn. **DERIVE THE LIST, NEVER QUOTE
+  IT**: `git grep -n "0\.1\.[0-9]"` from the repo root prints every one
+  at your own ref. **AND THEY ARE NOT ALL INSIDE ANY ONE FENCE**: a
   `[method/, docs/CONVENTIONS.md, app-agent]` fence reaches the three
   pinned places and this file's references, and does NOT reach
   docs/ARCHITECTURE.md, the component file or the app suites. Route
@@ -563,9 +553,8 @@
   this harness installs answers EXIT 1 WITH NO OUTPUT over the same
   bytes — the code a genuinely absent string gives. WHAT TO RUN NEXT:
   `file(1)`, which says `data`, and then `npm run lint:tokens` from
-  tools/e2e, which needs no `node_modules`, runs against a bare
-  checkout, and names the byte and its offset at exit 1. THE GATE IS
-  NOT THE GAP; the advice was.
+  tools/e2e, which needs no `node_modules` and names the byte and its
+  offset at exit 1. THE GATE IS NOT THE GAP; the advice was.
   **THREE, A HARD WRAP ACROSS THE PHRASE.** Every governing document
   here is wrapped at about 70 columns, so a phrase search is a search
   for a line break you did not choose: the head of a wrapped sentence
@@ -578,10 +567,10 @@
   mechanical reader of this file does before it matches.
   **`file --mime` IS NOT THE CHEAP VERSION OF THE GATE**:
   `charset=binary` is legitimate evidence for U+0000 and for almost
-  nothing else — one U+000B planted into this file left `file --mime` reporting
-  `text/plain; charset=utf-8` UNCHANGED and both greps still finding the
-  needle, while `npm run lint:tokens` named the byte and exited 1. THE
-  C0 SET P5 REJECTS IS `scanControlSource` in
+  nothing else — one U+000B planted into this file left `file --mime`
+  reporting `text/plain; charset=utf-8` UNCHANGED and both greps still
+  finding the needle, while `npm run lint:tokens` named the byte and
+  exited 1. THE C0 SET P5 REJECTS IS `scanControlSource` in
   tools/e2e/scripts/token-scan.mjs — READ IT THERE, never transcribed
   into prose. The cheap version of the gate IS the gate.
   **A COMMENT THAT RESTATES A MEASURED FIGURE IS A SECOND
@@ -602,18 +591,17 @@
 - Tauri v2 applies the CSP (app/src-tauri/tauri.conf.json) at serve
   time — it never appears in dist/index.html (that was v1 behavior);
   don't "fix" its absence there.
-- Tauri capability grants compile to code, not strings — `strings`
-  on a binary proves NOTHING about ACL grants (vacuously "clean"
-  even for granted permissions; only config JSON, e.g. the CSP, is
-  string-findable). Prove the webview surface with regenerated
-  gen/schemas/capabilities.json plus a runtime ACL probe (T-007
-  verdict correction). Since T-021 that proof is PINNED, not re-derived
-  per task: `app/src-tauri/src/acl_pin.rs` re-resolves the shipped
-  gen/schemas through tauri's own resolver on every `cargo test` and
-  fails with a `+`/`-` grant diff if the `core:default` set moves. A
+- Tauri capability grants compile to code, not strings — `strings` on a
+  binary proves NOTHING about ACL grants (vacuously "clean" even for
+  granted permissions; only config JSON, e.g. the CSP, is
+  string-findable). Since T-021 the webview-surface proof is PINNED, not
+  re-derived per task: `app/src-tauri/src/acl_pin.rs` re-resolves the
+  shipped gen/schemas through tauri's own resolver on every `cargo test`
+  and fails with a `+`/`-` grant diff if the `core:default` set moves. A
   deliberate grant is added by re-pinning EXPECTED_GRANTS in the same
-  commit, with the sweep — never by deleting or muting the test (see
-  ADR-012 for why the set stays empty of app grants).
+  commit, with the sweep — never by deleting or muting the test (ADR-012
+  for why the set stays empty of app grants; T-007's verdict correction
+  for the origin).
 - DECLARING A COMPONENT moves THREE live-registry fixtures, not two
   (T-024-s5, ratified at the 2026-08-16 second triage after the
   omission cost T-024 a rejection): `lib/parser/test/smoke.test.ts` (the
@@ -628,14 +616,12 @@
   DIFFERENT SET** (`T-163-s3`). DERIVE that set, never transcribe it:
   `node tools/e2e/scripts/docs-gate.mjs docs/architecture/components/C-NN-*.md`
   names the owed SUITES at your own ref, and it names more suites than
-  the two the three fixtures above live in. **The three above can all
-  be GREEN while other bodies in those same suites red** — T-163
-  measured it moving exactly one field — so run each suite the gate
-  names IN FULL; the gate answers at suite granularity and the file list
-  it prints is not the set of bodies that move. One consumer sits
-  outside every suite: docs/ARCHITECTURE.md's prose slug BLOCK copies
-  this field and must move with it — `brief.mjs --task` compares the
-  two and says in one line whether they agree at your ref.
+  the two the three fixtures above live in; **the three above can all
+  be GREEN while other bodies in those same suites red** (T-163 measured
+  it moving one field), so run each suite the gate names IN FULL. One
+  consumer sits outside every suite: docs/ARCHITECTURE.md's prose slug
+  BLOCK copies this field and must move with it — `brief.mjs --task`
+  compares the two and says in one line whether they agree at your ref.
 - THE SHIPPED PARTITION, IN SLUGS (T-147 — the sentence
   method/tasks/TASK-FORMAT.md's ceremony boundary asks each project to
   state beside its slug map, so a size-S card's ROW is read off
@@ -700,15 +686,14 @@
   board's parse-error badge) — move the file, don't "fix" the parser;
   the flat-glob exclusion and the loud trap are both pinned in
   lib/parser/test/rejected-exclusion.test.ts.
-  THE FOURTH QUESTION, ANSWERED AT T-084: **"resolved by other work" is
-  not a fourth move and `closed` is not a ninth status.** It is a
-  DISPOSITION, and disposition belongs to TRIAGE (T-083's integrator
-  ruled it and T-081's applied it): a finding whose work was resolved
-  elsewhere KEEPS `status: suggested` and records the discharge in its
-  own body — a `closed_by:` line naming the commit is the shape
-  `T-081-s7` uses — and TRIAGE then makes one of the three moves above,
-  normally promotion (`Absorbs:` plus removal). ADDING A STATUS IS A
-  METHOD CHANGE, NOT A PARSE FIX: the vocabulary is ratified in
+  THE FOURTH QUESTION (T-084): **"resolved by other work" is not a
+  fourth move and `closed` is not a ninth status.** It is a DISPOSITION,
+  and disposition belongs to TRIAGE (T-083's integrator ruled it): a
+  finding whose work was resolved elsewhere KEEPS `status: suggested`
+  and records the discharge in its own body — a `closed_by:` line naming
+  the commit is the shape `T-081-s7` uses — and TRIAGE then makes one of
+  the three moves above, normally promotion. ADDING A STATUS IS A METHOD
+  CHANGE, NOT A PARSE FIX: the vocabulary is ratified in
   method/tasks/TASK-FORMAT.md and lives in exactly one place in code,
   `lib/parser/src/types.ts`, which the DOCS GATE below READS rather than
   restates. Do not add a status to make one file parse — and a fence
@@ -716,41 +701,38 @@
   whose third file is Rust (T-078-s3).
 - The genesis kit is ratified in method/roles/planner.md +
   method/interview/plan-interview.md (ratified v0.1.5, T-023 — a
-  RATIFICATION record like the suggestion-triage bullet's own
-  `(v0.1.4, T-016)`, NOT a claim about the current method version, which
-  the first gotcha above owns): interview output is INCREMENTALLY
+  RATIFICATION record, NOT a claim about the current method version,
+  which the first gotcha above owns): interview output is INCREMENTALLY
   BANKED — the stage → artifact table in plan-interview.md is normative
   and gets transcribed by programs (T-024 stage inference, T-025 kit
   packaging); changing it is a method version bump, and code reading it
   must be kept in sync. "pushing back:" is a rendering hint, never
   load-bearing; the transcript is not record. docs-templates/ are
   scaffolded VERBATIM — examples live inside HTML comments, and since
-  T-030 (absorbing T-023-s1) parseRoadmap blanks every `<!-- … -->`
-  span before matching lines, so a column-0 `- F-01:` example row inside
-  a comment yields neither a phantom feature nor a roadmap-error (pinned
-  in lib/parser/test/roadmap.test.ts, template shape included). The
-  templates stay comment-wrapped REGARDLESS — a comment is how an
-  example says it is an example, and the parser's tolerance is a safety
-  net, not a licence to ship live-looking rows in a scaffold.
+  T-030 parseRoadmap blanks every `<!-- … -->` span before matching
+  lines, so a column-0 `- F-01:` example row inside a comment yields
+  neither a phantom feature nor a roadmap-error (pinned in
+  lib/parser/test/roadmap.test.ts). The templates stay comment-wrapped
+  REGARDLESS — a comment is how an example says it is an example, and
+  the parser's tolerance is a safety net, not a licence to ship
+  live-looking rows in a scaffold.
 - Outside-click/dismissal listeners must decide on pointerdown, never
   click — under trusted input the browser runs microtask checkpoints
   between listeners, so React's discrete-update flush lands
-  mid-propagation and detaches the clicked node; a click-time
-  listener then reads inside as outside and misdismisses (cost T-005
-  a rejection). Synthetic clicks propagate synchronously and CANNOT
+  mid-propagation and detaches the clicked node; a click-time listener
+  then reads inside as outside and misdismisses (cost T-005 a
+  rejection). Synthetic clicks propagate synchronously and CANNOT
   reproduce it — no unit/jsdom probe will warn you. Reuse
   attachPanelDismissal (app/src/components/board/panel-dismissal.ts);
-  its test pins the trusted event order headlessly, and since T-020 the
-  real-input lane (tools/e2e) pins it under TRUSTED input — swapping
-  those two strings back to `"click"` fails blocker-retarget,
-  keyboard-activation and the at-press assertion, which is the whole
-  reason that lane exists. The `data-panel-exempt` exemption is a
-  SAFETY NET against accidental dismissal, not a guarantee that exempt
-  controls stay pointer-reachable while a panel is open: the open panel
-  occludes the header's exempt controls and keyboard reach is
-  sufficient by design (human ruling 2026-08-16, closing T-020-s1;
-  tools/e2e/tests/panel-exempt-controls.spec.ts pins the occlusion as a
-  tripwire).
+  its test pins the trusted event order headlessly, and the real-input
+  lane (tools/e2e) pins it under TRUSTED input — swapping those two
+  strings back to `"click"` fails three bodies by name. The
+  `data-panel-exempt` exemption is a SAFETY NET against accidental
+  dismissal, not a guarantee that exempt controls stay pointer-reachable
+  while a panel is open: the open panel occludes the header's exempt
+  controls and keyboard reach is sufficient by design (human ruling
+  2026-08-16, closing T-020-s1;
+  tools/e2e/tests/panel-exempt-controls.spec.ts pins the occlusion).
 - A RENDER-PHASE REF STAMP is legitimate only under three conditions,
   all three of them (T-042 criterion 4, the architect's ruling on
   T-024-s3; live example `app/src/genesis/GenesisPane.tsx`'s `logRef`
@@ -758,12 +740,12 @@
   returning `prev` BY IDENTITY for the already-observed and stale cases,
   so a StrictMode double-render and every unrelated re-render are
   no-ops; BOUNDED — what it feeds must tolerate a discarded concurrent
-  render, here a pulse window whose start moves by a few ms, cosmetic
-  and self-healing; and DERIVED FROM PROPS THE RENDER ALREADY HAS — no
+  render (a pulse window whose start moves by a few ms, cosmetic and
+  self-healing); and DERIVED FROM PROPS THE RENDER ALREADY HAS — no
   I/O, no subscription, no second source of truth. Miss one and lift the
   state instead. Relocating such a log into a store is a change of
   SOURCE, not of mechanism, and it earns its cost when a SECOND CONSUMER
-  appears — not before (T-027's planning pass proved there is none).
+  appears — not before (T-027).
 - THE FOUR WALKS — which one sees this file? (T-078, closing an open
   question every integrator was re-deriving.) This repo walks its own
   tree FOUR different ways and no two of them agree. The AUTHORITY column
@@ -1005,26 +987,25 @@
   walk" argument below does not protect, since a trigger NARROWER than
   the walk **misses a real movement** (T-123's rebuild measured a
   Rust-only diff moving the graph while this trigger matched 0 of 9
-  paths). THE STANDING LESSON IS THE ONE THE BULLET ALREADY GAVE: the
-  suffix list is a signpost that goes stale the day a language is added,
-  and `index --check` is the authority — **ASK THE GATE**, which is why
-  the gap cost nothing. **"The merge's diff" is the PAIR OF COMMITS THE
-  RANGE RULE above names, and it is not the same pair before the merge
-  exists as at it** — that bullet states the reason once for both
-  gates. **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE
-  REGEN IS A NO-OP UNLESS AN INDEXED FILE MOVED** (T-054-s1): no suffix
-  rule can match the walk — see THE FOUR WALKS above — because
-  `.nputerignore` excludes docs/, tools/ AND the indexer's own fixture
-  trees, so a diff confined to `tools/**` MATCHES this trigger and
-  CANNOT move the graph by construction (T-054's branch and T-058's
-  merge are the measured examples). DO NOT NARROW THE WORDING TO CHASE
-  THE WALK — a trigger that restates `.nputerignore` goes stale the day
-  that file changes, and over-firing is the SAFE direction. **ASK THE
-  GATE INSTEAD OF PREDICTING**: `cargo run -p nputer-index -- index
-  --check --root ../..` from app/src-tauri answers "did an indexed file
-  move?" in about a second, and it is the same command the CI step
-  runs. A regen that changes nothing costs a minute and PROVES it; a
-  regen skipped on a guess proves nothing.
+  paths). THE STANDING LESSON: the suffix list is a signpost that goes
+  stale the day a language is added, and `index --check` is the
+  authority — **ASK THE GATE**, which is why the gap cost nothing.
+  **"The merge's diff" is the PAIR OF COMMITS THE RANGE RULE above
+  names, and it is not the same pair before the merge exists as at it.**
+  **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE REGEN IS A
+  NO-OP UNLESS AN INDEXED FILE MOVED** (T-054-s1): no suffix rule can
+  match the walk — see THE FOUR WALKS above — because `.nputerignore`
+  excludes docs/, tools/ AND the indexer's own fixture trees, so a diff
+  confined to `tools/**` MATCHES this trigger and CANNOT move the graph
+  by construction (T-054's branch and T-058's merge are the measured
+  examples). DO NOT NARROW THE WORDING TO CHASE THE WALK — a trigger
+  that restates `.nputerignore` goes stale the day that file changes,
+  and over-firing is the SAFE direction. **ASK THE GATE INSTEAD OF
+  PREDICTING**: `cargo run -p nputer-index -- index --check --root
+  ../..` from app/src-tauri answers "did an indexed file move?" in about
+  a second, and it is the same command the CI step runs. A regen that
+  changes nothing costs a minute and PROVES it; a regen skipped on a
+  guess proves nothing.
   WHAT RETIRED is the obligation to hand-run the byte-comparison
   afterwards: `index --check` is a written CI step and the ENFORCING
   copy since the repo's first push on 2026-08-29 (T-054-s4 closed at
@@ -1048,11 +1029,9 @@
   lane that finds a pin wrong states it in its notes and leaves the file
   alone. **READ THIS AS THE MERGE-MOVED CASE AND NOT AS DECLARING A
   COMPONENT ABOVE**, the one way a LANE legitimately writes those same
-  files: a lane that declares a component moved the three fixtures with
-  its OWN diff and reconciles all three there; a MERGE REGEN alone moves
-  only the two app fixtures. IF the regen cannot run THEN say so LOUDLY
-  in the checkpoint, naming the reason — a skipped gate is news, never
-  silence.
+  files with its OWN diff; a MERGE REGEN alone moves only the two app
+  fixtures. IF the regen cannot run THEN say so LOUDLY in the
+  checkpoint, naming the reason — a skipped gate is news, never silence.
 - THE LANE PROTOCOL — the generic rules are `method/lane-protocol.md`
   and are NOT restated here (T-089). That file rules one task/one
   branch/one worktree, the base commit, the sibling worktree, the
@@ -1156,22 +1135,18 @@
     ONE CRITERION IS THE HOOK'S OWN: a checkout git records as
     mid-merge, mid-rebase, mid-revert or mid-cherry-pick is free,
     because resolving a lane's merge is an Edit inside that fence by
-    construction, and a guard forbidding the act that CONSUMES a fence
-    is a guard somebody turns off. **AND IT CLOSES BEFORE THE LANE
-    DOES**: git drops the marker at the merge COMMIT while rule 6 keeps
-    the worktree until after the CHECKPOINT, so an Edit into a
-    just-merged fence is refused for that window, where this project's
-    verdict corrections land — remove the worktree before the
-    reconciling writes (`T-154-s2`).
+    construction. **AND IT CLOSES BEFORE THE LANE DOES**: git drops the
+    marker at the merge COMMIT while rule 6 keeps the worktree until
+    after the CHECKPOINT, so an Edit into a just-merged fence is refused
+    for that window, where this project's verdict corrections land —
+    remove the worktree before the reconciling writes (`T-154-s2`).
     **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write
     and stays protocol-covered. A path OUTSIDE the writing checkout is
     allowed in BOTH seats, the manifest's domains being
     repository-relative: the scratchpad, a drill tree and a sibling
-    lane's own tree are all reachable, the last deliberately, since
-    nothing separates an architect reaching into a lane from that lane's
-    own executor writing from a shell parked elsewhere. A DETACHED
+    lane's own tree are all reachable, the last deliberately. A DETACHED
     checkout is not judged at all, so the poison drill may mutate the
     files a live lane holds and the human's app checkout stays free. A
     live lane whose manifest this seat cannot read reserves nothing here
@@ -1223,11 +1198,11 @@
   `file:../lib/parser`, which npm installs as a SYMLINK, so the built
   `dist/` the running vite serves is the parser's own directory: a
   lib-only merge that rebuilds it changes what the app is serving
-  (instance 5). So the question is never "does my diff name a file the
-  app owns" but **"which build outputs does the running app read"** —
-  the fresh-clone ORDER at the top of this file answers it, and a
-  docs-only diff is not exempt, because an integrator who runs the
-  install order runs the parser build.
+  (instance 5). The question is never "does my diff name a file the app
+  owns" but **"which build outputs does the running app read"** — the
+  fresh-clone ORDER at the top of this file answers it, and a docs-only
+  diff is not exempt, because an integrator who runs the install order
+  runs the parser build.
   **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION** (the
   unexplained `zz-scope-probe.ts` of instance 9), **and a lane worktree
   parked INSIDE the tree is the same violation in a larger shape**:
@@ -1257,29 +1232,27 @@
 
   **BEING DETACHED IS THE FEATURE** — the app's code cannot move on its
   own, so the pipeline may merge all night; the app still OPENS
-  `/Users/ujju/Projects/nputer` as its project, so the founding demo
-  survives. Whether it exists, where 1420's holder runs from, and the
-  two target-dir mtimes are LIVE-ENVIRONMENT facts — re-derive them
-  (`git -C ../nputer-app rev-parse HEAD`, `lsof -p <pid>`), never quote
-  them. **AND IT EXCUSES NOTHING ABOVE**: every rule in this bullet
-  binds whether or not `../nputer-app` exists.
+  `/Users/ujju/Projects/nputer` as its project. Whether it exists,
+  where 1420's holder runs from, and the two target-dir mtimes are
+  LIVE-ENVIRONMENT facts — re-derive them (`git -C ../nputer-app
+  rev-parse HEAD`, `lsof -p <pid>`), never quote them. **AND IT EXCUSES
+  NOTHING ABOVE**: every rule in this bullet binds whether or not
+  `../nputer-app` exists.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE
   SENTENCE — THE TWO DISAGREE** (T-089, itself dispatched from a
   docs-only commit four after the newest checkpoint, obeying the reason
-  while failing the letter, with `index --check` exit 0 at the base).
-  The rule bans a MERGE commit, and the reason is a stale graph: a merge
-  commit carries a graph the checkpoint has not regenerated yet (see
-  GRAPH REGEN above), so a lane cut from one inherits a stale graph and
-  a red `index --check` through no fault of its own — T-014 is the
-  counter-example, cut from a merge with four sibling lanes dispatched
-  into the same window; T-027 is the worked example the other way. A
-  non-merge commit later than the checkpoint carries the checkpoint's
-  graph and is safe ON THAT COUNT. **But "safe" is all its gates green,
-  not only the graph**: a docs-only non-merge commit can still red a
-  code suite through FRONTMATTER (the DOCS GATE), which no graph
-  argument covers — so this holds by PRACTICE, verified, NOT by
+  while failing the letter). The rule bans a MERGE commit, and the
+  reason is a stale graph: a merge commit carries a graph the checkpoint
+  has not regenerated yet (GRAPH REGEN above), so a lane cut from one
+  inherits a stale graph and a red `index --check` through no fault of
+  its own — T-014 is the counter-example, T-027 the worked example the
+  other way. A non-merge commit later than the checkpoint carries the
+  checkpoint's graph and is safe ON THAT COUNT. **But "safe" is all its
+  gates green, not only the graph**: a docs-only non-merge commit can
+  still red a code suite through FRONTMATTER (the DOCS GATE), which no
+  graph argument covers — so this holds by PRACTICE, verified, NOT by
   property; nothing forbids a source commit between checkpoints. What
   the bullet means is: cut from a commit whose gates are green, which
   the newest `Checkpoint:` always is and a merge commit never is. This
@@ -1290,26 +1263,26 @@
   `app/src/**` or either manifest (app/package.json,
   app/src-tauri/Cargo.toml) — **and "the merge's diff" is the PAIR OF
   COMMITS THE RANGE RULE above names, which is a DIFFERENT pair before
-  the merge exists than at it.** That bullet carries this gate's own
-  oldest worked example (T-027) and the twelve merges on which the wrong
-  pair changed a gate's answer, eight of them this gate's. Then run the
-  boot check — `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check`
-  from tools/e2e/ — and RECORD the result (exit code, both `[nputer]`
-  lines) in the checkpoint; the four exit codes are legended in the
-  tools/e2e commands bullet under "Build & test" above. IF the check
-  cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
-  the exit code — a skipped gate is news, never silence. It exists
-  because `cargo run` is the ONE command this pipeline never issues:
-  T-040, a one-line manifest regression that stopped the app launching
-  at all, passed an executor, an adversarial verifier and an integrator,
-  each of whom ran `cargo test`, `cargo build` and three consecutive
-  full suites — all perfectly happy with two binaries. THE EXECUTOR RUNS
-  IT TOO, on the same trigger, before handing off (T-046 criterion 6): a
-  red the executor's own fence forbids fixing is still news, and news at
-  build time is cheaper than news after a merge — file it as a
-  suggestion and say so in the notes. Running it is NOT screen control
-  (@human ruling 2026-08-16): the app opens and closes its own window;
-  nothing is clicked, typed into, screenshotted, or read off the screen.
+  the merge exists than at it** (that bullet carries this gate's oldest
+  worked example, T-027, and the twelve merges on which the wrong pair
+  changed a gate's answer, eight of them this gate's). Then run the boot
+  check — `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
+  tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
+  in the checkpoint; the four exit codes are legended in the tools/e2e
+  commands bullet under "Build & test" above. IF the check cannot run
+  THEN say so LOUDLY in the checkpoint, naming the reason and the exit
+  code — a skipped gate is news, never silence. It exists because
+  `cargo run` is the ONE command this pipeline never issues: T-040, a
+  one-line manifest regression that stopped the app launching at all,
+  passed an executor, an adversarial verifier and an integrator, each of
+  whom ran `cargo test`, `cargo build` and three full suites — all
+  perfectly happy with two binaries. THE EXECUTOR RUNS IT TOO, on the
+  same trigger, before handing off (T-046 criterion 6): a red the
+  executor's own fence forbids fixing is still news, cheaper at build
+  time than after a merge — file it as a suggestion and say so in the
+  notes. Running it is NOT screen control (@human ruling 2026-08-16):
+  the app opens and closes its own window; nothing is clicked, typed
+  into, screenshotted, or read off the screen.
 - DOCS GATE (T-084 — the third standing gate, and the one the two above
   exclude BY CONSTRUCTION): at any merge whose diff touches a path under
   `docs/` that a code suite READS, run the suites that read it, and
@@ -1356,30 +1329,28 @@
   | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
 
-  Under BSD the pipe HIDES a failed range as a clean gate — every
-  utility exit collapses to **1**, and on EMPTY input the utility is
-  never invoked so the pipeline exits **0**. Under GNU nothing is hidden
-  and the IDENTITY of the codes is destroyed instead, 1, 2 and 3 all
-  arriving as 123 (GNU `xargs` RUNS the utility on empty input, so the
-  gate's own empty-list refusal at 2 becomes 123 — where this table,
-  filled in from BSD, once predicted 0).
-  `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect at run time,
-  two observables and never `process.platform`, so the bodies that
-  execute the piped column read the column for the dialect they
-  measured; the `$(…)` column has no `xargs` process in it at all.
+  Under BSD the pipe HIDES a failed range as a clean gate (every utility
+  exit collapses to **1**, and on EMPTY input the utility is never
+  invoked so the pipeline exits **0**); under GNU the IDENTITY of the
+  codes is destroyed instead, 1, 2 and 3 all arriving as 123, because
+  GNU `xargs` RUNS the utility on empty input and maps the gate's own
+  refusal at 2 to 123 — where this table, filled in from BSD, once
+  predicted 0. `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect
+  at run time, two observables and never `process.platform`, so the
+  bodies that execute the piped column read the column for the dialect
+  they measured; the `$(…)` column has no `xargs` process in it at all.
   **THAT ASYMMETRY IS THE ARGUMENT**: a spelling whose correctness must
   be re-measured per platform is one nobody will re-measure.
   **AN EMPTY PATH LIST IS EXIT 2, NOT EXIT 0** (T-084-s6), and the `$(…)`
-  form is what makes that reachable: a FAILED range substitutes to
-  nothing, which is zero arguments. THREE MORE SHAPES REACH EXIT 2, each
-  once answered "not owed" at 0: an argument that is EMPTY or BLANK
-  (`"$(git diff …)"` on a failed range is a list of length ONE,
-  T-064-s7); an argument carrying NEWLINES (the same quoting on a range
-  that SUCCEEDED, T-064-s7); and a path resolving OUTSIDE this
-  repository, which is what `../../docs/…` typed from tools/e2e/ used to
-  mean (T-101-s3). A `./`-prefixed or ABSOLUTE spelling is normalised
-  and answered; a PLAIN relative path away from the repo root is refused
-  as ambiguous.
+  form is what makes that reachable: a FAILED range substitutes to zero
+  arguments. THREE MORE SHAPES REACH EXIT 2, each once answered "not
+  owed" at 0: an argument that is EMPTY or BLANK (`"$(git diff …)"` on a
+  failed range is a list of length ONE, T-064-s7); an argument carrying
+  NEWLINES (the same quoting on a range that SUCCEEDED, T-064-s7); and a
+  path resolving OUTSIDE this repository, which is what `../../docs/…`
+  typed from tools/e2e/ used to mean (T-101-s3). A `./`-prefixed or
+  ABSOLUTE spelling is normalised and answered; a PLAIN relative path
+  away from the repo root is refused as ambiguous.
   **`npm run lint:docs` FROM tools/e2e IS THE NAMED FORM AND CI'S STEP**
   (T-090), AND IT BUYS HALF — the WHOLE-TREE half, judging NO diff,
   because a workflow has no "merge's diff" to be handed; both incidents
@@ -1395,24 +1366,24 @@
   the defect T-058 and T-080 each spent a card on — and **THE
   DERIVATION'S AUTHORITY IS `tools/e2e/scripts/docs-scan.mjs`'s OWN
   `THE DERIVATION` HEADER, NOT THIS PARAGRAPH** (T-162 corrected a
-  superseded wording here: T-085 subsumed the old two-halves rule under
+  superseded wording here; T-085 subsumed the old two-halves rule under
   ONE containment test so that a docs path written relative to a PACKAGE
   directory is SEEN). The SHAPE is two arms — a DOCS SITE, a
   path-forming call whose docs-shaped literal RESOLVES inside this
   repository's docs/; or a CALL SITE, a call that HANDS the repository
   root to a first-party function which spends it on a docs path
   (`lib/parser/test/smoke.test.ts` calls `parseProject(repoRoot)` and
-  spells no docs path; with the literal arm alone a one-line ROADMAP
-  edit owed the e2e lane while the parser suite went red unnamed,
-  T-084). Fixture readers stay out by the same test —
-  `lib/parser/test/files.test.ts` resolves OUTSIDE `<root>/docs`. **A
-  file that does BOTH and cannot be linked is REPORTED, never dropped**,
-  and the reporting arm follows IMPORTS as well as local bindings. **NO
-  COUNT IS TRANSCRIBED INTO THIS BULLET** — the census it once carried
-  was green and wrong: `node tools/e2e/scripts/docs-gate.mjs --census`
-  from the repo root prints the site census, the reader set with the
-  arm that found each, the root-anchor classification and the residual,
-  and cannot be stale because it is not written down.
+  spells no docs path; with the literal arm alone a ROADMAP edit owed
+  the e2e lane while the parser suite went red unnamed, T-084). Fixture
+  readers stay out by the same test — `lib/parser/test/files.test.ts`
+  resolves OUTSIDE `<root>/docs`. **A file that does BOTH and cannot be
+  linked is REPORTED, never dropped**, and the reporting arm follows
+  IMPORTS as well as local bindings. **NO COUNT IS TRANSCRIBED INTO THIS
+  BULLET** — the census it once carried was green and wrong:
+  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
+  prints the site census, the reader set with the arm that found each,
+  the root-anchor classification and the residual, and cannot be stale
+  because it is not written down.
   THE FOUR SUITES the derived readers sit in, listed so a reader knows
   the shape and re-derivable so nobody quotes them: `npm test from app/`
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own
@@ -1483,11 +1454,10 @@
   `run from <dir>/:` bullets that section carries and reds by name on a
   fifth, so exposing the command there is a two-package edit — that spec
   plus ci.yml — which T-155's fence reached neither of; the command lives
-  beside the gate it serves, as GRAPH REGEN's own regen command does.
-  Wiring it into CI is `T-155-s1`, and until that lands this gate is a
-  written ritual with one tripwire. IF the suite cannot run THEN say so
-  LOUDLY in the checkpoint, naming the reason and the exit code — a
-  skipped gate is news, never silence.
+  beside the gate it serves. Wiring it into CI is `T-155-s1`, and until
+  that lands this gate is a written ritual with one tripwire. IF the
+  suite cannot run THEN say so LOUDLY in the checkpoint, naming the
+  reason and the exit code — a skipped gate is news, never silence.
   AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
   residual, taken at T-159): a `method/**` diff now matches a trigger,
   and it still owes `cargo test` that no trigger names — `kit.rs`
@@ -1530,14 +1500,13 @@
   the EXIT, read unpiped, plus the readings that turn the three
   readings-authority bands from UNREAD into a reading — the output of
   `cargo test` and `index --check` from app/src-tauri/ and `npm test`
-  from tools/e2e/, all of which that checkpoint already ran; capture
-  them with a redirect and read `$?` from the gate itself, since a bare
-  `| tee` hands you tee's status. The record's own `Gate runtime:` total
-  is `machinery/gate-seconds`'s only reading, and its `Cold start:` and
-  `Drift incidents:` lines are the two docs/NORTH_STAR.md indicators'
-  only markers — **owed by the SESSION every time rather than by
-  whoever noticed a problem**, because a denominator that collects
-  successes only is worse than no band.
+  from tools/e2e/, captured with a redirect and read from `$?` (a bare
+  `| tee` hands you tee's status). The record's own `Gate runtime:`
+  total is `machinery/gate-seconds`'s only reading, and its `Cold
+  start:` and `Drift incidents:` lines are the two docs/NORTH_STAR.md
+  indicators' only markers — **owed by the SESSION every time rather
+  than by whoever noticed a problem**, because a denominator that
+  collects successes only is worse than no band.
   **THE GRAPH BAND'S READING IS THE INTEGRATOR'S AND A LANE CANNOT HOLD
   IT HONESTLY**: `index --check` is `graph/budget-headroom-bytes`'s
   authority, and a worktree that has built anything with cargo has its
@@ -1551,43 +1520,42 @@
   `index --watch`, `arch` and `npm run boot:orphan-drill` already have —
   it exits 3 at every ref while any band is unkept, so a step would red
   every push for no actionable signal (the AUDIT GATE POLICY's argument
-  against `--deny warnings`, one layer up); the readings that make it
-  informative are the OUTPUTS of steps the job already runs; and a
-  scheduled reporter would re-run the whole pipeline, on a trigger
-  workflow-parity does not pin ci.yml to. **Revisit this when the exit
-  code can move** — `T-156-s4`'s subject — and not before.
+  against `--deny warnings`); the readings that make it informative are
+  the OUTPUTS of steps the job already runs; and a scheduled reporter
+  would re-run the whole pipeline on a trigger workflow-parity does not
+  pin ci.yml to. **Revisit this when the exit code can move** —
+  `T-156-s4`'s subject — and not before.
   IT IS NOT IN "Build & test" ABOVE, DELIBERATELY, AND THE REASON IS
   MECHANICAL — the one the METHOD EVAL GATE bullet states, and the trap
   T-090 walked into while adding `npm run lint:docs`:
   `deriveExpectedSteps` in tools/e2e/tests/workflow-parity.spec.ts makes
   every command in those four bullets either a CI step or an argued
   `LOCAL_ONLY` entry, so adding `npm run health` to the tools/e2e
-  command bullet alone reds that spec by name (measured on `T-156-s1`).
-  The doc half and the spec half are ONE commit across two packages,
-  routed as **`T-156-s5`**; until it lands, this is the only place the
-  command is written down.
+  command bullet alone reds that spec by name (`T-156-s1`). The doc half
+  and the spec half are ONE commit across two packages, routed as
+  **`T-156-s5`**; until it lands, this is the only place the command is
+  written down.
 - THE CHECKPOINT COMMIT'S SUBJECT OPENS WITH `Checkpoint:` (T-182) — the
   commit that adds a record under `docs/checkpoints/` carries a subject
   beginning with that literal. **IT IS NOT A STYLE RULE: TWO RULES PARSE
-  THE MARKER, AND BOTH DEGRADE IN SILENCE WITHOUT IT.** CONSUMER ONE IS
-  IN THIS FILE — the DISPATCH bullet above, which picks a lane's base by
-  it; that bullet's naming phrase is spelled around rather than quoted,
-  because `rawBullet` (tools/e2e/scripts/dispatch-brief.mjs) demands ONE
-  bullet carry it. CONSUMER TWO IS THE TRIAGE BAND'S WINDOW —
-  `newestCheckpoint` in tools/e2e/scripts/health-bands.mjs, anchoring
-  `triage/net-arrivals-per-window` in health-bands.config.mjs beside it.
-  To both, an absent marker is indistinguishable from a night with no
-  checkpoint: the window does not advance, the base names an older
-  commit, and both keep reporting success — at `bd8a8e8` most
-  record-adding commits carried no such subject, and
-  `git log --first-parent --diff-filter=A <range> -- docs/checkpoints/`
-  derives the count at any ref. **IT IS A CONVENTION HERE ONLY BECAUSE
-  THE TRIGGER IS OUT OF FENCE**: the event to assert on is the COMMIT
-  THAT ADDS A RECORD, already `T-167-s8`'s second trigger, so the guard
-  joins there rather than growing a second mechanism — **ROUTED to
-  `T-167-s8`** with two facts: `--grep=^Checkpoint:` matches ANY line of
-  a message, so a SUBJECT guard is strictly narrower than the band's own
-  reader; and `newestCheckpoint` had no spec at `bd8a8e8`.
+  THE MARKER, AND BOTH DEGRADE IN SILENCE WITHOUT IT.** Consumer one is
+  the DISPATCH bullet above, which picks a lane's base by it (its naming
+  phrase is spelled around rather than quoted, because `rawBullet` in
+  tools/e2e/scripts/dispatch-brief.mjs demands ONE bullet carry it).
+  Consumer two is the triage band's window — `newestCheckpoint` in
+  tools/e2e/scripts/health-bands.mjs, anchoring
+  `triage/net-arrivals-per-window`. To both, an absent marker is
+  indistinguishable from a night with no checkpoint: the window does
+  not advance, the base names an older commit, and both keep reporting
+  success — at `bd8a8e8` most record-adding commits carried no such
+  subject (`git log --first-parent --diff-filter=A <range> --
+  docs/checkpoints/` derives the count). **IT IS A CONVENTION HERE ONLY
+  BECAUSE THE TRIGGER IS OUT OF FENCE**: the event to assert on is the
+  COMMIT THAT ADDS A RECORD, already `T-167-s8`'s second trigger, so the
+  guard joins there — **ROUTED to `T-167-s8`** with two facts:
+  `--grep=^Checkpoint:` matches ANY line of a message, so a SUBJECT
+  guard is strictly narrower than the band's own reader; and
+  `newestCheckpoint` had no spec at `bd8a8e8`.
 - POISON DRILL (ratified at T-054; until then "poison", "vacuous" and
   "mutation" appeared nowhere in this file or in method/roles/): at any
   task that ADDS OR CHANGES a test body — the executor before handing
@@ -1621,16 +1589,15 @@
   stats.mtimeMs / 1000)` — never through a `Date`, which writes back a
   ROUNDED timestamp. **THE LOSSY FORM SELF-HEALS**: it leaves the file on
   a whole millisecond, so the next run rounds to a no-op and passes —
-  red once, green forever after, and **re-running until green is the
-  defect's own healing mechanism, not evidence.** The same fixed point
-  defeats a POISON of a clock assertion (T-153-s5), so **before poisoning
-  an assertion over PERSISTENT state, put that state back to a condition
-  the suite did not create.** The round-trip's precision is scoped by
-  the libuv VERSION, not the platform (microseconds under v1.51.0; that
-  card carries both versions' bounds), so print `process.versions.uv`
-  beside any figure that depends on it. A `ctime` move after a
-  byte-exact restore was seen once and never reproduced; prove
-  restoration BY HASH, which is immune either way.
+  **re-running until green is the defect's own healing mechanism, not
+  evidence.** The same fixed point defeats a POISON of a clock assertion
+  (T-153-s5), so **before poisoning an assertion over PERSISTENT state,
+  put that state back to a condition the suite did not create.** The
+  round-trip's precision is scoped by the libuv VERSION, not the
+  platform (microseconds under v1.51.0; T-153-s5 carries both versions'
+  bounds), so print `process.versions.uv` beside any figure that depends
+  on it. A `ctime` move after a byte-exact restore was seen once and
+  never reproduced; prove restoration BY HASH, immune either way.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
@@ -1646,19 +1613,19 @@
   the latest). Several Rust bodies bake `env!("CARGO_MANIFEST_DIR")` in
   at COMPILE time, which cargo does not fingerprint, so binaries the
   DRILL compiled are reused by the parent afterwards (T-013's card has
-  the wreckage) — and the pollution runs the other way too: a mutant can
-  look DEAD against a stale binary that never saw it. Where `cargo
-  clean` is prohibited — it is, whenever another lane may be building —
-  the recovery is to `touch` EVERY workspace `.rs` and rebuild
-  (T-145-s3); touching only the file the panic NAMED yields a second
-  red. The directory's NAME is not free: `.gitignore` excludes `target/`
-  and nothing else, so a target dir under any other name is INDEXED and
-  `index --check` answers confidently and wrongly with phantom files
-  (T-111-s10, T-153-s3) — and **`files +0 -0` is the sentence a
-  checkpoint decides on**. Skipping any directory carrying cargo's
-  `CACHEDIR.TAG` is the CLASS fix and `crate-index`'s code. Drilling in
-  place is not the remedy: true of the INSTANCE, not the CLASS, and an
-  interrupted drill leaves the branch dirty for every concurrent reader.
+  the wreckage) and a mutant can look DEAD against a stale binary that
+  never saw it. Where `cargo clean` is prohibited — it is, whenever
+  another lane may be building — the recovery is to `touch` EVERY
+  workspace `.rs` and rebuild (T-145-s3); touching only the file the
+  panic NAMED yields a second red. The directory's NAME is not free:
+  `.gitignore` excludes `target/` and nothing else, so a target dir
+  under any other name is INDEXED and `index --check` answers
+  confidently and wrongly with phantom files (T-111-s10, T-153-s3) —
+  and **`files +0 -0` is the sentence a checkpoint decides on**.
+  Skipping any directory carrying cargo's `CACHEDIR.TAG` is the CLASS
+  fix and `crate-index`'s code. Drilling in place is not the remedy:
+  true of the INSTANCE, not the CLASS, and an interrupted drill leaves
+  the branch dirty for every concurrent reader.
   **AND THE SCRATCH IDENTITY IS DERIVED FROM THE LANE, NEVER CHOSEN**
   (T-092 holds the four-lane census). The scratch directory is SHARED
   between concurrent sessions whatever its UUID suggests, and naming the
@@ -1669,17 +1636,16 @@
   SHALL recognise its OWN drill rather than the shared prefix. **A
   DERIVED PATH IS A CONSTRUCTION AND A FIXED PATH IS THE DEFECT.** And
   the app suite needs `npm run build` before it can be drilled — build,
-  baseline, then mutate; derive the unbuilt-body count at your own ref.
+  baseline, then mutate.
   IF a body cannot be poisoned — it asserts a constant, or every
   mutation is one the test already makes — THEN say so and name it: a
   body that cannot red is the finding (six vacuous assertions in one
   night, T-057). It stays a DISCIPLINE rather than a gate because
   nothing can automate "would this have failed". WHAT THE DRILL CANNOT
-  SEE (T-057): poisoning proves a body RUNS and that its value MATTERS;
-  it does NOT prove the body is not a DUPLICATE — a CARD can specify a
-  duplicate into existence and a faithful executor will build it. SO:
-  after the drill reds, ask whether any OTHER test already drives this
-  exact call.
+  SEE (T-057): poisoning proves a body RUNS and that its value MATTERS,
+  not that it is no DUPLICATE — a CARD can specify a duplicate into
+  existence and a faithful executor will build it — so after the drill
+  reds, ask whether any OTHER test already drives this exact call.
   THE CATALOGUE OF SHAPES A VALUE POISON PASSES. Cite them by number —
   other cards do. **IT IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED
   HERE** (T-092); **ENTRIES LIVE HERE FOR FIVE THROUGH ELEVEN ONLY**
@@ -1720,9 +1686,8 @@
   MECHANICAL REMEDY: YES — **NARROW THE HAYSTACK** to the line or
   section pinned, with an ANCHOR that is not the needle, and assert the
   ANCHOR's own uniqueness; a bare occurrence count is a number with no
-  keeper (the first legitimate second copy reds it and the cheap repair
-  is bumping the 1 to a 2). Worked twice:
-  `snapshot_version_matches_the_live_method_stamps` (kit.rs) and
+  keeper. Worked twice: `snapshot_version_matches_the_live_method_stamps`
+  (kit.rs) and
   `the_only_production_path_to_the_transcript_is_the_bounded_one`
   (agent/mod.rs).
   **SHAPE NINE — a mutation that MOVES a generated row between families
@@ -1751,16 +1716,14 @@
   it.
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
-  somebody looks: T-078's fix session found three of its own, fixed each
-  where it stood, and twice left an identical sibling a few lines away —
-  both inside the subsection that announced the sweep, and both one
+  somebody looks: T-078's fix session fixed three of its own where they
+  stood and twice left an identical sibling a few lines away, one
   `git grep` from complete. So: NAME the class, run ONE search for it,
   and record the result **even when it is empty** — an unrecorded sweep
-  and an unrun one are indistinguishable to the next reader, which is
-  "a skipped gate is news" one layer up. **And the sweep is shown
-  capable of failing before its zero is written down** (the POISON
-  DRILL's proof clause), because a search that finds nothing is what a
-  finished job looks like.
+  and an unrun one are indistinguishable to the next reader. **And the
+  sweep is shown capable of failing before its zero is written down**
+  (the POISON DRILL's proof clause), because a search that finds nothing
+  is what a finished job looks like.
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
   at T-078). A test that asserts something is REFUSED must first prove
   the fixture would otherwise have been ACCEPTED: a bare "expected
@@ -1778,11 +1741,10 @@
   AND CENSUSES, NOT ONLY TEST BODIES (T-142): a crash is a finding; a
   ZERO is what you hoped for. Before a count reaches a card, brief or
   STATE, show the query able to answer otherwise: a ref where it is
-  known non-zero, or one planted instance. WHY SILENT: frontmatter
-  keys are snake_case and model properties camelCase, so a MODEL
-  census for `blocked_by` and a FRONTMATTER one for `blockedBy` both
-  return zero and read clean. Not a lint on known-bad spellings: a
-  census about censuses.
+  known non-zero, or one planted instance. WHY SILENT: frontmatter keys
+  are snake_case and model properties camelCase, so a MODEL census for
+  `blocked_by` and a FRONTMATTER one for `blockedBy` both return zero
+  and read clean. A census about censuses.
 - LIFTING A SAFETY GUARD TO DISCRIMINATE (T-060-s1, written down at
   T-078). A guard test needs a discriminating half, but the
   discriminating half of a SAFETY guard is by construction a deliberate
@@ -1792,21 +1754,20 @@
   merely started at one — and the body SHALL assert the guard's STATE
   before it exercises anything (T-060's first draft executed the
   developer's REAL CLI inside the very test written to prove that
-  cannot happen; both halves closed it). It applies to every guard this
-  project has, and most are safe only because their lifted behaviour
-  touches fixtures — a property to CHECK, never to assume.
+  cannot happen). It applies to every guard this project has, and most
+  are safe only because their lifted behaviour touches fixtures — a
+  property to CHECK, never to assume.
 - THE E2E LANE'S HONEST SCOPE (T-049-s1, recorded rather than coded —
   the two arms below stay available and were deliberately not taken):
   tools/e2e covers what a BROWSER can reach, and Tauri-gated
-  affordances are jsdom-plus-@human territory. Two live instances,
-  neither a defect: `runPicker` opens with a not-Tauri early return, so
-  an accelerator's ACTION is unobservable in the served bundle — the
-  lane can prove a chord was CLAIMED, never that it was OBEYED — and
-  both header buttons are gated behind `isTauriRuntime()`, so the one
-  screen where they live is the one screen the lane cannot show; T-027
-  and T-028 added whole screens whose actions are all IPC. So do not
-  read a green lane as coverage of an IPC path: the Rust suite, the boot
-  gate and @human's eye are what cover those. The two unused arms are a
-  DEV-only attempt counter and rendering the gated pair disabled in
-  browser mode; the recorded sentence was preferred over a second
-  DEV-gated surface, which T-041's single-gate argument disfavours.
+  affordances are jsdom-plus-@human territory. `runPicker` opens with a
+  not-Tauri early return, so an accelerator's ACTION is unobservable in
+  the served bundle — the lane can prove a chord was CLAIMED, never that
+  it was OBEYED — and both header buttons are gated behind
+  `isTauriRuntime()`, so the one screen where they live is the one
+  screen the lane cannot show. So do not read a green lane as coverage
+  of an IPC path: the Rust suite, the boot gate and @human's eye cover
+  those. The two unused arms are a DEV-only attempt counter and
+  rendering the gated pair disabled in browser mode; the recorded
+  sentence was preferred over a second DEV-gated surface, which T-041's
+  single-gate argument disfavours.
