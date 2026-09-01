@@ -326,10 +326,10 @@ INTEGRATOR's, in the merge commit, before the checkpoint
 
 ### Routed
 
-- `T-216-s4-s1` — `npm install` from app/ exits 243 (EACCES on
+- `T-216-s6` — `npm install` from app/ exits 243 (EACCES on
   `app/package-lock.json`) inside an armed lane; needs
   `docs/CONVENTIONS.md`, which `T-236` holds.
-- `T-216-s4-s2` — the class sweep: three more fixtures copy modes out of
+- `T-216-s7` — the class sweep: three more fixtures copy modes out of
   the live tree (`card-preflight.spec.ts`, `lane-fence.spec.ts`,
   `perf.rs`), green today only because none asserts on a copy's
   writability, and `perf.rs`'s body is `#[ignore]`d so nothing can ever
@@ -349,3 +349,26 @@ INTEGRATOR's, in the merge commit, before the checkpoint
   the sha256, which docs/CONVENTIONS.md names as the proof either way.
 - 18 mutants, 18 kills, 16 of them with a failing-body count of exactly
   ONE. The two that are not are recorded with their reason in the report.
+
+### A HAZARD THIS LANE WALKED INTO, WORTH THE SENTENCE
+
+**A SUB-CARD'S FINDING TAKES THE NEXT FREE `T-NNN-sN`, NOT A SECOND
+SUFFIX.** The two routed findings were first filed as `T-216-s4-s1` and
+`T-216-s4-s2`, which reads as the obvious spelling for *a suggestion from
+a sub-card* and is not a legal task id: `lib/parser` accepts ONE suffix
+level (*"field 'id' must be a task id like T-016 or T-016-s2"*). The
+board loses the card silently — nothing errors at write time and
+`docs-gate.mjs` answered *"every live task card's frontmatter parses,
+with a legal status"*, because the ID FORMAT is not what that half
+checks.
+
+What caught it is the four-suite battery, in exactly the shape the DOCS
+GATE bullet describes: a commit whose entire diff was markdown took
+`gate-run parser` to **1 failed / 348 passed** (`smoke — finds zero
+issues in the live tree`) and `gate-run app` to **RED over 1131 bodies**,
+three layers from the cause. Renamed to `T-216-s6` and `T-216-s7` — the
+next free ids beside `T-216-s1/s3/s4/s5` — and both suites are green
+again at 349/349 and 1131/1131. **Filed here rather than as a third
+card**: the parser's message is already exact, and the reason it took a
+battery to find is that the gate which reads frontmatter does not read
+ids.

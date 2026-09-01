@@ -1,5 +1,5 @@
 ---
-id: T-216-s4-s2
+id: T-216-s7
 title: Three more fixtures copy mode bits out of the live tree, and they are green only because none of them asserts on a copy's writability
 feature: F-06
 milestone: 4

@@ -1,5 +1,5 @@
 ---
-id: T-216-s4-s1
+id: T-216-s6
 title: A fresh lane cannot run CONVENTIONS' own setup command — `npm install` from app/ dies EACCES on app/package-lock.json under the physical layer
 feature: F-06
 milestone: 4
