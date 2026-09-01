@@ -3,6 +3,7 @@ id: T-216-s5
 title: The shared scratchpad has no per-lane naming, so one seat's script silently drove another seat's bench — a MACHINE-scoped surface with a defaulted name, which lane-protocol rule 4 already names as a class
 feature: F-06
 milestone: 4
+size: S
 priority: 3
 status: done
 suggested_by: executor claude-opus-5@subagent @T-216-s1

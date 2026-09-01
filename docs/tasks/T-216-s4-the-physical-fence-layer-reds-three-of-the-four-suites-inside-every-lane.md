@@ -3,6 +3,7 @@ id: T-216-s4
 title: The physical fence layer reds THREE of the four suites inside every lane — four bodies write tracked files outside the fence, and no lane can measure its own battery
 feature: F-06
 milestone: 4
+size: M
 priority: 2
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-216-s1
