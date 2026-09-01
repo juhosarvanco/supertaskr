@@ -235,19 +235,25 @@
   sentence**: a MECHANISM belongs in a governing document (this file has
   room; STATE does not), a record takes the INSTANCE, and shaving words
   is how a rule ends up in neither (T-146, T-225).
-- **RUN A GIT-FIXTURE SUITE ONCE IN A BORROWED ENVIRONMENT BEFORE YOU
-  BELIEVE IT.** A local green proves the suite passes *on the machine
-  that wrote it*, which is the weakest claim available. One line
-  reproduces the runner's git environment — no global identity, no
-  default-branch setting:
+- **RUN THE SUITE ONCE IN A BORROWED GIT ENVIRONMENT BEFORE YOU BELIEVE
+  IT.** A local green proves it passes *on the machine that wrote it*,
+  which is the weakest claim available. Two variables reproduce a
+  runner's git environment — no global identity, no `init.defaultBranch`,
+  nothing this developer configured years ago:
 
-      HOME=$(mktemp -d) GIT_CONFIG_GLOBAL=/dev/null \
-      GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch \
-      GIT_CONFIG_VALUE_0=master npx playwright test tests/<spec>
+      GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null npm test
 
   **It would have caught both of the CI reds this rule was written
-  from**, in seconds, before either push. A suite that is green here and
-  red there is not flaky; it is measuring the machine.
+  from**, in seconds, before either push. Measured after the fixes: 492
+  passed, exit 0. A suite green here and red there is not flaky; it is
+  measuring the machine.
+  **DO NOT CLOBBER `HOME` TO GET THERE.** The first version of this rule
+  did (`HOME=$(mktemp -d)`) and reddened **54 browser bodies**, because
+  Playwright caches its browsers under `~/`. Suppressing git's config
+  files is the whole of what is wanted; moving the home directory
+  changes an unrelated axis and the failures look like findings. The
+  wrong recipe was caught by running it — which is this bullet's own
+  point applied to itself.
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an
