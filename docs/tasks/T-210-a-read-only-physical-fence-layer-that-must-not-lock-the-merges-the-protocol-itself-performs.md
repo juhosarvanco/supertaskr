@@ -140,8 +140,11 @@ lane ran. Fence as expanded at dispatch: `method/lane-protocol.md` and
   complement, and four measured limits; fast path B gains the drop/re-arm
   and the measurement below; the tripwire's holes paragraph is narrowed
   from "outside the write refusal" to "narrowed, not closed".
-- **`tools/e2e/tests/lane-lock.spec.ts`** — **12** bodies
-  (`grep -c '^test(' tools/e2e/tests/lane-lock.spec.ts`).
+- **`tools/e2e/tests/lane-lock.spec.ts`** — **13** bodies
+  (`grep -c '^test(' tools/e2e/tests/lane-lock.spec.ts`), of which 12
+  stood at `e7c277a` and the thirteenth arrived with the verdict
+  correction below. The derive command answers for the tip, so the figure
+  is stated for the tip.
 
 ### THE MEASUREMENT THAT MOVED THE CARD
 
@@ -217,7 +220,8 @@ evidence.
 | M7 | `releaseLaneLock` stops restoring modes | spec | 3 |
 | M8 | `brief.mjs` stops arming the layer (THE WIRING ONLY) | **full suite** | **1 of 491 — the dispatch-step body; 490 passed** |
 
-**EVERY ONE OF THE 12 BODIES IS KILLED BY AT LEAST ONE MUTANT**, so no
+**EVERY ONE OF THE 12 BODIES THAT EXISTED AT `e7c277a` IS KILLED BY AT
+LEAST ONE MUTANT**, so no
 body is vacuous. Three containment facts carry more than the counts do.
 **M3 ran the FULL suite and killed nothing outside this card's own
 spec**, so the layer is new behaviour that perturbs no existing body.
