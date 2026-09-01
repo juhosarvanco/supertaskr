@@ -99,6 +99,12 @@ import {
   treeProv,
   value,
 } from "./dispatch-brief.mjs";
+import {
+  STALE_CLONE_LIMIT,
+  judge as judgeCheckout,
+  sessionCheckout,
+  sweep as sweepCheckouts,
+} from "./checkout-currency.mjs";
 import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
@@ -214,6 +220,143 @@ async function main(argv) {
     taskId,
     full,
   });
+
+  /**
+   * ARM SEVEN — THE STALE-CHECKOUT CATCHER, AT ARM TIME (T-216-s1).
+   *
+   * A `PreToolUse` hook is only as current as the checkout the SESSION
+   * was started in, and an ABSENT hook cannot announce itself — so the
+   * catcher has to run WHERE THE GUARD IS NOT. **This is that place.**
+   * The dispatch ritual's arming steps are `--preflight` and
+   * `--write-fence`; both run here, from THIS checkout's own copy of the
+   * catcher, against the checkout the harness loaded its settings from.
+   *
+   * IT RUNS BEFORE THE CARD IS EVEN LOOKED UP, so a dispatch that fails
+   * for any other reason has still been told. A guard that speaks only on
+   * the happy path is one nobody hears at the moment it matters.
+   *
+   * WHAT IT JUDGES AND FROM WHERE ARE BOTH DERIVED, AND BOTH ARE
+   * LOAD-BEARING: the TARGET is `sessionCheckout()` — `CLAUDE_PROJECT_DIR`
+   * where the harness exports it, else the WORKTREE ROOT containing this
+   * command's working directory when that root is a checkout of this
+   * repository — and the VANTAGE is the checkout the catcher's own file
+   * lives in. In the measured instance those were two DIFFERENT
+   * checkouts, which is exactly the split this arm sees.
+   *
+   * **AN EARLIER BUILD OF THIS ARM READ `CLAUDE_PROJECT_DIR` AND NOTHING
+   * ELSE, AND WAS REJECTED FOR IT.** That variable is exported to HOOK
+   * commands and NOT to Bash tool calls, so the arming step — typed at a
+   * shell — took the "nothing declared" branch every time, and the only
+   * path to a STALE verdict was reachable from a fixture. A catcher that
+   * is called and always declines is the same defect as one nothing
+   * calls. `sessionCheckout` carries the measurement.
+   *
+   * **AND THE SWEEP IS THE HALF THAT CANNOT BE DEFEATED.** Every way of
+   * naming *the session's own checkout* can be wrong; `sweep` asks which
+   * checkouts of this repository load stale guards, off git's own
+   * worktree administration, so the session's is in the answer whether or
+   * not anything could name it. It REPORTS rather than refuses — a gate
+   * that reds on every dispatch because some detached tree is permanently
+   * behind is a gate this project would learn to ignore, which is the
+   * same reason the guard-surface arm is not a commit count.
+   *
+   * A STALE verdict on the RESOLVED TARGET joins the findings and the
+   * dispatch answers 1. An UNKNOWN one does not: it means a question
+   * could not be ASKED, and turning an inability into a verdict is the
+   * failure every other arm of this command already refuses.
+   *
+   * @type {string[]}
+   */
+  const sessionFindings = [];
+  const session = wantsPreflight || fenceWorktree !== "" ? sessionCheckout() : undefined;
+  if ((wantsPreflight || fenceWorktree !== "") && session === undefined) {
+    // NEITHER SIGNAL RESOLVED: no `CLAUDE_PROJECT_DIR`, and this command's
+    // working directory is not inside a checkout of this repository. That
+    // is genuinely unanswerable — and it is NOT production's shape, which
+    // is the correction this branch was narrowed by. Three verdicts,
+    // never two: said out loud and charged to nobody. The sweep below
+    // still runs, and still names every stale checkout on this machine.
+    console.log(
+      render([
+        note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
+        note("UNANSWERED: no session checkout could be resolved. CLAUDE_PROJECT_DIR is unset"),
+        note("AND this command is not being run from inside a checkout of this repository, so"),
+        note("there is no signal to derive one from. The SWEEP below needed none of that."),
+      ]),
+    );
+  } else if (session !== undefined) {
+    const currency = judgeCheckout({ target: session.path });
+    console.log(
+      render([
+        note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
+        value(
+          `verdict: ${currency.verdict}`,
+          liveProv(ctx.at, ctx.host, "checkout-currency.mjs, run from this checkout's own copy"),
+        ),
+        value(
+          `judged: ${session.path}`,
+          liveProv(ctx.at, ctx.host, `${session.source}: ${session.how}`),
+        ),
+        value(
+          `from: ${String(currency.figures["vantage"])}`,
+          liveProv(ctx.at, ctx.host, "the checkout checkout-currency.mjs itself lives in"),
+        ),
+        // EVERY LINE BELOW IS A STAMPED VALUE AND NOT A NOTE, because
+        // this module refuses a note that carries a digit — a figure with
+        // no ref is the defect this whole command exists to stop, and a
+        // hash inside a finding is a figure like any other.
+        ...currency.findings.map((f) =>
+          value(
+            `STALE [${f.code}] ${f.detail}`,
+            liveProv(ctx.at, ctx.host, "checkout-currency.mjs, judging that checkout's own disk"),
+          ),
+        ),
+        ...currency.unanswered.map((f) =>
+          value(
+            `UNANSWERED [${f.code}] ${f.detail}`,
+            liveProv(ctx.at, ctx.host, "checkout-currency.mjs, a question it could not ask"),
+          ),
+        ),
+        note(STALE_CLONE_LIMIT),
+      ]),
+    );
+    for (const f of currency.findings) {
+      sessionFindings.push(
+        `the checkout this session was started in is STALE [${f.code}] — ${f.detail}`,
+      );
+    }
+  }
+
+  // THE SWEEP — asked of git's own worktree administration, so it needs
+  // no environment variable, no flag and no working directory to be
+  // right. It runs whether or not the target above resolved, which is the
+  // whole point: the checkout a session was started in appears here by
+  // construction even when nothing could name it.
+  if (wantsPreflight || fenceWorktree !== "") {
+    const results = sweepCheckouts();
+    const stale = results.filter((r) => r.decision.verdict === "stale");
+    console.log(
+      render([
+        note("EVERY CHECKOUT OF THIS REPOSITORY ON THIS MACHINE — the sweep that needs nothing"),
+        note("declared, so a session's own checkout is in it whether or not anything can name it"),
+        ...results.map((r) =>
+          value(
+            `${r.decision.verdict}: ${r.checkout} @ ${r.head.slice(0, 7)}` +
+              `${r.decision.findings.length === 0 ? "" : ` — ${r.decision.findings.map((f) => f.code).join(", ")}`}`,
+            liveProv(ctx.at, ctx.host, "git worktree list --porcelain, read in the vantage"),
+          ),
+        ),
+        ...(stale.length === 0
+          ? [note("Every checkout on this machine loads the guards this project registers.")]
+          : [
+              note("A SESSION STARTED IN ANY CHECKOUT MARKED STALE ABOVE RUNS THE GUARDS THAT"),
+              note("CHECKOUT CARRIES, WHICH ARE NOT THE ONES THIS PROJECT REGISTERS. Reported"),
+              note("rather than refused: a permanently-behind detached tree must not red every"),
+              note("dispatch, or this becomes the gate nobody reads."),
+            ]),
+      ]),
+    );
+  }
 
   if (taskId !== "") {
     if (ctx.card === undefined) {
@@ -484,6 +627,7 @@ async function main(argv) {
 
   const findings = [
     ...ctx.findings,
+    ...sessionFindings,
     ...preflightFindings,
     ...fenceFindings,
     ...cardFindings,

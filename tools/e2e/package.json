@@ -15,6 +15,7 @@
     "health": "node scripts/health-bands-run.mjs",
     "capabilities": "node scripts/capabilities.mjs",
     "capabilities:check": "node scripts/capabilities.mjs --check",
+    "session:check": "node scripts/checkout-currency.mjs",
     "boot:check": "node scripts/tauri-boot-check.mjs",
     "boot:orphan-drill": "node scripts/orphan-drill.mjs"
   },
