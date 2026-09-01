@@ -397,7 +397,7 @@
   shape to copy, and scratch ports must be probed on BOTH stacks for the
   same reason.
 - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
-  commands — dormant until the repo's first GitHub push.
+  commands, ENFORCING since the repo's first push (2026-08-29).
   tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from
   the bullets above (T-045): every command they list is a workflow step
   VERBATIM, except the TWO deliberate divergences below — each one a
@@ -406,34 +406,31 @@
   lockfile-exact installs in CI, everywhere. (2) `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
   install chromium` — the Linux system libs a fresh runner lacks.
-  BOTH ARE ENVIRONMENT DIFFERENCES, and that is now the whole list:
-  T-054 closed the two that were only CI spelling a documented command a
+  BOTH ARE ENVIRONMENT DIFFERENCES, and that is the whole list: T-054
+  closed the two that were only CI spelling a documented command a
   second way (T-045-s1). The token lint runs as
   `npm run lint:tokens -- --selftest` then `npm run lint:tokens` from
-  tools/e2e — still the job's FIRST step, ahead of every `npm ci`,
-  because `npm run` needs no installed node_modules (it only extends
-  PATH; measured on npm 11.12.1 against an uninstalled tools/e2e) — and
-  still two steps, because `--selftest` short-circuits the walk.
-  THE DOCS GATE runs as `npm run lint:docs` from tools/e2e and it CANNOT
-  hold the token lint's position — do not "fix" the ordering (T-090).
-  `token-scan.mjs` is deliberately zero-dependency and `npm run` only
-  extends PATH, which is the whole reason the lint can run against a bare
-  checkout ahead of every `npm ci`; `docs-gate.mjs` imports `yaml`, a
-  tools/e2e devDependency chosen because it is the SAME package
-  lib/parser parses task cards with, so a block parses for both or for
-  neither (T-057). It therefore sits immediately after `npm ci` in
-  tools/e2e and before that package's other steps, which is the earliest
-  position its own dependency allows and still ahead of the 250MB browser
-  download. `scripts/docs-scan.mjs` stays zero-dependency so this
-  constraint belongs to the wrapper alone, and its header says so.
-  The boot check runs as `xvfb-run -a npm run boot:check` from tools/e2e:
-  the wrapper is real, since a headless runner has no display, but what
-  it wraps is now the documented command rather than a second spelling
-  of it. CI also runs
+  tools/e2e — the job's FIRST step, ahead of every `npm ci`, because
+  `npm run` needs no installed node_modules (it only extends PATH) and
+  `token-scan.mjs` is deliberately zero-dependency — and two steps,
+  because `--selftest` short-circuits the walk. THE DOCS GATE runs as
+  `npm run lint:docs` from tools/e2e and it CANNOT hold the token lint's
+  position — do not "fix" the ordering (T-090): `docs-gate.mjs` imports
+  `yaml`, a tools/e2e devDependency chosen because it is the SAME
+  package lib/parser parses task cards with, so a block parses for both
+  or for neither (T-057). It therefore sits immediately after `npm ci`
+  in tools/e2e and before that package's other steps — the earliest
+  position its own dependency allows and still ahead of the 250MB
+  browser download; `scripts/docs-scan.mjs` stays zero-dependency so
+  the constraint belongs to the wrapper alone, and its header says so.
+  The boot check runs as `xvfb-run -a npm run boot:check` from
+  tools/e2e: the wrapper is real, since a headless runner has no
+  display, but what it wraps is the documented command rather than a
+  second spelling of it. CI also runs
   `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
-  (the dev-tool setup above — guarded, because the cargo cache
-  restores ~/.cargo/bin and a restored binary is the happy path,
-  T-153-s13), and it deliberately does NOT run `npm run tauri dev` or
+  (the dev-tool setup above — guarded, because the cargo cache restores
+  ~/.cargo/bin and a restored binary is the happy path, T-153-s13), and
+  it deliberately does NOT run `npm run tauri dev` or
   `npm run tauri build` — one opens a window and the other packages a
   bundle; the xvfb boot step covers the dev path — nor
   `cargo run -p nputer-index -- index --watch --root ../..`, which runs
@@ -447,81 +444,59 @@
   (T-061-s5, ruled here): it opens a window and builds the app, so it
   roughly DOUBLES the boot step's cost, and it deliberately SIGKILLs a
   process mid-boot, which on a shared runner is a different risk profile
-  from a laptop. It is a REGRESSION drill rather than a release gate —
-  the property it pins cannot drift without somebody editing
-  `tauri-boot-check.mjs`'s exit path — so it takes the disposition
-  `index --watch` and `arch` already have, and the ruling is written here
-  rather than left to the next editor to re-derive.
+  from a laptop — a REGRESSION drill rather than a release gate, whose
+  property cannot drift without somebody editing
+  `tauri-boot-check.mjs`'s exit path, so it takes the disposition
+  `index --watch` and `arch` already have.
   THE CENSUS-CURRENCY GATE runs as `npm run capabilities:check` from
   tools/e2e, immediately AFTER `npm run typecheck` and BEFORE the browser
-  download (T-153-s8). Three placements were open and each is decided by
-  a measurement rather than by taste. (1) It CANNOT hold the token lint's
-  bare-checkout position, and NOT for the DOCS GATE's reason:
-  `capabilities.mjs` imports no package at all, and on this lane's own
-  uninstalled worktree it ran and answered CURRENT at exit 0. But it
-  resolves a templated test name's iterable by IMPORTING a `.mjs` out of
-  tests/, and two scripts in that tree import `yaml` — so the
-  bare-checkout property is a fact about which modules the SPECS happen
-  to pull, not about this script, and the edit that would falsify it
-  lands in a spec file rather than here. After tools/e2e's `npm ci` it
-  costs nothing and cannot be falsified that way. (2) Before the 250MB
-  browser download and the lane, by `index --check`'s own argument: a
-  stale census is news that takes under a second to produce and should
-  not wait behind minutes of setup. (3) After `npm run typecheck`,
-  because the generator reads the same spec files `tsc` validates — a
-  file that does not compile should be named by the step that can say so.
-  CI deliberately does NOT run `npm run capabilities`, the GENERATOR, and
-  the reason is the gate's own integrity rather than cost: run in the
-  runner it rewrites the file the check judges, exits 0, and certifies
-  its own output. The regeneration stays a hand run, and `--check` prints
-  it by name when it reds.
+  download (T-153-s8; each placement decided by a measurement on that
+  card). It cannot hold the token lint's bare-checkout position — not
+  for the DOCS GATE's reason but because it resolves a templated test
+  name by IMPORTING a `.mjs` out of tests/, where two scripts import
+  `yaml`, so the bare-checkout property is a fact about the SPECS and
+  the edit that would falsify it lands in a spec file. It runs before
+  the browser download by `index --check`'s own argument (a stale census
+  takes under a second and should not wait behind minutes of setup),
+  and after `npm run typecheck` because the generator reads the same
+  spec files `tsc` validates. CI deliberately does NOT run
+  `npm run capabilities`, the GENERATOR, for the gate's own integrity:
+  run in the runner it rewrites the file the check judges, exits 0, and
+  certifies its own output. The regeneration stays a hand run, and
+  `--check` prints it by name when it reds.
   ONE TYPOGRAPHIC RULE GOVERNS EVERY EDIT TO THIS SECTION, and it lives
   in THIS bullet because this is what the next editor of ci.yml opens
-  (measured at T-054, promoted out of that card's implementation notes
-  at T-078): the four per-package bullets separate their commands with
-  U+00B7 MIDDLE DOT, and the derivation reads separated segments only
-  until the first one that does not open with a backtick. **A MIDDLE DOT
-  therefore belongs BETWEEN commands, or AFTER the last one — NEVER
-  inside a command's parenthetical**, where it ends the list early and
-  every command behind it quietly leaves CI parity. This clause NAMES
-  that character without typing it, and the section's in-parenthetical
-  legends use commas for the same reason; the tools/e2e bullet's own
-  `Exit 0 booted` legend sits after its LAST command rather than beside
-  its own, which is structure and not decoration. THE COST, MEASURED
-  TWICE — once in T-054's draft and again at T-078 against this wording:
-  putting that separator inside the `index --check` parenthetical drops
-  the section's exposed commands by FIVE, taking `cargo audit`,
-  `index --watch`, `arch`, `arch cycles` and `arch blast` with it — a
-  DELTA re-measured at ADR-019 phase 5 when the last two joined the
-  bullet (it was THREE from T-054 through T-090), which is why the
-  figure is stated as a DELTA and the endpoints are left to whoever
-  asks the derivation. AND THE TRUNCATION
-  IS NOT MOSTLY SILENT, which is what tells you how to check your own
-  edit: the derivation runs in BOTH directions, so every command the
-  SPEC claims and the doc stops exposing reds BY NAME — that mutation
-  fails the lane 2 of 14 at exit 1, naming all three keys.
-  **THE SENTENCE THAT USED TO SIT HERE WAS FALSE AND IS RETRACTED**
-  (T-090, absorbing T-084-s2). It said the derivation *"is silent in
-  exactly ONE case, a command the DOC gains that the spec does not yet
-  claim"*. That is the case it is LOUDEST about. `deriveExpectedSteps`'
-  `for (const key of doc.keys())` loop — the one that asks whether
-  anything CLAIMS each command the doc lists — pushes a problem naming
-  the command and both dispositions open to it. T-090 walked into it on
-  purpose while adding `npm run lint:docs` to the bullet above and the
-  lane failed by name; that card carries the message and the count.
-  **WHAT IS SILENT IS A SHAPE, NEVER A DIRECTION**: a command the
-  derivation cannot SEE. T-045's verifier found two such shapes and
-  `structuralProblems` now names both (an INDENTED bullet, a fenced
-  block). The third is a command written into a bullet carrying no
-  `run from <dir>/:` marker at all — invisible to every loop above by
-  construction, because that marker is what makes a bullet a command
-  list — and it is pinned by a fixture in the spec rather than left as a
-  claim in prose. **So a NEW command is still the edit to ENUMERATE
-  rather than eyeball**, for a better reason than the retracted one: not
-  because the lane will stay quiet about it, but because the lane can
-  only speak about commands it can see, and a new command is exactly the
-  thing that arrives in an unread shape. Change a command here, change it
-  there, or the lane fails.
+  (T-054, promoted at T-078): the four per-package bullets separate
+  their commands with U+00B7 MIDDLE DOT, and the derivation reads
+  separated segments only until the first one that does not open with a
+  backtick. **A MIDDLE DOT therefore belongs BETWEEN commands, or AFTER
+  the last one — NEVER inside a command's parenthetical**, where it ends
+  the list early and every command behind it quietly leaves CI parity.
+  This clause NAMES that character without typing it, and the section's
+  in-parenthetical legends use commas for the same reason; the tools/e2e
+  bullet's own `Exit 0 booted` legend sits after its LAST command rather
+  than beside its own, which is structure and not decoration. THE COST
+  is stated as a DELTA and re-measured when the bullets grow: a
+  separator inside the `index --check` parenthetical drops the section's
+  exposed commands by FIVE (T-054, T-078, ADR-019 phase 5). AND THE
+  TRUNCATION IS NOT MOSTLY SILENT, which is what tells you how to check
+  your own edit: the derivation runs in BOTH directions, so every
+  command the SPEC claims and the doc stops exposing reds BY NAME. **A
+  command the DOC gains that the spec does not yet claim is the case it
+  is LOUDEST about** — `deriveExpectedSteps`' `for (const key of
+  doc.keys())` loop pushes a problem naming the command and both
+  dispositions open to it; the sentence that once said the opposite
+  here is retracted (T-090, absorbing T-084-s2, walked into it on
+  purpose while adding `npm run lint:docs`). **WHAT IS SILENT IS A
+  SHAPE, NEVER A DIRECTION**: a command the derivation cannot SEE. An
+  INDENTED bullet and a fenced block are named by `structuralProblems`
+  (T-045's verifier found both); the third is a command written into a
+  bullet carrying no `run from <dir>/:` marker — invisible to every loop
+  by construction, and pinned by a fixture in the spec. **So a NEW
+  command is still the edit to ENUMERATE rather than eyeball**: the lane
+  can only speak about commands it can see, and a new command is exactly
+  the thing that arrives in an unread shape. Change a command here,
+  change it there, or the lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -1269,42 +1244,29 @@
     inside it. Created with
     `git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>`, and
     the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
-    THIS REPO and the older one is not a mistake to fix**: derived at
-    `4d2f03c`, 69 branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`,
-    plus `main`. The two OVERLAP rather than succeed each other (the old
-    set runs T-001…T-050, the new one starts at T-013 and T-028), so
-    there is no cutover id to cite; derive the pair, never quote it.
+    THIS REPO and the older `tNNN-…` one is not a mistake to fix**: the
+    two sets OVERLAP rather than succeed each other, so there is no
+    cutover id to cite — derive the pair at your own ref, never quote it
+    (the census at `4d2f03c` is on T-089's card).
   - the BRANCH IS KEPT after the merge and only the WORKTREE is removed
     (`git worktree remove`), which is why `git branch` lists every lane
     this repo has ever run and `git worktree list` lists only the live
     ones. `git worktree list` is therefore the authority on which fences
     are held right now — the board's `status: building` is not, while
-    the dispatch stamp is lapsed (see the STAMP bullet's own history in
-    method/tasks/TASK-FORMAT.md).
-    **BUT READ IT AS ENTRIES ON A `task/T-NNN-*` BRANCH, NOT AS A ROW
-    COUNT**, and this correction is measured rather than anticipated: at
-    T-089's tip `git worktree list` returned SIX entries, of which one is
-    `…/scratchpad/drill` on a DETACHED HEAD at `09ce637` — a transient
-    poison-drill checkout belonging to T-064's lane, holding no fence and
-    named after no card. A detached entry is not a lane. Filter on the
-    branch, and expect other lanes' scratch worktrees to appear beside
-    yours: the scratch directory is shared (STATE's standing observation
-    about prefixes), and so, it turns out, is the worktree list.
-    **AND ONE DETACHED ENTRY IS PERMANENT RATHER THAN TRANSIENT — THE
-    HUMAN'S APP CHECKOUT `../nputer-app`** (T-052, @human's ruling of
-    2026-08-25; the bullet below has the whole account). It is detached
-    ON PURPOSE, it holds no fence, it is named after no card, and it is
-    NOT a lane — the same reading a drill worktree gets, for a different
-    reason. It needs no new rule here; it needs naming, so that the next
-    session to derive the lane list does not count the human's app as a
-    sixth lane or try to remove it after a merge. **DERIVE WHETHER IT
-    EXISTS FROM `git worktree list`, NEVER FROM THIS FILE.** This
-    sentence said it did not exist yet, and it was falsified within the
-    hour by the lane that wrote it. A worktree's existence is a
-    LIVE-ENVIRONMENT fact like a pid or a port holder, not a function of
-    a tree, so a doc that claims one goes stale at somebody else's
-    keystroke and a session that quotes the doc reports the wrong lane
-    list.
+    the dispatch stamp is lapsed (the STAMP bullet's own history in
+    method/tasks/TASK-FORMAT.md). **BUT READ IT AS ENTRIES ON A
+    `task/T-NNN-*` BRANCH, NOT AS A ROW COUNT**: a detached entry is not
+    a lane — a poison-drill checkout holds no fence and is named after
+    no card (T-089 measured one beside its own lane) — so filter on the
+    branch, and expect other lanes' scratch worktrees beside yours. **AND
+    ONE DETACHED ENTRY IS PERMANENT RATHER THAN TRANSIENT — THE HUMAN'S
+    APP CHECKOUT `../nputer-app`** (T-052, @human's ruling of
+    2026-08-25; the bullet below has the account). It is detached ON
+    PURPOSE, holds no fence, is named after no card, and is NOT a lane:
+    do not count it or try to remove it after a merge. **DERIVE WHETHER
+    IT EXISTS FROM `git worktree list`, NEVER FROM THIS FILE** — a
+    worktree's existence is a LIVE-ENVIRONMENT fact like a pid, and the
+    sentence that once claimed one here was falsified within the hour.
   - A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT: no
     node_modules in any of the three packages, no `lib/parser/dist`, no
     `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
@@ -1319,9 +1281,8 @@
     never sees it because ci.yml orders app build before app suite; a
     hand-run lane does.
   - **THE BRIEF IS ASSEMBLED BY THE ASSEMBLER, AND THIS IS THE SPELLING
-    method/roles/orchestrator.md 5b POINTS AT** (`T-133-s3`, the split
-    that card's own first question asked for: the RULE is
-    product-agnostic and lives in the role file, the COMMAND is an
+    method/roles/orchestrator.md 5b POINTS AT** (`T-133-s3`: the RULE
+    is product-agnostic and lives in the role file, the COMMAND is an
     nputer path and lives here). Run from the repository root:
 
         node tools/e2e/scripts/brief.mjs --task T-NNN
@@ -1329,13 +1290,10 @@
     and paste what it emits. Every row comes back with the source that
     row names and the ref or reading time it was derived at, and a row
     the command cannot derive is printed as NOT DERIVED with its source
-    rather than filled in. **WHY A COMMAND AND NOT MORE PROSE ABOUT
-    CARE**: step 5b already said the brief is assembled to the contract,
-    every dispatch brief written on 2026-08-25 obeyed that clause and
-    broke the one after it, and the sentence had been read closely
-    enough to be QUOTED. A rule that depends on a reader remembering has
-    a failure mode; one that depends on a construction does not, and
-    this command already refuses to emit a figure it did not derive.
+    rather than filled in. A rule that depends on a reader remembering
+    has a failure mode — every brief written on 2026-08-25 obeyed 5b's
+    contract clause and broke the one after it — and a construction
+    does not: this command refuses to emit a figure it did not derive.
   - **THE FENCE IS A PROPERTY AT THE MOMENT OF THE WRITE, NOT ONLY A
     DISCIPLINE AT THE HANDOFF** (T-154, ADR-020 decision 1). After
     cutting the lane and before briefing the session, the dispatcher
@@ -1353,84 +1311,72 @@
     against live statuses, its `@ <hash>` ref stamps — and refuses the
     dispatch on any that no longer holds, in `--write-fence`'s own
     refusal shape and at the same four exit codes. It judges no
-    DESIRABILITY and says so on every run, printing which claim classes
-    it checked and which it cannot; a discrepancy is either corrected or
-    ruled acceptable ON THE CARD, dated, with a
+    DESIRABILITY and says so on every run; a discrepancy is either
+    corrected or ruled acceptable ON THE CARD, dated, with a
     `PREFLIGHT RULING (<date>):` line naming that finding's own SUBJECT
     rather than its class — and the ruling's FORM is load-bearing
-    (T-160's verdict, correction four): it must be a plain, unindented
-    body line. A ruling written as a `- ` list item, indented, or
-    inside a fenced block is invisible to the reader and the finding
-    stays refused; the bullet is the natural way to write one, and the
-    failure is silent to the author. A failed preflight also GATES
-    `--write-fence` in the same invocation: no manifest is written for
-    a card whose claims fell. IT IS DELIBERATELY NOT IN "Build & test"
-    above, for the reason the METHOD EVAL GATE gives about its own
-    runner — a two-package edit T-160's fence did not reach. Wiring it
-    into CI is a routed suggestion.
-    A PreToolUse hook wired in
-    `.claude/settings.json` then reads that file at every Edit/Write
-    with no dependency a freshly cut worktree lacks. FOUR ANSWERS FOR A
-    LANE, AND THE AUTHORITY IS `decide` IN
-    `.claude/hooks/lane-fence.mjs` RATHER
-    THAN THIS PAGE: a checkout not on a lane branch is ALLOWED — the
-    integrator, the architect and every detached drill, which is the
-    positive control that keeps a refusal distinguishable from an
-    absence; a lane branch with NO manifest is REFUSED, because that is
-    a dispatch that skipped its step; a path inside the manifest or
-    under the unfenceable `docs/tasks/` is allowed; anything else is
-    refused, naming the fence, the path and the route. A card whose
-    `touches:` no longer matches the manifest's stamp refuses with
-    `re-expand`, so a fence cannot be widened from inside the lane it
-    fences — `method/lane-protocol.md` rule 5, made mechanical.
-    **AND THE SEAT WITH NO LANE IS SEEN TOO, WHICH IS THE SHAPE OF TWO
-    OF THE THREE INCIDENTS T-154 CITES** (`T-154-s2`; @human ruled those
-    writes IN SCOPE on 2026-08-30, and v1 allowed them because it armed
-    on the writing session's own branch). A checkout that is NOT on a
-    lane branch — this one above all — is now refused a write to any
-    repository-relative path some LIVE lane's manifest reserves. Every
-    live lane's fence is read off git's own worktree administration with
-    no subprocess: measured at `T-154-s2`, the whole walk costs a fifth
-    of a millisecond where `git worktree list` alone costs eleven, and
-    the runner is unchanged end to end at ~40 ms because node's startup
-    dominates both. **THE CARVE-OUTS ARE CRITERIA AND NEVER THE HOOK'S
-    JUDGEMENT**: `docs/tasks/` stays unfenceable (every manifest carries
-    it, as `alwaysWritable`, so the dispatch and closing stamps are
-    safe), a card's own file is outside every fence (its `excluded`),
-    and this seat's own standing writes are never a lane's to veto —
-    exactly `docs/STATE.md` and `docs/checkpoints`, no more. ONE
-    CRITERION IS THE HOOK'S OWN AND IS NOT IN THE RULING'S LIST: a
-    checkout git itself records as mid-merge, mid-rebase, mid-revert or
-    mid-cherry-pick is free, because resolving a lane's merge is an Edit
-    inside that lane's fence by construction, and a guard forbidding the
-    act that CONSUMES a fence is a guard somebody turns off.
-    **AND IT CLOSES BEFORE THE LANE DOES**: git drops the marker at the
-    merge COMMIT and a clean merge never writes one, while rule 6 keeps
-    the worktree until after the CHECKPOINT — so an Edit into a
-    just-merged fence is refused for that whole window, which is where
-    this project's verdict corrections land. Remove the worktree before
-    the reconciling writes (measured at `T-154-s2`'s verification).
+    (T-160's verdict, correction four): a plain, unindented body line.
+    A ruling written as a `- ` list item, indented, or inside a fenced
+    block is invisible to the reader and the finding stays refused. A
+    failed preflight also GATES `--write-fence` in the same invocation.
+    IT IS DELIBERATELY NOT IN "Build & test" above, for the reason the
+    METHOD EVAL GATE gives about its own runner; wiring it into CI is a
+    routed suggestion.
+    A PreToolUse hook wired in `.claude/settings.json` then reads that
+    file at every Edit/Write with no dependency a freshly cut worktree
+    lacks. FOUR ANSWERS FOR A LANE, AND THE AUTHORITY IS `decide` IN
+    `.claude/hooks/lane-fence.mjs` RATHER THAN THIS PAGE: a checkout not
+    on a lane branch is ALLOWED — the integrator, the architect and
+    every detached drill, which is the positive control that keeps a
+    refusal distinguishable from an absence; a lane branch with NO
+    manifest is REFUSED, because that is a dispatch that skipped its
+    step; a path inside the manifest or under the unfenceable
+    `docs/tasks/` is allowed; anything else is refused, naming the
+    fence, the path and the route. A card whose `touches:` no longer
+    matches the manifest's stamp refuses with `re-expand`, so a fence
+    cannot be widened from inside the lane it fences —
+    `method/lane-protocol.md` rule 5, made mechanical.
+    **AND THE SEAT WITH NO LANE IS SEEN TOO** (`T-154-s2`; @human ruled
+    those writes IN SCOPE on 2026-08-30, and two of the three incidents
+    T-154 cites were that shape). A checkout that is NOT on a lane
+    branch — this one above all — is refused a write to any
+    repository-relative path some LIVE lane's manifest reserves, read
+    off git's own worktree administration with no subprocess (the
+    timing is on that card). **THE CARVE-OUTS ARE CRITERIA AND NEVER
+    THE HOOK'S JUDGEMENT**: `docs/tasks/` stays unfenceable (every
+    manifest carries it, as `alwaysWritable`, so the dispatch and
+    closing stamps are safe), a card's own file is outside every fence
+    (its `excluded`), and this seat's own standing writes are never a
+    lane's to veto — exactly `docs/STATE.md` and `docs/checkpoints`, no
+    more. ONE CRITERION IS THE HOOK'S OWN AND IS NOT IN THE RULING'S
+    LIST: a checkout git itself records as mid-merge, mid-rebase,
+    mid-revert or mid-cherry-pick is free, because resolving a lane's
+    merge is an Edit inside that lane's fence by construction, and a
+    guard forbidding the act that CONSUMES a fence is a guard somebody
+    turns off. **AND IT CLOSES BEFORE THE LANE DOES**: git drops the
+    marker at the merge COMMIT and a clean merge never writes one, while
+    rule 6 keeps the worktree until after the CHECKPOINT — so an Edit
+    into a just-merged fence is refused for that whole window, which is
+    where this project's verdict corrections land. Remove the worktree
+    before the reconciling writes (`T-154-s2`).
     **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
     IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
     `>` redirect, a checkout — reaches disk without an Edit or a Write
     and stays protocol-covered. A path OUTSIDE the writing checkout is
     allowed in BOTH seats, the manifest's domains being
-    repository-relative: the scratchpad and a drill tree are reachable,
-    and so is a sibling lane's own tree — that last one deliberately,
-    because nothing separates an architect reaching into a lane from
-    THAT LANE'S OWN EXECUTOR writing into it from a shell parked
-    elsewhere. A DETACHED checkout is not judged at all, so the poison
-    drill may go on mutating the very files a live lane holds and the
-    human's app checkout stays free. A live lane whose manifest this
-    seat cannot read reserves nothing here — that refusal belongs to
-    the lane's own arm, at its own first write, where there is a session
-    to tell. And the hook FAILS OPEN in exactly one shape, proven at
-    verification to be the harness's own contract rather than this
-    guard's choice: a command hook whose script cannot be LOCATED
-    never starts, and a process that never starts cannot exit 2 — it
+    repository-relative: the scratchpad, a drill tree and a sibling
+    lane's own tree are all reachable — the last deliberately, because
+    nothing separates an architect reaching into a lane from THAT LANE'S
+    OWN EXECUTOR writing into it from a shell parked elsewhere. A
+    DETACHED checkout is not judged at all, so the poison drill may go
+    on mutating the very files a live lane holds and the human's app
+    checkout stays free. A live lane whose manifest this seat cannot
+    read reserves nothing here — that refusal belongs to the lane's own
+    arm, at its own first write. And the hook FAILS OPEN in exactly one
+    shape, the harness's own contract rather than this guard's choice: a
+    command hook whose script cannot be LOCATED never starts, which
     takes `CLAUDE_PROJECT_DIR` unset AND a shell cwd outside any
-    checkout carrying the hook, both wrong at once (added at T-154's
-    merge, closing the verdict's disclosure condition).
+    checkout carrying the hook, both wrong at once (T-154's merge).
     The manifest is a RUNTIME file carrying a self-ignoring `.gitignore`
     beside it: one that reached the integration branch would hand every
     checkout one lane's permanently stale fence.
@@ -1590,17 +1536,13 @@
   GRAPH REGEN fires on `*.ts/*.tsx/*.js/*.jsx` OUTSIDE docs/, BOOT GATE
   on `app/src/**`, `app/src-tauri/**` or a manifest, so a commit whose
   whole diff is `docs/tasks/*.md` matches NEITHER — and it has redded a
-  suite twice. `9c64cd8`: two card titles opened with a backtick, a YAML
-  plain scalar may not, both cards became unparseable, nothing errored,
-  the board just got SHORTER and it surfaced as `Expected "60"` against
-  `Received "62"` in four bodies about scroll containment. `fede266`: a
-  finding filed with a `status:` outside the parser's vocabulary took
-  `npm test` from app/ to 830 of 831 on a commit whose entire diff was
-  ONE markdown file, and the NEXT executor found it rather than the
-  verifier who wrote it (T-081-s9). **Both were found three layers from
-  the cause by somebody who was not looking**, which is the argument for
-  this gate: the failure mode is not that a suite goes red, it is that
-  the red arrives detached from its edit and gets attributed to whatever
+  suite twice: `9c64cd8` (two card titles opened with a backtick, both
+  cards silently unparseable, the board got SHORTER and four
+  scroll-containment bodies redded) and `fede266` (a `status:` outside
+  the parser's vocabulary took the app suite to 830 of 831 on a diff of
+  ONE markdown file, T-081-s9). **Both were found three layers from the
+  cause by somebody who was not looking**: the failure mode is a red
+  that arrives detached from its edit and gets attributed to whatever
   lane is nearest.
   RUN IT — from the repo root, and this is THE ONE SPELLING, character
   for character the same string `tools/e2e/scripts/docs-gate.mjs`'s own
@@ -1611,24 +1553,19 @@
       node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
 
   It is fed the RANGE RULE's own path list and deliberately computes no
-  range of its own — a second opinion about which two commits the diff
-  means is the failure that rule exists to prevent. Exit 0 nothing owed,
-  1 the gate HAS a verdict (suites owed, or a live card the parser will
-  refuse, or the root-anchor account and the tree disagree), 2 called
-  wrong, 3 the gate could not run — the same four codes `index --check`
-  and `boot:check` use.
+  range of its own. Exit 0 nothing owed, 1 the gate HAS a verdict
+  (suites owed, or a live card the parser will refuse, or the
+  root-anchor account and the tree disagree), 2 called wrong, 3 the gate
+  could not run — the same four codes `index --check` and `boot:check`
+  use.
   **THERE IS NO `xargs` IN THAT SPELLING AND THAT IS THE POINT** (T-090,
-  absorbing T-061-s3; every BSD figure below measured at `9b03ae6` on
-  Darwin 25.6.0 against `/usr/bin/xargs`, which `which -a xargs` confirms
-  is the only one on this machine's PATH, and the GNU piped column on
-  ubuntu-24.04 at `8de9de4` and `8f7b58c` — CI runs 33259394002 and
-  33260414204, read into this table by T-153-s6). A pipe through `xargs`
-  destroys two of the four codes, in the direction the codes exist to
-  prevent, and it destroys them DIFFERENTLY on the two platforms — so the
-  doc prints a spelling that has no `xargs` layer at all rather than one
-  that is wrong on one platform. THE MATRIX, each code produced
-  deliberately and each observed code read from `$?` on an unpiped
-  command:
+  absorbing T-061-s3; the BSD column measured at `9b03ae6` against
+  `/usr/bin/xargs`, the GNU piped column on ubuntu-24.04 by CI runs
+  33259394002 and 33260414204, read into this table by T-153-s6). A pipe
+  through `xargs` destroys two of the four codes, in the direction the
+  codes exist to prevent, and destroys them DIFFERENTLY on the two
+  platforms. THE MATRIX, each code produced deliberately and each
+  observed code read from `$?` on an unpiped command:
 
   | the gate means | `$(…)` form, BSD | `$(…)` form, GNU | piped, BSD | piped, GNU |
   |---|---|---|---|---|
@@ -1637,166 +1574,99 @@
   | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
 
-  THE BSD COLUMNS ARE MEASURED HERE AND THE GNU PIPED ONE ON CI, AND
-  SAYING WHICH IS THE POINT OF THE COLUMN. This machine has no GNU
-  `xargs` and no container runtime to borrow one from, so that column
-  stood as GNU findutils' DOCUMENTED mapping — utility exits 1–125
-  become 123 — until the ubuntu runner ran it. **IT CLOSED AS A FAILURE,
-  AND NOT WHERE THIS BULLET SAID IT WOULD** (T-153-s6, whose card and
-  checkpoint carry both runs and the re-probe of this machine's PATH):
-  the closure was promised at CI's `npm run lint:docs` step, which
-  invokes the gate DIRECTLY and has no `xargs` in it at all, so nothing
-  in that step could ever have closed it. What closed it is the e2e
-  lane, whose two bodies EXECUTE the forbidden spelling and observed
-  **123** on an empty list where this table, filled in from BSD's
-  behaviour rather than measured, predicted **0**. GNU `xargs` RUNS the
-  utility once on empty input (BSD's silence is GNU's
-  `--no-run-if-empty`), so the gate reaches its OWN empty-list refusal
-  at 2 and GNU maps that to 123.
-  **THE HAZARD IS THEREFORE PLATFORM-SCOPED, AND IT IS NOT THE SAME
-  HAZARD ON THE TWO PLATFORMS.** Under BSD the pipe HIDES a failed range
-  as a clean gate: every utility exit collapses to **1**, as its own man
-  page says, and on EMPTY input the utility is never invoked at all so
-  the pipeline exits **0** — "nothing owed", silence wearing a clean
-  gate's costume, the exact outcome T-084-s6 exists to remove. Under GNU
-  nothing is hidden — the gate runs and refuses — and what is destroyed
-  instead is the IDENTITY of the codes, since 1, 2 and 3 all arrive as
-  123. Both are disqualifying and the reasons differ, which is why the
-  printed spelling drops `xargs` altogether rather than adding a flag
-  that makes one platform imitate the other.
-  `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect at run time —
-  two observables, never `process.platform` — so the bodies that execute
-  this table's piped column read the column for the dialect they
-  measured, and an `xargs` matching neither row reds instead of taking a
-  branch by default. The `$(…)` column needs no second measurement to be
-  honest about: it has no `xargs` process in it, so nothing
-  platform-dependent stands between this gate's `process.exit` and the
-  shell that reads it. **THAT ASYMMETRY IS THE ARGUMENT.** A spelling
-  whose correctness has to be re-measured per platform is one nobody
-  will re-measure.
+  **THE HAZARD IS PLATFORM-SCOPED, AND IT IS NOT THE SAME HAZARD ON THE
+  TWO PLATFORMS.** Under BSD the pipe HIDES a failed range as a clean
+  gate: every utility exit collapses to **1**, and on EMPTY input the
+  utility is never invoked so the pipeline exits **0** — silence wearing
+  a clean gate's costume. Under GNU nothing is hidden and what is
+  destroyed is the IDENTITY of the codes, since 1, 2 and 3 all arrive as
+  123 (GNU `xargs` RUNS the utility once on empty input, so the gate
+  reaches its own empty-list refusal at 2 and GNU maps that to 123 —
+  where this table, filled in from BSD, once predicted 0; T-153-s6
+  carries both runs). `tools/e2e/scripts/xargs-dialect.mjs` PROBES the
+  dialect at run time — two observables, never `process.platform` — so
+  the bodies that execute the piped column read the column for the
+  dialect they measured. The `$(…)` column has no `xargs` process in it,
+  so nothing platform-dependent stands between this gate's
+  `process.exit` and the shell that reads it. **THAT ASYMMETRY IS THE
+  ARGUMENT**: a spelling whose correctness has to be re-measured per
+  platform is one nobody will re-measure.
   **AN EMPTY PATH LIST IS EXIT 2, NOT EXIT 0** (T-084-s6), and the `$(…)`
-  form above is what makes that remedy reachable: a FAILED range
-  substitutes to nothing, which is zero arguments, which is exit 2.
-  THREE MORE SHAPES REACH EXIT 2 rather than a clean answer, each one
-  measured being answered "not owed" at 0 before T-090: an argument that
-  is EMPTY or BLANK (`"$(git diff …)"` on a failed range is a list of
-  length ONE, so the zero-argument guard cannot see it, T-064-s7); an
-  argument carrying NEWLINES (the same quoting, on a range that
-  SUCCEEDED, hands the whole list over as one blob, T-064-s7); and a
-  path that resolves OUTSIDE this repository, which is what `../../docs/…`
-  typed from tools/e2e/ used to mean (T-101-s3). A `./`-prefixed or
-  ABSOLUTE spelling is NOT refused — it is normalised to its
-  root-relative form, printed, and answered, because it names a file this
-  gate can identify. A PLAIN relative path away from the repo root is
-  refused as ambiguous rather than guessed at, because resolving it
-  either way just moves the false-clean to the other spelling.
+  form is what makes that remedy reachable: a FAILED range substitutes
+  to nothing, which is zero arguments. THREE MORE SHAPES REACH EXIT 2
+  rather than a clean answer, each once answered "not owed" at 0: an
+  argument that is EMPTY or BLANK (`"$(git diff …)"` on a failed range
+  is a list of length ONE, T-064-s7); an argument carrying NEWLINES (the
+  same quoting on a range that SUCCEEDED, T-064-s7); and a path that
+  resolves OUTSIDE this repository, which is what `../../docs/…` typed
+  from tools/e2e/ used to mean (T-101-s3). A `./`-prefixed or ABSOLUTE
+  spelling is normalised to its root-relative form and answered; a PLAIN
+  relative path away from the repo root is refused as ambiguous.
   **`npm run lint:docs` FROM tools/e2e IS THE NAMED FORM AND CI'S STEP**
-  (T-090), AND IT BUYS HALF: it runs the WHOLE-TREE half and judges NO
-  diff, because a workflow has no "merge's diff" to be handed and this
-  tool will not compute one. Both incidents it exists for (`9c64cd8`,
-  `fede266`) are in the half CI now holds. THE DIFF HALF IS STILL A
-  RITUAL: nothing but the integrator running the two lines above makes a
-  merge answer for the suites it owes. **AND ITS EXIT 0 MEANS *I WAS NOT
-  ASKED*, NEVER *NOTHING OWED*** (T-142-s1): no diff is judged, so no
-  owed-suite verdict exists to be clean. Read its LAST LINE: it names the
-  half it answered. IF it cannot run THEN say so LOUDLY in the
-  checkpoint, naming the reason and the exit code; a skipped gate is
-  news, never silence.
-  `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it
-  runs inside the lane TODAY, which makes this the one standing gate
-  whose written form is already held by something other than discipline.
-  THE READER SET IS DERIVED FROM THE TREE, NEVER LISTED — that is the
-  whole mechanism, and a hand list is the defect T-058 and T-080 each
-  spent a card on. **THE DERIVATION'S AUTHORITY IS
-  `tools/e2e/scripts/docs-scan.mjs`'s OWN `THE DERIVATION` HEADER, NOT
-  THIS PARAGRAPH — AND THAT IS A CORRECTION, NOT A PREFERENCE** (T-162,
-  re-landing this file): the two load-bearing halves this bullet used to
-  spell out were the PRE-T-085 rule, which required a site's literal to
-  open with `docs` AND its base to evaluate to the repository root.
-  T-085 SUBSUMED both under ONE containment test — a docs-SHAPED literal
-  RESOLVED against whatever its base evaluates to, kept when it lands
-  inside `<root>/docs` — precisely so that a docs path written relative
-  to a PACKAGE directory, live in app/src-tauri/tests/agent_runner.rs
-  and holding no root, is SEEN. This page carried the superseded wording
-  against a module no suite compares it to: T-057's two-implementations
-  rule arriving in prose instead of in code.
-  WHAT THIS BULLET OWES ITS READER IS THE SHAPE, AND IT IS TWO ARMS. A
-  DOCS SITE: a path-forming call whose docs-shaped literal RESOLVES
-  inside this repository's docs/. Or a CALL SITE: a call that HANDS the
-  repository root to a first-party function which spends it on a docs
-  path.
-  **THE SECOND ARM IS NOT A REFINEMENT, IT IS THE DIFFERENCE BETWEEN A
-  RIGHT ANSWER AND A WRONG ONE.** `lib/parser/test/smoke.test.ts` spells
-  no docs path at all; it calls `parseProject(repoRoot)`, and
-  `lib/parser/src/project.ts` spends that root on docs/tasks,
-  docs/ROADMAP.md and docs/architecture/components. With the literal arm
-  alone, a one-line edit to docs/ROADMAP.md owed the e2e lane at exit 0
-  while the parser suite went red in a suite the answer never named —
-  T-084's card carries both counts, and an integrator who obeyed the
-  gate merged a red tree.
-  AND THE TWO DISCRIMINATORS SURVIVE THE WIDENING, each by a different
-  half: `tools/e2e/fixtures/shell.ts` stays out TEXTUALLY, because its
-  literal's first segment is `app` and it is therefore not docs-shaped;
-  `lib/parser/test/files.test.ts` stays out BY CONTAINMENT, because its
-  base is that suite's own fixtures directory so the path lands OUTSIDE
-  `<root>/docs`. That second one is what stops a widened scan from
-  flooding the reader set with fixture readers.
-  **A file that does BOTH and cannot be linked is REPORTED, never
-  dropped**: silence is the outcome this gate exists to remove. The
-  reporting arm follows IMPORTS as well as local bindings, because
-  `import { repoRoot } from "../preflight"` is how most of this tree
-  names its root and an arm that only read local bindings was vacuous
-  one step out.
-  **NO COUNT IS TRANSCRIBED INTO THIS BULLET, AND THAT IS THE POINT.**
-  It used to carry the site census here as digits at a named ref, and
-  claimed **twelve** root-anchored where the tree held **eleven** — at
-  that ref, at the tip, and counted by hand. Nothing derived the figure,
-  so it was green and wrong, and it had been relayed into two further
-  documents before anyone re-measured. Run
-  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root: it
-  prints the site census, the reader set with the arm that found each,
-  the root-anchor classification and the residual, and it cannot be
-  stale because it is not written down. **THE FIGURE THAT REPRODUCES IS
-  THE ONLY KIND WORTH QUOTING**, and this bullet quotes none.
+  (T-090), AND IT BUYS HALF: the WHOLE-TREE half, judging NO diff,
+  because a workflow has no "merge's diff" to be handed. Both incidents
+  above are in that half. THE DIFF HALF IS STILL A RITUAL: nothing but
+  the integrator running the two lines above makes a merge answer for
+  the suites it owes. **AND ITS EXIT 0 MEANS *I WAS NOT ASKED*, NEVER
+  *NOTHING OWED*** (T-142-s1): read its LAST LINE, which names the half
+  it answered. IF it cannot run THEN say so LOUDLY in the checkpoint,
+  naming the reason and the exit code; a skipped gate is news, never
+  silence. `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing
+  copy and runs inside the lane, which makes this the one standing gate
+  whose written form is held by something other than discipline.
+  THE READER SET IS DERIVED FROM THE TREE, NEVER LISTED — a hand list is
+  the defect T-058 and T-080 each spent a card on. **THE DERIVATION'S
+  AUTHORITY IS `tools/e2e/scripts/docs-scan.mjs`'s OWN `THE DERIVATION`
+  HEADER, NOT THIS PARAGRAPH** (T-162 corrected a superseded wording
+  here: T-085 subsumed the old two-halves rule under ONE containment
+  test, so that a docs path written relative to a PACKAGE directory and
+  holding no root is SEEN). The SHAPE is two arms. A DOCS SITE: a
+  path-forming call whose docs-shaped literal RESOLVES inside this
+  repository's docs/. Or a CALL SITE: a call that HANDS the repository
+  root to a first-party function which spends it on a docs path —
+  `lib/parser/test/smoke.test.ts` spells no docs path and calls
+  `parseProject(repoRoot)`, and with the literal arm alone a one-line
+  ROADMAP edit owed the e2e lane at exit 0 while the parser suite went
+  red unnamed (T-084's card carries both counts). Two discriminators
+  survive the widening: `tools/e2e/fixtures/shell.ts` stays out
+  TEXTUALLY (its literal is not docs-shaped) and
+  `lib/parser/test/files.test.ts` BY CONTAINMENT (its base is its own
+  fixtures directory), which is what keeps fixture readers out of the
+  set. **A file that does BOTH and cannot be linked is REPORTED, never
+  dropped**, and the reporting arm follows IMPORTS as well as local
+  bindings. **NO COUNT IS TRANSCRIBED INTO THIS BULLET**: the census it
+  once carried read twelve where the tree held eleven, green and wrong,
+  relayed into two further documents. Run
+  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root —
+  it prints the site census, the reader set with the arm that found
+  each, the root-anchor classification and the residual, and it cannot
+  be stale because it is not written down.
   THE FOUR SUITES the derived readers sit in, listed so a reader knows
   the shape and re-derivable so nobody quotes them: `npm test from app/`
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own
   live-tree bodies), `npm test from tools/e2e/` (two specs that walk the
   whole of docs/, graph and all) and `cargo test from app/src-tauri/`
-  (docs/CONVENTIONS.md on every run, plus the component registry).
-  **THE CARD THAT OPENED THIS SAID THE ANSWER WAS `npm test` FROM app/
-  AND NOT THE PARSER SUITE AND NOT E2E; THE TREE SAYS ALL FOUR**, and
-  the first of the two incidents above was caught BY the lane.
-  THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately, because
-  the over-fire trap is real: a gate that says "run everything on any
-  `docs/**`" is ignored within a week. On this tree EVERY path under
-  docs/ reaches a reader — two lane specs walk all of it — so narrowing
-  the TRIGGER would be a lie. What is proportional is the ANSWER, and the
-  three below are EXAMPLES CARRYING THEIR REF rather than a table to
-  quote — each re-derived by asking the gate at `c4c15c8`, which is the
-  only thing that makes any of them worth writing: `docs/rooms/*.md` owes
-  ONE command, `docs/CONVENTIONS.md` owes TWO and not the app suite, a
-  flat `docs/tasks/T-*.md` owes THREE. **THEY ARE THE ANSWER'S SHAPE AND
-  NOT ITS CENSUS** (T-086): a new reader landing in a fourth suite moves
-  any of them without touching this page, which is exactly what happened
-  to the walk table's reader sentence above. Ask the gate; do not
-  predict.
+  (docs/CONVENTIONS.md on every run, plus the component registry). The
+  card that opened this named one suite; the tree says all four.
+  THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately: on this
+  tree EVERY path under docs/ reaches a reader — two lane specs walk all
+  of it — so narrowing the TRIGGER would be a lie, and what is
+  proportional is the ANSWER. The gate at `c4c15c8` answered ONE command
+  for `docs/rooms/*.md`, TWO for this file and THREE for a flat task
+  card; **those are the answer's SHAPE and not its census** (T-086) — a
+  new reader in a fourth suite moves any of them without touching this
+  page. Ask the gate; do not predict.
   THE OTHER HALF IS THE FRONTMATTER, asked of the WHOLE TREE and not
-  only of the diff, because a card broken three commits ago is still
-  broken: every live flat `docs/tasks/T-*.md` must parse, and its
-  `status:` must be in the parser's vocabulary. The gate READS that
-  vocabulary out of `lib/parser/src/types.ts` rather than restating it,
-  so this tree has exactly ONE status vocabulary (T-057 — a rule with
-  two implementations is two chances to disagree) and a ninth status
-  added there is honoured here with no edit. It names the FILE, the
-  FIELD and the near miss; the count in a scroll-containment body never
-  could.
+  only of the diff: every live flat `docs/tasks/T-*.md` must parse, and
+  its `status:` must be in the parser's vocabulary, which the gate READS
+  out of `lib/parser/src/types.ts` rather than restating (T-057) — one
+  status vocabulary, and a ninth status added there is honoured here
+  with no edit. It names the FILE, the FIELD and the near miss.
   `.nputerignore` IS UNTOUCHED AND THAT IS DELIBERATE: it excludes
-  docs/ because the graph is CODE-derived and docs/ is not code, so
-  `index --check` is not the gate that missed this and indexing docs/
-  would neither have caught either incident nor been correct. The
-  exclusion is asserted in the spec so "we decided" cannot be mistaken
-  for "we forgot".
+  docs/ because the graph is CODE-derived, so `index --check` is not the
+  gate that missed this and indexing docs/ would have caught neither
+  incident. The exclusion is asserted in the spec so "we decided" cannot
+  be mistaken for "we forgot".
 - METHOD EVAL GATE (T-155, ADR-020 decision 2 — the FOURTH standing gate,
   and the one the three above exclude BY CONSTRUCTION): at any merge whose
   diff touches `method/**`, run the model-free eval set and RECORD its
@@ -1991,347 +1861,224 @@
   `T-167-s8`** with two facts: `--grep=^Checkpoint:` matches ANY line of
   a message, so a SUBJECT guard is strictly narrower than the band's own
   reader; and `newestCheckpoint` had no spec at `bd8a8e8`.
-- POISON DRILL (ratified at T-054; until then it was pure oral
-  tradition — "poison", "vacuous" and "mutation" appeared nowhere in
-  this file or in method/roles/, verified at the 2026-08-17 triage): at
-  any task that ADDS OR CHANGES a test body — the executor before
-  handing off, the verifier before a verdict, the integrator before a
-  checkpoint — MUTATE every new or changed assertion so that it ought to
-  fail, RUN its suite, and require the RED. MUTATE ONE SIDE ONLY: the code
-  under test OR the assertion, never a literal the two SHARE; and confirm
-  the mutated TEXT is what you intended rather than only that a
-  substitution COUNT was non-zero. Then restore, and PROVE the
-  restoration rather than asserting it: `git show HEAD:<path> | shasum
-  -a 256` against the working file.
+- POISON DRILL (ratified at T-054; until then it was oral tradition —
+  "poison", "vacuous" and "mutation" appeared nowhere in this file or in
+  method/roles/): at any task that ADDS OR CHANGES a test body — the
+  executor before handing off, the verifier before a verdict, the
+  integrator before a checkpoint — MUTATE every new or changed assertion
+  so that it ought to fail, RUN its suite, and require the RED. MUTATE
+  ONE SIDE ONLY: the code under test OR the assertion, never a literal
+  the two SHARE; and confirm the mutated TEXT is what you intended rather
+  than only that a substitution COUNT was non-zero. Then restore, and
+  PROVE the restoration rather than asserting it: `git show HEAD:<path>
+  | shasum -a 256` against the working file. The generic judging rules —
+  kill-set containment, the site the property lives, a DATA mutant where
+  the property is data — are method/roles/verifier.md step 2b and are
+  not restated here.
   **THE SHA256 IS THE PROOF AND AN EMPTY `git diff -- <path>` IS A
-  COMPANION, NEVER AN ALTERNATIVE** (T-092-s4) — it was written as an
-  alternative and it PASSES ON A FAILED RESTORE. `git checkout <commit>
+  COMPANION, NEVER AN ALTERNATIVE** (T-092-s4): `git checkout <commit>
   -- <path>` writes the INDEX as well as the worktree, so a following
   bare `git checkout -- <path>` restores FROM THE MUTATION'S OWN SOURCE,
-  and `git diff` with no range compares the worktree to that index —
-  0 bytes, on the wrong file. Two mechanisms defeat one proof and
-  committing first closes only one. Name both sides when you restore —
+  and `git diff` with no range compares the worktree to that index — 0
+  bytes, on the wrong file. Name both sides when you restore —
   `git restore --source=<commit> --staged --worktree -- <path>` — and
   keep the hash, which is immune to either.
   **DRILL AT A COMMIT** (T-072-s1) — commit the work FIRST, then mutate,
   because **A RESTORE CANNOT TELL ITSELF FROM A REVERT**: both proofs
   above are satisfied perfectly by a restore that threw away work HEAD
-  never saw, and T-072-s1's card carries the measured instance — sha256
-  matched and `git diff --stat` was empty AT THE MOMENT THE WORK WAS
-  LOST. Committing first closes THAT mechanism by construction; it does
-  not close the staged-index one above, which is why the hash is the
-  proof. The scratch-SNAPSHOT alternative — copy aside, mutate, copy
-  back — works too and needs its OWN proof, `cmp` against the snapshot,
-  because `git show HEAD:` cannot see it.
+  never saw (that card carries the measured instance). Committing first
+  closes that mechanism; it does not close the staged-index one above,
+  which is why the hash is the proof. The scratch-SNAPSHOT alternative —
+  copy aside, mutate, copy back — needs its OWN proof, `cmp` against the
+  snapshot, because `git show HEAD:` cannot see it.
   **AND RESTORING A FIXTURE MEANS ITS BYTES AND ITS CLOCK** (T-079-s3,
-  T-130-s1). A body that plants into a tracked file and writes the
-  original bytes back can be sha256-identical and `git diff` clean and
-  still cost a red, because sibling bodies read the MTIME — `git diff
-  --quiet` itself answers from the index's cached stat info. So restore
-  the clock too, and **through the SECONDS form, never through a
-  `Date`**: `utimesSync(target, stats.atime, stats.mtime)` writes back a
-  ROUNDED timestamp, where `utimesSync(target, stats.atimeMs / 1000,
-  stats.mtimeMs / 1000)` carries the fraction. T-130-s1's card carries
-  the round-trip sample that separates the two forms.
-  **THE LOSSY FORM SELF-HEALS, WHICH IS WHY THIS IS A RULE AND NOT A
-  PREFERENCE**: it leaves the file on a whole millisecond, so the next
-  run rounds to a no-op and passes. Red once, green forever after in
-  that checkout — **re-running until green is the defect's own healing
-  mechanism, not evidence.** The same fixed point defeats a POISON of a
-  clock assertion: a value that came out of `utimesSync` is a FIXED
-  POINT of it, so a zero-tolerance mutant is killed by the PREVIOUS RUN
-  rather than by the body (T-153-s5's card measures the pair: the same
-  mutant reds one body of two against a healed tree and both against
-  targets `touch`ed kernel-fresh). **Before poisoning an assertion over
+  T-130-s1): sibling bodies read the MTIME, and `git diff --quiet`
+  answers from the index's cached stat info. Restore the clock through
+  the SECONDS form, never through a `Date` — `utimesSync(target,
+  stats.atimeMs / 1000, stats.mtimeMs / 1000)` carries the fraction
+  where the `stats.atime, stats.mtime` form writes back a ROUNDED
+  timestamp. **THE LOSSY FORM SELF-HEALS, WHICH IS WHY THIS IS A RULE**:
+  it leaves the file on a whole millisecond, so the next run rounds to a
+  no-op and passes — red once, green forever after in that checkout, and
+  **re-running until green is the defect's own healing mechanism, not
+  evidence.** The same fixed point defeats a POISON of a clock assertion
+  (T-153-s5 measures the pair), so **before poisoning an assertion over
   PERSISTENT state, put that state back to a condition the suite did not
-  create.**
-  **AND THE ROUND-TRIP'S PRECISION IS SCOPED BY THE libuv VERSION, NOT
-  BY THE PLATFORM** (T-153-s5, verdict correction 1): v1.51.0's
-  `uv__fs_to_timespec` truncates the nanosecond field to a whole
-  MICROSECOND before the syscall sees it, under ONE `#if` naming
-  `__APPLE__` and `__linux__` together, and v1.52.0 deletes the hack.
-  The seconds form is still the RIGHT form; what was wrong was the
-  inference from *"round-trips 50 of 50 here"* to *"round-trips
-  exactly"* — that card carries both versions' measured error bounds.
-  **A CLOCK RESTORE ROUND-TRIPS AT MICROSECOND PRECISION, AND AN
-  ASSERTION DEMANDING MORE IS MEASURING THE MEASURING HOST** — print
-  `process.versions.uv` beside any such figure, because a runner-image
-  bump moves it with no platform changing.
-  **THE `ctime` CAVEAT AT THE STRENGTH OF ITS EVIDENCE AND NO HIGHER**:
-  a `ctime` move after a byte-exact restore was seen ONCE and NOT
-  reproduced in 24 further cycles across two checkouts, one of them
-  freshly cut. It is an observation, not a mechanism, and it changes no
-  advice — prove restoration BY HASH, which is immune either way.
+  create.** The round-trip's precision is scoped by the libuv VERSION,
+  not the platform — microseconds under v1.51.0, the hack deleted in
+  v1.52.0 (T-153-s5, verdict correction 1) — so **an assertion demanding
+  more than microsecond agreement is measuring the measuring host**:
+  print `process.versions.uv` beside any such figure. A `ctime` move
+  after a byte-exact restore was seen ONCE and not reproduced in 24
+  cycles; it is an observation, not a mechanism, and changes no advice —
+  prove restoration BY HASH.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
   **A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
   NON-EMPTY** (poison shape TEN below), and **A COMMAND QUOTED AS PROOF
-  IS SHOWN CAPABLE OF FAILING** (T-078-s11): a diff-based check NAMES ITS
-  RANGE, and a search-based one is run once against a PLANTED HIT before
-  its zero is written down. Worked: `git diff -U0 -- <path>` piped
-  through two greps was offered as the STRONG form of a no-new-character
-  check, and **`git diff` with NO RANGE compares the WORKING TREE to the
-  INDEX** — so on a clean tree, the state at every commit boundary and
-  the only one a reviewer can reproduce, that diff is 0 bytes and the
-  grep says "no matches" whatever the branch added. The claim was TRUE
-  under an explicit range; the evidence offered for it was not evidence.
+  IS SHOWN CAPABLE OF FAILING** (T-078-s11): a diff-based check NAMES
+  ITS RANGE, and a search-based one is run once against a PLANTED HIT
+  before its zero is written down. `git diff` with NO RANGE compares the
+  WORKING TREE to the INDEX, so on a clean tree that diff is 0 bytes
+  whatever the branch added — the worked instance is on T-078-s11.
   **DRILL IN A DETACHED SCRATCH WORKTREE AT A NAMED COMMIT, AND GIVE IT
   ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF — AT `<scratch>/target`, NOT
-  AT A NAME YOU CHOSE** (T-013-s7 arm (c), taken at T-013's merge — the
-  standing advice above CREATES this hazard, and it has now bitten four
-  agents: T-013-s7's three, plus T-145-s3). A scratch worktree has no
-  `target/`, so the obvious economy is to symlink or share the parent's
-  — and that is a trap that stays silent until after the drill is over.
-  Several Rust bodies here resolve the repository from
-  `env!("CARGO_MANIFEST_DIR")`, which is baked in at COMPILE time and
-  which cargo does not fingerprint as an input, so the binaries the
-  DRILL compiled — carrying the DRILL's path — are reused by the parent
-  afterwards. T-013's card carries the measured wreckage: a bare
-  `cargo test --no-fail-fast` failing in bulk with the drill worktree
-  deleted, every failure naming a directory that no longer exists, and
-  `cargo clean -p` plus a multi-GiB rebuild as the whole fix.
-  **AND WHERE `cargo clean` IS PROHIBITED — it is, here, whenever
-  another lane may be building — THE RECOVERY IS TO `touch` EVERY
-  WORKSPACE `.rs` (MTIME ONLY) AND REBUILD** (T-145-s3, back to exit 0
-  at the count the lane measured before the drill). **Touching only the
-  source file the panic NAMED is the trap** — each integration-test
-  binary bakes its own copy of the path, so that produces a SECOND red
-  rather than a green.
-  **AND THE POLLUTION RUNS THE OTHER WAY TOO**, which is the half that
-  matters to a drill: a mutant can look DEAD against a stale binary that
-  never saw the mutation. Arm (c) costs one environment variable and one
-  cold build, and it is the only arm that leaves the parent's cache
-  untouched without a `cargo clean` to remember — measured at T-013's
-  merge, the main checkout's `target/` mtime unmoved across three
-  mutants and four suite runs in a drill carrying its own target
-  directory.
-  **AND THE DIRECTORY'S NAME IS NOT FREE, BECAUSE THE GRAPH WALK CAN SEE
-  IT** (T-111-s10, corroborated at T-110-s4 and T-153-s3). Arm (c) used
-  to leave the name to the reader, and `.gitignore` excludes `target/`
-  and NOTHING ELSE — so a target dir under any other name is INDEXED,
-  and `index --check` answers confidently and wrongly rather than
-  erroring, exactly as the `--root` paragraph above describes for a
-  different cause. Same tree, same commit, same command, differing only
-  in where `CARGO_TARGET_DIR` sat: INSIDE under a chosen name the walk
-  gained cargo build-script output files plus a phantom package node and
-  its import edge; BESIDE the worktree it gained nothing. T-111-s10's
-  card carries both `files` readings, and a second lane reproduced it
-  with a different name and a different phantom.
-  **`files +0 -0` IS THE SENTENCE A CHECKPOINT DECIDES ON** — it is the
-  whole argument for *"the checkpoint owes NO fixture reconciliation"* —
-  so a phantom `+3` buys a reconciliation nobody owes, and the expensive
-  reading is equally available: a REAL `+1` hidden among build artefacts
-  a reader has learned to discount. `<scratch>/target` costs one word
-  and the walk already excludes it; the hazard arm (c) exists for is not
-  sharing the PARENT's cache, never the directory's name, so naming it
-  changes nothing about the property. Teaching the walk to skip any
-  directory carrying cargo's own `CACHEDIR.TAG` is the CLASS fix, it is
-  `crate-index`'s code rather than this bullet's, and the two are not
-  alternatives — the doc does not wait on the code.
-  **DRILLING IN PLACE IS NOT THE REMEDY** — the in-place argument ("one
-  manifest path throughout, so the hazard is absent by construction") is
-  true of the INSTANCE and not of the CLASS, the mechanism being a
-  compile-time constant cargo does not track rather than that one
-  constant; and it substitutes a different hazard, since an interrupted
-  drill leaves the branch dirty and any concurrent reader sees mutated
-  source. Detached worktree **plus** its own target directory, not
-  either.
+  AT A NAME YOU CHOSE** (T-013-s7 arm (c), taken at T-013's merge; it
+  has bitten four agents, T-145-s3 the latest). Several Rust bodies
+  resolve the repository from `env!("CARGO_MANIFEST_DIR")`, baked in at
+  COMPILE time and not fingerprinted by cargo, so binaries the DRILL
+  compiled — carrying the DRILL's path — are reused by the parent
+  afterwards; T-013's card carries the wreckage (a bulk `cargo test`
+  failure naming a deleted directory, `cargo clean -p` and a multi-GiB
+  rebuild as the fix). **Where `cargo clean` is prohibited — it is,
+  here, whenever another lane may be building — the recovery is to
+  `touch` EVERY workspace `.rs` (mtime only) and rebuild** (T-145-s3);
+  touching only the file the panic NAMED yields a SECOND red, because
+  each integration-test binary bakes its own copy of the path. **And the
+  pollution runs the other way**: a mutant can look DEAD against a stale
+  binary that never saw it. **The directory's NAME is not free, because
+  the graph walk can see it** (T-111-s10, T-153-s3): `.gitignore`
+  excludes `target/` and nothing else, so a target dir under any other
+  name is INDEXED and `index --check` answers confidently and wrongly —
+  phantom files and a phantom package node, both cards carry the
+  readings — and **`files +0 -0` is the sentence a checkpoint decides
+  on**, so a phantom `+3` buys a reconciliation nobody owes. Teaching the
+  walk to skip any directory carrying cargo's `CACHEDIR.TAG` is the
+  CLASS fix and `crate-index`'s code, not this bullet's. **Drilling in
+  place is not the remedy**: the in-place argument is true of the
+  INSTANCE and not of the CLASS, and an interrupted drill leaves the
+  branch dirty for every concurrent reader. Detached worktree PLUS its
+  own target directory, not either.
   **AND THE SCRATCH IDENTITY IS DERIVED FROM THE LANE, NEVER CHOSEN**
-  (T-092, measured across FOUR lanes on 2026-08-24/25 — that card holds
-  the census). Start from the fact every session so far has had
-  backwards: **THE SCRATCH DIRECTORY IS SHARED BETWEEN CONCURRENT
-  SESSIONS** — the session UUID in its path makes it LOOK private and it
-  is not, so expect a sibling's files beside yours exactly as the
-  worktree-list bullet above tells you to expect a sibling's worktrees.
-  Four sessions independently picked the same literal path and the same
-  driver name; two were saved only by git refusing an existing path.
-  **Naming the WORKTREE per-lane is NOT enough** — T-110 named its
-  worktree per-lane and still had its driver and results files
-  overwritten by a sibling: the collision simply moved from the
-  directory to the FILES beside it. So DERIVE ONE STEM FROM THE LANE ID,
-  the way `../nputer-T-NNN` already derives the lane worktree from the
-  card, and spend that one stem on the worktree, its `CARGO_TARGET_DIR`,
-  the driver script AND every results file — one stem, every artefact,
-  no exceptions — cut at a SHORT root (`T-133-s5`).
-  **AND THE DRIVER'S GUARD SHALL RECOGNISE ITS OWN DRILL RATHER THAN THE
-  SHARED PREFIX**: three sessions wrote that guard independently and all
-  three guarded the prefix, so it answers *"is this A drill"* and never
-  *"is this MY drill"* — which argues the convention was under-specified,
-  not that the sessions were careless. **A DERIVED PATH IS A CONSTRUCTION
-  AND A FIXED PATH IS THE DEFECT.** Nothing was corrupted in any of the
-  four — every restoration was sha256-proved — but the protection was
-  git's, not the discipline's, and git only ever refuses the DIRECTORY.
-  **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED.** A fresh
-  worktree has no `app/dist`, and the test files that read the shipped
-  bundle fail on its absence with a message about the build rather than
-  about the tree — DERIVE the file count at your own ref: the two
-  denominators this file used to transcribe disagreed with each other
-  until ADR-019's compaction replaced both with this sentence. Build
-  first, then baseline, then mutate.
+  (T-092, measured across four lanes — that card holds the census). The
+  scratch directory is SHARED between concurrent sessions, whatever its
+  UUID suggests, and naming the WORKTREE per-lane is not enough — T-110
+  did and still had its driver and results files overwritten by a
+  sibling. So DERIVE ONE STEM FROM THE LANE ID, the way `../nputer-T-NNN`
+  derives the lane worktree from the card, and spend it on the worktree,
+  its `CARGO_TARGET_DIR`, the driver script AND every results file — one
+  stem, every artefact, cut at a SHORT root (`T-133-s5`). **The driver's
+  guard SHALL recognise its OWN drill rather than the shared prefix** —
+  three sessions guarded the prefix and answered *"is this A drill"*.
+  **A DERIVED PATH IS A CONSTRUCTION AND A FIXED PATH IS THE DEFECT.**
+  **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED**: a fresh
+  worktree has no `app/dist`, and the bodies that read the shipped
+  bundle fail on its absence with a message about the build — DERIVE the
+  count at your own ref. Build first, then baseline, then mutate.
   IF a body cannot be poisoned — it asserts a constant, or every
   mutation is one the test already makes — THEN say so and name it,
-  because a body that cannot red is the finding. WHY: an assertion that
-  cannot fail is indistinguishable from one that passes, and this
-  practice caught SIX vacuous assertions in a single night (T-057 fixes
-  what it found; this is the rule that found it). WHY ONE-SIDEDNESS IS A
-  RULE AND NOT A STYLE NOTE (T-078, measured on the drill's own
-  verifier): a global substitution of a message literal over
-  `tools/e2e/tests/workflow-parity.spec.ts` reported THREE substitutions,
-  applied all three correctly, and left the suite GREEN — the literal
-  lives once in the producer and once in each of two assertions, so the
-  mutation moved both sides at once and the test still agreed with
-  itself. A SYMMETRIC MUTATION PRODUCES A GREEN INDISTINGUISHABLE FROM A
-  VACUOUS ASSERTION: the exact failure the drill exists to detect,
-  wearing the drill's own costume. The older lesson ("count your
-  substitutions, never assume a mutation landed", T-054) would NOT have
-  caught it, because three was the true count. The same failure one
-  level deeper, the same session: a `perl -0777` mutation of a DOC
-  reported one substitution and changed nothing observable, because
-  without a UTF-8 output layer perl emitted a raw byte instead of the
-  character. The count was right and the TEXT was wrong. So READ THE
-  MUTATION BACK — `git diff` it — before you run the suite. It stays a
-  DISCIPLINE rather than a gate because nothing can automate "would this
-  have failed" — which is precisely why it has to be written where a
-  verifier reads it instead of remembered. WHAT THE DRILL CANNOT SEE
-  (T-057, measured on the card whose own subject was assertions that
-  cannot fail): poisoning proves a body RUNS and that its value MATTERS;
-  it does NOT prove the body is not a DUPLICATE of another. T-057's
-  replacement positive was character-identical to a test three cases
-  above it once one inert string was rewritten, with the file still
-  green — yet it reds under an expected-value poison, so the discipline
-  passed it. It kills no mutant of its own. Note where the fault lay —
-  the CRITERION named a positive the suite already had, so a CARD can
-  specify a duplicate into existence and a faithful executor will build
-  it. SO: after the drill reds, ask the second question — does any OTHER
-  test already drive this exact call?
+  because a body that cannot red is the finding: this practice caught
+  SIX vacuous assertions in one night (T-057). WHY ONE-SIDEDNESS IS A
+  RULE (T-078, measured on the drill's own verifier): a literal living
+  once in the producer and once in each assertion moved on both sides
+  under a global substitution, three substitutions counted correctly,
+  and the suite stayed GREEN — **a symmetric mutation produces a green
+  indistinguishable from a vacuous assertion**, wearing the drill's own
+  costume; the same session's `perl -0777` mutation of a DOC counted one
+  substitution and changed nothing, because without a UTF-8 output layer
+  perl emitted a raw byte. The count was right and the TEXT was wrong,
+  so READ THE MUTATION BACK — `git diff` it — before you run the suite.
+  It stays a DISCIPLINE rather than a gate because nothing can automate
+  "would this have failed". WHAT THE DRILL CANNOT SEE (T-057): poisoning
+  proves a body RUNS and that its value MATTERS; it does NOT prove the
+  body is not a DUPLICATE — T-057's replacement positive was
+  character-identical to a test three cases above it and still redded
+  under an expected-value poison, because the CRITERION had named a
+  positive the suite already had. SO: after the drill reds, ask the
+  second question — does any OTHER test already drive this exact call?
   THE CATALOGUE OF SHAPES A VALUE POISON PASSES. Cite them by number —
   other cards do. **IT IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED
   HERE** (T-092): minting a second one for a shape that already has one
   is the defect the catalogue exists to prevent. **ENTRIES LIVE HERE FOR
   FIVE THROUGH ELEVEN ONLY** (T-092-s5): ONE to FOUR are the *matcher
   moved, value fixed* family, named before this catalogue existed, and
-  their histories live in the cards rather than on this page — so
-  *"every ordinal is minted here"* governs NEW numbers and does not
-  promise an entry for an old one. Each entry carries its TELL, whether
-  it has a MECHANICAL REMEDY — that distinction is what a reader acts on
-  — and the card the instance lives on.
+  their histories live in the cards. Each entry carries its TELL,
+  whether it has a MECHANICAL REMEDY, and the card the instance lives
+  on.
   **SHAPE FIVE — the assertion SET has no cardinality or coverage floor,
   so deleting an assertion deletes its own failure.** TELL: a printed
-  count that falls with a deletion and stays green. Measured on
-  `tools/e2e/scripts/token-scan.mjs`'s `selftest()` (T-058-s2, absorbed
-  by T-080): deletions applied one at a time each left the selftest
-  GREEN at a smaller printed number, and the sharpest removed the only
-  positive sample for each of the four TOKEN patterns and stayed green
-  in the lint, the selftest and the lane alike. A printed count is not a
-  pin. MECHANICAL REMEDY: YES, which is why five is listed first — a
-  coverage floor per pattern id, or a cardinality pin, makes a deletion
-  fail against something that did not move with it, the shape
-  `MUST_TOKEN_COVER` already uses one rung up.
+  count that falls with a deletion and stays green (T-058-s2, absorbed
+  by T-080: `token-scan.mjs`'s `selftest()` stayed green as each
+  positive sample was deleted). A printed count is not a pin. MECHANICAL
+  REMEDY: YES — a coverage floor per pattern id, or a cardinality pin,
+  the shape `MUST_TOKEN_COVER` already uses one rung up.
   **SHAPE SIX — a body that reds under an expected-value poison while
-  killing no mutant another test does not already kill.** TELL: the drill
-  passes and every mutant the body kills is already killed elsewhere.
-  Measured on `app/test/interview-model.test.ts` (T-057-s1, absorbed by
-  T-072): the duplicate positive described above. It is not vacuous in
-  the poison sense, which is exactly why the discipline passed it. SIX
-  HAS NO MECHANICAL REMEDY — the drill has to ASK. **AND THIS IS WHAT
-  THE ASKING LOOKS LIKE ONCE IT IS ANSWERED** (T-072-s2; it replaces
-  nothing above, it finishes it): do NOT ask "is this a duplicate?" —
-  **name a mutation of the code under test that this body kills, run the
-  WHOLE suite under it, and require the failing-body count to be ONE.** A
-  count of one IS the non-duplication, mechanically; a count above one
-  names the bodies that already cover you, in the reporter's own output.
-  **The honest failure mode is the point** — if no such mutant exists,
-  THAT is the finding, and a reader holding only "the drill has to ASK"
-  has no way to say it. Both are DISTINCT from the four already
-  catalogued, which share the one tell these do not: the matcher moved,
-  never the value.
+  killing no mutant another test does not already kill.** TELL: the
+  drill passes and every mutant the body kills is already killed
+  elsewhere (T-057-s1, absorbed by T-072: the duplicate positive above).
+  SIX HAS NO MECHANICAL REMEDY — the drill has to ASK, and this is the
+  asking (T-072-s2): do NOT ask "is this a duplicate?" — **name a
+  mutation of the code under test that this body kills, run the WHOLE
+  suite under it, and require the failing-body count to be ONE.** A
+  count of one IS the non-duplication; a count above one names the
+  bodies that already cover you; if no such mutant exists, THAT is the
+  finding. Both are DISTINCT from ONE to FOUR, whose one tell is that
+  the matcher moved and the value did not.
   **SHAPE SEVEN — a mutant NO BODY KILLS, because the mutant set was
   derived from the PINS rather than from the CRITERIA.** The exact dual
-  of six — six is a body that kills no unique mutant, seven is a mutant
-  no body kills — and seven is worth more, because a redundant body costs
-  nothing and this costs the criterion. TELL: "zero survivors" reported
-  against a mutant set every member of which aims at something a pin
-  already names. NO MECHANICAL REMEDY, but a PROCEDURE: derive the
-  mutants from the acceptance criteria **with the test file closed**, and
-  mutate every clause the pins do not mention — a criterion's PLURAL
-  first, since fixtures that happen to carry ONE of a thing are how this
-  keeps arriving. Named by `T-076` and sighted independently since, each
-  sighting carrying its own measurement. DERIVE THE SIGHTING COUNT AT
-  YOUR OWN REF — `git grep -il "shape seven" -- docs/` from the repo root
-  — it grows at every triage and a tally here is a line number in
-  disguise.
+  of six, and worth more, because a redundant body costs nothing and
+  this costs the criterion. TELL: "zero survivors" reported against a
+  mutant set every member of which aims at something a pin already
+  names. NO MECHANICAL REMEDY, but a PROCEDURE: derive the mutants from
+  the acceptance criteria **with the test file closed**, and mutate
+  every clause the pins do not mention — a criterion's PLURAL first.
+  Named by `T-076` and sighted since; DERIVE THE SIGHTING COUNT AT YOUR
+  OWN REF — `git grep -il "shape seven" -- docs/` from the repo root.
   **SHAPE EIGHT — an assertion that SEARCHES a corpus has no uniqueness
   floor, so one duplicate anywhere in the corpus keeps it green with its
   own subject deleted.** `String::contains`, `toContain` and
-  `.includes()` are satisfied by ANY occurrence anywhere, and a haystack
-  that is a whole file is one anybody may add to. TELL: the assertion
-  pins *that the string exists somewhere in the file* while every reader
-  — the pinned constant's own doc comment included — takes it to pin *the
-  sentence*. THE DRILL THAT SHOWS IT (T-092, with the predicate modelled
-  exactly): rewriting the pinned sentence alone FAILS, so the pin looks
-  fine; plant a second copy FIRST and then rewrite the sentence and it
-  **PASSES** — green with its subject deleted. **The likeliest author of
-  that second copy is documentation ABOUT the pin**, which is why the
-  live-readers paragraph above writes `currently v<METHOD_SNAPSHOT_VERSION>`
-  with a placeholder rather than the literal. Distinct from ONE-to-FOUR
-  (the matcher moved and the value stayed; here nothing moved), from FIVE
-  (there the assertion SET lost a member, here the HAYSTACK gained one)
-  and from SIX (this body DOES kill a unique mutant, right up until a
-  duplicate appears somewhere it never looks). MECHANICAL REMEDY: YES,
-  which puts eight beside five — **NARROW THE HAYSTACK** to the line or
+  `.includes()` are satisfied by ANY occurrence, and a whole-file
+  haystack is one anybody may add to. TELL: the assertion pins *that the
+  string exists somewhere* while every reader takes it to pin *the
+  sentence*. THE DRILL THAT SHOWS IT (T-092): rewriting the pinned
+  sentence alone FAILS; plant a second copy FIRST and then rewrite it
+  and it **PASSES**. **The likeliest author of that second copy is
+  documentation ABOUT the pin**, which is why the live-readers paragraph
+  above writes `currently v<METHOD_SNAPSHOT_VERSION>` with a placeholder
+  rather than the literal. Distinct from ONE-to-FOUR (nothing moved
+  here), FIVE (the HAYSTACK gained a member, not the SET lost one) and
+  SIX (this body DOES kill a unique mutant, until a duplicate appears).
+  MECHANICAL REMEDY: YES — **NARROW THE HAYSTACK** to the line or
   section actually pinned, picking it out with an ANCHOR that is not the
-  needle, and assert the ANCHOR's own uniqueness so it cannot quietly
-  widen back into a whole-file search. A bare occurrence count
-  (`… .count() == 1`) reds the same drill and is the cheaper half, but
-  **it is a number with no keeper**: nothing in it says WHICH occurrence
-  is the subject, so the first legitimate second copy reds it and the
-  cheapest repair is to bump the 1 to a 2 — after which any two
-  occurrences anywhere satisfy it, including zero in the right place.
-  Prefer the anchor; reach for the count only where no anchor exists, and
-  say which you chose. Worked twice:
+  needle, and assert the ANCHOR's own uniqueness. A bare occurrence
+  count reds the same drill but **is a number with no keeper**: the
+  first legitimate second copy reds it and the cheapest repair is to
+  bump the 1 to a 2. Prefer the anchor; reach for the count only where
+  no anchor exists, and say which you chose. Worked twice:
   `snapshot_version_matches_the_live_method_stamps` (kit.rs), and
   `the_only_production_path_to_the_transcript_is_the_bounded_one`
-  (agent/mod.rs), which cuts the file to its production half so the pin
-  cannot find its own test module's literals — the remedy applied before
-  the shape had a number.
+  (agent/mod.rs), which cuts the file to its production half.
   **SHAPE NINE — a mutation that MOVES a generated row between families
   leaves the cardinality invariant, so a COUNT floor is blind to it.**
-  **The ordinal is RATIFIED here, not minted**: `T-080` and `T-083`
-  already call it nine in landed text and `T-095` carries the shape, so
-  giving nine to anything else would have made three citations wrong.
-  TELL: it is an argument against FIVE's own remedy — a cardinality floor
-  answers DELETION and says nothing about reclassification; the row
-  migrates between families and the rungs net out, so "at least N checks"
-  passes at every N (`T-080`, `T-095` §TWO carry the measurement).
-  MECHANICAL REMEDY: YES, but a CONTENT floor rather than a count, and
-  DERIVED FROM THE TREE rather than from a hand-written class list, or it
-  goes stale the day a real new asset format arrives.
+  **The ordinal is RATIFIED here, not minted**: `T-080` and `T-083` call
+  it nine in landed text and `T-095` carries the shape. TELL: it is an
+  argument against FIVE's own remedy — a cardinality floor answers
+  DELETION and says nothing about reclassification (`T-080`, `T-095`
+  §TWO carry the measurement). MECHANICAL REMEDY: YES, but a CONTENT
+  floor rather than a count, DERIVED FROM THE TREE rather than from a
+  hand-written class list.
   **SHAPE TEN — an empty comparison reports AGREEMENT.** The producer
-  fails, both sides come back empty, and `cmp` calls it a match: a green
-  built out of two failures. TELL: a comparison nothing proved had
-  anything on either side of it. Two sightings hours apart in one lane
-  (`T-083-s3`) — a `git merge-tree --write-tree` that exited 1 where a
-  tree OID was expected, and a comparison loop that word-splits under
-  `bash` and not under `zsh`. **TEN IS EIGHT'S OPPOSITE END AND THEY ARE
-  DELIBERATELY NOT FOLDED TOGETHER**: eight is a corpus that GAINED a
-  member and wants an upper floor, ten is a corpus with NO members and
-  wants a lower one, and a duplicate and a failed producer send a reader
-  to different repairs. MECHANICAL REMEDY: YES, one line, and the drill
-  bullet above carries it.
+  fails, both sides come back empty, and `cmp` calls it a match. TELL: a
+  comparison nothing proved had anything on either side of it (two
+  sightings in one lane, `T-083-s3`: a `git merge-tree --write-tree`
+  that exited 1 where a tree OID was expected, and a loop that
+  word-splits under `bash` and not under `zsh`). TEN IS EIGHT'S OPPOSITE
+  END AND THEY ARE DELIBERATELY NOT FOLDED TOGETHER: a corpus that
+  GAINED a member wants an upper floor, one with NO members a lower one.
+  MECHANICAL REMEDY: YES, one line, and the proof clause above carries
+  it.
   **SHAPE ELEVEN — an order assertion whose WITNESS IS BUFFERED dates
   nothing.** A body claims A precedes B and picks as witness an event
   whose emission is DEFERRED, so the witness arrives late whatever the
-  code does. Measured (`T-081-s5`): a text-delta witness is COALESCED by
-  `flush_pending`, so the assertion passed under the very batching mutant
-  it was written to detect; the fix was a witness EMITTED rather than
-  buffered — an `Activity` line, which is what the real planner did. TELL,
-  and it is the rule: **when a test asserts A precedes B, ask whether B's
-  arrival time is a property of B or of the TRANSPORT. If the transport
-  can hold B, B cannot date A.** NO MECHANICAL REMEDY — choosing the
-  witness is the judgement; the only mechanical half is to name the
-  witness's emission path in the body, so the next reader can check it
-  without re-deriving the transport.
+  code does (`T-081-s5`: a text-delta witness COALESCED by
+  `flush_pending` passed under the very batching mutant it was written
+  to detect; the fix was a witness EMITTED rather than buffered). TELL,
+  and it is the rule: **when a test asserts A precedes B, ask whether
+  B's arrival time is a property of B or of the TRANSPORT. If the
+  transport can hold B, B cannot date A.** NO MECHANICAL REMEDY —
+  choosing the witness is the judgement; name the witness's emission
+  path in the body so the next reader can check it.
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
   somebody looks. T-078's fix session found three of its own, fixed each
