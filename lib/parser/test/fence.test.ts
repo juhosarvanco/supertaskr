@@ -412,6 +412,120 @@ describe('THE TWO PINS THE CARD ASKS FOR, each measured against BEFORE', () => {
   });
 });
 
+describe('T-221 — THE ONE CHARACTER THAT MAKES CONTAINMENT CONTAINMENT', () => {
+  /**
+   * `sharedDomain` decides containment with TWO SYMMETRIC LINES, and each
+   * one is anchored on a single `/`:
+   *
+   *     if (b.startsWith(`${a}/`)) return b;   // the RIGHT side is deeper
+   *     if (a.startsWith(`${b}/`)) return a;   // the LEFT side is deeper
+   *
+   * DROP EITHER SEPARATOR AND NOTHING IN THIS REPOSITORY REDS — measured
+   * before this block existed, parser and the lane-fence/card-preflight/
+   * dispatch-order suites alike. That is not a gap in coverage, it is the
+   * SHAPE of the defect: deleting the separator does not delete a
+   * behaviour, it WIDENS one, and every assertion already written here
+   * stays true under the widening. A REMOVAL-ONLY MUTANT CANNOT FIND IT.
+   *
+   * What finds it is a pair where one string IS a prefix of the other and
+   * is NOT a path prefix of it — `tools/e2e` against `tools/e2e-helpers`.
+   * And it has to be asserted in BOTH ARGUMENT ORDERS, because the two
+   * lines fire on opposite sides: a body covering one direction leaves
+   * the other exactly as unpinned as before.
+   *
+   * WHY IT IS NOT COSMETIC ANY MORE. `compareFences` is what the dispatch
+   * guard, the push gate and the merge gate compute disjointness with, so
+   * a widened containment does not misprint a row — it REFUSES lanes that
+   * never touch, at three gates, quietly, because a spurious refusal
+   * looks exactly like a correct one. That is `method/lane-protocol.md`
+   * rule 5's own measurement (six concurrent lanes, every block a naming
+   * collision and not one real collision) reintroduced by the tool built
+   * to end it.
+   *
+   * THE DOMAIN IS DERIVED, NOT TYPED. It is the fence a live `done` card
+   * holds, and the adjacent sibling and the child are CONSTRUCTED from
+   * it — so the pair moves with this repository's own vocabulary instead
+   * of with a literal somebody has to remember. A construction cannot
+   * drift out of step with the thing it is derived from; a transcription
+   * can, and this file's own header says so about line numbers.
+   */
+  const held = fenceOf('T-038'); // the live board's `touches: [tools/e2e/]`
+  const domain = held.paths[0] ?? '';
+  /** A STRING prefix relationship that is NOT a path one. */
+  const adjacent = `${domain}-helpers`;
+  /** A genuine child — a path prefix, which containment must still see. */
+  const child = `${domain}/tests`;
+
+  /** Two one-token fences compared LEFT against RIGHT, in that order. */
+  function verdictOf(left: string, right: string) {
+    return compareFences(
+      expandFence(synthetic('T-921', [left]), components),
+      expandFence(synthetic('T-922', [right]), components),
+    );
+  }
+
+  it('the fixture is this repository’s own data, and is shaped the way both pins assume', () => {
+    // A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
+    // NON-EMPTY. A domain that came back `''` would make every pin below
+    // pass for entirely the wrong reason: `''` is the repository root, and
+    // `sharedDomain` short-circuits on it two lines BEFORE either
+    // separator — so the disjointness pins would go green against code
+    // that never ran the thing they exist to pin.
+    expect(card('T-038').status).toBe('done');
+    expect(held.paths).toEqual(['tools/e2e']);
+    expect(held.unusable).toEqual([]);
+    expect(domain).not.toBe('');
+    // The sibling is a STRING prefix and NOT a path prefix — which is the
+    // whole distinction the separator draws, asserted about the fixture
+    // rather than assumed of it.
+    expect(adjacent.startsWith(domain)).toBe(true);
+    expect(adjacent.startsWith(`${domain}/`)).toBe(false);
+    // …and the child is both, which is what makes it a control and not a
+    // second copy of the same case.
+    expect(child.startsWith(domain)).toBe(true);
+    expect(child.startsWith(`${domain}/`)).toBe(true);
+  });
+
+  it('DIRECTION ONE: the deeper string on the RIGHT is DISJOINT — pins `b.startsWith(`${a}/`)`', () => {
+    // Drop THIS line's separator and `tools/e2e` swallows
+    // `tools/e2e-helpers`: b.startsWith(a) is true, and the guard reports
+    // a collision between two lanes that share no file.
+    const seen = verdictOf(domain, adjacent);
+    expect(seen).toEqual({ verdict: 'disjoint', witnesses: [], unusable: [] });
+  });
+
+  it('DIRECTION TWO: the deeper string on the LEFT is DISJOINT — pins `a.startsWith(`${b}/`)`', () => {
+    // THE SAME PAIR, THE OTHER WAY ROUND, AND IT IS NOT A DUPLICATE. The
+    // line above cannot fire here and this one cannot fire there, so each
+    // body kills exactly one mutant and neither covers the other's line.
+    const seen = verdictOf(adjacent, domain);
+    expect(seen).toEqual({ verdict: 'disjoint', witnesses: [], unusable: [] });
+  });
+
+  it('POSITIVE CONTROL, RIGHT deeper: a genuine child is still SHARED, and the witness is the NARROWER domain', () => {
+    // A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL. A `sharedDomain`
+    // that returned `undefined` unconditionally satisfies both pins above
+    // perfectly — and it would silently disarm T-209's refusal entirely,
+    // reporting every lane disjoint from every other. That failure is
+    // indistinguishable from a working guard without these two bodies.
+    const seen = verdictOf(domain, child);
+    expect(seen.verdict).toBe('overlapping');
+    expect(seen.witnesses).toEqual([{ left: domain, right: child, path: child }]);
+  });
+
+  it('POSITIVE CONTROL, LEFT deeper: the same containment seen from the other side', () => {
+    // AND THIS HALF IS GENUINELY NEW RATHER THAN A MIRROR. PIN TWO (b)
+    // above already exercises the right-deeper line positively (`method/`
+    // containing `method/lane-protocol.md`, shallower on the left), so
+    // deleting that line reds a body today. NOTHING exercised the
+    // left-deeper line positively before this one: it could have been
+    // deleted outright and the suite would have stayed green.
+    const seen = verdictOf(child, domain);
+    expect(seen.verdict).toBe('overlapping');
+    expect(seen.witnesses).toEqual([{ left: child, right: domain, path: child }]);
+  });
+});
+
 describe('the live board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
