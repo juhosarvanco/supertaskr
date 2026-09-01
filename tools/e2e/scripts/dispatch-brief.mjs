@@ -724,6 +724,24 @@ export function laneWorktrees(porcelain, spellings) {
  * of the same name; preferring it would silently answer a question about
  * this checkout with a fact about the remote.
  *
+ * **AND THIS LIST HAS A SECOND CONSUMER THAT IS A GUARD, SO THE ORDER IS
+ * A GUARD SURFACE TOO** (`T-223`). `.claude/hooks/landing-gate.mjs`
+ * carries a hook-budget copy of this function, spends it to decide WHICH
+ * commit's card declares a lane's fence, and `landing-gate.spec.ts`'s
+ * *"the integration-ref candidates are dispatch-brief's, spelling for
+ * spelling"* pins the two lists together — so a reorder here is a
+ * reorder there, and it moves what that gate enforces. `T-223` weighed
+ * putting `refs/remotes/origin/<branch>` first, because a lane can move
+ * the LOCAL ref with `git update-ref` where `git branch -f` refuses it,
+ * and REFUSED the reorder: measured at git 2.50.1, `git update-ref
+ * refs/remotes/origin/<branch>` and a plain `git fetch .
+ * +<sha>:refs/remotes/origin/<branch>` both exit 0 from inside a lane
+ * worktree, so a remote-tracking ref carries no checked-out-elsewhere
+ * guard at all and the reorder would trade a partly-guarded ref for an
+ * unguarded one. The account, and the widening route it would have
+ * broken, are in that hook's header; the ordering above is unchanged and
+ * is now load-bearing for both readers.
+ *
  * @param {string} branch
  * @returns {string[]}
  */

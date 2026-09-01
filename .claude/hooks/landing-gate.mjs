@@ -30,26 +30,77 @@
  * widening lands, since the widening act is a card amendment COMMITTED
  * on main plus a re-run of `--write-fence` (`T-211`).
  *
- * **AND THAT REF IS NOT BEYOND THE LANE'S REACH, WHICH THIS PARAGRAPH
- * ASSERTED AND WHICH IS FALSE.** It said main was "a ref the lane cannot
- * move." `integrationRefCandidates` tries the LOCAL `main` FIRST, and
- * local `main` is movable from inside a lane worktree — reproduced at
- * this card's verification and again by its executor, in a throwaway
- * repository with `main` checked out in one worktree and a lane branch
- * in another:
+ * ── THE PROPERTY THIS RESTS ON, STATED AS THE PROPERTY IT ACTUALLY IS ─
+ * **`<integration>` is the ref the lane's own COMMITS cannot move**
+ * (`T-223`). That is the whole of what the paragraph above needs and the
+ * whole of what git guarantees here: committing on a lane branch
+ * advances the LANE branch, so no commit a lane makes — including one
+ * that rewrites its own card's `touches:`, and including one that
+ * rewrites the manifest — changes what `<integration>` NAMES. Two bodies
+ * measure exactly that and neither is about intentions:
+ * `landing-gate.spec.ts`'s *"a manifest edited INSIDE the lane does not
+ * widen this gate"* and *"a lane editing its OWN card's `touches:` does
+ * not widen this gate either"*.
  *
- *     git branch -f main <sha>      -> fatal: cannot force update the
- *                                      branch 'main' used by worktree at …
- *     git update-ref refs/heads/main <sha>  -> ACCEPTED, exit 0, main moved
+ * **IT IS NOT "a ref the lane cannot move", WHICH IS WHAT THIS HEADER
+ * SAID UNTIL `T-223`.** `integrationRefCandidates` tries the LOCAL
+ * `main` FIRST, and a local ref is movable from inside a lane worktree
+ * by a command that writes no commit at all. Measured three times — at
+ * `T-212`'s verification, again by its executor, and again at `T-223` on
+ * git 2.50.1 (Apple Git-155), each time in a throwaway repository with
+ * `main` checked out in worktree A and a lane branch in worktree B, run
+ * from B:
+ *
+ *     git branch -f main <sha>              -> fatal, exit 128: cannot
+ *                                              force update the branch
+ *                                              'main' used by worktree …
+ *     git update-ref refs/heads/main <sha>  -> exit 0, main moved
  *
  * `git branch -f` carries the checked-out-elsewhere guard; `update-ref`
  * does not. So a lane CAN point local `main` at a commit whose copy of
  * its own card carries a wider `touches:`, and this gate will expand
- * THAT fence. It is not a hole an ordinary lane falls into — it takes a
- * deliberate plumbing command, and a seat willing to run it could reach
- * for `git push --no-verify` instead — but the absolute was wrong, and
- * a guard that states an absolute it does not have is rule 5's *"a guard
- * described as total is worse than no guard."* `T-223` owns the fix.
+ * THAT fence — limit 6 below, and `landing-gate.spec.ts`'s *"THE
+ * DISCLOSED LIMIT, MEASURED: a lane moves local `main` with
+ * `update-ref` and this gate follows it"* drives the whole route end to
+ * end rather than arguing it. It is not a hole an ordinary lane falls
+ * into: it takes a deliberate plumbing command, and a seat willing to
+ * run it could reach for `git push --no-verify` instead. **The floor is
+ * unchanged; what was wrong was an ABSOLUTE**, stated in the one
+ * paragraph a reader consults to decide how far to trust this gate,
+ * which is rule 5's *"a guard described as total is worse than no
+ * guard."*
+ *
+ * ── AND PREFERRING THE REMOTE-TRACKING REF WOULD MAKE IT WORSE ───────
+ * `T-223` WEIGHED reordering `integrationRefCandidates` to try
+ * `refs/remotes/origin/<branch>` first and REFUSED the reorder, on three
+ * counts. The first is measured, in the same drill as the pair above and
+ * from the same lane worktree:
+ *
+ *     git update-ref refs/remotes/origin/main <sha>  -> exit 0
+ *     git fetch . +<sha>:refs/remotes/origin/main    -> exit 0
+ *
+ * **ONE, a remote-tracking ref carries no checked-out-elsewhere guard at
+ * all**, because no worktree can check one out — so the reorder would
+ * trade a ref that at least refuses `git branch -f` for one that refuses
+ * NOTHING, and the second line above reaches it with no plumbing command
+ * at all. Against this card's own threat that is a weaker ref, not a
+ * stronger one, which is why "narrows the window" was the right thing to
+ * suspect and the wrong thing to assume.
+ * **TWO, it would break the one widening route this file's `ROUTE` text
+ * prescribes.** A fast-path-A amendment is COMMITTED on the integration
+ * branch (`T-211`); it reaches `refs/remotes/origin/<branch>` only after
+ * a push and a fetch, so a gate preferring the remote would refuse a
+ * lane that had been widened exactly as instructed, for as long as the
+ * two refs disagree.
+ * **THREE, the order is not this file's to change.**
+ * `dispatch-brief.mjs` OWNS it — its comment there argues bare-name-first
+ * as a safety property for a DIFFERENT question, "which revision does
+ * THIS checkout hold" — and `landing-gate.spec.ts`'s *"the
+ * integration-ref candidates are dispatch-brief's, spelling for
+ * spelling"* pins the two lists together, so a reorder here is a reorder
+ * there. `T-153-s9` is why the fallbacks exist at all and is untouched:
+ * on a `pull_request` checkout the bare name resolves to nothing and the
+ * list is read in order until something does.
  *
  * **THE LANE'S OWN CARD IS STILL ITS OWN TO WRITE**, and that is not a
  * contradiction: rule 5 puts every card outside every fence including its
@@ -135,6 +186,19 @@
  *    the fix and it is precise: judge the `touches:` LINE across the
  *    range rather than the file, using the `frontmatterLineOf` this
  *    module already imports. The directory stays unfenceable.
+ * 6. **A LOCAL REF REWRITE MOVES THE FENCE, AND THE LOCAL NAME IS TRIED
+ *    FIRST.** `integrationRefCandidates` resolves the bare branch name
+ *    ahead of either remote spelling, and `git update-ref
+ *    refs/heads/<integration>` is accepted from inside a lane worktree
+ *    where `git branch -f` is refused — measured above. A lane that runs
+ *    it points this gate at a commit of its own choosing, and the
+ *    `touches:` on THAT commit is the fence this gate then enforces.
+ *    Preferring the remote-tracking ref does not close it, and the
+ *    paragraph above measures why not. **The disclosure IS the fix**
+ *    (`T-223`): the route costs a deliberate plumbing command that no
+ *    ordinary lane runs, and the same seat could `--no-verify` past this
+ *    hook entirely — so what was owed was an honest limit rather than a
+ *    guard rebuilt around a threat it cannot reach.
  */
 
 import { spawnSync } from "node:child_process";
@@ -167,6 +231,12 @@ export const INTEGRATION_BRANCH = "main";
  * no remote. `dispatch-brief.mjs` owns this list; this is the hook-budget
  * copy and `landing-gate.spec.ts` asserts the two are identical, so a
  * fourth candidate added there reds a body here.
+ *
+ * **THE ORDER IS A GUARD SURFACE AND IT WAS WEIGHED, NOT ASSUMED**
+ * (`T-223`). The bare name resolves first, and a lane can move that ref
+ * with `git update-ref` — this module's header carries the measurement,
+ * the three counts on which the reorder to a remote-first list was
+ * REFUSED, and limit 6, which is what that leaves disclosed.
  *
  * @param {string} branch
  * @returns {string[]}
