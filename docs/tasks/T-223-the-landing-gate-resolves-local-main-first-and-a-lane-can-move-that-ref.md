@@ -584,3 +584,21 @@ Fixtures pin `git init -b main` through the file's existing `fixture()`.
 - `s2` is deliberately skipped: these notes record a `T-223-s2` filed and
   withdrawn before it was committed, and reusing the id would make that
   record ambiguous.
+
+### Step 7 — the gates this verdict's OWN commit could move
+
+Appending a verdict and filing two cards are WRITES, and prose is a code
+input here. Measured at **`2561553`**, the commit carrying the entry
+above, in the verifier's bench:
+
+| gate | exit | figure |
+|---|---|---|
+| `docs-gate.mjs`, 3 separate literal paths | **1 = FIRES** | a verdict, not a crash: **0 frontmatter issues**, *every live task card's frontmatter parses, with a legal status* |
+| `parser` | 0 | GREEN, **349** |
+| `app` | 0 | GREEN, **1131** |
+| `e2e` | 1 | RED, **536** — the SAME two `session-economics` bodies, **2 failed / 534 passed**; nothing this commit wrote moved |
+
+The regress is closed by naming the ref rather than by chasing it: every
+figure above is a fact about `2561553`, and the only gates a prose-only
+commit on top of it can move are the docs gate and the card-parsing
+suites, re-read at the final tip.
