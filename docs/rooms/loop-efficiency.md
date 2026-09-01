@@ -92,6 +92,26 @@ asking `gh run list` for the last run's verdict before allowing the next
 push, so a red main cannot be pushed over twice in an evening, which is
 what happened at 53da881 and e67cb44.
 
+**11. The blessed gate-runner's solo lock is machine-wide, so four
+concurrent lanes cannot certify at once.** `gate-run.mjs` refuses a run
+while any other run holds `nputer-gate-run-<key>.lock` in the OS temp
+directory (T-088-s4, working as designed for one checkout). Tonight four
+lanes and four benches share the machine, so every final battery
+serialises behind whichever seat got there first, and a seat that reads
+REFUSED as red misattributes. Lane-protocol rule 4 names exactly this
+class: a surface scoped by the machine where the isolation is by
+checkout. The construction is a lock keyed by the worktree the runner
+was invoked in, with the machine-wide lock kept only for two runners in
+ONE checkout, which is the collision it was built for.
+
+**12. A seat's own edit tooling is a hazard the method does not name.**
+This seat's first triage pass swallowed the frontmatter delimiter of six
+cards with one `perl -pi` substitution (`\s*$` ate the newline) and was
+saved only by reading the diff back before committing, which CONVENTIONS
+already demands. Worth one sentence beside that rule: prefer the
+harness's own file tools for frontmatter, and never end a substitution
+pattern in a whitespace class.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
