@@ -596,3 +596,26 @@ card's base `e648590` or at the pre-commit tip.
 
 **The honest reading of that number is that it is not a property of this branch.** It is
 why `gate-run`'s ref field exists, and why this addendum names one.
+
+#### Correction, same date and seat — one of my own drills was evidence for nothing
+
+**A COMMAND QUOTED AS PROOF IS SHOWN CAPABLE OF FAILING** (docs/CONVENTIONS.md), and I
+applied that to the diff and not, at first, to myself. The DATA MUTANT above was first
+run through a shell helper whose `${2:+-g "$2"}` expansion WORD-SPLIT the pattern, so
+Playwright answered *"No tests found"* and exited 1 — and I read that 1 as the mutant
+being killed. **An exit that is right for the wrong reason ends the search**, and it did:
+the test-name argument never reached Playwright, and the output landed in a
+shell-split scratch file rather than the one I named, which is also a breach of this
+project's own SCRATCH RULE in a directory shared with three other seats. That file is
+removed.
+
+**RE-RUN PROPERLY QUOTED AT `1757f33`, and the claim survives on real evidence**:
+`Running 1 test`, **1 failed** — *"the manufactured source must be read-only / Expected:
+false / Received: true"* at `lane-lock.spec.ts:401`, the body's own precondition
+assertion. So the `0o444` literal is load-bearing and the control cannot pass over a
+source that was never read-only. Restoration sha256-proved against `1757f33` both sides.
+
+**Nothing else in this verdict rests on that run**, and the two mutants that carry AC3 —
+`common::copy_dir` losing `unlock()` (kill count 1, in a detached drill worktree with its
+own `CARGO_TARGET_DIR`) and `copyIntoFixture` losing `unlockTree` — were each run
+directly and are unaffected. The verdict stands at **APPROVED**.
