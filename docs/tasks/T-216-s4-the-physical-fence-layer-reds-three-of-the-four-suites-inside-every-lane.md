@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
-touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
+touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, tools/e2e/scripts/token-scan.mjs, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -180,3 +180,159 @@ not merge; it stamps `verifying`, reports ready-to-merge with its branch
 and tip, and leaves its worktree standing (lane-protocol rules 4 and 6).
 review: independent, set at this stamp — the subject is the physical
 fence layer, a guard.
+
+## Implementation notes
+
+**Built in `task/T-216-s4-lane-battery-measurable`, from base `e648590`.**
+Four files changed, all inside the fence; `tests/cli.rs` and the widened
+`tools/e2e/scripts/token-scan.mjs` are untouched, and the second of those
+is a deliberate refusal recorded below.
+
+### What was measured before any diff existed, in this lane, armed
+
+    cargo test --no-fail-fast   exit 101   2 failed   (cli.rs, golden.rs)
+    npm test from tools/e2e     exit 1     5 failed / 530 passed
+
+TWO suites, not three, and FIVE bodies, not four. Of the five e2e
+failures only three are this card's: `token-scan.spec.ts:225` (its
+instance 1), `token-scan.spec.ts:356` (the P6 body, which this card does
+not name — see the census correction below) and `lane-lock.spec.ts:428`
+(its instance 2). The other two are `session-economics.spec.ts` and are
+neither this card's nor this lane's; that is pinned below.
+
+### The fix, in two shapes
+
+**RUST — one class fix, two instances, no change to either named body.**
+`common::copy_dir` used `fs::copy`, which carries the source's permission
+bits, so a fixture materialized inside a lane arrived read-only and every
+body that then EDITED the temp tree panicked. `common::unlock` puts the
+owner write bit back on the COPY (`| 0o200`, never
+`set_readonly(false)` — the exec and group/other bits stay as the copy
+found them). `cli.rs:309` and `golden.rs`'s incremental body both go
+green with no edit of their own; `cli.rs` therefore has a ZERO DIFF.
+
+**E2E — the plant targets move into a scratch repository.**
+`token-scan.mjs` resolves the tree it walks from its OWN MODULE PATH, so
+a scratch directory carrying a copy of the scanner and its wrapper under
+`tools/e2e/scripts/` is a whole repository to the gate; CONTROL's corpus
+is `git ls-files`, so the fixture is a real repository with a real index
+(`git init --initial-branch=main` pinned, nothing committed — `add` fills
+the index and the index is what `ls-files` reads). Both plant bodies keep
+every assertion they had: exit code, hit counts, exact byte offsets, line
+numbers, the `(0 TOKEN, 7 CONTROL)` / `(1 TOKEN, 0 CONTROL)` census, the
+sha256 restoration proof and T-153-s5's clock round-trip — which is a
+property of the HOST rather than of which file is written, and still
+reports real deltas (`-33ns … 72ns of 1489`, darwin, uv 1.52.0). They
+GAIN a live-corpus half a scratch tree cannot make (these seven paths
+really are CONTROL-covered here, at seven DISTINCT first-party roots; and
+`tools/e2e/fixtures/shell.ts` really is in the live TOKEN corpus) and a
+proof that they leave this tree alone.
+
+`lane-lock.spec.ts`'s fixture stopped inheriting the lane's mode bits
+(the card's decision 2, as a `chmodSync` walk after the copy, applied to
+the four `copyFileSync` calls as well as the `cpSync`). Three new bodies,
+each MANUFACTURING its own read-only source rather than finding one, so
+the mutant dies in an unarmed checkout too.
+
+### After, in this lane, armed
+
+    npx playwright test tests/token-scan.spec.ts tests/lane-lock.spec.ts
+      -> 24 passed, exit 0
+    cargo test -p nputer-index --test golden --test cli
+      -> 16 + 10 passed, exit 0
+
+### FOUR CORRECTIONS TO THIS CARD'S OWN PROSE, measured at `e648590`
+
+1. **THREE suites is TWO.** The title, the opening paragraph and the
+   triage paragraph all say three; the card's own table and its first
+   acceptance criterion say two, and two is right. `gate-run parser` and
+   `gate-run app` are green under both the old fence and this one.
+2. **The two Rust instances do not write TRACKED files.** Rust `fs::copy`
+   preserves permission bits and `materialize_fixture` copies into
+   `std::env::temp_dir()`, so both bodies write a TEMP copy that
+   inherited a read-only mode from the lane. That is instance 2's shape,
+   not instance 1's, and the fix site is `copy_dir` rather than either
+   write site — which is why one three-line change closed both.
+3. **The census is a census of ONE FENCE.** Under this lane's own fence a
+   FIFTH body reds: `token-scan.spec.ts:356`, the P6 body, whose plant
+   target `tools/e2e/fixtures/shell.ts` was inside the `[tools/e2e]` fence
+   the card was written against and is outside a five-file one. A plant
+   target chosen to sit inside a fence moves whenever a fence narrows,
+   which is now written into that body's own header.
+4. **`{ mode: constants.COPYFILE_… }` reads as though a mode option had
+   been looked for and rejected.** There is no mode option on either copy
+   call at all; the card's parenthetical is right about the remedy and
+   loose about the reason.
+
+### THE FENCE WAS WIDENED IN FLIGHT AND THE GRANT WAS NOT SPENT
+
+At 22:39Z the dispatching seat added `tools/e2e/scripts/token-scan.mjs`
+to this card's `touches:` and re-stamped the manifest (`aad0cf7`). Both
+halves were read off disk here and AGREE character for character, and the
+physical layer has released that file (`-rw-r--r--`). The reason given
+was that decision 1 "cannot be written without a root override in the
+scanner". **The repository says otherwise and the repository wins**: the
+scanner's root is `path.resolve(<its own dir>, "..", "..", "..")`, so a
+COPY of the module at `<fixture>/tools/e2e/scripts/` already resolves to
+the fixture. It is measured, not argued — mutants M14 and M17 point the
+gate back at the live tree and both bodies red.
+
+So the grant is held and unspent, deliberately. A root override on
+`token-scan.mjs` would put an argument- or environment-controlled REDIRECT
+into the gate CI runs FIRST against a bare checkout — a gate whose stated
+design is *"still zero allowlist, by design: no file, line or comment can
+mute it"*. A redirect is a mute with a longer name. Keeping the diff
+inside test files leaves the shipped gate byte-identical.
+
+### WHAT IS RED HERE AND IS NOT THIS CARD'S — pinned by moving ONE variable
+
+`session-economics.spec.ts:179` and `:365` assert exit 0 from
+`brief.mjs`, which computes lane disjointness by crossing the
+MACHINE-scoped live worktree list with the card files IN THE CHECKOUT IT
+RUNS IN. At `e648590` this lane's copies of `T-223` and `T-230` still
+carry their pre-narrowing `tools/e2e` fences; on `main` at `aad0cf7` they
+are narrowed and pairwise disjoint. In the detached drill worktree, with
+NOTHING else changed:
+
+    sibling cards as at e648590   ->  2 failed / 8 passed, exit 1
+    sibling cards as at aad0cf7   ->  10 passed,           exit 0
+
+Same tree, same diff, same machine, same live worktree list. **It is REF
+SKEW, and it is already owned**: `T-143-s1` (planned) is these two bodies
+by name, and `T-187` (planned) is the class — a lane cut from a checkpoint
+reading a stale copy of the board. Recorded here, not re-filed.
+
+### Stale, reported rather than repaired
+
+`npm run capabilities:check` reds in this lane: one e2e test body was
+ADDED (`lane-lock.spec.ts` — *the fixture does NOT inherit the mode bits
+of the tree it is copied from*), and `docs/CAPABILITIES.md` is generated
+from spec names and is outside this fence. The regeneration is the
+INTEGRATOR's, in the merge commit, before the checkpoint
+(docs/CONVENTIONS.md's capabilities clause).
+
+### Routed
+
+- `T-216-s4-s1` — `npm install` from app/ exits 243 (EACCES on
+  `app/package-lock.json`) inside an armed lane; needs
+  `docs/CONVENTIONS.md`, which `T-236` holds.
+- `T-216-s4-s2` — the class sweep: three more fixtures copy modes out of
+  the live tree (`card-preflight.spec.ts`, `lane-fence.spec.ts`,
+  `perf.rs`), green today only because none asserts on a copy's
+  writability, and `perf.rs`'s body is `#[ignore]`d so nothing can ever
+  tell. `app/test` and `lib/parser/test` swept EMPTY.
+
+### For the verifier
+
+- `tests/cli.rs` has a zero diff and is meant to. So does
+  `tools/e2e/scripts/token-scan.mjs`, which this lane holds and declined.
+- The three new bodies each manufacture their read-only SOURCE. That is
+  deliberate and is the only reason a mutant dies in an unarmed drill
+  worktree: `method/roles/executor.md` and `tests/fixtures/**` are `644`
+  wherever the layer is not armed.
+- The `git diff --quiet` companion moved from the plant targets to the
+  LIVE tree, where no clock is rewritten, so the stat-cache interaction
+  the P6 body's own comment records cannot reach it. The fixture keeps
+  the sha256, which docs/CONVENTIONS.md names as the proof either way.
+- 18 mutants, 18 kills, 16 of them with a failing-body count of exactly
+  ONE. The two that are not are recorded with their reason in the report.
