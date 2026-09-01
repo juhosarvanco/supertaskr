@@ -163,9 +163,10 @@
   graded reading; its `gate-verdict` line carries the exit code, the
   BODY COUNT and the ref. READ THE COUNT, NEVER THE CODE.
 - **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
-  records its verdict in `.nputer/gate-verdict.json`, keyed on
-  `HEAD^{tree}` per suite, and `push-guard.mjs` refuses a push whose four
-  suites are not all GREEN against the tree being pushed. **So the
+  also writes that same verdict to a token beside the fence manifest in
+  `.nputer/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
+  refuses a push whose four suites are not all GREEN against the tree
+  being pushed. **So the
   battery is run LAST, after every commit** — otherwise the token names a
   tree that is no longer yours. The refusals are distinct and each prints
   its remedy: `token-incomplete` (a suite never ran), `token-red` (a
