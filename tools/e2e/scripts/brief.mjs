@@ -101,6 +101,7 @@ import {
 } from "./dispatch-brief.mjs";
 import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
+import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { seatRecs } from "./session-economics.mjs";
 
 const FLAGS = Object.freeze([
@@ -330,6 +331,14 @@ async function main(argv) {
     try {
       const manifest = await buildLaneFence(taskId, worktree, { root: ctx.root });
       const written = writeLaneFence(manifest);
+      // THE PHYSICAL LAYER IS ARMED FROM THE MANIFEST JUST WRITTEN (T-210).
+      // ONE EVENT, NOT TWO: a fence WIDENING is this same command run again
+      // (T-211 fast path A — "the dispatch step performed again, never a
+      // different act"), so arming here covers the widening as well and
+      // there is no second trigger to forget. `applyLaneLock` re-baselines
+      // rather than adding, so a path that has just been granted gets its
+      // write bit back in the same motion the manifest gains it.
+      const lock = applyLaneLock(worktree);
       console.log(
         render([
           note("THE LANE FENCE MANIFEST — expanded ONCE, here, where a built parser exists"),
@@ -354,14 +363,43 @@ async function main(argv) {
             treeProv(ctx.ref, "the parser's UNFENCEABLE_PATHS, copied rather than restated"),
           ),
           blank(),
+          // A NOTE MAY NOT CARRY A DIGIT — this module's own provenance rule,
+          // which refused these four lines while they still cited the card by
+          // id and was right to. Every figure below is a stamped value.
+          note("THE PHYSICAL LAYER, ARMED FROM THAT MANIFEST — out-of-fence TRACKED files are"),
+          note("now read-only, so a write through a shell fails with EACCES rather than being"),
+          note("parsed. It covers the vector the hook cannot see and misses the one the hook"),
+          note("catches; neither layer is sufficient alone."),
+          value(
+            `read-only: ${lock.locked} of ${lock.tracked} tracked · writable: ${lock.writable}`,
+            liveProv(ctx.at, ctx.host, "chmod over `git ls-files`, read in the lane worktree"),
+          ),
+          value(
+            `drop it around a checkpoint sync: node tools/e2e/scripts/lane-lock.mjs --release --worktree ${worktree}`,
+            liveProv(ctx.at, ctx.host, "the lane worktree handed to --write-fence"),
+          ),
+          blank(),
           note("The hook in .claude/ reads that file and nothing else. It is a runtime file, so"),
           note("a self-ignoring .gitignore goes beside it — a manifest that reached the"),
           note("integration branch would hand every checkout one lane's fence, permanently stale."),
         ]),
       );
+      if (lock.failures.length > 0) {
+        // A PARTIAL ARM IS A FINDING, NOT A WARNING. The manifest is
+        // written and the hook guards regardless, but a physical layer that
+        // covered most of the tree would be a guard trusted further than it
+        // measures — this repository's most repeated defect.
+        fenceFindings.push(
+          `the physical fence layer could not lock ${lock.failures.length} path(s) — ` +
+            lock.failures.map((f) => `${f.path} (${f.error})`).join("; "),
+        );
+      }
     } catch (err) {
-      if (!(err instanceof LaneFenceFinding)) throw err;
-      fenceFindings.push(err.message);
+      if (err instanceof LaneLockFinding) {
+        fenceFindings.push(err.message);
+      } else if (err instanceof LaneFenceFinding) {
+        fenceFindings.push(err.message);
+      } else throw err;
     }
   }
 

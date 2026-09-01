@@ -328,14 +328,54 @@ this file is a project's actual name.
    DESCRIBED AS TOTAL IS WORSE THAN NO GUARD.** A hook on the write
    TOOLS sees writes made with those tools. **A write mediated by a
    shell — a redirect, a `sed -i`, a script — does not pass through
-   them, and stays covered by this protocol and by nothing else.** So
-   does any write by a seat that holds no lane. And a guard that cannot
-   locate its own program cannot refuse: it fails OPEN, silently, which
-   is the harness's contract and not a defect to be argued away. **State
-   these where the guard is documented**, and read the guard's own
-   decision function rather than a page about it — a description of a
+   them**, and is answered by the physical layer below or by nothing at
+   all. So is any write by a seat that holds no lane. And a guard that
+   cannot locate its own program cannot refuse: it fails OPEN, silently,
+   which is the harness's contract and not a defect to be argued away.
+   **State these where the guard is documented**, and read the guard's
+   own decision function rather than a page about it — a description of a
    guard drifts from the guard, and the description is the half that
    gets read.
+   **THE SHELL-MEDIATED WRITE HAS A SECOND ANSWER AND IT IS PHYSICAL
+   RATHER THAN ANALYTICAL.** Deciding what an arbitrary shell command
+   will write is a parsing problem no project wins; asking the FILESYSTEM
+   is not a parsing problem at all. So after the manifest is written,
+   make every TRACKED file OUTSIDE that fence READ-ONLY in that lane's
+   worktree. A stray write then fails with `EACCES` from the kernel,
+   needing no intent analysis and covering every writer equally — the
+   redirect, the in-place edit, the script and the build tool alike.
+   **FILES ONLY, NEVER DIRECTORIES**, and all three reasons are
+   load-bearing rather than tidy. The runtime directory a lane's own
+   tooling writes to is created at the worktree ROOT, so a read-only root
+   would stop the lane minting whatever its push gate demands and
+   therefore stop it pushing at all; `git worktree remove` UNLINKS, and
+   unlink is authorised by the PARENT directory rather than by the file,
+   so a locked directory would break rule 6's cleanup; and a build writes
+   only ignored trees, which are untracked and therefore never
+   candidates. Take the corpus from what the repository TRACKS, and every
+   runtime path is excluded by construction instead of by an exception
+   list somebody has to maintain.
+   **THE TWO LAYERS COVER EACH OTHER'S BLIND SPOTS AND NEITHER IS
+   SUFFICIENT ALONE. SAY SO WHEREVER EITHER IS DOCUMENTED**, because a
+   guard trusted further than it measures is worse than none. **A lane
+   writing ANOTHER lane's worktree never appears in its own diff**, so no
+   landing check can see it and only the physical layer can — the other
+   lane's out-of-fence files are read-only to everybody. Conversely a
+   landing check covers what the physical layer cannot: content that
+   arrives through a path where the mode bit was legitimately dropped.
+   **AND THE PHYSICAL LAYER'S OWN LIMITS ARE FOUR, MEASURED RATHER THAN
+   REASONED.** It stops MODIFICATION of an existing out-of-fence tracked
+   file and nothing else. **CREATION is not blocked** — directories stay
+   writable, by the rule above. **DELETION is not blocked** — `rm` in a
+   writable directory succeeds whatever the file's mode. **GIT IS NOT
+   FENCED BY IT AT ALL**: measured at git 2.50.1, a merge writes straight
+   through a read-only tracked file, because it unlinks and recreates,
+   and the new file arrives at the umask default — so every git write
+   also DISARMS the layer on the paths it touched, silently. And it is
+   **not a security boundary**: the owner may `chmod` it back and root
+   ignores it. The first two are exactly what a landing check sees, which
+   is why the pair is kept; the third is why the layer must be
+   re-armable and ASKABLE, and it is what fast path B is written around.
 
 6. **The integrator removes the worktree** — after the merge and the
    checkpoint, not before. The executor never removes its own: a
@@ -538,6 +578,41 @@ diff, its merge base and every gate derivation recompute against the
 new base — which is also what stops a landing check charging the lane
 with the paths the sync brought in.
 
+**AND A PHYSICAL LAYER IS DROPPED ENTIRELY FOR THE DURATION OF THE SYNC,
+THEN RE-ARMED FROM THE POST-WIDENING MANIFEST ONCE THE MERGE COMMIT
+EXISTS.** Not a narrowing and not an exception list: off, then on again
+from the new answer. **This is the one self-violation this whole section
+had built into it**, and it is structural rather than unlucky — the sync
+is a merge THE PROTOCOL ITSELF PERFORMS, and the files it must write are
+by definition the ones outside the pre-widening fence, which is exactly
+what made the sync necessary. A layer armed over those paths is a guard
+aimed at its own project's fast path.
+
+**AND THE SHAPE OF THAT SELF-VIOLATION IS NOT THE ONE IT WAS PREDICTED
+TO HAVE, WHICH IS WHY IT IS STATED FROM MEASUREMENT.** The prediction was
+an `EACCES`: git writes tracked files, the tracked files are locked, so
+the sync fails loudly. **At git 2.50.1 on macOS/APFS it does not fail at
+all.** Merges of all three shapes — fast-forward, three-way, conflicting —
+write
+straight through a read-only tracked file, because git unlinks and
+recreates rather than opening for write, and the recreated file arrives
+at the umask default. **So the sync SILENTLY DISARMS the layer on
+precisely the paths it most needed to hold**, with no error, no output
+and nothing in `git status` to see. That is worse than the predicted
+failure in the direction that costs: a refusal stops you, and a guard
+that has quietly stopped guarding does not. Derive this at your own git
+version rather than trusting this paragraph — the remedy is the same
+either way, but WHICH half of it is load-bearing is not: under the
+prediction it is the drop, and under the measurement it is the re-arm.
+
+**SO THE LAYER MUST BE ASKABLE AND THE ANSWER MUST BE CHECKED AFTER ANY
+GIT OPERATION THAT REWRITES THE TREE** — a sync, a branch switch, a stash
+pop. A command that reports which out-of-fence paths are writable again
+is the whole difference between a decayed guard and a detected one. And
+ALL OR NOTHING below governs the re-arm as well: it is recomputed from
+the manifest, never from a memory of what was locked, because a layer
+restored from a remembered set is a claim about a tree that has moved.
+
 **ALL OR NOTHING. NEVER A PARTIAL FILE PICK.** A mixed base makes the
 lane's green a claim about a tree that will never exist, and the subset
 argument defeats itself: the only files worth picking are the ones the
@@ -609,11 +684,17 @@ IS WHY ITS HOLES ARE PUBLISHED HERE RATHER THAN DISCOVERED.** A write
 that reaches disk without passing through the guarded write tools — a
 redirect, an in-place edit, a script — is outside the write refusal by
 construction (rule 5 states that limit already), and every such write
-is a way for two disjoint fences to conflict honestly. **A tripwire
-believed wider than it is sends a seat hunting a violation that never
-happened**, which is the same cost as the miscast instrument failure
-above, arriving by a different road. State what your project enforces;
-claim nothing beyond it.
+is a way for two disjoint fences to conflict honestly. **THE PHYSICAL
+LAYER NARROWS THIS HOLE AND DOES NOT CLOSE IT**, which is a distinction
+worth keeping rather than rounding off: where it is armed, a shell can
+no longer MODIFY an existing out-of-fence tracked file, so what remains
+are creations, deletions, and whatever git itself writes — and a
+conflict is a textual disagreement about a file's CONTENT, which a
+creation on both sides still produces. **A tripwire believed wider than
+it is sends a seat hunting a violation that never happened**, which is
+the same cost as the miscast instrument failure above, arriving by a
+different road. State what your project enforces; claim nothing beyond
+it.
 
 ### The standing warning both paths are an instance of
 
