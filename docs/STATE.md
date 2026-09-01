@@ -58,9 +58,9 @@ opens with `Checkpoint:`** (T-182).
 
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
-2. **THE STACK IS 3 GATES OF 4** — WRITE (T-199), DISPATCH (T-209),
-   LANDING (T-212) refuse. T-203 (push gate) + T-211 dispatched
-   2026-09-01; **T-210 goes last**, colliding with both.
+2. **THE STACK**: WRITE (T-199), DISPATCH (T-209) and LANDING (T-212)
+   refuse; PUSH is registered and FAILS OPEN (hazards). T-203 + T-211
+   dispatched; **T-210 last**, colliding with both.
 3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
    decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
    rest on it, and dropping it reds nothing.
@@ -97,12 +97,13 @@ opens with `Checkpoint:`** (T-182).
   this seat read exit **254** as green four times. **Redirect, capture
   `$?`, THEN look.** Suite chains go in GUARDED SCRIPT FILES
   (`cd <abs> || exit N`).
-- **NOTHING GATES THE PUSH YET** (T-203/T-216 open), and two things
-  follow. A gate read BEFORE a commit does not catch what the commit
-  creates — committing a record is what makes STATE stale, so read it
-  AGAIN after. And the fence judges a WRITE and a LANDING but not a
-  push: `push-guard.mjs:449` roots on the writer's cwd and the hook
-  loads from the DISPATCHING checkout, so a lane never arms its own fix.
+- **THE PUSH GUARD IS REGISTERED AND FAILS OPEN BY DESIGN** — its own
+  words: *the ONLY refusal is a check that ran and answered 1.* So
+  "nothing gates a push" is FALSE and "a push is guarded" OVERSTATES;
+  T-203 EXTENDS it, T-216 fixes its rooting. Also: a gate read BEFORE a
+  commit misses what the commit creates, and the guard roots on the
+  WRITER's cwd while the hook loads from the DISPATCHING checkout — so a
+  lane never arms its own fix.
 - **A BLIND VERIFIER'S WORKTREE IS CUT AT THE BASE REF, NEVER THE TIP**
   (T-213) — a tip carries the executor's notes, including sections
   addressed to the verifier. **Lane context goes in a SECOND message**:
