@@ -197,6 +197,19 @@
   fails SILENTLY, still pointing at a real line, just the wrong rule.
   Two citations were falsified by merges in a single night, both true
   when written. **Cite a rule by its ORDINAL and its own capitals.**
+- **AND A DISTANCE TO A MOVING TIP CANNOT BE STATED AT ALL IN A DOCUMENT
+  COMMITTED TO THAT TIP'S BRANCH** — with or without a ref, because
+  **pinning is itself a commit and the commit moves the number.** One
+  card typed a count against `main` three times, each correction written
+  by the seat that had just made the previous one; the fourth instance
+  was a sentence measuring 348 that shipped at 349, **the delta being
+  exactly the commit carrying the sentence.** "Carry your ref" does not
+  reach that case — it reads as repairable. **THREE FORMS SURVIVE: both
+  endpoints pinned to fixed shas, the derive command with NO answer
+  beside it, or omission.** A past reading bound to a named occasion
+  ("347 when the verifier re-stamped it") is HISTORY and cannot go
+  stale; a present-tense value can. Derived by a blind verifier from a
+  defect it had already been shown three times.
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.

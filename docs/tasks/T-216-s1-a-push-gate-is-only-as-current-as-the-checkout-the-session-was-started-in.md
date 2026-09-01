@@ -83,10 +83,20 @@ Added by the dispatch audit, 2026-09-01, measured at `06ca1c5`:
     git rev-list --count 4ec229c..06ca1c5          -> 344
 
 *(Both rows said `main` when written and the count read 344. `main` has
-moved five times since, to 348. **Third instance of one defect on one
-card** — the criterion, the amendment's demonstration table, and this
+moved repeatedly since — re-derive with
+`git rev-list --count 4ec229c..main`. **Third instance of one defect on
+one card** — the criterion, the amendment's demonstration table, and this
 audit block, each written by the seat that had just corrected the
 previous one. Pinned to the sha the line already named.)*
+
+*(**And a FOURTH, of a different kind.** This parenthetical originally
+ended "moved five times since, to 348." That was true when measured at
+`87b134d~1` and false at `87b134d`, the commit that shipped it — **the
+delta being exactly the commit carrying the sentence.** Pinning cannot
+repair it, because pinning is a commit. The rule the first three taught,
+"a figure carries its ref", does not reach this case; the stronger form
+now lives in `docs/CONVENTIONS.md` beside A LINE NUMBER IS A FIGURE. The
+repair above asserts no value, so there is nothing left to falsify.)*
 
 **The motivating checkout PASSES an ancestry test.** Being an ancestor of
 the tip is not a defect a stale checkout has — it is the definition of
