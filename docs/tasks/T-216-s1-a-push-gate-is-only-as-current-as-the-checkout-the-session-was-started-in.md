@@ -132,6 +132,32 @@ Also corrected: the reachability bullet is the **fourth** criterion. Both
 dispatch briefs called it the fifth, counting past `Verification:
 headless`.
 
+**AND A MEASURED FACT THE CARD DID NOT HAVE — "REGISTERED" IS NOT A PROXY
+FOR "RUNS".** This is a NOTE and deliberately not a sixth criterion; the
+card is size S and has already grown once. Judge the built catcher against
+it anyway.
+
+There are TWO ways a checkout can fail to consult the guard, and from
+outside they are indistinguishable:
+
+    A. no Bash matcher registered at all      -> nothing is invoked
+    B. matcher registered, hook FILE absent   -> node starts, exits 1
+
+Measured at the integration seat, `CLAUDE_PROJECT_DIR` resolving correctly
+and only the `.mjs` missing — **one fault, not two**:
+
+    exit=1, stderr 761 bytes ("cannot find module")
+
+Exit 1 is not exit 2, so the harness does not block: **arm B fails open
+while looking fully configured.** A catcher that reads
+`.claude/settings.json` and finds the registration present would pass a
+checkout in arm B. The measured motivating instance is arm A; **arm B is
+the one that survives an inspection of the registration.**
+
+`docs/CONVENTIONS.md` currently asserts this shape needs two faults at
+once and that the process never starts. Both are false, and that document
+defect is routed as **T-232** rather than folded in here.
+
 ## Acceptance criteria
 
 - A body SHALL demonstrate the measured instance: a checkout registering
