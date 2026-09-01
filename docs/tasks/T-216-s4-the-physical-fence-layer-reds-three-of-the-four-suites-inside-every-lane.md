@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
-touches: [tools/e2e, app/src-tauri]
-builder:
-verifier:
+touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **FOUND WHILE BUILDING T-216-s1, NOT FIXED THERE** — every path a fix
@@ -151,3 +151,32 @@ not to any diff.
 defeated by T-210**: `lane-lock.spec.ts` builds its fixture with
 `cpSync`, which copies mode bits, so the control inherits the very
 read-only state it exists to detect.
+
+## DISPATCH, 2026-09-02 — the stamp, and what the audit found
+
+**Fence narrowed at dispatch to the five files the fix lives in**, so the
+three sibling lanes cut tonight (T-223, T-230, T-236) stay disjoint by
+PATH rather than serialising behind the `tools/e2e` token — lane-protocol
+rule 5's own norm, adopted on this board for the first time. The
+previous fence `[tools/e2e, app/src-tauri]` was a component-sized
+permission; the card's four bodies are in four files and one shared
+helper.
+
+**Audit correction (orchestrator 5b)**: instance 4 cites
+`tests/common/mod.rs:44` as where the write panics, which is the HELPER;
+the test body `incremental_reindex_after_an_edit_matches_a_fresh_index`
+lives in `tests/golden.rs`, so both files are in the fence. Instance 3's
+body is at `tests/cli.rs` as cited. Both e2e bodies exist under the
+names cited (checked against tools/e2e/tests at 2489853).
+
+**Decision 3 is ruled OUT for this lane**: `docs/CONVENTIONS.md` is
+outside the fence tonight (T-236 holds it), so "the battery is not a
+lane's to run" cannot be written here — build options 1 and 2, and IF a
+sentence in CONVENTIONS is still owed THEN route it as a suggestion
+naming that fence.
+
+**Holder**: this lane does NOT hold the integration checkout and does
+not merge; it stamps `verifying`, reports ready-to-merge with its branch
+and tip, and leaves its worktree standing (lane-protocol rules 4 and 6).
+review: independent, set at this stamp — the subject is the physical
+fence layer, a guard.
