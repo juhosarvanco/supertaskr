@@ -382,3 +382,182 @@ strongest attack is a second copy of a naming phrase or a phrase lost
 in a reflow — `brief.mjs --task T-236 --state --dispatch` exits 3 on
 either, and it exited 0 after every pass. The stale-census check is
 CURRENT because no test name moved.
+
+## Verdicts
+
+### V-236, 2026-09-02 — claude-opus-5@subagent, independent — REJECTED
+
+Measured in a detached bench at `560bac3` (`../nputer-V-T-236`), installed
+by the fresh-clone ORDER, `NPUTER_E2E_PORT=25236`. Every figure below is
+mine, re-derived rather than read from the report. **My blindness was
+CLOCK-SHAPED**: the bench was cut with the lane, so phase 1 ran before any
+diff existed and the attack set was hashed before the work was reported
+(`attack-V-T-236.md`
+`e1e28710620e19d464ced9ce9fb206de54e8e303a2c2d15c1377bfbc5c0c10fa`,
+`ground-V-T-236.md`
+`68d37dea23d2f54b90b56704ff49079f301ca4f40b885a80e003b1dc7e3eef56`,
+stamped 2026-09-01T22:22:55Z).
+
+**ONE BLOCKING FINDING, AND IT IS THE ONE THIS CARD EXISTS TO REFUSE.**
+
+#### F1 — criterion 3: a moved instance cited to a card that does not hold it
+
+THE LANE PROTOCOL bullet, at the tip:
+
+    **BOTH BRANCH SPELLINGS ARE LIVE IN THIS REPO and the older `tNNN-…`
+    one is not a mistake to fix**: the two sets overlap rather than succeed
+    each other, so there is no cutover id to cite — derive the pair at your
+    own ref (T-089's card holds the census at `4d2f03c`).
+
+The base held the census inline: *"derived at `4d2f03c`, 69 branches — 31
+`task/T-NNN-…`, 37 the older `tNNN-…`"*. Moving it is correct — it is an
+INSTANCE. **The target is wrong.** Reproduce:
+
+    C=docs/tasks/T-089-the-dispatch-brief-is-a-written-artifact.md
+    wc -c $C                                    # 98113
+    grep -c -F "69 branches" $C                 # 0
+    grep -c -F "tNNN" $C                        # 0
+    grep -c -F "37 the older" $C                # 0
+    grep -c -F "cutover" $C                     # 0
+
+Expected: T-089 holds the census. Actual: it holds none of it. `4d2f03c`
+appears on that card 22 times because it was **T-089's own base commit** —
+which is exactly how this half-right sentence survived: the REF is correct
+and only the ATTRIBUTION is wrong.
+
+**The holder is `docs/tasks/T-110-s2-the-older-branch-spelling-reads-as-not-a-lane.md`**,
+which carries *"69 branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`"* at
+that same ref. Swept with a positive control — the same needle matches
+`git show 3170247:docs/CONVENTIONS.md`, so the empty results above are a
+real absence and not a broken search.
+
+**Remedy: name T-110-s2.** Nothing is lost — the instance is on that card
+and in the pre-compaction ref the new preamble already publishes — so this
+is one citation, not a hazard. It is nonetheless a literal failure of the
+criterion that says a citation must point at what *holds* it, and it was
+the first attack in the stamped set. Of the six handoff citations this
+landing adds, five were verified to hold: T-093 (`bc2d82a`, the control-byte
+measurements — 9 hits), T-092 (the four-lane scratch census), T-052 (the
+ten instances), T-159's card and `docs/checkpoints/2026-08-30-T-159.md`
+(present), and the preamble's `git show 3170247:docs/CONVENTIONS.md`
+(resolves).
+
+**EVERYTHING ELSE VERIFIED. The pins held completely, and I attacked them
+with the programs rather than by eye.**
+
+- **Derived output byte-identical, base vs tip**, which is the strongest
+  form of criterion 2 available: `parseRangeRule` (3,700 chars),
+  `bootGateTrigger`, `graphRegenTrigger`, `parseDocsGateRecipe` (1,050
+  chars, the two recipe lines and the whole four-column matrix). The RANGE
+  RULE bullet is byte-identical outright.
+- **The four per-package command lists identical** (4 / 5 / 7 / 9 commands,
+  middle-dot structure intact). The DOCS GATE bullet's four-suite set
+  identical; its `MEANS *I WAS NOT ASKED*` legend still occurs once; the
+  `app/src-tauri` exit legend identical; the printed recipe still equals
+  `docs-gate.mjs`'s header lines 9–10.
+- **All 13 uniqueness-pinned phrases resolve to exactly one bullet**, the
+  `85dda6d` class ruled out in both directions — and `brief.mjs --state`,
+  `--dispatch` and `--task T-236` all exit **0** with zero NOT DERIVED rows.
+  `laneSpellings` returns the identical five values.
+- **The version stamp line is byte-identical** (sha256
+  `c5738e37…d135d3` both sides) and `formats are version-bumped` still
+  occurs on exactly one LINE — the line-scoped half of that pin, which a
+  reflow alone would have broken.
+- **56 bullets before, 56 after, same order, same identities**; only two
+  opening lines reworded, neither pinned. No column-zero split.
+- **Zero new dangling citations**: 40 cited ids have no card file and all 40
+  were already cited at the base.
+- **Every mechanism under the 23 deleted headline capitals survives** —
+  libuv/microsecond, stale-binary pollution, `<scratch>/target` indexing,
+  shape six's failing-body-count-of-ONE procedure, the fence carve-outs,
+  the NUL/`file --mime` pair, the detached-entry rule, `CACHEDIR.TAG`.
+- **ADR-019: 74 insertions, 0 deletions** — appended as addendum 6, not
+  edited. `DOC_BUDGETS` re-derived correctly: `landed 117502`,
+  `warn = ceil(117502 + max(2053, 29375.5)) = 146878`,
+  `fail = ceil(117502 × 1.5) = 176253`; `d01b24f` resolves to 117502 and
+  CONVENTIONS did not move after it. **I pre-committed in phase 1 that this
+  criterion is DEGENERATE for this document** — the floor binds only below
+  4F = 8,212, so the retired `× 1.25` spelling yields the same integer — so
+  I judged the stated derivation, and the comment names the floor *and* its
+  inertness. STATE's `warn: 8465` and the `× 1.25` doc comment were
+  correctly left alone: that disagreement is deliberate and is T-162-s2's.
+- **Security sweep** (short, but `docs-scan.mjs` is code): the diff there is
+  7 lines and touches only the CONVENTIONS entry plus its comment.
+  `Object.freeze` intact, entry shape intact, no `null` entry, no guard
+  relaxed — `conventionsBullet`'s `!== 1` throw is untouched. No dependency
+  movement, no secrets, no new input path. `lint:tokens` clean (TOKEN 173
+  files, CONTROL 1118) — no control byte from a bulk rewrite.
+
+**BATTERY at `560bac3`, read unpiped from the blessed runner:**
+
+    parser  exit 0  bodies 349   GREEN
+    app     exit 0  bodies 1131  GREEN
+    rust    exit 0  bodies 631   GREEN     <- kit.rs's stamp pin passes
+    e2e     exit 1  bodies 535   534 passed, 1 failed
+    lint:docs 0 · lint:tokens 0 · capabilities:check CURRENT · health 3 (by design)
+
+**The single e2e red is NOT this diff's, and I attributed it myself rather
+than accepting it**: `lane-lock.spec.ts:812 › the DISPATCH STEP arms it`
+fails **identically at the base `3170247`** in the same bench (`npx
+playwright test tests/lane-lock.spec.ts:812` → exit 1 at both refs). It is
+the physical-layer/T-216-s4 class. The docs gate on the merge's diff exits
+**1 = has a verdict**, naming the four suites; all live card frontmatter
+parses, including the three new suggestions; the census still names 28
+readers, so nothing dropped out.
+
+**Health:** the CONVENTIONS headroom band moves from **2.65% (drifting,
+0.65 points off breach)** at the base to **INSIDE** at the tip — 6 inside /
+1 drifting against 5 / 2. Noted rather than credited: after any re-derived
+landing that band reads 20% by construction.
+
+**MY OWN DRILLS, one side only, document mutated and never the reader's
+literal, each read back from `git diff` before the suite ran:**
+
+    D1  drop the trailing slash from `npx vitest run from lib/parser/`
+        -> docs-input-gate.spec.ts:674 "the DOCS GATE bullet names exactly
+           the commands the derivation produces"        1 failed / 42 passed
+    D2  RANGE RULE PATH-FOR-PATH cell **29** -> **28**
+        -> range-rule.spec.ts:91 "scoreboard-path-for-path", erroring
+           "doc says 28 of 31, git says 29 of 31"        1 failed / 24 passed
+
+Kill count ONE each, and **neither kill set contains the other**. Both aim
+at the site the property lives, and D1 aims at the sentence my phase-1 set
+named as the likeliest well-intentioned red — the transcribed four-suite
+list that ADR-019 rule 5 appears to license cutting. It was kept. Restored
+both times with `git restore --source=560bac3 --staged --worktree --` and
+proved by sha256 against `git show HEAD:` —
+`f5c35536b445a3bf04f4f0861af4b78e871433dfc6abb17639ae9776f6c81861` both
+sides, working tree clean.
+
+**ON THE BAR, WHICH I JUDGED AS THE CARD ASKS AND NOT BY THE NUMBER.**
+160,043 → 117,502 is **−42,541, −26.58%**, against a one-third bar of
+≤ 106,695 — short by 10,807. My phase-1 ground truth predicted exactly this
+before the diff existed, on the arithmetic that the largest bullet with no
+reader is 23,231 bytes against a 53,348-byte bar, and pre-committed that
+*"a report that stops short of a third, naming the pinned sentences that
+hold it, is a PASS on C4."* The stop-short is invoked, argued in addendum 6
+and accounted bullet by bullet. **The accounting is honest**: the addendum
+declines the easy excuse, saying the pins hold only ~17.6 KB and that what
+actually stops the cut is rule 6. Addendum 6 also restates the runway cost
+against itself — 46,891 bytes of headroom against the old line, 29,376
+against the new — which is addendum 4's uncomfortable half applied to this
+landing rather than quietly omitted. I checked for the failure mode that
+would have made the shortfall dishonest — a rule cut to reach the number —
+and found none: every rule, tell, remedy, legend and poison ordinal is
+present.
+
+**WHAT THE CARD ITSELF GOT WRONG, recorded because the next compaction
+inherits it and it is not this lane's failure.** The card's *What stays,
+byte for byte* list omits two bullets that `range-rule.mjs` parses with
+hard throws — `BOOT GATE (T-046` (its trigger, two globs and the manifest
+clause) and `GRAPH REGEN (T-009-s1` (its trigger, where the comma after
+`outside docs/` is load-bearing) — and under-states the DOCS GATE bullet,
+which is pinned by `range-rule.mjs` as well as `docs-input-gate.spec.ts`. A
+lane working from that list alone could have redded the suite lawfully.
+**This executor did not**: both triggers derive identically at the tip.
+Filed as T-236-s4.
+
+**Re-run after my own writes** (verifier.md step 7 — this verdict and the
+suggestion are commits, and prose is a code input here): recorded in the
+commit that carries them.
+
