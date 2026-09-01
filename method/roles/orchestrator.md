@@ -113,6 +113,25 @@ you know is in docs/. You are disposable at any moment.
    verifier can no longer be surprised, and *did it survive* becomes
    trivially yes. **Early is a SCHEDULING change and never a SHARING
    one.**
+   **AND A CONTRACT AMENDED AFTER DISPATCH REACHES THE VERIFIER BEFORE
+   THE WORK DOES.** Where a card gains anything once the lane is
+   running — a correction, a widened scope, a finding routed onto it —
+   send the verifier to the amended card AT ONCE, by path, and have it
+   re-stamp against the TEXT. The property 5c buys is a function of the
+   CLOCK and not of the document: a stamp made before the work exists
+   cannot be shaped by the work, and that holds for every part of the
+   contract, including the parts added late. **An amendment read
+   alongside the diff arrives already paired with an implementation of
+   it**, which is the pairing this whole step exists to prevent — and
+   the contract is not executor work, so reading it early costs the
+   blindness nothing.
+   **NEVER LET YOUR SUMMARY OF AN AMENDMENT STAND IN FOR ITS TEXT.** A
+   dispatcher relaying *what the change says* has put a second seat's
+   paraphrase inside a set whose entire value is that it is primary.
+   Name the ref and the heading; let the verifier read it. **This clause
+   exists because a verifier caught its dispatcher doing exactly that,
+   declared the provenance in its own addendum rather than letting it
+   pass, and argued the correction from 5c's own reasoning.**
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.
