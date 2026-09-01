@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 5
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent, app-interview]
 suggested_by: standing triage sitting #4 (2026-08-30) — SPLIT from T-171
