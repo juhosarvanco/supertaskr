@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: suggested
+status: building
 suggested_by: executor claude-opus-5@subagent @T-216
 blocked_by: []
-touches: [.claude, tools/e2e]
-builder:
-verifier:
+touches: [.claude, tools/e2e, .github]
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **FOUND ON T-216'S CARD, NOT BUILT THERE — and the split is that card's
@@ -64,11 +64,36 @@ which is why this is a card and not a paragraph in T-216's diff.
 ## The trap any implementation inherits
 
 **An ancestry test is answerable from a stale WORKTREE only because a
-worktree SHARES REFS.** Measured on that card: from the session worktree
-at `4ec229c`, `main` resolves to `4c33125` — a commit its own HEAD does
-not contain. **In a stale CLONE the same query consults a stale `main` and
-answers wrongly**, which is the guard asking the stale thing whether it is
-stale. State that limit or inherit it silently.
+worktree SHARES REFS.** From the session worktree at `4ec229c`, `main`
+resolves to whatever the integration branch currently points at — a commit
+its own HEAD does not contain. **In a stale CLONE the same query consults a
+stale `main` and answers wrongly**, which is the guard asking the stale
+thing whether it is stale. State that limit or inherit it silently.
+
+*(The card was filed naming a specific value for that resolution. It has
+moved twice since and is not restated here: **a ref is a figure and goes
+stale like one**, which is the same correction T-216 itself took for a
+line number.)*
+
+### AND ANCESTRY IS NOT MERELY LIMITED — IT IS THE WRONG QUESTION
+
+Added by the dispatch audit, 2026-09-01, measured at `06ca1c5`:
+
+    git merge-base --is-ancestor 4ec229c main   -> YES, ancestor
+    git rev-list --count 4ec229c..main          -> 344
+
+**The motivating checkout PASSES an ancestry test.** Being an ancestor of
+the tip is not a defect a stale checkout has — it is the definition of
+one. A catcher built on *"is this HEAD reachable from the integration
+tip?"* would have answered **fine** for the exact session whose pushes went
+ungated all sitting, and would have been another keeper incapable of
+failing on its own motivating instance — the second time that trap has
+been laid on this card's subject.
+
+**Whatever the mechanism asks, it cannot be reachability alone.**
+DISTANCE, or the registration itself, or the hook file's presence — the
+card does not prescribe which, but it now forbids the one that measurably
+does not work.
 
 ## What a first cut might ask
 
@@ -76,8 +101,10 @@ Not prescribed — the mechanism is the card's to choose:
 
 - Does the checkout a session's `.claude/settings.json` was loaded from
   register every hook the integration branch registers?
-- Is that checkout's HEAD reachable from the integration tip, asked
-  somewhere the answer cannot come from the stale side?
+- How FAR is that checkout's HEAD from the integration tip, asked
+  somewhere the answer cannot come from the stale side? (Not *is it
+  reachable* — the audit above measures that question answering "fine"
+  for the motivating instance.)
 - Where the answer is no, is it LOUD — at arm time, before the sitting,
   rather than at the push it failed to guard?
 
@@ -91,4 +118,9 @@ Not prescribed — the mechanism is the card's to choose:
   defect restated.
 - WHERE an ancestry query is used, the stale-clone limit SHALL be stated
   in the artifact, not only in this card.
+- The catcher SHALL NOT rest on reachability alone. A check that passes
+  for a HEAD which is an ancestor of the integration tip SHALL be shown
+  to REFUSE the motivating instance, whose HEAD is an ancestor 344
+  commits behind. A test asserting only "an unreachable HEAD is caught"
+  is degenerate against this card and SHALL be treated as absent.
 - Verification: headless.
