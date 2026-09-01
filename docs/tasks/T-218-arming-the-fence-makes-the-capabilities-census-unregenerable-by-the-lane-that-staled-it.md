@@ -131,3 +131,26 @@ Four went through; this one is the arithmetic's remainder, not triage's.
 held back by a byte ceiling looks identical on the board to one triage
 declined, and that is the thing this paragraph exists to prevent. Filed
 as `T-225`; when it lands, promote this card without re-triaging it.
+
+## CORROBORATION — third instance, 2026-09-01 (T-210's lane, at `e7c277a`)
+
+Adding `tools/e2e/tests/lane-lock.spec.ts` (12 bodies) staled the census
+by the same mechanism, on a third fence and a third seat:
+
+    npm run capabilities:check   exit 1
+      capabilities: STALE — committed 39425 bytes, a fresh generation is
+      40562 bytes; run npm run capabilities
+
+    decide({ file_path: "<lane>/docs/CAPABILITIES.md" })
+      BLOCK  outside-the-fence
+
+Fence: `touches: [tools/e2e, method/lane-protocol.md]` — which shares
+only `tools/e2e` with T-199's `[.claude, tools/e2e]` and T-209's, so
+**the one thing the three instances have in common is adding a test
+body**, not a fence spelling. Every other gate on the lane was green,
+including the 491-body suite and the graph check. Routed to the
+integrator's merge commit, as the two above were.
+
+**THE CLASS NOW HAS THREE INSTANCES ACROSS THREE LANES, THREE FENCES AND
+THREE SEATS**, which is what the triage note above was already holding
+for `T-225`'s byte ceiling rather than for want of evidence.
