@@ -182,6 +182,21 @@
   records, and then broken three times by seats able to quote it. That is
   the T-146 class, and the reason a MECHANISM belongs in a governing
   document while a record takes the INSTANCE.
+- **A GATE READ THROUGH A PIPE REPORTS THE PIPE**, so a hard failure
+  reads as a clean pass: `false | tail -1` exits 0, and `pipefail` is not
+  on by default. **Redirect to a file, capture `$?`, THEN look.** One
+  seat read exit **254** as green four times. Related and load-bearing:
+  **there is no root `package.json`** — every script lives in
+  `tools/e2e/`, `app/` or `lib/parser/`, so a bare `npm test` at the root
+  fails in a way that looks like a suite result.
+- **PASS THE DOCS GATE SEPARATE LITERAL PATHS.** zsh word-splits an
+  unquoted COMMAND SUBSTITUTION but NOT a variable, so handing it a
+  variable gives the gate every path as ONE argument and it answers
+  *"1 path(s)"* — plausible, and wrong.
+- **A LINE NUMBER IS A FIGURE** — a coordinate in a mutable object that
+  fails SILENTLY, still pointing at a real line, just the wrong rule.
+  Two citations were falsified by merges in a single night, both true
+  when written. **Cite a rule by its ORDINAL and its own capitals.**
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.

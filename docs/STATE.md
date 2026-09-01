@@ -1,9 +1,9 @@
 # State
 
-Updated: 2026-09-01 at the eight-card close. Its record — **"the 09-01
-record"** wherever this file points at one — is the newest file in
-docs/checkpoints/. **NO task branches remain** (derive: LANES) and no
-verification is outstanding.
+Updated: 2026-09-01 at the three-lane close — **"the 09-01 record"** is
+the newest file in docs/checkpoints/; the eight-card record sits beside
+it. **NO task branches remain** (derive: LANES) and no verification is
+outstanding.
 
 **NOTHING IS BROKEN.** Designed non-zero: `npm run health` **3** while
 bands await keepers (T-156-s1/s2) — never read it as clean, never "fix"
@@ -58,9 +58,11 @@ opens with `Checkpoint:`** (T-182).
 
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
-2. **THE STACK**: WRITE (T-199), DISPATCH (T-209) and LANDING (T-212)
-   refuse; PUSH is registered and FAILS OPEN (hazards). T-203 + T-211
-   dispatched; **T-210 last**, colliding with both.
+2. **THE STACK IS CLOSED BUT FOR ONE GATE**: WRITE (T-199), DISPATCH
+   (T-209), LANDING (T-212) and PUSH (T-203) all refuse, with the fast
+   paths law (T-211). **`T-210` is the remainder and is STARTABLE** —
+   it collided with both live lanes all night and the board is empty.
+   Then **T-216**, then T-222/T-223/T-224.
 3. **T-221 BEFORE ANY CARD TOUCHES `sharedDomain`** — one unpinned `/`
    decides whether `tools/e2e` contains `tools/e2e-helpers`, three gates
    rest on it, and dropping it reds nothing.
@@ -92,11 +94,8 @@ opens with `Checkpoint:`** (T-182).
 - **A WORKTREE ENTRY MUTATES IN PLACE.** A count cannot see a moved
   board; a path-only set difference cannot either. Compare whole
   `git worktree list` lines, **commit column included**.
-- **A GATE READ THROUGH A PIPE REPORTS THE PIPE** — `false | tail -1` →
-  0. There is **no root `package.json`** (scripts live in `tools/e2e/`);
-  this seat read exit **254** as green four times. **Redirect, capture
-  `$?`, THEN look.** Suite chains go in GUARDED SCRIPT FILES
-  (`cd <abs> || exit N`).
+- **SUITE CHAINS GO IN GUARDED SCRIPT FILES** (`cd <abs> || exit N`).
+  Pipe, docs-gate-path and line-number traps: CONVENTIONS.
 - **EVERY PUSH NOW OWES THE FULL FOUR-SUITE BATTERY, RUN LAST** (T-203).
   `gate-run` mints a token keyed on `HEAD^{tree}`; the guard refuses
   unless all four are GREEN against the tree you are pushing, so a commit
@@ -111,9 +110,6 @@ opens with `Checkpoint:`** (T-182).
   addressed to the verifier. **Lane context goes in a SECOND message**:
   a "blind line" inside one message is not blindness, because the agent
   reads the whole prompt. The four leaks: the 09-01 record.
-- **A LINE NUMBER IS A FIGURE** — a coordinate in a mutable object that
-  fails silently, still pointing at a real line, just the wrong rule.
-  Two falsified by merges in one night. Cite by ORDINAL.
 - **POISON DRILLS: KILL-SET CONTAINMENT, NOT THE COUNT** (shape SIX,
   settled by measurement). The third proof is *something died **at the
   site the property lives*** — the failure mode is AIMING, not
@@ -122,10 +118,7 @@ opens with `Checkpoint:`** (T-182).
 - **A TIMING CORRELATE IS NOT A CAUSE.** Read a suite's own time and
   re-run a body ALONE before attributing. **A merged main can fail
   `npm run build`**: `lib/parser/dist` is a build artifact no merge
-  updates — build the parser FIRST. **And pass the docs gate SEPARATE
-  LITERAL PATHS**: zsh splits an unquoted command substitution but NOT a
-  variable, so a variable hands the gate every path as ONE and it
-  answers "1 path(s)" — plausible and wrong.
+  updates — build the parser FIRST.
 - **THE FIVE TOOLING TRAPS ARE IN `docs/CONVENTIONS.md`** — moved there
   2026-09-01 on T-146's rule: **a MECHANISM lives in a governing
   document, a record takes the INSTANCE**, and STATE is byte-capped.
