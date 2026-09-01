@@ -13,21 +13,38 @@
  *
  * ── WHERE IT LIVES, AND WHY IT MAY NEVER BE COMMITTABLE ──────────────
  * `.nputer/` at the checkout root — the runtime directory T-154 already
- * created for the lane fence manifest, carrying a self-ignoring
- * `.gitignore` (`*`). The card asked this to be argued rather than
- * assumed, and the argument is the amend: A TOKEN IN THE TREE CAN BE
- * STALE-BUT-MATCHING. Commit a green token, amend the commit to change a
- * source file, and the token is still there, still parses, and now
- * describes a tree that no longer exists — while its own presence in the
- * tree has changed the tree it would be compared against. A runtime file
- * cannot do that: it is written by a run, it is never carried by a
+ * created for the lane fence manifest. The card asked this to be argued
+ * rather than assumed, and the argument is the amend: A TOKEN IN THE TREE
+ * CAN BE STALE-BUT-MATCHING. Commit a green token, amend the commit to
+ * change a source file, and the token is still there, still parses, and
+ * now describes a tree that no longer exists — while its own presence in
+ * the tree has changed the tree it would be compared against. A runtime
+ * file cannot do that: it is written by a run, it is never carried by a
  * commit, and a fresh clone has none, which is the honest state (nothing
  * has been measured here yet).
  *
+ * ── AND THIS WRITER IS WHAT MAKES THAT TRUE, WHICH IT ONCE WAS NOT ───
+ * The first version of this file said `.nputer/` "carries a self-ignoring
+ * `.gitignore`" and left the writing of it to somebody else. Nothing in
+ * this repository ignores `.nputer/` — not the root `.gitignore` — so
+ * that sentence was true only where a DISPATCHER had armed a lane
+ * worktree, and false everywhere else, INCLUDING THE INTEGRATION CHECKOUT
+ * WHERE PUSHES HAPPEN. A verifier reproduced it on a fresh clone:
+ * `?? .nputer/` in `git status`, and `git add -A` offering the token.
+ *
+ * The bug had a second face, and it is the one worth remembering. The
+ * body asserting non-committability used `docs/STATE.md` as its negative
+ * control — and on a fresh clone the subject and the control returned THE
+ * SAME VALUE, which is the exact degeneracy a control exists to exclude.
+ * It could not be killed by any mutant of this file either, because it
+ * was green by CONSTRUCTION in the only tree the drill ever ran in. So
+ * `writeToken` now writes the ignore file itself, and the bodies that
+ * check it run in a repository nobody armed.
+ *
  * ── THE KEY IS THE TREE HASH, NOT THE COMMIT ─────────────────────────
- * The card's second decision. `git rev-parse HEAD^{tree}` names the
- * CONTENT the suites actually ran against, and the three cases fall out
- * of that one choice rather than needing a rule each:
+ * The card's second decision. `git rev-parse HEAD^{tree}` names COMMITTED
+ * content, and the three cases fall out of that one choice rather than
+ * needing a rule each:
  *
  *   AMEND THAT CHANGES ONLY THE MESSAGE — the tree is unchanged, so the
  *   token stays VALID. That is honest: the suites graded that content and
@@ -49,6 +66,16 @@
  * battery run across two commits reports exactly which halves are stale
  * instead of collapsing to a single yes/no.
  *
+ * ── AND THE KEY IS NOT, BY ITSELF, WHAT THE SUITES RAN AGAINST ───────
+ * This section used to say the tree hash "names the CONTENT the suites
+ * actually ran against". IT DOES NOT, ON ITS OWN, and the gap is real: a
+ * suite executes against the WORKING TREE. Run the battery with
+ * uncommitted edits, discard them, push — and a green token certifies
+ * content no commit ever carried. So each entry also records whether
+ * TRACKED files were modified when it ran (`trackedDirt`), and a token
+ * carrying dirt is refused. The claim is true because that check stands
+ * behind it, not because a tree hash implies it.
+ *
  * ── NOTHING BUT NODE BUILTINS ────────────────────────────────────────
  * `push-guard.mjs` imports this at module load and its `Bash` matcher
  * fires on EVERY tool call in a session, so this file may cost node's
@@ -61,8 +88,9 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { RUNTIME_DIR_IGNORE } from "./lane-fence.mjs";
 
 /** The runtime directory T-154 established. Self-ignoring; never committed. */
 export const RUNTIME_DIR = ".nputer";
@@ -105,6 +133,7 @@ export const GREEN = "GREEN";
  * @property {string} reason
  * @property {string} ref      the commit HEAD pointed at
  * @property {string} tree     the TREE that commit named — the honest key
+ * @property {boolean} dirty   were TRACKED files modified when this ran?
  * @property {string} at       ISO time the entry was written
  */
 
@@ -119,6 +148,31 @@ export const GREEN = "GREEN";
 /** @param {string} root @returns {string} */
 export function tokenPath(root) {
   return path.join(root, TOKEN_REL_PATH);
+}
+
+/**
+ * Make `.nputer/` un-committable, and return the file that does it.
+ *
+ * IT IS WRITTEN WHENEVER IT IS ABSENT, not only when this writer creates
+ * the directory. The directory may already exist because a DISPATCHER
+ * armed a lane, or because an older token was written before this
+ * repository had this function, and in both cases the question a caller
+ * cares about is whether the ignore file is there NOW.
+ *
+ * IT DOES NOT OVERWRITE ONE THAT EXISTS. The dispatcher's copy and this
+ * one are the same string — they import it from one home — but a writer
+ * that rewrote a file it did not create would be a writer that could
+ * clobber a future one, and there is no reason to take that.
+ *
+ * @param {string} root
+ * @returns {string} the ignore file's path
+ */
+export function armRuntimeDir(root) {
+  const dir = path.join(root, RUNTIME_DIR);
+  mkdirSync(dir, { recursive: true });
+  const ignoreFile = path.join(dir, ".gitignore");
+  if (!existsSync(ignoreFile)) writeFileSync(ignoreFile, RUNTIME_DIR_IGNORE, "utf8");
+  return ignoreFile;
 }
 
 /**
@@ -142,6 +196,42 @@ export function headTree(root) {
     return /^[0-9a-f]{40}$/.test(tree) ? tree : undefined;
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * Were TRACKED files modified in this checkout?
+ *
+ * ── WHY TRACKED ONLY, AND THE RESIDUAL SAID OUT LOUD ─────────────────
+ * This exists to catch a battery run over uncommitted work being keyed to
+ * `HEAD^{tree}`, which is content no commit carries. Modified tracked
+ * files are exactly that case. UNTRACKED files are deliberately NOT
+ * counted: they do not change `HEAD^{tree}` either, and counting them
+ * would refuse a push because a seat left a scratch note in the tree —
+ * which is how a guard gets turned off. THE RESIDUAL IS AN UNTRACKED NEW
+ * TEST FILE: it can change what a suite executes without changing the
+ * key, and this check does not see it. Narrow, stated, and it
+ * self-corrects the moment the file is added.
+ *
+ * A FAILURE HERE IS `true`, NOT `false`. Every other inability in this
+ * family fails open; this one cannot, because "I could not tell whether
+ * the tree was clean" is precisely the claim the token must not make
+ * silently. An unanswerable question here becomes a refusal the seat can
+ * clear by re-running.
+ *
+ * @param {string} root
+ * @returns {boolean}
+ */
+export function trackedDirt(root) {
+  try {
+    const out = spawnSync("git", ["-C", root, "status", "--porcelain", "--untracked-files=no"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    if (out.status !== 0) return true;
+    return String(out.stdout ?? "").trim() !== "";
+  } catch {
+    return true;
   }
 }
 
@@ -221,12 +311,13 @@ export function readToken(root) {
  *
  * @param {string} root
  * @param {{ suite: string, exit: number, bodies: number, targets: number, verdict: string, reason: string, ref: string }[]} verdicts
- * @param {{ tree?: string, now?: () => string }} [opts]
- * @returns {{ path: string, token: Token }}
+ * @param {{ tree?: string, dirty?: boolean, now?: () => string }} [opts]
+ * @returns {{ path: string, ignoreFile: string, token: Token }}
  */
 export function writeToken(root, verdicts, opts = {}) {
   const now = opts.now ?? (() => new Date().toISOString());
   const tree = opts.tree ?? headTree(root) ?? "";
+  const dirty = opts.dirty ?? trackedDirt(root);
   const prior = readToken(root);
   /** @type {Record<string, SuiteEntry>} */
   const suites = "token" in prior ? { ...prior.token.suites } : {};
@@ -241,20 +332,24 @@ export function writeToken(root, verdicts, opts = {}) {
       reason: v.reason,
       ref: v.ref,
       tree,
+      dirty,
       at,
     };
   }
   /** @type {Token} */
   const token = { version: TOKEN_VERSION, writtenAt: at, writtenFrom: root, suites };
+  // ARM THE DIRECTORY BEFORE PUTTING ANYTHING IN IT. Ordering matters
+  // only for a reader that races this write, but the direction is free
+  // and one of them leaves a committable token on disk for a moment.
+  const ignoreFile = armRuntimeDir(root);
   const file = tokenPath(root);
-  mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(token, null, 2)}\n`);
-  return { path: file, token };
+  return { path: file, ignoreFile, token };
 }
 
 /**
  * @typedef {object} TokenJudgement
- * @property {"fresh"|"missing"|"incomplete"|"stale"|"red"} state
+ * @property {"fresh"|"missing"|"incomplete"|"stale"|"unkeyed"|"red"|"unmeasured"} state
  * @property {string} code    a stable, greppable name for WHY
  * @property {string} detail  the sentence a refused seat reads
  */
@@ -263,12 +358,24 @@ export function writeToken(root, verdicts, opts = {}) {
  * Judge a token against the tree a push would carry.
  *
  * ── THE ORDER IS THE ARGUMENT ────────────────────────────────────────
- * MISSING, then INCOMPLETE, then STALE, then RED — and STALE is reported
- * before RED deliberately. A suite that failed at a tree which is no
- * longer HEAD's tells the seat NOTHING about what it is pushing; leading
- * with "your suite is red" would send it to debug a result that describes
- * different content. Both refuse, so the ordering costs nothing but the
- * first sentence, and the first sentence is the one that gets acted on.
+ * MISSING, INCOMPLETE, STALE, UNKEYED, RED, UNMEASURED. Every one of them
+ * refuses, so the order costs nothing but the FIRST SENTENCE — and the
+ * first sentence is the one that gets acted on, which is the whole reason
+ * to think about it.
+ *
+ * STALE comes before RED: a suite that failed at a tree which is no
+ * longer HEAD's tells the seat NOTHING about what it is pushing, and
+ * leading with "your suite is red" would send it to debug a result that
+ * describes different content. UNKEYED comes next for the same reason one
+ * step further in — a result whose key does not describe what ran is not
+ * yet evidence about anything.
+ *
+ * RED AND UNMEASURED ARE SPLIT, and that is a decision rather than
+ * bookkeeping. `gate-run.mjs` answers REFUSED when it declines to grade
+ * at all; telling that seat "your suite is red" is telling it something
+ * false about its own tree. Both still refuse — an unrun suite genuinely
+ * is unmeasured, which is this card's entire premise — but they are not
+ * the same sentence and no longer pretend to be.
  *
  * It computes no suite result of its own and never re-runs anything: the
  * verdict in the token is `gate-run.mjs`'s, and this function only asks
@@ -321,22 +428,65 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
         "does not",
     };
   }
+  // A SUITE THAT RAN AGAINST A DIRTY TREE MEASURED SOMETHING THIS KEY
+  // DOES NOT NAME (T-203, C-7). The suites execute against the WORKING
+  // TREE; the token is keyed to `HEAD^{tree}`. Run the battery dirty,
+  // discard the dirt, push — and the token is green over content nothing
+  // ever graded. So the dirt is recorded at write time and refused here,
+  // and the header above no longer claims the key names what ran without
+  // this check standing behind it.
   /** @type {string[]} */
-  const red = [];
+  const unkeyed = [];
   for (const s of required) {
     const entry = /** @type {SuiteEntry} */ (token.suites[s]);
-    if (entry.verdict !== GREEN) {
-      red.push(
-        `${s} is ${entry.verdict || "(no verdict)"} (exit=${entry.exit} bodies=${entry.bodies} ` +
-          `reason=${entry.reason})`,
-      );
-    }
+    if (entry.dirty === true) unkeyed.push(`${s} ran with tracked files modified`);
+    else if (entry.dirty !== false) unkeyed.push(`${s} did not record whether the tree was clean`);
+  }
+  if (unkeyed.length > 0) {
+    return {
+      state: "unkeyed",
+      code: "token-unkeyed",
+      detail:
+        "the verdict token's key does not describe what its suites ran against: " +
+        `${unkeyed.join("; ")}. A suite grades the WORKING TREE and this token is keyed to ` +
+        `HEAD's tree ${tree}, so a battery run over uncommitted work certifies content that no ` +
+        "commit carries. Commit or stash, then run the battery again",
+    };
+  }
+  // RED AND UNMEASURED ARE BOTH REFUSALS AND ARE NOT THE SAME SENTENCE
+  // (T-203, closing a finding against this file). `gate-run.mjs` answers
+  // REFUSED when it declines to grade at all — no toolchain, zero bodies,
+  // a count that would not sum — and calling that "your suite is red"
+  // sends a seat to debug a failure that never happened. The partition is
+  // exhaustive over non-GREEN, so nothing slips between them.
+  /** @type {string[]} */
+  const red = [];
+  /** @type {string[]} */
+  const unmeasured = [];
+  for (const s of required) {
+    const entry = /** @type {SuiteEntry} */ (token.suites[s]);
+    if (entry.verdict === GREEN) continue;
+    const detail = `exit=${entry.exit} bodies=${entry.bodies} reason=${entry.reason}`;
+    if (entry.verdict === "REFUSED") unmeasured.push(`${s} (${detail})`);
+    else red.push(`${s} is ${entry.verdict || "(no verdict)"} (${detail})`);
   }
   if (red.length > 0) {
     return {
       state: "red",
       code: "token-red",
-      detail: `the verdict token records a suite that is not ${GREEN}: ${red.join("; ")}`,
+      detail: `the verdict token records a suite that RAN AND FAILED: ${red.join("; ")}`,
+    };
+  }
+  if (unmeasured.length > 0) {
+    return {
+      state: "unmeasured",
+      code: "token-unmeasured",
+      detail:
+        "the verdict token records a suite the runner DECLINED TO GRADE, which is not the same " +
+        `as a red one and is refused for a different reason: ${unmeasured.join("; ")}. Nothing ` +
+        "failed — nothing was measured, and a push may not carry a claim nothing measured. If " +
+        "the cause is a missing toolchain, this checkout genuinely cannot certify that suite; " +
+        "install it or push from one that can",
     };
   }
   return {

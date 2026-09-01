@@ -18,10 +18,15 @@ import {
   isPush,
   laneCanRegenerate,
 } from "../../../.claude/hooks/push-guard.mjs";
-import { MANIFEST_REL_PATH, MANIFEST_VERSION } from "../../../.claude/hooks/lane-fence.mjs";
+import {
+  MANIFEST_REL_PATH,
+  MANIFEST_VERSION,
+  RUNTIME_DIR_IGNORE,
+} from "../../../.claude/hooks/lane-fence.mjs";
 import {
   GREEN,
   REQUIRED_SUITES,
+  RUNTIME_DIR,
   TOKEN_REL_PATH,
   headTree,
   writeToken,
@@ -808,19 +813,89 @@ function boardFixture(
 
 /* ───────────── the token's own contract ─────────────────────────── */
 
-test("the token this guard reads may not be committed, derived from git itself", () => {
-  // THE CARD'S FIRST DECISION, ASKED OF GIT RATHER THAN ASSERTED FROM THE
-  // PATH'S SPELLING. A token inside the tree can be stale-but-matching
-  // after an amend, so the property that matters is that this repository
-  // would refuse to track the file — which `git check-ignore` answers and
-  // a string comparison against ".nputer/" does not.
-  const ignored = spawnSync("git", ["-C", repoRoot, "check-ignore", "-q", TOKEN_REL_PATH]);
-  expect(ignored.status, `${TOKEN_REL_PATH} is not ignored — a committable token can be stale-but-matching`).toBe(0);
-  // The control, in the same call shape: a path this repository DOES
-  // track answers non-zero, so the assertion above is not satisfied by
-  // `check-ignore` failing for an unrelated reason.
-  const tracked = spawnSync("git", ["-C", repoRoot, "check-ignore", "-q", "docs/STATE.md"]);
-  expect(tracked.status).not.toBe(0);
+test("writeToken makes its own token un-committable in a repository NOBODY armed", () => {
+  // THE CARD'S FIRST DECISION, AND THE BODY THAT REPLACES ONE THAT WAS
+  // GREEN BY CONSTRUCTION.
+  //
+  // The first version of this assertion asked `git check-ignore` in
+  // `repoRoot` — a LANE WORKTREE, where the dispatcher had already
+  // written `.nputer/.gitignore` at arm time. So it passed without
+  // `writeToken` doing anything, and no mutant of `gate-token.mjs` could
+  // red it. Worse, on a fresh clone the subject and its own negative
+  // control BOTH returned 1: a control that degenerates to its subject,
+  // which is the one outcome a control exists to exclude. A verifier
+  // reproduced `?? .nputer/` and `git add -A` offering the token.
+  //
+  // So the question is now asked in a repository this suite builds and
+  // nobody arms, and it is asked of the three things that actually
+  // matter: what `check-ignore` says, what `git status` shows, and what
+  // `git add -A` would stage.
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-unarmed-"));
+  SCRATCH.push(root);
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  writeFileSync(path.join(root, "tracked.txt"), "tracked\n");
+  execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
+    ...NO_BACKGROUND_MAINTENANCE, "add", "-A"], { stdio: "pipe" });
+  execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
+    ...NO_BACKGROUND_MAINTENANCE, "commit", "-qm", "one"], { stdio: "pipe" });
+
+  // THE PRECONDITION, ASSERTED: nothing here ignores `.nputer/` yet. This
+  // is what makes the assertions below a measurement of `writeToken`
+  // rather than of whoever built the fixture.
+  expect(
+    spawnSync("git", ["-C", root, "check-ignore", "-q", TOKEN_REL_PATH]).status,
+    "the fixture already ignores the token, so this body cannot see writeToken do it",
+  ).not.toBe(0);
+
+  writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+
+  expect(
+    spawnSync("git", ["-C", root, "check-ignore", "-q", TOKEN_REL_PATH]).status,
+    `${TOKEN_REL_PATH} is not ignored — a committable token can be stale-but-matching`,
+  ).toBe(0);
+  // The control, in the same call shape and IN THE SAME REPOSITORY: a
+  // tracked path answers non-zero. On the tree that shipped the defect
+  // this line and the one above both answered 1.
+  expect(spawnSync("git", ["-C", root, "check-ignore", "-q", "tracked.txt"]).status).not.toBe(0);
+
+  // AND THE TWO COMMANDS A SEAT ACTUALLY RUNS, because `check-ignore`
+  // answers about a path and these answer about the repository.
+  const status = execFileSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8" });
+  expect(status, "the token shows up as untracked — `git add -A` would take it").not.toContain(
+    RUNTIME_DIR,
+  );
+  const staged = execFileSync("git", ["-C", root, "add", "-A", "--dry-run"], { encoding: "utf8" });
+  expect(staged, "`git add -A` offers to commit the verdict token").not.toContain(RUNTIME_DIR);
+});
+
+test("the ignore string has ONE home, and the fence writer and the token writer both use it", () => {
+  // T-057, and this file's own footnote about re-exports dressed up as
+  // cross-checks: there is no second constant to compare against, so what
+  // is checked is the ROUND TRIP through each writer onto disk. Both
+  // arrive at byte-identical files because both import one string; a
+  // second copy reappearing anywhere reds this by inequality.
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-one-home-"));
+  SCRATCH.push(root);
+  execFileSync("git", ["init", "-q", root], { stdio: "pipe" });
+  const { ignoreFile } = writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(ignoreFile, "utf8")).toBe(RUNTIME_DIR_IGNORE);
+  expect(RUNTIME_DIR_IGNORE, "an ignore file that does not ignore everything").toContain("*");
+});
+
+test("an ignore file already on disk is left alone, so an armed lane is never clobbered", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "T-203-armed-"));
+  SCRATCH.push(root);
+  mkdirSync(path.join(root, RUNTIME_DIR), { recursive: true });
+  const ignoreFile = path.join(root, RUNTIME_DIR, ".gitignore");
+  writeFileSync(ignoreFile, "# a dispatcher wrote this\n*\n");
+  writeToken(root, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(ignoreFile, "utf8")).toBe("# a dispatcher wrote this\n*\n");
+  // The control: the same call into a directory with NO ignore file
+  // writes one, so "left alone" is a discrimination and not inaction.
+  const bare = mkdtempSync(path.join(os.tmpdir(), "T-203-bare-"));
+  SCRATCH.push(bare);
+  writeToken(bare, [suiteVerdict("parser", GREEN, "deadbee")]);
+  expect(readFileSync(path.join(bare, RUNTIME_DIR, ".gitignore"), "utf8")).toBe(RUNTIME_DIR_IGNORE);
 });
 
 test("a missing token refuses the push and names the one command that fixes it", () => {
@@ -850,7 +925,7 @@ test("a token recording a red suite refuses, and says which suite", () => {
   const fx = fixture("token-red", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "red" });
   const run = runHook(fx, "git push");
   expect(run.status).toBe(2);
-  expect(run.stderr).toContain("records a suite that is not GREEN");
+  expect(run.stderr).toContain("records a suite that RAN AND FAILED");
   expect(run.stderr).toContain(String(REQUIRED_SUITES[REQUIRED_SUITES.length - 1]));
 });
 
@@ -863,6 +938,77 @@ test("a token that graded some of the battery is refused as INCOMPLETE", () => {
   expect(run.status).toBe(2);
   expect(run.stderr).toContain("graded suites");
   for (const suite of REQUIRED_SUITES.slice(1)) expect(run.stderr).toContain(suite);
+});
+
+test("a suite the runner DECLINED to grade refuses as unmeasured, not as red", () => {
+  // THE TOOLCHAIN CASE, DECIDED AND WRITTEN DOWN. With no `cargo`,
+  // gate-run records `rust` REFUSED; that push is genuinely unmeasured
+  // and is refused. What it must not say is that the suite FAILED —
+  // that would send a seat to debug a run that never happened.
+  const fx = fixture("token-unmeasured", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(
+    fx.root,
+    REQUIRED_SUITES.map((s) =>
+      s === "rust"
+        ? { suite: s, exit: -1, bodies: 0, targets: 0, verdict: "REFUSED",
+            reason: "could-not-run: spawnSync cargo ENOENT", ref }
+        : suiteVerdict(s, GREEN, ref),
+    ),
+  );
+  const run = runHook(fx, "git push");
+  expect(run.status, "an ungraded suite must still refuse — nothing measured it").toBe(2);
+  expect(run.stderr).toContain("DECLINED TO GRADE");
+  expect(run.stderr).toContain("could-not-run");
+  expect(run.stderr, "an ungraded suite must not be reported as a failure").not.toContain(
+    "RAN AND FAILED",
+  );
+
+  // THE CONTROL, in the same fixture shape: a suite that really did run
+  // and fail says the opposite thing. Without it, "not red" is satisfied
+  // by a guard that never says red at all.
+  const failed = fixture("token-really-red", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "red" });
+  const failedRun = runHook(failed, "git push");
+  expect(failedRun.status).toBe(2);
+  expect(failedRun.stderr).toContain("RAN AND FAILED");
+  expect(failedRun.stderr).not.toContain("DECLINED TO GRADE");
+});
+
+test("a battery run over uncommitted work does not certify the tree it is keyed to", () => {
+  // C-7. The suites execute against the WORKING TREE; the token is keyed
+  // to HEAD^{tree}. Run dirty, discard the dirt, push — and a green token
+  // would certify content no commit carries. The dirt is recorded at
+  // write time, so the key's claim has something standing behind it.
+  const fx = fixture("token-dirty", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  writeFileSync(path.join(fx.root, "README.md"), "uncommitted edit the suites would have seen\n");
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+
+  const run = runHook(fx, "git push");
+  expect(run.status, "a battery run over uncommitted work must not certify HEAD's tree").toBe(2);
+  expect(run.stderr).toContain("does not describe what its suites ran against");
+
+  // THE CONTROL: discard the dirt and re-run the battery, and the same
+  // fixture pushes. This is also the remedy the refusal names.
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "checkout", "--", "README.md"], {
+    stdio: "pipe",
+  });
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+  expect(runHook(fx, "git push").status, "a clean re-run must be accepted").toBe(0);
+});
+
+test("an UNTRACKED file is not counted as dirt, because a scratch note is not a measurement problem", () => {
+  // THE BOUND ON THE CHECK ABOVE, and the residual is stated rather than
+  // implied: an untracked file does not change HEAD^{tree} either, and
+  // counting it would refuse a push over a stray note — which is how a
+  // guard gets turned off. What this does NOT see is an untracked NEW
+  // TEST FILE, which can change what a suite executes without moving the
+  // key. Narrow, named, and it self-corrects the moment it is added.
+  const fx = fixture("token-untracked", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  writeFileSync(path.join(fx.root, "scratch-note.txt"), "a note, untracked\n");
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(fx.root, REQUIRED_SUITES.map((s) => suiteVerdict(s, GREEN, ref)));
+  expect(runHook(fx, "git push").status, fx.root).toBe(0);
 });
 
 test("an amend that changes only the message keeps the token; one that changes a file does not", () => {

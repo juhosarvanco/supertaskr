@@ -13,11 +13,30 @@ builder:
 review: independent
 ---
 
-**`docs/CONVENTIONS.md` ALREADY SAYS IT**: *"an edit script's success is a
-GATE, not a step — never chain a commit after one."* **This seat broke
-that three times in one night**, twice with `&&` and once in a guarded
-chain, each time reading the exit **after** the commit had already run.
-The rule was written down, read, and quoted by the seat that broke it.
+**THE RULE EXISTS AND `docs/CONVENTIONS.md` NEVER RECEIVED IT**: *"an
+edit script's success is a GATE, not a step — never chain a commit after
+one."* **This seat broke that three times in one night**, twice with `&&`
+and once in a guarded chain, each time reading the exit **after** the
+commit had already run.
+
+> **CORRECTED AT VERIFICATION (2026-09-01), and the correction makes this
+> card's case stronger rather than weaker.** This paragraph opened *"`docs/
+> CONVENTIONS.md` ALREADY SAYS IT"*. It does not, and never did: **zero
+> occurrences** of that sentence in `docs/CONVENTIONS.md` at this lane's
+> base `9d56b47` and at its tip — re-derived here rather than taken on
+> report. The rule is real and traceable: it was written at `18d8166` and
+> is recorded in
+> `docs/checkpoints/2026-08-30-the-rulings-sitting-2-eight-answers.md`,
+> which cites *"the rule from `18d8166` working as designed one day after
+> it was written"*. But it lives ONLY in append-only records. **A rule
+> recorded in a checkpoint and absent from the governing document is a
+> rule no seat reads before it acts** — which is why it could be broken
+> three times by a seat able to quote it. The executor inherited the
+> misattribution from the filer without checking it; a verifier measured
+> it. **The `Read beside` line below points at the same non-existent
+> bullet and is left standing as the other half of the same finding.**
+> Both are the routed CONVENTIONS item seen from the far end: that bullet
+> does not need updating, it needs WRITING.
 
 ## What it cost, and none of it was theoretical
 
@@ -209,6 +228,58 @@ derivation MOVED from `docs-gate.mjs` into `docs-scan.mjs` as
 `staleStateRecords` and both readers now call it, which is the treatment
 `DOC_BUDGETS` got at T-156 for the identical reason. A body asserts the
 gate calls the shared derivation rather than carrying its own.
+
+### The rejection, and what it changed (2026-09-01)
+
+**THE BLOCKING DEFECT: the token was not gitignored outside an armed lane
+worktree.** `writeToken` created `.nputer/` and the token and never the
+`.gitignore` that makes the directory un-committable — only T-154's fence
+writer did that, at DISPATCH time. So non-committability was a property of
+having been dispatched as a lane, and false everywhere else: on a fresh
+clone, and **in the integration checkout, which is never armed as a lane
+and is where pushes happen**, `git status` showed `?? .nputer/` and `git
+add -A` offered the token. That is the stale-but-matching hazard
+`gate-token.mjs` argues against at length, reintroduced by the guard
+written to close it.
+
+**THE SECOND FACE IS THE ONE WORTH KEEPING.** The body asserting
+non-committability used `docs/STATE.md` as its negative control, and on a
+fresh clone **the subject and the control returned the same value** —
+the exact degeneracy a control exists to exclude. No mutant of mine could
+have killed it, because it was green BY CONSTRUCTION in the only tree the
+drill ever ran in. A drill can only kill what its environment lets fail.
+
+**FIXED**: `writeToken` now arms the directory itself, the ignore string
+has ONE home both writers import (`RUNTIME_DIR_IGNORE` in
+`.claude/hooks/lane-fence.mjs`), and the bodies that check it build a
+repository **nobody armed** and ask `check-ignore`, `git status` and `git
+add -A --dry-run`. **The new bodies were run against the pre-fix writer
+first and all three FAILED** — the pin is real before it is green.
+
+**FINDING 1 — a cargo-less checkout could never push, and it said the
+wrong thing.** Decided: it still refuses. An unrun suite genuinely is
+unmeasured, which is this card's premise. But `REFUSED` no longer arrives
+as `token-red`: the states are split, and `token-unmeasured` says the
+runner DECLINED TO GRADE and names the toolchain case. Telling a seat its
+suite failed when nothing ran is telling it something false about its own
+tree. The reconciliation with this file's own third criterion — *"the
+gate could not run" must never become a refusal* — is written into
+`push-guard.mjs`'s header: **the discriminator is whose inability it is.**
+The graph arm refuses to turn ITS OWN inability into a verdict; the token
+arm reports the RUNNER's inability faithfully.
+
+**FINDING 2 — C-7, the key described a tree the run did not measure.**
+Real, and the header's claim that the tree hash *"names the CONTENT the
+suites actually ran against"* was an overclaim: suites execute against the
+WORKING TREE. Fixed rather than reworded — each entry now records whether
+TRACKED files were modified when it ran, and a token carrying dirt is
+refused as `token-unkeyed`. Untracked files are deliberately not counted
+(they do not move `HEAD^{tree}` either, and refusing over a scratch note
+is how a guard gets turned off); **the residual — an untracked NEW TEST
+FILE — is named in the code and self-corrects when it is added.**
+
+**FINDING 3 — the card's own opening quote.** Corrected in place at the
+top of this card, with the derivation.
 
 ### Owed at the merge, outside this lane's fence
 

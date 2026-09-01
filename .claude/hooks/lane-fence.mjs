@@ -252,6 +252,38 @@ import path from "node:path";
 export const MANIFEST_REL_PATH = ".nputer/lane-fence.json";
 
 /**
+ * The self-ignoring file every writer of `.nputer/` drops beside what it
+ * wrote — and it lives HERE, at the one home both writers can reach,
+ * because it acquired a second writer (T-203).
+ *
+ * ── WHY IT MOVED, AND IT IS A MEASURED DEFECT RATHER THAN TIDYING ────
+ * `.nputer/` is NOT ignored by this repository's root `.gitignore`, so
+ * NOTHING IN THE TREE IGNORES IT — only the byte string below, written
+ * into the directory at the moment a writer creates it. T-154's fence
+ * writer did that; T-203's token writer did not. That made the verdict
+ * token's non-committability a property of HAVING BEEN DISPATCHED AS A
+ * LANE rather than a property of the token. In a lane worktree the
+ * dispatcher had already armed the directory and every check agreed; on a
+ * fresh clone — and in the INTEGRATION CHECKOUT, WHICH IS NEVER ARMED AS
+ * A LANE AND IS WHERE PUSHES ACTUALLY HAPPEN — `git status` showed
+ * `?? .nputer/` and `git add -A` offered to commit the token. That is the
+ * stale-but-matching hazard `gate-token.mjs` argues against at length,
+ * reintroduced by the guard written to close it.
+ *
+ * A constant with two copies is two chances to disagree (T-057), and a
+ * re-export dressed up as a cross-check is worse than either — this file
+ * carries that lesson already, at `writeLaneFence`'s own footnote. So
+ * there is ONE string, both writers import it, and no body pretends to
+ * compare it against itself. What the bodies check is the ROUND TRIP: the
+ * file on disk, in a repository nobody armed, answering `git
+ * check-ignore`.
+ */
+export const RUNTIME_DIR_IGNORE =
+  "# T-154, T-203: .nputer/ holds RUNTIME files — a lane's fence manifest\n" +
+  "# and the gate-runner's verdict token. Neither is ever a commit.\n" +
+  "*\n";
+
+/**
  * The manifest schema this reader understands. A manifest stamped with
  * anything else BLOCKS rather than being read optimistically: a reader
  * that guesses at an unknown shape is a reader that under-reserves.

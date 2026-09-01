@@ -60,6 +60,27 @@
  * is real: the full battery is paid once per PUSH, which is this card's
  * whole design (commits stay fast; pushes become unlyable).
  *
+ * ── A CHECKOUT WITH NO TOOLCHAIN CANNOT PUSH, AND THAT IS DECIDED ────
+ * Written down because it is a consequence nobody would predict from the
+ * arms above, and because THIS FILE ARGUES THE OPPOSITE TWELVE LINES UP.
+ * The graph arm reads `index --check`'s codes individually precisely so
+ * that "the gate could not run" never becomes a refusal — collapsing 3
+ * into 1 *"would refuse every push made without a toolchain"*. The token
+ * arm now does refuse such a push by another route: with no `cargo`,
+ * `gate-run.mjs` records `rust` REFUSED, and a token carrying an ungraded
+ * suite is refused.
+ *
+ * THE DISCRIMINATOR IS WHOSE INABILITY IT IS. The graph arm refuses to
+ * turn ITS OWN inability into a verdict about the tree — that would be
+ * this guard asserting something it never measured. The token arm reports
+ * the RUNNER's inability faithfully: the suite was not graded, so the
+ * tree is not certified. One is a guard inventing evidence; the other is
+ * a guard declining to invent it. A push from a toolchain-less checkout
+ * IS a push nothing measured, which is the state this card exists to
+ * stop, so it is refused — as `token-unmeasured`, in those words, and
+ * never as `token-red`. Telling a seat its suite failed when the runner
+ * declined to grade it is telling it something false about its own tree.
+ *
  * ── NO ESCAPE HATCH, AND THE ARGUMENT IS ON THE CARD ─────────────────
  * This card asked for an escape spelling *"for the rare intentional push
  * of a stale graph (should not exist; argue it if found)"*, and none is
