@@ -98,3 +98,62 @@ restructuring the standing documents. Per `T-142`, prove the measurement
 can come out the other way before believing it.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — THE MEASUREMENT THIS CARD RESTS ON HAS BEEN LARGELY ANSWERED AND MUST BE RE-DERIVED BEFORE ANYTHING IS BUILT. It cites STATE at 1055 lines, ROADMAP at 1181 and ARCHITECTURE at 1202; at this base they are 140, 157 and 142, under gated byte budgets, because ADR-019's compaction is exactly this card's remedy arriving by another route. What is NOT answered is the other row: docs/tasks/T-*.md was 291 files and is 342, and the three rediscovery incidents it measures all found their answer in a CARD or a rejected card rather than in a standing document. So the finding survives with its subject moved — the retrieval problem is the card corpus, not the governing set — and the fence on this card was always marked a PROPOSAL by its own author. RESURFACES: the next planning pass, or T-156's health bands, which are ADR-020's machine for noticing exactly this class going quiet or getting worse. Whoever takes it re-derives the table first and re-fences it, as the card instructs.
+
+## CORROBORATION — 2026-09-01, AND IT NARROWS THE UNKNOWN REMEDY
+
+Appended per TASK-FORMAT rather than filed beside. Recorded because this
+card is parked on *the remedy is not yet known*, and this instance rules
+one of its three proposed shapes IN.
+
+### The instance
+
+`T-203`'s card opens by asserting that `docs/CONVENTIONS.md` **already
+says** *"an edit script's success is a GATE, not a step."* Measured at
+`9d56b47` and again at `736aba6`: **zero occurrences.** The card was
+written by a seat that believed it was quoting a governing document.
+
+**The rule is real.** It was earned at `18d8166` and recorded in the
+2026-08-30 rulings checkpoint. It lives in two task cards and three
+checkpoint records — and **in no governing document at all.**
+
+The lane's conclusion, which is the sharpening:
+
+> That is why a seat able to quote it broke it three times, and the
+> routed item is not that the CONVENTIONS bullet needs UPDATING. **It
+> needs WRITING.**
+
+### THE DISPATCHING SEAT MADE THIS WORSE THE SAME NIGHT
+
+Recorded because it is the cleanest instance since the one this card's
+own table calls "mine". Hours before that lane reported, this seat
+discharged a `docs/STATE.md` byte breach by **moving five stable tooling
+rules — including that exact one — out of STATE and into the 09-01
+checkpoint record**, leaving a pointer.
+
+That obeyed STATE's contract to the letter: *when the byte band warns,
+content MOVES to the record; a hazard is never deleted to fit.* And by
+this card's thesis it moved five live rules from a document sessions read
+into a document nothing may depend on. **The contract and this card
+disagree, and nobody had noticed because they had never been applied to
+the same paragraph on the same night.**
+
+### WHAT IT NARROWS
+
+This card's fence offers three remedy shapes: a reading rule, a retrieval
+tool, or **a change to what a checkpoint writes**. This instance is
+evidence for the third, and gives it a concrete discriminator:
+
+**ADR-019 splits MECHANISM from INSTANCE, and a byte breach is currently
+discharged by moving whatever fits — which takes mechanisms too.** A rule
+is a mechanism. Its home is a governing document. When STATE cannot hold
+a mechanism, the answer is `docs/CONVENTIONS.md`, not a record — records
+take the instance and nothing else.
+
+**STATE is byte-capped and records are unread, so a stable rule has no
+good home unless CONVENTIONS takes it.** That is the shape of the fix, and
+it explains the whole class: every rule that ended up only in records got
+there by the same legal move.
+
+Whoever takes this card re-fences it, per its own instruction. This
+corroboration argues the fence should reach `docs/` and the ADR, not
+`lib-parser` or `tools/e2e`.
