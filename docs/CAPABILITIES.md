@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **479 behaviours** — 477 extracted sentences + 2 named-not-extracted (listed at the end) — across 35 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **492 behaviours** — 490 extracted sentences + 2 named-not-extracted (listed at the end) — across 36 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -388,6 +388,22 @@ Census: **479 behaviours** — 477 extracted sentences + 2 named-not-extracted (
 - a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence
 - a DETACHED worktree holds no fence, however much of the tree it is sitting on
 - THE COMPARISON IS THE PARSER'S — this module holds no second intersection
+
+## lane-lock
+
+- out-of-fence TRACKED files go read-only and in-fence files stay writable
+- a writer that RENAMES is NOT blocked — the coverage edge, pinned so the prose cannot drift back
+- a BASH write outside the fence fails with EACCES — the case the hook provably cannot decide
+- POSITIVE CONTROL — the protocol's own writes all still succeed under the layer
+- the layer ARMS LANES AND NOTHING ELSE — the integration checkout and a detached tree are refused
+- THE CHECKPOINT SYNC SUCCEEDS with the layer active — drop, merge, re-arm from the POST-widening manifest
+- a checkpoint sync SILENTLY DISARMS the layer when the drop is skipped — measured, not assumed
+- WORKTREE REMOVAL leaves no read-only residue, and a dirty tree refuses for DIRTINESS not for mode bits
+- the unfenceable directory is NEVER locked — including inside T-228's stale-stamp window
+- the physical verdict agrees with the hook's own decide(), path by path
+- the ledger records the mode it FOUND, so a release restores bits rather than guessing them
+- the DISPATCH STEP arms it — `brief.mjs --write-fence` is the one event, and a widening is the same event again
+- the plan is a pure function of the manifest — no clock, no filesystem, no git
 
 ## map-retarget
 
