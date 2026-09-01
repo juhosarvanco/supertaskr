@@ -218,11 +218,15 @@
   `scripts` block of the relevant `package.json` answers "where does this
   live" in one command. Three paths were INVENTED in a single sitting —
   `boot-gate.mjs` (the gate is `npm run boot:check`), a method-eval path
-  run from the wrong directory, and `gate-run.mjs` placed in
+  run from the wrong directory, and the blessed gate-runner placed under
   `.claude/hooks/` when it lives in `tools/e2e/scripts/`. **The third
   shipped inside a VERIFIER'S BRIEF**, so an agent spent part of its
   blind phase correcting its own instructions. Each surfaced as an exit 1
-  that was a stack trace rather than a verdict.
+  that was a stack trace rather than a verdict. **And this bullet is
+  itself pinned**: the runner is NAMED once in this file and a body
+  requires exactly that, so cite it by description here rather than by
+  filename — the seat that wrote this rule tripped that body twice in one
+  session, the second time inside the paragraph warning about it.
 - **FIT A BYTE-BANDED DOCUMENT IN ONE WRITE, NOT IN A LOOP.** Draft into
   a scratch file, `wc -c` it, cut to the target, THEN write. `docs/STATE.md`
   was edited SEVEN times in one sitting to fit its warn line, and every
