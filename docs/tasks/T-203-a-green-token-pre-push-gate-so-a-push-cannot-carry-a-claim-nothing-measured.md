@@ -138,14 +138,42 @@ INCOMPLETE, naming the suites. The required list is held in the hook
 call in a session) and is COMPARED against `GRADED_SUITES` by a body, the
 treatment `LANE_BRANCH_RE` and `GRAPH_REL_PATH` already get.
 
-**THE TOKEN ARM FAILS CLOSED AND EVERY OTHER ARM IN THAT FILE FAILS
-OPEN**, which is criterion 1 rather than drift, and the module header now
-says so at the point a reader meets the old rule. A missing token is not
-an unanswered question; it is the answer — nothing was measured — and a
-guard that allowed there would pass its own subject. What still fails
-open is the guard's inability to KEY the question: a checkout whose
-`HEAD^{tree}` git will not name has no tree to compare against, so that
-arm is announced and allowed, with a body driving both sides.
+### THE POSTURE CHANGE, DECIDED AND DEFENDED RATHER THAN INHERITED
+
+**THIS CARD EXTENDS A REGISTERED GUARD; IT DOES NOT CREATE ONE.**
+`.claude/settings.json` has pointed `PreToolUse`/`Bash` at
+`push-guard-hook.mjs` since `b8dcb37` (T-167-s8) and this card did not
+touch that file — the diff proves it. What is added is a THIRD ARM inside
+the decision module, beside the graph arm and T-212's landing arm.
+
+**AND IT INVERTS THAT FILE'S FAIL-OPEN POSTURE, WHICH IS A DECISION.**
+`push-guard.mjs`'s header argues — well, and it is right — that *"a guard
+that can halt [the pushing seat] on its own inability halts the project,
+and the first person it inconveniences turns it off."* The token arm
+refuses on a MISSING token. Three reasons that argument does not reach
+it, and they are reasons rather than an exemption:
+
+1. **It is not an INABILITY.** Every fails-open arm in that file is the
+   guard failing to ANSWER a question: no cargo, no toolchain, an
+   unreadable request, a check that exited 2. An absent token answers its
+   question — *nothing was measured* — and it is the precise state this
+   card exists to catch. A guard that allowed there would not be
+   cautious; it would be vacuous, passing its own subject.
+2. **The inconvenience has a one-command remedy, and the refusal prints
+   it.** *"The first person it inconveniences turns it off"* is a claim
+   about a guard with no way out. `node tools/e2e/scripts/gate-run.mjs
+   --all` is the way out, it is the command that seat already owes, and
+   the refusal names it together with the reason it must be run LAST.
+3. **The guard's OWN inability still fails open, and is announced.** A
+   checkout whose `HEAD^{tree}` git will not name has no key to compare
+   against; that arm allows and says so, with a body driving both sides.
+   So the header's rule is preserved exactly where it applies.
+
+**WHAT IS PAID FOR IT, said plainly**: the full battery is now owed once
+per PUSH — which is the card's own design (*"commits stay fast; pushes
+become unlyable"*) — and the false-positive cost of `gitInvocations`'
+whitespace scanner rises with it, as recorded below. If a seat measures
+that this bet is wrong, the place to argue it is a card, not a flag.
 
 **A COST THAT ROSE, RECORDED RATHER THAN DISCOVERED.** `gitInvocations`
 is a whitespace scanner whose own header records that `echo git push`
@@ -194,8 +222,17 @@ gate calls the shared derivation rather than carrying its own.
   GATE-RUNNER bullet still describes the runner without its token, and
   nothing in that file yet tells a seat that a push now needs one. Routed:
   the file is outside this fence.
-- **`docs/STATE.md`'s hazard line is now false.** It reads *"NOTHING
-  GATES THE PUSH YET (T-203/T-216 open)"*. Routed for the same reason.
+- **`docs/STATE.md`'s push line needs updating AGAIN, for the opposite
+  reason.** At this lane's BASE (`9d56b47`) it read *"NOTHING GATES THE
+  PUSH YET"*, which was already false then — a push has been gated on a
+  stale graph since `b8dcb37`. Main corrected it at `53fe498` to *"PUSH is
+  registered and FAILS OPEN (hazards)"*, which is exactly right today and
+  is exactly what this card changes: the token arm fails CLOSED. Neither
+  the line nor the hazard block is inside `[.claude, tools/e2e]`, so the
+  re-correction is routed. **The base's copy is stale on this point and
+  was deliberately not edited from inside the lane** — that would be a
+  mid-flight fence widening, which is the very thing the sibling lane is
+  writing law about.
 - **The docs gate's own STATE-staleness reporting has no body.** The
   poison drill's M7 killed two bodies in `push-checks.spec.ts` and
   `push-guard.spec.ts` and NONE in `docs-input-gate.spec.ts` — the check

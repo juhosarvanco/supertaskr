@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -265,10 +265,29 @@ test("a checkout that is not a git repository at all cannot run the checks, and 
 
 /* ───────────── the live tree ─────────────────────────────────────── */
 
-test("this repository's own board passes every cheap check", () => {
+test("this repository's own board passes every cheap check, over a board proved non-empty first", () => {
   // NOT A TAUTOLOGY, because every body above proves the checks can fail.
   // This is the one that would red if a lane pushed a dangling blocker or
-  // an unregenerated STATE into the tree — which is the whole point, and
-  // it is the same claim the guard makes at a push.
+  // an unregenerated STATE into the tree — the same claim the guard makes
+  // at a push.
+  //
+  // THE CORPUS IS COUNTED BEFORE IT IS JUDGED, which is this repository's
+  // instance 5 ("a comparison over an empty corpus reports agreement and
+  // measures nothing"). A `runChecks` that walked zero cards would return
+  // zero findings and read exactly like a clean board. These two reads
+  // are also what LINK this file into the docs gate's reader derivation:
+  // the checks really do read docs/tasks and docs/checkpoints off the
+  // live tree, so a change there really does owe this suite.
+  const cards = readdirSync(path.join(repoRoot, "docs/tasks")).filter(
+    (f) => f.startsWith("T-") && f.endsWith(".md"),
+  );
+  expect(cards.length, "the live board is empty, so the judgement below is vacuous").toBeGreaterThan(
+    20,
+  );
+  const records = readdirSync(path.join(repoRoot, "docs/checkpoints")).filter((f) =>
+    f.endsWith(".md"),
+  );
+  expect(records.length, "no checkpoint record, so the STATE half is vacuous").toBeGreaterThan(0);
+
   expect(runChecks(repoRoot).map((f) => f.message)).toEqual([]);
 });
