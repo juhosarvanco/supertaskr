@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 1
 size: S
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-216
 blocked_by: []
 touches: [.claude, tools/e2e, .github]
@@ -79,8 +79,14 @@ line number.)*
 
 Added by the dispatch audit, 2026-09-01, measured at `06ca1c5`:
 
-    git merge-base --is-ancestor 4ec229c main   -> YES, ancestor
-    git rev-list --count 4ec229c..main          -> 344
+    git merge-base --is-ancestor 4ec229c 06ca1c5   -> YES, ancestor
+    git rev-list --count 4ec229c..06ca1c5          -> 344
+
+*(Both rows said `main` when written and the count read 344. `main` has
+moved five times since, to 348. **Third instance of one defect on one
+card** — the criterion, the amendment's demonstration table, and this
+audit block, each written by the seat that had just corrected the
+previous one. Pinned to the sha the line already named.)*
 
 **The motivating checkout PASSES an ancestry test.** Being an ancestor of
 the tip is not a defect a stale checkout has — it is the definition of
@@ -108,6 +114,75 @@ Not prescribed — the mechanism is the card's to choose:
 - Where the answer is no, is it LOUD — at arm time, before the sitting,
   rather than at the push it failed to guard?
 
+## Amendment, 2026-09-01, after dispatch — two corrections to the criteria below
+
+**A FIGURE WENT STALE INSIDE THE CRITERION ADDED TO FORBID STALE FIGURES.**
+The reachability criterion was written naming a literal distance:
+
+    git rev-list --count 4ec229c..06ca1c5  -> 344   (fixed sha: stable)
+
+**The typed number was already wrong against a moving symbol**, and it is
+now DERIVED in the criterion rather than stated. **A figure in an
+acceptance criterion is a figure like any other: it carries its ref or it
+goes.** This is T-216's own line-number correction, re-earned one card
+later by the seat that wrote it.
+
+**AND THE TABLE THAT DEMONSTRATED IT CONTAINED A ROW WITH NO REF, WHICH
+DECAYED WHILE THIS CARD WAS BEING WRITTEN.** The original table carried a
+`4ec229c..main` row. It read 346 when written, 347 when the verifier
+re-stamped it, and 348 an hour later — because `main` moves with every
+commit this dispatch itself makes. The rows anchored to a fixed sha never
+moved. **The row is deleted rather than re-pinned**: it measured nothing
+the stable rows do not, and a demonstration of "carry your ref" that has
+to be re-pinned to stay true is making the opposite point.
+
+**A CATCHER NOTHING INVOKES SATISFIED EVERY CRITERION.** A blind phase-1
+attack set, written before any implementation existed, found that criteria
+1, 2 and 4 all pass against a correct catcher that is never called. The
+card had no criterion requiring it to be WIRED; there is now one.
+
+Also corrected: the reachability bullet is the **fourth** criterion. Both
+dispatch briefs called it the fifth, counting past `Verification:
+headless`.
+
+**AND A MEASURED FACT THE CARD DID NOT HAVE — "REGISTERED" IS NOT A PROXY
+FOR "RUNS".** This is a NOTE and deliberately not a sixth criterion; the
+card is size S and has already grown once. Judge the built catcher against
+it anyway.
+
+There are TWO ways a checkout can fail to consult the guard, and from
+outside they are indistinguishable:
+
+    A. no Bash matcher registered at all      -> nothing is invoked
+    B. matcher registered, hook FILE absent   -> node starts, exits 1
+
+Measured at the integration seat, `CLAUDE_PROJECT_DIR` resolving correctly
+and only the `.mjs` missing — **one fault, not two**:
+
+    exit = 1  ("cannot find module")
+
+**THE PORTABLE HALF IS THE EXIT CODE: 1 IS NOT 2, SO THE HARNESS DOES NOT
+BLOCK.** That is what the argument rests on and it is independent of path,
+platform and node version. The stderr byte count is NOT portable and is
+deliberately not quoted here as a bare number — it is
+`701 + len(path)` on node v22.22.0, exact at four path lengths and
+re-derived independently at three. Two seats measured 881 and 761 and both
+were right, at paths of 180 and 60 characters. **A byte count carries its
+path the way a figure carries its ref.**
+
+**Arm B fails open while looking fully configured.** A catcher that reads
+`.claude/settings.json` and finds the registration present would pass a
+checkout in arm B. The measured motivating instance is arm A; **arm B is
+the one that survives an inspection of the registration.**
+
+*(Letters are local to this note. The verification's own ground truth
+labels these arms differently — this note's arm B is that document's arm
+C. **Map by description, never by letter.**)*
+
+`docs/CONVENTIONS.md` currently asserts this shape needs two faults at
+once and that the process never starts. Both are false, and that document
+defect is routed as **T-232** rather than folded in here.
+
 ## Acceptance criteria
 
 - A body SHALL demonstrate the measured instance: a checkout registering
@@ -120,7 +195,102 @@ Not prescribed — the mechanism is the card's to choose:
   in the artifact, not only in this card.
 - The catcher SHALL NOT rest on reachability alone. A check that passes
   for a HEAD which is an ancestor of the integration tip SHALL be shown
-  to REFUSE the motivating instance, whose HEAD is an ancestor 344
-  commits behind. A test asserting only "an unreachable HEAD is caught"
-  is degenerate against this card and SHALL be treated as absent.
+  to REFUSE the motivating instance, whose HEAD is an ancestor of the
+  tip and hundreds of commits behind it. **The distance SHALL be DERIVED
+  at the ref under test and never typed**, because a distance measured
+  against a moving symbol is stale before it is read. A test asserting
+  only "an unreachable HEAD is caught" is degenerate against this card
+  and SHALL be treated as absent.
+- The catcher SHALL be WIRED, not merely present. A body SHALL establish
+  that the ordinary act it guards — cutting a session, opening a sitting,
+  running CI — actually INVOKES it, and SHALL fail if the catcher is
+  removed from that path while its own file remains. A correct catcher
+  that nothing calls satisfies every criterion above and is the exact
+  defect this card exists to end.
 - Verification: headless.
+
+## Implementation notes (executor, 2026-09-01)
+
+Built at `task/T-216-s1-stale-checkout-catcher`. Card read at `87b134d`
+(the third amendment); the lane's copy of this file was brought forward
+to that text before the stamp, so the merge carries the amendments rather
+than reverting them.
+
+### The mechanism, and the three arms
+
+`tools/e2e/scripts/checkout-currency.mjs` — a decision module plus a CLI,
+side-effect-free on import (`process.argv[1]` guard, `process.exitCode`
+never `process.exit`, per `brief-flush.spec.ts`'s standing sweep).
+
+It judges a TARGET checkout from a VANTAGE that is not it. **Both
+defaults are the whole construction**: the vantage is the checkout the
+module's own file lives in (`import.meta.url`, never `process.cwd()`),
+and the target is `CLAUDE_PROJECT_DIR` — the checkout whose settings the
+harness loaded. In the measured instance those were two different
+checkouts.
+
+    registration-missing   an (event, matcher, script) main registers and
+                           the target does not                    [arm A]
+    hook-absent            a script main registers that is not on the
+                           target's DISK                          [arm B]
+    guard-surface-behind   the newest main commit touching `.claude` is
+                           NOT contained in the target's HEAD
+
+The third arm is the one that is **not reachability**. The trap is
+`is-ancestor <targetHead> <tip>`, which answers YES for every stale
+checkout because that is what stale MEANS. This asks the opposite
+containment over a different commit, and a raw commit COUNT is
+deliberately not a refusal basis — it would red every live lane and teach
+the project to ignore the tool. The distance is reported as a figure.
+
+Three verdicts, never two: `current` / `stale` / `unknown`, exiting
+0 / 1 / 3. A question that could not be asked is `unanswered` and never
+rounded down.
+
+### Where it is wired (criterion 5)
+
+`brief.mjs`'s `--preflight` and `--write-fence` arms — the dispatch
+ritual's two arming steps — run it BEFORE the card is looked up, so a
+dispatch that fails for any other reason has still been told. A `stale`
+verdict joins `findings` and the dispatch answers 1. **An UNDECLARED
+`CLAUDE_PROJECT_DIR` is UNANSWERED and charges nobody**: an earlier draft
+fell back to the command's working directory and reported a scratch
+FIXTURE as a stale session checkout, redding
+`card-preflight.spec.ts:705`. That regression is the reason the arm now
+refuses to guess a target.
+
+### The live measurement, this machine, 2026-09-01, vantage `<lane>`
+
+    /Users/ujju/Projects/nputer           CURRENT   0 behind
+    /Users/ujju/Projects/V-216-s1         CURRENT   1 behind
+    /Users/ujju/Projects/nputer-app       STALE   438 behind, arms A+B
+    /private/tmp/nd-T-140-s4              STALE   414 behind, arms A+B
+    /Users/ujju/Projects/arch-verify      STALE   907 behind, no settings
+
+Two of those are the motivating instance's exact shape — a `Bash` matcher
+absent and no `push-guard-hook.mjs` — in live checkouts on this machine,
+not in a fixture. `V-216-s1` is the live positive control: behind the tip
+and CURRENT, which a commit count would have refused.
+
+### `.github` was in the fence and is deliberately unused
+
+CI cannot see this defect. Its checkout is the PUSHED REF, while the
+staleness is a property of the LOCAL checkout a session was started in;
+on `push: main` the comparison is vacuous, and running the catcher from
+CI would run the pushed ref's own (possibly stale) copy. Adding a step
+would also have needed either a `docs/CONVENTIONS.md` command (outside
+the fence) or a dishonest entry in `workflow-parity.spec.ts`'s
+`INFRASTRUCTURE_STEPS`. Recorded rather than silently omitted.
+
+### For the verifier
+
+- The vantage/target split is the property. Swapping `vantage` for
+  `target` in the registration arm is invisible to a fixture built from
+  a stale WORKTREE, because a worktree shares refs — a poison drill found
+  exactly that hole. `THE REFERENCE COMES FROM THE VANTAGE…` uses a stale
+  CLONE, which is the only fixture that separates the two reads.
+- `GUARD_SURFACE` is `.claude` and deliberately not the transitive
+  closure of what a hook spawns; the limit is stated in the module.
+- `STALE_CLONE_LIMIT` is printed on EVERY run, whatever the verdict.
+- The suite's two remaining reds and the rust suite's two are NOT this
+  card's: they are `T-216-s4`, filed here.

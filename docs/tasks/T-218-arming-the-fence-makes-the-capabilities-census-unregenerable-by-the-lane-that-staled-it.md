@@ -154,3 +154,36 @@ integrator's merge commit, as the two above were.
 **THE CLASS NOW HAS THREE INSTANCES ACROSS THREE LANES, THREE FENCES AND
 THREE SEATS**, which is what the triage note above was already holding
 for `T-225`'s byte ceiling rather than for want of evidence.
+
+## CORROBORATION — fourth instance, 2026-09-01 (T-216-s1's lane, at `47672fb`)
+
+Adding `tools/e2e/tests/checkout-currency.spec.ts` (26 bodies) staled the
+census by the same mechanism, on a fourth fence and a fourth seat.
+Fence: `touches: [.claude, tools/e2e, .github]`.
+
+    npm run capabilities:check   exit 1
+      capabilities: STALE — committed 41508 bytes, a fresh generation is
+      44323 bytes; run npm run capabilities
+
+    decide({ file_path: "<lane>/docs/CAPABILITIES.md" })
+      BLOCK  outside-the-fence
+    decide({ file_path: "<lane>/tools/e2e/scripts/checkout-currency.mjs" })
+      ALLOW  inside-the-fence
+
+    ls -l docs/CAPABILITIES.md   ->  -r--r--r--
+
+The second `decide` is the control, in the form the third instance used:
+the hook is armed and DISCRIMINATING, so the block is a fence verdict and
+not a guard refusing everything. The `ls` is the physical layer's own
+half — the file is read-only on disk as well, so a shell-mediated
+regeneration is refused too.
+
+Every other gate on this lane was green or accounted: parser 349/349, app
+1131/1131, `lint:tokens` 0, `lint:docs` 0, `index --check` CURRENT.
+Routed to the integrator's merge commit, as the three above were.
+
+**FOUR INSTANCES, FOUR FENCES, FOUR SEATS — AND THE FOURTH ADDS NOTHING
+BUT ITS COUNT.** That is worth saying plainly rather than dressing up: the
+mechanism was already established by instance one, and what a fourth
+identical reading buys is the confidence that this is not three unlucky
+lanes. It reds every lane that does what a lane is dispatched to do.
