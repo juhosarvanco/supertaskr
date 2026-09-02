@@ -12,7 +12,7 @@ suggested_by: executor claude-opus-5 @T-126
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -401,3 +401,234 @@ were checked against the whole tree first: `T-126-s4` through `T-126-s7`
 are already spent — `s4` and `s5` are named across `T-126`'s own card and
 `T-135`, and `s6`/`s7` were absorbed by `T-159`'s `Absorbs:` line — so
 `s8` is the first free ordinal.
+
+## VERDICT
+
+**APPROVED** — 2026-09-02, verifier `claude-opus-5@subagent`, seat
+`V-T-126-s2`, bench `/Users/ujju/Projects/nputer-V-T-126-s2`.
+**Tip judged: `dd190023334a4c46c2e4ffcde6894b36c190460b`**, base
+`fb222cdbe5d3d208f5c82b25d6644a27f1361dab`. Every figure below was
+measured in this bench, each carries the ref it was measured at, and not
+one was taken from the executor.
+
+### The frame, and the seals
+
+Phase 1 was a spawn of its own, before this diff existed. The attack set
+and the ground truth were written from the card at `fb222cd` — with
+`docs/CONVENTIONS.md`, `method/roles/verifier.md` and the F-04 entries of
+`docs/ROADMAP.md` — and sealed at **2026-09-02T16:06:50Z**:
+
+    attack set: sha256:1c61b5288fa6e087f67b7bbfeb8365777d97ad6f97bc83df3e39a7fd7598e918 (attack-V-T-126-s2.md)
+    ground truth: sha256:6a0f0a046bc7635795e3f5b66e7715083c0eaa08d5adef4ebd018f130c01c2e3 (ground-V-T-126-s2.md)
+    stamps-V-T-126-s2.txt carries both, the base ref and the sealing clock.
+
+Both re-verified byte-identical after this verdict was written.
+
+**WHAT THE BLINDNESS ACTUALLY WAS.** Phase 1 had a shell and used it: it
+read the card and the governing documents at the base and MEASURED the
+four suites, the arch and graph readings, the fence expansion and the
+import census there. It never opened the lane, its branch, its diff or
+any executor note, and the dispatching brief named no executor-derived
+specific. Phase 2 arrived carrying the executor's own tree facts — its
+fifteen mutants and their kill sets, its suite figures, its three routes.
+That is phase 2's ordinary shape, and the answer is that **nothing below
+rests on any of them**: the obligations are the ones sealed in phase 1,
+the drill is the sealed one, and every count is mine.
+
+**ONE DEVIATION, DISCLOSED.** `method/roles/verifier.md` says this seat
+does not read `docs/ROADMAP.md`; my dispatcher instructed me to read its
+F-04 dispatch entries and I did, in phase 1. They carry nothing about
+this card's implementation.
+
+### The card carries no acceptance criteria, so the RULING was read as one
+
+Stated in phase 1 before the diff was opened, and the executor reached
+the same conclusion independently. Nine obligations were sealed; each is
+re-derived here.
+
+**D1 — the join is in TypeScript.** MET. `joinLanes(scan, board)` in
+`app/src/lib/dispatch-store.ts`, with `IN_FLIGHT_STATUSES`, `isInFlight`,
+`classify`, `REFUSAL_SENTENCES` and `refusalSentence`. It builds the
+`DispatchJoinWire` and hands it to `hydrateJoin`, so one site in this
+repository turns dispatch rows into a keyed collection.
+
+**D2 — reachable by a collected body, and the bodies BITE.** MET, and
+this is the obligation the whole card turns on. See the drill below and,
+above all, the control.
+
+**D3 — shape 1 is not built.** MET. Swept over the whole diff at
+`dd19002`: no `#[tauri::command]` added or changed, no `generate_handler`
+line touched, no `invoke(` added. `app/src-tauri/src/lib.rs` is not in
+the diff at all — 10 paths, and its absence is the fence holding.
+
+**D4 — shape 2 is not built.** MET. No `read_dir`, no `serde_yaml`, no
+`docs/tasks` read anywhere in the added Rust. The only Rust changes are
+module-doc prose in `join.rs` and `mod.rs`.
+
+**D5 — one rule, and the second spelling is HELD.** MET, and it is met by
+a keeper rather than by a promise. The Rust join stays (`brief.rs` needs
+its `LaneScanRefusal`, `lanes.rs` holds `include_str!("join.rs")`), and
+its removal is routed as `T-126-s8`. The keeper is
+`the_rust_join_and_this_one_spell_one_rule`. **Measured, not accepted:**
+
+- **M11**, `join.rs`'s `IN_FLIGHT_STATUSES` reworded `merging` →
+  `integrating`: app suite **1 failed | 1160 passed (1161)**, exit 1, and
+  the one failure IS that body.
+- **M11c**, the real drift case — one refusal sentence reworded in
+  `join.rs` *and* in its own Rust expectation, so the Rust file is
+  self-consistent: the TS pin **reds** (1 body). A drift cannot land
+  green.
+- **M12**, the pin's own negative control — a sentence the TS side does
+  not author, planted in `join.rs` as a quoted literal: **reds**. The
+  control is not inert.
+
+**D6 — the fence holds.** MET. Ten paths: six code paths, all inside
+`[app-board, app-dispatch]` (`dispatch/join.rs`, `dispatch/mod.rs`,
+`Board.tsx`, `TaskDetailPanel.tsx`, `dispatch-store.ts`,
+`dispatch-store.test.ts`), plus this card and three filed findings.
+Nothing under `app/src/App.tsx`, `app/src-tauri/src/lib.rs`,
+`app/vitest.config.ts`, `app/test/board-truth.test.tsx`,
+`app/test/architecture-dogfood.test.ts` or any
+`docs/architecture/components/C-*.md`.
+
+**D7 — no undeclared cross-component edge.** MET, read from
+`index --check --root ../..` at `dd19002` rather than forecast. STALE at
+exit 1 by construction (a `.ts` joined the walk), `files +0 -0 ~6`, and
+**edges +19 −1**: every added edge lands either inside C-15's own two
+files or on `p:node:fs` / `p:node:path`, which are PACKAGE edges. No new
+component-to-component edge, so no registry line is owed and the fence
+did not need widening. `arch --root ../..` is **byte-identical to my base
+capture** and `arch cycles` is ACYCLIC at exit 0. The importer census for
+`dispatch-store.ts` is still exactly **1** file (the pin), against a
+positive control of **13** for `board-model`.
+
+**D8 — `unavailable` survives.** MET. A refused scan returns
+`unavailable` with its own arm and its own sentence; the four sentences
+are asserted whole and pairwise distinct; and the suite carries the
+CONTROL that gives those four assertions meaning — the same board over a
+**scanned but empty** repository comes back `joined`. My own hostile probe
+adds the boundary the suite does not: an unknown refusal kind invented on
+the Rust side comes back NOT `joined`.
+
+**D9 — the regression floor.** MET; the table below.
+
+### The drill — twelve mutants, all mine, all one side only
+
+Every landing was read from `git diff`, never from a mutator's report;
+every restore was proved with `shasum -a 256` against
+`git show dd19002:<path>`; the app suite was rebuilt (`npm run build`,
+exit 0 every time) before each reading.
+
+| # | mutant, one side only | file | failing bodies |
+|---|---|---|---|
+| M1 | `classify`: `died` and `stampSkipped` arms swapped | store | **5** |
+| M2 | `merging` removed from `IN_FLIGHT_STATUSES` | store | **3** |
+| M3 | `IN_FLIGHT_STATUSES` emptied | store | **6** |
+| M4 | the lane-on-no-card half short-circuited | store | **1** |
+| M5 | `noWorktreesDirectory` given `notAGitRepository`'s sentence | store | **1** |
+| M6 | a refused scan returns `joined` over an empty map | store | **1** |
+| M7 | `notLanes` dropped at the return | store | **1** |
+| M7b | `truncated` hardcoded `false` at the return | store | **1** |
+| M8 | the second lane for one task id overwritten | store | **1** |
+| M9 | the ASCII sort removed | store | **1** |
+| M11 | `join.rs`'s `IN_FLIGHT_STATUSES` reworded | join.rs | **1** |
+| M11c | one refusal sentence reworded in `join.rs`, self-consistently | join.rs | **1** |
+| M12 | an absent sentence planted quoted in `join.rs` | join.rs | **1** |
+
+Twelve of twelve died, and **each is aimed at the site its property
+lives** — the classifier, the constant, the two halves of the row build,
+the two carried fields, the sort, the refusal arm, and the Rust source
+the cross-language pin reads. **KILL-SET CONTAINMENT, never the count:**
+M4/M5/M7/M7b/M8/M9/M11 each kill exactly one body and they are seven
+DIFFERENT bodies, so no two of those bodies contain each other and none
+is a restatement. M1's five and M3's six are the wide ones, and they are
+wide because those two mutants change an answer every state body reads.
+
+**A DATA MUTANT WAS REQUIRED AND WAS RUN.** `the_rust_join_and_this_one_spell_one_rule`
+is a derivation guard — its expectation is parsed out of `join.rs`'s
+bytes — so a code-only drill would mis-grade it by construction (`T-221`).
+M11, M11c and M12 mutate the DATA it reads, and all three red.
+
+### The control, which is this verdict's load-bearing measurement
+
+A mutant dying proves nothing unless the ARMING is what killed it. So M1
+was re-run with the pin ABSENT — `app/test/dispatch-store.test.ts` moved
+out of `test/**` collection, the mutant left in place:
+
+    npm run build   exit 0
+    npm test        exit 0    Test Files 50 passed (50)   Tests 1141 passed (1141)
+
+**A wrong classification passes the ENTIRE app suite and both `tsc`
+programs at exit 0 when no collected body drives the join, and reds five
+bodies when one does.** That is T-110's defect reproduced deliberately on
+this bench and then killed, and it is the whole of what the 2026-08-31
+ruling made a precondition. The control is not a grader that fails
+everything: with the pin restored and no mutant, the same suite is green
+at 1161.
+
+### Security sweep (mandatory)
+
+- **No new input path crosses the boundary.** No command was added or
+  changed; `acl_pin.rs` is a 0-file diff and the rust suite is green, so
+  the `core:default` grant set is untouched.
+- **ADR-009 obeyed, and probed rather than asserted.** `lanesByTask` is a
+  `Map`, `claimed` a `Set`, the rows a `Map` via `hydrateJoin`. I ran a
+  throwaway probe (since deleted; tree clean) driving `joinLanes` with
+  task ids `__proto__` and `constructor` from a lane branch: both key
+  correctly, `Object.prototype` is unpolluted, and `{}` gains no own
+  property. `REFUSAL_SENTENCES` is a plain object, and legitimately so —
+  its keys are the union's own discriminants, authored in a Rust enum
+  here, not text read out of a file.
+- **No new regular expression is applied to attacker-controllable text.**
+  The three regexes added live in the TEST and are applied to `join.rs`'s
+  own source at a fixed path.
+- **No dependency added**, no secret or key in the diff, no markup built
+  from a worktree-supplied string, and no unbounded growth — the scan's
+  bound and its `truncated` flag are carried through rather than
+  re-decided.
+- **A pruned-but-not-removed lane** stays `live` with `existsOnDisk:
+  false` on the row rather than folding into `died`; probed directly.
+
+### Figures, each at its ref
+
+| reading | base `fb222cd` | tip `dd19002` |
+|---|---|---|
+| `gate-run parser` | 372 GREEN | **372 GREEN** |
+| `gate-run app` | 1146 GREEN | **1161 GREEN** |
+| `gate-run rust` | 639 / 18 targets GREEN | **639 / 18 GREEN** |
+| `gate-run e2e` (`NPUTER_E2E_PORT=25126`) | 626 GREEN | measured at my verdict commit |
+| `npm run build` from `app/` | 0 | **0** |
+| `boot:check` (`NPUTER_BOOT_PORT=26126`) | not owed | **0**, both `[nputer]` lines, no orphan |
+| `index --check` | CURRENT, exit 0 | **STALE, exit 1** — expected; `edges +19 −1`, none crossing a component |
+| `arch` summary | `components=15 files=201 … edges=45` | byte-identical |
+| `arch cycles` | ACYCLIC | ACYCLIC |
+| importers of `dispatch-store.ts` | 1 | 1 |
+
+`docs-gate.mjs` on all four card paths: exit 1, FIRES, naming
+`npm test from app/`, `npm test from tools/e2e/` and
+`npx vitest run from lib/parser/`, and reporting that every live card's
+frontmatter parses with a legal status. Those are the suites this verdict
+commit itself owes, and they were re-run at MY tip rather than at the one
+I was sent.
+
+### Non-blocking observations — findings, never conditions of this verdict
+
+1. **The cross-language pin's sentence third has a blind spot, and it is
+   closed by the Rust suite rather than by the pin.** Rewording ONE
+   refusal arm in `join.rs`'s `sentence()` while leaving `join.rs`'s own
+   Rust expectation untouched (M11b) leaves the app suite **GREEN at exit
+   0, 1161 passed** — because the old string survives as a quoted literal
+   inside `join.rs`'s own test body, and the pin searches the whole file.
+   That state is not reachable in a green tree: `cargo test` reds two
+   bodies on it, and the self-consistent version (M11c) reds the pin. So
+   the keeper holds against drift; what it does not hold alone is a file
+   already at war with itself. Worth one sentence on `T-126-s8`.
+2. **A prediction of mine was falsified, recorded because it was
+   pre-committed.** Phase 1 named D6 as the obligation most likely to
+   catch something, reasoning that a builder holding a ruling which calls
+   this card *"the only thing between the app and a rendered dispatch
+   block"* would reach for `App.tsx`. It did not. The lane measured the
+   claim, found the record wrong, and routed `T-126-s9` instead.
+3. `built_by:` is left empty and that is correct — `method/tasks/TASK-FORMAT.md`
+   stamps `built_by` / `verified_by` / `review` **on done**, which is the
+   integrator's moment for the first of them.
