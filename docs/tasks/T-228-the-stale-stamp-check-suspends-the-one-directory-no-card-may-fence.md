@@ -143,3 +143,113 @@ this card's own fence.
 Named here rather than discovered at that lane's gate: **keep the code
 string `stale-stamp`, or plan the two-act change** the fast-path law now
 describes. Nobody has to guess.
+
+## Implementation notes — 2026-09-02, and the card is NOT complete
+
+**THE FIX IS BUILT AND THREE OF THE SIX CRITERIA CANNOT BE BUILT UNDER
+THIS FENCE.** `touches: [.claude]` reaches `decide()` and reaches
+nothing that can hold a body for it. Every reader of
+`.claude/hooks/lane-fence.mjs` lives in `tools/e2e`
+(`command grep -rn 'lane-fence\.mjs' app lib tools .github
+--exclude-dir=node_modules` at `4c16b37`), so the only place a body
+driving `decide()` can live is
+`tools/e2e/tests/lane-fence.spec.ts` — outside this card's fence, and
+refused by the guard this card repairs. Asked of the live manifest
+rather than assumed:
+
+    ALLOW  inside-the-fence     .claude/hooks/lane-fence.mjs
+    ALLOW  always-writable      docs/tasks/T-228-….md
+    BLOCK  outside-the-fence    tools/e2e/tests/lane-fence.spec.ts
+
+**THE WIDENING ASKED FOR IS ONE FILE**, and it is disjoint from every
+lane live at dispatch: `tools/e2e/tests/lane-fence.spec.ts`. Not
+`tools/e2e` — that collides with `T-225-s2`
+(`tools/e2e/scripts/brief.mjs`, `tools/e2e/tests/brief.spec.ts`, …) and
+with `T-230-s7` (`tools/e2e/scripts/card-preflight.mjs`,
+`tools/e2e/tests/card-preflight.spec.ts`). Routed as `T-228-s1`.
+
+### What landed
+
+`decide()` in `.claude/hooks/lane-fence.mjs` now answers in the order
+the card prescribes — **`alwaysWritable` → stale-stamp → `paths`**. The
+`rel` derivation moved up with the first stage; nothing else moved, and
+the code string `stale-stamp` is untouched (the `T-210` coupling).
+
+### The measurement — four states, not two
+
+The window is TWO disagreements and the card's own S1/S2 pair exercises
+only one of them. Driven through `decide()` against a real armed fixture
+(`buildLaneFence`/`writeLaneFence`, a real git worktree), at `fa410f7`:
+
+    state     lane card  manifest   held  granted  never  card  file
+    C-narrow  NARROW     NARROW     ALLW  BLOCK    BLOCK  ALLW  ALLW
+    W-B       WIDE       NARROW     BLCK  BLOCK    BLOCK  ALLW  ALLW
+    W-A       NARROW     WIDE       BLCK  BLOCK    BLOCK  ALLW  ALLW
+    C-wide    WIDE       WIDE       ALLW  ALLOW    BLOCK  ALLW  ALLW
+
+**W-A is the card's S1** — the dispatch moved (main amended, the fence
+re-expanded, the lane's own card not yet updated: `roles/executor.md`
+fast path A) — and **C-wide is the card's S2**, reproduced row for row.
+**W-B is the other half**, a lane editing its own `touches:`, and it is
+the half `T-210`'s body drives. Before the reorder, every cell in W-A
+and W-B read `BLOCK stale-stamp`, the card and the fresh suggestion file
+included.
+
+### The drill — the ORDER mutated, and one mutant survives everything
+
+Drilled at `fa410f7`, one side only (the code under test, never an
+assertion), each mutation read back with `git diff --stat` and restored
+with `git restore --source=fa410f7 --staged --worktree`, sha256 proved
+against `git show fa410f7:.claude/hooks/lane-fence.mjs`
+(`4d3b0973b4e2c04bfb088f912e2b008e865e16b395e1f364839e610dbc799245`,
+matched after all three).
+
+| mutant | kind | suite | kill set |
+|---|---|---|---|
+| M1 `alwaysWritable` moved back AFTER the stale-stamp check — the pre-fix order | ORDER | 58 passed, exit 0 | **EMPTY** |
+| M2 the stale-stamp check moved to the END — the obvious fix | ORDER | 1 failed / 57 passed, exit 1 | `lane-fence.spec.ts:447` |
+| M3 `live !== manifest.touchesLine` inverted | PREDICATE | 15 failed / 43 passed, exit 1 | 15 bodies |
+
+**M1's EMPTY KILL SET IS THE FINDING AND IT IS THE CARD'S FIRST
+CRITERION, MEASURED.** The suite as committed cannot tell the repaired
+order from the defect: restore the old sequence and 58 of 58 still pass.
+So the fix is real and UNGUARDED, and the missing body is not a
+formality.
+
+**M2 IS ALREADY GUARDED** — by the very body `T-210` wrote and this
+card's coupling note names. Its last assertion (`ask(fx.lane,
+"tools/e2e/x.ts").code === "stale-stamp"`) is what reds, so criterion 2
+holds today without a new body.
+
+**M3 IS THE CARD'S FOURTH CRITERION DEMONSTRATED FROM THE OTHER SIDE.**
+A predicate mutant is loud in fifteen places and says nothing about the
+sequence: it does not move the card or the fresh-suggestion cell in ANY
+of the four states. A drill that mutates comparisons and leaves the
+sequence alone measures nothing about this card, exactly as the
+criterion says.
+
+### Criteria, one by one
+
+1. **BUILT, UNMEASURED BY THE SUITE.** W-A/W-B above: the card and a
+   fresh `docs/tasks` file are ALLOWED `always-writable` in the window,
+   `docs/STATE.md` — never granted — stays BLOCKED. No committed body
+   asserts it (M1's kill set is empty). **Routed: `T-228-s1`.**
+2. **HOLDS, AND IS GUARDED.** W-A `newly-granted` stays `BLOCK
+   stale-stamp`; M2 flips it to `ALLOW inside-the-fence` and reds
+   `lane-fence.spec.ts:447`.
+3. **HOLDS, UNCHANGED.** C-narrow/C-wide `never-granted` stays `BLOCK
+   outside-the-fence`; the whole 58-body suite is green.
+4. **DRILLED.** M1 and M2 are ORDER mutants; M3 is the predicate
+   counter-example the criterion asks to be excluded.
+5. Verification: headless throughout. No browser, no screen.
+6. `review: independent` — unchanged.
+
+### The gap a successor closes in minutes
+
+The four-state probe and the three-mutant drill live in this session's
+scratchpad as `probe-T-228.mjs` and `drill-T-228.mjs`; the body
+`T-228-s1` asks for is the probe's W-A arm written as three
+`expect`s against `decide()`, in the file that already builds exactly
+this fixture. **Status stays `building`**: three criteria are met, one
+is built and unguarded, and stamping `verifying` over an empty kill set
+would certify the thing this card exists to object to.
