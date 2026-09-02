@@ -371,6 +371,94 @@ export function resetDocsForProjectSwitch(prev: DocsModelState): DocsModelState 
 }
 
 /**
+ * The measurement a docs payload ANNOUNCES: WHICH folder was read, the
+ * ordering stamp Rust drew BEFORE reading it, and when that reading
+ * FINISHED — `null` where no collection produced one (a genesis switch
+ * onto a folder with no docs/ yet). A `DocsSnapshotPayload` IS one of
+ * these structurally, which is what lets an emit, the startup pull and a
+ * pick reply all be asked the same question by `readingIsOvertaken`
+ * below.
+ */
+interface SnapshotReading {
+  projectDir: string;
+  seq: number;
+  generatedAtMs: number | null;
+}
+
+/**
+ * HAS THIS READING ALREADY BEEN OVERTAKEN? — THE ONE PLACE THE QUESTION
+ * IS ANSWERED, for every path that applies a docs payload.
+ *
+ * WHAT "OVERTAKEN" MEANS, IN THE TWO STAMPS RUST SENDS, AND WHY ONE OF
+ * THEM IS NOT ENOUGH. `WatchState::next_seq` draws BEFORE the collect on
+ * every path, so `seq` dates the START of a collection and never its
+ * content; `snapshot_from` stamps `generated_at_ms` from `now_ms()`
+ * AFTER the walk returns, so `generatedAtMs` dates the reading itself.
+ * The two can disagree whenever two producers draw from the one global
+ * counter and walk for different lengths of time: the one that drew
+ * FIRST and walked LONGEST carries a LOWER seq with NEWER bytes, while
+ * the one that drew later and finished earlier carries a HIGHER seq with
+ * an OLDER read. Compared by seq alone the latter looks fresh, it is
+ * applied, and the newer tree is discarded until the next fs event under
+ * that folder — with the watermark advanced past the reading that
+ * carried it. So a reading is NEWER only when BOTH stamps agree that it
+ * is: its ordering stamp advanced AND its collection did not finish
+ * earlier than the one the model already holds.
+ *
+ * THE TWO PRODUCERS THAT ACTUALLY RACE, named rather than left abstract.
+ * (a) A pick or genesis REPLY against a `docs-changed` emit for the same
+ * folder — Rust arms the watch on the new root BEFORE the command that
+ * announces it commits and stamps (T-064, T-018-s5); see
+ * `switchIsOvertaken`. (b) The startup `docs_snapshot` PULL against an
+ * emit — `project_status` calls `build_snapshot(&root, state.next_seq())`
+ * on a COMMAND thread while `handle_fs_batch` draws, collects and sinks
+ * on the debouncer thread, so the pull can draw a seq after an emit drew
+ * its own, finish its walk first, and hand `reduceDocs` a higher-seq
+ * older read (T-018-s6). Two EMITS cannot overtake each other — one
+ * ordered thread produces them — which is why the residual this closes
+ * is narrower than T-018-s5's and is not empty.
+ *
+ * BOTH CONJUNCTS OF THE FIRST TEST ARE LOAD-BEARING and they answer
+ * different questions. The projectDir equality answers "is this the SAME
+ * folder?" — a reading of ANOTHER folder is never an overtake, however
+ * old, because the model must follow the project the user opened; a
+ * guard without it strands them on the folder they left. The stamp
+ * comparison answers "is this reading OLDER?" — re-reading the
+ * currently-open folder takes a NEW, higher seq and a NEW collection, so
+ * it is not an overtake and must apply normally.
+ *
+ * NO COLLECTION, NO CONTENT TIME — T-018-s6. `null` (a snapshot-less
+ * genesis switch) and `0` mean the same thing here and are handled the
+ * same way: nothing walked a tree to produce this payload, so it carries
+ * no reading time and the clock has nothing to compare. `0` is the
+ * project's own tell for that (`snapshot_from` stamps `now_ms()`, which
+ * is never 0 — see `outcomeCarriesSnapshot` and
+ * `test/genesis-switch-truth.test.ts`), and both the dev harness and
+ * pre-T-042 fixtures mint it. Read naively by `<` a zero compares as
+ * OLDER THAN EVERYTHING, so every such payload would be dropped behind
+ * any real reading; abstaining instead leaves the ordering stamp to
+ * decide, which is what those payloads have always been decided on.
+ *
+ * THE `<` ON THE CLOCK IS STRICT, DELIBERATELY. Two collections that
+ * finish inside one millisecond are not ordered by their clock at all,
+ * so the seq stamp decides and the reading applies — which is what keeps
+ * this from dropping a re-read of a small tree on a fast machine, and
+ * what a fixture stamping one constant `generatedAtMs` across a run
+ * relies on. THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND:
+ * `now_ms()` is a wall clock, so a backwards clock step can make a
+ * genuinely newer reading look older and hold a tree back until the next
+ * fs event under that folder. That is the SAME window an unguarded path
+ * left open on EVERY overtake, entered far more rarely, and it is
+ * bounded by the same recovery.
+ */
+function readingIsOvertaken(prev: DocsModelState, reading: SnapshotReading): boolean {
+  if (prev.projectDir !== reading.projectDir) return false;
+  if (reading.seq <= prev.seq) return true;
+  if (reading.generatedAtMs === null || reading.generatedAtMs === 0) return false;
+  return reading.generatedAtMs < prev.generatedAtMs;
+}
+
+/**
  * Apply one snapshot payload to the docs model, resetting first when the
  * payload comes from a different project root (T-007 switch). Stale or
  * duplicate payloads — including anything from a previously open project —
@@ -381,6 +469,22 @@ export function reduceDocs(
   payload: DocsSnapshotPayload,
 ): DocsModelState {
   if (payload.seq <= prev.seq) return prev; // stale/duplicate: identity
+  // T-018-s6: AND A HIGHER SEQ IS NOT BY ITSELF A LATER READING. The
+  // line above is the T-007 stale-drop invariant and it stays FIRST and
+  // unchanged, because it is the one that must hold ACROSS projects: a
+  // late delivery from the folder the user just left carries a seq at or
+  // below the watermark and has to return `prev` BY IDENTITY, which the
+  // predicate below deliberately does not do for another folder (its
+  // first conjunct answers `false` there). This second question is the
+  // one `seq` cannot answer at all — the startup `docs_snapshot` pull
+  // draws from the same global counter on a command thread, so it can
+  // draw AFTER an emit and finish its walk BEFORE it, arriving with a
+  // higher seq over older bytes. It is the SAME decision the pick
+  // reply's `switchIsOvertaken` asks, asked through the same expression
+  // rather than a second copy of it; `applyDocsPayload` and
+  // `applyProjectStatus`'s `"open"` arm add no ordering rule of their
+  // own and inherit this one by routing through here.
+  if (readingIsOvertaken(prev, payload)) return prev;
   const base =
     prev.seq > 0 && payload.projectDir !== prev.projectDir
       ? resetDocsForProjectSwitch(prev)
@@ -513,17 +617,6 @@ export function selectScreen(shell: ShellState): ScreenModel {
   }
 }
 
-/** The measurement a pick outcome announces: WHICH folder was read, the
- * ordering stamp Rust drew BEFORE reading it, and when that reading
- * FINISHED — `null` where no collection produced one (a genesis switch
- * onto a folder with no docs/ yet). The one shape both branches of
- * `switchIsOvertaken` compare, so the rule below is spelled once. */
-interface SwitchReading {
-  projectDir: string;
-  seq: number;
-  generatedAtMs: number | null;
-}
-
 /**
  * T-064 CRITERION 1, GENERALISED BY T-018-s5: HAS THIS SWITCH ALREADY
  * BEEN OVERTAKEN?
@@ -560,40 +653,18 @@ interface SwitchReading {
  * onto a folder with no docs/ yet carries none. That difference is read
  * off the outcome below; the comparison happens in one place.
  *
- * WHAT "OVERTAKEN" MEANS, IN THE TWO STAMPS RUST SENDS, AND WHY ONE OF
- * THEM IS NOT ENOUGH. `WatchState::next_seq` draws BEFORE the collect on
- * every path, so `seq` dates the START of a collection and never its
- * content; `snapshot_from` stamps `generated_at_ms` from `now_ms()`
- * AFTER the walk returns, so `generatedAtMs` dates the reading itself.
- * The two can disagree, and the ordinary pick is exactly where they do:
- * the watcher thread draws its seq first and finishes its walk last, so
- * its emit carries a LOWER seq and NEWER bytes while the reply carries a
- * HIGHER seq and an OLDER read. Compared by seq alone the reply looks
- * fresh, `reduceDocs` applies it, and the newer tree is discarded until
- * the next fs event under that folder — with the watermark advanced past
- * the emit that carried it. So a reading is NEWER only when BOTH stamps
- * agree that it is: its ordering stamp advanced AND its collection did
- * not finish earlier than the one the model already holds.
- *
- * BOTH CONJUNCTS OF THE FIRST TEST ARE LOAD-BEARING and they answer
- * different questions. The projectDir equality answers "is this the SAME
- * folder?" — a model from the PREVIOUS project must still be cleared,
- * because same-named paths must never fall back to another project's
- * content. The stamp comparison answers "is this reading OLDER?" —
- * re-picking the currently-open folder takes a NEW, higher seq and a NEW
- * collection, so it is not an overtake and must apply normally.
- *
- * THE `<` ON THE CLOCK IS STRICT, DELIBERATELY. Two collections that
- * finish inside one millisecond are not ordered by their clock at all,
- * so the seq stamp decides and the reading applies — which is what keeps
- * this from dropping a re-pick of a small tree on a fast machine, and
- * what a fixture stamping one constant `generatedAtMs` across a run
- * relies on. THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND:
- * `now_ms()` is a wall clock, so a backwards clock step can make a
- * genuinely newer reading look older and hold a pick's tree back until
- * the next fs event under that folder. That is the SAME window the
- * unguarded branch left open on every overtake, entered far more rarely,
- * and it is bounded by the same recovery.
+ * WHERE THE RULE ITSELF LIVES — T-018-s6 MOVED IT, AND THIS FUNCTION IS
+ * NOW THE SWITCH'S ADAPTER ONTO IT. Everything about what "overtaken"
+ * MEANS — the two stamps Rust sends and why one of them is not enough,
+ * why both conjuncts are load-bearing, why the `<` on the clock is
+ * strict, and what a payload with no content time means — is written
+ * once on `readingIsOvertaken` above `reduceDocs`, because the startup
+ * `docs_snapshot` pull asks the very same question of the very same
+ * stamps and a second copy of the rule here would be the T-057 failure
+ * this project names by number. What is left in THIS function is the
+ * only thing that is actually about a switch: reading the announced
+ * measurement off a pick outcome, whose two variants carry it
+ * differently.
  */
 export function switchIsOvertaken(
   prev: DocsModelState,
@@ -605,7 +676,7 @@ export function switchIsOvertaken(
   // snapshot-less genesis branch too, which had the same defect plus a
   // second one — it ASSIGNED `outcome.seq`, so an overtaking emit at a
   // higher seq was followed by the watermark going backwards.
-  const reading: SwitchReading =
+  const reading: SnapshotReading =
     outcome.kind === "picked"
       ? {
           projectDir: outcome.snapshot.projectDir,
@@ -617,9 +688,7 @@ export function switchIsOvertaken(
           seq: outcome.snapshot?.seq ?? outcome.seq,
           generatedAtMs: outcome.snapshot?.generatedAtMs ?? null,
         };
-  if (prev.projectDir !== reading.projectDir) return false;
-  if (reading.seq <= prev.seq) return true;
-  return reading.generatedAtMs !== null && reading.generatedAtMs < prev.generatedAtMs;
+  return readingIsOvertaken(prev, reading);
 }
 
 /**
@@ -1445,11 +1514,19 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
   // It cannot fight the pick's own snapshot: `docs_snapshot` mints a
   // fresh seq from the same global monotonic counter the pick just used,
   // so the pull is either strictly newer (applies, one extra echo of a
-  // genuinely newer tree) or — if anything ever reordered them — dropped
-  // by `reduceDocs`'s seq guard BY IDENTITY, with no re-render and no
-  // echo. That is the same guard that settles the subscribe-then-pull
-  // race today, and the interleaving is pinned in
+  // genuinely newer tree) or dropped by `reduceDocs` BY IDENTITY, with
+  // no re-render and no echo. The interleaving is pinned in
   // test/startup-recovery.test.ts rather than argued here.
+  //
+  // T-018-s6 CORRECTED THIS PARAGRAPH RATHER THAN DELETING IT, because
+  // the conclusion was right and the REASON was not. It used to say the
+  // pull was dropped "by `reduceDocs`'s SEQ guard", and the seq guard
+  // cannot do that job: the pull draws from the shared counter on a
+  // COMMAND thread, so it can draw after an emit and finish its walk
+  // before it, arriving with a HIGHER seq over an OLDER read — which the
+  // seq guard waves through. T-018-s5 measured that same conclusion to
+  // be false one door over, for the pick reply. What drops the pull now
+  // is `readingIsOvertaken`, which reads the content time as well.
   if (
     before.startupFailure?.step === "subscribe" &&
     (outcome.kind === "picked" || outcome.kind === "genesis")

@@ -89,6 +89,53 @@ describe("applySnapshot — stale/duplicate rejection (criterion 2, frontend hal
     const stale = apply(s2, 2, []);
     expect(stale).toBe(s2);
   });
+
+  /**
+   * T-018-s6 RULED THIS READER CORRECT AS WRITTEN, and this body is the
+   * ruling made mechanical so the next sweep does not re-open it.
+   *
+   * `applySnapshot` decides on `seq` ALONE — deliberately. The sweep
+   * that produced T-018-s6 named four seq-only readers, and the
+   * delivery-race guard landed on exactly one of them, `reduceDocs` in
+   * `watcher-store.ts`. It did not land HERE, and the reason is that the
+   * two functions answer different questions. `applySnapshot` is the
+   * MODEL primitive (T-003): given a state and a payload, parse and
+   * fold. "Which of Rust's producers read the tree last?" is a question
+   * about DELIVERY, and this layer has no producers — its callers do.
+   *
+   * Three of those callers would be answered WRONGLY by a clock rule
+   * here. `reducePickOutcome`'s genesis branch calls it on the state
+   * `resetDocsForProjectSwitch` just wiped, whose `projectDir` is `""`
+   * and whose `generatedAtMs` is 0, so any comparison there is against a
+   * cleared reading rather than a held one. The dev harness and a dozen
+   * test files compose `generatedAtMs` freely — several stamp one
+   * constant across a whole run — because at this layer it has never
+   * been load-bearing. And `reduceDocs` itself would then ask the
+   * question twice, once per layer, which is the two-spellings failure
+   * the guard was built as ONE expression to avoid.
+   *
+   * So: if a later card moves the clock comparison down here, this body
+   * reds. That is the intended effect — read this comment first.
+   */
+  it("applies a HIGHER-seq payload whose collection finished EARLIER — the delivery race is not this layer's question", () => {
+    const held = applySnapshot(emptyState(), {
+      seq: 5,
+      projectDir: "/scratch/project",
+      generatedAtMs: 1_700_000_000_900,
+      files: baseFiles(),
+    });
+    expect(held.fileCount).toBe(3);
+
+    const older = applySnapshot(held, {
+      seq: 6,
+      projectDir: "/scratch/project",
+      generatedAtMs: 1_700_000_000_500, // an OLDER read at a HIGHER seq
+      files: [{ path: "docs/ROADMAP.md", content: ROADMAP }],
+    });
+    expect(older, "not an identity return: this layer applied it").not.toBe(held);
+    expect(older.fileCount).toBe(1);
+    expect(older.seq).toBe(6);
+  });
 });
 
 describe("applySnapshot — parse failures keep last valid state (criterion 3)", () => {

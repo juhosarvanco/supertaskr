@@ -703,6 +703,152 @@ describe("T-018-s5: an ordinary pick whose reply arrives AFTER an emit for the s
   });
 });
 
+// ---- T-018-s6: the STARTUP PULL, overtaken the same way ---------------
+
+/**
+ * THE THIRD DOOR ONTO ONE DEFECT, and the one T-018-s5's fence could not
+ * reach. `reduceDocs` admits any payload whose `seq` exceeds the
+ * watermark, and `seq` dates the START of a collection: `next_seq` is
+ * drawn before the collect while `generated_at_ms` is stamped after the
+ * walk returns. Two `docs-changed` emits cannot disagree about that —
+ * `handle_fs_batch` draws, collects and sinks on ONE debouncer thread —
+ * but the startup `docs_snapshot` pull runs on a COMMAND thread and
+ * takes its seq from the same global counter (`project_status` ->
+ * `build_snapshot(&root, state.next_seq())`), so it can draw AFTER an
+ * emit drew its own, finish its walk FIRST, and hand `reduceDocs` a
+ * higher-seq OLDER read that overwrites the emit's newer tree and
+ * advances the watermark past it.
+ *
+ * EVERY BODY BELOW GOES THROUGH `reduceDocs`, WHICH IS THE REDUCER THE
+ * PULL ACTUALLY REACHES. The store's pull path is
+ * `applyProjectStatus` -> `applyDocsPayload` -> `reduceDocs`: neither
+ * caller carries an ordering rule of its own, and both consume the
+ * IDENTITY return (`applyDocsPayload` opens `if (next === shell.docs)
+ * return`, so an identity is exactly what suppresses the re-render and
+ * the `model-updated` echo). The emit path reaches `applyDocsPayload`
+ * directly. So the decision under test is the one they both inherit.
+ *
+ * THE PAIR IS BUILT BY HAND, and it has to be: the file-wide `payload`
+ * helper stamps `generatedAtMs = 1_700_000_000_000 + seq`, a MONOTONE
+ * function of the seq, so the two stamps can never disagree in it and
+ * the defect is unrepresentable. These fixtures spell the clock apart
+ * from the seq on purpose.
+ */
+describe("T-018-s6: a startup `docs_snapshot` pull that arrives AFTER an emit for the same folder", () => {
+  const DIR = "/projects/a";
+  const EMIT_FINISHED = 1_700_000_000_900;
+  const PULL_FINISHED = 1_700_000_000_500; // drew later, walked faster
+  const read = (
+    seq: number,
+    generatedAtMs: number,
+    files: number,
+    projectDir = DIR,
+  ): DocsSnapshotPayload => ({
+    seq,
+    projectDir,
+    generatedAtMs,
+    files: Array.from({ length: files }, (_, i) => ({
+      path: `docs/decisions/00${i + 1}-x.md`,
+      content: `# 00${i + 1}`,
+    })),
+  });
+
+  /** The emit landed first: the model already holds the LATER reading. */
+  const applied = (): DocsModelState => reduceDocs(emptyState(), read(5, EMIT_FINISHED, 3));
+
+  it("KEEPS the emit's tree and does not advance the watermark past it", () => {
+    const prev = applied();
+    expect(prev.fileCount, "the emit's three-file reading is what the store holds").toBe(3);
+
+    const next = reduceDocs(prev, read(6, PULL_FINISHED, 2));
+
+    // Identity is the whole contract here: it is what makes
+    // `applyDocsPayload` return before it re-renders and before it
+    // echoes a model the emit already echoed.
+    expect(next, "identity: nothing was rebuilt").toBe(prev);
+    expect(next.fileCount, "the fresher measurement survives").toBe(3);
+    expect(next.seq, "5, never forward to the pull's 6").toBe(5);
+    // And the watermark still does its job afterwards, in both
+    // directions: the stale drop holds, and the next emit lands.
+    expect(reduceDocs(next, read(5, EMIT_FINISHED + 10, 1))).toBe(next);
+    expect(reduceDocs(next, read(7, EMIT_FINISHED + 10, 1)).fileCount).toBe(1);
+  });
+
+  it("asks the SAME question the pick reply asks, of the same reading", () => {
+    // Reuse rather than a copy, asserted from outside the source: for
+    // every corner, `reduceDocs`'s identity return and
+    // `switchIsOvertaken`'s verdict are the SAME answer, because both
+    // route through one expression. A second spelling would be free to
+    // drift, and this body is what would notice.
+    const prev = applied();
+    const corners: [string, DocsSnapshotPayload][] = [
+      ["higher seq, OLDER read, same folder — the whole defect", read(6, PULL_FINISHED, 2)],
+      ["a genuinely newer pull", read(6, EMIT_FINISHED + 1, 2)],
+      ["a lower seq", read(4, EMIT_FINISHED + 1, 2)],
+      ["an equal seq", read(5, EMIT_FINISHED + 1, 2)],
+      ["another folder, however old its read", read(6, PULL_FINISHED, 2, "/projects/other")],
+    ];
+    for (const [why, snapshot] of corners) {
+      expect(reduceDocs(prev, snapshot) === prev, `both paths agree: ${why}`).toBe(
+        switchIsOvertaken(prev, { kind: "picked", snapshot }),
+      );
+    }
+  });
+
+  it("a genuinely newer pull still applies, and so does one that landed in the SAME millisecond", () => {
+    // The over-broad direction. The pull is the app's answer to the
+    // subscribe-then-pull race and this guard must not switch it off: it
+    // is held ONLY when an emit already delivered a LATER reading of the
+    // SAME folder, which is the one case where nothing is lost. The
+    // equal-clock case is the boundary the `<` is strict for — two
+    // collections finishing inside one tick are not ordered by the clock
+    // at all, so the seq stamp decides.
+    const prev = applied();
+    const newer = reduceDocs(prev, read(6, EMIT_FINISHED + 1, 1));
+    expect(newer, "not an identity return").not.toBe(prev);
+    expect(newer.fileCount).toBe(1);
+    expect(newer.seq).toBe(6);
+
+    const sameMs = reduceDocs(prev, read(6, EMIT_FINISHED, 1));
+    expect(sameMs, "not an identity return").not.toBe(prev);
+    expect(sameMs.fileCount).toBe(1);
+  });
+
+  it("a pull with NO content time is decided on its seq, not dropped as older than everything", () => {
+    // The `generatedAtMs: 0` case. Nothing walked a tree to produce such
+    // a payload — `snapshot_from` stamps `now_ms()`, which is never 0 —
+    // and both the dev harness (`__nputerDocsHarness.apply`, which IS
+    // `applyDocsPayload`) and pre-T-042 fixtures mint them. Read naively
+    // by `<`, a zero is older than every real reading, so every one of
+    // them would vanish behind any emit already applied.
+    const prev = applied();
+    const next = reduceDocs(prev, read(6, 0, 1));
+    expect(next, "not dropped").not.toBe(prev);
+    expect(next.fileCount).toBe(1);
+    expect(next.seq).toBe(6);
+  });
+
+  it("a pull announcing a DIFFERENT folder is never an overtake, however old its read", () => {
+    // The conjunct that is not about the stamps. Without it a guard
+    // keyed on the clock alone would hold the OLD project's model in
+    // front of the folder the pull is announcing — the user stranded on
+    // the project they just left, which is a worse failure than the one
+    // this card closes.
+    const prev = applied();
+    const next = reduceDocs(prev, read(6, PULL_FINISHED, 1, "/projects/elsewhere"));
+    expect(next.projectDir, "the folder the pull announced").toBe("/projects/elsewhere");
+    expect(next.fileCount, "its own tree, applied").toBe(1);
+    expect([...next.effective.keys()], "no cross-project ghosts").toEqual([
+      "docs/decisions/001-x.md",
+    ]);
+    // ...and the T-007 stale drop still holds across the switch, BY
+    // IDENTITY — which is why the seq line stays FIRST in `reduceDocs`
+    // rather than being folded into the predicate, whose first conjunct
+    // deliberately answers "not an overtake" for another folder.
+    expect(reduceDocs(next, read(6, EMIT_FINISHED + 99, 3)), "a late delivery, dropped").toBe(next);
+  });
+});
+
 // T-042 criterion 3: the echo's guard, as a named predicate. It used to
 // be "the docs seq advanced", which a genesis switch ALWAYS satisfies
 // (it advances the watermark on purpose, and Rust's counter is global
