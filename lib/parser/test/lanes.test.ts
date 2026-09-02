@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { parseProjectFromFiles } from '../src/files.js';
-import { readDispatchOrder, witnessComponents } from '../src/lanes.js';
+import {
+  BODY_DEMANDING,
+  bodyBearing,
+  bodyDemandOf,
+  criteriaDemandingABody,
+  fenceHoldsABody,
+  readDispatchOrder,
+  witnessComponents,
+} from '../src/lanes.js';
 import type { LaneRecord } from '../src/lanes.js';
 import { expandFence } from '../src/fence.js';
 import type { TaskStatus } from '../src/types.js';
@@ -25,6 +33,8 @@ interface Frontmatter {
   touches?: string[];
   milestone?: number;
   priority?: number;
+  /** Lines dropped under `## Acceptance criteria` (T-228-s1). */
+  criteria?: string[];
 }
 
 /**
@@ -60,6 +70,7 @@ function card(id: string, title: string, fm: Frontmatter = {}): { path: string; 
       '---',
       '',
       'Body.',
+      ...(fm.criteria === undefined ? [] : ['', '## Acceptance criteria', '', ...fm.criteria]),
     ].join('\n'),
   };
 }
@@ -736,5 +747,149 @@ describe('T-219-s4 — a fence that cannot be RESOLVED is not a fence that is fr
     const ok = readDispatchOrder(parseProjectFromFiles(dotted), []);
     expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
     expect(ok.startable[0]?.fence.paths).toEqual(['lib/parser']);
+  });
+});
+
+describe('T-228-s1 — A CRITERION DEMANDING A TEST BODY, OVER A FENCE THAT CANNOT HOLD ONE', () => {
+  /**
+   * T-228 was stamped and armed with `touches: [.claude]` over criteria
+   * demanding a body. No test file lives under `.claude`; the dispatch
+   * derivation, the arming arm and the brief all passed the card, the
+   * executor routed the criterion OUT because the fence refused it, and a
+   * blind verifier's phase-1 ground truth named the contradiction an arc
+   * later. Every fixture below is that card, planted.
+   */
+  const BODY = '- A body SHALL prove it was startable with a fence holding no test file.';
+  const DOCUMENTARY = '- The rule SHALL be written into the conventions as one bullet.';
+  /** The fence's own tracked file — real, and not a body. */
+  const NOTES = 'fixture/T-001/notes.md';
+  /** The one mutation that clears the refusal. */
+  const SPEC = 'fixture/T-001/thing.spec.ts';
+  const oracle = (...paths: string[]) => ({ knownPaths: ['fixture', 'fixture/T-001', ...paths] });
+
+  it('the card is UNFENCEABLE, and its own criterion and fence are in the sentence', () => {
+    // KILLED BY: dropping the `unbodied.length === 0` term from the
+    // `startable` guard (the card is startable and the view says so), or
+    // dropping the clause from the `unfenceable` branch (the state is
+    // right and the sentence has an empty middle).
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, criteria: [BODY] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [], oracle(NOTES));
+    expect(order.startable.map((r) => r.id)).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const ruled = order.unfenceable[0];
+    expect(ruled?.reason).toContain('demand a TEST BODY');
+    expect(ruled?.reason, 'the criterion is not in the sentence').toContain(
+      'A body SHALL prove it was startable with a fence holding no test file.',
+    );
+    expect(ruled?.reason, 'the fence is not in the sentence').toContain('fixture/T-001');
+    expect(ruled?.reason).toContain('holds no path any suite collects');
+    // THE READING IS CARRIED, so the preflight can refuse on exactly this
+    // and not on a second spelling of it.
+    expect(ruled?.unbodied.map((d) => d.phrase)).toEqual(['a body SHALL']);
+    expect(ruled?.unbodied[0]?.text, 'the subject kept its list marker').toBe(BODY.slice(2));
+    expect(ruled?.bodyBearer, 'a fence with no body named a bearer').toBeUndefined();
+  });
+
+  it('ONE spec file in the fence clears it, and the bearer names the suite', () => {
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, criteria: [BODY] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [], oracle(NOTES, SPEC));
+    expect(order.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.startable[0]?.unbodied).toEqual([]);
+    expect(order.startable[0]?.bodyBearer?.rel).toBe(SPEC);
+    expect(order.startable[0]?.bodyBearer?.suite).toContain('spec');
+  });
+
+  it('a DOCUMENTARY criterion over the same fence stays startable — the negative control', () => {
+    // Without this, "a body-demanding criterion is unfenceable" is
+    // satisfied by a rule that refuses every card whose fence holds no
+    // test file, which is most of this project's governing-document work.
+    const board = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, criteria: [DOCUMENTARY] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [], oracle(NOTES));
+    expect(order.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.startable[0]?.unbodied).toEqual([]);
+  });
+
+  it('WITHOUT a knownPaths oracle the term is DISARMED, and the card is startable', () => {
+    // MEASURED, NOT CAUTIOUS. Without an oracle this module cannot see
+    // that a directory fence already HOLDS a spec file — only that the
+    // token is not itself spec-shaped — so every directory-fenced card
+    // with a body-demanding criterion would be refused on a consumer with
+    // no repository to look in. A false refusal is the one failure a
+    // dispatch gate may not have, and the consumer that HAS a repository
+    // is exactly the one that dispatches.
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, criteria: [BODY] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+    expect(order.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.startable[0]?.unbodied).toEqual([]);
+  });
+
+  it('the phrases are four, and each narrowing carries the live line that forced it', () => {
+    // THE TABLE IS PINNED AGAINST LITERALS and never read out of itself:
+    // a body that looped `BODY_DEMANDING` to build its expectations
+    // passes for any value the table holds, the empty one included.
+    expect(BODY_DEMANDING.map((p) => p.name)).toEqual([
+      'a body SHALL',
+      'a test SHALL',
+      'SHALL red',
+      'positive control',
+    ]);
+    expect(bodyDemandOf('- A body SHALL prove it.')).toBe('a body SHALL');
+    expect(bodyDemandOf('- Each new test SHALL red on the mutant.')).toBe('a test SHALL');
+    expect(bodyDemandOf('- The mutant SHALL red exactly one body.')).toBe('SHALL red');
+    expect(bodyDemandOf('- A positive control SHALL be demonstrated failing.')).toBe(
+      'positive control',
+    );
+
+    // THE THREE NARROWINGS, EACH WITH THE LIVE LINE THAT FORCED IT. A
+    // wide reading refuses cards that demand nothing, and a refusal on
+    // the normal case is the gate nobody runs.
+    expect(
+      bodyDemandOf('- A lane adding a `tools/e2e` body SHALL NOT have to discover this.'),
+      'the body word must be the head noun',
+    ).toBe('');
+    expect(bodyDemandOf('- a body shall prove it.'), 'SHALL is capitals').toBe('');
+    expect(
+      bodyDemandOf('- The sweep returns zero (positive control: the same needle over `docs/`).'),
+      'a grep control demands no body',
+    ).toBe('');
+    expect(
+      bodyDemandOf('- Cite the integrator role with its positive control attached.'),
+      'a citation demands no body',
+    ).toBe('');
+
+    // THE SUITE VOCABULARY IS A REAL TREE'S AND NOT THE THREE SHAPES THE
+    // founding card named: the method evals and any Rust source carry
+    // bodies too, and refusing those cards is the failure this must not
+    // have.
+    expect(bodyBearing('tools/e2e/tests/card-preflight.spec.ts')).not.toBe('');
+    expect(bodyBearing('lib/parser/test/fence.test.ts')).not.toBe('');
+    expect(bodyBearing('app/src-tauri/src/agent/kit.rs')).not.toBe('');
+    expect(bodyBearing('tools/method-evals/evals/mf-09-attack-set-digest-refusal.mjs')).not.toBe(
+      '',
+    );
+    expect(bodyBearing('.claude/hooks/lane-fence.mjs')).toBe('');
+    expect(bodyBearing('docs/CONVENTIONS.md')).toBe('');
+
+    // A FENCE NAMING A BODY THAT DOES NOT EXIST YET IS A CARD ABOUT TO
+    // WRITE ONE — the direction the known side cannot answer.
+    expect(fenceHoldsABody(['tools/e2e/tests/not-yet.spec.ts'], [])?.rel).toBe(
+      'tools/e2e/tests/not-yet.spec.ts',
+    );
+    expect(fenceHoldsABody(['.claude'], ['.claude/hooks/guard.mjs'])).toBeUndefined();
+    expect(fenceHoldsABody(['tools/e2e'], ['tools/e2e/tests/a.spec.ts'])?.rel).toBe(
+      'tools/e2e/tests/a.spec.ts',
+    );
+    expect(fenceHoldsABody(['tools/e2e'], undefined), 'no oracle is not a refusal').toBeUndefined();
+
+    // AND BODY SCOPE IS NOT READ AT ALL: only the acceptance criteria
+    // section is, so a card's prose quoting these phrases — this file
+    // does — demands nothing.
+    expect(criteriaDemandingABody(undefined)).toEqual([]);
+    expect(criteriaDemandingABody(`${DOCUMENTARY}\n${BODY}`)).toEqual([
+      { line: 2, phrase: 'a body SHALL', text: BODY.slice(2) },
+    ]);
   });
 });
