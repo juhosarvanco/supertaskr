@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app/src-tauri/src/dispatch/brief.rs, app/src-tauri/src/arch_cmd.rs]
 suggested_by: executor claude-opus-5@subagent @T-236-s1
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent

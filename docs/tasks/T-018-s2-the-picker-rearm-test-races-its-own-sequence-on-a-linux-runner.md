@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 suggested_by: integrator nputer-4e @loop-sitting stamps push, CI run 33304351040 (2026-08-30)
 touches: [app/src-tauri/src/docs_watch.rs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
