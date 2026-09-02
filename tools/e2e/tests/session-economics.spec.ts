@@ -1,9 +1,11 @@
-import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import {
+  EXIT,
   assembleBrief,
   context,
   contractRows,
@@ -13,6 +15,7 @@ import {
   roleText,
   unstampedLines,
 } from "../scripts/dispatch-brief.mjs";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   DECOMPOSITION_FILE,
   EARS_ANCHOR,
@@ -64,7 +67,8 @@ function advisory(stdout: string): string {
 }
 
 /* ────────────────────────────────────────────────────────────────────
- * THE IDS THIS SUITE SPAWNS ARE DERIVED, NEVER TYPED (T-163-s4).
+ * THE IDS THIS SUITE SPAWNS ARE DERIVED, NEVER TYPED (T-163-s4) — AND
+ * SINCE T-205-s8, SO IS THE REPOSITORY THEY ARE ASKED OF.
  *
  * `brief.mjs --task <id>` is a DISPATCH question and not a lookup: before
  * it prints a row it compares the named card's fence against every live
@@ -77,25 +81,183 @@ function advisory(stdout: string): string {
  * card the whole suite is about, so the fix could not have gone green in
  * its own lane by repairing the `T-112` half alone.
  *
- * THE RULE THIS FILE NOW KEEPS: every invocation whose EXIT is graded
- * takes a DERIVED id; every in-process reading of the suite's own subject
- * card stays `T-157`, because a read of a card is not a dispatch question
- * and no lane can move it.
+ * DERIVING THE ID WAS ONLY HALF OF IT (T-205-s8). The lane list the
+ * command compares against comes from `git worktree list`, which is
+ * MACHINE-SCOPED and belongs to no ref — so the same tree measured 619
+ * bodies GREEN at `c08f260` and 2-failed/617-passed at the SAME ref four
+ * and a half hours later, nothing committed in between, a peer seat's
+ * `task/T-216-s8` worktree the whole difference. Choosing a different id
+ * cannot reach that: a live lane no card declares is a finding on EVERY
+ * `--task` run whatever id is asked for. Four verifier benches paid a red
+ * e2e leg for it in one sitting, each attributed to its own diff.
+ *
+ * `brief.mjs` IS RIGHT TO REFUSE and that half does not move: "a lane
+ * whose fence cannot be read is a fence nobody can be disjoint from" is
+ * `T-209`'s guard doing its job. The defect was on THIS side. Neither
+ * graded body is about lane disjointness at all — one is about the
+ * recommendation being a function of the CARD rather than of the
+ * environment, the other about where the advisory line SITS — so neither
+ * had any business inheriting a list no ref controls.
+ *
+ * THE RULE THIS FILE NOW KEEPS, IN THREE PARTS:
+ *   1. every invocation whose EXIT is graded names `--root <fixture>`, a
+ *      repository this suite BUILDS, so the lane set the answer is a
+ *      function of is the suite's own and not the machine's;
+ *   2. every such invocation still takes a DERIVED id, computed against
+ *      THAT repository's board through the command's own `fenceOverlaps`;
+ *   3. every in-process reading of the suite's own subject card stays
+ *      `T-157` at the live checkout, because a read of a card is not a
+ *      dispatch question and no lane can move it.
+ *
+ * AND THE REFUSAL KEEPS A KEEPER OF ITS OWN, because a fix that quietly
+ * stopped `brief.mjs` refusing would satisfy every `toBe(0)` here: the
+ * isolation body below plants an undeclared lane in a checkout that IS
+ * the one under test and requires exit 1 carrying the guard's own
+ * sentence.
  * ──────────────────────────────────────────────────────────────────── */
 
 type BriefCtx = ReturnType<typeof context>;
 
 /**
- * Card ids whose fence is disjoint from every live lane's AT THE REF THIS
- * RUNS AT, in a stable order — computed through the SAME `fenceOverlaps`
- * the command itself compares with, so the prediction cannot drift from
- * the rule it is predicting.
+ * Author and committer come from the environment, so a runner with no
+ * configured identity can still commit.
  *
- * Two board states are deliberately NOT worked around here: two live lanes
- * that overlap EACH OTHER, and a live lane whose card this checkout cannot
- * read. Each is a finding on every `--task` run whatever id is asked for,
- * so no choice made here avoids one — and each is lane-protocol rule five
- * actually broken rather than this suite naming the wrong card.
+ * EVERY CALL CARRIES `NO_BACKGROUND_MAINTENANCE` (T-178): `git commit`
+ * otherwise ends by detaching `git maintenance run --auto`, which keeps
+ * writing inside this fixture's `.git` for hundreds of milliseconds after
+ * the foreground command returned — into the very tree the teardown is
+ * about to remove. tools/e2e/tests/git-fixture.ts carries the mechanism.
+ */
+const FIXTURE_GIT_ENV = {
+  ...process.env,
+  GIT_AUTHOR_NAME: "t205s8",
+  GIT_AUTHOR_EMAIL: "t205s8@example.invalid",
+  GIT_COMMITTER_NAME: "t205s8",
+  GIT_COMMITTER_EMAIL: "t205s8@example.invalid",
+};
+
+function fixtureGit(cwd: string, args: string[]): string {
+  return execFileSync("git", ["-C", cwd, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    env: FIXTURE_GIT_ENV,
+  });
+}
+
+interface LaneFixture {
+  /** the mkdtemp root, and the whole of what the teardown removes */
+  dir: string;
+  /** the checkout every GRADED run is asked of — this project's tracked tree, and NO lanes */
+  pristine: string;
+  /** a SECOND checkout of the same project, which is what a peer seat's copy is */
+  peer: string;
+  /** where the plant goes: a SIBLING of `peer`, never a path inside it (lane-protocol rule three) */
+  peerLane: string;
+}
+
+let FIXTURE: LaneFixture | undefined;
+
+/**
+ * TWO CHECKOUTS OF THIS PROJECT, BUILT FROM ITS OWN TRACKED TREE.
+ *
+ * THE FIXTURE IS `git archive HEAD` AND NOT A HAND-BUILT STAND-IN, for
+ * the reason tests/brief.spec.ts's sibling fixture gives: every row of
+ * the brief is derived from a real project file — CONVENTIONS' lane
+ * bullet, the role file's contract table, the card index, the component
+ * registry — so a fixture missing them would prove something about a
+ * different repository. What it deliberately does NOT inherit is the
+ * machine's worktree list: a fresh `git init` knows exactly one worktree,
+ * its own, and that is the surface this card is about.
+ *
+ * IT IS BUILT ONCE PER WORKER and removed in `afterAll`, because the
+ * archive-and-commit is ~2s and three bodies want the same answer out of
+ * it. `dir` holds both checkouts and the plant, so one removal is the
+ * whole teardown.
+ */
+function laneFixture(): LaneFixture {
+  if (FIXTURE !== undefined) return FIXTURE;
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t205s8-lanes-"));
+  const pristine = path.join(dir, "pristine");
+  mkdirSync(pristine);
+  const tar = path.join(dir, "tree.tar");
+  writeFileSync(
+    tar,
+    execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
+  );
+  execFileSync("tar", ["-x", "-f", tar, "-C", pristine]);
+  fixtureGit(pristine, ["init", "--initial-branch=main", "--quiet"]);
+  fixtureGit(pristine, ["add", "-A"]);
+  // TWO `Checkpoint:` commits, because the brief's lane row reads the
+  // newest one out of the first-parent log and a fixture with none would
+  // fail for a reason that has nothing to do with lanes.
+  fixtureGit(pristine, ["commit", "--quiet", "-m", "Checkpoint: fixture base"]);
+  fixtureGit(pristine, ["commit", "--quiet", "--allow-empty", "-m", "Checkpoint: fixture tip"]);
+
+  // THE PEER'S COPY — a clone rather than a second archive, because what
+  // it has to be is a checkout of THE SAME project on THIS machine, which
+  // is exactly what every sibling seat's worktree is. It is cut with no
+  // lane in it; the plant is the isolation body's own act, so that body
+  // can measure the graded answer on both sides of it.
+  const peer = path.join(dir, "peer");
+  execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "clone", "--quiet", pristine, peer], {
+    env: FIXTURE_GIT_ENV,
+  });
+  FIXTURE = { dir, pristine, peer, peerLane: path.join(dir, "peer-lane") };
+  return FIXTURE;
+}
+
+test.afterAll(() => {
+  if (FIXTURE === undefined) return;
+  // The removal is the FIXTURE's finding when it fails, never the failure
+  // of whichever body ran last — those bodies already had their verdict.
+  removeGitFixture(FIXTURE.dir, "session-economics lane");
+  FIXTURE = undefined;
+});
+
+/**
+ * A lane id NO card on the board declares, DERIVED rather than typed for
+ * the same reason every other id in this file is: a number that later
+ * became a real card would turn the plant into a declared lane and the
+ * refusal assertion into a tautology that passes by never firing.
+ */
+function undeclaredId(ctx: BriefCtx): string {
+  for (let n = 900; n < 1000; n += 1) {
+    const id = `T-${n}`;
+    if (!ctx.cards.has(id)) return id;
+  }
+  throw new Error(
+    "session-economics: every id from T-900 to T-999 is a live card, so this suite cannot name a " +
+      "lane the board does not declare — which is the input the isolation body is built on.",
+  );
+}
+
+/**
+ * ONE GRADED INVOCATION OF THE REAL COMMAND.
+ *
+ * `--root` is what names the repository whose lane set the answer is a
+ * function of, and it is the whole of this card's fix. The working
+ * DIRECTORY stays the live checkout on purpose: the two are different
+ * paths here, so a command that started reading the cwd instead would
+ * show up as a difference between them rather than passing unnoticed.
+ */
+function brief(root: string, taskId: string, env: NodeJS.ProcessEnv = process.env) {
+  return spawnSync(process.execPath, [CLI, "--root", root, "--task", taskId], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env,
+  });
+}
+
+/**
+ * Card ids whose fence is disjoint from every live lane's IN THE
+ * REPOSITORY THE CONTEXT NAMES, in a stable order — computed through the
+ * SAME `fenceOverlaps` the command itself compares with, so the
+ * prediction cannot drift from the rule it is predicting.
+ *
+ * Against the fixture this filter has nothing to remove, and that is the
+ * point rather than a reason to delete it: it is the rule the command
+ * runs, kept here so a fixture that ever grows a lane is still answered
+ * correctly instead of silently handing back a colliding id.
  */
 function unfencedIds(ctx: BriefCtx): string[] {
   const lanes: { id: string; entries: string[] }[] = [];
@@ -124,11 +286,12 @@ function recommendation(block: string): string {
   return Object.values(SEAT_PHRASE).find((p) => line.includes(p)) ?? "";
 }
 
-let CONTROL: { baseId: string; otherId: string } | undefined;
+const CONTROLS = new Map<string, { baseId: string; otherId: string }>();
 
 /**
- * TWO CARDS THE LIVE BOARD CANNOT COLLIDE, GETTING DIFFERENT
- * RECOMMENDATIONS — the positive control's two inputs, derived once.
+ * TWO CARDS THE REPOSITORY UNDER TEST CANNOT COLLIDE, GETTING DIFFERENT
+ * RECOMMENDATIONS — the positive control's two inputs, derived once per
+ * repository.
  *
  * Chosen on the RECOMMENDATION and not on the whole block, because the
  * block echoes the card's own path: two distinct ids differ there whatever
@@ -141,10 +304,15 @@ let CONTROL: { baseId: string; otherId: string } | undefined;
  *
  * A derivation gone constant has no such pair, and this says so by name
  * rather than grading a card.
+ *
+ * THE ARGUMENT IS THE POINT (T-205-s8): the ids are derived against the
+ * SAME checkout the graded run will be asked of, so the prediction and
+ * the invocation cannot be reading two different boards.
  */
-function control(): { baseId: string; otherId: string } {
-  if (CONTROL !== undefined) return CONTROL;
-  const ctx = context({});
+function control(root: string): { baseId: string; otherId: string } {
+  const cached = CONTROLS.get(root);
+  if (cached !== undefined) return cached;
+  const ctx = context({ root });
   const ids = unfencedIds(ctx);
   // `seatRecs` reads ctx.card, ctx.root, ctx.slugs, ctx.comps, ctx.ref and
   // ctx.role and nothing else, so one context serves every card below: the
@@ -153,54 +321,55 @@ function control(): { baseId: string; otherId: string } {
   const baseId = ids[0];
   expect(
     baseId,
-    "no card on the board has a fence disjoint from every live lane, so this suite has no input " +
-      "the board cannot collide",
+    `no card in ${root} has a fence disjoint from every live lane there, so this suite has no ` +
+      "input that checkout cannot collide",
   ).toBeDefined();
   const base = recommendation(block(baseId as string));
   const otherId = ids.slice(1).find((id) => recommendation(block(id)) !== base);
   expect(
     otherId,
-    `all ${ids.length} cards the live board leaves unfenced draw the same recommendation ` +
+    `all ${ids.length} cards ${root} leaves unfenced draw the same recommendation ` +
       `(${JSON.stringify(base)}) — nothing here could tell a derivation from a constant`,
   ).toBeDefined();
-  CONTROL = { baseId: baseId as string, otherId: otherId as string };
-  return CONTROL;
+  const pair = { baseId: baseId as string, otherId: otherId as string };
+  CONTROLS.set(root, pair);
+  return pair;
 }
 
-/** A signal set that answers KNOW on every arm — the fixture the others move. */
-const ALL_KNOWN = {
-  size: "S",
-  lightest: "S",
-  fence: [{ entry: "tools/e2e", kind: "path", paths: ["tools/e2e"] }],
-  criteria: ["WHEN a brief is assembled THE row SHALL derive from the card"],
-  keywords: ["THE", "WHEN", "WHILE", "IF", "WHERE"],
-};
-
-test("the recommended seat is a function of the CARD, and an environment full of model dials does not move it", () => {
-  const { baseId, otherId } = control();
-  const clean = spawnSync(process.execPath, [CLI, "--task", baseId], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
+/**
+ * THE FIRST GRADED BODY'S ASSERTIONS, NAMED so the isolation body can run
+ * them a second time with an undeclared lane standing on this machine —
+ * which is what the card's second criterion asks for in as many words:
+ * "with a planted undeclared lane present, the two bodies still pass".
+ *
+ * @param root the checkout the graded invocations name
+ */
+function assertSeatFollowsTheCardOnly(root: string): void {
+  const { baseId, otherId } = control(root);
+  const clean = brief(root, baseId);
   expect(clean.status, clean.stderr ?? "").toBe(0);
+
+  // AND THE RUN SAYS WHICH REPOSITORY IT MEASURED, so "the answer follows
+  // --root" is asserted rather than assumed. Without this line a command
+  // that ignored the flag and read its own checkout would pass every
+  // comparison below on a machine whose lanes all have cards — which is
+  // precisely the machine this defect hid on for two days.
+  expect(clean.stdout).toContain(`repository: ${root}`);
+  expect(clean.stdout).not.toContain(`repository: ${repoRoot}`);
 
   // EVERY DIAL A SESSION PLAUSIBLY CARRIES, SET TO SOMETHING ABSURD. If
   // the recommendation were read from the environment rather than from
   // the card, one of these would move it — and the failure mode this
   // guards is the one the criterion names in as many words: a row filled
   // "from the assembling session's own dials".
-  const loud = spawnSync(process.execPath, [CLI, "--task", baseId], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      ANTHROPIC_MODEL: "a-model-that-does-not-exist",
-      CLAUDE_MODEL: "another-one",
-      NPUTER_MODEL: "a-third",
-      MODEL: "a-fourth",
-      ANTHROPIC_SMALL_FAST_MODEL: "a-fifth",
-      NPUTER_SEAT: "strongest",
-    },
+  const loud = brief(root, baseId, {
+    ...process.env,
+    ANTHROPIC_MODEL: "a-model-that-does-not-exist",
+    CLAUDE_MODEL: "another-one",
+    NPUTER_MODEL: "a-third",
+    MODEL: "a-fourth",
+    ANTHROPIC_SMALL_FAST_MODEL: "a-fifth",
+    NPUTER_SEAT: "strongest",
   });
   expect(loud.status, loud.stderr ?? "").toBe(0);
   expect(
@@ -215,10 +384,7 @@ test("the recommended seat is a function of the CARD, and an environment full of
   // command, two different blocks — and the two cards are DERIVED (see
   // `control` above), because the id this line used to name was a live
   // card whose fence the board kept colliding.
-  const other = spawnSync(process.execPath, [CLI, "--task", otherId], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
+  const other = brief(root, otherId);
   expect(other.status, other.stderr ?? "").toBe(0);
   expect(advisory(other.stdout)).not.toBe(advisory(clean.stdout));
   // AND THE DIFFERENCE IS IN THE RECOMMENDATION, not merely in the card
@@ -237,6 +403,37 @@ test("the recommended seat is a function of the CARD, and an environment full of
     readFileSync(MODULE, "utf8"),
     "the derivation reached for process state — the card is the only input it may have",
   ).not.toContain("process.env");
+}
+
+/**
+ * THE SECOND GRADED BODY'S ASSERTIONS, named for the same reason — and
+ * what they assert is a fact about the COMMAND's output shape, which is
+ * why the reads that go with them stay on the live checkout's `T-157`.
+ *
+ * @param root the checkout the graded invocation names
+ */
+function assertAdvisoryIsNotAContractRow(root: string): void {
+  const run = brief(root, control(root).baseId);
+  expect(run.status, run.stderr ?? "").toBe(0);
+  expect(run.stdout.indexOf("ROW 13")).toBeLessThan(run.stdout.indexOf("ADVISORY —"));
+  expect(advisory(run.stdout)).toContain("NOT one of the rows above");
+}
+
+/** A signal set that answers KNOW on every arm — the fixture the others move. */
+const ALL_KNOWN = {
+  size: "S",
+  lightest: "S",
+  fence: [{ entry: "tools/e2e", kind: "path", paths: ["tools/e2e"] }],
+  criteria: ["WHEN a brief is assembled THE row SHALL derive from the card"],
+  keywords: ["THE", "WHEN", "WHILE", "IF", "WHERE"],
+};
+
+test("the recommended seat is a function of the CARD, and an environment full of model dials does not move it", () => {
+  // ASKED OF A CHECKOUT THIS SUITE BUILT (T-205-s8). The property is
+  // about the card and the environment; the live machine's worktree list
+  // is neither, and while this body inherited it a colleague opening a
+  // lane could red the body without touching the tree.
+  assertSeatFollowsTheCardOnly(laneFixture().pristine);
 });
 
 test("every one of the three signals reads its own input, and every one of them is decisive once the other two split", () => {
@@ -375,17 +572,95 @@ test("the advisory line is NOT a contract row — it is printed outside the row 
   expect(render(assembleBrief(context({ taskId: "T-157" })).recs)).not.toContain("ADVISORY —");
 
   // …and the command prints it anyway, after the rows. THE SPAWN TAKES A
-  // DERIVED ID while the reads above stay on T-157: this line grades an
-  // EXIT, and an exit from `--task` is a dispatch verdict the live board
-  // moves. What it asserts — where the line sits and what it says about
-  // itself — is a fact about the command and not about the card.
-  const run = spawnSync(process.execPath, [CLI, "--task", control().baseId], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
-  expect(run.status, run.stderr ?? "").toBe(0);
-  expect(run.stdout.indexOf("ROW 13")).toBeLessThan(run.stdout.indexOf("ADVISORY —"));
-  expect(advisory(run.stdout)).toContain("NOT one of the rows above");
+  // DERIVED ID AND A FIXTURE CHECKOUT while the reads above stay on
+  // T-157: this line grades an EXIT, and an exit from `--task` is a
+  // dispatch verdict about a whole repository — every live lane's fence
+  // included. What it asserts — where the line sits and what it says
+  // about itself — is a fact about the command and not about the board,
+  // so the board it is asked of is the suite's own (T-205-s8).
+  assertAdvisoryIsNotAContractRow(laneFixture().pristine);
+});
+
+test("an undeclared lane in another checkout cannot move the graded runs, and in the checkout under test it is still refused", () => {
+  const fx = laneFixture();
+
+  /* ──────────────────────────────────────────────────────────────────
+   * THE ISOLATION THIS CARD ASKS FOR, MEASURED ON BOTH SIDES OF THE ACT.
+   *
+   * The reading that red four benches was not "an undeclared lane exists
+   * somewhere" — it was "the run inherited the lane list of whatever
+   * checkout it happened to be started in". So the demonstration is an
+   * ORDERING: the graded answer is taken, a lane no card declares is cut
+   * in a second checkout of this project on this machine, and the graded
+   * answer is taken again and required to be the same bytes.
+   *
+   * The one sibling this body will not create is a lane in the live
+   * checkout itself — that worktree list is shared with every other seat
+   * on this machine, and cutting into it to prove a point is the defect
+   * rather than the test of it. That case is covered from the other side
+   * below, where the checkout UNDER TEST is the one holding the plant and
+   * the refusal is required.
+   * ────────────────────────────────────────────────────────────────── */
+  const { baseId } = control(fx.pristine);
+  const before = brief(fx.pristine, baseId);
+  expect(before.status, before.stderr ?? "").toBe(0);
+
+  // THE PLANT. Its branch is spelled from the project's OWN published
+  // lane pattern rather than typed, so a project that respells lanes gets
+  // a plant that is still a lane; its id is derived to be one no card
+  // declares, which is what makes it undeclared.
+  const board = context({ root: fx.pristine });
+  const plantedId = undeclaredId(board);
+  const branch = board.spellings.branchPattern
+    .replace("T-NNN", plantedId)
+    .replace("<slug>", "a-lane-no-card-declares");
+  fixtureGit(fx.peer, ["worktree", "add", "--quiet", "-b", branch, fx.peerLane, "HEAD"]);
+
+  // PRE-CONDITION, ASSERTED RATHER THAN ASSUMED: the plant really is a
+  // LANE in the checkout that holds it, and really is undeclared. Without
+  // both, everything below passes by never having planted anything.
+  const peerCtx = context({ root: fx.peer });
+  expect(
+    peerCtx.lanes.map((l) => l.taskId),
+    "the plant did not register as a lane, so this body is proving nothing",
+  ).toContain(plantedId);
+  expect(peerCtx.cards.has(plantedId)).toBe(false);
+  expect(
+    context({ root: fx.pristine }).lanes,
+    "the graded checkout grew a lane, so its answer is no longer the suite's to control",
+  ).toEqual([]);
+
+  // AND THE GRADED ANSWER IS UNMOVED — exit and advisory both. At the
+  // base this comparison was unavailable: the run had no way to name a
+  // repository, so the lane above would have been in its answer.
+  const after = brief(fx.pristine, baseId);
+  expect(after.status, after.stderr ?? "").toBe(0);
+  expect(
+    advisory(after.stdout),
+    "a lane cut in another checkout moved the graded answer, which is the whole defect",
+  ).toBe(advisory(before.stdout));
+
+  // THE REFUSAL, EXERCISED SOMEWHERE THAT MEANS TO EXERCISE IT (the
+  // card's third criterion). `brief.mjs` is CORRECT to answer 1 for a
+  // lane whose fence it cannot read — T-209 — and this is the body that
+  // would red if the fix had bought its greens by weakening that. It
+  // grades the same command, the same flag and the same plant, and the
+  // ONLY difference from the run above is which checkout is named.
+  const refused = brief(fx.peer, baseId);
+  expect(
+    refused.status,
+    `the checkout under test holds ${plantedId} on ${branch} and no card declares it, and the ` +
+      "assembler answered anyway",
+  ).toBe(EXIT.FOUND);
+  expect(refused.stderr).toContain(plantedId);
+  expect(refused.stderr).toContain("a fence nobody can be disjoint from");
+
+  // AND THE TWO GRADED BODIES, RUN AGAIN WITH THAT LANE STANDING. This is
+  // the card's second criterion literally: the same assertions, the same
+  // helpers those bodies call, with an undeclared lane live on this
+  // machine the whole time.
+  assertSeatFollowsTheCardOnly(fx.pristine);
+  assertAdvisoryIsNotAContractRow(fx.pristine);
 });
 
 test("the recommendation names a seat strength and never a model, because this project passes no --model", () => {

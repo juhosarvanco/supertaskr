@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **626 behaviours** — 624 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **627 behaviours** — 625 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -668,6 +668,7 @@ Census: **626 behaviours** — 624 extracted sentences + 2 named-not-extracted (
 - the card's acceptance criteria are read where they exist, and their absence is a reading rather than a crash
 - the method text is the authority: the line quotes a role file's run-hygiene section, and says so plainly when there is none
 - the advisory line is NOT a contract row — it is printed outside the row set and derives none of it
+- an undeclared lane in another checkout cannot move the graded runs, and in the checkout under test it is still refused
 - the recommendation names a seat strength and never a model, because this project passes no --model
 - every line of the advisory block carries its provenance, and the detector is not vacuous here either
 - the lightest ceremony tier is read off the table's first row rather than typed into the tool
