@@ -325,3 +325,255 @@ existed. `T-143-s1` owns the class and carries the dated corroboration;
 this lane holds no `tools/e2e` fence, so the repair is outside it.
 The other three suites are GREEN at this tip: parser 349, app 1131,
 rust 632.
+
+## VERDICT — APPROVED at `8def123`, 2026-09-02, blind verifier claude-opus-5@subagent
+
+Bench `/Users/ujju/Projects/nputer-V-T-229`, detached, cut at the lane's
+BASE `179a7cc` **alongside the lane rather than after it** (orchestrator
+5c). Two artefacts stamped before the diff existed and re-stamped when
+the contract was amended:
+
+    attack-V-T-229.md  f6748c8a4629abdb74c812e70ef4cd6d757e25bfed3f802f8d7c92605ac1ca51
+    ground-V-T-229.md  97c6b8caa7ea018c48aca5601f657cfe9cc95bf916e773716c856ede22695205
+
+**MY BLINDNESS WAS CLOCK-SHAPED, NOT DISCIPLINARY, AND THAT IS THE
+WEAKER OF THE TWO GUARANTEES TO CLAIM — SO I CLAIM IT PLAINLY.** When
+phase 1 was written the lane stood at `179a7cca5621`, its own base:
+there was no diff to decline to read. The amendment at `37ac590` (the
+fourth rider) reached me BY PATH ahead of the work, I read the
+committed object, diffed it against my base copy — one hunk, eleven
+lines appended at EOF, nothing above touched — and re-stamped. So 5c's
+claim held under test: the contract changed and the stamp still
+predates every byte of the implementation.
+
+### Every criterion, judged
+
+1. **Demonstrated failing, recorded not asserted** — MET, in three
+   sites, and the SHIPPED one is `tasks/TASK-FORMAT.md`'s guard-class
+   paragraph (`KIT_FILES` ships that file; of the role files it ships
+   only `planner.md`, so a rule living only in `verifier.md` would
+   never reach another project — the diff puts it in both).
+2. **The same-arrangement defect named, remedy is to evaluate where the
+   arrangement is absent** — MET, and stated OPERATIONALLY rather than
+   as a predicate: *a fresh clone, a planted fixture, a data mutant.*
+   Those are the three that actually worked, not a description of the
+   property.
+3. **A data mutant where the property lives in data** — MET, and
+   `T-221` now travels with the clause that came from it.
+4. **The rule does not refuse every body** — MET, and this is the
+   criterion I most expected to find degenerate. **I reproduced the
+   discrimination rather than reading it.** Blinding `MF-03`'s audit
+   (a one-line early return; landing read from `git diff`, not from a
+   substitution count):
+
+       ordinary   node tools/method-evals/run.mjs             -> exit 0, GREEN, blind
+       control    node tools/method-evals/run.mjs --selftest  -> exit 1, "MF-03: rewording
+                  the executor's `# Role:` heading was NOT detected — 0 finding(s)"
+
+   One mutation, two arms, opposite answers. The arm whose arming
+   differs is the only one that saw it. Restored, `9ddb25b8…` byte-identical.
+5. **The four cited by id with what made each degenerate** — MET, in
+   `roles/verifier.md` step 2b, each id carrying its mechanism in one
+   clause. **DELIBERATELY ABSENT FROM THE SHIPPED FILE, AND I AGREE
+   WITH THE CALL**: `TASK-FORMAT.md` is materialised verbatim into every
+   project, `docs/CONVENTIONS.md`'s first gotcha forbids nputer-specific
+   bytes there, and at base exactly ONE card id existed as a citation
+   anywhere in `method/` — `orchestrator.md`'s `(T-138)`, in a file that
+   does not ship. The shipped paragraph carries the MEASUREMENT and
+   names where the ids live. **I raised `docs-protocol.md` rule 5
+   (*one rule, one provenance citation, one worked example*) against the
+   four and cleared it**: the rule binds governing documents, `T-203` is
+   named as the worked example, `docs/CONVENTIONS.md` took exactly ONE
+   line, and *four in one sitting* is the measurement itself — citing
+   one would delete the finding.
+
+### The bump — all four obligations
+
+- **THREE STAMPS, ONE COMMIT**: `0c7227b` carries `kit.rs`,
+  `docs/CONVENTIONS.md` and `plan-interview.md` together. Checked from
+  the history, because a green tip proves this either way.
+- **THE PIN DRILLED ON BOTH ARMS, WHICH ARE ORDERED AND NOT
+  INTERCHANGEABLE.** Moving the plan-interview stamp alone:
+  `kit.rs:716`, *"plan-interview.md's Output heading no longer stamps
+  v0.1.9"*, **exit 101**. Moving the CONVENTIONS stamp alone:
+  `kit.rs:728`, *"docs/CONVENTIONS.md's first gotcha no longer says
+  'currently v0.1.9'"*, **exit 101**. Same body, different arm,
+  different message — so a const-only bump reds on the first and never
+  reaches the second, exactly as CONVENTIONS says. Both restored by
+  hash.
+- **CHANGELOG**: one line — date, card, theme, *"itemised on T-229's
+  card"* — in the shape of the v0.1.8 entry above it. Not itemised.
+- **THE FOURTH OBLIGATION, WHICH IS WHERE I EXPECTED THIS CARD TO
+  COMMIT ITS OWN DEFECT.** `--bump` exits **3**, `Runner: NONE`, and
+  `0c7227b`'s message carries that block verbatim including its own
+  sentence that an absent result and a skipped one read the same. The
+  replay runner WAS driven and is recorded as *"1.00 BY CONSTRUCTION …
+  a path exercise, never as a measurement"*, with `T-229-s3` routing the
+  real gap. **A replayed 1.00 reported as a rate would have been this
+  card's own defect inside its own bump commit. It was not done.**
+- **VERSION CENSUS AT THE TIP**: the three pinned places moved; the two
+  references that CLAIM the current version and are now stale —
+  `docs/ARCHITECTURE.md:28` and `docs/architecture/components/C-01-method.md:9`
+  — are both OUT OF FENCE and both routed (`T-229-s2`). Historical
+  references (v0.1.3/4/5/7) and parser fixtures correctly untouched: no
+  churn.
+
+### The four riders
+
+- **T-167-s11** — conjunction, sha256 leading, and the WHY kept (the
+  index write that makes a rangeless diff compare the file against the
+  mutation's own source). Sweep: I re-ran it independently over
+  `method/` and confirm **exactly one site existed** and it is the one
+  fixed; no second either/or in any role file or `lane-protocol.md`.
+- **T-189-s2 — THE RIDER WAS UNPERFORMABLE AS WRITTEN AND THE LANE
+  MEASURED RATHER THAN OBEYED. I REPRODUCED IT.** Deleting the number
+  from `orchestrator.md` reds `app/test/select-board.test.ts > the
+  ceiling is a named constant with its own assertion (criterion 5) > and
+  it matches the LIVE orchestrator.md` — **1 failed / 94 passed** at my
+  own bench. A live checker regexes that line and joins it to
+  `CONCURRENCY_CEILING`; the repair is out of fence, routed as
+  `T-229-s4`. Home declared in TASK-FORMAT with the WHY, orchestrator
+  carrying an explicit citation and the number, and both files
+  disclosing the duplicate as one fact CHECKED twice. **The rider's own
+  premise was decided by a tree nobody had asked — which is this card's
+  subject, one level up.**
+- **Room item 8** — landed as a writing discipline, no field, no status.
+- **T-230-s1 (amended in flight)** — landed, and it is the paragraph I
+  most expected to be wrong. **I predicted it would state the marker's
+  visibility by analogy to `PREFLIGHT RULING` and be wrong in both
+  directions. THAT PREDICTION IS FALSIFIED.** Driven through the
+  exported regex at the tip:
+
+       plain / bullet / bullet+emphasis / 3-space indent -> CLAIM
+       4-space indent / backticked mid-sentence         -> not a claim, reported loose
+
+  The paragraph says a bullet and emphasis are fine (the regex allows
+  them; the sibling marker does not), says a fenced or indented block
+  is an example, says an unseen sighting is REPORTED never refused on,
+  and names no paths. **Its own example is indented four spaces and the
+  text says *"including the one above"*** — so the documentation cannot
+  be copied into a live claim in any project the kit creates.
+
+### Drills, security, gates — measured at `8def123` in this bench
+
+Every drill re-planted here, each landing read from `git diff`, each
+restoration proved by sha256 against `git show HEAD:<path>`:
+
+| drill | result | restored |
+|---|---|---|
+| plan-interview stamp alone | `kit.rs:716` panic, exit **101** | `c2e6d773…` |
+| CONVENTIONS stamp alone | `kit.rs:728` panic, exit **101** | `c84bea59…` |
+| dangling `roles/verifier.md` pointer | **MF-04** by name, exit 1 | `e48ffb2d…` |
+| blinding MF-03's audit | ordinary **0** / control **1** | `9ddb25b8…` |
+| the ceiling number deleted | `select-board.test.ts` 1 failed / 94 passed | `030e0343…` |
+| **the whole new rule deleted from the SHIPPED file** | **NOTHING REDS** — model-free 0, selftest 0, `cargo --lib` **0** | `260b6bb1…` |
+
+**That last row is the honest limit and the lane disclosed it first**
+(`T-229-s5`, with a counter-argument better than the one I brought: an
+eval that greps a sentence pins the WORDS, which is `SHAPE EIGHT`).
+I extend it by one measurement: the SHIPPED-BYTES cargo pin does not
+protect the rule either — `include_str!` moves with the file, so the
+byte pin and the tested effect are different claims, exactly as
+CONVENTIONS says.
+
+**SECURITY SWEEP — clean, and not a formality here because the fence's
+third file is Rust.** `KIT_FILES` is byte-identical base to tip (14
+entries): nothing new is compiled in, no new `rel:` path, no traversal
+surface. The only Rust change in the diff is the const string. **No
+manifest, lockfile or dependency moved, and `tools/method-evals` was
+not touched at all**, so its zero-dependency bare-checkout property is
+structurally intact and no `NPUTER_EVAL_RUNNER` default was introduced.
+Token lint: selftest 0, gate **0 — clean, TOKEN 174 files, CONTROL 1140
+tracked text files**.
+
+**FENCE**: every written path is in the declared fence or under
+`docs/tasks/` (`alwaysWritable`). Nothing out of fence was edited — the
+three out-of-fence findings were routed, not taken.
+
+**GATES**: cargo **628 passed / 0 failed / 4 ignored, exit 0** (628 at
+base too — no drop) · app **1131/1131, exit 0** · parser **349/349,
+exit 0** · method-evals **exit 0 over 6**, `--selftest` **exit 0 over
+6** (count read, not just the exit) · docs gate **exit 1, FIRES**,
+naming four suites, frontmatter clean, budgets hold ·
+`capabilities:check` **CURRENT (45,968)** · `docs/CONVENTIONS.md`
+117,505 → **117,645 bytes** against warn 146,878 — the stamp and one
+changelog line, no re-inflation of what T-236 compacted.
+
+### THE E2E RED IS INHERITED, AND I PROVED IT AT THE BASE RATHER THAN ACCEPTING IT
+
+`npm test` from `tools/e2e/` on `NPUTER_E2E_PORT=25229`: **2 failed /
+546 passed, exit 1**. Both failures are `brief.mjs` exiting 1 over
+**seven** fence-disjointness findings, every one naming `T-225`,
+`T-230-s3` and `T-237` — **not one names `T-229`**. Independently:
+`brief.mjs --task T-133` at this tip exits 1 with zero findings naming
+this card.
+
+**Then the measurement that settles it.** I checked this bench out at
+the BASE `179a7cc` and ran the spec alone:
+
+    session-economics.spec.ts at 179a7cc  ->  2 failed / 8 passed, exit 1
+    the same two bodies, :179 and :365
+
+Before a byte of this work existed. The class is `T-143-s1`'s and the
+lane's corroboration onto it is correct and well-measured.
+
+**ONE CORRECTION TO THAT RECORD, WHICH IS THE ONLY FACTUAL ERROR I
+FOUND.** The notes name the pair as `session-economics.spec.ts:179` and
+`brief-flush.spec.ts:337`. In a run not racing four bench cuts, the
+DETERMINISTIC pair is `session-economics.spec.ts:179` **and `:365`**;
+`brief-flush.spec.ts:337` passed for me at this tip. The corroboration
+already says the pair *"fails DIFFERENTLY and only one of them is
+deterministic"* — it named the wrong second body. Worth a one-line fix
+at the merge; it changes no conclusion.
+
+### Note-level corrections, none blocking
+
+1. **The `36 KB` figure in the shipped summary paragraph understates.**
+   It is sourced (`T-216-s1` is 36,779 bytes, per the room), and it is
+   past-tense so it cannot go stale — but **89 live cards exceed it and
+   the largest is 145,078 bytes**. It reads as an outlier and is
+   mid-pack, which weakens a rule the tree supports far better.
+2. **"RECORD that demonstration" does not say what the record carries.**
+   The lane's own practice carried both readings (green at 0, red at 1);
+   the rule as written is satisfiable by a sentence asserting a
+   demonstration, which is the shape the criterion's second half exists
+   to refuse.
+3. **"named as a defect by whoever notices" names no artefact** — a
+   finding needs somewhere to land, and this project's frontmatter
+   rules make *where* load-bearing.
+4. **The CARD CLAIM paragraph names two refusal shapes** (quote absent
+   from the named file; source unreadable) **and not the third** — a
+   payload carrying no quoted run, which the preflight also answers
+   `UNCHECKABLE`.
+
+### Pre-committed predictions, resolved honestly — including the two I lost
+
+CONFIRMED: the ceiling had a THIRD site out of fence (routed);
+`--bump` exits 3 with `Runner: NONE`; the card's *"the role files
+SHIP"* premise is false for four of five (the lane reached the same
+conclusion independently and used it to place the ids); the docs gate
+fires naming four suites. **FALSIFIED: (a)** criterion 5 would be
+degenerate — the ids moved into a durable home with their mechanisms,
+so it is met non-degenerately; **(b)** the marker paragraph would
+inherit the sibling marker's visibility rule — the lane measured the
+regex instead and got the boundary right, example indentation
+included.
+
+**APPROVED.** The card asked for a rule against controls that cannot
+fail, and the strongest evidence for it is that its own control
+discriminates under a mutant I planted myself: one blinding, two arms,
+exit 0 and exit 1. The three genuine weaknesses — no mechanical reader
+for the rule, no real eval runner, a checker aimed at the cited copy
+rather than the declared home — were each found by the lane, measured,
+and routed rather than papered over.
+
+**GATES RE-RUN AT THE TIP THIS VERDICT ITSELF CREATED** (`cd43930`,
+verifier.md step 7 — appending a verdict is a write, and prose is a code
+input here): docs gate **frontmatter clean, budgets hold** · parser
+**349/349** · app **1131/1131** · the four card-reading e2e specs
+(`landing-gate`, `push-checks`, `shell-frame`, `window-contract`)
+**46/46, exit 0**. The verdict's own text was also driven through the
+marker reader before committing: **0 live CARD CLAIM markers**, one
+loose sighting at the card's amendment line — the backticked mention in
+the `Absorbs: T-230-s1` section, correctly reported and correctly not a
+claim.
