@@ -368,6 +368,23 @@ message: `.nputer/lane-fence.json` carries `"touchesLine": "touches:
 guard compares. The physical layer agrees: everything under
 `tools/method-evals` is `rw-` in this lane. I wrote neither half.
 
+### Routed, not built
+
+**`T-229-s9`** — `fixture-root.mjs`'s `head` and `restore()` have ZERO
+call sites, re-derived at `82ffc26` rather than transcribed from the
+dispatching seat's bench. `restore()` is a real guard (it re-reads `git
+status` and throws by name) whose failure path has never executed. The
+path is INSIDE this lane's widened fence, so this is not a fence
+refusal: removing or wiring an exported contract is a different decision
+from making the copy writable, and an executor does not expand its own
+card. Filed with placement fields and a one-level suffix id; nothing
+else was noticed and left unfiled.
+
+**Nothing was routed for the e2e red** — `guard-surface-behind` is
+already carded as T-238, which docs/STATE.md names as the card that
+moves those four bodies to a fixture vantage. A second card for it would
+be a duplicate.
+
 ### For the verifier
 
 - The subject is `tools/method-evals/lib/fixture-root.mjs`; the body
