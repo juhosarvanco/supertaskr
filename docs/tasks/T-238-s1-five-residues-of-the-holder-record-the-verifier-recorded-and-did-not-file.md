@@ -167,3 +167,26 @@ The control writes a holder record built from `processRow(process.pid)`
 — the playwright WORKER's own row — and passes `startedAt:
 live?.startedAt ?? ""`. If that `ps` read comes back empty or late under
 a loaded machine, the record
+
+## ATTRIBUTION handed to this lane, 2026-09-02 (T-216-s8's executor, observed, not changed)
+
+The holder control body (push-guard.spec.ts near line 2960 at 8b5000d;
+2718 at older refs) reds only under the FULL e2e suite on a loaded
+machine and never alone. Its recorded failure is the control's OR
+(`verdict === "block" || notices include SEAT`). Enumerating the states
+that satisfy neither: `held` blocks; `dead` and `unknown` each print a
+SEAT sentence; `mine` is unreachable (ppid ≠ pid). So the red can only
+come through a SILENT ALLOW — `not-a-repository`, `not-this-repository`,
+holder `vacant`, or holder `not-integration` — and every one of those is
+reached only through an errno-swallowing filesystem probe: `existsSync`
+(false for EMFILE/EACCES exactly as for ENOENT) at checkout-currency.mjs's
+readHolder first line (→ vacant) and at decideWith's indexer-manifest
+check (→ not-this-repository), plus bare try/catch around statSync and
+readFileSync in lane-fence.mjs's gitDirOf/headRefIn (→ not-integration).
+Under the descriptor pressure of six concurrent Playwright processes a
+probe answering "not here" about a file that is there becomes a verdict.
+The `ps` read is excluded: a failed ps yields dead or held, both of
+which satisfy the assertion. Cheapest first step: put `d.code` and the
+notices into the two assertions' messages so the next red attributes
+itself; the fix is that those probes distinguish ENOENT from every other
+errno, or the silent allows stop being silent.
