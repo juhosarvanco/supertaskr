@@ -681,10 +681,15 @@ export const GH_BIN = "gh";
  *   `gh run list --branch main --limit 10 --json …`  1026–1256 ms, median 1085
  *   `gh run view <id> --json jobs`                   1232–1499 ms, median 1390
  *
- * READ A SECOND TIME BY A SECOND SEAT, on the same machine at 07:03:05Z
- * on 763548c: 1150 ms and 1390 ms, 2540 ms for the pair run serially. Two
- * independent readings agreeing to within a tenth of a second is the
- * whole reason both are recorded rather than one.
+ * READ A SECOND TIME, on the same machine at 07:03:05Z on 763548c:
+ * 1150 ms and 1390 ms, 2540 ms for the pair run serially. **THAT SECOND
+ * READING IS THIS CARD'S VERIFIER'S OWN, taken in its phase-1 ground
+ * truth and relayed here, and it is ATTRIBUTED rather than counted as
+ * independent corroboration — the seat that measured it is the seat that
+ * judged this constant** (the verifier disclosed exactly that, and this
+ * sentence is the lane taking the disclosure up). It agrees with the
+ * seven-sample run above to within a tenth of a second, which is worth
+ * recording; it is not a second opinion.
  *
  * ── AND THE FIGURE THAT CANNOT BE READ IN CI, WITH THE REASON ───────
  * There is no CI number for either line above and there cannot be one.
@@ -1364,15 +1369,39 @@ export const PUSH_OPTS_WITH_VALUE = Object.freeze([
 ]);
 
 /**
- * Flags that make a push carry MORE REFS THAN IT NAMES.
+ * Flags that push MORE BRANCHES THAN THE LINE NAMES — **and HEAD's own is
+ * always one of them**, which is what makes them answerable.
  *
- * `--all` and `--mirror` push a set the command line does not spell, so
- * the target is not one branch and this guard will not pick one out of
- * it. `--delete` is here for the opposite reason: it names a branch to
- * REMOVE, and *"what did CI last say about a branch you are deleting"* is
- * not a question worth a round trip or a refusal.
+ * ── THIS LIST WAS ONE LIST AND THE VERIFIER MEASURED WHY IT CANNOT BE ─
+ * `--all` and `--mirror` sat beside `--delete` under one name, and every
+ * member went to `unresolved` — which returns before `gh` is asked
+ * anything. Measured through the WIRED hook from a `main` checkout with
+ * one `in_progress` run on `main`: `git push --mirror origin` and
+ * `git push origin --all` were REFUSED at the base and ALLOWED at this
+ * card's first tip. **A LIVE RUN WAS LET THROUGH WHERE THE PRE-CARD
+ * GUARD REFUSED IT**, which is this file's own disqualifying test, and
+ * this card had already written that test down one function below for
+ * the several-targets case and then failed to apply it to two of its own
+ * instances.
+ *
+ * The repair is the several-targets rule, unchanged: both flags push a
+ * set that CONTAINS HEAD's own branch — that is what they mean — so
+ * HEAD's is a REAL target, asking about it can only produce a TRUE
+ * refusal, and the rest are DISCLOSED. So these take the FALLBACK path.
  */
-export const PUSH_UNRESOLVING_FLAGS = Object.freeze(["--all", "--mirror", "--delete", "-d"]);
+export const PUSH_ALL_BRANCHES_FLAGS = Object.freeze(["--all", "--mirror"]);
+
+/**
+ * Flags whose push does not LAND on a branch at all.
+ *
+ * `--delete` is the whole list, and it is the opposite case to the one
+ * above rather than a member of it: a deletion names a branch to REMOVE,
+ * so *"what did CI last say about a branch you are deleting"* is not a
+ * question worth a round trip — and the pre-card guard REFUSING such a
+ * push on HEAD's live run was a FALSE refusal this card removes. Keeping
+ * the two cases in one list conflated a false refusal with a true one.
+ */
+export const PUSH_UNRESOLVING_FLAGS = Object.freeze(["--delete", "-d"]);
 
 /** The refspec words that mean "the branch HEAD is on" and not a name. */
 export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
@@ -1388,9 +1417,11 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  *                      pushes to the ref of that name. `others` is every
  *                      FURTHER target the same line names, which the
  *                      caller discloses rather than asks about.
- *   `{ fallback }`   — the text spells NO refspec, or spells `HEAD`. The
- *                      target is then the branch HEAD is on, which is
- *                      what this arm always used and is still right about.
+ *   `{ fallback, others }` — the text spells NO refspec, or spells
+ *                      `HEAD`, or spells `--all`/`--mirror`. The target is
+ *                      then the branch HEAD is on, which is what this arm
+ *                      always used and is still right about, and `others`
+ *                      names the branches it therefore did not ask about.
  *   `{ unresolved }` — the text spells something this cannot read to ANY
  *                      branch. An announced allow, never a refusal.
  *
@@ -1422,6 +1453,34 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  *     `"$(cat ref)"`, `main-*` — is a value only a shell knows.
  *     `UNRESOLVABLE_TOKEN_RE` catches it and the whole line becomes
  *     unresolved, the same treatment `cd "$LANE"` gets one function up.
+ *     **AND THIS ONE IS NOT "THE PRE-GUARD STATE", WHICH THE FIRST DRAFT
+ *     OF THIS BLOCK CLAIMED AND A VERIFIER MEASURED FALSE.** The state
+ *     immediately before this card asked HEAD's branch UNCONDITIONALLY,
+ *     so `git push origin $BRANCH` and `git push origin "main"` were
+ *     REFUSED on a live run at the base and are ALLOWED here. That is a
+ *     trade TAKEN, not a hole inherited: the text names a target that is
+ *     not HEAD's, so the base's refusal could have been about a branch
+ *     the push never touches, and this file may not turn a doubt into a
+ *     verdict. It is the one limit on this list that costs a refusal the
+ *     old code made, and it is said in those words rather than filed
+ *     under a phrase that made it sound free.
+ *   A `--repo=<value>` SUPPLIES THE REPOSITORY AND THIS SCANNER STILL
+ *     EATS A POSITIONAL FOR ONE. `git push --repo=origin HEAD:main`
+ *     therefore reads its only refspec as the repository and falls back
+ *     to HEAD's branch. A FALSE NEGATIVE and never a false refusal, and
+ *     it is declared here rather than repaired in this pass because the
+ *     verifier filed it as non-blocking; the repair is `T-237-s9`.
+ *   A DESTINATION BEGINNING WITH `-` REACHES `gh` AS `--branch`'s VALUE.
+ *     `git push origin HEAD:--version` is read as a branch called
+ *     `--version`, and `ghRunListArgv` puts it in the argv array where
+ *     `gh`'s own parser will read it as an option. It is BOUNDED — there
+ *     is no shell anywhere in this arm, nothing is executed, and `gh`
+ *     answers non-zero, which `classifyGhFailure` turns into an announced
+ *     ALLOW — and such a refspec is not a legal ref for git either, so
+ *     the push it belongs to does not happen and no run is cancelled. It
+ *     is nevertheless the class `pathsSince` shape-checks `headSha`
+ *     against one arm over, which is why it is named here and carried by
+ *     `T-237-s9` rather than left for somebody to find.
  *   THE CONFIGURED TARGETS ARE NOT TEXT AND ARE NOT READ. `push.default`,
  *     `remote.<name>.push` and a configured upstream can all send a bare
  *     `git push` to a branch of another name. Reading them would mean
@@ -1440,14 +1499,22 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  *     which the acknowledgement clears in one word.
  *
  * NONE OF THESE IS A FALSE REFUSAL BY ITSELF, which is the property this
- * file's every scanner is bounded by.
+ * file's every scanner is bounded by. **THE PROPERTY THEY DO NOT ALL
+ * HAVE IS "NEVER WEAKER THAN WHAT THIS CARD REPLACED", and that is the
+ * distinction this block now draws**: the plain-`<name>` and
+ * `--repo=<value>` limits are free, the literal-refspec limit costs a
+ * refusal the base made, and `--all`/`--mirror` used to cost one until a
+ * verifier measured it — they take the FALLBACK path now, for the reason
+ * `PUSH_ALL_BRANCHES_FLAGS` carries.
  *
  * @param {string} command
- * @returns {{ branch: string, others: string[] } | { fallback: string } | { unresolved: string }}
+ * @returns {{ branch: string, others: string[] } | { fallback: string, others: string[] } | { unresolved: string }}
  */
 export function pushTargetBranch(command) {
   /** @type {Set<string>} */
   const targets = new Set();
+  /** @type {Set<string>} */
+  const unnamed = new Set();
   let sawHeadTarget = false;
   for (const inv of gitInvocations(command)) {
     if (inv.subcommand !== "push") continue;
@@ -1456,14 +1523,20 @@ export function pushTargetBranch(command) {
     if ("unresolved" in read) return { unresolved: read.unresolved };
     if (read.head) sawHeadTarget = true;
     for (const branch of read.branches) targets.add(branch);
+    for (const extra of read.more) unnamed.add(extra);
   }
   const named = [...targets];
-  if (named.length === 0) return { fallback: "no refspec on this line names a target branch" };
+  if (named.length === 0) {
+    return {
+      fallback: "no refspec on this line names a target branch",
+      others: [...unnamed],
+    };
+  }
   return {
     branch: /** @type {string} */ (named[0]),
     // `HEAD` is spelled here as the WORD rather than resolved, because
     // this function reads the command line and never a checkout.
-    others: [...named.slice(1), ...(sawHeadTarget ? ["HEAD"] : [])],
+    others: [...named.slice(1), ...(sawHeadTarget ? ["HEAD"] : []), ...unnamed],
   };
 }
 
@@ -1475,16 +1548,26 @@ export function pushTargetBranch(command) {
  * positional is the repository and the rest are refspecs.
  *
  * @param {string[]} tokens
- * @returns {{ branches: string[], head: boolean } | { unresolved: string }}
+ * @returns {{ branches: string[], head: boolean, more: string[] } | { unresolved: string }}
  */
 function refspecTargets(tokens) {
   /** @type {string[]} */
   const positionals = [];
+  /** Targets this push carries that the LINE does not name. @type {string[]} */
+  const more = [];
+  let all = false;
   for (let i = 0; i < tokens.length; i += 1) {
     const tok = /** @type {string} */ (tokens[i]);
     if (tok.startsWith("-") && tok !== "-") {
       if (PUSH_UNRESOLVING_FLAGS.includes(tok)) {
-        return { unresolved: `\`${tok}\` does not name ONE target branch this guard can ask about` };
+        return { unresolved: `\`${tok}\` does not land on a branch for this guard to ask about` };
+      }
+      if (PUSH_ALL_BRANCHES_FLAGS.includes(tok)) {
+        // HEAD's OWN BRANCH IS IN THAT SET, so the question is answerable
+        // and the answer can only be a TRUE refusal. The branches this
+        // line does not name are disclosed rather than asked about.
+        all = true;
+        more.push(`every other branch \`${tok}\` pushes`);
       }
       if (PUSH_OPTS_WITH_VALUE.includes(tok)) i += 1;
       continue;
@@ -1494,7 +1577,7 @@ function refspecTargets(tokens) {
   // The first positional is the REPOSITORY, and it is dropped rather than
   // read: a remote's name, a URL or a path says nothing about a branch.
   const refspecs = positionals.slice(1);
-  if (refspecs.length === 0) return { branches: [], head: true };
+  if (refspecs.length === 0) return { branches: [], head: true, more };
 
   /** @type {string[]} */
   const branches = [];
@@ -1545,10 +1628,10 @@ function refspecTargets(tokens) {
     }
     branches.push(dst);
   }
-  if (branches.length === 0 && !head) {
+  if (branches.length === 0 && !head && !all) {
     return { unresolved: "this push names refs, and none of them is a branch" };
   }
-  return { branches, head };
+  return { branches, head: head || all, more };
 }
 
 /**
@@ -2392,6 +2475,15 @@ export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
     return undefined;
   } else {
     branch = headBranch;
+    if (target.others.length > 0) {
+      // `--all` and `--mirror` reach here: HEAD's branch is a real target
+      // and is asked about, and the set the line did not spell is said.
+      notices.push(
+        `CI WAS ASKED ABOUT \`${branch}\` AND NOT ABOUT ${target.others.join(", ")}: this push ` +
+          "carries more branches than the line names and this arm asks about one, so a run in " +
+          "flight for the others is UNVERIFIED.",
+      );
+    }
   }
 
   const argv = ghRunListArgv(branch);

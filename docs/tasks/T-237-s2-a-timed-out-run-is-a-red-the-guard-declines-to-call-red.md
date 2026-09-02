@@ -342,3 +342,67 @@ every path above: `gate-run.mjs parser` 0 (363 bodies), `app` 0 (1141),
 `e2e` 0 (605) and `rust` 0 (639 / 18 targets), each keyed to the lane's
 own tip. It is still the integrator's to run at the merge, against the
 merge's own tree.
+
+## Fix pass — 2026-09-02, executor claude-opus-5@subagent @T-237-s2
+
+The verifier's verdict (`V-T-237-s2`, on the bench card at `d8db32f`)
+APPROVED the absorbed T-238-s2 as separable and REJECTED the three
+residuals on ONE defect, in its own words:
+
+> **THE DEFECT: `--all` AND `--mirror` MAKE THIS GUARD WEAKER THAN THE
+> ONE IT REPLACES.** `PUSH_UNRESOLVING_FLAGS` sends them to `unresolved`,
+> and `ciVerdict` then returns without asking `gh` anything — so a push
+> that lands on `main` while a run is in flight on `main` is no longer
+> refused.
+
+and its ruling on the remedy, also in its own words:
+
+> Both flags push a set that INCLUDES HEAD's own branch — that is what
+> they mean — so the run really is cancelled and the refusal the base
+> gave was TRUE. This is the lane's own disqualifying rule, left
+> unapplied to two of its instances.
+> `--delete`/`-d` are correctly on that list and must stay: a deletion
+> does not land on HEAD's branch, and the base refusing it was a FALSE
+> refusal this lane removes. The list conflates the two.
+
+**THE REPAIR IS THE ONE IT PRESCRIBED.** The list is split:
+`PUSH_ALL_BRANCHES_FLAGS` (`--all`, `--mirror`) takes the FALLBACK path —
+HEAD's branch is asked about, and the branches the line does not name are
+DISCLOSED through the same notice `git push origin main dev` already
+earns — while `PUSH_UNRESOLVING_FLAGS` keeps `--delete`/`-d` alone, with
+each list's docblock carrying the half of the argument that is its own.
+
+**RED BEFORE, GREEN AFTER, ONE SIDE ONLY.** A new body drives
+`git push --mirror origin` and `git push origin --all` through the WIRED
+hook against an `in_progress` run for `main`, sees exit 2 and the run id,
+and asserts nothing reached the remote; its control is the same two
+spellings over a COMPLETED green run, which push; and its third half
+shows a `--delete` asking nothing and spending no round trip. With the
+repair reverted (M6: `PUSH_UNRESOLVING_FLAGS` back to the four-member
+list, read back with `git diff --no-index` against the pre-mutation copy)
+that body and the reader's census body BOTH red — 2 failed / 83 passed.
+With the repair in place: **85 passed**. Mutated sha256
+`b8e0bbb60816bc37e2ec0ac6489d04b2648beed9719f14f5e7838fd02883a3aa`;
+restored `a4cc5d6ceb666b62f564868fc7f30aca1e9315629db14cad1f3857ef87253ee8`
+with an empty per-path diff beside it.
+
+**THE VERIFIER'S FINDING 1 IS CORRECTED IN THE HEADER, AS IT ASKED.** The
+limits block called `git push origin $BRANCH` and `git push origin "main"`
+*"the pre-guard state"*, and that is false: the state immediately before
+this card asked HEAD's branch unconditionally and REFUSED both. The block
+now says so in those words, names it as a trade taken rather than a hole
+inherited, and closes with the distinction the whole list was missing —
+free limits, limits that cost a refusal the base made, and the two that
+used to cost one until a verifier measured it.
+
+**FINDINGS 2 AND 3 ARE DECLARED AND ROUTED, NOT FOLDED IN.** The
+`--repo=<value>` positional and the `-`-leading destination are named in
+the limits block with their bounds, and `T-237-s9` carries the repairs. A
+fix pass that widens its own diff is a fix pass the verifier judges twice.
+
+**AND THE DISCLOSURE THE VERIFIER OWED IS TAKEN UP.** `GH_MEASURED_MS`'s
+second reading (1150 ms / 1390 ms at 07:03:05Z) is the VERIFIER'S OWN
+phase-1 ground truth relayed into this lane. It agrees with this lane's
+independent seven-sample run and it is NOT independent corroboration,
+because the seat that measured it is the seat that judged the constant.
+The comment now attributes it.

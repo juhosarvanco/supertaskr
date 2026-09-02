@@ -33,6 +33,7 @@ import {
   INDEX_CRATE_MANIFEST_REL_PATH,
   NON_PUSHING_FLAGS,
   NON_VERDICT_CONCLUSIONS,
+  PUSH_ALL_BRANCHES_FLAGS,
   PUSH_OPTS_WITH_VALUE,
   PUSH_UNRESOLVING_FLAGS,
   RUN_LIST_JSON_FIELDS,
@@ -3255,8 +3256,23 @@ test("the branch a push LANDS on is read off the refspec, and doubt is declared"
   ]) {
     expect("unresolved" in pushTargetBranch(command), command).toBe(true);
   }
+  // A DELETION LANDS ON NO BRANCH, so it is unresolved and this arm asks
+  // nothing — and the base REFUSING such a push on HEAD's live run was a
+  // false refusal this card removes.
   for (const flag of PUSH_UNRESOLVING_FLAGS) {
     expect("unresolved" in pushTargetBranch(`git push ${flag} origin main`), flag).toBe(true);
+  }
+  expect(PUSH_UNRESOLVING_FLAGS, "`--all` pushes HEAD's branch, so it is answerable").not.toContain(
+    "--all",
+  );
+  expect(PUSH_UNRESOLVING_FLAGS).not.toContain("--mirror");
+  // AND A FLAG THAT PUSHES EVERY BRANCH PUSHES HEAD'S, so the target is
+  // HEAD's own and the rest are disclosed — the several-targets rule, on
+  // a set the line does not spell.
+  for (const flag of PUSH_ALL_BRANCHES_FLAGS) {
+    const read = pushTargetBranch(`git push ${flag} origin`);
+    expect("fallback" in read, flag).toBe(true);
+    expect("fallback" in read ? read.others.join(" ") : "", flag).toContain(flag);
   }
 
   // SEVERAL TARGETS ARE NOT A DOUBT — every name is a real target, so
@@ -3368,4 +3384,58 @@ test("a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkou
   const onMain = pushUnderHarness(fx, "other-live");
   expect(onMain.status, "the same record on the integration branch refuses").toBe(2);
   expect(onMain.stderr).toContain("HELD BY ANOTHER LIVE SESSION");
+});
+
+test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too", () => {
+  // THE FIX PASS. A verifier measured this against the base: from a
+  // `main` checkout with one `in_progress` run on `main`,
+  // `git push --mirror origin` and `git push origin --all` were REFUSED
+  // at 763548c and ALLOWED at this card's first tip — a live run let
+  // through where the PRE-CARD guard refused it, which is this file's own
+  // disqualifying test. The first spelling put both flags on the
+  // "unresolved" list beside `--delete`, and `ciVerdict` returns from
+  // there without asking `gh` anything.
+  //
+  // Both flags push a set that CONTAINS HEAD's own branch — that is what
+  // they mean — so HEAD's is a REAL target and a refusal keyed to it can
+  // only be TRUE.
+  const live = listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 9301 })]);
+  for (const command of ["git push --mirror origin", "git push origin --all"]) {
+    const fx = fixture(`s2-fix-${command.includes("mirror") ? "mirror" : "all"}`, CHECK_EXIT.CURRENT, CURRENT_REPORT);
+    armGh(fx, { listByBranch: { main: live }, list: { stdout: "[]" } });
+    const before = remoteTip(fx);
+    const { status, stderr } = runWiredHook(fx, command);
+    expect(status, `${command} must be refused while a run for its branch is live`).toBe(2);
+    expect(stderr).toContain("PUSH REFUSED");
+    expect(stderr, "naming the run it would cancel").toContain("9301");
+    expect(stderr, "and the branch it asked about").toContain("`main`");
+    // AND THE SET IT DID NOT ASK ABOUT IS DISCLOSED, because HEAD's is
+    // one target of many here and the arm asks about one.
+    expect(stderr, "the branches this line does not name are said").toContain("CI WAS ASKED ABOUT");
+    expect(remoteTip(fx), "and nothing reached the remote").toBe(before);
+  }
+
+  // THE CONTROL, in the same fixture shape: the same two spellings with
+  // the run COMPLETED push, so the refusal above is keyed to the run and
+  // not to the flag.
+  for (const command of ["git push --mirror origin", "git push origin --all"]) {
+    const fx = fixture(`s2-fix-control-${command.includes("mirror") ? "mirror" : "all"}`, CHECK_EXIT.CURRENT, CURRENT_REPORT);
+    armGh(fx, {
+      listByBranch: {
+        main: listOf([runRow({ status: COMPLETED_RUN_STATUS, conclusion: "success", databaseId: 9301 })]),
+      },
+      list: { stdout: "[]" },
+    });
+    expect(runWiredHook(fx, command).status, `${command} over a green CI must push`).toBe(0);
+  }
+
+  // AND THE OTHER HALF OF THE SPLIT: a DELETION still asks nothing, and
+  // that is the case the base got WRONG — it refused a push that lands on
+  // no branch at all.
+  const del = fixture("s2-fix-delete", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(del, { listByBranch: { main: live }, list: { stdout: "[]" } });
+  const deleted = runWiredHook(del, "git push --delete origin some-old-branch");
+  expect(deleted.status, "a deletion lands on no branch, so there is nothing to refuse").toBe(0);
+  expect(deleted.stderr).toContain("CI WAS NOT ASKED");
+  expect(ghCalls(del), "and no round trip was spent").toEqual([]);
 });
