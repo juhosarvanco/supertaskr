@@ -183,7 +183,7 @@ this file is a project's actual name.
    **STANDING, NOT THE SEAT: THE SMALLEST TIER'S EXCEPTION AND THE
    CONCURRENT CEILING WERE WRITTEN WITHOUT EACH OTHER, AND THE
    RECONCILIATION IS THIS RULE'S OWN DISCRIMINATOR TURNED ON THIS RULE.**
-   At roles/orchestrator.md's ceiling of 3–5 concurrent lanes, the
+   At tasks/TASK-FORMAT.md's ceiling of 3–5 concurrent lanes, the
    exception above tells up to five executors to merge into one branch
    and to regenerate one byte-banded state document, each in the same
    commit as its own record (docs-protocol.md rule 4). That reads as two

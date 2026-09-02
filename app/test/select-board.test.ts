@@ -1209,21 +1209,35 @@ describe("the ceiling is a named constant with its own assertion (criterion 5)",
     expect(CONCURRENCY_CEILING.max).toBe(5);
   });
 
-  it("and it matches the LIVE orchestrator.md, which is the source it claims", () => {
-    // The constant and the method file are two copies of one bound; this
-    // body is the only thing making them one fact — the shape
+  it("and it matches the LIVE method — the HOME in tasks/TASK-FORMAT.md AND orchestrator.md's citation of it", () => {
+    // THREE COPIES OF ONE BOUND, AND THIS BODY IS THE ONLY THING MAKING
+    // THEM ONE FACT. The constant above; the ceiling's declared HOME in
+    // `method/tasks/TASK-FORMAT.md` ("THIS LINE IS THE VALUE'S HOME",
+    // which also carries the REASON); and `method/roles/orchestrator.md`'s
+    // dispatch step, which CITES that home and repeats the number because
+    // a project's code may pin the bound against ITS spelling. Reading
+    // only the citation is how the declared home became the copy nothing
+    // checked (T-229 moved the home, T-229-s4 aimed the checker at it),
+    // and TASK-FORMAT's own guardrail says a project adopting this aims
+    // its checker at BOTH copies. Both are compared to
+    // `CONCURRENCY_CEILING` rather than to a literal, so this body reds
+    // whenever EITHER file moves away from the code; the sibling body
+    // above is where the literal is pinned, because a test parametrised
+    // by the constant it checks cannot pin that constant. The shape
     // `snapshot_version_matches_the_live_method_stamps` uses one language
-    // over, for the same reason. NOTE FOR WHOEVER EDITS
-    // `method/roles/orchestrator.md`: the DOCS GATE's trigger is `docs/`
-    // and `method/` is not `docs/`, so the gate will not name this suite
-    // (T-132-s2's class). `app/test/genesis-derive.test.ts` already reads
+    // over, for the same reason. NOTE FOR WHOEVER EDITS EITHER METHOD
+    // FILE: the DOCS GATE's trigger is `docs/` and `method/` is not
+    // `docs/`, so the gate will not name this suite (T-132-s2's class).
+    // `app/test/genesis-derive.test.ts` already reads
     // `method/interview/plan-interview.md` under the same gap.
-    const m = /Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/.exec(
-      readRepo("method/roles/orchestrator.md"),
-    );
-    expect(m).not.toBeNull();
-    expect(Number(m?.[1])).toBe(3);
-    expect(Number(m?.[2])).toBe(5);
+    const CEILING = /Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/;
+    const copies = ["method/tasks/TASK-FORMAT.md", "method/roles/orchestrator.md"];
+    for (const rel of copies) {
+      const m = CEILING.exec(readRepo(rel));
+      expect(m, `${rel} states no "Ceiling: N–N concurrent"`).not.toBeNull();
+      expect(Number(m?.[1]), `${rel} ceiling min`).toBe(CONCURRENCY_CEILING.min);
+      expect(Number(m?.[2]), `${rel} ceiling max`).toBe(CONCURRENCY_CEILING.max);
+    }
   });
 
   it("at-ceiling and nothing-is-dispatchable are DIFFERENT SENTENCES", () => {
