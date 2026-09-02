@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-225-s12
 blocked_by: [T-239]
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-order.mjs, tools/e2e/tests/dispatch-order.spec.ts]
@@ -43,3 +43,7 @@ takes the arm under one pipe buffer without deciding what to leave out.
 
 **IT IS BLOCKED ON T-239 BY FENCE, NOT BY LOGIC** — `brief.mjs` and
 `dispatch-brief.mjs` are that lane's ground.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s12 merge
+
+The architect seat. The split the card itself preferred; needs brief.mjs's flag parsing, which T-239 holds and lands soon.

@@ -88,3 +88,35 @@ moving between the two runs (a worktree added or removed) before
 suspecting the flush."* The hazard is documented and unguarded — the
 comment tells the reader how to attribute the red after it has already
 cost them the
+
+## Absorbs: T-225-s18 (2026-09-02, at the T-225-s12 merge)
+
+Shrinking `--dispatch --full` past `--task <id> --preflight` REDS the margin guard's biggest-arm assertion, so one arm's fix is now fenced behind another arm's size
+
+**A GUARD THAT ANNOUNCES AN APPROACH HAS BECOME A FLOOR UNDER ONE ARM,
+AND NOTHING SAYS SO.** `brief-flush.spec.ts`'s margin guard closes with
+
+    expect(biggest.args.includes("--full")).toBe(true)
+
+reasoning that *"`--full` only ever ADDS to an answer, so if every
+announced view carried its `--full` twin the biggest arm measured would
+carry `--full` by construction"*. That reasoning is sound and the
+assertion is right. Its SIDE EFFECT is not announced anywhere: while
+`--task T-133 --preflight` is announced and its `--full` twin is not, any
+change that takes the biggest arm BELOW the preflight arm makes the
+preflight arm the biggest and reds this body — by a message about a
+missing twin, in a file the shrinking lane does not hold.
+
+**MEASURED, BOTH SIDES, AT `cde65b5` WITH EIGHTEEN WORKTREES AND FIVE
+LANES LIVE** (T-225-s12's lane, base and tip back to back, the guard's
+own `readViaFile` figures):
+
+    --dispatch --full          123,153 -> 99,943 bytes   (T-225-s12's fix)
+    --task T-133 --preflight    74,443 -> 74,443         (unchanged; renders no dispatch report)
+    --task T-133 --preflight --full  82,996 at the tip   (measured by hand; NOT announced)
+
+So the triage view has 25,500 bytes of room and no more. **T-225-s12
+stopped at 99,943 for this reason and said so** — the shape that takes it
+under one pipe buffer would have taken it under 74,443 first.
+
+**THE REMEDY IS O
