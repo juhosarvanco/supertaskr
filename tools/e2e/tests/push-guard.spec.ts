@@ -16,6 +16,7 @@ import {
   ANNOUNCED_ALLOW_CODES,
   ANNOUNCED_RED_CONCLUSIONS,
   CANCEL_CI_ENV,
+  CHEAP_CHECKS_EXIT,
   CHECK_ARGV,
   CHECK_DIR_REL_PATH,
   CHECK_EXIT,
@@ -74,7 +75,7 @@ import {
   headTree,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
-import { processRow, writeHolder } from "../scripts/checkout-currency.mjs";
+import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
@@ -2810,6 +2811,40 @@ test("a holder record this guard cannot READ is announced and allowed, never ref
   );
 });
 
+/**
+ * `decide` with every runner ARMED BY THIS FILE (T-238-s2).
+ *
+ * ── THE BODY BELOW WAS GREEN HERE AND RED ON THE RUNNER ─────────────
+ * The holder arm's answer depends on the CALLING PROCESS'S ANCESTRY —
+ * the nearest ancestor that is the harness — and a Playwright worker on a
+ * GitHub runner has none (`node ← bash ← Runner`). So a body that armed
+ * the arm through the REAL process tree measured this machine rather than
+ * the guard: green twenty-for-twenty here, and on 2026-09-02 it reddened
+ * main from the one place nobody was watching.
+ *
+ * THE REPAIR IS A SEAM, NOT A DERIVATION. `decide` takes its holder
+ * runner as a parameter for exactly the reason it takes `check`, `cheap`
+ * and `gh`, and this helper supplies all four — so the state under test
+ * is composed here and the body discriminates on every machine. It is a
+ * parameter and never an environment override: nothing outside this
+ * process can reach it, so it can never be used to silence the guard.
+ *
+ * @param identity what this session's identity DERIVES to, or why it does not.
+ */
+function decideWithSeat(
+  cwd: string,
+  command: string,
+  identity: { ok: true; identity: { pid: number; startedAt: string; program: string } } | { ok: false; why: string },
+) {
+  return decide(
+    { toolName: "Bash", toolInput: { command }, cwd },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    () => ({ status: CHEAP_CHECKS_EXIT.CLEAN, stdout: "", stderr: "" }),
+    NO_RUNS,
+    (options) => holderVerdict({ ...options, identity }),
+  );
+}
+
 test("a lane holds no seat, so a holder record in one refuses nothing", () => {
   // THE FIFTH ACCEPTANCE CRITERION, from the direction that could do
   // harm: a guard that read a stray record in a LANE would refuse every
@@ -2821,12 +2856,25 @@ test("a lane holds no seat, so a holder record in one refuses nothing", () => {
     fence: ["docs"],
   });
   const live = processRow(process.pid);
-  writeHolder(fx.root, {
+  const record = {
     pid: process.pid,
     startedAt: live?.startedAt ?? "",
     program: "/x/claude",
-  });
-  const d = decide({ toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root });
+  };
+  writeHolder(fx.root, record);
+  // A SESSION THAT IS NOT THE HOLDER, composed here rather than borrowed
+  // from this machine's ancestry: a pid that is alive and is not the
+  // record's. `process.ppid` is this worker's parent, which is running
+  // for as long as this body is.
+  const someoneElse = {
+    ok: true as const,
+    identity: {
+      pid: process.ppid,
+      startedAt: processRow(process.ppid)?.startedAt ?? "",
+      program: "/x/claude",
+    },
+  };
+  const d = decideWithSeat(fx.root, "git push", someoneElse);
   expect(d.verdict, "a lane does not hold a seat").toBe("allow");
   expect(d.code, "and the refusal code never appears").not.toBe("holder-live-elsewhere");
   expect((d.notices ?? []).join("\n"), "nor is anything said about a seat").not.toContain(
@@ -2834,18 +2882,60 @@ test("a lane holds no seat, so a holder record in one refuses nothing", () => {
   );
 
   // THE POSITIVE CONTROL: the very same record, in the very same shape,
-  // on the integration branch — which is the one place a seat exists.
+  // and the very same composed session — on the integration branch, which
+  // is the one place a seat exists.
   const onMain = fixture("holder-lane-control", CHECK_EXIT.CURRENT, CURRENT_REPORT);
-  writeHolder(onMain.root, {
-    pid: process.pid,
-    startedAt: live?.startedAt ?? "",
-    program: "/x/claude",
-  });
-  const control = decide({ toolName: "Bash", toolInput: { command: "git push" }, cwd: onMain.root });
+  writeHolder(onMain.root, record);
+  const control = decideWithSeat(onMain.root, "git push", someoneElse);
   expect(
     control.verdict === "block" || (control.notices ?? []).join("").includes("SEAT"),
     "the same record on the integration branch is not ignored",
   ).toBe(true);
+  expect(control.code, "and it is the collision, named").toBe("holder-live-elsewhere");
+});
+
+test("a session whose own identity will not derive is ANNOUNCED and allowed — the runner's case", () => {
+  // T-238-s2, AND IT IS THE CASE THAT REDDENED MAIN. On a CI runner this
+  // hook's whole ancestry is `node ← bash ← Runner`, the identity derives
+  // to nothing, and the arm cannot tell the recorded holder from this
+  // session. It ANNOUNCES and ALLOWS — the disclosed fail-open shape the
+  // CI arm already uses for an unreachable `gh` — because an inability is
+  // not a verdict, and a runner never holds this project's seat.
+  const fx = fixture("holder-underivable", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const live = processRow(process.pid);
+  const record = { pid: process.pid, startedAt: live?.startedAt ?? "", program: "/x/claude" };
+  writeHolder(fx.root, record);
+
+  const blind = decideWithSeat(fx.root, "git push", {
+    ok: false,
+    why: "no harness ancestor: node <- bash <- Runner",
+  });
+  expect(blind.verdict, "an inability may not become a verdict").toBe("allow");
+  expect(blind.code, "and the refusal is not reached").not.toBe("holder-live-elsewhere");
+  const said = (blind.notices ?? []).join("\n");
+  expect(said, "but it is ANNOUNCED, never silent").toContain(
+    "WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED",
+  );
+  expect(said, "naming the case, so a reader on a runner is not left guessing").toContain(
+    "CI runner",
+  );
+  expect(said, "and quoting the derivation's own reason").toContain("no harness ancestor");
+
+  // THE POSITIVE CONTROL, one argument away: the SAME record, the SAME
+  // checkout, and a session whose identity DOES derive and is not the
+  // holder's. Without it every assertion above is satisfied by an arm
+  // that never refuses anything.
+  const seeing = decideWithSeat(fx.root, "git push", {
+    ok: true,
+    identity: {
+      pid: process.ppid,
+      startedAt: processRow(process.ppid)?.startedAt ?? "",
+      program: "/x/claude",
+    },
+  });
+  expect(seeing.verdict, "the derivable case refuses a live OTHER holder").toBe("block");
+  expect(seeing.code).toBe("holder-live-elsewhere");
+  expect(seeing.reason).toContain("HELD BY ANOTHER LIVE SESSION");
 });
 
 test("WITH the holder arm, a push from a checkout another session holds never reaches the remote", () => {

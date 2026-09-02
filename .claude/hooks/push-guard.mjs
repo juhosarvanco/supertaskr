@@ -303,6 +303,28 @@
  * measurement that a harness process is both STABLE across tool calls and
  * DISTINGUISHABLE between concurrent sessions on this machine.
  *
+ * ── AND THE MACHINE WHERE IT DOES NOT DERIVE IS NAMED HERE (T-238-s2) ─
+ * **A CI RUNNER.** The identity is the nearest ancestor process that IS
+ * the harness, and on a GitHub runner this file's whole ancestry is
+ * `node ← bash ← Runner` — no harness anywhere in it. So on a runner the
+ * derivation answers NOTHING, `holderVerdict` returns
+ * `holder-identity-underivable`, and this arm ANNOUNCES that the seat
+ * could not be checked here and ALLOWS: the disclosed fail-open shape the
+ * CI arm already uses for an unreachable `gh`, and the right answer,
+ * because a runner never holds this project's integration seat.
+ *
+ * **THE COST IS THAT THE ARM IS INERT THERE, AND THAT IS SAID RATHER
+ * THAN DISCOVERED — IT WAS DISCOVERED.** T-238 landed on 2026-09-01 with
+ * a body that armed a holder record and asserted the arm READ it, and the
+ * arm's answer depends on the CALLING PROCESS'S ANCESTRY rather than on
+ * anything in the tree — so the body was green twenty-for-twenty on this
+ * machine and red on the runner, and it reddened main. The repair is not
+ * to make a runner derivable: it is that no body may arm this arm through
+ * the REAL process tree. `decide` takes the holder runner as a parameter
+ * for exactly the reason it takes `check`, `cheap` and `gh`, and the
+ * bodies that need a live seat build one — a symlink to node named the
+ * way the harness is — instead of borrowing the machine's.
+ *
  * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
  * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
  * worktree ninety seconds old has no `node_modules` anywhere in it. The
@@ -2733,16 +2755,35 @@ export function laneCanRegenerate(manifest) {
  * notice rather than a return, so a red CI reaches the seat whatever the
  * graph then says — the graph is about this machine and CI is not.
  *
+ * ── AND THE HOLDER ARM IS INJECTABLE, FOR THE REASON THE OTHER THREE
+ * ARE (T-238-s2). `check`, `cheap` and `gh` are parameters so a body can
+ * compose the state it is testing on ANY machine rather than on the one
+ * it happens to run on. The holder arm was not, and it is the one arm
+ * whose answer depends on the calling process's ANCESTRY — so a body
+ * that armed it through the real process tree passed on a developer's
+ * laptop and could not fire at all on a CI runner, which is exactly what
+ * reddened main on 2026-09-02. The default is unchanged and there is no
+ * environment override: production always runs `holderVerdict`, and the
+ * seam is a parameter a caller supplies, which nothing outside this
+ * process can reach.
+ *
  * @param {Request} request
  * @param {(root: string) => CheckResult} [check]
  * @param {(root: string) => CheckResult} [cheap]
  * @param {(root: string, argv: string[]) => CheckResult} [gh]
+ * @param {typeof holderVerdict} [holder]
  * @returns {Decision}
  */
-export function decide(request, check = runCheck, cheap = runCheapChecks, gh = runGh) {
+export function decide(
+  request,
+  check = runCheck,
+  cheap = runCheapChecks,
+  gh = runGh,
+  holder = holderVerdict,
+) {
   /** @type {string[]} */
   const notices = [];
-  const decision = decideWith(request, check, cheap, gh, notices);
+  const decision = decideWith(request, check, cheap, gh, holder, notices);
   return notices.length === 0 ? decision : { ...decision, notices };
 }
 
@@ -2751,10 +2792,11 @@ export function decide(request, check = runCheck, cheap = runCheapChecks, gh = r
  * @param {(root: string) => CheckResult} check
  * @param {(root: string) => CheckResult} cheap
  * @param {(root: string, argv: string[]) => CheckResult} gh
+ * @param {typeof holderVerdict} holder
  * @param {string[]} notices  collected, and attached by `decide`
  * @returns {Decision}
  */
-function decideWith(request, check, cheap, gh, notices) {
+function decideWith(request, check, cheap, gh, holder, notices) {
   const command = commandOf(request.toolInput);
   if (command === undefined) {
     return allow(
@@ -2866,11 +2908,11 @@ function decideWith(request, check, cheap, gh, notices) {
   // is this file's own discipline and not a new rule: an inability may
   // not become a verdict, and the only arm here that fails closed on an
   // absence is the token, for the reason `decide` gives.
-  const holder = holderVerdict({ root, integrationRef: INTEGRATION_BRANCH, headRef });
-  if (holder.state === "held") {
+  const seat = holder({ root, integrationRef: INTEGRATION_BRANCH, headRef });
+  if (seat.state === "held") {
     return block(
       "holder-live-elsewhere",
-      `PUSH REFUSED: ${holder.detail}\n` +
+      `PUSH REFUSED: ${seat.detail}\n` +
         "  A push from a checkout somebody else is sitting in is the collision rule 4 names and " +
         "nothing on disk used to record. This guard reads " +
         `${HOLDER_REL_PATH}, which that session wrote when it took the seat, and the process it ` +
@@ -2880,17 +2922,18 @@ function decideWith(request, check, cheap, gh, notices) {
         "does; nothing needs deleting by hand.",
     );
   }
-  if (holder.state === "dead") {
+  if (seat.state === "dead") {
     notices.push(
-      `THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE: ${holder.detail} The push is allowed and ` +
+      `THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE: ${seat.detail} The push is allowed and ` +
         "the seat is unclaimed — take it explicitly if you are the seat now: " +
         "node tools/e2e/scripts/brief.mjs --take-seat",
     );
-  } else if (holder.state === "unknown") {
+  } else if (seat.state === "unknown") {
     notices.push(
-      `WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED: ${holder.detail} The push is allowed — an ` +
+      `WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED: ${seat.detail} The push is allowed — an ` +
         "inability is not a verdict, in either direction — and nothing here has said this seat " +
-        "is yours.",
+        "is yours. THE SEAT CANNOT BE CHECKED WHERE THIS SESSION'S OWN IDENTITY WILL NOT DERIVE " +
+        "— on a CI runner it never does, and this arm is inert there by construction.",
     );
   }
 
