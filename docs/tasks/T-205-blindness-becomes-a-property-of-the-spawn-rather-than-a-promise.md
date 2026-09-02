@@ -193,6 +193,9 @@ return-bound, which stay document properties with no committed reader.
   pointer at `5d` dangles silently the day 5d is renamed.
 - `T-205-s5` — `brief.mjs --role verifier` exits 3 for EVERY verifier
   brief; blocked_by `T-225-s2`, which holds that fence.
+- `T-205-s6` — GRAPH REGEN's trigger omits `.mjs`, so this lane's own
+  gate derivation had two readings and the right answer was reached from
+  the graph rather than from the bullet.
 
 ### Not done, deliberately
 
