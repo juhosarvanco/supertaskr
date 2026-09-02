@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -52,3 +52,38 @@ ordinal PLUS the passage's own opening capitals (which `citedOpening`
 already computes), whether it refuses on more than one candidate the way
 its siblings do, and whether the spec's second reader is re-derived so
 the two disagree when the document moves.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s2 merge (6691fc5)
+
+The architect seat. A moved ordinal cited confidently as the wrong passage is worse than a refusal; T-225-s16 rides in the same fence. Waits behind T-239.
+
+## Absorbs: T-225-s16 (2026-09-02, at the T-225-s2 merge (6691fc5))
+
+The citation's printed grep needle stops at a backtick and a double quote but not at a dollar sign, so a future passage would print a command the reader's shell expands
+
+**THE NEEDLE IS SPENT INSIDE A DOUBLE-QUOTED SHELL STRING.** `citedRule`
+prints `READ IT: command grep -n "<needle>" <file>`, and `findableNeedle`
+already stops extending at a word carrying a backtick or a double quote —
+citing `docs/CONVENTIONS.md`'s NEVER PUT A BACKTICK INSIDE A SHELL STRING
+as the reason.
+
+**THE CLASS IS RIGHT AND THE MEMBERSHIP IS SHORT.** Inside double quotes
+`sh`, `bash` and `zsh` also expand `$`, honour `\`, and `bash` history-
+expands `!`. A passage opening with any of them prints a command that is
+silently a different command.
+
+**NOT A DEFECT TODAY, MEASURED.** At `098bbb1` both printed needles were
+scanned on a verifier bench: neither carries `$`, `\` or `!`, and both
+resolve to exactly one hit — `THE LANE PROTOCOL` at docs/CONVENTIONS.md
+line 1044, and the rule-four opening at method/lane-protocol.md line 51.
+This is a latent hole in a guard that already exists, not a live one.
+
+**WHY IT IS WORTH FILING RATHER THAN REMEMBERING.** The needle is derived
+from whatever the governing documents happen to say, and those documents
+are edited by every sitting. The guard's own comment argues the rule is
+*"about the syscall rather than about the intent"* — which is exactly the
+argument for the wider class.
+
+**WHAT A FIX WOULD DECIDE.** Whether the character class grows, or
+whether the printed command switches to a single-quoted `grep -F '…'`
+form that needs no 

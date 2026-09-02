@@ -4,11 +4,11 @@ title: Two session-economics bodies assert the assembler exits 0, so ANY live wo
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 2
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-205
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/tests/session-economics.spec.ts]
 builder:
 verifier:
 built_by:
@@ -76,3 +76,7 @@ whoever measures last, and it will be attributed to their diff.
 `tools/e2e/scripts/dispatch-brief.mjs` (the lane list is derived from
 live worktrees), `T-209`, and `docs/CONVENTIONS.md`'s SCRATCH RULE /
 PORT RULE family — one class, three spellings, and this is the fourth.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2, at the T-225-s2 merge (6691fc5)
+
+The architect seat. Two benches paid a red e2e leg for it this sitting: any live lane cut after the bench ref reds session-economics. Fence narrowed from tools/e2e to the one spec file.

@@ -4,8 +4,8 @@ title: MF-09 proves the digest comparison refuses, and nothing RUNS it against a
 feature: F-06
 milestone: 4
 size: M
-priority: 3
-status: suggested
+priority: 4
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/method-evals]
@@ -69,3 +69,7 @@ one:
   invocation reaches it WITHOUT defaulting a machine-scoped path
   (`method/lane-protocol.md` rule 4).
 - MF-09's matrix SHALL be REUSED rather than restated (`T-057`).
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-225-s2 merge (6691fc5)
+
+The architect seat. The digest checker MF-09 proves needs an invoker over a real verdict; one method-evals lane after T-205-s4.

@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: M
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-214 (2026-09-02)
 blocked_by: []
 touches: [app/test/watcher-store.test.ts, app/test/startup-recovery.test.ts, app/test/interview-model.test.ts, app/test/interview-chat-dom.test.tsx, app/test/interview-resume-dom.test.tsx, app/test/project-shell.test.tsx, app/test/architecture-derive.test.ts, app/test/map-search.test.ts, app/src/lib/dispatch-store.ts]
@@ -95,3 +95,7 @@ construction. Measured at T-214: a mutant that reds the build left the
 app gate GREEN at 1141 bodies. CI runs `app build` as its own step ahead
 of `app suite`, so the teeth are real; a lane that reads only the
 gate-runner will not see them.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-225-s2 merge (6691fc5)
+
+The architect seat. Sixteen fixtures of the class T-214 closed, two measured blind; four app test files, free once T-112-s6 lands.

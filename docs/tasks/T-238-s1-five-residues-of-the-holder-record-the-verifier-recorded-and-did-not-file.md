@@ -3,7 +3,7 @@ id: T-238-s1
 title: Five residues of the holder record, recorded by T-238's verifier and not filed — a dangling citation in a refusal, a release that removes what it cannot read, a false premise about session ids, a detached integration checkout that holds no seat, and an e2e suite that writes the host's worktree list
 feature: F-06
 milestone: 4
-priority: 3
+priority: 2
 size: S
 status: planned
 suggested_by: verifier claude-opus-5@subagent @T-238-verify, phase 2 at 7705ac4, filed by the architect seat at the merge
@@ -133,3 +133,37 @@ half inside the full `gate-run e2e` and passes every other way:
 oppos
 
 Absorbed here because the body that reds is the holder's own control at push-guard.spec.ts:2718, this card already fences that file, and V-T-219-s4 and V-T-229-s8 both measured the same body: red once under a shared machine, green on the verifier's own loaded full run. The lane SHALL attribute it before touching it — a body that reads the host's process tree is the class room item 20 names.
+
+## TRIAGE, 2026-09-02 — raised to priority 2 at the T-225-s2 merge (6691fc5)
+
+The architect seat. T-225-s14 is the fourth lane to measure the holder control's red under the full suite; absorbed here with T-229-s11, and the carrier rises to p2. Waits behind T-216-s8 on push-guard.mjs.
+
+## Absorbs: T-225-s14 (2026-09-02, at the T-225-s2 merge (6691fc5))
+
+The holder body's positive control reds under the FULL e2e suite and passes when the spec runs alone — reproduced at the base with no diff, so it is load and not a lane's work
+
+**MEASURED FOUR TIMES IN ONE SITTING, TWO REFS, SAME BODY.**
+`tests/push-guard.spec.ts`'s *"a lane holds no seat, so a holder record
+in one refuses nothing"* fails on its own POSITIVE CONTROL — the final
+`expect(control.verdict === "block" || notices includes "SEAT")` — but
+only under the whole lane:
+
+    ref       what ran                            that body
+    855db9b   the whole e2e suite (607 bodies)    FAILED
+    855db9b   the whole e2e suite, re-run         FAILED
+    855db9b   push-guard + session-economics only PASSED (86 passed)
+    09526da   push-guard + session-economics only PASSED (86 passed)
+    09526da   the whole e2e suite (604 bodies)    FAILED — 603 passed
+
+**THE LAST ROW IS THE ATTRIBUTION AND IT IS WHY THIS IS FILED RATHER
+THAN FIXED IN A LANE.** The base run was made in a detached worktree at
+`09526da` with T-225-s2's diff ABSENT, in the same window as the tip
+runs, and the same body reds. It is a property of the SUITE's load, not
+of any lane's work — and a red that arrives on whoever happens to be
+running the battery is a red attributed to the wrong card.
+
+**THE LIKELY MECHANISM, STATED AS A HYPOTHESIS AND NOT AS A FINDING.**
+The control writes a holder record built from `processRow(process.pid)`
+— the playwright WORKER's own row — and passes `startedAt:
+live?.startedAt ?? ""`. If that `ps` read comes back empty or late under
+a loaded machine, the record

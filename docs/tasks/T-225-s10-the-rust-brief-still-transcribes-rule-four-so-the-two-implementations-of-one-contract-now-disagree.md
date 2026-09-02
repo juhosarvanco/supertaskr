@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [app-dispatch]
@@ -53,3 +53,7 @@ body ASSERTS that the two assemblers agree row for row, so the next
 divergence reds instead of being noticed by hand. The size figure and
 the opening are both derivable on either side, so the comparison need
 not be a byte pin.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s2 merge (6691fc5)
+
+The architect seat. Two implementations of one contract row now differ by thirteen kilobytes; serialised with T-205-s2 on app-dispatch.

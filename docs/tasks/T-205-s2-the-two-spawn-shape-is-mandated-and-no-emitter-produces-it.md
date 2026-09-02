@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: M
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [app-dispatch]
@@ -49,3 +49,7 @@ narrowed, and it is out of that card's fence.
   refuses to interpolate one.
 - WHERE the driver cannot spawn twice, the emitted brief SHALL SAY SO in
   the artifact itself rather than leaving the reader to infer it.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s2 merge (6691fc5)
+
+The architect seat. The two-spawn shape 5d mandates has no emitter; the app-dispatch fence serialises it behind T-225-s10, which shares it.

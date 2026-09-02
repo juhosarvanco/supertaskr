@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/method-evals]
@@ -47,3 +47,38 @@ applied to the form the method actually writes.
   the eval to name the two role files that cite it, demonstrated red.
 - THE predicate SHALL NOT start matching ordinary prose: run it over the
   corpus and show the findings count is zero before the degradation.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-225-s2 merge (6691fc5)
+
+The architect seat. Dangling lettered pointers are exactly what the single-source rule now depends on; T-205-s7 rides in the same fence.
+
+## Absorbs: T-205-s7 (2026-09-02, at the T-225-s2 merge (6691fc5))
+
+MF-09's digest-command conjunct is satisfied by the POISON DRILL's own `shasum` mention, so striking the T-205 bullet's command spelling is undetectable
+
+**A CONJUNCT THAT CANNOT FAIL, INSIDE A GUARD BUILT TO END EXACTLY
+THAT.** `MF-09`'s third text finding is written as a conjunction:
+
+    if (!/shasum -a 256/.test(conv) || !CITATION.test(conv.replace(...)))
+
+The second conjunct — the citation grammar `attack set: sha256:<hex>` —
+is load-bearing and was drilled RED at the T-205 verification. The first
+is not. `docs/CONVENTIONS.md` has carried `shasum -a 256` since long
+before T-205, in the POISON DRILL bullet (*"`git show HEAD:<path> |
+shasum -a 256` against the working file"*), so the whole-document
+presence test is satisfied by a bullet that has nothing to do with
+attack-set digests.
+
+**MEASURED, at `48285b5`.** Replacing the T-205 bullet's own
+`` `shasum -a 256 <file>` `` with the words *"the usual hashing
+command"* leaves `node tools/method-evals/run.mjs` at **exit 0**. The
+same edit to the citation-grammar half reds it (exit 1, naming the
+finding). So the command half of a two-part check is decorative: the
+sentence MF-09 exists to hold can lose its command spelling and no gate
+notices.
+
+**WHY IT IS WORTH A CARD AND NOT A SHRUG.** `T-057` is this project's
+name for an assertion that cannot fail, and `roles/verifier.md` step 2b
+calls a control that grades every arrangement the same the defect this
+method produces most. MF-09 is otherwise a careful guard — a five-row
+matrix with three wrong judges, all of which were drilled a

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-order.mjs, tools/e2e/tests/dispatch-order.spec.ts]
@@ -53,3 +53,7 @@ block discloses the whole; or whether the arm is SPLIT so a reader asks
 for one dropped set at a time. The third is the shape T-225-s2 took for
 its two passages — an address rather than the bytes — and it is the one
 that does not have to choose what to leave out.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2, at the T-225-s2 merge (6691fc5)
+
+The architect seat. The biggest arm there is, announced on every run and filtered by nothing.

@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 size: M
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205
-blocked_by: [T-225-s2]
+blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs]
 builder:
 verifier:
@@ -64,3 +64,7 @@ from a construction.
 That lane holds `tools/e2e/scripts/brief.mjs` and
 `tools/e2e/scripts/dispatch-brief.mjs` — this card's whole fence — and a
 fence is not shared. It waits for that lane to land.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s2 merge (6691fc5)
+
+The architect seat. Every verifier brief the assembler produces is refused at exit 3; waits behind T-239 on dispatch-brief.mjs by fence.
