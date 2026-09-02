@@ -1174,6 +1174,62 @@ export function decide(request) {
   }
   const manifest = read.manifest;
 
+  // NO OUT-OF-CHECKOUT BRANCH HERE ANY MORE, AND ITS ABSENCE IS THE
+  // FIX (T-199). `root` is derived FROM `abs`, so `rel` cannot escape it
+  // and the old `rel.startsWith("../")` allow was not merely unused — it
+  // was the arm every lane write took. An allow no mutation can kill is
+  // an allow no test can prove, so it is gone rather than left inert.
+  const rel = path.relative(root, abs).split(path.sep).join("/");
+
+  // ── THE ORDER BELOW IS THE PROPERTY, NOT AN ARRANGEMENT (T-228) ──────
+  // THREE STAGES, AND EACH ONE'S POSITION IS BOUGHT: `alwaysWritable`
+  // FIRST, the stale-stamp comparison SECOND, `paths` LAST.
+  //
+  // THE STALE-STAMP CHECK USED TO RUN FIRST AND SUSPENDED THE ONE
+  // DIRECTORY NO CARD MAY FENCE. `docs/tasks` is the parser's
+  // `UNFENCEABLE_PATHS` — the directory the protocol itself writes to on
+  // every card (method/lane-protocol.md rule 5), which is why every
+  // manifest carries it as `alwaysWritable` and why a write there can
+  // never be a fence breach BY CONSTRUCTION. With the comparison ahead
+  // of that loop there was no allow path at all while a widening was
+  // HALF PERFORMED — the manifest re-expanded and the lane's own card
+  // not yet amended, or the reverse — so what the window suspended was a
+  // lane's implementation notes, any suggestion card it would file, and
+  // its own `status:` stamp. The protocol's own bookkeeping was the only
+  // thing the refusal reached, and the symptom was circular: a lane in
+  // the window reaches for the remedy the method prescribes — route it,
+  // file a suggestion — and is refused again.
+  //
+  // AND THE CHECK NEVER PREVENTED THE ABUSE IT RESEMBLES. The defence of
+  // the old position is that a stale stamp means the guard cannot know
+  // which side moved, one unreachable state being a lane that has widened
+  // ITSELF. To widen itself AT THE WRITE a lane must forge
+  // `manifest.paths`; the manifest sits outside every fence and a
+  // shell-mediated write reaches it regardless (limit 1) — and a lane
+  // forging the manifest forges `touchesLine` to match its card in the
+  // same edit, so the comparison passes. It detects a HALF-PERFORMED
+  // DISPATCH and nothing else. What actually stops self-widening is the
+  // landing gate reading the card as COMMITTED on the integration branch.
+  //
+  // MOVING IT TO THE END INSTEAD WOULD BE THE OBVIOUS FIX AND IS WRONG:
+  // a half-delivered grant would then come back `inside-the-fence` on the
+  // newly granted path, which quietly deletes the two-agreeing-files
+  // property `T-211` wrote into the law. So the stale manifest's `paths`
+  // stay untrusted — the second stage still refuses everything the first
+  // one did not free — and every containment property is unchanged.
+  //
+  // THE CODE STRING `stale-stamp` IS LOAD-BEARING BEYOND THIS FILE:
+  // `T-210`'s body asserts it by name from `tools/e2e`, so a rename here
+  // is a two-act change rather than a tidy-up.
+  for (const domain of manifest.alwaysWritable) {
+    if (within(rel, domain)) {
+      return allow(
+        "always-writable",
+        `${rel} is under ${domain}, which no card may fence and every card writes to`,
+      );
+    }
+  }
+
   let cardText;
   try {
     cardText = readFileSync(path.join(root, manifest.card), "utf8");
@@ -1199,21 +1255,6 @@ export function decide(request) {
     );
   }
 
-  // NO OUT-OF-CHECKOUT BRANCH HERE ANY MORE, AND ITS ABSENCE IS THE
-  // FIX (T-199). `root` is derived FROM `abs`, so `rel` cannot escape it
-  // and the old `rel.startsWith("../")` allow was not merely unused — it
-  // was the arm every lane write took. An allow no mutation can kill is
-  // an allow no test can prove, so it is gone rather than left inert.
-  const rel = path.relative(root, abs).split(path.sep).join("/");
-
-  for (const domain of manifest.alwaysWritable) {
-    if (within(rel, domain)) {
-      return allow(
-        "always-writable",
-        `${rel} is under ${domain}, which no card may fence and every card writes to`,
-      );
-    }
-  }
   for (const domain of manifest.paths) {
     if (within(rel, domain)) {
       return allow("inside-the-fence", `${rel} is inside the fence domain ${domain}`);
