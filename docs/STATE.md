@@ -20,7 +20,9 @@ then ATTRIBUTE.**
 ## The contract this file is under
 
 REPLACED at every checkpoint from docs/STATE-template.md, AFTER the
-record is written, in the SAME commit (ADR-019). STATE keeps the
+record is written, in the SAME commit (ADR-019) — and any LATER edit to
+that record re-touches this file in the same commit, or the docs gate
+reads STATE as STALE for every path (the third record's follow-up). STATE keeps the
 MECHANISM; the INSTANCE is stamped in the record. A figure appears here
 only with its derive command. **When the byte band warns, content MOVES
 to the record — a hazard is never deleted to fit.** **The commit subject
