@@ -4,11 +4,11 @@ title: The ceiling body searches two whole method files with no uniqueness floor
 feature: F-06
 milestone: 4
 size: S
-priority: 5
-status: suggested
+priority: 4
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-229-s4
 blocked_by: []
-touches: [app/test/select-board.test.ts]
+touches: [app/test/select-board.test.ts, method/lane-protocol.md]
 builder:
 verifier:
 built_by:
@@ -66,3 +66,20 @@ reader does not re-argue it: T-229-s4's criterion is that the body reds
 when either file moves away from `CONCURRENCY_CEILING`, and it does. A
 decoy planted elsewhere in the file is a different threat model, and the
 shipped body is strictly better than the one it replaced.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at T-229-s4's merge (89c7e2b)
+
+The architect seat. Shape eight, inherited from the body T-229-s4
+replaced: both reads search whole files with no uniqueness floor, so a
+decoy line keeps the body green with the home rewritten. Criteria: each
+read SHALL anchor to its file's unique sentence (TASK-FORMAT already
+carries one) and SHALL red when the anchor matches more than once; the
+absorbed prose copies below ride the same lane.
+
+## Absorbs: T-229-s7 (2026-09-02)
+
+lane-protocol rule 4's prose spells the ceiling twice more ("3–5
+concurrent lanes", "up to five executors") and no checker reads either.
+The lane SHALL either make both derive from the home by citation or
+give them a reader, and SHALL keep rule 4's extraction through both
+assemblers byte-stable except for the edit.

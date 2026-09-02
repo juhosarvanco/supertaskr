@@ -4,16 +4,16 @@ title: The lane fence's read-only mode makes the METHOD EVAL GATE's own positive
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 3
+status: building
 suggested_by: executor claude-opus-5@subagent @T-229-s4
 blocked_by: []
 touches: [tools/method-evals/lib/fixture-root.mjs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **Class parent: `T-155`** (the method gets an eval suite whose positive
@@ -61,3 +61,17 @@ down.
   with a positive control that still detects each planted degradation.
 - IF the fixture cannot be made writable THEN the eval SHALL still
   report `COULD NOT RUN` with the reason, never a pass.
+
+## TRIAGE, 2026-09-02 — promoted and dispatched, priority 3, at T-229-s4's merge (89c7e2b)
+
+The architect seat. Every lane that touches method/ owes the METHOD
+EVAL GATE and cannot run its positive control in-lane: the physical
+fence sets tracked files read-only, `fixture-root.mjs`'s `cpSync`
+preserves the mode into the eval fixture, and MF-01's degradation step
+hits EACCES (T-229-s4 measured exit 3 in-lane, 0 in a detached worktree
+at the same commit). Criteria: the fixture root SHALL be writable
+regardless of the source tree's modes (copy without preserving mode, or
+chmod the copy), a body SHALL red against a read-only source tree with
+the change reverted, and `--selftest` SHALL exit 0 from inside a fenced
+lane, shown in the notes from this lane's own checkout. Guard-class (the
+eval gate is a guard), `review: independent`.
