@@ -102,3 +102,34 @@ target `main` is never asked about. A FALSE NEGATIVE only: it can cost a
 refusal, never cause one.
 
 ## 2. A destination beginning with `-` reaches `gh` as `--branch`'s
+
+## Absorbs: T-229-s11 (2026-09-02, at the T-229-s8 merge (d179821))
+
+A push-guard positive control reds only inside the whole e2e run and passes alone, so the suite carries an intermittent that every lane in the window will misattribute
+
+**Found by `T-229-s8`'s battery, and filed because the next seat to run
+the four-suite battery will meet this red and has to decide what it is.**
+Nothing in `T-229-s8`'s fence touches the push guard.
+
+`tools/e2e/tests/push-guard.spec.ts:2718` — *"a lane holds no seat, so a
+holder record in one refuses nothing"* — fails its own POSITIVE CONTROL
+half inside the full `gate-run e2e` and passes every other way:
+
+    Error: the same record on the integration branch is not ignored
+      2751 | control.verdict === "block" || (control.notices ?? []).join("").includes("SEAT"),
+
+## What was measured, and where
+
+| run | ref | context | result |
+|---|---|---|---|
+| full `gate-run e2e` | `4d972d03e2a2644a4a56c792ddb3449e79d4c76e` | whole suite | **RED** — 1 failed / 601 passed, this body |
+| full `gate-run e2e`, again | `4d972d03e2a2644a4a56c792ddb3449e79d4c76e` | whole suite | **RED** — same single body |
+| the body alone (`-g`) | `4d972d0` | one body | **GREEN** 1/1 |
+| the whole spec FILE alone | `4d972d0` | 76 bodies | **GREEN** 76/76 |
+| full `gate-run e2e` | `1e344d62fbc3f7db83e367b1e8592578459407cb` | whole suite, quiet machine | **GREEN** 602/602, exit 0 |
+| full `gate-run e2e` | `1e344d6`, detached control worktree | whole suite, six other playwright processes live on the host | **RED** — the same single body |
+
+**THE LAST TWO ROWS ARE THE FINDING.** One commit, one suite, two
+oppos
+
+Absorbed here because the body that reds is the holder's own control at push-guard.spec.ts:2718, this card already fences that file, and V-T-219-s4 and V-T-229-s8 both measured the same body: red once under a shared machine, green on the verifier's own loaded full run. The lane SHALL attribute it before touching it — a body that reads the host's process tree is the class room item 20 names.

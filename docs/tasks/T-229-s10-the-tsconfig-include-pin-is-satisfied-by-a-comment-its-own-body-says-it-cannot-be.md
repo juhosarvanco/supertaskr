@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-229-s8
 blocked_by: []
 touches: [app/test/crescendo-dom.test.tsx]
@@ -77,3 +77,7 @@ is the copy that drifts — and the same reason it is filed rather than
 built: `app/test/crescendo-dom.test.tsx` is outside `T-229-s8`'s fence
 (`app/test/select-board.test.ts`, `method/lane-protocol.md`), so this
 lane routed it instead of widening itself.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-229-s8 merge (d179821)
+
+The architect seat. A sibling shape-eight instance measured with an empty kill set; the fence is one app test file, held behind T-214's app-shell lane until it lands.
