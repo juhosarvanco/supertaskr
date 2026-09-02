@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: verifier claude-opus-5@subagent @T-223-s3-verify, phase 1 at 695954f, 2026-09-02; filed by the architect seat
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, tools/e2e/tests/gate-run.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
