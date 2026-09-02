@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: building
 suggested_by: executor claude-opus-5@subagent @T-219
-blocked_by: [T-219]
+blocked_by: []
 touches: [.claude/hooks/lane-fence.mjs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
@@ -100,3 +100,16 @@ name** — which is the intended tripwire and not a conflict.
 `T-219` (the refusal that caused this, and where it was measured),
 `T-154-s2` (the seat-side carve-outs and @human's ruling of 2026-08-30),
 `method/lane-protocol.md` rule 5.
+
+## TRIAGE, 2026-09-02 — promoted and dispatched, priority 2, at T-219's merge (64fed70)
+
+The architect seat. Guard-class, filed by the lane that caused it: the
+own-card carve-out arm of `carveOutFor` can no longer be selected by any
+manifest, so the header's "an arm no write can select is an arm no
+mutation can kill" now describes its own first arm. Blocker cleared —
+T-219 is done. Criteria: the hook SHALL either remove the unreachable
+arm with its header rewritten to say why, or make it reachable by a
+manifest shape the parser can still produce, and in either case a body
+SHALL red under a mutant of whichever arm remains; the write that used
+to select it (a lane writing its own card) SHALL still be allowed, with
+the reason on the assertion.

@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-219
-blocked_by: [T-219]
+blocked_by: []
 touches: [lib-parser]
 builder:
 verifier:
@@ -82,3 +82,22 @@ filed about and T-219 exists to end.
 `T-219` and its `## VERDICT` (the rejection this is the residual of),
 `T-227` (the two-halves-disagree shape), `T-164-s1` (the card the change
 moves), `lib/parser/src/lanes.ts`'s `rule()`.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at T-219's merge (64fed70)
+
+The architect seat. The residual of V-T-219's own finding, one
+criterion over: a fence whose tokens cannot be RESOLVED is startable
+when no lane is live, and the wider `unusable.length > 0` remedy was
+measured to move T-164-s1 (planned, `touches: [bin]`) from startable to
+unfenceable — so the card SHALL decide that case on the record (a
+planned card whose only token resolves to nothing is not dispatchable,
+and says why), not in passing. One lane with the sibling below.
+
+## Absorbs: T-219-s2 (2026-09-02)
+
+A bare dot token normalises to `.` and expands to a domain no
+repository-relative path can match — the fence permits nothing,
+collides with nothing and reports no issue. The same module, the same
+class (`expandFence` answering confidently where it should refuse): a
+third refusal, with its own body and a live-board census printed with
+its control.
