@@ -696,3 +696,50 @@ pass at the tip (27 passed). `typecheck` 0, `lint:tokens` 0, `--selftest`
 51,380; regenerating adds exactly the three new test names and nothing
 else — I ran the generator, read the diff and restored it. The lane
 correctly did not commit it.
+
+### The verifier's own step-7 gates, at the verdict tip `49bc83d`
+
+A verdict is a WRITE, and this card's prose is a code input. The DOCS
+GATE, asked with the three literal paths this seat touched, FIRES and
+names three suites: `npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`. It also answers *"every live task
+card's frontmatter parses, with a legal status"* and *"0 frontmatter
+issue(s) in the live tree"* — the `9c64cd8` class, checked rather than
+assumed, on this verdict and on the two cards it files.
+
+    gate-run parser   exit 0  bodies=363   GREEN  ref 49bc83d
+    gate-run app      exit 0  bodies=1141  GREEN  ref 49bc83d
+    index --check                          CURRENT
+    e2e, whole suite by file group         605 passed, 2 failed of 607
+
+**THE E2E LEG WAS RUN IN GROUPS AND THE GROUPS ADD TO 607**, which is
+the census count at this tip: 46 (the two fenced readers) + 27
+(dispatch-order, docs-gate, token-scan) + 46 (landing-gate, push-checks,
+shell-frame, window-contract — the four readers the docs gate names for
+these paths) + 86 (push-guard, session-economics) + 205 + 154 + 43. The
+whole-suite invocation was abandoned twice at a ten-minute ceiling under
+a load average of 63–71 driven by other seats on this machine; the
+grouping is disclosed because it is not the same measurement as one
+run, and a body that reds only under the whole suite's load — which is
+`T-225-s14`'s own hypothesis — would not be caught by it.
+
+**THE TWO REDS ARE NOT THIS DIFF'S, ATTRIBUTED BY NAME AND BY
+MEASUREMENT.** Both are `session-economics.spec.ts` — *"the recommended
+seat is a function of the CARD"* and *"the advisory line is NOT a
+contract row"* — and both name their own cause:
+
+    T-202-s1 holds a worktree on refs/heads/task/T-202-s1-solo-lock-whole-path-key
+      and no live card declares that id
+    T-216-s8 holds a worktree on refs/heads/task/T-216-s8-unjudged-push-refused
+      and no live card declares that id
+
+Four lanes were cut by other seats during this pass and their cards are
+not on this branch's board. **Re-run at the BASE with the diff absent:
+the same two bodies fail, 84 passed of 86**, same names, same message.
+`push-guard.spec.ts`'s *"a lane holds no seat"* body PASSED at both refs
+in this grouping, which is consistent with `T-225-s14` rather than
+against it: that card's claim is that it reds under the FULL suite and
+passes alone.
+
+**THE CENSUS STAYS THE INTEGRATOR'S.** `npm run capabilities` in the
+merge commit, before the checkpoint.
