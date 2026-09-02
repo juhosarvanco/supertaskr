@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { createHash } from "node:crypto";
@@ -24,6 +25,7 @@ import {
   ROUTE,
   ROUTE_LANE_LESS,
   WRITE_TOOL_PATH_FIELDS,
+  carveOutFor,
   decide,
   findCheckoutRoot,
   liveLanes,
@@ -1090,6 +1092,185 @@ test("the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
     ...INTEGRATION_SEAT_PATHS,
   ]);
   expect(INTEGRATION_SEAT_PATHS.length, "the published set is empty, so this proves nothing").toBe(2);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * WHICH ARM ANSWERS A CARD FILE (T-215-s6)
+ *
+ * `T-219-s3` removed `carveOutFor`'s own-card FIRST arm, because no
+ * manifest the parser can produce selects it — and nothing pinned WHICH
+ * arm answers a card file afterwards. THE REASON NOTHING DID IS THAT
+ * PRESENCE PROVES NOTHING: called directly for a card file against a
+ * manifest whose `excluded` names that file, `carveOutFor` returns a
+ * carve-out BOTH WAYS — through the removed own-file arm before the
+ * removal, through `alwaysWritable` after it — so a body asserting that
+ * a carve-out comes back is satisfied by a re-added arm and measures
+ * nothing. Only the RETURNED VALUE discriminates, and both halves of it
+ * do:
+ *
+ *   the unfenceable arm answers the domain `docs/tasks` and "no card
+ *   may fence it and every card's protocol writes there";
+ *   a re-added own-file arm answers the CARD'S OWN PATH and "…'s own
+ *   card file, which is outside every fence including its own".
+ *
+ * THE BODY ABOVE CANNOT SEE IT, WHICH IS WHY THIS PAIR EXISTS. *The
+ * carve-outs each free a DIFFERENT write* pins `decide`'s answer for the
+ * own card (`not-a-lane`), and the seat branch consults `carveOutFor`
+ * only for a path some live lane's manifest RESERVES — a card file is
+ * never reserved, so that verdict does not move when the arm comes back.
+ * That body is the permanent pin on the VERDICT; this pair is the pin on
+ * the ARM.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The unfenceable arm's own answer, BOTH HALVES AS LITERALS.
+ *
+ * Not read back from the hook's constants nor from the manifest: a test
+ * parametrised by the constant it checks cannot pin that constant
+ * (docs/CONVENTIONS.md, A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL,
+ * second face). The manifest is asserted to CARRY this domain instead,
+ * which is the arming condition rather than the expected value.
+ */
+const UNFENCEABLE_DOMAIN = "docs/tasks";
+const UNFENCEABLE_WHY = "no card may fence it and every card's protocol writes there";
+
+/** `carveOutFor`'s opening line — where the removed arm stood FIRST. */
+const CARVE_OUT_ANCHOR = "export function carveOutFor(rel, manifest) {\n";
+
+/**
+ * The own-card arm as `T-219-s3` deleted it, byte for byte.
+ *
+ * TAKEN FROM THE REMOVAL DIFF RATHER THAN WRITTEN TO LOOK SIMILAR, which
+ * is docs/CONVENTIONS.md's own rule for a control fixture: an arm
+ * somebody re-typed measures that arm and not the one this repository
+ * removed. It is an array of source LINES so the template literal inside
+ * it stays text here instead of being interpolated by this file.
+ */
+const OWN_FILE_ARM = [
+  "  for (const domain of manifest.excluded) {",
+  "    if (within(rel, domain)) {",
+  "      return {",
+  "        domain,",
+  "        why: `it is ${manifest.taskId}'s own card file, which is outside every fence including its own`,",
+  "      };",
+  "    }",
+  "  }",
+  "",
+].join("\n");
+
+/** How many times `needle` occurs in `haystack` — the plant's own delta. */
+function occurrences(haystack: string, needle: string): number {
+  return haystack.split(needle).length - 1;
+}
+
+/**
+ * What is WRONG with the carve-out a CARD FILE came back with — empty
+ * when the unfenceable arm answered it, and naming both halves when
+ * some other arm did.
+ *
+ * ONE READER, DRIVEN TWICE: the body below requires it EMPTY against the
+ * live hook, and the control requires exactly its two complaints against
+ * a copy carrying the re-added arm — so the comparison under control is
+ * the comparison under test, one arm apart.
+ */
+function ownCardCarveComplaints(carve: { domain: string; why: string } | undefined): string[] {
+  if (carve === undefined) return ["no carve-out at all — `carveOutFor` answered undefined"];
+  const complaints: string[] = [];
+  if (carve.domain !== UNFENCEABLE_DOMAIN) {
+    complaints.push(
+      `the domain is \`${carve.domain}\` and the unfenceable arm's is \`${UNFENCEABLE_DOMAIN}\``,
+    );
+  }
+  if (carve.why !== UNFENCEABLE_WHY) {
+    complaints.push(
+      `the reason is "${carve.why}" and the unfenceable arm's is "${UNFENCEABLE_WHY}"`,
+    );
+  }
+  return complaints;
+}
+
+test("a card file is carved out by the UNFENCEABLE arm, and a carve-out coming back is not that", async () => {
+  const fx = makeFixture(`touches: [tools/e2e, ${FIXTURE_CARD}]`);
+  const manifest = await arm(fx);
+
+  // THE ANTI-VACUITY HALF, AND IT IS TWO CONDITIONS. A manifest whose
+  // `excluded` does not carry the card could not select an own-file arm
+  // however present that arm was, and an `alwaysWritable` containing no
+  // domain over the card would leave the arm under test nothing to
+  // answer through: without both, every assertion below is satisfied by
+  // a `carveOutFor` with no arms in it at all.
+  expect(
+    manifest.excluded,
+    "the card's own file was not carved out at dispatch, so no own-file arm could answer",
+  ).toEqual([FIXTURE_CARD]);
+  expect(
+    manifest.alwaysWritable,
+    "the manifest does not carry the unfenceable directory, so the arm under test cannot answer",
+  ).toContain(UNFENCEABLE_DOMAIN);
+  expect(
+    within(FIXTURE_CARD, UNFENCEABLE_DOMAIN),
+    "the fixture card does not live under the unfenceable directory, so nothing arms the arm",
+  ).toBe(true);
+
+  // DIRECTLY, BECAUSE `decide` CANNOT REACH THIS QUESTION: the seat
+  // branch consults `carveOutFor` only for a path some live lane's
+  // manifest RESERVES, and a card file is never reserved.
+  const carve = carveOutFor(FIXTURE_CARD, manifest);
+  expect(carve, "a card file gets no carve-out at all").toBeDefined();
+  expect(
+    ownCardCarveComplaints(carve),
+    "a card file was carved out by an arm that is not the unfenceable one",
+  ).toEqual([]);
+});
+
+test("THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers instead, and the body above reds naming both halves", async () => {
+  // KILLED BY: a plant that does not land — the occurrence DELTA is
+  // asserted, never the absence of the arm from the live hook, so this
+  // control survives the very mutant the body above is measured against
+  // and their kill sets stay disjoint. Killed also by a reader that
+  // answers from the LIVE hook whatever file it was handed: the copy is
+  // imported BY URL and driven through its OWN export.
+  //
+  // THE ARM IS PLANTED FIRST, WHERE IT STOOD. Its ordering argument is
+  // exactly what makes a re-add invisible — every card lives under the
+  // unfenceable directory, so an arm placed after `alwaysWritable`
+  // answers for nothing — and a control planting it anywhere else would
+  // be measuring a mutant this repository never carried.
+  const fx = makeFixture(`touches: [tools/e2e, ${FIXTURE_CARD}]`);
+  const manifest = await arm(fx);
+  const real = hookSourceText();
+  const at = real.indexOf(CARVE_OUT_ANCHOR);
+  expect(at, "`carveOutFor`'s opening line moved — the plant has no anchor").toBeGreaterThan(-1);
+  expect(
+    real.indexOf(CARVE_OUT_ANCHOR, at + 1),
+    "the anchor is not unique, so where the plant lands is not decided",
+  ).toBe(-1);
+
+  const opensAt = at + CARVE_OUT_ANCHOR.length;
+  const planted = `${real.slice(0, opensAt)}${OWN_FILE_ARM}${real.slice(opensAt)}`;
+  expect(
+    occurrences(planted, OWN_FILE_ARM) - occurrences(real, OWN_FILE_ARM),
+    "the arm did not land in the copy, so this control proves nothing",
+  ).toBe(1);
+
+  const copy = path.join(scratchRoot(), "lane-fence-own-file-arm-re-added.mjs");
+  writeFileSync(copy, planted, "utf8");
+  const mutant = await import(pathToFileURL(copy).href);
+  const carve = mutant.carveOutFor(FIXTURE_CARD, manifest);
+
+  // THE ARM IS GENUINELY SELECTABLE ONCE RE-ADDED, which is the whole
+  // reason the body above may not rest on a carve-out coming back.
+  expect(carve, "the re-added arm answered nothing, so nothing was measured").toBeDefined();
+  expect(carve.domain, "the plant did not take the answer").toBe(FIXTURE_CARD);
+  expect(carve.why).toContain("own card file");
+
+  // AND THE BODY ABOVE REDS ON IT, BY NAME: the same reader, the same
+  // manifest, one arm apart.
+  expect(ownCardCarveComplaints(carve)).toEqual([
+    `the domain is \`${FIXTURE_CARD}\` and the unfenceable arm's is \`${UNFENCEABLE_DOMAIN}\``,
+    `the reason is "it is ${FIXTURE_ID}'s own card file, which is outside every fence including ` +
+      `its own" and the unfenceable arm's is "${UNFENCEABLE_WHY}"`,
+  ]);
 });
 
 /* ────────────────────────────────────────────────────────────────────

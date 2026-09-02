@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **600 behaviours** — 598 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **602 behaviours** — 600 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -439,6 +439,8 @@ Census: **600 behaviours** — 598 extracted sentences + 2 named-not-extracted (
 - the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane
 - the carve-outs each free a DIFFERENT write, and the fence still holds around them
 - the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
+- a card file is carved out by the UNFENCEABLE arm, and a carve-out coming back is not that
+- THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers instead, and the body above reds naming both halves
 - the limits this hook declares are the limits docs/CONVENTIONS.md publishes
 - THE POSITIVE CONTROL: a planted header reds — one limit gained, one code renamed
 - the merge that CONSUMES a fence is not refused by it
