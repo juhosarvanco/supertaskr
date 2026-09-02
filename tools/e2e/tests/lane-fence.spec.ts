@@ -1632,6 +1632,268 @@ test("THE POSITIVE CONTROL: a planted header reds — one limit gained, one code
   ]);
 });
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE HEADER AGAINST ITSELF — THE CITATION NOBODY READ (T-215-s2)
+ *
+ * The pair above compares the hook's numbered block to the PAGE. It
+ * never compares the header to ITSELF, and the header cites its own
+ * limits in a second place: the `── AN UNJUDGED WRITE SAYS SO` block
+ * names each declining code with the limit it comes from.
+ *
+ * THAT SECOND PLACE DRIFTED AND NOTHING SAW IT. `T-199` renumbered the
+ * no-path limit from 5 to 8, fixed the cross-reference at the top of
+ * the header and left the decline list saying *"`no-path-to-judge`
+ * (limit 5)"* — which is not a declining limit at all, but the
+ * advice-to-a-cooperating-harness limit that returns no verdict. A
+ * reader chasing a request with no path was sent to a limit about
+ * `.claude/settings.json`. MEASURED AT `1886cc7`, THE BASE OF THE LANE
+ * THAT FIXED IT: this file ran 60 of 60 GREEN with the wrong number in
+ * place, because `headerLimitNumbers` slices from
+ * `── THE HONEST LIMITS` and the decline list sits ABOVE that slice.
+ *
+ * WHY IT IS THIS FILE'S PROBLEM AND NOT PROSE'S: a limit number is the
+ * HANDLE a reader looks the limit up by, and this project's own hook
+ * publishes three copies of it — the decline list, the numbered block,
+ * and the runtime string a refused session actually reads on stderr.
+ * Three copies are three chances to disagree (`T-057`), and the two
+ * bodies below bind all three to one figure READ FROM THE FILE.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The decline list's own block, by the rule it opens with. */
+const DECLINE_LIST_MARKER = "── AN UNJUDGED WRITE SAYS SO";
+
+/**
+ * Each numbered limit of the HONEST LIMITS block WITH ITS TEXT, so a
+ * code written inside one can be traced back to that limit's number.
+ *
+ * The slice runs to the NEXT limit's opening line, which is what makes
+ * a continuation line belong to the limit it continues.
+ */
+function numberedLimitBlocks(hookSource: string): { n: number; text: string }[] {
+  const header = hookHeader(hookSource);
+  const from = header.indexOf(HONEST_LIMITS_MARKER);
+  if (from === -1) return [];
+  const block = header.slice(from);
+  const opens = [...block.matchAll(/^ \* (\d+)\. /gm)];
+  return opens.map((m, i) => {
+    const next = opens[i + 1];
+    return {
+      n: Number(m[1]),
+      text: block.slice(m.index, next === undefined ? block.length : next.index),
+    };
+  });
+}
+
+/**
+ * The `code` (limit N) citations the DECLINE LIST makes — the half of
+ * the header the keeper above cannot see, because it lives between the
+ * decline marker and the limits marker.
+ */
+function declineCitations(hookSource: string): { code: string; n: number }[] {
+  const header = hookHeader(hookSource);
+  const from = header.indexOf(DECLINE_LIST_MARKER);
+  const to = header.indexOf(HONEST_LIMITS_MARKER);
+  if (from === -1 || to === -1 || to < from) return [];
+  return [...header.slice(from, to).matchAll(/`([a-z-]+)` \(limit (\d+)\)/g)].map((m) => ({
+    code: String(m[1]),
+    n: Number(m[2]),
+  }));
+}
+
+/**
+ * The limit number each `decline(...)` cites in the sentence the
+ * REFUSED SESSION READS. This is the copy with a consumer, so it is the
+ * copy whose drift is felt rather than merely filed.
+ */
+function runtimeCitations(hookSource: string): { code: string; n: number }[] {
+  const found: { code: string; n: number }[] = [];
+  for (const m of hookSource.matchAll(/\(limit (\d+) in this file's header\)/g)) {
+    const opened = hookSource.slice(0, m.index).lastIndexOf("return decline(");
+    if (opened === -1) continue;
+    const code = /return decline\(\s*"([a-z-]+)"/.exec(hookSource.slice(opened))?.[1];
+    if (code !== undefined) found.push({ code, n: Number(m[1]) });
+  }
+  return found;
+}
+
+/**
+ * Every way the header's THREE copies of a limit number have come
+ * apart, each naming BOTH sides and neither saying which is right — the
+ * treatment the three pairs above already give their own copies.
+ *
+ * A LIST RATHER THAN AN ASSERTION, for the reason `limitsDrift` gives:
+ * the positive control runs the SAME comparison over a planted header
+ * and reads what it says.
+ *
+ * THE COVERAGE RESIDUE, DECLARED RATHER THAN DISCOVERED: arm one binds
+ * only a code the numbered block SPELLS, and today exactly one of the
+ * four does (`no-path-to-judge`, inside limit 8) — the same fact that
+ * made `T-215-s1` take `DECLINE_CODES` as its authority instead of
+ * grepping the header. So a citation moved on one of the other three
+ * passes arm one silently. Closing that means giving the block a
+ * greppable handle for every code, which is a change to the hook and a
+ * card of its own; it is written down here rather than left for the
+ * next reader to measure.
+ */
+function citationDrift(hookSource: string): string[] {
+  const complaints: string[] = [];
+  const limits = numberedLimitBlocks(hookSource);
+  const cited = declineCitations(hookSource);
+  const runtime = runtimeCitations(hookSource);
+
+  // ARM ONE — a code WRITTEN INSIDE a numbered limit must be cited with
+  // THAT limit's number.
+  for (const { code, n } of cited) {
+    const spelled = limits.filter((l) => l.text.includes(code));
+    // Not spelled in the block, or spelled twice: there is no ONE limit
+    // to trace the citation back to, so there is nothing to compare.
+    const home = spelled.length === 1 ? spelled[0] : undefined;
+    if (home === undefined) continue;
+    if (home.n !== n) {
+      complaints.push(
+        `the decline list cites \`${code}\` as limit ${n} and the HONEST LIMITS block writes it ` +
+          `into limit ${home.n}`,
+      );
+    }
+  }
+
+  // ARM TWO — and the sentence the refused session reads must cite the
+  // same limit the decline list does.
+  for (const { code, n } of runtime) {
+    const listed = cited.find((c) => c.code === code);
+    if (listed === undefined) {
+      complaints.push(
+        `\`${code}\`'s runtime message cites limit ${n} and the decline list cites no limit for it`,
+      );
+    } else if (listed.n !== n) {
+      complaints.push(
+        `\`${code}\`'s runtime message cites limit ${n} and the decline list cites limit ${listed.n}`,
+      );
+    }
+  }
+  return complaints;
+}
+
+test("the limit a decline CITES is the limit the block numbers, and the one the session reads", () => {
+  const hookSource = hookSourceText();
+
+  // THE ANTI-VACUITY HALF FIRST, and it is three-sided: every complaint
+  // above is a NEGATIVE assertion, so an empty decline list, an empty
+  // limits block or a header with no runtime citation satisfies all of
+  // them at once. This is the failure the body is likeliest to acquire,
+  // because all three readers are slices that a re-worded marker
+  // silently empties.
+  expect(
+    declineCitations(hookSource).length,
+    `the header cites no limits under ${DECLINE_LIST_MARKER}, so this body proves nothing`,
+  ).toBeGreaterThan(0);
+  expect(
+    numberedLimitBlocks(hookSource).length,
+    "the hook declares no numbered limits, so this body proves nothing",
+  ).toBeGreaterThan(0);
+  expect(
+    runtimeCitations(hookSource).length,
+    "no `decline(...)` cites a limit, so arm two proves nothing",
+  ).toBeGreaterThan(0);
+
+  // AND THE CITED CODES ARE THE HOOK'S OWN, bound to the exported frozen
+  // set rather than trusted — the treatment the keeper above gives its
+  // own source reader. A citation naming a code this file cannot return
+  // is drift the other direction.
+  for (const { code } of declineCitations(hookSource)) {
+    expect(
+      [...DECLINE_CODES],
+      `the decline list cites \`${code}\`, which is not a code this hook can answer with`,
+    ).toContain(code);
+  }
+
+  expect(citationDrift(hookSource), "the header's limit citations have drifted").toEqual([]);
+});
+
+test("THE POSITIVE CONTROL: a planted header reds — the citation moved, and the runtime string moved", () => {
+  // KILLED BY: dropping either arm of `citationDrift`, and by a reader
+  // that answers from the LIVE hook whatever file it was handed. The
+  // planted headers are written to a scratch file and read back through
+  // the same `readFileSync` the subject uses, so the comparison under
+  // control is the comparison under test — and the ARRANGEMENT differs,
+  // which is the whole of what makes it a control (verifier.md 2b).
+  //
+  // THE FIRST PLANT IS THE DEFECT `T-215-s2` DELETED, replanted: it is
+  // the exact byte string this file carried at `1886cc7`, so the body
+  // above is shown red under the base header and green under the fixed
+  // one, which is the measurement the card asks for.
+  const real = hookSourceText();
+  const root = scratchRoot();
+  const baseline = citationDrift(real);
+  const added = (planted: string): string[] =>
+    citationDrift(planted).filter((c) => !baseline.includes(c));
+
+  // The figure is READ, never typed: whatever limit the block writes
+  // `no-path-to-judge` into is the one the plant moves it away from.
+  const spelled = numberedLimitBlocks(real).filter((l) => l.text.includes("no-path-to-judge"));
+  expect(
+    spelled.length,
+    "no ONE numbered limit spells `no-path-to-judge`, so the plant has no anchor",
+  ).toBe(1);
+  const home = spelled[0] as { n: number; text: string };
+  const wrong = home.n === 5 ? 4 : 5;
+
+  // PLANT ONE — THE HEADER'S CITATION MOVES, the block and the runtime
+  // string stay. Arm one alone.
+  const moved = path.join(root, "lane-fence-citation-moved.mjs");
+  writeFileSync(
+    moved,
+    real.replace(`\`no-path-to-judge\` (limit ${home.n})`, `\`no-path-to-judge\` (limit ${wrong})`),
+    "utf8",
+  );
+  const movedSource = readFileSync(moved, "utf8");
+  expect(
+    declineCitations(movedSource).find((c) => c.code === "no-path-to-judge")?.n,
+    "the plant did not land in the decline list",
+  ).toBe(wrong);
+  expect(added(movedSource)).toEqual([
+    `the decline list cites \`no-path-to-judge\` as limit ${wrong} and the HONEST LIMITS block ` +
+      `writes it into limit ${home.n}`,
+    `\`no-path-to-judge\`'s runtime message cites limit ${home.n} and the decline list cites ` +
+      `limit ${wrong}`,
+  ]);
+
+  // PLANT TWO — THE RUNTIME STRING MOVES INSTEAD, header untouched. Arm
+  // two ALONE, and this is what keeps the two arms' kill sets from
+  // containing one another: arm one cannot see this at all.
+  const restrung = path.join(root, "lane-fence-runtime-moved.mjs");
+  writeFileSync(
+    restrung,
+    real.replace(
+      `(limit ${home.n} in this file's header)`,
+      `(limit ${wrong} in this file's header)`,
+    ),
+    "utf8",
+  );
+  const restrungSource = readFileSync(restrung, "utf8");
+  expect(
+    runtimeCitations(restrungSource).find((c) => c.code === "no-path-to-judge")?.n,
+    "the plant did not land in the runtime message",
+  ).toBe(wrong);
+  expect(added(restrungSource)).toEqual([
+    `\`no-path-to-judge\`'s runtime message cites limit ${wrong} and the decline list cites ` +
+      `limit ${home.n}`,
+  ]);
+
+  // AND THE KEEPER ABOVE IS BLIND TO BOTH — the measurement that says
+  // this body is not a restatement of it. `limitsDrift` reads the
+  // numbered block and the page; neither plant touches either, so it
+  // stays green over both while `citationDrift` reds. That asymmetry is
+  // why the defect survived at the base.
+  const bullet = laneBulletText();
+  expect(limitsDrift(movedSource, bullet), "the keeper above sees the moved citation").toEqual(
+    limitsDrift(real, bullet),
+  );
+  expect(limitsDrift(restrungSource, bullet), "the keeper above sees the moved string").toEqual(
+    limitsDrift(real, bullet),
+  );
+});
+
 test("the merge that CONSUMES a fence is not refused by it", async () => {
   const fx = makeFixture();
   await arm(fx);
