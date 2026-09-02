@@ -115,3 +115,20 @@ text LINES for diagnostic output and key nothing. A second sweep for
 deterministic (non-`mkdtemp`) machine-scoped names under `tmpdir()`
 returns this lock and one path in `push-checks.spec.ts` that is
 deliberately never created.
+
+**THE DRILLS FOUND ONE THING IN THIS CARD'S OWN WORK.** Every poison
+drill that reds the new serialisation body used to leave a lock file in
+`tmpdir()`: a failing `expect` throws before a release placed after the
+assertions can run, and under the cwd-keyed mutant the spawned probe is
+GRANTED a lock and a one-line `node -e` child has no `finally` either.
+Three files, in the machine-scoped directory this card is about. Not a
+defect in the runner — a stale lock holding a dead pid is reclaimed
+rather than wedging the gate, which the body above this one proves — but
+litter a card about lock hygiene should not produce. The release now runs
+from the `finally`, and the probe gives back anything it was granted; on
+the passing path that clause is dead, because a refused acquire writes no
+file. Re-drilled after the change: D3 and D8 kill the same two
+assertions and **zero** locks are left behind. The key's width is what
+makes this checkable — only this fix mints a 64-hex name, so every
+64-hex lock on the machine is this lane's and every 16-hex one is
+another checkout's.
