@@ -139,6 +139,101 @@ you know is in docs/. You are disposable at any moment.
    exists because a verifier caught its dispatcher doing exactly that,
    declared the provenance in its own addendum rather than letting it
    pass, and argued the correction from 5c's own reasoning.**
+5d. **THE BENCH IS TWO SPAWNS, AND THIS STEP IS THE ONE PLACE THAT SAYS
+   SO.** 5c buys the blindness with the CLOCK; this step buys it with the
+   TOOL GRANT. Every other file points here rather than restating it
+   (T-057: a rule with two statements is two chances to disagree).
+   **A BLIND LINE INSIDE ONE MESSAGE IS NOT A BLIND LINE.** An agent
+   receives its whole prompt at once, so a marker separating the generic
+   duties from the executor's report is decoration the reader has
+   already read past. **And a verifier can leak to ITSELF**: one derived
+   a merge base with `git log --oneline main..HEAD` and read the lane's
+   commit subjects; one ran `git log --oneline -5` while orienting and
+   downgraded itself to *"corroborator rather than independent finder"*
+   on half its questions. Six contamination disclosures in one night,
+   four from the line and two self-inflicted, and the verifiers found
+   all six. **No wording prevents the second pair, because the wording
+   is not the leak** — which is why this is a construction and not a
+   promise.
+   - **PHASE 1 IS ITS OWN SPAWN, AND IT HAS NO FILE, GIT OR SHELL
+     TOOLS.** Its contract arrives PASTED INLINE and it returns one
+     artifact: the attack set. It cannot read the diff, the notes, the
+     log or the worktree, because it has no way to. **PHASE 2 IS A
+     SECOND SPAWN**, receiving that artifact and the lane — and **a
+     CONTINUATION of phase 1's session is not a second spawn**, any more
+     than a marker inside one message was a line: what phase 1 could not
+     see is the guarantee, and a session that keeps going keeps
+     everything it was later shown. Blindness stops being a promise a
+     seat keeps and becomes a property of the spawn, which is the whole
+     of what this step buys.
+   - **TWO BOUNDS, AND THEY ANSWER DIFFERENT HALVES OF THE DESIGN
+     QUESTION.** *Too little and the attack set is uninformed; too much
+     and the paste is itself a channel.* **THE BASE REF BOUNDS WHAT CAN
+     LEAK**: nothing that existed when the lane was cut is downstream of
+     the executor, so VOLUME cannot contaminate — while a seat's SUMMARY
+     can at any length, which is the same reason 5c forbids one for an
+     amendment. **THE CARD'S CRITERIA BOUND WHAT IS WORTH SENDING**: the
+     card as it stood at the cut, this method's verifier file, and the
+     base text of what those criteria are judged against. A fence naming
+     a directory or a hundred-kilobyte document is the ordinary case, so
+     a dispatcher CHOOSES — and having chosen, it NAMES THE REF AND THE
+     SECTIONS IT PASTED, which is what makes an under-paste recoverable
+     through the refusal below instead of invisible. Paste files at a
+     ref. **NEVER the diff, the notes, the executor's report, the commit
+     log, or any figure measured after the lane was cut** — those are
+     the leak this step exists to close, and pasting one hands it over
+     through the only channel a tool-less spawn still has.
+   - **PHASE 1 CANNOT MEASURE, SO IT ASKS — AND ASKING IS THE ONLY
+     OTHER THING IT MAY RETURN.** A card asserting anything about a
+     platform, a tool or an exit code owes a ground truth
+     (roles/verifier.md step 0), and a spawn with no shell cannot take
+     one. So phase 1 returns the LIST of measurements it wants and the
+     dispatcher takes them AT THE BASE REF, where no lane branch exists
+     to shape the answer. Anything else phase 1 finds it cannot reach is
+     a REFUSAL, naming what it needs and why, returned to the
+     dispatcher — who pastes it if it exists at the base ref and spawns
+     again, or records that the set was written without it. **A refusal
+     that reaches the dispatcher is cheaper than a verifier guessing**,
+     and a refusal is stamped and hashed exactly like an attack set, so
+     nothing is ever verified against a question nobody answered.
+   - **THE RETURN IS HASHED BEFORE PHASE 2 IS SPAWNED, AND PHASE 2'S
+     VERDICT CITES THAT HASH.** The dispatcher saves the return to a
+     file and hashes the file; the verdict names the hash it was written
+     against. **A VERDICT CITING A HASH THAT DOES NOT MATCH THE SAVED
+     FILE IS REFUSED** — not read, not weighed, and the pass is re-run —
+     because an attack set editable after the diff is open is an attack
+     set assembled after the fact, and it is indistinguishable from an
+     honest one to every later reader including its author. Three
+     verifiers hashed theirs voluntarily on 2026-08-31 and it made their
+     claims checkable; this makes it the contract rather than the habit.
+     The SPELLING of the hash and of the saved file's name is the
+     project's, in its own conventions, for the reason 5b gives about
+     the assembler.
+   - **AND A RETURN THAT SAYS NOTHING IS REFUSED TOO: BLINDNESS
+     ACHIEVED BY USELESSNESS IS NOT BLINDNESS.** A phase 1 returning an
+     empty or generic set is trivially uncontaminated and worth nothing,
+     and it passes every check above. **The floor is one attack per
+     acceptance criterion, each naming a way to satisfy that criterion's
+     LETTER while failing its purpose.** Under the floor it is a refusal
+     and is handled as one. Check the useful half BEFORE spending phase
+     2: the cheap failure is a second spawn, the expensive one is a
+     verdict nobody can rely on.
+   - **A REJECTION RE-ENTERS BY SPAWNING AGAIN, NEVER BY REMEMBERING.**
+     Phase 2 cannot un-read the diff, so it cannot return to phase 1's
+     frame; a seat that thinks it can is the honour system this step
+     replaces. Where a REJECTED verdict's re-verification needs a fresh
+     set — the card was amended (5c's last clause), or the rejection
+     taught something the first set could not have known — that is a NEW
+     phase 1 spawn against the amended card, with its own hash, stamped
+     as a re-entry and naming the verdict that caused it. The fix is
+     judged against BOTH hashes and neither set is discarded: the first
+     is the only one written before any implementation existed.
+   - **WHERE THE DRIVER CANNOT SPAWN TWICE, SAY SO — IN THE BRIEF AND IN
+     THE VERDICT** (roles/executor.md, the rules governing the whole
+     brief). The single-message fallback keeps the marker and keeps the
+     discipline, and it is a DISCLOSED weaker thing: a reader who is not
+     told cannot tell a guarantee from a habit, and the six disclosures
+     above are what it costs to find out afterwards.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

@@ -299,6 +299,30 @@ and T-236 (2026-09-02, whose pre-compaction text is
   naming the holding pid, was the only thing in the tree that recorded a
   second runner at all. **The collision is symmetric and the fault is
   the DISPATCHER'S**: whoever hands two seats one directory owns it.
+- **THE VERIFIER'S BENCH IS TWO SPAWNS, AND THIS BULLET IS THE
+  SPELLING, NEVER THE SHAPE.** `method/roles/orchestrator.md` 5d states
+  the shape once — phase 1 as its own spawn with no file, git or shell
+  tools, what is pasted into it, what it may return — and this bullet
+  carries only what 5b leaves to a project: the names and the commands.
+  Phase 1's return is SAVED, under the SCRATCH RULE above, as
+  `attack-set-<card id>.md`; a defaulted name is the collision that rule
+  exists for and two benches at once is when it happens. Hash it the way
+  the POISON DRILL below already hashes — `shasum -a 256 <file>`, and
+  there is no `sha256sum` on this platform. The verdict appended to the
+  card CITES that digest on a line of its own, `attack set:
+  sha256:<hex> (<file>)`, so a later reader re-runs one command and gets
+  a yes or a no instead of an impression; a REFUSAL is saved, hashed and
+  cited identically, because a bench that returned a question is a bench
+  whose answer somebody has to be able to find. **A verdict whose cited
+  digest does not match the saved file is REFUSED and the pass is
+  re-run** — `MF-09` in the method eval gate holds that refusal and
+  DEMONSTRATES it, running the comparison against three implementations
+  that lack the property (a presence check, a prefix compare, a
+  fail-open missing-file branch) and requiring each to be caught. **WHAT
+  IS STILL A HAND STEP IS THE WIRING**: nothing runs that comparison
+  against a real verdict and a real saved file, because the file lives
+  in a scratchpad and not in the tree. Do it by hand until `T-205-s1`
+  lands, and read the gap as a gap rather than as a mechanism.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config

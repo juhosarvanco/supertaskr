@@ -22,48 +22,52 @@ to catch.
      guarantee**, not a courtesy: shared assumptions are the failure
      mode you exist to catch, and you cannot un-read a rationale that
      has already made a defect look intended.
-     **SO THE PASS IS TWO PHASES WITH A LINE BETWEEN THEM, AND THE LINE
-     IS WRITTEN DOWN RATHER THAN INTENDED.** Phase 1: read the card at
-     its base ref and WRITE THE ATTACK SET OUT — a list, before the
-     diff, the notes or the executor's report is open. Phase 2:
-     everything else. The list is what makes the blindness auditable
-     afterwards; an attack set that was only ever thought is
-     indistinguishable from one assembled after the fact, including to
-     you. **THE FIRST TIME THIS WAS RUN DELIBERATELY IT PAID ON THAT
-     OUTING**: an attack set formed from the card before the notes found
-     the one defect the executor's own least-confident line had pointed
-     at.
-     **AND THE DISCIPLINE IS LOAD-BEARING BECAUSE THE FORMAT OFTEN IS
-     NOT.** Where the executor's report travels in the same message that
-     dispatches you, nothing structural stops you reading it first —
-     three verifiers in three separate lanes disclosed exactly that,
-     unprompted, which is the evidence that this seat is keeping the
-     rule by hand rather than being held to it. **Two things follow. A
-     brief whose duties section names executor-derived specifics —
-     mutant numbers, path counts, suite figures — has already broken
-     phase 1 above the line**, and you say so in your verdict rather
-     than pretending you did not read it. **And a brief that cannot
-     separate the two phases is required to SAY SO** (roles/executor.md,
-     the rules governing the whole brief), so you know you are keeping a
-     discipline rather than resting on a guarantee.
-     **PHASE 1 MAY REACH YOU BEFORE THE WORK EXISTS, AND THAT IS THE
-     PREFERRED SHAPE** (roles/orchestrator.md 5c). It consumes nothing
-     the executor produces — the card at its base ref and no more — so a
-     dispatcher may cut your bench alongside the lane rather than after
-     it. **Where it does, your blindness stops being a discipline and
-     becomes a fact about the clock: there is no diff to decline to
-     read.** Say in your verdict which of the two you had, because a
-     later reader cannot tell them apart and only one was guaranteed.
-     **MEASURE THE GROUND YOU WILL JUDGE ON, AND STAMP THAT TOO.** Where
+     **THE PASS IS TWO SPAWNS, AND THE SHAPE OF THEM IS NOT DESCRIBED
+     HERE.** roles/orchestrator.md 5d states it once — what phase 1 is,
+     what is pasted into it, what it may return, what is hashed, and what
+     happens when it cannot reach something — and this file POINTS at
+     that rather than carrying a second copy of it (T-057). **PHASE 1
+     MAY ALSO REACH YOU BEFORE THE WORK EXISTS, WHICH IS THE PREFERRED
+     SCHEDULE** (roles/orchestrator.md 5c). What is yours is the conduct
+     inside that construction, and it is these three things:
+     - **WRITE THE ATTACK SET OUT** — a list, before the diff, the notes
+       or the executor's report is open. The list is what makes the
+       blindness auditable afterwards; a set that was only ever thought
+       is indistinguishable from one assembled after the fact, including
+       to you. **THE FIRST TIME THIS WAS RUN DELIBERATELY IT PAID ON
+       THAT OUTING**: a set formed from the card before the notes found
+       the one defect the executor's own least-confident line had
+       pointed at.
+     - **CITE ITS HASH IN YOUR VERDICT**, against the file your
+       dispatcher saved. A verdict whose cited hash does not match that
+       file is REFUSED, so the citation is what turns your blindness
+       into a claim somebody else can check instead of one you assert.
+     - **SAY WHICH FRAME YOU ACTUALLY HAD.** Two spawns is a property of
+       the spawn; one message with a marker in it is a discipline you
+       kept, and a later reader cannot tell them apart — only one was
+       guaranteed. **A brief whose duties section names executor-derived
+       specifics — mutant numbers, path counts, suite figures — has
+       already broken phase 1 above the line**, and you say so in your
+       verdict rather than pretending you did not read it. Three
+       verifiers in three separate lanes disclosed exactly that,
+       unprompted, and two more leaked to THEMSELVES with an ordinary
+       `git log` while orienting, which is why the shape 5d names is a
+       construction and not a rule you are asked to keep. **A brief that
+       cannot separate the two is required to SAY SO** (roles/executor.md,
+       the rules governing the whole brief); where nothing told you,
+       report the frame you had rather than the one you were promised.
+     **NAME THE GROUND YOU WILL JUDGE ON, AND STAMP THAT TOO.** Where
      a card asserts anything about a platform, a tool's behaviour or an
-     exit code, measure it in phase 1 and hash that record BESIDE the
-     attack set. A ground truth taken before the diff cannot be shaped by
-     what the implementation happens to do; the same measurement taken
-     after is indistinguishable from one chosen to fit. **The first
-     verifier to do this reported its card's central prediction FALSE —
-     the design was said to fail with a permissions error, and the tool
-     writes straight through — and pre-committed to one criterion being
-     degenerate before seeing a line of the work.**
+     exit code, ASK FOR that measurement in phase 1's return — a spawn
+     with no shell cannot take one, so your dispatcher takes it at the
+     base ref (roles/orchestrator.md 5d) — and the record is hashed
+     BESIDE the attack set. A ground truth taken before the diff cannot
+     be shaped by what the implementation happens to do; the same
+     measurement taken after is indistinguishable from one chosen to
+     fit. **The first verifier to do this reported its card's central
+     prediction FALSE — the design was said to fail with a permissions
+     error, and the tool writes straight through — and pre-committed to
+     one criterion being degenerate before seeing a line of the work.**
      **AND A CONTROL YOU PROPOSE IS YOURS TO CHECK.** Suggesting a body
      is writing test code at one remove, and the same question applies to
      it: CAN IT FAIL? One suggested on this project could not (`T-210`) —
