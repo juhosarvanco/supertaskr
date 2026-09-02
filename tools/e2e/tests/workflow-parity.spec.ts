@@ -76,11 +76,24 @@ import { repoRoot } from "../preflight";
  * pushed reaches it. Every body above pins a step's COMMAND against
  * docs/CONVENTIONS.md and none of them looks at a step's NAME — which is
  * the key that map is keyed on — so the guard's most useful sentence
- * could degrade to "that step's package is unknown here" with this
- * suite entirely green. The last section of this file is the keeper for
- * that dependency, and the scanner it checks is IMPORTED rather than
- * re-implemented, for the same reason the command list stopped being a
- * sixteen-entry array.
+ * could degrade with this suite entirely green.
+ *
+ * AND THE DEGRADATION IS NOT AN ADMISSION, which is the half worth
+ * writing down. `reachSentence` collapses "this step is unplaceable"
+ * into "this step declares no `working-directory`": `stepWorkingDirectory`
+ * answers `undefined` for both and the guard has no third value to read,
+ * so a step the scanner cannot place is announced as running at the
+ * REPOSITORY ROOT where EVERY push reaches it — byte-identical to what a
+ * genuinely root-running step gets. A confident falsehood, not a lost
+ * sentence. (The hook's own "that step's package is unknown here" is a
+ * DIFFERENT branch: an unreadable workflow file, never an unreadable
+ * step. T-237-s3's card predicted that sentence and the code does not
+ * produce it; the repository won, and the guard-side repair is routed as
+ * T-237-s7 because the hook is another card's fence.)
+ *
+ * The last section of this file is the keeper for that dependency, and
+ * the scanner it checks is IMPORTED rather than re-implemented, for the
+ * same reason the command list stopped being a sixteen-entry array.
  */
 
 interface WorkflowStep {
@@ -1116,9 +1129,11 @@ export function stepPackageProblems(files: WorkflowFile[]): {
           (read === undefined ? "NOTHING" : `\`${read}\``) +
           " for that name. The guard's step->package map is READ out of this file " +
           "(T-237), and the one shape that scanner claims is a sequence item whose " +
-          "FIRST key is `name:` with `working-directory:` indented under it — any " +
-          'other spelling degrades the refusal to "that step\'s package is unknown ' +
-          'here" with this suite green.',
+          "FIRST key is `name:` with `working-directory:` indented under it. A step " +
+          "the scanner cannot place is NOT announced as unplaceable: the guard reads " +
+          "`undefined` for it, which is also what a root-running step reads as, and " +
+          "announces the step as running at the repository root where EVERY push " +
+          "reaches it.",
       );
     }
     if (site.dir !== undefined && !existsSync(path.join(repoRoot, site.dir))) {
@@ -1196,16 +1211,35 @@ test("FIXTURE: renaming a step in a copy of ci.yml degrades the guard's lookup B
   expect(renamed, "the fixture must actually change the workflow").not.toBe(raw);
 
   // THE DEGRADATION, BY NAME. Nothing was deleted — the KEY MOVED, and
-  // every holder of the old name now gets `undefined`, which the guard
-  // prints as "that step's package is unknown here". That is the
+  // every holder of the old name now gets `undefined`. That is the
   // production case rather than a hypothetical: `gh` reports the step
   // name from the run that ALREADY RAN, so the push that CARRIES a
-  // rename is exactly the push whose refusal loses the sentence.
+  // rename is exactly the push whose announcement moves.
   expect(
     stepWorkingDirectory(renamed, oldName),
-    `${oldName} no longer maps to ${dir} — the guard would call that package unknown`,
+    `${oldName} no longer maps to ${dir} — the guard reads nothing for that name`,
   ).toBeUndefined();
   expect(stepWorkingDirectory(renamed, newName), "the key moved rather than vanished").toBe(dir);
+
+  // AND WHAT IT MOVES TO, pinned at the guard's own input. `undefined`
+  // is ALSO what a step that genuinely declares no `working-directory`
+  // reads as, and the guard has no third value — so `reachSentence`
+  // announces the renamed step as running at the repository root where
+  // every push reaches it, which is a confident falsehood rather than
+  // an admission. This body pins the collapse; the repair is the hook's
+  // (T-237-s7) and cannot be made from inside this fence.
+  const rootStep = stepSites([{ rel: CI_WORKFLOW_REL_PATH, raw }]).find(
+    (s) => s.name !== undefined && s.dir === undefined,
+  );
+  expect(rootStep, "ci.yml has a step that genuinely runs at the repository root").toBeDefined();
+  expect(
+    stepWorkingDirectory(raw, rootStep!.name!),
+    "a genuinely root-running step reads as nothing...",
+  ).toBeUndefined();
+  expect(
+    stepWorkingDirectory(renamed, oldName),
+    "...and the unplaceable step reads as the SAME value, so no sentence downstream can separate them",
+  ).toBe(stepWorkingDirectory(raw, rootStep!.name!));
 
   // And a rename that moves BOTH sides at once is NOT a defect this
   // keeper reports: the parity above is scanner-against-YAML and both
@@ -1233,7 +1267,7 @@ const fixtureWorkflow = (stepLines: string[]): WorkflowFile => ({
 
 const FIXTURE_STEP_NAME = "fixture step";
 
-test("FIXTURE: an absent package, an unreadable step and an unnamed one each red BY NAME", () => {
+test("FIXTURE: an absent package, an unreadable step, an unnamed one and one read out of a run block each red BY NAME", () => {
   // THE CONTROL: the readable shape over a directory that really is
   // here derives clean, so every red below is the one edit and not the
   // scaffolding.
@@ -1275,6 +1309,41 @@ test("FIXTURE: an absent package, an unreadable step and an unnamed one each red
   const unreadableSaid = stepPackageProblems([unreadable]).problems.join("\n");
   expect(unreadableSaid, "the step is named").toContain(FIXTURE_STEP_NAME);
   expect(unreadableSaid).toContain("reads NOTHING");
+  //     ...and that NOTHING is the same value a genuinely root-running
+  //     step reads as, which is why the guard announces the unplaceable
+  //     step as running at the root instead of saying it cannot place
+  //     it. The root-running step is not itself a defect — asserted, so
+  //     this keeper cannot be read as banning one.
+  const rooted = fixtureWorkflow([`- name: ${FIXTURE_STEP_NAME}`, "  run: npm test"]);
+  expect(stepWorkingDirectory(rooted.raw, FIXTURE_STEP_NAME)).toBe(
+    stepWorkingDirectory(unreadable.raw, FIXTURE_STEP_NAME),
+  );
+  expect(
+    stepPackageProblems([rooted]).problems,
+    "a step that genuinely runs at the repository root is not a defect",
+  ).toEqual([]);
+
+  // (4) THE OTHER DIRECTION, which no body above reaches: the scanner
+  //     reads a `working-directory:` the YAML parser does NOT. Its line
+  //     scan knows nothing about block scalars, so a `run: |` script
+  //     that writes YAML hands it a package the step never declared —
+  //     and the guard would then announce a package, and a reach
+  //     verdict, for a step that actually runs at the root.
+  const fromRunBlock = fixtureWorkflow([
+    `- name: ${FIXTURE_STEP_NAME}`,
+    "  run: |",
+    "    cat > snippet.yml <<'YAML'",
+    "    working-directory: tools/e2e",
+    "    YAML",
+  ]);
+  expect(
+    stepWorkingDirectory(fromRunBlock.raw, FIXTURE_STEP_NAME),
+    "the scanner reads inside the block scalar — that is the premise",
+  ).toBe("tools/e2e");
+  const blockSaid = stepPackageProblems([fromRunBlock]).problems.join("\n");
+  expect(blockSaid, "the step is named").toContain(FIXTURE_STEP_NAME);
+  expect(blockSaid).toContain("has NO `working-directory`");
+  expect(blockSaid).toContain("reads `tools/e2e`");
 
   // (3) a step carrying a package and no name at all. `gh` reports steps
   //     BY NAME, so this one is unplaceable however the scanner is
