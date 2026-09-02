@@ -5,12 +5,11 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185-s2 (2026-08-31) — measured in-lane with two one-sided drills, not taken because the repair cannot be green before its blocker lands
 touches: [app-shell]
-builder:
-review: independent
+builder: claude-opus-5@subagentreview: independent
 ---
 
 **THE CLAIM AND THE MEASUREMENT DISAGREE.**

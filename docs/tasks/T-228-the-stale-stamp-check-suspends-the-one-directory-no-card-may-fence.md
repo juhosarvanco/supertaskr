@@ -5,12 +5,11 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [.claude]
 suggested_by: "T-211's executor and its blind verifier, independently and then jointly, 2026-09-01 — the executor met it while repairing a false positive control, the verifier reproduced it at a separate bench, and the counter-argument was tested and failed"
-builder:
-review: independent
+builder: claude-opus-5@subagentreview: independent
 ---
 
 **A LANE STUCK IN THE WIDENING WINDOW CANNOT FILE THE FINDING THAT
