@@ -183,3 +183,139 @@ it. It is kept because the property a reader of the brief cares about is
 - `T-236-s6` — `app/src-tauri/src/arch_cmd.rs` carries an unused `Path`
   import, so every cargo run of the crate prints a warning. Outside this
   fence; present at the base and untouched by this diff.
+
+## Verdicts
+
+VERDICT (2026-09-02, verifier claude-opus-5@subagent, bench
+`../nputer-V-T-236-s1`): **APPROVED** at
+`8508b88277e72c47bdcba8ae926637d6471878da`.
+
+**BLINDNESS WAS CLOCK-SHAPED, NOT DISCIPLINE-SHAPED**, and the
+difference is stated because a later reader cannot tell them apart and
+only one is a guarantee (verifier.md). Phase 1 was dispatched before the
+work existed, so there was no diff to decline to read. The attack set
+and the ground truth were written and hashed BEFORE this branch was
+fetched — `attack-V-T-236-s1.md`
+`45ab8503ab2b3fcd363f3ca5cca88e232c1c15705c8308e27c77bf1cb6a534dc`,
+`ground-V-T-236-s1.md`
+`1fae1e55409124b1b742f1261342b354e39300e938fb63cc5b5cb2df3b54e61b`,
+stamped `2026-09-02T01:08:07Z`. **The phase-2 dispatch DID relay
+executor-derived specifics** (mutant numbers, suite figures) — the shape
+verifier.md says breaks phase 1 above the line; here it arrived after
+the stamp, so the contamination is nil, and every relayed figure below
+is re-measured rather than repeated.
+
+**THE CARD'S CENTRAL CLAIM WAS TRUE, MEASURED IN PHASE 1 RATHER THAN
+REPLICATED.** At the base `80ab11c`, `assemble` over the real
+`DiskFiles` printed `integration branch :: method/lane-protocol.md` and
+`find_base :: git log --first-parent --format='%H %s'
+method/lane-protocol.md | grep -m1 ' Checkpoint:' | cut -d' ' -f1`.
+**And the failure is worse than "names a file path": it is SILENT.** Run
+at the base, that pipeline prints NOTHING and exits **0** — git resolves
+the existing file as a pathspec, lists 9 first-parent commits (all of
+them `Merge …`, none `Checkpoint:`), `grep` exits 1 and `cut` is last —
+so a dispatcher reads an EMPTY base and `git worktree add … <base>` cuts
+from HEAD. The correct ref answers `4a9c68c`. A path that does not exist
+exits 128, so the defect was invisible in exactly the checkout where the
+brief is used.
+
+### What the attack set found
+
+- **THE REVERT PROBE, PRE-COMMITTED IN PHASE 1, PASSES.** Restoring
+  `row_lane`'s pick to `backticked(..).next().unwrap_or_default()` and
+  leaving the new bodies untouched: `cargo test -p nputer --lib
+  --no-fail-fast` → exit 101, **both** new bodies red. **My own
+  pre-committed prediction — that the control would be degenerate in
+  the B1 way, `main` asserted against an arrangement the old code also
+  satisfies — was WRONG, and it is recorded as wrong.** The plant is
+  load-bearing.
+- **CONTAINMENT, MEASURED AT THE TIP — and this is the one place the
+  handoff needs correcting.** The notes' four mutants were run at
+  `bd9fc50` and `4d32627`; mutants 1–3 predate the second body, so
+  "containment was one in all four" is a statement about two
+  intermediate commits, not about `8508b88`. At the tip: `.next()`
+  kills BOTH bodies; `.nth(2)` kills BOTH; ambiguity-defaults kills the
+  refusal body ALONE. That left the plant body possibly contained, so I
+  built the discriminator the handoff lacked — **arity-aware BY LABEL,
+  value BY POSITION** (`Ok(backticked(bullet).nth(2))` behind the
+  one-match gate): exit 101, the plant body ALONE. **Neither kill set
+  contains the other; both bodies are load-bearing.** The handoff's
+  conclusion is right; its measurement did not reach it. Per
+  verifier.md 2b the COUNT was never the invariant, so this is a
+  correction, not a finding.
+- **DATA MUTANTS ON THE LIVE DOCUMENT**, because a derivation guard is
+  mis-graded by code mutants by construction. Planting
+  `` `docs/verifier-planted-first.md` `` first in the real
+  `docs/CONVENTIONS.md` lane bullet — landing read from `git diff
+  --unified=0`, not from the mutator — leaves the lib suite **GREEN,
+  270 passed**: the read follows the LABEL on disk, not only through an
+  in-memory overlay. Moving the label (`integration branch` →
+  `trunk branch`) reds 15 bodies including both new ones.
+- **THE `find_base` FIX IS DERIVED, NOT A STRING.** No `"main"` literal
+  exists anywhere in the non-test half of the file, and the new body
+  couples the two lines by construction
+  (`base.text.contains(&format!("%s' {} |", integration.text))`) rather
+  than asserting the constant — the assertion a hardcode would survive.
+- **THE DIVERGENCE I EXPECTED TO SURVIVE IS CLOSED.** `laneSpellings`
+  throws on `found.length !== 1`; every read in `row_lane` used to end
+  `unwrap_or_default()`. The new reader returns `Err(count)` and takes
+  row 4 down by name. **And the emptiness hole is closed by
+  construction rather than by a guard**: `Ok` is non-empty because the
+  reader pushes only when the closing backtick is strictly past its
+  opener — probed, `` integration branch `` `` → `Err(0)`.
+- **THE `GONE` ARM'S OVER-DETERMINATION IS REAL AND CORRECTLY
+  DISCLOSED.** Verified independently: after that replace the needle
+  count in the whole document is **0**, so `bullet_containing` refuses
+  before the label reader is reached. Named rather than counted, which
+  is the right disposition.
+- **THE NEW BYTE-INDEX READER IS TOTAL.** Fifteen adversarial bullets
+  through a scratch probe — multibyte (`é`, `—`, `→`, `ü`), unbalanced,
+  empty and trailing backticks, empty string, adjacent repeats — no
+  panic, no hang, every answer sane.
+- **SECURITY SWEEP CLEAN.** Zero dependency or lockfile churn (the
+  `regex` crate was the tempting and wrong reach — Rust's `regex`
+  supports no lookbehind at all). No subprocess added;
+  `no_subprocess_in_this_file` intact. Every `expect`/`panic!` in the
+  diff is inside test bodies. No secrets. `acl_pin.rs` a 0-file diff.
+  The read's source is still `docs/CONVENTIONS.md` and no new input
+  path crosses a trust boundary.
+- **FENCE HELD.** Exactly four paths: `brief.rs` and three cards. No
+  edit to `docs/CONVENTIONS.md` (fixing the test by moving the
+  document) and none to `dispatch-brief.mjs`.
+
+### Gates, all re-derived in this bench at `8508b88`
+
+`cargo test` exit 0 — **630 passed, 0 failed, 4 ignored** (the relayed
+`634` counts the ignored as passes; base `80ab11c` read 628, so the diff
+adds exactly its two bodies) · `lib/parser` `npx vitest run` 349 passed,
+`tsc --noEmit` exit 0 · `app` `npm run build` exit 0 then `npm test`
+1131 passed · `tools/e2e` `NPUTER_E2E_PORT=25236 npm test` **548
+passed**, `typecheck` / `lint:tokens` / `lint:docs` /
+`capabilities:check` all exit 0, the last CURRENT — so no census is
+owed, as the notes say. `docs-gate.mjs` on the four changed paths, run
+FROM THE REPOSITORY ROOT (from `tools/e2e/` it exits **2**, called
+wrong, which is not a clean gate): FIRES, exit 1, naming exactly the
+three suites above, and reporting every live card's frontmatter parses
+with a legal status. `git merge-tree --write-tree` against main
+`8d21442` exits 0 over the same four paths.
+
+`index --check` exits **1**, a TRUE stale — second line prints both
+count rows and `files +0 -0 ~1` naming
+`app/src-tauri/src/dispatch/brief.rs` (loc 3004 → 3233, symbols 83 →
+85), not the `committed: MISSING` false red. **The regeneration is the
+INTEGRATOR'S** (GRAPH REGEN) and is unreachable from this fence; at the
+base the same command exits 0. `cargo fmt --check` exits 1 at the tip
+AND at the base over the same 48 files, `brief.rs` among them at both —
+pre-existing, not this diff's, and not a command CONVENTIONS lists.
+
+### Filed, not blocking
+
+`T-236-s7` — **the lookbehind guard is unpinned**: neutering
+`tail_of_longer_label` to `false` leaves the whole lib suite green (270
+passed, exit 0), the one mutant of mine that survived. I probed the
+guard directly and it is CORRECT — `` the integration branch `x` `` →
+`Err(0)`, and label `branch` over
+`` integration branch `main`; branch `task/T-NNN` `` → `Ok("task/T-NNN")`,
+exact parity with the JS lookbehind down to `é` and `—` not counting as
+letters — so this is a coverage gap in new code, never a defect, and it
+is a suggestion rather than a verdict item.
