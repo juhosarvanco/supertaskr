@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: building
+status: verifying
 blocked_by: []
-touches: [method/roles, docs/CONVENTIONS.md]
+touches: [method/roles, docs/CONVENTIONS.md, tools/method-evals/evals/mf-08-two-spawn-single-source.mjs, tools/method-evals/evals/mf-09-attack-set-digest-refusal.mjs]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); six disclosures on 2026-08-31 are the evidence, four against this seat and two self-inflicted"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
@@ -100,3 +100,102 @@ that end classes which did measurable damage.
 `method/roles/verifier.md`, `T-204` (which generates the prompt this card
 splits in two), and `T-131` — whose question about the ceremony's cost is
 partly a question about how much of it is honour-system.
+
+
+## Implementation notes (executor claude-opus-5@subagent)
+
+**THE HOME IS `method/roles/orchestrator.md` 5d, AND THE CHOICE OF HOME
+IS THE FIRST DECISION.** The two-spawn shape is an ACT, and the method's
+own precedence rule gives an act to the acting role's file — the seat
+that SPAWNS is the dispatcher. 5c already owned *cut the bench when you
+cut the lane*, so 5d sits beside it and the two divide cleanly: **5c
+buys the blindness with the CLOCK, 5d buys it with the TOOL GRANT.**
+`roles/verifier.md` and `roles/executor.md` now point at 5d; neither
+restates it.
+
+**WHAT THE FOUR DECISIONS WERE DECIDED AS.**
+
+1. **The paste has TWO bounds, not one, and that is what makes *too
+   little / too much* answerable.** The BASE REF bounds what can LEAK —
+   nothing that existed at the cut is downstream of the executor, so
+   volume cannot contaminate, while a seat's SUMMARY can at any length.
+   The CARD'S CRITERIA bound what is worth SENDING. A fence naming a
+   directory or a 117KB document is the ordinary case, so the dispatcher
+   chooses and then NAMES the ref and the sections it pasted — which is
+   what makes an under-paste recoverable through the refusal rather than
+   invisible.
+2. **Hashed before phase 2 is spawned; the verdict cites the digest; a
+   mismatch is REFUSED.** `MF-09` holds that refusal.
+3. **The refusal channel is the only other thing phase 1 may return**,
+   and it absorbed a conflict this card did not name: step 0 told phase
+   1 to MEASURE a ground truth, and a spawn with no shell cannot. So
+   phase 1 returns the LIST of measurements it wants and the dispatcher
+   takes them AT THE BASE REF. `roles/verifier.md`'s sentence moved from
+   *measure it in phase 1* to *ask for it in phase 1*.
+4. **A REJECTED verdict re-enters by SPAWNING AGAIN, never by
+   remembering** — a new phase 1 against the amended card, its own hash,
+   stamped as a re-entry, and the fix judged against BOTH hashes.
+
+**AND A FIFTH THING NOBODY ASKED FOR, BECAUSE THE BLIND ARMS BOTH NAMED
+IT**: a CONTINUATION of phase 1's session is not a second spawn, and the
+paste may never carry the diff, the notes, the report, the commit log or
+a post-cut figure. Both clauses are in 5d.
+
+### The positive control, and its result was NOT what was expected
+
+Two blind phase-1 spawns were run on this card, both reporting
+`tool_uses: 0`. **Arm A** got the paste 5d prescribes (card at the base
+ref, `roles/verifier.md` step 0 at the base ref, 5c at the base ref) and
+returned **20 attacks plus a refusal naming three things it could not
+reach**. **Arm B** was starved to the title and the acceptance criteria
+alone and returned **35 attacks plus a refusal**. **The naive
+expectation — starved returns less — is false, and the criterion is met
+by the arm that was supposed to fail.**
+
+What the paste actually bought was **AIM, not volume**: roughly 26 of
+arm B's 35 attacked a code implementation this card explicitly excludes
+(*a method-doc change, not a tooling change*), while arm A's set was
+aimed at the documents under change. **A counter of attacks would have
+graded the starved arm better**, which is why `T-205-s3` exists and why
+its criteria forbid a length assertion. The other measured result is
+that **arm B's REFUSAL did the work the paste would have done** — it
+named T-057's text, the spawn API and the eval registry as things it
+lacked — which is decision 3 validating decision 1 rather than
+duplicating it.
+
+**THE LIMIT, DISCLOSED RATHER THAN CLOSED**: both arms were *asked* not
+to use tools, because the harness this lane ran in has no tool-free
+agent type. `tool_uses: 0` is the harness's own report, not a grant.
+**An instruction not to look is the honour system this card exists to
+end**, so the enforcement is routed as `T-205-s2` (app-dispatch), where
+the grant can actually be narrowed.
+
+### Measurement
+
+`MF-08` (single source + pointer) and `MF-09` (digest refusal) are the
+committed readers. Before they existed the criteria were measured by a
+reader run **both ways** over the base tree and the lane tree — 7
+findings at the base, 0 in the lane, and 8 of 8 hand degradations of the
+NEW text detected, so the reader can fail on the new text and not only
+on the old. `MF-08`/`MF-09` carry the arms that survive as a gate; the
+scratch reader additionally covered decisions 3 and 4 and AC-1's
+return-bound, which stay document properties with no committed reader.
+
+### Routed, with the fence each needs
+
+- `T-205-s1` — nothing INVOKES MF-09's comparison against a real
+  verdict; the saved file is in a scratchpad no gate may walk.
+- `T-205-s2` — the two-spawn shape has no EMITTER; `brief.rs` assembles
+  one brief with a marker, which 5d names as the fallback.
+- `T-205-s3` — the usefulness floor has no mechanical reader, and the
+  control above says why a naive one would be worse than none.
+- `T-205-s4` — MF-02 cannot resolve a LETTERED sub-step, so every
+  pointer at `5d` dangles silently the day 5d is renamed.
+- `T-205-s5` — `brief.mjs --role verifier` exits 3 for EVERY verifier
+  brief; blocked_by `T-225-s2`, which holds that fence.
+
+### Not done, deliberately
+
+**No method version bump.** This card's own *Rides the release* section
+says it joins the queued release, and `docs/CONVENTIONS.md`'s
+`currently v0.1.9` line is untouched.

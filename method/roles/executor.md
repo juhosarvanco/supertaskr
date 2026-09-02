@@ -251,15 +251,18 @@ column as "the brief's own role file".
   file. **The ruling is the BASE REF**: the verifier reads the card as
   it stood when the lane was cut, which is the card without this role's
   notes, so both sentences hold at once and neither file has to give way.
-  **WHAT SURVIVES IS NOT A CONTRADICTION BUT A LIMIT, AND IT IS
-  DISCLOSED RATHER THAN CLOSED.** The report this role writes commonly
-  travels in the same message that dispatches the verification, so the
-  blindness is a DISCIPLINE the verifier keeps and not a property the
-  protocol guarantees — three verifiers disclosed exactly that, in three
-  separate lanes, unprompted. The two constructions that would make it a
-  property are a two-message dispatch (the phase-1 instruction alone,
-  the report only after the attack set is written) and handing the
-  report ONLY on request. Neither is mandated here, because which is
-  available depends on the driver; **what IS mandated is that a brief
-  which cannot separate them SAYS SO**, so the verifier knows it is
-  keeping a discipline rather than resting on a guarantee.
+  **AND THE LIMIT THAT SURVIVED IT IS NOW CLOSED BY CONSTRUCTION.** The
+  report this role writes commonly travels in the same message that
+  dispatches the verification, which made the blindness a DISCIPLINE the
+  verifier kept rather than a property the protocol guaranteed — three
+  verifiers disclosed exactly that, in three separate lanes, unprompted,
+  and two more leaked to THEMSELVES with an ordinary orientation command
+  no brief could have forbidden. **The construction that closes it is
+  TWO SPAWNS, and `roles/orchestrator.md` 5d is the one place it is
+  stated**: a phase 1 holding no file, git or shell tools cannot read
+  this role's report, whatever a message puts next to it. **What stays
+  HERE is the FALLBACK** — where a driver cannot spawn twice, the marker
+  rule above is the mitigation and **a brief that cannot separate the
+  two phases SAYS SO**, so the verifier knows it is keeping a discipline
+  rather than resting on a guarantee. A disclosure is the honest weaker
+  thing; it was never the design.
