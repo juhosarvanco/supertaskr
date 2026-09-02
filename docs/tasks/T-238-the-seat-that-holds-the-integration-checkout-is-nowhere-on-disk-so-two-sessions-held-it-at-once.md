@@ -102,3 +102,18 @@ checkout is CURRENT, so they red when main advances underneath them
 controls, the way the same spec's stale bodies already do; the fence
 gains the two specs. Criterion added: WHEN main advances past a lane's
 base THE suite in that lane SHALL NOT red on the lane's own currency.
+
+## CORROBORATION, 2026-09-02 — a fourth body, and the trigger is the merge of a guard
+
+Measured by T-215's blind verifier on a bench detached at 42520e3, six
+commits behind main and cut before T-237's push guard merged at 44a95c3:
+`npm test` from tools/e2e reads 555 passed, 4 failed — card-preflight
+.spec.ts:719, checkout-currency.spec.ts:852 and :953, lane-lock.spec.ts
+:899 — because T-216-s1's catcher fires `guard-surface-behind` on every
+`--preflight` and `--write-fence` in a checkout whose `.claude/` is
+behind the integration branch's. Every lane cut before a guard merges
+reds these four on its own currency for the rest of its life, which is
+the class the absorbed T-230-s6 names with a second trigger: not main
+advancing past the base in general, but a `.claude/` change landing.
+The fixture-vantage move this card owes covers it; the lane SHALL name
+card-preflight.spec.ts:719 among the bodies it moves.
