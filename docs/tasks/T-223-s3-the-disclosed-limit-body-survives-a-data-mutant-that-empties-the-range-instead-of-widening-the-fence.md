@@ -8,6 +8,10 @@ priority: 3
 size: S
 blocked_by: []
 touches: [tools/e2e/tests/landing-gate.spec.ts]
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
 review: independent
 suggested_by: verifier claude-opus-5@subagent @V-223
 ---
