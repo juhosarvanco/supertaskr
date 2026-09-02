@@ -110,6 +110,15 @@ need no change. Kill set: that body and no other.
 - A mutant dropping the typographic term reds exactly one body.
 - The eight census arrangements V-T-230-s7 recorded still read identically.
 
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-228-s1: `git show 866ac33^:docs/tasks/T-228-s1-preflight-refuses-a-fence-with-no-spec-file-when-a-criterion-demands-a-body.md`
+- T-230-s8: `git show 866ac33^:docs/tasks/T-230-s8-pin-the-typographic-term-of-marker-end.md`
+
+A lane building this card reads those before it builds.
+
 ## Implementation notes
 
 **BOTH ABSORBED CARDS WERE READ IN FULL FROM HISTORY.** The absorb script
