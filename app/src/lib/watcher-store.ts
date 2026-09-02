@@ -513,16 +513,30 @@ export function selectScreen(shell: ShellState): ScreenModel {
   }
 }
 
+/** The measurement a pick outcome announces: WHICH folder was read, the
+ * ordering stamp Rust drew BEFORE reading it, and when that reading
+ * FINISHED — `null` where no collection produced one (a genesis switch
+ * onto a folder with no docs/ yet). The one shape both branches of
+ * `switchIsOvertaken` compare, so the rule below is spelled once. */
+interface SwitchReading {
+  projectDir: string;
+  seq: number;
+  generatedAtMs: number | null;
+}
+
 /**
- * T-064 CRITERION 1: HAS THE SWITCH ALREADY BEEN OVERTAKEN?
+ * T-064 CRITERION 1, GENERALISED BY T-018-s5: HAS THIS SWITCH ALREADY
+ * BEEN OVERTAKEN?
  *
- * `arm_genesis` arms the watch BEFORE `apply_genesis_folder` commits
+ * Rust arms the watch on the new root BEFORE the command that announces
+ * it commits and stamps — `arm_genesis` before `apply_genesis_folder`
  * (pinned by name in `docs_watch.rs`'s
  * `the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`),
- * so a `docs-changed` emit for the NEW root can reach this store before
- * the invoke reply that announced the switch. When it does, `prev.docs`
- * is already a model OF THE FOLDER THE SWITCH IS ANNOUNCING, read LATER
- * than the switch's own reading.
+ * and the `Rearm` rendezvous before `open_as_project`'s commit. So a
+ * `docs-changed` emit for the NEW root can reach this store before the
+ * invoke reply that announced the switch. When it does, `prev.docs` is
+ * already a model OF THE FOLDER THE REPLY IS ANNOUNCING, read LATER
+ * than the reply's own reading.
  *
  * What the genesis case used to do with that is throw it away:
  * `resetDocsForProjectSwitch` empties the model and KEEPS the seq
@@ -532,29 +546,80 @@ export function selectScreen(shell: ShellState): ScreenModel {
  * docs/ that is not empty. Measured through the real reducers by T-042's
  * verifier: `emit@8 -> fileCount=3`, then `switch@7 -> fileCount=0`.
  *
- * BOTH CONJUNCTS ARE LOAD-BEARING and they answer different questions.
- * The projectDir equality answers "is this the SAME folder?" — a model
- * from the PREVIOUS project must still be cleared, because same-named
- * paths must never fall back to another project's content. The seq
- * comparison answers "is the switch's reading OLDER?" — re-picking the
- * currently-open folder as a genesis root takes a NEW, higher seq, so it
- * is not an overtake and must apply normally.
+ * ONE PREDICATE, BOTH BRANCHES — T-018-s5, AND WHY IT IS SPELLED ONCE.
+ * This guard was `genesisSwitchIsOvertaken` and only the `"genesis"`
+ * branch asked it. The `"picked"` branch — the ordinary pick, the one
+ * the front door's folder picker actually runs — asked nothing: it
+ * called `reduceDocs(prev.docs, outcome.snapshot)` unconditionally. The
+ * overtake is DESIGNED on both paths (`open_as_project` arms before it
+ * commits exactly as `apply_genesis_folder` does), so a guard on one of
+ * them was an asymmetry with no argument behind it, and two spellings
+ * of one rule is the T-057 failure this project names by number. WHERE
+ * THE TWO CASES REALLY DIFFER IS THE SHAPE OF THE READING, NOT THE
+ * RULE: a `picked` reply always carries a snapshot, a genesis switch
+ * onto a folder with no docs/ yet carries none. That difference is read
+ * off the outcome below; the comparison happens in one place.
  *
- * THE READING SEQ IS THE SNAPSHOT'S WHEN THERE IS ONE. Rust stamps a
- * carried snapshot with the switch's own seq, so the two are the same
- * number whenever both exist; spelling it this way covers the
- * snapshot-less branch too, which had the same defect plus a second one
- * — it ASSIGNED `outcome.seq`, so an overtaking emit at a higher seq was
- * followed by the watermark going backwards.
+ * WHAT "OVERTAKEN" MEANS, IN THE TWO STAMPS RUST SENDS, AND WHY ONE OF
+ * THEM IS NOT ENOUGH. `WatchState::next_seq` draws BEFORE the collect on
+ * every path, so `seq` dates the START of a collection and never its
+ * content; `snapshot_from` stamps `generated_at_ms` from `now_ms()`
+ * AFTER the walk returns, so `generatedAtMs` dates the reading itself.
+ * The two can disagree, and the ordinary pick is exactly where they do:
+ * the watcher thread draws its seq first and finishes its walk last, so
+ * its emit carries a LOWER seq and NEWER bytes while the reply carries a
+ * HIGHER seq and an OLDER read. Compared by seq alone the reply looks
+ * fresh, `reduceDocs` applies it, and the newer tree is discarded until
+ * the next fs event under that folder — with the watermark advanced past
+ * the emit that carried it. So a reading is NEWER only when BOTH stamps
+ * agree that it is: its ordering stamp advanced AND its collection did
+ * not finish earlier than the one the model already holds.
+ *
+ * BOTH CONJUNCTS OF THE FIRST TEST ARE LOAD-BEARING and they answer
+ * different questions. The projectDir equality answers "is this the SAME
+ * folder?" — a model from the PREVIOUS project must still be cleared,
+ * because same-named paths must never fall back to another project's
+ * content. The stamp comparison answers "is this reading OLDER?" —
+ * re-picking the currently-open folder takes a NEW, higher seq and a NEW
+ * collection, so it is not an overtake and must apply normally.
+ *
+ * THE `<` ON THE CLOCK IS STRICT, DELIBERATELY. Two collections that
+ * finish inside one millisecond are not ordered by their clock at all,
+ * so the seq stamp decides and the reading applies — which is what keeps
+ * this from dropping a re-pick of a small tree on a fast machine, and
+ * what a fixture stamping one constant `generatedAtMs` across a run
+ * relies on. THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND:
+ * `now_ms()` is a wall clock, so a backwards clock step can make a
+ * genuinely newer reading look older and hold a pick's tree back until
+ * the next fs event under that folder. That is the SAME window the
+ * unguarded branch left open on every overtake, entered far more rarely,
+ * and it is bounded by the same recovery.
  */
-export function genesisSwitchIsOvertaken(
+export function switchIsOvertaken(
   prev: DocsModelState,
-  outcome: Extract<PickOutcomePayload, { kind: "genesis" }>,
+  outcome: Extract<PickOutcomePayload, { kind: "picked" } | { kind: "genesis" }>,
 ): boolean {
-  return (
-    prev.projectDir === outcome.projectDir &&
-    (outcome.snapshot?.seq ?? outcome.seq) <= prev.seq
-  );
+  // THE READING IS THE SNAPSHOT'S WHEN THERE IS ONE. Rust stamps a
+  // carried snapshot with the switch's own seq, so the two are the same
+  // number whenever both exist; spelling it this way covers the
+  // snapshot-less genesis branch too, which had the same defect plus a
+  // second one — it ASSIGNED `outcome.seq`, so an overtaking emit at a
+  // higher seq was followed by the watermark going backwards.
+  const reading: SwitchReading =
+    outcome.kind === "picked"
+      ? {
+          projectDir: outcome.snapshot.projectDir,
+          seq: outcome.snapshot.seq,
+          generatedAtMs: outcome.snapshot.generatedAtMs,
+        }
+      : {
+          projectDir: outcome.projectDir,
+          seq: outcome.snapshot?.seq ?? outcome.seq,
+          generatedAtMs: outcome.snapshot?.generatedAtMs ?? null,
+        };
+  if (prev.projectDir !== reading.projectDir) return false;
+  if (reading.seq <= prev.seq) return true;
+  return reading.generatedAtMs !== null && reading.generatedAtMs < prev.generatedAtMs;
 }
 
 /**
@@ -586,7 +651,23 @@ export function reducePickOutcome(
     case "picked":
       return {
         ...prev,
-        docs: reduceDocs(prev.docs, outcome.snapshot),
+        // T-018-s5: THE SAME QUESTION THE GENESIS BRANCH ASKS, asked by
+        // the same predicate. `open_as_project` arms the watch on the
+        // new root before it commits and stamps, so an emit for THIS
+        // folder can reach the store ahead of this reply and be the
+        // LATER reading. Unguarded, `reduceDocs` applied the reply on
+        // its `seq` alone — and `seq` dates the START of a collection —
+        // so an older read overwrote a newer tree and the watermark
+        // advanced past the emit that carried it, discarding it until
+        // the next fs event under that folder. A pure identity return
+        // also suppresses the `model-updated` echo (`commitPickOutcome`
+        // echoes on `next.docs !== before.docs`) — correctly, because
+        // the emit already echoed the model it produced. The SCREEN
+        // still moves: this is a switch, and the phase is what the
+        // switch is FOR.
+        docs: switchIsOvertaken(prev.docs, outcome)
+          ? prev.docs
+          : reduceDocs(prev.docs, outcome.snapshot),
         phase: "open",
         genesisDir: null,
         rejectedPick: null,
@@ -597,13 +678,14 @@ export function reducePickOutcome(
       // T-064 criterion 1: THE LATER READING WINS. An emit that
       // overtook the invoke reply is a measurement of THIS folder taken
       // after the switch's own, so it is kept rather than reset away.
-      // See `genesisSwitchIsOvertaken` for why both conjuncts are
-      // load-bearing; this branch is a pure identity return, so it also
-      // suppresses the `model-updated` echo (`commitPickOutcome` echoes
-      // on `next.docs !== before.docs`) — correctly, because the emit
+      // See `switchIsOvertaken` for why both conjuncts are load-bearing
+      // and why the `"picked"` branch above asks the very same one; this
+      // branch is a pure identity return, so it also suppresses the
+      // `model-updated` echo (`commitPickOutcome` echoes on
+      // `next.docs !== before.docs`) — correctly, because the emit
       // already echoed the model it produced.
       let docs: DocsModelState;
-      if (genesisSwitchIsOvertaken(prev.docs, outcome)) {
+      if (switchIsOvertaken(prev.docs, outcome)) {
         docs = prev.docs;
       } else {
         // The previous project's model is cleared HERE — same-named

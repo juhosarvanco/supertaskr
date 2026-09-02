@@ -8777,7 +8777,7 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:33db0421842b3acbd00ec35f409fdb44d97f234ecf681e57638669247c2e8a05",
+      "hash": "blake3:5a7a492fd59676525b6f6de06b7ee8660b766f698949256be38d8caab17249f6",
       "loc": 4738,
       "symbols": [
         {
@@ -18810,8 +18810,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:028fb18ea011a80b7107ca13a11512e117df0904ad452c580009aacd59f5edef",
-      "loc": 1452,
+      "hash": "blake3:33e898b0099c205991a4bf3350c9fe47352d2f29883ad1aa6f31f8c09fc9b5c7",
+      "loc": 1534,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -18959,8 +18959,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            718,
-            739
+            800,
+            821
           ]
         },
         {
@@ -19004,6 +19004,16 @@
           ]
         },
         {
+          "id": "s:app/src/lib/watcher-store.ts#SwitchReading",
+          "name": "SwitchReading",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            521,
+            525
+          ]
+        },
+        {
           "id": "s:app/src/lib/watcher-store.ts#UNANSWERED_INDEX_MESSAGE",
           "name": "UNANSWERED_INDEX_MESSAGE",
           "kind": "const",
@@ -19019,8 +19029,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            924,
-            937
+            1006,
+            1019
           ]
         },
         {
@@ -19029,8 +19039,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            952,
-            980
+            1034,
+            1062
           ]
         },
         {
@@ -19039,8 +19049,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            909,
-            922
+            991,
+            1004
           ]
         },
         {
@@ -19049,18 +19059,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1331,
-            1377
-          ]
-        },
-        {
-          "id": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
-          "name": "genesisSwitchIsOvertaken",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            550,
-            558
+            1413,
+            1459
           ]
         },
         {
@@ -19069,8 +19069,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            868,
-            870
+            950,
+            952
           ]
         },
         {
@@ -19079,8 +19079,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            784,
-            784
+            866,
+            866
           ]
         },
         {
@@ -19089,8 +19089,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            872,
-            874
+            954,
+            956
           ]
         },
         {
@@ -19099,8 +19099,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1394,
-            1396
+            1476,
+            1478
           ]
         },
         {
@@ -19109,8 +19109,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            800,
-            800
+            882,
+            882
           ]
         },
         {
@@ -19119,8 +19119,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            669,
-            673
+            751,
+            755
           ]
         },
         {
@@ -19129,8 +19129,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1386,
-            1391
+            1468,
+            1473
           ]
         },
         {
@@ -19139,8 +19139,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            693,
-            704
+            775,
+            786
           ]
         },
         {
@@ -19149,8 +19149,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1249,
-            1251
+            1331,
+            1333
           ]
         },
         {
@@ -19159,8 +19159,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1238,
-            1240
+            1320,
+            1322
           ]
         },
         {
@@ -19179,8 +19179,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            988,
-            1032
+            1070,
+            1114
           ]
         },
         {
@@ -19199,8 +19199,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            567,
-            647
+            632,
+            729
           ]
         },
         {
@@ -19219,8 +19219,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1055,
-            1092
+            1137,
+            1174
           ]
         },
         {
@@ -19229,8 +19229,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1409,
-            1452
+            1491,
+            1534
           ]
         },
         {
@@ -19239,8 +19239,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1274,
-            1322
+            1356,
+            1404
           ]
         },
         {
@@ -19249,8 +19249,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1111,
-            1188
+            1193,
+            1270
           ]
         },
         {
@@ -19269,8 +19269,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            941,
-            950
+            1023,
+            1032
           ]
         },
         {
@@ -19279,8 +19279,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            876,
-            879
+            958,
+            961
           ]
         },
         {
@@ -19289,8 +19289,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            786,
-            799
+            868,
+            881
           ]
         },
         {
@@ -19299,8 +19299,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            886,
-            907
+            968,
+            989
           ]
         },
         {
@@ -19309,8 +19309,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1201,
-            1230
+            1283,
+            1312
           ]
         },
         {
@@ -19319,8 +19319,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1259,
-            1261
+            1341,
+            1343
           ]
         },
         {
@@ -19329,8 +19329,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            829,
-            829
+            911,
+            911
           ]
         },
         {
@@ -19339,8 +19339,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            831,
-            831
+            913,
+            913
           ]
         },
         {
@@ -19349,8 +19349,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            861,
-            861
+            943,
+            943
           ]
         },
         {
@@ -19359,8 +19359,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            863,
-            866
+            945,
+            948
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
+          "name": "switchIsOvertaken",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            598,
+            623
           ]
         },
         {
@@ -19369,8 +19379,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            850,
-            850
+            932,
+            932
           ]
         }
       ]
@@ -24282,8 +24292,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:862ca5dba9b0ac4bb176b03d1a965406276efe95fb200bcc51a792f0496d9c02",
-      "loc": 605,
+      "hash": "blake3:1b9b2a9c74f1cb1afda02b4dc0fc4b02d8b56a10a4674dc787bb536e8d15f88e",
+      "loc": 739,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -33229,13 +33239,13 @@
         "EMPTY_PROBE",
         "PlanProbePayload",
         "ShellState",
-        "genesisSwitchIsOvertaken",
         "outcomeCarriesSnapshot",
         "planChecklist",
         "reduceDocs",
         "reducePickOutcome",
         "resetDocsForProjectSwitch",
-        "selectScreen"
+        "selectScreen",
+        "switchIsOvertaken"
       ]
     },
     {
@@ -40638,18 +40648,6 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
-      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
-      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/src/lib/watcher-store.ts#getShellState",
       "to": "s:app/src/lib/watcher-store.ts#ShellState",
       "kind": "type_ref",
@@ -40771,12 +40769,6 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
-      "to": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
       "to": "s:app/src/lib/watcher-store.ts#reduceDocs",
       "kind": "call",
       "confidence": "resolved"
@@ -40784,6 +40776,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
       "to": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -40953,6 +40951,24 @@
       "from": "s:app/src/lib/watcher-store.ts#startGenesisHere",
       "to": "s:app/src/lib/watcher-store.ts#runPicker",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
+      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
+      "to": "s:app/src/lib/watcher-store.ts#SwitchReading",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -44301,7 +44317,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2502,
-    "edges": 2390
+    "symbols": 2503,
+    "edges": 2391
   }
 }

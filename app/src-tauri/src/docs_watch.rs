@@ -2632,7 +2632,7 @@ mod tests {
         // NAME. `the_watch_is_armed_before_the_switch_commits_so_an_emit_
         // can_overtake_the_reply` pins the arm-before-commit order as
         // DESIGNED, precisely because an emit for the new root may reach
-        // the webview ahead of the invoke reply — `genesisSwitchIsOvertaken`
+        // the webview ahead of the invoke reply — `switchIsOvertaken` (renamed by T-018-s5 from `genesisSwitchIsOvertaken`)
         // in app/src/lib/watcher-store.ts is the frontend guard that
         // exists for it. So "every post-re-arm emit outranks the pick's
         // reply" is NOT a property of this watcher, and asserting it flat
@@ -4354,7 +4354,7 @@ mod tests {
     /// makes T-007's "a failed arm leaves the previous project exactly as
     /// it was" true, and it is ALSO why a `docs-changed` emit for the new
     /// root can reach the webview before the invoke reply does — the
-    /// whole reason `genesisSwitchIsOvertaken` exists on the frontend. If
+    /// whole reason `switchIsOvertaken` (renamed by T-018-s5 from `genesisSwitchIsOvertaken`) exists on the frontend. If
     /// this order were ever flipped, that guard would become unreachable
     /// code and nothing would say so.
     ///
