@@ -105,7 +105,11 @@
  *   refusal costs a re-run and keeps the reading honest.
  * The lock is advisory and keyed to the repo root, holds the pid, and is
  * reclaimed when its holder is gone — a crashed run must not wedge the
- * gate.
+ * gate. **KEYED ON THE WHOLE ROOT PATH, by a digest of it** (T-202-s1):
+ * the key was a SUFFIX of the path and collided for every pair of
+ * checkouts agreeing on their last eight bytes, which a lane and its
+ * own verifier bench do for every eight-character card id. See
+ * `lockPath` for the measurement and for why the FILE does not move.
  *
  * ── THE HONEST RESIDUAL, SAID OUT LOUD ──────────────────────────────
  * A child that PRINTS a plausible summary having run nothing is reported
@@ -141,6 +145,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   closeSync,
   existsSync,
@@ -574,10 +579,51 @@ export function judge({ status, count, ref, suite }) {
 
 // ── THE SOLO LOCK ────────────────────────────────────────────────────
 
-/** The advisory lock path, keyed to the repo root so two checkouts do
- *  not block each other. */
+/**
+ * The advisory lock path, keyed to the repo root so two checkouts do
+ * not block each other.
+ *
+ * ── THE KEY IS A DIGEST OF THE WHOLE PATH, NEVER A SUFFIX OF IT ──────
+ * (T-202-s1.) It used to be `Buffer.from(root).toString("hex")` cut to
+ * its last sixteen hex characters — the last EIGHT BYTES of the path —
+ * and a suffix cannot tell apart two paths that agree on it. Every card
+ * id this method issues is exactly eight characters, so a lane
+ * `…/nputer-T-223-s3` and its verifier bench `…/nputer-V-T-223-s3` end
+ * in the same eight bytes and produced the identical key
+ * (`542d3232332d7333`). The two seats the method deliberately runs side
+ * by side were therefore serialised on every eight-character card, each
+ * reading the refusal as another checkout's lock — which the sentence
+ * above says cannot happen. Three seats reported it in one day.
+ * A digest reads EVERY byte of the path, so no two distinct checkouts
+ * share a key, and it is a pure function of the path alone: one
+ * checkout's two runs still meet at one file however they were started,
+ * which is what makes the guard below a guard at all.
+ *
+ * A DIGEST AND NOT THE PATH'S OWN FULL HEX, AND THE WIDTH IS THE
+ * REASON. Both read every byte, but the hex of the path is 2 bytes wide
+ * per byte of root, making this basename `21 + 2 * root.length`. Against
+ * NAME_MAX — 255 here, `getconf NAME_MAX /` — that throws ENAMETOOLONG
+ * out of `acquireSolo`'s own `writeFileSync` at a root of 118 bytes:
+ * `ceil((255 - 21) / 2) + 1`, derived rather than guessed. The longest
+ * root that reaches this function in the suite today is 72 bytes (a
+ * `mkdtempSync` root under a 48-byte `tmpdir()`, 165 bytes of basename),
+ * so the hex form would not have failed HERE — and 118 bytes of
+ * checkout path is an ordinary home directory two projects deep, which
+ * is a failure waiting for the machine rather than a safe margin. A
+ * sha256 is FIXED at 64 hex characters whatever the root, so the
+ * basename is 85 bytes for every checkout on every machine — 170 bytes
+ * of headroom, and no root length can move it.
+ *
+ * THE FILE ITSELF DOES NOT MOVE, DELIBERATELY. Its directory
+ * (`tmpdir()`), its `nputer-gate-run-<key>.lock` name shape, its JSON
+ * payload and its lifetime — written at acquire, removed by the holding
+ * pid at release, reclaimed when the holder is gone — are unchanged,
+ * because two readers depend on them: `acquireSolo` below, and
+ * tools/e2e/tests/gate-run.spec.ts's stale-reclaim body, which plants a
+ * lock at this path by hand and reads the pid back out of it.
+ */
 export function lockPath(root = repoRoot) {
-  const key = Buffer.from(root).toString("hex").slice(-16);
+  const key = createHash("sha256").update(root, "utf8").digest("hex");
   return path.join(tmpdir(), `nputer-gate-run-${key}.lock`);
 }
 

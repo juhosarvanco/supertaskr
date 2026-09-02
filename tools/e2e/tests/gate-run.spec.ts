@@ -587,6 +587,105 @@ test("a lock left behind by a dead process is reclaimed, so a crashed run cannot
   }
 });
 
+test("two checkouts whose paths differ only BEFORE their last eight bytes get DIFFERENT lock keys, so a lane and its own verifier bench are not serialised", () => {
+  // T-202-s1. The key was the last sixteen hex characters of the root
+  // path — its last EIGHT BYTES — and a suffix cannot tell apart two
+  // paths that agree on it. Every card id this method issues is exactly
+  // eight characters, so a lane and its bench ended in the same eight
+  // bytes and hashed to one key: measured at the base, both roots below
+  // produced `542d3232332d7333`, and three seats in one day read the
+  // resulting refusal as another checkout's lock.
+  //
+  // THREE PAIRS, BECAUSE "A FUNCTION OF THE WHOLE PATH" FAILS IN MORE
+  // THAN ONE DIRECTION. A SUFFIX key collides on the first pair; a
+  // BASENAME key survives that pair and collides on the third; neither
+  // reads the whole path, and one arm each is what tells them apart.
+  const lane = "/x/nputer-T-223-s3";
+  const bench = "/x/nputer-V-T-223-s3";
+  expect(lockPath(lane)).not.toBe(lockPath(bench));
+  // ...while ONE root twice is ONE lock, or the guard above stops being
+  // a guard. (Symmetric on purpose, and its control is assertion-side:
+  // purity is a PRECONDITION of the two bodies above, so every code-side
+  // break of it reds them too. The cross-process half is the body below.)
+  expect(lockPath(lane)).toBe(lockPath(lane));
+  // A parent directory is part of the path as much as a basename is:
+  // two checkouts of the same NAME under different parents are two
+  // checkouts, and a key reading only the last segment merges them.
+  expect(lockPath("/a/nputer-T-223-s3")).not.toBe(lockPath("/b/nputer-T-223-s3"));
+  // AND THE FILE ITSELF DOES NOT MOVE. Nothing at the base asserted the
+  // lock's directory or its name shape, so a key change could have
+  // carried the file out of tmpdir() — where `acquireSolo` and the
+  // stale-reclaim body above both go looking for it — and every body
+  // here would still have passed.
+  expect(path.dirname(lockPath(lane))).toBe(tmpdir());
+  expect(path.basename(lockPath(lane))).toMatch(/^nputer-gate-run-[0-9a-f]+\.lock$/);
+  // AND THE KEY'S WIDTH IS FIXED, WHICH IS WHY IT IS A DIGEST AND NOT
+  // THE PATH'S OWN HEX. The card offered either; the hex of the path
+  // makes the basename 21 bytes plus TWICE the root, which passes
+  // NAME_MAX (255 on this platform, `getconf NAME_MAX /`) at a root of
+  // 118 bytes and throws ENAMETOOLONG out of `acquireSolo`. The longest
+  // root reaching lockPath in this suite is 72 bytes, so that form would
+  // not have failed here — but 118 bytes of checkout path is an ordinary
+  // home directory two projects deep. A sha256's 64 hex characters put
+  // the basename at 85 bytes for EVERY root, so the deep root below
+  // fits with exactly the room the shallow one has.
+  const deep = `/x/${"deep-".repeat(40)}nputer-T-223-s3`;
+  expect(path.basename(lockPath(deep)).length).toBeLessThan(255);
+});
+
+test("one checkout's two runs reach ONE lock file however each was started, so the widened key still serialises a root against itself", () => {
+  // The other half of T-202-s1, and the direction the widening could
+  // break: a key that reads the whole path must still be a function of
+  // the PATH ALONE. Mix in anything per-process — a pid, a nonce, the
+  // directory the command was typed in — and the body above still
+  // passes while the solo guard quietly OPENS, which is the worse
+  // failure, because a lock that never refuses looks exactly like a
+  // machine with nothing else running.
+  //
+  // §THE SOLO GUARD's first body cannot see that: its probe inherits
+  // this process's working directory, so a cwd-keyed lock still refuses
+  // there. THIS PROBE IS SPAWNED SOMEWHERE ELSE ON PURPOSE, and reports
+  // the lock path it computed as well as the answer it got.
+  const root = mkdtempSync(path.join(tmpdir(), "t202s1-one-root-"));
+  const elsewhere = mkdtempSync(path.join(tmpdir(), "t202s1-elsewhere-"));
+  // THE RELEASE IS IN THE `finally`, NOT AFTER THE ASSERTIONS, and this
+  // body earned that the hard way: its own poison drills left three
+  // locks behind in `tmpdir()` — a failing `expect` throws before a
+  // release placed below it ever runs, and the leaked file is in the
+  // MACHINE-scoped directory this whole card is about. A stale lock is
+  // reclaimed rather than wedging (the body above), so it is litter and
+  // not a defect; a card about lock hygiene should not produce it.
+  let release = () => {};
+  try {
+    const held = acquireSolo("rust", root);
+    expect(held.ok).toBe(true);
+    if (held.ok) release = held.release;
+    const probe = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `import { acquireSolo, lockPath } from ${JSON.stringify(path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"))};` +
+          `const r = acquireSolo("e2e", ${JSON.stringify(root)});` +
+          // A REFUSED acquire writes nothing, so this clause is dead on
+          // the passing path — it exists for the mutants. When a poison
+          // drill breaks the key, the probe is GRANTED a lock instead,
+          // and a one-line child has no `finally` to give it back.
+          `if (r.ok) r.release();` +
+          `process.stdout.write(JSON.stringify({ ok: r.ok, lock: lockPath(${JSON.stringify(root)}) }));`,
+      ],
+      { cwd: elsewhere, encoding: "utf8" },
+    );
+    const answer = JSON.parse(probe.stdout || "{}");
+    expect(answer.lock).toBe(lockPath(root));
+    expect(answer.ok).toBe(false);
+  } finally {
+    release();
+    rmSync(root, { recursive: true, force: true });
+    rmSync(elsewhere, { recursive: true, force: true });
+  }
+});
+
 // ── §THE FOUR CODES ──────────────────────────────────────────────────
 
 test("the runner answers in this repository's four gate codes, with REFUSED distinct from both green and red", () => {

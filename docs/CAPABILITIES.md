@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **624 behaviours** — 622 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **626 behaviours** — 624 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -325,6 +325,8 @@ Census: **624 behaviours** — 622 extracted sentences + 2 named-not-extracted (
 - stripping escapes leaves ordinary bracketed text alone, so the sanitiser cannot eat a card id
 - a solo suite is REFUSED while another run holds the lock, rather than queued behind it
 - a lock left behind by a dead process is reclaimed, so a crashed run cannot wedge the gate
+- two checkouts whose paths differ only BEFORE their last eight bytes get DIFFERENT lock keys, so a lane and its own verifier bench are not serialised
+- one checkout's two runs reach ONE lock file however each was started, so the widened key still serialises a root against itself
 - the runner answers in this repository's four gate codes, with REFUSED distinct from both green and red
 - the CLI refuses an unknown suite name at the usage code rather than running nothing and exiting clean
 - the CLI called with no arguments exits at the usage code, so an empty invocation is never a clean run
