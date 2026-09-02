@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: "T-126-s2's executor, which built the ruled shape and found the disposition of the Rust half was a decision the ruling did not take"
 blocked_by: []
 touches: [app-dispatch, app-shell]
@@ -78,3 +78,7 @@ answer is how two engines came to disagree about one registry.
 because `lib.rs`'s `dispatch_lanes` doc comment names
 `dispatch::join::join_lanes` in the sentence explaining why the command
 does not join, and that sentence is falsified by disposition 1.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-126-s2 merge
+
+The architect seat. The Rust join has no non-test caller but brief.rs and lanes.rs hold it; its disposition is a design call, not a deletion. No dispatch follows today by the user's instruction.

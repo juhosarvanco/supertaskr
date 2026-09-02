@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "T-126-s2's executor, from its OWN token file — a killed e2e leg wrote ref=300d04b beside tree=48d50df, two commits apart, at 2026-09-02"
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, .claude/hooks/gate-token.mjs, tools/e2e/tests/gate-run.spec.ts]
@@ -83,3 +83,7 @@ in this lane's tree or on `main` — when this was filed
 under the filing lane's own card because `TASK-FORMAT`'s *search before
 filing* puts a finding with the card that owns its class, and the class
 here is the verdict token's, not the dispatch join's.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2, at the T-126-s2 merge
+
+The architect seat. The runner captures ref before the suite and the token tree after it, so a run spanning a commit mints a token for a tree it never graded; the push guard cannot see it. A guard-class defect. No dispatch follows today by the user's instruction.

@@ -4,8 +4,8 @@ title: Nothing CALLS the join — `T-126-s2` built it, and the two files that re
 feature: F-04
 milestone: 4
 size: S
-priority: 2
-status: suggested
+priority: 3
+status: planned
 suggested_by: "T-126-s2's executor, from inside the [app-board, app-dispatch] fence that reaches the join and neither of its callers"
 blocked_by: []
 touches: [app-shell, app-dispatch]
@@ -96,3 +96,7 @@ prop doc) and could reach neither of these:
 The sweep was shown capable of finding something before its remainder was
 written down: the same grep over `no second copy` returns three live
 sites in `app/src` and `app/src-tauri/src`.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-126-s2 merge
+
+The architect seat. The door: nothing passes a dispatch prop to Board, and the shipped app does not render the block; F-04 product work, with T-126-s1 parked as its ruling. No dispatch follows today by the user's instruction.
