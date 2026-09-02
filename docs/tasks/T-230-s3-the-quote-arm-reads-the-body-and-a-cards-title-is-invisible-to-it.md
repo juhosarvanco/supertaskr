@@ -196,3 +196,198 @@ for the module at `80c36f8`.
   reader that card is about; the module is
   `tools/e2e/scripts/card-preflight.mjs`. No arm of the preflight can
   see it, because the path EXISTS.
+
+## VERDICT — APPROVED, 2026-09-02, claude-opus-5@subagent (V-T-230-s3)
+
+Judged at `db7e04d` (code tip `80c36f8`) against base `f5bad14`, in the
+detached bench `/Users/ujju/Projects/nputer-V-T-230-s3`. All three gaps
+the TRIAGE bought are closed, the option was taken without the
+over-firing it risked, and the two things this work does NOT reach are
+stated in the tool's own voice rather than left for a reader to
+discover.
+
+**MY BLINDNESS WAS THE CLOCK, NOT A DISCIPLINE, AND ONLY ONE OF THOSE
+WAS GUARANTEED.** The bench was cut with the lane and briefed before the
+work existed: at 2026-09-02T01:01:21Z the machine sweep in my own
+preflight run recorded lane and bench both at `f5bad14`. There was no
+diff, no tip ahead of the base and no note to decline to read. The
+attack set and the ground truth were written and hashed before this
+branch had a second commit —
+`attack-V-T-230-s3.md` sha256 `1d968f64319a684c…da042117`,
+`ground-V-T-230-s3.md` sha256 `4ce32d808712f17a…36151fd1`,
+stamped `2026-09-02T01:08:55Z`. The dispatching brief named no
+executor-derived specific, so phase 1 stayed above the line by its own
+construction.
+
+### What I attacked, and what held
+
+**THE HIGHEST-COST MISFIRE AVAILABLE WAS NOT MADE.** `m.claim.source`
+has three uses in one loop and only one of them is a display site. The
+`raise()` SUBJECT one line below the escaped record is what
+`dischargedBy` matches a dated ruling against; escaping it would have
+stopped every published-form ruling from discharging, silently and in
+the re-opening direction, and `dischargedBy`'s boundary test treats a
+quote as a terminator so nothing would have said so. Measured at
+`db7e04d`: a plain ruling still discharges a plain subject. The notes
+name this discriminator before I did.
+
+**THE FRONTMATTER SCOPE DOES NOT OVER-FIRE, AND I RE-DERIVED THE RATIO
+RATHER THAN READING IT.** At `db7e04d`, over 451 flat cards: **40**
+frontmatter runs listed across **34** cards, **39** of them in `title:`
+and one in `suggested_by:`. The raw reading finds 171 across 131 cards,
+so `unwrapScalar` suppresses **131 YAML wrappers** — quotation marks
+nobody wrote as quotation. Its guard was attacked at eight edges and
+held at all eight, including the two that matter: an escaped inner pair
+and a value that merely begins and ends with a quote are both left
+exactly as written. The conservative direction is the right one and it
+is the one taken.
+
+**`cardLines` WAS NOT TOUCHED, WHICH IS THE CONTAINMENT QUESTION.**
+Seven consumers across five claim classes plus the ruling reader and the
+criteria check read through it. `frontmatterScalars` takes the
+COMPLEMENT of the body, so `paths`, `refs`, `blockers` and `rulings`
+cannot have moved. `cardClaims` was deliberately not widened, so nothing
+in a frontmatter field gained the power to refuse a dispatch.
+
+**MY OWN POISON DRILL — NINE MUTANTS, AIMED, READ BACK FROM `git diff`,
+RESTORED BY SHA256.** Run in this bench at `db7e04d`, module mutated one
+side only, every restoration proved against `git show db7e04d:<path>`.
+
+| mutant | site | bodies red |
+|---|---|---|
+| D1 the frontmatter-scalar `cannot` clause (DATA mutant) | the string constant | 1 — the disclosure body |
+| D2 the LIST-values `cannot` clause reversed (DATA mutant) | the string constant | **0 — SURVIVED** |
+| D3 the floor comparison | `belowFloor:` | 1 — the floor body |
+| D4 the NOT CHECKABLE escape removed | the record line | 1 — the escape body |
+| D5 the frontmatter scope returns nothing | `frontmatterScalars` | 2 |
+| D6 the unwrap guard removed | `unwrapScalar` | 1 |
+| D7 the frontmatter unit forced near-path | the `take` argument | 1 |
+| D8 the frontmatter sighting loop removed | `unseenMarkers` | 1 |
+| D9 LIST values scanned, in CODE | the scalar filter | 1 |
+
+**CONTAINMENT, NEVER THE COUNT.** Body-wise the kill sets are
+`{D5,D6}`, `{D5,D7}`, `{D8}`, `{D3}`, `{D4}`, `{D1}` — **no body's kill
+set contains another's**, so all six new bodies are load-bearing and
+none is a restatement. D5's count of two is a property of a wide mutant,
+not a defect. Each mutant died at the site its property lives, and D1 is
+a DATA mutant because that property lives in a string, which a code-only
+drill would have mis-graded by construction.
+
+**D2 IS THE ONE THAT SURVIVED, AND IT IS ALREADY FILED.** The clause
+*its LIST values are not scanned at all* can be reversed in the `cannot`
+string and the whole suite stays green — the parametrised loop reads the
+mutated constant and four literals do not cover that clause. D9 shows
+the BEHAVIOUR is pinned (`toEqual(["id","title","suggested_by"])` reds),
+so what is unpinned is the disclosure alone. That is exactly
+`T-230-s8`'s subject, produced independently by this seat and by the
+executor's M10/M11. Not a blocker; the card exists.
+
+**NO SHAPE-EIGHT HOLE IN THE NEW LITERALS.** Each of the four pinned
+needles occurs exactly **once** in a real report, so none is satisfied
+by a duplicate elsewhere.
+
+**SECURITY.** No dependency added, no manifest in the diff, no
+credential-shaped literal. Path traversal still refuses at the `tracked`
+gate — `../../etc/passwd`, `/etc/passwd` and `docs/../../../etc/passwd`
+all reach `cardClaims` unnormalised and all three are untracked, so
+nothing is opened. Report injection through a marker source is now
+closed on the reachable line: a source carrying a forged provenance
+string is untracked, lands in NOT CHECKABLE, and is escaped there. Four
+thousand quoted runs on one frontmatter line scan in under a
+millisecond, so the new scope adds no backtracking surface. And the YAML
+is read through `frontmatterFields` rather than re-parsed, so T-057's
+one-derivation rule is kept and no second parser can disagree with the
+first.
+
+**THE CARD'S OWN INSTANCE IS STILL INVISIBLE, FOR A NOW-DISCLOSED
+REASON.** At `db7e04d` this card's quote counts are still zero, because
+its one quoted assertion (lines 44-45) spans the hard wrap. I predicted
+this before the diff existed and it is the single most misreportable
+fact in the lane: the repair did not move its own founding instance, the
+`cannot` line now says why, and the notes say so too rather than
+claiming a closure.
+
+**THE TWO ESTIMATORS FOR THE WRAP GAP DIFFER BY THE ESTIMATOR AND NOT BY
+THE REF, AND I OWN THE OTHER ONE.** `T-230-s7` carries **2,386 across
+364** because it was filed from this seat's phase-1 ground truth; the
+notes re-derive **2,345 across 363** at `80c36f8`. I re-ran my own
+estimator at `80c36f8` and it returns 2,386 across 364 there too, so the
+ref is not the cause. Mine pairs leftover straight quotes greedily
+within a paragraph and counts no typographic pair, which makes it a
+loose upper bound on one class and a lower bound overall. Neither number
+is load-bearing for any decision here; `T-230-s7` is the authority for
+its own figure, as the notes say, and that card should settle on one
+estimator rather than carry two.
+
+### Gates, at the commit under review
+
+Run in this bench, unpiped, exit read from `$?`. The DOCS GATE fired on
+four card paths and named three suites owed; all three were run.
+
+    docs-gate.mjs <the RANGE RULE's own path list>   exit 1, verdict:
+      three suites owed, and "every live task card's frontmatter parses,
+      with a legal status" — the GATE CASE is clear for all four cards
+    gate-run parser   exit 0   bodies=349    GREEN
+    gate-run app      exit 0   bodies=1131   GREEN   (after npm run build)
+    gate-run e2e      exit 1   bodies=553    551 passed, 2 failed
+
+**THE TWO E2E FAILURES ARE NOT THIS DIFF'S, AND THE ATTRIBUTION IS
+MEASURED IN BOTH DIRECTIONS RATHER THAN ARGUED.** Both are in
+`session-economics.spec.ts` and both carry the identical cause:
+`T-236-s5 holds a worktree on refs/heads/task/T-236-s5-row-four-reads-by-label
+and no live card declares that id`. That lane's card landed on `main`
+after this lane was cut, so a MACHINE-scoped fact — the host's worktree
+list — is being joined to a CHECKOUT-scoped one, which is the collision
+`method/lane-protocol.md` rule 4 names in those words.
+
+- CONTROL A, at the base `f5bad14` with no part of the diff present:
+  **the same two bodies fail**, 8 passed.
+- CONTROL B, on the merge's own tree, built with
+  `git merge-tree --write-tree` and wrapped in a throwaway `commit-tree`
+  so no ref moved: **10 passed, exit 0** — the merged tree carries
+  T-236-s5's card.
+- The diff touches `session-economics.spec.ts` zero times, and that spec
+  names `card-preflight` zero times.
+
+So the red is inherited from the base, does not survive the merge, and
+the lane's own green reading was true when it was taken. Neither reading
+is about this work.
+
+`merge-tree --write-tree main db7e04d` exits **0** on **six** paths.
+`capabilities:check` exits **1**, STALE, 45968 → 46371 bytes, by the five
+new bodies (31 → 36 in this spec) — re-derived here, matching the
+handoff.
+
+### Corrections owed before the merge, neither of them blocking
+
+1. **THE STALE CENSUS IS NOT ON THE CARD.** `docs/CONVENTIONS.md` asks a
+   lane that adds a test body to REPORT the stale census in its handoff;
+   it reached the handoff verbally but not this durable file, and the
+   handoff is not what the integrator reads at the merge. It is recorded
+   here instead: **the integrator regenerates `docs/CAPABILITIES.md` in
+   the merge commit** — the fence leaves it read-only, so the lane
+   neither could nor should have. Forgetting it reds CI's
+   census-currency step on that push, as it did at `e67cb44`.
+2. **`status:` IS LEFT AT `verifying`.** Moving it is the closing seat's,
+   not this seat's.
+
+### Filed, not folded into this verdict
+
+`T-230-s11` — the new scalar scope inherits `frontmatterFields`'
+inline-comment strip, so a scalar is cut at the first space-hash and any
+quoted assertion after it is dropped with no listing, no sighting and no
+floor count. Reachable (five frontmatter lines on the board carry the
+sequence at `db7e04d`) and costing nothing there today, because none of
+those five carries a quoted run after the cut. Inherited from a reader
+outside this fence that was correctly reused, and no completeness claim
+was made about it — so a suggestion, never a finding against this card.
+
+### The one thing I would say to the next reader
+
+The card offered a one-line `cannot` edit as its floor and the scalar
+scope as its option, and warned that the cheap one closes only the
+disclosure half. This lane took the option AND kept the disclosure, then
+disclosed the two gaps it did not close — and it found, unprompted, that
+the body meant to hold the disclosure honest is parametrised by the
+string it checks. A guard that can go silent without a red is not a
+guard, and this work is the first in this arm to say so about itself.
