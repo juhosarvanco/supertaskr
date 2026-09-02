@@ -1092,6 +1092,247 @@ test("the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
   expect(INTEGRATION_SEAT_PATHS.length, "the published set is empty, so this proves nothing").toBe(2);
 });
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE THIRD COPY — THE LIMITS (T-215-s1)
+ *
+ * The lane-branch spelling and the carve-out set are each COMPARED
+ * against the page above. The LIMITS were the third pair of the same
+ * shape and the only one nobody checked: `T-215` rewrote the paragraph
+ * from the hook's header BY HAND after `T-199` moved the hook and left
+ * the page behind, and a mutant paragraph carrying the exact falsehood
+ * that card exists to delete reddened nothing.
+ *
+ * WHAT IS COMPARED IS THE DECLARED KEYS, NEVER THE PROSE. Both sides
+ * are paragraphs, and a body asserting that two paragraphs match reds
+ * on every re-wording — a gate this project would learn to ignore.
+ * What is greppable on both sides is the NUMBERING and the declining
+ * verdict CODES, so those are what travel.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The hook's own limits block, by the rule the block opens with. */
+const HONEST_LIMITS_MARKER = "── THE HONEST LIMITS";
+/** The lane bullet's limits paragraph, by the phrase it opens with. */
+const LIMITS_PARAGRAPH_MARKER = "**THE LIMITS —";
+/** Enough of them to spell any count this header will ever carry. */
+const COUNT_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+] as const;
+
+/** The hook's leading block comment — the header, and nothing after it. */
+function hookHeader(hookSource: string): string {
+  const end = hookSource.indexOf("\n */");
+  return end === -1 ? "" : hookSource.slice(0, end);
+}
+
+/**
+ * The numbers the hook's HONEST LIMITS block gives its own limits, in
+ * the order the block gives them.
+ *
+ * READ OFF THE TEXT rather than off an export, because the header is
+ * what a reader of the hook meets and the header is the half that
+ * drifts. A continuation line is indented past the number, so only a
+ * limit's opening line matches.
+ */
+function headerLimitNumbers(hookSource: string): number[] {
+  const header = hookHeader(hookSource);
+  const from = header.indexOf(HONEST_LIMITS_MARKER);
+  if (from === -1) return [];
+  return [...header.slice(from).matchAll(/^ \* (\d+)\. /gm)].map((m) => Number(m[1]));
+}
+
+/** The lane bullet's limits paragraph, whitespace already collapsed. */
+function limitsParagraph(bullet: string): string {
+  const from = bullet.indexOf(LIMITS_PARAGRAPH_MARKER);
+  return from === -1 ? "" : bullet.slice(from);
+}
+
+/**
+ * The declining codes as the hook's own SOURCE spells them.
+ *
+ * THE AUTHORITY IS THE EXPORTED FROZEN `DECLINE_CODES`, which this file
+ * already imports, and the body below asserts these two agree. This
+ * reader exists so the positive control can hand `limitsDrift` a
+ * PLANTED file and have the codes come from THAT file — a control whose
+ * code list arrives from the live module could never see a rename.
+ */
+function declineCodesInSource(hookSource: string): string[] {
+  const block = /export const DECLINE_CODES = Object\.freeze\(\[([\s\S]*?)\]\)/.exec(hookSource);
+  if (block === null) return [];
+  return [...String(block[1]).matchAll(/"([^"]+)"/g)].map((m) => String(m[1]));
+}
+
+/** The numbers that paragraph publishes, in the order it publishes them. */
+function publishedLimitNumbers(bullet: string): number[] {
+  return [...limitsParagraph(bullet).matchAll(/\((\d+)\)/g)].map((m) => Number(m[1]));
+}
+
+/**
+ * Every way the hook's declared limits and the page's published ones
+ * have come apart, each naming BOTH sides and neither saying which is
+ * right — the treatment the two pairs above already give their own
+ * copies.
+ *
+ * A LIST RATHER THAN AN ASSERTION, so the positive control can run the
+ * SAME comparison over a planted header and read what it says. A
+ * control decided by different code from its subject decides nothing.
+ */
+function limitsDrift(hookSource: string, bullet: string): string[] {
+  const complaints: string[] = [];
+  const declared = headerLimitNumbers(hookSource);
+  const published = publishedLimitNumbers(bullet);
+  if (declared.length === 0) {
+    complaints.push(`the hook declares no numbered limits under ${HONEST_LIMITS_MARKER}`);
+  }
+  if (published.length === 0) {
+    complaints.push(`the lane bullet has no limits paragraph opening ${LIMITS_PARAGRAPH_MARKER}`);
+  }
+  if (declared.join("/") !== published.join("/")) {
+    complaints.push(
+      `the header numbers its limits ${declared.join("/")} and the lane bullet publishes ` +
+        `${published.join("/")}`,
+    );
+  }
+  const word = /— (\w+), numbered in/.exec(limitsParagraph(bullet))?.[1];
+  if (word === undefined) {
+    complaints.push("the limits paragraph no longer opens with its count in words");
+  } else if (word !== COUNT_WORDS[declared.length]) {
+    complaints.push(`the paragraph counts them "${word}" and the header numbers ${declared.length}`);
+  }
+  // THE BULLET ARRIVES WHITESPACE-COLLAPSED, so a code the document
+  // wrapped across two lines reads as two words here and matches
+  // nothing. That is the failure this loop is likeliest to meet, so the
+  // complaint says so rather than leaving the next reader to find it.
+  for (const code of declineCodesInSource(hookSource)) {
+    if (!bullet.includes(`\`${code}\``)) {
+      complaints.push(
+        `the declining code \`${code}\` is not published in the lane bullet — and a code the ` +
+          "document wrapped across two lines does not survive the collapse",
+      );
+    }
+  }
+  return complaints;
+}
+
+/** The hook, read as TEXT — the same read `:542` makes of the same file. */
+function hookSourceText(): string {
+  return readFileSync(path.join(repoRoot, ".claude/hooks/lane-fence.mjs"), "utf8");
+}
+
+/** The lane bullet, UNNESTED for the DOCS GATE's reader derivation. */
+function laneBulletText(): string {
+  const conventions = conventionsText(repoRoot);
+  return String(conventionsBullet(conventions, "THE LANE PROTOCOL"));
+}
+
+test("the limits this hook declares are the limits docs/CONVENTIONS.md publishes", () => {
+  // UNNESTED ON PURPOSE, for the reason the two bodies above give: a
+  // nested `f(g(root))` would hide this file from the DOCS GATE's
+  // reader derivation while it really does read the document.
+  const bullet = laneBulletText();
+  const hookSource = hookSourceText();
+
+  // THE ANTI-VACUITY HALF FIRST. Every complaint below is a NEGATIVE
+  // assertion, and a header with no limits or an empty declining set
+  // satisfies all of them at once.
+  expect(
+    headerLimitNumbers(hookSource).length,
+    "the hook declares no numbered limits, so this body proves nothing",
+  ).toBeGreaterThan(0);
+  expect(
+    DECLINE_CODES.length,
+    "the hook's declining set is empty, so this body proves nothing",
+  ).toBeGreaterThan(0);
+
+  // THE AUTHORITY IS THE EXPORTED FROZEN SET, and the text reader that
+  // makes the planted control possible is bound to it here rather than
+  // trusted. Only ONE of these codes is written inside the HONEST
+  // LIMITS block, so grepping the header for them would be checking a
+  // different thing from the one the hook can actually return.
+  expect(
+    declineCodesInSource(hookSource),
+    "the source reader and the module's own DECLINE_CODES disagree",
+  ).toEqual([...DECLINE_CODES]);
+
+  expect(limitsDrift(hookSource, bullet), "the limits have drifted").toEqual([]);
+});
+
+test("THE POSITIVE CONTROL: a planted header reds — one limit gained, one code renamed", () => {
+  // KILLED BY: dropping either half of `limitsDrift`, and by a reader
+  // that answers from the LIVE hook whatever file it was handed. The
+  // planted headers are written to a scratch file and read back through
+  // the same `readFileSync` the subject uses, so the comparison under
+  // control is the comparison under test — and the ARRANGEMENT differs,
+  // which is the whole of what makes it a control (verifier.md 2b).
+  //
+  // WHAT IS ASSERTED IS THE DELTA THE PLANT ADDS, and every expectation
+  // is derived from the same readers rather than typed out here. That is
+  // not tidiness: it is what keeps this body's kill set from CONTAINING
+  // the subject's. A data mutant on the paragraph must red the subject
+  // ALONE, or the subject is a restatement of this one — and a control
+  // asserting the WHOLE complaint list would die beside it every time.
+  const bullet = laneBulletText();
+  const real = hookSourceText();
+  const declared = headerLimitNumbers(real);
+  const published = publishedLimitNumbers(bullet);
+  const pageWord = /— (\w+), numbered in/.exec(limitsParagraph(bullet))?.[1];
+  const baseline = limitsDrift(real, bullet);
+  const added = (planted: string): string[] =>
+    limitsDrift(planted, bullet).filter((c) => !baseline.includes(c));
+  const root = scratchRoot();
+
+  // ONE LIMIT GAINED. A further limit is appended to the header's own
+  // block, exactly the drift this pair exists to catch: the hook grows
+  // a limit and the page does not publish it.
+  const headerEnd = real.indexOf("\n */");
+  const gained = path.join(root, "lane-fence-one-limit-gained.mjs");
+  const next = declared.length + 1;
+  writeFileSync(
+    gained,
+    `${real.slice(0, headerEnd)}\n * ${next}. A LIMIT THE PAGE DOES NOT CARRY.${real.slice(headerEnd)}`,
+    "utf8",
+  );
+  const gainedSource = readFileSync(gained, "utf8");
+  expect(headerLimitNumbers(gainedSource), "the plant did not land in the header's own block").toEqual(
+    [...declared, next],
+  );
+  expect(added(gainedSource)).toEqual([
+    `the header numbers its limits ${[...declared, next].join("/")} and the lane bullet ` +
+      `publishes ${published.join("/")}`,
+    `the paragraph counts them "${String(pageWord)}" and the header numbers ${next}`,
+  ]);
+
+  // ONE CODE RENAMED, in the fixture's own `DECLINE_CODES`. This is the
+  // second half of the pair — a limit the hook gains must not land
+  // unpublished, and a code it renames must not land unpublished
+  // either. The renamed code is read out of the PLANTED file, which is
+  // why the reader above exists: a control taking its code list from
+  // the live module could never see a rename.
+  const renamedTo = "not-a-code-this-page-carries";
+  const [firstCode] = DECLINE_CODES;
+  const renamed = path.join(root, "lane-fence-one-code-renamed.mjs");
+  writeFileSync(renamed, real.split(String(firstCode)).join(renamedTo), "utf8");
+  const renamedSource = readFileSync(renamed, "utf8");
+  expect(declineCodesInSource(renamedSource), "the rename did not land in the frozen set").toEqual(
+    [...DECLINE_CODES].map((c) => (c === firstCode ? renamedTo : c)),
+  );
+  expect(added(renamedSource)).toEqual([
+    `the declining code \`${renamedTo}\` is not published in the lane bullet — and a code the ` +
+      "document wrapped across two lines does not survive the collapse",
+  ]);
+});
+
 test("the merge that CONSUMES a fence is not refused by it", async () => {
   const fx = makeFixture();
   await arm(fx);

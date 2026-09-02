@@ -1149,45 +1149,55 @@ and T-236 (2026-09-02, whose pre-compaction text is
     after the CHECKPOINT, so an Edit into a just-merged fence is refused
     for that window, where this project's verdict corrections land —
     remove the worktree before the reconciling writes (`T-154-s2`).
-    **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
-    IS IS WORSE THAN NO GUARD** — eight, numbered in
-    `.claude/hooks/lane-fence.mjs`'s HONEST LIMITS header, tracked here
-    BY HAND. (1) A Bash-mediated write — `sed -i`, a `>` redirect, a
-    checkout — reaches disk without an Edit or a Write and stays
-    protocol-covered. (2) A path in NO GIT CHECKOUT AT ALL is not
-    judged, and since `T-199` that is the WHOLE of it: the scratchpad
-    and `/tmp` stay reachable. **It read *outside the WRITING checkout*
-    until `T-199`**, which left EVERY lane write UNJUDGED; the root now
-    comes from the TARGET. **THE RESIDUE, NAMED AS ONE**: a sibling
-    lane's tree is judged by THAT LANE'S fence, and the hook has no term
-    separating an architect reaching in from that lane's OWN executor.
-    (3) A DETACHED checkout
-    is not judged at all, which frees the poison drill and the human's
-    app checkout. (4) A live lane whose manifest this seat cannot read
-    reserves nothing. (5) It is ADVICE TO A COOPERATING HARNESS: a
-    session that can edit `.claude/settings.json` disarms it. (6) is
-    the mid-integration window above. (7) Containment compares BYTES
-    and this volume does not, so `DOCS/ROADMAP.md` passes the lane-less
-    seat where `docs/ROADMAP.md` is refused; the LANE arm has no such
-    escape. (8) A request with no readable path is the one question the
-    WRITER's cwd still answers — refused in a lane, DECLINED elsewhere,
-    which a lane executor, sitting in the dispatching checkout, takes.
-    Every decline carries `judged: false` and speaks on **stderr**. And
-    the hook FAILS OPEN in exactly one shape, the harness's own
-    contract: a command hook whose script cannot be LOCATED never
-    starts, which takes `CLAUDE_PROJECT_DIR` unset AND a shell cwd
-    outside any checkout carrying the hook, both wrong at once.
-    **SO *"a PreToolUse hook enforces it"* IS A CLAIM ABOUT THE
-    DISPATCHING CHECKOUT AND NEVER ABOUT THE LANE**:
-    `.claude/settings.json` runs the hook out of
-    `${CLAUDE_PROJECT_DIR:-.}`, the SESSION's project root, so the
-    binary a lane meets is the DISPATCHER's copy — true only from
-    `T-199`'s merge forward, and only for a session started in a
-    checkout carrying it; the arm-time catcher asks (`T-216-s1`,
-    `checkout-currency.mjs`). The manifest is a RUNTIME file carrying a
-    self-ignoring `.gitignore` beside it: one that reached the
-    integration branch would hand every checkout one lane's permanently
-    stale fence.
+    **THE LIMITS — A GUARD BELIEVED WIDER THAN IT IS IS WORSE THAN NO
+    GUARD** — eight, numbered in `.claude/hooks/lane-fence.mjs`'s
+    HONEST LIMITS header, whose count and four declining CODES
+    `tools/e2e/tests/lane-fence.spec.ts` COMPARES against this page;
+    the prose alone is by hand. (1) A Bash-mediated write — `sed -i`, a
+    `>` redirect, a checkout — reaches disk without an Edit or a Write,
+    so **TWO LAYERS FENCE A LANE AND NEITHER IS SUFFICIENT**
+    (`method/lane-protocol.md` rule 5, `T-210`): this hook judges an
+    Edit, including one into ANOTHER lane's tree, which never enters
+    this lane's diff; the PHYSICAL layer leaves out-of-fence tracked
+    files read-only, so a shell write takes `EACCES` unparsed — but
+    only on an OPEN, never a rename-over (the canonical `sed -i`), a
+    create, a delete or git, which also DISARMS the bit, and that
+    residue is the landing gate's half. (2) A path in NO GIT CHECKOUT
+    AT ALL is not judged (`not-a-repository`), and since `T-199` that
+    is the WHOLE of it: the scratchpad and `/tmp` stay reachable. It
+    read *outside the WRITING checkout* until `T-199`, which left EVERY
+    lane write UNJUDGED; the root now comes from the TARGET. **THE
+    RESIDUE**: a sibling lane's tree is judged by THAT LANE'S fence,
+    and the hook has no term separating an architect reaching in from
+    that lane's OWN executor. (3) A DETACHED checkout is not judged at
+    all (`not-judged-detached`), which frees the poison drill and the
+    human's app checkout. (4) A live lane whose manifest this seat
+    cannot read reserves nothing (`not-judged-lane-list`). (5) It is
+    ADVICE TO A COOPERATING HARNESS: a session that can edit
+    `.claude/settings.json` disarms it. (6) is the mid-integration
+    window above. (7) Containment compares BYTES and this volume does
+    not, so `DOCS/ROADMAP.md` passes the lane-less seat where
+    `docs/ROADMAP.md` is refused; the LANE arm has no such escape.
+    (8) A request with no readable path is the one question the
+    WRITER's cwd still answers — refused in a lane, DECLINED
+    (`no-path-to-judge`) elsewhere, which a lane executor, sitting in
+    the dispatching checkout, takes. Every decline carries
+    `judged: false` and speaks on **stderr**. And **IT FAILS OPEN IN
+    TWO SHAPES**: a script that cannot be LOCATED never starts — two
+    faults, `CLAUDE_PROJECT_DIR` unset AND a cwd outside any checkout
+    carrying the hook; and on ONE fault, a COMPLETE registration whose
+    hook FILE is gone still spawns node, which exits 1 where blocking
+    is 2, so nothing refuses while the checkout looks configured
+    (`checkout-currency.spec.ts`, ARM B). **SO *"a PreToolUse hook
+    enforces it"* IS A CLAIM ABOUT THE DISPATCHING CHECKOUT AND NEVER
+    ABOUT THE LANE**: `.claude/settings.json` runs the hook out of
+    `${CLAUDE_PROJECT_DIR:-.}`, the SESSION's project root, so a lane
+    meets the DISPATCHER's copy — true only from `T-199` forward and
+    only for a session started in a checkout carrying it; the arm-time
+    catcher asks (`T-216-s1`, `checkout-currency.mjs`). The manifest is
+    a RUNTIME file carrying a self-ignoring `.gitignore` beside it: one
+    that reached the integration branch would hand every checkout one
+    lane's permanently stale fence.
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052 — ten instances across
   2026-08-16/24, itemised on that card). **The generic rules are
