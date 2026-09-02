@@ -71,3 +71,28 @@ part of this card's diff and it is C-05's too.
 fixture; `[app-dispatch]` for the door in `dispatch-store.ts`. Both are
 needed in one lane: a door with no caller reopens `T-126-s1`'s finding
 one card later, and a caller with no door does not compile.
+
+## Two stale sentences this card's diff also owes, swept at `T-126-s2`'s tip
+
+`T-126-s2` ran the class sweep its fix owes (*A FIX NAMES ITS CLASS AND
+ITS SWEEP*) for sentences its change falsifies — the class being *"the
+join is not in TypeScript / has no shape"*. Three sites carried one; it
+repaired the one inside its fence (`TaskDetailPanel.tsx`'s `dispatch`
+prop doc) and could reach neither of these:
+
+- **`app/src-tauri/src/lib.rs`**, `dispatch_lanes`'s doc comment:
+  *"the join stays reachable to Rust callers and is `T-126-s2`"*, under
+  the heading **WHAT IT DELIBERATELY DOES NOT DO IS JOIN**. The heading
+  is still true of the command; the trailing clause now points at a card
+  that is built. `app-shell`, which this card already holds.
+- **`docs/architecture/components/C-15-dispatch.md`**, the *WHAT THIS
+  UNBLOCKS* section: *"the join goes to TypeScript behind a test path …
+  It does not supply the path"*. Written before `T-198`, already carrying
+  one blockquote correcting itself; it now needs a second. That file is
+  `T-126-s3`'s standing class (*C-15's file and module header describe a
+  wiring that no longer exists*) rather than this card's, and is noted
+  here only so the sweep is recorded complete.
+
+The sweep was shown capable of finding something before its remainder was
+written down: the same grep over `no second copy` returns three live
+sites in `app/src` and `app/src-tauri/src`.
