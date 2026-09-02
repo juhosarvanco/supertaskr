@@ -190,3 +190,14 @@ which satisfy the assertion. Cheapest first step: put `d.code` and the
 notices into the two assertions' messages so the next red attributes
 itself; the fix is that those probes distinguish ENOENT from every other
 errno, or the silent allows stop being silent.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-237-s8: `git show e2dee42^:docs/tasks/T-237-s8-the-identity-s-own-home-file-does-not-name-the-machine-where-it-will-not-derive.md`
+- T-237-s9: `git show e2dee42^:docs/tasks/T-237-s9-two-refspec-reader-residues-the-verifier-filed-as-non-blocking.md`
+- T-229-s11: `git show 162b04f^:docs/tasks/T-229-s11-a-push-guard-body-reds-only-in-the-whole-e2e-run-and-passes-alone.md`
+- T-225-s14: `git show 866ac33^:docs/tasks/T-225-s14-the-holder-control-reds-under-the-full-suite-and-passes-alone-at-the-base-too.md`
+
+A lane building this card reads those before it builds.

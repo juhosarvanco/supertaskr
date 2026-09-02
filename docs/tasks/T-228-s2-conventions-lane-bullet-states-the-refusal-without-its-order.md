@@ -75,3 +75,11 @@ saying NOT OWED and nothing reds.
 
 **AND THE TREE ALREADY DISAGREES WITH ITSELF ABOUT THIS SUFFIX**:
 `MODULE_SUFFIXES` in `tools/e2e/scripts/docs-scan.mjs` is
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-205-s6: `git show 866ac33^:docs/tasks/T-205-s6-graph-regens-suffix-list-omits-mjs-and-only-a-coincidence-makes-that-safe.md`
+
+A lane building this card reads those before it builds.

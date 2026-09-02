@@ -976,3 +976,12 @@ and the re-verification measured it at twice the load. The one residual
 the verifier named (nothing pins max over min; a min mutant survives on a
 quiet machine, bounded by the disclosure) is recorded here rather than
 carded, on the verifier's own reading that it is not worth a second card.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-197-s1: `git show 2489853^:docs/tasks/T-197-s1-write-shape-is-not-the-invariant.md`
+- T-225-s5: `git show ae41f78^:docs/tasks/T-225-s5-a-control-that-asserts-a-race-outcome-must-derive-its-own-reliability.md`
+
+A lane building this card reads those before it builds.

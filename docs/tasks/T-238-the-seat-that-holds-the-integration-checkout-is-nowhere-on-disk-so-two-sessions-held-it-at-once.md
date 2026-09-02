@@ -605,3 +605,12 @@ that the routing stays the architect's.
 question was measured rather than assumed and measured correctly, the
 controls fail where they should, and the four bodies that judged their
 own checkout no longer do.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-230-s6: `git show 37ac590^:docs/tasks/T-230-s6-four-e2e-bodies-red-when-their-own-checkout-falls-behind-main.md`
+- T-240: `git show a03259f^:docs/tasks/T-240-a-verifier-bench-cannot-run-the-e2e-leg-green-because-four-bodies-judge-the-checkout-they-run-in.md`
+
+A lane building this card reads those before it builds.

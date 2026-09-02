@@ -675,3 +675,13 @@ absorbed corrections are true and traceable to live keepers, the
 positive control was demonstrated to FAIL before it was trusted to pass,
 and the two kill sets are disjoint in both directions with a data mutant
 separating them. The third copy is now compared.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-215-s3: `git show 838e74b^:docs/tasks/T-215-s3-the-lane-bullet-publishes-one-fence-layer-and-there-are-two.md`
+- T-215-s5: `git show 838e74b^:docs/tasks/T-215-s5-the-lane-bullet-says-the-hook-fails-open-in-one-shape-and-the-tree-measures-two.md`
+- T-219-s5: `git show 451fe19^:docs/tasks/T-219-s5-two-documents-still-describe-the-own-card-carve-out-arm-T-219-s3-removed.md`
+
+A lane building this card reads those before it builds.

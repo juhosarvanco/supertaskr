@@ -120,3 +120,12 @@ stopped at 99,943 for this reason and said so** — the shape that takes it
 under one pipe buffer would have taken it under 74,443 first.
 
 **THE REMEDY IS O
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-202-s2: `git show 09662b8^:docs/tasks/T-202-s2-the-margin-guard-compares-two-invocations-and-reds-when-the-board-moves-between-them.md`
+- T-225-s18: `git show bedf981^:docs/tasks/T-225-s18-shrinking-the-triage-view-past-the-preflight-arm-reds-the-biggest-arm-guard.md`
+
+A lane building this card reads those before it builds.

@@ -82,3 +82,11 @@ name for an assertion that cannot fail, and `roles/verifier.md` step 2b
 calls a control that grades every arrangement the same the defect this
 method produces most. MF-09 is otherwise a careful guard — a five-row
 matrix with three wrong judges, all of which were drilled a
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-205-s7: `git show 866ac33^:docs/tasks/T-205-s7-mf-09s-command-conjunct-is-satisfied-by-an-unrelated-bullet.md`
+
+A lane building this card reads those before it builds.

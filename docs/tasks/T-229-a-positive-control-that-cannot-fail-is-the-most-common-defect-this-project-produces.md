@@ -579,3 +579,11 @@ marker reader before committing: **0 live CARD CLAIM markers**, one
 loose sighting at the card's amendment line — the backticked mention in
 the `Absorbs: T-230-s1` section, correctly reported and correctly not a
 claim.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-230-s1: `git show 37ac590^:docs/tasks/T-230-s1-the-card-claim-marker-is-card-grammar-and-task-format-does-not-carry-it.md`
+
+A lane building this card reads those before it builds.

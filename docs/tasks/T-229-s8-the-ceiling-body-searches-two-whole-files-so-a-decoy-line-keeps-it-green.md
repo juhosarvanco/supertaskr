@@ -580,3 +580,11 @@ on more-than-one and on none, and rule 4's two prose copies given a
 citation without disturbing the extraction. All three are met, drilled at
 the site the property lives with data mutants, and every floor is
 load-bearing by containment rather than by count.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-229-s7: `git show fafb6a7^:docs/tasks/T-229-s7-lane-protocol-rule-4-carries-two-more-copies-of-the-ceiling-that-no-checker-reads.md`
+
+A lane building this card reads those before it builds.

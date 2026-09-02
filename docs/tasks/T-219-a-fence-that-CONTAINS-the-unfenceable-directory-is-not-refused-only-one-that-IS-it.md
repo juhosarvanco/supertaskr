@@ -988,3 +988,11 @@ the lane's copy plus these two verdict sections.
 
 Figures measured at `518da9dfe5cb3d1ae390d4d0c53ce1a29f7d3edf`, except
 the e2e base control at `d272558331a826ae6a82a4ff91d6d82ea6f6fe1c`.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-219-s1: no deleting commit found; the text above is what exists.
+
+A lane building this card reads those before it builds.

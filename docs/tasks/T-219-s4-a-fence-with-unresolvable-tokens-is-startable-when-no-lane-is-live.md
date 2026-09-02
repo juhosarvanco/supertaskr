@@ -689,3 +689,11 @@ here the name that settled it was a PATH, and two concurrent e2e runs on
 one machine are exactly the arrangement that makes a temp-directory guess
 look like a measurement. **Reported to the dispatching seat as an
 observation about that lane, not a ruling on it.**
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-219-s2: `git show a7cc65b^:docs/tasks/T-219-s2-a-bare-dot-fence-reserves-a-domain-no-repository-path-can-match.md`
+
+A lane building this card reads those before it builds.

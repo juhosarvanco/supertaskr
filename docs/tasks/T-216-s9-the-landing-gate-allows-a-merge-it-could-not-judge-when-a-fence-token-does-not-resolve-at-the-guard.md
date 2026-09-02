@@ -118,3 +118,12 @@ driven by bodies; the rest are not driven at all:
 - `` `GIT_DIR` re-points the repository from the environment ``
 - `` `--git-dir` re-points the repository away from any directory this
   guard can name `` (also `--work-tree`, `--namespace`)
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-216-s10: `git show 2b41d89^:docs/tasks/T-216-s10-the-refspec-reader-takes-a-shell-redirection-for-a-refspec-so-the-ci-arm-goes-unasked.md`
+- T-216-s11: `git show 2b41d89^:docs/tasks/T-216-s11-the-unplaceable-push-refusal-is-pinned-only-where-the-sentence-names-cd.md`
+
+A lane building this card reads those before it builds.

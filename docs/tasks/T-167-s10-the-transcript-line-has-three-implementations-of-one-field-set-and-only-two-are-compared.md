@@ -113,3 +113,11 @@ Criteria added by the absorption:
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-167-s12: `git show 2489853^:docs/tasks/T-167-s12-the-pages-example-can-contradict-its-own-omission-rule-and-stay-green.md`
+
+A lane building this card reads those before it builds.

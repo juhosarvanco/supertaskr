@@ -87,3 +87,11 @@ argument for the wider class.
 **WHAT A FIX WOULD DECIDE.** Whether the character class grows, or
 whether the printed command switches to a single-quoted `grep -F '…'`
 form that needs no 
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-225-s16: `git show 866ac33^:docs/tasks/T-225-s16-the-printed-grep-needle-stops-at-a-backtick-but-not-at-a-dollar-sign.md`
+
+A lane building this card reads those before it builds.

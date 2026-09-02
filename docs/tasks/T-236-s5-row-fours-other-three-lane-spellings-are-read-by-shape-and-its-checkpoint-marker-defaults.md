@@ -536,3 +536,12 @@ unpinned prose: swapping two of them reds nothing. Cosmetic, inside the
 class parent's own territory, and named here rather than filed.
 
 **Both criteria are met and both are drilled. APPROVED.**
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-236-s7: `git show b0e1b59^:docs/tasks/T-236-s7-the-lookbehind-guard-in-the-new-label-reader-is-unpinned-by-any-body.md`
+- T-236-s6: `git show b0e1b59^:docs/tasks/T-236-s6-arch-cmd-carries-an-unused-path-import-so-every-cargo-build-prints-a-warning.md`
+
+A lane building this card reads those before it builds.

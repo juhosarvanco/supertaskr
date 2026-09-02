@@ -770,3 +770,14 @@ than quietly fixed.
 card plus both board readers GREEN · `capabilities:check` STALE
 (50,248 committed against a fresh generation), the integrator's at the
 merge, as the lane discloses.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-230-s10: `git show 824b6a0^:docs/tasks/T-230-s10-t-230-s7s-fence-names-a-module-that-carries-none-of-the-code-it-must-edit.md`
+- T-230-s8: `git show 866ac33^:docs/tasks/T-230-s8-pin-the-typographic-term-of-marker-end.md`
+- T-230-s9: `git show 824b6a0^:docs/tasks/T-230-s9-six-author-text-interpolations-in-the-quotes-arm-are-still-unescaped.md`
+- T-230-s11: `git show 824b6a0^:docs/tasks/T-230-s11-the-frontmatter-scalar-scope-inherits-the-inline-comment-strip.md`
+
+A lane building this card reads those before it builds.

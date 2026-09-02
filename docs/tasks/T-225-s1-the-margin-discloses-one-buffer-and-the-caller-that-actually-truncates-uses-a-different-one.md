@@ -818,3 +818,11 @@ real green rather than the `committed: MISSING` shape), and `gate-run e2e`
 `checkout-currency.spec.ts:953`, `lane-lock.spec.ts:899` — are
 `guard-surface-behind`: they red identically BY NAME at `fb2a944` on this
 same bench, so they are the base's and not this lane's.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-225-s3: `git show ae41f78^:docs/tasks/T-225-s3-the-margins-unsettled-fallback-is-a-branch-no-body-drives.md`
+
+A lane building this card reads those before it builds.

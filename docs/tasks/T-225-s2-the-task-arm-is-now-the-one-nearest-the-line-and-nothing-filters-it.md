@@ -743,3 +743,15 @@ passes alone.
 
 **THE CENSUS STAYS THE INTEGRATOR'S.** `npm run capabilities` in the
 merge commit, before the checkpoint.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-215-s4: `git show 838e74b^:docs/tasks/T-215-s4-brief-full-prints-two-bullets-verbatim-and-is-over-the-buffer.md`
+- T-225-s6: `git show 09526da^:docs/tasks/T-225-s6-the-writers-own-exit-behind-a-reader-that-stops-after-one-read-is-a-race.md`
+- T-225-s7: `git show 09526da^:docs/tasks/T-225-s7-the-margin-guards-live-arm-list-omits-the-biggest-arm-there-is.md`
+- T-225-s8: `git show 09526da^:docs/tasks/T-225-s8-the-margin-blocks-own-cost-grew-in-the-command-whose-scarce-resource-is-bytes.md`
+- T-225-s9: `git show f42b35d^:docs/tasks/T-225-s9-the-absence-half-is-scoped-to-the-line-its-key-anchors-so-a-false-clause-about-one-caller-survives-on-another-callers-line.md`
+
+A lane building this card reads those before it builds.

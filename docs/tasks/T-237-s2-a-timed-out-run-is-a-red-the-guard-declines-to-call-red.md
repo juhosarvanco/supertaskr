@@ -684,3 +684,13 @@ fence, and not attributed to the diff.
 **APPROVED at `ce2ffbab492deecf14b713c5fa966cdf5feb1919`.** The merge
 conflicts on this card alone, both sides carrying the absorbed section;
 the lane's copy is the superset and is the one to take.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-237-s4: `git show 7203db8^:docs/tasks/T-237-s4-a-push-now-waits-on-the-network-twice-and-nobody-has-measured-it.md`
+- T-237-s6: `git show 7203db8^:docs/tasks/T-237-s6-the-ci-arm-asks-about-the-branch-head-names-not-the-branch-the-push-targets.md`
+- T-238-s2: `git show d703e74^:docs/tasks/T-238-s2-on-a-ci-runner-no-harness-ancestor-exists-and-the-holder-arm-reads-the-record-as-ignored.md`
+
+A lane building this card reads those before it builds.

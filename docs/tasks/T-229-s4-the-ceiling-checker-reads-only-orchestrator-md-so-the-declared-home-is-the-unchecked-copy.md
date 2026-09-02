@@ -506,3 +506,11 @@ The notes are unusually honest about what was NOT taken and why, and both
 residuals were routed before this seat asked. The single red is a
 machine-scoped surface moving under an older card set, reproduced at the
 base and attributed there.
+
+## RECOVERY of absorbed texts (the seat's note, 2026-09-02)
+
+The Absorbs sections above were written by a script that cut each absorbed body at 1,400 characters, so their acceptance criteria may end mid-sentence. The whole text of each absorbed card is in history:
+
+- T-229-s1: `git show 52ad7f4^:docs/tasks/T-229-s1-lane-protocol-rule-4-still-names-orchestrator-md-as-the-concurrency-ceilings-home.md`
+
+A lane building this card reads those before it builds.
