@@ -3,11 +3,11 @@ id: T-236-s5
 title: Row 4's other three lane spellings are read by SHAPE and its checkpoint marker DEFAULTS — the parity T-236-s1 bought for the integration branch, applied to the rest of the row
 feature: F-06
 milestone: 4
-priority: 4
+priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
-touches: [app/src-tauri/src/dispatch/brief.rs]
+touches: [app/src-tauri/src/dispatch/brief.rs, app/src-tauri/src/arch_cmd.rs]
 suggested_by: executor claude-opus-5@subagent @T-236-s1
 builder:
 verifier:
@@ -63,3 +63,33 @@ tip, and it is right: this is a latent divergence rather than a live
 defect, so nothing is printed wrongly today. What it costs is the
 guarantee — T-057's class is two implementations of one rule, and half a
 parity is still two rules.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3
+
+The architect seat, at the stamp of T-236-s1's merge (6caac6a). One
+function, three picks still read by shape and one marker still
+defaulting, with the label reader and the refusal already written
+beside them; the two residuals below ride the same lane. Criteria: WHEN
+row 4 reads the branch, worktree and create spellings THE reader SHALL
+key on each label the way the integration read now does, and SHALL
+refuse by name on zero or two matches; WHEN the checkpoint marker is
+absent THE row SHALL refuse rather than default; a positive control per
+spelling SHALL plant a document whose lane bullet opens with a path and
+show the positional reading answer the plant. Guard-class, `review:
+independent`. Blocked by nothing; the fence is free once T-236-s1's
+worktree is gone, which it is.
+
+## Absorbs: T-236-s7 (2026-09-02)
+
+The verifier's own mutant: neutering `tail_of_longer_label` to `false`
+leaves the whole cargo suite green, so the lookbehind guard the JS
+reader carries is unpinned in Rust. One body: a bullet where a longer
+label ends in the word `branch` — the JS side's own case — SHALL be
+refused by the bare-label read, and the mutant SHALL red it.
+
+## Absorbs: T-236-s6 (2026-09-02)
+
+`app/src-tauri/src/arch_cmd.rs` opens with an unused `Path` import, so
+every cargo build of the app crate prints a warning that is not news.
+One word on one line, outside T-236-s1's fence and inside this one; the
+lane removes it and shows a clean `cargo build` in its notes.
