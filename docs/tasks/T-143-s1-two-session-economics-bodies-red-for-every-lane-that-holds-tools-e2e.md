@@ -327,3 +327,44 @@ lanes and four verifier benches were cut on this machine during the
 run. **So the pair fails DIFFERENTLY and only one of them is
 deterministic**, which is worth knowing before somebody attributes the
 flaky-looking half to the machine and the other half to a diff.
+
+## CORROBORATION, 2026-09-02 — the same two bodies, a THIRD cause, and a positive control at main
+
+Measured by T-238's lane at `e881a5c` on Mac.lan. The four-suite
+battery's e2e leg reads **2 failed / 592 passed, exit 1**, and the two
+are this card's own pair — `session-economics.spec.ts:179` and `:365`.
+
+**THE CAUSE IS THIS CARD'S CLASS AND NOT THIS CARD'S FINDING**, which is
+why it is a corroboration rather than a second card. The card's own
+instance is a DISJOINTNESS refusal (`fences are not disjoint`); this one
+is a different refusal from the same arm:
+
+    T-219-s3 holds a worktree on refs/heads/task/T-219-s3-carve-out-arm-reachable
+      and no live card declares that id — a lane whose fence cannot be read is
+      a fence nobody can be disjoint from.
+
+Both are the assembler being RIGHT about the live lane list while the
+body asserts exit 0. The mechanism is the one this card names: a
+MACHINE-scoped list joined to a CHECKOUT-scoped board.
+
+**THE THIRD CAUSE IS REF SKEW, AND IT MAKES THE PAIR RED FOR EVERY LANE
+RATHER THAN ONLY FOR ONE HOLDING `tools/e2e`.** The lane whose worktree
+is named does not have to share a fence with the fixture card — it only
+has to be a lane whose CARD does not exist at the reading lane's base.
+`T-219-s3` was cut at 07:40:36 on this machine; its card is on `main`
+and is absent from this lane's base `a03259f`, so the assembler cannot
+read a fence it can see a worktree for.
+
+**MEASURED BOTH WAYS, WHICH IS WHAT MAKES IT AN ATTRIBUTION RATHER THAN
+A GUESS.** The same e2e suite in the same lane read **594 passed, exit
+0** at 07:33 — before that lane existed — and **592 passed / 2 failed**
+at 08:2x, on a tree one assertion apart. And the POSITIVE CONTROL: the
+same two bodies, run from a detached bench at `main` (`fb2a944`), where
+every live lane's card IS on the board, pass — **2 passed, exit 0**.
+
+**AND THE POPULATION MOVES WHILE YOU WATCH.** By the time the control
+was run, `T-219-s3`'s worktree was gone and four other lanes had
+appeared (`T-018-s6`, `T-215-s1`, `T-225-s1`, `T-229-s6`), all of them
+cut after this lane's base and all of them producing the same finding.
+So a lane cannot wait this out: the pair reds for as long as the board
+it reads is older than the machine it runs on.

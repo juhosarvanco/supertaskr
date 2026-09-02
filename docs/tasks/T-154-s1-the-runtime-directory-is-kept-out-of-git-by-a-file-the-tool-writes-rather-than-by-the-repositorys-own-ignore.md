@@ -64,3 +64,29 @@ manifest reaching the integration branch is the guard's worst failure —
 every checkout would then carry ONE lane's fence, permanently stale —
 and belt-and-braces is cheap here. If it is removed, the spec body above
 must be moved to the root ignore or it goes vacuous.
+
+## CORROBORATION, 2026-09-02 — a THIRD writer joins `.nputer/`, and the self-ignoring shape was measured sufficient for it
+
+T-238 added `.nputer/holder.json` — the record of which session holds the
+integration checkout — beside this directory's fence manifest and verdict
+token. It takes the same protection the same way, and by the SAME CODE:
+`writeHolder` in `tools/e2e/scripts/checkout-currency.mjs` calls
+`armRuntimeDir` (`.claude/hooks/gate-token.mjs`) rather than spelling an
+ignore string of its own, so this directory now has three writers and
+still ONE ignore string, imported from one home.
+
+**MEASURED, in a repository NOBODY armed** — the state this card is about
+— at `e881a5c` on Mac.lan, by
+`the holder record is un-committable by construction, in a repository
+nobody armed` in `tools/e2e/tests/checkout-currency.spec.ts`: a fresh
+`git init` fixture reads `git status --porcelain` EMPTY before the write
+and EMPTY after it, while an ordinary file written beside it in the same
+breath IS reported. So the self-ignoring shape SUFFICES for the third
+writer, and this card's one-line root-`.gitignore` fix remains a
+tidiness improvement rather than a hole.
+
+**WHAT THIS DOES TO THE CARD'S GUARD RAIL: it widens it by one.** The
+"WHAT NOT TO DO" paragraph names the manifest writer; whoever takes this
+card must now check THREE writers before removing any of them, and the
+count is derivable rather than transcribed —
+`git grep -n armRuntimeDir` names every caller at your own ref.
