@@ -1203,6 +1203,79 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
   });
 });
 
+// =====================================================================
+// NARROWING THE HAYSTACK — shape EIGHT's mechanical remedy, in the two
+// helpers the ceiling pin below reads its two method files through.
+// `docs/CONVENTIONS.md`'s POISON DRILL catalogue: *an assertion that
+// SEARCHES a corpus has no uniqueness floor, so one duplicate anywhere
+// keeps it green with its own subject deleted* — remedy, *narrow the
+// haystack to the line or section pinned, with an ANCHOR that is not the
+// needle, and assert the ANCHOR's own uniqueness*. BOTH HALVES ARE
+// LOAD-BEARING: a body that merely READS an anchor is satisfied by a
+// second copy of it, which is the same defect one level up.
+// `the_one_line_carrying` (`app/src-tauri/src/agent/kit.rs`) is this
+// remedy where the anchor and the needle share a LINE; these are the
+// same remedy where they share a BLOCK, because one of the two anchors
+// below spans a hard wrap and a line-scoped helper cannot see it.
+// =====================================================================
+
+/**
+ * Folded the way both dispatch assemblers fold a rule: a hard wrap is a
+ * formatting choice, so an anchor that spans one still matches.
+ */
+const foldWhitespace = (s: string): string => s.replace(/\s+/g, " ").trim();
+
+/**
+ * A file's markdown BLOCKS, each folded — a block being a line that
+ * starts at column 0 plus the indented continuation lines under it, and
+ * a blank line ends one. That is the shape `numberedStep`
+ * (`tools/e2e/scripts/dispatch-brief.mjs`) and `numbered_rule`
+ * (`app/src-tauri/src/dispatch/brief.rs`) already fold a numbered rule
+ * into, borrowed here rather than invented.
+ */
+const foldedBlocks = (text: string): string[] => {
+  const out: string[] = [];
+  let held: string[] = [];
+  const flush = (): void => {
+    if (held.length > 0) out.push(foldWhitespace(held.join(" ")));
+    held = [];
+  };
+  for (const line of text.split(/\r?\n/)) {
+    if (line.trim() === "") {
+      flush();
+      continue;
+    }
+    if (!/^\s/.test(line)) flush();
+    held.push(line);
+  }
+  flush();
+  return out;
+};
+
+/**
+ * THE ONE BLOCK CARRYING `anchor`, and a red naming which floor failed
+ * when there is not exactly one of them. The UNIQUENESS assertion is the
+ * half that does the work: without it a decoy planted anywhere in the
+ * file keeps the pin green with the pinned sentence rewritten, which is
+ * the defect this helper exists to close.
+ */
+const theOneBlockCarrying = (text: string, anchor: string, whose: string): string => {
+  const occurrences = foldWhitespace(text).split(anchor).length - 1;
+  expect(
+    occurrences,
+    `${whose} must carry the anchor ${JSON.stringify(anchor)} exactly ONCE, and carries it ` +
+      `${occurrences} times — an anchor matching twice identifies nothing and an anchor ` +
+      `matching never has moved; re-anchor this pin on the sentence that carries the value`,
+  ).toBe(1);
+  const carrying = foldedBlocks(text).filter((block) => block.includes(anchor));
+  expect(
+    carrying.length,
+    `${whose}: the anchor is in the file once but in ${carrying.length} whole blocks — it ` +
+      `spans a blank line, so no one block is the haystack this pin narrows to`,
+  ).toBe(1);
+  return carrying[0] ?? "";
+};
+
 describe("the ceiling is a named constant with its own assertion (criterion 5)", () => {
   it("CONCURRENCY_CEILING is 3-5, hardcoded here and not parametrised by itself", () => {
     expect(CONCURRENCY_CEILING.min).toBe(3);
@@ -1230,13 +1303,45 @@ describe("the ceiling is a named constant with its own assertion (criterion 5)",
     // `docs/`, so the gate will not name this suite (T-132-s2's class).
     // `app/test/genesis-derive.test.ts` already reads
     // `method/interview/plan-interview.md` under the same gap.
-    const CEILING = /Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/;
-    const copies = ["method/tasks/TASK-FORMAT.md", "method/roles/orchestrator.md"];
-    for (const rel of copies) {
-      const m = CEILING.exec(readRepo(rel));
-      expect(m, `${rel} states no "Ceiling: N–N concurrent"`).not.toBeNull();
-      expect(Number(m?.[1]), `${rel} ceiling min`).toBe(CONCURRENCY_CEILING.min);
-      expect(Number(m?.[2]), `${rel} ceiling max`).toBe(CONCURRENCY_CEILING.max);
+    //
+    // EACH READ IS ANCHORED AND THE ANCHOR IS NOT THE NEEDLE (T-229-s8).
+    // Until this card both reads ran the CEILING regex over a WHOLE file
+    // and took the first match, which is shape EIGHT: measured at
+    // `339b8d3`, a decoy `Ceiling: 3–5 concurrent` planted above the home
+    // line with the home itself rewritten to `4–5` left this body — and
+    // the whole app suite — green. So each file is narrowed to the ONE
+    // block carrying its own unique sentence, and the needle is required
+    // exactly once INSIDE that block: the uniqueness floor is what makes
+    // a decoy red, and the block floor is what keeps a decoy planted in
+    // the same block from being read instead of the pinned line.
+    const CEILING = /Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/g;
+    const copies = [
+      // The home line carries this phrase itself, and the phrase is not
+      // the needle: it says which line is the value's home, never what
+      // the value is.
+      { rel: "method/tasks/TASK-FORMAT.md", anchor: "THIS LINE IS THE VALUE'S HOME" },
+      // orchestrator.md has no equivalent one-line phrase, so the anchor
+      // is its own declaration that the line IS a citation — the
+      // sentence whose truth this pin actually depends on. It spans a
+      // hard wrap, which is why the narrowing is by block and not line.
+      {
+        rel: "method/roles/orchestrator.md",
+        anchor:
+          "THAT BOUND'S HOME IS tasks/TASK-FORMAT.md's Parallelism guardrails " +
+          "AND THIS LINE IS A CITATION OF IT",
+      },
+    ];
+    for (const { rel, anchor } of copies) {
+      const block = theOneBlockCarrying(readRepo(rel), anchor, rel);
+      const stated = [...block.matchAll(CEILING)];
+      expect(
+        stated.length,
+        `${rel}'s anchored block states "Ceiling: N–N concurrent" ${stated.length} times, ` +
+          `not once — the pinned sentence has moved out of the anchored block, or a second ` +
+          `spelling of the bound has moved into it`,
+      ).toBe(1);
+      expect(Number(stated[0]?.[1]), `${rel} ceiling min`).toBe(CONCURRENCY_CEILING.min);
+      expect(Number(stated[0]?.[2]), `${rel} ceiling max`).toBe(CONCURRENCY_CEILING.max);
     }
   });
 

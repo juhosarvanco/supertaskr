@@ -183,18 +183,22 @@ this file is a project's actual name.
    **STANDING, NOT THE SEAT: THE SMALLEST TIER'S EXCEPTION AND THE
    CONCURRENT CEILING WERE WRITTEN WITHOUT EACH OTHER, AND THE
    RECONCILIATION IS THIS RULE'S OWN DISCRIMINATOR TURNED ON THIS RULE.**
-   At tasks/TASK-FORMAT.md's ceiling of 3–5 concurrent lanes, the
-   exception above tells up to five executors to merge into one branch
-   and to regenerate one byte-banded state document, each in the same
-   commit as its own record (docs-protocol.md rule 4). That reads as two
-   rules in conflict and it is not. ***May an S executor merge its OWN
-   work* is an AUTHORITY question, and the ceremony table answers it yes,
-   unchanged. *May two seats hold the integration checkout at once* is a
-   COLLISION question, and the first sentence of this rule already
-   answers it no.** The exception was phrased as though the second were
-   the first, so it issued a SEAT where it meant to issue STANDING. **The
-   integrator seat has one holder at a time; the exception says who may
-   TAKE it, never how many may sit in it.**
+   At the ceiling on concurrent lanes set by tasks/TASK-FORMAT.md's
+   Parallelism guardrails — that section is the value's HOME, and this
+   sentence CITES it rather than respelling the number, because a
+   duplicate WITHOUT a checker is two facts and nothing reads this one —
+   the exception above tells every executor under that ceiling to merge
+   into one branch and to regenerate one byte-banded state document,
+   each in the same commit as its own record (docs-protocol.md rule 4).
+   That reads as two rules in conflict and it is not. ***May an S
+   executor merge its OWN work* is an AUTHORITY question, and the
+   ceremony table answers it yes, unchanged. *May two seats hold the
+   integration checkout at once* is a COLLISION question, and the first
+   sentence of this rule already answers it no.** The exception was
+   phrased as though the second were the first, so it issued a SEAT
+   where it meant to issue STANDING. **The integrator seat has one
+   holder at a time; the exception says who may TAKE it, never how many
+   may sit in it.**
    **SO SELF-INTEGRATION IS CONDITIONED ON HOLDING THE CHECKOUT AND NEVER
    ON BEING THE ONLY LANE**, and the distinction is the whole of the
    repair: solitude is the proxy every reader reaches for, and it fails
