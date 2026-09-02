@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-238-verify, phase 2 at 7705ac4, filed by the architect seat at the merge
 blocked_by: []
-touches: [tools/e2e/scripts/brief.mjs, .claude/hooks/push-guard.mjs, tools/e2e/tests/checkout-currency.spec.ts, tools/e2e/tests/push-guard.spec.ts]
+touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/checkout-currency.mjs, .claude/hooks/push-guard.mjs, tools/e2e/tests/checkout-currency.spec.ts, tools/e2e/tests/push-guard.spec.ts]
 builder:
 verifier:
 built_by:
@@ -50,3 +50,55 @@ edit in the files that lane held.
 
 - Verification: headless.
 - **Guard-class: `review: independent`, set at filing.**
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-219-s4 merge
+
+The architect seat. The holder's residues and the push guard's refspec residues share three files; one lane, after T-225-s2 frees brief.mjs.
+
+## Absorbs: T-237-s8 (2026-09-02)
+
+The identity's own home file lists its limits and does not name the ONE machine where it will not derive at all — a CI runner — so the limit is stated only in the file that consumes it
+
+**A POINTER THAT PROMISES MORE THAN THE FILE IT POINTS AT CARRIES.**
+`.claude/hooks/push-guard.mjs`'s holder section says, in as many words:
+
+    THE LIMITS ARE THE IDENTITY'S AND THEY ARE STATED WHERE IT IS
+    DERIVED, in `checkout-currency.mjs`
+
+and then lists three — a seat that never arms, a seat that commits
+without pushing, and the one-harness fact. That pointer is the right
+shape: one home for the limits, and a consumer that refers to it rather
+than copying it. **It is now incomplete in the direction that cost main
+a red.** `sessionIdentity` derives from the nearest ancestor process
+that IS the harness, and there is a whole class of machine where no such
+ancestor exists: a CI runner, whose tree is `node <- bash <- Runner`.
+Every local checkout has the ancestor and is green; the runner has none,
+and on 2026-09-02 that difference reddened main through a body that
+armed the arm from the real process tree (T-238-s2, absorbed into
+T-237-s2 and closed there).
+
+**T-237-s2 NAMED THAT C
+
+## Absorbs: T-237-s9 (2026-09-02)
+
+Two residues of the refspec reader the verifier filed rather than blocked on — a `--repo=<value>` eats the only refspec, and a destination beginning with `-` reaches `gh` as `--branch`'s value
+
+**FILED RATHER THAN FOLDED IN, AND THE REASON IS THE FIX PASS'S OWN
+SHAPE.** T-237-s2's verifier rejected the three residuals on ONE defect
+(`--all`/`--mirror` let a live run through) and recorded these two beside
+it as *"findings that do NOT block, filed rather than folded in"*. The fix
+pass repaired the blocker and DECLARED these in the reader's limits block,
+because a fix pass that widens its own diff is a fix pass the verifier has
+to judge twice. They are carried here so the declaration has a repair
+behind it.
+
+## 1. `--repo=<value>` supplies the repository and the scanner still eats
+a positional for one
+
+`git push --repo=origin HEAD:main` is read as: `--repo=origin` skipped as
+a one-token option, `HEAD:main` taken as the REPOSITORY, no refspecs left
+— so `pushTargetBranch` falls back to HEAD's branch and the spelled
+target `main` is never asked about. A FALSE NEGATIVE only: it can cost a
+refusal, never cause one.
+
+## 2. A destination beginning with `-` reaches `gh` as `--branch`'s

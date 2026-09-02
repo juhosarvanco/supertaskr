@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-219-s4
 blocked_by: []
 touches: [lib-parser]
@@ -81,3 +81,19 @@ figure again; never quote this one.
 `T-219-s4` (its `DOT_DOMAIN` branch and the ceiling paragraph beside
 it), `T-219-s2` as absorbed there, `normalizeFenceToken`'s own declared
 ceiling.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-219-s4 merge
+
+The architect seat. The interior-dot residue, plus two pre-existing
+instances V-T-219-s4 observed at both refs and did not file, recorded
+here so one lib-parser lane closes the class:
+
+- A subject whose fence fully resolves, held by a lane whose card
+  declares no `touches:`, reaches `unfenceable` with an EMPTY clause
+  middle — "…none could be ruled out: . A fence that cannot be
+  COMPUTED…" — the exact string T-219's body guards against, from the
+  other side. The clause SHALL name the holding card or say why it cannot.
+- A card whose only token is its own file is `startable` at both refs
+  with `paths: []` while `buildLaneFence` refuses to arm it. The two
+  readers SHALL agree: a fence that arms nothing is not startable, said
+  by name.
