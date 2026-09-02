@@ -311,3 +311,34 @@ not appear at `17e764f` because main already carries the identical
   are line numbers, which docs/CONVENTIONS.md rules are figures; they are
   cited by SYMBOL throughout this work.
 - **Nothing else in the brief was contradicted by the repository.**
+
+### Addendum — the forecast moved because MAIN moved, not because this lane did
+
+The gate derivation above was measured at `17e764f` against main at
+`763548c`. Two things have changed since and both are recorded here
+rather than left for the integrator to discover:
+
+- **The path set is FOUR**, not three: this card, the hook, the spec, and
+  `docs/tasks/T-237-s8-*.md`, the one criterion this lane could not build
+  inside its fence and routed instead. The gate READINGS are unchanged —
+  GRAPH REGEN still fires on the `*.ts`, BOOT GATE and METHOD EVAL GATE
+  are still not owed, and the DOCS GATE still fires on `docs/tasks/`.
+- **`git merge-tree --write-tree main HEAD` now exits 1**, and the ONE
+  conflicted path is this card. Main moved from `763548c` to `65010e4`
+  and carries the `Absorbs: T-238-s2` section at `2a74287`; this lane
+  carries the same section plus the stamp and these notes. **The
+  resolution is to take THIS LANE'S version of this file wholesale** —
+  `git diff` between the two blobs is `185 insertions(+), 1 deletion(-)`
+  and every one of them is this lane's own addition, so the lane's copy
+  is a strict superset of main's. Main touched NEITHER fenced file since
+  dispatch (`git diff --name-only 763548c..main --` over both is empty),
+  so nothing else conflicts.
+- **T-237-s3 merged onto main at `7cb7a37` and imports from this hook** —
+  `CI_WORKFLOW_REL_PATH` and `stepWorkingDirectory`, both untouched by
+  this lane's diff, so the post-merge interaction is nil.
+
+**THE DOCS GATE WAS DISCHARGED IN THIS LANE**, at the tip that carries
+every path above: `gate-run.mjs parser` 0 (363 bodies), `app` 0 (1141),
+`e2e` 0 (605) and `rust` 0 (639 / 18 targets), each keyed to the lane's
+own tip. It is still the integrator's to run at the merge, against the
+merge's own tree.
