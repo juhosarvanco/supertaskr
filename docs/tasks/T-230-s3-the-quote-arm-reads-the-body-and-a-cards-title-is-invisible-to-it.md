@@ -1,13 +1,15 @@
 ---
 id: T-230-s3
 title: The quote arm reads the card BODY, so a false assertion in a TITLE is neither checked nor listed nor disclosed — and one of the three founding instances states its claim there
-status: planned
+status: building
 feature: F-06
 milestone: 4
 priority: 3
 size: S
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 suggested_by: "verifier claude-opus-5@subagent @V-230, 2026-09-02 — found attacking T-230's first acceptance criterion at 90dfe53"
 ---
@@ -60,3 +62,12 @@ message already does), and `unmarkedQuotes` dropping runs below
 line beside the two counts). Take the `cannot`-line arm as the floor for
 the frontmatter gap and the scalar-value scope as the option. Fence
 narrowed to the module and its spec.
+
+## DISPATCH, 2026-09-02 — the stamp
+
+**Audit (orchestrator 5b)**: both quote-arm call sites in
+`tools/e2e/scripts/card-preflight.mjs` pass `cardBody(cardText)`, which
+strips the frontmatter block (card-figures.mjs), so the title blind spot
+holds at 37ac590. Fence: the module and its spec; T-225 holds neither.
+Ceremony: S, guard-class, review independent — executor, then verifier;
+this lane does NOT hold the integration checkout and does not merge.
