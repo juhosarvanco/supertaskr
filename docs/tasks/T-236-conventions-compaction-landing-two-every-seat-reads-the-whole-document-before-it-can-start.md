@@ -383,6 +383,83 @@ in a reflow — `brief.mjs --task T-236 --state --dispatch` exits 3 on
 either, and it exited 0 after every pass. The stale-census check is
 CURRENT because no test name moved.
 
+### REJECTION 1 FIX, 2026-09-02 — fresh executor claude-opus-5@subagent
+
+Fix commit **`fc54028`**, lane `task/T-236-conventions-compaction-two`,
+on top of the verifier's `0c729cc`. I am not the author of the rejected
+work; V-236's verdict is this pass's spec.
+
+**THE FINDING, MET.** F1 against criterion 3: the LANE PROTOCOL bullet
+cited *"T-089's card holds the census at `4d2f03c`"*. Re-derived rather
+than assumed, `git grep` from the lane root over docs/tasks/ — T-089's
+card: `69 branches` **0**, `37 the older` **0**, `tNNN` **0**, `cutover`
+**0**, and `4d2f03c` **22** because it is that card's own base commit,
+which is exactly how the sentence survived: the REF was right and only
+the ATTRIBUTION was wrong. T-110-s2: `69 branches` **2**, `37 the older`
+**1**, `tNNN` **3**, `4d2f03c` **1**, carrying *"derived at `4d2f03c`, 69
+branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`"* verbatim. Shown
+capable of failing first: the same needles match
+`git show 3170247:docs/CONVENTIONS.md` (1/1/1), so the zeros are a real
+absence. Remedy applied: one card id, two lines re-wrapped, **+3 bytes**,
+no column-zero `- ` introduced (T-111-s12); column-zero bullets **56** at
+`3170247`, at `560bac3` and at `fc54028`.
+
+**THE SWEEP** (A FIX NAMES ITS CLASS AND ITS SWEEP). Class: every
+citation this compaction ADDED. Derived rather than read off the verdict
+— both texts collapsed past the ~70-col wrap, sentences set-differenced,
+holder assertions kept: **13**, wider than the verdict's six. One
+`git grep` per citation, recorded even where empty. **Twelve hold**:
+T-092 (the four-lane census, and it names T-110's overwritten driver and
+results files), T-052 twice (nine itemised instances plus the tenth of
+2026-08-24; and the MAIN CHECKOUT bullet does carry `../nputer-app`'s
+account), T-093 at `bc2d82a`, T-013 (336/33/3 exit 101 with the drill
+worktree deleted, and the stale-binary direction), T-159's card and
+`docs/checkpoints/2026-08-30-T-159.md`, the 2026-08-27 record, T-153-s5
+(both libuv bounds), T-216-s5, the RANGE RULE cross-reference (T-027's
+`dc3ef5b` as the oldest evidence, TWELVE distinct merges, **8**
+BOOT-GATE-side flips against the citation's *"eight of them this
+gate's"*, 5 GRAPH REGEN-side), and both preamble citations. **One was
+wrong** — the finding, repaired here.
+
+**ONE RESIDUAL, NAMED RATHER THAN SMOOTHED OVER.** The v0.1.7 line cites
+`docs/checkpoints/2026-08-27-adr019-compaction.md` for what that version
+moved. The record holds the bump as *"Phase 7 — method/docs-protocol.md,
+bump 0.1.6 -> 0.1.7"* and the `T-138-s2` discharge, but not the base's
+two finer clauses (the integrator's record-first checkpoint sequence, the
+adapter template's capabilities census): `record-first` **0**, `adapter`
+**0** on that record. It is a genuine holder and not an exhaustive one,
+and the same bullet names `method/` at that tag as the AUTHORITY, so I
+read it as within the changelog law rather than as a second F1 — recorded
+so the next compaction inherits the judgement rather than re-deriving it.
+
+**MY OWN MISS, DISCLOSED.** Two sweep needles first returned FALSE ZEROS
+by spanning the hard wrap — this document's own miss-cause THREE — and
+were re-run against the collapsed text. Recorded because an unrecorded
+miss reads as an absence.
+
+**PROOF, every exit read from `$?` unpiped.** `wc -c
+docs/CONVENTIONS.md` **117,502 at `560bac3`** → **117,505 at `fc54028`**,
+against warn 146,878 / fail 176,253; `DOC_BUDGETS` untouched, since
+`landed` is recorded data no reader byte-compares. The eight reader specs
+from tools/e2e at `NPUTER_E2E_PORT=15236` (lsof'd to zero rows first;
+1420 never probed): **282 passed, exit 0** — the executor's own count at
+every pass. `cargo test snapshot_version_matches` **exit 0**,
+`snapshot_version_matches_the_live_method_stamps` ok. `npm run
+lint:docs` **exit 0**, budgets hold, 4 gated.
+
+**WHERE THIS PASS'S DISPATCH WAS WRONG.** It said `brief.mjs --task T-236
+--state --dispatch` exits 0. It exits **1** here, on three
+fence-disjointness findings among the live lanes T-216-s4, T-225 and
+T-236 (T-225's `tools/e2e` against T-236's
+`tools/e2e/scripts/docs-scan.mjs`). Not mine, and measured rather than
+assumed: **identical exit 1 with identical findings at the pre-fix tip
+`560bac3`** on this machine, restored afterwards with sha256 equal to
+`f795f229…e169b1d9`. It is a live board fact of the machine-scoped class
+lane-protocol rule 4 names, zero NOT DERIVED rows either side, and never
+the pin-break code 3 — the four naming phrases still resolve to exactly
+one bullet each and every lane row still derives from the bullet I
+edited.
+
 ## Verdicts
 
 ### V-236, 2026-09-02 — claude-opus-5@subagent, independent — REJECTED
