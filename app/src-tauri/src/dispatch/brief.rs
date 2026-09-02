@@ -1171,17 +1171,15 @@ fn row_lane(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> 
     // BY ITS LABEL, and the three picks above are by PREFIX — neither is
     // by position. This one was, and the bullet it reads opens by naming
     // a file (T-236-s1).
-    let integration = match backticked_after_label(&spellings, "integration branch") {
-        Ok(name) => name,
-        Err(0) => return Err(empty(row, CONVENTIONS, "integration branch under its own label")),
-        Err(_) => {
-            return Err(empty(
-                row,
-                CONVENTIONS,
-                "integration branch under its own label ONCE — the bullet spells it more than once",
-            ))
-        }
-    };
+    let integration =
+        backticked_after_label(&spellings, "integration branch").map_err(|found| {
+            let what = if found == 0 {
+                "integration branch under its own label"
+            } else {
+                "integration branch under its own label ONCE — the bullet spells it more than once"
+            };
+            empty(row, CONVENTIONS, what)
+        })?;
     if branch.is_empty() || worktree.is_empty() || create.is_empty() {
         return Err(empty(row, CONVENTIONS, "complete lane spelling"));
     }
@@ -2678,6 +2676,79 @@ mod tests {
                 line.label,
                 line.text
             );
+        }
+    }
+
+    /// **AND THE READ REFUSES RATHER THAN DEFAULTS** (T-236-s1). The
+    /// parity with `laneSpellings` is two properties, not one: it keys on
+    /// the LABEL, and it throws when that label does not introduce
+    /// EXACTLY ONE backticked name. The second half is the one with teeth
+    /// here, because a defaulted integration name is SILENT downstream —
+    /// `git log --first-parent --format='%H %s' <nothing> | grep -m1 …
+    /// | cut -d' ' -f1` prints nothing and exits 0, since `cut` is last,
+    /// and a dispatcher reads an empty base rather than an error.
+    #[test]
+    fn an_integration_branch_the_bullet_does_not_spell_exactly_once_is_a_refusal_never_a_default() {
+        let live = live_files();
+        let live_text = live
+            .read_text(CONVENTIONS)
+            .expect("the live conventions document");
+        let one = "- integration branch `main`;";
+        assert_eq!(
+            live_text.matches(one).count(),
+            1,
+            "this body plants against the one spelling the document publishes"
+        );
+
+        let overlaid = |text: String| OverlayFiles {
+            inner: DiskFiles::new(&repo_root()),
+            path: CONVENTIONS.to_string(),
+            text,
+        };
+
+        // THE POSITIVE CONTROL — the same overlay carrying the document
+        // VERBATIM assembles, and answers the ref. Without this arm every
+        // refusal below is satisfied by an overlay that broke the read.
+        let control = assembled(assemble(
+            &overlaid(live_text.clone()),
+            &a_card(),
+            Role::Executor,
+            &no_lanes(),
+        ));
+        assert!(
+            control
+                .rows
+                .iter()
+                .find(|r| r.number == 4)
+                .expect("row 4")
+                .lines
+                .iter()
+                .any(|l| l.label == "integration branch" && l.text == "main"),
+            "the overlay itself is sound: verbatim, the row still answers the ref"
+        );
+
+        // TWICE — the JS reader's `found.length !== 1` throw, in Rust.
+        let twice = live_text.replace(
+            one,
+            "- integration branch `trunk`; integration branch `main`;",
+        );
+        match assemble(&overlaid(twice), &a_card(), Role::Executor, &no_lanes()) {
+            BriefOutcome::Unassemblable { rows } => assert!(
+                rows.iter().any(|r| r.number == 4 && r.path == CONVENTIONS),
+                "an ambiguous spelling takes row 4 down by name: {rows:?}"
+            ),
+            other => panic!("two spellings answered instead of refusing: {other:?}"),
+        }
+
+        // GONE — the label the read is keyed on, removed. The refusal is
+        // the property; which reader reaches it first is not.
+        let gone = live_text.replace(one, "- the integration branch is spelled `main`;");
+        match assemble(&overlaid(gone), &a_card(), Role::Executor, &no_lanes()) {
+            BriefOutcome::Unassemblable { rows } => assert!(
+                rows.iter().any(|r| r.number == 4 && r.path == CONVENTIONS),
+                "an absent spelling takes row 4 down by name: {rows:?}"
+            ),
+            other => panic!("an absent spelling answered instead of refusing: {other:?}"),
         }
     }
 
