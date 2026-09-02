@@ -17,6 +17,7 @@ import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CLAIM_CLASSES,
+  REPORT_BUDGET,
   cardClaims,
   checkClaim,
   collapse,
@@ -311,9 +312,16 @@ function makeFixture(planted: Planted = {}): Fixture {
   return { repo, lane };
 }
 
-/** Run the preflight for real against a fixture, and hand back its findings. */
-async function run(fx: Fixture): Promise<{ findings: string[]; text: string }> {
-  const ctx = context({ root: fx.repo, taskId: FIXTURE_ID });
+/**
+ * Run the preflight for real against a fixture, and hand back its
+ * findings. `full` is the brief's own `--full`, which spends no reported
+ * listing budget — the same flag `--dispatch --full` publishes.
+ */
+async function run(
+  fx: Fixture,
+  opts: { full?: boolean } = {},
+): Promise<{ findings: string[]; text: string }> {
+  const ctx = context({ root: fx.repo, taskId: FIXTURE_ID, full: opts.full ?? false });
   const report = await preflight(ctx);
   return { findings: report.findings, text: render(report.recs) };
 }
@@ -454,6 +462,108 @@ test("a DEAD fence entry reds — an entry true at writing that reserves nothing
   expect(joined(findings)).toContain("DEAD FENCE ENTRY");
   expect(joined(findings)).toContain("docs/architecture/decisions");
   expect((await run(makeFixture())).findings).toEqual([]);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * A CRITERION THAT DEMANDS A BODY, OVER A FENCE THAT CANNOT HOLD ONE
+ * (T-228-s1)
+ *
+ * T-228 was stamped and armed with `touches: [.claude]` over criteria
+ * demanding a body; no test file lives under `.claude`, the preflight,
+ * the arm and the brief all passed it, and the contradiction was named
+ * by a blind verifier's phase-1 ground truth an arc later. The fixture
+ * below is that card, planted: the founding fence spelling included.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** T-228's own criterion shape — the `a body SHALL` family. */
+const BODY_CRITERION = "- A body SHALL prove it was startable with a fence holding no test file.";
+/**
+ * The NEGATIVE CONTROL, and it is one mutation away: a reader over
+ * prose, demanding a sentence rather than a body. Same fence, same
+ * card, same run — so a green here cannot be a preflight that stopped
+ * reading criteria at all.
+ */
+const DOCUMENTARY_CRITERION =
+  "- The rule SHALL be written into docs/CONVENTIONS.md as one bullet a reader can quote.";
+/** A hook file, so `.claude` reserves something and is not merely DEAD. */
+const HOOK = { rel: ".claude/hooks/guard.mjs", content: "export const guard = 1;\n" };
+/** The one mutation that clears the refusal: a body inside the fence. */
+const FENCED_BODY = { rel: `${SLUG_PATH}/lens.test.ts`, content: "export const covered = 1;\n" };
+/** T-228's own fence, plus the slug the fixture's default criteria cite. */
+const NO_BODY_FENCE = `touches: [.claude, ${SLUG}]`;
+
+test("a criterion demanding a BODY over a fence that holds none is REFUSED, and one spec file clears it", async () => {
+  const refused = await run(
+    makeFixture({ touches: NO_BODY_FENCE, criteria: [BODY_CRITERION], files: [HOOK] }),
+  );
+  expect(joined(refused.findings)).toContain("NO BODY CAN BE WRITTEN");
+  // THE FINDING NAMES THE CRITERION AND THE FENCE, which is the whole of
+  // what the card asks for: a dispatcher who cannot see WHICH line and
+  // WHICH fence has to re-derive the refusal by hand.
+  expect(joined(refused.findings)).toContain("A body SHALL prove it was startable");
+  expect(joined(refused.findings)).toContain(".claude");
+  expect(joined(refused.findings)).toContain(SLUG_PATH);
+  // AND THE LINE IS THE CARD'S OWN. The parser numbers a criterion
+  // within the section it read; a dispatcher jumps to a line in the FILE,
+  // so the record joins the two back together and this pins the join.
+  const at = cardText({ touches: NO_BODY_FENCE, criteria: [BODY_CRITERION] })
+    .split("\n")
+    .findIndex((l) => l.trim() === BODY_CRITERION);
+  expect(at, "the planted criterion moved out of the fixture").toBeGreaterThan(0);
+  expect(joined(refused.findings), "the finding lost the card's own line").toContain(
+    `line ${at + 1}:`,
+  );
+  expect(refused.text).toContain("criteria demanding a test body this fence cannot hold: 1");
+  expect(refused.text).toContain("the fence holds a body: NO PATH ANY SUITE COLLECTS");
+
+  // ONE MUTATION AWAY, AND IT IS THE CARD'S OWN SECOND CLAUSE: the same
+  // card with a body inside its fence is startable. Nothing else moves —
+  // same fence spelling, same criterion, one extra tracked file.
+  const cleared = await run(
+    makeFixture({
+      touches: NO_BODY_FENCE,
+      criteria: [BODY_CRITERION],
+      files: [HOOK, FENCED_BODY],
+    }),
+  );
+  expect(
+    joined(cleared.findings),
+    `a fence holding a body was refused:\n${joined(cleared.findings)}`,
+  ).not.toContain("NO BODY CAN BE WRITTEN");
+  expect(cleared.text).toContain(`the fence holds a body: ${FENCED_BODY.rel}`);
+
+  // THE NEGATIVE CONTROL: the same fence, a documentary criterion, no
+  // refusal. Without this the body above is satisfied by an arm that
+  // refuses every fence holding no test file, which would refuse most of
+  // this board's governing-document cards.
+  const documentary = await run(
+    makeFixture({ touches: NO_BODY_FENCE, criteria: [DOCUMENTARY_CRITERION], files: [HOOK] }),
+  );
+  expect(
+    joined(documentary.findings),
+    `a documentary criterion was refused:\n${joined(documentary.findings)}`,
+  ).toEqual("");
+  expect(documentary.text).toContain("criteria demanding a test body this fence cannot hold: 0");
+
+  // AND THE ESCAPE IS THE ONE THIS ARM ALREADY PUBLISHES. A dated ruling
+  // naming the criterion discharges it, in the open, printed with the
+  // line that made it — which is what makes a refusal on a line no
+  // lexical test could tell from a rule-writing card cost one sentence.
+  const ruled = await run(
+    makeFixture({
+      touches: NO_BODY_FENCE,
+      criteria: [BODY_CRITERION],
+      files: [HOOK],
+      body: [
+        `PREFLIGHT RULING (2026-09-02): ${BODY_CRITERION.replace(/^- /, "")} is a rule this`,
+        "card writes into a document, not a body it owes.",
+      ],
+    }),
+  );
+  expect(joined(ruled.findings), `the ruling did not discharge:\n${joined(ruled.findings)}`).toEqual(
+    "",
+  );
+  expect(ruled.text).toContain("RULED (2026-09-02)");
 });
 
 test("a DANGLING REF stamp reds, and a ref this checkout holds does not", async () => {
@@ -613,12 +723,15 @@ const PINNED_CLAIM_CLASSES = [
       "module",
     refuses:
       "an entry that reserves no tracked file at all, an entry this expansion cannot " +
-      "resolve, and a path the criteria name that a DECLARED component owns and this fence " +
-      "does not carry",
+      "resolve, a path the criteria name that a DECLARED component owns and this fence " +
+      "does not carry, and a criterion that demands a TEST BODY over a fence holding " +
+      "nothing any suite would collect",
     cannot:
       "whether a path under NO component ought to be inside the fence — a criterion cites " +
       "far more files than it writes, and outside the slug map this tool cannot tell a " +
-      "citation from a write target",
+      "citation from a write target; and whether a body-demanding criterion is demanding " +
+      "one OF THIS CARD or WRITING A RULE about bodies into a document, which no lexical " +
+      "test separated",
   },
   {
     key: "figures",
@@ -1565,6 +1678,73 @@ test("a quoted run below the floor is COUNTED, and it is still not listed", asyn
   expect("abcd".length).toBeGreaterThanOrEqual(MIN_QUOTE_CHARS);
 });
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE REPORTED LISTING IS BUDGETED AND A FINDING NEVER IS (T-225-s11)
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("a reported listing is budgeted and says how much it did not print; a finding is never budgeted", async () => {
+  // THE ARM IS ONE ANSWER AGAINST A 65,536-BYTE PIPE BUFFER and this
+  // census is its largest listing: on a long card it ran to four figures
+  // of bytes, none of which refuses anything. T-225's rule for
+  // `--dispatch` is the one taken here — print what the reader will act
+  // on, and say how much was not printed.
+  const runs = Array.from(
+    { length: REPORT_BUDGET + 3 },
+    (_, i) => `The card asserts "an unmarked assertion number ${"x".repeat(i + 1)}" here.`,
+  );
+  const many = await run(makeFixture({ body: runs.flatMap((l) => [l, ""]) }));
+  const total = REPORT_BUDGET + 3;
+
+  // THE COUNT IS NOT BUDGETED. The census above the listing still reports
+  // every run, which is what makes the elision an elision rather than a
+  // shorter answer to a different question.
+  expect(many.text).toContain(`quoted and NOT marked, naming no source at all: ${total}`);
+  expect(unmarkedListing(many.text)).toHaveLength(REPORT_BUDGET);
+  expect(many.text).toContain(
+    `and 3 more unmarked runs naming no source of ${total} NOT PRINTED`,
+  );
+  expect(many.text).toContain("re-run with --full for every one");
+
+  // `--full` SPENDS NO BUDGET, and this is the half that makes the
+  // elision lossless: the rows are still derivable, one flag away.
+  const full = await run(makeFixture({ body: runs.flatMap((l) => [l, ""]) }), { full: true });
+  expect(unmarkedListing(full.text)).toHaveLength(total);
+  expect(full.text, "--full printed an elision line").not.toContain("NOT PRINTED");
+
+  // THE DISCRIMINATING HALF, ONE ROW BELOW THE BUDGET: a listing that
+  // fits prints whole and says nothing about eliding. Without this, "the
+  // listing is budgeted" is satisfied by an arm that elides everything.
+  const few = Array.from(
+    { length: REPORT_BUDGET },
+    (_, i) => `The card asserts "a short assertion number ${"y".repeat(i + 1)}" here.`,
+  );
+  const fits = await run(makeFixture({ body: few.flatMap((l) => [l, ""]) }));
+  expect(unmarkedListing(fits.text)).toHaveLength(REPORT_BUDGET);
+  expect(fits.text, "a listing that fits was elided").not.toContain("NOT PRINTED");
+
+  // AND A FINDING IS NEVER BUDGETED AT ANY SIZE. This is the criterion
+  // the whole change is bought on: a dispatcher acts on findings, and an
+  // answer that dropped the seventh one to save bytes would be a shorter
+  // answer that is also wrong.
+  const gone = Array.from(
+    { length: REPORT_BUDGET + 2 },
+    (_, i) => `- THE work SHALL edit docs/architecture/gone-${i}.md, which is absent.`,
+  );
+  const refused = await run(makeFixture({ criteria: gone }));
+  expect(refused.findings.filter((f) => f.startsWith("STALE PATH"))).toHaveLength(
+    REPORT_BUDGET + 2,
+  );
+  for (let i = 0; i < REPORT_BUDGET + 2; i += 1) {
+    expect(joined(refused.findings), `finding ${i} was budgeted away`).toContain(
+      `docs/architecture/gone-${i}.md`,
+    );
+    expect(refused.text, `the STALE PATH record for ${i} was budgeted away`).toContain(
+      `gone-${i}.md`,
+    );
+  }
+  expect(refused.text, "a finding listing printed an elision line").not.toContain("NOT PRINTED");
+});
+
 test("the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does", async () => {
   // THE VALUE IS A STRING THE CARD WROTE and the record line
   // interpolated it bare, so a source carrying spaces ran into the
@@ -1854,6 +2034,50 @@ test("a marker whose NEEDLE wraps ends its own unit, and the run after it surviv
       "a sentence nobody marked at all",
     )}`,
   ]);
+});
+
+test("markerEnd's TYPOGRAPHIC pair spans the wrap, and its own return is the only thing that moves", () => {
+  // V-T-230-s7's drill MV2 dropped the typographic term from `markerEnd`
+  // and all 48 bodies stayed green. The verifier showed the term is INERT
+  // under every census arrangement rather than unpinned: a shortened
+  // segment can only leak a CLOSING typographic quote, and `QUOTED_RUN`
+  // cannot open a run with one, so all eight arrangements read
+  // identically with and without it. **Only `markerEnd`'s own return
+  // value moves**, so this body drives it directly and asserts the index.
+  // Every existing assertion on this function uses STRAIGHT quotes, which
+  // is exactly why none of them could see the term go.
+  const para = (lines: string[]) =>
+    lines.map((text, i) => ({ line: i + 1, text, scope: "body" as const }));
+  const OPENS = "CARD CLAIM (docs/CONVENTIONS.md): “search the COLLAPSED text, the way";
+  const CLOSES = "every mechanical reader of this file does” before it matches.";
+
+  // THE PLANT IS ASSERTED BEFORE IT IS USED. A marker line carrying no
+  // open typographic quote, or one straight quote, would make the
+  // assertion below true for a reason that has nothing to do with the
+  // term — poison shape TEN: a comparison is evidence only once its
+  // expected side is asserted non-empty.
+  expect((OPENS.match(/"/g) ?? []).length, "the plant grew a straight quote").toBe(0);
+  expect((OPENS.match(/“/g) ?? []).length, "the plant lost its opening quote").toBe(1);
+  expect((OPENS.match(/”/g) ?? []).length, "the plant closed on its own line").toBe(0);
+  expect((CLOSES.match(/”/g) ?? []).length, "the continuation lost its closing quote").toBe(1);
+
+  // THE ASSERTION THE TERM IS THE ONLY WAY TO SATISFY: the payload ends
+  // on the CONTINUATION line, index 1. Counting straight quotes alone
+  // balances on line 0 and answers 0.
+  expect(
+    markerEnd(para([OPENS, CLOSES, "tail."]), 0),
+    "a typographic pair stopped spanning the wrap",
+  ).toBe(1);
+
+  // AND THE OTHER DIRECTION, so the term is not merely "always run on":
+  // a typographic pair that CLOSES on the marker's own line ends there,
+  // and a marker whose typographic quoting never closes falls back to its
+  // own line rather than eating the paragraph.
+  expect(markerEnd(para(["CARD CLAIM (a/b): “closed here”", "tail."]), 0)).toBe(0);
+  expect(
+    markerEnd(para(["CARD CLAIM (a/b): “never closed", "tail.", "more tail."]), 0),
+    "an unbalanced typographic marker ate its whole paragraph",
+  ).toBe(0);
 });
 
 /* ────────────────────────────────────────────────────────────────────

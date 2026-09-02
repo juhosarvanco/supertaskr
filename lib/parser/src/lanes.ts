@@ -100,12 +100,15 @@ export interface LaneHold {
  *                    which means every live lane was actually compared,
  *                    never that the uncomparable ones were skipped;
  * - `fenced`       — `ready`, and a live lane PROVABLY shares a path;
- * - `unfenceable`  — `ready`, no overlap proved, and no overlap could be
- *                    ruled out either. TWO causes, kept apart in the
- *                    sentence because their remedies differ: a token on
- *                    one side could not be resolved, or a LIVE LANE'S
- *                    CARD IS NOT IN THIS CHECKOUT so its fence could not
- *                    be expanded at all. NOT `startable`, not `fenced`;
+ * - `unfenceable`  — `ready`, and the fence cannot be shown to let this
+ *                    card start. Causes are kept apart in the sentence
+ *                    because their remedies differ: a token on one side
+ *                    could not be resolved, a LIVE LANE'S CARD IS NOT IN
+ *                    THIS CHECKOUT so its fence could not be expanded at
+ *                    all, the card declares no `touches:`, or ITS OWN
+ *                    CRITERIA DEMAND A TEST BODY THE FENCE CANNOT HOLD
+ *                    (T-228-s1) — the last of which needs no lane and is
+ *                    a defect of the card. NOT `startable`, not `fenced`;
  * - `own-lane`     — `ready` and the only lane holding it is its OWN.
  *                    A card cannot be fenced out by the lane built to
  *                    build it, and reporting that as `fenced` is how a
@@ -136,6 +139,24 @@ export interface CardStartability {
   fence: Fence;
   /** Every lane that is not disjoint from this card, id-ascending. */
   holds: readonly LaneHold[];
+  /**
+   * Acceptance criteria demanding a TEST BODY this card's fence cannot
+   * hold (T-228-s1) — EMPTY unless that is one of the reasons the card is
+   * not startable, and empty always where no `knownPaths` oracle was
+   * handed in, because without one this module cannot see that a
+   * directory fence already holds a spec file.
+   *
+   * CARRIED RATHER THAN RECOMPUTED, for the reason `unmet` is carried:
+   * `card-preflight.mjs` refuses on exactly this reading and would
+   * otherwise be a second spelling of it (T-057).
+   */
+  unbodied: readonly BodyDemand[];
+  /**
+   * How this card's fence COULD hold a body, when it can — the path and
+   * the suite that would collect it. Absent when it cannot, and absent
+   * when there was no oracle to look in.
+   */
+  bodyBearer?: { rel: string; suite: string };
 }
 
 export interface DispatchOrder {
@@ -189,6 +210,196 @@ export interface DispatchOrderOptions extends SelectScheduleOptions {
    * {@link byDispatchRank} — see its doc for what that is NOT.
    */
   order?: readonly string[];
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * A CRITERION THAT DEMANDS A TEST BODY, AGAINST A FENCE THAT CANNOT
+ * HOLD ONE (T-228-s1).
+ *
+ * ── THE FOUNDING INSTANCE ────────────────────────────────────────────
+ * `T-228` was stamped and armed with `touches: [.claude]` over criteria
+ * demanding a body. No test file lives under `.claude`; every body that
+ * can drive those hooks sits in two spec files under `tools/e2e/tests`.
+ * The dispatch derivation, the arming arm and the brief all passed the
+ * card. The executor routed the card's own ORDER criterion OUT as a
+ * suggestion because the fence refused it, and a blind verifier's phase-1
+ * ground truth named the contradiction twenty minutes later. It is a
+ * two-field read of the card, and it cost an arc.
+ *
+ * ── WHY IT LIVES HERE AND NOWHERE ELSE ───────────────────────────────
+ * Two consumers need this reading — this module, so the dispatch view
+ * rules such a card `unfenceable` rather than startable, and
+ * `tools/e2e/scripts/card-preflight.mjs`, so the preflight refuses with
+ * the criterion and the fence named. A second spelling of one derivation
+ * is what T-057 forbids, so the vocabulary is exported from here and the
+ * preflight reads it off the built parser rather than restating it.
+ *
+ * ── AND THE SWEEP IS NOT EMPTY ───────────────────────────────────────
+ * A defect found in one place is a defect of a CLASS until somebody
+ * looks. Over the 366 cards this repository's board draws at `2008186`
+ * the reading finds a SECOND instance, `T-189`, whose own notes record
+ * the same outcome in as many words: *"AC 4's 'a body SHALL prove it'
+ * was NOT built"* — its fence is `method/` and `docs/CONVENTIONS.md`,
+ * and `tools/e2e/tests/` is outside it.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * A criterion line that demands a TEST BODY of the card it is on, by
+ * family name.
+ *
+ * **EVERY ONE OF THESE WAS NARROWED AGAINST A LIVE BOARD**, and the
+ * narrowings carry more than the patterns do:
+ *
+ *   - THE BODY WORD IS THE HEAD NOUN. Written loosely, `a body SHALL`
+ *     also matches *"A lane adding a `tools/e2e` body SHALL NOT have to
+ *     discover this"* — a rule ABOUT other lanes, not a demand on this
+ *     card. Only a determiner, at most one adjective from a closed list,
+ *     then the body word, then SHALL.
+ *   - `SHALL` IS CASE-SENSITIVE. A normative SHALL is written in capitals
+ *     in the documents this reads, and ordinary prose writes "shall" for
+ *     nothing.
+ *   - `positive control` NEEDS A NORMATIVE SHALL ON ITS OWN LINE. Bare,
+ *     it matches *"(positive control: the same needle over `docs/`"* — a
+ *     grep — and *"with its positive control attached"* — a citation.
+ *     Two lines that demand nothing.
+ *
+ * **AND THE RESIDUAL IS DISCLOSED RATHER THAN CLAIMED AWAY.** At
+ * `2008186` this reading fires on 3 of the 366 cards the schedule draws
+ * and on 0 of the cards it rules startable. One of the three is a genuine
+ * instance; the other two are cards WRITING a rule about bodies into a
+ * governing document, and no lexical test told them apart from a card
+ * owing one. The consequence is a refusal a dated ruling on the card
+ * discharges in one line, printed with the ruling that made it.
+ */
+/** One acceptance-criterion line that demands a test body. */
+export interface BodyDemand {
+  /** 1-based, WITHIN the `## Acceptance criteria` section's own text. */
+  line: number;
+  /** The family that matched, by name — one of {@link BODY_DEMANDING}. */
+  phrase: string;
+  /**
+   * The criterion, trimmed, with a leading list marker and any wrapping
+   * emphasis left off — the form an author QUOTES when ruling on it, and
+   * the form a consumer matches back against the card's own line. A
+   * subject carrying `- ` would make every ruling on one fail to bind.
+   */
+  text: string;
+}
+
+export const BODY_DEMANDING: readonly { name: string; re: RegExp; needsShall?: boolean }[] = [
+  {
+    name: 'a body SHALL',
+    re: /\b(?:[Aa]n?|[Tt]he|[Oo]ne|[Ee]ach|[Ee]very|[Nn]o)\s+(?:[Nn]ew |[Cc]hanged |[Ff]ailing |[Pp]lanted |[Ss]econd |[Ss]ingle )?bod(?:y|ies)\s+SHALL\b/,
+  },
+  {
+    name: 'a test SHALL',
+    re: /\b(?:[Aa]n?|[Tt]he|[Oo]ne|[Ee]ach|[Ee]very|[Nn]o)\s+(?:[Nn]ew |[Cc]hanged |[Ff]ailing |[Pp]lanted |[Ss]econd |[Ss]ingle )?(?:test|spec)\s+SHALL\b/,
+  },
+  { name: 'SHALL red', re: /\bSHALL\s+(?:red|go red|fail)\b/ },
+  { name: 'positive control', re: /\bpositive control\b/i, needsShall: true },
+];
+
+/**
+ * The body-demanding family this line carries, or `''` for none.
+ *
+ * @param line one criterion line, as the card wrote it
+ */
+export function bodyDemandOf(line: string): string {
+  for (const p of BODY_DEMANDING) {
+    if (!p.re.test(line)) continue;
+    if (p.needsShall === true && !/\bSHALL\b/.test(line)) continue;
+    return p.name;
+  }
+  return '';
+}
+
+/**
+ * A path that could carry a TEST BODY, and the suite that would collect
+ * it.
+ *
+ * **THE FOUNDING CARD'S LIST WAS THREE SHAPES AND A REAL TREE HAS FIVE**,
+ * which is why this is a table rather than that sentence copied. Measured
+ * over the live board at `2008186`: reading only `*.spec.ts`, `*.test.*`
+ * and `tests/` refuses four cards whose fences hold real bodies — three
+ * reserve `tools/method-evals`, whose `evals/` files ARE that gate's
+ * bodies, and one reserves a Rust source, where a `#[cfg(test)] mod
+ * tests` is how a Rust body is written at all. A refusal that fires on a
+ * card which CAN hold its own body is the one failure a dispatch gate may
+ * not have.
+ *
+ * Each entry names the suite, because the remedy is *fence something a
+ * suite runs* rather than a file suffix.
+ */
+export const BODY_BEARING: readonly { re: RegExp; suite: string }[] = [
+  { re: /(?:^|\/)tests?\//, suite: 'a tests/ or test/ directory — playwright and vitest collect these' },
+  { re: /\.spec\.[^/]+$/, suite: 'a *.spec.* file' },
+  { re: /\.test\.[^/]+$/, suite: 'a *.test.* file' },
+  { re: /\.rs$/, suite: 'a Rust source — cargo test collects #[test] out of any crate file' },
+  { re: /^tools\/method-evals\/evals\//, suite: 'a method eval' },
+];
+
+/** Which suite would collect this path, or `''` for none. */
+export function bodyBearing(rel: string): string {
+  for (const { re, suite } of BODY_BEARING) if (re.test(rel)) return suite;
+  return '';
+}
+
+/**
+ * Whether a fence could hold a body at all, and by which path.
+ *
+ * **BOTH DIRECTIONS ARE READ AND THE SECOND IS THE ONE THAT MATTERS.** A
+ * fence entry can be a DIRECTORY that already holds bodies, and it can
+ * equally be a body that does not exist YET — a card whose whole job is
+ * to write `tools/e2e/tests/new-thing.spec.ts` fences exactly that path.
+ * Reading only the known side would refuse a card for fencing the file it
+ * is about to create.
+ *
+ * @param fencePaths the card's EXPANDED fence
+ * @param known      repository-relative paths known to exist, or nothing
+ */
+export function fenceHoldsABody(
+  fencePaths: readonly string[],
+  known: Iterable<string> | undefined,
+): { rel: string; suite: string } | undefined {
+  for (const p of fencePaths) {
+    const suite = bodyBearing(p);
+    if (suite !== '') return { rel: p, suite };
+  }
+  if (known === undefined) return undefined;
+  for (const rel of known) {
+    const suite = bodyBearing(rel);
+    if (suite === '') continue;
+    if (fencePaths.some((d) => rel === d || rel.startsWith(`${d}/`))) return { rel, suite };
+  }
+  return undefined;
+}
+
+/**
+ * Every acceptance-criterion line of this card that demands a body,
+ * with the family that matched.
+ *
+ * @param criteria the raw markdown under `## Acceptance criteria`
+ */
+/**
+ * One criterion line as a QUOTABLE subject: trimmed, with a leading list
+ * marker (`- `, `* `, `1. `) taken off. Exported because the consumer that
+ * refuses on this reading has to match the subject back against the card's
+ * own line, and a second spelling of the strip is a second answer.
+ */
+export function criterionText(line: string): string {
+  return line.trim().replace(/^(?:[-*+]|\d+\.)\s+/, '');
+}
+
+export function criteriaDemandingABody(criteria: string | undefined): readonly BodyDemand[] {
+  if (criteria === undefined) return [];
+  const out: BodyDemand[] = [];
+  const lines = criteria.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const text = lines[i] as string;
+    const phrase = bodyDemandOf(text);
+    if (phrase !== '') out.push({ line: i + 1, phrase, text: criterionText(text) });
+  }
+  return out;
 }
 
 /**
@@ -363,7 +574,17 @@ export function readDispatchOrder(
         cardMissing: false,
       });
     }
-    rulings.push(rule(card, fence, holds, fences));
+    // THE CRITERIA ARE READ OFF THE MODEL AND NEVER OFF `WaveCard`, which
+    // carries the frontmatter dimensions and no body (T-228-s1). The
+    // schedule's card and the parsed record are the same file; this is
+    // the join, made once here rather than by the ruling.
+    const record = model.tasks.find((t) => t.id === card.id);
+    rulings.push(
+      rule(card, fence, holds, fences, {
+        demands: criteriaDemandingABody(record?.sections?.acceptanceCriteria),
+        known: options.knownPaths,
+      }),
+    );
   }
 
   rulings.sort((a, b) => {
@@ -397,8 +618,29 @@ function rule(
   fence: Fence,
   holds: readonly LaneHold[],
   fences: ReadonlyMap<string, Fence>,
+  body: { demands: readonly BodyDemand[]; known: Iterable<string> | undefined },
 ): CardStartability {
-  const base = { id: card.id, card, fence, holds };
+  // THE BODY TERM IS ARMED ONLY WHERE A `knownPaths` ORACLE WAS HANDED
+  // IN, and that is measured rather than cautious (T-228-s1). Without an
+  // oracle this module cannot see that `tools/e2e` HOLDS a spec file —
+  // only that the token is not itself spec-shaped — so every
+  // directory-fenced card with a body-demanding criterion would be ruled
+  // unfenceable on a board consumer that has no repository to look in.
+  // A false refusal is the one failure a dispatch gate may not have, and
+  // the consumer that HAS a repository is exactly the one that dispatches.
+  const bearer = body.known === undefined ? undefined : fenceHoldsABody(fence.paths, body.known);
+  const unbodied =
+    body.known !== undefined && body.demands.length > 0 && bearer === undefined
+      ? body.demands
+      : [];
+  const base = {
+    id: card.id,
+    card,
+    fence,
+    holds,
+    unbodied,
+    ...(bearer === undefined ? {} : { bodyBearer: bearer }),
+  };
 
   if (card.schedule === 'underway') {
     return { ...base, state: 'underway', reason: `${card.id} is ${card.status} — somebody is on it.` };
@@ -484,7 +726,19 @@ function rule(
   // `startable` to `unfenceable`, which is the correct answer for a
   // consumer that has no repository to resolve a bare `bin` against: a
   // fence it cannot compute is not a fence that is free.
-  if (holds.length === 0 && fence.tokens.length > 0 && fence.unusable.length === 0) {
+  //
+  // AND THE FOURTH TERM IS T-228-s1's, ADDED HERE FOR THE REASON THE
+  // THIRD ONE WAS: a card whose criteria demand a test body over a fence
+  // that can hold none cannot be built as fenced, and `startable` is the
+  // one word that says a session may start it. Falling through carries
+  // the cause into the `unfenceable` clause list beside every other cause
+  // rather than answering early and dropping them.
+  if (
+    holds.length === 0 &&
+    fence.tokens.length > 0 &&
+    fence.unusable.length === 0 &&
+    unbodied.length === 0
+  ) {
     const spelled =
       fence.paths.length === 0 ? 'it reserves nothing' : `its fence is ${spellPaths(fence.paths)}`;
     return {
@@ -626,6 +880,20 @@ function rule(
     clauses.push(
       `against ${unresolved.map((h) => laneName(h.lane)).join(', ')}, ${tokens.join(', ')} ` +
         'resolved to neither a slug nor a path',
+    );
+  }
+  // THE FIFTH CAUSE, AND IT NEEDS NO LANE EITHER (T-228-s1). It names the
+  // criterion and the fence, because those are the two things a
+  // dispatcher repairs: widen the `touches:` to something a suite runs,
+  // or rule the criterion documentary on the card and date it.
+  if (unbodied.length > 0) {
+    const first = unbodied[0] as BodyDemand;
+    const more = unbodied.length > 1 ? ` (and ${unbodied.length - 1} more like it)` : '';
+    clauses.push(
+      `${card.id}'s acceptance criteria demand a TEST BODY — "${first.text}"${more}, the ` +
+        `"${first.phrase}" shape — and its fence ` +
+        `${fence.paths.length === 0 ? 'reserves nothing' : `is ${spellPaths(fence.paths)}`}, which ` +
+        'holds no path any suite collects, so the body has nowhere inside the lane to go',
     );
   }
   return {

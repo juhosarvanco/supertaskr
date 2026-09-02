@@ -25566,17 +25566,47 @@
       "id": "f:lib/parser/src/lanes.ts",
       "path": "lib/parser/src/lanes.ts",
       "lang": "ts",
-      "hash": "blake3:eca60e7cbd695fc5c9f6833647d4d498a166c44c01da84154e0bd69893cf89a1",
-      "loc": 638,
+      "hash": "blake3:071540e2bbb4b7c421d051d36a9a540d7809503a6b1ff963fe37b30f0155480f",
+      "loc": 906,
       "symbols": [
+        {
+          "id": "s:lib/parser/src/lanes.ts#BODY_BEARING",
+          "name": "BODY_BEARING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            333,
+            339
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#BODY_DEMANDING",
+          "name": "BODY_DEMANDING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            289,
+            300
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#BodyDemand",
+          "name": "BodyDemand",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            275,
+            287
+          ]
+        },
         {
           "id": "s:lib/parser/src/lanes.ts#CardStartability",
           "name": "CardStartability",
           "kind": "interface",
           "exported": true,
           "range": [
-            124,
-            139
+            127,
+            160
           ]
         },
         {
@@ -25585,8 +25615,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            141,
-            175
+            162,
+            196
           ]
         },
         {
@@ -25595,8 +25625,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            177,
-            192
+            198,
+            213
           ]
         },
         {
@@ -25625,8 +25655,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            260,
-            260
+            471,
+            471
           ]
         },
         {
@@ -25635,8 +25665,28 @@
           "kind": "type",
           "exported": true,
           "range": [
-            114,
-            121
+            117,
+            124
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#bodyBearing",
+          "name": "bodyBearing",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            342,
+            345
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#bodyDemandOf",
+          "name": "bodyDemandOf",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            307,
+            314
           ]
         },
         {
@@ -25645,8 +25695,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            213,
-            221
+            424,
+            432
           ]
         },
         {
@@ -25655,8 +25705,38 @@
           "kind": "function",
           "exported": false,
           "range": [
-            291,
-            295
+            502,
+            506
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#criteriaDemandingABody",
+          "name": "criteriaDemandingABody",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            393,
+            403
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#criterionText",
+          "name": "criterionText",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            389,
+            391
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#fenceHoldsABody",
+          "name": "fenceHoldsABody",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            360,
+            375
           ]
         },
         {
@@ -25665,8 +25745,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            225,
-            239
+            436,
+            450
           ]
         },
         {
@@ -25675,8 +25755,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            242,
-            244
+            453,
+            455
           ]
         },
         {
@@ -25685,8 +25765,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            307,
-            391
+            518,
+            612
           ]
         },
         {
@@ -25695,8 +25775,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            395,
-            638
+            616,
+            906
           ]
         },
         {
@@ -25705,8 +25785,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            247,
-            249
+            458,
+            460
           ]
         },
         {
@@ -25715,8 +25795,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            263,
-            267
+            474,
+            478
           ]
         },
         {
@@ -25725,8 +25805,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            283,
-            288
+            494,
+            499
           ]
         }
       ]
@@ -26779,8 +26859,8 @@
       "id": "f:lib/parser/test/lanes.test.ts",
       "path": "lib/parser/test/lanes.test.ts",
       "lang": "ts",
-      "hash": "blake3:35f61807aea9693419e39d25fa9eca9277b446d7df53b8e3b850996736f10248",
-      "loc": 740,
+      "hash": "blake3:5f7240ba6ead10df9d165db42faee5a872c0b56267a8221da92c95fba61972f0",
+      "loc": 895,
       "symbols": [
         {
           "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",
@@ -26788,8 +26868,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            22,
-            28
+            30,
+            38
           ]
         },
         {
@@ -26798,8 +26878,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            86,
-            89
+            97,
+            100
           ]
         },
         {
@@ -26808,8 +26888,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            47,
-            65
+            57,
+            76
           ]
         },
         {
@@ -26818,8 +26898,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            67,
-            84
+            78,
+            95
           ]
         },
         {
@@ -26828,8 +26908,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            91,
-            98
+            102,
+            109
           ]
         }
       ]
@@ -34764,7 +34844,12 @@
       "to": "f:lib/parser/src/lanes.ts",
       "kind": "import",
       "symbols": [
+        "BODY_DEMANDING",
         "LaneRecord",
+        "bodyBearing",
+        "bodyDemandOf",
+        "criteriaDemandingABody",
+        "fenceHoldsABody",
         "readDispatchOrder",
         "witnessComponents"
       ]
@@ -43743,6 +43828,12 @@
     },
     {
       "from": "s:lib/parser/src/lanes.ts#CardStartability",
+      "to": "s:lib/parser/src/lanes.ts#BodyDemand",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#CardStartability",
       "to": "s:lib/parser/src/lanes.ts#LaneHold",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -43832,6 +43923,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/lanes.ts#criteriaDemandingABody",
+      "to": "s:lib/parser/src/lanes.ts#BodyDemand",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#criteriaDemandingABody",
+      "to": "s:lib/parser/src/lanes.ts#bodyDemandOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#criteriaDemandingABody",
+      "to": "s:lib/parser/src/lanes.ts#criterionText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#fenceHoldsABody",
+      "to": "s:lib/parser/src/lanes.ts#bodyBearing",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/lanes.ts#fenceIndex",
       "to": "s:lib/parser/src/fence.ts#Fence",
       "kind": "type_ref",
@@ -43917,6 +44032,12 @@
     },
     {
       "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#criteriaDemandingABody",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
       "to": "s:lib/parser/src/lanes.ts#fenceIndex",
       "kind": "call",
       "confidence": "resolved"
@@ -43959,6 +44080,12 @@
     },
     {
       "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#BodyDemand",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
       "to": "s:lib/parser/src/lanes.ts#CardStartability",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -43972,6 +44099,12 @@
     {
       "from": "s:lib/parser/src/lanes.ts#rule",
       "to": "s:lib/parser/src/lanes.ts#comparisonComponents",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#fenceHoldsABody",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -44921,7 +45054,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2534,
-    "edges": 2433
+    "symbols": 2542,
+    "edges": 2441
   }
 }

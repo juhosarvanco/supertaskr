@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **649 behaviours** — 647 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **652 behaviours** — 650 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -145,6 +145,7 @@ Census: **649 behaviours** — 647 extracted sentences + 2 named-not-extracted (
 - a planted UNCOVERED CRITERION PATH reds, and only when a component owns it
 - a missing path INSIDE the card's own fence is a creation target, not a refusal
 - a DEAD fence entry reds — an entry true at writing that reserves nothing now
+- a criterion demanding a BODY over a fence that holds none is REFUSED, and one spec file clears it
 - a DANGLING REF stamp reds, and a ref this checkout holds does not
 - a blocked_by entry with no live card reds, and the parser's own ruling is reported
 - a stated blocking reason about a LIVE LANE is read against the lane list
@@ -174,11 +175,13 @@ Census: **649 behaviours** — 647 extracted sentences + 2 named-not-extracted (
 - a quoted assertion in the card's TITLE is COUNTED and LISTED, naming its field
 - a marker written into a frontmatter field is a SIGHTING, never a claim
 - a quoted run below the floor is COUNTED, and it is still not listed
+- a reported listing is budgeted and says how much it did not print; a finding is never budgeted
 - the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does
 - a quoted run that crosses the hard wrap is ONE run, and the flat twin agrees
 - the same run MARKED is treated exactly as a single-line marked run
 - a run that opens in one paragraph and closes in another stays UNSEEN, said in words
 - a marker whose NEEDLE wraps ends its own unit, and the run after it survives
+- markerEnd's TYPOGRAPHIC pair spans the wrap, and its own return is the only thing that moves
 - a frontmatter scalar is read RAW, so a space-hash inside a quoted title keeps it
 - every DISPLAY site in the quotes arm escapes the author's string
 - `--take-seat` records THIS session in the integration checkout, in a file git cannot see

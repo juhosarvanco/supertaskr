@@ -146,12 +146,14 @@ export const CLAIM_CLASSES = Object.freeze([
     checks:
       "the card's touches, expanded through the live slug map by the parser's own fence module",
     refuses:
-      "an entry that reserves no tracked file at all, an entry this expansion cannot resolve, and " +
-      "a path the criteria name that a DECLARED component owns and this fence does not carry",
+      "an entry that reserves no tracked file at all, an entry this expansion cannot resolve, " +
+      "a path the criteria name that a DECLARED component owns and this fence does not carry, and " +
+      "a criterion that demands a TEST BODY over a fence holding nothing any suite would collect",
     cannot:
       "whether a path under NO component ought to be inside the fence — a criterion cites far more " +
       "files than it writes, and outside the slug map this tool cannot tell a citation from a " +
-      "write target",
+      "write target; and whether a body-demanding criterion is demanding one OF THIS CARD or " +
+      "WRITING A RULE about bodies into a document, which no lexical test separated",
   },
   {
     key: "figures",
@@ -464,6 +466,103 @@ export const QUOTE_CLIP_CHARS = 72;
  */
 export function clip(text) {
   return text.length <= QUOTE_CLIP_CHARS ? text : `${text.slice(0, QUOTE_CLIP_CHARS)}...`;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE REPORTED LISTING IS BUDGETED AND A FINDING NEVER IS (T-225-s11).
+ *
+ * ── THE PROBLEM, AS A FIGURE ─────────────────────────────────────────
+ * `--task <id> --preflight` is one answer against a 65,536-byte pipe
+ * buffer, and this arm is the half that is over: T-225-s2 took 12,356
+ * bytes off the ROW SET and the command was still past it. The residual
+ * is here, and it is not the class table — it is the per-item LISTINGS,
+ * which grow with the card. On `T-133` the unmarked-quote census alone
+ * listed 56 rows of 13,104 bytes, not one of which refuses anything, and
+ * this arm's own half of the answer was 25,155 bytes of 74,633.
+ *
+ * ── THE RULE IS T-225'S OWN, TAKEN FROM `--dispatch` ─────────────────
+ * *Print what the reader will act on, and say how much was not printed.*
+ * A FINDING is what a dispatcher acts on: it refuses the dispatch, it
+ * names a subject a dated ruling can discharge, and it is never budgeted
+ * here at any size. Everything else in this arm is a CENSUS — reported,
+ * never refused on — and a census is served by its COUNT plus enough rows
+ * to recognise the shape. So each reported listing prints at most
+ * `REPORT_BUDGET` rows and then ONE line naming how many it did not
+ * print, out of how many there were, and the flag that prints them all.
+ *
+ * ── WHY A DISCLOSED ELISION RATHER THAN THE COUNT ALONE ──────────────
+ * The counts were already printed above every listing and were never the
+ * expensive half. Collapsing to them would have made this arm's own
+ * *"COUNTED and LISTED rather than passed over"* sentence false, and a
+ * census that silently stops listing is the failure this whole module
+ * exists against. `--full` is the escape `--dispatch --full` already
+ * publishes for the triage view, so this is a second member of one family
+ * rather than a new dialect.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * How many rows of ONE reported listing are printed before the rest are
+ * disclosed as a count.
+ *
+ * MEASURED, NOT CHOSEN, and measured BACK TO BACK at one held board — 17
+ * checkouts on this machine, 5 of them lanes. `--task T-133 --preflight`
+ * reads 74,633 bytes at `2008186` and 62,836 with this budget in place,
+ * against a 65,536-byte pipe buffer: 9,097 OVER becomes 2,700 UNDER, and
+ * 11,797 bytes come off. Six rows per listing is what buys that while
+ * leaving room for the MACHINE-WIDE CHECKOUT SWEEP this same answer
+ * carries — a line per checkout on the machine, which moves with the
+ * number of checkouts and not with the card, and which lives in
+ * `brief.mjs` outside this fence.
+ *
+ * Six is also above every planted fixture in `card-preflight.spec.ts`,
+ * deliberately: a budget that elided a two-row fixture would be a budget
+ * whose own bodies never see the unbudgeted case.
+ */
+export const REPORT_BUDGET = 6;
+
+/**
+ * @template T
+ * @typedef {object} Budgeted
+ * @property {T[]} shown    the rows this run prints
+ * @property {number} elided how many it did not, never negative
+ * @property {number} of     how many there were in all
+ */
+
+/**
+ * Cut a REPORTED listing to the budget. `--full` spends no budget at all:
+ * the triage reader asked for every row and gets every row.
+ *
+ * @template T
+ * @param {import("./dispatch-brief.mjs").Ctx} ctx
+ * @param {readonly T[]} items
+ * @returns {Budgeted<T>}
+ */
+export function budgeted(ctx, items) {
+  const of = items.length;
+  if (ctx.full || of <= REPORT_BUDGET) return { shown: [...items], elided: 0, of };
+  return { shown: items.slice(0, REPORT_BUDGET), elided: of - REPORT_BUDGET, of };
+}
+
+/**
+ * The one line an elided listing owes. It is a `value` rather than a note
+ * because it carries a FIGURE — how many rows this answer does not
+ * contain — and every figure here carries the provenance it came from.
+ *
+ * @template T
+ * @param {Budgeted<T>} b
+ * @param {string} what what the elided rows are, plural, in the listing's own words
+ * @param {import("./dispatch-brief.mjs").Prov} prov
+ * @returns {import("./dispatch-brief.mjs").Rec[]}
+ */
+export function elision(b, what, prov) {
+  if (b.elided === 0) return [];
+  return [
+    value(
+      `and ${b.elided} more ${what} of ${b.of} NOT PRINTED — a reported listing is budgeted at ` +
+        `${REPORT_BUDGET} rows; re-run with --full for every one. A FINDING is never budgeted`,
+      prov,
+    ),
+  ];
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -966,6 +1065,43 @@ export function ownersOf(owners, rel) {
   return [...new Set(found)].sort();
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * A CRITERION THAT DEMANDS A BODY, AGAINST A FENCE THAT CANNOT HOLD ONE
+ * (T-228-s1) — CONSUMED, NEVER RE-DERIVED.
+ *
+ * The reading itself is `@nputer/parser`'s `criteriaDemandingABody` +
+ * `fenceHoldsABody` in `lib/parser/src/lanes.ts`, because TWO consumers
+ * need it: the dispatch view, which must rule such a card `unfenceable`
+ * rather than startable, and this preflight, which must refuse with the
+ * criterion and the fence named. A second spelling here is exactly what
+ * T-057 forbids and what this module's own header promises not to do —
+ * so the verdict arrives on the parser's ruling, as `unbodied` and
+ * `bodyBearer`, beside the blocker verdict this arm already consumes.
+ *
+ * WHAT IS DONE HERE AND NOWHERE ELSE is the DISPLAY join: the parser
+ * numbers a criterion within the `## Acceptance criteria` section it was
+ * read from, and a dispatcher jumps to a line in the FILE. `cardLine`
+ * below matches the criterion's own text against this card's own lines to
+ * recover that number, and falls back to naming the section when it
+ * cannot — a join over text, not a second reading of the rule.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * Where a criterion the parser named sits in the CARD.
+ *
+ * @param {CardLine[]} lines  this card's lines, from `cardLines`
+ * @param {string} text       the criterion, trimmed, as the parser read it
+ * @returns {number} the card's own 1-based line, or 0 when it is not found
+ */
+export function criterionLine(lines, text) {
+  // CONTAINMENT, NOT EQUALITY, and the reason is that the parser hands
+  // back a QUOTABLE subject — trimmed, list marker off — while this side
+  // holds the line as the card wrote it. Re-spelling the strip here would
+  // be a second answer to the question the parser already answers.
+  const hit = lines.find((l) => l.scope === "criteria" && text !== "" && l.text.includes(text));
+  return hit === undefined ? 0 : hit.line;
+}
+
 /**
  * @typedef {object} Ruling
  * @property {number} line
@@ -1378,8 +1514,17 @@ export async function preflight(ctx, options = {}) {
     value(`HEAD in full: ${ctx.ref}`, tree(ctx, "git rev-parse HEAD")),
     value(
       `card status: ${fieldScalar(card.fields, "status")} / size ${fieldScalar(card.fields, "size")}`,
-      tree(ctx, `${card.file} frontmatter`),
+      tree(ctx, `${card.id} frontmatter`),
     ),
+    // THE CARD IS ADDRESSED ONCE, ABOVE, AND CITED BY ITS ID BELOW
+    // (T-225-s11). Every provenance in this block reads that one card, and
+    // spelling its whole path on each of them put the same 79-byte
+    // filename into this answer 78 times — 6,162 bytes of an answer
+    // already past the pipe buffer, saying nothing the line above does
+    // not. `A CITATION NAMES A SYMBOL, NOT A LINE`: the id IS the symbol,
+    // and the row above is where it resolves. A FINDING still carries the
+    // whole path, because a finding is read on its own, away from here.
+    note("  every provenance below cites this card by its ID; the row above is where that resolves"),
     blank(),
   ];
 
@@ -1393,7 +1538,7 @@ export async function preflight(ctx, options = {}) {
     );
   }
   const byState = /** @param {string} s */ (s) => claims.filter((c) => c.state === s);
-  const viaPaths = `${card.file} prose and frontmatter, over git ls-files`;
+  const viaPaths = `${card.id} prose and frontmatter, over git ls-files`;
   for (const state of ["exists", "missing", "pattern", "truncated", "ignored"]) {
     recs.push(value(`paths ${state}: ${byState(state).length}`, tree(ctx, viaPaths)));
   }
@@ -1418,7 +1563,8 @@ export async function preflight(ctx, options = {}) {
         "cannot be a creation target either.",
     );
   }
-  for (const c of creations) {
+  const someCreations = budgeted(ctx, creations);
+  for (const c of someCreations.shown) {
     recs.push(
       value(
         `creation target line ${c.line}: ${c.token} — absent, and inside this card's own fence`,
@@ -1426,7 +1572,9 @@ export async function preflight(ctx, options = {}) {
       ),
     );
   }
-  for (const c of illustrative) {
+  recs.push(...elision(someCreations, "creation targets", tree(ctx, viaPaths)));
+  const someIllustrative = budgeted(ctx, illustrative);
+  for (const c of someIllustrative.shown) {
     recs.push(
       value(
         `absent, body scope line ${c.line}: ${c.token} — reported, never refused on`,
@@ -1434,11 +1582,12 @@ export async function preflight(ctx, options = {}) {
       ),
     );
   }
+  recs.push(...elision(someIllustrative, "absent body-scope paths", tree(ctx, viaPaths)));
   recs.push(blank());
 
   /* ── CLASS TWO — the fence ──────────────────────────────────────── */
   recs.push(note("CLAIM CLASS fence — the card's touches, expanded through the live slug map"));
-  const viaFence = `${card.file} field touches, expanded by the parser's fence module`;
+  const viaFence = `${card.id} field touches, expanded by the parser's fence module`;
   recs.push(
     value(`fence entries: ${touches.length}`, tree(ctx, viaFence)),
     value(`fence reserves: ${fencePaths.join(" ") || "nothing"}`, tree(ctx, viaFence)),
@@ -1484,16 +1633,21 @@ export async function preflight(ctx, options = {}) {
       tree(ctx, `${viaFence}, against the criteria's own path tokens`),
     ),
   );
+  const unowned = budgeted(
+    ctx,
+    uncovered.filter((u) => u.owners.length === 0),
+  );
+  for (const u of unowned.shown) {
+    recs.push(
+      value(
+        `  outside the fence, under no component, line ${u.claim.line}: ${u.claim.token}`,
+        tree(ctx, viaPaths),
+      ),
+    );
+  }
+  recs.push(...elision(unowned, "criterion paths under no component", tree(ctx, viaPaths)));
   for (const u of uncovered) {
-    if (u.owners.length === 0) {
-      recs.push(
-        value(
-          `  outside the fence, under no component, line ${u.claim.line}: ${u.claim.token}`,
-          tree(ctx, viaPaths),
-        ),
-      );
-      continue;
-    }
+    if (u.owners.length === 0) continue;
     recs.push(
       value(
         `UNCOVERED CRITERION PATH line ${u.claim.line}: ${u.claim.token} — reserved by ` +
@@ -1511,11 +1665,53 @@ export async function preflight(ctx, options = {}) {
         "honestly at lane prices.",
     );
   }
+  /* THE CRITERIA THAT DEMAND A BODY, AGAINST A FENCE THAT CAN HOLD ONE
+   * (T-228-s1). `T-228` was armed with `touches: [.claude]` over criteria
+   * demanding a body, no test file lives under `.claude`, and the
+   * contradiction cost one dispatch arc before a blind verifier's ground
+   * truth named it. It is a two-field read of the card. */
+  const demands = ruling.unbodied ?? [];
+  const bearer = ruling.bodyBearer;
+  const viaBodies = `${card.id} acceptance criteria, against the expanded fence over git ls-files`;
+  recs.push(
+    value(`criteria demanding a test body this fence cannot hold: ${demands.length}`, tree(ctx, viaBodies)),
+    value(
+      `the fence holds a body: ${bearer === undefined ? "NO PATH ANY SUITE COLLECTS" : `${bearer.rel} — ${bearer.suite}`}`,
+      tree(ctx, viaBodies),
+    ),
+  );
+  for (const d of demands) {
+    const at = criterionLine(cardLines(cardText).lines, d.text);
+    const where = at === 0 ? "in the acceptance criteria" : `line ${at}`;
+    recs.push(
+      value(
+        `NO BODY CAN BE WRITTEN ${where}: ${JSON.stringify(clip(d.text))} — the "${d.phrase}" ` +
+          `shape, over a fence reserving ${fencePaths.join(" ") || "nothing"}`,
+        tree(ctx, viaBodies),
+      ),
+      note("  no path this fence reserves is one any suite in this repository collects, so the"),
+      note("  criterion cannot be satisfied inside the lane. Widen the fence on the card, or rule"),
+      note("  the criterion documentary with a dated PREFLIGHT RULING naming this line."),
+    );
+    raise(
+      d.text,
+      `NO BODY CAN BE WRITTEN at ${card.file} ${where}: the criterion ` +
+        `${JSON.stringify(d.text)} carries the "${d.phrase}" shape and this card's fence reserves ` +
+        `${fencePaths.join(" ") || "nothing"} — no path any suite collects, so the body the ` +
+        "criterion demands has nowhere inside the lane to go. T-228 was dispatched in exactly " +
+        "this state and the contradiction was found by a blind verifier's ground truth, an arc " +
+        "after the fence could have been widened at the stamp.",
+    );
+  }
   recs.push(
     note("  A PATH UNDER NO COMPONENT IS NEVER REFUSED ON, and the reason is measured: a criterion"),
     note("  cites far more files than it writes, so on this board the plain uncovered set is large"),
     note("  and mostly correct. What refuses is a path a DECLARED component owns — the card could"),
     note("  have fenced it by naming that slug, so its absence is a fence claim and not a citation."),
+    note("  AND A BODY-DEMANDING CRITERION REFUSES ONLY WHEN THE FENCE HOLDS NO BODY AT ALL. The"),
+    note("  suite vocabulary is the tree's, not a suffix list: a tests/ directory, a *.spec.* or"),
+    note("  *.test.* file, any Rust source, and tools/method-evals/evals. A fence naming a body"),
+    note("  that does not exist yet is a card about to write one and is not refused."),
     blank(),
   );
 
@@ -1525,14 +1721,14 @@ export async function preflight(ctx, options = {}) {
   recs.push(
     value(
       `figures claiming a provenance or making a census claim: ${figures.length}`,
-      tree(ctx, `${card.file}, audited against this checkout's derivers`),
+      tree(ctx, `${card.id}, audited against this checkout's derivers`),
     ),
   );
   for (const f of figures) {
     recs.push(
       value(
         `${f.verdict} line ${f.line}: ${f.text}`,
-        tree(ctx, `${card.file}, audited against this checkout's derivers`),
+        tree(ctx, `${card.id}, audited against this checkout's derivers`),
       ),
       note(`  ${f.detail}`),
     );
@@ -1554,7 +1750,7 @@ export async function preflight(ctx, options = {}) {
   recs.push(
     value(
       `blocked_by: ${blockedBy.length === 0 ? "nothing" : blockedBy.join(", ")}`,
-      tree(ctx, `${card.file} frontmatter field blocked_by`),
+      tree(ctx, `${card.id} frontmatter field blocked_by`),
     ),
   );
   for (const id of blockedBy) {
@@ -1614,17 +1810,21 @@ export async function preflight(ctx, options = {}) {
   recs.push(note("CLAIM CLASS refs — every commit-ref stamp the card carries, resolved here"));
   const refs = refClaims(cardText);
   recs.push(
-    value(`ref stamps: ${refs.length}`, tree(ctx, `${card.file}, the published @ stamp form`)),
+    value(`ref stamps: ${refs.length}`, tree(ctx, `${card.id}, the published @ stamp form`)),
   );
-  for (const r of refs) {
-    const ok = refResolves(ctx.root, r.hash);
-    recs.push(
-      value(
-        `ref ${r.hash} at line ${r.line}: ${ok ? "resolves" : "DOES NOT RESOLVE"}`,
-        live(ctx, "git rev-parse --verify, in this checkout"),
-      ),
-    );
-    if (ok) continue;
+  const viaRefs = live(ctx, "git rev-parse --verify, in this checkout");
+  const resolved = refs.map((r) => ({ ...r, ok: refResolves(ctx.root, r.hash) }));
+  const someResolved = budgeted(
+    ctx,
+    resolved.filter((r) => r.ok),
+  );
+  for (const r of someResolved.shown) {
+    recs.push(value(`ref ${r.hash} at line ${r.line}: resolves`, viaRefs));
+  }
+  recs.push(...elision(someResolved, "resolving ref stamps", viaRefs));
+  for (const r of resolved) {
+    if (r.ok) continue;
+    recs.push(value(`ref ${r.hash} at line ${r.line}: DOES NOT RESOLVE`, viaRefs));
     raise(
       r.hash,
       `DANGLING REF at ${card.file} line ${r.line}: @ ${r.hash} resolves to no commit in this ` +
@@ -1647,7 +1847,7 @@ export async function preflight(ctx, options = {}) {
    * a ruling is written in the published form, so wrapping it would stop
    * every such ruling discharging, silently and in the direction that
    * RE-OPENS what a seat already ruled on. */
-  const viaQuotes = `${card.file}, its CARD CLAIM markers, against the named file at HEAD`;
+  const viaQuotes = `${card.id}, its CARD CLAIM markers, against the named file at HEAD`;
   const marked = cardClaims(cardText).map((claim) => ({
     claim,
     verdict: checkClaim(ctx.root, oracle, claim),
@@ -1666,7 +1866,8 @@ export async function preflight(ctx, options = {}) {
     note("  check reports coverage it does not have, which is the defect this project has already"),
     note("  paid for twice — and a sum would hide the whole of what this arm cannot reach."),
   );
-  for (const m of heldClaimsList) {
+  const someHeld = budgeted(ctx, heldClaimsList);
+  for (const m of someHeld.shown) {
     recs.push(
       value(
         `CHECKED and HELD line ${m.claim.line}: ${JSON.stringify(m.claim.source)} contains ` +
@@ -1675,6 +1876,7 @@ export async function preflight(ctx, options = {}) {
       ),
     );
   }
+  recs.push(...elision(someHeld, "held marked claims", tree(ctx, viaQuotes)));
   for (const m of falseClaims) {
     recs.push(
       value(
@@ -1714,12 +1916,14 @@ export async function preflight(ctx, options = {}) {
         "alternative is a card that asks to be checked, is not, and reads as though it were.",
     );
   }
-  for (const s of unseenMarkers(cardText)) {
+  const viaSightings = tree(ctx, `${card.id}, its raw body against its prose reading`);
+  const someSightings = budgeted(ctx, unseenMarkers(cardText));
+  for (const s of someSightings.shown) {
     recs.push(
       value(
         `marker-shaped line the prose reader does not see, line ${s.line}: ` +
           `${JSON.stringify(s.text)}`,
-        tree(ctx, `${card.file}, its raw body against its prose reading`),
+        viaSightings,
       ),
       note("  an example in a block reads as an example and is not a claim, and a marker written"),
       note("  into a frontmatter field is a request in the wrong place; a marker meant as a claim"),
@@ -1727,8 +1931,9 @@ export async function preflight(ctx, options = {}) {
       note("  exactly how the marker gets documented."),
     );
   }
+  recs.push(...elision(someSightings, "marker-shaped lines the prose reader does not see", viaSightings));
   const loose = unmarkedQuotes(cardText, oracle);
-  const viaLoose = `${card.file} prose and frontmatter scalars, unit-scoped against git ls-files`;
+  const viaLoose = `${card.id} prose and frontmatter scalars, unit-scoped against git ls-files`;
   const listed = loose.filter((q) => !q.belowFloor);
   const short = loose.filter((q) => q.belowFloor);
   const besidePath = listed.filter((q) => q.nearPath);
@@ -1743,7 +1948,8 @@ export async function preflight(ctx, options = {}) {
     value(`quoted and NOT marked, naming no source at all: ${noSource.length}`, tree(ctx, viaLoose)),
     value(`below the quote floor: ${short.length}`, tree(ctx, viaLoose)),
   );
-  for (const q of besidePath) {
+  const someBeside = budgeted(ctx, besidePath);
+  for (const q of someBeside.shown) {
     recs.push(
       value(
         `NOT CHECKED, a path is named nearby, ${where(q)}: ${JSON.stringify(clip(q.text))}`,
@@ -1751,7 +1957,9 @@ export async function preflight(ctx, options = {}) {
       ),
     );
   }
-  for (const q of noSource) {
+  recs.push(...elision(someBeside, "unmarked runs beside a path", tree(ctx, viaLoose)));
+  const someNoSource = budgeted(ctx, noSource);
+  for (const q of someNoSource.shown) {
     recs.push(
       value(
         `NOT CHECKED, no source named, ${where(q)}: ${JSON.stringify(clip(q.text))}`,
@@ -1759,8 +1967,9 @@ export async function preflight(ctx, options = {}) {
       ),
     );
   }
+  recs.push(...elision(someNoSource, "unmarked runs naming no source", tree(ctx, viaLoose)));
   recs.push(
-    note("  EVERY UNMARKED QUOTE IS LISTED AND NONE OF THEM IS REFUSED ON. The first set could"),
+    note("  EVERY UNMARKED QUOTE IS COUNTED, AND NONE OF THEM IS REFUSED ON. The first set could"),
     note("  have named a source and did not: mark it and this arm will settle it. The second set"),
     note("  names none, and some of it never could — an assertion about a platform, a version or"),
     note("  a runtime is not a string in a file, and the honest answer for that class is the"),
@@ -1773,6 +1982,10 @@ export async function preflight(ctx, options = {}) {
     note("  AND THE RUNS BELOW THE FLOOR ARE COUNTED RATHER THAN DROPPED. The floor decides what"),
     note("  is LISTED — initials and punctuation samples are not assertions — and a run discarded"),
     note("  without a number would make this class's own counted-and-listed sentence false."),
+    note("  THE LISTING IS BUDGETED AND THE COUNTS ABOVE ARE NOT. This is the largest census here"),
+    note("  and on a long card it was thousands of bytes of an answer already past the pipe buffer,"),
+    note("  none of it refusing anything. A budgeted listing says how many rows it did not print;"),
+    note("  --full prints every one."),
     blank(),
   );
 
@@ -1781,7 +1994,7 @@ export async function preflight(ctx, options = {}) {
   recs.push(
     note("THE CARD'S OWN RULINGS — a discrepancy may be corrected, or ruled acceptable and dated"),
   );
-  const viaRuling = `${card.file}, its dated PREFLIGHT RULING lines`;
+  const viaRuling = `${card.id}, its dated PREFLIGHT RULING lines`;
   recs.push(value(`rulings on this card: ${ruled.length}`, tree(ctx, viaRuling)));
   /** @type {string[]} */
   const findings = [];
