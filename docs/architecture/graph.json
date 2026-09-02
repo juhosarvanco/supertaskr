@@ -19954,6 +19954,135 @@
       ]
     },
     {
+      "id": "f:app/test/board-root.test.tsx",
+      "path": "app/test/board-root.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:a8979c831569d13637bfde77c15b53108b3184b80b6295a859308a307f54d4e2",
+      "loc": 222,
+      "symbols": [
+        {
+          "id": "s:app/test/board-root.test.tsx#ASSEMBLED",
+          "name": "ASSEMBLED",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            86,
+            111
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#CARD",
+          "name": "CARD",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            46,
+            57
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#MODEL",
+          "name": "MODEL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            59,
+            62
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#NO_LANES",
+          "name": "NO_LANES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            66,
+            71
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#TRUNCATED_SCAN",
+          "name": "TRUNCATED_SCAN",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            76,
+            81
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            113,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#openT400",
+          "name": "openT400",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            142,
+            144
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#press",
+          "name": "press",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            132,
+            137
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            139,
+            139
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#render",
+          "name": "render",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            127,
+            129
+          ]
+        },
+        {
+          "id": "s:app/test/board-root.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            114,
+            114
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
@@ -31024,6 +31153,68 @@
       ]
     },
     {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "f:app/src/components/board/Board.tsx",
+      "kind": "import",
+      "symbols": [
+        "Board"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DispatchReading"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "BriefOutcomeView"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/board-root.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/board-truth.test.tsx",
       "to": "f:app/src/App.tsx",
       "kind": "import",
@@ -41227,6 +41418,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/board-root.test.tsx#ASSEMBLED",
+      "to": "s:app/src/lib/task-detail.ts#BriefOutcomeView",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-root.test.tsx#NO_LANES",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-root.test.tsx#TRUNCATED_SCAN",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-root.test.tsx#openT400",
+      "to": "s:app/test/board-root.test.tsx#press",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-root.test.tsx#openT400",
+      "to": "s:app/test/board-root.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/board-truth.test.tsx#FILES",
       "to": "s:app/test/board-truth.test.tsx#src",
       "kind": "call",
@@ -44409,8 +44630,8 @@
     }
   ],
   "stats": {
-    "files": 200,
-    "symbols": 2508,
-    "edges": 2398
+    "files": 201,
+    "symbols": 2520,
+    "edges": 2410
   }
 }
