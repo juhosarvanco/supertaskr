@@ -20,7 +20,12 @@
  *   now REQUIRES `excluded`, so a manifest predating this card blocks
  *   with `no-manifest` where v1 allowed. No live manifest can hit it —
  *   the writer has always stamped the field — and it is stated because
- *   "unchanged to the byte" was the claim and is not quite true.
+ *   "unchanged to the byte" was the claim and is not quite true. AND
+ *   SINCE `T-219-s3` THAT REQUIREMENT IS A SHAPE CHECK AND NOTHING
+ *   ELSE: the one arm that READ `excluded` is gone (`carveOutFor`), and
+ *   the field stays required because a manifest missing it was written
+ *   by a writer older than `T-154-s2` — a stale dispatch this reader
+ *   refuses on sight — never because a carve-out consults it.
  *   A SEAT WITH NO LANE answers from EVERY LIVE LANE'S manifest, and
  *   every uncertainty is an ALLOW. A refusal here rests on a POSITIVE,
  *   readable reservation — never on a file this hook could not read.
@@ -314,13 +319,18 @@ export const LANE_BRANCH_RE = /^refs\/heads\/task\/T-(\d+)-.+$/;
  *
  * THESE ARE @HUMAN'S RULING WRITTEN AS CRITERIA, NOT THE HOOK'S
  * JUDGEMENT (`T-154-s2`, 2026-08-30). The ruling names three carve-outs
- * and two of them are already IN THE MANIFEST — `docs/tasks/` arrives as
- * every manifest's `alwaysWritable` (the parser's `UNFENCEABLE_PATHS`)
- * and a card's own file as its `excluded` — so this constant holds only
- * the third: the writes the integration seat makes constantly and
- * legitimately, which no lane's fence may stop. `docs/tasks/` is where
+ * and this constant holds ONE of them: the writes the integration seat
+ * makes constantly and legitimately, which no lane's fence may stop.
+ * `docs/tasks/` is the second and arrives IN THE MANIFEST, as every
+ * manifest's `alwaysWritable` (the parser's `UNFENCEABLE_PATHS`), so
+ * `carveOutFor` reads it rather than re-spelling it — and it is where
  * the dispatch and closing stamps land, so the ruling's fourth item
  * needs no entry here; a second copy of it would be a second fact.
+ * THE THIRD — A CARD'S OWN FILE — NEEDS NO ARM AND NO LONGER HAS ONE
+ * (`T-219-s3`). It is subtracted from `paths` by `expandFence` before
+ * this hook ever reads the manifest, so it is never reserved and never
+ * has to be carved back out; the manifest records it in `excluded` for
+ * the reader's benefit and for `compareFences`, not for an arm here.
  *
  * THE AUTHORITY IS docs/CONVENTIONS.md's own lane bullet, which
  * publishes this set in as many words, and `lane-fence.spec.ts` COMPARES
@@ -801,40 +811,93 @@ export function integrationInProgress(root) {
  * Why a path a lane reserves is nonetheless the lane-less seat's to
  * write — or `undefined`, which is the refusal.
  *
- * THE ORDER IS THE RULING'S AND THE FIRST TWO COME OUT OF THE MANIFEST,
- * so the two carve-outs the method already computes are READ rather than
- * re-spelled here: `alwaysWritable` is the parser's `UNFENCEABLE_PATHS`
- * and `excluded` is the card's own file, both stamped at dispatch by the
- * one implementation. Only the third is this file's constant, and even
- * that one is compared against the document that publishes it.
+ * THE ORDER IS THE RULING'S AND THE FIRST COMES OUT OF THE MANIFEST, so
+ * the carve-out the method already computes is READ rather than
+ * re-spelled here: `alwaysWritable` is the parser's `UNFENCEABLE_PATHS`,
+ * stamped at dispatch by the one implementation. Only the second is this
+ * file's constant, and even that one is compared against the document
+ * that publishes it. Each arm owns a distinct write: any path under
+ * `docs/tasks`, and this seat's standing writes.
  *
  * NOT USED BY THE LANE ARM, and that is deliberate rather than an
  * oversight: these are the carve-outs of a seat holding NO fence, and a
  * lane writing `docs/STATE.md` is still outside its own fence and still
  * refused — the behaviour v1 pins.
  *
- * THE OWN-FILE TEST COMES FIRST THOUGH `docs/tasks` WOULD CATCH IT
- * ANYWAY, for two reasons that agree. Every card lives under the
- * unfenceable directory, so ordered the other way this branch would
- * answer for nothing that reaches it — an arm no write can select is an
- * arm no mutation can kill, and the ruling names it as a criterion in
- * its own right. This way each branch owns a distinct write: the card of
- * the lane that holds the domain, any OTHER path under `docs/tasks`, and
- * this seat's standing writes.
+ * ── THE OWN-CARD ARM IS GONE, AND ITS ORDERING ARGUMENT WITH IT
+ *    (T-219-s3) ─────────────────────────────────────────────────────
+ * A THIRD arm stood FIRST here, reading `manifest.excluded` and
+ * answering for a lane's own card file. Its paragraph argued the ORDER
+ * and the argument was sound: every card lives under the unfenceable
+ * directory, so placed AFTER the `alwaysWritable` arm this one would
+ * have answered for nothing that reaches it — *an arm no write can
+ * select is an arm no mutation can kill*, which the ruling names as a
+ * criterion in its own right. WHAT MOVED IS THE PREMISE UNDERNEATH IT.
+ * `T-219` made `expandFence` refuse any token whose domain CONTAINS
+ * `docs/tasks`, and the arm went unreachable in BOTH orders, by three
+ * facts that compose:
+ *
+ *   1. this function is consulted ONLY for a path some live lane's
+ *      manifest RESERVES (`laneLessVerdict`), so the arm needs a
+ *      manifest whose `paths` holds a card file;
+ *   2. a card file enters `paths` only through a domain CONTAINING
+ *      `docs/tasks` — the bare `docs`, or the directory itself — and
+ *      `T-219` refuses every such token;
+ *   3. and a card naming its OWN file outright does not reserve it
+ *      either: `expandFence` moves that file out of `paths` into
+ *      `excluded` by construction.
+ *
+ * MEASURED RATHER THAN REASONED ALONE, at `a7cc65b8064d`, driving the
+ * real `expandFence` over thirteen `touches:` spellings — the own file
+ * outright, `./`-spelled and double-slashed; `docs`, `docs/`,
+ * `docs/tasks`, `docs/tasks/`, `docs/tasks/**`; the repository root;
+ * another card by name; this lane's own shape; and the six-token fixture
+ * the spec arms. NO shape put a card file inside `paths`, and the arm
+ * was selected by none of them. And the live half, which carries when
+ * and where rather than a ref because a worktree list is not a function
+ * of a tree: all five manifests on `Mac.lan` on 2026-09-02 carried
+ * `excluded: []` outright.
+ *
+ * THE WRITER NARROWS IT FURTHER, WHICH IS WHY THE ARM IS DEAD AND NOT
+ * MERELY UNUSED. `tools/e2e/scripts/lane-fence.mjs` refuses to write a
+ * manifest at all for a fence carrying an `unusable` token — so `docs`,
+ * `docs/`, `docs/tasks`, `docs/tasks/` and `docs/tasks/**` never become
+ * a manifest, they become a dispatch that stops — and it refuses one
+ * expanding to NO path, which is what a card fencing only its own file
+ * expands to. So the shapes `expandFence` merely declines to reserve
+ * are the shapes the dispatch never gets past either.
+ *
+ * SO IT IS REMOVED RATHER THAN LEFT INERT, which is this file's own
+ * standing rule applied a second time: *an allow no mutation can kill is
+ * an allow no test can prove* already deleted the `../` allow the lane
+ * arm carried (T-199, and the comment still standing there).
+ * REACHABILITY WAS THE ALTERNATIVE AND IT IS NOT AVAILABLE FROM HERE.
+ * No manifest the parser can produce selects the arm, so the only route
+ * left is to consult this function for a path NO lane reserves — and
+ * that answer would be false in its own words: `protocol-carve-out`
+ * says *"inside `<lane>`'s fence (`<domain>`) and written anyway"* about
+ * a path nothing reserves and for which there is no domain to name. It
+ * would also convert every `not-a-lane` write to `docs/STATE.md`,
+ * `docs/checkpoints` and `docs/tasks` into a carve-out the seat never
+ * needed. A fabricated reachability is not the criterion the ruling
+ * asks for.
+ *
+ * AND THE PROPERTY THE ARM STOOD FOR SURVIVES IT, which is why removal
+ * is safe rather than merely tidy. A card's own file is outside every
+ * fence including its own — `expandFence` subtracts it at dispatch, in
+ * the one implementation that owns the rule (this file's own WHAT THIS
+ * FILE DELIBERATELY DOES NOT RE-SPELL, which names that carve-out as
+ * `fence.ts`'s). A write to it therefore meets no reservation at all:
+ * from this seat it is allowed `not-a-lane`, and from inside the lane
+ * `always-writable`, both without any carve-out. The arm was a SECOND
+ * copy of a subtraction already performed, and two copies of one rule
+ * agree only by luck (T-057).
  *
  * @param {string} rel a path relative to the writing checkout's root
  * @param {Manifest} manifest
  * @returns {{ domain: string, why: string } | undefined}
  */
 export function carveOutFor(rel, manifest) {
-  for (const domain of manifest.excluded) {
-    if (within(rel, domain)) {
-      return {
-        domain,
-        why: `it is ${manifest.taskId}'s own card file, which is outside every fence including its own`,
-      };
-    }
-  }
   for (const domain of manifest.alwaysWritable) {
     if (within(rel, domain)) {
       return { domain, why: "no card may fence it and every card's protocol writes there" };
@@ -976,8 +1039,9 @@ function laneLessVerdict(request, root, headRef, abs) {
         `  the domain that holds this path: ${domain}\n` +
         `  the path refused: ${rel}\n` +
         `  carve-outs checked and none matched: ${lane.manifest.alwaysWritable.join(", ")} ` +
-        `(unfenceable), ${lane.manifest.excluded.length > 0 ? lane.manifest.excluded.join(", ") : "the card's own file"} ` +
-        `(outside every fence), ${INTEGRATION_SEAT_PATHS.join(", ")} (this seat's standing writes)\n` +
+        `(unfenceable), ${INTEGRATION_SEAT_PATHS.join(", ")} (this seat's standing writes)\n` +
+        `  and ${lane.manifest.card} is outside this fence by construction — a card's own file is ` +
+        "subtracted at dispatch — so it never reaches this refusal (T-219-s3)\n" +
         `  ${ROUTE_LANE_LESS}`,
     );
   }
