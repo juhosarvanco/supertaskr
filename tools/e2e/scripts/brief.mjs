@@ -3,15 +3,25 @@
  * THE BRIEF COMMAND (T-133) — the runnable half of `dispatch-brief.mjs`.
  *
  * THE ONE SPELLING, run from the repo ROOT and by a dispatcher with no
- * lane. Every arm but TWO is a read, and both writers are NAMED ARMS
- * that write exactly one runtime file each: `--write-fence` writes the
- * lane's manifest SOMEWHERE ELSE, into the lane worktree it is handed,
- * and `--take-seat` (T-238) writes the holder record into the checkout
- * `--root` names — which is the point of it, since the seat IS that
- * checkout. Both files sit under `.nputer/` behind the same
- * self-ignoring `.gitignore`, so neither is ever a commit; the read arms
- * remain exactly reads, and `brief.spec.ts`'s *"THE COMMAND IS A READ"*
- * drives an invocation that names neither writer.
+ * lane. Every arm but THREE is a read, and all three writers are NAMED
+ * ARMS: `--write-fence` writes the lane's manifest SOMEWHERE ELSE, into
+ * the lane worktree it is handed, and `--take-seat` (T-238) writes the
+ * holder record into the checkout `--root` names — which is the point of
+ * it, since the seat IS that checkout. Both files sit under `.nputer/`
+ * behind the same self-ignoring `.gitignore`, so neither is ever a
+ * commit.
+ *
+ * **THE THIRD WRITER IS `--dispatch-lane` (T-239) AND IT IS THE ONE THAT
+ * COMMITS**, because the act it performs is a dispatch: it stamps the
+ * card on the integration branch and commits that, cuts the lane and the
+ * bench, arms the fence through the arm above, and writes the brief into
+ * the lane's own scratch file. It writes NOTHING the eight hand steps did
+ * not already write, and every one of those writes is named in its own
+ * printed ledger. The count in the first sentence is what a reader checks
+ * this against, so an arm that starts writing has to move it.
+ *
+ * The read arms remain exactly reads, and `brief.spec.ts`'s *"THE COMMAND
+ * IS A READ"* drives an invocation that names none of the three.
  *
  *   node tools/e2e/scripts/brief.mjs --task T-133
  *   node tools/e2e/scripts/brief.mjs --state
@@ -21,6 +31,8 @@
  *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../nputer-T-154
  *   node tools/e2e/scripts/brief.mjs --take-seat
  *   node tools/e2e/scripts/brief.mjs --release-seat
+ *   node tools/e2e/scripts/brief.mjs --dispatch-lane T-239 --slug one-arm
+ *   node tools/e2e/scripts/brief.mjs --dispatch-lane T-239 --slug one-arm --dry-run
  *
  * ARM ONE (`--task`) emits the row set of `method/roles/<role>.md`'s
  * normative contract table, each row derived from the source that row
@@ -69,6 +81,17 @@
  * `checkout-currency.mjs`'s, next to the catcher that already answers
  * *which checkout is this session in*.
  *
+ * ARM NINE (`--dispatch-lane`, T-239) is the RITUAL — the eight hand
+ * steps of a dispatch, performed in the order orchestrator 5b, 5c and
+ * CONVENTIONS' serial-ritual bullet fix, refusing at the first that
+ * fails. Every step had a command before this arm and nothing joined
+ * them but the dispatching seat's memory, which is where the failures
+ * were: the order was inverted (T-226), four worktrees were cut before
+ * any was armed (T-209's refusal), and a stamp anchored on a key the
+ * card did not carry was a silent no-op. The derivation and the runner
+ * are `dispatch-brief.mjs`'s, so this wrapper only wires the world into
+ * them; `--dry-run` prints the plan and performs nothing.
+ *
  * ARM FOUR (`--card`, T-150) points arm one's machinery ONE SEAT OVER, at
  * the card AUTHOR. It answers the figures an author would otherwise type
  * — board counts, fence weight, fence demand, contention, dependency
@@ -110,14 +133,21 @@ import {
 } from "./card-figures.mjs";
 import { preflight } from "./card-preflight.mjs";
 import {
+  DispatchLaneFinding,
   EXIT,
   assembleBrief,
   blank,
   context,
+  defaultDispatchIo,
+  dispatchLanePlan,
+  dispatchLaneRecs,
+  dispatchLedgerRecs,
+  dispatchPlanRecs,
   liveProv,
   mainWorktree,
   note,
   render,
+  runDispatchLane,
   stateReport,
   treeProv,
   value,
@@ -151,6 +181,12 @@ const FLAGS = Object.freeze([
   "--write-fence",
   "--take-seat",
   "--release-seat",
+  "--dispatch-lane",
+  "--slug",
+  "--executor",
+  "--verifier",
+  "--scratch",
+  "--dry-run",
   "--full",
   "--help",
 ]);
@@ -218,6 +254,7 @@ async function main(argv) {
   let wantsPreflight = false;
   let wantsTakeSeat = false;
   let wantsReleaseSeat = false;
+  let dryRun = false;
   let full = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
@@ -237,7 +274,9 @@ async function main(argv) {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
-          "[--write-fence <worktree>] [--take-seat] [--release-seat] [--full] [--root <path>]",
+          "[--write-fence <worktree>] [--take-seat] [--release-seat] " +
+          "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
+          "[--scratch <dir>] [--dry-run]] [--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -261,6 +300,10 @@ async function main(argv) {
       wantsReleaseSeat = true;
       continue;
     }
+    if (a === "--dry-run") {
+      dryRun = true;
+      continue;
+    }
     if (a === "--full") {
       full = true;
       continue;
@@ -277,6 +320,51 @@ async function main(argv) {
   const cardId = opts["card"] ?? "";
   const auditPath = opts["audit"] ?? "";
   const fenceWorktree = opts["write-fence"] ?? "";
+  const laneId = opts["dispatch-lane"] ?? "";
+  const wantsDispatchLane = laneId !== "";
+  /**
+   * THE RITUAL'S OWN DIALS, AND EVERY ONE OF THEM IS MEANINGLESS ALONE.
+   * A `--slug` with no `--dispatch-lane` is a lane name for a lane nobody
+   * asked to cut, and this command answers that with USAGE rather than
+   * ignoring it — a flag silently dropped is a dispatcher believing it
+   * said something it did not.
+   */
+  const laneDials = ["slug", "executor", "verifier", "scratch"];
+  const strayDials = laneDials.filter((d) => opts[d] !== undefined);
+  if (!wantsDispatchLane && (strayDials.length > 0 || dryRun)) {
+    console.error(
+      `brief: ${[...strayDials.map((d) => `--${d}`), ...(dryRun ? ["--dry-run"] : [])].join(", ")} ` +
+        "only mean something to --dispatch-lane <T-NNN>, and nothing else on this command reads " +
+        "them. A flag this command accepted and ignored is a dispatcher who believes it said " +
+        "something it did not.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsDispatchLane && (opts["slug"] ?? "") === "") {
+    console.error(
+      "brief: --dispatch-lane needs --slug <slug> — the branch name is what `git branch` shows for " +
+        "the life of this repository, and it is the ONE thing in the ritual the documents leave to " +
+        "the dispatcher. This command has declined to invent one since T-133 and still does.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsDispatchLane && fenceWorktree !== "") {
+    console.error(
+      "brief: --dispatch-lane already performs --write-fence, as its fourth step and against the " +
+        "worktree it cut at its second. Asking for both in one invocation is asking for the fence " +
+        "to be written twice, at two worktrees, in an order neither flag states.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsDispatchLane && (wantsTakeSeat || wantsReleaseSeat)) {
+    console.error(
+      "brief: --dispatch-lane is an act IN the integration checkout and the seat arms decide WHO " +
+        "may act in it, so one invocation cannot do both — take the seat, then dispatch. A " +
+        "dispatch that claimed the seat for itself would be the collision method/lane-protocol.md " +
+        "rule 4 rules against, performed by the guard.",
+    );
+    return EXIT.USAGE;
+  }
   if (wantsPreflight && taskId === "") {
     console.error(
       "brief: --preflight needs --task <T-NNN> — a preflight re-derives ONE card's claims against " +
@@ -307,13 +395,15 @@ async function main(argv) {
     !wantsDispatch &&
     !wantsPreflight &&
     !wantsTakeSeat &&
-    !wantsReleaseSeat
+    !wantsReleaseSeat &&
+    !wantsDispatchLane
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
         "sections of docs/STATE.md a command can answer, --dispatch for what is startable now " +
         "and why the rest are not, --card <T-NNN> for the figures a card author would " +
         "otherwise type, --take-seat or --release-seat for the integration checkout's holder, " +
+        "--dispatch-lane <T-NNN> --slug <slug> to perform the whole dispatch ritual, " +
         "or any combination.\n" +
         "  An empty request is not a clean run; it is a question this command was never asked.",
     );
@@ -336,6 +426,9 @@ async function main(argv) {
    * The dispatch ritual's arming steps are `--preflight` and
    * `--write-fence`; both run here, from THIS checkout's own copy of the
    * catcher, against the checkout the harness loaded its settings from.
+   * `--dispatch-lane` (T-239) performs both as its third and fourth
+   * steps, so it arms this catcher too — one condition, `arming` below,
+   * rather than three call sites that can drift apart.
    *
    * IT RUNS BEFORE THE CARD IS EVEN LOOKED UP, so a dispatch that fails
    * for any other reason has still been told. A guard that speaks only on
@@ -374,8 +467,10 @@ async function main(argv) {
    * @type {string[]}
    */
   const sessionFindings = [];
-  const session = wantsPreflight || fenceWorktree !== "" ? sessionCheckout() : undefined;
-  if ((wantsPreflight || fenceWorktree !== "") && session === undefined) {
+  /** Every invocation that ARMS a lane, and therefore owes the catcher below. */
+  const arming = wantsPreflight || fenceWorktree !== "" || wantsDispatchLane;
+  const session = arming ? sessionCheckout() : undefined;
+  if (arming && session === undefined) {
     // NEITHER SIGNAL RESOLVED: no `CLAUDE_PROJECT_DIR`, and this command's
     // working directory is not inside a checkout of this repository. That
     // is genuinely unanswerable — and it is NOT production's shape, which
@@ -438,7 +533,7 @@ async function main(argv) {
   // right. It runs whether or not the target above resolved, which is the
   // whole point: the checkout a session was started in appears here by
   // construction even when nothing could name it.
-  if (wantsPreflight || fenceWorktree !== "") {
+  if (arming) {
     const results = sweepCheckouts();
     const stale = results.filter((r) => r.decision.verdict === "stale");
     say(
@@ -497,9 +592,7 @@ async function main(argv) {
    */
   const holderFindings = [];
   const holder =
-    wantsPreflight || fenceWorktree !== "" || wantsTakeSeat || wantsReleaseSeat
-      ? holderVerdict({ root: ctx.root })
-      : undefined;
+    arming || wantsTakeSeat || wantsReleaseSeat ? holderVerdict({ root: ctx.root }) : undefined;
   if (holder !== undefined && holder.state !== "mine") {
     say(
       render([
@@ -633,6 +726,90 @@ async function main(argv) {
           ),
         ]),
       );
+    }
+  }
+
+  /**
+   * ARM NINE — THE RITUAL (T-239).
+   *
+   * The eight hand steps, in the order orchestrator 5b, 5c and
+   * CONVENTIONS' serial-ritual bullet fix, refusing at the first that
+   * fails. The plan is derived by `dispatchLanePlan` and performed by
+   * `runDispatchLane`; this block wires the real world into them and
+   * renders what came back.
+   *
+   * TWO REFUSALS COME BEFORE THE FIRST STEP, and both are about the SEAT
+   * rather than about the card. A checkout that is not the integration
+   * one has no lane to dispatch FROM — the stamp belongs on the
+   * integration branch (orchestrator 5b) and a lane does not hold that
+   * seat — and a checkout another live session holds is rule 4's
+   * collision, refused here at the one moment it is cheap. Both are the
+   * third acceptance criterion, and both answer 1: this command derived
+   * the checkout's own HEAD ref and FOUND something, which is not the
+   * same as being unable to look.
+   *
+   * @type {string[]}
+   */
+  const laneFindings = [];
+  if (wantsDispatchLane) {
+    const h = /** @type {NonNullable<typeof holder>} */ (holder);
+    say("");
+    if (h.state === "not-integration") {
+      say(
+        render([
+          note("THE DISPATCH — REFUSED before its first step, and nothing was written"),
+          value(
+            `--dispatch-lane was asked of ${ctx.root}, which is not the integration checkout`,
+            liveProv(ctx.at, ctx.host, "git symbolic-ref HEAD, read in that checkout"),
+          ),
+        ]),
+      );
+      laneFindings.push(
+        `--dispatch-lane was asked of a checkout that is not the integration one — ${h.detail} ` +
+          "The dispatch stamp goes on the integration branch and the lane inherits it in its base " +
+          "(method/roles/orchestrator.md 5b), so there is nothing here to dispatch from.",
+      );
+    } else if (h.state === "held") {
+      // The holder's own sentence is already printed and already a
+      // finding; this line says only which act it refused.
+      say(
+        render([
+          note("THE DISPATCH — REFUSED, and the sentence above says by whom"),
+          value(
+            `--dispatch-lane was refused: another live session holds ${ctx.root}`,
+            liveProv(ctx.at, ctx.host, `${HOLDER_REL_PATH}, and the process table`),
+          ),
+        ]),
+      );
+    } else {
+      try {
+        const plan = dispatchLanePlan(ctx, {
+          taskId: laneId,
+          slug: /** @type {string} */ (opts["slug"]),
+          ...(opts["executor"] === undefined ? {} : { executor: opts["executor"] }),
+          ...(opts["verifier"] === undefined ? {} : { verifier: opts["verifier"] }),
+          ...(opts["scratch"] === undefined ? {} : { scratch: opts["scratch"] }),
+        });
+        if (dryRun) {
+          say(render(dispatchPlanRecs(ctx, plan)));
+        } else {
+          const result = runDispatchLane(plan, defaultDispatchIo());
+          say(render(dispatchLedgerRecs(ctx, result)));
+          say("");
+          say(render(dispatchLaneRecs(ctx, plan, result)));
+          for (const f of result.findings) laneFindings.push(f);
+          if (result.code === EXIT.CANNOT_RUN) {
+            console.error("brief: COULD NOT RUN");
+            for (const f of result.findings) console.error(`  ${f}`);
+            flush();
+            return EXIT.CANNOT_RUN;
+          }
+        }
+      } catch (err) {
+        if (err instanceof DispatchLaneFinding) {
+          laneFindings.push(err.message);
+        } else throw err;
+      }
     }
   }
 
@@ -935,6 +1112,7 @@ async function main(argv) {
     ...ctx.findings,
     ...sessionFindings,
     ...holderFindings,
+    ...laneFindings,
     ...preflightFindings,
     ...fenceFindings,
     ...cardFindings,

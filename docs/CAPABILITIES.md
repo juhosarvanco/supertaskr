@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **632 behaviours** — 630 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **649 behaviours** — 647 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -88,6 +88,23 @@ Census: **632 behaviours** — 630 extracted sentences + 2 named-not-extracted (
 - A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, NOT ITS PARENT'S
 - THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no working tree is REFUSED
 - THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named
+- THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file
+- THE RITUAL STOPS AT STEP 1 (stamp) and performs no later step
+- THE RITUAL STOPS AT STEP 2 (cut) and performs no later step
+- THE RITUAL STOPS AT STEP 3 (preflight) and performs no later step
+- THE RITUAL STOPS AT STEP 4 (fence) and performs no later step
+- THE RITUAL STOPS AT STEP 5 (manifest) and performs no later step
+- THE RITUAL STOPS AT STEP 6 (bench) and performs no later step
+- THE RITUAL STOPS AT STEP 7 (brief) and performs no later step
+- THE RITUAL STOPS AT STEP 8 (port) and performs no later step
+- THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at step one
+- A STAMP ANCHORED ON A KEY THE CARD DOES NOT CARRY IS A REFUSAL, never a silent no-op
+- THE MANIFEST IS READ BACK, and a manifest for another lane is not this lane's fence
+- THE PORT, THE SCRATCH STEM AND THE BENCH FOLLOW THE SPELLINGS CONVENTIONS PUBLISHES
+- THE CREATE COMMAND IS THE ONE CONVENTIONS PUBLISHES, SUBSTITUTED — never one typed here
+- THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING
+- A CHECKOUT THAT IS NOT THE INTEGRATION ONE IS REFUSED BEFORE THE RITUAL'S FIRST STEP
+- THE RITUAL IS A NAMED ARM — its dials mean nothing without it, and it refuses the acts it performs
 
 ## card-figures
 
