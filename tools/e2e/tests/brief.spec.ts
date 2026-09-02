@@ -1256,6 +1256,34 @@ function pausingReader(dir: string): string {
 }
 
 /**
+ * A PRODUCER OF AN EXACT SIZE, for the one figure the arm prints that no
+ * reader of this command could otherwise pin (V-225-s1 finding 1).
+ *
+ * `SPAWNSYNC_DEFAULT_MAXBUFFER` is node's number, not this module's, and
+ * it was TRANSCRIBED: doubled to `2048 * 1024` the command printed
+ * *"spawnSync at its 2097152-byte DEFAULT maxBuffer … receives the whole
+ * answer at status 0 with no error"* to every dispatcher past the line —
+ * false about node — with this file green at 39 of 39. A figure with no
+ * keeper, in the module whose contract is that a figure never leaves it
+ * detached from its source.
+ *
+ * IT IS PINNED IN TWO SPAWNS AND WITHOUT A RACE, because the boundary is
+ * a property of the CHILD's size rather than of the reader's timing: node
+ * trips when the bytes it has accumulated EXCEED the limit, and a
+ * producer that writes exactly N never accumulates past N. So N clean and
+ * N+1 `ENOBUFS` bracket the default exactly, from both sides — a constant
+ * too large fails the first, too small fails the second.
+ *
+ * No `process.exit()`: the writer leaves naturally once stdout has
+ * drained, so the only ceiling in play is the caller's.
+ */
+function writesExactly(dir: string, bytes: number): string[] {
+  const file = path.join(dir, `writes-${bytes}.mjs`);
+  writeFileSync(file, `process.stdout.write("a".repeat(${bytes}));\n`, "utf8");
+  return [file];
+}
+
+/**
  * THE JOIN. Each claim narrows the haystack to the ONE line its key
  * anchors before looking for a needle — SHAPE EIGHT's remedy, because a
  * search over the whole block is satisfied by any occurrence anywhere,
@@ -1263,7 +1291,19 @@ function pausingReader(dir: string): string {
  */
 interface Claim {
   key: string;
+  /** What the measurement says this line MUST say. */
   needles: string[];
+  /**
+   * AND WHAT IT MUST NOT — the half this checker did not have (V-225-s1
+   * finding 2). Asking only whether a true needle is PRESENT catches a
+   * retired sentence that REPLACED the true one and misses a retired
+   * sentence restored BESIDE it: *"error.code ENOBUFS — and a caller
+   * collecting into a fixed buffer of that size receives a prefix with no
+   * error, never OVERRUNS that maxBuffer"* satisfies every needle on the
+   * line while contradicting the same run's own measurement, and passed.
+   * Presence and absence are two questions and a checker owes both.
+   */
+  absent: string[];
 }
 
 function disagreements(block: string, claims: readonly Claim[]): string[] {
@@ -1280,6 +1320,14 @@ function disagreements(block: string, claims: readonly Claim[]): string[] {
         found.push(`the line at ${JSON.stringify(claim.key)} does not say ${JSON.stringify(needle)}`);
       }
     }
+    for (const banned of claim.absent) {
+      if (line.includes(banned)) {
+        found.push(
+          `the line at ${JSON.stringify(claim.key)} STILL says ${JSON.stringify(banned)}, which ` +
+            "this run's own measurement contradicts",
+        );
+      }
+    }
   }
   return found;
 }
@@ -1287,10 +1335,12 @@ function disagreements(block: string, claims: readonly Claim[]): string[] {
 test("...and the OVER arm says what each named caller actually does past the line, measured in this run against this command's own answer", () => {
   // KILLED BY: any drift between what the arm SAYS and what the callers
   // DO — moving `SIGTERM` to `SIGKILL`, `ENOBUFS` to `EPIPE`, `status
-  // null` to `status 0`, dropping the default-maxBuffer line, or putting
-  // the retired *"receives a prefix with no error"* back on the
-  // `spawnSync` line. Each needle is built from the measurement in this
-  // run, so the producer and the assertion share no constant.
+  // null` to `status 0`, dropping the default-maxBuffer line, MOVING
+  // `SPAWNSYNC_DEFAULT_MAXBUFFER` off node's own number, or putting the
+  // retired *"receives a prefix with no error"* back on the `spawnSync`
+  // line — BESIDE the true text as well as in place of it. Each needle
+  // and each banned phrase is built from the measurement in this run, so
+  // the producer and the assertion share no constant.
   const dir = mkdtempSync(path.join(os.tmpdir(), "t225s1-callers-"));
   try {
     const argv = [CLI, "--dispatch", "--full"];
@@ -1385,6 +1435,37 @@ test("...and the OVER arm says what each named caller actually does past the lin
     ).not.toBeNull();
 
     /**
+     * THE FOURTH CALLER'S OWN FIGURE, BRACKETED. Everything above measures
+     * what a caller DOES; this measures the number that IDENTIFIES one of
+     * them, which the arm prints as a fact about node and which nothing
+     * checked (V-225-s1 finding 1).
+     */
+    const atDefault = readViaSpawnSync(writesExactly(dir, SPAWNSYNC_DEFAULT_MAXBUFFER));
+    const pastDefault = readViaSpawnSync(writesExactly(dir, SPAWNSYNC_DEFAULT_MAXBUFFER + 1));
+    expect(
+      atDefault.errorCode,
+      `a child writing exactly ${SPAWNSYNC_DEFAULT_MAXBUFFER} bytes was refused by an unconfigured ` +
+        "spawnSync, so node's default maxBuffer is SMALLER than the figure this arm prints as it",
+    ).toBe("none");
+    expect(atDefault.status, "the child at the declared default did not end cleanly").toBe(
+      EXIT.CLEAN,
+    );
+    expect(atDefault.bytes, "the answer at the declared default came back short").toBe(
+      SPAWNSYNC_DEFAULT_MAXBUFFER,
+    );
+    expect(
+      pastDefault.errorCode,
+      `a child writing ${SPAWNSYNC_DEFAULT_MAXBUFFER + 1} bytes was ACCEPTED by an unconfigured ` +
+        "spawnSync, so node's default maxBuffer is LARGER than the figure this arm prints as it",
+    ).toBe("ENOBUFS");
+    expect(pastDefault.status, "the child past the declared default reported a status").toBeNull();
+    expect(pastDefault.signal, "the kill past the declared default was not SIGTERM").toBe("SIGTERM");
+    expect(
+      pastDefault.bytes,
+      "the stdout past the declared default did not overrun it",
+    ).toBeGreaterThan(SPAWNSYNC_DEFAULT_MAXBUFFER);
+
+    /**
      * THE ARM UNDER TEST IS THE OVER ONE, so the size it is rendered at
      * is the live answer wherever that is past the line and is raised
      * past it otherwise — the TEXT is the same text either way, and the
@@ -1396,11 +1477,19 @@ test("...and the OVER arm says what each named caller actually does past the lin
     const overBytes = Math.max(actual, PIPE_BUFFER_BYTES + 1);
     const over = render(marginRecs({ bytes: overBytes, at, host }));
 
-    /** Every needle below is a function of the measurement, not a literal. */
+    /**
+     * Every needle below is a function of the measurement, not a literal
+     * — and so is every BANNED phrase beside it. The `absent` half asks
+     * the opposite question of the same line: given what this run
+     * measured, which sentences may no longer appear there at all.
+     */
+    const clean = tight.errorCode === "none";
+    const overran = tight.bytes > tightCeiling && loose.bytes > TINY_MAXBUFFER;
     const claims: Claim[] = [
       {
         key: "past it, a pipe reader that keeps reading:",
         needles: [keeps.bytes === actual ? "receives every byte" : "loses the tail"],
+        absent: [keeps.bytes === actual ? "loses the tail" : "receives every byte"],
       },
       {
         key: `past it, a reader taking ONE fixed read of that size (dd bs=${PIPE_BUFFER_BYTES} count=1):`,
@@ -1410,6 +1499,10 @@ test("...and the OVER arm says what each named caller actually does past the lin
             ? "NO error on the reader's side at all"
             : "an error on the reader's side",
         ],
+        absent: [
+          oneRead.bytes < actual ? "the whole answer" : "a PREFIX",
+          oneRead.readerStatus === EXIT.CLEAN ? "an error on the reader's side" : "NO error",
+        ],
       },
       {
         key: "past it, spawnSync at a maxBuffer this answer exceeds:",
@@ -1417,9 +1510,18 @@ test("...and the OVER arm says what each named caller actually does past the lin
           `status ${String(tight.status)}`,
           `signal ${String(tight.signal)}`,
           `error.code ${tight.errorCode}`,
-          tight.bytes > tightCeiling && loose.bytes > TINY_MAXBUFFER
-            ? "OVERRUNS that maxBuffer"
-            : "stops at that maxBuffer",
+          overran ? "OVERRUNS that maxBuffer" : "stops at that maxBuffer",
+        ],
+        /**
+         * THE RETIRED CLAUSE IS BANNED HERE BY MEASUREMENT, NOT BY
+         * MEMORY. This run saw an error and an overrun, so a line that
+         * also promises no error, or promises the limit holds, is
+         * contradicting the same run that produced it — however much true
+         * text it carries beside the promise.
+         */
+        absent: [
+          ...(clean ? [] : ["with no error", "receives a prefix"]),
+          ...(overran ? ["never OVERRUNS", "stops at that maxBuffer"] : ["OVERRUNS that maxBuffer"]),
         ],
       },
       {
@@ -1432,6 +1534,10 @@ test("...and the OVER arm says what each named caller actually does past the lin
                 `status ${String(unset.status)}`,
                 unset.errorCode === "none" ? "no error" : `error.code ${unset.errorCode}`,
               ],
+        absent:
+          overBytes > SPAWNSYNC_DEFAULT_MAXBUFFER
+            ? ["UNDER that default", "no error"]
+            : ["OVER that default", "ENOBUFS"],
       },
     ];
 
@@ -1467,13 +1573,51 @@ test("...and the OVER arm says what each named caller actually does past the lin
       "no line opens with",
     );
 
+    /**
+     * AND THE SECOND CONTROL IS THE RETIRED CLAUSE RESTORED *BESIDE* THE
+     * TRUE TEXT, WHICH IS THE FORM THE FIRST ONE MISSES (V-225-s1's
+     * finding 2, reproduced as the body that would have caught it). The
+     * control above is a REPLACEMENT — every needle goes missing and any
+     * presence check reds. This one is an ADDITION: every needle is still
+     * there, the line still says `error.code ENOBUFS` and still says
+     * `OVERRUNS`, and it ALSO promises no error and promises the limit
+     * holds. Only the absence half can see it.
+     *
+     * It is built by splicing into the arm this run actually rendered,
+     * not typed out, so it cannot drift from the text under test.
+     */
+    const ADDED = over.replace(
+      "and the stdout handed back OVERRUNS that ",
+      "and a caller collecting into a fixed buffer of that size receives a prefix with no error, " +
+        "never OVERRUNS that ",
+    );
+    expect(
+      ADDED,
+      "the addition control spliced nothing, so it is the true arm wearing a mutant's name",
+    ).not.toBe(over);
+    const added = disagreements(ADDED, claims);
+    expect(
+      added.length,
+      "the retired clause restored ALONGSIDE the true text passed — the checker asks only what a " +
+        "line SAYS and never what it may no longer say, which is the asymmetry this body was " +
+        "rejected for",
+    ).toBeGreaterThan(0);
+    const alsoSaid = added.join(" | ");
+    for (const banned of ["with no error", "never OVERRUNS"]) {
+      expect(alsoSaid, `the absence half did not report ${JSON.stringify(banned)}`).toContain(
+        `STILL says ${JSON.stringify(banned)}`,
+      );
+    }
+
     process.stdout.write(
       `\n  brief CALLERS past the line (answer ${actual} bytes): pausing pipe reader ${keeps.bytes}` +
         ` bytes at writer status ${String(keeps.writerStatus)}; one fixed read ${oneRead.bytes}` +
         ` bytes at writer status ${String(oneRead.writerStatus)}; spawnSync at maxBuffer` +
         ` ${tightCeiling} -> ${tight.bytes} bytes, status ${String(tight.status)}, signal` +
         ` ${String(tight.signal)}, error.code ${tight.errorCode}; at ${TINY_MAXBUFFER} ->` +
-        ` ${loose.bytes} bytes, error.code ${loose.errorCode}; at node's default ->` +
+        ` ${loose.bytes} bytes, error.code ${loose.errorCode}; node's DEFAULT bracketed at` +
+        ` ${SPAWNSYNC_DEFAULT_MAXBUFFER} (${atDefault.errorCode}) and ${SPAWNSYNC_DEFAULT_MAXBUFFER + 1}` +
+        ` (${pastDefault.errorCode}); at node's default ->` +
         ` ${unset.bytes} bytes, status ${String(unset.status)}, error.code ${unset.errorCode}.` +
         ` The retired sentence disagreed with ${planted.length} of the measurements.\n`,
     );

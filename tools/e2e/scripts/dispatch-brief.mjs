@@ -1250,12 +1250,27 @@ export const PIPE_BUFFER_BYTES = 65_536;
  * slow one's part-way kill both come back over the limit, so `>` is the
  * claim and an equality would be a flake wearing a measurement.
  *
+ * **AND THIS NUMBER IS NODE'S, NOT THIS MODULE'S, SO IT IS BRACKETED
+ * RATHER THAN TRUSTED.** It was TRANSCRIBED until `V-225-s1` doubled it
+ * and watched the command print *"spawnSync at its 2097152-byte DEFAULT
+ * maxBuffer"* to a dispatcher, false about node, with every body green:
+ * a figure with no keeper, in the module whose contract is that a figure
+ * never leaves it detached from its source. `brief.spec.ts`'s OVER-arm
+ * body now spawns a producer of exactly this many bytes and one of
+ * exactly one more, and requires the first clean and the second
+ * `ENOBUFS` — which brackets the default from BOTH sides, so a constant
+ * too large fails the first assertion and one too small fails the
+ * second. **The boundary is a property of the CHILD's size, not of the
+ * reader's timing**: node trips when what it has accumulated EXCEEDS the
+ * limit, and a producer writing exactly N never accumulates past N. Two
+ * spawns, no race.
+ *
  * **EVERY CLAIM IN THIS PARAGRAPH AND IN THE ARMS BELOW IS DRIVEN AND
- * NOT ASSERTED**, by `brief.spec.ts`'s *"...and the OVER arm says what
- * each named caller actually does past the line, measured in this run
- * against this command's own answer"*, which builds its needles out of
- * the measurement and reds when the sentence and the measurement
- * disagree. No figure from that measurement is transcribed here.
+ * NOT ASSERTED**, by that same body, which builds its needles AND its
+ * banned phrases out of the measurement and reds when the sentence and
+ * the measurement disagree — in either direction, a true clause missing
+ * or a retired one restored beside it. No figure from that measurement
+ * is transcribed here.
  */
 export const SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 * 1024;
 
