@@ -480,3 +480,225 @@ derived on those five and does not move: GRAPH REGEN fires (3 `.ts`
 outside `docs/`), BOOT GATE fires (`app/src/**`), DOCS GATE fires (2
 `docs/` paths, `docs-gate.mjs` exit 1 naming both), METHOD EVAL GATE
 not owed (0 `method/**` paths).
+
+## VERDICT
+
+**APPROVED** — 2026-09-02, verifier seat `claude-opus-5@subagent`
+(V-T-018-s6), judging tip `35e7d2e9bc9438282ea5191b043c4a6f076dad3a`
+(code commit `95bfb67`) against base
+`838e74b87628f50595b029841caf37527b55b73d`, from the detached bench
+`/Users/ujju/Projects/nputer-V-T-018-s6`. Ports 25018 / 26018; 1420
+probed read-only and never bound.
+
+### The blindness was CLOCK-SHAPED, and the seal is checkable
+
+Phase 1 reached this seat before the work existed: at the moment this
+pass began the lane's worktree stood at `838e74b`, the base, so there
+was no diff to decline to read. The attack set and the ground truth
+were WRITTEN AND HASHED before phase 2 opened, and the hashes are the
+audit:
+
+| file | sha256 |
+| --- | --- |
+| `attack-V-T-018-s6.md` | `305a6b8a71115b1a92d2f58b43dcac5187e341b22e89eaa5f668b570de8a075f` |
+| `ground-V-T-018-s6.md` | `2d90235f6845360c097c3a33c35330c4d9de1fe841226846639252ed29f6833f` |
+| `stamps-V-T-018-s6.txt` | `d9d8c5df1c404de9bd069658fd7ab7219b4ba720bdc02df9bac329193e9ab2f4` |
+
+Sealed **2026-09-02T05:08:41Z**. The dispatching message for phase 2
+carried the executor's own mutant numbers and suite figures — after the
+line, and every one of them is re-measured below rather than relayed.
+A discipline component remains and is disclosed: the lane's worktree
+path and branch name were visible in `git worktree list` at phase-1
+orientation, and were not followed.
+
+### The defect, reproduced at the base and closed at the tip
+
+Ground truth measured the runner's interleaving BEFORE the diff existed
+— emit `seq 5 / generatedAtMs 1_700_000_000_900 / 3 files` already
+applied, pull `seq 6 / 1_700_000_000_500 / 2 files`, same folder:
+
+| | base `838e74b` | tip `35e7d2e` |
+| --- | --- | --- |
+| `reduceDocs` pure | `identity=false fileCount=2 seq=6` | `identity=true fileCount=3 seq=5` |
+| through the SHIPPED store (jsdom, real `startDocsWatcher`, `listen` handler fired from inside the mocked `invoke("docs_snapshot")`) | `phase=open fileCount=2 seq=6`, **two** `model-updated` echoes (seqs 5 and 6) | `phase=open fileCount=3 seq=5`, **exactly one** echo (seq 5) |
+
+The end-to-end half is the one that matters and it was run in this
+bench, not argued: the pull's open arm still moves the screen, the
+emit's tree survives, the watermark holds at 5, and the duplicate echo
+is gone. The card's premise was independently checked against
+`docs_watch.rs` (`project_status` -> `build_snapshot(&root,
+state.next_seq())` at :974-990 draws the seq BEFORE the collect;
+`snapshot_from` at :954-965 stamps `now_ms()` AFTER it) and is TRUE as
+written. No assertion on this card measured false.
+
+### The drills, re-run by this seat, kill sets read from `git diff`
+
+Each mutant's landing was read from `git diff`, never from the report of
+the edit. Run over `test/watcher-store.test.ts test/docs-model.test.ts`
+(71 bodies at the tip).
+
+| mutant | landing | kill set |
+| --- | --- | --- |
+| **M1** the ONE clock expression -> `return false` | `readingIsOvertaken`, `- return reading.generatedAtMs < prev.generatedAtMs;` | **3** — T-018-s5 *predicate*, T-018-s5 *KEEPS*, **T-018-s6 *KEEPS*** |
+| **M2** the seq half -> `if (false)` | same function, one line up | **4** — T-064 *predicate*, T-064 *snapshot-less*, T-018-s5 *predicate*, **T-018-s6 *agreement*** |
+| **M3** the pull guard REMOVED, the pick's left armed | `- if (readingIsOvertaken(prev, payload)) return prev;` | **2** — T-018-s6 *KEEPS* (`expected { seq: 6 } to be { seq: 5 }`), T-018-s6 *agreement* (`expected false to be true`) |
+| **M4** DATA mutant, `PULL_FINISHED` -> `1_700_000_001_500` (monotone pair), source untouched | fixture only | **1** — T-018-s6 *KEEPS*, exactly |
+| **M5** the zero abstain narrowed to `=== null` | `readingIsOvertaken` | **1 in the fenced files** — T-018-s6 *no content time*; whole-suite run confirms nothing else depends on it |
+
+**M1 IS THE COPY/REUSE DETECTOR AND IT ANSWERS REUSE.** One mutation of
+one expression kills PICK bodies and a PULL body in the same run. Had
+the pull carried its own spelling, the pull body would have survived it.
+The graph agrees independently: `index --check` names the new edges
+`reduceDocs -> readingIsOvertaken (call)` and `switchIsOvertaken ->
+SnapshotReading (type_ref)` and no second comparison symbol anywhere.
+
+**KILL-SET CONTAINMENT HOLDS, NEITHER WAY** (verifier.md 2b): M1 kills
+the two *KEEPS* bodies M2 does not; M2 kills the two T-064 bodies and
+the *agreement* body M1 does not. So the two new load-bearing bodies are
+not restatements of the T-007 seq guard — *KEEPS* dies to the clock and
+survives the seq, *agreement* dies to the seq and survives the clock.
+That the *agreement* body survives M1 is correct rather than weak: its
+job is to catch DRIFT between two spellings, and a mutation of the one
+shared expression moves both sides together.
+
+**M3 IS THE ARMING-DIFFERS DEMONSTRATION, AND THE ARRANGEMENT REALLY
+DOES DIFFER** — the pick path stays guarded while the pull path is
+returned to the base's condition, so one act does not decide both sides.
+Both controls red there, with the exact expected/actual the defect
+produces. **M4 is the data mutant the rule demands where the property
+lives in a fixture**: the pair's DISAGREEMENT is the property, and a
+control built from the file-wide `payload` helper (`generatedAtMs =
+1_700_000_000_000 + seq`, monotone) could not have expressed it at all.
+
+**THE CONTROL THIS SEAT PROPOSED, AND THE DEMONSTRATION IT OWED.** The
+body asked for in phase 1 — assert `prev.fileCount === 3` first (shape
+TEN), then identity, `fileCount 3`, `seq 5` — was run against the
+UNGUARDED base and SEEN to fail before it was ever asked for. Sixteen
+further independent bodies with this seat's own fixtures were written
+and run at the tip and all pass: fresh open from `emptyState`, a
+genuinely newer pull, the same-millisecond boundary, the zero clock, the
+cross-project direction with no ghost and with the T-007 stale drop
+still holding by identity afterwards, two ordered emits, `applySnapshot`
+still seq-only, and the genesis arm's reset base.
+
+### The four seq-only readers, checked rather than accepted
+
+`applySnapshot`'s ruling of CORRECT AS WRITTEN was verified by
+enumerating its callers on the tip rather than by reading the claim:
+`reduceDocs` (now guarded) and `reducePickOutcome`'s genesis arm (guarded
+by `switchIsOvertaken`, and applying onto `resetDocsForProjectSwitch`'s
+state whose `generatedAtMs` is 0, so a clock rule there would be a no-op
+anyway). The reason holds. `applyDocsPayload` and `applyProjectStatus`'s
+open arm add no ordering rule and inherit — confirmed end to end by the
+echo measurement above, which drives the real `applyProjectStatus ->
+applyDocsPayload -> reduceDocs` chain. The seq line stays FIRST in
+`reduceDocs`, which is what keeps the T-007 stale drop working ACROSS
+projects where the predicate deliberately answers `false`.
+
+### Suites and gates, measured in this bench
+
+| gate | base `838e74b` | tip `35e7d2e` |
+| --- | --- | --- |
+| `npm test` from `app/` | 50 files / **1135** | 50 files / **1141** (+6: 5 + 1) |
+| the two fenced files | 42 + 23 = **65** | 47 + 24 = **71** |
+| `npx vitest run` from `lib/parser/` | — | **363 passed**, `tsc --noEmit` exit 0 |
+| `npm run build` from `app/` | 0 | **0** |
+| `npm test` from `tools/e2e/` (port 25018) | — | **572 passed / 3 failed** — see attribution |
+| `npm run typecheck` from `tools/e2e/` | — | **0** |
+| BOOT GATE, `NPUTER_BOOT_PORT=26018` | 0 | **0**, both `[nputer]` lines |
+| `capabilities:check` | 0, CURRENT 48201 | **0, CURRENT 48201** |
+| `lint:tokens` | 0, clean | **0, clean** (CONTROL 1149 -> 1150, the new card) |
+| `index --check --root ../..` | 0, CURRENT | **1, STALE — expected** |
+
+**THE STALE GRAPH IS NOT A DEFECT AND WAS PRE-COMMITTED AS SUCH IN PHASE
+1.** GRAPH REGEN is the integrator's at the merge (CONVENTIONS:984-991);
+the second line reads real counts rather than `committed: MISSING`, so
+it is not the `--root` false red, and the movement is exactly this
+change: `files +0 -0 ~3` naming the three fenced paths, `edges +5 -1`,
+`symbols 2503 -> 2504`.
+
+**THE THREE E2E REDS ARE NOT THIS LANE'S, ATTRIBUTED BY NAME AT THE BASE
+RATHER THAN BY COUNT** (docs/STATE.md's `guard-surface-behind` hazard).
+The same three bodies — `lane-lock.spec.ts:899`,
+`session-economics.spec.ts:179`, `session-economics.spec.ts:365` — were
+re-run in this bench AT `838e74b`, where this diff does not exist, and
+failed identically, for two causes that name other lanes and this
+machine: *"STALE [guard-surface-behind] the judged checkout … is at
+838e74b…, which does NOT contain 7129d90… — 15 commit(s) behind main"*,
+and *"T-229-s6 holds a worktree on
+refs/heads/task/T-229-s6-eval-fixture-writable and no live card declares
+that id"*. This diff touches no file under `tools/e2e/` or `method/`.
+**The relayed figure was 573/2 and this bench measured 572/3, and the
+discrepancy is itself the reason the rule says NAMES:** the third body
+reds as a function of how far the running checkout is behind `main`, and
+`main` moved during this pass (`fd103b0` as relayed, `fb2a944` as the
+sweep read it). A count is a moving target here; the names are not.
+
+### Security sweep (verifier.md 3)
+
+No new input path — the payload shape is unchanged. **New export surface
+zero**, verified: no `export` line added or removed in `app/src`;
+`readingIsOvertaken` and `SnapshotReading` are module-private. No
+`Date.now`, `performance`, `window`, `localStorage`, `fetch`,
+`innerHTML`, `eval`, `require`, `process.env` or dynamic `import` in the
+added lines — the reducers stay pure, so the guard compares the payload's
+own stamp against the held one and never a wall clock. No dependency,
+lockfile or config change; `git diff --name-only` returns exactly the
+three fenced code paths and the two cards, and `docs-model.ts` is
+untouched by design. Hostile clocks probed: `NaN` applies (`NaN < x` is
+false — honest abstention), `Infinity` applies, a NEGATIVE clock drops.
+Nothing wedges, nothing allocates unboundedly. No finding.
+
+### Findings — recorded, none blocking
+
+1. **A measured behaviour delta on the PICK path that the card does not
+   say out loud.** An exhaustive base-vs-tip corner sweep (run in this
+   bench by importing the base copy of the store beside the tip's) found
+   three differences. Two are the fix and its stated consequences. The
+   third: `switchIsOvertaken(prev, { kind: "picked", snapshot })` with
+   `generatedAtMs: 0` answered **true** at the base and answers **false**
+   at the tip, because the zero abstain is now shared. It is unreachable
+   in production — a `picked` reply always carries a `build_snapshot`
+   whose `generated_at_ms` is `now_ms()`, never 0 — it is consistent with
+   this project's own reading of a zero (`outcomeCarriesSnapshot`,
+   `genesis-switch-truth.test.tsx`), and it makes the two paths agree,
+   which is this card's goal. It is nonetheless a change on a path
+   outside the card's criteria, and the card presents the abstain purely
+   as the pull's question 2. Disclosure, not a defect; the *agreement*
+   body's five corners do not include the zero case, which is where a
+   future drift here would go unnoticed.
+2. **A negative `generatedAtMs` is treated as older than everything and
+   dropped.** Unreachable from Rust (`u64`), harness-reachable. Consistent
+   with the rule as written; noted so a later sweep does not read it as
+   an oversight.
+3. `docs-gate.mjs` FIRES on the two card paths (exit 1, "2 path(s) under
+   docs/ are code inputs") and names three owed suites — app, tools/e2e,
+   lib/parser. All three were run above, which satisfies it.
+
+None of these meets any of the ten rejection criteria sealed in phase 1,
+and every one of those ten was tested rather than waived.
+
+### The gates this verdict's OWN commit could move
+
+This verdict is a write under `docs/`, so it re-enters the docs gate's
+owed set on the same path. Re-run AT THIS SEAT'S OWN TIP after the
+commit: the card-frontmatter half, `lib/parser`'s live-docs smoke test,
+and the board-reading suites. Figures above carry the ref they were
+measured at.
+
+**RE-RUN AT THIS SEAT'S OWN TIP, and one red that was this seat's own.**
+`docs-gate.mjs` on this card: *every live task card's frontmatter parses,
+with a legal status* and *governing-document budgets hold* — the verdict
+did not break the board. `npx vitest run` from `lib/parser/`: **363
+passed** (its smoke test parses this repository's live `docs/`, so it is
+the body a malformed verdict would red). The four card-reading e2e specs
+the gate names — `landing-gate`, `push-checks`, `shell-frame`,
+`window-contract` — **46 passed**, exit 0. `npm test` from `app/` first
+answered **1 failed / 1140**, and the failure was MINE rather than the
+lane's or the verdict's: `shell-harness.test.ts`'s *"is not stale: the
+build is at least as new as the store"* compares `dist/` against
+`src/lib/watcher-store.ts` by mtime, and this seat's own mutation drills
+had restored that file after the last build. It is a guard doing exactly
+its job. `npm run build` then `npm test`: **50 files / 1141 passed**,
+exit 0, at verdict tip. Recorded rather than quietly rebuilt away,
+because a figure without its cause is the next reader's hour.
