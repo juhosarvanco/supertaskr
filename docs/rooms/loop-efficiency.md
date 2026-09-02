@@ -239,6 +239,17 @@ hiding it. The rule: a bench stands until the verifier's REPORT has been
 read, not until its verdict is on disk; the dispatch brief for a verifier
 now says so, and T-239's arm removes a bench only on the report.
 
+**22. A phase-2 dispatch sent from the lane's state rather than from the
+executor's report names a tip the executor is still amending.** At
+08:01Z the seat read two lanes stamped `verifying` with clean trees and
+sent both verifiers their tips to save the wait for the reports; both
+tips moved before the reports arrived (T-230-s7 amended its notes twice,
+T-237-s2 routed a suggestion), and both verifiers had to be corrected by
+message. The executor's REPORT is the end of the build, not the stamp,
+and the tip it names is the one a verifier judges; the twenty minutes
+saved were spent twice over. The rule pairs with item 21: a lane's
+report opens phase 2, a verifier's report frees the bench.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
