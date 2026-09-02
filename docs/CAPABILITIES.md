@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **604 behaviours** — 602 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **613 behaviours** — 611 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -600,7 +600,16 @@ Census: **604 behaviours** — 602 extracted sentences + 2 named-not-extracted (
 - a DEAD holder is announced and the push proceeds; an UNCLAIMED seat is silent
 - a holder record this guard cannot READ is announced and allowed, never refused
 - a lane holds no seat, so a holder record in one refuses nothing
+- a session whose own identity will not derive is ANNOUNCED and allowed — the runner's case
 - WITH the holder arm, a push from a checkout another session holds never reaches the remote
+- a run that timed out, failed to start or waits on a human is announced as the red it is
+- `cancelled` stays OUT of the announced set, and the reason is recorded beside the constant
+- the `gh` bound is a ratio over a MEASUREMENT, and the measurement is said where CI can read it
+- an ordinary push pays ONE round trip, and only a red pays the second
+- the branch a push LANDS on is read off the refspec, and doubt is declared
+- a refspec push from a LANE checkout is judged on the branch it lands on, and is refused there
+- a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkout (T-238's fifth criterion)
+- `--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too
 
 ## range-rule
 

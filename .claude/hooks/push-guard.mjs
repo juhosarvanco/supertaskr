@@ -209,20 +209,41 @@
  * ── WHICH BRANCH, AND WHY NOT THE INTEGRATION BRANCH BY NAME ─────────
  * This card's criterion says *"a push to the integration branch"*,
  * because that is where this repository's CI runs today. The arm asks
- * about whatever branch the PUSHED CHECKOUT's HEAD names instead, and the
- * reason is the one `GRAPH REGEN`'s suffix list records one file over: a
- * trigger keyed to a name goes quiet the day the name changes, and going
- * quiet is the failure this guard cannot see. A branch with no runs
- * answers in one round trip and says nothing, so generality costs a
- * network call on the lane pushes this project does not make.
+ * about whatever branch THE PUSH LANDS ON instead, and the reason is the
+ * one `GRAPH REGEN`'s suffix list records one file over: a trigger keyed
+ * to a name goes quiet the day the name changes, and going quiet is the
+ * failure this guard cannot see. A branch with no runs answers in one
+ * round trip and says nothing, so generality costs a network call on the
+ * lane pushes this project does not make.
  *
- * ── THE COSTS, STATED RATHER THAN DISCOVERED ────────────────────────
+ * **AND "THE BRANCH THE PUSH LANDS ON" IS NOT "THE BRANCH THE CHECKOUT
+ * IS ON"** (T-237-s2). It was, until this card: the arm read
+ * `readHeadRef(root)`, so `git push origin HEAD:refs/heads/main` from a
+ * LANE worktree was asked about the lane's own branch — which has no runs
+ * — and went out in silence, while the identical push from a `main`
+ * checkout was refused for a live run. The guard was strictest exactly
+ * where the seat was safest. `pushTargetBranch` now reads the TARGET off
+ * the refspec where the line spells one, falls back to HEAD's branch
+ * where it does not, and declares the spellings it cannot read to one
+ * branch — its own header carries that list, `gitInvocations`-style.
+ *
+ * ── THE COSTS, STATED RATHER THAN DISCOVERED — AND NOW MEASURED ─────
  * A push now waits on the network. `gh` is spawned with a TIMEOUT and a
  * timeout is an inability, so a hung remote costs the wait and then
  * ALLOWS — a guard that can hang the seat's shell for ever is a guard
  * that gets turned off before it is ever right. Nothing here runs for a
  * command that is not a push, and nothing here runs before the local arms
  * above: a push already refused for a stale token spends no round trip.
+ *
+ * **THE NUMBERS ARE NO LONGER LEFT TO THE READER** (T-237-s2). An
+ * ordinary push pays ONE round trip, measured at a 1085 ms median on this
+ * machine; a push over a RED pays a second one to name the failing step,
+ * ~2.5 s for the pair. The 15-second bound is about ten times the slowest
+ * of fourteen real calls and is a HANG bound rather than a budget. The
+ * measurement, the reason the second call cannot be folded into the
+ * first, and the reason a CI figure for either is unreadable all live at
+ * `GH_MEASURED_MS` and `GH_TIMEOUT_MS` below, beside the constants they
+ * are about.
  *
  * ── AND IT WIDENS THE THREAT MODEL BY EXACTLY ONE BINARY ────────────
  * `gh` is resolved OFF PATH BY NAME, like `cargo` and `git` already are
@@ -281,6 +302,28 @@
  * and the derivation is a fact about ONE harness, named there with the
  * measurement that a harness process is both STABLE across tool calls and
  * DISTINGUISHABLE between concurrent sessions on this machine.
+ *
+ * ── AND THE MACHINE WHERE IT DOES NOT DERIVE IS NAMED HERE (T-238-s2) ─
+ * **A CI RUNNER.** The identity is the nearest ancestor process that IS
+ * the harness, and on a GitHub runner this file's whole ancestry is
+ * `node ← bash ← Runner` — no harness anywhere in it. So on a runner the
+ * derivation answers NOTHING, `holderVerdict` returns
+ * `holder-identity-underivable`, and this arm ANNOUNCES that the seat
+ * could not be checked here and ALLOWS: the disclosed fail-open shape the
+ * CI arm already uses for an unreachable `gh`, and the right answer,
+ * because a runner never holds this project's integration seat.
+ *
+ * **THE COST IS THAT THE ARM IS INERT THERE, AND THAT IS SAID RATHER
+ * THAN DISCOVERED — IT WAS DISCOVERED.** T-238 landed on 2026-09-01 with
+ * a body that armed a holder record and asserted the arm READ it, and the
+ * arm's answer depends on the CALLING PROCESS'S ANCESTRY rather than on
+ * anything in the tree — so the body was green twenty-for-twenty on this
+ * machine and red on the runner, and it reddened main. The repair is not
+ * to make a runner derivable: it is that no body may arm this arm through
+ * the REAL process tree. `decide` takes the holder runner as a parameter
+ * for exactly the reason it takes `check`, `cheap` and `gh`, and the
+ * bodies that need a live seat build one — a symlink to node named the
+ * way the harness is — instead of borrowing the machine's.
  *
  * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
  * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
@@ -623,6 +666,56 @@ export const CHEAP_CHECKS_EXIT = Object.freeze({
 export const GH_BIN = "gh";
 
 /**
+ * What the two `gh` calls ACTUALLY COST, measured rather than assumed.
+ *
+ * ── A LIVE FACT, SO IT CARRIES WHEN AND WHERE AND NOT A COMMIT ──────
+ * A network round trip is not a function of a tree, so this constant is
+ * stamped with the host, the date and the `gh` it was read through, per
+ * the figure rule. Re-measure it rather than trusting it; it is here so
+ * the bound below is a NUMBER WITH AN ARGUMENT rather than a number.
+ *
+ * MEASURED 2026-09-02 ON Mac.lan, `gh` 2.89.0, from this repository's own
+ * checkout against its own remote (`github.com/juhosarvanco/nputer`),
+ * seven consecutive samples each, wall time of the whole process:
+ *
+ *   `gh run list --branch main --limit 10 --json …`  1026–1256 ms, median 1085
+ *   `gh run view <id> --json jobs`                   1232–1499 ms, median 1390
+ *
+ * READ A SECOND TIME, on the same machine at 07:03:05Z on 763548c:
+ * 1150 ms and 1390 ms, 2540 ms for the pair run serially. **THAT SECOND
+ * READING IS THIS CARD'S VERIFIER'S OWN, taken in its phase-1 ground
+ * truth and relayed here, and it is ATTRIBUTED rather than counted as
+ * independent corroboration — the seat that measured it is the seat that
+ * judged this constant** (the verifier disclosed exactly that, and this
+ * sentence is the lane taking the disclosure up). It agrees with the
+ * seven-sample run above to within a tenth of a second, which is worth
+ * recording; it is not a second opinion.
+ *
+ * ── AND THE FIGURE THAT CANNOT BE READ IN CI, WITH THE REASON ───────
+ * There is no CI number for either line above and there cannot be one.
+ * This file is a `PreToolUse` hook: it runs inside a seat's own shell and
+ * never on a runner, so CI never makes this call at all. The suite could
+ * not make it either — `ci.yml` grants `GITHUB_TOKEN` `contents: read`
+ * and `workflow-permissions.spec.ts`'s exception table is EMPTY, so
+ * `gh run list`, which needs `actions: read`, is refused there by
+ * construction. What CI *can* read is the NON-NETWORK floor: the guard's
+ * own spawn-and-parse against the spec's `gh` shim, which
+ * `push-guard.spec.ts` times and discloses on every run, on this machine
+ * and on a runner alike — measured at a 13.9 ms median for the pair, and
+ * NAMED AS THE HARNESS'S FIGURE RATHER THAN AS `gh`'s, because that is
+ * exactly what it is: anything timed through the shim measures this
+ * file's spawn-and-parse and never the network. That number bounds
+ * everything this file controls; the two above bound the part it does not.
+ *
+ * The bound these justify is `GH_TIMEOUT_MS` immediately below.
+ */
+export const GH_MEASURED_MS = Object.freeze({
+  runList: Object.freeze({ samples: 7, medianMs: 1085, slowestMs: 1256 }),
+  runView: Object.freeze({ samples: 7, medianMs: 1390, slowestMs: 1499 }),
+  at: "Mac.lan 2026-09-02, gh 2.89.0, against this repository's own remote",
+});
+
+/**
  * How long a push may wait on the network before this guard gives up.
  *
  * A TIMEOUT IS AN INABILITY, so it ends in the announced ALLOW like
@@ -630,6 +723,63 @@ export const GH_BIN = "gh";
  * INSIDE the seat's own `Bash` call: a `gh` waiting on an unreachable
  * host with no bound would hang the session rather than the push, which
  * is the failure that gets a guard disabled before it is ever right.
+ *
+ * ── 15 s IS A HANG BOUND AND NOT A BUDGET, WHICH IS WHY IT STAYS ────
+ * T-237-s2 was filed because this number was picked in a lane, and the
+ * measurement that answers it is `GH_MEASURED_MS` above: the slowest of
+ * fourteen real calls was 1499 ms, so this bound sits about TEN TIMES
+ * over the slowest observed call and about eleven over either median.
+ * Moving it DOWN toward the measurement is the tempting edit and it is
+ * the wrong one, because the two directions fail asymmetrically:
+ *
+ *   TOO HIGH costs the seat wall time on the ONE path where the host is
+ *     unreachable — once per push, bounded, and visible while it happens.
+ *   TOO LOW costs the guard its VOICE. A `gh` that overruns is
+ *     `classifyGhFailure`'s `did-not-answer`, which ANNOUNCES and ALLOWS
+ *     — so a bound set near the median would turn ordinary variance (a
+ *     cold `gh` start, slow DNS, a throttled link, a laptop waking) into
+ *     a push that silently stopped asking CI. A guard that goes quiet is
+ *     the exact failure this arm exists to prevent, and unlike a slow
+ *     push it leaves nothing behind to notice.
+ *
+ * So the bound is kept, and it is kept WITH ITS MARGIN STATED: this file
+ * exports the measurement, and `push-guard.spec.ts` asserts the ratio
+ * rather than the sentence — a future editor who halves this number
+ * without re-measuring reds a body by name.
+ *
+ * ── HOW MANY ROUND TRIPS A PUSH PAYS, AND WHY IT IS NOT ONE ─────────
+ * ONE, on every push that is not looking at a red. `run list` answers
+ * both of this arm's questions — *is a run in flight* and *what did the
+ * last verdict say* — off a single response, which is what
+ * `RUN_LIST_LIMIT` is for. The SECOND call is made only by
+ * `ciFailureNotice`, only for a run that already concluded red, and only
+ * to name the failing step.
+ *
+ * IT CANNOT BE FOLDED INTO THE FIRST, AND THAT IS A PROPERTY OF `gh`
+ * RATHER THAN A CHOICE HERE: `gh run list --json` publishes no `jobs`
+ * field at all — pinned by a body against `gh run list --json`'s own
+ * published field list — so a failing step is reachable only through
+ * `gh run view`. The alternative is `gh api` with a hand-written GraphQL
+ * query, which would buy one round trip on the red path and cost this
+ * arm the property that makes it auditable: `push-guard.spec.ts` compares
+ * the two subcommands against the ones docs/CONVENTIONS.md's own *"AND
+ * THEN READ IT"* bullet publishes for a seat to type by hand, and a
+ * bespoke API call answers to no such authority. So the trade is
+ * declared: a red push pays two round trips (~2.5 s measured), every
+ * other push pays one (~1.1 s measured).
+ *
+ * **AND T-237-s2's OWN WIDENING RAISED THAT COST, WHICH IS SAID HERE
+ * RATHER THAN DISCOVERED.** The second call used to be made for ONE
+ * conclusion; `ANNOUNCED_RED_CONCLUSIONS` now has four, so a `timed_out`,
+ * a `startup_failure` or an `action_required` run — each of which used to
+ * cost one round trip and a thin sentence — now costs two and the full
+ * announcement. THE COST IS PAID ONLY WHERE CI IS ALREADY NOT GREEN,
+ * which is the only place it buys anything, and the alternative it
+ * replaces was a seat running `gh run view` by hand. Two of the three
+ * commonly have no jobs to name a step from at all (`startup_failure`
+ * never does), so for those the second call buys a declared inability —
+ * kept anyway, because *"this run has no job that failed"* is itself
+ * worth the seat's second and is not knowable without asking.
  */
 export const GH_TIMEOUT_MS = 15_000;
 
@@ -757,15 +907,64 @@ export const COMPLETED_RUN_STATUS = "completed";
 export const NON_VERDICT_CONCLUSIONS = Object.freeze(["cancelled", "skipped", ""]);
 
 /**
- * The conclusion this arm ANNOUNCES, which is this card's word.
+ * GitHub's own word for a run, a job or a step that FAILED.
  *
- * `cancelled`, `timed_out` and `startup_failure` are deliberately absent
- * — a cancelled run is usually THIS defect's own footprint rather than a
- * verdict about the tree, and reading one as a red would announce the
- * guard's own subject back at the seat. Widening this is a card, not an
- * edit.
+ * IT IS STILL ONE STRING, and it is still the only conclusion meaning
+ * *"something under this ran and did not pass"*. What changed at
+ * T-237-s2 is that it is no longer the WHOLE of what this arm announces:
+ * `ANNOUNCED_RED_CONCLUSIONS` below is the RUN-level set and this is one
+ * member of it. The constant survives its own widening because the JOB
+ * and STEP levels are genuinely keyed to this word too, and collapsing
+ * the two levels into one list would be a rename pretending to be a
+ * simplification.
  */
 export const FAILED_CONCLUSION = "failure";
+
+/**
+ * The conclusions of a VERDICT-BEARING run that reach the seat as A RED,
+ * with the full announcement `failure` gets (T-237-s2).
+ *
+ * ── THE PREVIOUS SPELLING WAS CORRECT AND WAS NOT COMPLETE ──────────
+ * T-237's criterion said *"WHERE the newest completed run is `failure`"*
+ * and the build obeyed it literally, so the other terminal conclusions
+ * landed in the catch-all sentence — *"CI'S LAST VERDICT WAS NOT READ …
+ * which this guard reads as neither `success` nor `failure`"*. That is
+ * honest and it is thin. A `timed_out` run IS main being red: a suite
+ * that hung is a suite that did not pass. A `startup_failure` is a runner
+ * that never reached the code at all. An `action_required` is a run that
+ * stopped and is waiting for a human, so nothing is measuring that tree
+ * and nobody has been told. Each cost the seat a `gh run view` by hand,
+ * which is the manual step this whole arm exists to remove.
+ *
+ * ── AND IT IS A JUDGEMENT PER CONCLUSION, NEVER A SET UNION ─────────
+ * **`cancelled` IS DELIBERATELY OUT OF THIS SET, AND THE REASON IS
+ * RECORDED HERE BESIDE THE CONSTANT BECAUSE THIS IS WHERE THE NEXT
+ * EDITOR MEETS IT.** `.github/workflows/ci.yml` sets
+ * `cancel-in-progress: true`, so a cancelled run is usually THIS GUARD'S
+ * OWN SUBJECT — the footprint of a superseded push — and not a verdict
+ * about any tree. Announcing one as a red would announce the guard's own
+ * cause back at the seat, on the commonest conclusion this repository
+ * produces: measured two to one against `failure` over sixty runs.
+ * `NON_VERDICT_CONCLUSIONS` above, which SKIPS `cancelled` on the way to
+ * the last real verdict, is the other half of that one argument, and the
+ * two lists are DISJOINT BY CONSTRUCTION — a conclusion that is skipped
+ * on the way to a verdict can never be the verdict.
+ *
+ * `skipped` and the empty string are out for the weaker version of the
+ * same reason and are on that list instead: neither is a claim that
+ * anything failed. Anything on NEITHER list still reaches the seat — as
+ * the catch-all sentence, which names the conclusion and hands over
+ * `gh run view`. THAT IS THE FLOOR THIS WIDENING RESTS ON: a conclusion
+ * GitHub invents tomorrow is announced as UNREAD rather than swallowed,
+ * so the cost of this list being short is a weaker sentence and never a
+ * silence.
+ */
+export const ANNOUNCED_RED_CONCLUSIONS = Object.freeze([
+  FAILED_CONCLUSION,
+  "timed_out",
+  "startup_failure",
+  "action_required",
+]);
 
 /**
  * The acknowledgement that lets a seat cancel a run KNOWINGLY.
@@ -1136,6 +1335,303 @@ export function pushCwds(command, writerCwd) {
     };
   }
   return { dirs: distinct };
+}
+
+/* ═══════ T-237-s2 — WHICH BRANCH IS THIS PUSH ACTUALLY LANDING ON? ═══
+ *
+ * ── THE DEFECT THESE THREE CONSTANTS AND ONE FUNCTION REPLACE ───────
+ * The CI arm asked about `readHeadRef(root)` — the branch the pushed
+ * CHECKOUT is on — and a refspec push names a branch the checkout is not
+ * on. So `git push origin HEAD:refs/heads/main` from a lane worktree was
+ * asked about `task/T-2xx-…`, which has no runs, and went out in SILENCE
+ * while the SAME push from a `main` checkout was correctly refused for a
+ * live run. Measured that way round by T-237's verifier with a
+ * branch-aware shim: the guard was strictest exactly where the seat was
+ * safest and quiet exactly where it was not.
+ *
+ * It is `pushCwds`'s question one field over, and it takes `pushCwds`'s
+ * answer: READ ONLY WHAT THE TEXT DETERMINES, and declare the rest.
+ */
+
+/**
+ * `git push`'s own options that take a SEPARATE value, which the refspec
+ * scanner must step over — `GIT_GLOBAL_OPTS_WITH_VALUE` one level down.
+ *
+ * The `--opt=value` spellings need no entry: they carry their value in
+ * one token and are skipped as options like any other.
+ */
+export const PUSH_OPTS_WITH_VALUE = Object.freeze([
+  "-o",
+  "--push-option",
+  "--receive-pack",
+  "--exec",
+  "--repo",
+]);
+
+/**
+ * Flags that push MORE BRANCHES THAN THE LINE NAMES — **and HEAD's own is
+ * always one of them**, which is what makes them answerable.
+ *
+ * ── THIS LIST WAS ONE LIST AND THE VERIFIER MEASURED WHY IT CANNOT BE ─
+ * `--all` and `--mirror` sat beside `--delete` under one name, and every
+ * member went to `unresolved` — which returns before `gh` is asked
+ * anything. Measured through the WIRED hook from a `main` checkout with
+ * one `in_progress` run on `main`: `git push --mirror origin` and
+ * `git push origin --all` were REFUSED at the base and ALLOWED at this
+ * card's first tip. **A LIVE RUN WAS LET THROUGH WHERE THE PRE-CARD
+ * GUARD REFUSED IT**, which is this file's own disqualifying test, and
+ * this card had already written that test down one function below for
+ * the several-targets case and then failed to apply it to two of its own
+ * instances.
+ *
+ * The repair is the several-targets rule, unchanged: both flags push a
+ * set that CONTAINS HEAD's own branch — that is what they mean — so
+ * HEAD's is a REAL target, asking about it can only produce a TRUE
+ * refusal, and the rest are DISCLOSED. So these take the FALLBACK path.
+ */
+export const PUSH_ALL_BRANCHES_FLAGS = Object.freeze(["--all", "--mirror"]);
+
+/**
+ * Flags whose push does not LAND on a branch at all.
+ *
+ * `--delete` is the whole list, and it is the opposite case to the one
+ * above rather than a member of it: a deletion names a branch to REMOVE,
+ * so *"what did CI last say about a branch you are deleting"* is not a
+ * question worth a round trip — and the pre-card guard REFUSING such a
+ * push on HEAD's live run was a FALSE refusal this card removes. Keeping
+ * the two cases in one list conflated a false refusal with a true one.
+ */
+export const PUSH_UNRESOLVING_FLAGS = Object.freeze(["--delete", "-d"]);
+
+/** The refspec words that mean "the branch HEAD is on" and not a name. */
+export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
+
+/**
+ * WHICH BRANCH DOES THIS PUSH LAND ON? (T-237-s2)
+ *
+ * Three answers, and the middle one is the reason this function exists at
+ * all rather than being a line inside `ciVerdict`:
+ *
+ *   `{ branch, others }` — the text SPELLS a target: a `<src>:<dst>`
+ *                      refspec, or a plain `<name>` refspec, which git
+ *                      pushes to the ref of that name. `others` is every
+ *                      FURTHER target the same line names, which the
+ *                      caller discloses rather than asks about.
+ *   `{ fallback, others }` — the text spells NO refspec, or spells
+ *                      `HEAD`, or spells `--all`/`--mirror`. The target is
+ *                      then the branch HEAD is on, which is what this arm
+ *                      always used and is still right about, and `others`
+ *                      names the branches it therefore did not ask about.
+ *   `{ unresolved }` — the text spells something this cannot read to ANY
+ *                      branch. An announced allow, never a refusal.
+ *
+ * ── SEVERAL TARGETS ARE NOT A DOUBT, AND THE FIRST DRAFT HAD IT WRONG
+ * `git push origin main dev` names two branches, and an early spelling
+ * of this function called that unresolved — which WEAKENED the guard
+ * against its own pre-card state, because the arm used to ask about
+ * HEAD's branch and refuse. A blind body caught it: `git push origin main
+ * NPUTER_CANCEL_CI=7002` reads as two refspecs, and the live run it was
+ * written to refuse was let through with a sentence.
+ *
+ * THE ARGUMENT THAT REPLACES IT: every name on that list is a REAL
+ * target of this push, so asking about ANY of them can only produce a
+ * TRUE refusal — the push does update that branch, and a run measuring it
+ * really would be cancelled. Asking about only the first costs a FALSE
+ * NEGATIVE for the rest, which is the pre-guard state and the direction
+ * this file is allowed to fail. So the first is asked about, the rest are
+ * DISCLOSED by the caller, and the round trip stays at one.
+ *
+ * ── THE LIMITS, DECLARED RATHER THAN DISCOVERED ─────────────────────
+ * `gitInvocations`'s own header lists them for the SUBCOMMAND and every
+ * one of them applies here unchanged, because this reads that scanner's
+ * tokens: a push reached through a shell ALIAS, a FUNCTION, a script
+ * file, an `eval`, or a `git` binary invoked by an absolute path is not
+ * seen at all, so neither is its refspec. Three more are this function's
+ * own and are new with it:
+ *
+ *   A REFSPEC THAT IS NOT A LITERAL — `git push origin $BRANCH`,
+ *     `"$(cat ref)"`, `main-*` — is a value only a shell knows.
+ *     `UNRESOLVABLE_TOKEN_RE` catches it and the whole line becomes
+ *     unresolved, the same treatment `cd "$LANE"` gets one function up.
+ *     **AND THIS ONE IS NOT "THE PRE-GUARD STATE", WHICH THE FIRST DRAFT
+ *     OF THIS BLOCK CLAIMED AND A VERIFIER MEASURED FALSE.** The state
+ *     immediately before this card asked HEAD's branch UNCONDITIONALLY,
+ *     so `git push origin $BRANCH` and `git push origin "main"` were
+ *     REFUSED on a live run at the base and are ALLOWED here. That is a
+ *     trade TAKEN, not a hole inherited: the text names a target that is
+ *     not HEAD's, so the base's refusal could have been about a branch
+ *     the push never touches, and this file may not turn a doubt into a
+ *     verdict. It is the one limit on this list that costs a refusal the
+ *     old code made, and it is said in those words rather than filed
+ *     under a phrase that made it sound free.
+ *   A `--repo=<value>` SUPPLIES THE REPOSITORY AND THIS SCANNER STILL
+ *     EATS A POSITIONAL FOR ONE. `git push --repo=origin HEAD:main`
+ *     therefore reads its only refspec as the repository and falls back
+ *     to HEAD's branch. A FALSE NEGATIVE and never a false refusal, and
+ *     it is declared here rather than repaired in this pass because the
+ *     verifier filed it as non-blocking; the repair is `T-237-s9`.
+ *   A DESTINATION BEGINNING WITH `-` REACHES `gh` AS `--branch`'s VALUE.
+ *     `git push origin HEAD:--version` is read as a branch called
+ *     `--version`, and `ghRunListArgv` puts it in the argv array where
+ *     `gh`'s own parser will read it as an option. It is BOUNDED — there
+ *     is no shell anywhere in this arm, nothing is executed, and `gh`
+ *     answers non-zero, which `classifyGhFailure` turns into an announced
+ *     ALLOW — and such a refspec is not a legal ref for git either, so
+ *     the push it belongs to does not happen and no run is cancelled. It
+ *     is nevertheless the class `pathsSince` shape-checks `headSha`
+ *     against one arm over, which is why it is named here and carried by
+ *     `T-237-s9` rather than left for somebody to find.
+ *   THE CONFIGURED TARGETS ARE NOT TEXT AND ARE NOT READ. `push.default`,
+ *     `remote.<name>.push` and a configured upstream can all send a bare
+ *     `git push` to a branch of another name. Reading them would mean
+ *     running `git config` against a checkout the command text chose,
+ *     which is the rooting surface this file already bounds; instead a
+ *     bare push FALLS BACK to HEAD's branch, which is what
+ *     `push.default=simple` and `=current` both do and what this arm did
+ *     unconditionally before.
+ *   A PLAIN `<name>` IS READ AS A BRANCH, and git would resolve it
+ *     against the local refs — so `git push origin v1.2` pushes a TAG
+ *     and is read here as a branch called `v1.2`. The cost is bounded
+ *     and one-directional: this guard asks CI about a branch that has no
+ *     runs, hears nothing, and says nothing. It is a false NEGATIVE,
+ *     which is the pre-guard state, and never a false refusal — unless a
+ *     tag and a branch share a name AND that branch has a run in flight,
+ *     which the acknowledgement clears in one word.
+ *
+ * NONE OF THESE IS A FALSE REFUSAL BY ITSELF, which is the property this
+ * file's every scanner is bounded by. **THE PROPERTY THEY DO NOT ALL
+ * HAVE IS "NEVER WEAKER THAN WHAT THIS CARD REPLACED", and that is the
+ * distinction this block now draws**: the plain-`<name>` and
+ * `--repo=<value>` limits are free, the literal-refspec limit costs a
+ * refusal the base made, and `--all`/`--mirror` used to cost one until a
+ * verifier measured it — they take the FALLBACK path now, for the reason
+ * `PUSH_ALL_BRANCHES_FLAGS` carries.
+ *
+ * @param {string} command
+ * @returns {{ branch: string, others: string[] } | { fallback: string, others: string[] } | { unresolved: string }}
+ */
+export function pushTargetBranch(command) {
+  /** @type {Set<string>} */
+  const targets = new Set();
+  /** @type {Set<string>} */
+  const unnamed = new Set();
+  let sawHeadTarget = false;
+  for (const inv of gitInvocations(command)) {
+    if (inv.subcommand !== "push") continue;
+    if (inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t))) continue;
+    const read = refspecTargets(inv.tokens.slice(1));
+    if ("unresolved" in read) return { unresolved: read.unresolved };
+    if (read.head) sawHeadTarget = true;
+    for (const branch of read.branches) targets.add(branch);
+    for (const extra of read.more) unnamed.add(extra);
+  }
+  const named = [...targets];
+  if (named.length === 0) {
+    return {
+      fallback: "no refspec on this line names a target branch",
+      others: [...unnamed],
+    };
+  }
+  return {
+    branch: /** @type {string} */ (named[0]),
+    // `HEAD` is spelled here as the WORD rather than resolved, because
+    // this function reads the command line and never a checkout.
+    others: [...named.slice(1), ...(sawHeadTarget ? ["HEAD"] : []), ...unnamed],
+  };
+}
+
+/**
+ * One push invocation's target branches, read off its tokens.
+ *
+ * `tokens` is everything AFTER the word `push`. git's own grammar is
+ * `git push [<options>] [<repository> [<refspec>…]]`, so the first
+ * positional is the repository and the rest are refspecs.
+ *
+ * @param {string[]} tokens
+ * @returns {{ branches: string[], head: boolean, more: string[] } | { unresolved: string }}
+ */
+function refspecTargets(tokens) {
+  /** @type {string[]} */
+  const positionals = [];
+  /** Targets this push carries that the LINE does not name. @type {string[]} */
+  const more = [];
+  let all = false;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const tok = /** @type {string} */ (tokens[i]);
+    if (tok.startsWith("-") && tok !== "-") {
+      if (PUSH_UNRESOLVING_FLAGS.includes(tok)) {
+        return { unresolved: `\`${tok}\` does not land on a branch for this guard to ask about` };
+      }
+      if (PUSH_ALL_BRANCHES_FLAGS.includes(tok)) {
+        // HEAD's OWN BRANCH IS IN THAT SET, so the question is answerable
+        // and the answer can only be a TRUE refusal. The branches this
+        // line does not name are disclosed rather than asked about.
+        all = true;
+        more.push(`every other branch \`${tok}\` pushes`);
+      }
+      if (PUSH_OPTS_WITH_VALUE.includes(tok)) i += 1;
+      continue;
+    }
+    positionals.push(tok);
+  }
+  // The first positional is the REPOSITORY, and it is dropped rather than
+  // read: a remote's name, a URL or a path says nothing about a branch.
+  const refspecs = positionals.slice(1);
+  if (refspecs.length === 0) return { branches: [], head: true, more };
+
+  /** @type {string[]} */
+  const branches = [];
+  let head = false;
+  for (let i = 0; i < refspecs.length; i += 1) {
+    const raw = /** @type {string} */ (refspecs[i]);
+    // `tag <name>` is git's own two-token spelling for `refs/tags/<name>`
+    // — a ref, and never a branch. Both tokens are stepped over.
+    if (raw === "tag") {
+      i += 1;
+      continue;
+    }
+    if (UNRESOLVABLE_TOKEN_RE.test(raw)) {
+      return { unresolved: `the refspec \`${raw}\` is a value only a shell knows` };
+    }
+    const spec = raw.startsWith("+") ? raw.slice(1) : raw;
+    const colon = spec.indexOf(":");
+    if (colon === 0) {
+      return { unresolved: `the refspec \`${raw}\` DELETES a ref rather than landing one` };
+    }
+    const dst = colon < 0 ? spec : spec.slice(colon + 1);
+    if (dst === "") {
+      return { unresolved: `the refspec \`${raw}\` names no destination this guard can read` };
+    }
+    if (HEAD_REFSPEC_WORDS.includes(dst)) {
+      // `git push origin HEAD` lands on the branch of HEAD's own name;
+      // `…:HEAD` is not a destination git accepts as a branch, so it is
+      // read as a doubt rather than as HEAD's branch.
+      if (colon < 0) {
+        head = true;
+        continue;
+      }
+      return { unresolved: `the refspec \`${raw}\` names \`${dst}\` as a destination` };
+    }
+    if (dst.startsWith("refs/heads/")) {
+      const name = dst.slice("refs/heads/".length);
+      if (name === "") {
+        return { unresolved: `the refspec \`${raw}\` names an empty branch` };
+      }
+      branches.push(name);
+      continue;
+    }
+    if (dst.startsWith("refs/")) {
+      // A tag, a note, a replacement — a ref this repository's `ci.yml`
+      // does not run on. It contributes NO branch, and if the whole line
+      // contributes none the caller says so rather than guessing HEAD's.
+      continue;
+    }
+    branches.push(dst);
+  }
+  if (branches.length === 0 && !head && !all) {
+    return { unresolved: "this push names refs, and none of them is a branch" };
+  }
+  return { branches, head: head || all, more };
 }
 
 /**
@@ -1667,18 +2163,33 @@ export function parseRunJobs(text) {
 /**
  * The first step that failed, named with the job it failed in.
  *
- * A job whose conclusion is `failure` but whose steps name none — a
- * runner that died, a job cancelled mid-step — yields the JOB with no
- * step rather than nothing at all, because *"the linux job failed and
- * this guard cannot say where"* is still worth the seat's second.
+ * A job whose conclusion is red but whose steps name none — a runner that
+ * died, a job cancelled mid-step, a run that never started a job at all —
+ * yields the JOB with no step rather than nothing at all, because *"the
+ * linux job failed and this guard cannot say where"* is still worth the
+ * seat's second.
+ *
+ * ── IT READS THE SET, NOT THE WORD (T-237-s2) ───────────────────────
+ * A job and a step carry the SAME vocabulary a run does, so a `timed_out`
+ * run whose job timed out names its step here exactly as a `failure` run
+ * does. Widening the run-level announcement without widening this would
+ * have announced every timed-out run as *"no job in that run reports a
+ * failing conclusion"* — a sentence that is false about the run and true
+ * only about the word this function used to compare.
+ *
+ * WHERE THE RUN IS RED AND ITS JOBS ARE NOT — a `startup_failure` has no
+ * jobs, and a `timed_out` run's jobs are often `cancelled` — this returns
+ * `undefined` and the caller SAYS the step could not be named. That is
+ * the declared inability this file prefers to a guess, and it costs a
+ * line of the announcement rather than the announcement.
  *
  * @param {{ name: string, conclusion: string, steps: { name: string, conclusion: string }[] }[]} jobs
  * @returns {Step | undefined}
  */
 export function failingStep(jobs) {
   for (const job of jobs) {
-    if (job.conclusion !== FAILED_CONCLUSION) continue;
-    const step = job.steps.find((s) => s.conclusion === FAILED_CONCLUSION);
+    if (!ANNOUNCED_RED_CONCLUSIONS.includes(job.conclusion)) continue;
+    const step = job.steps.find((s) => ANNOUNCED_RED_CONCLUSIONS.includes(s.conclusion));
     return { job: job.name, name: step === undefined ? "" : step.name };
   }
   return undefined;
@@ -1924,13 +2435,55 @@ export function elapsedSince(iso, nowMs) {
  * @returns {Decision | undefined}
  */
 export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
-  const branch = headRef === undefined ? undefined : /^refs\/heads\/(.+)$/.exec(headRef)?.[1];
-  if (branch === undefined) {
+  // ── WHICH BRANCH IS THIS PUSH LANDING ON? (T-237-s2) ───────────────
+  // NOT `readHeadRef(root)` alone, which is the branch the CHECKOUT is
+  // on and not the branch the push lands on. `pushTargetBranch` reads
+  // the refspec where the line spells one and says so where it cannot;
+  // HEAD is the FALLBACK, which is what this arm used unconditionally
+  // and is still right about for a push that names no refspec.
+  const target = pushTargetBranch(command);
+  if ("unresolved" in target) {
     notices.push(
-      `CI WAS NOT ASKED: ${root}'s HEAD names no branch (${headRef ?? "unreadable"}), and a CI run ` +
-        "is looked up BY BRANCH. The push is allowed and the remote's state is UNVERIFIED.",
+      `CI WAS NOT ASKED: ${target.unresolved}. A run is looked up BY BRANCH, and this guard reads ` +
+        "the branch the push LANDS on — off the refspec where the line spells one, off HEAD " +
+        "where it does not. The push is allowed and the remote's state is UNVERIFIED.",
     );
     return undefined;
+  }
+  const headBranch = headRef === undefined ? undefined : /^refs\/heads\/(.+)$/.exec(headRef)?.[1];
+  /** @type {string} */
+  let branch;
+  if ("branch" in target) {
+    branch = target.branch;
+    if (target.others.length > 0) {
+      // A PARTIAL ANSWER, SAID OUT LOUD. Every name this line carries is
+      // a real target, so the refusal this arm may reach is TRUE; what
+      // the seat is owed is the fact that the others went unasked.
+      notices.push(
+        `CI WAS ASKED ABOUT \`${branch}\` AND NOT ABOUT ${target.others
+          .map((b) => `\`${b}\``)
+          .join(", ")}: this line pushes to more than one branch and this arm asks about one, ` +
+          "so a run in flight for the others is UNVERIFIED.",
+      );
+    }
+  } else if (headBranch === undefined) {
+    notices.push(
+      `CI WAS NOT ASKED: ${target.fallback}, and ${root}'s HEAD names no branch either ` +
+        `(${headRef ?? "unreadable"}) — a CI run is looked up BY BRANCH. The push is allowed and ` +
+        "the remote's state is UNVERIFIED.",
+    );
+    return undefined;
+  } else {
+    branch = headBranch;
+    if (target.others.length > 0) {
+      // `--all` and `--mirror` reach here: HEAD's branch is a real target
+      // and is asked about, and the set the line did not spell is said.
+      notices.push(
+        `CI WAS ASKED ABOUT \`${branch}\` AND NOT ABOUT ${target.others.join(", ")}: this push ` +
+          "carries more branches than the line names and this arm asks about one, so a run in " +
+          "flight for the others is UNVERIFIED.",
+      );
+    }
   }
 
   const argv = ghRunListArgv(branch);
@@ -2026,13 +2579,15 @@ export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
             (c) => c !== "",
           ).join("/")}) and were skipped to find it — \`cancel-in-progress: true\` means a ` +
           "superseded push leaves one behind, which is the habit this guard is here for.\n";
-    if (last.run.conclusion === FAILED_CONCLUSION) {
+    if (ANNOUNCED_RED_CONCLUSIONS.includes(last.run.conclusion)) {
       notices.push(ciFailureNotice(root, last.run, branch, gh, skipped));
     } else if (last.run.conclusion !== "success") {
       notices.push(
         `CI'S LAST VERDICT WAS NOT READ: run ${last.run.id} for \`${branch}\` concluded ` +
-          `\`${last.run.conclusion}\`, which this guard reads as neither \`success\` nor ` +
-          `\`${FAILED_CONCLUSION}\`. Look at it yourself: ${GH_BIN} run view ${last.run.id}\n` +
+          `\`${last.run.conclusion}\`, which this guard reads as neither \`success\` nor one of ` +
+          `the conclusions it announces as red (${ANNOUNCED_RED_CONCLUSIONS.map(
+            (c) => `\`${c}\``,
+          ).join(", ")}). Look at it yourself: ${GH_BIN} run view ${last.run.id}\n` +
           skipped,
       );
     }
@@ -2049,6 +2604,13 @@ export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
  * card's second criterion, because pushing over a red is the ORDINARY
  * way a red gets fixed and a refusal here would block the remedy.
  *
+ * IT NAMES THE CONCLUSION IT READ (T-237-s2) rather than the word it used
+ * to be keyed to. Four conclusions reach this sentence now, they mean
+ * four different things to whoever fixes them — a hung suite, a runner
+ * that never started, a run waiting on a human, a real failure — and a
+ * headline that said `failure` for all four would be this guard telling
+ * the seat something false about its own remote.
+ *
  * @param {string} root
  * @param {Run} run
  * @param {string} branch
@@ -2059,7 +2621,7 @@ export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
 function ciFailureNotice(root, run, branch, gh, skipped) {
   const head =
     `CI IS RED UNDER THIS PUSH: run ${run.id} for \`${branch}\` concluded ` +
-    `\`${FAILED_CONCLUSION}\`` +
+    `\`${run.conclusion}\`` +
     (run.headSha === "" ? "" : ` over ${run.headSha.slice(0, 12)}`) +
     (run.title === "" ? "" : ` — ${run.title}`) +
     "\n" +
@@ -2085,7 +2647,15 @@ function ciFailureNotice(root, run, branch, gh, skipped) {
   if ("problem" in jobs) return `${head}  the failing step could not be read: ${jobs.problem}\n${tail}`;
   const step = failingStep(jobs.jobs);
   if (step === undefined) {
-    return `${head}  no job in that run reports a \`${FAILED_CONCLUSION}\` conclusion\n${tail}`;
+    // THE ORDINARY CASE FOR THREE OF THE FOUR CONCLUSIONS (T-237-s2): a
+    // `startup_failure` has no jobs at all, and a `timed_out` run's jobs
+    // are commonly `cancelled`. The run is still red and the sentence
+    // above still says so; only the step is unnameable.
+    return (
+      `${head}  no job in that run reports any of ${ANNOUNCED_RED_CONCLUSIONS.map(
+        (c) => `\`${c}\``,
+      ).join(", ")}, so the failing step cannot be named from here\n${tail}`
+    );
   }
   const where = step.name === "" ? `job \`${step.job}\`` : `\`${step.job}\` / \`${step.name}\``;
   return `${head}  failing step: ${where}\n${reachSentence(root, run, step)}${tail}`;
@@ -2277,16 +2847,35 @@ export function laneCanRegenerate(manifest) {
  * notice rather than a return, so a red CI reaches the seat whatever the
  * graph then says — the graph is about this machine and CI is not.
  *
+ * ── AND THE HOLDER ARM IS INJECTABLE, FOR THE REASON THE OTHER THREE
+ * ARE (T-238-s2). `check`, `cheap` and `gh` are parameters so a body can
+ * compose the state it is testing on ANY machine rather than on the one
+ * it happens to run on. The holder arm was not, and it is the one arm
+ * whose answer depends on the calling process's ANCESTRY — so a body
+ * that armed it through the real process tree passed on a developer's
+ * laptop and could not fire at all on a CI runner, which is exactly what
+ * reddened main on 2026-09-02. The default is unchanged and there is no
+ * environment override: production always runs `holderVerdict`, and the
+ * seam is a parameter a caller supplies, which nothing outside this
+ * process can reach.
+ *
  * @param {Request} request
  * @param {(root: string) => CheckResult} [check]
  * @param {(root: string) => CheckResult} [cheap]
  * @param {(root: string, argv: string[]) => CheckResult} [gh]
+ * @param {typeof holderVerdict} [holder]
  * @returns {Decision}
  */
-export function decide(request, check = runCheck, cheap = runCheapChecks, gh = runGh) {
+export function decide(
+  request,
+  check = runCheck,
+  cheap = runCheapChecks,
+  gh = runGh,
+  holder = holderVerdict,
+) {
   /** @type {string[]} */
   const notices = [];
-  const decision = decideWith(request, check, cheap, gh, notices);
+  const decision = decideWith(request, check, cheap, gh, holder, notices);
   return notices.length === 0 ? decision : { ...decision, notices };
 }
 
@@ -2295,10 +2884,11 @@ export function decide(request, check = runCheck, cheap = runCheapChecks, gh = r
  * @param {(root: string) => CheckResult} check
  * @param {(root: string) => CheckResult} cheap
  * @param {(root: string, argv: string[]) => CheckResult} gh
+ * @param {typeof holderVerdict} holder
  * @param {string[]} notices  collected, and attached by `decide`
  * @returns {Decision}
  */
-function decideWith(request, check, cheap, gh, notices) {
+function decideWith(request, check, cheap, gh, holder, notices) {
   const command = commandOf(request.toolInput);
   if (command === undefined) {
     return allow(
@@ -2410,11 +3000,11 @@ function decideWith(request, check, cheap, gh, notices) {
   // is this file's own discipline and not a new rule: an inability may
   // not become a verdict, and the only arm here that fails closed on an
   // absence is the token, for the reason `decide` gives.
-  const holder = holderVerdict({ root, integrationRef: INTEGRATION_BRANCH, headRef });
-  if (holder.state === "held") {
+  const seat = holder({ root, integrationRef: INTEGRATION_BRANCH, headRef });
+  if (seat.state === "held") {
     return block(
       "holder-live-elsewhere",
-      `PUSH REFUSED: ${holder.detail}\n` +
+      `PUSH REFUSED: ${seat.detail}\n` +
         "  A push from a checkout somebody else is sitting in is the collision rule 4 names and " +
         "nothing on disk used to record. This guard reads " +
         `${HOLDER_REL_PATH}, which that session wrote when it took the seat, and the process it ` +
@@ -2424,17 +3014,18 @@ function decideWith(request, check, cheap, gh, notices) {
         "does; nothing needs deleting by hand.",
     );
   }
-  if (holder.state === "dead") {
+  if (seat.state === "dead") {
     notices.push(
-      `THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE: ${holder.detail} The push is allowed and ` +
+      `THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE: ${seat.detail} The push is allowed and ` +
         "the seat is unclaimed — take it explicitly if you are the seat now: " +
         "node tools/e2e/scripts/brief.mjs --take-seat",
     );
-  } else if (holder.state === "unknown") {
+  } else if (seat.state === "unknown") {
     notices.push(
-      `WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED: ${holder.detail} The push is allowed — an ` +
+      `WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED: ${seat.detail} The push is allowed — an ` +
         "inability is not a verdict, in either direction — and nothing here has said this seat " +
-        "is yours.",
+        "is yours. THE SEAT CANNOT BE CHECKED WHERE THIS SESSION'S OWN IDENTITY WILL NOT DERIVE " +
+        "— on a CI runner it never does, and this arm is inert there by construction.",
     );
   }
 
