@@ -53,6 +53,11 @@
  *   THE HOLDER (T-238) — another LIVE session is sitting in this
  *     integration checkout. Fails open on every inability, and is silent
  *     wherever there is no seat: see the section below.
+ *   WHICH REPOSITORY (T-216, refusing since T-216-s8) — not an arm but
+ *     the QUESTION every arm above is indexed by, asked first. Where the
+ *     command's text does not determine it, no arm below can be asked at
+ *     all, so it REFUSES: see the T-216-s8 paragraph below for why that
+ *     is not the paragraph above being abandoned.
  *
  * A MISSING TOKEN REFUSES, and the asymmetry is this card's first
  * criterion rather than drift. Every other arm allows when it cannot
@@ -80,6 +85,32 @@
  * refusal names the spelling that restores it. That is a trade of a
  * wrong answer for no answer, which is the only direction this guard is
  * allowed to fail — and it is the same trade the section below makes.
+ *
+ * ── AND NO ANSWER IS A REFUSAL, NOT AN ANNOUNCED ALLOW (T-216-s8) ────
+ * T-216 shipped that arm as an ALLOW carrying the loudest notice in this
+ * file, and the notice reached nobody. A `PreToolUse` hook's stdout at
+ * exit 0 is not shown to the seat, so on 2026-09-02 the seat ran
+ * `cd <checkout>; git push origin main …` — a `;`, not an `&&` — read
+ * exit 0, and pushed a tree whose verdict token was minted against a
+ * DIFFERENT tree. The bare `git push` that same second was correctly
+ * refused as STALE. The spelling did not defeat the token arm by
+ * staling it; it routed AROUND the token arm by making the repository
+ * unreadable, so the arm that fails closed on an absence was never
+ * reached at all.
+ *
+ * So `push-repository-unresolved` REFUSES, at exit 2, carrying the same
+ * `git -C <checkout> push` remedy the notice already spelled and naming
+ * the construct it could not read past. THE ASYMMETRY WITH THE
+ * PARAGRAPH ABOVE IS DELIBERATE AND IS NOT A DRIFT INTO FAILING CLOSED:
+ * every other inability in this file is *this guard could not answer a
+ * question ABOUT A KNOWN TREE*, and a push is worth more than the
+ * question. This one is *this guard does not know WHICH TREE* — the
+ * first question, and the one every other arm's answer is indexed by —
+ * so there is no verdict to weigh against the push, only the absence of
+ * every verdict at once. The remedy is one word long, it is printed,
+ * and `push-repository-unresolved-outside` keeps the sixth criterion:
+ * outside this repository's own checkouts, still silent and still an
+ * allow.
  *
  * THE COST HAS A SECOND HALF, and an early draft of this card claimed
  * only the first. CROSS-CHECKOUT, nothing is lost: the retired verdict
@@ -284,7 +315,10 @@
  *     recycled pid is never read as a live session.
  *   EVERY INABILITY ALLOWS AND SAYS SO — an unreadable record, and a
  *     session whose own identity would not derive. The token arm remains
- *     the only one that fails closed on an absence.
+ *     the only one that fails closed on an absence. (T-216-s8: the
+ *     unresolved-repository check now fails closed too, on an
+ *     INABILITY rather than an absence — and it is asked BEFORE this
+ *     arm, so it never changes which of the four this arm reaches.)
  *   A DEAD HOLDER IS ANNOUNCED AND STEPPED OVER. The refusal retires
  *     itself with the process; nothing has to be deleted by hand.
  *   NO SEAT, NO SENTENCE. A lane push, a bench push and an UNCLAIMED
@@ -525,7 +559,7 @@ export const UNRESOLVABLE_TOKEN_RE = /[$`"'\\*?[\]{}~()!<>]/;
  * *"IF the guard cannot run THEN it SHALL say so and ALLOW, never refuse
  * silently"* — this card's absorbed criterion, and the half that makes it
  * different from `lane-fence.mjs`, whose every allow is silent. The
- * distinction these four draw is between an ORDINARY allow and one where
+ * distinction its members draw is between an ORDINARY allow and one where
  * the graph went UNVERIFIED: nobody needs to hear that `ls` is not a
  * push, and everybody needs to hear that a push went out because the
  * check could not answer.
@@ -544,16 +578,21 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
   "lane-fence-unreadable",
   "no-command-to-read",
   "landing-gate-cannot-compare",
-  // T-216. THE MEMBERSHIP TEST IS THIS LIST'S OWN: an ALLOW reached with
-  // a question UNANSWERED. Here the unanswered question is the first one
-  // — WHICH REPOSITORY — so every other question went unasked with it,
-  // which makes this the loudest member rather than an exception to the
-  // rule. Its silent sibling `push-repository-unresolved-outside` is
-  // deliberately absent for `not-this-repository`'s reason: outside this
-  // repository's checkouts the guard has nothing to say, and saying it
-  // anyway is how a notice becomes noise nobody reads.
-  "push-repository-unresolved",
 ]);
+// T-216 ADDED `push-repository-unresolved` HERE AND T-216-s8 TOOK IT BACK
+// OUT, BECAUSE IT IS NO LONGER AN ALLOW. The membership test is this
+// list's own — an ALLOW reached with a question UNANSWERED — and that arm
+// now REFUSES, so a row here would be a row nothing consults: the runner
+// prints a block's reason whatever this list holds. The row was not
+// wrong when it landed; it was the loudest member, since the unanswered
+// question was the FIRST one — WHICH REPOSITORY — and every other
+// question went unasked with it. That is exactly why it stopped being an
+// allow: an announcement at exit 0 is stdout a `PreToolUse` hook's seat
+// never sees, and the tree went to origin ungraded (T-216-s8). Its
+// sibling `push-repository-unresolved-outside` is STILL an allow and
+// still deliberately absent, for `not-this-repository`'s reason: outside
+// this repository's checkouts the guard has nothing to say, and saying it
+// anyway is how a notice becomes noise nobody reads.
 // T-203's TWO ANNOUNCEMENTS ARE DELIBERATELY NOT IN THAT LIST, and the
 // reason is what the list actually is. It is a FILTER on a Decision's own
 // `code`, consulted when a returned decision might or might not deserve
@@ -2928,17 +2967,23 @@ function decideWith(request, check, cheap, gh, holder, notices) {
           "not in one of this repository's checkouts either, so there is nothing here to say",
       );
     }
-    return allow(
+    // AND IT REFUSES, WHICH IS T-216-s8's WHOLE CARD (see the header's
+    // T-216-s8 paragraph). This used to be an `allow` carrying exactly
+    // the sentence below, and a `PreToolUse` hook's stdout at exit 0 is
+    // not shown to the seat — so the notice reached nobody and a tree no
+    // battery had graded went to origin.
+    return block(
       "push-repository-unresolved",
-      "NOTHING ABOUT THIS PUSH WAS JUDGED: this guard could not identify the repository it acts " +
-        `on — ${resolved.unresolved}.\n` +
+      "PUSH REFUSED — NOTHING ABOUT THIS PUSH COULD BE JUDGED: this guard could not identify " +
+        `the repository it acts on — ${resolved.unresolved}.\n` +
         "  A push names no target the way a write does, so this guard reads only what the text " +
         "DETERMINES: a `-C`, or a `cd <literal>` chained to the push with `&&`, or an unmoved " +
         "working directory. It will not guess the rest, because the guess it used to make was " +
         `${cwd} — the seat's own directory — and judging the wrong tree is how a green verdict ` +
         "gets attached to a stale push (T-216).\n" +
         "  The graph, the board, the fence and the verdict token are ALL UNVERIFIED for this " +
-        "push. Spell it so this guard can read it, and it is judged exactly:\n" +
+        "push, which is why it is refused rather than narrated (T-216-s8). Spell it so this " +
+        "guard can read it, and it is judged exactly:\n" +
         "    git -C <the checkout being pushed> push",
     );
   }
@@ -2999,7 +3044,11 @@ function decideWith(request, check, cheap, gh, holder, notices) {
   // identity would not derive — is announced and ALLOWED. That last one
   // is this file's own discipline and not a new rule: an inability may
   // not become a verdict, and the only arm here that fails closed on an
-  // absence is the token, for the reason `decide` gives.
+  // absence is the token, for the reason `decide` gives. T-216-s8's
+  // refusal is not a counter-example to that discipline and is not
+  // reached from here: it fires ABOVE, before any tree is named, where
+  // the inability is not "this question went unanswered" but "no arm
+  // below could be asked at all".
   const seat = holder({ root, integrationRef: INTEGRATION_BRANCH, headRef });
   if (seat.state === "held") {
     return block(

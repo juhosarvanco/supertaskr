@@ -935,23 +935,33 @@ test("an allow that left the graph unverified is announced; an ordinary one is s
   // row nothing consults. Two bodies further down drive them and require
   // their sentences, which is the property a row here would only have
   // described.
-  // T-216 ADDED ONE AND DELIBERATELY LEFT ITS SIBLING OUT, which is the
-  // same split this list already draws twice. `push-repository-unresolved`
-  // is an ALLOW reached with the FIRST question unanswered — which
-  // repository — so every other question went unasked with it.
+  // T-216 ADDED ONE AND T-216-s8 TOOK IT BACK OUT, WHICH IS THIS LIST'S
+  // MEMBERSHIP TEST DOING ITS JOB RATHER THAN A ROW BEING LOST.
+  // `push-repository-unresolved` was an ALLOW reached with the FIRST
+  // question unanswered — which repository — so every other question went
+  // unasked with it, and it was the loudest thing this guard said. That
+  // is exactly why it stopped being an allow: a `PreToolUse` hook's
+  // stdout at exit 0 is not shown to the seat, the notice reached nobody,
+  // and an ungraded tree went to origin (T-216-s8). It now BLOCKS, and a
+  // block's reason is printed whatever this list holds — so a row here
+  // would be a row nothing consults, which is the same argument T-203's
+  // two announcements and T-237's five sentences are kept out on.
   // `push-repository-unresolved-outside` is the same inability in a
-  // checkout that is not this repository's, and is silent for
-  // `not-this-repository`'s reason: outside our own checkouts the guard
-  // has nothing to say. The two bodies at the end of this file drive both
-  // halves of that split.
+  // checkout that is not this repository's; it is STILL an allow and
+  // still silent, for `not-this-repository`'s reason: outside our own
+  // checkouts the guard has nothing to say. The two bodies at the end of
+  // this file drive both halves of that split, one refusing and one mute.
   expect([...ANNOUNCED_ALLOW_CODES].sort()).toEqual([
     "check-could-not-run",
     "check-inconclusive",
     "landing-gate-cannot-compare",
     "lane-fence-unreadable",
     "no-command-to-read",
-    "push-repository-unresolved",
   ]);
+  // AND THE ROW IS ABSENT BECAUSE THE CODE IS A BLOCK, not because the
+  // code is gone: an assertion that only counted rows would be satisfied
+  // by deleting the arm outright (shape five).
+  expect(ANNOUNCED_ALLOW_CODES).not.toContain("push-repository-unresolved");
   // Announced: the check answered a code that is not a verdict.
   const spoke = fixture("announced", CHECK_EXIT.COULD_NOT_RUN, "[nputer-index] no");
   expect(runHook(spoke, "git push").stderr).not.toBe("");
@@ -1844,28 +1854,49 @@ test("a `git -C <lane> push` is judged in the lane too, and it is the spelling t
 test("a spelling this guard cannot read judges NOTHING, and says so", () => {
   // THE THIRD CRITERION, applied to the guard beside T-199's. Where the
   // repository is not determined by the text, the guard does not fall
-  // back to the writer's cwd — that fallback IS the defect — and it does
-  // not refuse either, because not knowing which repository a push acts
-  // on is this guard's own inability and this file's header spends a
-  // section on why an inability may not become a verdict.
+  // back to the writer's cwd — that fallback IS the defect.
+  //
+  // T-216 SHIPPED THIS AS AN ALLOW AND T-216-s8 MADE IT A REFUSAL, and
+  // the sentence this body used to carry is the one that had to go: *"it
+  // does not refuse either, because not knowing which repository a push
+  // acts on is this guard's own inability"*. True of an inability ABOUT A
+  // KNOWN TREE, which is what every other arm's allow is; false here,
+  // where the unanswered question is WHICH TREE and no other arm can be
+  // asked at all. The measured cost of the old reading is on T-216-s8's
+  // card: a `;` instead of an `&&`, exit 0, and a tree no battery had
+  // graded on origin — because a `PreToolUse` hook's stdout at exit 0 is
+  // not shown to the seat, so the loudest notice in this file reached
+  // nobody.
   const fx = laneFixture("t216-unresolved", { dispatcher: "fresh", lane: "missing" });
   const run = runHookFromDispatcher(fx, 'cd "$LANE" && git push origin HEAD:refs/heads/main');
-  expect(run.status, "an unresolvable spelling must never refuse").toBe(0);
-  expect(run.stderr).toContain("NOTHING ABOUT THIS PUSH WAS JUDGED");
+  expect(run.status, "an unreadable spelling is refused, not narrated at exit 0").toBe(2);
+  expect(run.stderr).toContain("PUSH REFUSED");
+  expect(run.stderr, "and it says what went unjudged, not merely that it refused").toContain(
+    "ALL UNVERIFIED",
+  );
   expect(run.stderr, "the refusal must name the spelling that restores the guard").toContain(
     "git -C",
   );
   expect(checkWasSpawned(fx), "nothing may be judged, including the graph").toBe(false);
 
-  // THE CONTROL THIS BODY IS WORTHLESS WITHOUT — and the one arm whose
-  // EXIT CODE alone did not discriminate against the unfixed guard, which
-  // allowed this push too by judging the dispatcher. The same fixture,
-  // spelled so the guard can read it, refuses.
+  // THE CONTROL THIS BODY IS WORTHLESS WITHOUT, and it is no longer the
+  // EXIT CODE — both halves refuse now, so a guard that refused every
+  // push would pass on the code alone. What discriminates is WHICH
+  // REFUSAL: the same fixture, spelled so the guard can read it, is
+  // refused by an ARM — here the lane's own missing verdict token — and
+  // says nothing about an unidentifiable repository.
   const readable = runHookFromDispatcher(
     fx,
     `cd ${fx.lane} && git push origin HEAD:refs/heads/main`,
   );
   expect(readable.status, "the same push, spelled readably, is judged and refused").toBe(2);
+  expect(
+    readable.stderr,
+    "the readable spelling must be refused by an ARM, never by the unresolved check",
+  ).not.toContain("could not identify the repository");
+  expect(readable.stderr, "and the arm that refuses it is a measurement of the lane").toContain(
+    fx.lane,
+  );
 });
 
 test("an unresolvable push outside this repository's checkouts is silent", () => {
@@ -1883,13 +1914,20 @@ test("an unresolvable push outside this repository's checkouts is silent", () =>
 
   // THE CONTROL: the same unreadable command from a seat that IS in one
   // of this repository's checkouts speaks. Without it, "silent" is
-  // satisfied by an arm that never says anything at all.
+  // satisfied by an arm that never says anything at all. Since T-216-s8
+  // it speaks by REFUSING, which makes this control stronger rather than
+  // different: the two halves now differ by a verdict and not only by a
+  // sentence, so an arm that lost its voice cannot pass either half.
   const inside = fixture("t216-inside", CHECK_EXIT.CURRENT, CURRENT_REPORT);
   const spoke = decide({ toolName: "Bash", toolInput: { command: 'cd "$X" && git push' }, cwd: inside.root }, () => {
     throw new Error("the check must not be reached for an unresolved push");
   });
+  expect(spoke.verdict, "inside this repository the same inability REFUSES").toBe("block");
   expect(spoke.code).toBe("push-repository-unresolved");
-  expect(ANNOUNCED_ALLOW_CODES).toContain(spoke.code);
+  expect(
+    ANNOUNCED_ALLOW_CODES,
+    "and a block belongs to no allow list — the runner prints its reason regardless",
+  ).not.toContain(spoke.code);
 });
 
 test("`;` and `||` after a `cd` are not `&&`, and the guard judges nothing there", () => {
@@ -1905,19 +1943,103 @@ test("`;` and `||` after a `cd` are not `&&`, and the guard judges nothing there
   // in the directory it started in, and under `||` the `cd` may not have
   // run at all — so in both the working directory is not determined by
   // the text, and following it would reintroduce this card's own defect.
+  //
+  // T-216-s8 TOOK THE EXIT CODE AWAY FROM THIS BODY AS A DISCRIMINATOR,
+  // which is worth saying because it looks like a weakening and is not.
+  // Both halves refuse now — the `&&` half by an ARM that measured the
+  // lane, the `;`/`||` halves by the unresolved check that measured
+  // nothing — so what this body reads is the SENTENCE, and a guard that
+  // refused every push indiscriminately fails it in both directions.
   const fx = laneFixture("t216-separator", { dispatcher: "fresh", lane: "missing" });
   const push = "git push origin HEAD:refs/heads/main";
+  const UNPLACEABLE = "could not identify the repository";
 
   const and = runHookFromDispatcher(fx, `cd ${fx.lane} && ${push}`);
   expect(and.status, "`&&` determines the directory, so the lane is judged").toBe(2);
+  expect(and.stderr, "and it is judged by an arm, not declined as unplaceable").not.toContain(
+    UNPLACEABLE,
+  );
+  expect(and.stderr, "the arm that refuses it names the lane it measured").toContain(fx.lane);
 
   for (const sep of [";", "||"]) {
     const run = runHookFromDispatcher(fx, `cd ${fx.lane} ${sep} ${push}`);
-    expect(run.status, `\`${sep}\` must not be read as \`&&\``).toBe(0);
-    expect(run.stderr, `\`${sep}\` declined silently`).toContain(
-      "NOTHING ABOUT THIS PUSH WAS JUDGED",
+    expect(run.status, `\`${sep}\` must not be read as \`&&\``).toBe(2);
+    expect(run.stderr, `\`${sep}\` was judged rather than declined`).toContain(UNPLACEABLE);
+    expect(run.stderr, `\`${sep}\` declined without saying nothing was judged`).toContain(
+      "ALL UNVERIFIED",
     );
   }
+});
+
+/* ══ T-216-s8 — THE LINE THAT REACHED ORIGIN, AND THE REFUSAL IT OWES ══
+ *
+ * THE DEFECT WAS NOT A MISSING CHECK. Every arm above was present and
+ * correct on 2026-09-02 at 10:53Z when a seat pushed a tree whose verdict
+ * token had been minted against a DIFFERENT tree. Probed afterwards, the
+ * bare `git push origin main` was refused as STALE at exit 2 — the guard
+ * working exactly as designed — while the line the seat had actually run,
+ * `cd <checkout>; git push origin main 2>&1 | grep …`, exited 0.
+ *
+ * ONE CHARACTER APART, AND THE `;` IS NOT THE BUG EITHER. Declining to
+ * read past a `;` is right and stays right: under `;` a failed `cd`
+ * leaves the push in the directory it started in, so the text does not
+ * determine the tree. What was wrong was the VERDICT on that inability —
+ * an ALLOW carrying a notice, printed at exit 0, which is a channel a
+ * `PreToolUse` hook's seat is never shown. The loudest sentence in the
+ * file reached nobody and an ungraded tree reached origin.
+ *
+ * SO THE SPELLING DID NOT DEFEAT THE TOKEN ARM; IT ROUTED AROUND IT. The
+ * one arm in this file that fails closed on an ABSENCE is the token's,
+ * and this line never reached it: it made the REPOSITORY unreadable
+ * rather than the token stale, and every arm below the first question is
+ * indexed by the answer to that question.
+ */
+
+test("the `cd <checkout>; git push` line that reached origin is REFUSED, naming the separator and the `git -C` remedy", () => {
+  // THE FINDING'S OWN LINE, in a fixture that would otherwise ALLOW: the
+  // graph is CURRENT, the token is fresh, the board is quiet and the seat
+  // sits in the very checkout the `cd` names. Nothing here is refusable
+  // except the spelling, which is what makes the refusal attributable.
+  const fx = fixture("t216-s8-the-line", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const tail = 'git push origin main 2>&1 | grep -E "REFUSED|To github"';
+
+  const ran = runHook(fx, `cd ${fx.root}; ${tail}`);
+  expect(ran.status, "exit 2 is the documented refusal; exit 0 is what reached origin").toBe(2);
+  expect(ran.stderr).toContain("PUSH REFUSED");
+  expect(ran.stderr, "the refusal names the separator it could not read past").toContain(
+    "a `cd` reaches this push through a separator that is not `&&`",
+  );
+  expect(ran.stderr, "and carries the remedy the notice already spelled, in full").toContain(
+    "git -C <the checkout being pushed> push",
+  );
+  expect(ran.stderr, "and says what went unjudged rather than only that it refused").toContain(
+    "ALL UNVERIFIED",
+  );
+  expect(checkWasSpawned(fx), "nothing was judged, and the graph was not asked").toBe(false);
+
+  // THE POSITIVE CONTROL, ONE CHARACTER AWAY, IN THE SAME FIXTURE. `;`
+  // becomes `&&` and the identical line — same `2>&1`, same pipe, same
+  // `grep` — is placed, judged by every arm, and ALLOWED. A guard that
+  // had simply learned to refuse pushes, or to refuse this fixture, or to
+  // refuse anything carrying a pipe, fails here.
+  //
+  // IT IS NOT SILENT, AND THE REASON IS A SEPARATE FINDING RATHER THAN
+  // THIS BODY BEING LOOSE. The refspec reader takes the push segment's
+  // last operand, and `segments` splits on `&`, so `… origin main 2>&1`
+  // ends the segment at `2>` and the CI arm declares doubt about a
+  // refspec that is a REDIRECTION. That is T-237-s2's arm answering
+  // exactly as designed on an input nobody modelled — it is announced and
+  // allowed, never a refusal — and moving it is a different card's
+  // verdict to move (routed as T-216-s9). So what this control asserts is
+  // that no arm REFUSED and that the unplaceable check in particular did
+  // not fire, which is the property T-216-s8 is about.
+  const allowed = runHook(fx, `cd ${fx.root} && ${tail}`);
+  expect(allowed.status, "the same line, one separator different, is judged and allowed").toBe(0);
+  expect(allowed.stderr, "and nothing refused it").not.toContain("PUSH REFUSED");
+  expect(allowed.stderr, "least of all the check this card added").not.toContain(
+    "could not identify the repository",
+  );
+  expect(checkWasSpawned(fx), "judged means the graph really was asked").toBe(true);
 });
 
 /* ───────────── the resolver's own contract, as a table ─────────────── */
@@ -1945,7 +2067,10 @@ test("the working directory at the push is read only where the text determines i
   }
 
   // UNRESOLVED: each of these is a working directory only a running shell
-  // knows. None of them refuses; each one costs an announced allow.
+  // knows. `pushCwds` returns no verdict of its own — it says WHY it
+  // declined and `decide` decides. Since T-216-s8 that decision is a
+  // REFUSAL inside this repository's checkouts and still a silent allow
+  // outside them, and both are driven by their own bodies below.
   for (const command of [
     `cd ${up} ; git push`, //          `;` runs the push even if the cd failed
     `cd ${up} || git push`, //         the cd may not have run at all
