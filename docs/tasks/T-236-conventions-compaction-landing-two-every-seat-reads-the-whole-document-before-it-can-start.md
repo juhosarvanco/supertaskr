@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 1
 size: L
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e/scripts/docs-scan.mjs, docs/decisions/019-governing-docs-rules-truths-records.md]
 suggested_by: "the architect seat, 2026-09-02 — item 1 of docs/rooms/loop-efficiency.md, filed after @human asked for the loop's weak spots and ruled 'apply all of your current loop efficiency suggestions'"
 builder: claude-fable-5-1@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-fable-5-1@subagent, fix pass claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
