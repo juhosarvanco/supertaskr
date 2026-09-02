@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: [T-237]
 touches: [tools/e2e/tests/workflow-parity.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
