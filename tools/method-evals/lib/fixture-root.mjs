@@ -108,6 +108,31 @@ const LIVE_DOCS = [
 const LIVE_ADAPTERS = ["AGENTS.md", "CLAUDE.md"];
 
 /**
+ * EVERY ROOT-RELATIVE PATH `materialize` COPIES OUT OF THE REPOSITORY, in
+ * copy order — the two directory trees above the file lists, exactly as
+ * the four `cpSync` calls used to spell them one at a time.
+ *
+ * EXPORTED BECAUSE A SECOND READER EXISTS. `evals/mf-07-…` builds a
+ * READ-ONLY replica of this source set in scratch and materializes a
+ * fixture out of it; a second, typed copy of this list would go stale the
+ * day a path is added here, and the eval would then certify a source set
+ * nobody copies. One list, two readers.
+ */
+export const LIVE_COPY_SET = Object.freeze([
+  "method",
+  "docs/architecture",
+  ...LIVE_DOCS,
+  ...LIVE_ADAPTERS,
+]);
+
+/**
+ * The ONE synthetic copy, relative to `suiteDir`: this suite's own card
+ * fixture, which lands at `docs/tasks/` in the fixture. Exported for the
+ * same reason as the set above.
+ */
+export const CARD_FIXTURE_DIR = "fixtures/card";
+
+/**
  * @typedef {object} FixtureRoot
  * @property {string} dir         absolute path to the materialized root
  * @property {string} head        the fixture commit's full sha
@@ -171,18 +196,16 @@ function makeWritable(root) {
 export function materialize(stem) {
   const base = mkdtempSync(path.join(tmpdir(), `nputer-method-eval-${stem}-`));
   const dir = path.join(base, "project");
-  mkdirSync(path.join(dir, "docs"), { recursive: true });
+  mkdirSync(dir, { recursive: true });
 
-  cpSync(path.join(repoRoot, "method"), path.join(dir, "method"), { recursive: true });
-  cpSync(
-    path.join(repoRoot, "docs/architecture"),
-    path.join(dir, "docs/architecture"),
-    { recursive: true },
-  );
-  for (const rel of [...LIVE_DOCS, ...LIVE_ADAPTERS]) {
-    cpSync(path.join(repoRoot, rel), path.join(dir, rel));
+  // ONE LOOP OVER ONE LIST, because the list now has a second reader —
+  // see `LIVE_COPY_SET`. `cpSync` with `recursive` copies a FILE as
+  // happily as a tree and creates the destination's parent, so the
+  // directory entries and the file entries need no separate spelling.
+  for (const rel of LIVE_COPY_SET) {
+    cpSync(path.join(repoRoot, rel), path.join(dir, rel), { recursive: true });
   }
-  cpSync(path.join(suiteDir, "fixtures/card"), path.join(dir, "docs/tasks"), {
+  cpSync(path.join(suiteDir, CARD_FIXTURE_DIR), path.join(dir, "docs/tasks"), {
     recursive: true,
   });
 
