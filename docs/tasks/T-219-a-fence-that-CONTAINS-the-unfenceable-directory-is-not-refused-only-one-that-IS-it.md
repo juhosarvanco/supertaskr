@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: building
 blocked_by: []
-touches: [lib-parser]
+touches: [lib-parser, tools/e2e/tests/lane-fence.spec.ts]
 suggested_by: "T-209's executor, which needed the exact semantics of `alwaysWritable` to decide how it participates in a lane-vs-lane intersection and found the refusal is token-shaped where the rule is path-shaped"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
@@ -115,3 +115,13 @@ same file, one refusal short.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+## FENCE WIDENED, 2026-09-02 — fast path A, by the dispatching seat
+
+Amended on the integration branch while the lane was live: the blind
+verifier measured at the base that a correct containment refusal reds two
+bodies in tools/e2e/tests/lane-fence.spec.ts (:987 and :1711), whose lane
+fixtures fence the bare `docs` this card exists to refuse. Rule 5 forbids
+widening from inside the lane; the seat widened it here, re-expanded the
+manifest against this commit, and sent the executor this line by path.
+The two fixtures are repaired inside the lane rather than routed.
