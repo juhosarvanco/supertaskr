@@ -250,6 +250,32 @@ and the tip it names is the one a verifier judges; the twenty minutes
 saved were spent twice over. The rule pairs with item 21: a lane's
 report opens phase 2, a verifier's report frees the bench.
 
+**23. The blind verifier's phase 1 is the earliest reader of the fence,
+and the seat waited for the executor to stall on it.** At 10:11Z
+V-T-228's sealed ground named a tree fact: the card's fence was `.claude`
+alone, no test file lives under it, and every body that can drive the
+hook sits in two spec files under tools/e2e/tests. The executor had by
+then routed the card's own ORDER body OUT as a suggestion because the
+fence refused it, and would have reported the collision at the end of
+its build. The seat widened by fast path A on the verifier's fact
+instead (ae7e8a9), wrote the lane's card copy, and told the executor to
+bring the body back. A tree fact is not the attack set; relaying it
+breaks no blindness, and the widening reaches the lane before the
+executor's report rather than after it. The rule: read the verifier's
+phase-1 REPORT for tree facts that move the fence, and act on them at
+once.
+
+**24. A fence with no spec file in it, on a card whose criteria say "a
+body SHALL prove it", is a contradiction the dispatch view could name
+before anyone is spawned.** T-228 was startable with `touches:
+[.claude]`; the preflight, the arm and the brief all passed it, and only
+a verifier's ground measurement said the card could not be built as
+fenced. Preflight already reads the fence and the card; a check that a
+criterion demanding a body has at least one `*.spec.ts` or `*.test.*`
+inside the fence is one more line in card-preflight, and it turns a
+twenty-minute stall into a refusal at the seat. Owed as a card at the
+next triage.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
