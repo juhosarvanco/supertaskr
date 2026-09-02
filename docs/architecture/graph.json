@@ -23518,8 +23518,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:646f0e74287ecd6409d9e5d53bedac26bc172f693ff810d9e60d2cebc9a7860e",
-      "loc": 2325,
+      "hash": "blake3:9c08aaa025d209cdd8995035d33a2e3477ffa7f7b9ebe394976a336e04ccf727",
+      "loc": 2430,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -23622,6 +23622,26 @@
           ]
         },
         {
+          "id": "s:app/test/select-board.test.ts#foldWhitespace",
+          "name": "foldWhitespace",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1226,
+            1226
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#foldedBlocks",
+          "name": "foldedBlocks",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1236,
+            1253
+          ]
+        },
+        {
           "id": "s:app/test/select-board.test.ts#lane",
           "name": "lane",
           "kind": "const",
@@ -23709,6 +23729,16 @@
           "range": [
             61,
             78
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#theOneBlockCarrying",
+          "name": "theOneBlockCarrying",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1262,
+            1277
           ]
         },
         {
@@ -42432,6 +42462,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/select-board.test.ts#foldedBlocks",
+      "to": "s:app/test/select-board.test.ts#foldWhitespace",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/select-board.test.ts#lane",
       "to": "s:app/src/lib/board-model.ts#InFlightLane",
       "kind": "type_ref",
@@ -42470,6 +42506,18 @@
     {
       "from": "s:app/test/select-board.test.ts#task",
       "to": "s:app/test/select-board.test.ts#fm",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#theOneBlockCarrying",
+      "to": "s:app/test/select-board.test.ts#foldWhitespace",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#theOneBlockCarrying",
+      "to": "s:app/test/select-board.test.ts#foldedBlocks",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -44361,7 +44409,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2505,
-    "edges": 2395
+    "symbols": 2508,
+    "edges": 2398
   }
 }
