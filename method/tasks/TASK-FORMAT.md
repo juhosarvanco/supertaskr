@@ -672,13 +672,16 @@ makes an advisory period honest instead of a soft launch.
 ## Parallelism guardrails
 
 - Tasks with overlapping `touches:` never run concurrently.
-- **Ceiling: 3–5 concurrent agents, and THIS LINE IS THE VALUE'S ONE
-  HOME.** Past that, verification — not generation — becomes the
-  bottleneck and quality quietly drops. `roles/orchestrator.md`'s
-  dispatch step CITES this line instead of restating the number, and
-  the why stays here with it: the two said the same thing without
-  either citing the other, which is two facts rather than one fact
-  checked twice, and the day the ceiling moves is the day that costs a
-  reader an hour deciding which copy is authoritative.
+- **Ceiling: 3–5 concurrent agents, and THIS LINE IS THE VALUE'S HOME.**
+  Past that, verification — not generation — becomes the bottleneck and
+  quality quietly drops, and the WHY lives here and nowhere else.
+  `roles/orchestrator.md`'s dispatch step CITES this line; it repeats
+  the number because a project's code may pin the bound against that
+  file's spelling, and a duplicate WITH a checker is one fact checked
+  twice while a duplicate without one is two facts. The two said the
+  same thing for a long time with neither citing the other, which is
+  what the citation repairs. **A PROJECT ADOPTING THIS AIMS ITS CHECKER
+  AT BOTH COPIES**: the copy nothing reads is the copy that drifts, and
+  it will be this one.
 - When in doubt, run turn-based; parallel is an optimization, not
   the point.
