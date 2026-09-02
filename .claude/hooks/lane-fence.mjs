@@ -146,7 +146,7 @@
  * a fence that approves everything are byte-identical from outside"*. So
  * a `Decision` now carries `judged`, and the four codes that DECLINE to
  * judge — `not-a-repository` (limit 2), `not-judged-detached` (limit 3),
- * `not-judged-lane-list` (limit 4) and `no-path-to-judge` (limit 5) —
+ * `not-judged-lane-list` (limit 4) and `no-path-to-judge` (limit 8) —
  * set it FALSE. Every other verdict, allow or block, is a judgement this
  * function made and sets it TRUE.
  *

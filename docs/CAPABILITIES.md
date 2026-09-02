@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **630 behaviours** — 628 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **632 behaviours** — 630 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -460,6 +460,8 @@ Census: **630 behaviours** — 628 extracted sentences + 2 named-not-extracted (
 - THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers instead, and the body above reds naming both halves
 - the limits this hook declares are the limits docs/CONVENTIONS.md publishes
 - THE POSITIVE CONTROL: a planted header reds — one limit gained, one code renamed
+- the limit a decline CITES is the limit the block numbers, and the one the session reads
+- THE POSITIVE CONTROL: a planted header reds — the citation moved, and the runtime string moved
 - the merge that CONSUMES a fence is not refused by it
 - a lane whose worktree is gone fences nothing, and a stray manifest still locks nobody out
 - a live lane with no readable manifest reserves nothing here, and is still refused in its own arm
