@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 blocked_by: []
 touches: [tools/e2e/tests/lane-fence.spec.ts]
 suggested_by: "executor claude-opus-5@subagent @T-215-s1"
@@ -74,3 +74,195 @@ fixture copy of the hook (or drive the hook's function from a scratch
 copy) and show the body red by name; kill-set containment against the
 existing carve-out bodies SHALL be measured at the tip. Guard-class,
 `review: independent`.
+
+## Implementation notes — 2026-09-02 (executor claude-opus-5@subagent)
+
+### What was written, and where
+
+One file, the whole fence: `tools/e2e/tests/lane-fence.spec.ts`. Two
+bodies and their readers, placed with the carve-out family and ahead of
+`T-215-s1`'s THE THIRD COPY section:
+
+- **`a card file is carved out by the UNFENCEABLE arm, and a carve-out
+  coming back is not that`** — arms a fixture with
+  `touches: [tools/e2e, <the fixture card>]`, which is the one
+  dispatchable shape that puts the card into `excluded` (the writer
+  refuses a fence expanding to no path, and refuses every token whose
+  domain contains `docs/tasks`), then calls `carveOutFor` DIRECTLY and
+  requires the returned pair to be the unfenceable arm's. `decide`
+  cannot reach the question: the seat branch consults `carveOutFor` only
+  for a path some live lane's manifest RESERVES, and a card file is
+  never reserved.
+- **`THE POSITIVE CONTROL: the own-file arm re-added byte-identically
+  answers instead, and the body above reds naming both halves`** —
+  splices `T-219-s3`'s removed arm, byte for byte and FIRST, into a
+  scratch COPY of the hook, imports that copy by URL and drives its own
+  `carveOutFor` export. The live hook is never written to.
+- `UNFENCEABLE_DOMAIN` / `UNFENCEABLE_WHY` are LITERALS, not values read
+  back from the hook or the manifest; the manifest is asserted to CARRY
+  the domain, which is the arming condition rather than the expected
+  value. `OWN_FILE_ARM` is an array of source LINES so the arm's own
+  template literal stays text; `occurrences` gives the plant a DELTA so
+  the control never asserts the live hook lacks the arm — that is what
+  keeps its kill set disjoint from the body it controls.
+- Two imports joined the file: `carveOutFor` from the hook, and
+  `pathToFileURL` from `node:url`.
+
+Nothing else moved. `.claude/hooks/lane-fence.mjs` is read-only in this
+lane and outside this fence; its sha256 is unchanged from the dispatch
+stamp (below).
+
+### Why presence proves nothing, restated because it is the whole card
+
+`carveOutFor` called for a card file against a manifest whose `excluded`
+names it answers a carve-out BOTH WAYS — through the removed own-file
+arm and through `alwaysWritable`. Measured here, at this lane's tip: the
+arm re-added byte-identically to the live hook reds ONE body of the 58
+in this spec, and it is the new one. Every existing carve-out body,
+including *the carve-outs each free a DIFFERENT write, and the fence
+still holds around them* — whose own failure message reads "the own-card
+carve-out arm became reachable again — see T-219-s3" — stays GREEN under
+it, because `decide` never consults `carveOutFor` for a card file. That
+body is the pin on the VERDICT; this pair is the pin on the ARM.
+
+### Every command, in order, with the exit read from `$?` unpiped
+
+At the base `81bcd228258c3cdb3cf62f37a6ff9eb2f8cd797e`:
+
+1. `git rev-parse HEAD` (lane) — 0, `81bcd228258c3cdb3cf62f37a6ff9eb2f8cd797e`
+2. `npm ci` from `tools/e2e/` — 0
+3. `npm ci` from `app/` — 0
+4. `npm run build` from `app/` — 0
+5. `npm run typecheck` from `tools/e2e/` — 0
+6. `NPUTER_E2E_PORT=15215 npx playwright test tests/lane-fence.spec.ts` — 0, **58 passed** (56 at the base)
+7. `npm run lint:tokens` from `tools/e2e/` — 0, clean over TOKEN 174 files / CONTROL 1153 tracked text files
+8. `git commit` — 0, `4fc67edf0c48350ef4fc51eb67eaf414b6b60319`
+9. drill worktree at `4fc67ed` (below) — baseline 0 / **58 passed**, mutant A 1 / **1 failed 57 passed**, mutant B 1 / **1 failed 57 passed**
+10. `node tools/e2e/scripts/gate-run.mjs parser` — 0, `bodies=363 verdict=GREEN`
+11. `node tools/e2e/scripts/gate-run.mjs app` — 0, `bodies=1141 verdict=GREEN`
+12. `node tools/e2e/scripts/gate-run.mjs rust` — 0, `bodies=639 targets=18 verdict=GREEN`
+13. `NPUTER_E2E_PORT=15215 node tools/e2e/scripts/gate-run.mjs e2e` — 1, `bodies=579 verdict=RED`, **4 failed / 575 passed** — attributed below
+14. `npm run typecheck` from `tools/e2e/` — 0 (after the literals)
+15. `NPUTER_E2E_PORT=15215 npx playwright test tests/lane-fence.spec.ts` — 0, **58 passed**
+16. `git commit` — 0, `74998a0e1776d0c7728ba945642d13955e1ed0cb`
+17. drill worktree at `74998a0` (below) — mutants A, D, C, B and the base bench
+18. `git merge-tree --write-tree main HEAD` — 0 (read before the diff), tree `faa7dafcd35e743a4299e6cc9de66c9708c6d537` against main `763548cc61392f4f034b9c0fb334142f926d4c8b`
+19. `git diff --name-only main <tree>` — 0, **1 path**: `tools/e2e/tests/lane-fence.spec.ts`
+
+The gate derivations, the docs gate, `index --check` and the four-suite
+battery re-run at this card's own tip are in the handoff report, because
+this commit IS the tip and a gate answered one commit early is a gate
+nobody re-derived.
+
+### The four-suite battery, and the red that is not this lane's
+
+`gate-run e2e` came back RED with **4 failed / 575 passed** at
+`4fc67ed`. The four, by NAME:
+
+- `card-preflight.spec.ts` — *a discrepancy answers ONE and a preflight
+  that could not run answers THREE*
+- `checkout-currency.spec.ts` — *THE WIRING'S POSITIVE CONTROL: the same
+  arming step says CURRENT for a current checkout, and adds no finding*
+- `checkout-currency.spec.ts` — *THE SWEEP AT ARM TIME: the arming step
+  RUNS it, and names every checkout git reports*
+- `lane-lock.spec.ts` — *the DISPATCH STEP arms it — `brief.mjs
+  --write-fence` is the one event, and a widening is the same event
+  again*
+
+MEASURED AT THE BASE RATHER THAN ARGUED: the same three spec files run
+in a detached bench at `81bcd228258c3cdb3cf62f37a6ff9eb2f8cd797e` — this
+lane's base, carrying no diff of mine at all — red the SAME FOUR bodies
+and pass 78. This is the `guard-surface-behind` class docs/STATE.md
+names: a lane cut before a guard merges reds four bodies on its own
+guard surface. None of the four is in this fence, none reads the file
+this lane changed, and this lane's own spec is 58-for-58 in both places.
+
+### The drills — one side only, read back, restored by hash
+
+The live hook is read-only in this lane and outside this fence, so every
+mutation of it happened in a DETACHED scratch worktree cut from this
+lane's own commit, at `<scratchpad>/drill-T-215-s6`, removed afterwards.
+The scratch stem is the lane id, per the SCRATCH RULE.
+
+At `4fc67ed` (the first build commit):
+
+- **baseline** — the spec, unmutated, in the drill: 0, 58 passed.
+- **MUTANT A, the arm re-added** — `T-219-s3`'s arm spliced FIRST into
+  `carveOutFor`, byte-identical (`cmp` against the text extracted from
+  `f6aca05^`: exit 0, 230 bytes each side, both sides
+  `8281a7fc2a7fb77cf9b9fcbd6507ac1d41b73af77af1910bc33c7cbe64085c80`).
+  Read back with `git diff` before running. Result: **1 failed / 57
+  passed**, the failure being the new body, naming both halves —
+  *the domain is `docs/tasks/T-901-…` and the unfenceable arm's is
+  `docs/tasks`* and *the reason is "it is T-901's own card file, …"*.
+- **MUTANT B, the control plants nothing** — `${OWN_FILE_ARM}` in the
+  control's plant replaced by `${""}`, one side only. Result: **1 failed
+  / 57 passed**, the failure being the CONTROL, at its own anti-vacuity
+  line: *the arm did not land in the copy, so this control proves
+  nothing*, expected 1 received 0. The control is therefore shown
+  CAPABLE OF FAILING against an arrangement lacking the property.
+
+Re-run at the tip `74998a0`, with two finer mutants added:
+
+- **MUTANT A** (arm re-added) — **1 failed / 57 passed**, the new body.
+- **MUTANT D** (the domain half alone) — the `alwaysWritable` arm made to
+  return `{ domain: rel, … }`, the reason untouched: **1 failed / 57
+  passed**, the new body. The DOMAIN half is this body's alone.
+- **MUTANT C** (the reason half alone) — the `alwaysWritable` arm's `why`
+  replaced: **2 failed / 56 passed** — the new body AND *the carve-outs
+  each free a DIFFERENT write*, which already asserts that sentence by
+  `toContain` for another card through `decide`. Recorded rather than
+  hidden: the REASON half is shared coverage, the DOMAIN half and the
+  ARM identity are not, and A and D each have a kill set of exactly one
+  body.
+- **MUTANT B** (the control plants nothing) — **1 failed / 57 passed**,
+  the control. Its kill set and the subject's are disjoint, which is
+  what the DELTA assertion buys.
+
+RESTORATION, by `git restore --source=<the drill's own commit> --staged
+--worktree` and proved by sha256 after every mutant:
+
+- `.claude/hooks/lane-fence.mjs` —
+  `5e309398e9f236cdd3e4a90e700164e9735cefe158f05426097dce2d1e065d24`,
+  equal to `git show 74998a0:.claude/hooks/lane-fence.mjs | shasum -a
+  256`, and equal to the file in this lane, which was never written to.
+- `tools/e2e/tests/lane-fence.spec.ts` —
+  `ea9077c9479190af5aaf95ca666efcde96cea756d1daac9fa80b8e27580795e9`,
+  equal to `git show 74998a0:…` and to this lane's own file.
+- The drill worktree was then removed (`git worktree remove --force`)
+  and pruned; `git worktree list` no longer names it.
+
+### For the verifier
+
+- The census `docs/CAPABILITIES.md` is STALE by two sentences — this
+  lane adds two test names and `docs/CAPABILITIES.md` is read-only to it
+  (T-210, T-201). **The regeneration is the INTEGRATOR'S, in the merge
+  commit**: `npm run capabilities` from `tools/e2e/`.
+- The bench that measured this lane's base is gone with the drill; it is
+  reproducible in one command from the hashes above.
+- Nothing was routed as `status: suggested`: every acceptance criterion
+  fitted inside `tools/e2e/tests/lane-fence.spec.ts`.
+
+### Where the brief was wrong
+
+1. **The card's path.** The dispatch message named
+   `…-rather-than-an-own-file-arm.md`; the file on disk is
+   `…-rather-than-a-re-added-own-file-arm.md`, which is also what the
+   assembled brief's row 2 carries. The repository wins.
+2. **"tools/e2e npm ci already done in this lane".** It was not, and
+   neither was `app/`: this worktree had `node_modules` only under
+   `lib/parser/` (its `dist/` was present). Both installs and the app
+   build were run here, in the fresh-clone ORDER.
+3. **The brief's row 4 base commit** reads
+   `6cc38909ab24c9c5c06b4e23a0fa11424662a038`; this worktree's HEAD at
+   dispatch was `81bcd228258c3cdb3cf62f37a6ff9eb2f8cd797e`, which is
+   what every figure above is measured against. T-233's known defect,
+   and the dispatch message says so.
+4. **Row 10's live environment had already moved when this lane
+   started**, which is what row 10's own rule predicts: `main` was
+   `81bcd22` at assembly and `763548c` when the forecast was derived,
+   and the worktrees for `T-229-s6`, `T-238` and `drill-T-237-s3` that
+   the brief lists are gone. Live facts, re-read rather than trusted.
+5. **`docs/tasks/T-219-s5-*.md` does not exist** at this base — it was
+   absorbed into `T-215-s1` — so it is cited here as an id and never as
+   a file.
