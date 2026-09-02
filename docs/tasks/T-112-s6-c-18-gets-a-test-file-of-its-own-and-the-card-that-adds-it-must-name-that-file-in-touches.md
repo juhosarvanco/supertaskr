@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: building
 blocked_by: []
-touches: [app-board, app/test/board-root.test.tsx]
+touches: [app-board, docs/architecture/components/C-18-board-root.md, app/test/board-root.test.tsx]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FORMAT's "a criterion that cannot be built inside the fence is recorded and routed"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
