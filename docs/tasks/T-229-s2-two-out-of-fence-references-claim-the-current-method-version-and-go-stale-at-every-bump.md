@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: planned
+status: done
 suggested_by: executor claude-opus-5@subagent @T-229
 blocked_by: []
 touches: [docs/ARCHITECTURE.md, docs/architecture/components/C-01-method.md]
 builder:
 verifier:
-built_by:
-verified_by:
+built_by: the architect/integrator seat, claude-fable-5-1
+verified_by: the same seat — a two-word reconciling write, read back by grep
 review:
 ---
 
@@ -62,3 +62,12 @@ the integration checkout makes the two one-word edits in the next
 checkpoint commit and closes this card there, naming the bump they
 follow. The recurrence at every bump is the CONVENTIONS gotcha's own
 routing rule, kept.
+
+## CLOSED, 2026-09-02 — by the integrator's reconciling write
+
+Both references now read v0.1.9 (docs/ARCHITECTURE.md line 28,
+docs/architecture/components/C-01-method.md line 9), following the bump
+T-229 merged at d641846. `git grep 'v0\.1\.8'` over docs/ARCHITECTURE.md,
+docs/architecture/components/ and method/ returns nothing at this commit;
+kit.rs's own stamp is v0.1.9 and pinned by cargo test. The recurrence at
+every bump stays the CONVENTIONS gotcha's routing rule.
