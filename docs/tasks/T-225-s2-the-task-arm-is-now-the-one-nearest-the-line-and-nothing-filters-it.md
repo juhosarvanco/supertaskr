@@ -461,3 +461,39 @@ the gate section above was built on the RESOLVED tree with a scratch
 index (`git read-tree -m --aggressive`, one `update-index --cacheinfo`,
 `git write-tree`), which moves no ref and is a real tree rather than a
 proxy: `259e3ad`, 9 paths.
+
+### The four-suite battery, run LAST, with every red attributed at the base
+
+At tip `855db9b`, `node tools/e2e/scripts/gate-run.mjs <suite>` from the
+lane root:
+
+    parser  exit 0  bodies=363   GREEN
+    app     exit 0  bodies=1141  GREEN
+    rust    exit 0  bodies=639   GREEN
+    e2e     exit 1  bodies=607   RED — 1 failed, 606 passed
+
+**THE E2E TOKEN IS RED AND THE RED IS NOT THIS DIFF'S.** The failing body
+is `tests/push-guard.spec.ts` *"a lane holds no seat, so a holder record
+in one refuses nothing"*, on its own positive control. Attributed by
+NAME and by measurement rather than by count:
+
+    ref       what ran                             that body
+    855db9b   the whole e2e suite                  FAILED
+    855db9b   the whole e2e suite, re-run          FAILED
+    855db9b   push-guard + session-economics only  PASSED (86 passed)
+    09526da   push-guard + session-economics only  PASSED (86 passed)
+    09526da   the whole e2e suite, DIFF ABSENT     FAILED — 603 passed
+
+The base row was measured in a detached worktree at `09526da` in the same
+window. **The same body reds with this lane's work absent**, so it is a
+property of the suite's load; filed as `T-225-s14` with the hypothesis
+and what a fix would decide. `push-guard.spec.ts` imports nothing from
+this fence.
+
+**AND TWO EARLIER REDS WENT AWAY WHILE I WATCHED, WHICH IS THE SAME
+CLASS.** The first battery at this tip also reddened
+`session-economics.spec.ts` twice, both naming their own cause: *"T-216-s8
+holds a worktree ... and no live card declares that id"*. That worktree
+belonged to another seat and was removed during the sitting; both bodies
+then passed at the base AND at this tip, back to back, 86 of 86 each. A
+lane's battery is measured on a machine other lanes are moving.
