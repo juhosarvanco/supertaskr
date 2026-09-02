@@ -593,6 +593,30 @@ test("every run prints which claim classes it checked and which it cannot", asyn
     // DESIRABILITY IS RULED OUT BY NAME. The card's third criterion
     // says the tool judges none, and a reader has to be able to see it.
     expect(text).toContain("whether the work is still WANTED");
+    // AND THE `quotes` OMISSIONS ARE PINNED AS LITERALS (T-230-s3). The
+    // loop above is PARAMETRISED BY THE VERY STRING IT CHECKS, so it
+    // passes for any value the table holds — the empty one included —
+    // which is docs/CONVENTIONS.md's A TEST PARAMETRISED BY THE CONSTANT
+    // IT CHECKS CANNOT PIN THAT CONSTANT, exactly. A disclosure that can
+    // go silent without a red is not a disclosure, so the four clauses
+    // this arm's blind spots rest on are asserted against literals here
+    // and the loop keeps the cardinality.
+    expect(text, "the frontmatter DIRECTION stopped being disclosed").toContain(
+      "a MARKER is taken from the BODY's prose alone",
+    );
+    expect(text, "the frontmatter SCALAR scope stopped being disclosed").toContain(
+      "frontmatter's SCALAR values ARE scanned for unmarked quoted runs",
+    );
+    expect(text, "the floor's own omission stopped being disclosed").toContain(
+      "shorter than the floor is COUNTED and not listed",
+    );
+    // THE HARD WRAP IS A LIMIT THIS CARD DID NOT REPAIR, and stating it
+    // is what keeps the two unmarked counts from reading as a closed
+    // census: the needle class stops at a newline, so a run spanning the
+    // repository's own seventy-column wrap is invisible to both halves.
+    expect(text, "the hard-wrap omission stopped being disclosed").toContain(
+      "SPANS this repository's hard wrap is read by NEITHER half",
+    );
   }
 });
 

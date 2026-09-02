@@ -202,7 +202,10 @@ export const CLAIM_CLASSES = Object.freeze([
       "frontmatter field is reported as a SIGHTING and is never read as a claim, while the " +
       "frontmatter's SCALAR values ARE scanned for unmarked quoted runs — one field at a time, " +
       "with YAML's own quoting unwrapped first — and its LIST values are not scanned at all. A " +
-      "quoted run shorter than the floor is COUNTED and not listed",
+      "quoted run shorter than the floor is COUNTED and not listed; and a quoted run that SPANS " +
+      "this repository's hard wrap is read by NEITHER half, because the needle stops at a " +
+      "newline — so the unmarked numbers count the runs that open and close on ONE LINE and are " +
+      "not the whole census",
   },
 ]);
 
