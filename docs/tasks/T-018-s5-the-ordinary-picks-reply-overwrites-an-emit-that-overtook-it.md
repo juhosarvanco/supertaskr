@@ -375,3 +375,189 @@ answers do not move when this notes commit lands.
   before a guard merged (`card-preflight`, `checkout-currency` ×2,
   `lane-lock`) were **all green here** — see "where the brief was wrong"
   in the report.
+
+## VERDICT
+
+**APPROVED** — 2026-09-02, verifier `claude-opus-5@subagent`, seat
+`V-T-018-s5`, bench `/Users/ujju/Projects/nputer-V-T-018-s5`.
+**Tip judged: `943731dfb53fb3ebc4e1500a0bc63c23942497f7`** (code commit
+`668d7f2`), base `43e0fe8`. Every figure below was measured in this bench;
+figures carrying a ref were measured at that ref and nowhere else.
+
+### Blindness: CLOCK-SHAPED, and phase 1 was sealed by hash before the diff existed
+
+Phase 1 reached this seat before the lane's work existed
+(`method/roles/orchestrator.md` 5c, the preferred shape). The attack set
+and the ground truth were written from the card at `43e0fe8` and sealed
+at **2026-09-02T03:48:37Z**:
+
+    attack-V-T-018-s5.md  8bdaae0945e79be590895c2fc4ccbf11ce8bb84256111e78e2b6b6bbd96bbea8
+    ground-V-T-018-s5.md  fd1c37c1787699c18d2663c18de0fd82ad0902f541d41e877cddee4f2b57ac29
+    stamps-V-T-018-s5.txt 48749ef929d49d12aa5648590fd082fef60292f1b2973206df72434c207ddb10
+
+Corroboration rather than assertion: a `git worktree list` run for bench
+hygiene at seal time showed `/Users/ujju/Projects/nputer-T-018-s5` still
+sitting at `43e0fe8`. No branch was fetched and no lane file opened
+before the seal.
+
+**DISCLOSED, because the rule requires it rather than because it cost
+anything:** the PHASE 2 message carried the executor's own summary —
+the predicate's shape, the mutant numbering, suite counts. It arrived
+**after** the seal, so it could not shape the attack set; and every claim
+in it was re-measured here rather than taken as read. Where the two
+disagree, this verdict reports what this bench measured.
+
+### The finding phase 1 pre-committed, and what the lane did with it
+
+The sealed ground truth recorded that **this card is satisfiable
+word-by-word by a change that does nothing**: the TRIAGE `WHEN` clause
+and criterion 1's closing phrase name the interleaving `reduceDocs`
+already handles, because `same projectDir && snapshot.seq <= prev.seq` is
+a **strict subset** of `reduceDocs`'s own first line (`:383`). Measured at
+`43e0fe8` before any diff existed:
+
+| Probe at `43e0fe8` | Result |
+|---|---|
+| emit `seq 5`/3 files/`gen 2000`, then reply `seq 6`/1 file/`gen 1000` | `seq 6`, `fileCount 1`, identity lost — **the defect** |
+| emit `seq 6`, then reply `seq 5` | `seq 6`, `fileCount 3`, identity kept — **already safe** |
+| `genesisSwitchIsOvertaken` asked about the broken pair | **`false`** — the old predicate does not fire on it |
+
+The lane reached the same reading independently, took the non-vacuous
+door, and **left the erroneous `WHEN` clause standing with a dated
+correction beside it naming the architect seat's error** rather than
+editing it away. Two blind seats converging on the same defect in the
+card is the strongest evidence in this pass that neither was reading the
+other.
+
+### The attack set, run
+
+- **Vacuous guard — DEFEATED.** The new clause
+  `reading.generatedAtMs !== null && reading.generatedAtMs < prev.generatedAtMs`
+  is the non-vacuous half. Replacing it with `return false` reds both new
+  bodies and **no genesis body**, so it is load-bearing and it does not
+  reach the genesis path under existing fixtures.
+- **Criterion 3's demonstration — RUN BY THIS SEAT, not read.** Reverting
+  only the `"picked"` call site to the unguarded
+  `reduceDocs(prev.docs, outcome.snapshot)` (mutant landing read from
+  `git diff`, `1 3`) reds body 2:
+  `AssertionError: identity: nothing was rebuilt: expected { seq: 6, …(10) } to be { seq: 5, …(10) }`
+  — byte-for-byte the overwrite the phase-1 ground truth measured at the
+  base. `1 failed | 41 passed`.
+- **Copy versus reuse — SETTLED MECHANICALLY, which no behavioural body
+  can do.** Mutating the ONE shared expression (`reading.seq <= prev.seq`
+  → `<`) kills a genesis body **and** a picked body in the same run
+  (`2 failed | 40 passed`). One mutation cannot kill bodies on both
+  branches unless both route through that expression. Corroborated
+  independently by the graph: `index --check` reports exactly one added
+  call edge, `reducePickOutcome -> switchIsOvertaken`, and one removed.
+  `grep` finds one site spelling the rule. The lane's own M7 (the rule
+  copied inline, GREEN) is disclosed correctly as a drill that could not
+  red; criterion 2 is structural and the diff is what enforces it.
+- **The DATA mutant — the property lives in the fixture, so the mutant
+  is a data mutant** (2b, `T-221`). Making the body's clock monotone with
+  `seq` (`REPLY_FINISHED` moved above `EMIT_FINISHED`) reds **both** new
+  bodies. The fixture's independent clock is load-bearing; the file-wide
+  `payload` helper (`generatedAtMs = base + seq`) could not have
+  expressed this pair at all, and the lane's `read()` helper says so in
+  its own comment.
+- **Kill-set containment, from THIS seat's mutants.** Predicate body dies
+  to {shared-expression, data, clock-clause}; body 2 dies to
+  {call-site, data, clock-clause}. The shared-expression mutant kills only
+  the first and the call-site mutant only the second, so **neither set
+  contains the other** — both load-bearing, neither a restatement. Every
+  kill landed at the predicate or the `"picked"` branch: the site the
+  property lives.
+- **Over-broad guard — CLEAR.** A genuinely later reply (`seq 6`,
+  `gen 3000` over `gen 2000`) still applies: `fileCount 1`, `seq 6`.
+- **Cross-project stranding — CLEAR, and this was the worst degenerate
+  fix available.** A `generatedAtMs`-only rule without the `projectDir`
+  conjunct would keep the OLD project's model behind a newly opened one.
+  Driven here with `prev.gen 9999` against `reply.gen 1` for a different
+  folder: switches correctly to `/projects/other`, `fileCount 1`,
+  `seq 6`, no ghost.
+- **Watermark — CLEAR.** After the guard fires, `seq` stays at the emit's
+  5, and the reply's 6 was never burned: a following emit at `seq 6`
+  lands with its 7 files. The `Math.max` idiom that is right on the
+  genesis snapshot-less branch was correctly NOT copied here.
+- **Echo duplication — CLEAR.** The branch returns `prev.docs` by
+  identity, so `commitPickOutcome`'s `next.docs !== before.docs` is false
+  and no second `model-updated` is emitted for a model the emit already
+  echoed. The body asserts identity with `toBe`, not `toEqual`.
+- **Genesis regression — CLEAR.** The five T-064 bodies are green,
+  **unedited except for the rename**; no expected value moved. The
+  snapshot-less path is bit-identical to the pre-fix answer, because
+  `generatedAtMs: null` short-circuits the new clause — driven directly:
+  a snapshot-less switch at `seq 6` against `prev.gen 9000` still answers
+  `false`.
+- **Fence — CLEAR.** `git diff --name-status 43e0fe8..943731d` names
+  exactly the two `touches` paths, this card, and one `status: suggested`
+  filing. `docs/CAPABILITIES.md` untouched, correctly: an app-side vitest
+  body moves no e2e spec name.
+- **Security sweep — CLEAR.** No dependency or lockfile change, no
+  `as any` / `as unknown` / `@ts-ignore` / non-null assertion added, no
+  secret, no URL, no new IPC or input path. One new export
+  (`switchIsOvertaken`); `SwitchReading` stays module-private. The
+  signature is a narrow `Extract` of the two variants, so `cancelled` and
+  `busy` remain uncallable.
+
+### Gates, at the tip judged (`943731d`)
+
+| Gate | Result |
+|---|---|
+| `npm run build` from `app/` | **0** — both tsc programs (`tsconfig.json` + `tsconfig.test.json`, the T-073 write-surface gate) |
+| `npm test` from `app/` | **0 — 50 files, 1135 tests, 0 failed** (baseline at `43e0fe8` was 50 / 1131; +4 is this card's four bodies) |
+| `docs-gate.mjs` on the four changed paths | **1 — FIRES**, correctly: two cards are code inputs. *"every live task card's frontmatter parses, with a legal status."* |
+| `index --check --root ../..` from `app/src-tauri/` | **1 — STALE, and REAL** (both counts and a `~` file diff printed, not the `committed: MISSING` false-red shape) |
+
+**THE STALE GRAPH IS THE INTEGRATOR'S, NOT A LANE DEFECT**, and it is
+stale by *exactly* the rename plus the new type — `files +0 -0 ~2`,
+`symbols 2501 -> 2502`, `edges +5 -4`, every added edge naming
+`switchIsOvertaken` and every removed one `genesisSwitchIsOvertaken`.
+CONVENTIONS' GRAPH REGEN rule puts regeneration in the merge commit, the
+same owner as the capabilities census. **Nothing else moved**, which is
+what makes it safe to hand on.
+
+### Findings that are NOT failures (step 6 — never blocking)
+
+1. **Two stale cross-language citations.** `app/src-tauri/src/docs_watch.rs`
+   still names the frontend predicate by its dead name at **`:2635`** and
+   **`:4357`** — the second inside the doc comment of
+   `the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`,
+   the very body that pins this design. Outside this card's `touches`, so
+   the lane could not have fixed it; the lane's own sweep scoped its grep
+   to `app/src app/test` and so did not see it. Comment-only, moves no
+   gate. Deliberately NOT minted as a card for two comment lines — the
+   integrator is already writing in the merge commit and can fold it in
+   or file it.
+2. **The strict `<` on the clock is a narrowing, not a closure**, and the
+   lane states this rather than leaving it to be found: two collections
+   finishing inside one millisecond are unordered, so `seq` decides and
+   the reply applies. That is the safe direction (apply rather than
+   drop), it is what keeps a fixture stamping one constant clock from
+   reading as an overtake, and it is pinned by its own body. The
+   wall-clock backwards-step residual is disclosed in the same comment.
+3. **`T-018-s6` is the right filing and the sweep that produced it is
+   sound.** The mirror hole — the emit path and the startup
+   `docs_snapshot` pull still deciding on `seq` alone in `reduceDocs`,
+   `applyDocsPayload`, `applyProjectStatus` and `applySnapshot` — is real,
+   is out of this fence, and would have needed `docs-model.ts`. The sweep
+   also names `reduceGenesisEvent` (`agent-store.ts:378`) as correct as
+   written so the next sweep does not re-open it. Its frontmatter parses
+   with a legal `status: suggested` and a one-level suffix id.
+
+### Why APPROVED
+
+The card asked for three things. **One predicate serving both branches**
+— delivered as a genuine reuse, proved by a single mutation killing
+bodies on both branches, not by reading the source. **Never move the
+watermark backwards or past a newer emit** — driven and measured, in both
+directions. **A body driving a real overtaking pair, shown red against
+the unguarded branch** — the pair is the runner's own interleaving with
+the two Rust stamps free to disagree, and this seat reproduced the red
+itself rather than accepting the record of it.
+
+The fix also survives the attack the card did not ask about and that a
+narrower reading would have failed: it is not vacuous, and the reason it
+is not is that it keys on `generatedAtMs` — the stamp that dates a
+reading's content — instead of transcribing a `seq` rule that
+`reduceDocs` already enforces.
