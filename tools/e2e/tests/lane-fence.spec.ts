@@ -482,13 +482,15 @@ test("a manifest the hook cannot read is a refusal, never a shrug", async () => 
     ["not an object", "[]"],
     ["a version this reader does not know", JSON.stringify({ version: MANIFEST_VERSION + 1 })],
     ["missing a field", JSON.stringify({ version: MANIFEST_VERSION, taskId: FIXTURE_ID })],
-    // `excluded` joined the fields this reader requires at T-154-s2: the
-    // lane-less arm carves a card's own file out of a fence it does not
-    // hold, and it can only do that from a manifest that carries the
-    // carve-out. The writer has stamped it since T-154; requiring it is
-    // the reader catching up with the schema, not a new demand.
+    // `excluded` joined the fields this reader requires at T-154-s2 for
+    // the lane-less arm's own-card carve-out, and since T-219-s3 removed
+    // that arm it is a SHAPE check and nothing reads the field: a
+    // manifest missing it was written by a writer older than T-154-s2,
+    // and a reader that guesses at an unknown shape under-reserves. The
+    // writer has stamped it since T-154; requiring it is the reader
+    // holding the schema, not a new demand.
     [
-      "missing the excluded field the carve-outs are read from",
+      "missing the excluded field this reader requires of a manifest's SHAPE",
       JSON.stringify({
         version: MANIFEST_VERSION,
         taskId: FIXTURE_ID,
@@ -1025,18 +1027,16 @@ test("the carve-outs each free a DIFFERENT write, and the fence still holds arou
   // in the repository positioned to notice, so it is asserted rather
   // than left to be discovered.
   //
-  // `carveOutFor`'s FIRST arm answers for a lane's own card file, and
-  // the seat branch consults it only for a path some live lane's
-  // manifest RESERVES. A card file is reserved only by a domain that
-  // contains `docs/tasks` — the fence T-219 refuses — and `expandFence`
-  // moves a card's own file out of `paths` into `excluded` regardless.
-  // So after T-219 no manifest can select that arm, and the write falls
-  // through to `not-a-lane`. The hook's own header ordered that arm
-  // first to avoid exactly this ("an arm no write can select is an arm
-  // no mutation can kill"); the ordering is fine and the REACHABILITY
-  // moved under it. `.claude/hooks/lane-fence.mjs` is outside this
-  // lane's fence, so the arm is ROUTED as `T-219-s3` rather than
-  // touched here, and this assertion is what will red when it is fixed.
+  // `carveOutFor` USED TO ANSWER for a lane's own card file in a first
+  // arm, and the seat branch consults it only for a path some live
+  // lane's manifest RESERVES. A card file is reserved only by a domain
+  // that contains `docs/tasks` — the fence T-219 refuses — and
+  // `expandFence` moves a card's own file out of `paths` into `excluded`
+  // regardless. So after T-219 no manifest could select that arm, and
+  // T-219-s3 REMOVED it rather than making it reachable; the write falls
+  // through to `not-a-lane` either way, which is why this assertion
+  // never redded. It is therefore the permanent PIN on that answer, not
+  // a promise about a fix: a re-added own-file arm is what it catches.
   const ownCard = ask(fx.repo, path.join(fx.repo, FIXTURE_CARD));
   expect(ownCard.verdict, ownCard.reason).toBe("allow");
   expect(ownCard.code, "the own-card carve-out arm became reachable again — see T-219-s3").toBe(

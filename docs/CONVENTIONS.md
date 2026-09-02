@@ -1138,8 +1138,10 @@ and T-236 (2026-09-02, whose pre-compaction text is
     administration with no subprocess. **THE CARVE-OUTS ARE CRITERIA AND
     NEVER THE HOOK'S JUDGEMENT**: `docs/tasks/` stays unfenceable (every
     manifest carries it as `alwaysWritable`, so the dispatch and closing
-    stamps are safe), a card's own file is outside every fence (its
-    `excluded`), and this seat's own standing writes are never a lane's
+    stamps are safe), a card's own file is outside every fence —
+    `expandFence`'s subtraction at dispatch and never an arm at the
+    write, since `T-219-s3` removed the one no manifest could select —
+    and this seat's own standing writes are never a lane's
     to veto — exactly `docs/STATE.md` and `docs/checkpoints`, no more.
     ONE CRITERION IS THE HOOK'S OWN: a checkout git records as
     mid-merge, mid-rebase, mid-revert or mid-cherry-pick is free,
