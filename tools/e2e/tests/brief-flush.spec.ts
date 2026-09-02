@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
-import { unstampedLines } from "../scripts/dispatch-brief.mjs";
+import { EXIT, unstampedLines } from "../scripts/dispatch-brief.mjs";
 
 /**
  * THE BRIEF REACHES A PIPE WHOLE (T-197) — no browser.
@@ -621,12 +621,167 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
  */
 const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
   { label: "--dispatch", args: ["--dispatch"] },
+  // THE TWO ARMS THIS LIST DID NOT CARRY, AND BOTH ARE PAST THE LINE
+  // (T-225-s2, taking `T-225-s7` and this card's own CORROBORATION).
+  // `--dispatch --full` is the BIGGEST invocation there is — 105,917
+  // bytes at `09526da`, about 162% of one pipe buffer — and since T-225
+  // it is the TRIAGE view, so the arm most likely to meet a ceiling was
+  // the one the guard never mentioned. `--task <id> --preflight` is the
+  // dispatch ritual's own step and was 83,080 bytes at the same ref.
+  { label: "--dispatch --full", args: ["--dispatch", "--full"] },
   { label: "--task T-133 --state --full", args: ["--task", "T-133", "--state", "--full"] },
   { label: "--task T-133 --state", args: ["--task", "T-133", "--state"] },
   { label: "--task T-133", args: ["--task", "T-133"] },
+  { label: "--task T-133 --preflight", args: ["--task", "T-133", "--preflight"] },
   { label: "--state", args: ["--state"] },
   { label: "--card T-133", args: ["--card", "T-133"] },
 ];
+
+/**
+ * THE FLAGS THAT ARE NOT AN ARM OF THEIR OWN, EACH ARGUED (T-225-s2,
+ * taking `T-225-s7`).
+ *
+ * **THE LIST ABOVE WAS HAND-KEPT AND NOTHING COMPARED IT TO THE COMMAND**,
+ * which is how the biggest invocation there is went six cards without
+ * being announced. The body below closes that by DERIVING `brief.mjs`'s
+ * own flag set from its own frozen `FLAGS` literal and requiring every
+ * flag to be either exercised by an arm above or excluded HERE with a
+ * reason — so a NEW flag reds this file by name rather than joining a
+ * list nobody re-opens. The standing preference on `T-225-s7` was exactly
+ * this: derived, so a seventh arm cannot be forgotten again.
+ *
+ * A COMBINATORIAL SWEEP IS REFUSED IN WRITING: eight read flags are 256
+ * invocations of a command that takes seconds, and the guard's subject is
+ * what this repository READS, not what its parser accepts.
+ *
+ * **AND THE RESIDUAL IS STATED, BECAUSE A GUARD BELIEVED WIDER THAN IT IS
+ * IS WORSE THAN NO GUARD.** This derivation catches a FLAG that nothing
+ * announces. It does NOT catch a missing COMBINATION of flags that are
+ * each announced somewhere else — dropping `--dispatch --full` from the
+ * list above leaves both `--dispatch` and `--full` covered by other arms,
+ * and this body stays green. **That exact hole is closed by the margin
+ * guard itself and not here**: it measures every arm, so it asks which
+ * one is BIGGEST and requires that arm to be a `--full` arm — a question
+ * this body has no sizes to ask. Deriving the whole combination set is
+ * routed rather than built.
+ */
+const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
+  {
+    flag: "--role",
+    why: "a MODIFIER of --task: it chooses which role file the rows are read against. It moves the answer by the length of one contract table, never its shape, and the arms above already drive the default role.",
+  },
+  {
+    flag: "--root",
+    why: "a MODIFIER: which checkout to derive in. The size it produces is the size of whatever tree it is pointed at, so an arm here would measure that tree rather than this command.",
+  },
+  {
+    flag: "--audit",
+    why: "takes a PATH, so its size is a function of the file it is handed and not of this repository. Bodies ONE and FOUR above drive exactly that arm, at a size they SYNTHESISE, which is the whole reason they are deterministic.",
+  },
+  {
+    flag: "--write-fence",
+    why: "a WRITER. It leaves a manifest in a lane worktree, and a guard that measured it would be a suite arming a lane every time it ran.",
+  },
+  {
+    flag: "--take-seat",
+    why: "a WRITER: it records the holder of the integration checkout. A suite that took the seat would take it from whoever holds it.",
+  },
+  {
+    flag: "--release-seat",
+    why: "a WRITER, and the more dangerous half — it REMOVES a holder record, which is somebody else's declaration.",
+  },
+  {
+    flag: "--help",
+    why: "one line, and it is the usage string rather than a derivation; `brief.spec.ts` pins its exit.",
+  },
+];
+
+/**
+ * `brief.mjs`'s own flag set, read out of its frozen `FLAGS` literal.
+ *
+ * IT IS A TEXT DERIVATION AND NOT AN IMPORT, DELIBERATELY: execution lives
+ * in that wrapper rather than in the module beside it (the lint-tokens
+ * shape), so importing it to read one constant would RUN the command
+ * inside this suite. The literal is frozen and one line per flag, and a
+ * shape this reader cannot parse is a hard failure rather than an empty
+ * expectation — an empty flag set would make the coverage below vacuous
+ * in the direction it exists to prevent.
+ */
+function declaredFlags(): string[] {
+  const src = readFileSync(CLI, "utf8");
+  const block = /const FLAGS = Object\.freeze\(\[([\s\S]*?)\]\);/.exec(src);
+  if (block === null) {
+    throw new Error(
+      "brief-flush: brief.mjs no longer carries a frozen `FLAGS` literal this reader can find, " +
+        "so the arm list below is hand-kept again with nothing comparing it to the command. " +
+        "Move this derivation with the constant rather than deleting the check.",
+    );
+  }
+  const flags = [...(/** @type {string} */ (block[1]) ?? "").matchAll(/"(--[a-z-]+)"/g)].map(
+    (m) => m[1] as string,
+  );
+  if (flags.length === 0) {
+    throw new Error("brief-flush: the FLAGS literal parsed to zero flags, which cannot be right");
+  }
+  return flags;
+}
+
+test("THE ARM LIST IS COMPARED TO THE COMMAND'S OWN FLAGS, so a flag nothing announces reds by name", () => {
+  // KILLED BY: dropping an arm from LIVE_ARMS without arguing its flag
+  // into NOT_AN_ARM, or by adding a flag to brief.mjs and announcing
+  // nothing — which is exactly how `--dispatch --full`, the biggest
+  // invocation there is and the project's TRIAGE view since T-225, went
+  // unmentioned by the guard that exists to announce approaches.
+  const declared = declaredFlags();
+  const exercised = new Set(LIVE_ARMS.flatMap((a) => a.args).filter((a) => a.startsWith("--")));
+  const excused = new Map(NOT_AN_ARM.map((e) => [e.flag, e.why]));
+
+  const unannounced = declared.filter((f) => !exercised.has(f) && !excused.has(f));
+  expect(
+    unannounced,
+    "brief.mjs accepts a flag that no arm above announces and no entry below excuses — the arm " +
+      "list is a hand-kept enumeration and this is the stale-enumeration failure this project " +
+      "has paid for before. Add an arm, or argue the flag into NOT_AN_ARM with a reason.",
+  ).toEqual([]);
+
+  // AND THE EXCUSES ARE CHECKED IN THE OTHER DIRECTION TOO: an entry for
+  // a flag the command no longer has is a reason nobody can act on, and
+  // an entry for a flag an arm DOES drive is a contradiction.
+  expect(
+    NOT_AN_ARM.map((e) => e.flag).filter((f) => !declared.includes(f)),
+    "an excused flag is not one this command accepts any more",
+  ).toEqual([]);
+  expect(
+    NOT_AN_ARM.map((e) => e.flag).filter((f) => exercised.has(f)),
+    "a flag is excused from the arm list and driven by an arm at the same time",
+  ).toEqual([]);
+  for (const e of NOT_AN_ARM) {
+    expect(e.why.length, `${e.flag} is excused with no reason`).toBeGreaterThan(40);
+  }
+
+  /**
+   * THE POSITIVE CONTROL. A coverage check that has only ever seen a
+   * covered set cannot be told from one that decides nothing, and the
+   * ZERO it reports is exactly what a finished job looks like
+   * (`docs/CONVENTIONS.md`, A NEGATIVE ASSERTION NEEDS A POSITIVE
+   * CONTROL, and its census clause). So the same comparison is run
+   * against a flag this command does not have.
+   */
+  const planted = [...declared, "--a-flag-nobody-announced"].filter(
+    (f) => !exercised.has(f) && !excused.has(f),
+  );
+  expect(
+    planted,
+    "the coverage comparison accepted a flag that is in neither list, so its empty answer above " +
+      "proves nothing",
+  ).toEqual(["--a-flag-nobody-announced"]);
+
+  disclose(
+    "brief-flush ARM COVERAGE",
+    `${declared.length} flags declared by brief.mjs; ${exercised.size} exercised by ` +
+      `${LIVE_ARMS.length} announced arms; ${excused.size} excused with a reason.`,
+  );
+});
 
 test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader", () => {
   // KILLED BY: restoring `process.exit(code)` — every arm whose live size
@@ -670,9 +825,20 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
      * guard exists for is an approach nobody could see.
      */
     let past = 0;
+    const measured = new Map<string, number>();
     for (const arm of LIVE_ARMS) {
       const argv = [CLI, ...arm.args];
       const whole = readViaFile(argv, sc.dir);
+      measured.set(arm.label, whole.bytes);
+      // AN ARM THAT PRODUCED NOTHING PASSES EVERY COMPARISON BELOW, ON
+      // BOTH SIDES (poison SHAPE TEN). An arm that throws answers 0 bytes
+      // to the file destination and 0 to `spawnSync`, and the equality
+      // this guard rests on is then two absences agreeing.
+      expect(
+        whole.bytes,
+        `${arm.label}: the arm produced no answer at all, so every comparison below is two ` +
+          "absences agreeing rather than a measurement",
+      ).toBeGreaterThan(0);
       const margin = loss.arrived - whole.bytes;
       if (margin <= 0) past += 1;
       disclose(
@@ -687,20 +853,52 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
        * reader receives is what the file destination received.
        *
        * SIZE, NOT BYTES, AND THE REASON IS NAMED. Several of these arms
-       * carry LIVE provenance — `<- read <ISO timestamp> on <host>` —
-       * so two invocations are byte-identical only by luck of the
-       * clock. The byte-for-byte comparison lives in the body above, on
-       * the arm that stamps nothing live. If this fails with a small
-       * delta and no `process.exit` in `brief.mjs`, suspect the board
-       * moving between the two runs (a worktree added or removed) before
-       * suspecting the flush.
+       * carry LIVE provenance — `<- read <ISO timestamp> on <host>` — so
+       * two invocations are byte-identical only by luck of the clock. The
+       * byte-for-byte comparison lives in the body above, on the arm that
+       * stamps nothing live.
+       *
+       * ── AND THE BOARD IS A THIRD PARTY TO THIS COMPARISON (T-225-s2) ──
+       * The note here used to end *"suspect the board moving between the
+       * two runs before suspecting the flush"*, which tells a reader what
+       * to think about a red rather than keeping the red honest. It is a
+       * REAL red: measured in this lane's own four-suite battery at
+       * `adc5596`, `--task <id> --preflight` read 66,800 bytes to the file
+       * and 68,405 to `spawnSync` seconds later, because a sibling lane's
+       * worktree appeared between them and that arm's answer sweeps every
+       * checkout on the machine. **A body that reds when another seat cuts
+       * a worktree is a red on somebody else's work**, at `retries: 0`,
+       * carrying a message about a flush.
+       *
+       * SO THE PIPE READ IS BRACKETED, and only when it has to be: on a
+       * disagreement a SECOND file read is taken, and the pipe read must
+       * match one of the two file reads around it. A truncation matches
+       * NEITHER — it is one buffer, and both file reads are the whole
+       * answer — so the property this guard exists for is untouched, while
+       * a board that moved mid-arm is disclosed instead of blamed on the
+       * writer. The second read costs nothing on a quiet board because it
+       * is never taken there.
        */
       const viaSpawn = readViaSpawnSync(argv);
+      const accepted = [whole.bytes];
+      if (viaSpawn.bytes !== whole.bytes) {
+        const again = readViaFile(argv, sc.dir);
+        accepted.push(again.bytes);
+        disclose(
+          "brief-flush BOARD MOVED",
+          `${arm.label}: the file destination read ${whole.bytes} then ${again.bytes} bytes ` +
+            `around a pipe read of ${viaSpawn.bytes} — this arm's answer is a function of live ` +
+            "state that changed mid-arm, so the pipe read is bracketed rather than compared to " +
+            "one side of the move.",
+        );
+      }
       expect(
-        viaSpawn.bytes,
+        accepted,
         `${arm.label}: spawnSync received ${viaSpawn.bytes} bytes where the file destination ` +
-          `received ${whole.bytes}`,
-      ).toBe(whole.bytes);
+          `received ${accepted.join(" then ")} — the pipe read matches no file read taken ` +
+          "around it, which is what a truncation looks like and is not what a moving board " +
+          "looks like",
+      ).toContain(viaSpawn.bytes);
       expect(
         unstampedLines(viaSpawn.text.trimEnd()),
         `${arm.label}: a line arrived without its stamp, which is what a cut mid-line looks like`,
@@ -722,6 +920,253 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
             `this run — the SYNTHESISED body above is the one carrying the proof.`
         : `${past} of ${LIVE_ARMS.length} live arms are past the derived loss point, so this ` +
             `run exercises the flush on real input as well as on the synthesised input above.`,
+    );
+
+    /**
+     * AND THE MISSING `--full` TWIN IS CAUGHT HERE, WHERE THE SIZES ARE
+     * (T-225-s2, taking `T-225-s7`). The coverage body above derives the
+     * FLAG set and cannot see a missing COMBINATION of flags each covered
+     * elsewhere — which is exactly how `--dispatch --full` went
+     * unannounced while both `--dispatch` and `--full` were on the list.
+     *
+     * THIS BODY HAS WHAT THAT ONE LACKS: every arm's measured size.
+     * `--full` only ever ADDS to an answer, so if every announced view
+     * carried its `--full` twin the biggest arm measured would carry
+     * `--full` by construction. A biggest arm WITHOUT it names its own
+     * missing twin — a bigger invocation this list does not announce.
+     */
+    const biggest = [...LIVE_ARMS].sort(
+      (a, b) => (measured.get(b.label) ?? 0) - (measured.get(a.label) ?? 0),
+    )[0] as (typeof LIVE_ARMS)[number];
+    expect(
+      biggest.args.includes("--full"),
+      `the biggest arm measured this run is ${biggest.label} at ${measured.get(biggest.label)} ` +
+        "bytes and it does not carry --full — so its own --full twin is a LARGER invocation that " +
+        "this list does not announce, which is the stale-enumeration failure T-225-s7 was filed " +
+        "for. Announce that twin.",
+    ).toBe(true);
+  } finally {
+    sc.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * BODY FIVE — THE READER THAT STOPS, and the writer's own exit behind it
+ * (T-225-s2, taking `T-225-s6`).
+ *
+ * THE FOURTH READER SHAPE, AND THE ONE NONE OF THE THREE ABOVE COVERS.
+ * `readViaCatPipe` and `readViaFile` DRAIN; `readViaSlowPipe` pauses and
+ * then drains. All three take everything in the end. **A reader that
+ * takes ONE fixed-size read and STOPS never comes back** — `| head`, `|
+ * dd bs=65536 count=1`, a pager closed on the first screen — and it is
+ * the caller the margin block names as the owner of the 65,536-byte floor
+ * it prints on every run.
+ *
+ * THE READER'S SIDE IS THE PROPERTY AND IT IS ASSERTED. The cut is silent
+ * where it lands: at most one buffer arrives, the reader itself exits
+ * clean, and nothing on the reader's side says a word about the rest.
+ *
+ * **THE WRITER'S SIDE IS A RACE AND IS MEASURED RATHER THAN ASSERTED.**
+ * Whether the `EPIPE` from the closed pipe reaches the writer before it
+ * ends is timing: measured on the dispatching seat's bench at `09526da`
+ * over 40 runs of `--dispatch --full`, the writer ended non-zero in 3 of
+ * them, 1 of 30 quiet and 2 of 10 under eight-core load. **So the one
+ * fact a caller would reach for — "it exited 0, so nothing was cut" — is
+ * the unreliable one**, and this body asserts nothing about which side of
+ * that race a given run lands on. It DISCLOSES the spread instead, the
+ * way this file already discloses its reader spread rather than reporting
+ * an unqualified green.
+ *
+ * WHAT *IS* A PROPERTY ABOUT THE WRITER, AND IS THE FIX THIS CARD MADE:
+ * the non-zero may not be `EXIT.FOUND`. Until this card the closed pipe
+ * arrived as an UNCAUGHT `EPIPE` — a stack trace and exit 1 — which is
+ * the same code the command uses for *"I derived it and found something
+ * the repository disagrees with"*. Two answers the four-code contract
+ * exists to keep apart, arriving as one number. `brief.mjs` now maps a
+ * stdout `EPIPE` to `CANNOT_RUN`, whose own wording is *"this run is not
+ * a claim about the repository at all"* — which is exactly what a
+ * half-delivered answer is.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** A reader that takes ONE fixed read of `bytes` and stops: `dd`, exactly. */
+function readViaOneRead(
+  argv: string[],
+  dir: string,
+  cwd = repoRoot,
+): { bytes: number; writerStatus: number | null; readerStatus: number | null; writerErr: string } {
+  const stem = Math.random().toString(36).slice(2);
+  const out = path.join(dir, `one-${stem}.txt`);
+  const st = path.join(dir, `one-${stem}.status`);
+  const err = path.join(dir, `one-${stem}.err`);
+  const q = (s: string) => `'${s.replace(/'/g, "'\\''")}'`;
+  const left = [process.execPath, ...argv].map(q).join(" ");
+  const r = spawnSync(
+    "/bin/sh",
+    [
+      "-c",
+      `{ ${left} 2> ${q(err)}; echo $? > ${q(st)}; } | dd bs=${PIPE_BUFFER} count=1 ` +
+        `2>/dev/null > ${q(out)}`,
+    ],
+    { cwd, encoding: "utf8", maxBuffer: MAX_BUFFER },
+  );
+  const written = Number.parseInt(readFileSync(st, "utf8").trim(), 10);
+  return {
+    bytes: statSync(out).size,
+    writerStatus: Number.isInteger(written) ? written : null,
+    readerStatus: r.status,
+    writerErr: readFileSync(err, "utf8"),
+  };
+}
+
+/**
+ * THE CONTROL WRITER FOR THIS BODY: the same size, no `EPIPE` handling.
+ *
+ * It is what `brief.mjs` was before this card, reduced to its mechanism —
+ * a writer whose stdout `error` event has no listener, which node turns
+ * into an uncaught exception. It proves three things in one run: that the
+ * reader really does close the pipe under a writer of this size, that the
+ * harness can SEE a stack trace when one is printed, and that an unhandled
+ * `EPIPE` arrives as exit 1 — indistinguishable from a finding.
+ */
+function unhandledEpipeWriter(dir: string, want: number): string[] {
+  const file = path.join(dir, "unhandled-epipe-writer.mjs");
+  writeFileSync(
+    file,
+    "// No stdout error listener: node turns the EPIPE into an uncaught\n" +
+      "// 'error' event, which is a stack trace on stderr and exit 1.\n" +
+      `process.stdout.write("e".repeat(${want}) + "\\n");\nprocess.exitCode = 0;\n`,
+    "utf8",
+  );
+  return [file];
+}
+
+/** How many runs of the live arm the writer-exit spread is taken over. */
+const EXIT_SAMPLES = 5;
+
+/** Far past two buffers, so the writer CANNOT have finished before the close. */
+const CERTAIN_EPIPE_BYTES = 200_000;
+
+test("the reader that STOPS after one read gets a silent PREFIX, and the writer's own exit behind it is a RACE this body measures and does not assert", () => {
+  // KILLED BY: removing the stdout `EPIPE` handler from brief.mjs — the
+  // synthesised arm below then answers with a stack trace on stderr and
+  // exit 1, which is `EXIT.FOUND`. Also killed by a reader-side claim
+  // going false: more than one buffer arriving, or the reader itself
+  // failing.
+  const sc = scratch("one-read");
+  try {
+    /**
+     * THE CONTROL, FIRST AND AT A SIZE THAT REMOVES THE RACE. Two
+     * buffers is not enough — a reader that takes 65,536 bytes in one
+     * read empties the kernel buffer, and a writer with only a little
+     * left can push it and leave cleanly before the reader exits, which
+     * is exactly why the live arm's spread is 37-to-3 rather than 0-to-40.
+     * At three buffers the writer is still blocked when the pipe closes,
+     * so the `EPIPE` is a certainty rather than a coin toss and the
+     * control below is a control rather than a second sample of the race.
+     */
+    const control = readViaOneRead(unhandledEpipeWriter(sc.dir, CERTAIN_EPIPE_BYTES), sc.dir);
+    expect(
+      control.bytes,
+      "the one-read reader took more than the buffer it asked for from the control writer",
+    ).toBeLessThanOrEqual(PIPE_BUFFER);
+    expect(
+      control.writerErr,
+      "a writer with NO stdout error listener printed no EPIPE at all, so this reader is not " +
+        "closing the pipe under it and nothing below is a measurement of a closed pipe",
+    ).toContain("EPIPE");
+    expect(
+      control.writerStatus,
+      "an UNHANDLED EPIPE did not arrive as exit 1, so the collision with EXIT.FOUND this card " +
+        "removed is not what this machine does and the fix below is being credited for nothing",
+    ).toBe(1);
+
+    /**
+     * THE SAME SIZE, THE SAME READER, THROUGH THE COMMAND. `--audit`
+     * takes its input from a PATH, so this invocation's size is a
+     * function of a file this body writes and of nothing else — the
+     * synthesis bodies one and four already rely on, for the same reason.
+     */
+    const oversize = path.join(sc.dir, "synthesised-oversize.md");
+    writeFileSync(
+      oversize,
+      `# synthesised, so this body's size is not the board's\n\nfigure ${"x".repeat(
+        CERTAIN_EPIPE_BYTES,
+      )} <- @ deadbee ; a source this gate cannot re-run\n`,
+      "utf8",
+    );
+    const synth = [CLI, "--audit", oversize];
+    const whole = readViaFile(synth, sc.dir);
+    expect(
+      whole.bytes,
+      "the synthesised invocation is no longer past one pipe buffer, so this body proves nothing",
+    ).toBeGreaterThan(PIPE_BUFFER);
+
+    const cut = readViaOneRead(synth, sc.dir);
+    expect(cut.bytes, "one fixed read took more than the buffer it asked for").toBeLessThanOrEqual(
+      PIPE_BUFFER,
+    );
+    expect(
+      cut.bytes,
+      "the one-read reader received the whole answer, so nothing was cut and the silence below " +
+        "is the silence of a complete transfer",
+    ).toBeLessThan(whole.bytes);
+    expect(cut.readerStatus, "the fixed-buffer reader itself failed").toBe(0);
+
+    /**
+     * THE PROPERTY ABOUT THE WRITER — not which code it ends on, but
+     * which codes are REACHABLE. A closed pipe may leave this command at
+     * the status a whole read gives, or at `CANNOT_RUN`; it may not leave
+     * it at `FOUND`, because a caller reading that number would be told
+     * the repository disagrees with something when all that happened is
+     * that they closed the pipe.
+     *
+     * THE PERMITTED SET IS DERIVED FROM THIS RUN'S OWN WHOLE READ rather
+     * than typed, so a synthesis that changed what the arm finds moves
+     * the assertion with it instead of falsifying it.
+     */
+    const wholeStatus = whole.status;
+    expect(
+      [wholeStatus, EXIT.CANNOT_RUN],
+      `the writer ended on ${String(cut.writerStatus)} behind a reader that stopped — neither the ` +
+        `status of a whole read (${String(wholeStatus)}) nor CANNOT_RUN`,
+    ).toContain(cut.writerStatus);
+    expect(
+      cut.writerErr.includes("EPIPE"),
+      "the command printed an EPIPE stack trace at a closed pipe, which is the uncaught-error " +
+        "shape this card replaced with a deliberate exit",
+    ).toBe(false);
+
+    /**
+     * AND THE RACE ITSELF, ON THE ARM IT WAS FOUND ON, MEASURED AND
+     * ASSERTED NOWHERE. `--dispatch --full` is the biggest live arm and
+     * the project's triage view; its spread here is a fact about this
+     * machine at this moment, which is precisely why no body may pin it.
+     * Every sample is still held to the reachable-set property above.
+     */
+    const live = [CLI, "--dispatch", "--full"];
+    const liveWhole = readViaFile(live, sc.dir);
+    const spread: Array<number | null> = [];
+    for (let i = 0; i < EXIT_SAMPLES; i += 1) {
+      const s = readViaOneRead(live, sc.dir);
+      spread.push(s.writerStatus);
+      expect(
+        [liveWhole.status, EXIT.CANNOT_RUN],
+        `run ${i + 1} of the live arm ended on ${String(s.writerStatus)} behind a reader that ` +
+          "stopped, which is neither a whole read's status nor CANNOT_RUN",
+      ).toContain(s.writerStatus);
+      expect(s.bytes, `run ${i + 1}: the one-read reader took more than one buffer`).toBeLessThanOrEqual(
+        PIPE_BUFFER,
+      );
+    }
+
+    disclose(
+      "brief-flush ONE-READ READER",
+      `the synthesised ${whole.bytes}-byte answer reached a reader that stops at ${cut.bytes} ` +
+        `bytes, writer status ${String(cut.writerStatus)}, no stack trace; the control writer at ` +
+        `the same size left exit ${String(control.writerStatus)} with an EPIPE trace. The live ` +
+        `--dispatch --full arm (${liveWhole.bytes} bytes whole, status ${String(liveWhole.status)}) ` +
+        `left the writer at ${spread.map((s) => String(s)).join(", ")} over ${EXIT_SAMPLES} runs — ` +
+        "a RACE, disclosed and asserted nowhere; only the reachable SET is a property.",
     );
   } finally {
     sc.cleanup();

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **621 behaviours** — 619 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **624 behaviours** — 622 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -41,7 +41,9 @@ Census: **621 behaviours** — 619 extracted sentences + 2 named-not-extracted (
 
 - the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte
 - the whole derivation reaches a SLOW reader too, and the loss is the READER'S — never the write shape
+- THE ARM LIST IS COMPARED TO THE COMMAND'S OWN FLAGS, so a flag nothing announces reds by name
 - THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
+- the reader that STOPS after one read gets a silent PREFIX, and the writer's own exit behind it is a RACE this body measures and does not assert
 - THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
 
 ## brief
@@ -67,6 +69,7 @@ Census: **621 behaviours** — 619 extracted sentences + 2 named-not-extracted (
 - the commands are transcribed VERBATIM from the per-package bullets
 - the ceremony ROW is read from TASK-FORMAT, and the tier letter alone does not decide it
 - the named disciplines are enumerated from the document's own shape
+- THE TWO LONG PASSAGES ARE CITED BY ADDRESS, NOT TRANSCRIBED — and the address is one this repository answers
 - ARM TWO answers STATE's derivable sections and says what it cannot answer
 - the board census adds up, and it is derived rather than carried
 - THE COMMAND IS A READ — it writes nothing into the checkout it runs in

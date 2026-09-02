@@ -413,6 +413,122 @@ export function numberedStep(md, n) {
   return held.join(" ").replace(/\s+/g, " ").trim();
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * CITING A LONG RULE INSTEAD OF TRANSCRIBING IT (T-225-s2, taking
+ * `T-215-s4`).
+ *
+ * TWO PASSAGES IN THIS COMMAND'S ANSWER ARE SCREENS OF PROSE AND BOTH ARE
+ * FUNCTIONS OF A DOCUMENT RATHER THAN OF THE CARD: docs/CONVENTIONS.md's
+ * THE LANE PROTOCOL bullet, and method/lane-protocol.md's rule four.
+ * Measured at `09526da` on this repository, flattened and rendered the way
+ * this command renders them, they were 10,155 and 13,078 bytes — 23,233 of
+ * an 82,476-byte `--task --state --full` answer against a 65,536-byte
+ * line. **THE ROW SET GROWS WITH THE DOCUMENTS**, so every correction to
+ * either bullet pushed that arm further past a buffer, and the growth is
+ * not a function of the card the brief is about.
+ *
+ * **THE REPLACEMENT IS AN ADDRESS AND NOT A SUMMARY**, which is the whole
+ * of why it is allowed here. `docs/CONVENTIONS.md`'s A CITATION NAMES A
+ * SYMBOL, NOT A LINE asks for a path plus something searchable, and this
+ * emits exactly that: the file, the passage's own ordinal or capitals, the
+ * flattened SIZE at this ref so a reader knows what they are being sent
+ * for, and a command that finds it. Nothing is paraphrased, because
+ * nothing is restated at all — the brief contract's *"a brief is a
+ * TRANSCRIPTION, not a summary"* bans the middle option, and this is the
+ * far side of it rather than the middle.
+ *
+ * **THE NEEDLE IS CONSTRUCTED AGAINST THE HARD WRAP, NEVER TYPED.** Every
+ * governing document here is wrapped at about 70 columns, so a phrase
+ * search is a search for a line break nobody chose (`docs/CONVENTIONS.md`,
+ * A MISS IS NOT A REFUTATION, cause THREE). The needle is therefore
+ * EXTENDED word by word only while the RAW file still contains it: what is
+ * printed is findable by construction rather than by luck, and a reflow
+ * shortens the needle instead of breaking it.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The longest prefix of `opening` that the RAW document still contains, so
+ * the command this module prints cannot be defeated by a line break.
+ *
+ * A word carrying a backtick or a double quote ends the extension: the
+ * needle is spent inside a shell string, and `docs/CONVENTIONS.md`'s NEVER
+ * PUT A BACKTICK INSIDE A SHELL STRING is a rule about the syscall rather
+ * than about the intent.
+ *
+ * @param {string} raw      the document as it sits on disk, wrapped
+ * @param {string} opening  the flattened opening this cites
+ * @returns {string}
+ */
+export function findableNeedle(raw, opening) {
+  const words = opening.split(" ").filter((w) => w !== "");
+  if (words.length === 0) {
+    throw new Error(
+      "dispatch-brief: a citation was asked for a needle out of an empty opening — a citation " +
+        "with nothing to search for is worse than the transcription it replaced.",
+    );
+  }
+  let best = "";
+  for (let i = 1; i <= Math.min(words.length, 12); i += 1) {
+    const word = /** @type {string} */ (words[i - 1]);
+    if (word.includes("`") || word.includes('"')) break;
+    const candidate = words.slice(0, i).join(" ");
+    if (!raw.includes(candidate)) break;
+    best = candidate;
+  }
+  if (best === "") {
+    throw new Error(
+      `dispatch-brief: no prefix of ${JSON.stringify(opening.slice(0, 60))} occurs in the ` +
+        "document it was read from, so this citation would send a reader to a phrase that is " +
+        "not there.",
+    );
+  }
+  return best;
+}
+
+/**
+ * The opening SYMBOL of a rule or bullet: its own leading run, up to the
+ * first sentence end or em dash, with the markdown scaffolding removed.
+ *
+ * @param {string} flat  the flattened passage
+ * @returns {string}
+ */
+export function citedOpening(flat) {
+  const stripped = flat
+    .replace(/^\d+[a-z]?\.\s*/, "")
+    .replace(/^-\s*/, "")
+    .replace(/\*\*/g, "")
+    .trim();
+  const cut = /^(.*?)(?:\.\s|\s—\s|$)/.exec(stripped);
+  const head = (cut === null ? stripped : /** @type {string} */ (cut[1])).trim();
+  return (head === "" ? stripped : head).slice(0, 150).trim();
+}
+
+/**
+ * One cited passage, as the stamped value that stands where its
+ * transcription stood.
+ *
+ * @param {Ctx} ctx
+ * @param {{ label: string, source: string, file: string, raw: string, flat: string }} opts
+ * @returns {Rec}
+ */
+function citedRule(ctx, opts) {
+  const flat = opts.flat.replace(/\s+/g, " ").trim();
+  if (flat === "") {
+    throw new Error(
+      `dispatch-brief: ${opts.source} read as empty, so this row would cite a passage that is ` +
+        "not there. A citation of nothing is the one thing worse than a transcription.",
+    );
+  }
+  const opening = citedOpening(flat);
+  const needle = findableNeedle(opts.raw, opening);
+  return value(
+    `${opts.label}: CITED, NOT TRANSCRIBED (T-225-s2) — ${opts.source}, ` +
+      `${Buffer.byteLength(flat, "utf8")} bytes flattened at this ref, opening ` +
+      `${JSON.stringify(opening)}. READ IT: command grep -n "${needle}" ${opts.file}`,
+    tree(ctx, opts.source),
+  );
+}
+
 /**
  * A `## `-delimited section of a markdown file, raw.
  *
@@ -1320,8 +1436,25 @@ export const SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 * 1024;
  * control, because a checker that has only ever seen the true text cannot
  * be told from one that decides nothing.
  *
+ * AND THE BLOCK DECLARES ITS OWN COST (T-225-s2, taking `T-225-s8`).
+ * This disclosure is not free, and the resource it discloses is the one it
+ * spends: measured at `482be56`, the UNDER arm's block went 342 → 1,141
+ * bytes and the OVER arm's 500 → 2,183 when T-225-s1 gave each caller its
+ * own line. **THE ANSWER TO THAT IS A FIGURE, NOT A DELETION** — the
+ * symmetry rule this block already stands on (a disclosure that appears
+ * only past a threshold cannot be told from one that is broken) is exactly
+ * why the per-caller lines print in both arms, and a block that quietly
+ * grew the thing it measures while saying nothing about it would be the
+ * defect this whole module is against. So the split is stated: how many of
+ * the bytes above are the derivation, and how many are this block.
+ *
+ * IT IS EXACT AND COSTS NO SECOND FIXED POINT. `withMargin` knows the
+ * derivation's own size before it starts iterating, so the block's size is
+ * `bytes - body` at every candidate and is right at the one that settles —
+ * no search, no rounding, and no figure a reader has to adjust.
+ *
  * @param {{ bytes: number, at: string, host: string, buffer?: number,
- *   what?: string, units?: { count: number, label: string } }} opts
+ *   what?: string, body?: number, units?: { count: number, label: string } }} opts
  * @returns {Rec[]}
  */
 export function marginRecs(opts) {
@@ -1422,6 +1555,25 @@ export function marginRecs(opts) {
       ),
     );
   }
+  /**
+   * THIS BLOCK'S OWN COST, IN BOTH ARMS AND WHETHER OR NOT IT IS COUNTED
+   * (T-225-s2, taking `T-225-s8`). A disclosure that spends the resource
+   * it discloses owes the split, and the arm that CANNOT count itself says
+   * that rather than going quiet — the same symmetry the two arms above
+   * stand on, applied to the block instead of to the answer.
+   */
+  const body = opts.body;
+  recs.push(
+    value(
+      body === undefined
+        ? "this block: NOT COUNTED — the figure above is the derivation's own size, so these " +
+            "disclosure bytes sit OUTSIDE it and a reader adding them gets the whole write"
+        : `this block: ${bytes - body} of those bytes are this disclosure and ${body} are the ` +
+            "derivation — the block is counted INSIDE the figure it declares, so what is above " +
+            "is what `wc -c` gives",
+      prov,
+    ),
+  );
   if (opts.units !== undefined && opts.units.count > 0) {
     /**
      * THE PROJECTION, derived here and never quoted — `floor_line`'s own
@@ -1476,8 +1628,12 @@ export function marginRecs(opts) {
  */
 export function withMargin(body, opts) {
   const bodyBytes = Buffer.byteLength(body, "utf8");
+  // THE DERIVATION'S OWN SIZE TRAVELS WITH THE CANDIDATE TOTAL, so the
+  // block can state what it itself cost without a second search: the
+  // disclosure is `bytes - body` at every candidate, and it is exact at
+  // the one that settles (T-225-s2, taking `T-225-s8`).
   const head = (/** @type {number} */ n) =>
-    `${render(marginRecs({ ...opts, bytes: n }))}\n\n`;
+    `${render(marginRecs({ ...opts, bytes: n, body: bodyBytes }))}\n\n`;
   let total = bodyBytes;
   for (let pass = 0; pass < 8; pass += 1) {
     const text = head(total);
@@ -1908,8 +2064,20 @@ function deriveLane(ctx) {
     value(`lane-protocol rule two: ${rule2}`, tree(ctx, "method/lane-protocol.md rule two")),
     value(`lane-protocol rule three: ${rule3}`, tree(ctx, "method/lane-protocol.md rule three")),
     value(`base rule: ${dispatchBullet}`, tree(ctx, "docs/CONVENTIONS.md dispatch bullet")),
+    // THE LANE BULLET IS CITED RATHER THAN TRANSCRIBED (T-225-s2, taking
+    // `T-215-s4`). It was 10,155 bytes of an 82,476-byte `--full` answer
+    // at `09526da`, against a 65,536-byte line — and it is the document's
+    // own text, reachable in one command from the address printed here.
     ...(ctx.full
-      ? [value(`lane bullet in full: ${laneBullet.replace(/\s+/g, " ")}`, tree(ctx, "docs/CONVENTIONS.md lane bullet"))]
+      ? [
+          citedRule(ctx, {
+            label: "lane bullet",
+            source: "docs/CONVENTIONS.md lane bullet",
+            file: "docs/CONVENTIONS.md",
+            raw: ctx.conventions,
+            flat: laneBullet,
+          }),
+        ]
       : []),
     note("the slug in the branch name is the dispatcher's; this tool leaves the document's placeholder rather than inventing one"),
   ];
@@ -2283,10 +2451,18 @@ function deriveProhibitions(ctx) {
       `the human's app holds port ${port}; the ONE permitted command is ${spelling}`,
       tree(ctx, "docs/CONVENTIONS.md PORT RULE bullet"),
     ),
-    value(
-      `never touch the integration branch: ${numberedStep(laneProtocolText(ctx.root), 4)}`,
-      tree(ctx, "method/lane-protocol.md rule four"),
-    ),
+    // RULE FOUR IS CITED RATHER THAN TRANSCRIBED (T-225-s2, taking
+    // `T-215-s4`) — 13,078 bytes at `09526da`, in EVERY `--task` arm and
+    // not only under `--full`, which is the half `T-215-s4` did not say.
+    // It is the longest single line this command has ever emitted and it
+    // is a function of a document rather than of the card.
+    citedRule(ctx, {
+      label: "never touch the integration branch",
+      source: "method/lane-protocol.md rule four",
+      file: "method/lane-protocol.md",
+      raw: laneProtocolText(ctx.root),
+      flat: numberedStep(laneProtocolText(ctx.root), 4),
+    }),
   ];
   const probe = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], { encoding: "utf8" });
   const holder =

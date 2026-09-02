@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-225
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -207,3 +207,539 @@ that one is only untidy.
 that each named caller's own line agrees with what that caller was
 measured doing, and it now does, on both questions, with two controls that
 themselves red when disarm
+
+## Implementation notes, 2026-09-02 — executor claude-opus-5@subagent
+
+Branch `task/T-225-s2-arms-past-the-buffer`, cut at `09526da`. Every
+figure below is at the ref it names.
+
+### Every arm's bytes, before and after, at ONE HELD BOARD
+
+The base was read in a DETACHED drill worktree `/private/tmp/nd-T-225-s2-base`
+cut from `09526da`, and the diff was read in the lane IMMEDIATELY after,
+so the two readings differ in the diff and in nothing else. The board
+moves: `--task T-133` read 53,663 and then 53,682 bytes at one unchanged
+ref twenty minutes apart, so an unbracketed before/after table is a
+figure with no keeper in either direction. Bytes to a FILE destination,
+exit read from `$?` unpiped.
+
+    arm                            BEFORE     AFTER     delta   AFTER vs 65,536
+    --dispatch                     38,036    38,333      +297    27,203 UNDER
+    --dispatch --full             105,910   106,208      +298    40,672 PAST
+    --task T-133                   53,682    41,281   -12,401    24,255 UNDER
+    --task T-133 --state           64,943    52,551   -12,392    12,985 UNDER
+    --task T-133 --state --full    82,479    59,168   -23,311     6,368 UNDER
+    --task T-133 --role executor   53,682    41,281   -12,401    24,255 UNDER
+    --task T-133 --preflight       83,021    70,665   -12,356     5,129 PAST
+    --state                        12,393    12,690      +297    52,846 UNDER
+    --card T-133                    4,867     5,156      +289    60,380 UNDER
+
+**THREE ARMS WERE PAST THE LINE AND TWO ARE.** This card's own subject,
+`--task <id> --state --full`, is 6,368 UNDER. The `+290`-ish on every arm
+is the margin block's new own-cost line. What is still past is routed:
+`T-225-s11` (`--preflight`, whose residual is the preflight's own
+findings block, outside this fence) and `T-225-s12` (`--dispatch --full`,
+the triage view, whose size is `dispatch-order.mjs`'s and outside this
+fence).
+
+### What was written, per absorbed card
+
+**`T-215-s4` — the two long passages are CITED, not transcribed.**
+`citedRule` in `dispatch-brief.mjs` replaces each with the file, the
+passage's own opening capitals, its flattened size at this ref, and a
+`command grep` whose needle is EXTENDED word by word only while the RAW
+file still contains it — so a 70-column hard wrap cannot make the printed
+command miss. Measured at `09526da`: rule four 12,984 bytes,
+the lane bullet 10,078. **The brief was wrong about where rule four
+prints** (below).
+
+**`T-225-s8` — the block declares its own cost.** `withMargin` already
+knows the derivation's size, so the split is exact and costs no second
+fixed point: `this block: N of those bytes are this disclosure and M are
+the derivation`, in both arms, with a `NOT COUNTED` sentence in the
+unsettled fallback where the figure is the derivation's alone. The block
+is 1,629 bytes of a 38,333-byte `--dispatch` answer at this tip. It is a
+DISCLOSURE and not a deletion: the per-caller lines print in both arms on
+the symmetry rule T-225-s1 landed, and removing them to save bytes would
+breach it.
+
+**`T-225-s7` — the arm list is compared to the command.** `LIVE_ARMS`
+gains `--dispatch --full` and `--task <id> --preflight`; a new body
+derives `brief.mjs`'s own `FLAGS` literal and reds on a flag nothing
+announces; and the margin guard, which has the sizes, requires the
+BIGGEST arm it measured to be a `--full` arm. The residual — a missing
+COMBINATION of flags each covered elsewhere — is stated in the file and
+routed as `T-225-s13`.
+
+**`T-225-s6` — the writer's exit behind a reader that stops.** An
+uncaught stdout `EPIPE` was a stack trace at exit 1, which is
+`EXIT.FOUND`: a caller could not tell *"the repository disagrees with
+something"* from *"you closed the pipe"*. `brief.mjs` now maps it to
+`CANNOT_RUN`, whose own wording is *"this run is not a claim about the
+repository at all"*. **The race is not ended and nothing here pretends
+otherwise.** The new brief-flush body asserts the READER's side (a
+prefix of at most one buffer, the reader clean), asserts that the
+reachable SET excludes `FOUND` — derived from this run's own whole read
+rather than typed — and DISCLOSES the writer's spread over five runs
+asserting nothing about it. Measured in this lane: 12 hand runs of
+`--dispatch --full | dd bs=65536 count=1` left the writer at 0 eleven
+times and 3 once; the reader took exactly 65,536 in all twelve.
+
+**`T-225-s9` — the absence half ranges over every line.** The carve-out
+is DERIVED, never listed: a banned phrase is excused only where it sits
+on another claim's own line AND that claim's own measured needles already
+say it. A blanket ban reds the TRUE arm, because two claims are the same
+caller under different limits — the default-maxBuffer line legitimately
+says *"with no error"* and *"receives the whole answer"*, and the second
+of those is now a MEASURED needle on that line for exactly this reason.
+The card's own production mutant is drilled below as M7.
+
+### Every command, in order, with its exit
+
+     1  npm ci (tools/e2e)                                              0
+     2  npm ci (app)                                                    0
+     3  npm run build (app)                                             0
+     4  npm run typecheck (tools/e2e), five times over the pass         0
+     5  npx playwright test brief-flush.spec.ts                         0  (6 passed)
+     6  npx playwright test brief.spec.ts                               0  (39 passed)
+     7  npx playwright test brief.spec.ts (with the new bodies)         1  (2 failed — withMargin not yet wired)
+     8  npx playwright test brief.spec.ts                               1  (1 failed — T-179 sweep, allowlist)
+     9  npx playwright test brief.spec.ts brief-flush.spec.ts           0  (46 passed)
+    10  git commit (implementation)                                     0  adc5596
+    11  eleven drills M1..M11, each below                               1 each, by design
+    12  the eleven CONVENTIONS reader specs                             0  (335 passed)
+    13  node tools/e2e/scripts/gate-run.mjs parser                      0  GREEN bodies=363
+    14  node tools/e2e/scripts/gate-run.mjs app                         0  GREEN bodies=1141
+    15  node tools/e2e/scripts/gate-run.mjs rust                        0  GREEN bodies=639
+    16  node tools/e2e/scripts/gate-run.mjs e2e                         1  RED bodies=607, 1 failed
+    17  git commit (the guard's bracket)                                0  7dd1079
+    18  cargo run -p nputer-index -- index --check --root ../..         0  CURRENT
+    19  npm run capabilities:check                                      1  STALE, 51,025 -> 51,380
+    20  git merge-tree --write-tree main HEAD                           0  tree b54a605
+
+**COMMAND 16 IS THE ONE TO READ.** The e2e leg reddened on ONE body, the
+margin guard, on `--task T-133 --preflight`: 66,800 bytes to the file
+destination and 68,405 to `spawnSync` seconds later. **That is the board
+moving mid-arm, not a flush**, and it is a defect I had introduced: that
+arm sweeps every checkout on the machine and takes six seconds per read,
+so it straddles any worktree another seat cuts. A body that reds when a
+sibling lane is dispatched is a red on somebody else's work at
+`retries: 0` — the shape `V-225` rejected T-225 for. Commit `7dd1079`
+brackets the pipe read: on a disagreement a SECOND file read is taken and
+the pipe read must match one of the two around it. A truncation matches
+NEITHER, so the property is untouched, and the second read is never taken
+on a quiet board.
+
+### The drills — one side only, read back with `git diff`, restored by sha256
+
+M1..M10 at `adc5596`, M11 at `7dd1079`. Each ran the two fenced readers
+(46 bodies) and the kill set is the whole failing set, not a sample.
+
+    id   file                site                                   kill set (of 46)
+    M1   dispatch-brief.mjs  citation -> transcription              1  the CITED body
+    M2   dispatch-brief.mjs  byte figure + 1                        1  the CITED body
+    M3   dispatch-brief.mjs  needle wrap guard disarmed             1  the CITED body
+    M4   dispatch-brief.mjs  block cost is not a split of the size  2  margin disclosure, BOTH arms
+    M5   dispatch-brief.mjs  the uncounted arm goes silent          1  BOTH arms
+    M6   brief.mjs           the EPIPE handler disarmed             1  the one-read body
+    M7   dispatch-brief.mjs  the cross-caller clause planted        1  the OVER-arm body
+    M8   brief.spec.ts       the cross-line pass disarmed           1  the OVER-arm body
+    M9   brief.mjs           a flag nothing announces               1  the arm-coverage body
+    M10  brief-flush.spec.ts the biggest arm dropped                1  the margin guard
+    M11  brief.mjs           process.exit(code) restored            5  T-197's own set + OVER arm
+
+**M7 IS `T-225-s9`'s OWN PRODUCTION MUTANT**, applied verbatim: the
+pipe-reader arm's tail extended with *"and spawnSync past its maxBuffer
+likewise receives a prefix with no error"*. That substitution passed
+`brief.spec.ts` 39 of 39 at `b1dc556`; at this tip it reds by name.
+**M8 IS THE OTHER HALF OF THE SAME CONTROL** — disarm the cross-line pass
+and the planted clause stops being reported, which is the red-before to
+M7's green-after.
+
+**M9 RAN TWICE.** Its first run showed 2 failures, the second being the
+margin guard on `--task T-133` with a 259-byte delta — the board moving,
+the same artifact command 16 caught. Re-run alone: 1 failed, 45 passed.
+The kill set above is the second run's. The board moved a great deal in
+that window: `--dispatch --full` read 106,208, then 98,516, then 97,669
+bytes at one ref.
+
+RESTORATION, every drill: `git restore --source=<commit> --staged
+--worktree -- <path>`, then `git show <commit>:<path> | shasum -a 256`
+against the working file. All eleven matched, with an empty per-path
+`git diff` as the companion and never as the proof:
+
+    91f3d674b9ff2ed328d1f28799c51786663e78d28654e344d37237e69c4b9bff  dispatch-brief.mjs @ adc5596
+    0270a75b43c0b96ee227c2a2dd6acdd22337a983e2a5f549ad046f128abf02d5  brief.mjs @ adc5596
+    f8c76534f086a7603671b5de19d102347f50b4d7cb968663f63896a0faaeae41  brief.spec.ts @ adc5596
+    c3b103f418f3837010d0dd0b607826035af3a1c41cfcc66844b998c8ea298519  brief-flush.spec.ts @ adc5596
+
+The measurement worktree `/private/tmp/nd-T-225-s2-base` was detached at
+`09526da`, carried two symlinks into the lane's built parser (both
+gitignored paths), reported an EMPTY tracked status at removal, and was
+removed with `git worktree remove --force`.
+
+### Standing gates, derived on the merge forecast
+
+`git merge-tree --write-tree main HEAD` exits 0 at tree `b54a605`;
+`git diff --name-only main b54a605` returns the four fenced source paths
+plus this card and the four routed suggestions once this commit lands.
+
+- **GRAPH REGEN — FIRES** (the diff carries `*.ts` outside `docs/`), and
+  the answer is a no-op by construction: `tools/` is `.nputerignore`d.
+  ASKED rather than predicted — `index --check` exits **0**, CURRENT,
+  1,170,079 of 2,145,959 bytes.
+- **BOOT GATE — NOT OWED.** No path under `app/src-tauri/**`,
+  `app/src/**` or either manifest, on a 9-path forecast.
+- **DOCS GATE — FIRES** on `docs/tasks/*.md`. Asked with the forecast's
+  own path list; the answer is in the report.
+- **METHOD EVAL GATE — NOT OWED.** No `method/**` path.
+- **CENSUS — STALE AND IT IS THE INTEGRATOR'S.** Three test names are
+  ADDED, none renamed or removed; `capabilities:check` exits 1, committed
+  51,025 bytes against a fresh 51,380. `npm run capabilities` belongs in
+  the merge commit.
+
+### Where the brief was wrong
+
+1. **`T-215-s4` says `--full` prints both passages. Rule four prints in
+   EVERY `--task` brief**, from `deriveProhibitions`, with no `--full` in
+   sight — 12,984 bytes of a 41,281-byte default answer. The dispatch
+   message repeated it (*"only how `--full` presents them moves"*). Both
+   passages are now cited in every arm they appear in, because a `--full`
+   view that printed LESS than the default would be incoherent, and
+   because the card's own CORROBORATION names `--preflight`, which never
+   passes `--full`.
+2. **`disagreements()` is in `tools/e2e/tests/brief.spec.ts`, not in
+   `dispatch-brief.mjs`** as the T-225-s9 hand-off said. Both are in the
+   fence, so the ask was buildable as written.
+3. **Row 4 of the assembled brief gives the base as `5d3d516`**, which is
+   not this lane's base; the worktree's HEAD `09526da` is, as the
+   dispatch message warned (T-233's known defect).
+4. **The brief's arm list asks for `--role executor` and `--preflight` as
+   arms.** Neither stands alone — `brief.mjs` answers `USAGE` for a
+   request with no card — so both were measured as `--task T-133 --role
+   executor` and `--task T-133 --preflight`.
+5. **The dispatching seat's own figures differ from this lane's** for the
+   same reason the table above is bracketed: `--task <id> --state --full`
+   80,715 against 82,479, `--preflight` 73,212 against 83,021. Neither is
+   wrong; the board is a third party to both.
+
+### For the verifier
+
+- The one-read body's control writer is sized at **three** buffers, not
+  two, and the comment says why: at two the writer can push the rest into
+  a drained kernel buffer and leave cleanly, which is why the live arm's
+  spread is 11-to-1 rather than 0-to-12. At three the `EPIPE` is a
+  certainty and the control is a control rather than a second sample of
+  the race.
+- The margin guard's bracket is the one place an assertion was LOOSENED.
+  M11 shows it still kills the flush defect.
+- `--dispatch --full` and `--task <id> --preflight` add about 30 seconds
+  to the e2e lane. The seconds band is already breached (`T-120-s2`).
+
+### Addendum, same sitting — the docs gate caught one of mine
+
+`docs-gate.mjs` on the resolved forecast answered exit **1** and named
+`T-225-s12`'s own frontmatter: its `title:` opened with a backtick, so
+the card did not parse as YAML. That is the `9c64cd8` incident this
+project already paid for — *two card titles opening with a backtick,
+both cards silently unparseable, four bodies red* — reproduced by the
+lane that quotes it. Repaired in the same sitting by moving the backticked
+command out of the title's first position; all four routed cards then
+parse, and the gate's remaining answer is the three suites it names.
+
+**AND THE MERGE FORECAST IS A CONFLICT, WHICH IS THE ANSWER AND NOT A
+FAILURE.** `git merge-tree --write-tree main HEAD` exits **1** and prints
+a CONFLICT report for this card: `main` gained the `## Absorbs: T-225-s9`
+section as its own commit after this lane's base, and the lane committed
+the same text from its worktree. The two sides added the same lines to a
+base that had neither. **The lane's copy is main's card byte for byte
+plus the `verifying` stamp and these notes** — verified by comparing the
+first 209 lines of each, which differ on the status line alone — so the
+resolution is to take the lane's side, and it is stated here rather than
+left for the integrator to derive under a merge marker. The forecast in
+the gate section above was built on the RESOLVED tree with a scratch
+index (`git read-tree -m --aggressive`, one `update-index --cacheinfo`,
+`git write-tree`), which moves no ref and is a real tree rather than a
+proxy: `259e3ad`, 9 paths.
+
+### The four-suite battery, run LAST, with every red attributed at the base
+
+At tip `855db9b`, `node tools/e2e/scripts/gate-run.mjs <suite>` from the
+lane root:
+
+    parser  exit 0  bodies=363   GREEN
+    app     exit 0  bodies=1141  GREEN
+    rust    exit 0  bodies=639   GREEN
+    e2e     exit 1  bodies=607   RED — 1 failed, 606 passed
+
+**THE E2E TOKEN IS RED AND THE RED IS NOT THIS DIFF'S.** The failing body
+is `tests/push-guard.spec.ts` *"a lane holds no seat, so a holder record
+in one refuses nothing"*, on its own positive control. Attributed by
+NAME and by measurement rather than by count:
+
+    ref       what ran                             that body
+    855db9b   the whole e2e suite                  FAILED
+    855db9b   the whole e2e suite, re-run          FAILED
+    855db9b   push-guard + session-economics only  PASSED (86 passed)
+    09526da   push-guard + session-economics only  PASSED (86 passed)
+    09526da   the whole e2e suite, DIFF ABSENT     FAILED — 603 passed
+
+The base row was measured in a detached worktree at `09526da` in the same
+window. **The same body reds with this lane's work absent**, so it is a
+property of the suite's load; filed as `T-225-s14` with the hypothesis
+and what a fix would decide. `push-guard.spec.ts` imports nothing from
+this fence.
+
+**AND TWO EARLIER REDS WENT AWAY WHILE I WATCHED, WHICH IS THE SAME
+CLASS.** The first battery at this tip also reddened
+`session-economics.spec.ts` twice, both naming their own cause: *"T-216-s8
+holds a worktree ... and no live card declares that id"*. That worktree
+belonged to another seat and was removed during the sitting; both bodies
+then passed at the base AND at this tip, back to back, 86 of 86 each. A
+lane's battery is measured on a machine other lanes are moving.
+
+### Closing figures, at the tip
+
+Every arm at `188a550`, bytes to a FILE destination, exit read from `$?`
+unpiped, on a board of 17 worktrees — a DIFFERENT board from the held one
+the before/after table above was measured on, which is why the two tables
+are stated separately rather than reconciled:
+
+    --dispatch                     31,217   34,319 UNDER
+    --dispatch --full             100,269   34,733 PAST
+    --task T-133                   40,620   24,916 UNDER
+    --task T-133 --state           51,494   14,042 UNDER
+    --task T-133 --state --full    58,111    7,425 UNDER
+    --task T-133 --role executor   40,620   24,916 UNDER
+    --task T-133 --preflight       70,491    4,955 PAST
+    --state                        12,294   53,242 UNDER
+    --card T-133                    5,245   60,291 UNDER
+
+Gates at `188a550`: parser **363 GREEN**, app **1141 GREEN**, rust **639
+GREEN**; `index --check` CURRENT; `docs-gate.mjs` on the resolved
+forecast `c6ea4dd` (10 paths) FIRES for `npm test from app/`, `npm test
+from tools/e2e/` and `npx vitest run from lib/parser/`, and reports every
+live task card's frontmatter parsing with a legal status. The e2e leg's
+verdict was taken at `855db9b`; the only delta to this tip is two card
+files under docs/tasks, and the forecast-derived gate SET does not move
+with them.
+
+**THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S**: `capabilities:check`
+exits 1 at this tip. Three test names ADDED, none renamed or removed.
+
+## VERDICT, 2026-09-02 — APPROVED — verifier claude-opus-5@subagent
+
+Judged at tip `098bbb1deb1e1de517b134f91b5ebc7ceaa0d7fe`, base
+`09526da2234fe9a02453d641bf81d04d43d7b4b0`, on bench
+`/Users/ujju/Projects/nputer-V-T-225-s2` (detached), ports 25225/26225,
+node v22.22.0, `Mac.lan`. Every figure below carries the ref it was
+measured at.
+
+### The blindness, stated because a later reader cannot tell
+
+**PHASE 1 WAS CLOCK-SHAPED, NOT DISCIPLINE-SHAPED** (verifier.md's own
+distinction): this bench was cut alongside the lane and the attack set
+was written and SEALED before the work existed — there was no diff and no
+report to decline to read. The seals, made 2026-09-02T08:42:43Z UTC:
+
+    8f650c748d225d1f35b402255653b81121e56561870da5d19065af0c01449e31  attack-V-T-225-s2.md
+    c1ff16436355a5b1806ea4d9ecc84bd84210460f37bdaa46f58f30159032103d  ground-V-T-225-s2.md
+
+**AND THE PHASE-2 BRIEF CARRIED THE EXECUTOR'S OWN FIGURES AND CLAIMS**
+— the before/after table, the mutant count, the suite counts, the
+attribution of the one red. Phase 1 was already sealed, so the guarantee
+holds where it matters; but this seat's phase-2 reading was NOT blind to
+the executor's narrative, and verifier.md requires that be said rather
+than pretended past. Every criterion below was therefore re-derived on
+this bench with this seat's own mutants, and no figure is relayed.
+
+### The card's subject, at ONE HELD BOARD
+
+Bytes to a FILE destination, base and tip alternated three times in one
+window; **all three rounds returned identical figures at both refs**, so
+the board was genuinely held and the deltas are the diff's:
+
+    arm                            BASE      TIP      delta   TIP vs 65,536
+    --dispatch                    42,204   42,495     +291    23,041 UNDER
+    --dispatch --full            121,296  121,588     +292    56,052 PAST
+    --task T-133                  52,071   39,699  -12,372    25,837 UNDER
+    --task T-133 --state          64,503   52,216  -12,287    13,320 UNDER
+    --task T-133 --state --full   82,038   58,833  -23,205     6,703 UNDER
+    --task T-133 --preflight      82,070   69,697  -12,373     4,161 PAST
+    --state                       13,563   13,937     +374    51,599 UNDER
+    --card T-133                   4,993    5,371     +378    60,165 UNDER
+    --task T-225-s2 --state --full 80,732  57,528  -23,204     8,008 UNDER
+
+**THIS CARD'S OWN ARM CROSSES THE LINE THE RIGHT WAY.** The two still
+past are routed (`T-225-s11`, `T-225-s12`), neither fixable in this
+fence. My own phase-1 baseline at `09526da` on a different board read
+`--task <id> --state --full` at 80,715 and `--preflight` at 73,212; the
+lane's table read 82,479 and 83,021. **Neither is wrong and I pre-committed
+to saying so**: I measured the live board move `--task T-133` by +169
+bytes in nine minutes at one unchanged ref, so only a held-board pair is
+attributable, and the lane bracketed its own table for the same reason.
+
+### The criteria, each drilled by this seat's own mutant
+
+Six mutants applied in this bench, read back from `git diff`, each
+restored to an empty `git status`:
+
+    id   site                                          killed                     survived
+    M-A  brief.mjs: stdout EPIPE handler detached      one-read body              rest of 46
+    M-B  dispatch-brief.mjs: rule four transcribed     CITED body                 rest of 46
+    M-C  withMargin: block blinded to the body size    margin-disclosure body     rest of 46
+    M-D  LIVE_ARMS: `--dispatch --full` dropped        MARGIN GUARD               ARM COVERAGE
+    M-E  brief.mjs: a flag nothing announces           ARM COVERAGE               MARGIN GUARD
+    M-G  brief.spec.ts: cross-line ban disarmed        OVER-arm body              rest of 46
+
+**M-D AND M-E ARE THE CONTAINMENT PROOF** (verifier.md 2b): neither kill
+set contains the other, so the two arm-list bodies are both load-bearing
+rather than one restating the other. M-D's message names the twin it
+lost — *"the biggest arm measured this run is --task T-133 --preflight at
+70182 bytes and it does not carry --full"* — which is the property
+landing at the site it lives. The residual the coverage body cannot see
+(a missing COMBINATION of covered flags) is stated in the file and routed
+as `T-225-s13` rather than claimed away; M-D is the demonstration that
+the claim is honest in both directions.
+
+- **`T-215-s4` — cited, not transcribed.** Both addresses resolve. Pasted
+  verbatim from the tip's own output at `098bbb1`: `grep -n "THE LANE
+  PROTOCOL" docs/CONVENTIONS.md` → 1 hit, line 1044; `grep -n "NO SEAT
+  BUT THE INTEGRATOR'S INSTALLS OR RUNS A SUITE IN THE"
+  method/lane-protocol.md` → 1 hit, line 51. Each citation carries file,
+  the passage's own capitals, its flattened size and a runnable command —
+  which is what CONVENTIONS' A CITATION NAMES A SYMBOL, NOT A LINE asks
+  for. **The operational content survives**: `integration branch:`,
+  `branch:`, `worktree`, `create:` and the `never touch the integration
+  branch` imperative are all still emitted as their own rows, so nothing
+  a dispatcher acts on moved behind an address.
+- **Citing rule four in the DEFAULT arm exceeds the brief's literal "in
+  `--full`" and is right anyway.** I verified independently in phase 1
+  that rule four was never `--full`-gated (13,078 bytes in every `--task`
+  answer at `09526da`); a `--full` view printing LESS than the default
+  would be incoherent, and the card's own CORROBORATION names
+  `--preflight`, which never passes `--full`. The lane names the brief's
+  error rather than inheriting it.
+- **`T-225-s6` — the race.** `EPIPE` now maps to `CANNOT_RUN`. The body
+  asserts the READER's side and the reachable SET, and discloses the
+  writer's spread. My phase-1 ground truth (40 runs at `09526da`: 37×0,
+  3×1, every non-zero an uncaught EPIPE at exit 1 — the same code as
+  `EXIT.FOUND`) is what the fix removes, and the tip's own run reports
+  `0, 3, 0, 0, 3` over five — never 1. **Nothing asserts which side of
+  the race a run lands on**, which is what I pre-committed to reject.
+- **`T-225-s8` — the block's own cost.** Declared in both arms, `NOT
+  COUNTED` in the fallback, and EXACT: at `098bbb1` the two halves add up
+  to the declared figure at **9 of 9 arms**, and the declared figure
+  equals `wc -c` at **9 of 9**. The fixed point still settles on every
+  live arm.
+- **`T-225-s9` — the absence half.** M-G confirms the cross-line ban is
+  load-bearing and the carve-out is checked rather than trusted.
+
+### Findings — none blocking, all filed rather than folded in
+
+1. **`numberedStep`'s ordinal locator resolves a MOVED anchor silently.**
+   Control run in this bench: renaming `4.` to `4x.` in
+   `method/lane-protocol.md` did NOT refuse — it matched a different
+   `4. ` line further down and printed *"method/lane-protocol.md rule
+   four, 517 bytes flattened at this ref, opening \"THE CHECKPOINT RECORD
+   CARRIES THE WHY…\""*, exit 1, a confident citation of the wrong
+   passage. **The DELETED-anchor case is loud** (renaming the CONVENTIONS
+   bullet gives exit 3 with `range-rule: … 0 bullets … expected exactly
+   one`), so only the ordinal half is soft. **This is PRE-EXISTING** —
+   `numberedStep` is unchanged by this diff — and the citation exposes it
+   no worse than the transcription did. But `brief.spec.ts`'s
+   `ruleFourFlat()` is offered as an independent second reader and uses
+   the same `startsWith("4. ")` heuristic, so for this failure mode the
+   two readers agree with each other on the wrong passage. Filed.
+2. **`findableNeedle` stops the needle at a backtick or a `"` but not at
+   `$`, `\` or `!`.** Neither current passage contains one — I scanned
+   both printed needles at `098bbb1` — so today's commands are safe; a
+   future passage opening with a `$` would print a `grep -n "…"` the
+   reader's shell expands. One character class away.
+3. **Provenance nit.** The new comment in `brief.mjs` and the body in
+   `brief-flush.spec.ts` attribute the 40-run EPIPE spread to *"the
+   dispatching seat's bench at `09526da`"*. It was measured on the
+   VERIFIER's bench. The figure is correct — I re-derived it — but *a
+   relayed fact is a claim: say whose* (docs/STATE.md).
+4. **The block grew and the card says so.** The UNDER arm's block went
+   1,130 → 1,418 bytes (+288) at the held board, and every arm that lost
+   no prose gained +291…+378. `T-225-s8` asked whether the per-caller
+   line belongs; the lane's ruling is *"a figure, not a deletion"*, made
+   on the symmetry rule the block already stands on and disclosed in the
+   notes. Recorded as a ruling, not a defect.
+
+### Security sweep (mandatory)
+
+No dependency change (`package.json` untouched in all three packages), no
+secrets, no new write surface. The one new `/bin/sh -c` construction
+(`readViaOneRead`) uses the file's existing single-quote escaping helper
+for every interpolated argument. **The suite still writes nothing**: after
+a full run of both fenced spec files this bench has no `.nputer/` at all
+and an empty `git status`, and `--write-fence`, `--take-seat` and
+`--release-seat` are excused from the arm list in writing, each with the
+reason.
+
+### Fence and adjacency
+
+`git diff --name-only 09526da..098bbb1` is the four `touches:` paths, this
+card, and five `status: suggested` cards with `suggested_by` set — which
+`method/roles/executor.md` explicitly prescribes for an out-of-fence
+discovery. `docs/CONVENTIONS.md`, `method/lane-protocol.md`,
+`method/roles/executor.md` and `docs/CAPABILITIES.md` are untouched: the
+tempting fix (shortening the passages at source) was not taken.
+`dispatch-order.spec.ts`, `docs-gate.spec.ts` and `token-scan.spec.ts`
+pass at the tip (27 passed). `typecheck` 0, `lint:tokens` 0, `--selftest`
+0, `lint:docs` 0.
+
+**THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S** (`T-201`). At
+`098bbb1` `capabilities:check` exits 1, committed 51,025 against a fresh
+51,380; regenerating adds exactly the three new test names and nothing
+else — I ran the generator, read the diff and restored it. The lane
+correctly did not commit it.
+
+### The verifier's own step-7 gates, at the verdict tip `49bc83d`
+
+A verdict is a WRITE, and this card's prose is a code input. The DOCS
+GATE, asked with the three literal paths this seat touched, FIRES and
+names three suites: `npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`. It also answers *"every live task
+card's frontmatter parses, with a legal status"* and *"0 frontmatter
+issue(s) in the live tree"* — the `9c64cd8` class, checked rather than
+assumed, on this verdict and on the two cards it files.
+
+    gate-run parser   exit 0  bodies=363   GREEN  ref 49bc83d
+    gate-run app      exit 0  bodies=1141  GREEN  ref 49bc83d
+    index --check                          CURRENT
+    e2e, whole suite by file group         605 passed, 2 failed of 607
+
+**THE E2E LEG WAS RUN IN GROUPS AND THE GROUPS ADD TO 607**, which is
+the census count at this tip: 46 (the two fenced readers) + 27
+(dispatch-order, docs-gate, token-scan) + 46 (landing-gate, push-checks,
+shell-frame, window-contract — the four readers the docs gate names for
+these paths) + 86 (push-guard, session-economics) + 205 + 154 + 43. The
+whole-suite invocation was abandoned twice at a ten-minute ceiling under
+a load average of 63–71 driven by other seats on this machine; the
+grouping is disclosed because it is not the same measurement as one
+run, and a body that reds only under the whole suite's load — which is
+`T-225-s14`'s own hypothesis — would not be caught by it.
+
+**THE TWO REDS ARE NOT THIS DIFF'S, ATTRIBUTED BY NAME AND BY
+MEASUREMENT.** Both are `session-economics.spec.ts` — *"the recommended
+seat is a function of the CARD"* and *"the advisory line is NOT a
+contract row"* — and both name their own cause:
+
+    T-202-s1 holds a worktree on refs/heads/task/T-202-s1-solo-lock-whole-path-key
+      and no live card declares that id
+    T-216-s8 holds a worktree on refs/heads/task/T-216-s8-unjudged-push-refused
+      and no live card declares that id
+
+Four lanes were cut by other seats during this pass and their cards are
+not on this branch's board. **Re-run at the BASE with the diff absent:
+the same two bodies fail, 84 passed of 86**, same names, same message.
+`push-guard.spec.ts`'s *"a lane holds no seat"* body PASSED at both refs
+in this grouping, which is consistent with `T-225-s14` rather than
+against it: that card's claim is that it reds under the FULL suite and
+passes alone.
+
+**THE CENSUS STAYS THE INTEGRATOR'S.** `npm run capabilities` in the
+merge commit, before the checkpoint.
