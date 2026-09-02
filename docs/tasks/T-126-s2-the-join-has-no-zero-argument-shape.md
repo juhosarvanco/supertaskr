@@ -5,12 +5,15 @@ feature: F-04
 milestone: 4
 priority: 3
 size: M
-status: planned
+status: building
 blocked_by: [T-198]
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
-builder:
-review:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
+review: independent
 ---
 
 **T-126's criterion 6 fired, and it fired on the JOIN rather than on the
