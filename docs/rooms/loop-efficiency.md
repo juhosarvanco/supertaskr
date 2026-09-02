@@ -157,6 +157,22 @@ ORDER puts lib/parser first, and a relayed tree fact named brief.mjs
 for two call sites that live in card-preflight.mjs — each caught by
 the seat that received it, and each a sentence written from memory.
 
+**16. Fast path A's second half is a write the seat makes by hand, in a
+lane whose own hook refuses the executor.** Widening T-219's fence at
+03:20Z: the seat amended `touches:` on main, re-expanded the manifest,
+and asked the executor to apply the same line to its card copy. The
+executor refused, correctly — lane-protocol says both halves are the
+granting seat's — and measured that the lane's write hook refused ITS
+edits, even to the card under always-writable docs/tasks, as a stale
+stamp while the window was open. The seat wrote the line and the
+section into the lane's card by a Bash write (protocol-covered, hook-
+free), and the lane's merge now carries a card conflict resolved with
+the lane's copy. T-239's arm owns both halves and the conflict shape:
+amend on main, re-expand, write the lane's copy, and say so on the card
+once. A second finding from the same lane: the dispatch advisory's "no
+acceptance criteria" signal reads the heading and not the card, so a
+card whose SHALLs sit under "What to build" is called criterion-less.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
