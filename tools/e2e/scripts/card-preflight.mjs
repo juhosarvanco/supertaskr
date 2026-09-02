@@ -202,10 +202,15 @@ export const CLAIM_CLASSES = Object.freeze([
       "frontmatter field is reported as a SIGHTING and is never read as a claim, while the " +
       "frontmatter's SCALAR values ARE scanned for unmarked quoted runs — one field at a time, " +
       "with YAML's own quoting unwrapped first — and its LIST values are not scanned at all. A " +
-      "quoted run shorter than the floor is COUNTED and not listed; and a quoted run that SPANS " +
-      "this repository's hard wrap is read by NEITHER half, because the needle stops at a " +
-      "newline — so the unmarked numbers count the runs that open and close on ONE LINE and are " +
-      "not the whole census",
+      "quoted run shorter than the floor is COUNTED and not listed; a run that SPANS this " +
+      "repository's hard wrap IS read, because the paragraph is FOLDED on a single space before " +
+      "the needle is matched, the way the frontmatter title is folded; and a run that OPENS IN " +
+      "ONE PARAGRAPH AND CLOSES IN ANOTHER stays unseen, because a blank line ends the unit and " +
+      "pairing a quote across one would read the typesetting rather than the sentence. AND THE " +
+      "FOLD RE-PAIRS WHAT THE LINE ONCE BOUNDED: an odd quote character now reaches across the " +
+      "join, so a run the line-scoped reading paired can be swallowed into a longer one instead " +
+      "of listed on its own — the fold reaches far more than it drops, and what it drops is not " +
+      "none",
   },
 ]);
 
@@ -338,8 +343,21 @@ export const CARD_CLAIM_LOOSE = /CARD CLAIM\s*\(/;
  * FINDS IS THE FIRST ONE IN THE PAYLOAD**, stated rather than left to be
  * discovered, so a marker carrying two quoted runs has one deterministic
  * reading.
+ *
+ * **THE CLASS IS BOUNDED BY THE UNIT AND NO LONGER BY THE LINE**
+ * (T-230-s7). It read `[^"\n]+`, and every card in docs/tasks/ is
+ * hard-wrapped at seventy columns, so the ordinary shape of a quoted
+ * acceptance criterion — a sentence crossing one line break — arrived as
+ * two half-runs of which neither opened and closed. Its caller now hands
+ * in a FOLDED unit (`unmarkedQuotes` joins a paragraph's lines on a
+ * single space; a frontmatter scalar is one line already), so the
+ * newline was a bound the caller has already removed and keeping it
+ * would be a second answer to the question the fold settles. **THE FOLD
+ * IS THE REPAIR AND THIS IS ITS SPELLING**: on a folded unit the two
+ * classes cannot be told apart, which is exactly why only one of them
+ * should be written down.
  */
-export const QUOTED_RUN = /"([^"\n]+)"|“([^”\n]+)”/g;
+export const QUOTED_RUN = /"([^"]+)"|“([^”]+)”/g;
 
 /**
  * The same question asked of a MARKER's payload, where a backticked run
@@ -449,6 +467,14 @@ export function unwrapScalar(raw) {
 }
 
 /**
+ * A frontmatter key and everything after its colon, AS WRITTEN — the same
+ * shape `frontmatterFields` matches, minus the inline-comment strip it
+ * applies afterwards. Read `frontmatterScalars` for why this arm cannot
+ * take that strip.
+ */
+export const FRONTMATTER_SCALAR = /^([A-Za-z_][A-Za-z0-9_]*):[ \t]*(.*)$/;
+
+/**
  * @typedef {object} ScalarField
  * @property {number} line  1-based, into the card FILE
  * @property {string} key   the field name
@@ -458,14 +484,30 @@ export function unwrapScalar(raw) {
 /**
  * Every SCALAR frontmatter field of a card, with the line it sits on.
  *
- * **THE VALUES COME FROM `frontmatterFields` AND ONLY THE LINE NUMBER IS
- * DERIVED HERE** (T-057: one derivation, one implementation). That
- * function is already this repository's answer to "what is a frontmatter
- * field", the path arm already spends it on `touches:`, and re-parsing
- * the block here would be a second reading able to disagree with it. A
- * key it returns as an ARRAY is a list value and is not a scalar, so it
- * is skipped rather than flattened — a fence entry is the fence arm's
- * claim, not a sentence anybody asserted.
+ * **THE FIELD SET COMES FROM `frontmatterFields`; ONLY THE SCALAR'S OWN
+ * TEXT AND ITS LINE ARE READ HERE** (T-057 where it applies, T-230-s11
+ * for the exception). That function is already this repository's answer
+ * to "what is a frontmatter field", the path arm already spends it on
+ * `touches:`, and re-parsing the block here would be a second reading
+ * able to disagree with it. A key it returns as an ARRAY is a list value
+ * and is not a scalar, so it is skipped rather than flattened — a fence
+ * entry is the fence arm's claim, not a sentence anybody asserted.
+ *
+ * **THE VALUE IS READ RAW OFF THE KEY'S OWN LINE, AND THAT IS A
+ * DELIBERATE DEPARTURE** (T-230-s11). `frontmatterFields` strips an
+ * inline comment by cutting the value at the first space-hash, and it
+ * does so WITHOUT KNOWING ABOUT QUOTES — the component registry it was
+ * written for carries comments on its `paths:` items and no quoted
+ * assertions at all. On a card that rule truncates a title mid-needle:
+ * a hash inside a quoted assertion ends the value, the run never closes,
+ * and the assertion disappears with no listing, no sighting and no floor
+ * count. So the field set stays the parser's and the TEXT is this
+ * module's, which is the smallest departure that answers it.
+ * **dispatch-brief.mjs IS NOT CHANGED** — the strip is right for the
+ * caller that needs it, and this is the caller that cannot afford it.
+ * The cost is a genuine trailing comment joining the scanned text, which
+ * is the conservative direction and `unwrapScalar`'s own: one extra
+ * listed line against an assertion lost in silence.
  *
  * @param {string} cardText
  * @returns {ScalarField[]}
@@ -477,11 +519,12 @@ export function frontmatterScalars(cardText) {
   const lines = head.split(/\r?\n/);
   /** @type {ScalarField[]} */
   const out = [];
-  for (const [key, raw] of Object.entries(frontmatterFields(cardText))) {
-    if (typeof raw !== "string") continue;
-    const value = unwrapScalar(raw);
-    if (value === "") continue;
+  for (const [key, parsed] of Object.entries(frontmatterFields(cardText))) {
+    if (typeof parsed !== "string") continue;
     const at = lines.findIndex((l) => l.startsWith(`${key}:`));
+    const raw = at === -1 ? null : FRONTMATTER_SCALAR.exec(/** @type {string} */ (lines[at] ?? ""));
+    const value = unwrapScalar(raw === null ? parsed : /** @type {string} */ (raw[2]));
+    if (value === "") continue;
     out.push({ line: at === -1 ? 0 : at + 1, key, value });
   }
   return out;
@@ -605,14 +648,32 @@ export function unseenMarkers(cardText) {
  * decides what is LISTED — initials and punctuation samples are not
  * assertions — so what the flag buys is the count.
  *
- * **THE COUNT IS STILL NOT THE CENSUS, AND THE GAP IS `T-230-s7`.** The
- * needle class stops at a newline and the extraction is line by line, so
- * a quoted run spanning this repository's own hard wrap is seen by
- * neither half — the ordinary shape of a quoted acceptance criterion,
- * and the larger blind spot of the two by an order of magnitude. It is a
- * filed card rather than a repair here; what this arm owes meanwhile is
- * to STATE it, which the class's `cannot` line does, so the two unmarked
- * numbers cannot be read as a closed census.
+ * **AND THE UNIT IS FOLDED BEFORE THE NEEDLE IS MATCHED** (T-230-s7).
+ * The nearness decision was already the paragraph's while the extraction
+ * was still line by line against a class that stopped at the newline, so
+ * a quoted run crossing this repository's own hard wrap — the ordinary
+ * shape of a quoted acceptance criterion, and the larger blind spot of
+ * the two by an order of magnitude — was two half-runs to the extractor
+ * and neither of them opened and closed. The paragraph's lines are now
+ * joined on a SINGLE SPACE, the way the parser folds a card's own
+ * frontmatter title, and the needle is matched over that. A run keeps
+ * the line it OPENS on, carried through the fold, so a listing still
+ * names a place in the file rather than the top of a paragraph.
+ *
+ * **A MARKER LINE BREAKS THE FOLD RATHER THAN JOINING IT.** A marker's
+ * own needle belongs to the MARKED half, which is why the line was
+ * skipped before the fold existed; folding across it would carry a
+ * needle the author asked to have CHECKED into the census of what was
+ * not, and would also pair quotes on either side of it that no author
+ * wrote as a pair. So the lines around a marker are two units.
+ *
+ * **A RUN THAT OPENS IN ONE PARAGRAPH AND CLOSES IN ANOTHER STAYS
+ * UNSEEN, AND THE CLASS SAYS SO IN WORDS.** A blank line ends the unit.
+ * Pairing a quote across one would be a reading of the typesetting
+ * rather than of a sentence — the same error the line-scoped join made
+ * one size down — so the fold stops where the thought does, and the
+ * `cannot` line carries the omission rather than leaving the numbers to
+ * read as a closed census.
  *
  * @param {string} cardText
  * @param {PathOracle} oracle
@@ -630,25 +691,78 @@ export function unmarkedQuotes(cardText, oracle) {
     }
     return false;
   };
-  /** @param {number} line @param {string} field @param {string} text @param {boolean} nearPath */
-  const take = (line, field, text, nearPath) => {
+  /**
+   * Harvest one UNIT. Everything that reaches here is a single line by
+   * construction — a folded paragraph, or a frontmatter scalar, which is
+   * never wrapped — so the needle is bounded by the unit.
+   *
+   * @param {string} text
+   * @param {string} field
+   * @param {boolean} nearPath
+   * @param {(index: number) => number} lineOf the FILE line an offset sits on
+   */
+  const take = (text, field, nearPath, lineOf) => {
     for (const m of text.matchAll(QUOTED_RUN)) {
       const run = collapse(/** @type {string} */ (m[1] ?? m[2] ?? ""));
-      out.push({ line, field, text: run, nearPath, belowFloor: run.length < MIN_QUOTE_CHARS });
+      out.push({
+        line: lineOf(m.index ?? 0),
+        field,
+        text: run,
+        nearPath,
+        belowFloor: run.length < MIN_QUOTE_CHARS,
+      });
     }
   };
   for (const s of frontmatterScalars(cardText)) {
-    take(s.line, s.key, s.value, namesAPath(s.value));
+    take(s.value, s.key, namesAPath(s.value), () => s.line);
   }
   /** @type {CardLine[]} */
   let para = [];
+  /** @type {CardLine[]} */
+  let unit = [];
+  /**
+   * Fold the lines gathered so far and read them as ONE. The joiner is a
+   * single space and the offsets are kept, so the run that crosses a
+   * wrap is one run and still knows the line it opened on.
+   *
+   * @param {boolean} nearPath
+   */
+  const fold = (nearPath) => {
+    if (unit.length === 0) return;
+    let text = "";
+    /** @type {{ from: number, line: number }[]} */
+    const starts = [];
+    for (const l of unit) {
+      if (text !== "") text += " ";
+      starts.push({ from: text.length, line: l.line });
+      text += l.text;
+    }
+    const head = /** @type {{ from: number, line: number }} */ (starts[0]);
+    take(text, "", nearPath, (index) => {
+      let line = head.line;
+      for (const s of starts) {
+        if (s.from > index) break;
+        line = s.line;
+      }
+      return line;
+    });
+    unit = [];
+  };
   const flush = () => {
     if (para.length === 0) return;
+    // THE NEARNESS DECISION IS THE WHOLE PARAGRAPH'S, unchanged: a card
+    // wrapped at seventy columns puts the quote on one line and the file
+    // it is about on the next, and a marker line is part of that reading
+    // even though it is not part of any fold.
     const nearPath = namesAPath(para.map((l) => l.text).join("\n"));
     for (const l of para) {
-      if (CARD_CLAIM.test(l.text)) continue;
-      take(l.line, "", l.text, nearPath);
+      if (CARD_CLAIM.test(l.text)) {
+        fold(nearPath);
+        continue;
+      }
+      unit.push(l);
     }
+    fold(nearPath);
     para = [];
   };
   for (const l of lines) {
@@ -1470,6 +1584,16 @@ export async function preflight(ctx, options = {}) {
   recs.push(
     note("CLAIM CLASS quotes — every MARKED quote, read against the one file the card names"),
   );
+  /* EVERY DISPLAY SITE IN THIS ARM ESCAPES THE AUTHOR'S OWN STRING, AND
+   * EVERY `raise()` SUBJECT STAYS RAW (T-230-s9). A source, a needle and
+   * a sighting's line text are all strings the CARD wrote: they can carry
+   * a space, a stray quote or a trailing character that runs into the
+   * sentence around them, and the line is what a dispatcher decides on.
+   * The SUBJECT is the one member of the class that must not be escaped —
+   * `dischargedBy` matches a dated ruling against exactly that string, and
+   * a ruling is written in the published form, so wrapping it would stop
+   * every such ruling discharging, silently and in the direction that
+   * RE-OPENS what a seat already ruled on. */
   const viaQuotes = `${card.file}, its CARD CLAIM markers, against the named file at HEAD`;
   const marked = cardClaims(cardText).map((claim) => ({
     claim,
@@ -1492,7 +1616,8 @@ export async function preflight(ctx, options = {}) {
   for (const m of heldClaimsList) {
     recs.push(
       value(
-        `CHECKED and HELD line ${m.claim.line}: ${m.claim.source} contains "${m.claim.quote}"`,
+        `CHECKED and HELD line ${m.claim.line}: ${JSON.stringify(m.claim.source)} contains ` +
+          `${JSON.stringify(m.claim.quote)}`,
         tree(ctx, viaQuotes),
       ),
     );
@@ -1500,16 +1625,18 @@ export async function preflight(ctx, options = {}) {
   for (const m of falseClaims) {
     recs.push(
       value(
-        `QUOTED CLAIM NOT IN FILE line ${m.claim.line}: ${m.claim.source} does not contain ` +
-          `"${m.claim.quote}"`,
+        `QUOTED CLAIM NOT IN FILE line ${m.claim.line}: ${JSON.stringify(m.claim.source)} does ` +
+          `not contain ${JSON.stringify(m.claim.quote)}`,
         tree(ctx, viaQuotes),
       ),
       note(`  ${m.verdict.detail}`),
     );
     raise(
+      // RAW, and the comment above says why: this is the SUBJECT.
       m.claim.quote,
       `QUOTED CLAIM NOT IN FILE at ${card.file} line ${m.claim.line}: the card marks ` +
-        `"${m.claim.quote}" as a quote from ${m.claim.source}, and ${m.verdict.detail}`,
+        `${JSON.stringify(m.claim.quote)} as a quote from ${JSON.stringify(m.claim.source)}, ` +
+        `and ${m.verdict.detail}`,
     );
   }
   for (const m of uncheckable) {
@@ -1537,7 +1664,8 @@ export async function preflight(ctx, options = {}) {
   for (const s of unseenMarkers(cardText)) {
     recs.push(
       value(
-        `marker-shaped line the prose reader does not see, line ${s.line}: ${s.text}`,
+        `marker-shaped line the prose reader does not see, line ${s.line}: ` +
+          `${JSON.stringify(s.text)}`,
         tree(ctx, `${card.file}, its raw body against its prose reading`),
       ),
       note("  an example in a block reads as an example and is not a claim, and a marker written"),
@@ -1564,12 +1692,18 @@ export async function preflight(ctx, options = {}) {
   );
   for (const q of besidePath) {
     recs.push(
-      value(`NOT CHECKED, a path is named nearby, ${where(q)}: "${clip(q.text)}"`, tree(ctx, viaLoose)),
+      value(
+        `NOT CHECKED, a path is named nearby, ${where(q)}: ${JSON.stringify(clip(q.text))}`,
+        tree(ctx, viaLoose),
+      ),
     );
   }
   for (const q of noSource) {
     recs.push(
-      value(`NOT CHECKED, no source named, ${where(q)}: "${clip(q.text)}"`, tree(ctx, viaLoose)),
+      value(
+        `NOT CHECKED, no source named, ${where(q)}: ${JSON.stringify(clip(q.text))}`,
+        tree(ctx, viaLoose),
+      ),
     );
   }
   recs.push(
