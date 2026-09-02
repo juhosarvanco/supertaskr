@@ -454,7 +454,37 @@ function rule(
   // spells this cause and which ACCUMULATES the other causes when lanes
   // ARE live — an early return would have answered correctly and dropped
   // the `cardMissing` clause beside it.
-  if (holds.length === 0 && fence.tokens.length > 0) {
+  //
+  // AND A DECLARED FENCE IS STILL NOT A COMPARABLE ONE (T-219-s4, the
+  // residual V-T-219 named in the same sentence and deliberately left).
+  // `tokens.length > 0` asks only whether the card SPOKE. A token that
+  // cannot be RESOLVED means the fence cannot be COMPUTED, which is the
+  // sentence the `unfenceable` branch below closes with — and
+  // `compareFences` answers `unusable` for exactly that fence the moment
+  // any lane is live, while `buildLaneFence` refuses to arm it outright.
+  // So with no lane live this branch was the one place in the whole
+  // pipeline that called such a fence FREE, and it is the place dispatch
+  // actually asks. Two halves disagreeing in the safe direction by luck
+  // rather than by rule is T-227's shape and the reason T-219 exists.
+  //
+  // THE TERM IS `fence.unusable` AND IS NOT A COUNT DERIVED HERE.
+  // `expandFence` already answers *"which raw tokens make this fence
+  // uncomparable"* — every `rejected` and every `unresolved` one — and a
+  // second derivation at this site would be a fourth spelling of a rule
+  // this module imports precisely so that there is one (T-057). It is
+  // also why the term reads `=== 0` on a list rather than testing token
+  // KINDS: a kind test would have to be extended by hand the day a
+  // fourth kind is added, and this one never does.
+  //
+  // MEASURED BEFORE IT WAS TAKEN, at `24bfec8e10b3`, over the live board
+  // with no lanes handed in — both ways, because the two answers differ
+  // and only one of them is dispatch. WITH the oracle
+  // `brief.mjs --dispatch` supplies, 0 of 111 startable cards carry an
+  // unusable token and nothing moves. WITHOUT one, `T-164-s1` moves from
+  // `startable` to `unfenceable`, which is the correct answer for a
+  // consumer that has no repository to resolve a bare `bin` against: a
+  // fence it cannot compute is not a fence that is free.
+  if (holds.length === 0 && fence.tokens.length > 0 && fence.unusable.length === 0) {
     const spelled =
       fence.paths.length === 0 ? 'it reserves nothing' : `its fence is ${spellPaths(fence.paths)}`;
     return {
@@ -527,13 +557,29 @@ function rule(
     };
   }
 
-  // THREE CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR
+  // FOUR CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR
   // REMEDIES DIFFER: a card declaring no fence is spelled ON THIS CARD;
-  // a token nobody can resolve is spelled better on a card; a lane whose
-  // card is not here is fetched.
+  // a token THIS card owns and nobody can resolve is spelled better HERE;
+  // a token the LANE'S card owns is spelled better THERE; a lane whose
+  // card is not here is fetched. The middle two were one clause until
+  // T-219-s4, and they read as one remedy while pointing at two cards.
   const missing = holds.filter((h) => h.cardMissing);
   const unresolved = holds.filter((h) => !h.cardMissing);
-  const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))].sort();
+  // THIS CARD'S OWN UNCOMPARABLE TOKENS, WHICH IS THE ONLY CAUSE THAT
+  // NEEDS NO LANE (T-219-s4). It is read off `fence.unusable` — the same
+  // list the `startable` guard above tests — so the word that refuses the
+  // card and the word that explains the refusal can never be computed
+  // from two different facts.
+  const own = [...new Set(fence.unusable)].sort();
+  // AND THE HOLD CLAUSE NAMES ONLY WHAT THE OTHER SIDE BROUGHT.
+  // `compareFences` returns the UNION of both sides' `unusable`, so
+  // before the subtraction one token bought two clauses — "this card's
+  // fence carries bin" and "against T-002 …, bin resolved to neither" —
+  // and a reader could not tell which of the two cards to go and repair.
+  // The subtraction is by RAW TOKEN, which is what both lists hold.
+  const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))]
+    .filter((t) => !own.includes(t))
+    .sort();
   const clauses: string[] = [];
   // THE THIRD CAUSE IS THE CARD'S OWN (T-227, absorbed by T-219): a card
   // declaring no `touches:` owns no token to be unresolved, so neither
@@ -545,6 +591,22 @@ function rule(
     clauses.push(
       `${card.id} declares no \`touches:\` at all, so it has no fence to compare — an undeclared ` +
         'fence is not an empty one, and nothing can be ruled disjoint from it',
+    );
+  }
+  // THE CAUSE THAT NEEDS NO LANE, AND THEREFORE THE ONE THE OLD CLAUSE
+  // LIST COULD NOT REACH (T-219-s4). Every clause below is keyed on a
+  // HOLD, and there are no holds when the lane list is empty — so a card
+  // whose own token nobody can resolve arrived here with an empty middle
+  // in the one state where it is the whole story. The remedy named is
+  // this card's: spell the token as a slug or a path, or hand the reader
+  // a `knownPaths` oracle that can settle a bare word.
+  if (own.length > 0) {
+    const many = own.length > 1;
+    clauses.push(
+      `${card.id}'s own \`touches:\` carries ${own.join(', ')}, which ` +
+        `${many ? 'resolve' : 'resolves'} to neither a slug nor a path, so this fence cannot be ` +
+        'COMPARED against any lane, live or not — an unresolved token is not "disjoint from ' +
+        'everything"',
     );
   }
   if (missing.length > 0) {

@@ -819,6 +819,105 @@ describe('T-219 — CONTAINMENT IS HOLDING, so a fence that SWALLOWS the unfence
   });
 });
 
+describe('T-219-s2 — the repository ROOT has two spellings and only one of them was refused', () => {
+  it('REFUSES a bare dot, which normalisation cannot strip, and names what it refused', () => {
+    // `./` and `.//` normalise to nothing and are refused with a sentence
+    // that says a fence cannot reserve the repository root. A BARE DOT is
+    // the same declaration with nothing after it: the leading-`./` loop
+    // has nothing left to strip, `.` survives normalisation, and `.`
+    // contains a `.` — so `looksLikePath` classified it a PATH reserving
+    // the domain `.`. Every path this module compares is
+    // repository-relative and normalised, so none begins `./` and nothing
+    // can ever sit inside `.`.
+    //
+    // KILLED BY: removing the `DOT_DOMAIN` branch from `expandFence`,
+    // where the token comes back `kind: 'path'`, `paths: ['.']`,
+    // `unusable: []` and `issues: []` — a fence that permits nothing,
+    // collides with nothing and reports no issue.
+    for (const raw of ['.', './.', './/', ' . ']) {
+      const fence = expandFence(synthetic('T-930', [raw]), components);
+      expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
+      expect(fence.tokens[0]?.kind, `${raw} resolved`).toBe('unresolved');
+      expect(fence.unusable, `${raw} is not on the uncomparable list`).toEqual([raw.trim()]);
+      expect(fence.issues, `${raw} was refused in silence`).toHaveLength(1);
+    }
+    // `.//` and ` . ` reach the refusal by different routes — the first
+    // through the empty-normalisation branch, the second through this one
+    // — so the message is asserted on the spelling this card is about.
+    const dot = expandFence(synthetic('T-930', ['.']), components);
+    const message = dot.issues[0]?.message ?? '';
+    expect(message).toContain('repository ROOT under its other spelling');
+    expect(message).toContain('reserve NOTHING while colliding with nothing');
+    expect(message, 'the refusal does not name the card file').toContain(
+      'docs/tasks/T-930-fixture.md',
+    );
+  });
+
+  it('and refuses it BEFORE the oracle is consulted, so a repository cannot vote the root back in', () => {
+    // The oracle exists to settle a bare WORD (`docs` is a directory,
+    // `ci` is not). `.` is a directory on every filesystem there has ever
+    // been, so an oracle asked about it would answer yes and hand the
+    // fence a domain that still matches nothing. The refusal has to sit
+    // above the oracle, exactly as T-219's does.
+    const knownPaths = readdirSync(repoRoot);
+    const fence = expandFence(synthetic('T-931', ['.']), components, {
+      knownPaths: [...knownPaths, '.'],
+    });
+    expect(fence.tokens[0]?.kind).toBe('unresolved');
+    expect(fence.paths).toEqual([]);
+  });
+
+  it('REFUSES a token that climbs OUT of the repository, with the control that a sibling name does not', () => {
+    // THE CLASS, NOT THE SPELLING — which is this card's parent's own
+    // lesson turned on its residual: T-219 exists because `docs/tasks`
+    // was refused while the `docs` containing it was waved through, a
+    // rule built for one spelling of one fence. `..` and `../nputer-app`
+    // have the identical symptom as `.`: a domain no repository-relative
+    // path can sit inside, reserved in silence.
+    for (const raw of ['..', '../nputer-app', '../../etc']) {
+      const fence = expandFence(synthetic('T-932', [raw]), components);
+      expect(fence.tokens[0]?.kind, `${raw} resolved`).toBe('unresolved');
+      expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
+      expect(fence.issues[0]?.message ?? '', raw).toContain('climbs OUT of the repository');
+    }
+    // THE CONTROLS, which are what stop this being a rule about the
+    // CHARACTER: a leading `./` is stripped and the rest resolves; a
+    // directory whose NAME merely begins with a dot is a real path; and a
+    // dot inside a filename was never in question.
+    for (const [raw, domain] of [
+      ['./lib/parser', 'lib/parser'],
+      ['.claude/hooks', '.claude/hooks'],
+      ['...odd', '...odd'],
+      ['lib/parser/src/fence.ts', 'lib/parser/src/fence.ts'],
+    ] as const) {
+      const fence = expandFence(synthetic('T-933', [raw]), components);
+      expect(fence.tokens[0]?.kind, `${raw} was refused`).toBe('path');
+      expect(fence.paths, `${raw} lost its domain`).toEqual([domain]);
+      expect(fence.issues, `${raw} raised an issue`).toEqual([]);
+    }
+  });
+
+  it('and the refusal reaches the VERDICT, never only the issue list', () => {
+    // The half that decides a lane. `compareFences` walks the expanded
+    // path sets, so before the refusal a dot fence produced zero
+    // witnesses and fell through to `disjoint` — the answer, not a
+    // silence, which is why the dispatch guard would have let it start.
+    const dot = expandFence(synthetic('T-934', ['.']), components);
+    const real = expandFence(synthetic('T-935', ['lib-parser']), components);
+    const elsewhere = expandFence(synthetic('T-936', ['app/src/main.tsx']), components);
+
+    // THE CONTROLS FIRST, so the refusal below is a verdict this probe
+    // could have answered otherwise rather than the only word it knows.
+    expect(compareFences(real, expandFence(synthetic('T-937', ['lib/parser/src/fence.ts']), components)).verdict).toBe('overlapping');
+    expect(compareFences(real, elsewhere).verdict).toBe('disjoint');
+
+    for (const other of [real, elsewhere]) {
+      expect(compareFences(dot, other).verdict).toBe('unusable');
+      expect(compareFences(other, dot).verdict).toBe('unusable');
+    }
+  });
+});
+
 describe('the live board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
@@ -902,5 +1001,112 @@ describe('the live board, censused through the expansion', () => {
     // A CENSUS IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
     // NON-EMPTY: a loop over zero tokens passes every assertion inside it.
     expect(named.length).toBeGreaterThan(0);
+  });
+
+  it('T-219-s2: NO live card fences the repository root or climbs out of it — with a planted card proving the census can see one', () => {
+    // AN EMPTY CENSUS IS NOT EVIDENCE UNTIL ITS OWN INSTRUMENT HAS BEEN
+    // SEEN FINDING SOMETHING. This one expects zero, so the control comes
+    // FIRST: a planted card carrying `.` is run through the identical
+    // predicate over the identical loop, and it is found. Without that,
+    // the body below passes just as green against a predicate that never
+    // matches anything — which is the failure mode a zero-count census
+    // has and a non-empty one does not.
+    const planted: string[] = [];
+    for (const task of [...project.tasks, synthetic('T-940', ['.', '../nputer-app'])]) {
+      if (task.id === undefined) continue;
+      for (const raw of task.touches) {
+        const normalized = normalizeFenceToken(raw);
+        if (/^\.\.?(?:\/|$)/.test(normalized)) planted.push(`${task.id} ${raw} -> ${normalized}`);
+      }
+    }
+    expect(planted, 'the census predicate found nothing even with a card planted for it').toEqual([
+      'T-940 . -> .',
+      'T-940 ../nputer-app -> ../nputer-app',
+    ]);
+
+    // AND NOW THE LIVE BOARD, through the same predicate: nobody has ever
+    // spelled it. The refusal is structural rather than a repair, which
+    // is exactly what makes it worth pinning — a silent state has no
+    // instance until the day it has one, and the DOT is reachable from
+    // the most ordinary source there is: a token pasted out of a shell.
+    const live: string[] = [];
+    for (const task of project.tasks) {
+      if (task.id === undefined) continue;
+      for (const raw of task.touches) {
+        const normalized = normalizeFenceToken(raw);
+        if (/^\.\.?(?:\/|$)/.test(normalized)) live.push(`${task.id} ${raw} [${task.status}]`);
+      }
+    }
+    expect(live).toEqual([]);
+
+    // THE DECLARED CEILING, CENSUSED RATHER THAN ASSERTED. An INTERIOR
+    // dot segment (`a/./b`, `a/../b`) has the identical symptom and a
+    // DIFFERENT remedy — normalisation should resolve the segment, not
+    // refuse the token — so `expandFence` deliberately does not reach it
+    // and `T-219-s6` is routed for it. This row is what stops that being
+    // a silent hole: it is zero today, and it reds the day one is written.
+    const interior: string[] = [];
+    for (const task of project.tasks) {
+      if (task.id === undefined) continue;
+      for (const raw of task.touches) {
+        const normalized = normalizeFenceToken(raw);
+        if (/(?:^|\/)\.\.?(?:\/)/.test(normalized) && !/^\.\.?(?:\/|$)/.test(normalized)) {
+          interior.push(`${task.id} ${raw} [${task.status}]`);
+        }
+      }
+    }
+    expect(interior).toEqual([]);
+  });
+
+  it('T-219-s4: every ready card the DISPATCH oracle sees has a COMPARABLE fence, and oracle-less exactly the bare-word cards do not', () => {
+    // THE LIVE-BOARD EFFECT OF THE `rule()` TERM, censused where the
+    // census belongs — and measured BOTH ways, because the two answers
+    // differ and only one of them is dispatch. `brief.mjs --dispatch`
+    // passes a `knownPaths` oracle built from every tracked path and
+    // every directory prefix of one, so a bare `bin` resolves there;
+    // this suite has no git, so `readdirSync` of the repository root is
+    // the same oracle for the top-level tokens that are the whole of the
+    // disagreement today.
+    //
+    // THE CONTROL FIRST, again, because the oracle side expects zero: a
+    // planted card carrying an unresolvable bare word is found by the
+    // identical predicate.
+    const oracle = readdirSync(repoRoot);
+    const uncomparable = (task: TaskRecord, knownPaths?: readonly string[]): string | undefined => {
+      const fence = expandFence(task, components, knownPaths === undefined ? {} : { knownPaths });
+      return fence.unusable.length === 0 ? undefined : `${task.id} ${fence.unusable.join(',')}`;
+    };
+    expect(uncomparable(synthetic('T-941', ['nowhere-at-all']), oracle)).toBe(
+      'T-941 nowhere-at-all',
+    );
+
+    // WITH THE ORACLE: no card that a dispatch could START carries an
+    // uncomparable fence. `planned` is the only status the schedule can
+    // rule `ready` from, so it is the population the term moves.
+    const withOracle: string[] = [];
+    const withNone: string[] = [];
+    for (const task of project.tasks) {
+      if (task.id === undefined || task.status !== 'planned' || task.touches.length === 0) continue;
+      const a = uncomparable(task, oracle);
+      if (a !== undefined) withOracle.push(a);
+      const b = uncomparable(task);
+      if (b !== undefined) withNone.push(b);
+    }
+    expect(withOracle, 'a planned card cannot be dispatched with a fence nobody can compute').toEqual([]);
+    // AND THE ORACLE-LESS ROW IS WHAT STOPS THE EMPTY ONE ABOVE BEING
+    // VACUOUS, run through the SAME predicate over the SAME population:
+    // drop the oracle and the board does produce an instance. So the
+    // zero is the oracle closing the gap, not the loop finding nothing.
+    //
+    // IT IS ALSO THE QUALIFIER THIS CARD'S TRIAGE WAS AMENDED FOR. The
+    // stamp read "the wider remedy moves T-164-s1 from startable to
+    // unfenceable" full stop; it moves it ORACLE-LESS ONLY. `bin/.gitkeep`
+    // is tracked, `knownPathOracle` carries every ancestor prefix of every
+    // tracked path, and `brief.mjs --dispatch` and `buildLaneFence` both
+    // supply it — so at the surface that dispatches, `bin` resolves as a
+    // path and NO live card moves. A consumer with no repository gets
+    // `unfenceable`, which is the correct answer for it: a fence it cannot
+    // COMPUTE is not a fence that is free.
+    expect(withNone).toEqual(['T-164-s1 bin']);
   });
 });
