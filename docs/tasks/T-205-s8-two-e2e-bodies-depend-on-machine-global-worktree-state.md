@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: building
+status: verifying
 suggested_by: verifier claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/e2e/tests/session-economics.spec.ts]
