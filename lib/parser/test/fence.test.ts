@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  type Fence,
   UNFENCEABLE_PATHS,
   compareFences,
   expandFence,
@@ -204,15 +205,22 @@ describe('expandFence — the three kinds of token, typed', () => {
   });
 
   it('resolves the bare words a repository oracle can settle, and only those', () => {
-    // With the repository's own top-level entries supplied, `docs` and
-    // `method` are paths and `ci` still names nothing — which is
-    // `T-111-s3`'s ruling ("`ci` wants a ruling, not code") reproduced
-    // mechanically rather than asserted.
+    // With the repository's own top-level entries supplied, `method` is a
+    // path and `ci` still names nothing — which is `T-111-s3`'s ruling
+    // ("`ci` wants a ruling, not code") reproduced mechanically rather
+    // than asserted.
+    //
+    // `docs` IS THE THIRD ANSWER AND IT IS NOT THE ORACLE'S (T-219). The
+    // oracle would settle it — `docs` is a real directory — and the
+    // expansion never asks, because the domain contains `docs/tasks` and
+    // is refused two branches earlier. So this body's subject is
+    // `method`: the bare word an oracle turns into a path, beside the
+    // bare word nothing can.
     const knownPaths = readdirSync(repoRoot);
     const fence = expandFence(card('T-054'), components, { knownPaths });
-    expect(fence.unusable).toEqual(['ci']);
+    expect(fence.unusable).toEqual(['docs', 'ci']);
     const kinds = new Map(fence.tokens.map((t) => [t.raw, t.kind]));
-    expect(kinds.get('docs')).toBe('path');
+    expect(kinds.get('docs')).toBe('rejected');
     expect(kinds.get('method')).toBe('path');
     expect(kinds.get('ci')).toBe('unresolved');
     // And the bare `method` now means what the seven cards spelling it
@@ -265,9 +273,24 @@ describe("a card's own file is never in its own fence", () => {
   it('carves the own file out of a directory token it sits inside', () => {
     const fence = expandFence(synthetic('T-904', ['docs/architecture/components/'], own), components);
     expect(fence.excluded).toEqual([]);
-    const wide = expandFence(synthetic('T-904', ['docs/'], own), components);
-    expect(wide.excluded).toEqual([own]);
-    expect(wide.paths).toEqual(['docs']);
+    // THE CONTAINING CASE CANNOT BE SPELLED OVER A CARD'S OWN DIRECTORY
+    // ANY MORE, AND THAT IS T-219 RATHER THAN A WEAKENING: every domain
+    // containing `docs/tasks/T-904-own-file.md` also contains
+    // `docs/tasks`, which the expansion now refuses outright. So the
+    // carve-out is exercised over a file the protocol does NOT write on
+    // every card — the `ownFile` option's own reason for existing — and
+    // the property under test is unchanged.
+    //
+    // THE DIRECTORY IS `docs/rooms` AND NOT `docs/architecture`, so that
+    // this body's kill set stays disjoint from the sibling-directory
+    // control's in the T-219 block below: that control is armed by
+    // `UNFENCEABLE_PATHS` and dies to a DATA mutant adding its
+    // directory, and a fixture sharing that directory would die to the
+    // same mutant and prove nothing of its own.
+    const roomFile = 'docs/rooms/a-room-fixture.md';
+    const wide = expandFence(synthetic('T-904', ['docs/rooms/'], roomFile), components);
+    expect(wide.excluded).toEqual([roomFile]);
+    expect(wide.paths).toEqual(['docs/rooms']);
   });
 
   it('drops a token that IS the own file, and records the carve-out', () => {
@@ -286,8 +309,24 @@ describe("a card's own file is never in its own fence", () => {
     // because the other card's own file is carved out of the other card's
     // own fence by the rule above. The collision is between a FENCE and a
     // PROTOCOL WRITE, and a fence-versus-fence check has no term for one.
-    const holder = expandFence(synthetic('T-904', ['docs/'], own), components);
+    //
+    // THE HOLDER IS BUILT BY HAND HERE, AND THAT IS THE POINT (T-219).
+    // `expandFence` no longer produces this fence at all — a token whose
+    // domain contains `docs/tasks` is refused before it can reserve
+    // anything — so the argument is modelled the way MODEL ONE and MODEL
+    // TWO at the top of this file are modelled: the BEFORE, kept in the
+    // test and never in `src/`. Without it the reason the refusal has to
+    // live at parse time would be unstated once the refusal exists.
     const neighbourFile = 'docs/tasks/T-905-neighbour.md';
+    const holder: Fence = {
+      id: 'T-904',
+      file: own,
+      tokens: [{ raw: 'docs/', normalized: 'docs', kind: 'path', components: [], paths: ['docs'] }],
+      paths: ['docs'],
+      excluded: [own],
+      unusable: [],
+      issues: [],
+    };
     const neighbour = expandFence(synthetic('T-905', ['lib-parser'], neighbourFile), components);
 
     // The holder reserves it…
@@ -298,10 +337,16 @@ describe("a card's own file is never in its own fence", () => {
     // …so the comparison is silent, and correctly so.
     expect(compareFences(holder, neighbour).verdict).toBe('disjoint');
     // Which is why `docs/tasks` is refused by the parser rather than
-    // discovered by a comparison that structurally cannot discover it.
+    // discovered by a comparison that structurally cannot discover it —
+    // and why the bare `docs` the model above hand-builds is refused
+    // now too, in the same place and for the same reason.
     const refused = expandFence(synthetic('T-904', ['docs/tasks/'], own), components);
     expect(refused.tokens[0]?.kind).toBe('rejected');
     expect(compareFences(refused, neighbour).verdict).toBe('unusable');
+    const swallowing = expandFence(synthetic('T-904', ['docs/'], own), components);
+    expect(swallowing.tokens[0]?.kind).toBe('rejected');
+    expect(swallowing.paths).toEqual([]);
+    expect(compareFences(swallowing, neighbour).verdict).toBe('unusable');
   });
 
   it('does not suppress a collision on somebody ELSE’s card file', () => {
@@ -526,6 +571,254 @@ describe('T-221 — THE ONE CHARACTER THAT MAKES CONTAINMENT CONTAINMENT', () =>
   });
 });
 
+describe('T-219 — CONTAINMENT IS HOLDING, so a fence that SWALLOWS the unfenceable path is refused', () => {
+  /**
+   * `method/lane-protocol.md` rule 5 refuses the directory the protocol
+   * writes to on every card, "MECHANICALLY, where the fence is read".
+   * Until this block existed it was mechanical for ONE spelling: the
+   * check was `UNFENCEABLE_PATHS.includes(normalized)`, EXACT equality on
+   * a normalised token, in a module whose every other rule is
+   * prefix-aware. `touches: [docs/tasks]` was refused; `touches: [docs]`
+   * was ACCEPTED and expanded to a domain containing it, so a lane could
+   * hold by containment the one directory no card may hold.
+   *
+   * THE TWO DIRECTIONS ARE DIFFERENT ANSWERS AND BOTH ARE PINNED HERE.
+   * A token that CONTAINS the entry holds it and is refused; a token
+   * that SITS INSIDE it is the narrowing the rule asks for by name —
+   * "Name the individual files instead" — and must not be. A containment
+   * test run in both directions would refuse `T-108`'s three named card
+   * files, which is the fence the rule itself produced.
+   *
+   * THE DOMAINS ARE DERIVED FROM `UNFENCEABLE_PATHS`, NOT TYPED. The
+   * refusal is a rule about the LIST, and the list is data — so the
+   * fixtures are constructed from each entry and the block moves with
+   * the data instead of with a literal somebody has to remember.
+   */
+  const entry = UNFENCEABLE_PATHS[0] ?? '';
+  /** The parent domain that SWALLOWS the entry — `docs` for `docs/tasks`. */
+  const parent = entry.split('/').slice(0, -1).join('/');
+  /** A file NAMED inside the entry: allowed, and the rule says so. */
+  const inside = `${entry}/T-905-a-named-card.md`;
+  /** A STRING prefix of the entry that is not a PATH prefix of it. */
+  const nearMiss = entry.slice(0, -1);
+  /** A sibling whose name merely starts the same way. */
+  const adjacent = `${entry}-archive`;
+
+  it('the fixtures are this repository’s own data, and are shaped the way every pin below assumes', () => {
+    // A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
+    // NON-EMPTY. An `entry` that came back `''` is the repository root,
+    // which `sharedDomain` short-circuits on — every refusal below would
+    // then pass against code that never ran the containment line at all.
+    expect(UNFENCEABLE_PATHS.length).toBeGreaterThan(0);
+    expect(entry).not.toBe('');
+    expect(parent, 'the entry has no parent to swallow it with').not.toBe('');
+    expect(entry.startsWith(`${parent}/`)).toBe(true);
+    // The near miss is a STRING prefix and NOT a path one, which is the
+    // whole distinction the separator draws — asserted about the fixture
+    // rather than assumed of it.
+    expect(entry.startsWith(nearMiss)).toBe(true);
+    expect(entry.startsWith(`${nearMiss}/`)).toBe(false);
+    expect(adjacent.startsWith(entry)).toBe(true);
+    expect(adjacent.startsWith(`${entry}/`)).toBe(false);
+  });
+
+  it('REFUSES a token whose domain CONTAINS the entry, in every spelling, and NAMES what it swallowed', () => {
+    for (const spelling of [parent, `${parent}/`, `./${parent}/**`, `${parent}//`, `  ${parent}  `]) {
+      const fence = expandFence(synthetic('T-910', [spelling]), components);
+      expect(fence.tokens[0]?.kind, spelling).toBe('rejected');
+      expect(fence.paths, spelling).toEqual([]);
+      expect(fence.unusable, spelling).toEqual([spelling.trim()]);
+      const message = fence.issues[0]?.message ?? '';
+      // The token it refused, and the unfenceable path it swallowed —
+      // "SHALL say which unfenceable path the token swallowed".
+      expect(message, spelling).toContain(JSON.stringify(spelling.trim()));
+      expect(message, spelling).toContain(`CONTAINS '${entry}'`);
+      expect(message, spelling).toContain('every dispatch');
+    }
+  });
+
+  it('and refuses it BEFORE the oracle is consulted, so a real directory does not resolve past the rule', () => {
+    // `parent` is a real directory, so the `knownPaths` oracle WOULD
+    // settle it as a path — which is exactly how it slipped through
+    // before. The refusal has to precede the oracle or the widest fence
+    // on the board is the one the repository can confirm exists.
+    const knownPaths = readdirSync(repoRoot);
+    expect(knownPaths, 'the oracle cannot settle the fixture at all').toContain(parent);
+    const fence = expandFence(synthetic('T-911', [parent]), components, { knownPaths });
+    expect(fence.tokens[0]?.kind).toBe('rejected');
+    expect(fence.paths).toEqual([]);
+  });
+
+  it('still refuses a token that IS the entry, and says so WITHOUT claiming containment', () => {
+    const fence = expandFence(synthetic('T-912', [entry]), components);
+    expect(fence.tokens[0]?.kind).toBe('rejected');
+    const message = fence.issues[0]?.message ?? '';
+    expect(message).toContain(`fences '${entry}'`);
+    expect(message, 'a token that IS the entry contains nothing').not.toContain('CONTAINS');
+  });
+
+  it('does NOT reach a token that merely sits NEAR the entry — the separator is the whole rule', () => {
+    // The one-character mutant this pins: drop the `/` from the
+    // containment test and `docs/task` swallows `docs/tasks`, refusing a
+    // fence that shares no file with it. That is `method/lane-protocol.md`
+    // rule 5's own measurement — six concurrent lanes, every block a
+    // naming collision and not one real collision — reintroduced by the
+    // refusal built to enforce it.
+    for (const near of [nearMiss, adjacent, `${parent}/ROADMAP.md`]) {
+      const fence = expandFence(synthetic('T-913', [near]), components);
+      expect(fence.tokens[0]?.kind, near).toBe('path');
+      expect(fence.paths, near).toEqual([normalizeFenceToken(near)]);
+      expect(fence.unusable, near).toEqual([]);
+      expect(fence.issues, near).toEqual([]);
+    }
+  });
+
+  it('POSITIVE CONTROL: a sibling DIRECTORY under the same parent is still fenceable', () => {
+    // The card asks for this one by name, and `UNFENCEABLE_PATHS`'s own
+    // doc is why: the list "is deliberately not a rule about
+    // directories" — `docs/architecture/components/` is a legitimate
+    // directory fence that six live cards hold, and what disqualifies
+    // `docs/tasks` is that the PROTOCOL writes there on every card.
+    //
+    // ITS ARMING IS THE DATA, SO ITS CONTROL IS A DATA MUTANT. The same
+    // `unfenceableWithin` call decides this body's answer and the
+    // refusals above, so a code mutant cannot show this body failing
+    // where the subject's arrangement is absent; adding this directory
+    // to `UNFENCEABLE_PATHS` can, and is what the drill on this card ran.
+    const fence = expandFence(synthetic('T-914', ['docs/architecture/components/']), components);
+    expect(fence.tokens[0]?.kind).toBe('path');
+    expect(fence.paths).toEqual(['docs/architecture/components']);
+    expect(fence.unusable).toEqual([]);
+    // …and it is a live vocabulary rather than a fixture: cards hold it.
+    const holders = project.tasks.filter(
+      (t) => t.id !== undefined && t.touches.some((raw) => normalizeFenceToken(raw) === 'docs/architecture/components'),
+    );
+    expect(holders.length, 'no live card fences the directory this control is about').toBeGreaterThan(0);
+  });
+
+  it('POSITIVE CONTROL: a card file NAMED inside the entry is still fenceable, live and synthetic', () => {
+    // The rule's own remedy — "Name the individual files instead" — and
+    // `T-108` is the card whose fence was narrowed by hand to exactly
+    // that. A containment test run in BOTH directions refuses every one
+    // of them and undoes the narrowing the rule asks for.
+    const made = expandFence(synthetic('T-915', [inside]), components);
+    expect(made.tokens[0]?.kind).toBe('path');
+    expect(made.paths).toEqual([inside]);
+    expect(made.unusable).toEqual([]);
+
+    const live = fenceOf('T-108');
+    expect(live.unusable).toEqual([]);
+    expect(live.tokens.every((t) => t.kind === 'path')).toBe(true);
+    expect(
+      live.paths.every((p) => p.startsWith(`${entry}/`)),
+      'the live fixture no longer names files inside the unfenceable directory',
+    ).toBe(true);
+    expect(live.paths.length).toBeGreaterThan(0);
+  });
+
+  it('REFUSES A SLUG whose component paths swallow the entry, and names the component', () => {
+    // THE REFUSAL SITS AFTER THE SLUG BRANCH'S `continue`, so a slug
+    // never reached it: the same guard, unasked, for the other kind of
+    // token. Zero live instances — no component declares a path under
+    // docs/ — so this is a SYNTHETIC registry deliberately, and the
+    // control below is that the live registry is clean.
+    const wide: ComponentRecord = {
+      id: 'C-99',
+      name: 'a component whose territory is the whole of docs',
+      paths: [parent],
+      dependsOn: [],
+      decisions: [],
+      touchSlugs: ['docs-everything'],
+      status: 'auto',
+      nonCode: true,
+      responsibility: 'fixture',
+      extra: Object.create(null) as Record<string, unknown>,
+      file: 'docs/architecture/components/C-99-fixture.md',
+    };
+    const fence = expandFence(synthetic('T-921', ['docs-everything']), [wide]);
+    expect(fence.tokens[0]?.kind, 'a slug walked past the rule a path is refused by').toBe(
+      'rejected',
+    );
+    expect(fence.paths).toEqual([]);
+    expect(fence.unusable).toEqual(['docs-everything']);
+    const message = fence.issues[0]?.message ?? '';
+    expect(message).toContain('C-99');
+    expect(message).toContain(`CONTAINS '${entry}'`);
+
+    // THE CONTROL, on the SAME registry shape: a component whose paths
+    // sit elsewhere resolves as a slug and reserves them. Without it
+    // every assertion above is satisfied by a branch that refuses every
+    // slug it is handed.
+    const narrow: ComponentRecord = { ...wide, paths: ['lib/parser/src'], touchSlugs: ['narrow'] };
+    const ok = expandFence(synthetic('T-922', ['narrow']), [narrow]);
+    expect(ok.tokens[0]?.kind).toBe('slug');
+    expect(ok.paths).toEqual(['lib/parser/src']);
+    expect(ok.unusable).toEqual([]);
+  });
+
+  it('and NO live registry slug swallows it, so the synthetic fixture above is the only way to reach it', () => {
+    // The other half of the same claim, censused over this repository's
+    // own registry rather than asserted: every slug the live components
+    // declare expands to domains that hold nothing unfenceable, which is
+    // why the branch above has zero live instances and is structural.
+    const slugs = slugPathIndex(components);
+    expect(slugs.size, 'the live registry declares no slug at all').toBeGreaterThan(0);
+    const swallowing: string[] = [];
+    for (const [name] of slugs) {
+      const fence = expandFence(synthetic('T-923', [name]), components);
+      if (fence.tokens[0]?.kind !== 'slug') swallowing.push(`${name} -> ${fence.tokens[0]?.kind}`);
+    }
+    expect(swallowing).toEqual([]);
+  });
+
+  it('T-227: a card declaring NO `touches:` is REFUSED, and the refusal names the card', () => {
+    // Absorbed here as a second instance of this function's silence. An
+    // empty `touches:` produced no token, no issue and no `unusable`
+    // entry, so the expansion answered with a fence that permits nothing
+    // and reports nothing — and the diagnosis costs whoever meets it far
+    // more than the mistake did.
+    const fence = expandFence(synthetic('T-916', []), components);
+    expect(fence.tokens).toEqual([]);
+    expect(fence.paths).toEqual([]);
+    expect(fence.issues).toHaveLength(1);
+    expect(fence.issues[0]?.kind).toBe('invalid-field');
+    expect(fence.issues[0]).toMatchObject({ field: 'touches' });
+    const message = fence.issues[0]?.message ?? '';
+    expect(message, 'the refusal does not name the card').toContain('T-916');
+    expect(message).toContain('docs/tasks/T-916-fixture.md');
+    // AND NOT THROUGH `unusable`, WHICH IS RAW TOKENS: there is no token
+    // here, and a sentinel in that list would make every consumer that
+    // prints it as an unresolved TOKEN print a sentence with none behind
+    // it. The verdict is `compareFences`'s, and the body below is it.
+    expect(fence.unusable).toEqual([]);
+  });
+
+  it('T-227: and it is NEVER reported disjoint — with the control that the same probe answers both other verdicts', () => {
+    // T-227's own measurement, and its own control: `compareFences`
+    // walks `a.tokens × b.tokens`, so a token-less side produced zero
+    // witnesses and fell through to `disjoint` — an ANSWER rather than a
+    // silence, which is why the guard would have allowed the lane.
+    const undeclared = expandFence(synthetic('T-917', []), components);
+    const real = expandFence(synthetic('T-918', ['lib-parser']), components);
+    const overlapping = expandFence(synthetic('T-919', ['lib/parser/src/fence.ts']), components);
+    const elsewhere = expandFence(synthetic('T-920', ['app/src/main.tsx']), components);
+
+    // THE CONTROLS FIRST, so the refusal below is a verdict this probe
+    // could have answered otherwise rather than the only word it knows.
+    expect(compareFences(real, overlapping).verdict).toBe('overlapping');
+    expect(compareFences(real, elsewhere).verdict).toBe('disjoint');
+
+    // …and the undeclared fence is disjoint from NEITHER, in both
+    // argument orders — the loop is symmetric and the guard is not
+    // allowed to depend on which side it was handed.
+    for (const other of [real, overlapping, elsewhere]) {
+      expect(compareFences(undeclared, other).verdict).toBe('unusable');
+      expect(compareFences(other, undeclared).verdict).toBe('unusable');
+    }
+    expect(compareFences(undeclared, undeclared).verdict).toBe('unusable');
+  });
+});
+
 describe('the live board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
@@ -560,14 +853,54 @@ describe('the live board, censused through the expansion', () => {
     expect(carved).toEqual([]);
   });
 
-  it('and no live card holds the directory the parser refuses', () => {
+  it('ONE live card holds the directory the parser refuses, it is `done`, and it holds no lane', () => {
+    // THE CENSUS MOVED WITH T-219 AND THE PROPERTY DID NOT. No card had
+    // ever spelled `docs/tasks`, so this list was empty while the refusal
+    // was exact-match; making it CONTAINMENT-aware brings in the one card
+    // whose bare `docs` domain swallows it — `T-054`, the card's own
+    // "Measured" instance, first seen in passing by `T-111`'s verifier
+    // (F7) and never filed until this one.
+    //
+    // IT IS RECORDED RATHER THAN REPAIRED, and the reason is what the
+    // status says: `T-054` is `done`, its lane was removed long ago, and
+    // a fence is a claim on ground held by a LIVE lane. Narrowing a
+    // closed card's `touches:` would rewrite the record of what that lane
+    // actually held, which is the one thing the card is evidence of. The
+    // refusal binds every card dispatched from here; this body is what
+    // stops the census reading as though nothing on the board ever
+    // matched it.
     const held: string[] = [];
     for (const task of project.tasks) {
       if (task.id === undefined || task.touches.length === 0) continue;
       for (const token of expandFence(task, components).tokens) {
-        if (token.kind === 'rejected') held.push(`${task.id} ${token.raw}`);
+        if (token.kind === 'rejected') held.push(`${task.id} ${token.raw} [${task.status}]`);
       }
     }
-    expect(held).toEqual([]);
+    expect(held).toEqual(['T-054 docs [done]']);
+  });
+
+  it('and no live card is refused for a card file it names INSIDE that directory', () => {
+    // THE OTHER DIRECTION, CENSUSED OVER THIS REPOSITORY'S OWN DATA.
+    // `method/lane-protocol.md` rule 5 answers the refusal above with
+    // "Name the individual files instead", and four live cards did
+    // exactly that — `T-108` is the one the rule was written from. A
+    // containment test run in both directions would refuse every one of
+    // them and undo the narrowing the rule asks for, so this is the
+    // control that the refusal is a ONE-WAY test and not a rule about
+    // the directory's name.
+    const named: string[] = [];
+    for (const task of project.tasks) {
+      if (task.id === undefined || task.touches.length === 0) continue;
+      const fence = expandFence(task, components);
+      for (const token of fence.tokens) {
+        if (!token.normalized.startsWith('docs/tasks/')) continue;
+        expect(token.kind, `${task.id} ${token.raw}`).toBe('path');
+        expect(fence.paths, `${task.id} ${token.raw}`).toContain(token.normalized);
+        named.push(token.normalized);
+      }
+    }
+    // A CENSUS IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
+    // NON-EMPTY: a loop over zero tokens passes every assertion inside it.
+    expect(named.length).toBeGreaterThan(0);
   });
 });

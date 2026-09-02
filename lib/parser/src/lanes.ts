@@ -502,13 +502,26 @@ function rule(
     };
   }
 
-  // TWO CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR REMEDIES
-  // DIFFER: a token nobody can resolve is spelled better on a card; a
-  // lane whose card is not here is fetched.
+  // THREE CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR
+  // REMEDIES DIFFER: a card declaring no fence is spelled ON THIS CARD;
+  // a token nobody can resolve is spelled better on a card; a lane whose
+  // card is not here is fetched.
   const missing = holds.filter((h) => h.cardMissing);
   const unresolved = holds.filter((h) => !h.cardMissing);
   const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))].sort();
   const clauses: string[] = [];
+  // THE THIRD CAUSE IS THE CARD'S OWN (T-227, absorbed by T-219): a card
+  // declaring no `touches:` owns no token to be unresolved, so neither
+  // clause below can speak for it and the sentence would arrive with an
+  // empty middle. `compareFences` refuses to call a token-less fence
+  // disjoint, which is what routes such a card here; this is the clause
+  // that says why.
+  if (fence.tokens.length === 0) {
+    clauses.push(
+      `${card.id} declares no \`touches:\` at all, so it has no fence to compare — an undeclared ` +
+        'fence is not an empty one, and nothing can be ruled disjoint from it',
+    );
+  }
   if (missing.length > 0) {
     // NUMBER AGREEMENT IS NOT DECORATION HERE. Three lanes went live on
     // this machine while the sentence was being written, and a reason a

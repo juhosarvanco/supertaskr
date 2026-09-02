@@ -51,6 +51,17 @@ import type { ComponentRecord, ParseIssue, TaskRecord } from './types.js';
  * DIRECTORIES. `docs/architecture/components/` is a legitimate directory
  * fence that six cards hold. What disqualifies `docs/tasks` is that the
  * PROTOCOL writes there on every card, not that it is a directory.
+ *
+ * AND THE LIST IS READ AS DOMAINS, NEVER AS STRINGS (T-219). A card that
+ * CONTAINS an entry holds it just as surely as one that IS it — a bare
+ * `docs` fence reserves `docs/tasks` and every card file under it — so
+ * `expandFence` tests containment through `sharedDomain`, the same
+ * "containment IS overlap" rule the rest of this module compares with,
+ * rather than by string equality. The test runs in ONE direction: a
+ * token that SITS INSIDE an entry is the narrowing `method/lane-protocol.md`
+ * rule 5 asks for in as many words (*"Name the individual files
+ * instead"*), so `docs/tasks/T-108-…md` stays fenceable and `docs` does
+ * not.
  */
 export const UNFENCEABLE_PATHS: readonly string[] = Object.freeze(['docs/tasks']);
 
@@ -60,7 +71,10 @@ export type FenceTokenKind =
   | 'slug'
   /** A repository path or directory prefix, standing for itself. */
   | 'path'
-  /** Refused by `UNFENCEABLE_PATHS`; reserves nothing. */
+  /**
+   * Refused by `UNFENCEABLE_PATHS` — the token IS one of those paths or
+   * CONTAINS one (T-219); reserves nothing either way.
+   */
   | 'rejected'
   /** Neither a slug nor anything this module can read as a path. */
   | 'unresolved';
@@ -105,6 +119,14 @@ export interface Fence {
    * Raw tokens that make this fence uncomparable — every `rejected` and
    * `unresolved` one. A non-empty list is why `compareFences` answers
    * `unusable` instead of `disjoint`.
+   *
+   * IT IS RAW TOKENS AND NOTHING ELSE, so it is EMPTY for the one fence
+   * that is uncomparable without owning a token: a card declaring no
+   * `touches:` at all (T-227, absorbed by T-219). That refusal reaches
+   * `issues`, and `compareFences` answers `unusable` off the empty
+   * `tokens` list rather than off this one — a sentinel here would make
+   * every consumer that prints these as unresolved TOKENS print a
+   * sentence with no token behind it.
    */
   unusable: string[];
   issues: ParseIssue[];
@@ -273,6 +295,34 @@ function sharedDomain(a: string, b: string): string | undefined {
 }
 
 /**
+ * The `UNFENCEABLE_PATHS` entry a token domain HOLDS, or `undefined`.
+ *
+ * T-219: rule 5 refuses the directory the protocol writes to on every
+ * card, and until this function existed the refusal was
+ * `UNFENCEABLE_PATHS.includes(normalized)` — EXACT equality on the
+ * normalised token, in a module where every other rule is prefix-aware.
+ * So `docs/tasks` was refused and the bare `docs` beside it was accepted
+ * and expanded to a domain CONTAINING it: rule 5's mechanical half was
+ * built for one spelling of the same fence.
+ *
+ * THE TEST IS `sharedDomain` AND IS NOT A SECOND PREFIX RULE (T-057: one
+ * fact, one implementation). `sharedDomain` returns the NARROWER of two
+ * domains when they meet, so asking whether that narrower one IS the
+ * unfenceable path asks exactly *"does this token hold it?"* — true when
+ * the token equals the entry, true when it contains it, and FALSE when
+ * the token sits inside it, which is the narrowing rule 5 asks for by
+ * name. One expression, both directions, and the `/` separator every
+ * containment answer in this module turns on is spelled in exactly one
+ * place.
+ */
+function unfenceableWithin(domain: string): string | undefined {
+  for (const path of UNFENCEABLE_PATHS) {
+    if (sharedDomain(domain, path) === path) return path;
+  }
+  return undefined;
+}
+
+/**
  * Expand one card's `touches:` list into the path set it reserves.
  *
  * A CARD'S OWN FILE IS NEVER PART OF ITS OWN FENCE, and that is encoded
@@ -321,6 +371,30 @@ export function expandFence(
     });
   };
 
+  // A CARD THAT DECLARES NO FENCE IS REFUSED, NOT READ AS AN EMPTY ONE
+  // (T-227, absorbed by T-219 as a second instance of this function's
+  // silence). An empty `touches:` produced no token, no issue and no
+  // `unusable` entry, so the expansion answered with a fence that
+  // reserves nothing — and `compareFences`, which walks `tokens`, then
+  // reported it DISJOINT from a fence it would fully overlap while the
+  // write-time hook refused every path. The two halves disagreed in the
+  // safe direction, by luck rather than by rule, and the diagnosis cost
+  // whoever met it far more than the mistake did.
+  //
+  // THE REFUSAL IS AN ISSUE AND NOT AN `unusable` ENTRY, because that
+  // list is documented as RAW TOKENS and there is no token here to name
+  // — a sentinel in it would make every consumer that prints "tokens
+  // this expansion could not resolve" print a sentence that is false.
+  // The `unusable` VERDICT is `compareFences`'s and is where this lands:
+  // that function refuses to call a token-less fence disjoint, which is
+  // the half this module's own header promises ("an ISSUE plus an
+  // `unusable` verdict, NEVER as silence").
+  if (task.touches.length === 0) {
+    invalid(
+      `is empty, so ${task.id ?? 'this card'} declares no fence at all — a card with no \`touches:\` reserves nothing and can write nothing, and an undeclared fence is not "disjoint from everything" (method/lane-protocol.md rule 5). Declare the paths or slugs this card's work reaches`,
+    );
+  }
+
   for (const entry of task.touches) {
     const raw = entry.trim();
     const normalized = normalizeFenceToken(raw);
@@ -330,6 +404,26 @@ export function expandFence(
     const slug = slugs.get(normalized);
 
     if (slug !== undefined) {
+      // A SLUG IS A TOKEN TOO, AND ITS DOMAIN IS THE SET IT EXPANDS TO
+      // (T-219). The refusal below sits after this branch's `continue`,
+      // so until this check existed a slug whose component `paths:`
+      // reached an unfenceable directory walked past the rule entirely —
+      // the same guard, unasked, for the other kind of token. No live
+      // component declares such a path today and that is exactly why it
+      // is structural rather than an incident: this module refuses on
+      // the DOMAIN a token reserves, and a slug reserves domains.
+      const swallowedByComponent = slug.paths
+        .map((path) => [path, unfenceableWithin(path)] as const)
+        .find((pair): pair is readonly [string, string] => pair[1] !== undefined);
+      if (swallowedByComponent !== undefined) {
+        const [domain, held] = swallowedByComponent;
+        unusable.push(raw);
+        tokens.push({ raw, normalized, kind: 'rejected', components: [], paths: [] });
+        invalid(
+          `entry ${JSON.stringify(raw)} is a component slug expanding through ${slug.components.join(', ')} to '${domain}', which ${domain === held ? `IS` : `CONTAINS`} '${held}' — every dispatch and every closing stamp writes there, so a lane holding it collides with every other lane's opening and closing move (T-108, T-219). The fence refuses the DOMAIN a token reserves, and a slug reserves the domains its components declare: narrow the component's paths, or name the individual files instead`,
+        );
+        continue;
+      }
       tokens.push({
         raw,
         normalized,
@@ -350,11 +444,16 @@ export function expandFence(
       continue;
     }
 
-    if (UNFENCEABLE_PATHS.includes(normalized)) {
+    const swallowed = unfenceableWithin(normalized);
+    if (swallowed !== undefined) {
       unusable.push(raw);
       tokens.push({ raw, normalized, kind: 'rejected', components: [], paths: [] });
+      const holding =
+        normalized === swallowed
+          ? `which no card may hold`
+          : `which CONTAINS '${swallowed}' — and containment IS holding, so this fence reserves it just as surely as one that names it — and that no card may hold`;
       invalid(
-        `entry ${JSON.stringify(raw)} fences '${normalized}', which no card may hold — every dispatch and every closing stamp writes there, so a lane holding it collides with every other lane's opening and closing move (T-108). Name the individual files instead`,
+        `entry ${JSON.stringify(raw)} fences '${normalized}', ${holding} — every dispatch and every closing stamp writes there, so a lane holding it collides with every other lane's opening and closing move (T-108, T-219). Name the individual files instead`,
       );
       continue;
     }
@@ -422,10 +521,12 @@ export function expandFence(
  * comparison misses both, in the direction a fence exists to prevent.
  *
  * The lattice has three values on purpose. `overlapping` is PROVED — a
- * witness names the shared domain. `disjoint` is proved too: every token
- * on both sides resolved, and no pair of domains meets. `unusable` is
- * neither, and it is what an unresolved or rejected token buys: no
- * overlap was found and none could be ruled out. A proved overlap
+ * witness names the shared domain. `disjoint` is proved too: BOTH SIDES
+ * DECLARED A FENCE, every token on both sides resolved, and no pair of
+ * domains meets. `unusable` is neither, and it is what an unresolved or
+ * rejected token buys — and what a side declaring NO token buys, which
+ * is the same "I do not know" reached by the one input that owns no
+ * token to be unresolved (T-227, absorbed by T-219). A proved overlap
  * outranks an unusable token, because an unresolved token can only add
  * reserved paths and never remove one.
  *
@@ -436,6 +537,21 @@ export function expandFence(
  * rather than an oversight.
  */
 export function compareFences(a: Fence, b: Fence): FenceComparison {
+  // A FENCE WITH NO TOKENS DECLARES NOTHING, AND NOTHING IS NOT DISJOINT
+  // FROM EVERYTHING (T-227, absorbed by T-219). The loops below are over
+  // `a.tokens × b.tokens`, so a token-less side produces zero witnesses
+  // and falls straight through to `disjoint` — the third verdict's whole
+  // reason for existing, reached by the one input that never gets one.
+  // `unusable` is the honest answer: no overlap was proved, and with one
+  // side declaring nothing none could be ruled out either.
+  if (a.tokens.length === 0 || b.tokens.length === 0) {
+    return {
+      verdict: 'unusable',
+      witnesses: [],
+      unusable: [...new Set([...a.unusable, ...b.unusable])],
+    };
+  }
+
   const excluded = new Set([...a.excluded, ...b.excluded]);
   const seen = new Set<string>();
   const witnesses: FenceWitness[] = [];

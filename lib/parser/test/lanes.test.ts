@@ -291,17 +291,30 @@ describe('ADAPTATION IS BY CONSTRUCTION, NOT A FEATURE', () => {
     // the cards and the lane list, so there is no bookkeeping step to
     // forget and no remembered answer to go stale. THIS BODY IS THE
     // PROPERTY ITSELF, pinned rather than asserted in prose.
+    // EACH FIXTURE CARD DECLARES ITS OWN DISJOINT FENCE, and that is
+    // load-bearing rather than decoration since T-219: a card with an
+    // EMPTY `touches:` declares no fence at all, `compareFences` refuses
+    // to call a token-less fence disjoint, and these cards would land in
+    // `unfenceable` for a reason with nothing to do with caching.
     const base = [
       ROADMAP,
-      card('T-001', 'A', { milestone: 4, priority: 1 }),
-      card('T-002', 'B', { status: 'building', milestone: 4, priority: 2 }),
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['app/src/one.ts'] }),
+      card('T-002', 'B', {
+        status: 'building',
+        milestone: 4,
+        priority: 2,
+        touches: ['app/src/two.ts'],
+      }),
     ];
     const before = readDispatchOrder(parseProjectFromFiles(base), [lane('T-002')]);
     expect(before.startable.map((r) => r.id)).toEqual(['T-001']);
     expect(before.schedule.total).toBe(2);
 
     const after = readDispatchOrder(
-      parseProjectFromFiles([...base, card('T-003', 'C', { milestone: 4, priority: 0 })]),
+      parseProjectFromFiles([
+        ...base,
+        card('T-003', 'C', { milestone: 4, priority: 0, touches: ['app/src/three.ts'] }),
+      ]),
       [lane('T-002')],
     );
     expect(after.startable.map((r) => r.id)).toEqual(['T-003', 'T-001']);
@@ -452,5 +465,45 @@ describe('a lane whose id names no card RULES on every card, and is never merely
     expect(order.all.find((r) => r.id === 'T-001')?.reason).toContain(
       'nothing can be ruled disjoint from them',
     );
+  });
+});
+
+describe('T-219/T-227 — a card that declares NO fence is not a card whose fence is free', () => {
+  it('lands in `unfenceable` beside a live lane, with a sentence naming the card as the cause', () => {
+    // KILLED BY: `compareFences` walking `a.tokens × b.tokens` and
+    // falling through to `disjoint` on a token-less side, which is what
+    // this module shipped until T-219 absorbed T-227. The consequence
+    // reached here rather than at the parser: such a card came back
+    // `startable`, wearing the sentence "it reserves nothing, disjoint
+    // from every live lane" — a fence that permits NOTHING advertised as
+    // a fence that collides with nothing.
+    const board = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1 }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-002')]);
+
+    expect(order.startable.map((r) => r.id), 'an undeclared fence got a green light').toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason).toContain('declares no `touches:` at all');
+    expect(reason).toContain('an undeclared fence is not an empty one');
+    // AND THE SENTENCE IS NOT LEFT WITH AN EMPTY MIDDLE. The other two
+    // causes cannot speak for this card — there is no token to be
+    // unresolved and the holder's card IS in this checkout — so without
+    // the third clause the reason reads "…ruled out: . A fence that…".
+    expect(reason, 'the clause list came back empty').not.toContain(': . A fence');
+
+    // THE CONTROL: the same board with the same holder, and the card
+    // declaring a disjoint fence, is startable. Without it every
+    // assertion above is satisfied by a module that refuses everything.
+    const declared = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['app/src/main.tsx'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(declared), [lane('T-002')]);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
   });
 });
