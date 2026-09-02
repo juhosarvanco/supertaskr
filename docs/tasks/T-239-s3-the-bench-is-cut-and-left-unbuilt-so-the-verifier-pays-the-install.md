@@ -4,8 +4,8 @@ title: The dispatch arm cuts the verifier's bench detached at the stamp and leav
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 3
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-239
 blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs]
@@ -41,3 +41,7 @@ making it a flag rather than the default.
   ordered commands that build it.
 - ANY build the arm performs SHALL be measured against a dispatch that
   does not, and the figure SHALL be on this card.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-239 merge (0f3e7ae)
+
+The architect seat. Every verifier bench this sitting paid npm ci in tools/e2e and app plus an app build before its first gate, ten to fifteen minutes each under load; the arm cutting the bench built is the cheapest minute the loop has left. No dispatch follows today by the user's instruction.

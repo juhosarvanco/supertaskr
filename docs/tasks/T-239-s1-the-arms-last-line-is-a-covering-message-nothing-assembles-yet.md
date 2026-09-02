@@ -4,8 +4,8 @@ title: The dispatch arm performs the eight steps and STOPS — the covering mess
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 4
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-239
 blocked_by: [T-204]
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs]
@@ -35,3 +35,7 @@ the same place a transcription can go wrong.
   above it prints.
 - THE arm SHALL still refuse at the first failed step and print no
   covering message for a dispatch that did not happen.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-239 merge (0f3e7ae)
+
+The architect seat. The arm ends where the covering message begins and nothing assembles that message; waits on T-204 by its own blocked_by. No dispatch follows today by the user's instruction.

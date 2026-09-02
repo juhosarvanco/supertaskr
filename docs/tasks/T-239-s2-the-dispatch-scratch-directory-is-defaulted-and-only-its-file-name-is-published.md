@@ -4,8 +4,8 @@ title: The dispatch arm derives every scratch file NAME from the card and DEFAUL
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 4
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-239
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
@@ -37,3 +37,7 @@ hands an executor names a path nobody published.
   session's and therefore always passed.
 - THE dispatch arm SHALL read that spelling rather than defaulting, in
   the same commit that publishes it.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-239 merge (0f3e7ae)
+
+The architect seat. The scratch directory is a machine-scoped default where only the file name is published; the fourth member of the rule family, beside T-240. No dispatch follows today by the user's instruction.
