@@ -276,6 +276,18 @@ inside the fence is one more line in card-preflight, and it turns a
 twenty-minute stall into a refusal at the seat. Owed as a card at the
 next triage.
 
+**25. The push guard's "unjudged" verdict is an allow, and an allow's
+notice is invisible to the seat.** At 10:53Z the seat pushed a2335c6
+from a line that began `cd <dir>;` — a separator the guard rightly
+declines to read past — and the guard allowed it with a notice saying
+the token, graph, board and fence were ALL UNVERIFIED. A PreToolUse
+hook's stdout on exit 0 reaches nobody. The token was in fact STALE
+(battery 23 ran at 5af76ff; a docs-only widening landed after it), and
+the bare spelling of the same push is refused. A guard whose whole
+value is refusing on an absence must not turn an unreadable command
+into an allow. Filed and dispatched as T-216-s8; the seat's own rule
+from now: `git -C <checkout> push`, never after a `cd`.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
