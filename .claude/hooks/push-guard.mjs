@@ -139,6 +139,109 @@
  * and reaches no verdict: the verdict is the check's exit code and
  * nothing in this file can move it.
  *
+ * ── AND A FOURTH ARM ASKS THE ONE MACHINE THAT IS NOT THIS ONE (T-237)
+ * docs/CONVENTIONS.md keeps two rules by memory — *"A PUSH CANCELS THE
+ * RUNNING CI JOB … BATCH THE PUSH"* and *"AND THEN READ IT"* — and on
+ * 2026-09-01 both were kept in retrospect and never at the moment: four
+ * runs were superseded by rapid pushes and main sat RED for roughly five
+ * hours while a seat reported four green suites. Both halves of that are
+ * true. **A LOCAL BATTERY AND CI ARE DIFFERENT MEASUREMENTS AND ONLY ONE
+ * OF THEM RUNS ON A MACHINE THAT IS NOT YOURS**, so the T-203 token above
+ * cannot answer either question, however green it is.
+ *
+ * So this arm asks `gh` two things about the branch the pushed checkout
+ * is on, and each answer has a DIFFERENT shape on purpose:
+ *
+ *   IS A RUN STILL RUNNING? — a REFUSAL. Pushing now cancels it and the
+ *     tree it was measuring never gets a verdict, which is how a red main
+ *     is found two pushes late. The refusal names the run, its elapsed
+ *     time and `gh run watch`.
+ *   WHAT DID CI LAST ACTUALLY SAY? — an ANNOUNCEMENT, never a refusal.
+ *     Pushing over a red is the ORDINARY way a red gets fixed, so a
+ *     refusal here would block the remedy. It names the run, the failing
+ *     step, and whether the tree being pushed changes anything under that
+ *     step's own package — so a seat pushing a fix sees that it is
+ *     pushing a fix, and a seat pushing something else sees that main is
+ *     red under it. **THE QUESTION IS NOT "THE NEWEST COMPLETED RUN"**,
+ *     which under this repository's `cancel-in-progress: true` is usually
+ *     a run that was superseded and concluded `cancelled`; it is the
+ *     newest run that reached a VERDICT, and the count of cancellations
+ *     skipped on the way to it is itself the batching rule's footprint.
+ *
+ * ── THE ARM IS THE HEADER'S OWN RULE, PLUS ONE NAMED EXCEPTION ───────
+ * `gh` absent, offline, unauthenticated or simply refusing is THIS
+ * GUARD'S OWN INABILITY, and the section above spends a paragraph on why
+ * an inability may not become a verdict: it ANNOUNCES that CI was not
+ * asked and ALLOWS, because a guard that refuses every offline push is a
+ * guard somebody turns off. **The exception is a `gh` that ANSWERED with
+ * a shape this guard cannot read**, which refuses (`ci-unreadable`).
+ * That is the token arm's discriminator, not a new one: an unreadable
+ * answer is not an unanswered question, it is an answer this guard would
+ * have to GUESS at — and the guess that matters here is *"probably no run
+ * is in flight"*, which is exactly the state the arm exists to catch. The
+ * split is drawn per FIELD rather than per response, and it is THREE
+ * fields wide: `status` decides the refusal, `conclusion` decides the
+ * announcement, `databaseId` is what an acknowledgement is checked
+ * against — those are required and their absence refuses. Everything
+ * else (`headSha`, `startedAt`, `createdAt`, `url`, `displayTitle`)
+ * carries a SENTENCE, so its absence costs a phrase and never a verdict.
+ * **`conclusion` IS THE EMPTY STRING ON A RUNNING RUN**, so `required`
+ * means present-and-a-string and never present-and-non-empty; the
+ * stricter test would refuse every live run, which is the one state this
+ * arm exists to catch.
+ *
+ * ── THE ACKNOWLEDGEMENT NAMES THE RUN, AND THAT IS THE WHOLE DESIGN ──
+ * `NPUTER_CANCEL_CI=<run id>` — as an environment prefix on the push's
+ * own segment, or in this hook's own environment — lets a seat cancel a
+ * run KNOWINGLY. It is not an override flag and this file's standing
+ * refusal of those is intact: an override flag is a claim that the guard
+ * is wrong, and this is a claim about ONE RUN, checked against the id the
+ * remote just gave us. **A value left in a shell outlives the run it was
+ * for; a value that must EQUAL the run id cannot**, because the next run
+ * has a different id and the guard refuses again with the new one. The
+ * acknowledgement retires ONLY the refusal: the announcement arm still
+ * runs, so a seat that cancels a run knowingly still hears what the last
+ * completed one said.
+ *
+ * ── WHICH BRANCH, AND WHY NOT THE INTEGRATION BRANCH BY NAME ─────────
+ * This card's criterion says *"a push to the integration branch"*,
+ * because that is where this repository's CI runs today. The arm asks
+ * about whatever branch the PUSHED CHECKOUT's HEAD names instead, and the
+ * reason is the one `GRAPH REGEN`'s suffix list records one file over: a
+ * trigger keyed to a name goes quiet the day the name changes, and going
+ * quiet is the failure this guard cannot see. A branch with no runs
+ * answers in one round trip and says nothing, so generality costs a
+ * network call on the lane pushes this project does not make.
+ *
+ * ── THE COSTS, STATED RATHER THAN DISCOVERED ────────────────────────
+ * A push now waits on the network. `gh` is spawned with a TIMEOUT and a
+ * timeout is an inability, so a hung remote costs the wait and then
+ * ALLOWS — a guard that can hang the seat's shell for ever is a guard
+ * that gets turned off before it is ever right. Nothing here runs for a
+ * command that is not a push, and nothing here runs before the local arms
+ * above: a push already refused for a stale token spends no round trip.
+ *
+ * ── AND IT WIDENS THE THREAT MODEL BY EXACTLY ONE BINARY ────────────
+ * `gh` is resolved OFF PATH BY NAME, like `cargo` and `git` already are
+ * here, and never out of the judged tree — a checkout cannot supply the
+ * binary that reads its own CI. Its arguments are an ARGV ARRAY with no
+ * shell anywhere in the path, which matters more than usual because one
+ * of them is a BRANCH NAME: a git ref may legally carry `;`, `$` and a
+ * backtick, so a shell here would be a command-injection surface fed by
+ * `git checkout -b`. Nothing this arm reads — not the branch, not a run
+ * id, not a step name — is ever interpolated into a command string, and
+ * `push-guard.spec.ts` drives a branch carrying those characters through
+ * the real runner to say so mechanically. No secret is passed in argv
+ * either: `gh` holds its own credential and this file never reads, names
+ * or forwards one. What is NOT bounded, and is named rather than
+ * dismissed: `gh` reads the checkout's own remotes and git config to
+ * decide which GitHub repository to ask about, so a checkout the seat
+ * pointed this guard at chooses the host that is contacted. That is the
+ * same rooting surface `runCheck` already documents two sections up, and
+ * the same answer applies — a seat that can write `cd <x> && git push`
+ * can run `gh` in `<x>` directly, with the same rights and without this
+ * hook.
+ *
  * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
  * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
  * worktree ninety seconds old has no `node_modules` anywhere in it. The
@@ -149,7 +252,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
@@ -355,6 +458,16 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
 // whatever the verdict is. Adding them would put two entries in a list
 // nothing consults, and a census with dead rows is a census a reader
 // stops trusting. Each is greppable by its own opening sentence instead.
+// T-237 ADDS FIVE SENTENCES AND NO ROW, for that same reason twice over.
+// `ci-run-in-flight` and `ci-unreadable` are BLOCKS, and this list is
+// consulted only where a returned Decision might or might not deserve
+// saying — a refusal always deserves saying, and the runner prints one
+// whatever this list holds. The CI arm's `CI WAS NOT ASKED`, `CI'S
+// NEWEST RUN WAS NOT JUDGED`, `WILL CANCEL IT` and `CI IS RED UNDER THIS
+// PUSH` are NOTICES, printed whatever verdict the arms below reach, and
+// that is the property they are for: a red CI must survive a push the
+// graph arm then refuses, because the two facts are about different
+// machines.
 
 /**
  * THE CHEAP CHECKS (T-203) — the script, the flag and the four codes.
@@ -392,6 +505,256 @@ export const CHEAP_CHECKS_EXIT = Object.freeze({
   USAGE: 2,
   COULD_NOT_RUN: 3,
 });
+
+/* ═════════════ T-237 — THE RUN THAT IS ALREADY RUNNING ══════════════
+ *
+ * The constants this arm reads CI with. Every one of them is compared
+ * against an authority by `push-guard.spec.ts` rather than trusted: the
+ * subcommands against docs/CONVENTIONS.md's own *"AND THEN READ IT"*
+ * bullet, the step→package map against `.github/workflows/ci.yml`'s own
+ * `working-directory:` keys, and the whole argv against a shim that
+ * records each argument on its own line.
+ *
+ * ── FOUR FACTS ABOUT `gh` THAT THE OBVIOUS CODE GETS WRONG ──────────
+ * Measured against this repository's real remote on 2026-09-02, and
+ * written down because every one of them produces a guard that looks
+ * right and is silently useless:
+ *
+ *   A RUNNING RUN'S `conclusion` IS THE EMPTY STRING, not `null` and not
+ *     absent. A shape check that demands a NON-EMPTY string rejects every
+ *     live run — and under this arm's refuse-on-unreadable rule that
+ *     turns the offline ALLOW into a hard block on exactly the runs it
+ *     exists to catch.
+ *   `updatedAt` IS NOT A CLOCK. Run 33577276465 read `updatedAt`
+ *     00:55:14 while still genuinely running at 01:02:13Z, so an elapsed
+ *     time computed from it is wrong and stays plausible. It comes from
+ *     `startedAt` — the run's own start — and falls back to `createdAt`.
+ *   `ci.yml` SETS `cancel-in-progress: true`, so `cancelled` outnumbers
+ *     `failure` about two to one over the last sixty runs. THE NEWEST
+ *     COMPLETED RUN IS USUALLY A RUN THAT REACHED NO VERDICT, so an arm
+ *     that reads `runs.find(completed)` would have missed this card's own
+ *     instance — the five red hours of 2026-09-01 sat behind exactly
+ *     such a stack of superseded runs. `newestVerdictRun` skips them and
+ *     SAYS HOW MANY it skipped, because that count is the batching
+ *     rule's own footprint.
+ *   `gh`'s EXIT 1 IS OVERLOADED across a misspelled `--json` field, HTTP
+ *     401, 404, no GitHub remote and a dead network — so *"non-zero
+ *     means CI could not be asked"* swallows this guard's own bugs and
+ *     reports them as being offline. `classifyGhFailure` discriminates
+ *     the three it can name and DISCLOSES the rest as unrecognised.
+ *     `gh` off PATH is `status: null` with `ENOENT`, never 127: 127
+ *     needs a shell, and there is no shell here.
+ */
+
+/**
+ * The GitHub CLI, RESOLVED OFF PATH BY NAME.
+ *
+ * Never out of the judged tree, and the distinction is the one
+ * `runCheck` already draws for `cargo`: this guard may be pointed at a
+ * checkout by the command text, and a checkout that could supply the
+ * binary which reads its own CI could answer any question it liked.
+ */
+export const GH_BIN = "gh";
+
+/**
+ * How long a push may wait on the network before this guard gives up.
+ *
+ * A TIMEOUT IS AN INABILITY, so it ends in the announced ALLOW like
+ * every other one — never in a refusal. It exists because this hook runs
+ * INSIDE the seat's own `Bash` call: a `gh` waiting on an unreachable
+ * host with no bound would hang the session rather than the push, which
+ * is the failure that gets a guard disabled before it is ever right.
+ */
+export const GH_TIMEOUT_MS = 15_000;
+
+/**
+ * How many runs to ask for.
+ *
+ * TWO QUESTIONS, ONE ROUND TRIP. The newest run answers *"is one still
+ * running"*; the newest run whose `status` is `completed` answers *"what
+ * did the last verdict say"*, and they are different runs exactly when
+ * the first question's answer is yes. `--limit 1` would answer the first
+ * and make the second unaskable at the one moment it is interesting.
+ */
+export const RUN_LIST_LIMIT = 10;
+
+/**
+ * The fields asked of `gh run list --json`.
+ *
+ * `gh run list --json` with no value PRINTS the fields it publishes, and
+ * a body compares this list against that output — so a field `gh`
+ * retires reds a test by name instead of turning this arm into an
+ * announced allow nobody reads.
+ */
+export const RUN_LIST_JSON_FIELDS = Object.freeze([
+  "conclusion",
+  "createdAt",
+  "databaseId",
+  "displayTitle",
+  "headSha",
+  "startedAt",
+  "status",
+  "url",
+]);
+
+/**
+ * The subset a VERDICT rests on, which is where the parser's strictness
+ * is spent — and it is THREE fields, not the eight above.
+ *
+ * `status` decides the refusal, `conclusion` decides the announcement,
+ * and `databaseId` is what an acknowledgement is checked against, so a
+ * missing one would leave a refusal with no clearable remedy. EVERYTHING
+ * ELSE COSTS A PHRASE AND NEVER A VERDICT: without `headSha` the reach
+ * sentence says it cannot compare, without `startedAt`/`createdAt` the
+ * elapsed time says it is unreadable, without `url` a line is missing.
+ * Strictness over those would refuse a push for cosmetic drift in
+ * somebody else's CLI, which is the direction this file may not fail.
+ */
+export const RUN_LIST_REQUIRED_FIELDS = Object.freeze([
+  "conclusion",
+  "databaseId",
+  "status",
+]);
+
+/** @see RUN_LIST_JSON_FIELDS */
+export const RUN_VIEW_JSON_FIELDS = Object.freeze(["jobs"]);
+
+/**
+ * `gh run list`'s argv — AN ARRAY, and the branch is an ELEMENT of it.
+ *
+ * A git ref may legally carry `;`, `$`, `&` and a backtick, so a branch
+ * name interpolated into a command string would be a command-injection
+ * surface fed by `git checkout -b`. There is no shell anywhere in this
+ * arm's path; `push-guard.spec.ts` drives such a branch through the real
+ * runner and reads the shim's own record of each argument.
+ *
+ * @param {string} branch
+ * @returns {string[]}
+ */
+export function ghRunListArgv(branch) {
+  return [
+    "run",
+    "list",
+    "--branch",
+    branch,
+    "--limit",
+    String(RUN_LIST_LIMIT),
+    "--json",
+    RUN_LIST_JSON_FIELDS.join(","),
+  ];
+}
+
+/** @see ghRunListArgv @param {string} runId @returns {string[]} */
+export function ghRunViewArgv(runId) {
+  return ["run", "view", runId, "--json", RUN_VIEW_JSON_FIELDS.join(",")];
+}
+
+/**
+ * The statuses that mean A RUN IS STILL GOING, so a push would cancel it.
+ *
+ * NAMED RATHER THAN DERIVED FROM `!== "completed"`, and the direction of
+ * the failure is why. A negated test treats every status GitHub invents
+ * as running and refuses pushes nobody can clear; this list treats an
+ * unknown status as UNKNOWN and announces it, which is this file's rule
+ * for a question it could not answer. The cost of the choice is stated:
+ * a future status meaning "running" that is not on this list goes
+ * unrefused until somebody adds it, which is the pre-guard state.
+ */
+export const ACTIVE_RUN_STATUSES = Object.freeze([
+  "queued",
+  "in_progress",
+  "waiting",
+  "requested",
+  "pending",
+]);
+
+/** @see ACTIVE_RUN_STATUSES */
+export const COMPLETED_RUN_STATUS = "completed";
+
+/**
+ * The conclusions of a COMPLETED run that are NOT a verdict about the
+ * tree, and are therefore SKIPPED OVER when looking for the last thing
+ * CI actually said.
+ *
+ * ── THIS LIST IS THE CARD'S OWN INSTANCE, MEASURED ──────────────────
+ * `.github/workflows/ci.yml` sets `cancel-in-progress: true`, which is
+ * the OTHER half of the defect this arm exists for: a rapid push does
+ * not merely supersede a run, it leaves a `cancelled` run behind that
+ * looks completed and reached nothing. Over this repository's last sixty
+ * runs, `cancelled` outnumbers `failure` about two to one — so a guard
+ * that announced *"the newest COMPLETED run"* would have been silent
+ * through the five red hours of 2026-09-01, reading a stack of
+ * superseded cancellations as the verdict. The empty string is here for
+ * the same reason from the other direction: a run still going has no
+ * conclusion at all.
+ */
+export const NON_VERDICT_CONCLUSIONS = Object.freeze(["cancelled", "skipped", ""]);
+
+/**
+ * The conclusion this arm ANNOUNCES, which is this card's word.
+ *
+ * `cancelled`, `timed_out` and `startup_failure` are deliberately absent
+ * — a cancelled run is usually THIS defect's own footprint rather than a
+ * verdict about the tree, and reading one as a red would announce the
+ * guard's own subject back at the seat. Widening this is a card, not an
+ * edit.
+ */
+export const FAILED_CONCLUSION = "failure";
+
+/**
+ * The acknowledgement that lets a seat cancel a run KNOWINGLY.
+ *
+ * ITS VALUE MUST BE THE RUN'S OWN ID. This is not an override flag —
+ * this file refuses those and says so twice — because an override flag
+ * is a standing claim that the guard is wrong, while this is a claim
+ * about ONE RUN checked against the id the remote just handed us. A
+ * value left in a shell cannot outlive the run it was for.
+ */
+export const CANCEL_CI_ENV = "NPUTER_CANCEL_CI";
+
+/**
+ * `gh`'s exit codes, to the extent it publishes any — and the point of
+ * this object is how LITTLE it publishes.
+ *
+ * **EXIT 1 IS OVERLOADED AND MEANS ALMOST NOTHING**: a misspelled
+ * `--json` field, an HTTP 401, a 404, a checkout with no GitHub remote
+ * and a dead network all arrive as 1. So *"non-zero means CI could not
+ * be asked"* — the obvious code — quietly relabels THIS GUARD'S OWN BUGS
+ * as being offline, and a guard whose bugs report as a benign limit is a
+ * guard nobody ever fixes. `classifyGhFailure` names the three cases it
+ * can actually identify and DISCLOSES everything else as unrecognised;
+ * all four still ALLOW, because this card's third criterion says an
+ * unaskable CI allows.
+ *
+ * ABSENT IS NOT AN EXIT CODE AT ALL. Off PATH, `spawnSync` returns
+ * `status: null` with `ENOENT` — 127 is what a SHELL reports, and there
+ * is no shell anywhere in this arm.
+ */
+export const GH_EXIT = Object.freeze({ OK: 0, GENERIC: 1, UNAUTHENTICATED: 4 });
+
+/**
+ * `gh`'s own words for a checkout it cannot map to a GitHub repository.
+ *
+ * Matched as a PHRASE rather than by exit code, because the code is 1
+ * and so is everything else. This is the case every fixture in
+ * `push-guard.spec.ts` would hit if it ever reached the real `gh` — a
+ * local bare `origin` is not a known GitHub host — which is why the
+ * fixtures shim `gh` on their own `bin/` instead.
+ */
+export const GH_NO_GITHUB_REMOTE_RE = /point to a known GitHub host|no git remotes found/i;
+
+/**
+ * Where a failing STEP's package is written down — the workflow itself.
+ *
+ * NEVER TYPE A PATH YOU CAN DERIVE (docs/CONVENTIONS.md). `gh`'s
+ * `jobs[].steps[].name` is the workflow's own `name:` verbatim, and the
+ * workflow puts each step's package in its `working-directory:`. So the
+ * map from *"which step failed"* to *"which package it was testing"* is
+ * READ out of the repository being pushed, not held here — a step
+ * renamed in `ci.yml` moves both sides at once, and a step this scanner
+ * cannot place is SAID to be unplaceable rather than guessed at.
+ */
+export const CI_WORKFLOW_REL_PATH = ".github/workflows/ci.yml";
 
 /**
  * @typedef {object} Decision
@@ -796,6 +1159,11 @@ function sameDirectory(a, b) {
  * @property {string} stdout         the check's own report
  * @property {string} stderr         cargo's build chatter, and any failure
  * @property {string} [problem]      why it never ran at all
+ * @property {string} [spawnError]   the OS error code when it never started — `ENOENT`, `ETIMEDOUT`
+ *   (T-237). `gh` off PATH is `status: null` + `ENOENT` and NEVER 127, because 127 is what a SHELL
+ *   reports and nothing in this file uses one. Carried as a FIELD rather than sniffed back out of a
+ *   message, so `classifyGhFailure` can tell ABSENT from every other inability without a regex over
+ *   somebody else's prose.
  */
 
 /**
@@ -904,6 +1272,809 @@ export function runCheapChecks(root) {
     stdout: String(out.stdout ?? ""),
     stderr: String(out.stderr ?? ""),
   };
+}
+
+/* ═════════════ T-237 — THE RUN THAT IS ALREADY RUNNING ══════════════ */
+
+/**
+ * @typedef {object} Run
+ * @property {string} id          `databaseId`, as a string — it is an identifier, never arithmetic
+ * @property {string} status      `queued` | `in_progress` | `completed` | …
+ * @property {string} conclusion  THE EMPTY STRING while a run is live; `success` | `failure` | `cancelled` | … when it ends
+ * @property {string} headSha     the commit that run measured, or `` — a sentence, never a verdict
+ * @property {string} startedAt   ISO 8601, the run's own start; `updatedAt` is NOT this and lies
+ * @property {string} createdAt   ISO 8601, the fallback when `startedAt` is absent
+ * @property {string} url         `` when `gh` did not answer one
+ * @property {string} title       `displayTitle`, or `` — a sentence, never a verdict
+ */
+
+/**
+ * Run `gh` with an ARGV ARRAY and hand back what it said.
+ *
+ * NOTHING IS INTERPRETED HERE — `runCheck`'s contract, for `runCheck`'s
+ * reason: this starts the documented command in the judged checkout and
+ * survives its failure to start, and the caller decides what the answer
+ * means. The cwd is the ROOT BEING PUSHED (T-216), because `gh` resolves
+ * which GitHub repository to ask about from that checkout's own remotes
+ * — asking about the seat's directory would be this guard's oldest
+ * defect wearing a new binary.
+ *
+ * THE ENVIRONMENT IS NARROWED RATHER THAN INHERITED WHOLE for the three
+ * variables that would otherwise make a hook interactive or decorated:
+ * `gh` must never open a pager or a prompt inside a `PreToolUse` hook
+ * whose stdout nobody is watching.
+ *
+ * @param {string} root
+ * @param {string[]} argv
+ * @returns {CheckResult}
+ */
+export function runGh(root, argv) {
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    out = spawnSync(GH_BIN, [...argv], {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+      timeout: GH_TIMEOUT_MS,
+      env: { ...process.env, GH_PAGER: "", GH_PROMPT_DISABLED: "1", NO_COLOR: "1" },
+    });
+  } catch (err) {
+    return {
+      status: null,
+      stdout: "",
+      stderr: "",
+      spawnError: err instanceof Error ? String(/** @type {NodeJS.ErrnoException} */ (err).code ?? "") : "",
+      problem: `${GH_BIN} could not be started (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+  if (out.error !== undefined && out.error !== null) {
+    const code = String(/** @type {NodeJS.ErrnoException} */ (out.error).code ?? "");
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      spawnError: code,
+      problem:
+        code === "ETIMEDOUT"
+          ? `${GH_BIN} did not answer within ${String(GH_TIMEOUT_MS)}ms`
+          : `${GH_BIN} could not be started (${out.error.message})`,
+    };
+  }
+  if (out.status === null) {
+    return {
+      status: null,
+      stdout: String(out.stdout ?? ""),
+      stderr: String(out.stderr ?? ""),
+      spawnError: "ETIMEDOUT",
+      problem: `${GH_BIN} was killed by a signal (${String(out.signal)}) before it could answer`,
+    };
+  }
+  return { status: out.status, stdout: String(out.stdout ?? ""), stderr: String(out.stderr ?? "") };
+}
+
+/**
+ * What a value IS, in one word, for a shape complaint that is worth
+ * reading.
+ *
+ * @param {unknown} v
+ * @returns {string}
+ */
+function describe(v) {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return "an array";
+  if (typeof v === "object") return "an object";
+  return `a ${typeof v}`;
+}
+
+/**
+ * Read `gh run list --json`'s answer, or say why it cannot be read.
+ *
+ * REFUSES RATHER THAN GUESSES, which is this card's fourth criterion and
+ * the ONE place this arm inverts the header's fail-open doctrine. The
+ * strictness is spent on `RUN_LIST_REQUIRED_FIELDS` and nowhere else: a
+ * missing `status` leaves this guard unable to tell a running job from a
+ * finished one, and the guess it would have to make — *"probably nothing
+ * is in flight"* — is precisely the state the arm exists to catch. Extra
+ * fields are fine; a CLI is allowed to grow.
+ *
+ * @param {string} text
+ * @returns {{ runs: Run[] } | { problem: string }}
+ */
+export function parseRunList(text) {
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    return {
+      problem: `\`${GH_BIN} run list --json\` printed something that is not JSON (${
+        err instanceof Error ? err.message : String(err)
+      })`,
+    };
+  }
+  if (!Array.isArray(parsed)) {
+    return {
+      problem: `\`${GH_BIN} run list --json\` answered ${describe(parsed)} where this guard asked for an array of runs`,
+    };
+  }
+  /** @type {Run[]} */
+  const runs = [];
+  for (let i = 0; i < parsed.length; i += 1) {
+    /** @type {unknown} */
+    const row = parsed[i];
+    if (row === null || typeof row !== "object" || Array.isArray(row)) {
+      return { problem: `run ${String(i)} of the run list is ${describe(row)} and not an object` };
+    }
+    const obj = /** @type {Record<string, unknown>} */ (row);
+    for (const field of RUN_LIST_REQUIRED_FIELDS) {
+      if (!(field in obj)) {
+        return {
+          problem: `run ${String(i)} of the run list carries no \`${field}\`, and this guard's verdict rests on it`,
+        };
+      }
+    }
+    // THE EMPTY STRING IS A VALID `conclusion` AND IS THE COMMONEST ONE
+    // THIS ARM MEETS: a run that is still going has not concluded. A
+    // non-empty check here would reject every live run, which — under
+    // the refuse-on-unreadable rule above — would turn this arm's
+    // announced allow into a hard block on exactly the state it exists
+    // to catch.
+    for (const field of ["status", "conclusion"]) {
+      if (typeof obj[field] !== "string") {
+        return {
+          problem: `run ${String(i)} of the run list answers \`${field}\` with ${describe(obj[field])} and not a string`,
+        };
+      }
+    }
+    const id = obj["databaseId"];
+    if (typeof id !== "number" && typeof id !== "string") {
+      return {
+        problem: `run ${String(i)} of the run list answers \`databaseId\` with ${describe(id)}`,
+      };
+    }
+    /** @param {string} field @returns {string} */
+    const optional = (field) => (typeof obj[field] === "string" ? /** @type {string} */ (obj[field]) : "");
+    runs.push({
+      id: String(id),
+      status: /** @type {string} */ (obj["status"]),
+      conclusion: /** @type {string} */ (obj["conclusion"]),
+      headSha: optional("headSha"),
+      startedAt: optional("startedAt"),
+      createdAt: optional("createdAt"),
+      url: optional("url"),
+      title: optional("displayTitle"),
+    });
+  }
+  return { runs };
+}
+
+/**
+ * THE NEWEST RUN THAT ACTUALLY SAID SOMETHING, and how many it skipped.
+ *
+ * Not `runs.find(r => r.status === "completed")`, and the difference is
+ * this card's own instance rather than a refinement. `ci.yml` sets
+ * `cancel-in-progress: true`, so a batch of rapid pushes leaves a stack
+ * of `cancelled` runs that are completed and mean nothing — measured two
+ * to one against `failure` over this repository's last sixty runs. The
+ * skipped COUNT is returned rather than discarded because it is the
+ * batching rule's own footprint: a seat told it is skipping four
+ * cancelled runs has been told it superseded four runs.
+ *
+ * @param {Run[]} runs
+ * @returns {{ run: Run, skipped: number } | undefined}
+ */
+export function newestVerdictRun(runs) {
+  let skipped = 0;
+  for (const run of runs) {
+    if (run.status !== COMPLETED_RUN_STATUS) continue;
+    if (NON_VERDICT_CONCLUSIONS.includes(run.conclusion)) {
+      skipped += 1;
+      continue;
+    }
+    return { run, skipped };
+  }
+  return undefined;
+}
+
+/**
+ * WHY DID `gh` FAIL, to the extent it can be told?
+ *
+ * Three named cases and one disclosed unknown. All four ALLOW — this
+ * card's third criterion — and the split is not decoration: an
+ * unrecognised failure is the bucket that would otherwise hide a
+ * misspelled `--json` field, which is a defect in THIS FILE reported as
+ * a benign limit in somebody else's network.
+ *
+ * @param {CheckResult} result
+ * @returns {{ kind: string, sentence: string }}
+ */
+export function classifyGhFailure(result) {
+  const err = String(result.stderr ?? "").trim();
+  if (result.status === null) {
+    const absent = (result.spawnError ?? "") === "ENOENT";
+    return {
+      kind: absent ? "absent" : "did-not-answer",
+      sentence: absent
+        ? `\`${GH_BIN}\` is not on this PATH`
+        : (result.problem ?? `\`${GH_BIN}\` did not answer`),
+    };
+  }
+  if (result.status === GH_EXIT.UNAUTHENTICATED) {
+    return { kind: "unauthenticated", sentence: `\`${GH_BIN}\` is not authenticated (exit 4)` };
+  }
+  if (GH_NO_GITHUB_REMOTE_RE.test(err)) {
+    return {
+      kind: "no-github-remote",
+      sentence: "this checkout's remotes point at no GitHub repository, so there is no CI to ask about",
+    };
+  }
+  return {
+    kind: "unrecognised",
+    sentence:
+      `\`${GH_BIN}\` exited ${String(result.status)}, WHICH THIS GUARD CANNOT INTERPRET — that code ` +
+      "covers a dead network, an HTTP 404, and a mistake in the arguments this guard itself sent",
+  };
+}
+
+/**
+ * @typedef {object} Step
+ * @property {string} job
+ * @property {string} name
+ */
+
+/**
+ * Read `gh run view --json jobs`'s answer, or say why it cannot be read.
+ *
+ * The same rule as `parseRunList` and the same reason, applied to a
+ * nested shape: a job is unreadable if its `steps` is not a list of
+ * objects carrying a `name` and a `conclusion`.
+ *
+ * @param {string} text
+ * @returns {{ jobs: { name: string, conclusion: string, steps: { name: string, conclusion: string }[] }[] } | { problem: string }}
+ */
+export function parseRunJobs(text) {
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    return {
+      problem: `\`${GH_BIN} run view --json jobs\` printed something that is not JSON (${
+        err instanceof Error ? err.message : String(err)
+      })`,
+    };
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {
+      problem: `\`${GH_BIN} run view --json jobs\` answered ${describe(parsed)} where this guard asked for an object`,
+    };
+  }
+  const jobsRaw = /** @type {Record<string, unknown>} */ (parsed)["jobs"];
+  if (!Array.isArray(jobsRaw)) {
+    return { problem: `the run's \`jobs\` is ${describe(jobsRaw)} and not an array` };
+  }
+  /** @type {{ name: string, conclusion: string, steps: { name: string, conclusion: string }[] }[]} */
+  const jobs = [];
+  for (let i = 0; i < jobsRaw.length; i += 1) {
+    /** @type {unknown} */
+    const row = jobsRaw[i];
+    if (row === null || typeof row !== "object" || Array.isArray(row)) {
+      return { problem: `job ${String(i)} is ${describe(row)} and not an object` };
+    }
+    const obj = /** @type {Record<string, unknown>} */ (row);
+    if (typeof obj["name"] !== "string" || typeof obj["conclusion"] !== "string") {
+      return { problem: `job ${String(i)} carries no readable \`name\` and \`conclusion\`` };
+    }
+    const stepsRaw = obj["steps"];
+    if (!Array.isArray(stepsRaw)) {
+      return { problem: `job ${String(i)}'s \`steps\` is ${describe(stepsRaw)} and not an array` };
+    }
+    /** @type {{ name: string, conclusion: string }[]} */
+    const steps = [];
+    for (let k = 0; k < stepsRaw.length; k += 1) {
+      /** @type {unknown} */
+      const s = stepsRaw[k];
+      if (s === null || typeof s !== "object" || Array.isArray(s)) {
+        return { problem: `step ${String(k)} of job ${String(i)} is ${describe(s)} and not an object` };
+      }
+      const so = /** @type {Record<string, unknown>} */ (s);
+      if (typeof so["name"] !== "string" || typeof so["conclusion"] !== "string") {
+        return {
+          problem: `step ${String(k)} of job ${String(i)} carries no readable \`name\` and \`conclusion\``,
+        };
+      }
+      steps.push({
+        name: /** @type {string} */ (so["name"]),
+        conclusion: /** @type {string} */ (so["conclusion"]),
+      });
+    }
+    jobs.push({
+      name: /** @type {string} */ (obj["name"]),
+      conclusion: /** @type {string} */ (obj["conclusion"]),
+      steps,
+    });
+  }
+  return { jobs };
+}
+
+/**
+ * The first step that failed, named with the job it failed in.
+ *
+ * A job whose conclusion is `failure` but whose steps name none — a
+ * runner that died, a job cancelled mid-step — yields the JOB with no
+ * step rather than nothing at all, because *"the linux job failed and
+ * this guard cannot say where"* is still worth the seat's second.
+ *
+ * @param {{ name: string, conclusion: string, steps: { name: string, conclusion: string }[] }[]} jobs
+ * @returns {Step | undefined}
+ */
+export function failingStep(jobs) {
+  for (const job of jobs) {
+    if (job.conclusion !== FAILED_CONCLUSION) continue;
+    const step = job.steps.find((s) => s.conclusion === FAILED_CONCLUSION);
+    return { job: job.name, name: step === undefined ? "" : step.name };
+  }
+  return undefined;
+}
+
+/**
+ * WHICH PACKAGE WAS THAT STEP TESTING? — read out of the workflow.
+ *
+ * A line scanner rather than a YAML parser, because this hook's
+ * dependency budget is node builtins and a lane worktree ninety seconds
+ * old has no `node_modules`. The shape it reads is the only one it
+ * claims: a sequence item whose first key is `name:`, and a
+ * `working-directory:` indented under that same item. Anything else
+ * returns `undefined`, which the caller SAYS rather than guesses past.
+ *
+ * A step with no `working-directory` runs at the repository root, and
+ * `reachesPackage` treats that as reached by every push — which is true
+ * and is the honest answer rather than a convenient one.
+ *
+ * @param {string} workflowText
+ * @param {string} stepName
+ * @returns {string | undefined}
+ */
+export function stepWorkingDirectory(workflowText, stepName) {
+  if (stepName === "") return undefined;
+  let inStep = false;
+  let itemIndent = -1;
+  for (const line of workflowText.split("\n")) {
+    const item = /^(\s*)-\s+(\S.*)$/.exec(line);
+    if (item !== null) {
+      const named = /^name:\s*(.*)$/.exec(/** @type {string} */ (item[2]));
+      inStep = named !== null && yamlScalar(/** @type {string} */ (named[1])) === stepName;
+      itemIndent = /** @type {string} */ (item[1]).length;
+      continue;
+    }
+    if (!inStep) continue;
+    const key = /^(\s*)(\S+):\s*(.*)$/.exec(line);
+    if (key === null) continue;
+    if (/** @type {string} */ (key[1]).length <= itemIndent) {
+      inStep = false;
+      continue;
+    }
+    if (key[2] === "working-directory") return yamlScalar(/** @type {string} */ (key[3]));
+  }
+  return undefined;
+}
+
+/**
+ * A plain YAML scalar, unquoted and trimmed. Nothing cleverer: the
+ * workflow this reads writes plain scalars, and a value this cannot read
+ * makes the step unplaceable, which is a sentence and never a verdict.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function yamlScalar(raw) {
+  const v = raw.trim();
+  if (v.length >= 2 && ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))) {
+    return v.slice(1, -1);
+  }
+  return v;
+}
+
+/**
+ * The paths this push carries SINCE the run that failed.
+ *
+ * THE LEFT-HAND END IS THE FAILED RUN'S OWN `headSha`, which is what
+ * makes this question answerable at all: the run tells us which commit
+ * it measured, so *"does this push reach that package"* needs no guess
+ * about upstreams, tracking refs or which remote a `git push` names.
+ * A sha this checkout does not have is SAID to be missing rather than
+ * substituted for.
+ *
+ * ── THE ONE VALUE IN THIS ARM THAT REACHES ANOTHER PROGRAM ──────────
+ * `sha` is the only field this file takes out of `gh`'s JSON and hands
+ * to a second binary, so it is SHAPE-CHECKED FIRST. There is no shell
+ * here and there never was, so this is not about quoting: `git`'s own
+ * argument parser reads a leading `-` as an OPTION, and an argv array
+ * does nothing to stop that. A `headSha` of `--output=/tmp/x` would be a
+ * flag rather than a revision. The check is the narrowest thing that can
+ * be true of a commit id, and a value that fails it is DECLARED — the
+ * announcement loses a sentence and no verdict moves.
+ *
+ * Found by this card's own security sweep rather than by a failure,
+ * which is why the bound is written here with its reason: the next
+ * reader should meet the argument, not just the regex.
+ *
+ * @param {string} root
+ * @param {string} sha
+ * @returns {{ paths: string[] } | { problem: string }}
+ */
+export function pathsSince(root, sha) {
+  if (!/^[0-9a-f]{7,64}$/.test(sha)) {
+    return {
+      problem: `the run named \`${sha}\` where a commit id was expected, and this guard will not ` +
+        "hand that to `git` as a revision",
+    };
+  }
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    // `--` closes the revision list, so nothing after it can be read as
+    // a path either. Belt and braces on a value that came off the wire.
+    out = spawnSync("git", ["diff", "--name-only", sha, "HEAD", "--"], {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch (err) {
+    return { problem: `git could not be started (${err instanceof Error ? err.message : String(err)})` };
+  }
+  if ((out.error !== undefined && out.error !== null) || out.status !== 0) {
+    const first = String(out.stderr ?? "").trim().split("\n")[0] ?? "";
+    return {
+      problem: `git would not diff ${sha}..HEAD in this checkout (${
+        first !== "" ? first : `exit ${String(out.status)}`
+      })`,
+    };
+  }
+  return {
+    paths: String(out.stdout ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l !== ""),
+  };
+}
+
+/**
+ * Does any of these paths lie inside that package?
+ *
+ * A step with no working directory of its own runs at the repository
+ * root, and every push reaches the repository root — stated as `true`
+ * rather than as an absence, because the caller's sentence differs.
+ *
+ * @param {string[]} paths
+ * @param {string | undefined} dir
+ * @returns {boolean}
+ */
+export function reachesPackage(paths, dir) {
+  if (dir === undefined || dir === "" || dir === ".") return true;
+  const norm = dir.replace(/\/+$/, "");
+  return paths.some((p) => p === norm || p.startsWith(`${norm}/`));
+}
+
+/**
+ * Every run id this command line, or this hook's own environment,
+ * acknowledges.
+ *
+ * READ FROM THE PUSH'S OWN SEGMENT AND ONLY BEFORE THE WORD `git`, which
+ * is what an environment PREFIX is. `echo NPUTER_CANCEL_CI=1 && git push`
+ * does not acknowledge anything, and neither does a `--message` that
+ * happens to quote the name. The process environment is read too, because
+ * a human running a session with the variable exported is making the same
+ * statement — and it is safe to honour precisely because the VALUE must
+ * be the live run's id, so an exported acknowledgement expires by itself.
+ *
+ * @param {string} command
+ * @param {Record<string, string | undefined>} env
+ * @returns {string[]}
+ */
+export function acknowledgedRunIds(command, env) {
+  /** @type {string[]} */
+  const values = [];
+  const fromEnv = env[CANCEL_CI_ENV];
+  if (typeof fromEnv === "string" && fromEnv.trim() !== "") values.push(fromEnv.trim());
+  const pushSegments = new Set(
+    gitInvocations(command)
+      .filter(
+        (inv) =>
+          inv.subcommand === "push" && !inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t)),
+      )
+      .map((inv) => inv.segment),
+  );
+  const segs = segments(command);
+  for (const s of pushSegments) {
+    const seg = segs[s];
+    if (seg === undefined) continue;
+    for (const tok of seg.tokens) {
+      if (tok === "git") break;
+      if (tok.startsWith(`${CANCEL_CI_ENV}=`)) values.push(tok.slice(CANCEL_CI_ENV.length + 1).trim());
+    }
+  }
+  return values;
+}
+
+/**
+ * When a run STARTED — `startedAt`, falling back to `createdAt`.
+ *
+ * **`updatedAt` IS NOT A CLOCK AND IS NOT HERE.** Measured: run
+ * 33577276465 read `updatedAt` 00:55:14 while it was still genuinely
+ * running at 01:02:13Z. An elapsed time derived from it would be wrong
+ * by minutes and would stay perfectly plausible, which is the kind of
+ * figure nobody ever checks.
+ *
+ * @param {Run} run
+ * @returns {string}
+ */
+export function runStartedAt(run) {
+  return run.startedAt !== "" ? run.startedAt : run.createdAt;
+}
+
+/**
+ * How long ago, in words a refusal can carry.
+ *
+ * A LIVE FACT AND NOT A FUNCTION OF A TREE, so it is computed at the
+ * moment of the refusal from a clock this guard is handed rather than
+ * from one it reaches for — which is what lets a body pin it. An
+ * unreadable or absent timestamp SAYS SO: the elapsed time is a sentence
+ * and never a verdict, so it degrades rather than refusing.
+ *
+ * @param {string} iso
+ * @param {number} nowMs
+ * @returns {string}
+ */
+export function elapsedSince(iso, nowMs) {
+  const started = Date.parse(iso);
+  if (Number.isNaN(started)) return "an unreadable time";
+  const secs = Math.max(0, Math.round((nowMs - started) / 1000));
+  if (secs < 60) return `${String(secs)}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${String(mins)}m ${String(secs % 60)}s`;
+  return `${String(Math.floor(mins / 60))}h ${String(mins % 60)}m`;
+}
+
+/**
+ * THE CI ARM'S WHOLE DECISION.
+ *
+ * Returns a `block` only for a run that is still going and unacknowledged
+ * or an answer whose shape this guard cannot read; everything else is
+ * `undefined` — an allow — with whatever it had to say pushed onto
+ * `notices`, which the runner prints whatever verdict the arms below then
+ * reach. THAT PLACEMENT IS THE DESIGN: a red-CI announcement must survive
+ * a push that the graph arm goes on to refuse, because the two facts are
+ * about different machines.
+ *
+ * @param {string} root
+ * @param {string | undefined} headRef
+ * @param {string} command
+ * @param {(root: string, argv: string[]) => CheckResult} gh
+ * @param {string[]} notices
+ * @param {Record<string, string | undefined>} env
+ * @param {number} nowMs
+ * @returns {Decision | undefined}
+ */
+export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
+  const branch = headRef === undefined ? undefined : /^refs\/heads\/(.+)$/.exec(headRef)?.[1];
+  if (branch === undefined) {
+    notices.push(
+      `CI WAS NOT ASKED: ${root}'s HEAD names no branch (${headRef ?? "unreadable"}), and a CI run ` +
+        "is looked up BY BRANCH. The push is allowed and the remote's state is UNVERIFIED.",
+    );
+    return undefined;
+  }
+
+  const argv = ghRunListArgv(branch);
+  const listed = gh(root, argv);
+  if (listed.status !== GH_EXIT.OK) {
+    const why = classifyGhFailure(listed);
+    notices.push(
+      `CI WAS NOT ASKED (${why.kind}): ${why.sentence}.\n` +
+        `${indent(listed.stderr || listed.stdout)}` +
+        "  An inability is not a verdict, in either direction: nothing here has said a run is " +
+        "finished, and nothing here has said one is not. The T-203 token above is a LOCAL " +
+        "measurement and answers neither question — only one of the two machines is yours " +
+        "(docs/CONVENTIONS.md, AND THEN READ IT).\n" +
+        (why.kind === "unrecognised"
+          ? "  THAT EXIT CODE MAY BE THIS GUARD'S OWN MISTAKE rather than your network — run the " +
+            "exact command it sent and read the answer:\n"
+          : "  Ask by hand:\n") +
+        `    ${GH_BIN} ${argv.join(" ")}`,
+    );
+    return undefined;
+  }
+  const read = parseRunList(listed.stdout);
+  if ("problem" in read) {
+    return block(
+      "ci-unreadable",
+      `PUSH REFUSED: \`${GH_BIN}\` answered, and this guard cannot read the answer — ${read.problem}.\n` +
+        "  This is the ONE place this arm refuses on something other than a running job, and it " +
+        "is the token arm's rule rather than a new one: an unreadable answer is not an " +
+        "unanswered question. To carry on, this guard would have to GUESS the shape, and the " +
+        "guess that matters is `probably nothing is in flight` — which is exactly the state it " +
+        "exists to catch.\n" +
+        `  Ask by hand and compare: ${GH_BIN} ${ghRunListArgv(branch).join(" ")}`,
+    );
+  }
+  const runs = read.runs;
+  if (runs.length === 0) return undefined;
+  const newest = /** @type {Run} */ (runs[0]);
+
+  /** @type {Decision | undefined} */
+  let verdict = undefined;
+  if (ACTIVE_RUN_STATUSES.includes(newest.status)) {
+    if (acknowledgedRunIds(command, env).includes(newest.id)) {
+      notices.push(
+        `CI RUN ${newest.id} IS ${newest.status.toUpperCase()} AND THIS PUSH WILL CANCEL IT — ` +
+          `acknowledged by ${CANCEL_CI_ENV}=${newest.id}. It has been running for ` +
+          `${elapsedSince(runStartedAt(newest), nowMs)} and the tree it was measuring gets no ` +
+          "verdict.",
+      );
+    } else {
+      verdict = block(
+        "ci-run-in-flight",
+        `PUSH REFUSED: CI run ${newest.id} for \`${branch}\` is ${newest.status} and this push ` +
+          "would CANCEL it.\n" +
+          (newest.title === "" ? "" : `    ${newest.title}\n`) +
+          `    running for ${elapsedSince(runStartedAt(newest), nowMs)}` +
+          (newest.headSha === "" ? "" : `, over ${newest.headSha.slice(0, 12)}`) +
+          "\n" +
+          (newest.url === "" ? "" : `    ${newest.url}\n`) +
+          "  docs/CONVENTIONS.md: A PUSH CANCELS THE RUNNING CI JOB — BATCH THE PUSH. The tree " +
+          "that run is measuring never gets a verdict, which is how a red main is discovered two " +
+          "pushes late: four runs were superseded this way on 2026-09-01 and main sat red for " +
+          "roughly five hours.\n" +
+          "  A GREEN LOCAL BATTERY IS NOT THIS MEASUREMENT. Only one of the two machines is " +
+          "yours, so the T-203 token this guard just accepted says nothing about this run.\n" +
+          "  Wait for it, then push:\n" +
+          `    ${GH_BIN} run watch ${newest.id}\n` +
+          "  Or cancel it knowingly, by naming the run you are cancelling:\n" +
+          `    ${CANCEL_CI_ENV}=${newest.id} git push …\n` +
+          "  That is not an override flag — this guard ships none. It names ONE RUN, so it " +
+          "cannot outlive the run it was for: the next run has a different id.",
+      );
+    }
+  } else if (newest.status !== COMPLETED_RUN_STATUS) {
+    notices.push(
+      `CI'S NEWEST RUN WAS NOT JUDGED: run ${newest.id} for \`${branch}\` reports status ` +
+        `\`${newest.status}\`, which is neither \`${COMPLETED_RUN_STATUS}\` nor one of the ` +
+        `statuses this guard knows to mean RUNNING (${ACTIVE_RUN_STATUSES.join(", ")}). The push ` +
+        "is allowed and whether it cancels anything is UNVERIFIED.",
+    );
+  }
+
+  // ── WHAT DID CI LAST ACTUALLY SAY? ─────────────────────────────────
+  // NOT the newest COMPLETED run, which under `cancel-in-progress: true`
+  // is usually a run that was superseded and reached nothing. See
+  // `newestVerdictRun`: this card's own instance sat behind exactly such
+  // a stack.
+  const last = newestVerdictRun(runs);
+  if (last !== undefined) {
+    const skipped =
+      last.skipped === 0
+        ? ""
+        : `  ${String(last.skipped)} newer run(s) reached NO verdict (${NON_VERDICT_CONCLUSIONS.filter(
+            (c) => c !== "",
+          ).join("/")}) and were skipped to find it — \`cancel-in-progress: true\` means a ` +
+          "superseded push leaves one behind, which is the habit this guard is here for.\n";
+    if (last.run.conclusion === FAILED_CONCLUSION) {
+      notices.push(ciFailureNotice(root, last.run, branch, gh, skipped));
+    } else if (last.run.conclusion !== "success") {
+      notices.push(
+        `CI'S LAST VERDICT WAS NOT READ: run ${last.run.id} for \`${branch}\` concluded ` +
+          `\`${last.run.conclusion}\`, which this guard reads as neither \`success\` nor ` +
+          `\`${FAILED_CONCLUSION}\`. Look at it yourself: ${GH_BIN} run view ${last.run.id}\n` +
+          skipped,
+      );
+    }
+    // A `success` IS SILENT, skipped runs and all. This file's rule: an
+    // ORDINARY allow says nothing. The skipped count is context for a
+    // verdict worth acting on, and a line printed on every green push is
+    // a line nobody reads by the third one.
+  }
+  return verdict;
+}
+
+/**
+ * The announcement a red CI earns — and it is an announcement, by this
+ * card's second criterion, because pushing over a red is the ORDINARY
+ * way a red gets fixed and a refusal here would block the remedy.
+ *
+ * @param {string} root
+ * @param {Run} run
+ * @param {string} branch
+ * @param {(root: string, argv: string[]) => CheckResult} gh
+ * @param {string} skipped  the superseded-run sentence, or ``
+ * @returns {string}
+ */
+function ciFailureNotice(root, run, branch, gh, skipped) {
+  const head =
+    `CI IS RED UNDER THIS PUSH: run ${run.id} for \`${branch}\` concluded ` +
+    `\`${FAILED_CONCLUSION}\`` +
+    (run.headSha === "" ? "" : ` over ${run.headSha.slice(0, 12)}`) +
+    (run.title === "" ? "" : ` — ${run.title}`) +
+    "\n" +
+    skipped;
+  const tail =
+    (run.url === "" ? "" : `    ${run.url}\n`) +
+    "  THIS IS NOT A REFUSAL: pushing over a red is how a red gets fixed. It is said because a " +
+    "local battery and CI are different measurements, and this one has already failed " +
+    "(docs/CONVENTIONS.md, AND THEN READ IT).\n" +
+    `    ${GH_BIN} run view ${run.id} --log-failed`;
+
+  const viewed = gh(root, ghRunViewArgv(run.id));
+  if (viewed.status !== 0) {
+    return (
+      head +
+      `  the failing step could not be read: ${
+        viewed.problem ?? `\`${GH_BIN}\` exited ${String(viewed.status)}`
+      }\n` +
+      tail
+    );
+  }
+  const jobs = parseRunJobs(viewed.stdout);
+  if ("problem" in jobs) return `${head}  the failing step could not be read: ${jobs.problem}\n${tail}`;
+  const step = failingStep(jobs.jobs);
+  if (step === undefined) {
+    return `${head}  no job in that run reports a \`${FAILED_CONCLUSION}\` conclusion\n${tail}`;
+  }
+  const where = step.name === "" ? `job \`${step.job}\`` : `\`${step.job}\` / \`${step.name}\``;
+  return `${head}  failing step: ${where}\n${reachSentence(root, run, step)}${tail}`;
+}
+
+/**
+ * DOES THE TREE BEING PUSHED REACH THAT STEP'S PACKAGE?
+ *
+ * Two derivations, either of which can decline: the step's package comes
+ * out of the repository's OWN workflow file, and the paths come out of
+ * `git diff` against the commit that run measured. Where either declines
+ * the sentence SAYS which one did — a guard that answered "no" because it
+ * could not look would be telling the seat something false about its own
+ * tree, which is the discrimination `token-unmeasured` exists to make one
+ * arm up.
+ *
+ * @param {string} root
+ * @param {Run} run
+ * @param {Step} step
+ * @returns {string}
+ */
+function reachSentence(root, run, step) {
+  if (run.headSha === "") {
+    return `    whether this push reaches that step's package is UNKNOWN: the run named no headSha\n`;
+  }
+  /** @type {string} */
+  let workflow;
+  try {
+    workflow = readFileSync(path.join(root, CI_WORKFLOW_REL_PATH), "utf8");
+  } catch {
+    return `    that step's package is unknown here: ${root} carries no readable ${CI_WORKFLOW_REL_PATH}\n`;
+  }
+  const dir = stepWorkingDirectory(workflow, step.name);
+  const pkg =
+    dir === undefined || dir === "" ? undefined : dir.replace(/\/+$/, "");
+  const paths = pathsSince(root, run.headSha);
+  if ("problem" in paths) {
+    return (
+      `    that step runs in ${pkg === undefined ? "the repository root" : `${pkg}/`}, and whether ` +
+      `this push reaches it is UNKNOWN: ${paths.problem}\n`
+    );
+  }
+  if (pkg === undefined) {
+    return (
+      `    ${CI_WORKFLOW_REL_PATH} gives that step no \`working-directory\`, so it runs at the ` +
+      `repository root and EVERY push reaches it (${String(paths.paths.length)} path(s) changed ` +
+      `since ${run.headSha.slice(0, 12)})\n`
+    );
+  }
+  const reaches = reachesPackage(paths.paths, pkg);
+  return (
+    `    that step runs in ${pkg}/, and this push ${reaches ? "DOES" : "does NOT"} change anything ` +
+    `under it (${String(paths.paths.length)} path(s) changed since ${run.headSha.slice(0, 12)})` +
+    (reaches ? " — you are pushing a fix\n" : " — main is red under work that is not this\n")
+  );
 }
 
 /**
@@ -1031,15 +2202,25 @@ export function laneCanRegenerate(manifest) {
  * card's — but the new cost is stated so the next reader meets it in a
  * comment instead of in a refusal.
  *
+ * ── AND A FOURTH ARM ASKS THE REMOTE (T-237) ────────────────────────
+ * Placed AFTER every local arm and before the graph check, which is a
+ * cost decision and a courtesy in one: a push already refused for a
+ * dangling `blocked_by` or an unmeasured tree should not first spend a
+ * network round trip to be told something else, and the two problems it
+ * reports are the seat's to fix in either order. Its ANNOUNCEMENT is a
+ * notice rather than a return, so a red CI reaches the seat whatever the
+ * graph then says — the graph is about this machine and CI is not.
+ *
  * @param {Request} request
  * @param {(root: string) => CheckResult} [check]
  * @param {(root: string) => CheckResult} [cheap]
+ * @param {(root: string, argv: string[]) => CheckResult} [gh]
  * @returns {Decision}
  */
-export function decide(request, check = runCheck, cheap = runCheapChecks) {
+export function decide(request, check = runCheck, cheap = runCheapChecks, gh = runGh) {
   /** @type {string[]} */
   const notices = [];
-  const decision = decideWith(request, check, cheap, notices);
+  const decision = decideWith(request, check, cheap, gh, notices);
   return notices.length === 0 ? decision : { ...decision, notices };
 }
 
@@ -1047,10 +2228,11 @@ export function decide(request, check = runCheck, cheap = runCheapChecks) {
  * @param {Request} request
  * @param {(root: string) => CheckResult} check
  * @param {(root: string) => CheckResult} cheap
+ * @param {(root: string, argv: string[]) => CheckResult} gh
  * @param {string[]} notices  collected, and attached by `decide`
  * @returns {Decision}
  */
-function decideWith(request, check, cheap, notices) {
+function decideWith(request, check, cheap, gh, notices) {
   const command = commandOf(request.toolInput);
   if (command === undefined) {
     return allow(
@@ -1221,6 +2403,14 @@ function decideWith(request, check, cheap, notices) {
     // announces itself. A line on every good push is a line nobody reads
     // by the third one.
   }
+
+  // ── THE RUN THAT IS ALREADY RUNNING (T-237) ────────────────────────
+  // The first arm in this file that asks a machine which is not this
+  // one. It returns a verdict only for a live run or an unreadable
+  // answer; everything else it has to say goes into `notices`, so a red
+  // CI is heard even when the graph then refuses.
+  const ci = ciVerdict(root, headRef, command, gh, notices, process.env, Date.now());
+  if (ci !== undefined) return ci;
 
   // ── CAN THIS LANE EVEN CLEAR A GRAPH REFUSAL? ──────────────────────
   // Both arms are about the GRAPH CHECK and nothing else, so they sit

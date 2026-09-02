@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **559 behaviours** — 557 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **574 behaviours** — 572 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -559,6 +559,21 @@ Census: **559 behaviours** — 557 extracted sentences + 2 named-not-extracted (
 - the separator scan is the one gitInvocations always used
 - `-C` is followed and the options that re-point a repository are not
 - the guard is wired into .claude/settings.json on the Bash matcher
+- the two commands this arm runs are the ones docs/CONVENTIONS.md publishes
+- a failing step's package is READ out of the workflow, in this repository and in a fixture
+- a run still in flight refuses the push, and unguarded that same push lands
+- the same push lands once that run is completed — the positive control
+- the acknowledgement names the run, and nothing else acknowledges anything
+- a red CI is ANNOUNCED with its failing step, and is never a refusal
+- the newest COMPLETED run is not the question — cancellations are skipped and counted
+- `gh` absent announces that CI was not asked and allows — reachable is the control
+- `gh` refusing is announced in its own words, and an unrecognised exit says whose bug it may be
+- an answer this guard cannot READ refuses, and a well-formed one does not
+- a running run's EMPTY conclusion is read, never rejected as an unreadable shape
+- a status this guard does not recognise is disclosed, and does not refuse
+- the branch reaches `gh` as ONE argument, through no shell
+- CI is not asked for a push the LOCAL arms already refused
+- the elapsed time comes from the run's own start, and `updatedAt` is not it
 
 ## range-rule
 
