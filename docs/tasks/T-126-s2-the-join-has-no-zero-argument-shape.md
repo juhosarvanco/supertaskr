@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: M
-status: building
+status: verifying
 blocked_by: [T-198]
 touches: [app-board, app-dispatch]
 suggested_by: executor claude-opus-5 @T-126
@@ -298,3 +298,106 @@ So: the ruling's DIRECTION has never moved, and its BLOCKER has now moved
 twice — C-18 → `T-190` → `T-198`. Each move was a measurement, and each
 came from a lane that went and looked rather than from this seat
 reasoning harder.
+
+## BUILT — `T-126-s2`'s lane, 2026-09-02, at base `fb222cd`
+
+**THE RULED SHAPE AND NOTHING ELSE.** The join is in TypeScript. This
+card carried no `## Acceptance criteria` section — the dispatch brief's
+own signal row says so — so the criteria below are the RULING's clauses,
+read as criteria, each with its measurement at this lane's tip.
+
+### C1 — the join lives in TypeScript, in C-15's own module
+
+`app/src/lib/dispatch-store.ts` gains `IN_FLIGHT_STATUSES`, `isInFlight`,
+`classify`, `REFUSAL_SENTENCES`/`refusalSentence` and
+`joinLanes(scan, board)`. **MEASURED**: `npm run build` from `app/` exit
+0 (both `tsc` programs plus `vite build`); `joinLanes` is exported and
+imported by `app/test/dispatch-store.test.ts`.
+
+**IT PRODUCES THE WIRE FORM AND HANDS IT TO `hydrateJoin`** rather than
+filling a `Map` itself. That is not tidiness: it makes *"this join
+produces what the Rust join would have put on the wire"* a fact about the
+code, and it leaves ONE site in this repository that turns dispatch rows
+into a keyed collection, so ADR-009's shape cannot be obeyed in one place
+and forgotten in the other.
+
+### C2 — it lands AFTER the view model has a test path, never before
+
+`T-198` is `status: done` at this base and
+`app/test/dispatch-store.test.ts` exists and collects.
+**MEASURED**: `npx vitest run test/dispatch-store.test.ts` from `app/`
+— 5 bodies at the base, **20** at the tip, all passing.
+
+### C3 — the bodies KILL mutants rather than merely importing the module
+
+**MEASURED, 15-for-15 at commit `ca8b963`**, one side only, each landing
+read back with `git diff --unified=0` and each restore proved by
+`shasum -a 256` against `git show ca8b963:<path>`:
+
+| mutant | kill set (bodies) |
+|---|---|
+| `classify` `live` arm → `died` | 3 |
+| `classify` `died` arm → `notDispatched` | 3 |
+| `classify` `stampSkipped` arm → `notDispatched` | 3 |
+| `classify` `notDispatched` arm → `stampSkipped` | 4 |
+| `IN_FLIGHT_STATUSES` emptied | 6 |
+| the no-card half short-circuited | 1 |
+| the ASCII sort removed | 1 |
+| `notLanes.push` dropped | 1 |
+| `truncated` hardcoded `false` | 1 |
+| two refusals given one sentence | 1 |
+| duplicate board id → first wins | 1 |
+| the second lane for one id dropped | 1 |
+| a scanned-EMPTY repository treated as a refusal | 5 |
+| `join.rs`'s `IN_FLIGHT_STATUSES` reworded (Rust side) | 1 |
+| a plant of the absent sentence in `join.rs` (Rust side) | 1 |
+
+**AND ONE MUTANT SURVIVED ON ITS FIRST SHAPE, WHICH IS THE FINDING WORTH
+KEEPING.** The last row's plant was first written as an UNQUOTED doc
+comment and the body stayed green — because the negative control searches
+for the sentence as a Rust STRING LITERAL, quotes included. Re-planted
+with the quotes it reds. That is the POISON DRILL's own proof clause
+working as designed: *"a search-based check is run once against a PLANTED
+HIT before its zero is written down"*, and the first plant proved the
+plant wrong rather than the assertion.
+
+### C4 — two spellings of one rule do not go unheld
+
+T-110's indictment is *"two copies of one rule with a pin under only one
+of them"*. `join.rs` keeps `join_lanes` — webview-unreachable, still
+driven by `cargo test`, and still depended on by `brief.rs` for
+`LaneScanRefusal` — so REMOVING it is a second architecture decision this
+ruling did not take, and it is routed rather than taken.
+`the_rust_join_and_this_one_spell_one_rule` reads `join.rs`'s source and
+requires the three in-flight statuses, the four state names and the four
+refusal sentences to agree. **MEASURED**: rewording the Rust constant
+reds that body and nothing else.
+
+## WHAT THIS CARD DID NOT BUILD, AND WHY EACH IS A ROUTE RATHER THAN A GAP
+
+**THE DISPATCH BLOCK STILL DOES NOT RENDER IN THE SHIPPED APP.** The
+corroboration above says this card is *"the only thing between the app
+and a rendered dispatch block"*, and that is **the one place the record
+was wrong** — measured from inside the fence rather than argued:
+
+- `joinLanes` needs a `LaneScan`, whose only producer is the registered
+  `dispatch_lanes`; `dispatch-store.ts` has no door onto it, and the door
+  is `T-126-s1` — PARKED on a genuine RULING (mirror the
+  `DispatchLanesOutcome` wrapper, or fold `noProject` into `LaneScan` as
+  a sixth kind), whose own note assigns it to whoever holds
+  `[app-dispatch]` when a frontend first calls the command. This lane
+  held `[app-dispatch]` and declined it: its dispatch was the ruled shape
+  and nothing else, and taking a second architecture decision to make
+  this card's output visible is exactly the move `T-112-s1` declined for
+  the same reason.
+- The two files that render `<Board>` — `app/src/App.tsx:812` and
+  `app/src/genesis/BoardCrescendo.tsx:135`, neither passing `dispatch` —
+  are C-05's `app-shell`, which no `[app-board, app-dispatch]` fence
+  reaches.
+
+Routed as **`T-126-s9`** (the call site, with the door and the IPC census
+fixture) and **`T-126-s8`** (the Rust join's disposition). Both suffixes
+were checked against the whole tree first: `T-126-s4` through `T-126-s7`
+are already spent — `s4` and `s5` are named across `T-126`'s own card and
+`T-135`, and `s6`/`s7` were absorbed by `T-159`'s `Absorbs:` line — so
+`s8` is the first free ordinal.
