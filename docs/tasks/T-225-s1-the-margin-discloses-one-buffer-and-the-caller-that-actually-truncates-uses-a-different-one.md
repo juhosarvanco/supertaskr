@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-225
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
