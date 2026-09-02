@@ -463,6 +463,107 @@ branch no body drives), `T-225-s4` (CONVENTIONS and STATE send a seat to
    read). The measurements the card rests on are unaffected; the label
    is wrong, and `T-225-s1` is the card for it.
 
+## FIX PASS, 2026-09-02 — V-225's F1, and the census figure corrected
+
+**APPENDED, NOTHING ABOVE IT EDITED** — the same rule this lane applied
+to `T-197`'s notes, turned on its own. Two figures above are now known
+wrong and the corrections are here rather than in place, because a
+record that rewrites itself destroys the evidence anybody believed it.
+
+### F1 — control two asserted the outcome of a race
+
+**The finding is right and I do not contest any part of it.**
+`brief-flush.spec.ts` body four's control two required `| cat` to
+receive all 524,400 bytes from a pre-T-197 writer:
+
+    expect(fast.bytes, "a DRAINING reader lost bytes …").toBe(smallWant);
+
+That is who wins a race, not a property. V-225 measured 1 of 25 runs
+short on a quiet machine, 16 of 25 at six busy cores, and — the part
+that settles it — **one real suite red while an unrelated mutant of
+`dispatch-order.mjs` was applied**, a file that body cannot reach. At
+`retries: 0` on a shared runner such a red arrives on somebody else's
+work, carrying a message about write shape, in the file whose subject is
+write shape. **And the asymmetry was the tell I missed**: this body's
+header argues at length that control ONE is owed because *"a harness
+that drops data on a writer that dropped none would red this body for
+its own reason and read as a finding"* — and then asserted exactly that
+about the fast reader instead of proving it.
+
+**THE REMEDY, AND WHY IT IS STRONGER THAN THE ONE THE VERDICT NAMES.**
+V-225 offered three: assert `fast > slow`, derive the fast arm in-run as
+`deriveLossPoint` derives the slow one, or keep the equality and
+`disclose()` the shortfall. **I took the second and the third together,
+and the assertion is the first over the derived value** — because the
+verdict's own leading option, taken alone, is still one sample of a
+race. Under sustained load `cat` reaches the pauser's own floor of one
+pipe buffer: that is precisely what V-225's spurious red was, `Expected:
+524400  Received: 65536`, and against a `slow` that also sat at 65,536 a
+single `fast > slow` would have redded too. So:
+
+    slow.bytes < smallWant           asserted — a PROPERTY: a reader
+                                     that pauses cannot drain half a
+                                     megabyte before a burst writer exits
+    fastBest > slow.bytes            asserted — the DISCRIMINATION the
+                                     argument actually makes, over the
+                                     BEST of FAST_SAMPLES runs
+    "a draining reader loses NOTHING"  DISCLOSED with its full spread,
+                                     no longer asserted
+
+The MAX is the mirror of `deriveLossPoint`'s MIN one screen down, and
+the same argument turned around: that function takes the conservative
+end of a spread because it announces a margin against it, and here the
+claim is *this reader CAN keep up*, whose conservative end is the
+maximum. Failing now requires **every** sample to be as bad as the
+pauser, which is a strictly weaker event than any one of them being.
+
+**MEASURED UNDER THE VERIFIER'S OWN CONDITION**, six busy cores, body
+four alone, at `eb05606`: **8 runs, 8 passed, 0 failed.** The disclosure
+caught the class live in that batch — one run's spread carried a
+**191,392**-byte draining sample that the old equality would have redded
+on, and one run's pauser took **152,062** rather than 65,536, which is
+why no bound is asserted on the pauser's arrival either.
+
+### The fix pass's own drill
+
+Detached scratch worktree `/private/tmp/nd-T-225-fix` at `f16f019`, own
+installs; one side only, mutation read back from `git diff`, restored by
+`git restore --source=f16f019 --staged --worktree` and proved by sha256
+(both files byte-identical, no residual dirt).
+
+| # | mutant | killed |
+|---|---|---|
+| FX1 | the control writer FLUSHES (`process.exitCode = 0`) — nothing left to discriminate | **3**, body four failing on *"the reader that PAUSES lost nothing from a pre-T-197 writer at this size"* |
+| FX2 | the fast arm reads with the PAUSER — two identical readers | **1**, body four failing on *"not one of 5 runs of the DRAINING reader took more … than the reader that pauses did"* |
+| FX3 | `process.exitCode = code` → `process.exit(code)` in brief.mjs | **4**, body four still failing on *"the SLOW reader lost bytes the file destination received"* |
+
+FX1 and FX2 are the two directions the control has to separate — a
+writer that flushes, and a reader that does not drain — and FX3 shows
+the proof it guards still reds against the card's own defect.
+
+### The census figure, corrected
+
+The notes above say `capabilities:check` is stale by **three** new test
+names. **It is SIX** — V-225 derived it and I take the correction as
+read: six `test(` names added, none removed, census 45,893 → 46,468
+bytes, suite 553 bodies against a committed 547. The fix pass adds no
+test body, so six stands at this tip. Not regenerating in the lane
+remains correct (T-210 leaves `docs/CAPABILITIES.md` read-only inside a
+fence); **the integrator carries SIX into the merge commit.**
+
+### And the OVER arm's sentence, corroborated against
+
+V-225 appended a dated corroboration to `T-225-s1` that sharpens it from
+*the label is wrong* to *the sentence the tool PRINTS is false*: at
+`b5d015b`, `spawnSync` with `maxBuffer: 65536` over `--dispatch --full`
+returns **the whole 102,752 bytes** with `status: null`, `signal:
+SIGTERM` and `error.code: ENOBUFS` — not *"receives a prefix with no
+error"*, which is what the margin block's OVER arm tells a dispatcher.
+**I concur, and I did not fix it here**: the fix pass's mandate is F1,
+the OVER arm's wording is a producer change, and `T-225-s1` now carries
+both the class and the measurement. Whoever takes s1 should change that
+clause, not only add a second reference point.
+
 ## Verdicts
 
 ### V-225, 2026-09-02 — claude-opus-5@subagent (verifier bench `../nputer-V-T-225`, detached at `b5d015b`)
