@@ -26,6 +26,7 @@ import {
   assembleBrief,
   boardCensus,
   ceremonyRows,
+  citedOpening,
   components,
   contractRows,
   context,
@@ -33,6 +34,7 @@ import {
   fenceLedger,
   fenceOverlaps,
   fieldList,
+  findableNeedle,
   frontmatterFields,
   insideRepository,
   integrationRefCandidates,
@@ -920,6 +922,176 @@ test("the named disciplines are enumerated from the document's own shape", () =>
   expect(after).toContain("POISON RITUAL");
 });
 
+/* ════════════════════════════════════════════════════════════════════
+ * THE TWO LONG PASSAGES ARE CITED, NOT TRANSCRIBED (T-225-s2, taking
+ * `T-215-s4`).
+ *
+ * docs/CONVENTIONS.md's THE LANE PROTOCOL bullet and
+ * method/lane-protocol.md's rule four were 10,155 and 13,078 bytes at
+ * `09526da` — 23,233 of an 82,476-byte `--task --state --full` answer
+ * against a 65,536-byte line, and rule four printed in EVERY `--task`
+ * brief rather than only under `--full`. **THE ROW SET GREW WITH THE
+ * DOCUMENTS**: every correction to either passage pushed the arm further
+ * past a buffer, for text no dispatched session could act on differently
+ * for having been handed the bytes instead of the address.
+ *
+ * THE EXTRACTIONS BELOW ARE THIS FILE'S OWN, not the module's. The
+ * derivation computes on one implementation and the assertion on
+ * another, which is this file's standing shape — a body that measured the
+ * passage with the same function that printed it would agree with itself
+ * whatever either of them did.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** rule four of method/lane-protocol.md, flattened — a SECOND reader. */
+function ruleFourFlat(): string {
+  const lines = readDoc("method/lane-protocol.md", repoRoot).split(/\r?\n/);
+  const start = lines.findIndex((l) => l.startsWith("4. "));
+  expect(start, "method/lane-protocol.md has no rule four for this body to measure").toBeGreaterThan(
+    -1,
+  );
+  const held: string[] = [lines[start] as string];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const line = lines[i] as string;
+    if (/^\d+[a-z]?\. /.test(line) || line.startsWith("## ")) break;
+    held.push(line);
+  }
+  return held.join(" ").replace(/\s+/g, " ").trim();
+}
+
+/** the LANE PROTOCOL bullet of docs/CONVENTIONS.md, flattened — likewise. */
+function laneBulletFlat(): string {
+  const bullets = conventions()
+    .split(/\n(?=- )/)
+    .filter((b) => b.startsWith("- ") && b.includes("THE LANE PROTOCOL"));
+  expect(bullets.length, "docs/CONVENTIONS.md no longer has exactly one LANE PROTOCOL bullet").toBe(
+    1,
+  );
+  return (bullets[0] as string).replace(/\s+/g, " ").trim();
+}
+
+test("THE TWO LONG PASSAGES ARE CITED BY ADDRESS, NOT TRANSCRIBED — and the address is one this repository answers", () => {
+  // KILLED BY: putting either transcription back (the deep-phrase absence
+  // below reds), by a citation whose byte figure drifts from the passage
+  // it names, by an opening that is not the passage's own, or by a needle
+  // the wrapped document does not contain — which is what a phrase search
+  // across a 70-column hard wrap silently is.
+  const rendered = render(assembleBrief(context({ taskId: "T-133", full: true })).recs);
+  const lines = rendered.split("\n");
+
+  const passages = [
+    {
+      key: "  never touch the integration branch: ",
+      file: "method/lane-protocol.md",
+      source: "method/lane-protocol.md rule four",
+      flat: ruleFourFlat(),
+    },
+    {
+      key: "  lane bullet: ",
+      file: "docs/CONVENTIONS.md",
+      source: "docs/CONVENTIONS.md lane bullet",
+      flat: laneBulletFlat(),
+    },
+  ];
+
+  for (const p of passages) {
+    const line = lines.find((l) => l.startsWith(p.key)) ?? "";
+    expect(line, `no line opens with ${JSON.stringify(p.key.trim())}`).not.toBe("");
+    expect(line, `${p.source}: the row does not say it is citing rather than quoting`).toContain(
+      "CITED, NOT TRANSCRIBED",
+    );
+    expect(line, `${p.source}: the citation does not name its source`).toContain(p.source);
+
+    // THE SIZE IS THE PASSAGE'S OWN, measured here by a second reader. A
+    // citation that told a reader the wrong weight would send them off
+    // for something other than what it named.
+    expect(
+      line,
+      `${p.source}: the byte figure is not this passage's flattened size at this ref`,
+    ).toContain(`${Buffer.byteLength(p.flat, "utf8")} bytes flattened at this ref`);
+
+    // THE OPENING IS THE PASSAGE'S OWN CAPITALS — the SYMBOL a reader
+    // searches for, which is what docs/CONVENTIONS.md's A CITATION NAMES
+    // A SYMBOL, NOT A LINE asks for in place of a coordinate.
+    const opening = citedOpening(p.flat);
+    expect(opening.length, `${p.source}: the derived opening is empty`).toBeGreaterThan(8);
+    expect(line, `${p.source}: the citation quotes an opening that is not the passage's`).toContain(
+      JSON.stringify(opening),
+    );
+
+    /**
+     * AND THE NEEDLE IS ONE THIS REPOSITORY ANSWERS. It is spelled into a
+     * command a reader will paste, so this body RUNS the search rather
+     * than reading the string: every governing document here is wrapped
+     * at about 70 columns, and a phrase search is a search for a line
+     * break nobody chose.
+     */
+    const printed = /READ IT: command grep -n "([^"]+)" (\S+)/.exec(line);
+    expect(printed, `${p.source}: the citation prints no command to read it with`).not.toBeNull();
+    const needle = (printed as RegExpExecArray)[1] as string;
+    const file = (printed as RegExpExecArray)[2] as string;
+    expect(file, `${p.source}: the command names a different file from the citation`).toBe(p.file);
+    const hits = execFileSync(
+      "git",
+      [...NO_BACKGROUND_MAINTENANCE, "grep", "-c", "-F", needle, "--", file],
+      { cwd: repoRoot, encoding: "utf8" },
+    ).trim();
+    expect(
+      Number(hits.split(":").pop()),
+      `${p.source}: the needle this citation prints is not findable in the file it names — a ` +
+        "phrase search across a hard wrap returns nothing at exit 1, which reads like a " +
+        "refutation rather than a miss",
+    ).toBeGreaterThan(0);
+
+    /**
+     * THE TRANSCRIPTION IS GONE, and the phrase asked for is DEEP inside
+     * the passage rather than at its head: the citation legitimately
+     * quotes the opening, so an absence check anchored there would red on
+     * the citation itself.
+     */
+    const at = Math.floor(p.flat.length * 0.6);
+    const deep = p.flat.slice(at, at + 60);
+    expect(deep.length, `${p.source}: no deep phrase to check for`).toBe(60);
+    expect(
+      rendered,
+      `${p.source}: the brief still carries the passage's own text, so it is transcribing it`,
+    ).not.toContain(deep);
+
+    /**
+     * THE POSITIVE CONTROL. "This text is absent" is satisfied equally by
+     * absent-because-cited, absent-because-misspelled and
+     * absent-because-nothing-was-checked, and only the first is the
+     * property (docs/CONVENTIONS.md, A NEGATIVE ASSERTION NEEDS A
+     * POSITIVE CONTROL). So the same phrase is looked for in a line built
+     * the way the command used to build it.
+     */
+    expect(
+      `${p.key}${p.flat}`,
+      `${p.source}: the deep phrase is not in the passage either, so its absence above proves ` +
+        "nothing about the brief",
+    ).toContain(deep);
+  }
+
+  /**
+   * AND THE NEEDLE BUILDER ITSELF IS DRIVEN, one side only: a document
+   * that WRAPS the opening yields a shorter needle than one that does
+   * not, which is the whole construction. Without this the extension
+   * loop is a green that never met a line break.
+   */
+  const opening = "ALPHA BETA GAMMA DELTA";
+  expect(findableNeedle(`4. **${opening}** and so on\n`, opening)).toBe(opening);
+  expect(
+    findableNeedle(`4. **ALPHA BETA\n   GAMMA DELTA** and so on\n`, opening),
+    "the needle builder handed back a phrase that spans a line break, which is the miss that " +
+      "reads like a refutation",
+  ).toBe("ALPHA BETA");
+
+  process.stdout.write(
+    `\n  brief CITED: ${passages
+      .map((p) => `${p.source} ${Buffer.byteLength(p.flat, "utf8")} bytes`)
+      .join("; ")} — by address, in an answer of ${Buffer.byteLength(rendered, "utf8")} bytes.\n`,
+  );
+});
+
 test("ARM TWO answers STATE's derivable sections and says what it cannot answer", () => {
   const ctx = context({});
   const rendered = render(stateReport(ctx));
@@ -1062,7 +1234,55 @@ test("THE MARGIN IS DISCLOSED IN THE COMMAND'S OWN OUTPUT, and the size it decla
       Math.round(actual / Number(spelled)),
     );
 
-    process.stdout.write(`\n  brief MARGIN: ${line.split("  <- ")[0]}\n`);
+    /**
+     * AND THE BLOCK SAYS WHAT IT ITSELF COST (T-225-s2, taking
+     * `T-225-s8`). This disclosure spends the resource it discloses —
+     * measured at `482be56` the UNDER arm's block went 342 → 1,141 bytes
+     * and the OVER arm's 500 → 2,183 when each caller got its own line —
+     * so the split is stated rather than left for somebody to find in a
+     * size report. **THE TWO HALVES MUST ADD UP TO THE DECLARED FIGURE**,
+     * which is what makes it a measurement instead of an adjective: the
+     * derivation, plus the block, is the number `wc -c` gives.
+     */
+    const split = text.split("\n").find((l) => l.startsWith("this block: ")) ?? "";
+    expect(split, "the block disclosed a size and never said how much of it was itself").not.toBe(
+      "",
+    );
+    const halves = /this block: (\d+) of those bytes are this disclosure and (\d+) are the/.exec(
+      split,
+    );
+    expect(halves, `the block's own cost line does not carry both halves: ${split}`).not.toBeNull();
+    const blockBytes = Number((halves as RegExpExecArray)[1]);
+    const derivationBytes = Number((halves as RegExpExecArray)[2]);
+    expect(
+      blockBytes + derivationBytes,
+      "the block's own cost and the derivation's size do not add up to the figure the same block " +
+        "declares, so one of the three is not a measurement",
+    ).toBe(actual);
+    /**
+     * AND THE SPLIT IS CHECKED AGAINST THE BYTES, NOT ONLY AGAINST THE
+     * ARITHMETIC. Two numbers that add up are satisfied by any pair that
+     * adds up; the claim is that the FIRST `blockBytes` of this answer
+     * are the disclosure and the rest is the derivation. Sliced on a
+     * BUFFER rather than on the string, because this block's own prose
+     * carries em dashes and a byte offset is not a UTF-16 offset.
+     */
+    const answerBytes = Buffer.from(text, "utf8");
+    expect(answerBytes.length, "the answer read back at a different size").toBe(actual);
+    expect(answerBytes.subarray(0, blockBytes).toString("utf8")).toContain(
+      "THE MARGIN — this answer's own size",
+    );
+    expect(
+      answerBytes.subarray(blockBytes).toString("utf8"),
+      "the byte offset the block claims for itself does not end the block, so the two halves add " +
+        "up without describing this answer",
+    ).not.toContain("THE MARGIN — this answer's own size");
+
+    process.stdout.write(
+      `\n  brief MARGIN: ${line.split("  <- ")[0]}\n  brief MARGIN COST: ${
+        split.split("  <- ")[0]
+      }\n`,
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -1133,6 +1353,48 @@ test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped
   expect(
     render(marginRecs({ bytes: 1_000, at, host, units: { count: 4, label: "listed card" } })),
   ).toContain("per listed card: 250 bytes");
+
+  /**
+   * THE BLOCK'S OWN COST SPEAKS IN BOTH ARMS AND IN BOTH STATES
+   * (T-225-s2, taking `T-225-s8`) — the symmetry rule this block already
+   * stands on, turned on the block itself. A disclosure that appears only
+   * when the figure INCLUDES the disclosure cannot be told from one that
+   * is broken, so the arm that cannot count itself says so rather than
+   * going quiet, and the two sentences are exclusive on their own line.
+   */
+  for (const arm of [under, over]) {
+    const counted = render(
+      marginRecs({ bytes: arm === under ? 1_000 : PIPE_BUFFER_BYTES + 500, at, host, body: 700 }),
+    );
+    const costed = counted.split("\n").find((l) => l.startsWith("this block: ")) ?? "";
+    expect(costed, "an arm disclosed a size and never said how much of it was itself").not.toBe("");
+    expect(costed).toContain(
+      `this block: ${(arm === under ? 1_000 : PIPE_BUFFER_BYTES + 500) - 700} of those bytes are ` +
+        "this disclosure and 700 are the derivation",
+    );
+    expect(costed, "the counted arm spoke in the uncounted arm's words").not.toContain(
+      "NOT COUNTED",
+    );
+
+    const uncounted = arm.split("\n").find((l) => l.startsWith("this block: ")) ?? "";
+    expect(
+      uncounted,
+      "an arm given no derivation size went silent about its own cost instead of saying it could " +
+        "not count it — a disclosure that only fires in the easy case cannot be told from one " +
+        "that is broken",
+    ).toContain("NOT COUNTED");
+    expect(uncounted, "the uncounted arm claimed a split it was never given").not.toContain(
+      "are the derivation",
+    );
+  }
+
+  // AND A DERIVATION SIZE THAT WOULD MAKE THE BLOCK NEGATIVE IS THE SAME
+  // class of nonsense as a size the block was never given, so the pin is
+  // that the two halves come out of ONE subtraction rather than out of
+  // two independent numbers.
+  expect(
+    render(marginRecs({ bytes: 2_000, at, host, body: 2_000 })),
+  ).toContain("this block: 0 of those bytes are this disclosure and 2000 are the derivation");
 
   // A SIZE IT WAS NOT GIVEN IS REFUSED RATHER THAN GUESSED AT.
   expect(() => marginRecs({ bytes: Number.NaN, at, host })).toThrow(/needs a byte count/);
@@ -1325,6 +1587,54 @@ function disagreements(block: string, claims: readonly Claim[]): string[] {
         found.push(
           `the line at ${JSON.stringify(claim.key)} STILL says ${JSON.stringify(banned)}, which ` +
             "this run's own measurement contradicts",
+        );
+      }
+    }
+  }
+
+  /**
+   * AND THE ABSENCE HALF RANGES OVER EVERY LINE, NOT ONLY THE ONE ITS KEY
+   * ANCHORS (T-225-s9, filed with T-225-s1's APPROVED re-verdict).
+   *
+   * Narrowing the haystack to one line is SHAPE EIGHT's remedy and is
+   * right for the NEEDLES — the block deliberately says similar things in
+   * two arms, and a presence check over the whole block would be
+   * satisfied by any occurrence anywhere. **It is wrong for the BAN.** A
+   * sentence about caller A, planted on caller B's line, meets neither
+   * B's needles nor B's ban list: measured at `b1dc556`, extending the
+   * pipe-reader arm's tail with *"and spawnSync past its maxBuffer
+   * likewise receives a prefix with no error"* — a clause the same run
+   * measures as `ENOBUFS`, `SIGTERM` and an overrun — passed this file 39
+   * of 39.
+   *
+   * **THE CARVE-OUT IS THE WHOLE DIFFICULTY AND IT IS DERIVED, NEVER
+   * LISTED.** A blanket ban over every line reds the TRUE arm, because
+   * two claims here are the same caller under different limits: the
+   * default-maxBuffer line legitimately says *"with no error"* and
+   * *"receives the whole answer"*, both of which the `ENOBUFS` and
+   * fixed-read claims ban about THEIR callers. So a banned phrase is
+   * excused exactly where it sits on another claim's own line AND that
+   * claim's own measured needles already say it — presence on the owning
+   * line is the evidence, and it comes from the same measurement the ban
+   * does. Anywhere else, the clause is a claim about a caller made on a
+   * line that is not that caller's, and it is reported.
+   */
+  for (const claim of claims) {
+    for (const banned of claim.absent) {
+      for (const line of lines) {
+        if (line.startsWith(claim.key)) continue;
+        if (!line.includes(banned)) continue;
+        const owner = claims.find((c) => c !== claim && line.startsWith(c.key));
+        const trueForTheOwner =
+          owner !== undefined && owner.needles.some((n) => n.includes(banned) || banned.includes(n));
+        if (trueForTheOwner) continue;
+        found.push(
+          `cross-caller: the line at ${JSON.stringify(
+            owner === undefined ? line.split(":")[0] : owner.key,
+          )} carries ${JSON.stringify(banned)}, which is a claim about ` +
+            `${JSON.stringify(claim.key)} that this run's own measurement contradicts — a clause ` +
+            "false about one caller survives on another caller's line unless the ban ranges over " +
+            "every line",
         );
       }
     }
@@ -1533,6 +1843,13 @@ test("...and the OVER arm says what each named caller actually does past the lin
                 "UNDER that default",
                 `status ${String(unset.status)}`,
                 unset.errorCode === "none" ? "no error" : `error.code ${unset.errorCode}`,
+                // WHAT THIS CALLER GOT, SAID ON ITS OWN LINE — measured,
+                // like every other needle here, and load-bearing since
+                // T-225-s9: the cross-line ban above excuses a phrase only
+                // where the owning line's own MEASURED needles already say
+                // it, so a caller that receives the whole answer has to say
+                // so rather than have it inferred.
+                unset.bytes === actual ? "receives the whole answer" : "came back short",
               ],
         absent:
           overBytes > SPAWNSYNC_DEFAULT_MAXBUFFER
@@ -1609,6 +1926,52 @@ test("...and the OVER arm says what each named caller actually does past the lin
       );
     }
 
+    /**
+     * AND THE THIRD CONTROL IS THE CLAUSE ON SOMEBODY ELSE'S LINE
+     * (T-225-s9). The two above are a REPLACEMENT and an ADDITION, both on
+     * the line the claim owns. This one is a CROSS-CALLER addition: the
+     * `spawnSync` promise is spliced onto the PIPE READER's line, where it
+     * meets neither that line's needles nor that line's ban list — and it
+     * passed this file 39 of 39 while being false about the very caller it
+     * names.
+     *
+     * It is spliced into the arm this run rendered, like the one above, so
+     * it cannot drift from the text under test.
+     */
+    const CROSSED = over.replace(
+      "rather than exiting on the tail",
+      "rather than exiting on the tail, and spawnSync past its maxBuffer likewise receives a " +
+        "prefix with no error",
+    );
+    expect(
+      CROSSED,
+      "the cross-caller control spliced nothing, so it is the true arm wearing a mutant's name",
+    ).not.toBe(over);
+    const crossed = disagreements(CROSSED, claims);
+    expect(
+      crossed.length,
+      "a clause the same run measures as ENOBUFS, SIGTERM and an overrun sat on the pipe " +
+        "reader's line and passed — the ban is scoped to the line its key anchors, which is the " +
+        "third-order variant T-225-s9 was filed for",
+    ).toBeGreaterThan(0);
+    const crossSaid = crossed.join(" | ");
+    expect(crossSaid, "the cross-line report did not name itself as one").toContain("cross-caller:");
+    expect(
+      crossSaid,
+      "the cross-line report did not name the caller the false clause is about",
+    ).toContain('is a claim about "past it, spawnSync at a maxBuffer this answer exceeds:"');
+
+    // AND THE CARVE-OUT IS CHECKED RATHER THAN TRUSTED, so the cross-line
+    // pass cannot be satisfied by banning everything everywhere: the TRUE
+    // arm carries "with no error" and "receives the whole answer" on the
+    // default-maxBuffer line, where this run's own measurement puts them,
+    // and the assertion above that `disagreements(over, claims)` is empty
+    // is what would red if the excuse were dropped. Stated here because
+    // the two assertions are a pair and only one of them looks like it.
+    expect(over, "the true arm no longer carries the phrase the carve-out exists for").toContain(
+      "receives the whole answer at status 0 with no error",
+    );
+
     process.stdout.write(
       `\n  brief CALLERS past the line (answer ${actual} bytes): pausing pipe reader ${keeps.bytes}` +
         ` bytes at writer status ${String(keeps.writerStatus)}; one fixed read ${oneRead.bytes}` +
@@ -1633,7 +1996,16 @@ test("...and the UNSETTLED fallback is DRIVEN at a REAL width: the fixed point o
   // reported. Until this body the fallback was a branch no test drove.
   const at = "1999-01-01T00:00:00.000Z";
   const host = "a-test-host";
-  const head = (n: number): string => `${render(marginRecs({ bytes: n, at, host }))}\n\n`;
+  /**
+   * THE HEAD MODELS `withMargin`'s OWN, WHICH NOW MEANS THE BODY SIZE
+   * TOO (T-225-s2). The block declares how many of the bytes it announces
+   * are the disclosure and how many are the derivation, so its length is
+   * a function of BOTH numbers; a head built without the second one is a
+   * model of a block this command no longer emits, and the widths derived
+   * from it would be right only by luck.
+   */
+  const head = (n: number, body: number): string =>
+    `${render(marginRecs({ bytes: n, at, host, body }))}\n\n`;
   const bodyOf = (bytes: number): string => `${"z".repeat(bytes - 1)}\n`;
 
   /**
@@ -1644,14 +2016,27 @@ test("...and the UNSETTLED fallback is DRIVEN at a REAL width: the fixed point o
    * and each width is a function of this block's own prose, which moves
    * whenever a sentence in it moves. Over the line there is no candidate
    * at all: the total, the percentage and `OVER by` all grow together.
+   *
+   * THE WIDTH IS NOW SOLVED RATHER THAN SUBTRACTED, because the block's
+   * length depends on the body it heads: the loop below asks for the body
+   * whose block, declaring `edge`, makes the true total `edge + 1`, and it
+   * converges in a pass or two since only a digit count moves.
    */
   const widths: Array<{ width: number; edge: number }> = [];
   let shrinking = 0;
   for (let k = 1; k < 5; k += 1) {
     const edge = PIPE_BUFFER_BYTES - 10 ** k;
-    const width = edge + 1 - Buffer.byteLength(head(edge), "utf8");
+    let width = edge + 1 - Buffer.byteLength(head(edge, 0), "utf8");
+    for (let pass = 0; pass < 6; pass += 1) {
+      const next = edge + 1 - Buffer.byteLength(head(edge, width), "utf8");
+      if (next === width) break;
+      width = next;
+    }
     if (width <= 0) continue;
-    if (Buffer.byteLength(head(edge + 1), "utf8") === Buffer.byteLength(head(edge), "utf8") - 1) {
+    if (
+      Buffer.byteLength(head(edge + 1, width), "utf8") ===
+      Buffer.byteLength(head(edge, width), "utf8") - 1
+    ) {
       shrinking += 1;
     }
     if (!withMargin(bodyOf(width), { at, host }).whole) widths.push({ width, edge });
@@ -2492,6 +2877,13 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
           "contains would be measuring something other than what was written",
       },
       {
+        prefix: "this block: ",
+        why:
+          "the same size split in two (T-225-s2): the derivation half is the answer minus this " +
+          "block, so it moves with `output:` above for exactly the same reason — a half that did " +
+          "NOT move would not be measuring what was written",
+      },
+      {
         prefix: "per listed card: ",
         why: "the same size, over the same denominator",
       },
@@ -2532,6 +2924,14 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
       moved.map((p) => p.line).filter((l) => l.startsWith("output: ")),
       "the margin disclosed the same size from two checkouts whose own path row differs, so it is " +
         "not measuring the answer it heads",
+    ).toHaveLength(1);
+    // AND THE COST SPLIT IS THE SAME KIND OF ENTRY (T-225-s2): the
+    // derivation half is that same answer minus a block whose own length
+    // did not change, so it must move exactly as `output:` did.
+    expect(
+      moved.map((p) => p.line).filter((l) => l.startsWith("this block: ")),
+      "the block's own cost split did not move while the size it splits did, so the two halves " +
+        "are not a split of that size",
     ).toHaveLength(1);
 
     // ── AND THE VALUE ITSELF, because the sweep alone cannot see a row

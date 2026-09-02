@@ -954,6 +954,56 @@ async function main(argv) {
   return EXIT.CLEAN;
 }
 
+/**
+ * THE READER THAT WALKS AWAY IS ANSWERED DELIBERATELY (T-225-s2, taking
+ * `T-225-s6`).
+ *
+ * A reader that takes ONE fixed-size read and stops — `| head`, `| dd
+ * bs=65536 count=1`, a pager closed on the first screen — closes the pipe
+ * under a writer that is still writing. Node does not raise SIGPIPE; it
+ * raises an `EPIPE` on the stream, and an `error` event with no listener
+ * is an uncaught exception: **a stack trace on stderr and exit 1.**
+ *
+ * **EXIT 1 IS `EXIT.FOUND`, WHICH IS THE WHOLE DEFECT.** Measured on the
+ * dispatching seat's bench at `09526da`, 40 runs of `--dispatch --full`
+ * into `dd bs=65536 count=1`: the writer exited 0 in 37 and 1 in 3 (1 of
+ * 30 quiet, 2 of 10 under eight-core load), and every non-zero was that
+ * uncaught EPIPE rather than a finding. So a caller reading the writer's
+ * `$?` could not tell *"the assembler found something the repository
+ * disagrees with"* from *"you closed the pipe"* — two answers this
+ * command's own four-code contract exists to keep apart.
+ *
+ * **THE MAPPING IS `CANNOT_RUN`, AND THE REASON IS THE CONTRACT'S OWN
+ * WORDING.** Code 3 is *"the command COULD NOT RUN, so this run is not a
+ * claim about the repository at all"* — and a closed pipe is exactly
+ * that shape seen from the other end: the derivation happened, the
+ * TELLING did not, and what the reader holds is a prefix rather than an
+ * answer. It is not 0 (the answer did not arrive), it is not 1 (nothing
+ * was found), and it is not 2 (the invocation was fine).
+ *
+ * **WHAT THIS DOES NOT DO IS END THE RACE, AND NOTHING HERE PRETENDS
+ * OTHERWISE.** Whether the EPIPE reaches this process before it exits is
+ * still timing, so the writer's own exit behind such a reader is 0 or 3
+ * depending on the machine. What changes is that the non-zero is now
+ * DISTINCT from a finding and carries a sentence instead of a stack
+ * trace. `tests/brief-flush.spec.ts` measures the spread per run and
+ * asserts nothing about which side of it a given run lands on — the
+ * reader's side is the property, and it is asserted there.
+ */
+process.stdout.on("error", (err) => {
+  const errno = /** @type {NodeJS.ErrnoException} */ (err).code;
+  if (errno === "EPIPE") {
+    process.exitCode = EXIT.CANNOT_RUN;
+    return;
+  }
+  // ANY OTHER STDOUT FAILURE IS THE SAME CLASS AND IS NAMED RATHER THAN
+  // THROWN: this run is not a claim about the repository either, and a
+  // stack trace out of a stream event would land at exit 1 beside the
+  // findings again.
+  process.exitCode = EXIT.CANNOT_RUN;
+  console.error(`brief: COULD NOT WRITE THE ANSWER — ${err instanceof Error ? err.message : String(err)}`);
+});
+
 let code;
 try {
   code = await main(process.argv.slice(2));
