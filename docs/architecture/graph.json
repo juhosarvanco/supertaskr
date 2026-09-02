@@ -8777,8 +8777,8 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:216d7b254e97a09274464b672573162a66648c9478108b2f8e2e3521b76c5457",
-      "loc": 4662,
+      "hash": "blake3:33db0421842b3acbd00ec35f409fdb44d97f234ecf681e57638669247c2e8a05",
+      "loc": 4738,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
@@ -9317,7 +9317,7 @@
           "exported": false,
           "range": [
             1784,
-            4662
+            4738
           ]
         },
         {
