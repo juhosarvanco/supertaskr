@@ -248,3 +248,105 @@ generation 47134 — because this lane adds test names. Since T-210 a
 lane's fence leaves docs/CAPABILITIES.md read-only and the regeneration
 is the INTEGRATOR's, in the merge commit, before the checkpoint
 (docs/CONVENTIONS.md, the capabilities bullet; T-201).
+
+### The poison drills — 17 mutants, 16 killed, one survivor recorded
+
+Every mutation edits the CODE UNDER TEST and never an assertion, and
+never a literal the two share. All were run in a DETACHED scratch
+worktree at a named commit, the mutated text was READ BACK with
+`git diff` before each suite (T-078: a substitution count is not evidence
+that the text changed the way it was meant to), and every restoration is
+proved by sha256 against that commit — `git restore --source=<commit>
+--staged --worktree`, never a bare `git checkout --` (T-092-s4).
+
+Batch one, 15 mutants at `e2572ee`, hook sha256
+`22a855d1eb85271c92aacd464f56e7a62a005a4be8f058bfcc33a9410544e104`,
+restored to that hash 15 times out of 15. Baseline before the batch:
+71 passed, exit 0.
+
+| mutant | the property it removes | kill set |
+|---|---|---|
+| M1 `ACTIVE_RUN_STATUSES` -> `[]` | no status means a run is running | 6 |
+| M2 `NON_VERDICT_CONCLUSIONS` -> `[""]` (DATA mutant) | a cancellation counts as a verdict | 1 |
+| M3 the array-shape guard is never taken | an answer that is not an array is accepted | 1 |
+| M4 a non-empty test on `conclusion` | a running run is called unreadable | 4 |
+| M5 `acknowledgedRunIds` -> `[]` | no push ever acknowledges a run | 1 |
+| M6 `classifyGhFailure` -> always `absent` | gh's four inabilities collapse into one | 1 |
+| M7 `stepWorkingDirectory` -> `undefined` | a failing step is never placed | 3 |
+| M8 `reachesPackage` -> `true` | every push reaches every package | 2 |
+| M9 the announcement fires on `success` | a red is never announced | 3 |
+| M10 the skip loop's `continue` removed (algorithm site) | the search stops at the newest COMPLETED run | 1 |
+| M11 `runStartedAt` -> `createdAt` | the run's own start is ignored | 1 |
+| M12 the branch quoted into one word | argv stops being argv | 2 |
+| M13 the CI arm moved ahead of the local arms | ordering | 1 |
+| M14 `elapsedSince` -> a constant | the clock stops mattering | 1 |
+| M15 the gh-failure arm is never taken | an unaskable CI stops being an allow | 3 |
+
+Batch two, at `99349db` (the commit carrying the security fix), hook
+sha256 `dcf7adb1557648ad7430e15ca863645d95e13af110ca40c8fd04886da68c2a3e`,
+restored to that hash 3 times out of 3:
+
+| mutant | the property it removes | kill set |
+|---|---|---|
+| M16 the sha shape check accepts anything | a hostile `headSha` reaches `git` | 1 |
+| M17 the trailing `--` removed | the revision list is left open | **0 — SURVIVED** |
+
+**THE SURVIVOR IS REPORTED RATHER THAN PAPERED OVER, AND IT IS NOT A
+MISSING ASSERTION.** `--` in `git diff --name-only <sha> HEAD --` is
+belt-and-braces behind the shape check: once `sha` is proven to match
+`/^[0-9a-f]{7,64}$/`, nothing can reach that argument list that the `--`
+would have to stop, so no observable behaviour distinguishes its presence
+from its absence and no body can. The two honest responses are to delete
+it or to keep it and say it is unkilled; **it is kept**, because a second
+bound that costs nothing is worth more than a tidy kill rate, and because
+if a later card widens the shape check the `--` is the bound still
+standing. Killing it would need a shimmed `git` recording its argv, which
+is machinery bought for a redundant guard.
+
+**KILL-SET CONTAINMENT.** Every kill set contains the bodies that own the
+mutated property, and the wider ones are wider for a reason worth
+reading. M1's six include `gh` absent's own control and the ordering body
+— removing every active status means no fixture ever refuses, so the
+controls that depend on a refusal go with it. M9's three include *the
+same push lands once that run is completed*, the positive control:
+moving the announcement onto `success` makes a green push speak, which is
+exactly what that control exists to notice. M15's three reach an OLDER
+body, *no cargo at all allows the push*, because a fixture with no `gh`
+on PATH stops being an allow at all.
+
+### The two reds in the e2e lane, attributed — neither is this diff's
+
+The full lane at this lane's tip: **561 passed / 2 failed**, both in
+`tools/e2e/tests/session-economics.spec.ts`. The same lane run in this
+worktree earlier the same sitting, before these two lanes existed on the
+machine, was **563 passed / 0 failed, exit 0**.
+
+Both failures carry one message:
+
+    T-236-s5 holds a worktree on refs/heads/task/T-236-s5-row-four-reads-by-label
+    and no live card declares that id
+
+**THIS IS RULE 4's OWN NAMED COLLISION, NOT A DEFECT.** The check joins a
+MACHINE-scoped list (`git worktree list`) to a CHECKOUT-scoped one (the
+cards in the tree it is pointed at) — the shape `method/lane-protocol.md`
+rule 4 records as reddening *"in every older lane the moment a newer lane
+was cut"*, and docs/STATE.md names with two prior instances (T-143-s1,
+T-187). Measured here rather than assumed:
+
+* `docs/tasks/…T-236-s5….md` is ABSENT at this lane's base `977697b`,
+  ABSENT at its tip, and PRESENT on `main` — added by `69a8477`, a
+  dispatch commit that landed after this lane was cut.
+* So the card set this check reads is IDENTICAL at this lane's base and
+  at its tip for the id it complains about: the two bodies red the same
+  way over a tree carrying none of this card's work.
+* This diff's merge forecast touches `.claude/hooks/push-guard.mjs`,
+  `tools/e2e/tests/push-guard.spec.ts` and six `docs/tasks/T-237*` files
+  and nothing else — nothing `session-economics.spec.ts` reads.
+* RE-RUN ALONE, as docs/STATE.md requires before attributing: **2 failed
+  / 8 passed** in 3.3s, so it is the environment and not a
+  timing correlate of a full run.
+
+The remedy is outside this fence and is the integrator's by construction:
+the merge tree carries `main`'s cards, T-236-s5 included, so the join has
+both halves again. **A lane cannot fix this and must not try** — the card
+it would have to add belongs to another lane.
