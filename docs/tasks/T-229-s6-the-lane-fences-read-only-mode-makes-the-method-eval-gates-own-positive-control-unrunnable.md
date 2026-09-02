@@ -399,3 +399,66 @@ be a duplicate.
   anywhere under `tools/method-evals` and no package added.
 - The e2e red is `guard-surface-behind`, reproduced at the base; nothing
   in this fence can move it, and T-238 is the card that does.
+
+
+## Fix pass, 2026-09-02 — executor claude-opus-5@subagent, on the REJECTION at `5ff00ab`
+
+**THE FINDING, IN THE VERIFIER'S WORDS.** *"`evals/mf-07-fixture-root-writable.mjs`,
+`replicaSource`, lines 113–115 … Line 114's `cpSync` is REDUNDANT — line
+115 overwrites the content unconditionally, so the copy's only surviving
+effect is its MODE. And `cpSync` preserves modes, which is the entire
+subject of this card. In any checkout where
+`tools/method-evals/lib/fixture-root.mjs` is `444`, the replica's copy of
+the subject lands `444` and line 115's `writeFileSync` dies with
+`EACCES`."* It is a **REGRESSION onto the standing gate**, not a residue:
+at the base the plain `node tools/method-evals/run.mjs` — the run
+docs/CONVENTIONS.md mandates at every `method/**` merge — exited **0**
+under the fence and only `--selftest` reded; at `5ff00ab` **both** exit 3.
+
+**THE ARRANGEMENT THAT HID IT FROM ME, named plainly, because it is this
+card's own subject turned on the lane that built it.** The fence was
+widened mid-lane to the whole `tools/method-evals` tree, so in THIS
+checkout the subject module is writable and the bug cannot appear. Every
+in-lane measurement I made — the before, the after, both gate arms, all
+four drills — ran inside that one arrangement, and **one arrangement
+decided both the subject's answer and the control's**. That is
+`method/roles/verifier.md` step 2b's defect, reproduced *inside the eval
+written to catch it*, by the seat that had just quoted the rule in
+MF-07's own header. My drills varied the SUBJECT and never the FENCE, so
+none of them could see it; the verifier's did, because it judged from a
+bench whose fence was not mine. **The lesson is not "drill harder" — it
+is that a lane cannot grade an arrangement it is standing in.**
+
+**THE REPAIR**, exactly as the verifier measured it: drop the `cpSync`
+and create the parent instead —
+`mkdirSync(path.dirname(...), { recursive: true })`, with `mkdirSync`
+added to the `node:fs` import. One line. The two lines now carry a
+comment saying why they must never be folded back into a copy.
+
+**MEASURED IN A SCRATCH CLONE OF THE TIP** (`git clone` of this lane,
+detached, no `node_modules` anywhere — the zero-dependency property
+holds), fenced by NUL-delimited walk so the two tracked paths carrying
+spaces are not missed; under `method` + `docs/tasks` the fence leaves
+**0** writable tracked files outside those two prefixes:
+
+| ref | fence `method` + `docs/tasks` | full `444`, every tracked file |
+|---|---|---|
+| base `fafb6a7` | plain **0** · selftest **0** | plain **0** · selftest **3** |
+| REJECTED `5ff00ab` | plain **3** · selftest **3** | plain **3** · selftest **3** |
+| FIXED (this commit) | plain **0** · selftest **0** | plain **0** · selftest **0** |
+
+The middle row is the verifier's finding reproduced by this seat before
+the repair was written, and the bottom row is the repair. **And the
+repair re-arms nothing**: with it applied under the full `444` fence,
+deleting `makeWritable(dir)` still reds MF-07 BY NAME at exit 1.
+
+**One correction to this card's own premise, found by the base row.**
+The card says the sessions that cannot run the control are *"precisely
+the sessions holding a lane whose fence includes a `method/` path"*. The
+base row measures the opposite: a fence that INCLUDES `method` leaves
+`method/roles/executor.md` writable, so MF-01's control passed there even
+at the base (selftest **0**), and the original defect needs `method/`
+read-only — a fence that EXCLUDES it, which is what this lane had at
+dispatch. The phenomenon and the repair are unchanged; the sentence
+naming which lanes is inverted, and it is recorded rather than corrected
+in place because it is the card's premise and not this pass's to rewrite.

@@ -49,6 +49,7 @@
 import {
   chmodSync,
   cpSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -110,8 +111,27 @@ function replicaSource(stem, mutate) {
       path.join(root, "tools/method-evals", CARD_FIXTURE_DIR),
       { recursive: true },
     );
+    // THE SUBJECT IS WRITTEN, NEVER COPIED, AND THIS IS NOT A STYLE CHOICE
+    // — IT IS THIS CARD'S OWN SUBJECT TURNED ON THIS FILE (T-229-s6, the
+    // verifier's rejection at `5ff00ab`). A `cpSync` here would be
+    // REDUNDANT, because the `writeFileSync` below overwrites the content
+    // unconditionally — so the copy's only surviving effect would be its
+    // MODE, and `cpSync` preserves modes. In any checkout where
+    // `fixture-root.mjs` is itself `444` — which is EVERY lane whose fence
+    // does not happen to include this suite — the replica's subject would
+    // land `444` and this write would die with `EACCES`, taking the PLAIN
+    // `run.mjs` down with it and not merely the control. Measured under a
+    // `method` + `docs/tasks` fence: with the copy, plain 3 and selftest 3;
+    // without it, 0 and 0.
+    //
+    // IT WAS INVISIBLE IN THE LANE THAT WROTE IT because that lane's fence
+    // had been widened to the whole suite, so one arrangement decided both
+    // the subject's answer and the control's — the exact defect
+    // `method/roles/verifier.md` step 2b names, reproduced inside the eval
+    // written to catch it. If you are tempted to "tidy" the two lines below
+    // back into one `cpSync`, that is the bug.
     const live = readFileSync(path.join(repoRoot, SUBJECT), "utf8");
-    cpSync(path.join(repoRoot, SUBJECT), path.join(root, SUBJECT_IN_REPLICA));
+    mkdirSync(path.dirname(path.join(root, SUBJECT_IN_REPLICA)), { recursive: true });
     writeFileSync(path.join(root, SUBJECT_IN_REPLICA), mutate === undefined ? live : mutate(live));
 
     // THE ARMING, and it is this file's own act: lock every regular file
