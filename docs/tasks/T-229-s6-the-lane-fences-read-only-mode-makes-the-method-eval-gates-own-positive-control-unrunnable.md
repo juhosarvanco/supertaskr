@@ -8,7 +8,7 @@ priority: 3
 status: building
 suggested_by: executor claude-opus-5@subagent @T-229-s4
 blocked_by: []
-touches: [tools/method-evals/lib/fixture-root.mjs]
+touches: [tools/method-evals]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -75,3 +75,15 @@ chmod the copy), a body SHALL red against a read-only source tree with
 the change reverted, and `--selftest` SHALL exit 0 from inside a fenced
 lane, shown in the notes from this lane's own checkout. Guard-class (the
 eval gate is a guard), `review: independent`.
+
+## FENCE WIDENED, 2026-09-02 — fast path A, by the dispatching seat
+
+Amended on the integration branch while the lane was live: the blind
+verifier measured at the base that no suite covers fixture-root.mjs,
+that `fixture.head`/`fixture.restore()` have zero call sites, and that
+the card's own criterion — a body that reds against a read-only source
+with the change reverted — has no in-fence file to live in. The fence
+is now the whole `tools/method-evals` tree (its zero-dependency property
+unchanged: no package added), so the control can live beside the evals'
+own selftest. Re-expanded against this commit; the lane's card copy
+carries this line and section by the seat's own write.
