@@ -30,10 +30,34 @@
 //!
 //! `app/src-tauri/src/dispatch/**` is C-15's OWN path, so a join here is
 //! inside the fence and its `#[cfg(test)]` bodies run under `cargo test`
-//! — the verification the card itself prescribes. The TypeScript half
-//! keeps the types and the `Map` hydration ADR-009 requires and holds no
-//! second copy of this decision, because two copies of one rule with a
-//! pin under only one of them is the divergence T-110 exists to remove.
+//! — the verification the card itself prescribes.
+//!
+//! **AND THE HEADING ABOVE IS NOW HISTORY RATHER THAN A RULE —
+//! `T-126-s2` MOVED THE SHIPPING JOIN TO TYPESCRIPT.** The 2026-08-31
+//! architecture sitting ruled it, and the ruling turns on the KIND of
+//! each objection rather than on their number: stamps inbound breaks
+//! ADR-012 and a second card parser in Rust is `T-057`'s rule — neither
+//! survives any measurement — while the objection to a TypeScript join
+//! was TEST REACHABILITY, which is a property a lane can fix. `T-190`
+//! priced that fix and `T-198` landed it (C-15 declares an `app/test/**`
+//! path and `app/test/dispatch-store.test.ts` collects), so the
+//! condition the ruling attached — *"after, and only after, the dispatch
+//! view model has a test path"* — is met. `dispatch-store.ts`'s
+//! `joinLanes` is the join the webview reaches.
+//!
+//! **WHAT THIS FILE IS NOW: a second spelling with its own pin, and NOT
+//! a duplicate left unheld.** It is unreachable from the webview (no
+//! command delivers it), it is still exercised by every
+//! `#[cfg(test)]` body below, and [`brief.rs`](super::brief) depends on
+//! its [`LaneScanRefusal`] — so removing it is a separate decision the
+//! ruling did not take, routed as `T-126-s8`. Meanwhile the divergence
+//! T-110 actually indicts — *two copies of one rule with a pin under
+//! only one of them* — is closed from the other side:
+//! `the_rust_join_and_this_one_spell_one_rule` in
+//! `app/test/dispatch-store.test.ts` reads THIS FILE's source and
+//! requires [`IN_FLIGHT_STATUSES`], [`DISPATCH_STATES`] and the four
+//! [`LaneScanRefusal::sentence`] strings to match the TypeScript ones.
+//! Renaming or re-wording any of them here reds that body.
 //!
 //! **EVERY BODY BELOW DRIVES THE REAL READER OVER A REAL FIXTURE
 //! DIRECTORY** ([`super::fixtures`]), never a hand-built [`LaneScan`]

@@ -33,16 +33,27 @@
 //! argument.
 //!
 //! **THE JOIN IS HERE AND NOT IN TYPESCRIPT, AND THAT IS THIS CARD'S
-//! REBUILD.** [`join`] takes what [`lanes`] read plus the board's stamps
-//! and names the four states the card is about. The first pass wrote it
-//! in `app/src/lib/dispatch-store.ts`, where no suite could reach it —
+//! REBUILD — AND `T-126-s2` PUT IT IN BOTH.** [`join`] takes what
+//! [`lanes`] read plus the board's stamps and names the four states the
+//! card is about. T-110's first pass wrote it in
+//! `app/src/lib/dispatch-store.ts`, where no suite could reach it —
 //! `app/vitest.config.ts` collects `test/**` only, and both that config
-//! and `app/test/**` are C-05's `app-shell`, outside this card's fence —
+//! and `app/test/**` were C-05's `app-shell`, outside that card's fence —
 //! so four one-side-only producer mutants survived the whole app suite at
 //! exit 0. The same rule under `src/dispatch/**` is inside C-15's own
-//! path and runs under `cargo test`. The TypeScript half keeps the
-//! mirrored types and the `Map` hydration ADR-009 requires, and holds no
-//! second copy of the rule.
+//! path and runs under `cargo test`, which is why it moved here.
+//!
+//! `T-198` then declared C-15's own `app/test/**` path and landed
+//! `app/test/dispatch-store.test.ts`, discharging the one objection the
+//! 2026-08-31 architecture sitting left standing against a TypeScript
+//! join — so `T-126-s2` built it, and `dispatch-store.ts`'s `joinLanes`
+//! is what the webview reaches. [`join`] stays compiled, unreachable from
+//! the webview, still exercised by `cargo test`, and still depended on by
+//! [`brief`] for its `LaneScanRefusal`; whether it is REMOVED is
+//! `T-126-s8`, a decision the ruling did not take. The drift between the
+//! two spellings is held by a pin rather than by a promise —
+//! `the_rust_join_and_this_one_spell_one_rule` reads [`join`]'s source
+//! and requires the two vocabularies to agree.
 
 //! Callers reach the two halves as `dispatch::lanes::read_lanes` and
 //! `dispatch::join::join_lanes`. There is deliberately no `pub use`

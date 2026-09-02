@@ -43,14 +43,22 @@ const DENSE_CARD_THRESHOLD = 40;
  * **AND `brief` NOW HAS A DOOR WHILE `dispatch` DOES NOT.**
  * `dispatch_brief` is registered (`T-112-s1`) and reached by
  * `dispatch-store.ts`'s `readBrief`. `dispatch` wants a `DispatchJoin`,
- * and the join has no zero-argument command shape — that is `T-126-s2`,
- * which is UN-PARKED AND RULED (architecture sitting, 2026-08-31): the
- * join goes to TypeScript, after the dispatch view model has a test
- * path and not before, because shape 3 was refused on test reachability
- * alone while shapes 1 and 2 were refused on properties no measurement
- * can revive. Until that lands nothing in the shipped app fills either
- * prop, so the block still does not render outside a suite;
- * `T-112-s5` carries the account.
+ * and since `T-126-s2` there is one: the architecture sitting of
+ * 2026-08-31 ruled the join into TypeScript — after the dispatch view
+ * model had a test path and not before, because that shape was refused
+ * on test reachability alone while the other two were refused on
+ * properties no measurement can revive — `T-198` landed the test path,
+ * and `dispatch-store.ts`'s `joinLanes` is the join.
+ *
+ * **WHAT IS STILL MISSING IS THE CALL, AND IT IS TWO FILES THIS ONE
+ * CANNOT REACH.** `joinLanes` needs a `LaneScan`, which only the
+ * registered `dispatch_lanes` command produces; `dispatch-store.ts` has
+ * no door onto it yet (`T-126-s1`, parked on a genuine ruling about
+ * where the `noProject` fact belongs), and the two files that render
+ * `<Board>` — `App.tsx` and `genesis/BoardCrescendo.tsx` — are C-05's
+ * `app-shell`, which no `[app-board]` fence reaches (`T-126-s9`). So the
+ * block still does not render outside a suite, and `T-112-s5` carries
+ * the account.
  */
 export function Board({
   model,

@@ -1,32 +1,59 @@
 /**
  * C-15 (F-04) — the dispatch surface, TS half (T-110).
  *
- * **THIS FILE IS A MIRROR, AND AFTER T-110's REBUILD IT IS ONLY A
- * MIRROR.** The Rust half (`app/src-tauri/src/dispatch/`) reads the lanes
- * git wrote down and JOINS them against the board; this file types that
- * answer for the webview and hydrates it into the `Map`s ADR-009
- * requires. It makes no decision of its own.
+ * **THIS FILE WAS ONLY A MIRROR BETWEEN T-110 AND `T-126-s2`, AND IT IS
+ * NOW A MIRROR PLUS EXACTLY ONE DECISION.** The Rust half
+ * (`app/src-tauri/src/dispatch/`) reads the lanes git wrote down; this
+ * file types that answer for the webview, hydrates it into the `Map`s
+ * ADR-009 requires, and — since the architecture sitting of 2026-08-31
+ * ruled `T-126-s2` — JOINS that lane list against the board's stamps.
+ * {@link joinLanes} is that decision and the only one here.
  *
- * **WHY THE JOIN IS NOT HERE ANY MORE — the whole content of this card's
- * rebuild.** T-110's first pass put `classify`, `joinLanes`,
- * `IN_FLIGHT_STATUSES` and `describeRefusal` in this file. They were
- * correct and **nothing tested them**: no file in the repository imports
- * this module, `app/vitest.config.ts` collects `test/**` only, and both
- * that config and `app/test/**` are C-05's `app-shell` — outside T-110's
- * `[app-dispatch]` fence. Four one-side-only producer mutants, measured
- * at `6fea6a1`, ALL SURVIVED `npm run build` and `npm test` at exit 0:
- * swapping the `died` and `stampSkipped` arms; emptying the in-flight
- * set (which makes `died` unreachable — the very fixture the card names);
- * short-circuiting the no-card half of the join; and giving two refusals
- * one sentence. **Exhaustiveness checking is not a substitute and the
- * fourth is the proof: `assertNever` catches a MISSING arm, never a
- * WRONG one.**
+ * **WHY THE JOIN LEFT THIS FILE AT T-110, BECAUSE IT IS WHY EVERY BODY
+ * UNDER IT IS WRITTEN AGAINST A MUTANT.** T-110's first pass put
+ * `classify`, `joinLanes`, `IN_FLIGHT_STATUSES` and `describeRefusal`
+ * here. They were correct and **nothing tested them**: no file in the
+ * repository imported this module, `app/vitest.config.ts` collects
+ * `test/**` only, and both that config and `app/test/**` were C-05's
+ * `app-shell` — outside T-110's `[app-dispatch]` fence. Four
+ * one-side-only producer mutants, measured at `6fea6a1`, ALL SURVIVED
+ * `npm run build` and `npm test` at exit 0: swapping the `died` and
+ * `stampSkipped` arms; emptying the in-flight set (which makes `died`
+ * unreachable — the very fixture the card names); short-circuiting the
+ * no-card half of the join; and giving two refusals one sentence.
+ * **Exhaustiveness checking is not a substitute and the fourth is the
+ * proof: `assertNever` catches a MISSING arm, never a WRONG one.**
  *
- * `app/src-tauri/src/dispatch/**` is C-15's own path, so the same rule
- * written there is inside the fence AND inside a suite. It now lives in
- * `join.rs` with one pin per state. Two copies of one rule with a pin
- * under only one of them is precisely the divergence T-110 exists to
- * remove one layer up, so this file keeps NO second copy.
+ * **AND WHY IT IS BACK — THE OBJECTION HAD A REMEDY AND `T-198` SPENT
+ * IT.** The 2026-08-31 sitting re-measured T-110's refutation, found it
+ * intact, and then read the ASYMMETRY rather than the tally: stamps
+ * inbound breaks ADR-012's *"narrowness lives in the command's own
+ * signature"* and a second card parser in Rust is `T-057`'s rule with
+ * `T-033-s11`'s divergence already on the record — neither can be bought
+ * off by any measurement — while joining HERE was refused on TEST
+ * REACHABILITY, which is a property a lane can fix. One option and a
+ * price. The price was paid in order and by measurement: `T-190`
+ * established that no location an `[app-dispatch]` fence reached was
+ * collected by any runner and routed the crossing; `T-198` carried the
+ * four `touches:` tokens that crossing needs, declared C-15's
+ * `app/test/**` path in the component registry, and landed
+ * `app/test/dispatch-store.test.ts`. So the rule below is inside the
+ * fence AND inside a suite, which is the whole and only thing T-110
+ * required of it.
+ *
+ * **THE RUST JOIN IS STILL COMPILED, SO ONE RULE NOW HAS TWO SPELLINGS —
+ * AND THE ANSWER TO THAT IS A PIN, NOT A PROMISE.** `join.rs` keeps
+ * `join_lanes` (webview-unreachable, still driven by `cargo test`) and
+ * `brief.rs` depends on its `LaneScanRefusal`, so REMOVING it is a
+ * second architecture decision the ruling did not take; it is routed as
+ * `T-126-s8` rather than taken from inside a lane. What T-110 actually
+ * indicts is *"two copies of one rule with a pin under only one of
+ * them"*, and the missing pin is now
+ * `the_rust_join_and_this_one_spell_one_rule` in
+ * `app/test/dispatch-store.test.ts`: it reads `join.rs`'s own source and
+ * requires the three in-flight statuses, the four state names and the
+ * four refusal sentences to agree, so a drift is a RED rather than a
+ * discovery.
  *
  * | the card says | git says | state |
  * |---|---|---|
@@ -53,18 +80,27 @@
  * added at `T-112-s1` because a mirror with no door is a mirror of
  * nothing.
  *
- * **WHAT IS STILL NOT HERE, AND IT IS THE JOIN.** No Tauri command
- * delivers a {@link DispatchJoinWire} to this file. That is not a fence
- * problem any more — `T-112-s1` held `app-shell` and could have registered
- * one — it is `T-126-s2`, PARKED: `join_lanes(scan, board)` takes the
- * board's stamps, the board is parsed in TypeScript, and all three shapes
- * a joining command could take are refused today (stamps inbound breaks
- * ADR-012; a second card parser in Rust is the `T-033-s11` divergence;
- * joining here is what T-110 measured four surviving mutants against).
- * That card wants a RULING before it wants a fence, so this lane routed it
- * rather than deciding it. Until it lands, the board root has no
- * {@link DispatchJoin} to hand the drawer and the dispatch block still
- * does not render.
+ * **WHAT IS STILL NOT HERE, AND IT IS NO LONGER THE JOIN — IT IS THE
+ * DOOR.** {@link joinLanes} takes a {@link LaneScan}, and the one command
+ * that produces one is `dispatch_lanes`, registered at T-126 and called
+ * by nothing on this side. Two things are owed before the drawer's
+ * dispatch block renders in the shipped app, and NEITHER is this card's:
+ *
+ * 1. **The reader's door** — `dispatch_lanes` answers with
+ *    `DispatchLanesOutcome`, a wrapper (`noProject` beside `answered`)
+ *    that this file does not mirror. That is `T-126-s1`, and it is
+ *    PARKED on a genuine choice rather than on effort: mirror the
+ *    wrapper here, or fold "no project is open" into {@link LaneScan} as
+ *    a sixth kind so one fence owns one type. Its own parking note says
+ *    the ruling belongs to whoever holds `[app-dispatch]` when a
+ *    frontend first calls the command — so it is a RULING owed, not a
+ *    line of code, and this lane routed it rather than taking it.
+ * 2. **The composition root** — `App.tsx` and `genesis/BoardCrescendo.tsx`
+ *    are the two files that render `<Board>`, and both are C-05's
+ *    `app-shell`, outside this card's fence. Routed as `T-126-s9`.
+ *
+ * `Board.tsx`'s `dispatch` prop and `TaskDetailPanel`'s consumption of it
+ * are pinned and have been since `T-112-s1`; what they lack is a caller.
  *
  * **T-112'S BRIEF HAS ITS DOOR SINCE `T-112-s1`.** The assembler is built
  * and proved in `dispatch/brief.rs`, registered as `dispatch_brief` in
@@ -337,6 +373,207 @@ export function hydrateJoin(wire: DispatchJoinWire): DispatchJoin {
     default:
       return assertNever(wire);
   }
+}
+
+// ---------------------------------------------------------------------
+// THE JOIN (`T-126-s2`, the shape the 2026-08-31 architecture sitting
+// ruled).
+//
+// The four rows of the table in this file's header, as code. Everything
+// below is a port of `app/src-tauri/src/dispatch/join.rs` and is held
+// against that file's SOURCE by `the_rust_join_and_this_one_spell_one_rule`
+// in `app/test/dispatch-store.test.ts` — the pin that makes two spellings
+// of one rule survivable, and the thing T-110's indictment actually asked
+// for.
+//
+// **WHY THERE IS NO `joinLanesWire` BESIDE THIS.** The join builds
+// EXACTLY the {@link DispatchJoinWire} `join.rs`'s serde emits and then
+// hands it to {@link hydrateJoin}, rather than filling a `Map` itself.
+// Two reasons, and neither is tidiness: it makes the claim "this join
+// produces what the Rust join would have put on the wire" a fact about
+// the code rather than a sentence in a comment, and it leaves ONE site
+// in this repository that turns dispatch rows into a keyed collection,
+// so ADR-009's shape cannot be obeyed in one place and forgotten in the
+// other.
+// ---------------------------------------------------------------------
+
+/**
+ * The statuses that SAY A LANE EXISTS.
+ *
+ * **THREE, AND THE THIRD TWO ARE A JUDGEMENT RATHER THAN A READING.**
+ * `building` is the dispatch stamp itself. `verifying` and `merging` are
+ * in because `method/lane-protocol.md` keeps the worktree alive past the
+ * handoff — the executor stamps `verifying` and STOPS, and the integrator
+ * removes the worktree only after the merge — so a live worktree under a
+ * `verifying` card is the ORDINARY state of this repository between
+ * handoff and merge, and scoring it {@link DispatchState} `stampSkipped`
+ * would make the board cry wolf on its healthiest lane.
+ *
+ * The membership is a constant so it can be argued with rather than
+ * reverse-engineered, and it is the FIRST of the three things
+ * `the_rust_join_and_this_one_spell_one_rule` holds equal to `join.rs`'s
+ * own `IN_FLIGHT_STATUSES`. T-110's second surviving mutant emptied this
+ * list — which makes `died` unreachable — so it is a list with a body
+ * written against exactly that.
+ */
+export const IN_FLIGHT_STATUSES: readonly string[] = ["building", "verifying", "merging"];
+
+/** Does this card claim a lane exists? */
+export function isInFlight(status: string): boolean {
+  return IN_FLIGHT_STATUSES.includes(status);
+}
+
+/**
+ * **THE WHOLE DISAGREEMENT, AS ONE TOTAL FUNCTION OF TWO BOOLEANS.**
+ * Four inputs, four outputs, one arm each and no fallthrough — so a
+ * swapped pair is a CHANGED ANSWER rather than a changed shape, and only
+ * a test can catch it. T-110's first surviving mutant swapped the `died`
+ * and `stampSkipped` arms of this exact function and both `tsc` programs
+ * agreed with it.
+ *
+ * The four arms are written out rather than expressed as two nested
+ * conditionals on purpose: the shape mirrors `join.rs`'s `match (in_flight,
+ * has_lane)` row for row, so the two files can be read side by side, and a
+ * mutation of any single row reds exactly one body below.
+ */
+export function classify(inFlight: boolean, hasLane: boolean): DispatchState {
+  if (inFlight && hasLane) return "live";
+  if (inFlight && !hasLane) return "died";
+  if (!inFlight && hasLane) return "stampSkipped";
+  return "notDispatched";
+}
+
+/**
+ * One sentence per refusal, naming WHICH case the scan hit.
+ *
+ * **THIS IS A SECOND SPELLING OF `join.rs`'s `LaneScanRefusal::sentence`
+ * AND IT IS UNAVOIDABLE UNDER THE RULING.** The wire that used to carry
+ * these strings was `DispatchJoin`'s, produced by the Rust join; the
+ * ruled shape joins HERE, from a {@link LaneScan}, and a `LaneScan`
+ * carries no sentence — there is nothing to forward. So the strings are
+ * authored here and held byte-equal to the Rust ones by
+ * `the_rust_join_and_this_one_spell_one_rule`, which is the difference
+ * between a duplicate and a mirror.
+ *
+ * A plain object rather than a `Map`, and that does not contradict this
+ * file's ADR-009 paragraph: the keys are the union's own discriminants,
+ * authored in a Rust enum in this repository, not text read out of a
+ * file. `DISPATCH_STATE_KEYS` above makes the same trade for the same
+ * reason. `satisfies` is what keeps it total — adding an arm to
+ * {@link LaneScanRefusal} without a sentence here is a compile error in
+ * both `tsc` programs, which is a guarantee about SHAPE and, as ever,
+ * never about the answer.
+ */
+const REFUSAL_SENTENCES = {
+  notAGitRepository: "this folder is not a git repository, so it has no lanes to read",
+  gitIsAFile:
+    "this folder is itself a git worktree (its .git is a file), so its lanes live in the repository it was cut from",
+  noWorktreesDirectory: "this repository has never registered a worktree",
+  worktreesUnreadable: "this repository's .git/worktrees could not be read",
+} satisfies Record<LaneScanRefusal["kind"], string>;
+
+/**
+ * The sentence for one refusal.
+ *
+ * T-110's fourth surviving mutant gave two refusals one sentence, and
+ * `assertNever` could not see it because every arm was present. The body
+ * that kills it here sweeps all four and asserts they are pairwise
+ * distinct as well as individually right.
+ */
+export function refusalSentence(because: LaneScanRefusal): string {
+  return REFUSAL_SENTENCES[because.kind];
+}
+
+/**
+ * Join the lane list against the board.
+ *
+ * Every task id on the board gets a row, **and so does every lane whose
+ * id is on no card** — that second half is the `stampSkipped` case with
+ * `card: null`, and it is the shape a dispatch that skipped the stamp
+ * leaves when nobody has written the card yet either. T-110's third
+ * surviving mutant short-circuited exactly that half.
+ *
+ * **A REFUSED SCAN IS NOT AN EMPTY ONE.** When the scan produced no list
+ * the app knows NOTHING about lanes, so this returns `unavailable` rather
+ * than classifying every card as `notDispatched` — which would be the
+ * same lie one layer up that "an empty list meaning two different things"
+ * is one layer down. That arm is the whole reason {@link DispatchJoin} is
+ * a union, and `board-model.ts`'s `DispatchReading` makes the argument a
+ * third time one layer further out.
+ *
+ * **THE ROWS ARE SORTED BY TASK ID BEFORE THEY BECOME A `Map`, AND THE
+ * ORDER IS ASCII RATHER THAN NUMERIC.** `T-110` is before `T-9`. That is
+ * deterministic and is all it promises, and it is promised at all because
+ * a `Map` keeps insertion order: a renderer iterating `rows` would
+ * otherwise be reading the order the filesystem handed the worktrees over
+ * in. The comparison is `<`/`>` on the strings, which is UTF-16
+ * code-unit order and agrees with Rust's byte order over the ASCII these
+ * ids are; `localeCompare` is deliberately not used, because it answers
+ * differently under different locales and the promise here is
+ * determinism.
+ *
+ * **A DUPLICATE ID ON THE BOARD LEAVES ONE ROW, THE LAST.** `join.rs`
+ * emits two rows for two stamps with one id because its rows are a `Vec`;
+ * this returns a `Map`, which ADR-009 requires of a collection keyed by a
+ * task id, and one key holds one value. The difference is stated rather
+ * than hidden, and the losing row is the EARLIER one, so the behaviour
+ * matches {@link hydrateJoin}'s documented last-wins exactly — the two
+ * halves of this file agree about the one case where a `Vec` and a `Map`
+ * cannot.
+ */
+export function joinLanes(scan: LaneScan, board: readonly BoardStamp[]): DispatchJoin {
+  if (scan.kind !== "scanned") {
+    return { kind: "unavailable", because: scan, sentence: refusalSentence(scan) };
+  }
+
+  // Task id -> its lane registrations. A `Map` because the key is a
+  // string GIT wrote (ADR-009), and one that keeps EVERY registration:
+  // two branches can carry one id, and dropping the second to fit a
+  // single field is the silent loss `DispatchRow.lanes` exists to refuse.
+  const lanesByTask = new Map<string, LaneRegistration[]>();
+  const notLanes: WorktreeEntry[] = [];
+  for (const entry of scan.entries) {
+    if (entry.kind !== "lane") {
+      // Carried WHOLE rather than dropped — the entry is a worktree that
+      // holds no fence and counts against no ceiling, and a reader who
+      // cannot see it reads a LANE census as a WORKTREE census.
+      notLanes.push(entry);
+      continue;
+    }
+    const existing = lanesByTask.get(entry.taskId);
+    if (existing === undefined) {
+      lanesByTask.set(entry.taskId, [entry]);
+    } else {
+      existing.push(entry);
+    }
+  }
+
+  const rows: DispatchRow[] = [];
+  const claimed = new Set<string>();
+  for (const card of board) {
+    const lanes = lanesByTask.get(card.id) ?? [];
+    claimed.add(card.id);
+    rows.push({
+      taskId: card.id,
+      state: classify(isInFlight(card.status), lanes.length > 0),
+      card,
+      lanes,
+    });
+  }
+  // A lane whose task id is on NO card. Reported for the same reason a
+  // non-lane worktree is: the board cannot report what it drops.
+  for (const [taskId, lanes] of lanesByTask) {
+    if (claimed.has(taskId)) continue;
+    rows.push({
+      taskId,
+      state: classify(false, lanes.length > 0),
+      card: null,
+      lanes,
+    });
+  }
+  rows.sort((a, b) => (a.taskId < b.taskId ? -1 : a.taskId > b.taskId ? 1 : 0));
+
+  return hydrateJoin({ kind: "joined", rows, notLanes, truncated: scan.truncated });
 }
 
 // ---------------------------------------------------------------------
