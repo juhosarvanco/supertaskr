@@ -7,7 +7,7 @@ priority: 3
 size: M
 status: building
 blocked_by: []
-touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
+touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
 suggested_by: "the architect seat, 2026-09-02 — item 6 of docs/rooms/loop-efficiency.md; measured across the four lanes dispatched that night, each cut by hand in the order orchestrator 5b and 5c prescribe"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
