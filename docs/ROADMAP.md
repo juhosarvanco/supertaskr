@@ -29,7 +29,10 @@ opens with the card id that still holds its story.
   rules, never a second amnesty. **THE LIVE METHOD VERSION IS
   CONVENTIONS' FIRST-GOTCHA STAMP AND IS NEVER QUOTED HERE**; what a
   bump moved is on its release card and that card's checkpoint
-  (v0.1.8: T-159). The rest of the ledger — T-158's human front door,
+  (v0.1.8: T-159). The second CONVENTIONS compaction landed
+  2026-09-02 (T-236: 160,043 to 117,505 bytes, every program-read
+  sentence byte-identical, the budget re-landed), and the census
+  regeneration has an owner (T-201). The rest of the ledger — T-158's human front door,
   the amnesty sitting's dispositions, T-153-s6/s9's CI first-contact
   classes and the first fully green run, T-157's derived seat-strength
   row — is one record per merge in docs/checkpoints/. Next: T-140-s1.
@@ -97,7 +100,12 @@ opens with the card id that still holds its story.
   since T-127-s6 (2026-08-29), with C-17/C-18 minted and no import
   severed; the file ceiling PRINTS from `index --check` every run
   (T-140), and an oversize graph tells the map the truth (payload
-  shape: T-140-s1, @human's).
+  shape: T-140-s1, @human's). On 2026-09-02 the landing gate
+  stopped claiming an absolute and measures its sixth limit (T-223),
+  the preflight checks a card's quoted claims against the named file
+  (T-230), and every lane can measure its own battery with the physical
+  layer armed (T-216-s4); the wave was fenced by PATH for the first time
+  and every pair was proved disjoint.
 
 ## Milestones
 
