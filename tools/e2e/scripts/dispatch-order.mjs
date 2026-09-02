@@ -288,7 +288,10 @@ function unmetBlockers(rulings) {
  * per held card, so the branch and the absolute worktree path of every
  * live lane are re-spelled once per card. Measured on this repository at
  * `cde65b5` with five lanes live and fifty-five cards fenced out: 252
- * addresses, 23,136 bytes, in a 123,153-byte answer. The term is
+ * addresses spelling 23,136 bytes of branch and worktree path — 23,388
+ * counting the separator each one hangs on, which is what a removal
+ * actually takes — in a 123,153-byte answer that is 99,943 with the
+ * address given once. The term is
  * O(cards x lanes) and every byte of it is a repeat of THE LIVE LANES
  * section a page above, which spells each lane's branch and worktree
  * exactly once — so this is the same answer with the address given once
