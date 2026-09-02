@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/card-preflight.spec.ts]
@@ -75,3 +75,11 @@ quoted (docs/STATE.md, LANES). Re-derive before cutting.
   require the refusal to be distinguishable from an ordinary
   unresolvable ref.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3
+
+The architect seat, at the stamp of T-237's merge (44a95c3). The class
+T-237's own sweep named, with the two sites measured; a card-authored
+`base:` reaching `git rev-parse` as a bare revision is the same shape the
+lane closed for `headSha`. Fence collides with T-230-s7 (card-preflight)
+and T-225-s1 (dispatch-brief); the disjointness guard serialises it.

@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-237
-blocked_by: [T-237]
+blocked_by: [T-238]
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder:
 verifier:
@@ -58,3 +58,34 @@ union, and it deserves its own argument.
   announcement AND a `success` producing silence in the same fixture
   shape, so the arm cannot pass by announcing everything.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3; two siblings ride
+
+The architect seat, at the stamp of T-237's merge (44a95c3). Three
+findings edit the same hook and the same spec, each a few lines; they
+are one lane, behind T-238, which holds both files for the holder
+record. Criteria: `timed_out`, `startup_failure` and `action_required`
+SHALL reach the same announcement as `failure`, with the conclusion
+named; the two absorbed asks below are criteria of this lane.
+
+## Absorbs: T-237-s4 (2026-09-02)
+
+The 15-second `gh` timeout is a bound picked in a lane. The lane SHALL
+measure the two `gh` calls' wall time on this machine and in CI (the
+push-guard spec's own shim can time them; a real `gh run list` against
+this repository gives the figure), print both beside the bound in the
+hook's declared-limits header, and either justify 15 s from the
+measurement or move it; the two calls SHALL be issued in one round trip
+where the API allows, or the header SHALL say why not.
+
+## Absorbs: T-237-s6 (2026-09-02)
+
+The CI arm derives its branch from HEAD, so a refspec push
+(`git push origin HEAD:refs/heads/main`) from a lane checkout is asked
+about the lane's branch and allowed in silence while the same push from
+a `main` checkout is refused (measured by the verifier with a
+branch-aware shim). The lane SHALL read the push's TARGET branch from
+the refspec when one is spelled, fall back to HEAD's when none is, and
+disclose the alias/eval residue in the header the way `gitInvocations`
+already does; a body SHALL drive the refspec form from a non-main
+checkout through the wired hook and show it refused.

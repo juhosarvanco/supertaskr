@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: [T-237]
 touches: [tools/e2e/tests/workflow-parity.spec.ts]
@@ -55,3 +55,11 @@ beside the workflow's other keepers, not inside a hook's spec.
 - WHERE the guard's `CI_WORKFLOW_REL_PATH` no longer names a file in the
   tree THE spec SHALL red rather than skip.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3
+
+The architect seat, at the stamp of T-237's merge (44a95c3). The
+workflow's keeper does not know the guard reads it; one body in
+workflow-parity.spec.ts that renames a step in a fixture copy of ci.yml
+and shows the guard's step lookup degrade by name closes it. Fence is one
+spec, free now.

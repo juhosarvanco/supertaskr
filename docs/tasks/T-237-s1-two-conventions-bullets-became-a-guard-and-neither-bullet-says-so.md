@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: [T-237]
 touches: [docs/CONVENTIONS.md]
@@ -59,3 +59,13 @@ remedy. That is the shape this owes.
   bullet (`conventionsBullet`), and T-237's own spec pins the two
   subcommands against the *AND THEN READ IT* bullet, so a rewrite that
   drops `gh run list` or `gh run view` reds a body by name.
+
+## TRIAGE, 2026-09-02 — `planned`, the integrator's, no lane
+
+The architect seat, at the stamp of T-237's merge (44a95c3). A
+forwarding address in a governing document is a reconciling write of the
+kind the checkpoint owns: the two CONVENTIONS bullets gain, in the next
+checkpoint commit, the sentence that they are now arms of the push guard
+(`ci-run-in-flight` refuses; the newest verdict is announced) and that
+`NPUTER_CANCEL_CI=<run id>` is the acknowledgement — and this card closes
+there, beside T-225-s4's sentence in the same commit.
