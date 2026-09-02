@@ -503,6 +503,16 @@ test("a criterion demanding a BODY over a fence that holds none is REFUSED, and 
   expect(joined(refused.findings)).toContain("A body SHALL prove it was startable");
   expect(joined(refused.findings)).toContain(".claude");
   expect(joined(refused.findings)).toContain(SLUG_PATH);
+  // AND THE LINE IS THE CARD'S OWN. The parser numbers a criterion
+  // within the section it read; a dispatcher jumps to a line in the FILE,
+  // so the record joins the two back together and this pins the join.
+  const at = cardText({ touches: NO_BODY_FENCE, criteria: [BODY_CRITERION] })
+    .split("\n")
+    .findIndex((l) => l.trim() === BODY_CRITERION);
+  expect(at, "the planted criterion moved out of the fixture").toBeGreaterThan(0);
+  expect(joined(refused.findings), "the finding lost the card's own line").toContain(
+    `line ${at + 1}:`,
+  );
   expect(refused.text).toContain("criteria demanding a test body this fence cannot hold: 1");
   expect(refused.text).toContain("the fence holds a body: NO PATH ANY SUITE COLLECTS");
 
