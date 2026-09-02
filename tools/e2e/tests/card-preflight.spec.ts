@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   copyFileSync,
   existsSync,
@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
@@ -705,8 +706,41 @@ test("ownership comes from the slug map, and a path under no component has no ow
 
 const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
 
+/**
+ * A DIRECTORY IN NO CHECKOUT OF THIS REPOSITORY, pointed at by every CLI
+ * invocation below (T-238, absorbing T-230-s6 and T-240).
+ *
+ * ── WHAT IT NEUTRALISES, AND WHY THAT IS NOT DISARMING A GUARD ───────
+ * `--preflight` and `--write-fence` also run T-216-s1's stale-checkout
+ * catcher, whose subject is THE CHECKOUT THE SESSION WAS STARTED IN.
+ * Run from a lane that is the lane — and the moment a `.claude` commit
+ * lands on the integration branch while the lane is open, the catcher
+ * answers `guard-surface-behind`, CORRECTLY, and contributes a finding.
+ * The body below then reads exit 1 where it asserted 0, and reds for a
+ * fact about the runner's own position rather than about the preflight.
+ * Measured by T-215's blind verifier on a bench six commits behind main:
+ * this body among four, across three spec files, on a byte-identical
+ * tree.
+ *
+ * ── THE STATE IT PUTS THE ARM IN IS ONE `checkout-currency.spec.ts`
+ *    ALREADY PINS ─────────────────────────────────────────────────────
+ * A `CLAUDE_PROJECT_DIR` outside every checkout of this repository is
+ * exactly the case that file's *UNANSWERED is reserved for the case that
+ * genuinely has no signal* body covers: the arm still SPEAKS, it reports
+ * that it could not ask, and it charges nobody with being stale. So this
+ * file's exit codes become facts about the preflight, while the
+ * catcher's own discrimination stays measured in the file whose subject
+ * it is — where a wiring that reported STALE unconditionally still reds.
+ */
+const NO_SESSION_CHECKOUT = mkdtempSync(path.join(os.tmpdir(), "nputer-T-238-no-session-"));
+SCRATCH.push(NO_SESSION_CHECKOUT);
+
 function cli(args: string[], cwd = repoRoot): ReturnType<typeof spawnSync> {
-  return spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: "utf8" });
+  return spawnSync(process.execPath, [CLI, ...args], {
+    cwd,
+    encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: NO_SESSION_CHECKOUT },
+  });
 }
 
 test("`--preflight` is a NAMED arm of the brief command and needs its task", () => {
@@ -1358,4 +1392,237 @@ test("the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding
     markedFixture(TRUE_CLAIM.marker, [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }]),
   );
   expect(fine.text).not.toContain("NOT CHECKABLE line");
+});
+
+/* ══════ THE SEAT ARMS, THROUGH THE PROCESS BOUNDARY (T-238) ═════════
+ *
+ * `method/lane-protocol.md` rule 4 rules ONE holder of the integration
+ * checkout at a time and says the holder is DECLARED at dispatch and
+ * never inferred. Nothing recorded who, so on 2026-09-01 two sessions
+ * held it at once — one mid-battery and then mid-checkpoint, the other
+ * reading — and neither could see the other.
+ *
+ * ── WHY THESE BODIES LIVE HERE ───────────────────────────────────────
+ * `--take-seat` and `--release-seat` are arms of the same command this
+ * section already drives through the process boundary, and `makeFixture`
+ * already builds the one thing a seat needs: a whole fixture world whose
+ * `repo` is a real INTEGRATION checkout, on the integration ref, with
+ * the governing documents `context()` reads. The catcher-and-currency
+ * half of the same subject stays in `checkout-currency.spec.ts`, which
+ * is where the identity derivation and the holder state machine are
+ * measured against a synthetic process table.
+ *
+ * ── AND THE HARNESS IS A FIXTURE, NOT THIS MACHINE ───────────────────
+ * The identity is the nearest ancestor that IS the harness, so a body
+ * resting on the real ancestry would derive an identity on a developer's
+ * laptop and NONE on a CI runner — green here, vacuous there, which is
+ * the measurement-of-the-machine this whole card is repairing elsewhere
+ * in this file. `fakeHarness` is a SYMLINK TO NODE NAMED `claude`: the
+ * derivation's first arm reads the program's basename, so a process
+ * started through that link is a harness to it, on any machine, with no
+ * production flag and no environment override to be abused later.
+ */
+
+/** A stand-in harness: a symlink to this node, named the way the real one is. */
+function fakeHarness(name: string): string {
+  const dir = path.join(scratchRoot(), name, "bin");
+  mkdirSync(dir, { recursive: true });
+  const link = path.join(dir, "claude");
+  symlinkSync(process.execPath, link);
+  return link;
+}
+
+interface HarnessRun {
+  status: number | null;
+  out: string;
+  err: string;
+  harnessPid: number;
+}
+
+/** The script a stand-in harness runs: spawn the CLI, report what it said. */
+function harnessScript(args: string[], cwd: string, holdMs = 0): string {
+  return (
+    `const {spawnSync}=require("node:child_process");` +
+    `const r=spawnSync(process.execPath,${JSON.stringify([CLI, ...args])},` +
+    `{cwd:${JSON.stringify(cwd)},encoding:"utf8",` +
+    `env:{...process.env,CLAUDE_PROJECT_DIR:${JSON.stringify(NO_SESSION_CHECKOUT)}}});` +
+    `process.stdout.write(JSON.stringify({status:r.status,out:r.stdout,err:r.stderr,harnessPid:process.pid}));` +
+    (holdMs > 0 ? `setTimeout(()=>{},${String(holdMs)});` : "")
+  );
+}
+
+/** Run the CLI as a child of a stand-in harness, and wait for it. */
+function underHarness(harness: string, args: string[], cwd: string): HarnessRun {
+  const outer = spawnSync(harness, ["-e", harnessScript(args, cwd)], { encoding: "utf8" });
+  const text = String(outer.stdout ?? "");
+  if (text === "") throw new Error(`the stand-in harness produced nothing: ${String(outer.stderr)}`);
+  return JSON.parse(text) as HarnessRun;
+}
+
+/** Poll until `ready`, so a body never sleeps a fixed guess. */
+async function until(ready: () => boolean, what: string): Promise<void> {
+  for (let i = 0; i < 200; i += 1) {
+    if (ready()) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(`timed out waiting for ${what}`);
+}
+
+const HOLDER_FILE = ".nputer/holder.json";
+
+function holderIn(repo: string): { identity: { pid: number; startedAt: string } } {
+  return JSON.parse(readFileSync(path.join(repo, HOLDER_FILE), "utf8")) as {
+    identity: { pid: number; startedAt: string };
+  };
+}
+
+test("`--take-seat` records THIS session in the integration checkout, in a file git cannot see", () => {
+  // KILLED BY: recording anything but the harness process (the pid
+  // asserted below is the STAND-IN HARNESS's, not the CLI's own), and by
+  // writing the record without arming the runtime directory.
+  const fx = makeFixture();
+  const clean = git(fx.repo, ["status", "--porcelain"]);
+  expect(clean.trim(), "the fixture starts clean, so the control is not degenerate").toBe("");
+
+  const harness = fakeHarness("seat-taker");
+  const run = underHarness(harness, ["--take-seat", "--root", fx.repo], fx.repo);
+  expect(run.status, `${run.out}\n${run.err}`).toBe(0);
+  expect(run.out).toContain("THE SEAT — TAKEN");
+
+  const record = holderIn(fx.repo);
+  expect(record.identity.pid, "the SESSION is the harness, not the command it spawned").toBe(
+    run.harnessPid,
+  );
+  expect(record.identity.startedAt, "and it carries the start time that closes pid reuse").not.toBe(
+    "",
+  );
+  expect(git(fx.repo, ["status", "--porcelain"]).trim(), "and git cannot see it").toBe("");
+});
+
+test("`--take-seat` REFUSES a checkout another LIVE session holds, and takes it over once that process is dead", async () => {
+  // THE FIRST ACCEPTANCE CRITERION, WITH ITS POSITIVE CONTROL IN THE
+  // SAME FIXTURE: the refusal is measured while a second harness is
+  // genuinely RUNNING, and the same command is then measured SUCCEEDING
+  // once that process has genuinely exited. A refusal proved without the
+  // control is satisfied by a command that refuses everything.
+  const fx = makeFixture();
+  const holderHarness = fakeHarness("first-seat");
+  const held = spawn(holderHarness, ["-e", harnessScript(["--take-seat", "--root", fx.repo], fx.repo, 60_000)], {
+    stdio: "ignore",
+  });
+  // THE DEATH IS AWAITED ON THE PROCESS'S OWN `exit`, not on a flag and
+  // not on a sleep. `kill()` sets `killed` the moment the signal is SENT
+  // and `exitCode` stays null for a signalled process, so a body waiting
+  // on either would race the very transition it is about — and node
+  // reaps the child at `exit`, which is exactly what makes the guard's
+  // `ps -p` stop finding it.
+  const exited = new Promise<void>((resolve) => held.once("exit", () => resolve()));
+  try {
+    await until(() => existsSync(path.join(fx.repo, HOLDER_FILE)), "the first session to take the seat");
+    expect(holderIn(fx.repo).identity.pid, "the record names the live holder").toBe(held.pid);
+
+    const second = underHarness(fakeHarness("second-seat"), ["--take-seat", "--root", fx.repo], fx.repo);
+    expect(second.status, "the second session is refused").toBe(1);
+    expect(second.err, "naming the holder").toContain("HELD BY ANOTHER LIVE SESSION");
+    expect(second.err, "and naming its pid").toContain(String(held.pid));
+    expect(second.err, "and the remedy").toContain("--release-seat");
+    expect(holderIn(fx.repo).identity.pid, "and it did NOT overwrite the record").toBe(held.pid);
+  } finally {
+    held.kill("SIGKILL");
+  }
+  await exited;
+
+  // THE CONTROL: the same command, the same checkout, the same record —
+  // one process's death apart.
+  const third = underHarness(fakeHarness("third-seat"), ["--take-seat", "--root", fx.repo], fx.repo);
+  expect(third.status, `${third.out}\n${third.err}`).toBe(0);
+  expect(third.out, "the takeover is ANNOUNCED with the dead holder's identity").toContain(
+    "TAKEN OVER from a dead holder",
+  );
+  expect(third.out).toContain(String(held.pid));
+  expect(holderIn(fx.repo).identity.pid, "and the seat is now the third session's").toBe(
+    third.harnessPid,
+  );
+});
+
+test("`--release-seat` gives the seat up, and refuses to remove a record it cannot show is its own", async () => {
+  const fx = makeFixture();
+  const harness = fakeHarness("releaser");
+  expect(underHarness(harness, ["--take-seat", "--root", fx.repo], fx.repo).status).toBe(0);
+  expect(existsSync(path.join(fx.repo, HOLDER_FILE))).toBe(true);
+
+  const released = underHarness(harness, ["--release-seat", "--root", fx.repo], fx.repo);
+  expect(released.status, `${released.out}\n${released.err}`).toBe(0);
+  expect(released.out).toContain("THE SEAT — RELEASED");
+  expect(existsSync(path.join(fx.repo, HOLDER_FILE)), "the record is gone").toBe(false);
+
+  // AND THE OTHER SIDE, which is the one that could do harm: removing a
+  // live session's declaration would retire a seat nobody retired.
+  const other = spawn(fakeHarness("other-seat"), ["-e", harnessScript(["--take-seat", "--root", fx.repo], fx.repo, 60_000)], {
+    stdio: "ignore",
+  });
+  try {
+    await until(() => existsSync(path.join(fx.repo, HOLDER_FILE)), "the other session to take the seat");
+    const refused = underHarness(fakeHarness("would-be-releaser"), ["--release-seat", "--root", fx.repo], fx.repo);
+    expect(refused.status, "refused").toBe(1);
+    expect(refused.err).toContain("HELD BY ANOTHER LIVE SESSION");
+    expect(existsSync(path.join(fx.repo, HOLDER_FILE)), "and the record survives").toBe(true);
+  } finally {
+    other.kill("SIGKILL");
+  }
+});
+
+test("no manifest is written for a lane while another live session holds the integration checkout", async () => {
+  // THE ARMING STEP IS AN ACT IN THAT CHECKOUT, so it takes the same
+  // refusal the preflight's own findings already gate the write with —
+  // and the POSITIVE CONTROL is the same invocation, in the same
+  // fixture, with the seat free.
+  const fx = makeFixture();
+  const manifest = path.join(fx.lane, ".nputer/lane-fence.json");
+  const first = underHarness(fakeHarness("armer"), ["--task", OTHER_ID, "--write-fence", fx.lane, "--root", fx.repo], fx.repo);
+  expect(first.status, `${first.out}\n${first.err}`).toBe(0);
+  expect(existsSync(manifest), "the control: with the seat free the manifest IS written").toBe(true);
+  rmSync(manifest);
+
+  const other = spawn(fakeHarness("holder"), ["-e", harnessScript(["--take-seat", "--root", fx.repo], fx.repo, 60_000)], {
+    stdio: "ignore",
+  });
+  try {
+    await until(() => existsSync(path.join(fx.repo, HOLDER_FILE)), "the holder to take the seat");
+    const refused = underHarness(fakeHarness("intruder"), ["--task", OTHER_ID, "--write-fence", fx.lane, "--root", fx.repo], fx.repo);
+    expect(refused.status, "the dispatch is refused").toBe(1);
+    expect(refused.out, "and says why the manifest is missing").toContain("fence: NOT WRITTEN");
+    expect(existsSync(manifest), "no manifest for a dispatch this seat may not perform").toBe(false);
+  } finally {
+    other.kill("SIGKILL");
+  }
+});
+
+test("a lane holds no seat: both arms say so, write nothing, and the arming steps are unaffected", () => {
+  // THE FIFTH ACCEPTANCE CRITERION through the process boundary. It is
+  // the one seat body that needs no stand-in harness, because the ref is
+  // read before an identity is ever derived — which is also why a lane
+  // pays no process walk for a question it cannot be the answer to.
+  const fx = makeFixture();
+  const take = cli(["--take-seat", "--root", fx.lane], fx.lane);
+  expect(take.status, "the arm has a verdict and it is not silence").toBe(1);
+  expect(String(take.stderr)).toContain("not the integration checkout");
+  expect(String(take.stdout)).toContain("THE SEAT — nothing was taken");
+  expect(
+    String(take.stdout),
+    "and the arm SAYS SO in its own block rather than skipping in silence",
+  ).toContain("THE HOLDER OF THE INTEGRATION CHECKOUT");
+  expect(existsSync(path.join(fx.lane, HOLDER_FILE)), "and nothing was written").toBe(false);
+
+  const release = cli(["--release-seat", "--root", fx.lane], fx.lane);
+  expect(release.status).toBe(1);
+  expect(String(release.stderr)).toContain("not the integration checkout");
+});
+
+test("the two arms are opposite acts and are refused in one invocation", () => {
+  const both = cli(["--take-seat", "--release-seat"]);
+  expect(both.status, "called wrong, which is not a finding about any checkout").toBe(2);
+  expect(String(both.stderr)).toContain("opposite acts");
+  expect(String(cli(["--help"]).stdout)).toContain("--take-seat");
+  expect(String(cli(["--help"]).stdout)).toContain("--release-seat");
 });

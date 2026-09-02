@@ -67,6 +67,7 @@ import {
   headTree,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
+import { processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
@@ -2575,4 +2576,198 @@ test("the elapsed time comes from the run's own start, and `updatedAt` is not it
   expect(elapsedSince("2026-09-01T12:00:00Z", Date.parse("2026-09-01T14:30:00Z"))).toBe("2h 30m");
   // An unreadable timestamp costs a phrase and never a verdict.
   expect(elapsedSince("", Date.now())).toBe("an unreadable time");
+});
+
+/* ══════ THE HOLDER OF THE INTEGRATION CHECKOUT (T-238) ══════════════
+ *
+ * `method/lane-protocol.md` rule 4 rules ONE holder at a time and says
+ * the holder is DECLARED at dispatch and never inferred. Nothing on disk
+ * recorded who, so on 2026-09-01 two sessions held the integration
+ * checkout at once — one running the four-suite battery and then writing
+ * its checkpoint, the other reading. Either one's commit would have
+ * STALED THE OTHER'S T-203 TOKEN at the moment it was minted, which is
+ * this file's own token arm being corrupted from outside.
+ *
+ * ── THE HARNESS IS A FIXTURE, AND IT HAS TO BE ───────────────────────
+ * The identity is the nearest ancestor that IS the harness. A body
+ * resting on the real ancestry would derive one on a developer's laptop
+ * and NONE on a CI runner, so the refusal it is written for would be
+ * unreachable exactly where nobody is watching. `harnessLink` is a
+ * SYMLINK TO NODE NAMED `claude` — the derivation's first arm reads the
+ * program's basename — so every body below composes its own session, on
+ * any machine, with no production flag and no environment override that
+ * could later be used to silence the guard.
+ */
+
+/** A stand-in harness: a symlink to this node, named the way the real one is. */
+function harnessLink(name: string): string {
+  const dir = mkdtempSync(path.join(os.tmpdir(), `T-238-harness-${name}-`));
+  SCRATCH.push(dir);
+  const link = path.join(dir, "claude");
+  symlinkSync(process.execPath, link);
+  return link;
+}
+
+const CURRENCY_MODULE = path.join(repoRoot, "tools", "e2e", "scripts", "checkout-currency.mjs");
+
+/** What the seat looks like when the guarded push is made. */
+type Seat = "vacant" | "mine" | "other-live" | "dead" | "unreadable";
+
+/**
+ * Run the WIRED hook as a child of a stand-in harness, with the seat put
+ * into one named state FIRST — by the harness itself, so a `mine` record
+ * carries the very identity the hook then derives.
+ */
+function pushUnderHarness(
+  fx: Fixture,
+  seat: Seat,
+  opts: { root?: string; deadPid?: number } = {},
+): { status: number | null; stderr: string; harnessPid: number } {
+  const settings = JSON.parse(
+    readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8"),
+  ) as { hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] } };
+  const entry = settings.hooks.PreToolUse.find((h) => new RegExp(`^(${h.matcher})$`).test("Bash"));
+  if (entry === undefined) throw new Error("no PreToolUse entry whose matcher matches `Bash`");
+  const wired = entry.hooks.map((h) => h.command).join(" && ");
+  const root = opts.root ?? fx.root;
+  const script =
+    `const {spawnSync}=require("node:child_process");` +
+    `const {writeFileSync}=require("node:fs");` +
+    `const path=require("node:path");` +
+    `import(${JSON.stringify(`file://${CURRENCY_MODULE}`)}).then((m)=>{` +
+    `const root=${JSON.stringify(root)};` +
+    `const seat=${JSON.stringify(seat)};` +
+    `if(seat==="mine"){const me=m.sessionIdentity();if(!me.ok)throw new Error(me.why);` +
+    `m.writeHolder(root,me.identity);}` +
+    `if(seat==="other-live"){const row=m.processRow(${String(process.pid)});` +
+    `m.writeHolder(root,{pid:${String(process.pid)},startedAt:row.startedAt,program:"/x/claude"});}` +
+    `if(seat==="dead"){m.writeHolder(root,{pid:${String(opts.deadPid ?? 0)},` +
+    `startedAt:"Tue Sep 1 00:00:00 2026",program:"/x/claude"});}` +
+    `if(seat==="unreadable"){m.writeHolder(root,{pid:1,startedAt:"x",program:""});` +
+    `writeFileSync(path.join(root,m.HOLDER_REL_PATH),"{ not json");}` +
+    `const r=spawnSync("sh",["-c",${JSON.stringify(wired)}],{` +
+    `input:JSON.stringify({tool_name:"Bash",tool_input:{command:"git push origin HEAD:refs/heads/main"},cwd:root}),` +
+    `encoding:"utf8"});` +
+    `process.stdout.write(JSON.stringify({status:r.status,stderr:String(r.stderr??""),harnessPid:process.pid}));` +
+    `});`;
+  const outer = spawnSync(harnessLink(`${fx.root.slice(-6)}-${seat}`), ["-e", script], {
+    encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: repoRoot, PATH: fixturePath(fx) },
+  });
+  const text = String(outer.stdout ?? "");
+  if (text === "") throw new Error(`the stand-in harness produced nothing: ${String(outer.stderr)}`);
+  return JSON.parse(text) as { status: number | null; stderr: string; harnessPid: number };
+}
+
+test("a push from a checkout ANOTHER LIVE SESSION holds is refused, and the same push goes through once the seat is this session's", () => {
+  // THE SECOND ACCEPTANCE CRITERION, both halves, in ONE fixture and one
+  // process's identity apart. The refusal's holder is this test worker —
+  // a process that is genuinely running and is genuinely NOT the session
+  // the hook derives — and the control writes the record from inside the
+  // stand-in harness, so it carries the very identity the hook then
+  // derives for itself.
+  const fx = fixture("holder-refuses", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const held = pushUnderHarness(fx, "other-live");
+  expect(held.status, "exit 2 is the documented refusal").toBe(2);
+  expect(held.stderr).toContain("PUSH REFUSED");
+  expect(held.stderr, "naming the holder").toContain("HELD BY ANOTHER LIVE SESSION");
+  expect(held.stderr, "and its pid, checked by pid AND start time").toContain(String(process.pid));
+
+  const mine = pushUnderHarness(fx, "mine");
+  expect(mine.status, "the control: the seat is this session's and the push proceeds").toBe(0);
+  expect(mine.stderr, "and an ordinary allow says nothing at all").toBe("");
+});
+
+test("a DEAD holder is announced and the push proceeds; an UNCLAIMED seat is silent", () => {
+  // The third and fourth of the arm's four dispositions. A dead holder's
+  // refusal retires itself with the process, so the guard says so and
+  // steps over it; a checkout NOBODY has claimed is not a collision, and
+  // a line on every push until the project adopts `--take-seat` is the
+  // noise this file refuses under `not-this-repository`.
+  const reaped = spawnSync("sh", ["-c", "exit 0"]);
+  const fx = fixture("holder-dead", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+
+  const vacant = pushUnderHarness(fx, "vacant");
+  expect(vacant.status, "an unclaimed seat allows").toBe(0);
+  expect(vacant.stderr, "and says nothing").toBe("");
+
+  const dead = pushUnderHarness(fx, "dead", { deadPid: reaped.pid as number });
+  expect(dead.status, "a dead holder allows too").toBe(0);
+  expect(dead.stderr, "but it is ANNOUNCED, with the remedy").toContain(
+    "THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE",
+  );
+  expect(dead.stderr).toContain("--take-seat");
+});
+
+test("a holder record this guard cannot READ is announced and allowed, never refused", () => {
+  // THE INABILITY, WHICH IS THE HALF A GUARD GETS WRONG. Every arm in
+  // this file but the token allows when it cannot answer, and an
+  // unreadable record is precisely that: it is not a vacant seat and it
+  // is not a collision, it is a question nobody could ask. The control
+  // is the body above, where the SAME fixture shape refuses on a record
+  // that reads.
+  const fx = fixture("holder-unreadable", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const run = pushUnderHarness(fx, "unreadable");
+  expect(run.status, "allowed").toBe(0);
+  expect(run.stderr).toContain("WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED");
+  expect(run.stderr, "and it does not claim the seat is anybody's").toContain(
+    "nothing here has said this seat is yours",
+  );
+});
+
+test("a lane holds no seat, so a holder record in one refuses nothing", () => {
+  // THE FIFTH ACCEPTANCE CRITERION, from the direction that could do
+  // harm: a guard that read a stray record in a LANE would refuse every
+  // lane push on this machine. The record planted here is the SAME one
+  // that refuses on the integration branch two bodies up — only the
+  // checked-out ref differs.
+  const fx = fixture("holder-lane", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    branch: "task/T-901-holder-lane",
+    fence: ["docs"],
+  });
+  const live = processRow(process.pid);
+  writeHolder(fx.root, {
+    pid: process.pid,
+    startedAt: live?.startedAt ?? "",
+    program: "/x/claude",
+  });
+  const d = decide({ toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root });
+  expect(d.verdict, "a lane does not hold a seat").toBe("allow");
+  expect(d.code, "and the refusal code never appears").not.toBe("holder-live-elsewhere");
+  expect((d.notices ?? []).join("\n"), "nor is anything said about a seat").not.toContain(
+    "SEAT",
+  );
+
+  // THE POSITIVE CONTROL: the very same record, in the very same shape,
+  // on the integration branch — which is the one place a seat exists.
+  const onMain = fixture("holder-lane-control", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  writeHolder(onMain.root, {
+    pid: process.pid,
+    startedAt: live?.startedAt ?? "",
+    program: "/x/claude",
+  });
+  const control = decide({ toolName: "Bash", toolInput: { command: "git push" }, cwd: onMain.root });
+  expect(
+    control.verdict === "block" || (control.notices ?? []).join("").includes("SEAT"),
+    "the same record on the integration branch is not ignored",
+  ).toBe(true);
+});
+
+test("WITH the holder arm, a push from a checkout another session holds never reaches the remote", () => {
+  // WHAT REACHES THE REMOTE, not what an exit code was — the property
+  // this file measures for every other arm it has.
+  const fx = fixture("holder-remote", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const before = remoteTip(fx);
+  const refused = pushUnderHarness(fx, "other-live");
+  expect(refused.status).toBe(2);
+  expect(remoteTip(fx), "the remote never moved").toBe(before);
+
+  const allowed = pushUnderHarness(fx, "mine");
+  expect(allowed.status).toBe(0);
+  execFileSync(
+    "git",
+    ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "origin", "HEAD:refs/heads/main"],
+    { stdio: "pipe" },
+  );
+  expect(remoteTip(fx), "and the control's push does reach it").toBe(fx.unpushed);
 });

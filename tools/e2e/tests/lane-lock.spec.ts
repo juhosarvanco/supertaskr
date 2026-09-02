@@ -898,10 +898,29 @@ test("the ledger records the mode it FOUND, so a release restores bits rather th
 
 test("the DISPATCH STEP arms it — `brief.mjs --write-fence` is the one event, and a widening is the same event again", async () => {
   const fx = makeFixture();
+  // T-238, absorbing T-230-s6 and T-240: `CLAUDE_PROJECT_DIR` POINTS
+  // OUTSIDE EVERY CHECKOUT OF THIS REPOSITORY, and that is what makes
+  // this body's exit code a fact about the DISPATCH STEP.
+  //
+  // `--write-fence` also runs T-216-s1's stale-checkout catcher, whose
+  // subject is the checkout the SESSION was started in. Run from a lane
+  // that is the lane — and the moment a `.claude` commit lands on the
+  // integration branch while this lane is open, the catcher answers
+  // `guard-surface-behind`, CORRECTLY, contributes a finding, and this
+  // body reads exit 1 where it asserts 0. Measured by T-215's blind
+  // verifier on a bench six commits behind main: this body among four,
+  // across three spec files, on a byte-identical tree. The state a
+  // non-repository directory puts that arm in is UNANSWERED, which
+  // `checkout-currency.spec.ts` pins as speaking and charging nobody —
+  // so the catcher's own discrimination stays measured where its
+  // subject is, and the physical fence layer is measured here.
+  const outside = mkdtempSync(path.join(os.tmpdir(), "T-238-no-session-"));
+  SCRATCH.push(outside);
   const cli = (args: string[]) =>
     spawnSync(process.execPath, [path.join(repoRoot, "tools/e2e/scripts/brief.mjs"), ...args], {
       cwd: repoRoot,
       encoding: "utf8",
+      env: { ...process.env, CLAUDE_PROJECT_DIR: outside },
     });
 
   const first = cli(["--task", ID, "--write-fence", fx.lane, "--root", fx.repo]);

@@ -3,9 +3,15 @@
  * THE BRIEF COMMAND (T-133) — the runnable half of `dispatch-brief.mjs`.
  *
  * THE ONE SPELLING, run from the repo ROOT and by a dispatcher with no
- * lane. Every arm but one is a read, and the one that writes writes
- * SOMEWHERE ELSE — into the lane worktree it is handed, never into the
- * checkout it runs in.
+ * lane. Every arm but TWO is a read, and both writers are NAMED ARMS
+ * that write exactly one runtime file each: `--write-fence` writes the
+ * lane's manifest SOMEWHERE ELSE, into the lane worktree it is handed,
+ * and `--take-seat` (T-238) writes the holder record into the checkout
+ * `--root` names — which is the point of it, since the seat IS that
+ * checkout. Both files sit under `.nputer/` behind the same
+ * self-ignoring `.gitignore`, so neither is ever a commit; the read arms
+ * remain exactly reads, and `brief.spec.ts`'s *"THE COMMAND IS A READ"*
+ * drives an invocation that names neither writer.
  *
  *   node tools/e2e/scripts/brief.mjs --task T-133
  *   node tools/e2e/scripts/brief.mjs --state
@@ -13,6 +19,8 @@
  *   node tools/e2e/scripts/brief.mjs --card T-150
  *   node tools/e2e/scripts/brief.mjs --task T-160 --preflight
  *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../nputer-T-154
+ *   node tools/e2e/scripts/brief.mjs --take-seat
+ *   node tools/e2e/scripts/brief.mjs --release-seat
  *
  * ARM ONE (`--task`) emits the row set of `method/roles/<role>.md`'s
  * normative contract table, each row derived from the source that row
@@ -46,6 +54,20 @@
  * nothing, so it runs before a seat is paid for rather than after. It
  * judges no DESIRABILITY: its own output names the claim classes it
  * checked and the ones it cannot.
+ *
+ * ARM EIGHT (`--take-seat` / `--release-seat`, T-238) is the SECOND arm
+ * that writes, and it writes ONE runtime file into the checkout `--root`
+ * names: `.nputer/holder.json`, the on-disk record of who holds the
+ * integration checkout. `method/lane-protocol.md` rule 4 already rules
+ * one holder at a time and says the holder is DECLARED at dispatch and
+ * never inferred; until this arm there was nowhere to declare it, so two
+ * sessions held that checkout at once on 2026-09-01 and neither could
+ * see the other. The READ half of the same arm runs inside `--preflight`
+ * and `--write-fence` — a live OTHER holder refuses the dispatch and the
+ * manifest is not written, a DEAD one is announced and stepped over.
+ * The identity, the measurement it rests on and every limit are
+ * `checkout-currency.mjs`'s, next to the catcher that already answers
+ * *which checkout is this session in*.
  *
  * ARM FOUR (`--card`, T-150) points arm one's machinery ONE SEAT OVER, at
  * the card AUTHOR. It answers the figures an author would otherwise type
@@ -102,10 +124,15 @@ import {
   withMargin,
 } from "./dispatch-brief.mjs";
 import {
+  HOLDER_REL_PATH,
   STALE_CLONE_LIMIT,
+  holderVerdict,
   judge as judgeCheckout,
+  removeHolder,
   sessionCheckout,
+  sessionIdentity,
   sweep as sweepCheckouts,
+  writeHolder,
 } from "./checkout-currency.mjs";
 import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
@@ -122,6 +149,8 @@ const FLAGS = Object.freeze([
   "--audit",
   "--preflight",
   "--write-fence",
+  "--take-seat",
+  "--release-seat",
   "--full",
   "--help",
 ]);
@@ -187,6 +216,8 @@ async function main(argv) {
   let wantsState = false;
   let wantsDispatch = false;
   let wantsPreflight = false;
+  let wantsTakeSeat = false;
+  let wantsReleaseSeat = false;
   let full = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
@@ -206,7 +237,7 @@ async function main(argv) {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
-          "[--write-fence <worktree>] [--full] [--root <path>]",
+          "[--write-fence <worktree>] [--take-seat] [--release-seat] [--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -220,6 +251,14 @@ async function main(argv) {
     }
     if (a === "--preflight") {
       wantsPreflight = true;
+      continue;
+    }
+    if (a === "--take-seat") {
+      wantsTakeSeat = true;
+      continue;
+    }
+    if (a === "--release-seat") {
+      wantsReleaseSeat = true;
       continue;
     }
     if (a === "--full") {
@@ -252,19 +291,30 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
+  if (wantsTakeSeat && wantsReleaseSeat) {
+    console.error(
+      "brief: --take-seat and --release-seat in one invocation is not a request this command can " +
+        "answer — taking a seat and giving it up are opposite acts, and a command that did both " +
+        "would leave the checkout in whichever state the argument order happened to produce.",
+    );
+    return EXIT.USAGE;
+  }
   if (
     taskId === "" &&
     cardId === "" &&
     auditPath === "" &&
     !wantsState &&
     !wantsDispatch &&
-    !wantsPreflight
+    !wantsPreflight &&
+    !wantsTakeSeat &&
+    !wantsReleaseSeat
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
         "sections of docs/STATE.md a command can answer, --dispatch for what is startable now " +
         "and why the rest are not, --card <T-NNN> for the figures a card author would " +
-        "otherwise type, or any combination.\n" +
+        "otherwise type, --take-seat or --release-seat for the integration checkout's holder, " +
+        "or any combination.\n" +
         "  An empty request is not a clean run; it is a question this command was never asked.",
     );
     return EXIT.USAGE;
@@ -414,6 +464,178 @@ async function main(argv) {
     );
   }
 
+  /**
+   * ARM EIGHT — THE HOLDER OF THE INTEGRATION CHECKOUT (T-238).
+   *
+   * `method/lane-protocol.md` rule 4 rules ONE holder at a time and says
+   * the holder is DECLARED at dispatch, never inferred. Until this arm
+   * the declaration existed only in prose, so on 2026-09-01 two sessions
+   * held that checkout at once — one mid-battery and then mid-checkpoint
+   * — and neither could see the other. `checkout-currency.mjs` carries
+   * the record, the identity derivation and the measurement it rests on;
+   * this arm is where the dispatch ritual READS it.
+   *
+   * IT JUDGES `ctx.root` AND NOT THE CWD, and that is the opposite choice
+   * from arm seven's, deliberately. Arm seven asks *which copy of the
+   * guards did this SESSION load*, which is a fact about where the seat
+   * is sitting. This one asks *who is acting in the checkout this
+   * dispatch is ABOUT*, and the checkout being armed is exactly what
+   * `--root` names.
+   *
+   * WHAT IT DOES WITH EACH ANSWER: a LIVE other holder is a FINDING, so
+   * the dispatch answers 1 and — like a failed preflight — the fence is
+   * not written. A DEAD holder, an UNREADABLE record and a checkout that
+   * is NOT the integration one are ANNOUNCED and proceed: three verdicts
+   * never two, and an inability may not become a verdict. A VACANT
+   * checkout is announced with the one command that claims it. THE SEAT
+   * BEING THIS SESSION'S IS THE ONLY SILENT ANSWER — the second
+   * acceptance criterion says the arming steps proceed silently there,
+   * and a line printed on every ordinary dispatch is a line nobody reads
+   * by the third one.
+   *
+   * @type {string[]}
+   */
+  const holderFindings = [];
+  const holder =
+    wantsPreflight || fenceWorktree !== "" || wantsTakeSeat || wantsReleaseSeat
+      ? holderVerdict({ root: ctx.root })
+      : undefined;
+  if (holder !== undefined && holder.state !== "mine") {
+    say(
+      render([
+        note("THE HOLDER OF THE INTEGRATION CHECKOUT — declared at dispatch, never inferred"),
+        value(
+          `holder: ${holder.state} [${holder.code}]`,
+          liveProv(ctx.at, ctx.host, `checkout-currency.mjs, over ${HOLDER_REL_PATH} and ps`),
+        ),
+        value(
+          holder.detail,
+          liveProv(ctx.at, ctx.host, "the holder record on disk, and the process table"),
+        ),
+      ]),
+    );
+  }
+  if (holder !== undefined && holder.state === "held") {
+    holderFindings.push(
+      `the integration checkout is held by another live session — ${holder.detail}`,
+    );
+  }
+
+  /**
+   * TAKING AND RELEASING THE SEAT — the explicit arm the declaration
+   * needs, because rule 4's holder is DECLARED and a declaration nobody
+   * performs is the state this card found.
+   *
+   * `--take-seat` refuses a checkout somebody else is live in, takes over
+   * a DEAD holder's record while ANNOUNCING whose it was, and writes
+   * otherwise. `--release-seat` gives it up, and refuses to remove a
+   * record it cannot show belongs to this session — removing another
+   * seat's declaration is the one harm this arm could do.
+   *
+   * THE ONE EARLY RETURN IS AN INABILITY. A session whose own identity
+   * cannot be derived cannot record anything on its own behalf, and that
+   * is `COULD NOT RUN` rather than a finding about the checkout: the
+   * house contract keeps "I derived it and found something" apart from
+   * "I could not tell you", and this is squarely the second.
+   */
+  if (wantsTakeSeat || wantsReleaseSeat) {
+    const h = /** @type {NonNullable<typeof holder>} */ (holder);
+    const asked = wantsTakeSeat ? "--take-seat" : "--release-seat";
+    say("");
+    if (h.state === "not-integration") {
+      say(
+        render([
+          note("THE SEAT — nothing was taken and nothing was released"),
+          value(
+            `${asked} was asked of ${ctx.root}, which is not the integration checkout`,
+            liveProv(ctx.at, ctx.host, "git symbolic-ref HEAD, read in that checkout"),
+          ),
+        ]),
+      );
+      holderFindings.push(
+        `${asked} was asked of a checkout that is not the integration one — ${h.detail}`,
+      );
+    } else if (h.state === "held") {
+      // The refusal's sentence is already printed and already a finding;
+      // this line says only which act it refused, so a reader does not
+      // have to infer it from the invocation.
+      say(
+        render([
+          note("THE SEAT — REFUSED, and the sentence above says by whom"),
+          value(
+            `${asked} was refused: another live session holds ${ctx.root}`,
+            liveProv(ctx.at, ctx.host, `${HOLDER_REL_PATH}, and the process table`),
+          ),
+        ]),
+      );
+    } else if (wantsTakeSeat) {
+      const mine = sessionIdentity();
+      if (!mine.ok) {
+        console.error("brief: COULD NOT RUN");
+        console.error(`  ${mine.why}`);
+        console.error(
+          "  Nothing was written. A session that cannot name itself cannot record a claim on " +
+            "its own behalf, and a record naming nobody would refuse every other session for ever.",
+        );
+        flush();
+        return EXIT.CANNOT_RUN;
+      }
+      const written = writeHolder(ctx.root, mine.identity, { at: ctx.at, host: ctx.host });
+      say(
+        render([
+          note("THE SEAT — TAKEN. Every arming step and every push in this checkout now reads it"),
+          ...(h.state === "dead"
+            ? [
+                value(
+                  `TAKEN OVER from a dead holder: ${h.detail}`,
+                  liveProv(ctx.at, ctx.host, "the record that was there, and the process table"),
+                ),
+              ]
+            : []),
+          value(
+            `holder: pid ${String(mine.identity.pid)} started ${mine.identity.startedAt}`,
+            liveProv(ctx.at, ctx.host, "ps, walked up from this process to the harness"),
+          ),
+          value(
+            `wrote: ${written.file}`,
+            liveProv(ctx.at, ctx.host, "the checkout --root names, which is the seat"),
+          ),
+          value(
+            `un-committable by: ${written.ignoreFile}`,
+            liveProv(ctx.at, ctx.host, "the same armRuntimeDir the gate token and the fence use"),
+          ),
+          // A STAMPED VALUE AND NOT A NOTE, because `dispatch-brief.mjs`
+          // refuses a note carrying a digit and this command's own path
+          // has one in it. The rule caught this line rather than the
+          // reader having to.
+          value(
+            "release it when you retire: node tools/e2e/scripts/brief.mjs --release-seat",
+            liveProv(ctx.at, ctx.host, "this command's own spelling, from docs/CONVENTIONS.md"),
+          ),
+        ]),
+      );
+    } else if (h.state === "unknown" && h.figures["holderAlive"] === true) {
+      say(
+        render([
+          note("THE SEAT — NOT RELEASED. A live record this session cannot show is its own is"),
+          note("not this session's to remove; removing it would retire somebody else's claim."),
+        ]),
+      );
+      holderFindings.push(`--release-seat could not establish that the live holder is this session — ${h.detail}`);
+    } else {
+      const had = removeHolder(ctx.root);
+      say(
+        render([
+          note("THE SEAT — RELEASED. The next session to arm this checkout takes it unopposed"),
+          value(
+            had ? `removed: ${HOLDER_REL_PATH}` : `nothing to remove: ${HOLDER_REL_PATH} was absent`,
+            liveProv(ctx.at, ctx.host, "the checkout --root names, which is the seat"),
+          ),
+        ]),
+      );
+    }
+  }
+
   if (taskId !== "") {
     if (ctx.card === undefined) {
       console.error(
@@ -491,7 +713,18 @@ async function main(argv) {
    * @type {string[]}
    */
   const fenceFindings = [];
-  if (fenceWorktree !== "" && wantsPreflight && preflightFindings.length > 0) {
+  // T-238: A SECOND GATE ON THE SAME WRITE, AND IT IS THE SAME ARGUMENT.
+  // The manifest is the step that makes the lane real, so a dispatcher
+  // who is not the seat holding this checkout does not perform it —
+  // rule 4's collision, refused at the one moment it is cheap. It is
+  // spelled as a separate condition rather than folded into the
+  // preflight's because a `--write-fence` with no `--preflight` is a
+  // legal invocation and the holder still governs it.
+  const heldByAnother = holder !== undefined && holder.state === "held";
+  if (
+    fenceWorktree !== "" &&
+    ((wantsPreflight && preflightFindings.length > 0) || heldByAnother)
+  ) {
     // T-160's VERDICT, correction 2: the ordering above was PRINT order
     // only — arm five still wrote a manifest for a card whose claims
     // had just been refuted one screen up. The manifest is the step
@@ -499,16 +732,29 @@ async function main(argv) {
     // write instead of merely preceding it.
     if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) say("");
     say(
-      render([
-        note(
-          "fence: NOT WRITTEN — the preflight above found stale claims, and a card " +
-            "whose claims no longer hold does not get a",
-        ),
-        note(
-          "manifest. Correct the card, or rule the finding ON the card (dated), then " +
-            "re-run this same invocation.",
-        ),
-      ]),
+      render(
+        heldByAnother
+          ? [
+              note(
+                "fence: NOT WRITTEN — another live session holds this integration checkout, and " +
+                  "arming a lane is an act",
+              ),
+              note(
+                "in it. The refusal above names the holder and the remedy; re-run this same " +
+                  "invocation once the seat is yours.",
+              ),
+            ]
+          : [
+              note(
+                "fence: NOT WRITTEN — the preflight above found stale claims, and a card " +
+                  "whose claims no longer hold does not get a",
+              ),
+              note(
+                "manifest. Correct the card, or rule the finding ON the card (dated), then " +
+                  "re-run this same invocation.",
+              ),
+            ],
+      ),
     );
   } else if (fenceWorktree !== "") {
     if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) say("");
@@ -688,6 +934,7 @@ async function main(argv) {
   const findings = [
     ...ctx.findings,
     ...sessionFindings,
+    ...holderFindings,
     ...preflightFindings,
     ...fenceFindings,
     ...cardFindings,
