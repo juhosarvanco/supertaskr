@@ -135,6 +135,21 @@ arm list one excuse short (1, and it names the flag); and a flag added to
 `brief.mjs` that nothing announces (1, the producer-side half of the
 same coverage body).
 
+**TWO MORE AFTER THE REJECTION, FOR THE TWO BODIES THAT CHANGED.** The
+file-for-file body and the dry-run body each opened by requiring the
+arm's own exit to be `CLEAN`. **`--dispatch-lane` joins the arming
+condition, so it runs the stale-checkout catcher, and EVERY lane and
+EVERY verifier's bench is behind `main` by construction** — so both
+bodies were green until `main` moved and red deterministically after,
+aborting before the comparison they exist for. They now accept `CLEAN` or
+`FOUND` — the rule `brief.spec.ts` already states for *"THE COMMAND IS A
+READ"*, arriving in a body written after it — and, when the exit is
+`FOUND`, require EVERY finding to be the session's own stale checkout and
+NONE to name the fixture. Drilled one side only: aiming step four's
+`--write-fence` at the bench (a real step failure) reds the file-for-file
+body by exactly that new assertion, and a plan that refuses before any
+step reds BOTH.
+
 **THE FENCE WAS WIDENED TWICE AND NEITHER TIME BY ME**:
 `docs/CONVENTIONS.md`, because orchestrator 5b requires a new command's
 SPELLING to be published there; and `tools/e2e/tests/brief-flush.spec.ts`,
@@ -143,21 +158,33 @@ and reds by name on a flag nothing announces — six new flags, so six
 `NOT_AN_ARM` entries, `--dispatch-lane` as a writer and the five dials as
 its modifiers.
 
-**THE TWO E2E REDS AT THIS REF ARE REF SKEW AND ARE NAMED**:
-`session-economics.spec.ts`'s *"the recommended seat is a function of the
-CARD"* and *"the advisory line is NOT a contract row"* both require
-`brief.mjs --task` to answer 0, and it answers 1 because the board READ
-AT THIS REF is not fence-disjoint: `T-205-s8`'s card here is the
-`suggested` one carrying `touches: [tools/e2e]`, a fence that contains
-every other tools/e2e lane's. At main's tip that card reads `building`
-with `touches: [tools/e2e/tests/session-economics.spec.ts]` (the triage
-commit landed two minutes after this lane's base), and the board is
-disjoint. Nineteen overlap findings were measured in this lane and eleven
-name no T-239 file at all. **It is worth saying which way this cuts**:
-the arm this card builds reads the stamp back out of the commit and
-refuses a card the integration branch does not carry as `building`, so it
-would have refused that dispatch — the red is a point in the arm's
-favour, and `T-205-s8`'s own lane is closing the class.
+**CORRECTION TO THIS SECTION'S FIRST WRITING, AND IT IS THE VERDICT'S**:
+two `session-economics.spec.ts` bodies redded in the graded run at this
+tip and were attributed here to REF SKEW. **That attribution was wrong,
+and the two bodies PASS at this same tip** — re-run and measured after the
+verdict: 2 passed. The reds were a function of the LIVE WORKTREE LIST and
+not of any tree: while `T-205-s8`'s lane was live, its card as read at
+this ref carried `touches: [tools/e2e]`, a fence containing every other
+tools/e2e lane's, so `fenceOverlaps` reported nineteen overlaps and
+`brief.mjs --task` answered 1 where those bodies require 0. That lane has
+since been removed and the overlaps went with it. The card text at this
+ref never changed — **only the machine did**, which is exactly the class
+`T-205-s8`'s own title names, and it is why a figure like this one has to
+carry the clock it was read at rather than a commit.
+
+**AND THE CARD'S `Read beside` LINE CLAIMS MORE THAN THIS ARM DELIVERS.**
+It names *"T-233 (the base row the arm makes true by construction)"*.
+**It is not true and T-233 keeps its row.** Measured on a fixture
+dispatch: the arm's own printed block reports `base hash:` as the STAMP
+commit, which is where the lane really is, while the brief the arm writes
+at step seven still carries ROW 4's `base commit:` as the newest
+`Checkpoint:` — a DIFFERENT commit — and prints `branch: task/T-901-<slug>`
+and a `create:` line with `<slug>` unsubstituted and that same checkpoint
+as the base. So a dispatcher reading the arm's block and a seat reading
+the brief the arm handed it are told two different bases, and the brief's
+create line is still a prescription nobody performed. The arm makes ROW 4
+true of ITSELF and not of the document it writes; closing that is T-233's
+and is not claimed here.
 
 **WHAT IS ROUTED AND NOT BUILT**: `T-239-s1` (the arm's last line is
 T-204's covering message and nothing assembles one yet), `T-239-s2` (the

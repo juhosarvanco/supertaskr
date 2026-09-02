@@ -3154,6 +3154,79 @@ function normalise(text: string, fx: RitualFixture): string {
     .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, "<clock>");
 }
 
+/**
+ * THE FINDINGS A `brief.mjs` RUN REPORTED, split back out of its stderr.
+ *
+ * The command prints them as `brief: FOUND N thing(s)…` and then one
+ * two-space-indented line per finding, closing with a fixed paragraph. A
+ * finding carrying its own newlines continues UNindented, so a
+ * continuation is folded back into the finding above it rather than
+ * counted as one.
+ */
+function dispatchFindings(stderr: string): string[] {
+  const lines = stderr.split("\n");
+  const start = lines.findIndex((l) => /^brief: FOUND \d+ thing\(s\)/.test(l));
+  if (start < 0) return [];
+  const out: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^ {2}Each of these is a row/.test(line)) break;
+    if (/^ {2}\S/.test(line)) {
+      out.push(line.slice(2));
+      continue;
+    }
+    if (out.length > 0 && line.trim() !== "") out[out.length - 1] += `\n${line}`;
+  }
+  return out;
+}
+
+/**
+ * A DISPATCH THAT HAPPENED, WHATEVER THE COMMAND'S OWN EXIT WAS — and the
+ * distinction is the point rather than a loosening.
+ *
+ * **`--dispatch-lane` JOINS THE ARMING CONDITION**, so it runs the
+ * stale-checkout catcher before it looks at a card. Every lane worktree
+ * and every verifier's bench is behind `main` BY CONSTRUCTION — that is
+ * what a lane IS — so on any of them the catcher correctly reports the
+ * session's own checkout and the command correctly answers `FOUND`. A
+ * body that required `CLEAN` was therefore green until `main` moved and
+ * red for ever after, aborting before the comparison it exists for. That
+ * is exactly the rule *"THE COMMAND IS A READ"* states above and gives
+ * its reason for, arriving in a body written after it.
+ *
+ * **WHAT IS NOT LOOSENED IS WHICH FINDINGS ARE ALLOWED.** A `FOUND` here
+ * must be the catcher and nothing else: every finding has to be about the
+ * checkout this SESSION was started in, and none may name the fixture the
+ * dispatch was aimed at. So a ritual that actually failed a step — whose
+ * finding opens *"the dispatch stopped at step…"* and names the fixture —
+ * still reds these bodies, which is the property the `CLEAN` assertion
+ * was there for in the first place.
+ */
+function expectDispatched(
+  ran: { status: number | null; stderr: string },
+  fx: RitualFixture,
+  what: string,
+): void {
+  expect([EXIT.CLEAN, EXIT.FOUND], `${what}: ${ran.stderr}`).toContain(ran.status);
+  if (ran.status === EXIT.CLEAN) return;
+  const findings = dispatchFindings(ran.stderr);
+  expect(
+    findings.length,
+    `${what} answered FOUND and printed no finding this reader could find`,
+  ).toBeGreaterThan(0);
+  for (const f of findings) {
+    expect(
+      f,
+      `${what} reported a finding that is NOT the session's own stale checkout, so something ` +
+        "about this dispatch was found and the comparison below would be comparing a failure",
+    ).toContain("the checkout this session was started in is STALE");
+    expect(
+      f,
+      `${what} reported a finding naming the fixture it was aimed at, which is a finding about ` +
+        "the dispatch and not about the seat",
+    ).not.toContain(path.dirname(fx.root));
+  }
+}
+
 test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", () => {
   // KILLED BY: a step dropped from `DISPATCH_STEPS`, a step reordered, the
   // bench cut on a branch instead of detached, the lane cut at the
@@ -3181,7 +3254,7 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
       ],
       { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
-    expect(ran.status, ran.stderr).toBe(EXIT.CLEAN);
+    expectDispatched(ran, arm, "the arm's dispatch");
 
     // ── THE HAND RITUAL: the same eight steps, typed here ──────────────
     // Two sides sharing no constant: the arm derives its lane names from
@@ -3668,7 +3741,7 @@ test("THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING", () => {
         "--scratch", fx.scratch, "--dry-run"],
       { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
-    expect(ran.status, ran.stderr).toBe(EXIT.CLEAN);
+    expectDispatched(ran, fx, "the arm's dry run");
 
     // THE ORDER IS THE LAW, and the plan is where a reader checks it.
     const printed = values(ran.stdout).filter((l) => /^step \d+ — /.test(l));
