@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-237
-blocked_by: [T-238]
+blocked_by: []
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent

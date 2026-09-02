@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 suggested_by: verifier claude-opus-5@subagent @T-230-s3-verify, phase 1 at f5bad14, 2026-09-02
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
