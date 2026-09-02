@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185-s2 (2026-08-31) — measured in-lane with two one-sided drills, not taken because the repair cannot be green before its blocker lands
 touches: [app-shell]
@@ -95,3 +95,61 @@ the lane measures option 1 cheaper.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+## Implementation notes
+
+**NEITHER OPTION AS WRITTEN — a third was measured cheaper than option 1
+and stronger than option 2, and the card's own sentence licenses the
+pick.** Both constants are now ANNOTATED with the arm of the prop type
+they are written for, reached through `ComponentProps<typeof Board>`:
+the type comes from `Board`, which this file has imported since T-017
+over the C-05 -> C-18 edge `C-05-app.md` already declares, so it buys no
+C-17 import and no new component edge — the trade the header defends
+survives intact. An annotated declaration IS a fresh literal, so
+excess-property checking runs, which is option 1's guarantee at three
+lines instead of a 28-line JSX prop, two orphaned doc comments and a
+`NO_LANES` duplicated across two bodies.
+
+**THE THREE OPTIONS, MEASURED RATHER THAN ARGUED** (all at `4c16b37`,
+`npm run build` from `app/`, mutants applied ONE at a time and restored
+sha256-identical):
+
+| mutant | before | option 2 (runtime keys) | the annotation |
+|---|---|---|---|
+| stale key in `NO_LANES` | exit 0 | suite RED | `TS2353` |
+| stale key in `ASSEMBLED.brief` | exit 0 | suite GREEN — **survives** | `TS2353` |
+| stale key in a nested `provenance` | exit 0 | suite GREEN — **survives** | `TS2353` |
+| `notLanes` -> `notLane` | exit 2, two `TS2322` at the USE sites | suite RED | `TS2561`, at the typo, naming the field it meant |
+| `truncated` dropped | exit 2 | not its business | `TS2741` |
+
+Option 2 was measured to survive both NESTED mutants and to pin a
+hardcoded key list rather than the type, so it is the weakest of the
+three; option 1 was built and drilled green before being rejected on
+cost. **Option 1's blocker is spent either way**: T-185 has landed, so
+freshness no longer reds on `notLanes`/`truncated`.
+
+**FOR THE VERIFIER, THE THREE THINGS WORTH AIMING AT.**
+(a) The guard is not silently removable: deleting the two annotations
+alone reds the build with three `TS2322`s, because `as const` went with
+them and `kind` widens to `string`. (b) The anti-vacuity control is the
+pre-T-214 shape with the same stale key — exit 0, zero `error TS`. (c)
+`as const` was NOT the line suppressing the check: measured, the stale
+key reds `TS2353` under the annotation whether it stays or goes, and the
+doc comment now says so, because a reader who blamed the assertion would
+have deleted the wrong line.
+
+**THE ENFORCER IS `npm run build`, NOT THE APP GATE**, and this is the
+residual worth saying out loud: `gate-run.mjs`'s `app` entry is `npm
+test` — `vitest run`, which does not typecheck. Measured: a mutant that
+reds the build leaves the app gate GREEN at 1141 bodies. `ci.yml` runs
+`app build` as its own step ahead of `app suite`, so the teeth are real;
+a lane reading only the gate-runner will not see them. The section
+header now carries this sentence.
+
+**SWEEP, AND IT IS NOT EMPTY** — filed as `T-214-s1`. The class is a
+structural-literal fixture bound to an unannotated `const` before it
+reaches a typed prop or parameter. A scan of `app/test/**` and
+`app/src/**` returned 16 further candidates; the two in-fence ones the
+lane could drill (`watcher-store.test.ts`'s `at()` arrows,
+`startup-recovery.test.ts`'s spread-built `withPick`) are MEASURED blind
+to the same planted key at exit 0. The rest were routed, not built.
