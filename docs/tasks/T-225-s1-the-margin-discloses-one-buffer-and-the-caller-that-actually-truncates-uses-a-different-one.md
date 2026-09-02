@@ -802,7 +802,19 @@ recorded so it is not re-derived.
 `capabilities:check` is STALE by the same two bodies (48,201 committed
 against 48,481 fresh) and is the INTEGRATOR's under T-201; this lane's
 fence leaves `docs/CAPABILITIES.md` read-only and the notes report it
-correctly. The four-suite battery and the graph gate as re-run by this
-seat at its own verdict tip are recorded in the commit that carries this
-verdict; the four `e2e` reds are `guard-surface-behind` and red
-identically BY NAME at `fb2a944` on this bench.
+correctly.
+
+**AND THE GATES THIS SEAT'S OWN WRITES COULD MOVE WERE RE-RUN AT ITS OWN
+TIP, WITH THE REF NAMED SO THE FIGURES STAY TRUE** (`d296c2c`, the commit
+carrying the two verdicts above and `T-225-s9`): `lib/parser` **363
+passed**, `app` **1135 passed**, `brief.spec.ts` + `brief-flush.spec.ts`
+**43 passed**, `docs-gate` reporting every live card's frontmatter parsing
+with a legal status and the governing budgets holding,
+`cargo run -p nputer-index -- index --check` **CURRENT** (1,169,022 bytes,
+200 files, 2,503 symbols, 2,391 edges — the quantified second line, so a
+real green rather than the `committed: MISSING` shape), and `gate-run e2e`
+**bodies=577, 4 failed / 573 passed**. Those four —
+`card-preflight.spec.ts:719`, `checkout-currency.spec.ts:852`,
+`checkout-currency.spec.ts:953`, `lane-lock.spec.ts:899` — are
+`guard-surface-behind`: they red identically BY NAME at `fb2a944` on this
+same bench, so they are the base's and not this lane's.
