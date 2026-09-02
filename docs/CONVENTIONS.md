@@ -1143,23 +1143,84 @@ and T-236 (2026-09-02, whose pre-compaction text is
     for that window, where this project's verdict corrections land —
     remove the worktree before the reconciling writes (`T-154-s2`).
     **THE LIMITS, WRITTEN DOWN BECAUSE A GUARD BELIEVED WIDER THAN IT
-    IS IS WORSE THAN NO GUARD.** A Bash-mediated write — `sed -i`, a
-    `>` redirect, a checkout — reaches disk without an Edit or a Write
-    and stays protocol-covered. A path OUTSIDE the writing checkout is
-    allowed in BOTH seats, the manifest's domains being
-    repository-relative: the scratchpad, a drill tree and a sibling
-    lane's own tree are all reachable, the last deliberately. A DETACHED
-    checkout is not judged at all, so the poison drill may mutate the
-    files a live lane holds and the human's app checkout stays free. A
-    live lane whose manifest this seat cannot read reserves nothing here
-    — that refusal belongs to the lane's own arm. And the hook FAILS
-    OPEN in exactly one shape, the harness's own contract: a command
-    hook whose script cannot be LOCATED never starts, which takes
-    `CLAUDE_PROJECT_DIR` unset AND a shell cwd outside any checkout
-    carrying the hook, both wrong at once. The manifest is a RUNTIME
-    file carrying a self-ignoring `.gitignore` beside it: one that
-    reached the integration branch would hand every checkout one lane's
-    permanently stale fence.
+    IS IS WORSE THAN NO GUARD** — and the authority is the numbered
+    HONEST LIMITS block in `.claude/hooks/lane-fence.mjs`'s own header,
+    which this paragraph tracks BY HAND. A Bash-mediated write —
+    `sed -i`, a `>` redirect, a checkout — reaches disk without an Edit
+    or a Write and stays protocol-covered (1). **A PATH IN NO GIT
+    CHECKOUT AT ALL IS NOT JUDGED, AND SINCE `T-199` THAT IS THE WHOLE
+    OF IT** (2): the scratchpad, `/tmp` and any directory outside every
+    repository are reachable, because a manifest's domains are
+    repository-relative and there is nothing there to judge them
+    against; an unrelated repository elsewhere on the machine IS a
+    checkout, so it is rooted, asked, and allowed by its own empty lane
+    list. **THE SENTENCE THIS REPLACES READ *a path outside the WRITING
+    checkout*, AND IT WAS THE HOLE**: lane worktrees are siblings (rule
+    3) and the dispatching seat is nested, so EVERY lane write was
+    outside the writing checkout and none was ever judged — seven lanes
+    ran one night on discipline alone. The root now comes from the
+    TARGET, so a write is judged by the repository it LANDS in.
+    **WHAT THE NARROWING COSTS IS A RESIDUE, NOT A DESIGN**: a sibling
+    lane's tree is no longer outside anything, so a write into it is
+    judged by THAT LANE'S fence, and the hook still has no term
+    separating an architect reaching into a lane from THAT LANE'S OWN
+    EXECUTOR writing in from a shell parked elsewhere — both meet that
+    lane's fence and neither meets a rule written for it. It is
+    strictly tighter than what it replaces, which allowed both without
+    looking. A DETACHED checkout is not judged at all (3), which is how
+    the poison drill may mutate the files a live lane holds and the
+    human's app checkout stays free — a drill tree is reachable by THAT
+    limit and never by the one above it. A live lane whose manifest
+    this seat cannot read reserves nothing here (4) — that refusal
+    belongs to the lane's own arm — and a worktree administration this
+    hook cannot walk reserves nothing either. **IT IS ADVICE TO A
+    COOPERATING HARNESS** (5): a session that can edit
+    `.claude/settings.json` can disarm it, and the fence forbids
+    exactly that for every lane whose `touches:` does not carry
+    `.claude/` — a property, not a proof. The mid-integration criterion
+    closes before the lane does (6), which is the window stated one
+    paragraph up. **CONTAINMENT COMPARES BYTES AND THIS VOLUME DOES
+    NOT** (7): from a lane-less seat `DOCS/ROADMAP.md` is allowed where
+    `docs/ROADMAP.md` is refused, and on the default macOS APFS both
+    write one file. The LANE arm has no such escape — there an
+    unmatched path BLOCKS — so it is this arm's allow-by-default that
+    turns a case difference into a hole; comparing case-insensitively
+    would over-refuse the seat that may not be stopped on a
+    case-sensitive volume, so it is declared rather than papered over.
+    A REQUEST WITH NO READABLE PATH has no target to root from, so it
+    is the one question the WRITER's cwd still answers (8): a writer
+    sitting in a lane is refused, and every other writer is DECLINED —
+    which a lane executor, whose cwd is the DISPATCHING checkout,
+    actually takes. And the hook FAILS OPEN in exactly one shape, the
+    harness's own contract: a command hook whose script cannot be
+    LOCATED never starts, which takes `CLAUDE_PROJECT_DIR` unset AND a
+    shell cwd outside any checkout carrying the hook, both wrong at
+    once.
+    **AN UNJUDGED WRITE SAYS SO, WHICH IS WHAT MAKES THE FOUR DECLINES
+    ABOVE READABLE FROM OUTSIDE** (`T-199`): a fence that judges
+    nothing and a fence that approves everything are byte-identical, so
+    `not-a-repository`, `not-judged-detached`, `not-judged-lane-list`
+    and `no-path-to-judge` carry `judged: false`, and the runner prints
+    them on **stderr** at exit 0 prefixed `LANE FENCE (not judged)` —
+    one grep finds refusals and declines together. stderr because
+    stdout is the channel a harness PARSES for a permission decision,
+    and this hook subtracts permission and never grants it; the cost is
+    that a decline is AUDITABLE rather than loud.
+    **AND *"a PreToolUse hook enforces it"* IS A CLAIM ABOUT THE
+    DISPATCHING CHECKOUT, NEVER ABOUT THE LANE — DO NOT PRINT IT
+    UNCHECKED.** `.claude/settings.json` runs
+    `node "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/lane-fence-hook.mjs"`,
+    and `CLAUDE_PROJECT_DIR` is the SESSION's project root — the
+    checkout the dispatcher sits in, not the worktree it cut — so the
+    binary a lane meets is that checkout's copy. The sentence is true
+    only from `T-199`'s merge forward, and only for a session started
+    in a checkout that carries it. What ASKS is the stale-checkout
+    catcher — `tools/e2e/scripts/checkout-currency.mjs`, run at arm
+    time by `brief.mjs --preflight` and `--write-fence` (`T-216-s1`) —
+    because a guard that is absent cannot announce itself. The manifest
+    is a RUNTIME file carrying a self-ignoring `.gitignore` beside it:
+    one that reached the integration branch would hand every checkout
+    one lane's permanently stale fence.
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052 — ten instances across
   2026-08-16/24, itemised on that card). **The generic rules are
