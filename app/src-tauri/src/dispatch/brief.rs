@@ -1088,6 +1088,61 @@ fn backticked(line: &str) -> Vec<String> {
     out
 }
 
+/// The one backticked name a LABEL introduces in a folded bullet.
+///
+/// **THE LABEL, NEVER THE POSITION** (T-236-s1). A spelling read as the
+/// FIRST backticked run of a bullet is whatever that bullet happens to
+/// open with, and at every ref since T-089 this project's LANE PROTOCOL
+/// bullet has opened by naming `method/lane-protocol.md` — so the
+/// integration branch came back as a FILE PATH and the command that
+/// finds the base printed it where a ref belongs.
+///
+/// `laneSpellings` in tools/e2e/scripts/dispatch-brief.mjs already reads
+/// that bullet this way; this is the same rule in Rust, so the two
+/// implementations of it agree (T-057's class).
+///
+/// **THE GUARD IS THE JS SIDE'S LOOKBEHIND, and it is the whole of why
+/// this is not a bare `find`**: a label immediately preceded by a letter
+/// and a space is the TAIL of a longer label — *"integration branch"*
+/// ends in *"branch"* — so a bare `branch` read must not answer with the
+/// integration branch's name. TWO matches are refused for the same
+/// reason zero is: an ambiguous spelling is not a spelling, and
+/// defaulting one is how a brief assembled from memory reads.
+///
+/// `Err` carries the count found, so a caller can say which of the two
+/// refusals it met.
+fn backticked_after_label(bullet: &str, label: &str) -> Result<String, usize> {
+    let needle = format!("{label} `");
+    let mut found: Vec<String> = Vec::new();
+    let mut from = 0usize;
+    while let Some(offset) = bullet[from..].find(&needle) {
+        let at = from + offset;
+        let open = at + needle.len();
+        let close = match bullet[open..].find('`') {
+            Some(rel) => open + rel,
+            None => break,
+        };
+        if close > open && !tail_of_longer_label(bullet, at) {
+            found.push(bullet[open..close].to_string());
+        }
+        from = close + 1;
+    }
+    if found.len() == 1 {
+        Ok(found.remove(0))
+    } else {
+        Err(found.len())
+    }
+}
+
+/// The lookbehind: a letter then whitespace immediately before a label
+/// means this label is the tail of a longer one.
+fn tail_of_longer_label(bullet: &str, at: usize) -> bool {
+    let mut before = bullet[..at].chars().rev();
+    let space = before.next().is_some_and(char::is_whitespace);
+    let letter = before.next().is_some_and(|c| c.is_ascii_alphabetic());
+    space && letter
+}
+
 // ---- row 4 -----------------------------------------------------------
 
 /// The bullet in CONVENTIONS that names this project's lane spellings.
@@ -1113,10 +1168,20 @@ fn row_lane(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> 
         .into_iter()
         .find(|b| b.starts_with("git worktree add"))
         .unwrap_or_default();
-    let integration = backticked(&spellings)
-        .into_iter()
-        .next()
-        .unwrap_or_default();
+    // BY ITS LABEL, and the three picks above are by PREFIX — neither is
+    // by position. This one was, and the bullet it reads opens by naming
+    // a file (T-236-s1).
+    let integration = match backticked_after_label(&spellings, "integration branch") {
+        Ok(name) => name,
+        Err(0) => return Err(empty(row, CONVENTIONS, "integration branch under its own label")),
+        Err(_) => {
+            return Err(empty(
+                row,
+                CONVENTIONS,
+                "integration branch under its own label ONCE — the bullet spells it more than once",
+            ))
+        }
+    };
     if branch.is_empty() || worktree.is_empty() || create.is_empty() {
         return Err(empty(row, CONVENTIONS, "complete lane spelling"));
     }
@@ -2521,6 +2586,99 @@ mod tests {
             .lines
             .iter()
             .any(|l| l.label == "worktree" && l.text.contains("nputer-T-900")));
+    }
+
+    /// **THE INTEGRATION BRANCH IS READ BY ITS LABEL, NEVER BY POSITION**
+    /// (T-236-s1). Two arms, and the second is the control the live
+    /// document cannot supply on its own: the lane bullet happens to open
+    /// with a path today, so an arm that only read the live tree would
+    /// stop discriminating the day that opener moved.
+    #[test]
+    fn the_integration_branch_is_read_by_its_label_and_a_planted_first_backtick_does_not_move_it() {
+        let live = live_files();
+
+        // ARM ONE — the LIVE document. The row answers with a REF, and
+        // the command that finds the base spends that same answer.
+        let brief = assembled(assemble(&live, &a_card(), Role::Executor, &no_lanes()));
+        let row4 = brief.rows.iter().find(|r| r.number == 4).expect("row 4");
+        let integration = row4
+            .lines
+            .iter()
+            .find(|l| l.label == "integration branch")
+            .expect("row 4 names the integration branch");
+        assert_eq!(
+            integration.text, "main",
+            "the integration branch this project publishes is a REF, and row 4 answered {:?}",
+            integration.text
+        );
+        let base = row4
+            .lines
+            .iter()
+            .find(|l| l.label.contains("command that finds it"))
+            .expect("the cut-commit command");
+        assert!(
+            base.text.contains(&format!("%s' {} |", integration.text)),
+            "the command names the ref the row derived: {}",
+            base.text
+        );
+        assert!(
+            !base.text.contains(".md"),
+            "a file path where a ref belongs is this card's own defect: {}",
+            base.text
+        );
+
+        // ARM TWO — THE POSITIVE CONTROL, AND IT CAN FAIL. A document
+        // whose lane bullet opens with a PATH. Both halves are asserted,
+        // so the arm cannot pass by there being nothing to read: the
+        // POSITIONAL reading answers the planted path, and the row still
+        // answers the ref.
+        let planted_path = "docs/planted-first-backtick.md";
+        let live_text = live
+            .read_text(CONVENTIONS)
+            .expect("the live conventions document");
+        let opener = "- THE LANE PROTOCOL";
+        let at = live_text
+            .find(opener)
+            .expect("the lane bullet opens with its own name");
+        let planted = format!(
+            "{}{opener} — `{planted_path}`{}",
+            &live_text[..at],
+            &live_text[at + opener.len()..]
+        );
+        let bullet = bullet_containing(&planted, "integration branch `")
+            .expect("the planted document still carries one lane bullet");
+        assert_eq!(
+            backticked(&bullet).into_iter().next().as_deref(),
+            Some(planted_path),
+            "the control is not vacuous: the POSITIONAL reading answers the planted path"
+        );
+        let files = OverlayFiles {
+            inner: DiskFiles::new(&repo_root()),
+            path: CONVENTIONS.to_string(),
+            text: planted,
+        };
+        let planted_brief = assembled(assemble(&files, &a_card(), Role::Executor, &no_lanes()));
+        let planted_row4 = planted_brief
+            .rows
+            .iter()
+            .find(|r| r.number == 4)
+            .expect("row 4 of the planted brief");
+        assert!(
+            planted_row4
+                .lines
+                .iter()
+                .any(|l| l.label == "integration branch" && l.text == "main"),
+            "the LABEL read answers the ref with a path planted ahead of it: {:?}",
+            planted_row4.lines
+        );
+        for line in &planted_row4.lines {
+            assert!(
+                !line.text.contains(planted_path),
+                "row 4 spent the planted PATH somewhere: {} = {}",
+                line.label,
+                line.text
+            );
+        }
     }
 
     /// A 40-hex run anywhere in the text.
