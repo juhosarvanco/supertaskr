@@ -155,7 +155,7 @@ This arm's own half fell from 25,155 bytes to 15,716; the remaining
 `brief.mjs` and `dispatch-brief.mjs` — T-239's lane, outside this fence.
 **THE SWEEP MOVES WITH THE CHECKOUT COUNT AND NOT WITH THE CARD**: it
 prints one line per checkout on the machine, so this figure is a reading
-of a machine as well as of a tree. Routed as `T-225-s13`.
+of a machine as well as of a tree. Routed as `T-225-s19` (`T-225-s13` is taken — it is the arm-list derivation card).
 
 Over twelve cards measured at both refs at the same held board, every one
 is under the buffer at the tip and eleven have BYTE-IDENTICAL finding
