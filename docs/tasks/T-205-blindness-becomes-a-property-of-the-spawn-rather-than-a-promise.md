@@ -5,12 +5,15 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [method/roles, docs/CONVENTIONS.md]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); six disclosures on 2026-08-31 are the evidence, four against this seat and two self-inflicted"
-builder:
-review:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
+review: independent
 ---
 
 **SIX CONTAMINATION DISCLOSURES IN ONE NIGHT, AND THE VERIFIERS FOUND
