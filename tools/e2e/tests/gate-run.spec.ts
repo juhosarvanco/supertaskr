@@ -648,9 +648,18 @@ test("one checkout's two runs reach ONE lock file however each was started, so t
   // the lock path it computed as well as the answer it got.
   const root = mkdtempSync(path.join(tmpdir(), "t202s1-one-root-"));
   const elsewhere = mkdtempSync(path.join(tmpdir(), "t202s1-elsewhere-"));
+  // THE RELEASE IS IN THE `finally`, NOT AFTER THE ASSERTIONS, and this
+  // body earned that the hard way: its own poison drills left three
+  // locks behind in `tmpdir()` — a failing `expect` throws before a
+  // release placed below it ever runs, and the leaked file is in the
+  // MACHINE-scoped directory this whole card is about. A stale lock is
+  // reclaimed rather than wedging (the body above), so it is litter and
+  // not a defect; a card about lock hygiene should not produce it.
+  let release = () => {};
   try {
     const held = acquireSolo("rust", root);
     expect(held.ok).toBe(true);
+    if (held.ok) release = held.release;
     const probe = spawnSync(
       process.execPath,
       [
@@ -665,8 +674,8 @@ test("one checkout's two runs reach ONE lock file however each was started, so t
     const answer = JSON.parse(probe.stdout || "{}");
     expect(answer.lock).toBe(lockPath(root));
     expect(answer.ok).toBe(false);
-    if (held.ok) held.release();
   } finally {
+    release();
     rmSync(root, { recursive: true, force: true });
     rmSync(elsewhere, { recursive: true, force: true });
   }
