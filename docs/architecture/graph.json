@@ -18810,8 +18810,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:33e898b0099c205991a4bf3350c9fe47352d2f29883ad1aa6f31f8c09fc9b5c7",
-      "loc": 1534,
+      "hash": "blake3:2846982933d790984c351bd42f760a8944ae0dc41e294d6b5122bbd9f7612230",
+      "loc": 1611,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -18819,8 +18819,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            394,
-            395
+            498,
+            499
           ]
         },
         {
@@ -18839,8 +18839,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            428,
-            430
+            532,
+            534
           ]
         },
         {
@@ -18889,8 +18889,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            399,
-            404
+            503,
+            508
           ]
         },
         {
@@ -18949,8 +18949,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            434,
-            448
+            538,
+            552
           ]
         },
         {
@@ -18959,8 +18959,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            800,
-            821
+            869,
+            890
           ]
         },
         {
@@ -18984,6 +18984,16 @@
           ]
         },
         {
+          "id": "s:app/src/lib/watcher-store.ts#SnapshotReading",
+          "name": "SnapshotReading",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            382,
+            386
+          ]
+        },
+        {
           "id": "s:app/src/lib/watcher-store.ts#StartupFailure",
           "name": "StartupFailure",
           "kind": "interface",
@@ -19004,16 +19014,6 @@
           ]
         },
         {
-          "id": "s:app/src/lib/watcher-store.ts#SwitchReading",
-          "name": "SwitchReading",
-          "kind": "interface",
-          "exported": false,
-          "range": [
-            521,
-            525
-          ]
-        },
-        {
           "id": "s:app/src/lib/watcher-store.ts#UNANSWERED_INDEX_MESSAGE",
           "name": "UNANSWERED_INDEX_MESSAGE",
           "kind": "const",
@@ -19029,8 +19029,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1006,
-            1019
+            1075,
+            1088
           ]
         },
         {
@@ -19039,8 +19039,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1034,
-            1062
+            1103,
+            1131
           ]
         },
         {
@@ -19049,8 +19049,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            991,
-            1004
+            1060,
+            1073
           ]
         },
         {
@@ -19059,8 +19059,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1413,
-            1459
+            1482,
+            1536
           ]
         },
         {
@@ -19069,8 +19069,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            950,
-            952
+            1019,
+            1021
           ]
         },
         {
@@ -19079,8 +19079,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            866,
-            866
+            935,
+            935
           ]
         },
         {
@@ -19089,8 +19089,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            954,
-            956
+            1023,
+            1025
           ]
         },
         {
@@ -19099,8 +19099,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1476,
-            1478
+            1553,
+            1555
           ]
         },
         {
@@ -19109,8 +19109,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            882,
-            882
+            951,
+            951
           ]
         },
         {
@@ -19119,8 +19119,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            751,
-            755
+            820,
+            824
           ]
         },
         {
@@ -19129,8 +19129,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1468,
-            1473
+            1545,
+            1550
           ]
         },
         {
@@ -19139,8 +19139,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            775,
-            786
+            844,
+            855
           ]
         },
         {
@@ -19149,8 +19149,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1331,
-            1333
+            1400,
+            1402
           ]
         },
         {
@@ -19159,8 +19159,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1320,
-            1322
+            1389,
+            1391
           ]
         },
         {
@@ -19169,8 +19169,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            409,
-            419
+            513,
+            523
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#readingIsOvertaken",
+          "name": "readingIsOvertaken",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            454,
+            459
           ]
         },
         {
@@ -19179,8 +19189,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1070,
-            1114
+            1139,
+            1183
           ]
         },
         {
@@ -19189,8 +19199,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            379,
-            389
+            467,
+            493
           ]
         },
         {
@@ -19199,8 +19209,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            632,
-            729
+            701,
+            798
           ]
         },
         {
@@ -19219,8 +19229,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1137,
-            1174
+            1206,
+            1243
           ]
         },
         {
@@ -19229,8 +19239,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1491,
-            1534
+            1568,
+            1611
           ]
         },
         {
@@ -19239,8 +19249,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1356,
-            1404
+            1425,
+            1473
           ]
         },
         {
@@ -19249,8 +19259,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1193,
-            1270
+            1262,
+            1339
           ]
         },
         {
@@ -19259,8 +19269,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            450,
-            514
+            554,
+            618
           ]
         },
         {
@@ -19269,8 +19279,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1023,
-            1032
+            1092,
+            1101
           ]
         },
         {
@@ -19279,8 +19289,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            958,
-            961
+            1027,
+            1030
           ]
         },
         {
@@ -19289,8 +19299,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            868,
-            881
+            937,
+            950
           ]
         },
         {
@@ -19299,8 +19309,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            968,
-            989
+            1037,
+            1058
           ]
         },
         {
@@ -19309,8 +19319,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1283,
-            1312
+            1352,
+            1381
           ]
         },
         {
@@ -19319,8 +19329,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1341,
-            1343
+            1410,
+            1412
           ]
         },
         {
@@ -19329,8 +19339,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            911,
-            911
+            980,
+            980
           ]
         },
         {
@@ -19339,8 +19349,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            913,
-            913
+            982,
+            982
           ]
         },
         {
@@ -19349,8 +19359,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            943,
-            943
+            1012,
+            1012
           ]
         },
         {
@@ -19359,8 +19369,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            945,
-            948
+            1014,
+            1017
           ]
         },
         {
@@ -19369,8 +19379,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            598,
-            623
+            669,
+            692
           ]
         },
         {
@@ -19379,8 +19389,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            932,
-            932
+            1001,
+            1001
           ]
         }
       ]
@@ -20869,8 +20879,8 @@
       "id": "f:app/test/docs-model.test.ts",
       "path": "app/test/docs-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:142e00fedc3a3517a232f25bd3e59f48adee0fed3a6baf024fb05242ebf941f4",
-      "loc": 324,
+      "hash": "blake3:83ad77dd99e36dc7e13bf1364dae46af9141ec6fc16c0bf6597429eb3ff3b82e",
+      "loc": 371,
       "symbols": [
         {
           "id": "s:app/test/docs-model.test.ts#BROKEN_TASK",
@@ -20908,8 +20918,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            198,
-            203
+            245,
+            250
           ]
         },
         {
@@ -24292,8 +24302,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:1b9b2a9c74f1cb1afda02b4dc0fc4b02d8b56a10a4674dc787bb536e8d15f88e",
-      "loc": 739,
+      "hash": "blake3:f8cbd7a4d6f77be6ce876ebaf563963b604fdd40057ce28b3188a3482f5443d8",
+      "loc": 885,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -40702,6 +40712,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#readingIsOvertaken",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#readingIsOvertaken",
+      "to": "s:app/src/lib/watcher-store.ts#SnapshotReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
       "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
       "kind": "type_ref",
@@ -40734,6 +40756,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
       "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "to": "s:app/src/lib/watcher-store.ts#readingIsOvertaken",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -40967,8 +40995,14 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
-      "to": "s:app/src/lib/watcher-store.ts#SwitchReading",
+      "to": "s:app/src/lib/watcher-store.ts#SnapshotReading",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#switchIsOvertaken",
+      "to": "s:app/src/lib/watcher-store.ts#readingIsOvertaken",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -44317,7 +44351,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2503,
-    "edges": 2391
+    "symbols": 2504,
+    "edges": 2395
   }
 }
