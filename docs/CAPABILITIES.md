@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **554 behaviours** — 552 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **559 behaviours** — 557 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -148,6 +148,11 @@ Census: **554 behaviours** — 552 extracted sentences + 2 named-not-extracted (
 - the marker is read through a bullet and emphasis, and the FIRST quoted run is the needle
 - the file check collapses the wrap on both sides and keeps the capitals
 - the unmarked report is paragraph-scoped, and a marker's own needle is not in it
+- a frontmatter scalar is read with YAML's own quoting off, and a real pair is not eaten
+- a quoted assertion in the card's TITLE is COUNTED and LISTED, naming its field
+- a marker written into a frontmatter field is a SIGHTING, never a claim
+- a quoted run below the floor is COUNTED, and it is still not listed
+- the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does
 
 ## checkout-currency
 
