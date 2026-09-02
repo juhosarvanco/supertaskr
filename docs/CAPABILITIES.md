@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **577 behaviours** — 575 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **597 behaviours** — 595 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -153,6 +153,12 @@ Census: **577 behaviours** — 575 extracted sentences + 2 named-not-extracted (
 - a marker written into a frontmatter field is a SIGHTING, never a claim
 - a quoted run below the floor is COUNTED, and it is still not listed
 - the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does
+- `--take-seat` records THIS session in the integration checkout, in a file git cannot see
+- `--take-seat` REFUSES a checkout another LIVE session holds, and takes it over once that process is dead
+- `--release-seat` gives the seat up, and refuses to remove a record it cannot show is its own
+- no manifest is written for a lane while another live session holds the integration checkout
+- a lane holds no seat: both arms say so, write nothing, and the arming steps are unaffected
+- the two arms are opposite acts and are refused in one invocation
 
 ## checkout-currency
 
@@ -188,6 +194,15 @@ Census: **577 behaviours** — 575 extracted sentences + 2 named-not-extracted (
 - sessionCheckout derives the WORKTREE ROOT, never the raw working directory, and never outside this repository
 - the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it
 - the exported EXIT object is the single authority — the npm script re-types no number
+- the session identity is the NEAREST harness ancestor, at whatever depth the caller sits
+- the shared application root is never the identity, and neither is the launcher that names the harness in its own arguments
+- a chain with no harness in it answers NOTHING, naming what it walked, and never guesses a seat
+- liveness is the pid AND its start time, so a recycled pid is a dead holder
+- 0 and -1 are refused as holder pids at the write and at the read, because both answer ALIVE to kill(2)
+- the holder record is un-committable by construction, in a repository nobody armed
+- every holder state is reachable in one fixture, and a live OTHER session is the only one that refuses
+- the DEAD holder is proved with a pid that genuinely does not exist, and the live one with a pid that does
+- the identity derivation is named in the artifact's own header, with the harness it is a fact about
 
 ## crescendo
 
@@ -577,6 +592,11 @@ Census: **577 behaviours** — 575 extracted sentences + 2 named-not-extracted (
 - the branch reaches `gh` as ONE argument, through no shell
 - CI is not asked for a push the LOCAL arms already refused
 - the elapsed time comes from the run's own start, and `updatedAt` is not it
+- a push from a checkout ANOTHER LIVE SESSION holds is refused, and the same push goes through once the seat is this session's
+- a DEAD holder is announced and the push proceeds; an UNCLAIMED seat is silent
+- a holder record this guard cannot READ is announced and allowed, never refused
+- a lane holds no seat, so a holder record in one refuses nothing
+- WITH the holder arm, a push from a checkout another session holds never reaches the remote
 
 ## range-rule
 

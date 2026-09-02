@@ -50,6 +50,9 @@
  *     cannot-compare is a NOTICE, never a verdict.
  *   THE PUSH BATTERY (T-203) — the CHEAP CHECKS, which fail open when
  *     they cannot run, and the VERDICT TOKEN, WHICH DOES NOT.
+ *   THE HOLDER (T-238) — another LIVE session is sitting in this
+ *     integration checkout. Fails open on every inability, and is silent
+ *     wherever there is no seat: see the section below.
  *
  * A MISSING TOKEN REFUSES, and the asymmetry is this card's first
  * criterion rather than drift. Every other arm allows when it cannot
@@ -242,6 +245,43 @@
  * can run `gh` in `<x>` directly, with the same rights and without this
  * hook.
  *
+ * ── AND A FIFTH ARM ASKS WHO IS SITTING IN THIS CHECKOUT (T-238) ────
+ * `method/lane-protocol.md` rule 4 rules ONE holder of the integration
+ * checkout at a time and says the holder is DECLARED at dispatch and
+ * never inferred. Nothing recorded who, so on 2026-09-01 two sessions
+ * held it at once — one running the four-suite battery and then writing
+ * its checkpoint, the other reading — and the only thing that noticed
+ * was a seat running `ps` by hand. Either session's commit would have
+ * staled the other's T-203 token at the moment it was minted, which is
+ * this file's own arm three being corrupted from outside.
+ *
+ * So a seat DECLARES itself in `.nputer/holder.json` and this arm reads
+ * it. Its shape is the one this file already argues for everywhere:
+ *
+ *   A LIVE OTHER HOLDER REFUSES. It is the collision, it is on disk, and
+ *     the record's process is checked by PID AND START TIME so a
+ *     recycled pid is never read as a live session.
+ *   EVERY INABILITY ALLOWS AND SAYS SO — an unreadable record, and a
+ *     session whose own identity would not derive. The token arm remains
+ *     the only one that fails closed on an absence.
+ *   A DEAD HOLDER IS ANNOUNCED AND STEPPED OVER. The refusal retires
+ *     itself with the process; nothing has to be deleted by hand.
+ *   NO SEAT, NO SENTENCE. A lane push, a bench push and an UNCLAIMED
+ *     integration checkout are all silent. The first two are correct by
+ *     rule 4 — a lane does not hold a seat. The third is a DECLARED
+ *     LIMIT: nobody having taken the seat is not a collision, and a
+ *     line on every push until the whole project adopts `--take-seat`
+ *     is the noise `not-this-repository` already refuses. The unclaimed
+ *     checkout is announced instead at the ARMING steps, in `brief.mjs`,
+ *     where the seat that could claim it is the reader.
+ *
+ * THE LIMITS ARE THE IDENTITY'S AND THEY ARE STATED WHERE IT IS DERIVED,
+ * in `checkout-currency.mjs`: a seat that never arms and never pushes is
+ * not seen, a seat that commits without pushing is seen at its next push,
+ * and the derivation is a fact about ONE harness, named there with the
+ * measurement that a harness process is both STABLE across tool calls and
+ * DISTINGUISHABLE between concurrent sessions on this machine.
+ *
  * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
  * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
  * worktree ninety seconds old has no `node_modules` anywhere in it. The
@@ -249,6 +289,13 @@
  * manifest lives, how to read one, what containment means — are
  * IMPORTED from `lane-fence.mjs` rather than re-spelled, because a rule
  * with two implementations is two chances to disagree (T-057).
+ *
+ * **THE RULE IS THE REASON AND NOT THE DIRECTORY** (T-238). This file
+ * now imports one module from `tools/e2e/scripts/` — the holder and
+ * session-identity derivation, which imports node builtins and these
+ * same hooks and nothing else. A lane worktree ninety seconds old loads
+ * it exactly as it loads `lane-fence.mjs`, which is the whole of what
+ * the rule protects. The import comment at that line carries the rest.
  */
 
 import { spawnSync } from "node:child_process";
@@ -267,6 +314,20 @@ import {
   laneLandingVerdict,
   mergeLandingVerdict,
 } from "./landing-gate.mjs";
+// T-238 — THE ONE IMPORT THAT IS NOT A HOOK BESIDE THIS ONE, and the
+// section above is amended rather than contradicted. The rule's REASON is
+// that a lane worktree ninety seconds old has no `node_modules` anywhere
+// in it; `checkout-currency.mjs` imports node builtins and these same
+// hooks and nothing else, so that reason is satisfied. It is IMPORTED
+// rather than spawned — the `push-checks.mjs` treatment — because it
+// costs one module load of builtin-only code and no subprocess, and
+// because resolving it against THIS FILE's URL gives exactly the property
+// that spawn was chosen for one section down: the hook's OWN copy runs
+// while the ROOT it judges may be another checkout entirely. The holder
+// question and the *which checkout is this session in* question are one
+// subject, and splitting them across two modules would be the second
+// implementation this file refuses everywhere else.
+import { HOLDER_REL_PATH, holderVerdict } from "../../tools/e2e/scripts/checkout-currency.mjs";
 
 /**
  * The committed graph, relative to the checkout root.
@@ -468,6 +529,11 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
 // that is the property they are for: a red CI must survive a push the
 // graph arm then refuses, because the two facts are about different
 // machines.
+// T-238 ADDS ONE BLOCK AND TWO SENTENCES AND NO ROW, for that reason a
+// third time. `holder-live-elsewhere` is a BLOCK. The dead-holder and
+// unestablished-holder lines are NOTICES, printed whatever verdict the
+// arms below reach — a seat has to hear that the seat it is sitting in
+// is unclaimed even when the push is then refused for something else.
 
 /**
  * THE CHEAP CHECKS (T-203) — the script, the flag and the four codes.
@@ -2319,6 +2385,59 @@ function decideWith(request, check, cheap, gh, notices) {
 
   const headRef = readHeadRef(root);
   const onLane = headRef !== undefined && LANE_BRANCH_RE.test(headRef);
+
+  // ── WHO HOLDS THIS CHECKOUT? (T-238) ──────────────────────────────
+  // FIRST of the arms, and before the landing gate, because every other
+  // arm's verdict is about a tree this session may have no standing to
+  // push at all. `lane-protocol.md` rule 4: one holder at a time, and
+  // concurrent checkpoints CORRUPT — either seat's commit stales the
+  // other's push token at the moment it is minted, which is the exact
+  // artifact the arm below refuses on.
+  //
+  // ONLY THE INTEGRATION CHECKOUT HAS A SEAT, so a lane push and a
+  // detached bench's push reach this line and pass through it silently:
+  // a lane does not hold a seat, and a notice on every lane push is the
+  // noise this file spends a paragraph refusing under `not-this-repository`.
+  // A VACANT seat is silent too, and that is a stated limit rather than
+  // an oversight — nobody having declared the seat is not a collision,
+  // and the arming steps in `brief.mjs` are where the unclaimed checkout
+  // is announced to the seat that could claim it.
+  //
+  // THE THREE THINGS IT DOES SAY: a live OTHER holder REFUSES, a DEAD
+  // holder's record is announced and stepped over, and a record this
+  // guard cannot read — or cannot compare, because this session's own
+  // identity would not derive — is announced and ALLOWED. That last one
+  // is this file's own discipline and not a new rule: an inability may
+  // not become a verdict, and the only arm here that fails closed on an
+  // absence is the token, for the reason `decide` gives.
+  const holder = holderVerdict({ root, integrationRef: INTEGRATION_BRANCH, headRef });
+  if (holder.state === "held") {
+    return block(
+      "holder-live-elsewhere",
+      `PUSH REFUSED: ${holder.detail}\n` +
+        "  A push from a checkout somebody else is sitting in is the collision rule 4 names and " +
+        "nothing on disk used to record. This guard reads " +
+        `${HOLDER_REL_PATH}, which that session wrote when it took the seat, and the process it ` +
+        "names is RUNNING right now — checked by pid AND start time, so a recycled pid is not " +
+        "mistaken for a live session.\n" +
+        "  If that session is in fact gone, this refusal retires itself the moment its process " +
+        "does; nothing needs deleting by hand.",
+    );
+  }
+  if (holder.state === "dead") {
+    notices.push(
+      `THE INTEGRATION SEAT'S RECORDED HOLDER IS GONE: ${holder.detail} The push is allowed and ` +
+        "the seat is unclaimed — take it explicitly if you are the seat now: " +
+        "node tools/e2e/scripts/brief.mjs --take-seat",
+    );
+  } else if (holder.state === "unknown") {
+    notices.push(
+      `WHO HOLDS THIS CHECKOUT WAS NOT ESTABLISHED: ${holder.detail} The push is allowed — an ` +
+        "inability is not a verdict, in either direction — and nothing here has said this seat " +
+        "is yours.",
+    );
+  }
+
   if (onLane) {
     // THE LANDING GATE FIRST, AND BEFORE THE MANIFEST IS EVEN OPENED
     // (T-212). It reads no manifest by construction — its fence comes off
