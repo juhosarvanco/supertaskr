@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-order.mjs, tools/e2e/tests/dispatch-order.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **THE ARM T-225-s7 ASKED TO HAVE ANNOUNCED IS NOW ANNOUNCED, AND WHAT IT
