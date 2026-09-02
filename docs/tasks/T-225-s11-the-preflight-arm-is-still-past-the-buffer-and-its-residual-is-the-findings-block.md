@@ -187,6 +187,22 @@ fences hold real bodies: `T-205`, `T-205-s4` and `T-229-s6` reserve
 `knownPaths` oracle was handed in, because without one the parser cannot
 see that a directory fence already holds a spec file.
 
+### The live board's startable set, at base and tip
+
+Derived back to back at one held board — 13 checkouts, 3 of them lanes,
+the same count before and after — with `lib/parser` rebuilt on each side,
+because the ruling lives in the parser's dist and a stale build would
+have measured the wrong tree:
+
+    startable at 2008186:  24 cards
+    startable at the tip:  24 cards, the SAME 24, in the same order
+    unfenceable:            0 at both refs
+
+**NO CARD MOVES.** The refusal fires on 3 cards and every one of them is
+`underway`, so the set a dispatcher can start is untouched. The sets were
+compared with `diff` and are byte-identical; both sides were restored and
+proved by sha256 afterwards.
+
 ### The class and the sweep
 
 CLASS: a card whose acceptance criteria demand work its own fence cannot
