@@ -332,3 +332,21 @@ sentence. **Out of this fence** (`app/src/lib/watcher-store.ts` and
    fence, the ceremony row (S touching shipped code → a verifier is
    owed, so `verifying` and not `done`), the ports, the scratch naming
    and the setup order all held as written.
+
+### The battery re-run at the code-final tree
+
+The table above records the battery at `3858ddc`, before the comment
+amendment. **RE-RUN IN FULL at `5aadb2329fb38e8be4f953e67d21c4b7141e2ab8`**
+— the commit immediately before this paragraph, and the last one
+carrying any code — so the verdict tokens name the tree the merge takes.
+All four GREEN, exits `0/0/0/0`, counts read rather than codes:
+`parser bodies=349 targets=1` · `app bodies=1131 targets=1` ·
+`rust bodies=634 targets=18` · `e2e bodies=548 targets=1`
+(`NPUTER_E2E_PORT=15018`). Those three of the four are also the suites
+the DOCS GATE named for this card's own path, so the gate is discharged
+at the ref it was derived on. `npm run capabilities:check` exits **0**,
+`CURRENT (45968 bytes)`.
+
+**A COMMIT CANNOT MEASURE ITSELF**, so this paragraph's own commit is
+docs/tasks-only and moves no suite input but the two card files the gate
+already named. The integrator re-derives at its own ref.
