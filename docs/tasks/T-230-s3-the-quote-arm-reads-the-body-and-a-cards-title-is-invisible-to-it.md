@@ -391,3 +391,22 @@ disclosed the two gaps it did not close — and it found, unprompted, that
 the body meant to hold the disclosure honest is parametrised by the
 string it checks. A guard that can go silent without a red is not a
 guard, and this work is the first in this arm to say so about itself.
+
+### Step 7 — the gates at the tip THIS VERDICT created
+
+A verdict and a filed finding are commits, and they make a tip nobody
+has tested; prose is a code input here, so this seat owes the gates its
+own writes could move. Measured at `c06ecb0`, the commit carrying the
+verdict above and `T-230-s11`:
+
+    lint:docs (whole-tree half)  exit 0 — every live task card's
+      frontmatter parses, with a legal status; budgets hold
+    gate-run parser  exit 0  bodies=349   GREEN
+    gate-run app     exit 0  bodies=1131  GREEN
+    gate-run e2e     exit 1  bodies=553   551 passed, 2 failed
+
+**THE E2E DELTA FROM THIS SEAT'S OWN WRITES IS ZERO**: the same two
+`session-economics` bodies, the same `T-236-s5` cause string, 551 passed
+either side. So the figures in the verdict above are stated at
+`db7e04d`, this block's are stated at `c06ecb0`, and neither is a
+present-tense number anybody has to keep true.
