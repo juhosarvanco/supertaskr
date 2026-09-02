@@ -610,10 +610,12 @@ test("every run prints which claim classes it checked and which it cannot", asyn
     expect(text, "the floor's own omission stopped being disclosed").toContain(
       "shorter than the floor is COUNTED and not listed",
     );
-    // THE HARD WRAP IS A LIMIT THIS CARD DID NOT REPAIR, and stating it
-    // is what keeps the two unmarked counts from reading as a closed
-    // census: the needle class stops at a newline, so a run spanning the
-    // repository's own seventy-column wrap is invisible to both halves.
+    // THE HARD WRAP IS A LIMIT THIS CARD DID NOT REPAIR — it is already
+    // filed as `T-230-s7`, blocked behind this card because both edit
+    // the same reader — and stating it is what keeps the two unmarked
+    // counts from reading as a closed census: the needle class stops at
+    // a newline, so a run spanning the repository's own seventy-column
+    // wrap is invisible to both halves.
     expect(text, "the hard-wrap omission stopped being disclosed").toContain(
       "SPANS this repository's hard wrap is read by NEITHER half",
     );

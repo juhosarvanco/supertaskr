@@ -605,6 +605,15 @@ export function unseenMarkers(cardText) {
  * decides what is LISTED — initials and punctuation samples are not
  * assertions — so what the flag buys is the count.
  *
+ * **THE COUNT IS STILL NOT THE CENSUS, AND THE GAP IS `T-230-s7`.** The
+ * needle class stops at a newline and the extraction is line by line, so
+ * a quoted run spanning this repository's own hard wrap is seen by
+ * neither half — the ordinary shape of a quoted acceptance criterion,
+ * and the larger blind spot of the two by an order of magnitude. It is a
+ * filed card rather than a repair here; what this arm owes meanwhile is
+ * to STATE it, which the class's `cannot` line does, so the two unmarked
+ * numbers cannot be read as a closed census.
+ *
  * @param {string} cardText
  * @param {PathOracle} oracle
  * @returns {LooseQuote[]}
