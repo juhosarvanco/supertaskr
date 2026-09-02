@@ -24,6 +24,7 @@ import {
   frontmatterScalars,
   NOT_A_CLAIM_CLASS,
   componentOwners,
+  markerEnd,
   MIN_QUOTE_CHARS,
   ownersOf,
   pathOracle,
@@ -568,6 +569,136 @@ test("an UNDATED ruling is not a ruling, and a ruling that binds to nothing is r
  * THE HONEST-OMISSION RULE, WHICH IS A CRITERION AND NOT A HEADER
  * ──────────────────────────────────────────────────────────────────── */
 
+/**
+ * THE WHOLE DISCLOSURE, TRANSCRIBED AS LITERALS (T-230-s8).
+ *
+ * The body below used to assert `toContain(c.checks)` with the expected
+ * value read out of `CLAIM_CLASSES` itself, which is docs/CONVENTIONS.md's
+ * A TEST PARAMETRISED BY THE CONSTANT IT CHECKS CANNOT PIN THAT CONSTANT
+ * exactly: it passes for any value the table holds, the empty string
+ * included. T-230-s3's drill measured the consequence — mutants M10 and
+ * M11 changed one capital in a `cannot` clause and the parametrised loop
+ * stayed green under both — and its verifier's D2 reversed a whole clause
+ * and survived. Four clauses were pinned then; these are the other
+ * fourteen, so a one-capital mutant in ANY class reds.
+ *
+ * **THE COPY IS THE POINT AND NOT AN ACCIDENT.** T-057 forbids a second
+ * copy of a DERIVATION; this is a second copy of a PUBLISHED SENTENCE,
+ * which is what pinning a disclosure means. The loop below still reads
+ * the constant, so the two halves answer different questions: this table
+ * says what the disclosure MUST say, and the loop says the tool printed
+ * whatever the table holds.
+ */
+const PINNED_CLAIM_CLASSES = [
+  {
+    key: "paths",
+    checks:
+      "every slash-carrying path token whose first segment exists at HEAD, resolved against " +
+      "the tracked tree (the verdict's first correction: narrower than 'every path', stated " +
+      "so)",
+    refuses:
+      "a path named in the frontmatter or the acceptance criteria that does not exist and " +
+      "is not inside this card's own fence, so it cannot be a creation target either",
+    cannot:
+      "a glob, a truncated token, a git-ignored build artefact, anything inside a fenced or " +
+      "indented transcript block (the prose reading blanks them), a token whose FIRST " +
+      "segment is not a top-level entry at HEAD (a deleted or renamed top-level directory " +
+      "is this staleness class at its largest and is invisible here), a leading-./ token, " +
+      "and a root file with no slash",
+  },
+  {
+    key: "fence",
+    checks:
+      "the card's touches, expanded through the live slug map by the parser's own fence " +
+      "module",
+    refuses:
+      "an entry that reserves no tracked file at all, an entry this expansion cannot " +
+      "resolve, and a path the criteria name that a DECLARED component owns and this fence " +
+      "does not carry",
+    cannot:
+      "whether a path under NO component ought to be inside the fence — a criterion cites " +
+      "far more files than it writes, and outside the slug map this tool cannot tell a " +
+      "citation from a write target",
+  },
+  {
+    key: "figures",
+    checks:
+      "every figure carrying a card deriver stamp, re-run through that deriver at HEAD",
+    refuses:
+      "a stamped figure the deriver no longer produces, an unrunnable provenance, a census " +
+      "claim",
+    cannot:
+      "an unstamped number, and any shell command the card quotes — this tool never " +
+      "executes text out of a markdown body",
+  },
+  {
+    key: "blockers",
+    checks:
+      "every blocked_by entry against the live board, and the parser's own startability " +
+      "ruling",
+    refuses:
+      "a blocker with no live card, and a card the parser rules blocked or waiting",
+    cannot:
+      "a blocking reason stated as prose with no machine form; the one exception is the " +
+      "claim that another card's LIVE LANE holds a fence, which is read against the live " +
+      "lane list. A card the board's schedule does not draw at all has no ruling here, and " +
+      "this command REFUSES rather than reporting the other classes as though they were the " +
+      "whole answer",
+  },
+  {
+    key: "refs",
+    checks:
+      "every commit-ref stamp the card carries, resolved with git rev-parse",
+    refuses:
+      "a stamp this checkout can no longer resolve to a commit",
+    cannot:
+      "whether the stamped ref is still the RIGHT one — only that it still exists — and a " +
+      "commit written in any form but the published stamp: prose like 'at commit <hash>' is " +
+      "invisible, only the '@ <hash>' spelling is read (the verdict's first correction)",
+  },
+  {
+    key: "quotes",
+    checks:
+      "every CARD CLAIM marker — a quoted string plus the tracked file the card names as " +
+      "its source — read against that file's own bytes at HEAD, whitespace collapsed on " +
+      "both sides so a hard-wrapped document still matches, and compared with the capitals " +
+      "the card wrote",
+    refuses:
+      "a marked quote the named file does not contain, a marker whose source is not a " +
+      "tracked file at HEAD, and a marker no quoted string can be read out of",
+    cannot:
+      "any assertion the card did not MARK, and the unmarked ones are COUNTED and LISTED " +
+      "rather than passed over: a quoted sentence beside a path the card names could have " +
+      "been marked and was not, and a quoted sentence naming no source at all — an " +
+      "assertion about a platform, a version or a runtime — is not a string in any file, so " +
+      "it belongs to the verifier's phase-one ground truth and is reported here rather than " +
+      "settled. It opens ONE named file and never the tree, so a true quote under a wrong " +
+      "file name is a finding and not a pass; and it judges OCCURRENCE, never meaning. THE " +
+      "FRONTMATTER IS READ IN ONE DIRECTION ONLY: a MARKER is taken from the BODY's prose " +
+      "alone, so one written into a frontmatter field is reported as a SIGHTING and is " +
+      "never read as a claim, while the frontmatter's SCALAR values ARE scanned for " +
+      "unmarked quoted runs — one field at a time, with YAML's own quoting unwrapped first " +
+      "— and its LIST values are not scanned at all. A quoted run shorter than the floor is " +
+      "COUNTED and not listed; a run that SPANS this repository's hard wrap IS read, " +
+      "because the paragraph is FOLDED on a single space before the needle is matched, the " +
+      "way the frontmatter title is folded; and a run that OPENS IN ONE PARAGRAPH AND " +
+      "CLOSES IN ANOTHER stays unseen, because a blank line ends the unit and pairing a " +
+      "quote across one would read the typesetting rather than the sentence. AND THE FOLD " +
+      "RE-PAIRS WHAT THE LINE ONCE BOUNDED: an odd quote character now reaches across the " +
+      "join, so a run the line-scoped reading paired can be swallowed into a longer one " +
+      "instead of listed on its own — the fold reaches far more than it drops, and what it " +
+      "drops is not none",
+  },
+];
+
+const PINNED_NOT_A_CLAIM_CLASS = [
+  "whether the work is still WANTED — desirability is a seat's call and this tool takes " +
+  "none",
+  "whether the criteria are the RIGHT criteria, or the design behind them still holds",
+  "any figure a card states with no provenance at all",
+  "anything a session would have to run the suite to know",
+];
+
 test("every run prints which claim classes it checked and which it cannot", async () => {
   // Asserted on a CLEAN card as well as a refused one, because the
   // failure this criterion exists against is a green run that reads as
@@ -585,12 +716,23 @@ test("every run prints which claim classes it checked and which it cannot", asyn
     // FIVE). So the cardinality is pinned here, off the constant.
     expect(CLAIM_CLASSES.length, "the claim-class table lost a member").toBe(6);
     expect(NOT_A_CLAIM_CLASS.length, "the not-a-claim-class list lost a member").toBe(4);
-    for (const c of CLAIM_CLASSES) {
+    // EVERY CLASS'S THREE STRINGS, AGAINST A LITERAL (T-230-s8). This is
+    // the assertion the loop below cannot make: a one-capital mutant in
+    // any of the eighteen reds HERE, and the loop stays green under it
+    // because the loop reads the mutated value.
+    expect(CLAIM_CLASSES, "a claim class's own disclosure moved").toEqual(PINNED_CLAIM_CLASSES);
+    expect(NOT_A_CLAIM_CLASS, "the not-a-claim-class list moved").toEqual(
+      PINNED_NOT_A_CLAIM_CLASS,
+    );
+    // AND THE TOOL PRINTED THEM. The table above says what the constant
+    // must hold; these say the run emitted it, and the literals are the
+    // expected side so a silent constant cannot satisfy them.
+    for (const c of PINNED_CLAIM_CLASSES) {
       expect(text, `${c.key} did not print what it checks`).toContain(c.checks);
       expect(text, `${c.key} did not print what it refuses`).toContain(c.refuses);
       expect(text, `${c.key} did not print what it cannot see`).toContain(c.cannot);
     }
-    for (const line of NOT_A_CLAIM_CLASS) expect(text).toContain(line);
+    for (const line of PINNED_NOT_A_CLAIM_CLASS) expect(text).toContain(line);
     // DESIRABILITY IS RULED OUT BY NAME. The card's third criterion
     // says the tool judges none, and a reader has to be able to see it.
     expect(text).toContain("whether the work is still WANTED");
@@ -611,15 +753,35 @@ test("every run prints which claim classes it checked and which it cannot", asyn
     expect(text, "the floor's own omission stopped being disclosed").toContain(
       "shorter than the floor is COUNTED and not listed",
     );
-    // THE HARD WRAP IS A LIMIT THIS CARD DID NOT REPAIR — it is already
-    // filed as `T-230-s7`, blocked behind this card because both edit
-    // the same reader — and stating it is what keeps the two unmarked
-    // counts from reading as a closed census: the needle class stops at
-    // a newline, so a run spanning the repository's own seventy-column
-    // wrap is invisible to both halves.
-    expect(text, "the hard-wrap omission stopped being disclosed").toContain(
-      "SPANS this repository's hard wrap is read by NEITHER half",
+    // THE HARD WRAP IS NOW READ AND THE PARAGRAPH BOUNDARY IS NOT
+    // (T-230-s7). The class's fourth acceptance criterion asks for the
+    // remaining omission IN WORDS, so both halves of the sentence are
+    // pinned: the wrap is folded before the needle is matched, and a run
+    // that opens in one paragraph and closes in another stays unseen.
+    expect(text, "the fold stopped being disclosed").toContain(
+      "hard wrap IS read, because the paragraph is FOLDED on a single space",
     );
+    expect(text, "the paragraph-boundary omission stopped being disclosed").toContain(
+      "OPENS IN ONE PARAGRAPH AND CLOSES IN ANOTHER stays unseen",
+    );
+    // AND THE FOLD'S OWN COST IS DISCLOSED BESIDE ITS BENEFIT. Joining a
+    // paragraph lets an odd quote character reach across what used to be
+    // a line boundary, so a handful of runs the line-scoped reading
+    // listed are swallowed into a longer one instead. Measured at this
+    // lane's tip and recorded on the card; a repair that reports only
+    // its gain is the census defect this whole arm exists against.
+    expect(text, "the fold's re-pairing stopped being disclosed").toContain(
+      "THE FOLD RE-PAIRS WHAT THE LINE ONCE BOUNDED",
+    );
+    // AND NO `cannot` MAY CARRY A DIGIT — those rows leave through
+    // `note()`, which throws on one, so a clause that gained a figure
+    // would take the whole run down rather than this assertion. Asserted
+    // anyway, because a throw names the tool and this names the rule.
+    for (const c of PINNED_CLAIM_CLASSES) {
+      expect(`${c.checks}${c.refuses}${c.cannot}`, `${c.key} put a digit in a note`).not.toMatch(
+        /\d/,
+      );
+    }
   }
 });
 
@@ -1115,6 +1277,38 @@ test("a quoted-claim finding is dischargeable by a dated ruling naming its quote
   );
   expect(ruled.findings, `\n${joined(ruled.findings)}`).toEqual([]);
   expect(ruled.text).toContain("RULED (2026-09-01)");
+  // AND THE SUBJECT STAYED RAW WHILE THE DISPLAY LEARNED TO ESCAPE
+  // (T-230-s9). `raise()`'s first argument is what `dischargedBy` matches
+  // a dated ruling against, and a ruling is written in the PUBLISHED form
+  // — the author quotes the needle as they wrote it. Wrapping the subject
+  // in `JSON.stringify` would stop every such ruling discharging,
+  // silently, in the direction that RE-OPENS what a seat already ruled
+  // on. So this is the positive control for that half: the ruling above
+  // is plain, the finding it discharged prints its pair ESCAPED, and the
+  // discharge still happens.
+  expect(ruled.text, "the discharge record stopped printing the escaped pair").toContain(
+    `the card marks ${JSON.stringify(i.needle)} as a quote from ${JSON.stringify(i.source)}`,
+  );
+  // AND THE PROBE THAT ACTUALLY DISCRIMINATES IS THE BARE ONE. A ruling
+  // that writes the needle IN QUOTES discharges either way — an escaped
+  // subject is that same string with quotes round it, and the ruling text
+  // carries both — so it proves nothing about the subject. A ruling that
+  // names the needle BARE discharges a raw subject and nothing else, and
+  // that is the sentence a seat actually writes.
+  const bare = await run(
+    makeFixture({
+      files,
+      body: [
+        i.marker,
+        "",
+        `PREFLIGHT RULING (2026-09-01): ${i.needle} is the version this card was written`,
+        "against; carried deliberately.",
+      ],
+    }),
+  );
+  expect(bare.findings, `a bare-subject ruling discharged nothing:\n${joined(bare.findings)}`)
+    .toEqual([]);
+  expect(bare.text).toContain("RULED (2026-09-01)");
 
   // AND A RULING NAMING A DIFFERENT QUOTE DISCHARGES NOTHING, which is
   // what keeps the ruling from becoming an amnesty for the class.
@@ -1392,6 +1586,379 @@ test("the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding
     markedFixture(TRUE_CLAIM.marker, [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }]),
   );
   expect(fine.text).not.toContain("NOT CHECKABLE line");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE FOLD (T-230-s7)
+ *
+ * `unmarkedQuotes` decided nearness over the PARAGRAPH and then extracted
+ * its needles LINE BY LINE with a class that stopped at the newline. Every
+ * card in docs/tasks/ is hard-wrapped at seventy columns, so a quoted
+ * sentence crossing one line break — the ordinary shape of a quoted
+ * acceptance criterion — was two half-runs to the extractor and neither of
+ * them opened and closed. The unit is now FOLDED on a single space before
+ * the needle is matched, which is the whole repair; what stays unseen is a
+ * run crossing a PARAGRAPH, and the class's `cannot` line says so.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The run the fold exists for, and the two spellings of its paragraph. */
+const WRAP_RUN = "a quoted sentence that crosses the hard wrap";
+const WRAPPED_PARA = [
+  'The rule is "a quoted sentence that crosses the',
+  'hard wrap" and docs/CONVENTIONS.md carries it.',
+];
+/**
+ * THE CONTROL THE FIRST CRITERION ASKS FOR BY NAME — the same card minus
+ * the wrap. The two paragraphs FOLD to the same bytes, so the two reports
+ * have to agree line for line about this class, and the only thing that
+ * moved is where the line break falls.
+ */
+const FLAT_PARA = [
+  'The rule is "a quoted sentence that crosses the hard wrap" and',
+  "docs/CONVENTIONS.md carries it.",
+];
+
+/** The NOT CHECKED listing, with line numbers and provenance taken off. */
+function unmarkedListing(text: string): string[] {
+  return text
+    .split("\n")
+    .map((l) => l.replace(/\s+<-\s[\s\S]*$/, "").trim())
+    .filter((l) => l.startsWith("NOT CHECKED,"))
+    .map((l) => l.replace(/line \d+/, "line N"));
+}
+
+/** A one-document repository, for driving the readers directly. */
+function oneDocRepo(rel: string, content: string): string {
+  const root = scratchRoot();
+  git(root, ["init", "--initial-branch=main", "--quiet"]);
+  writeFixtureFile(root, rel, content);
+  git(root, ["add", "-A"]);
+  git(root, ["commit", "-m", "Checkpoint: one document", "--quiet"]);
+  return root;
+}
+
+test("a quoted run that crosses the hard wrap is ONE run, and the flat twin agrees", async () => {
+  // THE FIRST CRITERION, PLANTED. Before the fold this card reported
+  // ZERO unmarked runs: the opening quote had no closer on its line and
+  // the closing quote had no opener on its own, so the census counted
+  // the runs that fit on one line and called itself a census.
+  const wrapped = await run(makeFixture({ body: WRAPPED_PARA }));
+  expect(wrapped.findings, `a wrapped run refused:\n${joined(wrapped.findings)}`).toEqual([]);
+  expect(wrapped.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(wrapped.text).toContain("quoted and NOT marked, naming no source at all: 0");
+  expect(wrapped.text).toContain("below the quote floor: 0");
+  expect(wrapped.text).toContain(WRAP_RUN);
+
+  // THE CONTROL: the same sentence with the wrap moved off it. The folded
+  // bytes are identical, so the listing is identical — which is what makes
+  // "sees it as ONE run" a measurement rather than a count that happens to
+  // read one.
+  const flat = await run(makeFixture({ body: FLAT_PARA }));
+  expect(unmarkedListing(flat.text)).toEqual([
+    `NOT CHECKED, a path is named nearby, line N: ${JSON.stringify(WRAP_RUN)}`,
+  ]);
+  expect(unmarkedListing(wrapped.text)).toEqual(unmarkedListing(flat.text));
+  // THE PLANT ITSELF IS ASSERTED, because the property lives half in the
+  // DATA: the wrapped paragraph must carry the run on NO single line and
+  // the flat one on exactly one, and the two must FOLD to the same bytes.
+  expect(
+    WRAPPED_PARA.some((l) => l.includes(WRAP_RUN)),
+    "the wrapped fixture stopped spanning a line break",
+  ).toBe(false);
+  expect(
+    FLAT_PARA.some((l) => l.includes(WRAP_RUN)),
+    "the flat control stopped holding the run on one line",
+  ).toBe(true);
+  expect(WRAPPED_PARA.join(" ")).toEqual(FLAT_PARA.join(" "));
+
+  // AND THE READER CARRIES THE LINE THE RUN OPENS ON THROUGH THE FOLD,
+  // which a fold that dated every run at the top of its paragraph would
+  // fail: here the paragraph starts one line ABOVE the opening quote.
+  const root = oneDocRepo("docs/CONVENTIONS.md", "anything\n");
+  const oracle = pathOracle(root);
+  const late = [
+    "---",
+    "id: T-903",
+    "---",
+    "",
+    "docs/CONVENTIONS.md is the document, and the rule it carries is",
+    '"a quoted sentence that crosses the',
+    'hard wrap" exactly.',
+    "",
+  ].join("\n");
+  const loose = unmarkedQuotes(late, oracle);
+  expect(loose.map((q) => q.text)).toEqual([WRAP_RUN]);
+  expect(loose.map((q) => q.line), "the run was dated at the paragraph, not at itself").toEqual([6]);
+  expect(loose.map((q) => q.nearPath)).toEqual([true]);
+  expect(loose.map((q) => q.field)).toEqual([""]);
+});
+
+test("the same run MARKED is treated exactly as a single-line marked run", async () => {
+  // THE SECOND CRITERION. A marker's needle belongs to the MARKED half,
+  // so a marker line BREAKS the fold instead of joining it — otherwise
+  // the fold would carry a needle the author asked to have CHECKED into
+  // the census of what was not, and would pair quotes on either side of
+  // it that nobody wrote as a pair.
+  const files = [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }];
+  // THE LINES EITHER SIDE OF THE MARKER EACH CARRY A LONE QUOTE, so a
+  // reader that folded THROUGH the marker line — or merely skipped it
+  // without ending the unit — would pair them into a run nobody wrote.
+  const before = 'and one more, as in "this';
+  const after = 'unfinished thought" which nobody wrote as a pair.';
+  const wrapped = await run(
+    makeFixture({ files, body: [...WRAPPED_PARA, before, TRUE_CLAIM.marker, after] }),
+  );
+  expect(wrapped.findings, `a marked run refused:\n${joined(wrapped.findings)}`).toEqual([]);
+  expect(wrapped.text).toContain("CHECKED and HELD: 1");
+  expect(wrapped.text).toContain("CHECKED and FALSE: 0");
+  expect(wrapped.text).toContain("NOT CHECKABLE: 0");
+  // THE MARKED NEEDLE IS NOT IN THE UNMARKED CENSUS, and the listing is
+  // asserted WHOLE rather than by absence: a fold that swallowed the
+  // marker line would add its needle here, and an equality says so where
+  // a `not.toContain` would pass for a reader that listed nothing.
+  expect(unmarkedListing(wrapped.text)).toEqual([
+    `NOT CHECKED, a path is named nearby, line N: ${JSON.stringify(WRAP_RUN)}`,
+  ]);
+
+  // EXACTLY AS IT TREATS A SINGLE-LINE RUN: the same card with the prose
+  // flat around the same marker reports the same three counts and the
+  // same listing.
+  const flat = await run(
+    makeFixture({ files, body: [...FLAT_PARA, before, TRUE_CLAIM.marker, after] }),
+  );
+  expect(flat.text).toContain("CHECKED and HELD: 1");
+  expect(unmarkedListing(flat.text)).toEqual(unmarkedListing(wrapped.text));
+
+  // AND THE TWIN THAT SHOWS THE MARKER IS BEING READ AT ALL: the same
+  // marker naming a file that does not exist refuses, so "the marked run
+  // is treated as marked" is not satisfied by a reader seeing no markers.
+  const broken = await run(
+    makeFixture({
+      body: [...WRAPPED_PARA, before, 'CARD CLAIM (docs/NEVER-EXISTED.md): "a needle"', after],
+    }),
+  );
+  expect(joined(broken.findings)).toContain("UNCHECKABLE CARD CLAIM");
+});
+
+test("a run that opens in one paragraph and closes in another stays UNSEEN, said in words", async () => {
+  // THE FOURTH CRITERION, AND THE OMISSION IS THE POINT. A blank line
+  // ends the unit: pairing a quote across one would read the typesetting
+  // rather than the sentence, which is the error the line-scoped join
+  // made one size down. So it stays unseen AND the `cannot` line says so.
+  const across = await run(
+    makeFixture({
+      body: [
+        'The paragraph opens a quote "that never closes on this side and',
+        "",
+        'goes on past a blank line" as a different thought entirely.',
+      ],
+    }),
+  );
+  expect(across.findings, `an unpaired quote refused:\n${joined(across.findings)}`).toEqual([]);
+  expect(across.text).toContain("quoted and NOT marked, beside a path this card names: 0");
+  expect(across.text).toContain("quoted and NOT marked, naming no source at all: 0");
+  expect(across.text).toContain("below the quote floor: 0");
+  expect(unmarkedListing(across.text)).toEqual([]);
+  expect(across.text, "the omission stopped being stated in words").toContain(
+    "OPENS IN ONE PARAGRAPH AND CLOSES IN ANOTHER stays unseen",
+  );
+
+  // THE TWIN, ONE BLANK LINE AWAY: the same two lines as ONE paragraph
+  // fold into one run. Without it, "a cross-paragraph run is unseen" is
+  // satisfied by a reader that sees nothing anywhere.
+  const together = await run(
+    makeFixture({
+      body: [
+        'The paragraph opens a quote "that never closes on this side and',
+        'goes on past a blank line" as a different thought entirely.',
+      ],
+    }),
+  );
+  expect(together.text).toContain("quoted and NOT marked, naming no source at all: 1");
+  expect(unmarkedListing(together.text)).toEqual([
+    "NOT CHECKED, no source named, line N: " +
+      JSON.stringify("that never closes on this side and goes on past a blank line"),
+  ]);
+});
+
+test("a marker whose NEEDLE wraps ends its own unit, and the run after it survives", async () => {
+  // V-T-230-s7's attack A4, planted. A marker wraps like everything else
+  // in a seventy-column document, and its CONTINUATION line is not itself
+  // a marker line: ending the segment at the LINE left the needle's
+  // orphan closing quote to join the NEXT unit, where a class bounded by
+  // the unit paired it with the following run's OPENING quote. The
+  // author's real assertion was swallowed and a run nobody wrote was
+  // listed in its place — a false-negative census AND a fabricated
+  // listing, which is the direction this card calls the wrong kind.
+  const root = oneDocRepo("docs/CONVENTIONS.md", "anything\n");
+  const oracle = pathOracle(root);
+  const head = ["---", "id: T-903", "---", "", "The rule this card rests on is stated in docs/CONVENTIONS.md."];
+  const after = 'And the card also asserts "a sentence nobody marked at all" beside it.';
+  const wrapped = [
+    ...head,
+    'CARD CLAIM (docs/CONVENTIONS.md): "search the COLLAPSED text, the way',
+    'every mechanical reader of this file does before it matches anything"',
+    after,
+    "",
+  ].join("\n");
+  // THE MARKER IS WRITTEN THE WAY THIS REPOSITORY WRITES ONE, and the
+  // plant is asserted: the needle must span a line break, or the body
+  // measures nothing.
+  expect(
+    ((wrapped.split("\n")[5] ?? "").match(/"/g) ?? []).length % 2,
+    "the planted marker stopped wrapping its needle",
+  ).toBe(1);
+
+  const loose = unmarkedQuotes(wrapped, oracle);
+  expect(loose.map((q) => q.text)).toEqual(["a sentence nobody marked at all"]);
+  expect(loose.map((q) => q.line), "the surviving run lost its own line").toEqual([8]);
+
+  // "EXACTLY AS IT TREATS A SINGLE-LINE MARKED RUN", in the second
+  // criterion's own words: the same card with a needle short enough to
+  // fit reports the same assertion. Before the repair the wrapped one
+  // reported `And the card also asserts` — a sentence nobody wrote.
+  const single = [...head, 'CARD CLAIM (docs/CONVENTIONS.md): "the COLLAPSED text"', after, ""].join(
+    "\n",
+  );
+  expect(unmarkedQuotes(single, oracle).map((q) => q.text)).toEqual(loose.map((q) => q.text));
+
+  // AND THE BOUNDARY ITSELF, DRIVEN DIRECTLY: the payload's last line,
+  // never the marker's own, and a marker whose quoting never closes
+  // inside its paragraph falls back to its own line rather than eating
+  // the rest of it.
+  const para = (lines: string[]) => lines.map((text, i) => ({ line: i + 1, text, scope: "body" as const }));
+  expect(markerEnd(para(['CARD CLAIM (a/b): "one', 'two" and more.', "tail."]), 0)).toBe(1);
+  expect(markerEnd(para(['CARD CLAIM (a/b): "closed here"', "tail."]), 0)).toBe(0);
+  expect(markerEnd(para(["CARD CLAIM (a/b): no needle at all", "tail."]), 0)).toBe(0);
+  expect(
+    markerEnd(para(['CARD CLAIM (a/b): "never closed', "tail.", "more tail."]), 0),
+    "an unbalanced marker ate its whole paragraph",
+  ).toBe(0);
+
+  // THROUGH THE WHOLE ARM, on the fixture world: the assertion after a
+  // wrapped marker is COUNTED, and the marker is still read as a marker.
+  const whole = await run(
+    makeFixture({
+      files: [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }],
+      body: [
+        `CARD CLAIM (${TRUE_CLAIM.source}): "A substitution count is not a`,
+        'diff" — quoted across the wrap the way this repository writes one.',
+        'And the card also asserts "a sentence nobody marked at all" beside',
+        "docs/CONVENTIONS.md.",
+      ],
+    }),
+  );
+  expect(whole.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(unmarkedListing(whole.text)).toEqual([
+    `NOT CHECKED, a path is named nearby, line N: ${JSON.stringify(
+      "a sentence nobody marked at all",
+    )}`,
+  ]);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE RAW SCALAR (T-230-s11) AND THE SIX DISPLAY SITES (T-230-s9)
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("a frontmatter scalar is read RAW, so a space-hash inside a quoted title keeps it", async () => {
+  // `frontmatterFields` strips an inline comment by cutting the value at
+  // the first space-hash, and it does that WITHOUT KNOWING ABOUT QUOTES —
+  // right for the component registry it was written for, wrong here: a
+  // hash inside a quoted assertion ends the value, the run never closes,
+  // and the assertion vanishes with no listing, no sighting and no floor
+  // count. The field SET is still the parser's; only the text is read here.
+  const HASHED = 'the design "already fails # the checkpoint sync" and docs/CONVENTIONS.md says so';
+  expect(HASHED, "the plant stopped carrying a space-hash INSIDE the quoted run").toContain(" # ");
+  const hashed = await run(makeFixture({ title: HASHED }));
+  expect(hashed.findings, `a title assertion refused:\n${joined(hashed.findings)}`).toEqual([]);
+  expect(hashed.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(unmarkedListing(hashed.text)).toEqual([
+    "NOT CHECKED, a path is named nearby, frontmatter title, line N: " +
+      JSON.stringify("already fails # the checkpoint sync"),
+  ]);
+
+  // THE CONTROL, ONE CHARACTER AWAY: the same title with the hash gone is
+  // counted the same, so this body measures the STRIP and not the mere
+  // presence of a title.
+  const plain = await run(
+    makeFixture({ title: 'the design "already fails the checkpoint sync" and docs/CONVENTIONS.md says so' }),
+  );
+  expect(plain.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+
+  // AND THE UNIT READER HANDS BACK THE WHOLE SCALAR, wrapper off and
+  // comment cut absent — the two halves of what this scope reads.
+  const scalars = frontmatterScalars(`---\nid: T-903\ntitle: ${HASHED}\nnote: "a # b"\n---\n\nbody\n`);
+  expect(scalars.map((s) => s.key)).toEqual(["id", "title", "note"]);
+  expect(scalars.map((s) => s.value)).toEqual(["T-903", HASHED, "a # b"]);
+});
+
+test("every DISPLAY site in the quotes arm escapes the author's string", async () => {
+  // T-230-s4 named ONE site and there are seven; six were still bare. A
+  // value carrying a space or a stray quote runs into the sentence around
+  // it and the reader cannot tell where the author's string ends — and
+  // the line is what a dispatcher decides on.
+  const held = await run(
+    markedFixture(TRUE_CLAIM.marker, [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }]),
+  );
+  expect(held.text, "the HELD record stopped escaping").toContain(
+    `${JSON.stringify(TRUE_CLAIM.source)} contains ${JSON.stringify(TRUE_CLAIM.quote)}`,
+  );
+  expect(held.text, "the HELD record is bare again").not.toContain(`: ${TRUE_CLAIM.source} contains`);
+
+  const missed = await run(
+    markedFixture(NEAR_MISS.marker, [
+      { rel: NEAR_MISS.holder, content: NEAR_MISS.holderText },
+      { rel: NEAR_MISS.named, content: NEAR_MISS.namedText },
+    ]),
+  );
+  expect(missed.text, "the FALSE record stopped escaping").toContain(
+    `${JSON.stringify(NEAR_MISS.named)} does not contain ${JSON.stringify(NEAR_MISS.quote)}`,
+  );
+  expect(missed.text, "the FALSE record is bare again").not.toContain(
+    `: ${NEAR_MISS.named} does not contain`,
+  );
+  expect(joined(missed.findings), "the finding's own pair stopped escaping").toContain(
+    `the card marks ${JSON.stringify(NEAR_MISS.quote)} as a quote from ` +
+      `${JSON.stringify(NEAR_MISS.named)}`,
+  );
+  expect(joined(missed.findings), "the finding's pair is bare again").not.toContain(
+    `as a quote from ${NEAR_MISS.named}`,
+  );
+
+  const sighted = await run(
+    makeFixture({
+      body: [
+        "The form is one plain body line:",
+        "",
+        '    CARD CLAIM (docs/NEVER-EXISTED.md): "an example, not a claim"',
+      ],
+    }),
+  );
+  expect(sighted.text, "the sighting stopped escaping").toContain(
+    JSON.stringify('CARD CLAIM (docs/NEVER-EXISTED.md): "an example, not a claim"'),
+  );
+  expect(sighted.text, "the sighting is bare again").not.toContain(
+    ": CARD CLAIM (docs/NEVER-EXISTED.md)",
+  );
+
+  // THE TWO LISTINGS, ON A RUN THAT IS AMBIGUOUS WHEN IT IS BARE. A
+  // typographic pair may hold straight quotes, so the old form printed
+  // `"the flag is "--x" here"` and the reader could not see where the
+  // author's run ended. This is the founding shape rather than a spaced
+  // filename, because these two lines are the ones a census prints most.
+  const AMBIGUOUS = 'the flag is "--x" here';
+  const beside = await run(
+    makeFixture({ body: [`The document says “${AMBIGUOUS}” and docs/CONVENTIONS.md carries it.`] }),
+  );
+  expect(unmarkedListing(beside.text)).toEqual([
+    `NOT CHECKED, a path is named nearby, line N: ${JSON.stringify(AMBIGUOUS)}`,
+  ]);
+  const alone = await run(
+    makeFixture({ body: [`A paragraph naming no file says “${AMBIGUOUS}” and stops.`] }),
+  );
+  expect(unmarkedListing(alone.text)).toEqual([
+    `NOT CHECKED, no source named, line N: ${JSON.stringify(AMBIGUOUS)}`,
+  ]);
 });
 
 /* ══════ THE SEAT ARMS, THROUGH THE PROCESS BOUNDARY (T-238) ═════════

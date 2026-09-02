@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **613 behaviours** — 611 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **619 behaviours** — 617 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -155,6 +155,12 @@ Census: **613 behaviours** — 611 extracted sentences + 2 named-not-extracted (
 - a marker written into a frontmatter field is a SIGHTING, never a claim
 - a quoted run below the floor is COUNTED, and it is still not listed
 - the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does
+- a quoted run that crosses the hard wrap is ONE run, and the flat twin agrees
+- the same run MARKED is treated exactly as a single-line marked run
+- a run that opens in one paragraph and closes in another stays UNSEEN, said in words
+- a marker whose NEEDLE wraps ends its own unit, and the run after it survives
+- a frontmatter scalar is read RAW, so a space-hash inside a quoted title keeps it
+- every DISPLAY site in the quotes arm escapes the author's string
 - `--take-seat` records THIS session in the integration checkout, in a file git cannot see
 - `--take-seat` REFUSES a checkout another LIVE session holds, and takes it over once that process is dead
 - `--release-seat` gives the seat up, and refuses to remove a record it cannot show is its own
