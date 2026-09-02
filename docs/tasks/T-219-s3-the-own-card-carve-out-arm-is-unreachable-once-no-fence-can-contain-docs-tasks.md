@@ -406,3 +406,167 @@ sites are the routed card. No other site claims the hook applies it.
    carries a `What to build` section of five criteria plus a TRIAGE
    paragraph restating them; the assembler's keyword match missed the
    heading spelling. Nothing was built against a guess.
+
+## VERDICT — APPROVED, 2026-09-02, verifier claude-opus-5@subagent
+
+Judged at tip **`7129d90b4ead812954c44c6c6f5094c76e4772b7`** (code
+`f6aca05`, stamp/notes/routed card `7129d90`) against base
+**`a7cc65b8064deb9420a6190540f64ae884357d2a`**, on the bench
+`/Users/ujju/Projects/nputer-V-T-219-s3`, ports 25219/26219. Every figure
+below is derived at one of those two refs and says which.
+
+**BLINDNESS: CLOCK-SHAPED, and the discipline was kept on top of it.**
+The bench was cut alongside the lane; the branch stood at the dispatch
+stamp with no commit on it when phase 1 was sealed, so there was no diff
+to decline to read. The attack set and the ground truth were written and
+hashed BEFORE the work existed —
+`attack-V-T-219-s3.md`
+`02f51e92e9094f2aea75bb83936531451c3f8112fed554640295fb2a48a544a2`,
+`ground-V-T-219-s3.md`
+`b288a7023061fb88cb79659c8f2f9eeaae94bcf8f6927e261f92dc430e46f204`,
+sealed 2026-09-02T04:54:39Z (`stamps-V-T-219-s3.txt`
+`09947260842e5b3fc235fa80baed4dfc9c2344f47ef4e750942b6578fe9e5116`). The
+dispatching seat's phase-2 message carried the executor's own summary;
+it was read AFTER the seal, and nothing below rests on it — every claim
+it makes that this verdict repeats was re-measured here.
+
+### The card's own criteria, one at a time
+
+1. **REMOVE or MAKE REACHABLE — removal, and I confirm no reachable
+   shape exists.** Measured independently at the base BEFORE the diff
+   existed: fourteen `touches:` spellings through the real `expandFence`
+   with the real oracle, and then the whole board — **464 live cards, 365
+   fences the dispatch writer would accept, 0 producing a non-empty
+   `excluded`, 0 selecting the arm.** The composition is structural, not
+   incidental: `excluded` is non-empty only when a card names its own
+   file, and the own file then either leaves `paths` (token = the file)
+   or is contained by a domain — and the only containing domains are
+   `docs` and `docs/tasks`, both `rejected` since T-219, which makes the
+   fence `unusable`, which the writer refuses outright. Re-run at the tip
+   after the diff: **section A of the probe is byte-identical to the
+   base** (the parser was not touched).
+2. **A BODY REDS UNDER A MUTANT OF WHICHEVER ARM REMAINS — met, by my
+   own mutants, each landing read from `git diff` and never from a
+   mutator's report.** At the tip, on this bench, port 25219 (baseline
+   there: **54 passed** at both refs):
+
+   | my mutant | landing | result | kill set |
+   |---|---|---|---|
+   | A `carveOutFor`'s `alwaysWritable` loop → `of []` (scoped: the same text occurs twice in the file, and the driver REFUSED the unscoped edit rather than mutating the lane arm too) | line 901 | 1 failed / 53 passed | {`the carve-outs each free a DIFFERENT write`} |
+   | B `carveOutFor`'s `INTEGRATION_SEAT_PATHS` loop → `of []` | line 906 | 1 failed / 53 passed | {the same body} |
+   | C **data mutant** — the constant narrowed to `["docs/STATE.md"]` | line 342 | 2 failed / 52 passed | {that body, `the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes`} |
+   | D the removed arm **re-added byte-identical to the base's** | +8 lines at 901 | **54 passed** | **EMPTY** |
+   | E arm 2's `why` string replaced | line 903 | 1 failed / 53 passed | {the same body} |
+   | F **coupling control** — `expandFence`'s own-file subtraction disabled (`if (false && …)`), `lib/parser` rebuilt | `fence.ts:496` | 3 failed / 51 passed | {that body, `` `excluded` PARTICIPATES… ``, `a card fencing a domain that CONTAINS docs/tasks…`} |
+
+   Containment (step 2b, and never the count): A = B = E as sets, and all
+   three are contained in C — so the two surviving arms are pinned by one
+   body, with only the DATA mutant reaching a second. That is the
+   suite's pre-existing shape and not something this card degraded. **F
+   is what makes the surviving allow non-vacuous**: the `not-a-lane`
+   answer is coupled to the parser's subtraction and reds when it is
+   removed, so the criterion is not satisfied by a hook that stopped
+   enforcing anything. `fence.ts` restored to
+   `f5a5e065a6626665b5aaa38845b41571872a948366011f8a69abadf7c4e2616b` and
+   the hook to `5e309398…` after every mutant, verified by `shasum`.
+3. **THE WRITE STAYS ALLOWED, WITH THE REASON ON THE ASSERTION — met and
+   UNCHANGED.** An eight-probe matrix through the real dispatch writer
+   and the real `decide`, run at the base and re-run at the tip, is
+   **identical in all eight rows**: the lane's own card from the seat
+   `allow`/`not-a-lane`; another card `allow`/`protocol-carve-out`;
+   `docs/STATE.md` and `docs/checkpoints/…` `allow`/`protocol-carve-out`
+   (*standing write*); a fenced `docs/ROADMAP.md` `block`/
+   `held-by-a-live-lane`; inside the lane `always-writable`,
+   `always-writable`, `inside-the-fence`. The only movement anywhere is
+   the one I pre-committed to in phase 1: a DIRECT `carveOutFor(<own
+   card>, <manifest carrying an excluded>)` moves from the removed arm to
+   `alwaysWritable`/`docs/tasks` — never to `undefined`. Mutant E proves
+   the surviving reason is asserted and not merely returned.
+4. **THE DECISION IS RECORDED**, in the tree and not only in a report:
+   the header carries the three composing facts, the measurement, the
+   rejected alternative with the reason it is wrong in its own words, and
+   the property that survives.
+
+### What I attacked and found clean
+
+- **Fence (rule 5).** `git diff --name-status a7cc65b..7129d90` is three
+  paths: `.claude/hooks/lane-fence.mjs` (the whole fence), this card
+  (outside every fence including its own), and the new
+  `docs/tasks/T-219-s5-…md` (under `docs/tasks`, which every manifest
+  carries as `alwaysWritable`). **No path outside the licence, and none
+  reached by a Bash write around the guard.**
+- **The header's new claims, checked against measurement rather than
+  read.** *"the one arm that READ `excluded` is gone"* — `grep -n
+  excluded` at the tip finds only the shape check and prose, so the
+  claim is true. *"all five manifests on `Mac.lan` on 2026-09-02 carried
+  `excluded: []`"* — `hostname` is `Mac.lan`, and I read the live
+  manifests read-only twice, at 04:51Z (T-018-s5, T-215, T-219-s3,
+  T-229-s4, T-238) and again at 05:0xZ after the board moved (T-018-s6,
+  T-215-s1, T-219-s3, T-229-s6, T-238): five each time, `excluded: []`
+  each time. The three pinned header sentences
+  (`lane-fence.spec.ts:542`) survive the rewrite: both required strings
+  present once, the forbidden one absent.
+- **The refusal message.** It no longer lists `excluded` among
+  "carve-outs checked", and the sentence replacing it was DRIVEN, not
+  read: a real `held-by-a-live-lane` refusal at the tip prints
+  `carve-outs checked and none matched: docs/tasks (unfenceable),
+  docs/STATE.md, docs/checkpoints (this seat's standing writes)` followed
+  by the card named by path. No spec body asserts on that fragment, so
+  nothing but reading would have caught a stale one.
+- **Security sweep — this diff TIGHTENS the guard, measurably.** The
+  removed arm was unreachable for every manifest the parser PRODUCES and
+  reachable for one it does not. A forged or pre-guard manifest carrying
+  `excluded: ["app"]` beside `paths: ["app"]`, judged by the two hooks
+  over the same fixture: **base `allow`/`protocol-carve-out`, tip
+  `block`/`held-by-a-live-lane`.** `readManifest` shape-checks `excluded`
+  and never bounded its contents, so that allow was live; it is gone. No
+  new input path, no new dependency (the hook's import surface is still
+  node builtins only), no fail-open branch added, nothing widened.
+- **Adjacent surfaces.** `lane-fence.spec.ts` **54 passed** at the tip
+  (identical to the base's 54); `lib/parser` **363 passed / 16 files**
+  at the tip, whose smoke body parses the live `docs/` tree and so
+  validates both card files; `npm run capabilities:check` **CURRENT** (no
+  test name moved, because no spec was touched); `docs-gate.mjs` on the
+  two card paths **FIRES** and names the three suites, which the lane
+  ran; `index --check` **CURRENT** at the base and re-asked below;
+  `git merge-tree --write-tree main 7129d90` exit **0**, three paths
+  (my tree hash differs from the lane's only because `main` has moved to
+  `fafb6a7` since their run — the path set is identical).
+- **`carveOutFor` is exported and imported nowhere** (`grep -rn` over the
+  repo), so the arm's removal breaks no consumer, and
+  `lane-fence.spec.ts:1533`'s export contract still holds.
+
+### Findings that are NOT failures, recorded rather than folded in
+
+1. **Mutant D is the honest residual and the lane named it first.** With
+   the arm put back verbatim the suite passes 54-for-54, so this change
+   is invisible to the suite in BOTH directions. I reproduced that
+   independently before reading the lane's account of it. It is the
+   condition the arm's own header described about itself, it is why
+   *left inert* was rightly refused, and the body that would close it
+   lives in `tools/e2e/tests/lane-fence.spec.ts` — reserved right now by
+   `T-215-s1`, which I confirmed from the live worktree list rather than
+   from the covering message. Routed as `T-219-s5` with the exact sites.
+   Correct handling of a fence that is narrower than the card's ask.
+2. **One body carries the seat-side carve-outs.** Mutants A, B and E all
+   kill only *the carve-outs each free a DIFFERENT write*; only the data
+   mutant C reaches a second. Pre-existing, not caused here, and worth a
+   line on `T-219-s5`.
+3. **A flat sentence with a conditional truth.** The new
+   `INTEGRATION_SEAT_PATHS` comment states the own file *"is subtracted
+   from `paths` … so it is never reserved"* without the qualifier the
+   long block three screens down supplies — it is never reserved
+   BECAUSE T-219 refuses every containing domain. True at this ref (0 of
+   464 cards), and it would be the first sentence to go stale if that
+   refusal ever moved. Suggestion, not a defect.
+4. The card's own body predicted this landing would red
+   `the carve-outs each free a DIFFERENT write` by name. It did not, and
+   could not: that prediction belongs to the reachable branch. The card's
+   *What to build* prescribes the opposite for the branch actually taken,
+   so the two are consistent and the prediction is simply spent.
+
+### The gates MY OWN commit could move, re-run at MY tip
+
+This verdict is a write to `docs/tasks/`, which the docs gate names as a
+code input, so the suites it names were re-run after the commit below and
+their results are reported with the verdict.
