@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-229
 blocked_by: []
 touches: [docs/ARCHITECTURE.md, docs/architecture/components/C-01-method.md]
@@ -52,3 +52,13 @@ give them a keeper — the same assertion, widened to read the component
 row — or replace the value with a pointer to CONVENTIONS' stamp, the
 way ROADMAP already does. The second is cheaper and is what ROADMAP's
 own sentence recommends.
+
+## TRIAGE, 2026-09-02 — `planned`, the integrator's, no lane
+
+The architect seat, at the stamp of T-229's merge (d641846). Both
+references are reconciling writes of the kind the checkpoint already
+owns (docs/ARCHITECTURE.md is a checkpoint document): the seat holding
+the integration checkout makes the two one-word edits in the next
+checkpoint commit and closes this card there, naming the bump they
+follow. The recurrence at every bump is the CONVENTIONS gotcha's own
+routing rule, kept.

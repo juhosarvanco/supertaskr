@@ -47,3 +47,9 @@ is `SHAPE EIGHT` in `docs/CONVENTIONS.md`'s poison catalogue — a
 search-based assertion satisfied by any occurrence. If it is built, the
 haystack is narrowed to the section and the ANCHOR is asserted unique,
 the way `snapshot_version_matches_the_live_method_stamps` does.
+
+## TRIAGE, 2026-09-02 — stays `suggested`
+
+The architect seat, at the stamp of T-229's merge (d641846). One eval
+for one rule does not earn a lane; promote when a second method rule
+wants a content reader, and fold both into one T-155-class card.

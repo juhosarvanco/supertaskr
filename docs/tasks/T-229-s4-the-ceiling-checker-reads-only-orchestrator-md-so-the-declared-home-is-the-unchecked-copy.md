@@ -4,11 +4,11 @@ title: The concurrency ceiling's checker reads only orchestrator.md, so after T-
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 3
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-229
 blocked_by: []
-touches: [app/test/select-board.test.ts]
+touches: [app/test/select-board.test.ts, method/lane-protocol.md]
 builder:
 verifier:
 built_by:
@@ -43,3 +43,24 @@ move in one commit. `app/test/**` is outside T-229's fence, so it is
 routed rather than taken. The body's own comment already warns that the
 DOCS GATE cannot name this suite, because `method/` is not `docs/` —
 which is why this drifts silently if nobody takes it.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3
+
+The architect seat, at the stamp of T-229's merge (d641846). Promoted
+because the ceiling's declared HOME is now the copy nothing checks, and
+the repair is a four-line edit to one body. Fence widened to
+`method/lane-protocol.md` for the absorbed rider below. Criterion added:
+WHEN the checker runs THE body SHALL read the ceiling from its HOME
+(`method/tasks/TASK-FORMAT.md`) AND from orchestrator.md's citation, and
+SHALL red when either moves away from `CONCURRENCY_CEILING`; a positive
+control SHALL show it red against a planted home with the citation
+intact.
+
+## Absorbs: T-229-s1 (2026-09-02)
+
+`method/lane-protocol.md` rule 4's STANDING, NOT THE SEAT clause opens
+*"At roles/orchestrator.md's ceiling of 3–5 concurrent lanes"* — a
+pointer one hop stale after T-229 moved the home to TASK-FORMAT. The
+two-word edit rides this lane, which is the next lane to open the
+ceiling's readers; the pointer SHALL name the home, and the checker's
+new home read makes the pointer's target the checked copy.

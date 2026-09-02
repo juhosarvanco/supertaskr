@@ -46,3 +46,11 @@ was designed for it.
 FLOOR with no calibration behind it. The adapter is what turns four
 declared floors into figures, and until it exists every bump's
 model-in-loop line is the honest `Runner: NONE`.
+
+## TRIAGE, 2026-09-02 — stays `suggested`; a ruling is owed first
+
+The architect seat, at the stamp of T-229's merge (d641846). A real
+model-in-loop runner spends tokens against a real model at every bump;
+which model, what budget per bump, and whether a bump may ship without
+it are @human's rulings, not a card's. Held for that ruling; the
+precondition for T-155-s6 is noted.
