@@ -673,3 +673,316 @@ is outside the fence; regeneration (`npm run capabilities` from
 tools/e2e/) is the integrator's, in the merge commit, per
 `docs/CONVENTIONS.md`. `npm run capabilities:check` reds until then, by
 design.
+## VERDICT — 2026-09-02, claude-opus-5@subagent (verifier seat, `review: independent`)
+
+**REJECTED at `1bfe8f1dff930d764b62d692196cd0c885119c43`**, on ONE
+reproducible failure against this card's own absorbed criterion. Every
+other criterion is MET, several beyond what was asked, and the finding
+is two lines at a site this lane already edited.
+
+**BLINDNESS: CLOCK-SHAPED.** The bench
+(`/Users/ujju/Projects/nputer-V-T-219`) was cut at this card's base
+alongside the lane, and phase 1 was sealed before the branch carried a
+commit: `attack-V-T-219.md`
+sha256 `77f43864fd4153b0c8e3140debba78bcd4210a0ce2018adf2abcde6941a7cc97`,
+`ground-V-T-219.md`
+sha256 `5681cc842ca6a9aa383ad49fd0b1b35d1b623a313400f42aef079a55f724d5b1`,
+sealed 2026-09-02T03:08:15Z. Disclosed there and repeated here: a
+`git worktree list` at this seat's first call printed the lane's row at
+the base SHA — a tip at one instant, no content. **I did not read the
+Implementation notes above**; I read section HEADINGS to check the card's
+shape, the diff, and the code comments inside it, which are the artifact.
+
+### THE FINDING — `readDispatchOrder` still reports an undeclared fence `disjoint`, and does it exactly when it matters
+
+The absorbed T-227 criterion reads: *"IF a card's `touches:` is empty
+THEN `expandFence` SHALL refuse it, naming the card, and the dispatch
+guard SHALL never report it disjoint."* The first half is met. The
+second is met **only while at least one lane is live**.
+
+Reproduced in this bench at `1bfe8f1`, `lib/parser/dist`:
+
+```js
+const ROADMAP = { path:'docs/ROADMAP.md', content:'# Roadmap\n\n## F-01 One\n' };
+const card = { path:'docs/tasks/T-001-a.md', content:
+  '---\nid: T-001\ntitle: A\nstatus: planned\nmilestone: 4\npriority: 1\n' +
+  'blocked_by: []\ntouches: []\n---\n\nBody.\n' };
+readDispatchOrder(parseProjectFromFiles([ROADMAP, card]), []).all
+```
+
+**Actual, at this tip:**
+
+```
+T-001  state=startable  T-001 has no unmet blocker and it reserves nothing,
+                        disjoint from every live lane.
+```
+
+That is, verbatim, the sentence `lanes.test.ts`'s own new comment names
+as the defect this card closed — *"such a card came back `startable`,
+wearing the sentence 'it reserves nothing, disjoint from every live
+lane'"*. With one lane handed in, the same board answers `unfenceable`
+with the new clause, correctly. So the refusal is armed when the card is
+held anyway and disarmed when it is not.
+
+**WHY THIS IS NOT A CORNER.** `rule()` reaches `compareFences` only
+through `holds`, and `holds` is empty when the lane list is. **Dispatch
+happens when lanes are free**, so the zero-lane state is the canonical
+dispatch moment, not an exotic one. `brief.mjs --dispatch` is what STATE
+sends every seat to for *what can START*, it is `readDispatchOrder`, and
+I found no other empty-`touches:` guard between it and `--write-fence`
+(`grep` over `tools/e2e/scripts/dispatch-order.mjs` and `brief.mjs`).
+The write side still refuses at the arm — which is exactly the
+"two halves disagree in the safe direction, by luck rather than by rule"
+that T-227 was filed about. Latency is unchanged in kind: 0 `planned`
+cards carry an empty `touches:` at this tip, and 98 cards do (96
+`parked`, 2 `done`), so one triage promotion is still all it takes.
+
+**THE REMEDY IS IN FENCE AND IS SMALL.** `rule()` already receives
+`fence`. A `fence.tokens.length === 0` branch placed BEFORE the
+`holds.length === 0` branch in `lib/parser/src/lanes.ts` closes it, and
+the clause text already written for the hold path can be reused. A body
+pinning the zero-lane case belongs beside the `T-219/T-227` body in
+`lanes.test.ts`, whose fixture hands in `[lane('T-002')]` and therefore
+cannot see this.
+
+### WHAT IS MET, measured rather than accepted
+
+- **The predicate is the one correct spelling.** `unfenceableWithin` is
+  `sharedDomain(domain, path) === path` over the LIST — one-directional,
+  routed through the module's single containment primitive, no second
+  prefix rule (T-057 held). Probed at the tip: `docs`, `docs/`,
+  `./docs/**`, `docs//`, `docs/tasks`, `docs/tasks/` → `rejected`;
+  `docs/task`, `docs/tas`, `docs/tasks-archive`, `docs/tasksX`,
+  `docs/tasks/T-1.md`, `docs/tasks/rejected`, `docs/ROADMAP.md`,
+  `docs/architecture/components/`, `docs/rooms` → `path`, reserving
+  themselves. Both separator-less directions and the both-ways reading
+  are excluded by measurement, not by reading.
+- **The refusal names what it swallowed** — `entry "docs" fences 'docs',
+  which CONTAINS 'docs/tasks'` — and a token that IS the entry does not
+  claim containment.
+- **The slug arm is closed**, which the card did not ask for and the
+  cascade needed: the refusal sits after the slug branch's `continue`,
+  so a component whose `paths:` reached the directory walked past the
+  rule. Synthetic registry, with the control that a narrow slug still
+  resolves, plus a live-registry census proving 0 instances.
+- **The reverse direction is protected, live.** 21 tokens across 5 cards
+  (T-108, T-108-s2, T-159-s1, T-160-s4) name files inside `docs/tasks`;
+  all resolve `path` at this tip, and a new census body asserts it with
+  a non-empty guard.
+- **T-054 is recorded, not repaired**, and status does not filter the
+  census: `['T-054 docs [done]']`.
+- **`compareFences` changes its ANSWER, not just its issue list** —
+  `unusable` in both argument orders, with `overlapping`/`disjoint`
+  controls beside it. The `Fence.unusable` list is deliberately left
+  empty (raw tokens only), which is also what keeps `lane-fence.spec.ts`'s
+  empty-`touches:` body reading `expands to no path at all`; I measured
+  in phase 1 that that body's colour turns on exactly this wording.
+- **No body was deleted.** fence.test.ts 27→40, lanes.test.ts 16→17,
+  lane-fence.spec.ts 53→54; the two names that disappear are RENAMES
+  whose properties are preserved and strengthened, and the own-file
+  carve-out was re-fixtured onto `docs/rooms/` with its kill set
+  deliberately kept disjoint from the sibling-directory control's.
+- **Purity and interfaces hold**: no throw, no filesystem, one type-only
+  import, `UNFENCEABLE_PATHS` still `readonly` + `Object.freeze`d — which
+  `lane-fence.spec.ts:1729`'s constitution check depends on.
+- **Fence conduct is correct** (lane-protocol rule 5). The diff touches
+  `lib/parser/**`, `tools/e2e/tests/lane-fence.spec.ts`, this card and
+  two routed findings — all inside the widened `touches:` or the
+  unfenceable directory. The two e2e reds I pre-measured in phase 1 were
+  the subject of a fast-path-A widening rather than a breach, and
+  `.claude/hooks/lane-fence.mjs` was ROUTED as `T-219-s3` rather than
+  touched.
+
+### DRILLS I RAN MYSELF (verifier.md 2b)
+
+Eight code mutants and three data mutants, applied in this bench,
+landing read from `git diff --numstat`, reverted after each. **All
+killed.** `bothways` 7, `nosep` 8, `equality` 6, `oneway` 12,
+`slugskip` 1, `noissue` 1, `nocompare` 2, `noclause` 1 (of 362).
+
+**KILL-SET CONTAINMENT, settled by a ninth mutant rather than argued.**
+An asymmetric `compareFences` guard (`a.tokens.length === 0` only) kills
+the `fence.test.ts` T-227 verdict body and NOT the `lanes.test.ts` body,
+while `noclause` kills the lanes body and not the fence one. Neither
+kill set contains the other; both are load-bearing.
+
+**THE POSITIVE CONTROL WAS SEEN FAILING, twice, in the arrangement's
+absence.** In phase 1, before this diff existed, a `widened` mutant
+(same first path segment) red the sibling-directory control. At this
+tip, the DATA mutant that adds `docs/architecture/components` to
+`UNFENCEABLE_PATHS` reds it and the new T-219 control alike (4 bodies).
+The list emptied reds 11; the list replaced with `['method/rooms']` reds
+7, including the named-inside control — so the block is DERIVED from the
+data and not typed against it, which no code mutant could have shown.
+
+### THE SIX E2E REDS ARE NOT THIS DIFF'S, AND I MEASURED THAT RATHER THAN RELAYING IT
+
+`npx playwright test` at this tip, `NPUTER_E2E_PORT=25219`: **549
+passed / 6 failed** (555 bodies; the base carried 554). The six:
+`card-preflight.spec.ts:684`, `checkout-currency.spec.ts:852` and `:953`,
+`lane-lock.spec.ts:899`, `session-economics.spec.ts:179` and `:365`.
+
+**CONTROL: the identical six fail at the BASE `d272558`, in this same
+bench, now** — where the diff does not exist. The same bench ran
+**554/554 green at that same base** earlier today. What changed is the
+MACHINE, not the tree: main advanced past the base and now carries
+`99349db`, the newest main commit touching `.claude`, so
+`checkout-currency` judges any checkout at or below the base
+`guard-surface-behind`, 35 commits back; and new worktrees
+(`nputer-T-018-s5`, `nputer-V-T-018-s5`, `nputer-T-215`,
+`nputer-V-T-215`) appeared in the machine-wide sweep. That is
+`method/lane-protocol.md` rule 4's own MACHINE-scoped-surface hazard,
+and none of the six is attributable to this card.
+
+### GATE STATE AT `1bfe8f1`, each with its command
+
+| gate | result |
+|---|---|
+| `npx vitest run` (lib/parser) | **362 passed / 362**, 16 files |
+| `npx tsc --noEmit` (lib/parser) | 0 |
+| `npm run build` (lib/parser, app) | 0 |
+| `npm test` (app) | **1131 passed / 1131**, 50 files |
+| `npx playwright test` (tools/e2e) | 549 / 6 — all six reproduce at the base |
+| `lint:tokens` · `lint:docs` · `typecheck` (tools/e2e) | 0 · 0 · 0 |
+| `docs-gate.mjs <the 8 changed paths>` | 0 — frontmatter parses, legal statuses, budgets hold |
+| `capabilities:check` | **1, STALE** — two test names moved and one added; regeneration is the integrator's at the merge (CONVENTIONS) |
+| `index --check` (app/src-tauri) | **1, STALE** — a real stale (counts printed, not `MISSING`); regeneration is the integrator's with the checkpoint |
+
+Neither STALE is attributable to this lane; both were pre-committed as
+non-attributable in my sealed phase-1 set before I saw a line of the diff.
+
+### SECURITY SWEEP (verifier.md 3)
+
+No new input path, no endpoint, no query, no secret, no dependency. The
+realistic hazard in this change is a WIDENED refusal — a guard that
+refuses lanes which never touch reintroduces rule 5's own measured
+failure — and the near-miss probes above close it in both directions.
+The one direction that could have gone wrong quietly, refusing the
+`docs/tasks/T-*.md` narrowing the rule itself prescribes, is pinned by
+two controls, one of them over live board data. Nothing found.
+
+### ROUTED FINDINGS, checked because prose is a code input here
+
+`T-219-s2` and `T-219-s3` both parse: legal `status: suggested`,
+one-level suffix ids, no reserved indicator opening either title,
+`touches:` declared. `docs-gate.mjs` reads them clean.
+
+### TO CLOSE
+
+Fix the finding, add the zero-lane body beside the existing
+`T-219/T-227` one, and this is an APPROVE. Nothing else in the diff is
+in question, and this verdict's figures are all measured at
+`1bfe8f1dff930d764b62d692196cd0c885119c43` except the base control,
+measured at `d272558331a826ae6a82a4ff91d6d82ea6f6fe1c`.
+
+## RE-VERDICT — 2026-09-02, claude-opus-5@subagent (verifier seat, `review: independent`)
+
+**APPROVED at `518da9dfe5cb3d1ae390d4d0c53ce1a29f7d3edf`.** The finding
+above is closed, measured on MY OWN fixture rather than on the body the
+lane wrote for it, and the fix moved nothing else.
+
+### THE FINDING IS CLOSED — my own three-line fixture, both ways
+
+The same script that produced the rejection, unchanged, at this tip:
+
+| board | before (`1bfe8f1`) | now (`518da9d`) |
+|---|---|---|
+| `touches: []`, **zero lanes** | `startable` — *"it reserves nothing, disjoint from every live lane"* | **`unfenceable`** — *"T-001 declares no `touches:` at all… nothing can be ruled disjoint from it"* |
+| `touches: []`, one lane live | `unfenceable` | `unfenceable`, unchanged |
+| `touches: [app/src/main.tsx]`, zero lanes — **the control** | `startable` | `startable`, *"disjoint from every live lane"*, unchanged |
+
+The forbidden sentence is gone from the case that produced it and still
+present where it is true. **The refusal did not widen**: the declared
+fence is still startable on the same zero-lane board, which is the
+direction a careless fix breaks and which would look just as green.
+
+### THE REMEDY DIFFERS FROM THE ONE I NAMED, AND THE DEVIATION IS RIGHT — verified, not accepted
+
+I proposed an early `fence.tokens.length === 0` return. The lane added
+the term to the existing guard instead
+(`holds.length === 0 && fence.tokens.length > 0`) and falls through, on
+the argument that an early return drops the clauses the `unfenceable`
+branch accumulates. **Measured at this tip** on a board carrying an
+undeclared card AND a lane whose card is not in the checkout, the single
+reason carries BOTH causes:
+
+> *…T-001 declares no `touches:` at all, so it has no fence to compare —
+> an undeclared fence is not an empty one…; **this checkout has NO CARD
+> for T-999** (refs/heads/task/T-999-lane at /w/T-999), so that fence
+> could not be expanded at all…*
+
+My remedy would have returned before that clause list is built. **The
+lane's shape is better than the one I named**, and one copy of the
+sentence survives (T-057) rather than two.
+
+**AND IT EXPOSED A REAL THROW.** `[].every(...)` is `true`, so once the
+guard above stopped returning for every empty `holds`, `ownLaneOnly`
+would have indexed `holds[0]` — `undefined` — in a module whose header
+promises *"Nothing here throws"*. I re-derived both mutants myself,
+landing read from `git diff --numstat`, reverted after each:
+
+- **M16**, the old guard restored → the new body reds on *"an undeclared
+  fence got a green light at the dispatch moment"*. 1 of 363.
+- **M17**, the count guard removed → the same body reds with
+  `TypeError: Cannot read properties of undefined (reading 'lane')`.
+  The guard is load-bearing, not defensive.
+
+### THE FIXTURE CHANGE MASKS NOTHING — checked, because a test-helper default is where a mask would live
+
+`card()` in `lanes.test.ts` now defaults each fixture to its own
+`fixture/<id>` domain, with `touches: []` as an explicit opt-in to the
+undeclared case. I reverted that default to `[]` and re-ran: **exactly
+three bodies red**, and all three are about `underway` and dispatch
+ORDER — nothing about fences. So the default repairs fixtures that
+declared no fence by accident and hides no fence behaviour. The two
+bodies that need the undeclared case pass `touches: []` in one visible
+token, which is the right way round.
+
+### THE WIDER REMEDY'S COST IS REAL, so routing it rather than taking it was correct
+
+The executor filed `T-219-s4` instead of widening the term to
+`fence.unusable.length > 0`. **Measured over the live board at this tip,
+both ways:** oracle-less, that widening moves exactly one live card —
+`T-164-s1` (`status: planned`, `touches: [bin]`, unresolved because no
+component claims `bin/`) — from `startable` to `unfenceable`; **with**
+the dispatch oracle supplied it moves nothing. A live `planned` card is
+not collateral a fix takes on the way past. Routed correctly, and
+`T-219-s4` parses clean.
+
+### NO ADJACENT BREAKAGE — the live board answers identically
+
+`readDispatchOrder` over this repository's own board, zero lanes, with
+and without the oracle: **114 startable, 0 unfenceable, 0 fenced** — the
+same 114 as at `1bfe8f1`. `parseProject` issues 0. Rejected tokens still
+`['T-054 docs [done]']`. `lanes.ts` gained no `throw`, no filesystem
+read and no import.
+
+### GATE STATE AT `518da9d`, each with its command
+
+| gate | result |
+|---|---|
+| `npx vitest run` (lib/parser) | **363 passed / 363**, 16 files (+1 body) |
+| `npx tsc --noEmit` (lib/parser) | 0 |
+| `npm run build` (lib/parser, app) | 0 |
+| `npm test` (app) | **1131 passed / 1131** |
+| `npx playwright test` (tools/e2e) | **549 / 6** — the SAME six, and I proved at the previous pass that all six reproduce at the base `d272558` in this bench, which ran 554/554 green there earlier the same day. Machine-scoped, not this card's |
+| `lint:tokens` · `lint:docs` · `typecheck` | 0 · 0 · 0 |
+| `docs-gate.mjs <the 4 changed paths>` | 0 — frontmatter parses, legal statuses, budgets hold |
+| `capabilities:check` | 1, STALE — carried over from the previous pass's test renames; the integrator's at the merge |
+| `index --check` | 1, STALE — a real stale (counts printed, not `MISSING`); the integrator's with the checkpoint |
+
+Neither STALE is attributable to this lane; both were pre-committed as
+non-attributable in my sealed phase-1 set.
+
+### CLOSING
+
+Everything the previous verdict approved still holds — the predicate,
+the slug arm, the reverse direction over live data, the message, the two
+fixture repairs, the routing, the fence conduct. The one finding is
+closed, closed better than I specified, and the fix carried its own
+second-order hazard out with it. `status: verifying` is the lane's to
+move; the merge conflict on this card is the integrator's, resolved with
+the lane's copy plus these two verdict sections.
+
+Figures measured at `518da9dfe5cb3d1ae390d4d0c53ce1a29f7d3edf`, except
+the e2e base control at `d272558331a826ae6a82a4ff91d6d82ea6f6fe1c`.
