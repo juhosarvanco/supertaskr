@@ -12,7 +12,7 @@ touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.s
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -482,3 +482,291 @@ drill baseline after 0 (52) · worktree removed 0. The four-suite battery
 and the standing gates at the fix-pass tip are in the report; the gate
 DECISIONS do not move, because the merge forecast names the same three
 paths it named before.
+
+## VERDICT — REJECTED, 2026-09-02, claude-opus-5@subagent (V-T-230-s7)
+
+Judged at `5ce89ea` (code tip `70cd426`) against base `763548c`, in the
+detached bench `/Users/ujju/Projects/nputer-V-T-230-s7`. This seat was
+first sent `5e09cb0` and judged there; the dispatching seat corrected the
+tip to `5ce89ea` mid-pass. `git diff 70cd426 5ce89ea -- tools/e2e/` is
+EMPTY, so the code and the spec judged are byte-identical at both, and
+every reading below was re-derived at `5ce89ea` before this was
+committed. One finding,
+below, and it is the second acceptance criterion's own arrangement. Every
+other ask on this card and on the four it absorbs is met, most of them
+better than asked; the repair is one branch of `flush()` and one body.
+
+**MY BLINDNESS WAS THE CLOCK, NOT A DISCIPLINE, AND ONLY ONE OF THOSE
+WAS GUARANTEED.** Phase 1 reached this seat before the work existed —
+no diff, no tip ahead of the base, no note to decline. The attack set,
+the ground truth and the two instruments were written and sealed at
+**2026-09-02T07:17:40Z**, sha256 `95f04afa9864a0f4…` (attack),
+`d31eb7b179e86b56…` (ground), `7a842ee167ac811b…` (the stamp file). The
+finding below is attack A4, written out in full before the diff existed,
+with the fixture it is measured on and the ruling pre-committed as
+REJECT-level. I note also that the lane's notes quote this seat's
+phase-1 board figures back at it; my readings were sealed first, and
+every figure I print below I re-derived here.
+
+### THE FINDING — the marker segment ends at the LINE, not the NEEDLE
+
+The fold ends a unit at a `CARD CLAIM` LINE, which is the right idea and
+the lane's own invention. But a marker's payload wraps like everything
+else in a seventy-column document, and the CONTINUATION line of a
+wrapped marker is not itself a marker line: it joins the NEXT unit,
+carrying the needle's orphan closing quote with it. Under `[^"]+` that
+orphan pairs with the next run's OPENING quote, so the real unmarked run
+is swallowed and a run nobody wrote is listed in its place.
+
+Reproduce — a marker written the way this repository writes one, and an
+ordinary unmarked assertion after it in the same paragraph:
+
+    ---
+    id: T-903
+    ---
+
+    The rule this card rests on is stated in docs/CONVENTIONS.md.
+    CARD CLAIM (docs/CONVENTIONS.md): "search the COLLAPSED text, the way
+    every mechanical reader of this file does before it matches anything"
+    And the card also asserts "a sentence nobody marked at all" beside it.
+
+driven straight through the module's own export, the way three bodies in
+`tools/e2e/tests/card-preflight.spec.ts` already drive it:
+
+    unmarkedQuotes(card, pathOracle(root))
+
+- at `763548c`: `[{ line: 8, text: "a sentence nobody marked at all" }]`
+- at `70cd426`: `[{ line: 8, text: "And the card also asserts" }]`
+
+The same card with the needle short enough to fit on the marker line
+reports `a sentence nobody marked at all` at both refs. So the census
+does NOT treat a marked wrapped run *exactly as it treats a single-line
+marked run*: with the single-line marker the neighbour survives, with
+the wrapped one it is destroyed. That is the second criterion in its own
+words, and it is the arrangement the criterion names — a run that
+crosses a line break, marked.
+
+**THIS IS NOT THE RE-PAIRING LOSS THE `cannot` LINE DISCLOSES.** That
+disclosure is about an odd quote character in ordinary prose reaching
+across a join, which follows from the construction the card mandates and
+is honestly stated. This is the marker's own needle reaching past the
+boundary the lane built to contain it — the module's own comment says
+folding through a marker *"would both leak that needle into the unmarked
+census and pair quotes either side of it that nobody wrote as a pair"*,
+and that is exactly what happens here, one line further down. Nothing in
+the report, the class text or the notes tells the author.
+
+**IT IS A FALSE-NEGATIVE CENSUS PLUS A FABRICATED LISTING**, which is
+the direction this card calls the wrong kind: an assertion the author
+made disappears, and a sentence they did not write is attributed to them
+on a line a dispatcher decides on.
+
+Latency, stated honestly: **zero live cards carry a `CARD CLAIM` marker
+at `5ce89ea`** (measured over the flat board), so nothing on the board is
+wrong today. That is not a defence for a guard whose whole subject is
+the marker.
+
+Direction, not a design: the unit has to end where the marker's PAYLOAD
+ends rather than where its first line does — consume lines into the
+marked segment until the marker line's quote count is balanced. Both
+halves want a body: the wrapped-marker fixture above, and a mutant that
+ends the segment at the line rather than the payload.
+
+### WHAT PASSED, MEASURED HERE
+
+- **The fence held.** `git diff --name-only 763548c..5ce89ea` names
+  exactly `tools/e2e/scripts/card-preflight.mjs`,
+  `tools/e2e/tests/card-preflight.spec.ts` and this card.
+  `dispatch-brief.mjs` is untouched, as T-230-s11 requires.
+- **No cross-paragraph fold, over the live board rather than a fixture.**
+  Every body run the tip reports is a substring of ONE paragraph's folded
+  text: **0 exceptions across 473 flat cards at `5ce89ea`**. And **0**
+  runs dated at a line the card does not have.
+- **The figures re-derive exactly.** With the base module and the tip
+  module run over the same board at `5ce89ea`: line-scoped **5,973** runs
+  (5,928 body + 45 frontmatter) on **422** cards, **388** below the
+  floor; folded **8,421** (8,376 + 45) on **451** cards, **356** below
+  the floor; **233** runs lost across **127** cards. Every one of those
+  is the lane's own number. My own sealed estimator at `70cd426` reads
+  **2,561** wrap-spanning runs on **386** of 473 cards — the lane's
+  headline figure, to the unit, from an instrument written before the
+  work existed. Its one-run difference from the production loss (234 vs
+  233) is the replica's, as the notes say.
+- **The disclosure is pinned per class.** Eighteen one-capital mutants at
+  sites *I* chose — deep in each string, never a fragment the lane
+  quotes — one at a time, each landing read from `git diff` and not from
+  the mutator: **18 of 18 KILLED**. Seventeen ran automatically; the
+  eighteenth (`quotes.refuses`) is recorded because it caught the
+  instrument rather than the diff — the automatic window was unique in
+  the file but landed on `viaQuotes`, a provenance string nothing pins,
+  and survived; re-aimed by hand inside the constant it killed. At
+  `763548c` the same drill left `paths.checks` SURVIVING, which is the
+  arming this property lacked.
+- **No `cannot` string carries a digit** at `70cd426` (all eighteen), so
+  `note()` does not throw, and the fourth criterion is stated in words:
+  *OPENS IN ONE PARAGRAPH AND CLOSES IN ANOTHER stays unseen*.
+- **The escape/subject split holds.** Every author-text display site in
+  the arm is `JSON.stringify`d and both `raise()` SUBJECTS are raw. The
+  probe that discriminates — a ruling naming the subject BARE — still
+  discharges at the tip and returns nothing for an escaped subject; a
+  ruling that quotes its needle discharges either way and proves nothing,
+  which the lane found independently.
+- **The raw scalar answers T-230-s11.** A title carrying `issue #14` and
+  a quoted assertion after it yielded NOTHING at `763548c` and yields the
+  assertion at `70cd426`; a hash INSIDE the quoted run behaves the same;
+  the control without the hash is unchanged. Frontmatter runs over the
+  live board stayed at **45** at both refs, so neither the wrapper
+  regression nor a list-flattening one appeared.
+- **Suites.** `tests/card-preflight.spec.ts` on `NPUTER_E2E_PORT=25230`:
+  **47 passed, exit 0** (42 at the base). `npm run typecheck` exit 0.
+  `index --check` CURRENT. `capabilities:check` STALE — 50,248 committed
+  against 50,632 fresh, by the five bodies this lane adds; that is the
+  INTEGRATOR's regeneration in the merge commit and the lane disclosed
+  it.
+- **Security sweep.** No dependency added, no `eval`, no `RegExp` built
+  from card text, no path from a card reaching a filesystem call that did
+  not already; the widened class is a linear negated character class; no
+  secret or key in the diff. The one remaining bare interpolation in the
+  arm is `q.field`, and it cannot carry a separator: `FRONTMATTER_SCALAR`
+  admits only `[A-Za-z_][A-Za-z0-9_]*` as a key.
+
+### OBSERVATIONS, NOT FINDINGS
+
+- The raw scalar now scans a genuine trailing YAML comment. The module's
+  own header says so and no criterion asks for more; the class's `cannot`
+  line does not mention it, which is defensible because it is something
+  the arm now DOES see rather than a blind spot. Worth one clause if the
+  text is being edited anyway.
+- `M6` survived in the lane's own drill and is reported rather than
+  dressed up. I agree with the reading: on a folded unit the two classes
+  are indistinguishable, and `M1`, `M2` and `M18` kill the property three
+  ways.
+
+## RE-VERDICT — APPROVED, 2026-09-02, claude-opus-5@subagent (V-T-230-s7)
+
+Judged at `c19ac18` (fix commit `17711d5`) against the `5ce89ea` this
+seat rejected, in the same detached bench. **A4 is closed**, and the
+repair is narrower and better argued than the finding asked for. The
+phase-1 seals are unchanged and were re-verified byte for byte before
+this was written: `95f04afa…` (attack), `d31eb7b1…` (ground),
+`7a842ee1…` (stamp), `cec5f8ac…` (probe), `dc2b5283…` (estimator).
+
+**THE REJECTING VERDICT IS RE-ATTACHED ABOVE THIS ONE.** The fix pass
+built on `5ce89ea` rather than on the verdict commit `2b25ac8`, so the
+card reached this seat carrying no record of the finding it answers; an
+approval with the rejection missing is a card that has lost its own
+history. The text above is that verdict unchanged, with the one figure it
+got wrong corrected below rather than edited out of it.
+
+### A4, re-derived against the sealed reading
+
+The sealed phase-1 probe file, unmodified, run against `c19ac18`. Its
+marker fixtures now read **byte-identical to the reading at the lane's
+base**: `P5` (a marker whose needle wraps, an ordinary unmarked run after
+it in the same paragraph) is back to
+`[{ line: 9, text: "an unmarked run that follows the marker" }]`, where
+`5ce89ea` gave `[{ line: 8, text: "And it closes with" }]`. `P4`, the
+single-line twin, never moved. The whole diff of the sealed probe against
+the base is now only the intended repairs — the space-hash title, the
+hash inside a run, the wrap itself — plus the disclosed re-pairing loss.
+
+### The boundary, attacked at eight edges of my own
+
+`markerEnd` is new surface, so it was attacked rather than accepted.
+Every reading below is the census, taken at `c19ac18` and compared with
+`5ce89ea`:
+
+- a malformed marker whose quoting never closes, with a real run two
+  lines later — the run survives (the fallback does not eat the
+  paragraph);
+- malformed, where the tail line closes the quoting AND carries a real
+  run — `5ce89ea` fabricated `and then`; `c19ac18` fabricates nothing;
+- an innocuous odd quote on a single-line marker (`5" of rain`) — no
+  over-consumption, the following assertion survives;
+- two markers in one paragraph with the FIRST one wrapped — correct;
+- a TYPOGRAPHIC needle that wraps — correct;
+- a wrapped marker at the END of its paragraph, and a marker on the last
+  line with an unclosed needle — neither reaches the next paragraph;
+- `markerEnd` driven directly at five edges (balanced, wrapped, never
+  closing, typographic, closing three lines on) — all five correct.
+
+**AND THE ONE PLACE A RUN IS STILL DROPPED IS THE PLACE THE CRITERION
+POINTS AT.** A real assertion sharing the marker's payload's LAST line is
+not counted. That is exactly what happens to an assertion sharing a
+SINGLE-LINE marker's own line, at the lane's base and at this tip alike —
+measured both ways — so the two arrangements are now identical, which is
+the second criterion's own requirement. The base fabricated a run in the
+wrapped case and does not in the single-line case; that asymmetry is what
+this fix removes.
+
+### The drill, aimed by this seat
+
+Three mutants of my own, one at a time, each landing read from
+`git diff` and each restored to sha256
+`e816eba056d843dba881fc6fb82ab3c04b40bd04fb438327dbd14d4c93411374`:
+
+- **MV1** — the malformed fallback swallows the paragraph
+  (`return at` → `return para.length - 1`): **KILLED**, 1 failed of 48,
+  and the body that reds is the new one.
+- **MV3** — the skip deleted, so the segment ends at the LINE again (the
+  A4 defect, aimed independently of the lane's M19): **KILLED**, 1 failed
+  of 48, same body.
+- **MV2** — the typographic term dropped from the balance test:
+  **SURVIVED**, 48 passed, and it is INERT rather than unpinned. Every
+  one of the eight census arrangements above reads identically with and
+  without that term;
+  only `markerEnd`'s own return value moves. The reason is structural: the
+  orphan a shortened segment leaks is always a CLOSING typographic quote,
+  and `QUOTED_RUN`'s typographic alternative cannot open a run with one.
+  It is the same shape as the lane's own disclosed M6 survivor, and it is
+  killable at the function's boundary rather than at the census — one more
+  line beside the four `markerEnd` assertions already in the body would
+  pin it. Filed below as a suggestion, not a failure.
+
+Neither MV1's nor MV3's kill set contains the other's or any other body's,
+and both die at the site the property lives.
+
+### What was re-checked rather than assumed
+
+- **The disclosure is untouched.** The eighteen `CLAIM_CLASSES` strings
+  fingerprint identically to the tip where this seat killed 18 of 18
+  one-capital mutants, so that drill transfers rather than being
+  re-asserted; a spot-check mutant re-run here **KILLED**. One earlier
+  attempt at that spot-check silently failed to match its pattern and
+  reported a green — caught by reading the landing from `git diff`, which
+  is why the rule is written that way.
+- **The board figures did not move**, re-derived here: line-scoped 5,973
+  runs on 422 cards, 388 below the floor; folded **8,421** on **451**,
+  356 below the floor; **233** lost to re-pairing on **127** cards; 45
+  frontmatter runs; **2,561** wrap-spanning on **386** of 473 by the
+  sealed estimator. **0** runs not contained in a single paragraph and
+  **0** dated at a line the card lacks. The live board carries **0**
+  marked claims, so the repair moves nothing on it and never could.
+
+### A correction this seat owes on its own verdict
+
+The rejecting verdict printed the reproduction WITHOUT the
+`title: a probe card` line that the fixture it was measured on carried,
+so the card as printed there dates the fabricated run at line 7 while the
+verdict says line 8. Measured both ways here: as printed, `5ce89ea` gives
+line 7; as measured, line 8. The text was identical and the finding
+unaffected, but a figure has to re-derive from the reproduction beside it,
+and that one did not. The executor found it; it is recorded here rather
+than quietly fixed.
+
+### Filed as suggestions, blocking nothing
+
+- Pin the typographic half of `markerEnd` with one assertion beside the
+  four already there — `markerEnd(para(['CARD CLAIM (a/b): “one',
+  'two” and more.']), 0)` is `1` and is `0` without the term.
+- A run sharing a marker's last payload line is uncounted in both
+  arrangements. Consistent, and arguably worth a clause in the class's
+  own `cannot` text if that text is edited again.
+
+### Gates at this seat's own tip
+
+`gate-run parser` GREEN 363 · `gate-run app` GREEN 1141 ·
+`index --check` CURRENT · every e2e reader the docs gate names for this
+card plus both board readers GREEN · `capabilities:check` STALE
+(50,248 committed against a fresh generation), the integrator's at the
+merge, as the lane discloses.
