@@ -24283,17 +24283,47 @@
       "id": "f:app/test/startup-recovery.test.ts",
       "path": "app/test/startup-recovery.test.ts",
       "lang": "ts",
-      "hash": "blake3:a0b0a9fad5c3c4dafaa47354324992f9800806ab18d543c873343c7c55e06d60",
-      "loc": 1380,
+      "hash": "blake3:57c314fc65377385b19d7c1dcfdfb2cf2c985403cf577f746e9d9fece57e9c49",
+      "loc": 1601,
       "symbols": [
+        {
+          "id": "s:app/test/startup-recovery.test.ts#EMITTED_READING",
+          "name": "EMITTED_READING",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1439,
+            1448
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#HONESTLY_NEWER_PULL",
+          "name": "HONESTLY_NEWER_PULL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1467,
+            1470
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#OVERTAKING_PULL",
+          "name": "OVERTAKING_PULL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1453,
+            1461
+          ]
+        },
         {
           "id": "s:app/test/startup-recovery.test.ts#PROBE",
           "name": "PROBE",
           "kind": "const",
           "exported": false,
           "range": [
-            184,
-            184
+            199,
+            199
           ]
         },
         {
@@ -24302,8 +24332,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            135,
-            146
+            150,
+            161
           ]
         },
         {
@@ -24312,8 +24342,18 @@
           "kind": "type",
           "exported": false,
           "range": [
-            133,
-            133
+            148,
+            148
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#echoes",
+          "name": "echoes",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1473,
+            1476
           ]
         },
         {
@@ -24322,8 +24362,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            186,
-            186
+            201,
+            201
           ]
         },
         {
@@ -24332,8 +24372,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            179,
-            182
+            194,
+            197
           ]
         },
         {
@@ -24342,8 +24382,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            151,
-            171
+            166,
+            186
           ]
         },
         {
@@ -24357,13 +24397,33 @@
           ]
         },
         {
+          "id": "s:app/test/startup-recovery.test.ts#raceToTheParkedPull",
+          "name": "raceToTheParkedPull",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            1484,
+            1513
+          ]
+        },
+        {
           "id": "s:app/test/startup-recovery.test.ts#settle",
           "name": "settle",
           "kind": "const",
           "exported": false,
           "range": [
-            176,
-            176
+            191,
+            191
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#taskCard",
+          "name": "taskCard",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1434,
+            1436
           ]
         }
       ]
@@ -43010,9 +43070,39 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/startup-recovery.test.ts#EMITTED_READING",
+      "to": "s:app/test/startup-recovery.test.ts#taskCard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-recovery.test.ts#OVERTAKING_PULL",
+      "to": "s:app/test/startup-recovery.test.ts#taskCard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/startup-recovery.test.ts#freshStore",
       "to": "s:app/test/startup-recovery.test.ts#StoreModule",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-recovery.test.ts#raceToTheParkedPull",
+      "to": "s:app/test/startup-recovery.test.ts#StoreModule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-recovery.test.ts#raceToTheParkedPull",
+      "to": "s:app/test/startup-recovery.test.ts#echoes",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-recovery.test.ts#raceToTheParkedPull",
+      "to": "s:app/test/startup-recovery.test.ts#settle",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -44831,7 +44921,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2528,
-    "edges": 2428
+    "symbols": 2534,
+    "edges": 2433
   }
 }
