@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-223-s3
 blocked_by: []
 touches: [method/roles/verifier.md]
@@ -67,3 +67,12 @@ does not fence it. A `method/**` diff fires the METHOD EVAL GATE.
 `tools/e2e/tests/landing-gate.spec.ts` alone. The finding is recorded in
 that card's own build notes with both measurements; this card is the
 rule.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-223-s3 merge (5414979)
+
+The architect seat. Both T-223-s3 seats measured the same thing: a
+mutant that lands, hits its predicted count, and dies at a fixture
+self-check or an empty commit is lethal while measuring nothing, and
+step 2b warns only about the mutant that never lands. One sentence in
+verifier.md; method/roles is free now that T-205 landed. Rides a method
+release; no version bump of its own.
