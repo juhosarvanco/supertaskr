@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
 suggested_by: executor claude-fable-5-1@subagent @T-236
 blocked_by: []
 touches: [tools/e2e, tools/method-evals]
@@ -40,3 +40,12 @@ bullet states in words that the method evals read the governing
 documents and are owed on a CONVENTIONS diff. Whichever lands, the
 `--census` count moves and docs-input-gate.spec.ts's floor body is the
 positive control.
+
+## PARKED, 2026-09-02
+
+The fifth-suite question is T-155-s1's (the one place a command becomes
+a CI step refuses a fifth package), and this card's second arm edits
+docs/CONVENTIONS.md outside its fence. RESURFACES when T-155-s1 is
+dispatched — that lane takes arm 1 or refuses it in writing — or the
+first time a CONVENTIONS diff lands without the method evals having run,
+whichever comes first.

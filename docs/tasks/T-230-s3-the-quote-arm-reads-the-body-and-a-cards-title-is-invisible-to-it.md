@@ -1,13 +1,13 @@
 ---
 id: T-230-s3
 title: The quote arm reads the card BODY, so a false assertion in a TITLE is neither checked nor listed nor disclosed — and one of the three founding instances states its claim there
-status: suggested
+status: planned
 feature: F-06
 milestone: 4
 priority: 3
 size: S
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
 review: independent
 suggested_by: "verifier claude-opus-5@subagent @V-230, 2026-09-02 — found attacking T-230's first acceptance criterion at 90dfe53"
 ---
@@ -48,3 +48,15 @@ parsed for `touches` by the path arm — or, cheaper and honest, add the
 frontmatter to the class's `cannot` line so the omission is stated rather
 than silent. Prefer whichever the fence can carry; the second is a
 one-line edit and closes the disclosure half immediately.
+
+## TRIAGE, 2026-09-02 — PROMOTED, absorbing its two siblings
+
+Absorbs: T-230-s4, T-230-s5 — three distinct gaps in one arm of one
+file, merged for economy (one lane, one review): the frontmatter blind
+spot this card names, the marker's source reaching the report line
+unescaped (`JSON.stringify` on the NOT CHECKABLE record, as the finding
+message already does), and `unmarkedQuotes` dropping runs below
+`MIN_QUOTE_CHARS` without counting them (a `below the quote floor: N`
+line beside the two counts). Take the `cannot`-line arm as the floor for
+the frontmatter gap and the scalar-value scope as the option. Fence
+narrowed to the module and its spec.

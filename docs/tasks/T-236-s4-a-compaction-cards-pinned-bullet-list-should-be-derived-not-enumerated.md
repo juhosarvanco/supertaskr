@@ -4,12 +4,16 @@ title: A compaction card's "what stays" list is enumerated by hand, and T-236's 
 feature: F-01
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 4
+status: planned
 suggested_by: verifier claude-opus-5@subagent @V-236
 blocked_by: []
 touches: [tools/e2e]
 builder:
+verifier:
+built_by:
+verified_by:
+review: independent
 ---
 
 **Addressed to TRIAGE.** Not a failure of T-236 — its executor kept both
@@ -55,3 +59,11 @@ likely to be cut under ADR-019 rule 5 — the DOCS GATE bullet's transcribed
 four-suite command list, which reads as a derivable list — is pinned
 `toEqual`, both directions, by `docs-input-gate.spec.ts:674`. V-236's own
 drill D1 killed exactly that body by removing one trailing slash.
+
+## TRIAGE, 2026-09-02 — PROMOTED at priority 4
+
+The `--pins` arm is the keeper the next compaction card needs; the
+interim (run the readers against a scratch mutation during the planning
+pass) is written into T-236's own record and costs nothing. Frontmatter
+stubs added at the seat; review independent because range-rule.mjs is a
+keeper.

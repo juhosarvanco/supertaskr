@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 blocked_by: []
-touches: [tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/lane-fence.spec.ts, app/src-tauri/crates/nputer-index/tests/perf.rs]
+touches: [tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/lane-fence.spec.ts, tools/e2e/tests/helpers.ts, app/src-tauri/crates/nputer-index/tests/perf.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs, tools/method-evals/lib/fixture-root.mjs]
 suggested_by: executor claude-opus-5@subagent @T-216-s4
 builder:
 verifier:
@@ -73,3 +73,16 @@ layer reached the lane* from *the layer reached everything* — received
   that leans on the ambient tree is green in every checkout a drill runs
   in. `T-216-s4` ships two of these to copy.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — PROMOTED as the carrier of the sweep
+
+Absorbs: T-216-s8 — the fourth tree of the same sweep,
+`tools/method-evals/lib/fixture-root.mjs`'s `materialize` copying
+`method/` and the live docs out of the checkout with their mode bits,
+latent because no eval writes there yet; its argument that the METHOD
+EVAL GATE is owed precisely from a lane where `method/**` is read-only
+travels with it. The fence gains that file, `tools/e2e/tests/helpers.ts`
+(the one implementation on the e2e side) and
+`app/src-tauri/crates/nputer-index/tests/common/mod.rs` (T-216-s4's
+`copy_dir`, the one implementation on the Rust side), so "one
+implementation per package" is buildable rather than routed.

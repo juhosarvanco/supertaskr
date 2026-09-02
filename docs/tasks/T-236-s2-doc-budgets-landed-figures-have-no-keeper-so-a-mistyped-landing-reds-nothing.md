@@ -5,15 +5,15 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-fable-5-1@subagent @T-236
-blocked_by: []
+blocked_by: [T-162-s2]
 touches: [tools/e2e]
 builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **A FIGURE WITH NO KEEPER, IN THE TABLE THAT EXISTS TO KEEP FIGURES.**
@@ -40,3 +40,11 @@ that the floor moves its warn line to 8825 while the table still holds
 on it today, which is the correct reading and one more reason to land
 T-162-s2 first or together. Class parent: ADR-019 Law 2 and T-142 (a
 census with no positive control reads clean).
+
+## TRIAGE, 2026-09-02 — PROMOTED, blocked by T-162-s2
+
+Two keepers for a table nothing reads back: the warn/fail derivation
+from `landed`, and a `landedAt` sha per row so a body executes
+`git cat-file -s` rather than quoting. `blocked_by: [T-162-s2]` is a
+TRUE blocker: the formula keeper reds on STATE's row today, and that row
+is T-162-s2's to move.

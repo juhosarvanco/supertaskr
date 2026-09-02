@@ -1,7 +1,14 @@
 ---
 id: T-223-s4
 title: "The narrowed sentence is still an absolute — `git symbolic-ref HEAD refs/heads/main` from a lane worktree exits 0 and an ORDINARY commit then moves main — and T-211's card still carries the struck clause"
-status: suggested
+status: planned
+feature: F-06
+milestone: 4
+priority: 4
+size: S
+blocked_by: []
+touches: [.claude/hooks/landing-gate.mjs]
+review: independent
 suggested_by: verifier claude-opus-5@subagent @V-223
 ---
 
@@ -53,3 +60,10 @@ append in an already-unfenceable file.
 
 Out of `T-223`'s named scope (its card names the hook header and
 `T-212`'s card), which is why it was not charged there either.
+
+## TRIAGE, 2026-09-02 — PROMOTED, placement fields written at the seat
+
+Bind the narrowed sentence to its premise (HEAD names the lane branch)
+or widen limit 6 to any ref write, measured; append one sentence to
+T-211's card, which is docs/tasks and outside every fence. Fence: the
+hook alone.

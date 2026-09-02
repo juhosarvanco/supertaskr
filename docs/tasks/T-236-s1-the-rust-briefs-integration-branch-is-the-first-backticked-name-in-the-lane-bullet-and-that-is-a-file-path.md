@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-fable-5-1@subagent @T-236
 blocked_by: []
 touches: [app/src-tauri/src/dispatch/brief.rs]
@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **FOUND WHILE PINNING, NOT WHILE CUTTING — the T-236 compaction did not
@@ -44,3 +44,12 @@ read the integration branch by its label (`integration branch \``)
 the way the JS side does, and add the positive control the JS side
 already has — a body that asserts `main` from the live document and
 reds when the label moves.
+
+## TRIAGE, 2026-09-02 — PROMOTED
+
+The one card of the wave's sixteen where a printed command is wrong
+today: the Rust brief's `find_base` names a file path where a ref
+belongs, two implementations of one rule disagree (T-057), and no cargo
+body asserts the value. Read by label as `laneSpellings` does, and add
+the body. T-233 is the sibling row; one lane may take both if fences
+allow.

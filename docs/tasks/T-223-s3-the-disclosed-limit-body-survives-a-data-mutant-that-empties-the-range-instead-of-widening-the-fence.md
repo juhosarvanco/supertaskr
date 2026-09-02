@@ -1,7 +1,14 @@
 ---
 id: T-223-s3
 title: "The disclosed-limit body survives a data mutant that empties the RANGE instead of widening the fence — both routes end in the same allow, and one merge-base assertion separates them"
-status: suggested
+status: planned
+feature: F-06
+milestone: 4
+priority: 3
+size: S
+blocked_by: []
+touches: [tools/e2e/tests/landing-gate.spec.ts]
+review: independent
 suggested_by: verifier claude-opus-5@subagent @V-223
 ---
 
@@ -58,3 +65,9 @@ making the moved-to commit's card NARROW instead of wide — kills that
 body ALONE (1 failed / 23 passed), so it does bind to the fence declared
 at the moved ref. This is a sharpening of a body that already
 discriminates.
+
+## TRIAGE, 2026-09-02 — PROMOTED, placement fields written at the seat
+
+One `merge-base` assertion after the second push, shown able to fail
+against the data mutant that empties the range — T-229's class at the
+size of one line. Fence: the spec alone.

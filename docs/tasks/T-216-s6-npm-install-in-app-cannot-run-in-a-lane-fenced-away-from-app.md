@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, tools/e2e/tests/workflow-parity.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-216-s4
 builder:
 verifier:
@@ -72,3 +72,19 @@ question and should be ruled, not assumed.
   divergence mapping SHALL move in the same commit — that spec reds by
   name on a command the doc lists and it has no entry for.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — PROMOTED as the carrier of the lockfile class
+
+Absorbs: T-223-s1, T-230-s2 — the same `npm install` refusal measured
+independently on three lanes in one night (exit 243 EACCES on the
+read-only `app/package-lock.json`, node_modules already populated).
+This card carries it because it alone states acceptance criteria and
+names `tools/e2e/tests/workflow-parity.spec.ts` as a same-commit
+obligation, now in its fence. RULED at the seat, so the lane does not
+have to: **the lane's setup spelling is `npm ci` from app/ — CI's own
+documented spelling — and the CONVENTIONS lane bullet says so beside the
+fresh-clone ORDER; option 2 (a lockfile in `alwaysWritable`) is
+REFUSED**, because the unfenceable set is one directory and every
+addition is a hole in every fence at once. T-223-s1's third arm — the
+arming step printing "installs in app/ use npm ci" — is an option the
+lane may take, not a criterion.

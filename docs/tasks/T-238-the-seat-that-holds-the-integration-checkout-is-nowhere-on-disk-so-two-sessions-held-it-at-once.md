@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e/scripts/checkout-currency.mjs, tools/e2e/scripts/brief.mjs, .claude/hooks/push-guard.mjs, tools/e2e/tests/checkout-currency.spec.ts, tools/e2e/tests/push-guard.spec.ts]
+touches: [tools/e2e/scripts/checkout-currency.mjs, tools/e2e/scripts/brief.mjs, .claude/hooks/push-guard.mjs, tools/e2e/tests/checkout-currency.spec.ts, tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/lane-lock.spec.ts]
 suggested_by: "the architect seat, 2026-09-02 — item 7 of docs/rooms/loop-efficiency.md; the instance is this seat's own arrival, measured with ps and the session list while the retired seat was mid-battery and then mid-checkpoint in the same checkout"
 builder:
 verifier:
@@ -91,3 +91,14 @@ lane-protocol rule 4 (STANDING, NOT THE SEAT — the holder is declared,
 never inferred), T-189-s3 (the carrier), T-216-s1 (the catcher that
 sweeps the machine), T-203 (the token this protects), and
 docs/rooms/loop-efficiency.md item 7.
+
+## Absorbs: T-230-s6 (2026-09-02)
+
+Four e2e bodies — two in checkout-currency.spec.ts, one in
+card-preflight.spec.ts, one in lane-lock.spec.ts — assert their OWN
+checkout is CURRENT, so they red when main advances underneath them
+(measured green then red hours apart on a byte-identical tree at
+90dfe53). The CURRENT case moves to a fixture whose vantage the body
+controls, the way the same spec's stale bodies already do; the fence
+gains the two specs. Criterion added: WHEN main advances past a lane's
+base THE suite in that lane SHALL NOT red on the lane's own currency.
