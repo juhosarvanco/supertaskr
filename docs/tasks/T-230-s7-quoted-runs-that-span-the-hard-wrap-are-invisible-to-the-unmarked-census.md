@@ -3,12 +3,12 @@ id: T-230-s7
 title: QUOTED RUNS THAT SPAN THE 70-COLUMN HARD WRAP ARE INVISIBLE TO THE UNMARKED CENSUS — unmarkedQuotes decides nearness over the paragraph but extracts needles line by line with a class that stops at the newline, so 2,386 runs on 364 of 448 cards are never seen, 6.5 times the floor drop T-230-s5 counted
 feature: F-06
 milestone: 4
-priority: 3
-size: S
-status: suggested
+priority: 2
+size: M
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-230-s3-verify, phase 1 at f5bad14, 2026-09-02
-blocked_by: [T-230-s3]
-touches: [tools/e2e/scripts/brief.mjs, tools/e2e/tests/card-preflight.spec.ts]
+blocked_by: []
+touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
 builder:
 verifier:
 built_by:
@@ -67,3 +67,53 @@ T-230 (the arm), T-230-s3 (the title and frontmatter gap, whose lane
 this filing is blocked behind because both edit the same reader),
 T-230-s5 (the floor count), and the T-230-s3 verifier's phase-1 ground
 truth in the sitting's record.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2, size M, fence corrected
+
+The architect seat, at the stamp of T-230-s3's merge (6ccfda4). The
+fence this card was filed with named tools/e2e/scripts/brief.mjs, which
+carries zero occurrences of the reader the card is about; the reader
+lives in tools/e2e/scripts/card-preflight.mjs (T-230-s10, the
+executor's finding, absorbed below). T-230-s3 is done, so the blocker is
+gone. The figure in the title is estimator-dependent: the verifier's
+estimator reads 2,386 runs on 364 cards at f5bad14 and at 80c36f8, the
+executor's reads 2,345 on 363 — the lane SHALL settle on one estimator,
+print both controls, and state the figure at its own tip. Size M because
+four residuals of the same module ride this lane below; one verifier,
+one bounded file pair.
+
+## Absorbs: T-230-s10 (2026-09-02)
+
+The fence correction above is that card's whole ask; its lesson — a
+fence that names a real file and the wrong one is the case no guard
+catches, and the preflight does not warn — stays here as the reason a
+dispatcher greps the fence for the symbol the card names before the
+stamp.
+
+## Absorbs: T-230-s8 (2026-09-02)
+
+The claim-class disclosure body asserts `c.checks`, `c.refuses` and
+`c.cannot` read from `CLAIM_CLASSES` itself, so five of six classes
+cannot fail it (mutants M10 and M11 of T-230-s3's drill, and the
+verifier's D2, all survived on exactly this). The lane SHALL pin each
+class's three strings as literals, and a one-capital mutant per class
+SHALL red the body.
+
+## Absorbs: T-230-s9 (2026-09-02)
+
+Six author-text interpolations in the quotes arm's report lines are still
+unescaped (T-230-s4 named one site; there are seven; one is fixed). The
+lane SHALL escape the six DISPLAY sites and SHALL leave every `raise()`
+SUBJECT raw, because `dischargedBy` matches rulings against the subject —
+with a body proving a plain ruling still discharges a plain subject after
+the change.
+
+## Absorbs: T-230-s11 (2026-09-02)
+
+The new scalar scope reads values through `frontmatterFields`, whose
+`stripInlineComment` cuts a scalar at the first space-hash, so a quoted
+assertion after one vanishes with no sighting and no count. The lane
+SHALL read the raw scalar for the quotes arm (a local read in
+card-preflight.mjs; dispatch-brief.mjs is outside this fence and stays
+as it is), with a planted card carrying a space-hash inside a quoted
+title as the control.
