@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 suggested_by: "the architect seat, 2026-09-02 — item 10 of docs/rooms/loop-efficiency.md; the instance is the evening of 2026-09-01, when four runs were superseded by rapid pushes and main sat red for five hours while local batteries said green"
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
@@ -76,3 +76,15 @@ T-203 (the token gate this extends), T-216 (the rooting), the CONVENTIONS
 bullets *A PUSH CANCELS THE RUNNING CI JOB* and *AND THEN READ IT*, the
 09-01 records (the five red hours), and docs/rooms/loop-efficiency.md
 item 10.
+
+## DISPATCH, 2026-09-02 — the stamp, and what the audit found
+
+**Audit (orchestrator 5b)**: `.claude/hooks/push-guard.mjs` at 37ac590
+contains no `gh` call and no notion of a run's state — the claim holds.
+The instance is measured: four runs superseded on 2026-09-01, and this
+sitting held two pushes by hand to let runs finish. Fence as filed: the
+hook and its spec; two lanes are live (T-225, T-229) and neither holds
+either file. **Holder**: this lane does NOT hold the integration
+checkout and does not merge; it stamps `verifying`, reports
+ready-to-merge with branch and tip, and leaves its worktree standing.
+Size S, guard-class, review independent: executor, then verifier.
