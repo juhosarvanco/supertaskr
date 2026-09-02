@@ -2614,44 +2614,63 @@ mod tests {
             vec!["docs/tasks/T-302-b.md"]
         );
 
-        // THE ORDERING THIS BODY PINS IS THE ONE THE WATCHER ACTUALLY
-        // PROMISES, AND IT IS A CLAIM ABOUT COLLECTION *STARTS*
-        // (T-018-s2). `WatchState::next_seq` says so in as many words and
-        // every path obeys it: the stamp is drawn BEFORE the tree is
-        // collected, in `open_as_project`'s reply and in
-        // `handle_fs_batch` alike. So the counter orders the MOMENTS
-        // COLLECTION BEGAN and nothing else — it does not order content,
-        // because a batch that drew a lower stamp can still be collecting
-        // when a later write lands and will then ship the newer bytes
-        // under the older stamp. `from_b.seq > picked.seq` therefore
-        // means "the batch that produced this emit BEGAN after the pick
-        // took its stamp", and the only thing in this module that
-        // establishes that is the control loop's FIFO order.
+        // THE ORDERING THE WATCHER ACTUALLY PROMISES ACROSS A RE-ARM,
+        // DERIVED AND THEN PINNED — AND IT IS NARROWER THAN THE SENTENCE
+        // THIS BODY USED TO ASSERT (T-018-s2).
         //
-        // WITHOUT THE RENDEZVOUS BELOW THAT CLAIM WAS DECIDED BY A RACE,
-        // and it lost three times on ubuntu-24.04, every time on a
-        // docs-only diff that could not reach this file (CI run
-        // 33304351040, a second sighting on 2e4b76f, and run 33566291111
-        // attempt 1 on 4018a7b, whose captured stdout is the whole
-        // account). `project folder picked: <B>` is printed after the
-        // pick has taken its stamp, and the emit printed AFTER that line
-        // carried `seq=5` with `fs_events=3`: a batch left over from A's
-        // last write, dequeued the instant the re-arm ack was sent, that
-        // drew 5 while this thread drew 6 — and then collected B's tree
-        // late enough to see `beta v2`. Newer bytes, older stamp, and the
-        // assertion below was the only thing that noticed.
+        // WHAT IT PROMISES. `WatchState::next_seq` draws from ONE shared
+        // atomic and says in as many words that the draw happens BEFORE
+        // the files are collected, on EVERY path: `open_as_project` draws
+        // after the re-arm ack and the commit, `handle_fs_batch` draws
+        // before its own `collect_docs_tree`. So the counter orders the
+        // MOMENTS COLLECTION BEGAN, and that is the whole of it. It does
+        // NOT order content: a batch that drew a lower stamp can still be
+        // collecting when a later write lands, and it then ships the
+        // newer bytes under the older stamp.
         //
-        // `barrier` closes it, and it is a RENDEZVOUS RATHER THAN A WAIT:
-        // the same `WatchCtl::Ping` the startup arm uses in `live_state`,
-        // which returns only once the loop has handled every message
-        // enqueued ahead of it. After it, every batch the loop had
-        // already taken has FINISHED collecting — before the write below
-        // exists, so none of them can carry `beta v2` — and every batch
-        // it has not yet taken draws its stamp after this thread drew
-        // `picked.seq`. Both arms satisfy the assertion, so it can no
-        // longer be decided by the clock: no sleep, no retry, no widened
-        // window, and the two ways out are still the emit arriving and
-        // the watcher dying.
+        // WHAT IT DOES NOT PROMISE, AND THIS MODULE ALREADY SAYS SO BY
+        // NAME. `the_watch_is_armed_before_the_switch_commits_so_an_emit_
+        // can_overtake_the_reply` pins the arm-before-commit order as
+        // DESIGNED, precisely because an emit for the new root may reach
+        // the webview ahead of the invoke reply — `genesisSwitchIsOvertaken`
+        // in app/src/lib/watcher-store.ts is the frontend guard that
+        // exists for it. So "every post-re-arm emit outranks the pick's
+        // reply" is NOT a property of this watcher, and asserting it flat
+        // contradicts that body. The overtake stays legal.
+        //
+        // WHAT THIS BODY MAY THEREFORE ASSERT is the promise and not the
+        // wish: an emit whose batch BEGAN AFTER the pick drew its stamp
+        // outranks it. Establishing "began after" needs a happens-before
+        // edge, and the module has exactly one — `spawn_watcher_thread`
+        // hands the debouncer a CLONE of the control sender, so fs
+        // batches and control messages share ONE mpsc queue and
+        // `run_watcher`'s loop drains it strictly in order.
+        //
+        // THE CHAIN: `picked.seq` is drawn before this `barrier` sends
+        // `WatchCtl::Ping`; the loop answers the Ping only after every
+        // message queued ahead of it, so each such batch has FINISHED its
+        // collect before the ack — and therefore before `beta v2` exists
+        // on disk, which is why none of them can carry it; every batch
+        // queued after the Ping draws its stamp after the Ping was
+        // handled, hence after `picked.seq`. Both arms hold, so the emit
+        // the wait converges on always outranks the reply.
+        //
+        // WITHOUT THAT EDGE THE CLAIM WAS DECIDED BY THE RACE the second
+        // paragraph describes, and it lost three times on ubuntu-24.04,
+        // every time on a docs-only diff that cannot reach this file (CI
+        // runs 33304351040 and 33566291111, plus a sighting on 2e4b76f;
+        // read them with `--attempt 1`, since each was re-run green). The
+        // transcripts have one shape: `project folder picked: <B>` prints
+        // after the pick's draw, and the emit printed AFTER that line
+        // carries `seq=5` — a batch left from A's last write, dequeued
+        // the instant the ack was sent, that drew 5 while this thread
+        // drew 6 and then collected B late enough to see `beta v2`.
+        // Failed by exactly one draw, three times.
+        //
+        // AND IT IS A RENDEZVOUS, NOT A WAIT: no sleep, no retry, no
+        // widened window. `barrier`'s two ways out are the ack arriving
+        // and the watcher being gone, both events of the system under
+        // test — the discipline `recv_until` documents at length.
         barrier(&state);
 
         // Watching B now: changes in B emit, stamped with B's dir and a
