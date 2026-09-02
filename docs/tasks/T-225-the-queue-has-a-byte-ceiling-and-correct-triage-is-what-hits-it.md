@@ -462,3 +462,291 @@ branch no body drives), `T-225-s4` (CONVENTIONS and STATE send a seat to
    with a different failure (`ENOBUFS` on a field most callers never
    read). The measurements the card rests on are unaffected; the label
    is wrong, and `T-225-s1` is the card for it.
+
+## Verdicts
+
+### V-225, 2026-09-02 — claude-opus-5@subagent (verifier bench `../nputer-V-T-225`, detached at `b5d015b`)
+
+**REJECTED**, on ONE finding in one new test body. Everything else in
+this diff is sound, and several parts answer the card better than it
+asked. The remedy is two lines, touches no producer, and does not touch
+the proof this body carries.
+
+**MY BLINDNESS WAS CLOCK-SHAPED, NOT DISCIPLINARY.** Phase 1 reached me
+before the work existed (orchestrator 5c), so there was no diff to
+decline to read. The attack set and the ground truth were written and
+hashed at the base ref `5f193e6` on 2026-09-02 at 00:03–00:13Z, BEFORE
+this lane's first commit:
+
+    fd8f255a2f20566fba3918bde51d33f117561b72907a0b7caa782c77682e1518  attack-V-T-225.md
+    709f2046ab0f25f188a5425e86df8e6e6817ee67e96edfe6efa06ae12cbc08d3  ground-V-T-225.md
+    c56d05335b106c7398684c36605543a64519522610ccbbf9222306641d466b75  verdict-draft-V-T-225.md
+
+The verdict draft above was stamped at 01:24:55Z, **before** the
+implementation notes or any suggestion card was opened. What I read
+afterwards, disclosed: the notes, the four suggestion cards, and — this
+one unavoidably and early — the four suggestion FILENAMES, which are
+descriptive and appeared in the first `git diff --stat`. My phase-2
+brief also carried executor-derived specifics (a harness bug, "two
+disclosed surviving mutants", red-body attributions, a census figure);
+that is above the line for phase 1 and phase 1 was already closed and
+hashed, but it is said rather than left for a reader to wonder about.
+
+---
+
+#### THE FINDING — F1, blocking
+
+**`tools/e2e/tests/brief-flush.spec.ts`, body four's CONTROL TWO asserts
+the outcome of a race, in the direction machine load pushes it.**
+
+    expect(
+      fast.bytes,
+      "a DRAINING reader lost bytes from two hundred small writes, so this run cannot show that " +
+        "the write shape is not what decides the loss",
+    ).toBe(smallWant);
+
+`fast` is `readViaCatPipe` over `controlWriter(CONTROL_WANT, 200)` — a
+pre-T-197 writer emitting 524,400 bytes in 200 small writes and then
+calling `process.exit(0)`. The body requires `| cat` to receive **all**
+524,400. That is not a property; it is who wins a race, and `cat` loses
+it often enough to matter.
+
+**Reproduce** (no repository state needed; the writer is
+`controlWriter`'s output, transcribed):
+
+    cat > /tmp/w.mjs <<'EOF'
+    for (let i = 0; i < 200; i += 1) process.stdout.write("c".repeat(2621) + "\n");
+    process.exit(0);
+    EOF
+    node /tmp/w.mjs > /tmp/ref.txt          # 524400 — a file cannot lose
+    for i in $(seq 25); do node /tmp/w.mjs | cat | wc -c; done
+
+**Measured in my bench at `b5d015b`, expected 524,400 every time:**
+
+    quiet, sample 1              1 of 25 runs SHORT   (smallest arrival 68,158)
+    quiet, sample 2              0 of 30 runs SHORT
+    2 busy cores                 0 of 30 runs SHORT
+    6 busy cores                16 of 25 runs SHORT   (smallest arrival 97,000)
+
+**And it is not only a micro-benchmark: it failed as a real suite red in
+my own drill.** While mutant D10 was applied — a mutation of
+`holdingLanes` in `dispatch-order.mjs`, which cannot reach this body —
+body four failed with *"a DRAINING reader lost bytes from two hundred
+small writes"*, `Expected: 524400  Received: 65536`. A body that reds
+under an unrelated file's mutation is a body that will red under
+somebody else's lane.
+
+**WHY THIS IS BLOCKING RATHER THAN A SUGGESTION.** This lane runs at
+`retries: 0` by deliberate design, on every lane and on a shared CI
+runner whose load nobody controls. A new intermittent here arrives
+detached from its cause and gets attributed to whatever diff is nearest
+— which `docs/STATE.md` names as this seat's most common failure. The
+red does not even look like a harness problem: its message is about
+write shape, in a file whose subject is write shape.
+
+**AND THE STANDARD IS THIS BODY'S OWN.** Control ONE proves the SLOW
+reader cannot lose by itself, and the header explains at length why that
+proof is owed — *"a harness that drops data on a writer that dropped
+none would red this body for its own reason and read as a finding"*.
+Exactly that is true of the FAST reader, and control two asserts its
+no-loss claim instead of proving it. The asymmetry is the whole defect.
+
+**REMEDY (the lane's to choose; any of these clears F1).** The argument
+control two makes is *one writer, one shape, two readers, two answers* —
+which needs the DISCRIMINATION, not the maximum:
+
+    expect(fast.bytes).toBeGreaterThan(slow.bytes);   // the actual claim
+    expect(slow.bytes).toBeLessThan(smallWant);       // unchanged
+
+or derive the fast arm in-run the way `deriveLossPoint` already derives
+the slow one (max of N samples), or keep the equality but `disclose()`
+the shortfall instead of asserting it. **Do not add a retry** — that
+would mask the trusted-timing class this lane exists to catch.
+
+---
+
+#### EVERYTHING ELSE — attacked against a stamped set, and it holds
+
+My attack set named six ways this card could be satisfied in its letter
+and failed in its purpose. **Five of the six do not land, and each was
+tested with a mutant rather than read for.**
+
+**The emitter is NOT made unbreakable by emitting less.** This was my
+primary attack, because at `5f193e6` dropping `UNBLOCKED BUT FENCED`
+alone takes the print from 85,820 to 26,403 bytes and satisfies every
+byte-shaped criterion at once. It is not what happened: the filter is a
+DERIVED predicate over `readDispatchOrder`'s own partition, there is no
+byte budget, no row cap and no `slice` anywhere in the render path, and
+the census line states what was RULED ON beside what was SPELLED OUT.
+Mutants, mine, in my bench, one side only, landing read from `git diff`,
+restored and proved by sha256:
+
+| mutant (producer side unless noted) | killed |
+|---|---|
+| D1 `process.exitCode = code` → `process.exit(code)` | 4 — flush proof, slow reader, margin guard, sweep |
+| D3 `PIPE_BUFFER_BYTES` 65,536 → 32,768 | 1 — the two-arms body |
+| D4 invert the FENCED verbosity branch | 3 — filter, positive control, live board |
+| D5 drop FENCED rows from `--full` too | 2 — filter, positive control |
+| D6 truncate STARTABLE rows (`slice(0, 0)`) | 3 — lane-with-no-card, filter, positive control |
+| D7 **DATA mutant**: move `T-951` fenced→startable, cardinality UNCHANGED | 2 — filter, positive control |
+| D8 `setTimeout(() => process.exit(code), 50)` | 1 — the flush sweep |
+| D2b `withMargin` made a pass-through | 3 — both margin bodies, the T-179 sweep |
+| D9 census `ruled:` made a function of `ctx.full` | 1 — the positive control |
+| D10 `holdingLanes(...)` → `""` in the counted line | 1 — the filter body (plus F1 firing spuriously) |
+
+**D5 is the one I pre-committed on**: my attack set said *"if this mutant
+survives, criterion 3's control is vacuous and that is a REJECT."* It
+does not survive. **D6 answers my sharpest question** — the suite CAN
+tell a filter from a truncation. **D7 is the one I care about most**: the
+row moved between families and the cardinality did not change, and it
+still reds. That is CONVENTIONS' poison shape NINE defeated by a CONTENT
+floor rather than a count floor, and it is the answer to the attack I
+thought most likely to land.
+
+**KILL-SET CONTAINMENT, not the count.** The filter body is killed by
+{D4, D5, D6, D7, D10}; the positive control by {D4, D5, D6, D7, D9}.
+**Neither contains the other** — D10 kills the first and not the second,
+D9 the second and not the first — so both are load-bearing. Two honest
+observations against that standard: the live-board body's kill set {D4}
+is CONTAINED by both, and over ten producer mutants I could not
+construct one that body four kills and body one does not (D8, my
+intended discriminator, killed neither). Neither is a defect. Both
+bodies discharge obligations the card states in words — criterion 4's
+"never on a synthesised one alone", and the rider's demand that the
+correction be driven rather than written — and a body whose job is a
+DISCLOSURE or a DEMONSTRATION does not earn its place by its kill set.
+The lane's own M2 and M3c separate body four on its controls, which is
+the site that property lives in; I record that I could not separate it
+from the producer side.
+
+**The margin is derived where it must be and constant where it says so.**
+The size is `Buffer.byteLength` of the answer, at a FIXED POINT that
+includes the block declaring it — I checked that against the filesystem
+rather than against the body that checks it: `--dispatch` declares
+41,256 and `wc -c` says 41,256; `--dispatch --full` declares 102,752 and
+`wc -c` says 102,752. It prints FIRST, it prints in BOTH arms, and D3
+proves the buffer constant is pinned rather than shared with its own
+assertion. My attack A2c — that deriving the loss point per run would
+buy a subprocess into a read-only command — is avoided, and the
+trade-off is the one I named as acceptable in advance.
+
+**The unfiltered view is kept and is discoverable in band.** `--full` is
+an existing flag, so no governing document had to move and
+`workflow-parity` is untouched; the default view's own header tells the
+reader the flag exists. My attack A6a/A6b do not land.
+
+**The rider is complete and the record was APPENDED.** The brief said two
+prose sites; I derived FOUR independently in phase 1 and stamped them
+before the diff existed, including the `LIVE_ARMS` sentence that is
+hard-wrapped as `harder to\n * lose` so a one-line grep returns nothing
+and reads like a refutation. All four are taken. `T-197`'s card is
+**38 additions, 0 deletions, landing at line 573** — the end of the file
+— and its base content hashes to
+`58e00078003284ec961114a2a78e21753f5d91537ff80d8e51e7fb6e70befca7`,
+byte-identical to my phase-1 stamp. Nothing above the correction moved.
+My own sweep over `tools/e2e/**`, `method/**` and `docs/**` in collapsed
+text finds no surviving uncorrected assertion; every remaining mention is
+a quotation inside its own retraction.
+
+**Security sweep — clean, and stated as a comparison rather than a
+feeling.** Base and tip both spawn exactly `git`, `lsof` and `hostname`,
+all from `dispatch-brief.mjs`, all as fixed-argv0 arrays; `brief.mjs` and
+`dispatch-order.mjs` spawn nothing at either ref. The diff adds no
+`execFileSync`/`spawnSync`, no `writeFileSync`/`chmodSync`, no new
+`readFileSync`, no `shell: true`, and no dependency — no manifest is in
+the diff at all. The only new I/O is `process.stdout.write` replacing
+`console.log`. `--dispatch` still writes nothing, and the body pinning
+that with a `git status --porcelain` comparison still passes.
+
+**ARCHITECTURE and CONVENTIONS.** No component registry file, no
+`touch_slugs:`, no `method/` path and no governing document is touched,
+so the DECLARING A COMPONENT and method-bump classes are not in play.
+`tools/e2e` is dev tooling under no component and `.nputerignore`d.
+
+---
+
+#### THE BATTERY, in my bench at `b5d015b`, `NPUTER_E2E_PORT=25225`
+
+    gate-verdict suite=parser exit=0 bodies=349  GREEN
+    gate-verdict suite=app    exit=0 bodies=1131 GREEN
+    gate-verdict suite=rust   exit=0 bodies=631  GREEN
+    gate-verdict suite=e2e    exit=1 bodies=553  RED — 551 passed, 2 failed
+    typecheck 0 · lint:tokens 0 · lint:tokens --selftest 0 · lint:docs 0
+    capabilities:check 1 STALE
+
+**THE TWO E2E REDS ARE NOT THIS DIFF'S, AND I PROVED IT RATHER THAN
+ACCEPTING THE ATTRIBUTION I WAS HANDED.** They are
+`session-economics.spec.ts:179` and `:365`, both refusing because the
+LIVE lane set at this base is not pairwise disjoint (`T-230-s3` carries
+the broad `touches: [tools/e2e]` at `5f193e6`, and `T-236-s1` is a lane
+whose card this ref does not have). I checked out `5f193e6` in the same
+bench, with the diff entirely absent, and ran that spec: **2 failed, 8
+passed — the same two bodies.** REF SKEW, confirmed by measurement.
+
+**I saw no `EACCES` body at all**, because my bench is detached and
+carries no fence manifest, which is exactly why the bench is the place to
+measure T-216-s4's class from.
+
+**ONE CORRECTION TO THE HANDOFF, because the integrator will act on it.**
+The notes and my dispatch brief both say `capabilities:check` is stale by
+**three** new test names. It is **six** — the diff adds six `test(` names
+and removes none, and the census moves 45,893 → 46,468 bytes with the
+suite at 553 bodies against a committed census of 547. Not regenerating
+in the lane is correct (T-210 leaves `docs/CAPABILITIES.md` read-only
+inside a fence); the figure the integrator carries into the merge commit
+should be six.
+
+*(I ran `npm run capabilities` once in my bench by accident while
+checking that delta, which wrote `docs/CAPABILITIES.md` there. Restored
+immediately with `git restore --source=HEAD --staged --worktree`, sha256
+back to `dc6752608f544d59df402764db05ff4dc9d780de18225db3fc6aeead5ac73247`
+and `git status` clean. Recorded because an unrecorded write and an unrun
+one are indistinguishable.)*
+
+---
+
+#### GROUND TRUTH I STAMPED BEFORE THE DIFF EXISTED, AND WHAT IT SETTLED
+
+The card's opening mechanism does not reproduce, and I measured that at
+the base ref before this lane wrote a line — so the finding is not a
+reading of the notes. At `5f193e6`, `--dispatch` = **85,820 bytes**,
+**20,284 PAST** the flush guard's own derived loss point, and **nothing
+is lost** to a file, to `| cat`, to `| (sleep 1; cat)`, to
+`| (sleep 5; cat)` (pipeline wall 5,020 ms — the writer blocked and
+waited), or to `spawnSync` at Node's default `maxBuffer`. **Criterion 1
+is degenerate**: it was satisfied by T-197's landed work at the commit
+this card was cut from. The lane discloses that in as many words rather
+than reporting it as proved, which is what I pre-committed to require.
+
+I also re-derived the rider's own claim before the diff existed: 200
+small writes plus `process.exit(0)` lose **50,264 bytes** to
+`| (sleep 1; cat)` and **nothing** to `| cat`, and the same writes lose
+nothing at all once `process.exit()` goes. The rider is right.
+
+**AND THE FIXTURE EVAPORATED WHILE I WAS MEASURING IT.** Between
+00:03:27Z and 00:12:53Z the `T-216-s4` lane merged; at the identical
+bench ref `--dispatch` fell **85,820 → 76,549 bytes** on the lane list
+alone, while the card-row count stayed at **96**. One lane merging moved
+the print by 9,271 bytes with the tree unchanged and the count
+unchanged. **Any `--dispatch` size stated anywhere must carry its ref AND
+its lane count** — the notes do this correctly, and it is why D7 mattered
+to me.
+
+---
+
+#### FILED, NOT BLOCKING
+
+`T-225-s5` (the CLASS behind F1: a control that asserts a race outcome
+must derive its own reliability in-run), and a dated CORROBORATION
+appended to `T-225-s1` — my measurement sharpens it from *the label is
+wrong* to *the sentence the tool PRINTS is false*: at `b5d015b`,
+`spawnSync` with `maxBuffer: 65536` over `--dispatch --full` returns
+**the whole 102,752 bytes**, `status: null`, `signal: SIGTERM`,
+`error.code: ENOBUFS` — not "a prefix with no error", which is what the
+OVER arm tells every dispatcher who crosses the line.
+
+`T-225-s2`, `T-225-s3` and `T-225-s4` are the lane's own and I concur
+with all three; s2 and s4 are two I had independently on my attack set.
+
+**On re-verification**: fix F1 and re-run `tools/e2e` only. No producer
+changes, so the parser, app and rust readings above stand at their ref.

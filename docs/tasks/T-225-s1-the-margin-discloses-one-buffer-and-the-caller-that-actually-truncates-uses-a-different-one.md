@@ -47,3 +47,38 @@ loss point with the reader it was measured against. That spec's own
 sentence is the precedent: *"This is ONE reader's answer, never THE
 boundary."* The disclosure currently makes the opposite implicit claim by
 naming one number.
+
+## CORROBORATION 2026-09-02 — verifier claude-opus-5@subagent @V-225, measured at `b5d015b`
+
+This card says the disclosure names the wrong NUMBER. It also names the
+wrong FAILURE, and that half is printed to every dispatcher who crosses
+the line. The OVER arm emits, verbatim:
+
+    output: 102752 of 65536 bytes (156.8%) - OVER by 37216: past one buffer the
+    tail arrives only while the reader drains, and a caller collecting into a
+    fixed buffer of that size receives a prefix with no error
+
+Measured against the reader this repository actually uses —
+`spawnSync(node, [brief.mjs, "--dispatch", "--full"], { maxBuffer: 65536 })`:
+
+    stdout        102,752 bytes — the WHOLE answer, not a prefix
+    status        null
+    signal        SIGTERM
+    error.code    ENOBUFS
+
+So for that caller the clause is wrong in both of its claims: nothing is
+truncated to a prefix, and the error is loud rather than absent. The
+same command at Node's DEFAULT `maxBuffer` (1 MiB) returns all 102,752
+bytes with `error: none` and `status: 0`.
+
+The clause is true of a POSIX caller doing one `read()` into a 64 KiB
+buffer, and that reading is defensible — but it is unqualified, in a
+tool whose contract is that a figure never leaves it detached from its
+source, and the repository's own named reader contradicts it. Whatever
+this card does about the number, the sentence should either name the
+caller it is true of or say what `spawnSync` actually does.
+
+Independently derived: the ENOBUFS behaviour is in this verifier's
+phase-1 ground truth, stamped at the base ref `5f193e6` as
+`709f2046ab0f25f188a5425e86df8e6e6817ee67e96edfe6efa06ae12cbc08d3`
+before this lane's first commit existed.
