@@ -2614,12 +2614,60 @@ mod tests {
             vec!["docs/tasks/T-302-b.md"]
         );
 
+        // THE ORDERING THIS BODY PINS IS THE ONE THE WATCHER ACTUALLY
+        // PROMISES, AND IT IS A CLAIM ABOUT COLLECTION *STARTS*
+        // (T-018-s2). `WatchState::next_seq` says so in as many words and
+        // every path obeys it: the stamp is drawn BEFORE the tree is
+        // collected, in `open_as_project`'s reply and in
+        // `handle_fs_batch` alike. So the counter orders the MOMENTS
+        // COLLECTION BEGAN and nothing else — it does not order content,
+        // because a batch that drew a lower stamp can still be collecting
+        // when a later write lands and will then ship the newer bytes
+        // under the older stamp. `from_b.seq > picked.seq` therefore
+        // means "the batch that produced this emit BEGAN after the pick
+        // took its stamp", and the only thing in this module that
+        // establishes that is the control loop's FIFO order.
+        //
+        // WITHOUT THE RENDEZVOUS BELOW THAT CLAIM WAS DECIDED BY A RACE,
+        // and it lost three times on ubuntu-24.04, every time on a
+        // docs-only diff that could not reach this file (CI run
+        // 33304351040, a second sighting on 2e4b76f, and run 33566291111
+        // attempt 1 on 4018a7b, whose captured stdout is the whole
+        // account). `project folder picked: <B>` is printed after the
+        // pick has taken its stamp, and the emit printed AFTER that line
+        // carried `seq=5` with `fs_events=3`: a batch left over from A's
+        // last write, dequeued the instant the re-arm ack was sent, that
+        // drew 5 while this thread drew 6 — and then collected B's tree
+        // late enough to see `beta v2`. Newer bytes, older stamp, and the
+        // assertion below was the only thing that noticed.
+        //
+        // `barrier` closes it, and it is a RENDEZVOUS RATHER THAN A WAIT:
+        // the same `WatchCtl::Ping` the startup arm uses in `live_state`,
+        // which returns only once the loop has handled every message
+        // enqueued ahead of it. After it, every batch the loop had
+        // already taken has FINISHED collecting — before the write below
+        // exists, so none of them can carry `beta v2` — and every batch
+        // it has not yet taken draws its stamp after this thread drew
+        // `picked.seq`. Both arms satisfy the assertion, so it can no
+        // longer be decided by the clock: no sleep, no retry, no widened
+        // window, and the two ways out are still the emit arriving and
+        // the watcher dying.
+        barrier(&state);
+
         // Watching B now: changes in B emit, stamped with B's dir and a
         // seq newer than the pick snapshot.
         b.write("docs/tasks/T-302-b.md", "beta v2");
         let from_b = recv_until(&emits, "B's tree carries `beta v2`", content_is("beta v2"));
         assert_eq!(from_b.project_dir, canon_b.display().to_string());
-        assert!(from_b.seq > picked.seq);
+        assert!(
+            from_b.seq > picked.seq,
+            "the first post-re-arm emit began after the pick took its stamp: \
+             from_b.seq={} must exceed picked.seq={} (see the derivation above \
+             - a tie or a lead means a batch that began BEFORE the pick shipped \
+             bytes written AFTER it)",
+            from_b.seq,
+            picked.seq
+        );
 
         // A change in the OLD project must never surface B's watch: any
         // residual event collects from B and is suppressed by equality.
@@ -2651,6 +2699,15 @@ mod tests {
 
         a.write("docs/two.md", "two");
         let emit = recv_until(&emits, "the new file's bytes are collected", content_is("two"));
+        // THE SAME CLAIM AS THE BODY ABOVE AND IT NEEDS NO BARRIER HERE,
+        // which is the sweep of T-018-s2's class recorded at the site
+        // rather than only in the notes. The hazard there is a batch
+        // ALREADY IN FLIGHT when the pick draws its stamp; this state is
+        // launched with no project, so nothing is armed and no fs event
+        // can exist until the pick above arms one. Every batch is
+        // therefore drawn after `picked.seq` by construction. **Arm this
+        // body over a tree that was already being watched and the
+        // rendezvous becomes owed here too.**
         assert!(emit.seq > picked.seq);
         assert_eq!(emit.files.len(), 2);
     }
