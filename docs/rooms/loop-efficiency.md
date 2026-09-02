@@ -173,6 +173,29 @@ once. A second finding from the same lane: the dispatch advisory's "no
 acceptance criteria" signal reads the heading and not the card, so a
 card whose SHALLs sit under "What to build" is called criterion-less.
 
+**17. A merge whose second parent is the verifier's detached bench commit
+is UNJUDGED by the landing gate.** The push guard's landing-gate line at
+05:08Z: *"0 lane branch(es) point at its second parent … so which card
+fences it cannot be derived."* Seven merges this sitting took the
+verifier's commit (written on a bench detached at the lane's tip) as the
+second parent, so the verdict rode the history — and no lane branch
+pointed at that commit, so the gate could not derive the card and
+allowed the push unjudged. The push was allowed, the merges were inside
+their fences, and nothing checked that. The construction is one
+command before the merge: `git branch -f task/<lane> <verdict sha>`,
+so the second parent is the lane branch's tip and the gate derives the
+card from the branch; the seat moved all eight branches after the fact
+so the record derives. T-239's arm owns it beside the merge step.
+
+**18. The integrator merged app sources and ran the battery without
+rebuilding the app.** Battery 14's app leg redded on one body, *"dist/
+predates src/lib/watcher-store.ts — rebuild (npm run build) before
+trusting the bundle grep"* — the T-018-s5 executor had named that body
+as the one a source change after a build necessarily reds. CONVENTIONS
+already orders the parser built first after a merge; the app's build is
+the same rule one package over, and the battery runner could run it
+rather than trust the seat's memory (T-204's class).
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an

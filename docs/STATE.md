@@ -120,14 +120,17 @@ opens with `Checkpoint:`** (T-182).
 - **A FRONTMATTER STAMP IS A NO-OP ON A KEY THE CARD LACKS** — read the
   frontmatter back after every stamp; a guard-class card gets
   `review: independent` at the dispatch stamp.
-- **CUT THE VERIFIER'S BENCH WITH THE LANE** (orchestrator 5c) — every
-  verdict this sitting was blind by the clock. **An AMENDMENT reaches the
-  verifier by PATH, never as your summary.**
+- **CUT THE VERIFIER'S BENCH WITH THE LANE** (orchestrator 5c). **An
+  AMENDMENT reaches the verifier by PATH, never as your summary.** **MOVE
+  THE LANE BRANCH TO THE VERDICT COMMIT BEFORE MERGING** (`git branch -f
+  task/<lane> <verdict sha>`), or the landing gate cannot derive the
+  card and the merge pushes UNJUDGED (room item 17).
 - **POISON DRILLS**: kill-set containment, the site the property lives,
   a DATA mutant where the property is data — verifier.md step 2b.
 - **A TIMING CORRELATE IS NOT A CAUSE.** Re-run a body ALONE before
   attributing; a merged main can fail `npm run build` — build the parser
-  FIRST.
+  FIRST, and build app/ after merging app sources, BEFORE the battery
+  (battery 14's stale-dist red).
 - **BOOT GATE AND HEALTH BANDS ARE OWED AT EVERY CHECKPOINT** (T-046,
   T-156). **A lane's token meter exists ONLY in its notification.**
 - **NARROWER HAZARDS LIVE IN THE RECORDS**: T-086-s1's 1-in-22 body,
