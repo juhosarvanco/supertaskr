@@ -10,6 +10,7 @@ import {
   dispatchContext,
   dispatchReport,
   knownPathOracle,
+  laneAddressOnce,
   lanesFrom,
   listedCards,
   loadParser,
@@ -704,4 +705,181 @@ test("the in-flight section's POPULATED arm, on an injected board that cannot ev
   // ...and the narrowing: the done card must not appear as a row.
   expect(section).not.toContain("T-941 [");
   expect(section).toContain("is NOT a fence hold");
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE LANE'S ADDRESS, SPELLED ONCE (T-225-s12) — the repeat that scales
+ * with the board times the lanes, and the control that stops it being
+ * removed by removing the sentence around it.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** A ruling row — `dispatchReport`'s own shape for one, three spaces in. */
+function rulingRows(rendered: string): string[] {
+  return rendered.split("\n").filter((l) => l.startsWith("   "));
+}
+
+/** Every line of the whole answer carrying `needle`, as a count. */
+function linesWith(rendered: string, needle: string): number {
+  return rendered.split("\n").filter((l) => l.includes(needle)).length;
+}
+
+test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path", async () => {
+  // KILLED BY: `laneAddressOnce` returning its argument — the no-op
+  // mutant, which is what this file looked like before this card and is
+  // the one a reader cannot see in the output, because the answer stays
+  // CORRECT and only gets bigger. Killed the other way by a helper that
+  // removes the lane ID with the address: the two acts `--full` exists
+  // for are "free that lane" and "argue with the overlap", and the id is
+  // half of the first.
+  const opts = { files: FILTER_BOARD, porcelain: ONE_LANE };
+  const full = await dispatchContext({ ...opts, full: true });
+  const rendered = render(dispatchReport(full));
+  expect(unstampedLines(rendered)).toEqual([]);
+
+  // THE FIXTURE IS LOAD-BEARING AND IS ASSERTED. A board with nothing
+  // fenced would satisfy every "appears once" check below out of an
+  // empty set rather than out of a removal.
+  expect(full.order.fenced.map((r: { id: string }) => r.id)).toEqual(["T-950", "T-951"]);
+
+  // THE ADDRESS IS IN THE ANSWER, ONCE, ON THE LANE'S OWN ROW.
+  const laneRow = "T-901 branch refs/heads/task/T-901-a-real-lane worktree /Users/x/nputer-T-901";
+  expect(rendered).toContain(laneRow);
+  expect(
+    linesWith(rendered, "refs/heads/task/T-901-a-real-lane"),
+    "T-901's branch is not on exactly one row — more means a ruling still re-spells it, zero " +
+      "means the answer no longer carries the address a reader comes here for",
+  ).toBe(1);
+  expect(
+    linesWith(rendered, "/Users/x/nputer-T-901"),
+    "T-901's worktree path is not on exactly one row — more means a ruling still re-spells it, " +
+      "zero means the answer no longer carries it at all",
+  ).toBe(1);
+
+  // AND NO RULING CARRIES IT — which is the byte this card is about.
+  for (const row of rulingRows(rendered)) {
+    expect(row, "a ruling re-spells a lane's branch").not.toContain("refs/heads/");
+    expect(row, "a ruling re-spells a lane's worktree path").not.toContain("/Users/x/nputer-T-901");
+  }
+
+  // WHILE THE TWO THINGS A TRIAGE READER ACTS ON ARE UNTOUCHED: which
+  // lane holds the card, and exactly which paths it shares.
+  const held = rulingRows(rendered).filter((l) => l.includes("T-950 has no unmet blocker"));
+  expect(held, "T-950's ruling is not in the answer at all").toHaveLength(1);
+  expect(String(held[0])).toContain("T-901 holds tools/e2e");
+
+  /**
+   * THE POSITIVE CONTROL, AND IT IS RUN ON THE PARSER'S OWN SENTENCE
+   * rather than on a string this test wrote: the raw reason DOES carry
+   * the address, so the absence above is a removal and not a board that
+   * never had one. Without this, a parser that stopped spelling lane
+   * addresses entirely would pass every assertion above while this card
+   * bought nothing.
+   */
+  const raw = String(
+    (full.order.fenced as { id: string; reason: string }[]).find((r) => r.id === "T-950")?.reason,
+  );
+  expect(raw, "the parser's own reason no longer carries a lane address").toContain(
+    "T-901 (refs/heads/task/T-901-a-real-lane at /Users/x/nputer-T-901)",
+  );
+  expect(laneAddressOnce(raw, [...full.order.lanes])).not.toContain("refs/heads/");
+  expect(
+    laneAddressOnce(raw, []),
+    "the helper removed an address with no lane to match it, so it is recognising a shape rather " +
+      "than replacing a lane record's own spelling",
+  ).toBe(raw);
+
+  /**
+   * AND THE FAILURE MODE IS THE SAFE ONE, asserted rather than claimed:
+   * a lane spelled some other way is left WHOLE. The answer is then
+   * bigger than it needs to be and is never wrong, which is the property
+   * that makes a literal replacement safe where a recogniser would not
+   * be.
+   */
+  const foreign = "T-901 (refs/heads/some-other-spelling at /elsewhere) holds tools/e2e.";
+  expect(laneAddressOnce(foreign, [...full.order.lanes])).toBe(foreign);
+});
+
+test("...AND THE SAVING IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone", async () => {
+  // KILLED BY: the same no-op mutant, and by a saving measured only on a
+  // board chosen to fit — the card's own complaint about this family is
+  // that the number moved one arm along each time, so the number is
+  // taken here, on the board this command actually runs against.
+  //
+  // ONE READ OF THE WORKTREE LIST FEEDS THE WHOLE BODY. The board moves
+  // under every reading and a delta between two boards is not a delta
+  // (T-220's failure at this same seam).
+  const porcelain = worktreePorcelain(repoRoot);
+  const full = await dispatchContext({ porcelain, full: true });
+  const rendered = render(dispatchReport(full));
+  const lanes = [...full.order.lanes] as { taskId: string; branch: string; worktree: string }[];
+  expect(unstampedLines(rendered)).toEqual([]);
+
+  // EVERY RULING THE REPORT SPELLS AT THIS VERBOSITY, so the saving is
+  // the report's and not one set's.
+  const o = full.order;
+  const spelled = [
+    ...o.startable,
+    ...o.fenced,
+    ...o.unfenceable,
+    ...o.waits,
+    ...o.blocked,
+  ] as { reason: string }[];
+  const saved = spelled.reduce(
+    (n, r) => n + r.reason.length - laneAddressOnce(r.reason, lanes).length,
+    0,
+  );
+  const bytes = Buffer.byteLength(rendered, "utf8");
+
+  disclose(
+    "dispatch ADDRESS",
+    `at ${full.ref.slice(0, 12)} with ${lanes.length} lane(s) live: the unfiltered view is ` +
+      `${bytes} bytes with each lane's address spelled once, and ${saved} bytes of lane branch ` +
+      `and worktree path are what the ${spelled.length} ruling(s) below the headings no longer ` +
+      `re-spell. ${o.fenced.length} card(s) are fenced out.`,
+  );
+
+  // EACH LIVE LANE'S ADDRESS APPEARS EXACTLY ONCE IN THE WHOLE ANSWER —
+  // on its own row under THE LIVE LANES, where a reader goes to find it.
+  // EXACTLY once, in BOTH directions: more than one row means a ruling
+  // is still re-spelling it, and zero means the answer stopped carrying
+  // the address at all — which would be this card buying its bytes by
+  // deleting what a reader goes to THE LIVE LANES to find.
+  for (const lane of lanes) {
+    expect(
+      linesWith(rendered, lane.branch),
+      `${lane.taskId}'s branch is not on exactly one row of the whole answer — once under THE ` +
+        "LIVE LANES, never inside a ruling",
+    ).toBe(1);
+    expect(
+      linesWith(rendered, `worktree ${lane.worktree}`),
+      `${lane.taskId}'s worktree is not on exactly one row of the whole answer — once under THE ` +
+        "LIVE LANES, never inside a ruling",
+    ).toBe(1);
+  }
+
+  // AND THE HONEST ARM. A board with nothing held by a lane has no
+  // address to repeat, so this run SAYS which of the two it was rather
+  // than reporting an unqualified saving — brief-flush.spec.ts's own
+  // vacuity disclosure, kept here for the same reason.
+  if (saved === 0) {
+    disclose(
+      "dispatch ADDRESS COVERAGE",
+      "no ruling on this board names a live lane today, so THIS run measures nothing — the " +
+        "injected board above is the one carrying the proof.",
+    );
+    expect(lanes.length === 0 || o.fenced.length + o.unfenceable.length === 0).toBe(true);
+  } else {
+    expect(saved).toBeGreaterThan(0);
+    // ...and the removal is not the sentence: every ruling that lost an
+    // address still names the lane it lost it from.
+    for (const lane of lanes) {
+      const named = spelled.filter((r) => r.reason.includes(`${lane.taskId} (${lane.branch} `));
+      for (const r of named) {
+        expect(
+          laneAddressOnce(r.reason, lanes),
+          `a ruling naming ${lane.taskId} lost the lane id along with the address`,
+        ).toContain(lane.taskId);
+      }
+    }
+  }
 });
