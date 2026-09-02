@@ -984,24 +984,66 @@ test("the seat with no lane is seen from a LINKED worktree too, and the main che
   expect(held.reason).toContain("T-905");
 });
 
-test("the three carve-outs each free a DIFFERENT write, and the fence still holds around them", async () => {
-  // A lane fencing `docs` is what makes this measurable: the domain
-  // contains the card, the stamps and this seat's own standing writes,
-  // so all three carve-outs and the refusal are one fixture apart.
-  const fx = makeFixture("touches: [tools/e2e, docs]");
+test("the carve-outs each free a DIFFERENT write, and the fence still holds around them", async () => {
+  // THE FENCE NAMES ITS PIECES, AND SINCE T-219 IT HAS TO. This body
+  // used to fence the bare `docs`, because that one domain contains the
+  // card, the stamps and this seat's own standing writes — all three
+  // carve-outs and the refusal, one fixture apart. `expandFence` now
+  // REFUSES a token whose domain CONTAINS `docs/tasks` (containment IS
+  // holding), so the widest fence any card may hold reaches those four
+  // places by naming them. Every carve-out below is still armed, and
+  // the own-file one is armed by the spelling rule 5 prescribes in
+  // place of the directory: the card named outright.
+  //
+  // THE OTHER CARD IS FENCED BY NAME, AND THAT IS NOT A CONTRIVANCE: it
+  // is the spelling rule 5 prescribes in the same breath as the refusal
+  // ("Name the individual files instead"), and it is the only way left
+  // to put a path under `docs/tasks` inside a live lane's reservation —
+  // which is what arms the unfenceable-directory carve-out at all.
+  const OTHER_CARD = "docs/tasks/T-903-a-suggestion.md";
+  const fx = makeFixture(
+    `touches: [tools/e2e, ${FIXTURE_CARD}, ${OTHER_CARD}, docs/STATE.md, docs/checkpoints, docs/ROADMAP.md]`,
+  );
   const manifest = await arm(fx);
-  expect(manifest.paths).toContain("docs");
+  expect(manifest.paths).toEqual([
+    "docs/ROADMAP.md",
+    "docs/STATE.md",
+    "docs/checkpoints",
+    OTHER_CARD,
+    "tools/e2e",
+  ]);
+  expect(manifest.paths, "the fence swallowed the directory no card may hold").not.toContain(
+    "docs",
+  );
   expect(manifest.excluded, "the card's own file was not carved out at dispatch").toEqual([
     FIXTURE_CARD,
   ]);
   expect(manifest.alwaysWritable).toEqual(["docs/tasks"]);
 
+  // THE OWN-CARD WRITE IS STILL ALLOWED, AND IT NO LONGER TAKES THE
+  // CARVE-OUT — a consequence of T-219 that this body is the only thing
+  // in the repository positioned to notice, so it is asserted rather
+  // than left to be discovered.
+  //
+  // `carveOutFor`'s FIRST arm answers for a lane's own card file, and
+  // the seat branch consults it only for a path some live lane's
+  // manifest RESERVES. A card file is reserved only by a domain that
+  // contains `docs/tasks` — the fence T-219 refuses — and `expandFence`
+  // moves a card's own file out of `paths` into `excluded` regardless.
+  // So after T-219 no manifest can select that arm, and the write falls
+  // through to `not-a-lane`. The hook's own header ordered that arm
+  // first to avoid exactly this ("an arm no write can select is an arm
+  // no mutation can kill"); the ordering is fine and the REACHABILITY
+  // moved under it. `.claude/hooks/lane-fence.mjs` is outside this
+  // lane's fence, so the arm is ROUTED as `T-219-s3` rather than
+  // touched here, and this assertion is what will red when it is fixed.
   const ownCard = ask(fx.repo, path.join(fx.repo, FIXTURE_CARD));
   expect(ownCard.verdict, ownCard.reason).toBe("allow");
-  expect(ownCard.code).toBe("protocol-carve-out");
-  expect(ownCard.reason, "the own-file carve-out is not the one named").toContain("own card file");
+  expect(ownCard.code, "the own-card carve-out arm became reachable again — see T-219-s3").toBe(
+    "not-a-lane",
+  );
 
-  const otherCard = ask(fx.repo, path.join(fx.repo, "docs/tasks/T-903-a-suggestion.md"));
+  const otherCard = ask(fx.repo, path.join(fx.repo, OTHER_CARD));
   expect(otherCard.verdict, otherCard.reason).toBe("allow");
   expect(otherCard.code).toBe("protocol-carve-out");
   expect(otherCard.reason, "the unfenceable-directory carve-out is not the one named").toContain(
@@ -1015,9 +1057,11 @@ test("the three carve-outs each free a DIFFERENT write, and the fence still hold
     expect(seat.reason, seatPath).toContain("standing write");
   }
 
-  // THE DISCRIMINATING HALF: a path under the SAME fenced domain that no
-  // carve-out names is refused, in the same run. Without it every line
-  // above is satisfied by a hook that stopped enforcing `docs`.
+  // THE DISCRIMINATING HALF: a fenced path under docs/ that no carve-out
+  // names is refused, in the same run. Without it every line above is
+  // satisfied by a hook that stopped enforcing this lane's docs domains
+  // altogether. `docs/ROADMAP.md` is now fenced by NAME rather than by
+  // sitting inside `docs`, which is the only thing about it that moved.
   const refused = ask(fx.repo, path.join(fx.repo, "docs/ROADMAP.md"));
   expect(refused.verdict, refused.reason).toBe("block");
   expect(refused.code).toBe("held-by-a-live-lane");
@@ -1708,7 +1752,7 @@ test("`alwaysWritable` PARTICIPATES — two lanes judged under different unfence
   expect(refusal).toContain("unfenceable set moved");
 });
 
-test("`excluded` PARTICIPATES — a card's own file is not a collision with the lane that holds its directory", async () => {
+test("`excluded` PARTICIPATES — a card's own file is not a collision with the lane that carved it out", async () => {
   // A card's own file is outside every fence including its own, which
   // `expandFence` records in `excluded` and `compareFences` already
   // subtracts. Pinned at THIS call site because the manifest is where the
@@ -1718,19 +1762,65 @@ test("`excluded` PARTICIPATES — a card's own file is not a collision with the 
   // this check refuses in its own right, and this body is about a
   // different question.
   await arm(fx);
-  const sibling = await addLane(fx, "T-902", "touches: [docs]");
+  // THE SIBLING NAMES ITS OWN CARD, WHICH IS WHAT T-219 LEFT AVAILABLE
+  // AND IS ALSO THE STRONGER FIXTURE. It used to fence the bare `docs`
+  // and reach its own card by CONTAINMENT; that token is now refused,
+  // because a domain containing `docs/tasks` holds every card's file.
+  // Naming the card outright exercises the carve-out's exact-file arm —
+  // the one `expandFence` actually implements — and `docs/rooms` is
+  // beside it only so the fence reserves something, which
+  // `buildLaneFence` requires separately. The body's own title moved
+  // with the fixture: the lane no longer holds a DIRECTORY, it holds the
+  // file it carved out, and the property is the carve-out either way.
+  const sibling = await addLane(
+    fx,
+    "T-902",
+    "touches: [docs/rooms, docs/tasks/T-902-a-sibling-lane.md]",
+  );
   expect(
     sibling.manifest.excluded,
     "the sibling's own card is carved out of its own fence",
   ).toEqual(["docs/tasks/T-902-a-sibling-lane.md"]);
+  expect(
+    sibling.manifest.paths,
+    "the carve-out swallowed the fence instead of one file",
+  ).toEqual(["docs/rooms"]);
 
   // A third lane fencing exactly that carved-out file is NOT colliding
-  // with the lane that holds all of `docs/`.
+  // with the lane whose own card it is.
   const third = await addLane(fx, "T-903", "touches: [docs/tasks/T-902-a-sibling-lane.md]");
   expect(
     third.manifest.paths,
     "the file the other lane excluded is ground it does not hold",
   ).toEqual(["docs/tasks/T-902-a-sibling-lane.md"]);
+});
+
+test("a card fencing a domain that CONTAINS `docs/tasks` is refused at the arm, naming what it swallowed", async () => {
+  // T-219, pinned at the call site the ruling is FOR. `method/lane-protocol.md`
+  // rule 5 refuses the directory the protocol writes to on every card, and
+  // until T-219 that refusal was EXACT-MATCH on the normalised token — so
+  // `docs/tasks` was refused and the bare `docs` beside it was accepted and
+  // expanded to a domain containing it. Two fixtures in this very file held
+  // that token, which is how the gap survived: the specs pinned the fence a
+  // card may not hold.
+  //
+  // WITHOUT THIS BODY THE ONLY TRACE OF THE RULING WOULD BE THE ABSENCE of
+  // those two fixtures, and an absence pins nothing — the next author to
+  // want a wide docs fence would write one and find out from a suite that
+  // does not say why.
+  const fx = makeFixture("touches: [tools/e2e, docs]");
+  await expect(buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo })).rejects.toThrow(
+    /CONTAINS 'docs\/tasks'/,
+  );
+
+  // THE CONTROL, and it is the direction that matters: the remedy the rule
+  // names in the same breath — "Name the individual files instead" — still
+  // arms. A containment test run in BOTH directions would refuse this too,
+  // and this fixture is the difference between the two implementations.
+  const named = makeFixture(`touches: [tools/e2e, ${FIXTURE_CARD}]`);
+  const manifest = await buildLaneFence(FIXTURE_ID, named.lane, { root: named.repo });
+  expect(manifest.paths).toEqual(["tools/e2e"]);
+  expect(manifest.excluded).toEqual([FIXTURE_CARD]);
 });
 
 test("a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence", async () => {
@@ -1740,6 +1830,16 @@ test("a card with an EMPTY `touches:` is refused rather than dispatched with the
   // step EARLIER than the intersection and more strictly: such a card is
   // not dispatchable at all. Pinned here so the criterion cannot regress
   // silently into a fence that collides with nothing.
+  //
+  // WHICH OF TWO REFUSALS THIS BODY READS IS A DESIGN CHOICE AND NOT AN
+  // ACCIDENT (T-219, absorbing T-227). `expandFence` now refuses an empty
+  // `touches:` too, and it does so with an ISSUE rather than an entry in
+  // `Fence.unusable` — that list is documented as raw TOKENS and an empty
+  // declaration owns none. Had the refusal gone into `unusable`,
+  // `buildLaneFence`'s unresolved-token guard would fire FIRST and this
+  // regex would stop matching, so this assertion is load-bearing on that
+  // choice: if it ever reds with a message about tokens, the parser put a
+  // sentinel where a token belongs.
   const fx = makeFixture("touches: []");
   await expect(buildLaneFence(FIXTURE_ID, fx.lane, { root: fx.repo })).rejects.toThrow(
     /expands to no path at all/,

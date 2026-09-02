@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: verifying
 blocked_by: []
-touches: [lib-parser]
+touches: [lib-parser, tools/e2e/tests/lane-fence.spec.ts]
 suggested_by: "T-209's executor, which needed the exact semantics of `alwaysWritable` to decide how it participates in a lane-vs-lane intersection and found the refusal is token-shaped where the rule is path-shaped"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
@@ -471,6 +471,44 @@ derivation time.
 
 <!-- GATE-DERIVATION -->
 
+### Fence pass, 2026-09-02 — the widening arrived and steps 2-6 were performed here
+
+**The grant was read, not relied on.** The dispatching seat amended
+`touches:` on the integration branch at **`52eea31fc6ae55ec33a45171aef7d5b40b3e3c62`**,
+re-expanded this lane's manifest against that commit, and wrote the same
+line plus the `## FENCE WIDENED` section into this lane's copy of the card
+by an uncommitted Bash write. **Both halves were verified by this lane's own
+read before anything was built** (`roles/executor.md`: never proceed on a
+reply): the card's line and the manifest's `touchesLine` compare
+`IDENTICAL: true` byte for byte, and the section is byte-identical to
+`52eea31`'s copy. That uncommitted write is committed here, by the seat
+that owns the file it lands in.
+
+**FAST PATH A'S POSITIVE CONTROL PAIR, MEASURED IN THIS LANE RATHER THAN
+QUOTED**, because only the two together separate a refusal from an absence:
+
+| write attempted | before the lane's copy carried the line | after |
+|---|---|---|
+| `lib/parser/src/fence.ts` (already held) | REFUSED — stale stamp | allowed |
+| this card, under always-writable `docs/tasks` | REFUSED — stale stamp | allowed |
+| `tools/e2e/tests/lane-fence.spec.ts` (newly granted) | — | allowed |
+| `tools/e2e/tests/landing-gate.spec.ts` (never granted) | — | REFUSED, naming fence, path and route |
+
+The first two are the half-performed widening's own measurement
+reproduced: the guard refused the paths this lane ALREADY held, and it
+refused the card too — so **routing could not be written during the
+window**, which is why the earlier report ended in a hand-off rather than
+in notes. Nothing was written by any refused probe; `git status` was clean
+after both and `fence.ts`'s sha256 was unchanged.
+
+**One correction to my own routed card, found by building it.** `T-219-s1`
+prescribed the two fixture spellings and was right in shape, but it had not
+seen that a carve-out is consulted only for a path a live lane RESERVES.
+That cost two iterations, both recorded above under Absorbs, and it turned
+up the finding now filed as `T-219-s3`: this card makes `carveOutFor`'s
+own-card arm unreachable for every possible manifest — the exact condition
+that arm's own header was ordered first to avoid.
+
 ### Where the brief was wrong
 
 - **Row 4's base commit is wrong, and the brief says it may be** (T-233's
@@ -513,3 +551,64 @@ derivation time.
 - The e2e lane is RED by two named bodies at this tip and the cause is
   this diff. That is disclosed, routed as `T-219-s1`, and is the one
   thing about this lane that a green report would have hidden.
+
+## FENCE WIDENED, 2026-09-02 — fast path A, by the dispatching seat
+
+Amended on the integration branch while the lane was live: the blind
+verifier measured at the base that a correct containment refusal reds two
+bodies in tools/e2e/tests/lane-fence.spec.ts (:987 and :1711), whose lane
+fixtures fence the bare `docs` this card exists to refuse. Rule 5 forbids
+widening from inside the lane; the seat widened it here, re-expanded the
+manifest against this commit, and sent the executor this line by path.
+The two fixtures are repaired inside the lane rather than routed.
+
+## Absorbs: T-219-s1 (2026-09-02, at the fence widening)
+
+`T-219-s1` was this lane's routed finding while the fence was
+`[lib-parser]`: a correct containment refusal reds two bodies in
+`tools/e2e/tests/lane-fence.spec.ts` whose lane fixtures fence the bare
+`docs` this card exists to refuse, and rule 5 forbids widening from
+inside the lane. The dispatching seat widened the fence by fast path A
+(the section above), so the repair was performed here instead of routed,
+and the suggestion file is removed in this commit per
+`method/tasks/TASK-FORMAT.md`'s promotion encoding.
+
+**What the repair actually was**, since the routed card's guess at it was
+right in shape and short in one place:
+
+- **`:987` — *the carve-outs each free a DIFFERENT write, and the fence
+  still holds around them*.** Its fixture now names its pieces:
+  `[tools/e2e, <its own card>, <another card>, docs/STATE.md,
+  docs/checkpoints, docs/ROADMAP.md]`. Naming ANOTHER card by name is
+  what still arms the unfenceable-directory carve-out — that is the
+  spelling rule 5 prescribes in the same breath as the refusal, and the
+  routed card had not spotted that the carve-out needs the path to be
+  RESERVED by a live lane at all.
+- **THE HALF THE ROUTED CARD MISSED, found by building it**: the
+  own-card carve-out is now unreachable for every possible manifest, so
+  that write is allowed as `not-a-lane` instead. The body asserts the new
+  code with the reason on the assertion. The arm lives in
+  `.claude/hooks/lane-fence.mjs`, outside even the widened fence, so it
+  is filed as **`T-219-s3`** — guard-class, and its landing will red this
+  body by name on purpose.
+- **`:1729` — *`excluded` PARTICIPATES*.** Its sibling lane now fences
+  `[docs/rooms, <its own card>]`, which exercises the carve-out's
+  exact-file arm — the one `expandFence` implements — rather than
+  reaching the card by containment. Renamed from *…the lane that holds
+  its directory* to *…the lane that carved it out*, because after this
+  card no lane holds that directory.
+- **ADDED: *a card fencing a domain that CONTAINS `docs/tasks` is
+  refused at the arm, naming what it swallowed*.** Without it the only
+  trace of the ruling at this call site would be the ABSENCE of the two
+  `docs` fixtures, and an absence pins nothing.
+- **`:1802` — *a card with an EMPTY `touches:`…*** was green throughout
+  and its comment now says why: it reads `lane-fence.mjs`'s *expands to
+  no path at all*, which stays reachable only because this card's
+  empty-`touches:` refusal is an ISSUE and not a `Fence.unusable` entry.
+
+**TWO TEST NAMES MOVED AND ONE WAS ADDED, SO `docs/CAPABILITIES.md` IS
+STALE AT THIS TIP.** The census is generated from these spec names and
+is outside the fence; regeneration (`npm run capabilities` from
+tools/e2e/) is the integrator's, in the merge commit, per
+`docs/CONVENTIONS.md`. `npm run capabilities:check` reds until then, by
+design.
