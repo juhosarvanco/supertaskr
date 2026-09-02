@@ -509,6 +509,67 @@ up the finding now filed as `T-219-s3`: this card makes `carveOutFor`'s
 own-card arm unreachable for every possible manifest — the exact condition
 that arm's own header was ordered first to avoid.
 
+### Fix pass, 2026-09-02 — V-T-219's rejection, and the half of my own criterion I argued myself out of
+
+**The finding, in the verifier's words:** *"`readDispatchOrder` still
+reports an undeclared fence `disjoint`, and does it exactly when it
+matters … The first half is met. The second is met **only while at least
+one lane is live**."* And: *"`rule()` reaches `compareFences` only through
+`holds`, and `holds` is empty when the lane list is. **Dispatch happens
+when lanes are free**, so the zero-lane state is the canonical dispatch
+moment, not an exotic one."* REJECTED at `1bfe8f1`, on this card's own
+absorbed T-227 criterion — *the dispatch guard SHALL never report it
+disjoint* — and the sentence it still produced is verbatim the one
+`lanes.test.ts`'s own comment names as closed.
+
+**I OWE THIS ONE PLAINLY: I SAW IT WHILE BUILDING AND TALKED MYSELF OUT
+OF IT.** The build reasoned that *"the dispatch guard"* meant
+`compareFences` and `lane-fence.mjs`'s arm, concluded the criterion was
+satisfied there, and moved on — having already noticed that `holds` is
+empty when no lane is live. That is the shape the ceremony table gives a
+guard-class card a verifier FOR: the author of a cage deciding which
+question the cage was asked. The verifier's reproduction is three lines
+and I could have run it.
+
+**Reproduced at `1bfe8f1` before touching anything**, and the pair is
+what makes it a finding rather than a claim: `NO LANES → startable, "it
+reserves nothing, disjoint from every live lane"`; `ONE LANE →
+unfenceable`.
+
+**THE REMEDY IS THE VERIFIER'S TERM AT A DIFFERENT SITE, AND THE
+DIFFERENCE IS DEFENDED RATHER THAN SMUGGLED.** The verdict names a
+`fence.tokens.length === 0` branch placed BEFORE the `holds.length === 0`
+branch. I added the term TO that guard instead — `holds.length === 0 &&
+fence.tokens.length > 0` — because an early return answers correctly and
+DROPS the clauses the `unfenceable` branch accumulates when lanes are
+also live: measured, the one-lane reason still carries its `cardMissing`
+clause beside the undeclared one, which an early return would have lost.
+One exit, one copy of the sentence (T-057). **It also forced a guard that
+was not there**: `[].every(...)` is TRUE, so once that line stopped
+returning for every empty `holds`, `ownLaneOnly` would have indexed
+`holds[0]` — `undefined` — and thrown out of a module whose contract is
+that it never throws. `ownLaneOnly` is now guarded on the count, and a
+mutant proves it.
+
+**SCOPE, MEASURED BEFORE IT WAS CHOSEN.** A wider remedy —
+`fence.unusable.length > 0` beside the token count — is the same class
+and is defensible on this module's own closing sentence (*a fence that
+cannot be COMPUTED is not a fence that is free*). Measured over the live
+board with no lanes: the verifier's term moves **0** cards; the wider one
+would additionally move **`T-164-s1` (`planned`, unusable `["bin"]`)**
+from `startable` to `unfenceable`. That is a different criterion and
+another card's dispatchability, so it is NOT taken here and is filed as
+**`T-219-s4`**. The verdict said the rest was tested and holds; a fix
+pass that quietly re-opened it would be spending a verdict nobody gave.
+
+**THE FIXTURE HELPER MOVED, AND THREE BODIES SAY WHY.** Completing the
+refusal reddened three existing bodies about ORDERING and `underway`
+whose fixture cards happened to declare no fence. `card()` in
+`lanes.test.ts` now gives each fixture its own `fixture/<id>` domain
+unless the caller passes `touches: []` explicitly — so the two bodies
+that genuinely need an undeclared fence DECLARE that they do, in one
+visible token, instead of relying on the absence of an argument.
+
 ### Where the brief was wrong
 
 - **Row 4's base commit is wrong, and the brief says it may be** (T-233's
