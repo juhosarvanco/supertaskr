@@ -4,8 +4,8 @@ title: The `git worktree list` a session reads is a defaulted machine-scoped sur
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 4
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205-s8, 2026-09-02
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
@@ -59,3 +59,12 @@ of that surface from defaulting it.
 `docs/CONVENTIONS.md`'s SCRATCH RULE, PORT RULE and E2E PORT bullets;
 `T-205-s8` (the measurement and the first fix), `T-205-s6`, `T-205-s7`,
 and `T-209`.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-205-s8 merge (e68c36e)
+
+The architect seat. The worktree list is the fourth machine-scoped
+surface (with the scratch rule, the port rule and the e2e port); three
+lanes measured it today (T-205-s8, T-202-s1's margin guard, T-239's
+skew). One sentence in CONVENTIONS' lane bullet naming it beside the
+other three; rides the next CONVENTIONS lane (T-216-s6 or T-228-s2,
+behind T-239).
