@@ -7,7 +7,7 @@ priority: 3
 size: M
 status: building
 blocked_by: []
-touches: [method/roles, docs/CONVENTIONS.md]
+touches: [method/roles, docs/CONVENTIONS.md, tools/method-evals/evals/mf-08-two-spawn-single-source.mjs, tools/method-evals/evals/mf-09-attack-set-digest-refusal.mjs]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); six disclosures on 2026-08-31 are the evidence, four against this seat and two self-inflicted"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
