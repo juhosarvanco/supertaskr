@@ -570,3 +570,34 @@ it makes that this verdict repeats was re-measured here.
 This verdict is a write to `docs/tasks/`, which the docs gate names as a
 code input, so the suites it names were re-run after the commit below and
 their results are reported with the verdict.
+
+**Measured at `051e29fedd…` — the verdict commit above, whose only
+successor is this paragraph** (a figure without its ref is wrong the
+moment anybody writes again, so each carries one):
+
+| gate | at `051e29f` | reading |
+|---|---|---|
+| `gate-run parser` | exit 0, **363 bodies**, GREEN | |
+| `gate-run app` | exit 0, **1131 bodies**, GREEN | |
+| `gate-run e2e` (port 25219) | exit 1, **575 bodies, 573 passed / 2 failed**, RED | **attributed, not assumed — see below** |
+| `index --check --root ../..` | exit 0, **CURRENT** (200 files, 2502 symbols, 2390 edges) | |
+| `docs-gate.mjs <this card>` | FIRES on the card path; **0 frontmatter issues in the live tree**, every status legal, budgets hold | |
+| `capabilities:check` | **CURRENT** (48201 bytes) | no test name moved |
+
+**THE E2E RED IS NOT THIS LANE'S, AND I ATTRIBUTED IT BY NAME RATHER
+THAN BY COUNT.** The two failures are
+`session-economics.spec.ts:179` (*the recommended seat is a function of
+the CARD…*) and `:365` (*the advisory line is NOT a contract row…*), both
+failing on the assembler's disclosure that **`T-018-s6`, `T-215-s1` and
+`T-229-s6` hold worktrees whose ids no live card declares** — the
+machine-scoped worktree list joined to a checkout-scoped board, which
+`docs/STATE.md` carries as `guard-surface-behind` and
+`method/lane-protocol.md` rule 4 names. Those three lanes were cut after
+this lane's base, so their cards are not in this tree. **Measured, not
+reasoned:** the same file run at the BASE
+`a7cc65b8064deb9420a6190540f64ae884357d2a` — which contains no line of
+this diff and none of my verdict — fails **the same two bodies by name**,
+2 failed / 8 passed. Nothing in the three paths this branch touches is on
+the assembler's path.
+
+The verdict stands: **APPROVED at `7129d90b4ead812954c44c6c6f5094c76e4772b7`.**
