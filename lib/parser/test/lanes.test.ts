@@ -27,7 +27,25 @@ interface Frontmatter {
   priority?: number;
 }
 
+/**
+ * A fixture card. **IT DECLARES ITS OWN DISJOINT FENCE UNLESS IT ASKS NOT
+ * TO**, and that default is load-bearing rather than tidy since T-219:
+ * a card with an EMPTY `touches:` declares no fence at all, and
+ * `readDispatchOrder` refuses such a card whatever the lane list says. A
+ * fixture that left the field empty by accident would land in
+ * `unfenceable` for a reason having nothing to do with ordering,
+ * `underway` or caching — which is exactly how three bodies here reddened
+ * when that refusal was completed.
+ *
+ * THE OPT-OUT IS EXPLICIT AND IS THE POINT: passing `touches: []` is a
+ * DECLARATION that this fixture is the undeclared-fence case, and the two
+ * bodies that need it say so in one visible token instead of relying on
+ * the absence of an argument. The domain is a `fixture/` namespace no
+ * component claims, so two fixture cards are disjoint by construction and
+ * never by a coincidence of the registry.
+ */
 function card(id: string, title: string, fm: Frontmatter = {}): { path: string; content: string } {
+  const touches = 'touches' in fm ? (fm.touches ?? []) : [`fixture/${id}`];
   return {
     path: `docs/tasks/${id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`,
     content: [
@@ -38,7 +56,7 @@ function card(id: string, title: string, fm: Frontmatter = {}): { path: string; 
       ...(fm.milestone === undefined ? [] : [`milestone: ${fm.milestone}`]),
       ...(fm.priority === undefined ? [] : [`priority: ${fm.priority}`]),
       `blocked_by: [${(fm.blockedBy ?? []).join(', ')}]`,
-      `touches: [${(fm.touches ?? []).join(', ')}]`,
+      `touches: [${touches.join(', ')}]`,
       '---',
       '',
       'Body.',
@@ -291,17 +309,30 @@ describe('ADAPTATION IS BY CONSTRUCTION, NOT A FEATURE', () => {
     // the cards and the lane list, so there is no bookkeeping step to
     // forget and no remembered answer to go stale. THIS BODY IS THE
     // PROPERTY ITSELF, pinned rather than asserted in prose.
+    // EACH FIXTURE CARD DECLARES ITS OWN DISJOINT FENCE, and that is
+    // load-bearing rather than decoration since T-219: a card with an
+    // EMPTY `touches:` declares no fence at all, `compareFences` refuses
+    // to call a token-less fence disjoint, and these cards would land in
+    // `unfenceable` for a reason with nothing to do with caching.
     const base = [
       ROADMAP,
-      card('T-001', 'A', { milestone: 4, priority: 1 }),
-      card('T-002', 'B', { status: 'building', milestone: 4, priority: 2 }),
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['app/src/one.ts'] }),
+      card('T-002', 'B', {
+        status: 'building',
+        milestone: 4,
+        priority: 2,
+        touches: ['app/src/two.ts'],
+      }),
     ];
     const before = readDispatchOrder(parseProjectFromFiles(base), [lane('T-002')]);
     expect(before.startable.map((r) => r.id)).toEqual(['T-001']);
     expect(before.schedule.total).toBe(2);
 
     const after = readDispatchOrder(
-      parseProjectFromFiles([...base, card('T-003', 'C', { milestone: 4, priority: 0 })]),
+      parseProjectFromFiles([
+        ...base,
+        card('T-003', 'C', { milestone: 4, priority: 0, touches: ['app/src/three.ts'] }),
+      ]),
       [lane('T-002')],
     );
     expect(after.startable.map((r) => r.id)).toEqual(['T-003', 'T-001']);
@@ -452,5 +483,86 @@ describe('a lane whose id names no card RULES on every card, and is never merely
     expect(order.all.find((r) => r.id === 'T-001')?.reason).toContain(
       'nothing can be ruled disjoint from them',
     );
+  });
+});
+
+describe('T-219/T-227 — a card that declares NO fence is not a card whose fence is free', () => {
+  it('lands in `unfenceable` beside a live lane, with a sentence naming the card as the cause', () => {
+    // KILLED BY: `compareFences` walking `a.tokens × b.tokens` and
+    // falling through to `disjoint` on a token-less side, which is what
+    // this module shipped until T-219 absorbed T-227. The consequence
+    // reached here rather than at the parser: such a card came back
+    // `startable`, wearing the sentence "it reserves nothing, disjoint
+    // from every live lane" — a fence that permits NOTHING advertised as
+    // a fence that collides with nothing.
+    const board = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: [] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-002')]);
+
+    expect(order.startable.map((r) => r.id), 'an undeclared fence got a green light').toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason).toContain('declares no `touches:` at all');
+    expect(reason).toContain('an undeclared fence is not an empty one');
+    // AND THE SENTENCE IS NOT LEFT WITH AN EMPTY MIDDLE. The other two
+    // causes cannot speak for this card — there is no token to be
+    // unresolved and the holder's card IS in this checkout — so without
+    // the third clause the reason reads "…ruled out: . A fence that…".
+    expect(reason, 'the clause list came back empty').not.toContain(': . A fence');
+
+    // THE CONTROL: the same board with the same holder, and the card
+    // declaring a disjoint fence, is startable. Without it every
+    // assertion above is satisfied by a module that refuses everything.
+    const declared = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['app/src/main.tsx'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(declared), [lane('T-002')]);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+  });
+
+  it('and it is refused with NO LANE LIVE, which is the moment dispatch actually asks', () => {
+    // V-T-219's rejection, pinned. The body above hands in `[lane('T-002')]`
+    // and therefore CANNOT see this: `rule()` reaches `compareFences` only
+    // through `holds`, and `holds` is empty when the lane list is — so the
+    // refusal was armed exactly when the card would have been held anyway
+    // and disarmed when nothing was live. That is backwards, because
+    // DISPATCH HAPPENS WHEN LANES ARE FREE: `brief.mjs --dispatch` is what
+    // this project asks for "what can START", it is this function, and the
+    // zero-lane board is its canonical input rather than an exotic one.
+    //
+    // KILLED BY: dropping `&& fence.tokens.length > 0` from the
+    // `holds.length === 0` guard in `rule()` — which is what this module
+    // shipped at `1bfe8f1`, where the card came back `startable` wearing
+    // the sentence the body above names as the defect.
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, touches: [] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+
+    expect(order.lanes, 'the fixture handed in a lane and cannot see this').toEqual([]);
+    expect(
+      order.startable.map((r) => r.id),
+      'an undeclared fence got a green light at the dispatch moment',
+    ).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason).toContain('declares no `touches:` at all');
+    // AND THE SENTENCE IT NO LONGER WEARS, asserted by name: this is the
+    // exact string the absorbed T-227 criterion forbids, and a regression
+    // here would restore it verbatim rather than paraphrase it.
+    expect(reason, 'the refused sentence came back').not.toContain('disjoint from every live lane');
+
+    // THE CONTROL, on the SAME zero-lane board: a card that DECLARES a
+    // fence is still startable. Without it every assertion above is
+    // satisfied by a module that refuses every card once the lane list is
+    // empty — which would break dispatch in the opposite direction and
+    // look just as green.
+    const declared = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, touches: ['lib/parser'] })];
+    const ok = readDispatchOrder(parseProjectFromFiles(declared), []);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(ok.startable[0]?.reason).toContain('disjoint from every live lane');
   });
 });

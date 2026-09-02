@@ -24734,8 +24734,8 @@
       "id": "f:lib/parser/src/fence.ts",
       "path": "lib/parser/src/fence.ts",
       "lang": "ts",
-      "hash": "blake3:909a444f3900a684706dcca37b2575a087066e7ea786a8b0c2a2cdbe88e7d9e5",
-      "loc": 470,
+      "hash": "blake3:ac47bfd61491ee7189bfd6cacd3b5421756bee5e88fc3b751992d71f8de15cdf",
+      "loc": 586,
       "symbols": [
         {
           "id": "s:lib/parser/src/fence.ts#ExpandFenceOptions",
@@ -24743,8 +24743,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            155,
-            181
+            177,
+            203
           ]
         },
         {
@@ -24753,8 +24753,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            89,
-            111
+            103,
+            133
           ]
         },
         {
@@ -24763,8 +24763,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            146,
-            152
+            168,
+            174
           ]
         },
         {
@@ -24773,8 +24773,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            69,
-            86
+            83,
+            100
           ]
         },
         {
@@ -24783,8 +24783,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            58,
-            66
+            69,
+            80
           ]
         },
         {
@@ -24793,8 +24793,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            122,
-            133
+            144,
+            155
           ]
         },
         {
@@ -24803,8 +24803,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            136,
-            143
+            158,
+            165
           ]
         },
         {
@@ -24813,8 +24813,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            184,
-            184
+            206,
+            206
           ]
         },
         {
@@ -24823,8 +24823,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            114,
-            119
+            136,
+            141
           ]
         },
         {
@@ -24833,8 +24833,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            55,
-            55
+            66,
+            66
           ]
         },
         {
@@ -24843,8 +24843,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            438,
-            470
+            539,
+            586
           ]
         },
         {
@@ -24853,8 +24853,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            297,
-            414
+            347,
+            513
           ]
         },
         {
@@ -24863,8 +24863,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            215,
-            221
+            237,
+            243
           ]
         },
         {
@@ -24873,8 +24873,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            266,
-            273
+            288,
+            295
           ]
         },
         {
@@ -24883,8 +24883,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            236,
-            253
+            258,
+            275
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#unfenceableWithin",
+          "name": "unfenceableWithin",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            318,
+            323
           ]
         }
       ]
@@ -25227,8 +25237,8 @@
       "id": "f:lib/parser/src/lanes.ts",
       "path": "lib/parser/src/lanes.ts",
       "lang": "ts",
-      "hash": "blake3:91d5610f6b631aac07c1889edf225dcd211738732d3bd4d9363cf581eabe5e1d",
-      "loc": 538,
+      "hash": "blake3:afc23964aa026b16e03c00acd793c3210e1c294494a86a77fb2f16ac9c2bcf85",
+      "loc": 576,
       "symbols": [
         {
           "id": "s:lib/parser/src/lanes.ts#CardStartability",
@@ -25357,7 +25367,7 @@
           "exported": false,
           "range": [
             395,
-            538
+            576
           ]
         },
         {
@@ -26265,8 +26275,8 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:0812b2ffc44e6632c4b778712cac8929a2b1d45764e172346bae06cb9ee86e02",
-      "loc": 573,
+      "hash": "blake3:064229bf1685415dd00dc8b59111c9004cffc7133884c39a058e2c0963f96e31",
+      "loc": 906,
       "symbols": [
         {
           "id": "s:lib/parser/test/fence.test.ts#board",
@@ -26274,8 +26284,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            27,
-            27
+            28,
+            28
           ]
         },
         {
@@ -26284,8 +26294,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            31,
-            35
+            32,
+            36
           ]
         },
         {
@@ -26294,8 +26304,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            41,
-            45
+            42,
+            46
           ]
         },
         {
@@ -26304,8 +26314,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            26,
-            26
+            27,
+            27
           ]
         },
         {
@@ -26314,8 +26324,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            64,
-            78
+            65,
+            79
           ]
         },
         {
@@ -26324,8 +26334,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            37,
-            39
+            38,
+            40
           ]
         },
         {
@@ -26334,8 +26344,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            25,
-            25
+            26,
+            26
           ]
         },
         {
@@ -26344,8 +26354,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            24,
-            24
+            25,
+            25
           ]
         },
         {
@@ -26354,8 +26364,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            87,
-            98
+            88,
+            99
           ]
         },
         {
@@ -26364,8 +26374,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            101,
-            112
+            102,
+            113
           ]
         },
         {
@@ -26374,8 +26384,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            58,
-            61
+            59,
+            62
           ]
         }
       ]
@@ -26440,8 +26450,8 @@
       "id": "f:lib/parser/test/lanes.test.ts",
       "path": "lib/parser/test/lanes.test.ts",
       "lang": "ts",
-      "hash": "blake3:6a19d0830e7dd97168b6704831a72f9ab06b7f595f9bc8b2bf4b189b260952f7",
-      "loc": 456,
+      "hash": "blake3:49f8a0917bf4d8bd263705017cb1605c64069773fcca4f09350a83783a20bf07",
+      "loc": 568,
       "symbols": [
         {
           "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",
@@ -26459,8 +26469,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            68,
-            71
+            86,
+            89
           ]
         },
         {
@@ -26469,8 +26479,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            30,
-            47
+            47,
+            65
           ]
         },
         {
@@ -26479,8 +26489,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            49,
-            66
+            67,
+            84
           ]
         },
         {
@@ -26489,8 +26499,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            73,
-            80
+            91,
+            98
           ]
         }
       ]
@@ -34179,6 +34189,7 @@
       "to": "f:lib/parser/src/fence.ts",
       "kind": "import",
       "symbols": [
+        "Fence",
         "UNFENCEABLE_PATHS",
         "compareFences",
         "expandFence",
@@ -42848,6 +42859,12 @@
     },
     {
       "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#unfenceableWithin",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -42880,6 +42897,12 @@
       "from": "s:lib/parser/src/fence.ts#slugPathIndex",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#unfenceableWithin",
+      "to": "s:lib/parser/src/fence.ts#sharedDomain",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -44278,7 +44301,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2501,
-    "edges": 2388
+    "symbols": 2502,
+    "edges": 2390
   }
 }

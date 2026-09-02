@@ -435,7 +435,26 @@ function rule(
   // not expand a fence for arrives as a `cardMissing` hold and lands the
   // card in `unfenceable`, so `startable` is unreachable while one is
   // live.
-  if (holds.length === 0) {
+  // AND `holds.length === 0` IS NOT ON ITS OWN A LICENCE, BECAUSE THE
+  // LANE LIST CANNOT SPEAK FOR A CARD THAT DECLARES NO FENCE (T-227,
+  // absorbed by T-219; V-T-219's verdict of 2026-09-02, which found this
+  // reachable at this very site). `compareFences` refuses to call a
+  // token-less fence disjoint — but this branch reaches `compareFences`
+  // only THROUGH `holds`, and `holds` is empty when the lane list is. So
+  // the refusal was armed exactly when the card would have been held
+  // anyway and disarmed when nothing was live, which is the canonical
+  // DISPATCH moment: `brief.mjs --dispatch` is asked what can START, and
+  // it is asked when lanes are free. An undeclared fence is a defect of
+  // the CARD and not a fact about the board, so it cannot be conditioned
+  // on the board.
+  //
+  // THE TERM IS ADDED TO THIS GUARD RATHER THAN GIVEN ITS OWN EARLY
+  // RETURN, so the sentence stays in ONE place (T-057). Falling through
+  // reaches the `unfenceable` branch below, whose clause list already
+  // spells this cause and which ACCUMULATES the other causes when lanes
+  // ARE live — an early return would have answered correctly and dropped
+  // the `cardMissing` clause beside it.
+  if (holds.length === 0 && fence.tokens.length > 0) {
     const spelled =
       fence.paths.length === 0 ? 'it reserves nothing' : `its fence is ${spellPaths(fence.paths)}`;
     return {
@@ -445,7 +464,13 @@ function rule(
     };
   }
 
-  const ownLaneOnly = holds.every((h) => h.lane.taskId === card.id);
+  // GUARDED ON THE COUNT, and that is load-bearing rather than defensive
+  // since the line above stopped returning for every empty `holds`:
+  // `[].every(...)` is TRUE, so an undeclared fence with no live lane
+  // would take this branch and index `holds[0]` — which is `undefined`,
+  // and the cast below would hand a crash to a caller this module
+  // promises never to throw at.
+  const ownLaneOnly = holds.length > 0 && holds.every((h) => h.lane.taskId === card.id);
   if (ownLaneOnly) {
     const lane = holds[0] as LaneHold;
     return {
@@ -502,13 +527,26 @@ function rule(
     };
   }
 
-  // TWO CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR REMEDIES
-  // DIFFER: a token nobody can resolve is spelled better on a card; a
-  // lane whose card is not here is fetched.
+  // THREE CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR
+  // REMEDIES DIFFER: a card declaring no fence is spelled ON THIS CARD;
+  // a token nobody can resolve is spelled better on a card; a lane whose
+  // card is not here is fetched.
   const missing = holds.filter((h) => h.cardMissing);
   const unresolved = holds.filter((h) => !h.cardMissing);
   const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))].sort();
   const clauses: string[] = [];
+  // THE THIRD CAUSE IS THE CARD'S OWN (T-227, absorbed by T-219): a card
+  // declaring no `touches:` owns no token to be unresolved, so neither
+  // clause below can speak for it and the sentence would arrive with an
+  // empty middle. `compareFences` refuses to call a token-less fence
+  // disjoint, which is what routes such a card here; this is the clause
+  // that says why.
+  if (fence.tokens.length === 0) {
+    clauses.push(
+      `${card.id} declares no \`touches:\` at all, so it has no fence to compare — an undeclared ` +
+        'fence is not an empty one, and nothing can be ruled disjoint from it',
+    );
+  }
   if (missing.length > 0) {
     // NUMBER AGREEMENT IS NOT DECORATION HERE. Three lanes went live on
     // this machine while the sentence was being written, and a reason a

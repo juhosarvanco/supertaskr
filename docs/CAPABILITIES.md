@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **574 behaviours** — 572 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **575 behaviours** — 573 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -422,7 +422,7 @@ Census: **574 behaviours** — 572 extracted sentences + 2 named-not-extracted (
 - EVERY live lane is read, not the first one the walk finds
 - a DETACHED checkout is not judged, so the poison drill may mutate what a lane holds
 - the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane
-- the three carve-outs each free a DIFFERENT write, and the fence still holds around them
+- the carve-outs each free a DIFFERENT write, and the fence still holds around them
 - the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
 - the merge that CONSUMES a fence is not refused by it
 - a lane whose worktree is gone fences nothing, and a stray manifest still locks nobody out
@@ -442,7 +442,8 @@ Census: **574 behaviours** — 572 extracted sentences + 2 named-not-extracted (
 - THREE VERDICTS: a live lane whose fence cannot be READ is refused, never reported disjoint
 - a lane whose manifest reserves NO PATH is refused rather than treated as reserving nothing
 - `alwaysWritable` PARTICIPATES — two lanes judged under different unfenceable sets cannot be compared
-- `excluded` PARTICIPATES — a card's own file is not a collision with the lane that holds its directory
+- `excluded` PARTICIPATES — a card's own file is not a collision with the lane that carved it out
+- a card fencing a domain that CONTAINS `docs/tasks` is refused at the arm, naming what it swallowed
 - a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence
 - a DETACHED worktree holds no fence, however much of the tree it is sitting on
 - THE COMPARISON IS THE PARSER'S — this module holds no second intersection
