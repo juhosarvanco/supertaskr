@@ -324,3 +324,32 @@ commit writes.
    fence held: `TASK-FORMAT.md`, `orchestrator.md`, `board-model.ts` and
    `brief.rs` were read here and mutated only in detached drill
    worktrees, one side at a time, each restored with an equal sha256.
+
+### Addendum, same day — the e2e battery at the tip, and its attribution
+
+The battery above was taken at `1e344d6`, the source commit, and all four
+suites were GREEN there (`e2e` 602/602, exit 0). Re-run at the notes
+commit `4d972d0`: `parser` **363** GREEN, `app` **1141** GREEN, `rust`
+**639** over 18 targets GREEN, and `e2e` **RED** — 1 failed / 601 passed,
+twice, always the same single body:
+`tools/e2e/tests/push-guard.spec.ts:2718` *"a lane holds no seat, so a
+holder record in one refuses nothing"*, failing its positive-control half
+*"the same record on the integration branch is not ignored"*.
+
+**ATTRIBUTED, BY NAME AND BY MEASUREMENT, AND IT IS NOT THIS LANE'S.**
+The body passes ALONE (1/1) and inside its own whole file (76/76) at
+`4d972d0`. The decisive measurement is a control: the full suite re-run
+at `1e344d6` — the commit that had already run it GREEN, and which does
+not contain either card this lane files — **reds on the same single
+body** when the host is busy (six other playwright processes live, read
+2026-09-02 on Mac.lan while three lanes ran e2e suites). One commit, one
+suite, two opposite verdicts: the red is not a function of the tree.
+Nothing in this fence touches the push guard, its spec, or `.nputer/`.
+Filed as `T-229-s11` with the full table, because the next seat to run
+the battery in this window will meet it.
+
+**AND THE E2E VERDICT THIS LANE OFFERS IS THEREFORE THE ONE AT
+`1e344d6`** — 602 bodies, exit 0, GREEN, the whole source change in the
+tree. What `4d972d0` adds is two markdown cards under `docs/tasks/`,
+which the failing body does not read, and the control proves it does not
+need them to fail.
