@@ -853,20 +853,52 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
        * reader receives is what the file destination received.
        *
        * SIZE, NOT BYTES, AND THE REASON IS NAMED. Several of these arms
-       * carry LIVE provenance — `<- read <ISO timestamp> on <host>` —
-       * so two invocations are byte-identical only by luck of the
-       * clock. The byte-for-byte comparison lives in the body above, on
-       * the arm that stamps nothing live. If this fails with a small
-       * delta and no `process.exit` in `brief.mjs`, suspect the board
-       * moving between the two runs (a worktree added or removed) before
-       * suspecting the flush.
+       * carry LIVE provenance — `<- read <ISO timestamp> on <host>` — so
+       * two invocations are byte-identical only by luck of the clock. The
+       * byte-for-byte comparison lives in the body above, on the arm that
+       * stamps nothing live.
+       *
+       * ── AND THE BOARD IS A THIRD PARTY TO THIS COMPARISON (T-225-s2) ──
+       * The note here used to end *"suspect the board moving between the
+       * two runs before suspecting the flush"*, which tells a reader what
+       * to think about a red rather than keeping the red honest. It is a
+       * REAL red: measured in this lane's own four-suite battery at
+       * `adc5596`, `--task <id> --preflight` read 66,800 bytes to the file
+       * and 68,405 to `spawnSync` seconds later, because a sibling lane's
+       * worktree appeared between them and that arm's answer sweeps every
+       * checkout on the machine. **A body that reds when another seat cuts
+       * a worktree is a red on somebody else's work**, at `retries: 0`,
+       * carrying a message about a flush.
+       *
+       * SO THE PIPE READ IS BRACKETED, and only when it has to be: on a
+       * disagreement a SECOND file read is taken, and the pipe read must
+       * match one of the two file reads around it. A truncation matches
+       * NEITHER — it is one buffer, and both file reads are the whole
+       * answer — so the property this guard exists for is untouched, while
+       * a board that moved mid-arm is disclosed instead of blamed on the
+       * writer. The second read costs nothing on a quiet board because it
+       * is never taken there.
        */
       const viaSpawn = readViaSpawnSync(argv);
+      const accepted = [whole.bytes];
+      if (viaSpawn.bytes !== whole.bytes) {
+        const again = readViaFile(argv, sc.dir);
+        accepted.push(again.bytes);
+        disclose(
+          "brief-flush BOARD MOVED",
+          `${arm.label}: the file destination read ${whole.bytes} then ${again.bytes} bytes ` +
+            `around a pipe read of ${viaSpawn.bytes} — this arm's answer is a function of live ` +
+            "state that changed mid-arm, so the pipe read is bracketed rather than compared to " +
+            "one side of the move.",
+        );
+      }
       expect(
-        viaSpawn.bytes,
+        accepted,
         `${arm.label}: spawnSync received ${viaSpawn.bytes} bytes where the file destination ` +
-          `received ${whole.bytes}`,
-      ).toBe(whole.bytes);
+          `received ${accepted.join(" then ")} — the pipe read matches no file read taken ` +
+          "around it, which is what a truncation looks like and is not what a moving board " +
+          "looks like",
+      ).toContain(viaSpawn.bytes);
       expect(
         unstampedLines(viaSpawn.text.trimEnd()),
         `${arm.label}: a line arrived without its stamp, which is what a cut mid-line looks like`,
