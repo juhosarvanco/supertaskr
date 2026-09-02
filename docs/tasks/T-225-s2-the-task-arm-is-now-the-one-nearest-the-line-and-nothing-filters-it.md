@@ -72,3 +72,12 @@ the lane's own margin guard: `--task <id> --state --full` is past the
 `spawnSync` line today and the row set grows with the board, so the
 ceiling T-225 moved off `--dispatch` now sits on the arm every executor
 reads. Serialises behind T-225-s1 on dispatch-brief.mjs and brief.spec.ts.
+
+## CORROBORATION, 2026-09-02 — the `--preflight` arm is past the line too
+
+Measured at the dispatch of T-018-s5 (a03259f): `brief.mjs --task
+T-018-s5 --preflight` printed 68,078 bytes, OVER the 65,536-byte buffer by
+2,542, disclosed by its own margin block. The seat read it through a file
+redirect and lost nothing; a `spawnSync` caller would have received a
+prefix. Same class as `--task --state --full`; the row set grows with the
+board and the preflight carries the whole row set plus its findings.

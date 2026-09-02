@@ -71,9 +71,10 @@ guard on only one of them is an asymmetry with no argument behind it.
    older one — rather than asserting on a hand-built state.
 
 **OUT OF T-018-s2's FENCE, WHICH IS WHY THIS IS A CARD AND NOT A
-COMMIT.** That lane's fence is exactly
-`app/src-tauri/src/docs_watch.rs`; the defect and its test both live
-under `app/src/`.
+COMMIT.** That lane's fence was the watcher's one Rust file alone; the
+defect and its test both live in the frontend store this card fences.
+(Reworded at dispatch: the preflight read the other lane's fence path,
+spelled here as a path, as a criterion path this fence does not cover.)
 
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2
 
