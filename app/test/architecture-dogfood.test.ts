@@ -1414,7 +1414,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // nested session worktree doubled the walk (the T-153-s3 class).
     // 198 -> 199 at the T-112 merge regen (2026-08-30) — brief.rs under
     // C-15, mapped, the bucket still empty.
-    expect(derived.fileComponent.size).toBe(200);
+    // 200 -> 201 at the T-112-s6 merge regen (2026-09-02, 531e04f) —
+    // app/test/board-root.test.tsx, declared in C-18's own paths in the
+    // same lane, mapped, the bucket still empty. The lane could not see
+    // this pin move: arch reads the COMMITTED graph and the regeneration
+    // is the integrator's, so the app suite is owed at the merge.
+    expect(derived.fileComponent.size).toBe(201);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1913,7 +1918,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `C-13 -> C-05` beside the declared `C-05 -> C-13` —
       // `cycle C-05 -> C-13 -> C-05`, `1 cycle(s) among 14 components`,
       // exit 1. One cycle traded for another; C-18 earns its node.
-      ["C-18", 1],
+      ["C-18", 2],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -2354,10 +2359,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-18 reaches BOTH halves of the old pair, which is exactly why it
       // is its own node: it is the only file on the board side that does.
       // Leaving it in C-08 is what closed `C-08 -> C-09 -> C-08`.
-      ["C-18", "C-06", "confirmed", 1],
+      ["C-18", "C-06", "confirmed", 2],
       ["C-18", "C-08", "confirmed", 1],
       ["C-18", "C-09", "confirmed", 1],
-      ["C-18", "C-17", "confirmed", 2],
+      ["C-18", "C-17", "confirmed", 4],
       // AND THE TWO ROWS THAT STOOD HERE FOR ONE MERGE, KEPT AS A COMMENT.
       // T-139 (2026-08-26, merge `aed77b6`) added `unmapped -> C-07` and
       // `unmapped -> C-10`, the first and only rows this table has ever
@@ -2486,6 +2491,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(c18?.relation).toBe("confirmed");
     expect(c18?.fileEdges).toEqual([
       { from: "app/src/components/board/Board.tsx", to: LIB_PARSER, package: PARSER_PKG },
+      // T-112-s6 (2026-09-02): C-18's own test file reads the parser's
+      // pure surface for its fixtures, the second file edge on this seam.
+      { from: "app/test/board-root.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c10 = derived.edges.find((e) => e.from === "C-10" && e.to === "C-06");
     expect(c10?.relation).toBe("confirmed");

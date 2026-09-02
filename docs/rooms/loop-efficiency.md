@@ -298,6 +298,19 @@ read it as another checkout's lock. Every `T-NNN-sN` card this sitting
 paid a suite length of wall-clock for it, unseen, because the runner's
 header says a foreign lock cannot happen. Filed as T-202-s1, p2.
 
+**27. A merge that regenerates the graph moves fixtures no lane can
+see, and the seat committed without running the suite that pins
+them.** The T-112-s6 merge (531e04f) regenerated graph.json to 201
+files; six pins in architecture-dogfood.test.ts and
+map-dogfood-render.test.tsx hold the committed graph's scale, and both
+T-112-s6 seats had said in as many words that the regeneration is the
+integrator's and that these fixtures red at it, detached from their
+cause. Main was red on the app suite for forty minutes until battery 24
+said so. The rule: a merge whose regen moves graph.json runs the two
+dogfood files before the commit and updates the pins with the dated
+line the house pattern already uses; the integrator's own suite is the
+app suite whenever the graph moves.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an

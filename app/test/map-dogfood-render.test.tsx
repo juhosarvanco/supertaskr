@@ -802,7 +802,9 @@ describe("the nputer repo on its own map", () => {
       // 198 -> 199 at the T-112 merge regen (2026-08-30) - brief.rs, the
       // dispatch assembler, mapped under C-15.
       // Derived from arch after the regen, not from the failure output.
-      "committed graph · 200 files",
+      // 200 -> 201 at the T-112-s6 merge regen (2026-09-02, 531e04f) -
+      // board-root.test.tsx under C-18, mapped, findings unmoved.
+      "committed graph · 201 files",
     );
   });
 });
