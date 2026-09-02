@@ -291,11 +291,11 @@ restored-to-base run is the measurement rather than the argument.
 
 | leg | ref | verdict |
 |---|---|---|
-| parser | `5fbb25d` | exit 0, **349 bodies**, 1 target, GREEN |
-| app | `5fbb25d` | exit 0, **1131 bodies**, 1 target, GREEN |
-| rust | `17f8261` | exit 0, **634 bodies**, 18 targets, GREEN — re-read at the final tip because the DOCS GATE names `cargo test` for `docs/CONVENTIONS.md` through `app/src-tauri/src/agent/kit.rs` |
-| e2e | `5fbb25d` | exit 1, **559 bodies**, 6 failed / 553 passed, RED — the SAME SIX named above, base-attributed |
+| parser | `fe2a3c6` | exit 0, **349 bodies**, 1 target, GREEN |
+| app | `fe2a3c6` | exit 0, **1131 bodies**, 1 target, GREEN |
+| rust | `fe2a3c6` | exit 0, **634 bodies**, 18 targets, GREEN — the DOCS GATE names `cargo test` for `docs/CONVENTIONS.md` through `app/src-tauri/src/agent/kit.rs`, so this leg is owed and was re-read whenever the document moved |
+| e2e | `fe2a3c6` | exit 1, **559 bodies**, 6 failed / 553 passed, RED — the SAME SIX named above, base-attributed |
 
-The e2e leg was read twice, at `e47bf86` and again at `5fbb25d` after the
-cards landed: identical failure SET both times, and identical to the run
-with `docs/CONVENTIONS.md` restored to its base bytes.
+The e2e leg was read three times — `e47bf86`, `5fbb25d`, `fe2a3c6` —
+with an identical failure SET each time, and identical to the run with
+`docs/CONVENTIONS.md` restored to its base bytes. A SET, never a count.
