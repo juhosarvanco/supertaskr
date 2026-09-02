@@ -1045,8 +1045,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
     the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
     THIS REPO and the older `tNNN-…` one is not a mistake to fix**: the
     two sets overlap rather than succeed each other, so there is no
-    cutover id to cite — derive the pair at your own ref (T-089's card
-    holds the census at `4d2f03c`).
+    cutover id to cite — derive the pair at your own ref (T-110-s2's
+    card holds the census at `4d2f03c`).
   - the BRANCH IS KEPT after the merge and only the WORKTREE is removed
     (`git worktree remove`), so `git branch` lists every lane this repo
     has ever run and `git worktree list` lists only the live ones — and
