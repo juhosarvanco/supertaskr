@@ -1,9 +1,9 @@
 # State
 
-Updated: 2026-09-02 at the second Fable checkpoint — the newest file
-in docs/checkpoints/ is **the second Fable sitting record** (the method
-bumps to v0.1.9, the ceiling moves off triage, the push guard reads
-CI); the first sits beside it. **Lanes are live (derive: LANES)**, all
+Updated: 2026-09-02 at the third Fable checkpoint — the newest file in
+docs/checkpoints/ is **the third Fable sitting record** (the holder on
+disk, the landing gate derives the card, the guard refuses its own
+dispatcher); the first two sit beside it. **Lanes are live (derive: LANES)**, all
 dispatched from this sitting. **CI IS A SEPARATE CLAIM
 FROM A LOCAL BATTERY AND MUST BE READ**: `gh run list` before believing
 the tree; one red this sitting was T-018-s2's intermittent and a re-run
@@ -55,13 +55,11 @@ opens with `Checkpoint:`** (T-182).
 
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
-2. **SEVEN MORE LANDED THIS SITTING**: T-229 (v0.1.9), T-236-s1,
-   T-225, T-230-s3, T-237, T-018-s2, T-236-s5 — and the seventeen held
-   promotions are applied. Live and next, as fences free: T-238 (the
-   holder on disk), T-018-s5, T-219, T-215; then T-239 (the dispatch
-   arm, after T-238 on brief.mjs), T-230-s7, T-229-s4, T-225-s1,
-   T-237-s2 (after T-238), T-120-s2. **The order with its reasoning:
-   the second Fable record's Next section.**
+2. **SIXTEEN LANDED THIS SITTING** (T-229 v0.1.9, T-225, T-237, T-238
+   among them). Next, as fences free: T-120-s2 (the e2e split, ALONE on
+   tools/e2e in the first quiet window — the e2e-seconds breach grows
+   with every merge), T-239 (the dispatch arm), T-225-s2, T-219-s4,
+   T-229-s8. **Order and reasoning: the third Fable record.**
 3. **TRIAGE IS OWED AT THE STAMP** (orchestrator 2): `brief.mjs
    --dispatch --full` is the TRIAGE view since T-225; the default
    answers what can START. Derive the count, never quote it.
@@ -94,10 +92,8 @@ opens with `Checkpoint:`** (T-182).
   triage stamp owes the placement fields and a ONE-LEVEL suffix id
   (T-235); a prose commit stales the push token.
 - **A SEAT'S OWN SHELL IS A HAZARD**: a `cd` persists across tool calls,
-  a `perl -pi` pattern ending in `\s*$` swallows the newline and glues
-  the next frontmatter line on, and zsh spells the pipe array
-  `pipestatus` — every instance caught by READING THE DIFF BACK before
-  the commit (room item 12).
+  a `perl -pi` pattern ending in `\s*$` swallows the newline, zsh spells
+  the pipe array `pipestatus` — caught by READING THE DIFF BACK (room 12).
 - **A RELAYED FACT IS A CLAIM**: say whose. Two covering-message
   sentences this sitting were false (room item 11, the Fable record).
 - **A WORKTREE ENTRY MUTATES IN PLACE** — compare whole `git worktree
@@ -107,24 +103,19 @@ opens with `Checkpoint:`** (T-182).
   CURRENT AS THE CHECKOUT THE SESSION STARTED IN**: `brief.mjs
   --preflight`'s sweep names every checkout on this machine — RUN IT
   BEFORE YOU TRUST A PUSH (T-216-s1).
-- **ONE HOLDER OF THE INTEGRATION CHECKOUT AT A TIME**, and nothing on
-  disk says who until T-238 lands: check the harness's session list and
-  `ps` for `gate-run` before writing there (the Fable records).
-- **A LANE OR BENCH CUT BEFORE A GUARD MERGES REDS FOUR BODIES ON ITS
-  OWN GUARD SURFACE** (`guard-surface-behind`): attribute by NAME at
-  the base, never by count; T-238 moves them to a fixture vantage.
-- **FAST PATH A HAS TWO HALVES, BOTH THE SEAT'S**: amend `touches:` on
-  main, re-expand, AND write the lane's card copy by a Bash write (the
-  lane's hook refuses the executor while the window is open; room 16).
-  Cut, ARM, then cut the next (room 15).
-- **A FRONTMATTER STAMP IS A NO-OP ON A KEY THE CARD LACKS** — read the
-  frontmatter back after every stamp; a guard-class card gets
-  `review: independent` at the dispatch stamp.
-- **CUT THE VERIFIER'S BENCH WITH THE LANE** (orchestrator 5c). **An
-  AMENDMENT reaches the verifier by PATH, never as your summary.** **MOVE
-  THE LANE BRANCH TO THE VERDICT COMMIT BEFORE MERGING** (`git branch -f
-  task/<lane> <verdict sha>`), or the landing gate cannot derive the
-  card and the merge pushes UNJUDGED (room item 17).
+- **ONE HOLDER OF THE INTEGRATION CHECKOUT, RECORDED ON DISK (T-238)**:
+  `.nputer/holder.json` — `brief.mjs --take-seat` from that checkout
+  (refuses a live other holder, takes over a dead one), `--release-seat`
+  when you retire; the arming steps and the push guard read it.
+- **THE RITUAL'S MEASURED HAZARDS LIVE IN THE ROOM AND THE RECORDS**
+  (docs/rooms/loop-efficiency.md items 13–19, the Fable records): cut,
+  ARM, then cut the next; fast path A has two halves, both the seat's;
+  a stamp is a no-op on a key the card lacks; attribute a red by NAME
+  at the base, never by count.
+- **CUT THE VERIFIER'S BENCH WITH THE LANE** (orchestrator 5c); an
+  amendment reaches it by PATH. **MOVE THE LANE BRANCH TO THE VERDICT
+  COMMIT BEFORE MERGING** (`git branch -f task/<lane> <sha>`), or the
+  landing gate cannot derive the card (room item 17).
 - **POISON DRILLS**: kill-set containment, the site the property lives,
   a DATA mutant where the property is data — verifier.md step 2b.
 - **A TIMING CORRELATE IS NOT A CAUSE.** Re-run a body ALONE before

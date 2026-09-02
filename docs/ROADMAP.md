@@ -51,6 +51,10 @@ opens with the card id that still holds its story.
   reply, and the overtake itself stays legal (T-018-s2) — and the
   ordinary pick's reply gains the genesis branch's overtake guard
   (T-018-s5, in flight).
+  The ordinary pick's reply and the startup pull ask the genesis
+  switch's own overtake question, so a higher-seq older snapshot no
+  longer overwrites an emit that overtook it on any door (T-018-s5,
+  T-018-s6).
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer
@@ -117,6 +121,11 @@ opens with the card id that still holds its story.
   view answers what can START under a disclosed byte margin with
   `--full` as the triage view (T-225), and a fence is refused when
   it CONTAINS the unfenceable directory (T-219, in flight).
+  The seat that holds the integration checkout is a record on disk
+  that the arming steps and the push guard read (T-238), the eval
+  gate's positive control runs inside a fenced lane again
+  (T-229-s6), CONVENTIONS' limits paragraph has a keeper (T-215-s1),
+  and the dead own-card carve-out arm is gone (T-219-s3).
 
 ## Milestones
 
