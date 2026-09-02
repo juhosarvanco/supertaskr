@@ -142,6 +142,21 @@ reconciling writes; the cheaper spelling is "before the next arming on
 its paths", and T-239's arm should remove the merged lane's worktree as
 its first step when the guard names it.
 
+**15. Two lanes cut before either is armed cannot both be armed.** The
+disjointness guard reads every live task-branch worktree's fence
+manifest, and a lane with no manifest yet is "an unread fence", which
+is not disjoint from anything — so cutting T-018-s2 and T-236-s5 in one
+pass at 02:03Z made each arm refuse on the other's missing manifest,
+and the way out was to remove one worktree, arm the first, re-cut the
+second on its branch and arm it. The guard is right; the ritual's
+order is CUT, ARM, then cut the next, and T-239's arm keeps that order
+per lane rather than cutting a wave and arming afterwards. A second
+instance of item 11 the same hour: three covering messages abbreviated
+the setup line to `npm ci` in app/ where CONVENTIONS' fresh-clone
+ORDER puts lib/parser first, and a relayed tree fact named brief.mjs
+for two call sites that live in card-preflight.mjs — each caught by
+the seat that received it, and each a sentence written from memory.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
