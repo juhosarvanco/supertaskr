@@ -82,7 +82,16 @@ import {
   derivedTexts,
   proseOnly,
 } from "./card-figures.mjs";
-import { blank, fieldList, fieldScalar, liveProv, note, treeProv, value } from "./dispatch-brief.mjs";
+import {
+  blank,
+  fieldList,
+  fieldScalar,
+  frontmatterFields,
+  liveProv,
+  note,
+  treeProv,
+  value,
+} from "./dispatch-brief.mjs";
 import { trackedFiles } from "./docs-scan.mjs";
 import { dispatchContext } from "./dispatch-order.mjs";
 
@@ -188,7 +197,12 @@ export const CLAIM_CLASSES = Object.freeze([
       "platform, a version or a runtime — is not a string in any file, so it belongs to the " +
       "verifier's phase-one ground truth and is reported here rather than settled. It opens ONE " +
       "named file and never the tree, so a true quote under a wrong file name is a finding and " +
-      "not a pass; and it judges OCCURRENCE, never meaning",
+      "not a pass; and it judges OCCURRENCE, never meaning. THE FRONTMATTER IS READ IN ONE " +
+      "DIRECTION ONLY: a MARKER is taken from the BODY's prose alone, so one written into a " +
+      "frontmatter field is reported as a SIGHTING and is never read as a claim, while the " +
+      "frontmatter's SCALAR values ARE scanned for unmarked quoted runs — one field at a time, " +
+      "with YAML's own quoting unwrapped first — and its LIST values are not scanned at all. A " +
+      "quoted run shorter than the floor is COUNTED and not listed",
   },
 ]);
 
@@ -387,6 +401,89 @@ export function clip(text) {
   return text.length <= QUOTE_CLIP_CHARS ? text : `${text.slice(0, QUOTE_CLIP_CHARS)}...`;
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE FRONTMATTER, AS A SCOPE (T-230-s3).
+ *
+ * `cardBody` strips the frontmatter and every reader in this class took
+ * its output, so a card's TITLE was the one place none of them looked —
+ * and one of this arm's own founding instances states its claim there.
+ * The two halves below are what the scope needs and no more: the values,
+ * and the rule for reading a YAML wrapper off one.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * A frontmatter scalar with YAML's OWN quoting taken off.
+ *
+ * **THE UNWRAP IS THE WHOLE OF WHY THIS SCOPE IS READABLE, AND IT IS
+ * MEASURED RATHER THAN ASSUMED.** `frontmatterFields` hands back the
+ * value as written, wrapper included, so a field spelled
+ * `suggested_by: "verifier … at <hash>"` presents its ENTIRE value as
+ * one quoted run — a quotation mark that is YAML syntax read as an
+ * author's assertion. Over the live board at `f5bad14` the raw reading
+ * finds 171 quoted runs across the frontmatter of 448 cards and 131 of
+ * them are exactly that wrapper; unwrapping first leaves 40, of which 39
+ * sit in `title:` and every one is an assertion somebody wrote.
+ *
+ * **THE GUARD IS WHAT KEEPS IT FROM EATING A REAL PAIR.** A value that
+ * merely BEGINS and ENDS with a quote is not necessarily wrapped —
+ * `"a" and "b"` is two runs, not one wrapper — so the pair is taken off
+ * only when the quote character does not occur again between them, and
+ * anything else is left exactly as written. The conservative direction
+ * is to leave it: an un-stripped wrapper costs one listed line, and a
+ * wrongly stripped one silently loses an assertion.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+export function unwrapScalar(raw) {
+  const t = raw.trim();
+  if (t.length < 2) return t;
+  const q = t[0];
+  if (q !== '"' && q !== "'") return t;
+  if (!t.endsWith(q)) return t;
+  const inner = t.slice(1, -1);
+  return inner.includes(q) ? t : inner;
+}
+
+/**
+ * @typedef {object} ScalarField
+ * @property {number} line  1-based, into the card FILE
+ * @property {string} key   the field name
+ * @property {string} value the scalar, YAML's own quoting removed
+ */
+
+/**
+ * Every SCALAR frontmatter field of a card, with the line it sits on.
+ *
+ * **THE VALUES COME FROM `frontmatterFields` AND ONLY THE LINE NUMBER IS
+ * DERIVED HERE** (T-057: one derivation, one implementation). That
+ * function is already this repository's answer to "what is a frontmatter
+ * field", the path arm already spends it on `touches:`, and re-parsing
+ * the block here would be a second reading able to disagree with it. A
+ * key it returns as an ARRAY is a list value and is not a scalar, so it
+ * is skipped rather than flattened — a fence entry is the fence arm's
+ * claim, not a sentence anybody asserted.
+ *
+ * @param {string} cardText
+ * @returns {ScalarField[]}
+ */
+export function frontmatterScalars(cardText) {
+  const body = cardBody(cardText);
+  const head = cardText.slice(0, cardText.length - body.length);
+  if (head === "") return [];
+  const lines = head.split(/\r?\n/);
+  /** @type {ScalarField[]} */
+  const out = [];
+  for (const [key, raw] of Object.entries(frontmatterFields(cardText))) {
+    if (typeof raw !== "string") continue;
+    const value = unwrapScalar(raw);
+    if (value === "") continue;
+    const at = lines.findIndex((l) => l.startsWith(`${key}:`));
+    out.push({ line: at === -1 ? 0 : at + 1, key, value });
+  }
+  return out;
+}
+
 /**
  * @typedef {object} MarkedClaim
  * @property {number} line
@@ -431,16 +528,35 @@ export function cardClaims(cardText) {
  * item is invisible to its reader and the author cannot tell, and that
  * failure is the reason this function exists one card later.
  *
+ * **AND THE FRONTMATTER IS THE THIRD PLACE A MARKER CAN HIDE** (T-230-s3).
+ * `cardClaims` reads the BODY's prose, so EVERY marker-shaped line in a
+ * frontmatter field is unseen by construction — and it was unseen in the
+ * worse sense too, since nothing looked there at all and the author was
+ * told nothing. It stays a SIGHTING rather than becoming a claim: a
+ * frontmatter key is a FIELD with its own owner (`method/tasks/
+ * TASK-FORMAT.md`, and it is why `cardBody` strips the block), so a
+ * marker there is a request written in the wrong place, which is
+ * precisely what a sighting is for.
+ *
  * @param {string} cardText
  * @returns {{ line: number, text: string }[]}
  */
 export function unseenMarkers(cardText) {
   const body = cardBody(cardText);
-  const offset = cardText.slice(0, cardText.length - body.length).split(/\r?\n/).length - 1;
+  const head = cardText.slice(0, cardText.length - body.length);
+  const offset = head.split(/\r?\n/).length - 1;
   const raw = body.split(/\r?\n/);
   const prose = proseOnly(body).split(/\r?\n/);
   /** @type {{ line: number, text: string }[]} */
   const out = [];
+  if (head !== "") {
+    const headLines = head.split(/\r?\n/);
+    for (let i = 0; i < headLines.length; i += 1) {
+      const line = /** @type {string} */ (headLines[i] ?? "");
+      if (!CARD_CLAIM_LOOSE.test(line)) continue;
+      out.push({ line: i + 1, text: collapse(line) });
+    }
+  }
   for (let i = 0; i < raw.length; i += 1) {
     const line = /** @type {string} */ (raw[i] ?? "");
     if (!CARD_CLAIM_LOOSE.test(line)) continue;
@@ -453,13 +569,15 @@ export function unseenMarkers(cardText) {
 /**
  * @typedef {object} LooseQuote
  * @property {number} line
+ * @property {string} field the frontmatter key it came from, "" in the body
  * @property {string} text
- * @property {boolean} nearPath a repository path sits in the same paragraph
+ * @property {boolean} nearPath a repository path sits in the same unit
+ * @property {boolean} belowFloor shorter than `MIN_QUOTE_CHARS`
  */
 
 /**
  * Every quoted run the card did NOT mark, split by whether a repository
- * path sits in the same paragraph.
+ * path sits in the same unit.
  *
  * **THE PARAGRAPH IS THE UNIT AND THE HARD WRAP IS WHY.** A card wrapped
  * at seventy columns puts the quote on one line and the file it is about
@@ -469,6 +587,21 @@ export function unseenMarkers(cardText) {
  * where the line-scoped join names a fifth of them and drops the ones
  * the wrap split.
  *
+ * **IN THE FRONTMATTER THE UNIT IS THE FIELD** (T-230-s3), and that is
+ * the same rule rather than a second one: the paragraph is the smallest
+ * block that holds one thought, a frontmatter scalar is never wrapped
+ * across lines, so the field IS its paragraph. Reading the whole block
+ * as one unit would make every card's `touches:` a path beside every
+ * card's title, which is a join about the FORMAT and not about the
+ * sentence — the exact error the line-scoped body join makes.
+ *
+ * **AND NOTHING IS DROPPED FOR BEING SHORT ANY MORE.** A run below the
+ * floor is FLAGGED rather than discarded, because the class's own report
+ * says the unmarked ones are *counted and listed rather than passed
+ * over*, and a silent drop made that sentence false. The floor still
+ * decides what is LISTED — initials and punctuation samples are not
+ * assertions — so what the flag buys is the count.
+ *
  * @param {string} cardText
  * @param {PathOracle} oracle
  * @returns {LooseQuote[]}
@@ -477,26 +610,32 @@ export function unmarkedQuotes(cardText, oracle) {
   const { lines } = cardLines(cardText);
   /** @type {LooseQuote[]} */
   const out = [];
+  /** @param {string} text @returns {boolean} */
+  const namesAPath = (text) => {
+    for (const m of text.matchAll(REPO_PATH_TOKEN)) {
+      const token = /** @type {string} */ (m[1]).replace(/[.,;:)\]}`'"]+$/, "");
+      if (oracle.tops.has(/** @type {string} */ (token.split("/")[0]))) return true;
+    }
+    return false;
+  };
+  /** @param {number} line @param {string} field @param {string} text @param {boolean} nearPath */
+  const take = (line, field, text, nearPath) => {
+    for (const m of text.matchAll(QUOTED_RUN)) {
+      const run = collapse(/** @type {string} */ (m[1] ?? m[2] ?? ""));
+      out.push({ line, field, text: run, nearPath, belowFloor: run.length < MIN_QUOTE_CHARS });
+    }
+  };
+  for (const s of frontmatterScalars(cardText)) {
+    take(s.line, s.key, s.value, namesAPath(s.value));
+  }
   /** @type {CardLine[]} */
   let para = [];
   const flush = () => {
     if (para.length === 0) return;
-    const joined = para.map((l) => l.text).join("\n");
-    let nearPath = false;
-    for (const m of joined.matchAll(REPO_PATH_TOKEN)) {
-      const token = /** @type {string} */ (m[1]).replace(/[.,;:)\]}`'"]+$/, "");
-      if (oracle.tops.has(/** @type {string} */ (token.split("/")[0]))) {
-        nearPath = true;
-        break;
-      }
-    }
+    const nearPath = namesAPath(para.map((l) => l.text).join("\n"));
     for (const l of para) {
       if (CARD_CLAIM.test(l.text)) continue;
-      for (const m of l.text.matchAll(QUOTED_RUN)) {
-        const text = collapse(/** @type {string} */ (m[1] ?? m[2] ?? ""));
-        if (text.length < MIN_QUOTE_CHARS) continue;
-        out.push({ line: l.line, text, nearPath });
-      }
+      take(l.line, "", l.text, nearPath);
     }
     para = [];
   };
@@ -1364,7 +1503,13 @@ export async function preflight(ctx, options = {}) {
   for (const m of uncheckable) {
     recs.push(
       value(
-        `NOT CHECKABLE line ${m.claim.line}: ${m.verdict.state} source ${m.claim.source}`,
+        `NOT CHECKABLE line ${m.claim.line}: ${m.verdict.state} source ` +
+          // ESCAPED, THE WAY THE FINDING BESIDE IT ALREADY IS. The
+          // source is a string the CARD wrote: it can carry spaces, be
+          // empty, or end in a character that eats the boundary, and
+          // bare interpolation hands the reader a line where the value
+          // and the sentence around it cannot be told apart.
+          `${JSON.stringify(m.claim.source)}`,
         tree(ctx, viaQuotes),
       ),
       note(`  ${m.verdict.detail}`),
@@ -1383,38 +1528,36 @@ export async function preflight(ctx, options = {}) {
         `marker-shaped line the prose reader does not see, line ${s.line}: ${s.text}`,
         tree(ctx, `${card.file}, its raw body against its prose reading`),
       ),
-      note("  an example in a block reads as an example and is not a claim; a marker meant as a"),
-      note("  claim has to be a plain body line. Reported rather than refused on, because this is"),
-      note("  also exactly how the marker gets documented."),
+      note("  an example in a block reads as an example and is not a claim, and a marker written"),
+      note("  into a frontmatter field is a request in the wrong place; a marker meant as a claim"),
+      note("  has to be a plain body line. Reported rather than refused on, because this is also"),
+      note("  exactly how the marker gets documented."),
     );
   }
   const loose = unmarkedQuotes(cardText, oracle);
-  const besidePath = loose.filter((q) => q.nearPath);
-  const noSource = loose.filter((q) => !q.nearPath);
+  const viaLoose = `${card.file} prose and frontmatter scalars, unit-scoped against git ls-files`;
+  const listed = loose.filter((q) => !q.belowFloor);
+  const short = loose.filter((q) => q.belowFloor);
+  const besidePath = listed.filter((q) => q.nearPath);
+  const noSource = listed.filter((q) => !q.nearPath);
+  /** @param {LooseQuote} q @returns {string} */
+  const where = (q) => (q.field === "" ? `line ${q.line}` : `frontmatter ${q.field}, line ${q.line}`);
   recs.push(
     value(
       `quoted and NOT marked, beside a path this card names: ${besidePath.length}`,
-      tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
+      tree(ctx, viaLoose),
     ),
-    value(
-      `quoted and NOT marked, naming no source at all: ${noSource.length}`,
-      tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
-    ),
+    value(`quoted and NOT marked, naming no source at all: ${noSource.length}`, tree(ctx, viaLoose)),
+    value(`below the quote floor: ${short.length}`, tree(ctx, viaLoose)),
   );
   for (const q of besidePath) {
     recs.push(
-      value(
-        `NOT CHECKED, a path is named nearby, line ${q.line}: "${clip(q.text)}"`,
-        tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
-      ),
+      value(`NOT CHECKED, a path is named nearby, ${where(q)}: "${clip(q.text)}"`, tree(ctx, viaLoose)),
     );
   }
   for (const q of noSource) {
     recs.push(
-      value(
-        `NOT CHECKED, no source named, line ${q.line}: "${clip(q.text)}"`,
-        tree(ctx, `${card.file} prose, paragraph-scoped against git ls-files`),
-      ),
+      value(`NOT CHECKED, no source named, ${where(q)}: "${clip(q.text)}"`, tree(ctx, viaLoose)),
     );
   }
   recs.push(
@@ -1425,6 +1568,12 @@ export async function preflight(ctx, options = {}) {
     note("  verifier's phase-one ground truth rather than a scanner pretending to settle it."),
     note("  This list carries quotations as well as assertions and does not separate them, which"),
     note("  is the prose parsing the cheap shape was chosen to avoid."),
+    note("  A RUN IN A FRONTMATTER FIELD IS NAMED BY ITS FIELD AND CANNOT BE MARKED AWAY: the"),
+    note("  marker is read from the body's prose, so the repair for one of these is to move the"),
+    note("  sentence into the body and mark it there, never to mark the field."),
+    note("  AND THE RUNS BELOW THE FLOOR ARE COUNTED RATHER THAN DROPPED. The floor decides what"),
+    note("  is LISTED — initials and punctuation samples are not assertions — and a run discarded"),
+    note("  without a number would make this class's own counted-and-listed sentence false."),
     blank(),
   );
 

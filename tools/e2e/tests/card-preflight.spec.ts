@@ -20,8 +20,10 @@ import {
   checkClaim,
   collapse,
   dischargedBy,
+  frontmatterScalars,
   NOT_A_CLAIM_CLASS,
   componentOwners,
+  MIN_QUOTE_CHARS,
   ownersOf,
   pathOracle,
   preflight,
@@ -29,6 +31,7 @@ import {
   rulings,
   unmarkedQuotes,
   unseenMarkers,
+  unwrapScalar,
 } from "../scripts/card-preflight.mjs";
 import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
 import { context, render } from "../scripts/dispatch-brief.mjs";
@@ -112,6 +115,12 @@ interface Planted {
   criteria?: string[];
   /** Extra lines dropped into the body, outside the criteria. */
   body?: string[];
+  /**
+   * The frontmatter `title:` value, verbatim — the scope T-230-s3 opened.
+   * A card's title is a scalar FIELD, so a body plants one here and not
+   * through `body`.
+   */
+  title?: string;
   /** The frontmatter fence, verbatim. */
   touches?: string;
   /** The frontmatter blocker list, verbatim. */
@@ -165,7 +174,7 @@ function cardText(planted: Planted): string {
   return [
     "---",
     `id: ${FIXTURE_ID}`,
-    "title: The card the preflight is measured on",
+    `title: ${planted.title ?? "The card the preflight is measured on"}`,
     "feature: F-04",
     "milestone: 4",
     "priority: 30",
@@ -1140,8 +1149,187 @@ test("the unmarked report is paragraph-scoped, and a marker's own needle is not 
     "",
   ].join("\n");
   const loose = unmarkedQuotes(card, oracle);
-  expect(loose.map((q) => q.text)).toEqual(["quoted across the wrap", "a platform behaviour"]);
+  const listed = loose.filter((q) => !q.belowFloor);
+  expect(listed.map((q) => q.text)).toEqual(["quoted across the wrap", "a platform behaviour"]);
   // THE WRAP IS THE WHOLE REASON THE PARAGRAPH IS THE UNIT: the quote is
   // on one line and the path it is about is on the next.
-  expect(loose.map((q) => q.nearPath)).toEqual([true, false]);
+  expect(listed.map((q) => q.nearPath)).toEqual([true, false]);
+  // AND THE SHORT RUN IS RETURNED, FLAGGED, RATHER THAN DROPPED
+  // (T-230-s3). It stays out of the listing — the floor is what keeps
+  // initials and punctuation samples from swamping it — but it is in the
+  // set, which is what lets the report carry a number for it.
+  const short = loose.filter((q) => q.belowFloor);
+  expect(short.map((q) => q.text)).toEqual(["abc"]);
+  expect("abc".length, "the fixture stopped sitting below the floor").toBeLessThan(
+    MIN_QUOTE_CHARS,
+  );
+  // EVERY RUN IN THIS CARD IS IN THE BODY, so `field` discriminates
+  // rather than being constant: the frontmatter body below moves it.
+  expect(loose.every((q) => q.field === "")).toBe(true);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE FRONTMATTER SCOPE (T-230-s3)
+ *
+ * Every reader in this class took `cardBody(cardText)`, which strips the
+ * frontmatter — so a card's TITLE was the one place none of them looked,
+ * and one of the arm's own founding instances states its claim there.
+ * The three bodies below pin the three halves of the repair: the values
+ * are read with YAML's own quoting off, a quoted assertion in a field is
+ * COUNTED and LISTED, and a marker written into a field is a SIGHTING
+ * and never a claim.
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("a frontmatter scalar is read with YAML's own quoting off, and a real pair is not eaten", () => {
+  // THE WRAPPER IS SYNTAX AND THE INNER PAIR IS AN ASSERTION, and the
+  // whole scope turns on telling them apart: measured over the live
+  // board at f5bad14 the raw reading finds a hundred and thirty-one
+  // wrappers among its hits, and every one of them is a quotation mark
+  // nobody wrote as a quotation.
+  expect(unwrapScalar('"a wrapped scalar"')).toBe("a wrapped scalar");
+  expect(unwrapScalar("'a wrapped scalar'")).toBe("a wrapped scalar");
+  // THE DISCRIMINATING HALF: a value that merely begins and ends with a
+  // quote is two runs, not a wrapper, and stripping it would silently
+  // fuse two assertions into one.
+  expect(unwrapScalar('"the first" and "the second"')).toBe('"the first" and "the second"');
+  expect(unwrapScalar("a title that quotes \"one run\" mid-sentence")).toBe(
+    'a title that quotes "one run" mid-sentence',
+  );
+
+  const card = [
+    "---",
+    "id: T-903",
+    'title: the design "already says it" and docs/CONVENTIONS.md carries it',
+    'suggested_by: "verifier at the second criterion"',
+    "touches: [preflight-lens]",
+    "builder:",
+    "---",
+    "",
+    "body",
+    "",
+  ].join("\n");
+  const scalars = frontmatterScalars(card);
+  // THE LIST VALUE IS NOT A SCALAR AND THE EMPTY FIELD IS NOT A
+  // SENTENCE: a fence entry is the fence arm's claim, and an unfilled
+  // field asserts nothing.
+  expect(scalars.map((s) => s.key)).toEqual(["id", "title", "suggested_by"]);
+  // THE LINE IS INTO THE CARD FILE, so a finding can name where it is.
+  expect(scalars.map((s) => s.line)).toEqual([2, 3, 4]);
+  expect(scalars[2]?.value).toBe("verifier at the second criterion");
+});
+
+test("a quoted assertion in the card's TITLE is COUNTED and LISTED, naming its field", async () => {
+  // THE FOUNDING INSTANCE, RELOCATED TO A FIXTURE. The card's own
+  // reproduction is a title carrying a quoted assertion beside the
+  // governing document it is about; before this scope existed all three
+  // readers returned nothing and the author was told nothing.
+  const fx = makeFixture({
+    title: 'the design "already fails the checkpoint sync" and docs/CONVENTIONS.md says so',
+  });
+  const { findings, text } = await run(fx);
+
+  // IT REPORTS AND NEVER REFUSES — the same disposition every unmarked
+  // quote has, because nobody asked for this check.
+  expect(findings, `a title assertion refused a dispatch:\n${joined(findings)}`).toEqual([]);
+  expect(text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(text).toContain("NOT CHECKED, a path is named nearby, frontmatter title, line");
+  expect(text).toContain("already fails the checkpoint sync");
+  // AND IT IS NEVER COUNTED AS CHECKED. The census split is the whole
+  // point of the class: what was looked at and what was not are two
+  // numbers and never one.
+  expect(text).toContain("marked claims: 0");
+  expect(text).toContain("CHECKED and HELD: 0");
+
+  // THE TWIN, ONE FIELD AWAY: the default title carries no quoted run,
+  // and both counts go to zero. Without this half the body is satisfied
+  // by a reader that reports every card's title unconditionally.
+  const plain = await run(makeFixture());
+  expect(plain.text).toContain("quoted and NOT marked, beside a path this card names: 0");
+  expect(plain.text).not.toContain("frontmatter title, line");
+
+  // THE SECOND DISCRIMINATOR: the same assertion in a title that names
+  // no path lands in the OTHER unchecked class, so the field is read as
+  // its own unit rather than joined to the whole frontmatter block —
+  // where `touches:` would make every title sit beside a path.
+  const alone = await run(makeFixture({ title: 'a title quoting "already fails" and no file' }));
+  expect(alone.text).toContain("quoted and NOT marked, naming no source at all: 1");
+  expect(alone.text).toContain("NOT CHECKED, no source named, frontmatter title, line");
+});
+
+test("a marker written into a frontmatter field is a SIGHTING, never a claim", async () => {
+  // A FRONTMATTER KEY IS A FIELD WITH ITS OWN OWNER, which is why
+  // `cardBody` strips the block at all — so a marker written there is a
+  // request in the wrong place. It gets the disposition an unseen marker
+  // already has: reported, so the author is told, and never promoted to
+  // something that refuses.
+  const marked = await run(
+    makeFixture({ title: `'CARD CLAIM (docs/NEVER-EXISTED.md): "a needle in a field"'` }),
+  );
+  expect(marked.findings, `a frontmatter marker refused:\n${joined(marked.findings)}`).toEqual([]);
+  expect(marked.text).toContain("marker-shaped line the prose reader does not see, line 3");
+  expect(marked.text).toContain("marked claims: 0");
+
+  // THE DISCRIMINATING HALF, one line of the card away: the SAME marker
+  // as a plain body line IS a claim, and this one names a file that does
+  // not exist, so it refuses. Without it, "a frontmatter marker is only
+  // a sighting" is satisfied by a reader that sees no markers anywhere.
+  const inBody = await run(
+    makeFixture({ body: ['CARD CLAIM (docs/NEVER-EXISTED.md): "a needle in a field"'] }),
+  );
+  expect(joined(inBody.findings)).toContain("UNCHECKABLE CARD CLAIM");
+  expect(inBody.text).toContain("NOT CHECKABLE: 1");
+
+  // AND THE CLEAN TWIN REPORTS NO SIGHTING AT ALL, so the line above is
+  // a reading of this card rather than a header printed on every run.
+  const plain = await run(makeFixture());
+  expect(plain.text).not.toContain("marker-shaped line the prose reader does not see");
+});
+
+test("a quoted run below the floor is COUNTED, and it is still not listed", async () => {
+  // THE CLASS'S OWN REPORT SAYS THE UNMARKED ONES ARE COUNTED AND
+  // LISTED, and a run dropped for being short made that sentence false —
+  // the author could not tell a card with no short runs from a card
+  // whose short runs were discarded. The floor still decides the
+  // LISTING; what it may not decide any more is the census.
+  const short = await run(makeFixture({ body: ['Initials like "ab" are not assertions.'] }));
+  expect(short.text).toContain("below the quote floor: 1");
+  // AND IT IS NOT PROMOTED INTO EITHER LISTED SET, which is the half
+  // that would make the floor pointless.
+  expect(short.text).toContain("quoted and NOT marked, beside a path this card names: 0");
+  expect(short.text).toContain("quoted and NOT marked, naming no source at all: 0");
+  expect(short.findings, `a short run refused a dispatch:\n${joined(short.findings)}`).toEqual([]);
+
+  // THE TWIN, ONE CHARACTER LONGER: the same sentence with a run AT the
+  // floor is listed and the floor count falls back to zero. A body that
+  // asserted only the count is satisfied by a counter wired to the
+  // wrong set.
+  const atFloor = await run(makeFixture({ body: ['Initials like "abcd" are not assertions.'] }));
+  expect(atFloor.text).toContain("below the quote floor: 0");
+  expect(atFloor.text).toContain("quoted and NOT marked, naming no source at all: 1");
+  expect(atFloor.text).toContain('NOT CHECKED, no source named, line');
+  expect("ab".length).toBeLessThan(MIN_QUOTE_CHARS);
+  expect("abcd".length).toBeGreaterThanOrEqual(MIN_QUOTE_CHARS);
+});
+
+test("the NOT CHECKABLE record ESCAPES the source the card wrote, as its finding already does", async () => {
+  // THE VALUE IS A STRING THE CARD WROTE and the record line
+  // interpolated it bare, so a source carrying spaces ran into the
+  // sentence around it and the reader could not see where it ended. The
+  // finding beside it was already escaped; this is the record catching
+  // up with it.
+  const spaced = await run(markedFixture('CARD CLAIM (docs/two words.md): "anything at all"', []));
+  expect(spaced.text).toContain('NOT CHECKABLE line');
+  expect(spaced.text).toContain('source "docs/two words.md"');
+  // THE BARE FORM IS WHAT THIS BODY REFUSES, and naming it is what makes
+  // the assertion above discriminate: with the escape removed the record
+  // reads `source docs/two words.md` and this line finds it.
+  expect(spaced.text).not.toContain("source docs/two words.md ");
+  expect(joined(spaced.findings)).toContain("UNCHECKABLE CARD CLAIM");
+
+  // THE TWIN: a marker that CAN be evaluated prints no record at all, so
+  // the escape is a property of this line rather than of every line.
+  const fine = await run(
+    markedFixture(TRUE_CLAIM.marker, [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }]),
+  );
+  expect(fine.text).not.toContain("NOT CHECKABLE line");
 });
