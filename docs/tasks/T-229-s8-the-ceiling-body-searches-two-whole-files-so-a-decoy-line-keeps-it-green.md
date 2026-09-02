@@ -12,7 +12,7 @@ touches: [app/test/select-board.test.ts, method/lane-protocol.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -353,3 +353,230 @@ the battery in this window will meet it.
 tree. What `4d972d0` adds is two markdown cards under `docs/tasks/`,
 which the failing body does not read, and the control proves it does not
 need them to fail.
+
+## VERDICT, 2026-09-02 — APPROVED — verifier claude-opus-5@subagent
+
+Judged at lane tip `8876eb5b98c063c86c5949c980a176d8e071652d`, base
+`24bfec8e10b3b13699e137befc11c729b13fd986`, on an independent bench
+(`/Users/ujju/Projects/nputer-V-T-229-s8`, detached, ports
+`NPUTER_E2E_PORT=25229` / `NPUTER_BOOT_PORT=26229`, 1420 read never
+touched). **Every figure below was measured by this seat**; the ones
+taken before the diff existed carry the base ref, the ones taken after
+carry the tip.
+
+### The blindness was CLOCK-SHAPED, and it is stamped
+
+Phase 1 reached this seat before the lane's work existed: there was no
+diff to decline to read. The attack set and the ground truth were written
+from the card at its base ref and **sealed at `2026-09-02T08:10:36Z`**,
+before the tip was named to me:
+
+```
+attack-V-T-229-s8.md   ce3f162e62e5a1bc43eec796252de88ab0cfa89ced8ade532daa683b5ce88fcb
+ground-V-T-229-s8.md   207262168afaf0952b4b30b516804008eb2d2508667b5145a530f7ea06e3b7ba
+stamps-V-T-229-s8.txt  d4fe9d27cd60a1eeb68cdcfd4735064b0918a03bb119b5d1b96ef18e1ffb40de
+```
+
+All three re-verified byte-identical at verdict time. **DISCLOSED**: the
+phase-2 dispatch carried the executor's own figures (extraction lengths,
+drill counts, suite totals). That arrived AFTER the seal, which is where
+it belongs — but it means nothing below is accepted on those figures. Each
+was re-derived here, and where the executor and I measured the same thing
+we agree to the character; that agreement is corroboration, not the
+source.
+
+### O1 — each read anchors to its file's unique sentence · MET
+
+The two files the body reads are **byte-identical to base at the tip**
+(`260b6bb1…` TASK-FORMAT, `030e0343…` orchestrator), so the whole change
+in behaviour is in the test. Anchor occurrences, whitespace-folded, in
+their own file, measured at both refs: `THIS LINE IS THE VALUE'S HOME`
+**1**, `THAT BOUND'S HOME IS tasks/TASK-FORMAT.md's Parallelism
+guardrails AND THIS LINE IS A CITATION OF IT` **1**.
+
+**The scope of the floor is one file, and that is the right scope.** My
+sealed attack A2 predicted the failure of a wider one and measured why:
+`THIS LINE IS THE VALUE'S HOME` occurs in **four** tracked files at the
+base — this card, `T-229-s4`, the test file and TASK-FORMAT — so a
+repo-wide uniqueness assertion would have been FALSE on arrival, with the
+commissioning card as one of the duplicates. The shipped floor counts
+inside one file and is unaffected.
+
+**The block fold is the honest answer to the asymmetry the card set as
+its design question.** orchestrator's anchor spans a hard wrap, so a
+line-scoped helper (`the_one_line_carrying`, kit.rs) could only have
+anchored on a fragment. Folding by block makes a re-wrap of either file a
+non-event. I pre-committed in the sealed set that a lane treating both
+sides identically *without noticing the asymmetry* had not read the card;
+this lane noticed it, named it, and chose the fold for that reason.
+
+### O2 — reds on more-than-one and on none · MET, DRILLED, CONTAINMENT 1
+
+Twelve DATA mutants, each applied ONE SIDE ONLY to the method file the
+body READS (never the assertion — the property lives in data, so a code
+mutant would mis-grade it by construction), each landing read back from
+`git diff`, each restored with `git restore --source=<tip>
+--staged --worktree` and a sha256 equal to the tip's. Whole app suite
+every time; baseline at the tip **50 files / 1141 passed**.
+
+| # | data mutant | file | result | failing bodies |
+|---|---|---|---|---|
+| D1 | **the card's own mutant** — decoy above the home + home → `4–5` | TASK-FORMAT | **RED**, *"ceiling min: expected 4 to be 3"* | **1** |
+| D2 | decoy above the home, home UNCHANGED | TASK-FORMAT | GREEN (1141) | 0 |
+| D3 | home → `4–5`, no decoy | TASK-FORMAT | **RED** | **1** |
+| D4 | decoy in its own block + citation → `4–5` | orchestrator | **RED** | **1** |
+| D5 | decoy in its own block, citation UNCHANGED | orchestrator | GREEN (1141) | 0 |
+| D6 | citation → `4–5`, no decoy | orchestrator | **RED** | **1** |
+| D7 | second anchor copy, DIFFERENT block | TASK-FORMAT | **RED**, *"carries it 2 times"* | **1** |
+| D8 | second anchor copy, SAME block | TASK-FORMAT | **RED**, *"carries it 2 times"* | **1** |
+| D9 | blank line splitting the anchor's span | orchestrator | **RED**, *"in 0 whole blocks"* | **1** |
+| D10 | decoy INSIDE the anchored block + home → `4–5` | TASK-FORMAT | **RED**, *"states … 2 times, not once"* | **1** |
+| D11 | anchor phrase deleted from the home line | TASK-FORMAT | **RED**, *"carries it 0 times"* | **1** |
+| D12 | decoy INSIDE the anchored block, home UNCHANGED | TASK-FORMAT | **RED**, *"states … 2 times, not once"* | **1** |
+
+**D1 IS THE CARD.** At the base I measured that same mutant GREEN —
+50 files / **1141 passed**, exit 0, the home moved and nothing noticed
+(sealed ground §4.2, taken before the diff existed). At the tip it is
+**1 failed / 1140 passed**, the ceiling body by name. **The other side was
+holed too and the card did not say so**: I measured the orchestrator
+analogue GREEN at the base (sealed ground §4.3) and it is D4 RED at the
+tip. Both halves are closed, not one.
+
+**KILL-SET CONTAINMENT, NEVER THE COUNT.** Each of the three new floors
+has a mutant that kills it and nothing else, so no kill set contains
+another:
+- anchor-occurrence floor — **D8**: a same-block duplicate leaves the
+  block floor at 1 and the needle floor unreached;
+- one-block floor — **D9**: the anchor still folds to one occurrence in
+  the file, but no single block holds it;
+- needle-once-in-block floor — **D12**: occurrences 1, blocks 1, and only
+  the in-block count moves;
+- and the min/max compare keeps its own — **D3/D6**, where all three
+  floors stay green and only the value has moved.
+
+**The discrimination D2 and D5 buy is the part a weaker fix would have
+lost.** A floor asserted on the NEEDLE instead of the anchor (sealed
+attack A3) would red identically whether the home moved or somebody
+merely wrote the number twice elsewhere. This body reds on D1 and stays
+green on D2, so its red still means *the value moved* — and where a
+duplicate genuinely lands inside the pinned block, D12's message names
+the duplicate rather than claiming the value moved.
+
+### O3 — rule 4's prose copies, and byte-stability through BOTH assemblers · MET
+
+The citation route was taken and the numbers are gone, not merely
+checked: at the tip `method/lane-protocol.md` contains
+`ceiling of 3–5 concurrent lanes` **0**, `up to five executors` **0**,
+`3–5 concurrent` **0**, and **0** matches of the body's own `CEILING`
+regex (all were 1, 1, 1, 0 at base). A duplicate removed outranks a
+duplicate checked, and it means no THIRD unanchored read was introduced —
+the failure my sealed attack A4 was written for.
+
+**Extraction, re-derived here through both real assemblers:**
+
+| assembler | base | tip | delta |
+|---|---|---|---|
+| `numberedStep` (`dispatch-brief.mjs:400`) | 12,932 | 13,152 | +220 |
+| `numbered_rule` (`brief.rs:1890`, lifted verbatim, `rustc -O`) | 12,929 | 13,149 | +220 |
+
+**ONE contiguous span**: common prefix 8,850 chars, common suffix 3,981
+chars, a 101-char region replaced by a 321-char one, everything outside
+it byte-identical. Rules 2, 3 and 6 are sha256-**identical** at both refs
+(`b707d0f9…`, `c8f88eb9…`, `65b834ea…`). Rule 4's head and tail 60 chars
+unchanged. Ordinal set identical (14 ordinals, 4 `## ` headings, each
+shifted exactly +4 lines); the diff adds no `^\d+[a-z]?\. ` line and no
+`^## ` line.
+
+**AND IT AVOIDED THE TRAP I MEASURED BEFORE THE DIFF EXISTED.** The two
+assemblers stop differently — JS on an ordinal or heading, Rust on the
+first non-indented non-empty line. Sealed ground §3 records that ONE
+column-zero line inside rule 4 collapses the Rust extraction
+**12,929 → 8,842** while JS grows normally to 12,980, so a JS-only check
+would call that clean. Every added line here is indented, and the Rust
+side growing by the identical +220 is the evidence.
+
+**The brief's byte margin did not degrade**: 52,344 of 65,536 bytes
+(79.9 %, 13,192 left) at the base → **51,680 of 65,536 (78.9 %, 13,856
+left)** at the tip, `brief.mjs --task T-229-s8 --role executor`.
+
+**The citation is SEEN, not merely shaped right.** Sealed attack A8
+demanded proof that MF-04 examines the new pointer rather than skipping
+it. Dangling it here (`tasks/TASK-FORMAT-NOPE.md`, restored by sha256)
+reds **MF-04 by name** — *"method/lane-protocol.md points at
+method/tasks/TASK-FORMAT-NOPE.md, which is not in the method tree"*. At
+the base I had measured the two ways this could have gone silently wrong:
+a BARE `TASK-FORMAT-NOPE.md` exits **0, SILENT** (MF-04's documented
+allowlist hole), and an ORDINAL citation reds **MF-02** — *"has no rule 4
+(its numbered rules are )"*. The shipped form is prefixed and
+non-ordinal, which is the only spelling that is both checked and legal.
+
+### Security sweep (step 3) — CLEAN
+
+The only new read is `readRepo(rel)` with `rel` one of two hardcoded
+literals; no path is derived from file content. No regex is built from
+content (`anchor` is used with `String.split`/`String.includes`, never
+`new RegExp`); `/\s+/g` and `/^\s/` are linear over a 43 KB input with no
+backtracking hazard. No new dependency, no `package.json` change, no
+secret, no endpoint, no authz surface. Nothing to report.
+
+### Gates, run here at the tip
+
+| gate | result |
+|---|---|
+| `npm run build` from `app/` (tsc + tsc test config + vite) | **exit 0** |
+| `npm test` from `app/` | **50 files / 1141 passed** |
+| `npx vitest run` from `lib/parser/` | **16 files / 363 passed** |
+| `npm test` from `tools/e2e/` (ports 25229/26229) | **602 passed, exit 0**, 16.0 m |
+| `node tools/method-evals/run.mjs` | **exit 0**, 7 model-free; MF-04 13 refs, MF-02 26 citations |
+| `node tools/method-evals/run.mjs --selftest` | **exit 0**, 7, POSITIVE CONTROL |
+| `index --check` from `app/src-tauri/` | **exit 1, STALE** — `files +0 -0 ~1`, symbols 20→23, `edges +3`, all three the new helpers' own call edges inside the one changed file. **The integrator's, in the merge commit.** Correctly not regenerated in the lane. |
+| `docs-gate.mjs` on the three literal paths | **exit 1, FIRES** on the card paths — `app/`, `tools/e2e/`, `lib/parser/` owed |
+
+**THE e2e INTERMITTENT — MEASURED HERE, NOT ACCEPTED.** I was told the
+lane attributes a red at `push-guard.spec.ts:2718` to host load rather
+than to this diff, and told to check it myself rather than take that.
+**My own full e2e run at this tip is 602 passed, exit 0** — the body did
+not red for me. It ran in 16.0 m against a 9.8 m baseline at the same
+bench, with three other lanes' playwright suites live on the host
+throughout (`nputer-T-228` and `nputer-V-T-214`, four worker processes
+counted at `ps` time). So the slow, loaded condition was present and the
+body still passed: an independent third reading consistent with an
+intermittent and inconsistent with a defect introduced by this diff.
+`T-229-s11` is the right disposition. **No red is attributable to this
+lane.**
+
+### Fence, and the routed cards
+
+`git diff --name-only` names exactly `app/test/select-board.test.ts`,
+`method/lane-protocol.md`, and three paths under `docs/tasks/` — this
+card and two routed suggestions, in the unfenceable directory every card
+writes to. `method/tasks/TASK-FORMAT.md`, `method/roles/orchestrator.md`,
+`app/src/lib/board-model.ts` and `tools/e2e/**` are untouched. Both
+routed cards parse: `status: suggested` with `suggested_by` set,
+one-level suffix ids, no reserved title indicator. Neither test name in
+the file moved, so the CAPABILITIES census is not owed — and it could not
+be regardless: `capabilities.mjs` reads `tools/e2e/tests/*.spec.ts` only.
+
+### Two corrections of record, neither a failure
+
+1. **The card's premise about orchestrator.md is partly false.** It says
+   that file *"has no equivalent phrase"*. It carries two, each unique in
+   that file. I pre-committed this in the sealed attack set (A13) before
+   the diff existed; the lane found it independently and recorded it. The
+   card's *conclusion* — anchor on the citation declaration — survives.
+2. **The figures the card quotes are from `339b8d3`.** At my base the
+   same mutant is 50 files / **1141** bodies, not 1131; ten bodies landed
+   between the two refs. The claim is unaffected.
+
+### Not blocking, filed by the lane rather than by me
+
+`T-229-s10` (a sibling shape-eight instance with an empty kill set) and
+`T-229-s11` (the intermittent) are `status: suggested` and correctly
+routed rather than built — both are outside this fence. I did not
+re-measure either; they are suggestions, not conditions of this verdict.
+
+**APPROVED.** The card asked for an anchor that is not the needle, a red
+on more-than-one and on none, and rule 4's two prose copies given a
+citation without disturbing the extraction. All three are met, drilled at
+the site the property lives with data mutants, and every floor is
+load-bearing by containment rather than by count.
