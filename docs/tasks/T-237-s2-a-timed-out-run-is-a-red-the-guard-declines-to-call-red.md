@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: []
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
@@ -127,3 +127,187 @@ the ancestor.
   allow, and the derivable case refuse a live other holder.
 - Verification: headless.
 - **Guard-class: `review: independent`, set at filing.**
+
+## Implementation notes — 2026-09-02, executor claude-opus-5@subagent @T-237-s2
+
+Lane `/Users/ujju/Projects/nputer-T-237-s2`, branch
+`task/T-237-s2-push-guard-three-residuals`, base
+`763548cc61392f4f034b9c0fb334142f926d4c8b`. Fence held: the only files
+touched are `.claude/hooks/push-guard.mjs`, `tools/e2e/tests/push-guard.spec.ts`
+and this card. Nothing was merged, pushed or written outside this lane.
+
+### T-238-s2 first, because main was RED
+
+CI run 33602096600 on `763548c` failed one body. The cause was the BODY,
+not the guard: it armed the holder arm through the REAL process tree, and
+the identity is the nearest harness ancestor, which a GitHub runner
+(`node <- bash <- Runner`) does not have.
+
+**REPRODUCED ON THIS MACHINE rather than argued.** The two holder bodies
+were run under a double-forked, `setsid` process reparented to launchd —
+a tree with no harness ancestor, which is the runner's shape. At
+`67563b4` the body fails with CI's exact message (`the same record on the
+integration branch is not ignored`); at `17e764f` both pass. Logs:
+`detached-base-T-237-s2.log` and `detached-tip-T-237-s2.log` in the
+lane's scratch.
+
+The repair is a SEAM: `decide` takes its holder runner as a fifth
+parameter, for the reason it already takes `check`, `cheap` and `gh`. The
+default is `holderVerdict`, so production is unchanged; it is a parameter
+and never an environment override, so nothing outside the process can
+reach it and it cannot be used to silence the guard. The arm ALREADY
+failed open on an underivable identity — that half was right — and what
+was added is the DISCLOSURE: the notice now says the seat cannot be
+checked where this session's identity will not derive and that the arm is
+inert on a runner by construction, and the declared-limits header names
+the runner as the case with the incident that found it.
+
+### The three residuals
+
+**THE CONCLUSION.** `ANNOUNCED_RED_CONCLUSIONS` is the run-level set —
+`failure`, `timed_out`, `startup_failure`, `action_required` — and
+`FAILED_CONCLUSION` survives as the JOB and STEP word. `failingStep` reads
+the same set at both levels, so a timed-out run whose job timed out still
+names its step; a run with no jobs (`startup_failure` never has any) SAYS
+the step cannot be named rather than pretending. The announcement names
+the conclusion it read (`run.conclusion`), because four reds mean four
+different things to whoever fixes them. `cancelled` stays OUT and the
+reason sits beside the constant, with `NON_VERDICT_CONCLUSIONS` named as
+the other half of one argument and the two lists asserted disjoint. A
+conclusion on neither list still reaches the seat as the catch-all, which
+now names the whole set rather than one word of it.
+
+**THE BOUND (absorbs T-237-s4).** `GH_MEASURED_MS` is a new export
+carrying the measurement, and `push-guard.spec.ts` holds the RATIO rather
+than the sentence, so halving the bound without re-measuring reds a body
+by name. 15 s is KEPT and justified as a HANG bound at ~10x the slowest
+of fourteen real calls, with the asymmetry argued: a bound near the median
+turns ordinary network variance into a push that silently stopped asking
+CI, and a guard that goes quiet leaves nothing behind to notice. Round
+trips: ONE per ordinary push (`run list` answers both questions off one
+response); a second only over a red, and it cannot be folded in because
+`gh run list --json` publishes no `jobs` — pinned by a body. The header
+also states that THIS CARD'S WIDENING RAISED THAT COST for three more
+conclusions, and that a CI figure for the network call cannot be read at
+all (this file is a `PreToolUse` hook and never runs on a runner; the
+suite's own `gh` there has `contents: read` only, and
+`workflow-permissions.spec.ts`'s exception table is empty). What CI *can*
+read is the harness floor, timed and disclosed by a body on every run and
+NAMED as the harness's figure rather than as `gh`'s.
+
+**THE BRANCH (absorbs T-237-s6).** `pushTargetBranch` reads the branch a
+push LANDS on off the refspec, falls back to HEAD's where none is spelled,
+and declares every spelling it cannot read to a branch — with a
+`gitInvocations`-style limits block naming the alias/function/script/eval
+residue, the `$BRANCH` case, the configured-target case (`push.default`,
+`remote.<name>.push`, an upstream — not text, so not read), and the
+plain-`<name>`-is-a-tag case with its cost shown to be one-directional.
+
+**A FIRST DRAFT OF THAT FUNCTION WAS WEAKER THAN THE PRE-CARD GUARD AND A
+BLIND BODY CAUGHT IT.** It called several named targets `unresolved`, and
+`git push origin main NPUTER_CANCEL_CI=7002` reads as two refspecs — so
+the live run that body exists to refuse was let through with a sentence.
+The rule that replaced it: every name on the list is a REAL target, so
+asking about the first can only produce a TRUE refusal, and the rest are
+DISCLOSED in a notice. One round trip, and never weaker than what it
+replaced.
+
+**THE SHARPEST HAZARD WAS AVOIDED AND IS NOW PINNED.** `decide` computes
+ONE `headRef` and feeds it to five arms. The target is a SECOND value the
+CI arm alone consumes; `headRef` is untouched. A body drives a lane
+pushing `HEAD:refs/heads/main` and shows the holder arm still answers
+"not the integration checkout", and a poison drill that redefines
+`headRef` from the refspec kills exactly that body.
+
+### Poison drills — five, one side only, sha256-restored
+
+Pristine hook before drills 1-4:
+`402765efca9254140cdf5892b4eddf1c2c7d5f5b930f1cb27e3102585e0e76a4`.
+Pristine hook before drill 5 (post-T-238-s2):
+`4119f8bdad53dd56bd3ffe83456b2374ea1875161c1979e85e37123e70918e26`.
+Each mutant was read back with `git diff` against the lane's own commit,
+the whole `push-guard.spec.ts` was run against it, and the file was
+restored from a scratch copy with the hash re-read and `git status`
+verified clean.
+
+| # | mutant (hook only) | mutated sha256 | kill set |
+|---|---|---|---|
+| M1 | `ANNOUNCED_RED_CONCLUSIONS` back to `[FAILED_CONCLUSION]` (DATA) | `0416a3f2…2014a1` | 2 — both residual-1 bodies; 81 passed |
+| M2 | `GH_TIMEOUT_MS` 15_000 to 2_000 (DATA) | `961fa899…89250bd` | 1 — the bound body; 82 passed |
+| M3 | `pushTargetBranch` always falls back (`length >= 0`) | `5f85f6ea…198a62` | 2 — both residual-3 bodies; 81 passed |
+| M4 | `headRef` REDEFINED from the refspec in `decide` | `b3af88d3…cab9489d` | 1 — the T-238 fifth-criterion body; 82 passed |
+| M5 | the holder SEAM removed (`holderVerdict` called directly) | `106def6d…2f6463` | 1 — the runner-case body; 83 passed |
+
+Every kill set is contained to the residual its mutant belongs to. Every
+positive control was therefore DEMONSTRATED FAILING against an
+implementation lacking the property, not merely observed passing.
+
+### Commands, in order, with their exits
+
+`tools/e2e npm ci` 0 · `app npm ci` 0 · `app npm run build` 0 ·
+7x `gh run list` 0 (1026-1256 ms) · 7x `gh run view` 0 (1232-1499 ms) ·
+`tools/e2e npm run typecheck` 0 (x5) ·
+`npx playwright test tests/push-guard.spec.ts` 1 (2 failed / 81 passed —
+two PRE-EXISTING bodies moved by the branch fix, both diagnosed and
+repaired below), then 1 (1 failed / 82), then 0 (83 passed), then 0
+(84 passed at the T-238-s2 tip) · five drill runs (M1 81/2, M2 82/1,
+M3 81/2, M4 82/1, M5 83/1) · detached runner-shape runs: base FAILED as
+CI does, tip 2 passed · `gate-run.mjs parser` 0 (363 bodies) ·
+`gate-run.mjs app` 0 (1141) · `gate-run.mjs rust` 0 (639, 18 targets) ·
+`NPUTER_E2E_PORT=15238 gate-run.mjs e2e` 0 (605) ·
+`git merge-tree --write-tree main HEAD` 0 ·
+`cargo run -p nputer-index -- index --check --root ../..` 0 (CURRENT) ·
+`npm run capabilities:check` 1 (STALE — the integrator's regen).
+
+The two bodies the branch fix moved, both repaired rather than relaxed:
+`the acknowledgement names the run` (its trailing-token case, which the
+first-target rule above restores to a refusal) and `the branch reaches
+gh as ONE argument` (its command now spells NO refspec, so the hostile
+branch still reaches `gh` off HEAD — and a companion half shows that the
+same name spelled AS a refspec never reaches `gh` at all).
+
+### Gates, derived on the merge forecast
+
+`git merge-tree --write-tree main HEAD` exited 0, tree
+`03bf82711fba77e9d104348449b4bf8f003dcbcc`;
+`git diff --name-only main <tree>` names 2 paths at `17e764f`
+(`.claude/hooks/push-guard.mjs`, `tools/e2e/tests/push-guard.spec.ts`)
+and 3 once this notes commit lands, adding this card. The card itself did
+not appear at `17e764f` because main already carries the identical
+`Absorbs: T-238-s2` text (`2a74287`).
+
+- **GRAPH REGEN — FIRES**, on `tools/e2e/tests/push-guard.spec.ts`, a
+  `*.ts` outside `docs/`. ASKED RATHER THAN PREDICTED: `index --check`
+  exits 0, CURRENT, 1170079 bytes / 200 files / 2504 symbols / 2395
+  edges — the regen is a no-op by construction, since `.nputerignore`
+  excludes `tools/` and `.claude/` is outside the walk. It is still the
+  integrator's to run at the merge.
+- **BOOT GATE — NOT OWED**: no path under `app/src-tauri/**`,
+  `app/src/**`, `app/package.json` or `app/src-tauri/Cargo.toml`.
+- **DOCS GATE — FIRES** once this commit lands, on
+  `docs/tasks/T-237-s2-*.md`, which the parser smoke test and the board
+  scripts read.
+- **METHOD EVAL GATE — NOT OWED**: no path under `method/**`.
+- **THE CENSUS IS OWED AND IS THE INTEGRATOR'S**: seven new spec names,
+  `capabilities:check` exits 1 (committed 50248 bytes, fresh 50969), so
+  `npm run capabilities` belongs in the merge commit.
+
+### Where the brief was wrong
+
+- **Row 4's base commit** said `6cc38909ab24c9c5c06b4e23a0fa11424662a038`
+  while this lane's HEAD at dispatch was
+  `763548cc61392f4f034b9c0fb334142f926d4c8b` — T-233's known defect, and
+  the worktree's HEAD is the truth. Every figure here is derived at
+  `763548c` or later.
+- **The brief's fence sentence and the ceremony are otherwise exact.**
+  The one departure from its ORDER is the coordinator's: T-238-s2 was
+  handed to this lane "before the three residuals" and arrived after they
+  were already committed, so it is the SECOND commit (`17e764f`) rather
+  than the first. It touches regions `67563b4` does not, so it can be
+  cherry-picked ahead of the residuals if the import block is merged by
+  hand.
+- **The brief said the card's `FAILED_CONCLUSION` sits "around :768"**
+  and `GH_TIMEOUT_MS` "around :634". Both were right at the base and both
+  are line numbers, which docs/CONVENTIONS.md rules are figures; they are
+  cited by SYMBOL throughout this work.
+- **Nothing else in the brief was contradicted by the repository.**
