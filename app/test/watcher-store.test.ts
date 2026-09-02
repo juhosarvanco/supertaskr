@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   CONVENTION_HINT,
   EMPTY_PROBE,
-  genesisSwitchIsOvertaken,
   outcomeCarriesSnapshot,
   planChecklist,
   reduceDocs,
   reducePickOutcome,
   resetDocsForProjectSwitch,
   selectScreen,
+  switchIsOvertaken,
   type PlanProbePayload,
   type ShellState,
 } from "../src/lib/watcher-store";
@@ -465,11 +465,11 @@ describe("T-064: a genesis switch that arrives AFTER an emit for the same folder
     const at = (seq: number, projectDir = GENESIS_DIR) =>
       ({ kind: "genesis", projectDir, seq }) as const;
 
-    expect(genesisSwitchIsOvertaken(prev, at(7)), "older reading, same folder").toBe(true);
-    expect(genesisSwitchIsOvertaken(prev, at(8)), "equal seq is still not newer").toBe(true);
-    expect(genesisSwitchIsOvertaken(prev, at(9)), "a NEWER switch is not overtaken").toBe(false);
+    expect(switchIsOvertaken(prev, at(7)), "older reading, same folder").toBe(true);
+    expect(switchIsOvertaken(prev, at(8)), "equal seq is still not newer").toBe(true);
+    expect(switchIsOvertaken(prev, at(9)), "a NEWER switch is not overtaken").toBe(false);
     expect(
-      genesisSwitchIsOvertaken(prev, at(7, "/projects/somewhere-else")),
+      switchIsOvertaken(prev, at(7, "/projects/somewhere-else")),
       "a different folder must still be reset away",
     ).toBe(false);
   });
@@ -480,7 +480,7 @@ describe("T-064: a genesis switch that arrives AFTER an emit for the same folder
     // agree in production; spelling it from the snapshot is what makes
     // the tree-less branch and the tree-bearing branch one rule.
     expect(
-      genesisSwitchIsOvertaken(prev, {
+      switchIsOvertaken(prev, {
         kind: "genesis",
         projectDir: GENESIS_DIR,
         seq: 9,
@@ -566,6 +566,140 @@ describe("T-064: a genesis switch that arrives AFTER an emit for the same folder
     expect(next.docs).not.toBe(s.docs);
     expect(next.docs.fileCount, "the switch's own tree, applied").toBe(1);
     expect(next.docs.seq).toBe(9);
+  });
+});
+
+// ---- T-018-s5: the ORDINARY pick, overtaken the same way ---------------
+
+/**
+ * `open_as_project` arms the watch on the new root at the `Rearm`
+ * rendezvous BEFORE it commits and stamps — exactly as
+ * `apply_genesis_folder` does — so an emit for the picked folder can
+ * reach this store ahead of the invoke reply. The `"picked"` branch used
+ * to ask nothing about that and hand the reply straight to `reduceDocs`,
+ * which applies any payload whose `seq` exceeds the watermark.
+ *
+ * THE INTERLEAVING BELOW IS THE RUNNER'S OWN, not a hypothetical.
+ * `docs_watch::tests::picker_rearms_the_watcher_onto_the_new_root`
+ * printed `docs-changed: seq=5` AFTER `project folder picked`, carrying
+ * bytes written after the pick returned (T-018-s2; ubuntu-24.04, CI runs
+ * 33304351040 and 33566291111). The two stamps Rust sends disagree
+ * because they measure different moments: `WatchState::next_seq` draws
+ * BEFORE the collect, so the watcher thread — which drew first and
+ * walked longest — sends the LOWER seq with the NEWER bytes, while the
+ * pick's reply sends a HIGHER seq stamped `generated_at_ms` by a walk
+ * that finished EARLIER. Compared by seq alone the reply looks fresh.
+ */
+describe("T-018-s5: an ordinary pick whose reply arrives AFTER an emit for the same folder", () => {
+  const DIR = "/projects/a";
+  // The clock, spelled apart from the seq on purpose: these fixtures are
+  // the one place the two stamps must be free to disagree, which the
+  // file-wide `payload` helper (generatedAtMs = base + seq) cannot show.
+  const EMIT_FINISHED = 1_700_000_000_900;
+  const REPLY_FINISHED = 1_700_000_000_500;
+  const read = (
+    seq: number,
+    generatedAtMs: number,
+    files: number,
+    projectDir = DIR,
+  ): DocsSnapshotPayload => ({
+    seq,
+    projectDir,
+    generatedAtMs,
+    files: Array.from({ length: files }, (_, i) => ({
+      path: `docs/decisions/00${i + 1}-x.md`,
+      content: `# 00${i + 1}`,
+    })),
+  });
+
+  /** The emit landed first: the model already holds the LATER reading. */
+  const overtaken = (): ShellState =>
+    shell({
+      phase: "open",
+      docs: reduceDocs(emptyState(), read(5, EMIT_FINISHED, 3)),
+    });
+
+  it("the PREDICATE reads a `picked` reply's OWN snapshot, both conjuncts", () => {
+    const prev = overtaken().docs;
+    const at = (seq: number, generatedAtMs: number, projectDir = DIR) =>
+      ({ kind: "picked", snapshot: read(seq, generatedAtMs, 2, projectDir) }) as const;
+
+    expect(
+      switchIsOvertaken(prev, at(6, REPLY_FINISHED)),
+      "higher seq, OLDER read, same folder — the whole defect",
+    ).toBe(true);
+    expect(switchIsOvertaken(prev, at(4, EMIT_FINISHED + 1)), "a lower seq is stale").toBe(true);
+    expect(switchIsOvertaken(prev, at(5, EMIT_FINISHED + 1)), "an equal seq is not newer").toBe(
+      true,
+    );
+    expect(
+      switchIsOvertaken(prev, at(6, EMIT_FINISHED + 1)),
+      "a genuinely newer reply is NOT overtaken",
+    ).toBe(false);
+    expect(
+      switchIsOvertaken(prev, at(6, REPLY_FINISHED, "/projects/somewhere-else")),
+      "a different folder must still be reset away, however old its read",
+    ).toBe(false);
+  });
+
+  it("KEEPS the overtaking emit's tree and does not advance the watermark past it", () => {
+    const s = overtaken();
+    expect(s.docs.fileCount, "the emit's three-file reading is what the store holds").toBe(3);
+
+    const next = reducePickOutcome(s, {
+      kind: "picked",
+      snapshot: read(6, REPLY_FINISHED, 2),
+    });
+
+    // The screen still moves — this is a switch, and the phase is what
+    // the switch is FOR.
+    expect(next.phase).toBe("open");
+    expect(next.genesisDir).toBeNull();
+    // ...but the model is the LATER reading of the same folder, kept by
+    // identity (which is also what suppresses the duplicate echo), and
+    // the watermark stays on the emit that carried it rather than
+    // jumping past it.
+    expect(next.docs, "identity: nothing was rebuilt").toBe(s.docs);
+    expect(next.docs.fileCount, "the fresher measurement survives").toBe(3);
+    expect(next.docs.seq, "5, never forward to the reply's 6").toBe(5);
+    // And the watermark still does its job afterwards, in both
+    // directions: the stale drop holds, and the next emit lands.
+    expect(reduceDocs(next.docs, read(5, EMIT_FINISHED + 10, 1))).toBe(next.docs);
+    expect(reduceDocs(next.docs, read(7, EMIT_FINISHED + 10, 1)).fileCount).toBe(1);
+  });
+
+  it("a re-pick of the OPEN folder whose read landed in the SAME millisecond still applies", () => {
+    // The boundary the `<` on the clock is strict for. Two collections
+    // that finish inside one tick are not ordered by the clock at all,
+    // so the seq stamp decides and the reply applies — a fixture (or a
+    // fast machine reading a small tree twice) must not be read as an
+    // overtake.
+    const s = overtaken();
+    const next = reducePickOutcome(s, {
+      kind: "picked",
+      snapshot: read(6, EMIT_FINISHED, 1),
+    });
+    expect(next.docs, "not an identity return").not.toBe(s.docs);
+    expect(next.docs.fileCount, "the reply's own tree, applied").toBe(1);
+    expect(next.docs.seq).toBe(6);
+  });
+
+  it("a pick onto a DIFFERENT folder is never an overtake, however old its read", () => {
+    // The conjunct that is not about the stamps. Without it, an emit
+    // from the previously open project would be kept as though it
+    // described the folder being picked — the cross-project ghost the
+    // T-007 reset exists to prevent.
+    const s = overtaken();
+    const next = reducePickOutcome(s, {
+      kind: "picked",
+      snapshot: read(6, REPLY_FINISHED, 1, "/projects/elsewhere"),
+    });
+    expect(next.phase).toBe("open");
+    expect(next.docs.projectDir, "the folder that was picked").toBe("/projects/elsewhere");
+    expect(next.docs.fileCount, "its own tree, applied").toBe(1);
+    expect([...next.docs.effective.keys()], "no cross-project ghosts").toEqual([
+      "docs/decisions/001-x.md",
+    ]);
   });
 });
 
