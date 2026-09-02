@@ -328,3 +328,181 @@ lane, because the bench is not a dispatched lane and so does not carry
 the fence's `r--r--r--` modes — the whole of `T-229-s6`. And
 `index --check` is CURRENT at the base and **STALE at this tip**, by
 design: GRAPH REGEN fires and regeneration is the integrator's.
+
+## VERDICT — 2026-09-02, verifier claude-opus-5@subagent: APPROVED
+
+Judged at tip `339b8d31a615edfda1e9b8d02d3677ca4d403889`, base
+`e4cd6d4d27671f6c6064a8853886b2ee62d9237d`, on an independent bench at
+`/Users/ujju/Projects/nputer-V-T-229-s4`. **Blindness was CLOCK-SHAPED**:
+the bench was cut with the lane, phase 1 ran before the branch existed,
+and the attack set and a measured ground truth were sealed and hashed
+before any diff was fetched — `attack-V-T-229-s4.md`
+`970ac287d69bf15f40adb7f5cb4e0cb61f2e943b9d9edce4a91b027b376a85ee`,
+`ground-V-T-229-s4.md`
+`79007ae4be287bd2760877b90bf84db51124a35c8e798b01e39894ac278b7157`,
+sealed 2026-09-02T04:25:37Z. The dispatching brief's duties section named
+no executor-derived specific — no mutant count, no path count, no suite
+figure — so phase 1 was not broken above the line. Every figure below
+carries the ref it was measured at.
+
+### The card's premise, measured at the BASE before the work existed
+
+Data mutants at `e4cd6d4`, landings read from `git diff -U0`, restored by
+`git restore --source=HEAD --staged --worktree` and proved by sha256:
+moving the number in the **HOME** left `npm test` from `app/` at **exit 0,
+50/50 files** — the declared home was checked by nothing; moving it in the
+**citation** gave **exit 1** on exactly one body; moving it in
+**lane-protocol's pointer** gave **exit 0**. The card's premise is true in
+both directions, and this reading was taken before the implementation
+could shape it.
+
+### Criteria
+
+**TRIAGE criterion — read the HOME and the citation, red when either
+moves away from `CONCURRENCY_CEILING`: MET.** Re-measured independently at
+`339b8d3`:
+
+| mutant (one side only, DATA, in a method file) | app suite | body / message |
+|---|---|---|
+| HOME `3–5` → `4–5`, citation intact | **exit 1** | the new body — *"method/tasks/TASK-FORMAT.md ceiling min: expected 4 to be 3"* |
+| HOME's line DELETED | **exit 1** | *"method/tasks/TASK-FORMAT.md states no \"Ceiling: N–N concurrent\": expected null not to be null"* |
+| citation `3–5` → `3–6` | **exit 1** | *"method/roles/orchestrator.md ceiling max: expected 6 to be 5"* |
+
+The messages name the file, so a red says which copy moved. The regex is
+non-global, so the shared `const` does not carry `lastIndex` across the
+loop's two iterations; measured at `339b8d3`, it returns `3/5` from both
+intended files with byte-identical match text and **NULL** from
+`method/lane-protocol.md`. The card's own note is right that the
+colon-and-capital anchor is load-bearing: a `concurrent\.` tightening
+reads NULL from the home, a case-insensitive loosening also matches
+lane-protocol.
+
+**TRIAGE criterion — a positive control red against a planted home with
+the citation intact: MET, and it is a real control.** The lane's mutant A
+plants the home and leaves the citation untouched; the new body reds and
+**the pre-change body, over the same planted data, passes green**. That is
+the arrangement `roles/verifier.md` 2b demands — the thing deciding the
+subject's answer is not the thing deciding the control's. This seat
+reproduced the pair from the opposite end and on a different checkout:
+red at `339b8d3` under the home mutant, green at `e4cd6d4` under the same
+mutant, the second reading sealed before the diff was fetched.
+
+**KILL-SET CONTAINMENT — neither body contains the other, measured.**
+The constant alone (`min: 3` → `4` in `board-model.ts`) reds BOTH bodies.
+The constant **and both method files moved together to 4–5** reds **only
+the literal-pin body** — the new body correctly passes, because the three
+copies agree. So the pin kills a mutant the agreement check does not, and
+the agreement check kills three the pin does not. `T-063`'s rule — a test
+parametrised by the constant it checks cannot pin that constant — is
+discharged by construction here, and demonstrated rather than argued. The
+mutants are DATA mutants at the site the property lives, which is the only
+kind that can grade this body (`T-221`'s class).
+
+**Absorbed T-229-s1 — the pointer names the home: MET, and the pointer is
+now MECHANICALLY CHECKED.** Three probes at `339b8d3`, each restored:
+planting a dangling target in the new pointer reds **MF-04** by name
+(*"method/lane-protocol.md points at method/tasks/TASK-FORMAT-NOPE.md"*),
+so the shipped two-segment spelling is examined; the **bare** form
+(`TASK-FORMAT-NOPE.md`, no `tasks/` prefix) exits **0** — MF-04 never
+looks, so the chosen spelling is load-bearing and the bare one would have
+recreated this card's own defect one file over; and an ordinal citation
+(`tasks/TASK-FORMAT.md rule 4`) reds **MF-02** with
+*"has no rule 4 (its numbered rules are )"*, TASK-FORMAT having no
+top-level numbered items at all. All three hazards were pre-committed in
+the sealed attack set and all three were avoided.
+
+**Rule 4's shape is intact.** `numberedStep(laneProtocolText, 4)` through
+the real assembler returns **12,933 characters at `e4cd6d4` and 12,932 at
+`339b8d3`** — exactly the 21→20 pointer swap — with head and tail bytes
+unchanged and rules 1,2,3,5,6,7 byte-unchanged; the ordinal set and every
+ordinal's line number are identical; the diff adds no line matching
+`^\d+[a-z]?\. ` or `^## `. The Rust twin is covered by a green cargo suite.
+
+**Fence: HELD.** `app/test/select-board.test.ts` and
+`method/lane-protocol.md`, plus three `docs/tasks/` paths — this card and
+two routed findings — in the directory every manifest carries as
+`alwaysWritable`. `method/tasks/TASK-FORMAT.md`, `method/roles/orchestrator.md`
+and `app/src/lib/board-model.ts` are untouched. **No method version bump**,
+correctly: `lane-protocol.md` is not in `KIT_FILES` (derived at `e4cd6d4`)
+and a citation repair to an unshipped method file is owed none.
+
+### Gates, all at `339b8d3` on this bench
+
+`npm test` from `app/` **0** — 50 files / **1131** bodies,
+`select-board.test.ts` at **95**, unchanged because the body was rewritten
+rather than added · `npx vitest run` from `lib/parser/` **0** — 16 / **349** ·
+`cargo test` from `app/src-tauri/` **0** — **635** passed, 0 failed ·
+`node tools/method-evals/run.mjs` **0**, six model-free · `--selftest`
+**0**, six + POSITIVE CONTROL · DOCS GATE on the merge's own five paths
+**1 — it FIRES**, owing app, tools/e2e and lib/parser, and reports every
+live card's frontmatter parsing with a legal status.
+
+**`index --check` is exit 1, STALE, and that is GRAPH REGEN working**:
+`files +0 -0 ~1`, `~ app/test/select-board.test.ts (content, loc 2311 ->
+2325)`, budget unmoved at 1167986 of 2145959. The second line names byte
+counts and one file, so it is a real stale and not the `--root` false red;
+the regeneration is the integrator's at the checkpoint and a lane never
+updates the pins.
+
+**The METHOD EVAL GATE's positive control is GREEN at this tip.** The
+lane's `--selftest` exit 3 is reproduced as a lane artifact, not a tree
+fact: on this detached bench, at the same commit, both arms exit 0. The
+diagnosis routed as `T-229-s6` is consistent with everything measured here.
+
+### The one red, attributed BY NAME at the base rather than by count
+
+`npm test` from `tools/e2e/` is **exit 1 at `339b8d3` on this bench** — 572
+passed, **2 failed**, both in `session-economics.spec.ts` (`:179`, `:365`).
+**IT IS NOT THIS DIFF.** The failure text is the brief assembler refusing
+to settle three rows: *"T-018-s6 / T-215-s1 / T-219-s3 holds a worktree …
+and no live card declares that id"*. Those three lanes were cut on this
+host AFTER this bench's own phase-1 baseline, which measured **574 passed,
+exit 0, at `e4cd6d4`**; their cards exist at neither `e4cd6d4` nor
+`339b8d3`. Decisive experiment: the same two bodies, run alone, fail
+**identically at `e4cd6d4`** — the commit where this diff does not exist.
+This is `guard-surface-behind` by ref skew, and its surface is the one
+rule 4 itself names: **the host's list of worktrees is MACHINE-scoped**.
+The lane's own e2e reading was true when it was taken and is a
+live-environment fact with a shelf life, not a false claim.
+
+### Security sweep
+
+No filesystem write, no subprocess, no `process.env` read, no dependency
+or manifest change, no secret, no `.skip`/`.only`/`.todo`. `readRepo`'s
+arguments are two string literals in a local array joined onto a fixed
+`REPO_ROOT`; no path is data-derived and none carries `..`. The regex is
+linear with no nested quantifier. Nothing here is REJECTED-level.
+
+### Findings — NOT failures, and nothing here blocks
+
+1. **Both reads have no uniqueness floor (`CONVENTIONS`' shape EIGHT).**
+   Measured at `339b8d3`: with a decoy `Ceiling: 3–5 concurrent` planted
+   ABOVE line 701 and the real home line moved to `4–5`, the app suite
+   passes at **exit 0, 50/50** — the whole-file `exec` takes the first
+   match. The hole is INHERITED from the body being replaced, not
+   introduced, and TASK-FORMAT.md already carries an anchor that is not
+   the needle (`THIS LINE IS THE VALUE'S HOME`, occurrence count 1 at this
+   ref). Filed as `T-229-s8`.
+2. **`app/src/lib/board-model.ts:726-734`'s doc comment is now stale in a
+   new way, and the notes do not say so.** It reads *"Asserted against the
+   live `method/roles/orchestrator.md` … with both bounds HARDCODED in the
+   body — never parametrised by this object"*. After this lane the body
+   that asserts against the method files IS parametrised by the object —
+   deliberately and correctly, the hardcoding having moved wholly to the
+   sibling — and the home is not named at all. The file is out of fence,
+   so leaving it alone was right; CONVENTIONS' other half, *a lane that
+   finds a pin wrong states it in its notes*, was the reachable part. A
+   two-sentence repair for whichever lane next opens that file; recorded
+   here rather than carded, because the fix has no independent subject.
+
+### Why APPROVED
+
+The card named one defect, the defect was real and measured before the
+work existed, and the work closes it in the one place the card's fence
+reaches — with the citation's guard kept, the constant's pin kept and
+proved non-redundant, the pointer's new target mechanically checked, and
+three named traps in the surrounding gates avoided rather than survived.
+The notes are unusually honest about what was NOT taken and why, and both
+residuals were routed before this seat asked. The single red is a
+machine-scoped surface moving under an older card set, reproduced at the
+base and attributed there.
