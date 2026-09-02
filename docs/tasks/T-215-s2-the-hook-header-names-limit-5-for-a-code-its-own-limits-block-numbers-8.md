@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 blocked_by: [T-219-s3]
 touches: [.claude/hooks/lane-fence.mjs]
 suggested_by: "executor claude-opus-5@subagent @T-215"
