@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e/scripts/checkout-currency.mjs, tools/e2e/scripts/brief.mjs, .claude/hooks/push-guard.mjs, tools/e2e/tests/checkout-currency.spec.ts, tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/lane-lock.spec.ts]
 suggested_by: "the architect seat, 2026-09-02 — item 7 of docs/rooms/loop-efficiency.md; the instance is this seat's own arrival, measured with ps and the session list while the retired seat was mid-battery and then mid-checkpoint in the same checkout"
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
@@ -117,3 +117,15 @@ the class the absorbed T-230-s6 names with a second trigger: not main
 advancing past the base in general, but a `.claude/` change landing.
 The fixture-vantage move this card owes covers it; the lane SHALL name
 card-preflight.spec.ts:719 among the bodies it moves.
+
+## Absorbs: T-240 (2026-09-02)
+
+The T-018-s2 verifier measured that a verifier BENCH cannot run the e2e
+leg green at any ref for any diff: four bodies judge the checkout they
+run in, and a bench detached at a lane's base is stale to that judge by
+construction (`guard-surface-behind`, 28 commits behind). The
+fixture-vantage move this card owes covers benches exactly as it covers
+lanes; the criterion gains its second subject: WHEN a bench is detached
+at a base behind the integration branch THE suite there SHALL NOT red on
+the bench's own currency, and verifier.md step 7's e2e column SHALL be
+dischargeable from a bench.

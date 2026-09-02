@@ -5,11 +5,12 @@ feature: F-02
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: building
 blocked_by: []
 touches: [app/src/lib/watcher-store.ts, app/test/watcher-store.test.ts]
 suggested_by: executor claude-opus-5@subagent @T-018-s2
-builder:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -73,3 +74,18 @@ guard on only one of them is an asymmetry with no argument behind it.
 COMMIT.** That lane's fence is exactly
 `app/src-tauri/src/docs_watch.rs`; the defect and its test both live
 under `app/src/`.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 2
+
+The architect seat, at the stamp of T-018-s2's merge (ba764b2). A
+product defect on the front door's own path, verified in the file by
+the T-018-s2 verifier independently of the lane that filed it
+(watcher-store.ts :550/:606 guard the genesis branch; :586 guards
+nothing). Criteria: WHEN a `picked` reply carries a snapshot whose `seq`
+is lower than an emit already applied for the same root THE reducer
+SHALL keep the emit and SHALL NOT move the watermark backwards or
+overwrite newer bytes with older; a positive control SHALL replay the
+runner's own interleaving (emit seq 5 before reply seq ≥6 carrying the
+older read) and red under the unguarded branch; the genesis guard SHALL
+be reused, not copied. Guard-class by consequence (data loss on the
+front door): `review: independent`.
