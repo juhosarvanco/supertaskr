@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: building
 blocked_by: []
 touches: [tools/e2e/tests/lane-fence.spec.ts]
 suggested_by: "executor claude-opus-5@subagent @T-215-s1"
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -60,3 +60,17 @@ the ARM.
   `T-215-s1` used for its own header control, so no fixture machinery is
   owed that the file does not already have.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted and dispatched, priority 3, at T-215-s1's merge (7264d21)
+
+The architect seat. T-219-s5's fourth ask, routed by T-215-s1 because
+its base predated T-219-s3's removal of the arm; main carries the
+removal now (f6e3924), so the body can be written against the hook as
+it is. Criteria: a body SHALL call `carveOutFor` directly for a card
+file with a manifest carrying `excluded` and assert the RETURNED domain
+and reason are the `alwaysWritable` arm's (docs/tasks), not an own-file
+arm's; a positive control SHALL re-add a byte-identical own-file arm in a
+fixture copy of the hook (or drive the hook's function from a scratch
+copy) and show the body red by name; kill-set containment against the
+existing carve-out bodies SHALL be measured at the tip. Guard-class,
+`review: independent`.
