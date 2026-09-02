@@ -1,9 +1,10 @@
 # State
 
-Updated: 2026-09-02 at the wave-1 close — the newest file in
-docs/checkpoints/ is **the Fable sitting record**; the retired seat's
-catcher/sweep record sits beside it. **TWO lanes are live (derive:
-LANES)**, both dispatched from this sitting. **CI IS A SEPARATE CLAIM
+Updated: 2026-09-02 at the second Fable checkpoint — the newest file
+in docs/checkpoints/ is **the second Fable sitting record** (the method
+bumps to v0.1.9, the ceiling moves off triage, the push guard reads
+CI); the first sits beside it. **Lanes are live (derive: LANES)**, all
+dispatched from this sitting. **CI IS A SEPARATE CLAIM
 FROM A LOCAL BATTERY AND MUST BE READ**: `gh run list` before believing
 the tree; one red this sitting was T-018-s2's intermittent and a re-run
 read green.
@@ -54,15 +55,16 @@ opens with `Checkpoint:`** (T-182).
 
 1. IN FLIGHT: **DERIVE IT** — `brief.mjs --dispatch`. A hand-kept list
    here named two dead lanes and missed two live ones (T-142).
-2. **THE WAVE LANDED**: T-223, T-230, T-216-s4 and T-236 (the CONVENTIONS
-   compaction) are done; **every lane can measure its own battery
-   again**. Next, as fences free: T-237, T-238, T-239 (the room's
-   cards), T-120-s2 (the e2e split), then the held promotions once
-   T-225's filter lands. **The order with its reasoning: the Fable
-   record's Next section.**
-3. **TRIAGE IS OWED AT THE STAMP** (orchestrator 2): the wave filed
-   sixteen suggestions and the band drifts — derive the count, never
-   quote it.
+2. **SEVEN MORE LANDED THIS SITTING**: T-229 (v0.1.9), T-236-s1,
+   T-225, T-230-s3, T-237, T-018-s2, T-236-s5 — and the seventeen held
+   promotions are applied. Live and next, as fences free: T-238 (the
+   holder on disk), T-018-s5, T-219, T-215; then T-239 (the dispatch
+   arm, after T-238 on brief.mjs), T-230-s7, T-229-s4, T-225-s1,
+   T-237-s2 (after T-238), T-120-s2. **The order with its reasoning:
+   the second Fable record's Next section.**
+3. **TRIAGE IS OWED AT THE STAMP** (orchestrator 2): `brief.mjs
+   --dispatch --full` is the TRIAGE view since T-225; the default
+   answers what can START. Derive the count, never quote it.
 4. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <separate
    literal paths>`; `lint:docs` is the CENSUS, exit 0 means "I wasn't
    asked". **AND IT DOES NOT READ PLACEMENT FIELDS OR ID SHAPE** — the
@@ -83,16 +85,19 @@ opens with `Checkpoint:`** (T-182).
   file is the RUNNER'S OWN CAPTURE (`gate-run` prints its path), not the
   verdict log, or two bands read UNREAD.
 - **A LOCAL BATTERY AND CI ARE DIFFERENT MEASUREMENTS** — only one runs
-  somewhere else. `gh run list` after every batch; **a push cancels the
-  running job**, so read the last run before the next push. **THREE
+  somewhere else. **THE PUSH GUARD NOW READS CI (T-237)**: a push while a
+  run is in flight is REFUSED unless `NPUTER_CANCEL_CI=<that run's id>`
+  is set; a red newest verdict is ANNOUNCED with the failing step; an
+  unreachable `gh` is disclosed and allowed. Read the announcement. **THREE
   WRITES THAT RED THE TREE AND NO CHEAP GATE SEES**: a test rename owes
   `npm run capabilities` (the integrator's, in the merge commit); a
   triage stamp owes the placement fields and a ONE-LEVEL suffix id
   (T-235); a prose commit stales the push token.
 - **A SEAT'S OWN SHELL IS A HAZARD**: a `cd` persists across tool calls,
-  and a `perl -pi` pattern ending in `\s*$` swallows the newline and glues
-  the next frontmatter line on — three instances this sitting, all caught
-  by READING THE DIFF BACK before the commit (room item 12).
+  a `perl -pi` pattern ending in `\s*$` swallows the newline and glues
+  the next frontmatter line on, and zsh spells the pipe array
+  `pipestatus` — every instance caught by READING THE DIFF BACK before
+  the commit (room item 12).
 - **A RELAYED FACT IS A CLAIM**: say whose. Two covering-message
   sentences this sitting were false (room item 11, the Fable record).
 - **A WORKTREE ENTRY MUTATES IN PLACE** — compare whole `git worktree
@@ -103,8 +108,18 @@ opens with `Checkpoint:`** (T-182).
   --preflight`'s sweep names every checkout on this machine — RUN IT
   BEFORE YOU TRUST A PUSH (T-216-s1).
 - **ONE HOLDER OF THE INTEGRATION CHECKOUT AT A TIME**, and nothing on
-  disk says who: check the harness's session list and `ps` for
-  `gate-run` before writing there (T-238, the Fable record).
+  disk says who until T-238 lands: check the harness's session list and
+  `ps` for `gate-run` before writing there (the Fable records).
+- **A LANE OR BENCH CUT BEFORE A GUARD MERGES REDS FOUR BODIES ON ITS
+  OWN GUARD SURFACE** (`guard-surface-behind`): attribute by NAME at
+  the base, never by count; T-238 moves them to a fixture vantage.
+- **FAST PATH A HAS TWO HALVES, BOTH THE SEAT'S**: amend `touches:` on
+  main, re-expand, AND write the lane's card copy by a Bash write (the
+  lane's hook refuses the executor while the window is open; room 16).
+  Cut, ARM, then cut the next (room 15).
+- **A FRONTMATTER STAMP IS A NO-OP ON A KEY THE CARD LACKS** — read the
+  frontmatter back after every stamp; a guard-class card gets
+  `review: independent` at the dispatch stamp.
 - **CUT THE VERIFIER'S BENCH WITH THE LANE** (orchestrator 5c) — every
   verdict this sitting was blind by the clock. **An AMENDMENT reaches the
   verifier by PATH, never as your summary.**
@@ -120,7 +135,7 @@ opens with `Checkpoint:`** (T-182).
 
 ## The records
 
-- docs/checkpoints/ — append-only, one per integration; the Fable
-  sitting record is the newest. Pre-compaction: 2026-08-27-backfill-STATE.md.
+- docs/checkpoints/ — append-only, one per integration; the second
+  Fable sitting record is the newest. Pre-compaction: 2026-08-27-backfill-STATE.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.

@@ -205,9 +205,16 @@ and T-236 (2026-09-02, whose pre-compaction text is
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.
 - **A PUSH CANCELS THE RUNNING CI JOB.** Commit stamps freely; BATCH THE
   PUSH — and with T-203's token gate each push wants a fresh four-suite
-  battery anyway.
+  battery anyway. **Since T-237 the push guard HOLDS this**: a push while
+  a run for the branch is in flight is REFUSED, naming the run, and
+  `NPUTER_CANCEL_CI=<that run's id>` is the acknowledgement that cancels
+  it knowingly.
 - **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
-  `gh run view <id> --log-failed` on anything red. Batching exists so CI
+  `gh run view <id> --log-failed` on anything red (`--attempt 1` when a
+  red was re-run green). **Since T-237 the guard ANNOUNCES the newest
+  verdict at every push** — run id, failing step, and whether the pushed
+  tree reaches that step's package — and discloses an unreachable `gh`;
+  the reading is still yours. Batching exists so CI
   gets to FINISH, which buys nothing if nobody looks: main sat RED for
   roughly five hours across two distinct failures while a seat pushed
   over both, reporting "all four suites green" — true locally, and not

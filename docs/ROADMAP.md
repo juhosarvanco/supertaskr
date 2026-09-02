@@ -46,6 +46,11 @@ opens with the card id that still holds its story.
   umbrella-fence cost cut by T-149, and the docs watcher's live tests
   awaiting the CONVERGED state across platforms (T-153). Next:
   T-149-s1…s5.
+  The watcher's re-arm ordering is pinned as the watcher promises it
+  — an emit whose batch began after the pick's draw outranks the
+  reply, and the overtake itself stays legal (T-018-s2) — and the
+  ordinary pick's reply gains the genesis branch's overtake guard
+  (T-018-s5, in flight).
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer
@@ -106,6 +111,12 @@ opens with the card id that still holds its story.
   (T-230), and every lane can measure its own battery with the physical
   layer armed (T-216-s4); the wave was fenced by PATH for the first time
   and every pair was proved disjoint.
+  The method is at v0.1.9 (T-229: a positive control is DEMONSTRATED
+  failing and the record carries it), the push guard reads CI so a
+  run in flight refuses a push by construction (T-237), the dispatch
+  view answers what can START under a disclosed byte margin with
+  `--full` as the triage view (T-225), and a fence is refused when
+  it CONTAINS the unfenceable directory (T-219, in flight).
 
 ## Milestones
 

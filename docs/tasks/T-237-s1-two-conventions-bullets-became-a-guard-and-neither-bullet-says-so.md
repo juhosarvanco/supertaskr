@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: done
 suggested_by: executor claude-opus-5@subagent @T-237
 blocked_by: [T-237]
 touches: [docs/CONVENTIONS.md]
 builder:
 verifier:
-built_by:
-verified_by:
+built_by: the architect/integrator seat, claude-fable-5-1
+verified_by: the same seat — a governing-document sentence, read back and gated
 review: independent
 ---
 
@@ -69,3 +69,12 @@ checkpoint commit, the sentence that they are now arms of the push guard
 (`ci-run-in-flight` refuses; the newest verdict is announced) and that
 `NPUTER_CANCEL_CI=<run id>` is the acknowledgement — and this card closes
 there, beside T-225-s4's sentence in the same commit.
+
+## CLOSED, 2026-09-02 — at the second Fable checkpoint
+
+The two CONVENTIONS bullets now carry their forwarding address: *A PUSH
+CANCELS THE RUNNING CI JOB* says the guard HOLDS it since T-237 and names
+`NPUTER_CANCEL_CI=<run id>` as the acknowledgement; *AND THEN READ IT*
+says the guard ANNOUNCES the newest verdict at every push and discloses
+an unreachable `gh`, and adds `--attempt 1` for a red that was re-run
+green. Written by the integrator in the checkpoint commit.

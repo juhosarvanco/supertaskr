@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, docs/STATE.md]
 suggested_by: executor claude-opus-5@subagent @T-225
 builder:
 verifier:
-built_by:
-verified_by:
+built_by: the architect/integrator seat, claude-fable-5-1
+verified_by: the same seat — a governing-document sentence, read back and gated
 review: independent
 ---
 
@@ -54,3 +54,9 @@ are reconciling writes of the kind the checkpoint owns: STATE is
 regenerated there, and the CONVENTIONS sentence that sends a seat to
 `brief.mjs --dispatch` for triage gains `--full` in the same commit,
 which closes this card.
+
+## CLOSED, 2026-09-02 — at the second Fable checkpoint
+
+STATE, regenerated in this commit, sends a seat to `brief.mjs --dispatch`
+for what can START and to `--dispatch --full` for TRIAGE, in its Next-up
+list. CONVENTIONS at this ref does not spell `--dispatch` anywhere (measured: `grep -c -- --dispatch docs/CONVENTIONS.md` is 0 at 43e0fe8), so the half of this card that named it was already moot; the STATE half is the whole repair. Written by the integrator in the checkpoint commit.
