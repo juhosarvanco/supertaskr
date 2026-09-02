@@ -236,6 +236,14 @@ function readViaFile(argv: string[], dir: string, cwd = repoRoot): Read {
 const SLOW_CHUNK = 4096;
 const SLOW_DELAY_MS = 5;
 
+/**
+ * How many runs of the DRAINING reader control two takes before it uses
+ * the best of them (V-225's F1). Its arrival is a race, so one sample is
+ * a coin toss reported as a property; the best of several is a claim
+ * about what that reader CAN do, which is what the control argues.
+ */
+const FAST_SAMPLES = 5;
+
 function slowReader(dir: string): string {
   const file = path.join(dir, "slow-reader.mjs");
   writeFileSync(
@@ -487,27 +495,72 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
 
     /**
      * CONTROL TWO — THE SAME PRE-FIX WRITER, TWO READERS, TWO ANSWERS.
-     * Two hundred small writes and `process.exit()`: the draining reader
-     * loses NOTHING, and the reader that pauses loses down to one pipe
-     * buffer. Neither number is pinned — the equality is asserted where
-     * it must hold exactly, and the loss only as a floor over the
-     * buffer, because a race may leave a little more than a buffer
-     * behind and never less.
+     *
+     * ── V-225's F1, AND WHY THE ASSERTION MOVED ──────────────────────
+     * This control USED TO REQUIRE `| cat` to receive all 524,400 bytes
+     * (`expect(fast.bytes).toBe(smallWant)`). **That is not a property.
+     * It is who wins a race**, and `cat` loses it often enough to
+     * matter: V-225 measured 1 of 25 runs short on a quiet machine, 16
+     * of 25 at six busy cores, and one REAL suite red while an unrelated
+     * mutant of `dispatch-order.mjs` was applied — a body redding under
+     * a file it cannot reach is a body that will red on somebody else's
+     * lane, at `retries: 0`, carrying a message about write shape.
+     *
+     * **THE ARGUMENT NEVER NEEDED THE MAXIMUM; IT NEEDS THE
+     * DISCRIMINATION.** *One writer, one shape, two readers, two
+     * answers* is a claim that the two readers DIFFER, and the
+     * difference is what falsifies the write-shape inference. So the
+     * draining reader's arrival is DERIVED IN-RUN rather than assumed —
+     * the mirror of `deriveLossPoint` one line down, and the same
+     * argument turned the other way. That function takes the MIN of
+     * several samples because the conservative end of a spread is the
+     * honest threshold to announce a margin against; here the claim is
+     * *this reader CAN keep up*, so the conservative end is the MAX.
+     *
+     * **WHY SAMPLING RATHER THAN A SINGLE RELAXED COMPARISON.** A single
+     * `fast > slow` is still one sample of a race — under sustained load
+     * `cat` reaches the pauser's own floor of one pipe buffer, which is
+     * exactly what V-225 saw in its spurious red. Requiring the BEST of
+     * several runs to beat the pauser fails only if every one of them is
+     * that bad, which is a different and far weaker event. **What is
+     * left unasserted is the vivid half** — that a draining reader loses
+     * NOTHING — and it is DISCLOSED with its spread instead, the way
+     * this file already discloses its own coverage rather than reporting
+     * an unqualified green.
+     *
+     * THE OTHER HALF IS A PROPERTY AND STAYS ASSERTED: a reader that
+     * pauses cannot drain half a megabyte before a burst writer exits,
+     * so it loses, and it loses whatever the machine is doing.
      */
     const smallWrites = controlWriter(sc.dir, CONTROL_WANT, 200);
     const smallWant = controlBytes(CONTROL_WANT, 200);
-    const fast = readViaCatPipe(smallWrites, sc.dir);
     const slow = readViaSlowPipe(smallWrites, sc.dir);
-    expect(
-      fast.bytes,
-      "a DRAINING reader lost bytes from two hundred small writes, so this run cannot show that " +
-        "the write shape is not what decides the loss",
-    ).toBe(smallWant);
+    const fastSpread: number[] = [];
+    for (let i = 0; i < FAST_SAMPLES; i += 1) {
+      fastSpread.push(readViaCatPipe(smallWrites, sc.dir).bytes);
+    }
+    const fastBest = Math.max(...fastSpread);
+    const wholeRuns = fastSpread.filter((b) => b === smallWant).length;
+
     expect(
       slow.bytes,
       "the reader that PAUSES lost nothing from a pre-T-197 writer at this size, so a green " +
         "below would prove nothing about the writer",
     ).toBeLessThan(smallWant);
+    expect(
+      fastBest,
+      `not one of ${FAST_SAMPLES} runs of the DRAINING reader took more from this writer than the ` +
+        "reader that pauses did, so this run cannot show that the write shape is not what decides " +
+        "the loss — suspect a machine under sustained load before suspecting the writer",
+    ).toBeGreaterThan(slow.bytes);
+
+    disclose(
+      "brief-flush READER SPREAD",
+      `one pre-T-197 writer, ${smallWant} bytes in 200 small writes: the pauser took ` +
+        `${slow.bytes}; the draining reader took ${fastSpread.join(", ")} over ${FAST_SAMPLES} ` +
+        `runs, ${wholeRuns} of them whole. The BEST draining run is what the assertion uses, and ` +
+        `only its being larger than the pauser's is asserted.`,
+    );
 
     /**
      * THE PROOF. The same synthesised oversize invocation body one
@@ -539,7 +592,8 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
       `${SLOW_CHUNK} bytes every ${SLOW_DELAY_MS} ms received all ${whole.bytes} synthesised ` +
         `bytes past a ${PIPE_BUFFER}-byte buffer. The pre-T-197 writer at ${smallWant} bytes in ` +
         `200 small writes lost ${smallWant - slow.bytes} to that reader and ` +
-        `${smallWant - fast.bytes} to \`| cat\` — one writer, one shape, two readers.`,
+        `${smallWant - fastBest} to \`| cat\` at its BEST of ${FAST_SAMPLES} runs — one writer, ` +
+        "one shape, two readers.",
     );
   } finally {
     sc.cleanup();
