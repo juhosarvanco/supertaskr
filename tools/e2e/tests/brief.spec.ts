@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -10,6 +18,7 @@ import { conventionsText, liveTaskCards, trackedFiles } from "../scripts/docs-sc
 import {
   DERIVERS,
   EXIT,
+  PIPE_BUFFER_BYTES,
   architectureText,
   assembleBrief,
   boardCensus,
@@ -28,6 +37,7 @@ import {
   laneWorktrees,
   liveProv,
   mainWorktree,
+  marginRecs,
   namedDisciplines,
   note,
   packageCommands,
@@ -46,6 +56,7 @@ import {
   treeProv,
   unstampedLines,
   value,
+  withMargin,
   worktreePorcelain,
 } from "../scripts/dispatch-brief.mjs";
 
@@ -982,6 +993,115 @@ test("THE EXIT CODES keep `I derived it` apart from `I could not tell you`", () 
   expect(broken.stderr).toContain("COULD NOT RUN");
 });
 
+/* ════════════════════════════════════════════════════════════════════
+ * THE MARGIN, DISCLOSED IN THE COMMAND'S OWN OUTPUT (T-225, decision 3
+ * — the shape `T-167-s5` landed for the graph budget).
+ *
+ * The margin was already computed, accurately, by brief-flush.spec.ts.
+ * A dispatcher who never runs the e2e lane never met it, and a triage
+ * sitting then chose which cards to promote BY ARITHMETIC without
+ * anything in this command's output saying a ceiling was in play. These
+ * bodies are about the difference between a measurement that exists and
+ * one that reaches the person holding the decision.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("THE MARGIN IS DISCLOSED IN THE COMMAND'S OWN OUTPUT, and the size it declares is the size it is", () => {
+  // KILLED BY: dropping the `withMargin` wrapper at the foot of
+  // `brief.mjs`, or by disclosing a size that is not this answer's — the
+  // block measures the WHOLE output including itself, at a fixed point,
+  // so a reader who checks it with `wc -c` gets the same number. A
+  // disclosure a reader has to adjust is a figure with no keeper.
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t225-margin-"));
+  try {
+    const out = path.join(dir, "dispatch.txt");
+    const run = spawnSync("/bin/sh", ["-c", `'${process.execPath}' '${CLI}' --dispatch > '${out}'`], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(run.status, run.stderr).toBe(EXIT.CLEAN);
+    const text = readFileSync(out, "utf8");
+    const actual = statSync(out).size;
+
+    const line = text.split("\n").find((l) => l.startsWith("output: ")) ?? "";
+    expect(line, "the command emitted no margin line at all").not.toBe("");
+    const declared = Number.parseInt(line.slice("output: ".length), 10);
+    expect(declared, `the margin declares ${declared} bytes and the answer is ${actual}`).toBe(
+      actual,
+    );
+    expect(line).toContain(`of ${PIPE_BUFFER_BYTES} bytes`);
+
+    // AND IT IS AT THE TOP, WHICH IS THE WHOLE POINT. A truncation eats
+    // the TAIL, so a margin line under an answer too big to arrive is
+    // lost in the one case it was written for.
+    const lines = text.split("\n");
+    expect(lines.indexOf(line)).toBeLessThan(
+      lines.findIndex((l) => l.includes("WHAT IS DISPATCHABLE")),
+    );
+
+    // THE DENSITY LINE NAMES ITS DENOMINATOR, and the denominator is the
+    // cards this verbosity SPELLS OUT — the census line's own second
+    // half, so the two cannot drift into different answers.
+    const per = text.split("\n").find((l) => l.startsWith("per listed card: ")) ?? "";
+    const ruled = text.split("\n").find((l) => l.startsWith("ruled: ")) ?? "";
+    expect(per, "no per-card density was disclosed beside the size").not.toBe("");
+    const spelled = /— (\d+) card\(s\) spelled out/.exec(ruled)?.[1] ?? "";
+    expect(spelled, "the census line named no spelled-out count").not.toBe("");
+    expect(Number(/per listed card: (\d+) bytes/.exec(per)?.[1])).toBe(
+      Math.round(actual / Number(spelled)),
+    );
+
+    process.stdout.write(`\n  brief MARGIN: ${line.split("  <- ")[0]}\n`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped values, never as prose", () => {
+  // KILLED BY: a disclosure that only fires near the boundary, which is
+  // the shape this project has paid for twice: a guard that speaks only
+  // in the bad case cannot be told from one that is broken. `budget_line`
+  // in nputer-index prints at every run for the same reason, and says
+  // "OVER by" rather than failing, because over is not an error here —
+  // the answer is complete either way and what changes is who drains it.
+  const at = "1999-01-01T00:00:00.000Z";
+  const host = "a-test-host";
+  const under = render(marginRecs({ bytes: 1_000, at, host }));
+  const over = render(marginRecs({ bytes: PIPE_BUFFER_BYTES + 500, at, host }));
+
+  expect(under).toContain(`output: 1000 of ${PIPE_BUFFER_BYTES} bytes (1.5%) - 64536 left`);
+  expect(over).toContain(`(100.8%) - OVER by 500`);
+  expect(under).not.toContain("OVER by");
+  expect(over).not.toContain(" left");
+
+  // THE PROVENANCE FLOOR REACHES IT TOO: a size is a figure, and a figure
+  // leaves this module through a stamped value or not at all.
+  expect(unstampedLines(under)).toEqual([]);
+  expect(unstampedLines(over)).toEqual([]);
+  for (const l of [...under.split("\n"), ...over.split("\n")].filter((l) => !l.startsWith("# "))) {
+    expect(l).toContain(`<- read ${at} on ${host} ;`);
+  }
+
+  // AND THE DENSITY IS ABSENT WHEN NOTHING DERIVED A DENOMINATOR. A
+  // per-card cost divided by a count this command did not derive is
+  // exactly the figure with no keeper the whole module exists against.
+  expect(under).not.toContain("per ");
+  expect(
+    render(marginRecs({ bytes: 1_000, at, host, units: { count: 4, label: "listed card" } })),
+  ).toContain("per listed card: 250 bytes");
+
+  // A SIZE IT WAS NOT GIVEN IS REFUSED RATHER THAN GUESSED AT.
+  expect(() => marginRecs({ bytes: Number.NaN, at, host })).toThrow(/needs a byte count/);
+
+  // THE FIXED POINT, driven rather than reasoned about: the block
+  // declares the size of the WHOLE text it heads.
+  const body = `${"y".repeat(40_000)}\n`;
+  const wrapped = withMargin(body, { at, host });
+  expect(wrapped.whole, "the disclosure did not settle on a real board-sized answer").toBe(true);
+  expect(Buffer.byteLength(wrapped.text, "utf8")).toBe(wrapped.bytes);
+  expect(wrapped.text).toContain(`output: ${wrapped.bytes} of`);
+  expect(wrapped.text.endsWith(body)).toBe(true);
+});
+
 test("a brief assembled at this ref names the lanes the repository holds, and no others", () => {
   const ctx = context({ taskId: "T-133" });
   const rendered = render(assembleBrief(ctx).recs);
@@ -1750,6 +1870,17 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
         prefix: "  port ",
         why: "a live read of the MACHINE, not of any checkout: two reads seconds apart may differ",
       },
+      {
+        prefix: "output: ",
+        why:
+          "the margin measures THIS INVOCATION's own answer (T-225), and the `repository:` row " +
+          "allowed above is one of the lines inside it — a size that did NOT move with a row it " +
+          "contains would be measuring something other than what was written",
+      },
+      {
+        prefix: "per listed card: ",
+        why: "the same size, over the same denominator",
+      },
     ];
     const mainVals = values(fromMain.stdout);
     const nestedVals = values(fromNested.stdout);
@@ -1780,6 +1911,14 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
       moved.map((p) => p.line).filter((l) => l.startsWith("  another checkout exists")),
       "neither run saw a checkout that was not its own, so the fixture has one worktree, not two",
     ).not.toEqual([]);
+    // THE MARGIN'S ENTRY IS STRUCTURAL TOO and gets the same treatment:
+    // it is on the list because it MUST move here, so an allowlist entry
+    // that never fires would be one nobody could tell from a dead one.
+    expect(
+      moved.map((p) => p.line).filter((l) => l.startsWith("output: ")),
+      "the margin disclosed the same size from two checkouts whose own path row differs, so it is " +
+        "not measuring the answer it heads",
+    ).toHaveLength(1);
 
     // ── AND THE VALUE ITSELF, because the sweep alone cannot see a row
     //    that is equally wrong from both checkouts — which the `create:`

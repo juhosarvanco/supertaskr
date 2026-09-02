@@ -3,7 +3,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import { conventionsText } from "../scripts/docs-scan.mjs";
-import { render, unstampedLines } from "../scripts/dispatch-brief.mjs";
+import { render, unstampedLines, worktreePorcelain } from "../scripts/dispatch-brief.mjs";
 import {
   PARSER_DIST,
   boardFiles,
@@ -11,6 +11,7 @@ import {
   dispatchReport,
   knownPathOracle,
   lanesFrom,
+  listedCards,
   loadParser,
 } from "../scripts/dispatch-order.mjs";
 
@@ -451,6 +452,218 @@ test("A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is no
     expect(ruling, `${r.id}'s block carries both arms`).not.toContain(
       hasLane ? "it has NO lane, so it holds no fence" : "it HAS a lane above",
     );
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE DISPATCHABLE-NOW FILTER (T-225, decision 2) — the lever that
+ * scales, and the control that stops it scaling by lying.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** @see the disclosure precedent in brief.spec.ts and brief-flush.spec.ts. */
+function disclose(label: string, line: string): void {
+  test.info().annotations.push({ type: label, description: line });
+  process.stdout.write(`\n  ${label}: ${line}\n`);
+}
+
+/**
+ * A board built to hold every set this filter touches, so no merge and no
+ * removed worktree can empty it — the select-board pattern the in-flight
+ * body above already uses, for the same reason it uses it.
+ *
+ * `T-901` is the LANE, and its card is present: that is what separates
+ * `fenced` from `unfenceable`, since a lane whose card this checkout
+ * cannot read holds nothing it can name.
+ */
+const FILTER_BOARD = [
+  { path: "docs/ROADMAP.md", content: "# R\n\n## Backbone\n- F-01: Method — the convention\n" },
+  {
+    path: "docs/tasks/T-901-the-lane-itself.md",
+    content:
+      "---\nid: T-901\ntitle: The lane itself\nfeature: F-01\nmilestone: 1\npriority: 1\n" +
+      "size: S\nstatus: building\nblocked_by: []\ntouches: [tools/e2e]\nbuilder: m@x\n---\n\nbody\n",
+  },
+  {
+    path: "docs/tasks/T-950-fenced-one.md",
+    content:
+      "---\nid: T-950\ntitle: Fenced one\nfeature: F-01\nmilestone: 1\npriority: 2\n" +
+      "size: S\nstatus: planned\nblocked_by: []\ntouches: [tools/e2e]\n---\n\nbody\n",
+  },
+  {
+    path: "docs/tasks/T-951-fenced-two.md",
+    content:
+      "---\nid: T-951\ntitle: Fenced two\nfeature: F-01\nmilestone: 1\npriority: 3\n" +
+      "size: S\nstatus: planned\nblocked_by: []\ntouches: [tools/e2e]\n---\n\nbody\n",
+  },
+  {
+    path: "docs/tasks/T-952-startable.md",
+    content:
+      "---\nid: T-952\ntitle: Startable\nfeature: F-01\nmilestone: 1\npriority: 4\n" +
+      "size: S\nstatus: planned\nblocked_by: []\ntouches: [lib/parser]\n---\n\nbody\n",
+  },
+  {
+    path: "docs/tasks/T-953-blocked.md",
+    content:
+      "---\nid: T-953\ntitle: Blocked\nfeature: F-01\nmilestone: 1\npriority: 5\n" +
+      "size: S\nstatus: planned\nblocked_by: [T-999]\ntouches: [lib/parser]\n---\n\nbody\n",
+  },
+];
+
+/** Only `T-901`, so `T-950`/`T-951` are fenced and `T-952` is not. */
+const ONE_LANE = [
+  "worktree /Users/x/nputer",
+  "HEAD 1111111111111111111111111111111111111111",
+  "branch refs/heads/main",
+  "",
+  "worktree /Users/x/nputer-T-901",
+  "HEAD 2222222222222222222222222222222222222222",
+  "branch refs/heads/task/T-901-a-real-lane",
+  "",
+].join("\n");
+
+/** A card's own ROW — the report writes one at column 0, `id [` first. */
+function rowFor(rendered: string, id: string): string[] {
+  return rendered.split("\n").filter((l) => l.startsWith(`${id} [`));
+}
+
+test("THE DISPATCHABLE-NOW FILTER: the default spells out what can START and COUNTS what cannot", async () => {
+  // KILLED BY: dropping the `ctx.full` branch in `dispatchReport`, in
+  // either direction. Wire the fenced/waiting/blocked sets back to a row
+  // per card and the default view gains rows it must not have; delete
+  // the `--full` arm and the triage answer is gone.
+  //
+  // WHY AN INJECTED BOARD AND A LIVE ONE BOTH: this one pins the
+  // MECHANISM against a fixture no merge can empty, and the body two
+  // below measures the same filter on the REAL board at this ref,
+  // because the card's own criterion refuses a synthesised measurement
+  // standing alone.
+  const opts = { files: FILTER_BOARD, porcelain: ONE_LANE };
+  const def = await dispatchContext(opts);
+  const full = await dispatchContext({ ...opts, full: true });
+  const defText = render(dispatchReport(def));
+  const fullText = render(dispatchReport(full));
+  expect(unstampedLines(defText)).toEqual([]);
+  expect(unstampedLines(fullText)).toEqual([]);
+
+  // THE FIXTURE IS LOAD-BEARING AND IS ASSERTED, not assumed: a board
+  // where nothing is fenced would satisfy every "absent" check below
+  // vacuously (CONVENTIONS' shape five, one level up).
+  expect(def.order.fenced.map((r: { id: string }) => r.id)).toEqual(["T-950", "T-951"]);
+  expect(def.order.startable.map((r: { id: string }) => r.id)).toEqual(["T-952"]);
+  expect(def.order.blocked.map((r: { id: string }) => r.id)).toEqual(["T-953"]);
+
+  // WHAT CAN START IS SPELLED OUT IN BOTH.
+  expect(rowFor(defText, "T-952")).toHaveLength(1);
+  expect(rowFor(fullText, "T-952")).toHaveLength(1);
+
+  // WHAT CANNOT START HAS NO ROW IN THE DEFAULT, AND HAS ONE IN --full.
+  for (const id of ["T-950", "T-951", "T-953"]) {
+    expect(rowFor(defText, id), `${id} still has a row in the dispatchable-now view`).toEqual([]);
+    expect(rowFor(fullText, id), `${id} lost its row in the unfiltered view`).toHaveLength(1);
+  }
+
+  // AND THE COUNTED LINES NAME WHAT A READER ACTS ON — the LANE to free,
+  // and the BLOCKER to watch. A bare count would move the reader's next
+  // question somewhere this command cannot answer it.
+  expect(defText).toContain("2 card(s) are unblocked and fenced out, held by T-901");
+  expect(defText).toContain("1 card(s) are blocked, on unmet blockers T-999");
+
+  // THE UNFILTERED VIEW KEEPS THE SENTENCE THAT IS THE WHOLE REASON THIS
+  // COMMAND EXISTS: which paths, exactly, are shared.
+  expect(fullText).toContain("holds tools/e2e");
+  expect(defText).not.toContain("holds tools/e2e");
+
+  // ...and the default is SMALLER, which is the only thing about this
+  // change that the board's growth was ever about.
+  expect(Buffer.byteLength(defText, "utf8")).toBeLessThan(Buffer.byteLength(fullText, "utf8"));
+});
+
+test("THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never what is RULED ON", async () => {
+  // KILLED BY: a filter that drops cards from the RULING rather than
+  // from the printing — narrowing `readDispatchOrder`'s inputs, skipping
+  // a set, or capping a list. Every one of those makes this command
+  // smaller and would read as a fix on every size T-225 measures, which
+  // is the defect that card names in as many words: an emitter made
+  // unbreakable by emitting less.
+  const opts = { files: FILTER_BOARD, porcelain: ONE_LANE };
+  const def = await dispatchContext(opts);
+  const full = await dispatchContext({ ...opts, full: true });
+  const census = (t: string) => t.split("\n").filter((l) => l.startsWith("ruled: "));
+
+  // ONE CENSUS LINE EACH, and its RULED half is identical across the two
+  // verbosities. The two runs share no constant: each counts its own
+  // `DispatchOrder`.
+  const [defCensus] = census(render(dispatchReport(def)));
+  const [fullCensus] = census(render(dispatchReport(full)));
+  expect(defCensus, "the default view emits no census line").toBeTruthy();
+  expect(fullCensus, "the unfiltered view emits no census line").toBeTruthy();
+  const ruledHalf = (l: string) => l.slice(0, l.indexOf(" — "));
+  expect(ruledHalf(String(defCensus))).toBe(ruledHalf(String(fullCensus)));
+  expect(String(defCensus)).toContain(
+    "ruled: 1 startable, 2 fenced, 0 unfenceable, 0 waiting, 1 blocked",
+  );
+
+  // AND THE CENSUS AGREES WITH THE ORDER IT WAS COMPUTED FROM, so the
+  // line cannot go stale into a comfortable constant.
+  const o = def.order;
+  const ruled = [...o.startable, ...o.fenced, ...o.unfenceable, ...o.waits, ...o.blocked];
+  expect(ruled.length).toBe(4);
+  expect(String(defCensus)).toContain(`${listedCards(def)} card(s) spelled out`);
+  expect(String(fullCensus)).toContain(`${listedCards(full)} card(s) spelled out`);
+  expect(listedCards(full)).toBeGreaterThan(listedCards(def));
+
+  // THE COMPLETE BOARD IS STILL EMITTED, and this is the arm that says
+  // so: every card the command ruled on has a row in `--full`.
+  const fullText = render(dispatchReport(full));
+  for (const r of ruled) {
+    expect(rowFor(fullText, r.id), `${r.id} was ruled on and has no row in --full`).toHaveLength(1);
+  }
+});
+
+test("...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone", async () => {
+  // KILLED BY: the same mutants as the body above, and by a filter that
+  // buys nothing on real input — a saving measured only on a board
+  // chosen to fit is not evidence about the board this command runs on.
+  //
+  // ONE READ OF THE WORKTREE LIST FEEDS BOTH VIEWS. Two live reads of a
+  // board the dispatcher is moving is `T-220`'s own failure at this same
+  // seam, and a delta between two different boards is not a delta.
+  const porcelain = worktreePorcelain(repoRoot);
+  const def = await dispatchContext({ porcelain });
+  const full = await dispatchContext({ porcelain, full: true });
+  const defBytes = Buffer.byteLength(render(dispatchReport(def)), "utf8");
+  const fullBytes = Buffer.byteLength(render(dispatchReport(full)), "utf8");
+  const fenced = full.order.fenced.length;
+
+  disclose(
+    "dispatch FILTER",
+    `at ${def.ref.slice(0, 12)} with ${full.order.lanes.length} lane(s) live: the unfiltered view ` +
+      `is ${fullBytes} bytes and the dispatchable-now view is ${defBytes}, a saving of ` +
+      `${fullBytes - defBytes} over ${fenced} fenced, ${full.order.waits.length} waiting and ` +
+      `${full.order.blocked.length} blocked card(s). ${full.order.startable.length} card(s) are ` +
+      "startable and are spelled out in both.",
+  );
+
+  // THE RULING IS THE SAME BOARD IN BOTH — asserted on the live one too,
+  // because that is the claim a reader of the default view is relying on.
+  expect(def.order.all.length).toBe(full.order.all.length);
+  expect(def.order.startable.map((r: { id: string }) => r.id)).toEqual(
+    full.order.startable.map((r: { id: string }) => r.id),
+  );
+
+  // AND THE HONEST ARM. A board with nothing held has nothing to filter,
+  // so this run SAYS which of the two it was rather than reporting an
+  // unqualified saving — the coverage disclosure brief-flush.spec.ts
+  // already keeps for its own vacuous case.
+  if (fenced + full.order.waits.length + full.order.blocked.length === 0) {
+    disclose(
+      "dispatch FILTER COVERAGE",
+      "no card is held on this board today, so the two views coincide and THIS run measures " +
+        "nothing — the injected board above is the one carrying the proof.",
+    );
+    expect(defBytes).toBe(fullBytes);
+  } else {
+    expect(defBytes).toBeLessThan(fullBytes);
   }
 });
 

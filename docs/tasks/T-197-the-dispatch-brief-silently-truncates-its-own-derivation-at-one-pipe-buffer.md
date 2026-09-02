@@ -570,3 +570,41 @@ board — the card predicts exactly this. (2) `capabilities.mjs --check` is
 listed at 36 B; on the STALE path at `ab873e0` stdout is **0 B** with 107 B
 on stderr. The 36 B is the CURRENT path. The non-membership conclusion is
 unaffected; the table does not say which path it measured.
+
+## CORRECTION APPENDED 2026-09-02 (T-225, absorbing `T-197-s1`) — finding 1's generalisation, retracted where it was written
+
+**This section is APPENDED and nothing above it is edited**: a record
+takes the instance, and a correction that rewrites the sentence it
+corrects destroys the evidence that anybody believed it.
+
+The implementation notes' **finding 1** above reads *"THE LOSS IS A
+PROPERTY OF THE WRITE SHAPE, NOT ONLY OF THE READER"* and concludes *"a
+single write past one buffer is what loses"*. **The MEASUREMENTS in that
+table are correct and reproduce; the GENERALISATION drawn from them is
+false**, which is exactly how this card's own verifier adjudicated it
+lower down (*"TRUE AS MEASURED, FALSE AS GENERALISED"*). Both readers in
+that table DRAIN, so the table measures two draining readers and says
+nothing about a reader that does not.
+
+**THE INVARIANT, and it names no shape: bytes are lost if and only if
+they are still queued in USERLAND when `process.exit()` runs.** A reader
+that drains promptly keeps that queue empty however the writer wrote; a
+reader that pauses lets it fill however small the writes were. Many small
+writes are not safer — they are the shape a FAST reader happens to
+rescue.
+
+Re-measured at `5f193e6` on one writer of the pre-T-197 shape emitting
+524,400 bytes as 200 small writes, which is finding 1's own middle row:
+
+    through `| cat`                      524,400 arrive — nothing lost
+    through 4,096 bytes every 5 ms        65,536 arrive — 458,864 lost
+
+Same writer, same size, same write shape, two readers, and the shape
+explains none of it. T-225 puts that pair in
+`tests/brief-flush.spec.ts` as a body with both controls, so the
+correction is driven on every lane run rather than kept as a paragraph;
+the same card corrects the three prose sites in that spec which carried
+the generalisation forward. **The one-long-line synthesis is KEPT exactly
+as it is** — against the two draining readers those bodies name, it is
+still the most reliable reproduction, which is a fact about those readers
+and not about writers in general.

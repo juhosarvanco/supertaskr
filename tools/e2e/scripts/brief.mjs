@@ -78,6 +78,7 @@
  *      and every one of them names the sentence it could not find.
  */
 import { readFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {
   FINDING_VERDICTS,
@@ -98,6 +99,7 @@ import {
   stateReport,
   treeProv,
   value,
+  withMargin,
 } from "./dispatch-brief.mjs";
 import {
   STALE_CLONE_LIMIT,
@@ -105,7 +107,7 @@ import {
   sessionCheckout,
   sweep as sweepCheckouts,
 } from "./checkout-currency.mjs";
-import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
+import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { seatRecs } from "./session-economics.mjs";
@@ -123,6 +125,60 @@ const FLAGS = Object.freeze([
   "--full",
   "--help",
 ]);
+
+/**
+ * THE ANSWER IS COLLECTED BEFORE IT IS WRITTEN (T-225), and the reason is
+ * the disclosure rather than the writing.
+ *
+ * A command cannot state its own size until it has one, and the
+ * disclosure has to go AHEAD of the answer because a truncation eats the
+ * tail — a margin line at the foot of an answer too big to arrive is lost
+ * in the one case it was written for. So every arm renders into here and
+ * the whole thing goes out in one write, with the margin block in front
+ * of it.
+ *
+ * THE CRASH PATH KEEPS WHAT WAS DERIVED. Arms used to print as they ran,
+ * so a throw in a later arm still left the earlier ones on the reader's
+ * screen; the flush below therefore runs in the catch as well, ahead of
+ * the message. Losing five derived rows to make room for a stack trace
+ * would be this command telling a reader less than it knew.
+ *
+ * @type {string[]}
+ */
+const OUT = [];
+
+/** @param {string} text */
+function say(text) {
+  OUT.push(text);
+}
+
+/**
+ * The units the margin's per-card density is divided by, set by whichever
+ * arm has a card count to give. Left undefined by the arms that do not:
+ * a density over a denominator this command did not derive would be a
+ * figure with no keeper, which is the defect this whole file is against.
+ *
+ * @type {{ count: number, label: string } | undefined}
+ */
+let UNITS;
+
+/**
+ * Write the collected answer, disclosing its own size ahead of it.
+ *
+ * The margin's stamp is a LIVE read and takes its own clock: it is a fact
+ * about this invocation's output rather than about the tree, and the
+ * measurement happens HERE, at the write, not when any arm ran.
+ */
+function flush() {
+  if (OUT.length === 0) return;
+  const answer = withMargin(OUT.map((s) => `${s}\n`).join(""), {
+    at: new Date().toISOString(),
+    host: os.hostname(),
+    ...(UNITS === undefined ? {} : { units: UNITS }),
+  });
+  process.stdout.write(answer.text);
+  OUT.length = 0;
+}
 
 /** @param {string[]} argv @returns {Promise<number>} */
 async function main(argv) {
@@ -276,7 +332,7 @@ async function main(argv) {
     // is the correction this branch was narrowed by. Three verdicts,
     // never two: said out loud and charged to nobody. The sweep below
     // still runs, and still names every stale checkout on this machine.
-    console.log(
+    say(
       render([
         note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
         note("UNANSWERED: no session checkout could be resolved. CLAUDE_PROJECT_DIR is unset"),
@@ -286,7 +342,7 @@ async function main(argv) {
     );
   } else if (session !== undefined) {
     const currency = judgeCheckout({ target: session.path });
-    console.log(
+    say(
       render([
         note("THE SESSION'S OWN CHECKOUT — the copy of the guards this sitting actually loaded"),
         value(
@@ -335,7 +391,7 @@ async function main(argv) {
   if (wantsPreflight || fenceWorktree !== "") {
     const results = sweepCheckouts();
     const stale = results.filter((r) => r.decision.verdict === "stale");
-    console.log(
+    say(
       render([
         note("EVERY CHECKOUT OF THIS REPOSITORY ON THIS MACHINE — the sweep that needs nothing"),
         note("declared, so a session's own checkout is in it whether or not anything can name it"),
@@ -367,30 +423,34 @@ async function main(argv) {
       return EXIT.USAGE;
     }
     const { recs } = assembleBrief(ctx);
-    console.log(render(recs));
+    say(render(recs));
     // THE ADVISORY LINE, PRINTED AFTER THE ROWS AND OUTSIDE THEM (T-157).
     // It is not a contract row and must never look like one: the row set
     // is read from the role file, and a fourteenth row this command
     // invented would be exactly the second row set that `assembleBrief`
     // reports as a finding. It sits here rather than inside that function
     // so the contract half stays exactly the contract.
-    console.log(render(seatRecs(ctx)));
+    say(render(seatRecs(ctx)));
   }
 
   if (wantsState) {
-    if (taskId !== "") console.log("");
-    console.log(render(stateReport(ctx)));
+    if (taskId !== "") say("");
+    say(render(stateReport(ctx)));
   }
 
   if (wantsDispatch) {
-    if (taskId !== "" || wantsState) console.log("");
-    console.log(
-      render(
-        dispatchReport(
-          await dispatchContext(opts["root"] === undefined ? {} : { root: opts["root"] }),
-        ),
-      ),
-    );
+    if (taskId !== "" || wantsState) say("");
+    // `--full` reaches this arm as the UNFILTERED view (T-225): the
+    // default answers what a session could START, and every set that is
+    // not startable collapses to one counted line. The flag is the same
+    // one arm one already spends on its own prose — one dial for "spell
+    // it out", not a second vocabulary.
+    const dctx = await dispatchContext({
+      ...(opts["root"] === undefined ? {} : { root: opts["root"] }),
+      full,
+    });
+    UNITS = { count: listedCards(dctx), label: "listed card" };
+    say(render(dispatchReport(dctx)));
   }
 
   /**
@@ -410,10 +470,10 @@ async function main(argv) {
    */
   let preflightFindings = [];
   if (wantsPreflight) {
-    if (taskId !== "" || wantsState || wantsDispatch) console.log("");
+    if (taskId !== "" || wantsState || wantsDispatch) say("");
     const report = await preflight(ctx);
     preflightFindings = report.findings;
-    console.log(render(report.recs));
+    say(render(report.recs));
   }
 
   /**
@@ -437,8 +497,8 @@ async function main(argv) {
     // had just been refuted one screen up. The manifest is the step
     // that makes the lane real, so a failed preflight now GATES the
     // write instead of merely preceding it.
-    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
-    console.log(
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) say("");
+    say(
       render([
         note(
           "fence: NOT WRITTEN — the preflight above found stale claims, and a card " +
@@ -451,7 +511,7 @@ async function main(argv) {
       ]),
     );
   } else if (fenceWorktree !== "") {
-    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) say("");
     // THE SECOND MEMBER OF ROW 4'S CLASS, AND THE ONE THAT WRITES (T-179).
     // This resolved a relative `--write-fence` argument against `ctx.root`
     // — the checkout the command ran in — which is the same base row 4 was
@@ -482,7 +542,7 @@ async function main(argv) {
       // rather than adding, so a path that has just been granted gets its
       // write bit back in the same motion the manifest gains it.
       const lock = applyLaneLock(worktree);
-      console.log(
+      say(
         render([
           note("THE LANE FENCE MANIFEST — expanded ONCE, here, where a built parser exists"),
           value(
@@ -575,8 +635,8 @@ async function main(argv) {
     const cardText = readFileSync(path.join(cardCtx.root, cardCtx.card.file), "utf8");
     const report = cardReport(cardCtx, cardText);
     cardFindings = report.findings;
-    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) console.log("");
-    console.log(render(report.recs));
+    if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight) say("");
+    say(render(report.recs));
   }
 
   /** @type {string[]} */
@@ -594,8 +654,8 @@ async function main(argv) {
     const text = readFileSync(path.resolve(cardCtx.root, auditPath), "utf8");
     const figures = auditCard(text, derivedTexts(cardCtx));
     if (taskId !== "" || wantsState || wantsDispatch || wantsPreflight || cardId !== "")
-      console.log("");
-    console.log(
+      say("");
+    say(
       render([
         note("THE AUDIT, over a file that is not a card"),
         // The path goes out as a stamped VALUE and not as a note, because a
@@ -605,12 +665,12 @@ async function main(argv) {
       ]),
     );
     if (figures.length === 0) {
-      console.log(
+      say(
         render([note("  no figure in it claims a provenance and no census claim is made")]),
       );
     }
     for (const f of figures) {
-      console.log(
+      say(
         render([
           value(
             `${f.verdict} line ${f.line}: ${f.text}`,
@@ -650,7 +710,13 @@ async function main(argv) {
 let code;
 try {
   code = await main(process.argv.slice(2));
+  flush();
 } catch (err) {
+  // THE DERIVED ROWS GO OUT FIRST, THEN THE REFUSAL. Before T-225 each arm
+  // printed as it ran, so a throw in a later arm left the earlier ones on
+  // the reader's screen; collecting the answer to disclose its size must
+  // not quietly cost that.
+  flush();
   console.error("brief: COULD NOT RUN");
   console.error(`  ${err instanceof Error ? err.message : String(err)}`);
   console.error(
@@ -692,5 +758,19 @@ try {
  * SYNTHESISED: the live board crosses and re-crosses one buffer as lanes
  * open and close, so a body whose subject is the live `--dispatch` is
  * green whenever the board is small.
+ *
+ * **AND THE READER IS WHAT DECIDES THE LOSS, NEVER THE WRITE SHAPE**
+ * (T-225, taking `T-197-s1`). The sentence above about "the ordinary way
+ * anyone reads" is the load-bearing half and the buffer size is not:
+ * bytes are lost if and only if they are still queued in USERLAND when
+ * `process.exit()` runs, so a reader that drains promptly loses nothing
+ * however the writer wrote, and a reader that pauses loses whatever it
+ * has not taken however small the writes were. Measured at `5f193e6`
+ * against a writer of the pre-T-197 shape emitting 524,400 bytes as 200
+ * small writes: through `| cat` all 524,400 arrive, three runs of three;
+ * through a reader taking 4,096 bytes every 5 ms, 65,536 arrive — one
+ * pipe buffer, and 458,864 bytes gone. Since this file stopped calling
+ * `process.exit()` neither reader loses anything, which is what
+ * brief-flush.spec.ts's slow-reader body now drives.
  */
 process.exitCode = code;

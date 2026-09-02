@@ -182,6 +182,10 @@ export function lanesFrom(porcelain, conventionsMd) {
  * @property {any} parser   the loaded parser, held so the TEXT rules are
  *   read off the same module the schedule came from and never re-spelled
  * @property {any} order    the parser's DispatchOrder
+ * @property {boolean} full THE UNFILTERED VIEW. False is the DISPATCHABLE-NOW
+ *   answer: every card a session could start right now, in full, and one
+ *   counted line for each set that is not startable. True restores a row
+ *   per card in every set. See `dispatchReport`.
  */
 
 /**
@@ -194,7 +198,7 @@ export function lanesFrom(porcelain, conventionsMd) {
  * rejected once for stamping reads of a mutable ref as tree facts, so the
  * two never share a constructor below.
  *
- * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string, files?: {path: string, content: string}[] }} opts
+ * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string, files?: {path: string, content: string}[], full?: boolean }} opts
  * @returns {Promise<DispatchCtx>}
  */
 export async function dispatchContext(opts = {}) {
@@ -217,7 +221,60 @@ export async function dispatchContext(opts = {}) {
     host: opts.host ?? os.hostname(),
     parser,
     order,
+    full: opts.full ?? false,
   };
+}
+
+/**
+ * THE CARDS THIS ANSWER SPELLS OUT — the denominator of the per-card
+ * density `brief.mjs` discloses beside the size.
+ *
+ * It counts the sets `dispatchReport` gives a ROW to at this verbosity,
+ * never the board: a per-card cost divided by cards that were summarised
+ * into one line would understate the cost of the next card by exactly the
+ * factor the filter just bought.
+ *
+ * @param {DispatchCtx} ctx
+ * @returns {number}
+ */
+export function listedCards(ctx) {
+  const o = ctx.order;
+  const inFlight = o.underway.filter((/** @type {any} */ r) =>
+    ctx.parser.IN_FLIGHT.has(r.card.status),
+  ).length;
+  const always = o.startable.length + o.unfenceable.length + inFlight;
+  return ctx.full ? always + o.fenced.length + o.waits.length + o.blocked.length : always;
+}
+
+/**
+ * The distinct lanes holding at least one card in a set, id-ascending —
+ * what the counted line names in place of the rows it replaced.
+ *
+ * THE LANES ARE THE ACTIONABLE HALF and the card list is not: a reader
+ * who wants those cards back frees a LANE, and there are as many lanes as
+ * this machine has worktrees rather than as the board has cards.
+ *
+ * @param {any[]} rulings
+ * @returns {string[]}
+ */
+function holdingLanes(rulings) {
+  const ids = new Set();
+  for (const r of rulings) for (const h of r.holds) ids.add(h.lane.taskId);
+  return [...ids].sort();
+}
+
+/**
+ * The unmet blockers a set is waiting on, id-ascending and deduped — read
+ * off the schedule's own `unmet` field rather than re-derived, so the
+ * counted line still NAMES the blocker its section header promises.
+ *
+ * @param {any[]} rulings
+ * @returns {string[]}
+ */
+function unmetBlockers(rulings) {
+  const ids = new Set();
+  for (const r of rulings) for (const b of r.card.unmet ?? []) ids.add(b.id);
+  return [...ids].sort();
 }
 
 /** The card's roadmap dimension, REPORTED and never re-derived. */
@@ -234,6 +291,43 @@ function roadmapOf(card) {
  * the card owes a terminal: what can start, what is merely unblocked but
  * FENCED (naming the lane), what is BLOCKED (naming the unmet blocker),
  * and the critical path and worst blocker the pane already computes.
+ *
+ * ── THE DISPATCHABLE-NOW FILTER (T-225, decision 2) ─────────────────
+ * THIS ANSWER USED TO OWE A ROW TO EVERY PLANNED CARD, AND THAT IS THE
+ * ONE THING ABOUT IT THAT SCALES WITH THE BOARD RATHER THAN WITH THE
+ * WORK. A dispatcher asks what can be STARTED; a card another lane is
+ * holding cannot be, and neither can one waiting on an unmet blocker. Yet
+ * each of those printed a title row plus a REASON that re-enumerates
+ * every live lane and every path it holds — so the cost per card is
+ * O(lanes x paths) and the whole answer is O(cards x lanes x paths).
+ * Measured on this repository at `5f193e6` with three lanes live: the
+ * fenced section alone was 59,465 of 85,818 bytes over 60 cards, ~991
+ * bytes each, against ~660 for the answer as a whole. The board could not
+ * carry a correct triage because of it — seven cards were triaged PROMOTE
+ * on their merits and three were held BY ARITHMETIC.
+ *
+ * SO THE DEFAULT ANSWERS THE DISPATCHER'S QUESTION AND THE SETS THAT ARE
+ * NOT DISPATCHABLE COLLAPSE TO ONE COUNTED LINE EACH, naming what a
+ * reader would act on — the LANES doing the holding, the BLOCKERS not
+ * met. Those grow with the lanes and with the distinct blockers, both of
+ * which are bounded by the work in flight.
+ *
+ * ── AND THE UNFILTERED VIEW IS KEPT, BECAUSE IT ANSWERS A DIFFERENT
+ *    QUESTION ─────────────────────────────────────────────────────────
+ * `--full` is the TRIAGE view, not a verbose one. *"What can I start?"*
+ * is the dispatcher's question and the default answers it. *"Why can I
+ * not start T-204, and which lane do I have to free to get it back?"* is
+ * the question a triage sitting or an unblocking pass asks, and it is
+ * answered per card, by the sentence naming the exact shared paths. That
+ * sentence is the reason this command exists — an architect who
+ * hand-rolled the fence expansion reported two overlapping cards disjoint
+ * — so it is moved behind a flag and never deleted.
+ *
+ * THREE SETS STAY IN FULL AT EVERY VERBOSITY, and each for a reason
+ * rather than by omission. UNFENCEABLE is a REFUSAL and not a queue: no
+ * overlap was proved and none was ruled out, so a count would hide the
+ * one state whose remedy is to go and look. IN FLIGHT is bounded by the
+ * work under way rather than by the board. And STARTABLE is the answer.
  *
  * @param {DispatchCtx} ctx
  * @returns {import("./dispatch-brief.mjs").Rec[]}
@@ -252,6 +346,16 @@ export function dispatchReport(ctx) {
     note("WHAT IS DISPATCHABLE, IN WHAT ORDER, GIVEN THE LIVE LANES — derived, never remembered"),
     value(`repository: ${ctx.root}`, tree("the checkout this command ran in")),
     value(`HEAD in full: ${ctx.ref}`, tree("git rev-parse HEAD")),
+    ...(ctx.full
+      ? [
+          note("THE UNFILTERED VIEW — a row per card in every set, including the ones nothing can"),
+          note("start today. This is the TRIAGE answer: why a card is held, and which lane holds it."),
+        ]
+      : [
+          note("THE DISPATCHABLE-NOW VIEW — what a session could START, spelled out; every set that"),
+          note("is not startable is one counted line naming what a reader would act on. Add --full"),
+          note("for the triage answer: a row per held card, with the exact paths it shares."),
+        ]),
     blank(),
     note("THE LIVE LANES — entries on a task branch. A detached worktree is not a lane."),
   ];
@@ -306,11 +410,25 @@ export function dispatchReport(ctx) {
     note("UNBLOCKED BUT FENCED — nothing unmet, and a live lane is holding the files."),
   );
   if (o.fenced.length === 0) recs.push(value("no card is fenced out", live(laneVia)));
-  for (const r of o.fenced) {
+  else if (!ctx.full) {
+    // THE COUNTED LINE, AND IT NAMES THE LANES RATHER THAN THE CARDS.
+    // Freeing a lane is what brings this whole set back, and the lane
+    // count is bounded by the machine's worktrees where the card count is
+    // bounded by nothing.
     recs.push(
-      value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-      value(`   ${r.reason}`, live(`${laneVia}, compared through the parser's fence module`)),
+      value(
+        `${o.fenced.length} card(s) are unblocked and fenced out, held by ` +
+          `${holdingLanes([...o.fenced]).join(", ")} — --full names each card and the paths it shares`,
+        live(`${laneVia}, compared through the parser's fence module`),
+      ),
     );
+  } else {
+    for (const r of o.fenced) {
+      recs.push(
+        value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
+        value(`   ${r.reason}`, live(`${laneVia}, compared through the parser's fence module`)),
+      );
+    }
   }
 
   if (o.unfenceable.length > 0) {
@@ -328,20 +446,45 @@ export function dispatchReport(ctx) {
 
   recs.push(blank(), note("WAITING — every unmet blocker is in flight, so the wait has an end."));
   if (o.waits.length === 0) recs.push(value("nothing is waiting on an in-flight card", tree(boardVia)));
-  for (const r of o.waits) {
+  else if (!ctx.full) {
+    // THE BLOCKERS, NOT THE WAITERS. The section header promises the
+    // blocker is named and the counted line keeps that promise: the ids
+    // below are what a reader watches for, and they are as many as there
+    // are cards in flight rather than as many as are waiting.
     recs.push(
-      value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-      value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+      value(
+        `${o.waits.length} card(s) are waiting, every one on in-flight blockers ` +
+          `${unmetBlockers([...o.waits]).join(", ")} — --full names each waiter`,
+        tree(`${boardVia}, field blocked_by resolved on the board`),
+      ),
     );
+  } else {
+    for (const r of o.waits) {
+      recs.push(
+        value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
+        value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+      );
+    }
   }
 
   recs.push(blank(), note("BLOCKED — the unmet blocker is named, and nobody is on it."));
   if (o.blocked.length === 0) recs.push(value("nothing is blocked", tree(boardVia)));
-  for (const r of o.blocked) {
+  else if (!ctx.full) {
     recs.push(
-      value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-      value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+      value(
+        `${o.blocked.length} card(s) are blocked, on unmet blockers ` +
+          `${unmetBlockers([...o.blocked]).join(", ")}, and nobody is on them — --full names each ` +
+          "blocked card",
+        tree(`${boardVia}, field blocked_by resolved on the board`),
+      ),
     );
+  } else {
+    for (const r of o.blocked) {
+      recs.push(
+        value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
+        value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+      );
+    }
   }
 
   // UNDERWAY, AND IT IS A BOARD REPORT RATHER THAN A HOLD (T-137-s10,
@@ -411,6 +554,22 @@ export function dispatchReport(ctx) {
     value(`drawn cards: ${s.total}`, tree(boardVia)),
     value(`ready on blocked_by alone: ${s.readyNow.length}`, tree(boardVia)),
     value(`startable once the lanes are counted: ${o.startable.length}`, live(laneVia)),
+    blank(),
+    // THE COMPLETENESS CENSUS (T-225). An emitter made smaller by
+    // emitting LESS OF THE BOARD is the defect this card's own criteria
+    // call out, and it would read as a fix on every size this card
+    // measures. So the answer states what it ruled on and how much of it
+    // it spelled out, at whatever verbosity it was asked for: a filter
+    // that started dropping cards moves the left-hand number, which is a
+    // function of the board and of nothing this flag controls.
+    note("THE CENSUS — what this answer RULED ON, beside how much of it this verbosity spells"),
+    note("out. The filter changes the second number and may never change the first."),
+    value(
+      `ruled: ${o.startable.length} startable, ${o.fenced.length} fenced, ` +
+        `${o.unfenceable.length} unfenceable, ${o.waits.length} waiting, ${o.blocked.length} blocked` +
+        ` — ${listedCards(ctx)} card(s) spelled out below the headings above`,
+      live(`${laneVia}, joined to the parsed board`),
+    ),
     blank(),
     note("ONE HONEST DIFFERENCE FROM THE PANE, named rather than discovered: the worst blocker's"),
     note("rejected-count word needs the app's verdict classifier, which lives in a component"),
