@@ -299,3 +299,31 @@ whole time, and the seat that narrowed `T-230` had already done the
 right thing. Arm 3 (synthesise the fixture repository) is the only arm
 of the three above that removes this too, because a synthesised
 repository has both a lane list and a card set of its own.
+
+**CORROBORATION 2026-09-02, from `T-229`'s lane (a method-text card
+holding NO `tools/e2e` fence at all).** The class is wider than this
+card's own title: the red does not need the lane to hold `tools/e2e`,
+only for the live board to hold a PAIR of lanes whose fences overlap
+there. At tip `a60309c`, `gate-run.mjs e2e` returned RED / 548 bodies
+with two failures — `session-economics.spec.ts:179` and
+`brief-flush.spec.ts:337` — the first on `brief.mjs` exit 1 carrying
+seven disjointness findings, every one of them naming `T-225`,
+`T-230-s3`, `T-237` and `T-133` and none naming `T-229`.
+
+**MEASURED AGAINST THE BASE, WHICH IS THE ATTRIBUTION THIS CARD SAYS IS
+THE REAL COST.** `brief.mjs --task T-133 --root <checkout>` run from one
+process against three checkouts, minutes apart on one machine:
+`a60309c` (this lane's tip, five new cards) exit 1 / 15 findings;
+`0c7227b` (this lane's first commit, no new cards) exit 1 / 15;
+`179a7cc` (this lane's BASE, before any byte of the work) exit 1 / 15.
+Identical at all three, so nothing in the lane produced it.
+
+`brief-flush.spec.ts:337` is the same cause one step removed: it
+compares two live reads and the disclosure block it diffs carries the
+finding list, so a lane list that MOVES mid-run changes the byte count
+between the two reads (66,579 against 66,907 here). It passed on a
+re-run alone at the same tip while the other body still failed — four
+lanes and four verifier benches were cut on this machine during the
+run. **So the pair fails DIFFERENTLY and only one of them is
+deterministic**, which is worth knowing before somebody attributes the
+flaky-looking half to the machine and the other half to a diff.

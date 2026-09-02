@@ -310,3 +310,18 @@ runner adapter is `T-229-s3`.
   loose. Quote the marker inside a block if you quote it at all.
 - `npm run capabilities:check` was run and is reported, never
   regenerated.
+
+### THE E2E LANE IS RED AT THIS TIP AND IT IS NOT THIS LANE'S RED
+
+`gate-run.mjs e2e` returns RED / 548 bodies at `a60309c` with two
+failures, `session-economics.spec.ts:179` and `brief-flush.spec.ts:337`.
+Both come from `brief.mjs` exiting 1 over fence-disjointness findings
+that name `T-225`, `T-230-s3`, `T-237` and `T-133` and never `T-229`.
+Attributed by measurement rather than by argument: `brief.mjs --task
+T-133 --root <checkout>` gives exit 1 with **15** findings at this tip
+(`a60309c`), at this lane's first commit (`0c7227b`) and at this lane's
+BASE (`179a7cc`) alike — the same answer before a byte of this work
+existed. `T-143-s1` owns the class and carries the dated corroboration;
+this lane holds no `tools/e2e` fence, so the repair is outside it.
+The other three suites are GREEN at this tip: parser 349, app 1131,
+rust 632.
