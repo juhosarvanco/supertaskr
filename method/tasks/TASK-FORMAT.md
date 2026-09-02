@@ -50,6 +50,32 @@ this card is the one you need is to read all of it. Measured on this
 method's own project, where a single card reached 36 KB and the seats
 reading it had no way to triage that cost.
 
+**A CARD MAY ASK FOR ONE OF ITS SENTENCES TO BE CHECKED, AND THE ASK IS
+A PLAIN BODY LINE.** The marker is
+
+    CARD CLAIM (<tracked file>): "<quoted string>"
+
+written as an ordinary line of the body — a leading list bullet and
+surrounding emphasis are fine — and a project's card-input check opens
+that ONE file at the integration ref and requires the quoted run to be
+in it. **THE MARKER IS THE REQUEST, WHICH IS WHY THIS CHECK MAY
+REFUSE**: a card's structural checks are automatic and must be measured
+narrow before they refuse anything, while nobody is refused an ask they
+wrote themselves — so a quote that is not in the file it names REFUSES
+the dispatch, and so does a marker whose named source cannot be read at
+all, because a card that asks to be checked, is not, and reads as though
+it were is the worse outcome. **IT IS READ FROM THE PROSE, SO A MARKER
+INSIDE A FENCED OR INDENTED BLOCK IS AN EXAMPLE AND NOT A CLAIM** —
+including the one above. That is the whole reason the reader is narrow:
+this marker gets quoted constantly, by the notes documenting it and by
+every room arguing about it, and a reader that saw raw blocks would turn
+documentation ABOUT the marker into live claims; a marker-shaped line
+the prose reader cannot see is REPORTED, never refused on. **It is the
+cheap shape deliberately** — a quoted string plus the file it claims to
+be in, never a parse of prose — and what it does not reach is every
+claim nobody chose to mark. Which tool reads it, and at which ref, are
+the PROJECT's to name in its own conventions; this file names no paths.
+
 **A CRITERION NAMES THE GATE'S COMMAND, NEVER ITS OUTPUT.** Write *"the
 gate SHALL report no unaccounted readers"*, or better, write the command
 and let it answer — never *"the gate SHALL name five readers across three

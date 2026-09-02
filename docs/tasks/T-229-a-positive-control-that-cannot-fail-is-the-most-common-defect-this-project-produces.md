@@ -175,3 +175,14 @@ only.
 merge; it stamps `verifying`, reports ready-to-merge with branch and tip,
 and leaves its worktree standing. Ceremony row M, guard-class, review
 independent.
+
+## Absorbs: T-230-s1 (2026-09-02, amended IN FLIGHT — a fourth rider on the bump)
+
+T-230 shipped a live marker — a plain body line `CARD CLAIM (<tracked
+file>): "<quoted string>"` that `brief.mjs --preflight` checks against
+that one file — and `method/tasks/TASK-FORMAT.md`, the file that says
+what a card may say, does not mention it, so the grammar exists only in
+a tooling module's source. One paragraph in TASK-FORMAT's body sections
+names the marker, its shape, and what the preflight does with it; a
+grammar addition rides a bump, and this lane is the bump. Amended on the
+integration branch and sent to both seats by path (orchestrator 5c).
