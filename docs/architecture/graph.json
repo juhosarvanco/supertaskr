@@ -8350,8 +8350,8 @@
       "id": "f:app/src-tauri/src/dispatch/join.rs",
       "path": "app/src-tauri/src/dispatch/join.rs",
       "lang": "rust",
-      "hash": "blake3:e1c5fbc2a30a5033613c29016fa45345be0fc7cc46c97fae3cb308605c4634a3",
-      "loc": 973,
+      "hash": "blake3:7c6e87bb5e062b98ddab0252eb140213621dcb3a12f04a652570bda23fda8958",
+      "loc": 997,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/join.rs#BoardStamp",
@@ -8359,8 +8359,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            79,
-            83
+            103,
+            107
           ]
         },
         {
@@ -8369,8 +8369,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            112,
-            117
+            136,
+            141
           ]
         },
         {
@@ -8379,8 +8379,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            257,
-            275
+            281,
+            299
           ]
         },
         {
@@ -8389,8 +8389,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            177,
-            191
+            201,
+            215
           ]
         },
         {
@@ -8399,8 +8399,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            100,
-            109
+            124,
+            133
           ]
         },
         {
@@ -8409,8 +8409,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            66,
-            66
+            90,
+            90
           ]
         },
         {
@@ -8419,8 +8419,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            205,
-            210
+            229,
+            234
           ]
         },
         {
@@ -8429,8 +8429,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            142,
-            148
+            166,
+            172
           ]
         },
         {
@@ -8439,8 +8439,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            197,
-            202
+            221,
+            226
           ]
         },
         {
@@ -8449,8 +8449,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            123,
-            130
+            147,
+            154
           ]
         },
         {
@@ -8459,8 +8459,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            345,
-            354
+            369,
+            378
           ]
         },
         {
@@ -8469,8 +8469,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            85,
-            93
+            109,
+            117
           ]
         },
         {
@@ -8479,8 +8479,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            150,
-            172
+            174,
+            196
           ]
         },
         {
@@ -8489,8 +8489,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            212,
-            246
+            236,
+            270
           ]
         },
         {
@@ -8499,8 +8499,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            69,
-            71
+            93,
+            95
           ]
         },
         {
@@ -8509,8 +8509,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            283,
-            340
+            307,
+            364
           ]
         },
         {
@@ -8519,8 +8519,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            357,
-            973
+            381,
+            997
           ]
         }
       ]
@@ -8728,8 +8728,8 @@
       "id": "f:app/src-tauri/src/dispatch/mod.rs",
       "path": "app/src-tauri/src/dispatch/mod.rs",
       "lang": "rust",
-      "hash": "blake3:52573f38fc40ad28308d506534edb9572e3ee89efc90100396fc7d177e65ab1c",
-      "loc": 62,
+      "hash": "blake3:5ff0f54f965f8c8c8eaa73a2671b9e79c9feee24316bd56e446639cc8eaf526d",
+      "loc": 73,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/mod.rs#brief",
@@ -8737,8 +8737,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            54,
-            54
+            65,
+            65
           ]
         },
         {
@@ -8747,8 +8747,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            62,
-            62
+            73,
+            73
           ]
         },
         {
@@ -8757,8 +8757,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            55,
-            55
+            66,
+            66
           ]
         },
         {
@@ -8767,8 +8767,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            56,
-            56
+            67,
+            67
           ]
         }
       ]
@@ -13815,8 +13815,8 @@
       "id": "f:app/src/components/board/Board.tsx",
       "path": "app/src/components/board/Board.tsx",
       "lang": "ts",
-      "hash": "blake3:56c2b5fc8e0683d93945125664688f3d4b52bdb4366fdc90139b36b79626202a",
-      "loc": 100,
+      "hash": "blake3:db73df6164b15d6d3fdbac3038889d16eb1a6baf65e0d325a4fe229a6be025a2",
+      "loc": 108,
       "symbols": [
         {
           "id": "s:app/src/components/board/Board.tsx#Board",
@@ -13824,8 +13824,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            55,
-            100
+            63,
+            108
           ]
         },
         {
@@ -14009,8 +14009,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:60e24dafb385438798ac4cd5a411234638f1fda7557baadefb6e73d37672846c",
-      "loc": 725,
+      "hash": "blake3:5d0acff1ad1301b8f35570ed62087f5cf4a59dafedf6dc704810c0229a14c903",
+      "loc": 727,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#AssignmentRow",
@@ -14018,8 +14018,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            680,
-            714
+            682,
+            716
           ]
         },
         {
@@ -14028,8 +14028,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            453,
-            523
+            455,
+            525
           ]
         },
         {
@@ -14038,8 +14038,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            652,
-            658
+            654,
+            660
           ]
         },
         {
@@ -14048,8 +14048,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            526,
-            532
+            528,
+            534
           ]
         },
         {
@@ -14058,8 +14058,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            541,
-            569
+            543,
+            571
           ]
         },
         {
@@ -14068,8 +14068,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            624,
-            648
+            626,
+            650
           ]
         },
         {
@@ -14078,8 +14078,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            716,
-            725
+            718,
+            727
           ]
         },
         {
@@ -14089,7 +14089,7 @@
           "exported": true,
           "range": [
             67,
-            434
+            436
           ]
         },
         {
@@ -14098,8 +14098,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            587,
-            622
+            589,
+            624
           ]
         }
       ]
@@ -18085,8 +18085,8 @@
       "id": "f:app/src/lib/dispatch-store.ts",
       "path": "app/src/lib/dispatch-store.ts",
       "lang": "ts",
-      "hash": "blake3:dc3e264e8e8c66a0d6d923b9f5a8422f32f45e74b33e522bb320f4b6d12516c6",
-      "loc": 507,
+      "hash": "blake3:7b054a459a77d514684a1075d4b6af87f0c268d0c1598db340c39caecd081b8c",
+      "loc": 744,
       "symbols": [
         {
           "id": "s:app/src/lib/dispatch-store.ts#BoardStamp",
@@ -18094,8 +18094,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            169,
-            173
+            205,
+            209
           ]
         },
         {
@@ -18104,8 +18104,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            379,
-            383
+            616,
+            620
           ]
         },
         {
@@ -18114,8 +18114,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            429,
-            442
+            666,
+            679
           ]
         },
         {
@@ -18124,8 +18124,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            374,
-            377
+            611,
+            614
           ]
         },
         {
@@ -18134,8 +18134,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            387,
-            396
+            624,
+            633
           ]
         },
         {
@@ -18144,8 +18144,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            398,
-            411
+            635,
+            648
           ]
         },
         {
@@ -18154,8 +18154,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            206,
-            208
+            242,
+            244
           ]
         },
         {
@@ -18164,8 +18164,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            199,
-            204
+            235,
+            240
           ]
         },
         {
@@ -18174,8 +18174,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            115,
-            120
+            151,
+            156
           ]
         },
         {
@@ -18184,8 +18184,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            483,
-            485
+            720,
+            722
           ]
         },
         {
@@ -18194,8 +18194,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            267,
-            304
+            303,
+            340
           ]
         },
         {
@@ -18204,8 +18204,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            236,
-            255
+            272,
+            291
           ]
         },
         {
@@ -18214,8 +18214,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            211,
-            228
+            247,
+            264
           ]
         },
         {
@@ -18224,8 +18224,18 @@
           "kind": "type",
           "exported": true,
           "range": [
-            180,
-            188
+            216,
+            224
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#IN_FLIGHT_STATUSES",
+          "name": "IN_FLIGHT_STATUSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            419,
+            419
           ]
         },
         {
@@ -18234,8 +18244,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            89,
-            102
+            125,
+            138
           ]
         },
         {
@@ -18244,8 +18254,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            140,
-            142
+            176,
+            178
           ]
         },
         {
@@ -18254,8 +18264,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            149,
-            153
+            185,
+            189
           ]
         },
         {
@@ -18264,8 +18274,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            414,
-            419
+            651,
+            656
           ]
         },
         {
@@ -18274,8 +18284,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            105,
-            112
+            141,
+            148
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#REFUSAL_SENTENCES",
+          "name": "REFUSAL_SENTENCES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            467,
+            473
           ]
         },
         {
@@ -18284,8 +18304,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            123,
-            127
+            159,
+            163
           ]
         },
         {
@@ -18294,8 +18314,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            129,
-            133
+            165,
+            169
           ]
         },
         {
@@ -18304,8 +18324,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            454,
-            456
+            691,
+            693
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#classify",
+          "name": "classify",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            439,
+            444
           ]
         },
         {
@@ -18314,8 +18344,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            321,
-            340
+            357,
+            376
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#isInFlight",
+          "name": "isInFlight",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            422,
+            424
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#joinLanes",
+          "name": "joinLanes",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            524,
+            577
           ]
         },
         {
@@ -18324,8 +18374,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            502,
-            507
+            739,
+            744
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#refusalSentence",
+          "name": "refusalSentence",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            483,
+            485
           ]
         }
       ]
@@ -20959,8 +21019,8 @@
       "id": "f:app/test/dispatch-store.test.ts",
       "path": "app/test/dispatch-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:ef8ecd2bb92b6707ddaf39ff3cc60a8d907ce9582020901e213a5d4282c3cf2c",
-      "loc": 233,
+      "hash": "blake3:dce36d2af1078ad5e2c32d679dab5283b5b00456152eacf4ed3f229011cdd9d9",
+      "loc": 602,
       "symbols": [
         {
           "id": "s:app/test/dispatch-store.test.ts#joined",
@@ -20968,8 +21028,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            92,
-            96
+            112,
+            116
           ]
         },
         {
@@ -20978,8 +21038,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            62,
-            69
+            82,
+            89
           ]
         },
         {
@@ -20988,8 +21048,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            83,
-            90
+            103,
+            110
           ]
         },
         {
@@ -20998,8 +21058,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            71,
-            80
+            91,
+            100
+          ]
+        },
+        {
+          "id": "s:app/test/dispatch-store.test.ts#scanned",
+          "name": "scanned",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            280,
+            284
+          ]
+        },
+        {
+          "id": "s:app/test/dispatch-store.test.ts#stamp",
+          "name": "stamp",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            276,
+            276
           ]
         }
       ]
@@ -31588,12 +31668,36 @@
       "to": "f:app/src/lib/dispatch-store.ts",
       "kind": "import",
       "symbols": [
+        "BoardStamp",
+        "DISPATCH_STATES",
         "DispatchJoinWire",
         "DispatchRow",
+        "IN_FLIGHT_STATUSES",
         "LaneRegistration",
+        "LaneScan",
         "LaneScanRefusal",
         "NotALaneEntry",
-        "hydrateJoin"
+        "WorktreeEntry",
+        "classify",
+        "hydrateJoin",
+        "joinLanes",
+        "refusalSentence"
+      ]
+    },
+    {
+      "from": "f:app/test/dispatch-store.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:app/test/dispatch-store.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "resolve"
       ]
     },
     {
@@ -40308,6 +40412,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/dispatch-store.ts#REFUSAL_SENTENCES",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
       "to": "s:app/src/lib/dispatch-store.ts#DetachedEntry",
       "kind": "type_ref",
@@ -40328,6 +40438,12 @@
     {
       "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
       "to": "s:app/src/lib/dispatch-store.ts#UnreadableEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#classify",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchState",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -40356,8 +40472,74 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#BoardStamp",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScan",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#classify",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#isInFlight",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#joinLanes",
+      "to": "s:app/src/lib/dispatch-store.ts#refusalSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/dispatch-store.ts#readBrief",
       "to": "s:app/src/lib/dispatch-store.ts#DispatchBriefWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#refusalSentence",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -41726,6 +41908,24 @@
     {
       "from": "s:app/test/dispatch-store.test.ts#row",
       "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#scanned",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScan",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#scanned",
+      "to": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/dispatch-store.test.ts#stamp",
+      "to": "s:app/src/lib/dispatch-store.ts#BoardStamp",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -44631,7 +44831,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2520,
-    "edges": 2410
+    "symbols": 2528,
+    "edges": 2428
   }
 }

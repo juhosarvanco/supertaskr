@@ -78,14 +78,16 @@ export function TaskDetailPanel({
   onClose: () => void;
   /**
    * The lane reader's answer (T-110/T-111). **ABSENT MEANS THE APP HAS NO
-   * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT** — this wants
-   * a `DispatchJoin`, and the join has no zero-argument command shape:
-   * `join_lanes(scan, board)` takes the board's stamps and the board is
-   * parsed in TypeScript. That is `T-126-s2`, which `T-112-s1` routed
-   * rather than deciding from inside a lane and which is now UN-PARKED
-   * AND RULED (architecture sitting, 2026-08-31): the join goes to
-   * TypeScript once the dispatch view model has a test path. While it is
-   * absent the dispatch block does not render at all, rather than
+   * LANE CHANNEL, WHICH IS TODAY'S TRUTH AND NOT A DEFAULT.** It wants a
+   * `DispatchJoin`, and since `T-126-s2` there is a producer for one: the
+   * architecture sitting of 2026-08-31 ruled the join into TypeScript
+   * once the dispatch view model had a test path, `T-198` landed the
+   * path, and `dispatch-store.ts`'s `joinLanes` is the join.
+   * **WHAT IS STILL ABSENT IS THE CALLER** — `joinLanes` needs a
+   * `LaneScan`, whose only producer is the `dispatch_lanes` command; the
+   * door onto it is `T-126-s1`'s parked RULING, and the two files that
+   * render `<Board>` are C-05's `app-shell` (`T-126-s9`). While this prop
+   * is absent the dispatch block does not render at all, rather than
    * rendering an "unavailable" strip on every card: a section that says
    * nothing on every open is a section nobody reads.
    */
