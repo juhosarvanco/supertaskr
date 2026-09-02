@@ -810,11 +810,21 @@ test("the unfenceable directory is NEVER locked — including inside T-228's sta
   // the assertion.
   expect(blocked.code).toBe("stale-stamp");
 
-  // AND THE PHYSICAL LAYER STILL ALLOWS THE CARD. This card does not FIX
-  // T-228 — today the hook refuses the Write tool on this very file — it
-  // declines to add a SECOND, physical copy of the same trap, so a lane
-  // stuck in the window still has somewhere to file the finding that
-  // explains why it is stuck.
+  // AND THE PHYSICAL LAYER STILL ALLOWS THE CARD. This layer never held
+  // the trap: it declined to add a SECOND, physical copy of it, so a
+  // lane stuck in the window always had somewhere to file the finding
+  // that explains why it is stuck.
+  // **THE TWO LAYERS NOW AGREE HERE, AND THEY DID NOT WHEN THIS BODY
+  // WAS WRITTEN** (T-228): the sentence removed from this comment said
+  // the hook refuses the Write tool on this very file, which was true
+  // and is the defect T-228 landed to repair — `decide` answers
+  // `alwaysWritable` BEFORE it compares the stamp. The hook side of
+  // that agreement is asserted where it belongs, in
+  // `lane-fence.spec.ts`'s *"the UNFENCEABLE directory stays open while
+  // the card and the manifest disagree"*, and deliberately NOT
+  // duplicated here: a second copy would put this body in that one's
+  // kill set and leave neither uniquely responsible (docs/CONVENTIONS.md,
+  // POISON DRILL shape SIX).
   expect(writable(path.join(fx.lane, CARD)), "the lane's own card").toBe(true);
   const filed = bashWrite(
     path.join(fx.lane, "docs/tasks/T-912-routed-from-inside-the-window.md"),

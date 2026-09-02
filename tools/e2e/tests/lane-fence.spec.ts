@@ -474,6 +474,124 @@ test("a card whose touches line moved under the lane blocks with `re-expand`", a
   expect(ask(fx.lane, path.join(fx.lane, "tools/e2e/x.ts")).code).toBe("stale-stamp");
 });
 
+/** What `halfDeliveredGrant` adds to the fence, and the file under it. */
+const WIDENED_TOUCHES = `${FIXTURE_TOUCHES.slice(0, -1)}, app/src]`;
+const WIDENED_PATH = "app/src";
+const NEWLY_GRANTED = "app/src/main.tsx";
+
+/**
+ * THE WINDOW'S OTHER HALF, BUILT ONCE (T-228).
+ *
+ * The body above opens the window by moving the LANE's card. This builds
+ * the half `method/roles/executor.md`'s fast path A describes and the
+ * one T-228 is filed about: the DISPATCH moved — the integration branch
+ * amended and the fence re-expanded — and the lane's own copy of the
+ * card has not caught up. **Only in this half does the stale manifest
+ * actually CARRY the newly granted path**, so it is the only half where
+ * consulting `paths` before comparing the stamp could hand that path
+ * over, and the only half where refusing it is a measurement.
+ *
+ * The disagreement is ASSERTED here rather than left to each body: a
+ * setup that silently failed to open the window would satisfy every
+ * refusal below for the wrong reason.
+ */
+async function halfDeliveredGrant(fx: Fixture): Promise<{
+  manifest: Awaited<ReturnType<typeof arm>>;
+  laneCard: string;
+  staleLine: string;
+}> {
+  const repoCard = path.join(fx.repo, FIXTURE_CARD);
+  const laneCard = path.join(fx.lane, FIXTURE_CARD);
+  const staleLine = readFileSync(laneCard, "utf8");
+  const widened = readFileSync(repoCard, "utf8").replace(FIXTURE_TOUCHES, WIDENED_TOUCHES);
+  expect(widened, "the fixture card no longer carries the line this helper edits").not.toBe(
+    readFileSync(repoCard, "utf8"),
+  );
+  writeFileSync(repoCard, widened, "utf8");
+  git(fx.repo, ["add", "-A"]);
+  git(fx.repo, ["commit", "-m", "widen the fixture card on the integration branch", "--quiet"]);
+  const manifest = await arm(fx);
+
+  expect(manifest.paths, "the re-arm did not widen the manifest").toContain(WIDENED_PATH);
+  expect(readFileSync(laneCard, "utf8"), "the LANE's card moved, so this is the other half").toBe(
+    staleLine,
+  );
+  expect(touchesLineOf(staleLine), "the window did not open").not.toBe(manifest.touchesLine);
+  return { manifest, laneCard, staleLine };
+}
+
+test("the UNFENCEABLE directory stays open while the card and the manifest disagree", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const neverGranted = path.join(fx.lane, "docs/STATE.md");
+  const suggestion = path.join(
+    fx.lane,
+    `docs/tasks/${FIXTURE_ID}-s1-a-finding-routed-from-inside-the-window.md`,
+  );
+
+  // THE GUARD'S STATE FIRST, as docs/CONVENTIONS.md's LIFTING A SAFETY
+  // GUARD TO DISCRIMINATE requires of every allow in this file. With a
+  // CURRENT stamp the never-granted path is ALREADY refused, so the
+  // allows below cannot be a fence that failed to arm — and this is
+  // also T-228's third criterion, the ordinary refusal proved unmoved.
+  const armed = ask(fx.lane, neverGranted);
+  expect(armed.verdict, armed.reason).toBe("block");
+  expect(armed.code, "the fence never granted docs/STATE.md").toBe("outside-the-fence");
+
+  const { manifest, laneCard } = await halfDeliveredGrant(fx);
+
+  // THE WINDOW IS OPEN, AND THE SAME PATH SAYS SO BY CHANGING ITS
+  // REASON: the stale-stamp arm is now the one answering, not the fence.
+  const inWindow = ask(fx.lane, neverGranted);
+  expect(inWindow.verdict, inWindow.reason).toBe("block");
+  expect(inWindow.code, "the window is not open, so this body proves nothing").toBe("stale-stamp");
+  expect(inWindow.reason).toContain(manifest.touchesLine);
+
+  // AND THE ONE DIRECTORY NO CARD MAY FENCE IS STILL OPEN. These are the
+  // writes the window used to suspend — a lane's own exit stamp and its
+  // notes on the card, and the finding it would route beside it — and
+  // `method/lane-protocol.md` rule 5 is why a write here can never be a
+  // fence breach: the protocol itself writes to this directory on every
+  // card, which is why no card may hold it.
+  for (const [what, target] of [
+    ["the lane's own card", laneCard],
+    ["a finding routed from inside the window", suggestion],
+  ] as const) {
+    const verdict = ask(fx.lane, target);
+    expect(verdict.verdict, `${what}: ${verdict.reason}`).toBe("allow");
+    expect(verdict.code, what).toBe("always-writable");
+  }
+});
+
+test("a HALF-DELIVERED grant is still refused ON THE PATH IT GRANTED", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // ARMED AND QUIET FIRST: before the grant moves, the newly granted
+  // path is outside the fence — so the refusal below is not a path that
+  // was never reachable, and the manifest's own widening is what this
+  // body is about.
+  expect(ask(fx.lane, path.join(fx.lane, NEWLY_GRANTED)).code).toBe("outside-the-fence");
+
+  const { manifest } = await halfDeliveredGrant(fx);
+
+  // THE MANIFEST NOW CARRIES IT AND THE HOOK STILL WILL NOT HAND IT
+  // OVER. An executor writes NEITHER HALF of its own grant
+  // (method/roles/executor.md), so a manifest its card does not agree
+  // with buys nothing: the stale manifest's `paths` stay untrusted.
+  // **THIS IS THE ARM THAT REDS IF THE STALE-STAMP CHECK MOVES TO THE
+  // END** — the obvious repair of T-228, which would answer
+  // `inside-the-fence` here and quietly delete the two-agreeing-files
+  // property `T-211` wrote into the law.
+  const granted = ask(fx.lane, path.join(fx.lane, NEWLY_GRANTED));
+  expect(granted.verdict, granted.reason).toBe("block");
+  expect(granted.code).toBe("stale-stamp");
+  expect(granted.reason).toContain("Re-expand the fence");
+  expect(manifest.paths, "the manifest stopped granting the path this body is about").toContain(
+    WIDENED_PATH,
+  );
+});
+
 test("a manifest the hook cannot read is a refusal, never a shrug", async () => {
   const fx = makeFixture();
   await arm(fx);
