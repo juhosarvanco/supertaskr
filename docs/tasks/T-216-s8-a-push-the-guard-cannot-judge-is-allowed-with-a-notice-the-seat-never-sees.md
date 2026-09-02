@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: building
+status: planned
 suggested_by: the architect seat, measured by probing the hook with the pushed command line, 2026-09-02
-blocked_by: []
+blocked_by: [T-228]
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
@@ -46,7 +46,7 @@ the separator it could not read past. The three determinable spellings
 (`-C`, `cd <literal> &&`, an unmoved working directory) are unchanged.
 A command with no push in it is unchanged.
 
-## Acceptance
+## Acceptance criteria
 
 - The exact command line above is refused by name, and the refusal text
   contains the `git -C` remedy.
@@ -58,9 +58,11 @@ A command with no push in it is unchanged.
 - No other arm's verdict moves: the existing push-guard bodies are green
   at the tip, and the drill kill sets are disjoint from theirs.
 
-## TRIAGE, 2026-09-02 — filed `building`, priority 2, by the seat that pushed the tree
+## TRIAGE, 2026-09-02 — filed `planned`, priority 2, behind T-228 by fence
 
-Filed and dispatched in one motion because the evidence is a probe, not
-a reading: the hole let an ungraded tree out once already this morning,
-and every push this seat makes is spelled by hand. T-238-s1 shares the
-fence and waits behind this card.
+Filed by the seat that pushed the tree. The evidence is a probe, not a
+reading, so it is planned at once — but T-228 holds the whole `.claude`
+directory until it lands, and the arm refused this lane on that shared
+path. The seat had stamped it `building` and cut a lane before deriving
+that; the lane was removed unarmed. Dispatch at T-228's merge; T-238-s1
+shares the fence and waits behind this card.
