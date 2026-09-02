@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **629 behaviours** — 627 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **630 behaviours** — 628 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -592,6 +592,7 @@ Census: **629 behaviours** — 627 extracted sentences + 2 named-not-extracted (
 - a spelling this guard cannot read judges NOTHING, and says so
 - an unresolvable push outside this repository's checkouts is silent
 - `;` and `||` after a `cd` are not `&&`, and the guard judges nothing there
+- the `cd <checkout>; git push` line that reached origin is REFUSED, naming the separator and the `git -C` remedy
 - the working directory at the push is read only where the text determines it
 - the separator scan is the one gitInvocations always used
 - `-C` is followed and the options that re-point a repository are not
