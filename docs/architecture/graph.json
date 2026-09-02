@@ -19957,8 +19957,8 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:4b25ef7e9dc439555455e87c3f17364b9bf36831d8a6047dd928531e4af98bf5",
-      "loc": 983,
+      "hash": "blake3:d59bacb741082891c8759c8bc5846a43391d6d891f341bc6ad48bb7d0d09cd25",
+      "loc": 1031,
       "symbols": [
         {
           "id": "s:app/test/board-truth.test.tsx#CLAMPING",
@@ -31053,6 +31053,7 @@
       "to": "p:react",
       "kind": "import",
       "symbols": [
+        "ComponentProps",
         "act"
       ]
     },

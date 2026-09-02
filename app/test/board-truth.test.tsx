@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
@@ -860,13 +860,54 @@ describe("soft issues reach the affected card (T-019-s1)", () => {
 // `DispatchReading` lives in `board-model.ts` and `BriefOutcomeView` in
 // `task-detail.ts`, both C-17, which C-05 does NOT declare — importing
 // either for a type would buy exactly the undeclared edge this section
-// exists to avoid. TypeScript checks them against `Board`'s own prop types
-// contextually, which is the same guarantee without the edge.
+// exists to avoid.
+//
+// **AND THE SENTENCE THAT USED TO CLOSE THAT ARGUMENT — *"TypeScript
+// checks them against `Board`'s own prop types contextually, which is the
+// same guarantee without the edge"* — WAS MEASURABLY ONE-DIRECTIONAL
+// (T-214).** A literal bound to a plain `const` is a REFERENCE by the time
+// it reaches a JSX prop and never a fresh object literal, so
+// excess-property checking did not run on it. What redded was a field
+// ADDED to the type, and only because the fixture was then missing a
+// REQUIRED one — while a field REMOVED from the type, a key gone stale,
+// and a misspelling that was not also a required-field omission each sat
+// at exit 0 indefinitely. Measured in this lane at `4c16b37`:
+// `staleKeyNobodyRemoved` planted in `NO_LANES`, `staleBriefKey` in
+// `ASSEMBLED.brief`, `staleNested` in a `provenance` literal — each left
+// `npm run build` at **exit 0** AND the app suite at **1141 passed**. NO
+// GATE SAW ANY OF THEM. Only `notLanes` -> `notLane` redded, and it redded
+// as two `TS2322`s pointing at the two USE sites rather than at the typo,
+// because what `tsc` had noticed was the missing required field.
+//
+// **THE ANNOTATIONS BELOW MAKE THAT SENTENCE TRUE, AND STILL BUY NO
+// EDGE.** Both types are reached through `Board`'s OWN props —
+// `ComponentProps<typeof Board>` — so they come from the component this
+// file has imported since T-017, over the C-05 -> C-18 edge
+// `C-05-app.md` already declares, and not from C-17. An annotated
+// declaration IS a fresh literal, so excess-property checking runs, and it
+// reaches nested literals too: all three planted keys now red at the
+// DECLARATION (`TS2353`), the misspelling reds as `TS2561` naming the
+// field it meant, and a dropped required field still reds as `TS2741`.
+//
+// **AND `npm run build` IS WHAT ENFORCES THIS, NEVER `npm test`.** The
+// app's graded suite is `vitest run`, which does not typecheck; the build
+// is `tsc && tsc -p tsconfig.test.json && vite build`, and ci.yml runs it
+// as its own step ahead of the suite. A guard living in the type system
+// cannot appear in a body count by construction — so read this section's
+// protection off the build step, and never off a green suite.
 describe("the board root threads the dispatch channel into the drawer (T-112-s1)", () => {
   const DISPATCH_MODEL = parseProjectFromFiles([
     { path: "docs/ROADMAP.md", content: ROADMAP },
     { path: "docs/tasks/T-400.md", content: task("T-400", [["priority", 1]]) },
   ]);
+
+  /** The two props' own types, reached through the component rather than
+   * through C-17 — see the section header for what the annotation buys
+   * and what it deliberately does not import. `Extract` picks the arm
+   * each fixture is written for, so excess-property checking is measured
+   * against ONE member instead of the whole union. */
+  type DispatchProp = Extract<NonNullable<ComponentProps<typeof Board>["dispatch"]>, { kind: "joined" }>;
+  type BriefProp = Extract<NonNullable<ComponentProps<typeof Board>["brief"]>, { kind: "assembled" }>;
 
   /** A scanned repository holding no lane — the ordinary quiet state, and
    * the one that leaves T-400 dispatchable.
@@ -892,23 +933,30 @@ describe("the board root threads the dispatch channel into the drawer (T-112-s1)
    * the field that will lie quietly and `notLanes` is the one that will
    * shout.
    *
-   * **AND `as const` HERE LEANS ON A `readonly` IT DOES NOT NAME.** The
-   * assertion gives `notLanes` the type `readonly []`, assignable only
-   * because `board-model.ts` declares the field `readonly
-   * NotLaneHold[]`. Narrow that to a mutable `NotLaneHold[]` and this
-   * literal reds — *"the type `readonly []` is `readonly` and cannot be
-   * assigned to the mutable type"* — with nothing here hinting why. */
-  const NO_LANES = {
+   * **`as const` IS GONE, AND IT WAS NEVER THE LINE SUPPRESSING THE
+   * CHECK (T-214).** The assertion used to give `notLanes` the type
+   * `readonly []`, assignable only because `board-model.ts` declares the
+   * field `readonly NotLaneHold[]` — narrow that to a mutable
+   * `NotLaneHold[]` and the literal redded, with nothing here hinting
+   * why. The annotation now does that narrowing FROM the contextual type
+   * instead of against it, so the fragility left with the assertion.
+   * **But do not read the removal as the repair**: measured in this lane
+   * at `4c16b37`, a stale key planted in this constant reds `TS2353`
+   * under the annotation whether `as const` stays or goes. What was blind
+   * was the UNANNOTATED `const` — a reference is not a fresh literal at
+   * the assignment — so a reader who blamed the assertion would have
+   * deleted the wrong line and kept the hole. */
+  const NO_LANES: DispatchProp = {
     kind: "joined",
     rows: new Map(),
     notLanes: [],
     truncated: false,
-  } as const;
+  };
 
   /** One assembled brief, with a line whose text nothing else in this file
    * produces, so the assertion below proves the brief's VALUE arrived and
    * not merely that some brief did. */
-  const ASSEMBLED = {
+  const ASSEMBLED: BriefProp = {
     kind: "assembled",
     brief: {
       role: "executor",
@@ -933,7 +981,7 @@ describe("the board root threads the dispatch channel into the drawer (T-112-s1)
       ],
       marker: null,
     },
-  } as const;
+  };
 
   it("a card opened with both props renders the drawer's copyable brief, and neither prop alone will do", () => {
     render(<Board model={DISPATCH_MODEL} dispatch={NO_LANES} brief={ASSEMBLED} />);
