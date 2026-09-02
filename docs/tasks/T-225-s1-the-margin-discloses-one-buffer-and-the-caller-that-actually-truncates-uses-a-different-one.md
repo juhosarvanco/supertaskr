@@ -421,3 +421,84 @@ worth trying to defeat. **Two:** the unsettled body derives its own
 widths, so a derivation returning an empty set would report success about
 a case it never reached — the coverage floor against the boundaries that
 shrink is what closes that, and it is the assertion to poison.
+
+## FIX PASS — 2026-09-02, executor claude-opus-5@subagent, on V-T-225-s1's REJECTION at `1e9fb6e`
+
+Both findings were pre-registered in the verifier's sealed attack set
+(A11 and A1) and both are the card's own criterion. Both are repaired in
+`301b7cb`, and both remedies are shown RED-before/GREEN-after on a
+detached bench cut from the rejected tip itself.
+
+**FINDING ONE, in the verifier's words:** *"`SPAWNSYNC_DEFAULT_MAXBUFFER`
+is transcribed, not driven. Doubled to `2048 * 1024` the command prints
+'spawnSync at its 2097152-byte DEFAULT maxBuffer' to a dispatcher and
+brief.spec.ts passes 39/39 — a figure with no keeper, in the module whose
+contract is that a figure never leaves it detached from its source, under
+a comment claiming every figure here is driven. The boundary is
+deterministic: 1,048,576 clean, 1,048,577 ENOBUFS."* It is right, and the
+comment it quotes was mine. The body now spawns a producer writing
+exactly `SPAWNSYNC_DEFAULT_MAXBUFFER` bytes and one writing exactly one
+more, and requires the first clean and the second `ENOBUFS`. That
+brackets node's default from BOTH sides — a constant too large fails the
+first assertion, one too small fails the second — in two spawns and with
+no race, because **the boundary is a property of the CHILD's size rather
+than of the reader's timing**: node trips when what it has accumulated
+EXCEEDS the limit, and a producer writing exactly N never accumulates
+past N. Disclosed at every run beside the other callers:
+`node's DEFAULT bracketed at 1048576 (none) and 1048577 (ENOBUFS)`.
+
+**FINDING TWO, in the verifier's words:** *"`disagreements()` has no
+ABSENCE half. The retired clause restored ALONGSIDE the true text …
+is green at 39/39, in the same run that measured ENOBUFS and a
+135,657-byte overrun. The planted control catches replacement and misses
+addition, which is the asymmetry this diff correctly repaired one body
+earlier."* That last clause is the sting: this lane narrowed three
+whole-block absence assertions to their own line and then wrote a checker
+with no absence question in it at all. `Claim` now carries `absent:`
+beside `needles`, built from the same measurement — this run saw an error
+and an overrun, so the line may not also promise *"with no error"*,
+*"receives a prefix"* or *"never OVERRUNS"* — and a second planted
+control splices the retired clause INTO the arm this run actually
+rendered, which is the ADDITION form the first control cannot see. The
+retired sentence now disagrees with **9** measurements where it disagreed
+with 7.
+
+**THE TWO REMEDIES, RED BEFORE AND GREEN AFTER.** A detached bench at
+`/private/tmp/nd-fix-T-225-s1`, installed in fresh-clone order, ran each
+of the verifier's two mutants at BOTH tips — one side only, landing read
+back from `git diff -U0`, restored with `git restore --source=<tip>
+--staged --worktree` and proved by sha256, bench removed afterwards.
+
+| mutant | at `1e9fb6e` (rejected) | at `301b7cb` (fixed) |
+|---|---|---|
+| `SPAWNSYNC_DEFAULT_MAXBUFFER` → `2048 * 1024` | **39 passed**, exit 0 — the defect | **1 failed / 38 passed** — the OVER-arm body alone |
+| the retired clause spliced BESIDE the true text | **39 passed**, exit 0 — the defect | **1 failed / 38 passed** — the OVER-arm body alone |
+
+The reds are assertions and not resolution errors. Finding one fails with
+*"a child writing exactly 2097152 bytes was refused by an unconfigured
+spawnSync, so node's default maxBuffer is SMALLER than the figure this
+arm prints as it"*. Finding two fails naming all three restored promises,
+each as *"the line at "past it, spawnSync at a maxBuffer this answer
+exceeds:" STILL says … which this run's own measurement contradicts"*.
+Restoration hashes: producer at `1e9fb6e`
+`baba8c0cba5f4e04ac722234a489cf8be97c2c4292ed7b169c68d6619921fa43`, at
+`301b7cb` `eb85bc2b7e25cc0a33868eeadab5f84d16dd799b79e358adf122785e843a496b`,
+each matching its worktree file after every one of the four runs.
+
+**COMMANDS, IN ORDER.** `npm run typecheck` from `tools/e2e/` **0** (x2);
+`npx playwright test tests/brief.spec.ts` **0** — 39 passed;
+`npx playwright test tests/brief-flush.spec.ts` **0** — 4 passed;
+`npx vitest run` from `lib/parser/` **0** — 363 passed;
+`git worktree add --detach /private/tmp/nd-fix-T-225-s1 1e9fb6e` **0**;
+bench install parser/app/e2e **0**, **0**, **0**; four mutant runs
+**0**, **0**, **1**, **1** exactly as the table says;
+`git worktree remove --force` **0**.
+
+**WHAT DID NOT MOVE.** Everything the verdict recorded as standing —
+the seven producer mutants the OVER-arm body kills alone, the three the
+UNSETTLED body kills alone, the transplant reding all four margin bodies,
+the four real widths and their −799 relationship to the base's four, the
+floor naming the right reader, and the `>`-not-`===` call on a killed
+child's stdout. `status: verifying` is unchanged and `verified_by` stays
+unstamped: a rejected card returns to its lane, and stamping either field
+is the dispatching seat's.
