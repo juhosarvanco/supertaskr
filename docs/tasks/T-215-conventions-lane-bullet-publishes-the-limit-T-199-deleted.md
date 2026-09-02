@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: [T-199]
 touches: [docs/CONVENTIONS.md]
 suggested_by: "T-199's executor, which could not correct it: docs/CONVENTIONS.md is outside `touches: [.claude, tools/e2e]` AND was held by the live T-189 lane at dispatch"
-builder:
-review:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+review: independent
 ---
 
 **A DOCUMENT THAT PUBLISHES A GUARD'S LIMITS IS PART OF THE GUARD**, and
