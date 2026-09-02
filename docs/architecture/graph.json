@@ -23508,8 +23508,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:165ab0e786ae751a9fc5d9f3ef9d9387bba6b4ddf4704613b397ee229f787e76",
-      "loc": 2311,
+      "hash": "blake3:646f0e74287ecd6409d9e5d53bedac26bc172f693ff810d9e60d2cebc9a7860e",
+      "loc": 2325,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
