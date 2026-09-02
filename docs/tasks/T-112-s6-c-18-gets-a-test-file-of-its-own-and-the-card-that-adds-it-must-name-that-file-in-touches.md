@@ -5,12 +5,15 @@ feature: F-02
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app-board, app/test/board-root.test.tsx]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FORMAT's "a criterion that cannot be built inside the fence is recorded and routed"
-builder:
-review:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
+review: independent
 ---
 
 **THIS IS THE HALF OF `T-112-s4`'s FIRST CRITERION THAT ITS OWN FENCE

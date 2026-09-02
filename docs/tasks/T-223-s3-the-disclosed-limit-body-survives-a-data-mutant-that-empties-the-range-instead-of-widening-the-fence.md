@@ -1,7 +1,7 @@
 ---
 id: T-223-s3
 title: "The disclosed-limit body survives a data mutant that empties the RANGE instead of widening the fence — both routes end in the same allow, and one merge-base assertion separates them"
-status: planned
+status: building
 feature: F-06
 milestone: 4
 priority: 3
