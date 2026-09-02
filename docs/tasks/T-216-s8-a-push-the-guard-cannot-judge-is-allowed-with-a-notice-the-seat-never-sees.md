@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: the architect seat, measured by probing the hook with the pushed command line, 2026-09-02
-blocked_by: [T-228]
+blocked_by: []
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
