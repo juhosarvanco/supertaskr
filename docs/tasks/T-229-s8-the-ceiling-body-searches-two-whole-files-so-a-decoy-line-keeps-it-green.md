@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: planned
+status: building
 suggested_by: verifier claude-opus-5@subagent @T-229-s4
 blocked_by: []
 touches: [app/test/select-board.test.ts, method/lane-protocol.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **Class parent: `T-229-s4`**, whose verdict measured this. That card
