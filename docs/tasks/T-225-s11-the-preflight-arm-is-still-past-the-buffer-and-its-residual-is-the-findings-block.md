@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts, lib/parser/src/lanes.ts, lib/parser/test/lanes.test.ts]
@@ -109,3 +109,79 @@ need no change. Kill set: that body and no other.
 
 - A mutant dropping the typographic term reds exactly one body.
 - The eight census arrangements V-T-230-s7 recorded still read identically.
+
+## Implementation notes
+
+**BOTH ABSORBED CARDS WERE READ IN FULL FROM HISTORY.** The absorb script
+cut each absorbed body at 1,400 characters, so the copies above stop
+mid-sentence. The full texts were read at
+`git show 866ac33^:docs/tasks/T-228-s1-preflight-refuses-a-fence-with-no-spec-file-when-a-criterion-demands-a-body.md`
+and
+`git show 866ac33^:docs/tasks/T-230-s8-pin-the-typographic-term-of-marker-end.md`.
+The only text the cut lost is T-228-s1's third acceptance bullet — *the
+live board's startable set is derived at base and tip and every card that
+moves is named* — which is measured below.
+
+**AND T-228-s1 WAS ITSELF FENCED WHERE ITS OWN VIEW CLAUSE COULD NOT BE
+BUILT.** Its frontmatter read `touches: [tools/e2e/scripts/card-preflight.mjs,
+tools/e2e/tests/card-preflight.spec.ts]` while its second clause asks the
+DISPATCH VIEW to rule the card `unfenceable` — a state set in
+`lib/parser/src/lanes.ts`, outside those two files. The card that filed
+*"a criterion demanding what the fence cannot hold"* is an instance of its
+own defect. This lane hit the wall the card describes and the fence was
+widened at the seat's fast path (`a3794c9`) to the two parser paths, which
+is why the clause is built here rather than routed.
+
+### The size (measured BACK TO BACK at one held board)
+
+17 checkouts on this machine, 5 of them lanes, the same list before and
+after both runs and the same 17 sweep lines in both answers:
+
+    --task T-133 --preflight   74,633 -> 62,836 bytes   (-11,797)
+
+against the 65,536-byte pipe buffer: **9,097 OVER becomes 2,700 UNDER**.
+The tip figure was re-measured after the restore and read 62,836 again.
+This arm's own half fell from 25,155 bytes to 15,716; the remaining
+47,431 are the ROW SET and the MACHINE-WIDE CHECKOUT SWEEP, which live in
+`brief.mjs` and `dispatch-brief.mjs` — T-239's lane, outside this fence.
+**THE SWEEP MOVES WITH THE CHECKOUT COUNT AND NOT WITH THE CARD**: it
+prints one line per checkout on the machine, so this figure is a reading
+of a machine as well as of a tree. Routed as `T-225-s13`.
+
+Over twelve cards measured at both refs at the same held board, every one
+is under the buffer at the tip and eleven have BYTE-IDENTICAL finding
+sets. The twelfth is `T-078`, whose difference is exactly one ADDED
+finding — the new refusal below.
+
+### The refusal (T-228-s1)
+
+The reading lives ONCE, in `lib/parser/src/lanes.ts`, because two
+consumers need it: `readDispatchOrder` rules such a card `unfenceable`
+with the criterion and the fence in its reason, and the dispatch view
+renders that reason unchanged (`dispatch-order.mjs` needed no edit).
+`card-preflight.mjs` consumes it off the ruling as `unbodied` /
+`bodyBearer` and refuses. Measured over the live board at `2008186`: **3
+of the 366 cards the schedule draws, 0 of the cards it rules startable.**
+Of the three, `T-189` is a genuine second instance — its own notes say
+*"AC 4's 'a body SHALL prove it' was NOT built"* over a `method/` +
+`docs/CONVENTIONS.md` fence — and `T-078` and `T-236` are cards WRITING a
+rule about bodies into a governing document. No lexical test separated
+those from a card owing one; the residual is disclosed in the module, in
+the class table's own `cannot` clause, and discharges in one dated
+`PREFLIGHT RULING` naming the criterion.
+
+**THE SUITE VOCABULARY IS THE TREE'S, NOT THE CARD'S THREE SHAPES.**
+Reading only `*.spec.ts`, `*.test.*` and `tests/` refuses four cards whose
+fences hold real bodies: `T-205`, `T-205-s4` and `T-229-s6` reserve
+`tools/method-evals`, whose `evals/` files ARE that gate's bodies, and
+`T-229` reserves a Rust source. The term is also DISARMED where no
+`knownPaths` oracle was handed in, because without one the parser cannot
+see that a directory fence already holds a spec file.
+
+### The class and the sweep
+
+CLASS: a card whose acceptance criteria demand work its own fence cannot
+hold. SWEEP: the reading above, run over all 366 cards the schedule
+draws — 3 hits, named. It was shown able to answer otherwise before its
+number was written down: the same sweep with the head-noun narrowing
+removed returns 10.
