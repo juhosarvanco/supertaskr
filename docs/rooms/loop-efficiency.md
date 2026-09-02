@@ -196,6 +196,21 @@ already orders the parser built first after a merge; the app's build is
 the same rule one package over, and the battery runner could run it
 rather than trust the seat's memory (T-204's class).
 
+**19. A widened fence can hide the arrangement the card is about.**
+T-229-s6's subject was the lane fence's read-only mode itself; the seat
+widened its fence to the whole tools/method-evals tree (fast path A, so
+the control could live beside the evals), which made the subject file
+writable IN THAT LANE — and the lane's own measurement then could not see
+that its new control copied its subject with `cpSync`, inherited the 444
+mode, and regressed the plain eval run to exit 3 in every lane fenced to
+method/. The executor's report was true of its lane and false of the
+lanes the card exists for. The verifier saw it only by building a scratch
+clone fenced the other way. The rule: when a card's property is a
+function of the FENCE's arrangement, the lane's own gates are decided by
+that arrangement and prove nothing about it — the executor SHALL measure
+under a clone fenced like the lanes that owe the gate, and the dispatcher
+SHALL say so in the brief when it widens.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
