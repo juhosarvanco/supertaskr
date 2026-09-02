@@ -502,3 +502,307 @@ floor naming the right reader, and the `>`-not-`===` call on a killed
 child's stdout. `status: verifying` is unchanged and `verified_by` stays
 unstamped: a rejected card returns to its lane, and stamping either field
 is the dispatching seat's.
+
+## VERDICT — 2026-09-02, verifier claude-opus-5@subagent: REJECTED
+
+Judged at tip `1e9fb6ef8e9ad499b1e6f9fb5829110ac0c5c596`, base
+`fb2a944078142f3a8acc809e5b28be5ac8ce5255`, on an independent bench at
+`/Users/ujju/Projects/nputer-V-T-225-s1` (node v22.22.0, macOS 26.6
+arm64, `NPUTER_E2E_PORT=25225`; 1420 never touched).
+
+**BLINDNESS WAS CLOCK-SHAPED, with one thing to disclose.** The bench was
+cut with the lane and phase 1 ran before the branch carried a commit: the
+attack set and a measured ground truth were sealed and hashed before any
+diff was fetched — `attack-V-T-225-s1.md`
+`dc440dfb3a47582e3924acb125d6260a7b354bb5eaf55f208e19d840585807c5`,
+`ground-V-T-225-s1.md`
+`f810f8dccf1da5426311888956f901932e5b803ed02878fbc3a114eda7755a33`,
+sealed **2026-09-02T06:03:31Z**. The one disclosure: confirming this
+bench's own stamp with `git worktree list` printed every worktree's commit
+column, so this seat saw that the lane still stood at `fb2a944` — a fact
+about the clock that disclosed no content, and it was not looked at again.
+The dispatching brief's duties section named no executor-derived specific.
+**BOTH FINDINGS BELOW WERE PRE-REGISTERED IN THAT SEALED ATTACK SET** (A11
+and A1) and are reported because the pre-registered mutant SURVIVED, not
+because a defect was hunted for after reading the diff.
+
+### FINDING 1 — the figure that names one of the four callers is transcribed, and nothing keeps it true
+
+`SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 * 1024` is typed into
+`dispatch-brief.mjs` and printed to the dispatcher as the identity of one
+of the four callers the arm names. No body measures it.
+
+    perl -0777 -pi -e 's/SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 \* 1024/SPAWNSYNC_DEFAULT_MAXBUFFER = 2048 * 1024/' \
+      tools/e2e/scripts/dispatch-brief.mjs
+    node tools/e2e/scripts/brief.mjs --dispatch --full | grep "DEFAULT maxBuffer"
+
+prints, live:
+
+    past it, spawnSync at its 2097152-byte DEFAULT maxBuffer: this answer is UNDER
+    that default, so a caller that configured nothing receives the whole answer at
+    status 0 with no error
+
+which is false about node. Expected: a red. Actual: `brief.spec.ts`
+**39 passed**, `brief-flush.spec.ts` **4 passed**, both exit 0. The
+mutant's landing was read from `git diff -U0` (one line, one-for-one).
+
+Why this is REJECTED-level rather than a suggestion: the card's criterion
+is *the OVER arm SHALL describe what each named caller actually does past
+the line, measured, and a body SHALL red when the sentence and the
+measurement disagree*. For three of the four callers it does. For the
+fourth the sentence can disagree with node silently, and the disagreeing
+half is the only thing that identifies that caller. **And the diff says
+otherwise about itself**: the new comment on the constant asserts *"EVERY
+CLAIM IN THIS PARAGRAPH AND IN THE ARMS BELOW IS DRIVEN AND NOT ASSERTED"*
+and *"No figure from that measurement is transcribed here."* Both are
+false of this constant — a figure with no keeper, in the module whose
+whole contract is that a figure never leaves it detached from its source.
+
+**The remedy is cheap and the measurement is deterministic.** This
+verifier's sealed ground truth probed it at the base with a synthetic
+producer, one run each:
+
+    1,048,575 bytes -> stdout 1048575, status 0, no error
+    1,048,576 bytes -> stdout 1048576, status 0, no error
+    1,048,577 bytes -> stdout 1048577, status null, SIGTERM, ENOBUFS
+
+So the boundary is exactly `SPAWNSYNC_DEFAULT_MAXBUFFER` and the
+comparison is strictly greater. A producer at the constant and at the
+constant plus one, asserted clean and ENOBUFS, pins it in two spawns and
+no race — the same shape the body already uses for its two ceilings.
+
+### FINDING 2 — the checker has no ABSENCE half, so the retired clause restored ALONGSIDE the true text passes
+
+`disagreements()` asks whether each needle is PRESENT on the anchored
+line. It never asks whether a retired needle is ABSENT. So the exact
+sentence this card was filed about, restored verbatim to the exact line
+this card is about, contradicting the measurement taken in the same run,
+is green:
+
+    perl -0777 -pi -e 's/and the stdout handed back OVERRUNS that /and a caller collecting into a fixed buffer of that size receives a prefix with no error, never OVERRUNS that /' \
+      tools/e2e/scripts/dispatch-brief.mjs
+
+The command then prints to a dispatcher:
+
+    past it, spawnSync at a maxBuffer this answer exceeds: the child is KILLED —
+    status null, signal SIGTERM, error.code ENOBUFS — and a caller collecting into
+    a fixed buffer of that size receives a prefix with no error, never OVERRUNS
+    that maxBuffer by however much node had already read, so the caller's own
+    number bounds nothing
+
+Expected: a red — the line asserts both that the caller is told through
+`error.code ENOBUFS` and that it receives no error, and this run measured
+`ENOBUFS` with an overrun of 135,657 bytes past a 135,656 ceiling.
+Actual: `brief.spec.ts` **39 passed**, exit 0.
+
+The positive control catches the RETIRED-BY-REPLACEMENT form and misses
+the RETIRED-BY-ADDITION form. That asymmetry is the same one this diff
+correctly repaired one body earlier: the base's
+`expect(under).not.toContain("OVER by")` was an absence assertion over a
+whole block, and the lane narrowed it to the figure line. The `Claim`
+shape needs the mirror of that — an `absent: string[]` beside `needles`,
+carrying the retired clause — and the planted `RETIRED` control already in
+the body then exercises the absence half at no extra cost.
+
+### WHAT STANDS, AND IT IS MOST OF THE CARD
+
+Recorded so the next pass does not re-derive it.
+
+- **The false clause is gone** and the arm names four callers with one
+  measured line each. **SEVEN producer mutants killed, each by the new
+  OVER-arm body ALONE**: `signal SIGTERM`→`SIGKILL`, `error.code
+  ENOBUFS`→`EPIPE`, `KILLED — status `→`status 0 not `, the DEFAULT line
+  unanchored (`-byte DEFAULT`→`-byte standard`), `OVERRUNS that
+  `→`stops at that `, `receives every byte`→`loses the tail`, `NO error on
+  the reader's side at all`→`an error on the reader's side every time`.
+  Every landing read from `git diff`, never from the mutator.
+- **THREE `withMargin` mutants killed by the new UNSETTLED body alone**,
+  at the site the property lives: `whole: false`→`true`, `bytes:
+  bodyBytes`→`total`, and the "did not settle" label replaced. Neither
+  new body's kill set contains the other's, and neither is contained in
+  the two existing margin bodies' (which alone killed the
+  floor-names-the-wrong-reader mutant, `the floor for a reader that takes
+  ONE `→`the floor for spawnSync and a reader that takes ONE `).
+- **THE TRANSPLANT REDS.** The tip's spec against the BASE's producer
+  (base module restored plus only the one export the import needs, so the
+  red is an assertion and not a resolution stack trace): all four margin
+  bodies fail, the new one naming all four callers as
+  `no line opens with "past it, ..."`. These bodies are not decoration.
+- **THE UNSETTLED BRANCH IS GENUINELY NON-CONVERGENT, NOT SLOW.** Raising
+  the loop from `pass < 8` to `pass < 2000` leaves the body PASSING — the
+  cycles are period 2 and never settle.
+- **AND THE WIDTHS ARE DERIVED IN-RUN, NOT PINNED.** Adding ONE byte to
+  the block's prose moved all four derived widths by exactly −1
+  (64386/64296/63395/54394 → 64385/64295/63394/54393) with the body still
+  green.
+- **THE DERIVATION IS ALSO COMPLETE, CHECKED BY A DIFFERENT METHOD.** This
+  verifier's exhaustive scan of every body width 1..200,000 against the
+  tip's `withMargin` finds exactly `54394, 63395, 64296, 64386` — the same
+  four, no fifth missed. The same scan sealed at the BASE found
+  `55193, 64194, 65095, 65185`; every one differs by exactly **799**,
+  which is the block's own growth and is what T-225-s8 records. **So the
+  absorbed T-225-s3 question is answered correctly: the fixed point fails
+  at REAL widths, one per digit boundary of `left`, and the OVER arm
+  cannot oscillate at all** — 0 unsettled bodies in 65,537..200,000 at the
+  base, confirmed independently of the lane.
+- **THE FLOOR NAMES THE RIGHT READER.** Sealed measurement:
+  `| dd bs=65536 count=1` receives exactly 65,536 bytes with reader exit 0
+  (3/3), while `| cat` loses nothing (115,250 of 115,250, 3/3). *"The
+  floor for a reader that takes ONE fixed-size read and stops … and no
+  other reader's limit"* is exactly right, and it is the caller the
+  retired sentence was true of.
+- **THE LOAD-INDEPENDENCE CALL IS RIGHT, AND THIS SEAT PRE-COMMITTED TO
+  IT.** The body asserts `>` on a killed child's stdout and never `===`.
+  The sealed ground truth shows why that was necessary: at
+  `maxBuffer: 65536` a one-shot producer hands back its whole 102,752
+  bytes while a slow producer of the same size is cut at 73,728 — 3/3
+  each. An equality would have been a flake wearing a measurement.
+- **AND THE WRITER'S EXIT IS RIGHTLY NOT ASSERTED.** Five consecutive runs
+  on this bench read writer status **1** behind the `dd` reader where the
+  dispatching seat read 0. T-225-s6 files it correctly.
+- Suite state: `brief.spec.ts` **39 passed** (base 37; +7.7s), green also
+  under `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null`.
+  `brief-flush.spec.ts` 4 passed. `npx tsc --noEmit` exit 0.
+  `gate-run e2e` at this tip: **bodies=577, 4 failed / 573 passed**, and
+  those four — `card-preflight.spec.ts:719`,
+  `checkout-currency.spec.ts:852`, `checkout-currency.spec.ts:953`,
+  `lane-lock.spec.ts:899` — **red identically BY NAME at `fb2a944`** on
+  this same bench, so they are `guard-surface-behind` and not this diff's.
+- **SECURITY: clean.** No dependency change. Every path interpolated into
+  a `/bin/sh -c` string goes through the new `shq()`; the only other
+  interpolations are the module's own integer constants. The pipeline
+  spawn carries a 64 MiB `maxBuffer`. No secrets, no network, no new
+  endpoint.
+- **FENCE: clean.** Six paths, none outside it. `brief.mjs` (T-238) and
+  `brief-flush.spec.ts` are untouched, which is the temptation this card
+  set up and the lane declined. The three filed cards are lane-protocol's
+  prescribed ROUTING beside the card, one-level ids, `status: suggested`
+  with `suggested_by` set, and the docs gate reports every live card's
+  frontmatter parsing with a legal status.
+- **CENSUS: stale by two bodies (48,201 committed against 48,481 fresh),
+  correctly reported in the notes as the INTEGRATOR's** under T-201.
+  `index --check` CURRENT at the base and unaffected by this diff.
+
+### WHAT THE LANE OWES
+
+Two edits, both inside the existing fence. **(1)** Drive
+`SPAWNSYNC_DEFAULT_MAXBUFFER` from a measurement rather than a
+transcription — the two-spawn probe above — or stop printing the number
+as a fact about node. **(2)** Give `Claim` an absence half and put the
+retired clause in it, then re-run the planted control, which will then
+prove both halves. Nothing else in the diff needs to move, and the
+frontmatter is deliberately left as this seat found it (`status:
+verifying`, `verified_by` unstamped): a rejected card returns to its lane,
+and stamping either field is the dispatching seat's.
+
+## RE-VERDICT — 2026-09-02, verifier claude-opus-5@subagent: APPROVED
+
+Judged at tip `b1dc556fc7730b6b307d8d8986532d3ff6c22272`, fix range
+`1e9fb6e..b1dc556`, on the same bench. **Both rejections are closed, and
+each closure was checked by re-running the ORIGINAL sealed mutant
+unchanged** — the same two substitutions, byte for byte, that survived at
+`1e9fb6e`.
+
+### FINDING 1 — CLOSED, and the bracket is two-sided and tight to ±1
+
+    perl -0777 -pi -e 's/SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 \* 1024/... = 2048 * 1024/'
+
+now REDS, and with its own message rather than a generic one:
+
+    a child writing exactly 2097152 bytes was refused by an unconfigured
+    spawnSync, so node's default maxBuffer is SMALLER than the figure this arm
+    prints as it
+
+The bracket was then attacked from the other side and at the boundary,
+because a one-sided check would have passed my mutant by luck:
+
+| constant planted | verdict | the assertion that caught it |
+|---|---|---|
+| `2048 * 1024` (too large) | KILLED | the N-byte child was refused |
+| `512 * 1024` (too small)  | KILLED | *"a child writing 524289 bytes was ACCEPTED … so node's default is LARGER"* |
+| `1024 * 1024 + 1`         | KILLED | off by one, high |
+| `1024 * 1024 - 1`         | KILLED | off by one, low |
+
+Each by the OVER-arm body ALONE. This agrees exactly with the ground truth
+this seat sealed at the base before the branch existed — 1,048,575 and
+1,048,576 clean, 1,048,577 `ENOBUFS` — and the claim that it needs no race
+is sound for the reason the comment gives: node trips when what it has
+ACCUMULATED exceeds the limit, and a child writing exactly N never
+accumulates past N. Disclosed at every run now, and stable 4 runs of 4:
+`node's DEFAULT bracketed at 1048576 (none) and 1048577 (ENOBUFS)`.
+
+### FINDING 2 — CLOSED, and the new control reds when disarmed
+
+    perl -0777 -pi -e 's/and the stdout handed back OVERRUNS that /and a caller
+      collecting into a fixed buffer of that size receives a prefix with no error,
+      never OVERRUNS that /'
+
+now REDS, naming all three contradictions it found on the anchored line:
+
+    the line at "past it, spawnSync at a maxBuffer this answer exceeds:" STILL
+      says "with no error", which this run's own measurement contradicts
+    ... STILL says "receives a prefix" ...
+    ... STILL says "never OVERRUNS" ...
+
+**AND THE GUARD IS ITSELF GUARDED, WHICH IS WHAT STEP 2b ASKS AND WHAT
+THIS SEAT CHECKED RATHER THAN TOOK ON TRUST.** Two mutations of the
+CHECKER, not of the subject:
+
+- emptying the `absent` list for that claim → the new addition control
+  REDS with *"the retired clause restored ALONGSIDE the true text passed —
+  the checker asks only what a line SAYS and never what it may no longer
+  say, which is the asymmetry this body was rejected for"*;
+- breaking the splice so `ADDED` would equal `over` → REDS with *"the
+  addition control spliced nothing, so it is the true arm wearing a
+  mutant's name"*.
+
+So the control cannot silently become a no-op, and the absence half cannot
+be removed without the control noticing. The banned phrases are derived
+from this run's `clean` and `overran`, not typed beside the arm.
+
+### NO REGRESSION, RE-MEASURED RATHER THAN ASSUMED
+
+All ELEVEN mutants that died at `1e9fb6e` still die at `b1dc556`, with the
+same kill sets: seven producer mutants and the wrong-reader mutant, plus
+`whole: false`→`true`, `bytes: bodyBytes`→`total` and the dropped label,
+each killed by the UNSETTLED body alone. The two new bodies' kill sets
+still contain neither each other's nor the two existing margin bodies'.
+Beyond them: the fix's spec transplanted onto the BASE producer reds all
+four margin bodies; the loop ceiling raised from 8 to 2000 leaves the
+UNSETTLED body PASSING, so the cycles are period-2 and not slow
+convergence; one byte of added prose still moves all four derived widths
+by −1 with the body green; and an exhaustive scan of every body width
+1..200,000 against this tip's `withMargin` returns exactly
+`54394, 63395, 64296, 64386` — the four the derivation reports, none
+missed. The producer half of this fix is comment-only, so the block length
+is unchanged at 1,142 bytes and the widths did not move.
+
+Suites at this tip: `brief.spec.ts` **39 passed** (also 39 under
+`GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null`),
+`brief-flush.spec.ts` 4 passed, `npx tsc --noEmit` exit 0, the OVER-arm
+body stable over 3 further consecutive runs. Security unchanged and clean:
+no dependency moved, and `writesExactly` interpolates only this module's
+own integer into a file it writes itself. Fence clean — three paths, the
+two in `touches` and this card; `brief.mjs` and `brief-flush.spec.ts`
+untouched.
+
+### FILED, NOT BLOCKING
+
+One third-order gap was measured while confirming the two closures and is
+filed as **T-225-s9**, `status: suggested`: the `absent` list is per-claim,
+so a clause that is FALSE about one caller survives on ANOTHER caller's
+line (*"on the tail, and spawnSync past its maxBuffer likewise receives a
+prefix with no error"* — 39 passed). It is not a failure of this card's
+criterion, which is about each named caller's own line, and that line now
+answers both questions with controls that red when disarmed. It is
+recorded so it is not re-derived.
+
+### THE CENSUS AND THE BATTERY
+
+`capabilities:check` is STALE by the same two bodies (48,201 committed
+against 48,481 fresh) and is the INTEGRATOR's under T-201; this lane's
+fence leaves `docs/CAPABILITIES.md` read-only and the notes report it
+correctly. The four-suite battery and the graph gate as re-run by this
+seat at its own verdict tip are recorded in the commit that carries this
+verdict; the four `e2e` reds are `guard-surface-behind` and red
+identically BY NAME at `fb2a944` on this bench.
