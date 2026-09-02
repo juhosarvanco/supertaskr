@@ -428,3 +428,55 @@ forecast is against `fb55a9f` and merged clean.
   measurement: `test/shell-harness.test.ts`'s *"keeps genesis when docs
   land under it"* stamps `generatedAtMs: 1` on every payload. M6 is the
   drill on that boundary.
+
+### ADDENDUM, same day — the e2e battery re-run after the card writes, and the two reds it found
+
+The DOCS GATE fires on this lane's two card paths, so the three suites
+`docs-gate.mjs` names were re-run at the tip `ad8a5df`:
+`gate-run parser` **0 — GREEN, bodies=363**, `gate-run app` **0 —
+GREEN, bodies=1141**, `gate-run e2e` **1 — RED, bodies=575** (573
+passed, 2 failed).
+
+**BOTH REDS ARE ONE CAUSE AND IT IS NOT THIS LANE'S**, named and
+measured rather than argued:
+
+    tests/session-economics.spec.ts:179  the recommended seat is a function of the CARD…
+    tests/session-economics.spec.ts:365  the advisory line is NOT a contract row…
+
+Each fails on `expect(<brief.mjs exit>).toBe(0)` with one stderr:
+
+    T-229-s6 holds a worktree on refs/heads/task/T-229-s6-eval-fixture-writable
+    and no live card declares that id
+
+`brief.mjs` joins a MACHINE-scoped list (the host's live worktrees) to a
+CHECKOUT-scoped one (the cards in the tree it is run from). `T-229-s6`
+is a SIBLING LANE cut after this one; its card is on `main` and is
+absent from every checkout cut before it landed —
+`git ls-tree -r --name-only 838e74b -- docs/tasks/ | grep -c T-229-s6`
+is **0** at this lane's base and **0** at its tip, against **1** on
+`main`. So the join fails for every older lane the moment a newer lane
+is cut, which is the failure class `method/lane-protocol.md` rule 4
+names in its own words and which the head of `main` (`e67cb44`) was
+already repairing.
+
+**MEASURED IN A PRISTINE BENCH, NOT INFERRED.** A detached worktree cut
+at this lane's own base `838e74b`, carrying NONE of this lane's work,
+was installed (`tools/e2e` `npm ci`, exit 0) and run:
+`node tools/e2e/scripts/brief.mjs --task T-018-s6` exits **1** with the
+byte-identical `T-229-s6` stderr. The bench's tracked-file status was
+empty when it was removed (`git worktree remove --force`, exit 0; the
+entry is gone from `git worktree list`). Corroborating: the only
+in-tree change between the GREEN e2e run at `95bfb67` and the RED one
+at `ad8a5df` is this card and `T-018-s7` —
+`git diff --name-only 95bfb67 ad8a5df` returns exactly those two paths,
+and neither is read for lane identity.
+
+**THE MERGE FORECAST, RE-DERIVED AT THE TIP.** `main` advanced twice
+during this lane (`838e74b` at dispatch, `fb55a9f`, then `fafb6a7`).
+`git merge-tree --write-tree main HEAD` → exit **0**, no conflict;
+`git diff --name-only main <tree>` returns exactly **5 paths** — the
+three fenced code paths and the two cards. The gate set above is
+derived on those five and does not move: GRAPH REGEN fires (3 `.ts`
+outside `docs/`), BOOT GATE fires (`app/src/**`), DOCS GATE fires (2
+`docs/` paths, `docs-gate.mjs` exit 1 naming both), METHOD EVAL GATE
+not owed (0 `method/**` paths).
