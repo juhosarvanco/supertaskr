@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: building
 blocked_by: [T-219-s3]
-touches: [.claude/hooks/lane-fence.mjs]
+touches: [.claude/hooks/lane-fence.mjs, tools/e2e/tests/lane-fence.spec.ts]
 suggested_by: "executor claude-opus-5@subagent @T-215"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
