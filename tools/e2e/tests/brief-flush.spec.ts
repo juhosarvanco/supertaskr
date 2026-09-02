@@ -45,15 +45,36 @@ import { unstampedLines } from "../scripts/dispatch-brief.mjs";
  *     --dispatch via spawnSync            survives to ~66,470
  *
  * The loss point is a property of WHO IS READING, because it is a race
- * between the reader draining the pipe and the writer exiting. And it is
- * a property of the WRITE SHAPE too, which is the half that surprises:
- * an arm emitting 115,079 bytes as two hundred small `console.log` calls
- * lost NOTHING through either reader at `209e5d3` with the defect fully
- * present, because the reader drained between the writes. One write
- * larger than a buffer is what loses. So these bodies assert an
- * EQUALITY between two destinations and a floor over the buffer; the
- * only number they derive, they derive at run time and label with the
- * reader it belongs to.
+ * between the reader draining the pipe and the writer exiting.
+ *
+ * ── AND IT IS DECIDED BY A SLOW READER, NEVER BY THE WRITE SHAPE ──────
+ * THIS FILE SAID THE OPPOSITE AND THE CORRECTION IS `T-197-s1`, TAKEN AT
+ * T-225. It read: *"And it is a property of the WRITE SHAPE too, which
+ * is the half that surprises … One write larger than a buffer is what
+ * loses."* The measurement behind that sentence is real and is kept —
+ * 115,079 bytes as two hundred small `console.log` calls lost NOTHING
+ * through either reader at `209e5d3` with the defect fully present — but
+ * the inference from it was wrong, because both readers there DRAIN.
+ *
+ * THE INVARIANT IS ONE LINE AND IT MENTIONS NO SHAPE: **bytes are lost
+ * if and only if they are still queued in USERLAND when `process.exit()`
+ * runs.** A reader that drains promptly keeps that queue empty however
+ * the writer wrote; a reader that pauses lets it fill however small the
+ * writes were. Many small writes are not safer — they are the shape a
+ * FAST reader happens to rescue.
+ *
+ * MEASURED BOTH WAYS AT `5f193e6`, one writer of the pre-T-197 shape
+ * emitting 524,400 bytes as 200 small writes: through `| cat` all
+ * 524,400 arrive, three runs of three; through a reader taking 4,096
+ * bytes every 5 ms, 65,536 arrive — one pipe buffer, 458,864 bytes gone
+ * at exit status 0 with nothing printed. Same writer, same size, same
+ * shape, two readers, and the shape explains none of it. BODY FOUR
+ * drives exactly that pair, which is why the correction is a body here
+ * and not only a paragraph.
+ *
+ * So these bodies assert an EQUALITY between two destinations and a
+ * floor over the buffer; the only number they derive, they derive at run
+ * time and label with the reader it belongs to.
  *
  * ── AND A CI GREEN IS NOT EVIDENCE FOR THIS CLASS ────────────────────
  * CI passed at `5e36a0b` with the brief already 928 bytes past the
@@ -75,6 +96,19 @@ const PIPE_BUFFER = 65_536;
 
 /** How much the control writer asks for: far past any plausible buffer. */
 const CONTROL_WANT = 512 * 1024;
+
+/**
+ * TWO INVOCATIONS OF ONE ARM DIFFER IN EXACTLY ONE THING — THE CLOCK
+ * (T-225). Since this card every arm carries a MARGIN block disclosing
+ * its own size, and that size is a fact about an invocation rather than
+ * about a tree, so it is stamped LIVE and carries an ISO timestamp. The
+ * bodies below still compare BYTE FOR BYTE; they normalise the one field
+ * that is a clock and nothing else, so a byte lost anywhere — inside the
+ * margin block included — still reds.
+ */
+function sameButTheClock(text: string): string {
+  return text.replace(/read \d{4}-\d{2}-\d{2}T[\d:.]+Z on /g, "read <clock> on ");
+}
 
 /** @see the disclosure precedent in brief.spec.ts and range-rule.spec.ts. */
 function disclose(label: string, line: string): void {
@@ -180,22 +214,116 @@ function readViaFile(argv: string[], dir: string, cwd = repoRoot): Read {
 }
 
 /**
+ * THE SLOW READER — a real consumer at the far end of a real pipe, which
+ * is what `| less` is and what neither reader above is (T-225).
+ *
+ * WHY IT IS A SUBPROCESS AND NOT A PAUSED `child.stdout`. The obvious
+ * build spawns the command with a piped stdout, pauses that stream and
+ * reads it in slices. IT LOSES BYTES BY ITSELF: measured at `5f193e6`,
+ * `/bin/cat` of a 524,400-byte FILE read that way delivered 397,312
+ * bytes, twice, because node tears down a child's stdio when the child
+ * exits and the readable buffer goes with it. A harness that drops data
+ * on a writer that dropped none would red this body for its own reason
+ * and read as a finding — so the slow reader sits where a human's
+ * pager sits, on the other side of a shell pipeline, owning its own
+ * stdin.
+ *
+ * ITS OWN INTEGRITY IS THE FIRST THING BODY FOUR PROVES, and by exactly
+ * this route: the same reader takes 524,400 bytes from a writer that
+ * exits naturally and loses none of them.
+ */
+/** One slice the slow reader takes, and how long it waits before the next. */
+const SLOW_CHUNK = 4096;
+const SLOW_DELAY_MS = 5;
+
+/**
+ * How many runs of the DRAINING reader control two takes before it uses
+ * the best of them (V-225's F1). Its arrival is a race, so one sample is
+ * a coin toss reported as a property; the best of several is a claim
+ * about what that reader CAN do, which is what the control argues.
+ */
+const FAST_SAMPLES = 5;
+
+function slowReader(dir: string): string {
+  const file = path.join(dir, "slow-reader.mjs");
+  writeFileSync(
+    file,
+    "// A reader that PAUSES: small slices, a wait between them. It owns its\n" +
+      "// own stdin, so nothing but this loop decides how fast the pipe drains.\n" +
+      `const CHUNK = ${SLOW_CHUNK};\nconst DELAY = ${SLOW_DELAY_MS};\n` +
+      "const inp = process.stdin;\ninp.pause();\n" +
+      "let ended = false;\ninp.on('end', () => { ended = true; });\n" +
+      "const sleep = (ms) => new Promise((r) => setTimeout(r, ms));\n" +
+      "for (;;) {\n" +
+      "  const c = inp.read(CHUNK);\n" +
+      "  if (c === null) { if (ended) break; await sleep(DELAY); continue; }\n" +
+      "  process.stdout.write(c);\n" +
+      "  await sleep(DELAY);\n" +
+      "}\n",
+    "utf8",
+  );
+  return file;
+}
+
+/**
+ * READER THREE — the command's output through that pauser, with the
+ * writer's own `$?` recovered the same dialect-free way `readViaCatPipe`
+ * recovers it.
+ */
+function readViaSlowPipe(argv: string[], dir: string, cwd = repoRoot): Read {
+  const reader = slowReader(dir);
+  const stem = Math.random().toString(36).slice(2);
+  const out = path.join(dir, `slow-${stem}.txt`);
+  const st = path.join(dir, `slow-${stem}.status`);
+  const quoted = (a: string[]) => a.map((s) => `'${s.replace(/'/g, "'\\''")}'`).join(" ");
+  spawnSync(
+    "/bin/sh",
+    [
+      "-c",
+      `{ ${quoted([process.execPath, ...argv])} 2>/dev/null; echo $? > '${st}'; } | ` +
+        `${quoted([process.execPath, reader])} > '${out}'`,
+    ],
+    { cwd, encoding: "utf8", maxBuffer: MAX_BUFFER },
+  );
+  const text = readFileSync(out, "utf8");
+  const written = Number.parseInt(readFileSync(st, "utf8").trim(), 10);
+  return {
+    bytes: Buffer.byteLength(text, "utf8"),
+    text,
+    status: Number.isInteger(written) ? written : null,
+  };
+}
+
+/**
  * THE POSITIVE CONTROL — the shape `brief.mjs` HAD, reduced to its
- * mechanism: one write larger than a buffer, then `process.exit()`.
+ * mechanism: a writer that gets past a buffer, then `process.exit()`.
+ *
+ * `writes` IS A PARAMETER BECAUSE THE SHAPE IS THE THING THIS FILE USED
+ * TO BLAME (`T-197-s1`, taken at T-225). One write past a buffer loses
+ * against a draining reader; two hundred small ones do not, and BOTH
+ * lose against a reader that pauses. A control that could only be built
+ * one way could not show that, and the sentence would have stayed a
+ * paragraph.
  *
  * It is written to a scratch file rather than kept as a fixture, because
  * a committed copy of the defect is a thing somebody eventually imports.
  */
-function controlWriter(dir: string, want: number): string[] {
-  const file = path.join(dir, "control-writer.mjs");
+function controlWriter(dir: string, want: number, writes = 1): string[] {
+  const file = path.join(dir, `control-writer-${writes}.mjs`);
+  const per = Math.floor(want / writes);
   writeFileSync(
     file,
-    "// The pre-T-197 shape, built to be lost. ONE write, then the tear-down.\n" +
-      `process.stdout.write("c".repeat(${want}) + "\\n");\n` +
+    "// The pre-T-197 shape, built to be lost. The writes, then the tear-down.\n" +
+      `for (let i = 0; i < ${writes}; i += 1) process.stdout.write("c".repeat(${per}) + "\\n");\n` +
       "process.exit(0);\n",
     "utf8",
   );
   return [file];
+}
+
+/** What `controlWriter` actually emits: one newline per write. */
+function controlBytes(want: number, writes = 1): number {
+  return Math.floor(want / writes) * writes + writes;
 }
 
 /**
@@ -232,12 +360,19 @@ test("the whole derivation reaches BOTH readers — one SYNTHESISED oversize inv
      * file this body writes and of nothing else — not of the board, not
      * of the lane count, not of how many cards were filed today.
      *
-     * ONE LONG LINE rather than many, deliberately: the audit emits one
-     * `console.log` per figure, and many small writes let the reader
-     * drain between them. Measured at `209e5d3` with the defect fully
-     * present, 200 short figures produced 115,079 bytes and lost NONE
-     * through either reader. The defect is a pending write QUEUE at
-     * exit, so the input is shaped to produce one write past a buffer.
+     * ONE LONG LINE rather than many, and the reason is now stated
+     * correctly (`T-197-s1`, taken at T-225): the two readers this body
+     * drives both DRAIN, so against them many small writes let the
+     * reader keep up and lose nothing — measured at `209e5d3` with the
+     * defect fully present, 200 short figures produced 115,079 bytes and
+     * lost NONE through either. That is a fact about THESE READERS, not
+     * about the write shape: the defect is a pending write QUEUE at
+     * exit, and one write past a buffer is simply the cheapest way to
+     * make a DRAINING reader leave something in it. Body four takes the
+     * other route to the same queue — a reader that pauses — and loses
+     * bytes from small writes. The synthesis here is kept exactly as it
+     * was, because it is what makes this body deterministic against the
+     * reader it names.
      */
     const oversize = path.join(sc.dir, "synthesised-oversize.md");
     writeFileSync(
@@ -280,18 +415,21 @@ test("the whole derivation reaches BOTH readers — one SYNTHESISED oversize inv
       "the synthesised invocation is no longer past one pipe buffer, so this body proves nothing",
     ).toBeGreaterThan(PIPE_BUFFER);
 
-    // BOTH READER SHAPES, BYTE FOR BYTE. `--audit` stamps its lines with
-    // TREE provenance only — no live read, no timestamp — so byte
-    // identity across two invocations is a real assertion here and not a
-    // comparison of clocks.
+    // BOTH READER SHAPES, BYTE FOR BYTE. `--audit`'s own rows stamp TREE
+    // provenance only — no live read — so byte identity across two
+    // invocations is a real assertion here and not a comparison of
+    // clocks. SINCE T-225 the MARGIN block ahead of them is stamped LIVE,
+    // which is one ISO timestamp per run and the only thing normalised
+    // below; the sizes are still compared raw, so a byte lost inside that
+    // block reds here exactly as one lost in the derivation does.
     const viaSpawn = readViaSpawnSync(argv);
     const viaCat = readViaCatPipe(argv, sc.dir);
     expect(viaSpawn.bytes, "spawnSync lost bytes the file destination received").toBe(whole.bytes);
     expect(viaCat.bytes, "the `| cat` reader lost bytes the file destination received").toBe(
       whole.bytes,
     );
-    expect(viaSpawn.text).toBe(whole.text);
-    expect(viaCat.text).toBe(whole.text);
+    expect(sameButTheClock(viaSpawn.text)).toBe(sameButTheClock(whole.text));
+    expect(sameButTheClock(viaCat.text)).toBe(sameButTheClock(whole.text));
 
     // AND THE EXIT CODE SURVIVES THE CHANGE. Removing `process.exit()`
     // moves the code onto `process.exitCode`, so the four-code contract
@@ -315,15 +453,171 @@ test("the whole derivation reaches BOTH readers — one SYNTHESISED oversize inv
 });
 
 /* ════════════════════════════════════════════════════════════════════
+ * BODY FOUR — THE SLOW READER, and the correction it carries (T-225,
+ * taking `T-197-s1`).
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("the whole derivation reaches a SLOW reader too, and the loss is the READER'S — never the write shape", () => {
+  // KILLED BY: `process.exit(code)` at the foot of brief.mjs. Restore it
+  // and the third assertion below fails while bodies one and two stay
+  // green whenever their two draining readers win the race — which is
+  // the whole reason this body exists beside them.
+  //
+  // AND THE TWO CONTROLS ARE THE ARGUMENT, not scaffolding around it.
+  // This file used to say the loss is a property of the WRITE SHAPE and
+  // it is not: one writer, one size, one shape, two readers, two
+  // answers. The pair below is that sentence made mechanical.
+  const sc = scratch("slow");
+  try {
+    /**
+     * CONTROL ONE — THE READER CANNOT LOSE BY ITSELF. A slow reader that
+     * dropped bytes on its own would red the proof below for its own
+     * reason and read as a finding about `brief.mjs`. The witness is a
+     * writer of the CURRENT shape at the control's own size: it exits
+     * naturally, so nothing should be lost, and nothing is.
+     */
+    const honest = path.join(sc.dir, "honest-writer.mjs");
+    writeFileSync(
+      honest,
+      "// The post-T-197 shape at the control's size: many small writes, no tear-down.\n" +
+        `for (let i = 0; i < 200; i += 1) process.stdout.write("h".repeat(${Math.floor(
+          CONTROL_WANT / 200,
+        )}) + "\\n");\nprocess.exitCode = 0;\n`,
+      "utf8",
+    );
+    const honestBytes = controlBytes(CONTROL_WANT, 200);
+    const readerIsHonest = readViaSlowPipe([honest], sc.dir);
+    expect(
+      readerIsHonest.bytes,
+      "the SLOW READER lost bytes from a writer that never tears down, so it cannot be used to " +
+        "judge one that does — see the paused-`child.stdout` measurement in slowReader()",
+    ).toBe(honestBytes);
+
+    /**
+     * CONTROL TWO — THE SAME PRE-FIX WRITER, TWO READERS, TWO ANSWERS.
+     *
+     * ── V-225's F1, AND WHY THE ASSERTION MOVED ──────────────────────
+     * This control USED TO REQUIRE `| cat` to receive all 524,400 bytes
+     * (`expect(fast.bytes).toBe(smallWant)`). **That is not a property.
+     * It is who wins a race**, and `cat` loses it often enough to
+     * matter: V-225 measured 1 of 25 runs short on a quiet machine, 16
+     * of 25 at six busy cores, and one REAL suite red while an unrelated
+     * mutant of `dispatch-order.mjs` was applied — a body redding under
+     * a file it cannot reach is a body that will red on somebody else's
+     * lane, at `retries: 0`, carrying a message about write shape.
+     *
+     * **THE ARGUMENT NEVER NEEDED THE MAXIMUM; IT NEEDS THE
+     * DISCRIMINATION.** *One writer, one shape, two readers, two
+     * answers* is a claim that the two readers DIFFER, and the
+     * difference is what falsifies the write-shape inference. So the
+     * draining reader's arrival is DERIVED IN-RUN rather than assumed —
+     * the mirror of `deriveLossPoint` one line down, and the same
+     * argument turned the other way. That function takes the MIN of
+     * several samples because the conservative end of a spread is the
+     * honest threshold to announce a margin against; here the claim is
+     * *this reader CAN keep up*, so the conservative end is the MAX.
+     *
+     * **WHY SAMPLING RATHER THAN A SINGLE RELAXED COMPARISON.** A single
+     * `fast > slow` is still one sample of a race — under sustained load
+     * `cat` reaches the pauser's own floor of one pipe buffer, which is
+     * exactly what V-225 saw in its spurious red. Requiring the BEST of
+     * several runs to beat the pauser fails only if every one of them is
+     * that bad, which is a different and far weaker event. **What is
+     * left unasserted is the vivid half** — that a draining reader loses
+     * NOTHING — and it is DISCLOSED with its spread instead, the way
+     * this file already discloses its own coverage rather than reporting
+     * an unqualified green.
+     *
+     * THE OTHER HALF IS A PROPERTY AND STAYS ASSERTED: a reader that
+     * pauses cannot drain half a megabyte before a burst writer exits,
+     * so it loses, and it loses whatever the machine is doing.
+     */
+    const smallWrites = controlWriter(sc.dir, CONTROL_WANT, 200);
+    const smallWant = controlBytes(CONTROL_WANT, 200);
+    const slow = readViaSlowPipe(smallWrites, sc.dir);
+    const fastSpread: number[] = [];
+    for (let i = 0; i < FAST_SAMPLES; i += 1) {
+      fastSpread.push(readViaCatPipe(smallWrites, sc.dir).bytes);
+    }
+    const fastBest = Math.max(...fastSpread);
+    const wholeRuns = fastSpread.filter((b) => b === smallWant).length;
+
+    expect(
+      slow.bytes,
+      "the reader that PAUSES lost nothing from a pre-T-197 writer at this size, so a green " +
+        "below would prove nothing about the writer",
+    ).toBeLessThan(smallWant);
+    expect(
+      fastBest,
+      `not one of ${FAST_SAMPLES} runs of the DRAINING reader took more from this writer than the ` +
+        "reader that pauses did, so this run cannot show that the write shape is not what decides " +
+        "the loss — suspect a machine under sustained load before suspecting the writer",
+    ).toBeGreaterThan(slow.bytes);
+
+    disclose(
+      "brief-flush READER SPREAD",
+      `one pre-T-197 writer, ${smallWant} bytes in 200 small writes: the pauser took ` +
+        `${slow.bytes}; the draining reader took ${fastSpread.join(", ")} over ${FAST_SAMPLES} ` +
+        `runs, ${wholeRuns} of them whole. The BEST draining run is what the assertion uses, and ` +
+        `only its being larger than the pauser's is asserted.`,
+    );
+
+    /**
+     * THE PROOF. The same synthesised oversize invocation body one
+     * drives, through the reader that pauses, against the destination
+     * that cannot lose.
+     */
+    const oversize = path.join(sc.dir, "synthesised-oversize.md");
+    writeFileSync(
+      oversize,
+      `# synthesised, so this body's size is not the board's\n\nfigure ${"x".repeat(90_000)} <- @ deadbee ; a source this gate cannot re-run\n`,
+      "utf8",
+    );
+    const argv = [CLI, "--audit", oversize];
+    const whole = readViaFile(argv, sc.dir);
+    expect(
+      whole.bytes,
+      "the synthesised invocation is no longer past one pipe buffer, so this body proves nothing",
+    ).toBeGreaterThan(PIPE_BUFFER);
+
+    const viaSlow = readViaSlowPipe(argv, sc.dir);
+    expect(viaSlow.bytes, "the SLOW reader lost bytes the file destination received").toBe(
+      whole.bytes,
+    );
+    expect(sameButTheClock(viaSlow.text)).toBe(sameButTheClock(whole.text));
+    expect(viaSlow.status, "the writer's exit code out of the slow pipeline").toBe(1);
+
+    disclose(
+      "brief-flush SLOW READER",
+      `${SLOW_CHUNK} bytes every ${SLOW_DELAY_MS} ms received all ${whole.bytes} synthesised ` +
+        `bytes past a ${PIPE_BUFFER}-byte buffer. The pre-T-197 writer at ${smallWant} bytes in ` +
+        `200 small writes lost ${smallWant - slow.bytes} to that reader and ` +
+        `${smallWant - fastBest} to \`| cat\` at its BEST of ${FAST_SAMPLES} runs — one writer, ` +
+        "one shape, two readers.",
+    );
+  } finally {
+    sc.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
  * BODY TWO — THE MARGIN GUARD.
  * ════════════════════════════════════════════════════════════════════ */
 
 /**
- * The invocations this repository actually reads. Every one of them
- * renders through a SINGLE `console.log` per arm, which is the write
- * shape the derived loss point below is measured against — a
- * multi-arm invocation writes once per arm and is therefore harder to
- * lose, never easier.
+ * The invocations this repository actually reads.
+ *
+ * THE WRITE SHAPE IS RECORDED HERE AND IS NOT AN ARGUMENT ABOUT SAFETY
+ * (`T-197-s1`, taken at T-225). This comment used to say a multi-arm
+ * invocation *"writes once per arm and is therefore harder to lose,
+ * never easier"*, which is the write-shape inference this file now
+ * disowns: against a reader that pauses, small writes lose exactly as a
+ * large one does, because what is lost is whatever is still queued in
+ * userland at exit. Since T-225 the shape is moot anyway — every arm
+ * renders into one collection and the answer leaves in a SINGLE write,
+ * behind the margin block disclosing its size — so the loss point
+ * derived below is measured against a writer of that same single-write
+ * shape, and it is still ONE READER'S answer rather than the boundary.
  */
 const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
   { label: "--dispatch", args: ["--dispatch"] },

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **548 behaviours** — 546 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **554 behaviours** — 552 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -40,6 +40,7 @@ Census: **548 behaviours** — 546 extracted sentences + 2 named-not-extracted (
 ## brief-flush
 
 - the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte
+- the whole derivation reaches a SLOW reader too, and the loss is the READER'S — never the write shape
 - THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
 - THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
 
@@ -70,6 +71,8 @@ Census: **548 behaviours** — 546 extracted sentences + 2 named-not-extracted (
 - the board census adds up, and it is derived rather than carried
 - THE COMMAND IS A READ — it writes nothing into the checkout it runs in
 - THE EXIT CODES keep `I derived it` apart from `I could not tell you`
+- THE MARGIN IS DISCLOSED IN THE COMMAND'S OWN OUTPUT, and the size it declares is the size it is
+- ...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped values, never as prose
 - a brief assembled at this ref names the lanes the repository holds, and no others
 - THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still wins wherever it exists
 - the WHOLE brief assembles on a pull_request-shaped checkout, and names the ref it actually spent
@@ -204,6 +207,9 @@ Census: **548 behaviours** — 546 extracted sentences + 2 named-not-extracted (
 - the STARTABLE set is exactly the ready set minus what the live lanes hold
 - a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the CALL SITE
 - A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold
+- THE DISPATCHABLE-NOW FILTER: the default spells out what can START and COUNTS what cannot
+- THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never what is RULED ON
+- ...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
 - the in-flight section's POPULATED arm, on an injected board that cannot evaporate
 
 ## docs-input-gate

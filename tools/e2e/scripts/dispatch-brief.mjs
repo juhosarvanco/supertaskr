@@ -1209,6 +1209,143 @@ export function unstampedLines(rendered) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
+ * THE MARGIN — this command's own size, disclosed in its own output
+ * (T-225, borrowing `T-167-s5`'s shape).
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * ONE PIPE BUFFER ON THIS PLATFORM, and the reference this disclosure
+ * measures against.
+ *
+ * It is not a limit this command enforces and it is not a promise about
+ * any particular reader. It is the size of the transfer a writer gets for
+ * free: up to one buffer, the whole answer is sitting in the kernel when
+ * the writer finishes, and past it arrival depends on the READER draining
+ * while the writer is still alive. `tests/brief-flush.spec.ts` derives its
+ * own loss point at run time for exactly that reason and labels it with
+ * the reader it belongs to; this constant is the FLOOR both readers
+ * measured there share, and the only number about this that does not move
+ * with who is reading.
+ */
+export const PIPE_BUFFER_BYTES = 65_536;
+
+/**
+ * THE NUMBER THIS COMMAND USED NOT TO PRINT — how big its own answer is,
+ * against the buffer a caller collects it in.
+ *
+ * WHY IT EXISTS. `T-225`'s board could not carry a correct triage
+ * because the queue's capacity turned out to be a function of the bytes
+ * this command prints per card rather than of the work: seven cards were
+ * triaged PROMOTE on their merits and three were held BY ARITHMETIC.
+ * Nothing in this command's own output said so. The margin was computed —
+ * accurately — by a SPEC, so a dispatcher who never runs the e2e lane
+ * never met it, which is the difference between a measurement that exists
+ * and one that reaches the person holding the decision.
+ *
+ * WHY IT IS PRINTED FIRST AND NOT LAST, which is the opposite of where
+ * `nputer-index` puts its budget line: a truncation eats the TAIL. A
+ * disclosure at the foot of an answer too big to arrive is lost in
+ * exactly the case it was written for, so the caller in `brief.mjs`
+ * renders the whole answer, measures it, and emits this ahead of it.
+ *
+ * WHY IT PRINTS WHETHER OR NOT IT IS NEAR THE LINE, the way `budget_line`
+ * does: a disclosure that appears only past some threshold cannot be told
+ * from one that is broken, and this project has paid for that
+ * distinction more than once. Over is not an error and must not read like
+ * one — the answer is complete either way, and what changes is who has to
+ * drain it.
+ *
+ * @param {{ bytes: number, at: string, host: string, buffer?: number,
+ *   what?: string, units?: { count: number, label: string } }} opts
+ * @returns {Rec[]}
+ */
+export function marginRecs(opts) {
+  const buffer = opts.buffer ?? PIPE_BUFFER_BYTES;
+  const bytes = opts.bytes;
+  if (!Number.isInteger(bytes) || bytes < 0 || !Number.isInteger(buffer) || buffer <= 0) {
+    throw new Error(
+      `dispatch-brief: a margin needs a byte count and a positive buffer, and got ${String(bytes)} ` +
+        `against ${String(buffer)} — a disclosure that guesses its own size is the figure with no ` +
+        "keeper this command exists to remove.",
+    );
+  }
+  const via = "this command's own rendered answer, measured before it was written";
+  const prov = liveProv(opts.at, opts.host, via);
+  const percent = ((bytes * 100) / buffer).toFixed(1);
+  const what = opts.what ?? "output";
+  /** @type {Rec[]} */
+  const recs = [
+    note("THE MARGIN — this answer's own size against one buffer, disclosed here because a"),
+    note("truncation eats the TAIL and a reader meeting the ceiling as a cut line is told nothing"),
+    value(
+      bytes > buffer
+        ? `${what}: ${bytes} of ${buffer} bytes (${percent}%) - OVER by ${bytes - buffer}: past one ` +
+          "buffer the tail arrives only while the reader drains, and a caller collecting into a " +
+          "fixed buffer of that size receives a prefix with no error"
+        : `${what}: ${bytes} of ${buffer} bytes (${percent}%) - ${buffer - bytes} left`,
+      prov,
+    ),
+  ];
+  if (opts.units !== undefined && opts.units.count > 0) {
+    /**
+     * THE PROJECTION, derived here and never quoted — `floor_line`'s own
+     * argument. The per-unit cost moves with the provenance this tool
+     * prints, with the lane count and with how long a title anybody
+     * writes, so a document that wrote it down would be wrong by the next
+     * merge and a report that prints it at every run cannot be.
+     */
+    const per = bytes / opts.units.count;
+    recs.push(
+      value(
+        `per ${opts.units.label}: ${per.toFixed(0)} bytes at this answer's own density, so one ` +
+          `buffer holds about ${Math.floor(buffer / per)} of them`,
+        prov,
+      ),
+    );
+  }
+  return recs;
+}
+
+/**
+ * The disclosure ahead of the answer it measures, at a FIXED POINT: the
+ * size it declares INCLUDES the block declaring it, so the figure is the
+ * one `wc -c` gives and not one a reader has to adjust.
+ *
+ * THE ITERATION TERMINATES BY CONSTRUCTION rather than by a bound alone.
+ * Each pass declares a candidate total and asks whether the block that
+ * renders it makes that total true; a pass that agrees is exact. The
+ * block's own length moves only when a digit count moves, so the answer
+ * is reached in a pass or two — but the `left` field SHRINKS as the body
+ * grows, so the length is not monotone and a knife edge could refuse to
+ * settle. THAT CASE IS LABELLED RATHER THAN ROUNDED: an unsettled run
+ * discloses the DERIVATION's size, which is exact and is a different
+ * measurement, instead of declaring a total that is off by a byte.
+ *
+ * @param {string} body   the rendered answer, newline-terminated
+ * @param {{ at: string, host: string, buffer?: number,
+ *   units?: { count: number, label: string } }} opts
+ * @returns {{ text: string, bytes: number, whole: boolean }}
+ */
+export function withMargin(body, opts) {
+  const bodyBytes = Buffer.byteLength(body, "utf8");
+  const head = (/** @type {number} */ n) =>
+    `${render(marginRecs({ ...opts, bytes: n }))}\n\n`;
+  let total = bodyBytes;
+  for (let pass = 0; pass < 8; pass += 1) {
+    const text = head(total);
+    const settled = bodyBytes + Buffer.byteLength(text, "utf8");
+    if (settled === total) return { text: text + body, bytes: total, whole: true };
+    total = settled;
+  }
+  const text = `${render([
+    note("THE MARGIN — the total including this block did not settle, so what is disclosed is"),
+    note("the DERIVATION below, which this block measures exactly"),
+    ...marginRecs({ ...opts, bytes: bodyBytes, what: "derivation below" }).slice(2),
+  ])}\n\n`;
+  return { text: text + body, bytes: bodyBytes, whole: false };
+}
+
+/* ────────────────────────────────────────────────────────────────────
  * The derivers — one per contract row, keyed by the row's own label.
  * ──────────────────────────────────────────────────────────────────── */
 
