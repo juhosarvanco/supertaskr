@@ -4,8 +4,8 @@ title: The arm list is now derived against the command's FLAGS and against the b
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 3
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/tests/brief-flush.spec.ts]
@@ -50,3 +50,41 @@ nothing; or whether the honest answer is that the guard's subject is
 what this repository READS and the missing combinations should be
 argued into `NOT_AN_ARM` one by one, with a reason each, the way the
 writers already are.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-202-s1 merge (0856ed7)
+
+The architect seat. brief-flush.spec.ts carries three residues now: the combination coverage this card names, the margin guard's machine-global inheritance (T-202-s2, absorbed here), and the ranking floor T-225-s12's lane will route. One lane.
+
+## Absorbs: T-202-s2 (2026-09-02, at the T-202-s1 merge (0856ed7))
+
+THE MARGIN GUARD compares two separate invocations of one arm, so a worktree added or removed between them reds it — a THIRD body inheriting machine-global state, and T-205-s8 names only the other two
+
+## The finding, measured
+
+`tools/e2e/tests/brief-flush.spec.ts:631` — *"THE MARGIN GUARD: every
+live arm against a loss point DERIVED in this run, for a NAMED reader"*
+— asserts, for every arm, that what `spawnSync` receives equals what the
+file destination received. It gets those two figures from **two separate
+invocations of the assembler**, so anything that moves between them
+moves the assertion.
+
+Measured in this lane's `gate-run e2e` leg at `2ed2861`:
+
+    Error: --task T-133 --state --full: spawnSync received 84026 bytes
+           where the file destination received 83532
+    Expected: 83532
+    Received: 84026
+
+A 494-byte delta between two reads of one command. The arm's own size
+was **83532 bytes in that run and in three consecutive re-runs of the
+body alone, all three GREEN** — so the size did not move and the body is
+not measuring a size regression. What moved was the machine: five lanes
+are live on this host and their worktrees are added and removed by peer
+seats mid-body, and `--state --full` renders the board.
+
+**The body already knows.** Its own comment says: *"If this fails with a
+small delta and no `process.exit` in `brief.mjs`, suspect the board
+moving between the two runs (a worktree added or removed) before
+suspecting the flush."* The hazard is documented and unguarded — the
+comment tells the reader how to attribute the red after it has already
+cost them the

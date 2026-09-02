@@ -4,8 +4,8 @@ title: A solo-guard body that FAILS leaves its lock file in tmpdir(), because th
 feature: F-06
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 5
+status: planned
 suggested_by: verifier claude-opus-5@subagent @V-T-202-s1, measured at 18c88e3, 2026-09-02
 blocked_by: []
 touches: [tools/e2e/tests/gate-run.spec.ts]
@@ -73,3 +73,7 @@ was granted, matching the body added by `T-202-s1`.
   taking that set before and after, not asserted.
 - The body still reds under that same mutant; the hygiene fix must not
   cost the assertion.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 5, at the T-202-s1 merge (0856ed7)
+
+The architect seat. The same release-after-assertions wart T-202-s1 fixed in its own body, one body above it; gate-run.spec.ts is free now.
