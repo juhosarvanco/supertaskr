@@ -9,7 +9,11 @@ status: building
 blocked_by: []
 touches: [.claude]
 suggested_by: "T-211's executor and its blind verifier, independently and then jointly, 2026-09-01 — the executor met it while repairing a false positive control, the verifier reproduced it at a separate bench, and the counter-argument was tested and failed"
-builder: claude-opus-5@subagentreview: independent
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
+review: independent
 ---
 
 **A LANE STUCK IN THE WIDENING WINDOW CANNOT FILE THE FINDING THAT

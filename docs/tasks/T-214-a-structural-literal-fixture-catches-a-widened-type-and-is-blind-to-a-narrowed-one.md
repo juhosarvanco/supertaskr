@@ -9,7 +9,11 @@ status: building
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185-s2 (2026-08-31) — measured in-lane with two one-sided drills, not taken because the repair cannot be green before its blocker lands
 touches: [app-shell]
-builder: claude-opus-5@subagentreview: independent
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+built_by:
+verified_by:
+review: independent
 ---
 
 **THE CLAIM AND THE MEASUREMENT DISAGREE.**
