@@ -3589,8 +3589,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/common/mod.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/common/mod.rs",
       "lang": "rust",
-      "hash": "blake3:531885e9882c5fd47697c2f0669224eb691e91ff3b2c435332ff5f674523433e",
-      "loc": 108,
+      "hash": "blake3:3929019713efeb6444d4659cbec4433a7e2b5bff88dcf8460d98fc104ea45ef4",
+      "loc": 157,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/common/mod.rs#COUNTER",
@@ -3616,10 +3616,10 @@
           "id": "s:app/src-tauri/crates/nputer-index/tests/common/mod.rs#copy_dir",
           "name": "copy_dir",
           "kind": "fn",
-          "exported": false,
+          "exported": true,
           "range": [
-            70,
-            94
+            118,
+            143
           ]
         },
         {
@@ -3668,8 +3668,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            102,
-            108
+            151,
+            157
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/common/mod.rs#unlock",
+          "name": "unlock",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            91,
+            106
           ]
         },
         {
@@ -3678,8 +3688,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            96,
-            98
+            145,
+            147
           ]
         }
       ]
@@ -3866,8 +3876,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/golden.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/golden.rs",
       "lang": "rust",
-      "hash": "blake3:95fa8f2d7324bf6e2ec40a47d21a01e3e33b69ed8ebce9c7534e48471fcde0ab",
-      "loc": 292,
+      "hash": "blake3:261cf98f9fd5ab0966b1a28865ef85c1d37e73752f31e87d649dc42cb55fa160",
+      "loc": 366,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/golden.rs#FIXTURES",
@@ -3877,6 +3887,16 @@
           "range": [
             12,
             12
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/golden.rs#a_materialized_fixture_is_writable_even_when_its_source_is_read_only",
+          "name": "a_materialized_fixture_is_writable_even_when_its_source_is_read_only",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            334,
+            366
           ]
         },
         {
@@ -3947,6 +3967,26 @@
           "range": [
             22,
             24
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/golden.rs#is_writable",
+          "name": "is_writable",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            304,
+            309
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/golden.rs#make_read_only",
+          "name": "make_read_only",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            296,
+            302
           ]
         },
         {
@@ -44219,7 +44259,7 @@
   ],
   "stats": {
     "files": 200,
-    "symbols": 2495,
+    "symbols": 2499,
     "edges": 2388
   }
 }

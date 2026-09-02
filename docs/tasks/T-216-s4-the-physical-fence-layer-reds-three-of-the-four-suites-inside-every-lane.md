@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: verifying
+status: done
 suggested_by: executor claude-opus-5@subagent @T-216-s1
 blocked_by: []
 touches: [tools/e2e/tests/token-scan.spec.ts, tools/e2e/tests/lane-lock.spec.ts, tools/e2e/scripts/token-scan.mjs, app/src-tauri/crates/nputer-index/tests/cli.rs, app/src-tauri/crates/nputer-index/tests/golden.rs, app/src-tauri/crates/nputer-index/tests/common/mod.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
