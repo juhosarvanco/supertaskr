@@ -5,9 +5,9 @@ feature: F-02
 milestone: 4
 priority: 3
 size: S
-status: building
+status: verifying
 blocked_by: []
-touches: [app-board, app/test/board-root.test.tsx]
+touches: [app-board, docs/architecture/components/C-18-board-root.md, app/test/board-root.test.tsx]
 suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FORMAT's "a criterion that cannot be built inside the fence is recorded and routed"
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
@@ -46,11 +46,18 @@ sufficient, because the slug expansion is what is stale. Hence the
 `touches:` line above — it is the deliverable of `T-112-s4`'s learning and
 should be taken verbatim rather than re-derived.
 
-`app-board` already reaches `C-18-board-root.md` through the slug, so no
-separate registry token is needed here; a dispatcher preferring the
-narrower T-149 spelling may use
-`[app-board, docs/architecture/components/C-18-board-root.md, app/test/board-root.test.tsx]`
-instead, and the two are equivalent for this card's writes.
+**RETRACTED 2026-09-02 BY THE LANE THIS SENTENCE STOPPED.** It read:
+*"`app-board` already reaches `C-18-board-root.md` through the slug, so
+no separate registry token is needed here; a dispatcher preferring the
+narrower T-149 spelling may use `[app-board,
+docs/architecture/components/C-18-board-root.md,
+app/test/board-root.test.tsx]` instead, and the two are equivalent for
+this card's writes."* **The two are NOT equivalent, and the second is the
+only one that works.** The slug expands to each component's `paths:`, and
+the section above quotes C-18's own body saying that no component
+declares its own registry file there — so the sentence was refuted by
+this card's own citation two paragraphs up. `touches:` at the top is now
+the three-token spelling; the account is at the end of this card.
 
 ## What the file may and may not import
 
@@ -135,3 +142,41 @@ board-root test reaches the shell's config. Do not widen on reflex; the
 preflight's own note draws exactly this distinction.
 
 Stamp returned to `planned`; no lane was cut and nothing was built.
+
+## AND THE SECOND DISPATCH WAS REFUSED TOO — BY THE LANE HOOK, MID-BUILD
+
+The re-dispatch took `touches:` as the card asked, verbatim:
+`[app-board, app/test/board-root.test.tsx]`. The armed manifest expanded
+to **18 paths, none of them a registry file**, and the hook refused
+`docs/architecture/components/C-18-board-root.md` — the file the FIRST
+acceptance criterion requires. Probed rather than discovered by a failed
+write:
+
+    docs/architecture/components/C-18-board-root.md  exit=2
+      LANE FENCE: ... is outside T-112-s6's fence.
+
+**THE LANE STOPPED RATHER THAN SHIPPING THE HALF IT COULD REACH, AND THE
+HALF WAS MEASURED HARMFUL BEFORE THAT WAS DECIDED.** On a `git archive`
+copy of the tree at the lane's base, the test file WITHOUT the registry
+line lands `arch drift` **D2 unmapped=1, findings 4 to 5, edges 45 to
+48** — which `app/test/architecture-dogfood.test.ts` asserts against by
+name, and which reds at the integrator's graph regen, detached from its
+cause, in a file no `[app-board]` fence reaches. With the line, the same
+copy answers **mapped 201, unmapped 0, edges 45, findings 4** — every
+summary at its base value.
+
+**BOTH OF THOSE ARE THE COPY'S FIGURES AND NEITHER IS THIS TREE'S.**
+`arch` reads the COMMITTED graph, which no lane regenerates, so at this
+lane's tip it still prints `files=200 mapped=200` and cannot name the new
+file at all. **Criterion 3's "`arch` reports the new file mapped" is
+therefore satisfiable only after the INTEGRATOR's regeneration**, and
+what this lane can show in-tree is `index --check` answering **STALE,
+`files +1 -0`, `edges +12 -0`** — the expected reading — plus
+`arch cycles` **ACYCLIC at exit 0**, which needs no graph because it
+reads the registry only. The derivation is now in `C-18-board-root.md`,
+which is where the next component in this position will look.
+
+The fence was re-armed on the three-token spelling and the card built
+under it. **The cost of the two refusals was two dispatches and no
+rejected build**, which is the trade the preflight and the lane hook are
+both for.
