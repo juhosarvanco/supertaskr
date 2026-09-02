@@ -2030,7 +2030,7 @@ test("the `cd <checkout>; git push` line that reached origin is REFUSED, naming 
   // refspec that is a REDIRECTION. That is T-237-s2's arm answering
   // exactly as designed on an input nobody modelled — it is announced and
   // allowed, never a refusal — and moving it is a different card's
-  // verdict to move (routed as T-216-s9). So what this control asserts is
+  // verdict to move (routed as T-216-s10). So what this control asserts is
   // that no arm REFUSED and that the unplaceable check in particular did
   // not fire, which is the property T-216-s8 is about.
   const allowed = runHook(fx, `cd ${fx.root} && ${tail}`);

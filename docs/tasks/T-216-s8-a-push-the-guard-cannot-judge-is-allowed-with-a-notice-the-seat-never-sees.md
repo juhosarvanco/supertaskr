@@ -98,6 +98,42 @@ with `git diff` and restored by sha256 against `89cf296`, measured over
 | D | the code put back into `ANNOUNCED_ALLOW_CODES` | 2 — the census body + *an unresolvable push outside* |
 | F | the separator check accepts ANY separator | 3 — the separator body, the new body, the resolver table |
 
+## Gates, and the one RED that is not this lane's
+
+Derived on `git merge-tree --write-tree main HEAD`, four paths: GRAPH
+REGEN **fires** (`*.ts` outside docs/), DOCS GATE **fires** (two cards
+are code inputs — app, tools/e2e, lib/parser), BOOT GATE and METHOD
+EVAL **not owed** (nothing under `app/src-tauri/**`, `app/src/**`,
+either manifest, or `method/**`).
+
+`gate-run parser` GREEN 372, `gate-run app` GREEN 1141, `index --check`
+CURRENT — all at `73981da`. **`gate-run e2e` RED at `73981da`: 2 failed
+/ 620 passed, both in `session-economics.spec.ts`, and neither is this
+diff.** `brief.mjs` refuses three worktrees on task branches
+(`T-202-s1`, `T-205-s8`, `T-225-s12`) whose cards *"no live card
+declares"* — the REF-SKEW class this project already names (T-143-s1,
+T-187): all three cards exist on main and none exists at this lane's
+base `2f813e8`, so the check joins a MACHINE-scoped surface (the host's
+worktree list) to a CHECKOUT-scoped one (this base's cards) and reds
+every older lane the moment a newer lane is cut. **Measured, not
+argued**: the two bodies red alone at this tip (2 failed / 8 passed) and
+are GREEN 10/10 in a detached worktree at the merge tree, where main's
+cards are present. The full merge forecast is **GREEN, exit 0, 625
+bodies** at `a944722` (main `cde65b5` ⨝ `73981da`), run in
+`../nputer-T-216-s8-forecast` and removed afterwards.
+
+The forecast's own `index --check` read STALE on two files this lane
+never opened — `app/test/architecture-dogfood.test.ts` and
+`app/test/map-dogfood-render.test.tsx`, identical blobs to main's — and
+main regenerated exactly those at `7b4ed3e` while this lane was
+measuring. Main moved four commits during this build.
+
+**THE ROUTED CARD'S ID WAS TAKEN WHILE THIS LANE HELD IT.** It was filed
+as `T-216-s9`; `ecbc26f` landed a different `T-216-s9` on main an hour
+later, so it is `T-216-s10` here. The card-id namespace is a
+BRANCH-scoped surface two seats can claim at once, and nothing warned —
+the integrator re-checks it at the merge.
+
 ## Attribution owed by the dispatch: the holder body's intermittent
 
 *"a lane holds no seat, so a holder record in one refuses nothing"* —

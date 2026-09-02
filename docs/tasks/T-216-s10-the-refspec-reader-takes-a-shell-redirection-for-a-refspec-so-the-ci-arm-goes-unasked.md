@@ -1,5 +1,5 @@
 ---
-id: T-216-s9
+id: T-216-s10
 title: The refspec reader takes a shell REDIRECTION for a refspec, so every push spelled `git push origin main 2>&1 | …` declares doubt and the CI arm goes unasked
 feature: F-06
 milestone: 4
