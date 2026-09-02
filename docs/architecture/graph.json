@@ -6775,8 +6775,8 @@
       "id": "f:app/src-tauri/src/arch_cmd.rs",
       "path": "app/src-tauri/src/arch_cmd.rs",
       "lang": "rust",
-      "hash": "blake3:ea1d8330bdd36a1c6346996021d9238e9d2c4736889aa1ee5dba4a80ebb5cd06",
-      "loc": 443,
+      "hash": "blake3:8e3c651c78b4d63f19fb366cfa1afb0e49c4069c6acdfc01f82087fcc40b46d4",
+      "loc": 447,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/arch_cmd.rs#DetailOutcome",
@@ -6865,7 +6865,7 @@
           "exported": false,
           "range": [
             203,
-            443
+            447
           ]
         }
       ]
@@ -7422,8 +7422,8 @@
       "id": "f:app/src-tauri/src/dispatch/brief.rs",
       "path": "app/src-tauri/src/dispatch/brief.rs",
       "lang": "rust",
-      "hash": "blake3:08425258d6801347cfc61143c1b56d5d4c35750973c447e4bdda10300675b929",
-      "loc": 3233,
+      "hash": "blake3:4ff03218f4740a5cc7f4b0a016c04eb059d8d0d6cce79bb53599f960af167dfe",
+      "loc": 3572,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/brief.rs#ADAPTER_FILES",
@@ -7481,8 +7481,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1247,
-            1247
+            1291,
+            1291
           ]
         },
         {
@@ -7531,8 +7531,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1374,
-            1377
+            1418,
+            1421
           ]
         },
         {
@@ -7701,8 +7701,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1677,
-            1677
+            1721,
+            1721
           ]
         },
         {
@@ -7751,8 +7751,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1981,
-            2004
+            2025,
+            2048
           ]
         },
         {
@@ -7761,8 +7761,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1809,
-            1813
+            1853,
+            1857
           ]
         },
         {
@@ -7771,8 +7771,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1718,
-            1740
+            1762,
+            1784
           ]
         },
         {
@@ -7781,8 +7781,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1459,
-            1461
+            1503,
+            1505
           ]
         },
         {
@@ -7821,8 +7821,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1410,
-            1420
+            1454,
+            1464
           ]
         },
         {
@@ -7831,8 +7831,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1928,
-            1957
+            1972,
+            2001
           ]
         },
         {
@@ -7841,8 +7841,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1910,
-            1925
+            1954,
+            1969
           ]
         },
         {
@@ -7911,8 +7911,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1464,
-            1476
+            1508,
+            1520
           ]
         },
         {
@@ -7921,8 +7921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1816,
-            1830
+            1860,
+            1874
           ]
         },
         {
@@ -7931,8 +7931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1834,
-            1843
+            1878,
+            1887
           ]
         },
         {
@@ -7951,8 +7951,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1423,
-            1430
+            1467,
+            1474
           ]
         },
         {
@@ -7971,8 +7971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1846,
-            1868
+            1890,
+            1912
           ]
         },
         {
@@ -7981,8 +7981,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1520,
-            1544
+            1564,
+            1588
           ]
         },
         {
@@ -8031,8 +8031,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1495,
-            1509
+            1539,
+            1553
           ]
         },
         {
@@ -8041,8 +8041,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1757,
-            1775
+            1801,
+            1819
           ]
         },
         {
@@ -8051,8 +8051,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1679,
-            1715
+            1723,
+            1759
           ]
         },
         {
@@ -8061,8 +8061,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1590,
-            1613
+            1634,
+            1657
           ]
         },
         {
@@ -8071,8 +8071,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1249,
-            1370
+            1293,
+            1414
           ]
         },
         {
@@ -8081,8 +8081,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1546,
-            1562
+            1590,
+            1606
           ]
         },
         {
@@ -8092,7 +8092,7 @@
           "exported": false,
           "range": [
             1152,
-            1243
+            1287
           ]
         },
         {
@@ -8101,8 +8101,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1615,
-            1673
+            1659,
+            1717
           ]
         },
         {
@@ -8121,8 +8121,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1742,
-            1755
+            1786,
+            1799
           ]
         },
         {
@@ -8141,8 +8141,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1480,
-            1493
+            1524,
+            1537
           ]
         },
         {
@@ -8161,8 +8161,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1871,
-            1891
+            1915,
+            1935
           ]
         },
         {
@@ -8171,8 +8171,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1894,
-            1907
+            1938,
+            1951
           ]
         },
         {
@@ -8181,8 +8181,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1436,
-            1456
+            1480,
+            1500
           ]
         },
         {
@@ -8191,8 +8191,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1384,
-            1407
+            1428,
+            1451
           ]
         },
         {
@@ -8201,8 +8201,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1569,
-            1588
+            1613,
+            1632
           ]
         },
         {
@@ -8251,8 +8251,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            2011,
-            3233
+            2055,
+            3572
           ]
         },
         {
@@ -8261,8 +8261,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1782,
-            1806
+            1826,
+            1850
           ]
         },
         {
@@ -28441,7 +28441,6 @@
       "to": "p:cargo:std",
       "kind": "import",
       "symbols": [
-        "Path",
         "PathBuf",
         "fs"
       ]

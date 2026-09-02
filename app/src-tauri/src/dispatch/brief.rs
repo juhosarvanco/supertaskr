@@ -1156,33 +1156,42 @@ fn row_lane(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> 
         Some(text) => text,
         None => return Err(empty(row, CONVENTIONS, "lane spelling bullet")),
     };
-    let branch = backticked(&spellings)
-        .into_iter()
-        .find(|b| b.starts_with("task/"))
-        .unwrap_or_default();
-    let worktree = backticked(&spellings)
-        .into_iter()
-        .find(|b| b.contains("../"))
-        .unwrap_or_default();
-    let create = backticked(&spellings)
-        .into_iter()
-        .find(|b| b.starts_with("git worktree add"))
-        .unwrap_or_default();
-    // BY ITS LABEL, and the three picks above are by PREFIX — neither is
-    // by position. This one was, and the bullet it reads opens by naming
-    // a file (T-236-s1).
-    let integration =
-        backticked_after_label(&spellings, "integration branch").map_err(|found| {
+    // **EVERY SPELLING IN THIS ROW IS READ BY ITS LABEL** — T-236-s1
+    // bought that for the integration branch, T-236-s5 gives the rest of
+    // the row the same parity, so `laneSpellings` in
+    // tools/e2e/scripts/dispatch-brief.mjs and this module are one rule
+    // in two languages rather than two rules (T-057's class). The labels
+    // are the JS reader's own four.
+    //
+    // **A SHAPE FILTER IS NOT THE SAME PROPERTY, AND THE DIFFERENCE IS
+    // SILENT.** `starts_with("task/")`, `contains("../")` and
+    // `starts_with("git worktree add")` survive a reordering, which is why
+    // they read correctly through the defect T-236-s1 fixed — but they
+    // answer with the FIRST run that happens to match, so a bullet that
+    // grows a second `task/`-prefixed or `../`-carrying name answers with
+    // whichever comes first and says nothing. Each of the three ended in
+    // `unwrap_or_default()`, so an unreadable spelling was an EMPTY one.
+    let spell = |label: &str, noun: &str| -> Result<String, MissingRow> {
+        backticked_after_label(&spellings, label).map_err(|found| {
             let what = if found == 0 {
-                "integration branch under its own label"
+                format!("{noun} under its own label {label:?}")
             } else {
-                "integration branch under its own label ONCE — the bullet spells it more than once"
+                format!(
+                    "{noun} under its own label {label:?} ONCE — the bullet spells it {found} times"
+                )
             };
-            empty(row, CONVENTIONS, what)
-        })?;
-    if branch.is_empty() || worktree.is_empty() || create.is_empty() {
-        return Err(empty(row, CONVENTIONS, "complete lane spelling"));
-    }
+            empty(row, CONVENTIONS, &what)
+        })
+    };
+    let integration = spell("integration branch", "integration branch")?;
+    let branch = spell("branch", "lane branch")?;
+    let worktree = spell("worktree", "lane worktree")?;
+    let create = spell("Created with", "lane create command")?;
+    // No emptiness guard follows, and its absence is the point rather than
+    // an omission: `backticked_after_label` pushes a run only when its
+    // closing backtick is strictly past its opener, so every `Ok` here is
+    // non-empty BY CONSTRUCTION. The guard this replaces existed because
+    // the three shape reads above could answer with a default.
 
     // **THE COMMAND, NOT THE ANSWER.** The card rules it: this assembler
     // runs no `git`, so the brief carries the command that finds the
@@ -1195,10 +1204,45 @@ fn row_lane(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> 
         Some(text) => text,
         None => return Err(empty(row, CONVENTIONS, "dispatch-from bullet")),
     };
-    let marker = backticked(&dispatch_bullet)
+    // **AND THE MARKER REFUSES RATHER THAN DEFAULTS** (T-236-s5). It used
+    // to end `.unwrap_or_else(|| "Checkpoint:".to_string())`, which is
+    // this module's memory standing in for the document — and a defaulted
+    // spelling here is SILENT, because the printed pipeline ends in `cut`:
+    // a wrong marker matches nothing, `grep` exits 1, `cut` is last, and
+    // the dispatcher reads an EMPTY base at exit 0 rather than an error.
+    // The read stays a SHAPE test, and that is measured rather than
+    // preferred: the bullet introduces the marker MID-SENTENCE and twice,
+    // so every label in front of it — `the newest`, `newest` — is itself
+    // the tail of a longer one and a label read refuses at the live
+    // document. What T-236-s5 changes is the DEFAULT.
+    //
+    // **AND THE ARITY RULE IS ON DISTINCT SPELLINGS, NOT ON OCCURRENCES.**
+    // The bullet names the marker twice and means it once; two spellings
+    // that DISAGREE are the ambiguity `laneSpellings` refuses, and two
+    // that agree are one spelling said twice.
+    let mut distinct: Vec<String> = Vec::new();
+    for found in backticked(&dispatch_bullet)
         .into_iter()
-        .find(|b| b.ends_with(':') && b.chars().next().is_some_and(|c| c.is_uppercase()))
-        .unwrap_or_else(|| "Checkpoint:".to_string());
+        .filter(|b| b.ends_with(':') && b.chars().next().is_some_and(|c| c.is_uppercase()))
+    {
+        if !distinct.contains(&found) {
+            distinct.push(found);
+        }
+    }
+    let marker = match distinct.len() {
+        1 => distinct.remove(0),
+        found => {
+            let what = if found == 0 {
+                "checkpoint marker in the dispatch bullet".to_string()
+            } else {
+                format!(
+                    "checkpoint marker in the dispatch bullet ONCE — the bullet spells {found} \
+                     different markers"
+                )
+            };
+            return Err(empty(row, CONVENTIONS, &what));
+        }
+    };
     let find_base = format!(
         "git log --first-parent --format='%H %s' {integration} | grep -m1 ' {marker}' | cut -d' ' -f1"
     );
@@ -2749,6 +2793,301 @@ mod tests {
                 "an absent spelling takes row 4 down by name: {rows:?}"
             ),
             other => panic!("an absent spelling answered instead of refusing: {other:?}"),
+        }
+    }
+
+    // ---- T-236-s5: the other three spellings, and the marker ----------
+
+    /// The live document with one DECOY planted at the lane bullet's own
+    /// opener, ahead of every spelling row 4 reads.
+    ///
+    /// The bullet then OPENS with the decoy, which is what makes each
+    /// control below able to fail two ways at once: the POSITIONAL read
+    /// T-236-s1 removed answers it because it is first, and the SHAPE
+    /// reads T-236-s5 removes answer it because it matches their filter
+    /// and comes first. Neither the live tree nor a hand-written fixture
+    /// supplies that on its own.
+    fn lane_bullet_opening_with(live_text: &str, decoy: &str) -> String {
+        let opener = "- THE LANE PROTOCOL";
+        let at = live_text
+            .find(opener)
+            .expect("the lane bullet opens with its own name");
+        format!(
+            "{}{opener} — `{decoy}` —{}",
+            &live_text[..at],
+            &live_text[at + opener.len()..]
+        )
+    }
+
+    /// One spelling, planted against and asserted BOTH ways: the reading
+    /// row 4 used to do answers the decoy, and the row answers the
+    /// document. `shape` is the filter that read this spelling before
+    /// T-236-s5 — written here, in the test, because it no longer exists
+    /// in the module under test.
+    fn a_spelling_survives_a_decoy(
+        label: &str,
+        decoy: &str,
+        shape: fn(&String) -> bool,
+        expected_line: &str,
+        expected_text: &str,
+    ) {
+        let live = live_files();
+        let live_text = live
+            .read_text(CONVENTIONS)
+            .expect("the live conventions document");
+        let planted = lane_bullet_opening_with(&live_text, decoy);
+        let bullet = bullet_containing(&planted, "integration branch `")
+            .expect("the planted document still carries one lane bullet");
+
+        // THE CONTROL, AND IT IS NOT VACUOUS: both of the readings this
+        // card replaces come back with the plant.
+        assert_eq!(
+            backticked(&bullet).into_iter().next().as_deref(),
+            Some(decoy),
+            "the POSITIONAL reading answers the planted {label} decoy"
+        );
+        assert_eq!(
+            backticked(&bullet).into_iter().find(shape).as_deref(),
+            Some(decoy),
+            "the SHAPE reading answers the planted {label} decoy"
+        );
+
+        // THE PROPERTY: the row keys on the LABEL, so the decoy is not
+        // what it answers — and the decoy is spent nowhere else in row 4.
+        let files = OverlayFiles {
+            inner: DiskFiles::new(&repo_root()),
+            path: CONVENTIONS.to_string(),
+            text: planted,
+        };
+        let brief = assembled(assemble(&files, &a_card(), Role::Executor, &no_lanes()));
+        let row4 = brief
+            .rows
+            .iter()
+            .find(|r| r.number == 4)
+            .expect("row 4 of the planted brief");
+        let line = row4
+            .lines
+            .iter()
+            .find(|l| l.label == expected_line)
+            .unwrap_or_else(|| panic!("row 4 names {expected_line}: {:?}", row4.lines));
+        assert_eq!(
+            line.text, expected_text,
+            "the {label} label read answers the document with a decoy planted ahead of it"
+        );
+        for line in &row4.lines {
+            assert!(
+                !line.text.contains(decoy),
+                "row 4 spent the planted decoy somewhere: {} = {}",
+                line.label,
+                line.text
+            );
+        }
+    }
+
+    /// **THE LANE BRANCH IS READ BY ITS LABEL** (T-236-s5). It was read by
+    /// SHAPE — the first backticked run starting `task/` — which answers
+    /// whichever such name comes first and says nothing about a second.
+    #[test]
+    fn row_fours_branch_spelling_is_read_by_its_label_and_a_planted_task_branch_does_not_move_it() {
+        a_spelling_survives_a_decoy(
+            "branch",
+            "task/T-000-a-planted-branch",
+            |b| b.starts_with("task/"),
+            "branch",
+            "task/T-900-<slug>",
+        );
+    }
+
+    /// **THE LANE WORKTREE IS READ BY ITS LABEL** (T-236-s5). It was the
+    /// first backticked run containing `../`, and the decoy below is a
+    /// sibling path exactly like the one the document publishes.
+    #[test]
+    fn row_fours_worktree_spelling_is_read_by_its_label_and_a_planted_sibling_path_does_not_move_it()
+    {
+        a_spelling_survives_a_decoy(
+            "worktree",
+            "../nputer-a-planted-worktree",
+            |b| b.contains("../"),
+            "worktree",
+            "../nputer-T-900",
+        );
+    }
+
+    /// **THE CREATE COMMAND IS READ BY ITS `Created with` LABEL**
+    /// (T-236-s5), the label `laneSpellings` keys it on. It was the first
+    /// backticked run starting `git worktree add`, and this document
+    /// already publishes a second such command elsewhere — the human's
+    /// detached app checkout.
+    ///
+    /// The decoy carries an ABSOLUTE path deliberately, where the
+    /// document's own second `git worktree add` carries `../`: a decoy
+    /// matching two shape filters at once reds this body under the
+    /// WORKTREE mutant as well, and a control that fails for another
+    /// spelling's reason is not this spelling's control. Measured — with
+    /// `../` in it, reverting the worktree read alone killed two bodies.
+    #[test]
+    fn row_fours_create_command_is_read_by_its_label_and_a_planted_worktree_add_does_not_move_it() {
+        a_spelling_survives_a_decoy(
+            "create",
+            "git worktree add --detach /tmp/nputer-a-planted-tree main",
+            |b| b.starts_with("git worktree add"),
+            "create",
+            "git worktree add ../nputer-T-900 -b task/T-900-<slug> <base>",
+        );
+    }
+
+    /// **THE LOOKBEHIND IS THE GUARD, AND IT IS PINNED HERE** (T-236-s5,
+    /// absorbing T-236-s7). A bare `branch` read must never answer with a
+    /// LONGER label that ends in the word `branch`, which is the JS
+    /// reader's own `(?<![A-Za-z]\s)` case: *"integration branch"* ends in
+    /// *"branch"*. Neutering `tail_of_longer_label` to `false` left the
+    /// whole cargo suite green at this lane's base, so the guard had no
+    /// keeper until this body.
+    #[test]
+    fn a_longer_label_ending_in_the_word_branch_is_not_what_the_bare_label_read_answers() {
+        // ARM ONE — a longer label and NOTHING ELSE. The only needle in
+        // this bullet is the tail of *"the release branch"*, so the bare
+        // read finds nothing at all rather than the longer label's name.
+        // Without the guard it answers `rel/x`.
+        assert_eq!(
+            backticked_after_label("the release branch `rel/x` is cut weekly", "branch"),
+            Err(0),
+            "a longer label ending in the word `branch` is not a `branch` spelling"
+        );
+
+        // ARM TWO — the LIVE document, where the two labels sit in one
+        // bullet. The control is the needle count: without the lookbehind
+        // this read is AMBIGUOUS rather than merely wrong, so the guard is
+        // what makes row 4 answerable at all.
+        let live = live_files();
+        let live_text = live
+            .read_text(CONVENTIONS)
+            .expect("the live conventions document");
+        let bullet = bullet_containing(&live_text, "integration branch `")
+            .expect("the live document carries one lane bullet");
+        let needles = bullet.matches("branch `").count();
+        assert!(
+            needles > 1,
+            "the control is not vacuous: this bullet carries {needles} `branch ` needle(s), so a \
+             read without the lookbehind has more than one candidate"
+        );
+        assert!(
+            bullet.contains("integration branch `main`"),
+            "the longer label this guard is about is the one the document publishes"
+        );
+        assert_eq!(
+            backticked_after_label(&bullet, "branch"),
+            Ok("task/T-NNN-<slug>".to_string()),
+            "the bare label answers the LANE branch, never the integration branch"
+        );
+        assert_eq!(
+            backticked_after_label(&bullet, "integration branch"),
+            Ok("main".to_string()),
+            "and the longer label still answers its own name"
+        );
+    }
+
+    /// **THE CHECKPOINT MARKER REFUSES RATHER THAN DEFAULTS** (T-236-s5).
+    /// It ended `.unwrap_or_else(|| "Checkpoint:".to_string())` — this
+    /// module's memory standing in for the document — and the failure is
+    /// SILENT downstream: the printed pipeline ends in `cut`, so a marker
+    /// that matches nothing prints nothing and exits 0, and the dispatcher
+    /// reads an empty base rather than an error.
+    #[test]
+    fn a_dispatch_bullet_that_names_no_checkpoint_marker_is_a_refusal_never_a_default() {
+        let live = live_files();
+        let live_text = live
+            .read_text(CONVENTIONS)
+            .expect("the live conventions document");
+        let overlaid = |text: String| OverlayFiles {
+            inner: DiskFiles::new(&repo_root()),
+            path: CONVENTIONS.to_string(),
+            text,
+        };
+
+        // THE POSITIVE CONTROL — the same overlay carrying the document
+        // VERBATIM assembles, and the command spends the marker it read.
+        let control = assembled(assemble(
+            &overlaid(live_text.clone()),
+            &a_card(),
+            Role::Executor,
+            &no_lanes(),
+        ));
+        let base = control
+            .rows
+            .iter()
+            .find(|r| r.number == 4)
+            .expect("row 4")
+            .lines
+            .iter()
+            .find(|l| l.label.contains("command that finds it"))
+            .expect("the cut-commit command")
+            .text
+            .clone();
+        assert!(
+            base.contains("Checkpoint:"),
+            "the overlay itself is sound: verbatim, the command carries the marker: {base}"
+        );
+
+        // AND THE VERBATIM ARM IS ALSO THE CONTROL FOR THE ARITY RULE: the
+        // dispatch bullet names this marker MORE THAN ONCE and means it
+        // once, so the refusal below is on distinct SPELLINGS rather than
+        // on occurrences. An arity rule counting occurrences would take
+        // row 4 down against the document this project publishes.
+        let dispatch_bullet = bullet_containing(&live_text, "DISPATCH FROM THE LAST CHECKPOINT")
+            .expect("the live document carries one dispatch bullet");
+        let occurrences = dispatch_bullet.matches("`Checkpoint:`").count();
+        assert!(
+            occurrences > 1,
+            "the control is not vacuous: the dispatch bullet spells the marker {occurrences} \
+             time(s), so agreeing repeats are the live case"
+        );
+
+        // THE MUTATION, SHOWN CAPABLE OF DOING SOMETHING BEFORE ITS ZERO
+        // IS BELIEVED: the marker is a BACKTICKED run, so un-quoting every
+        // occurrence takes it out of the assembler's reach while leaving
+        // the sentence a human reads unchanged — which is exactly the edit
+        // a default would have absorbed in silence.
+        let quoted = "`Checkpoint:`";
+        assert!(
+            live_text.contains(quoted),
+            "this body plants against a marker the document actually backticks"
+        );
+        let stripped = live_text.replace(quoted, "Checkpoint:");
+        match assemble(&overlaid(stripped), &a_card(), Role::Executor, &no_lanes()) {
+            BriefOutcome::Unassemblable { rows } => assert!(
+                rows.iter().any(|r| r.number == 4 && r.path == CONVENTIONS),
+                "an absent marker takes row 4 down by name: {rows:?}"
+            ),
+            other => panic!("an absent marker was defaulted instead of refused: {other:?}"),
+        }
+
+        // AND TWO MARKERS THAT DISAGREE ARE AN AMBIGUITY, NOT A CHOICE —
+        // the arity half of the parity `laneSpellings` carries. One of the
+        // agreeing occurrences is renamed, so the bullet now spells two
+        // DIFFERENT markers where it used to spell one twice.
+        let one_of_them = "`Checkpoint:` commit on main";
+        assert_eq!(
+            live_text.matches(one_of_them).count(),
+            1,
+            "this arm renames the dispatch bullet's own first occurrence, and nothing else"
+        );
+        let disagreeing = live_text.replace(one_of_them, "`Landing:` commit on main");
+        assert_ne!(
+            disagreeing, live_text,
+            "the rename above is shown capable of doing something"
+        );
+        match assemble(
+            &overlaid(disagreeing),
+            &a_card(),
+            Role::Executor,
+            &no_lanes(),
+        ) {
+            BriefOutcome::Unassemblable { rows } => assert!(
+                rows.iter().any(|r| r.number == 4 && r.path == CONVENTIONS),
+                "two disagreeing markers take row 4 down by name: {rows:?}"
+            ),
+            other => panic!("two disagreeing markers answered instead of refusing: {other:?}"),
         }
     }
 

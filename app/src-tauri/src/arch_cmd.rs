@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::Serialize;
 
@@ -204,6 +204,10 @@ mod tests {
     use super::*;
     use crate::docs_watch::{now_ms, WatchCtl};
     use nputer_index::{index, write_graph, IndexOptions};
+    // `Path` is borrowed by `TempTree::root` and by nothing outside this
+    // module, so it belongs to the test build alone — at the file head it
+    // was an unused import on every non-test `cargo build` (T-236-s6).
+    use std::path::Path;
     use std::sync::atomic::AtomicU64;
     use std::sync::{mpsc, Arc};
 
