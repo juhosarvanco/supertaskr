@@ -87,11 +87,16 @@ moves), `lib/parser/src/lanes.ts`'s `rule()`.
 
 The architect seat. The residual of V-T-219's own finding, one
 criterion over: a fence whose tokens cannot be RESOLVED is startable
-when no lane is live, and the wider `unusable.length > 0` remedy was
+when no lane is live. The wider `unusable.length > 0` remedy was
 measured to move T-164-s1 (planned, `touches: [bin]`) from startable to
-unfenceable — so the card SHALL decide that case on the record (a
-planned card whose only token resolves to nothing is not dispatchable,
-and says why), not in passing. One lane with the sibling below.
+unfenceable ORACLE-LESS ONLY — at the surface that dispatches,
+`brief.mjs --dispatch` supplies the known-path oracle, `bin/.gitkeep`
+is tracked, `bin` resolves as a path and no live card moves (the
+verifier's phase-1 measurement; the triage stamp above had dropped the
+qualifier). So the card SHALL decide the case on the record with the
+oracle supplied — a planned card whose only token resolves to nothing
+is not dispatchable, and says why — proved on a PLANTED card, and SHALL
+NOT edit T-164-s1's card. One lane with the sibling below.
 
 ## Absorbs: T-219-s2 (2026-09-02)
 
