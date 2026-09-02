@@ -1,26 +1,57 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import {
+  ACTIVE_RUN_STATUSES,
   ANNOUNCED_ALLOW_CODES,
+  CANCEL_CI_ENV,
   CHECK_ARGV,
   CHECK_DIR_REL_PATH,
   CHECK_EXIT,
+  CI_WORKFLOW_REL_PATH,
+  COMPLETED_RUN_STATUS,
+  FAILED_CONCLUSION,
+  GH_BIN,
+  GH_EXIT,
   GIT_GLOBAL_OPTS_WITH_VALUE,
   GRAPH_REL_PATH,
   INDEX_CRATE_MANIFEST_REL_PATH,
   NON_PUSHING_FLAGS,
+  NON_VERDICT_CONCLUSIONS,
+  RUN_LIST_JSON_FIELDS,
+  RUN_LIST_REQUIRED_FIELDS,
+  RUN_VIEW_JSON_FIELDS,
   UNRESOLVABLE_TOKEN_RE,
+  acknowledgedRunIds,
+  classifyGhFailure,
   commandOf,
   decide,
+  elapsedSince,
+  failingStep,
+  ghRunListArgv,
+  ghRunViewArgv,
   gitInvocations,
   isPush,
   laneCanRegenerate,
+  newestVerdictRun,
+  parseRunJobs,
+  parseRunList,
   pushCwds,
+  reachesPackage,
   repointedBy,
+  runStartedAt,
   segments,
+  stepWorkingDirectory,
 } from "../../../.claude/hooks/push-guard.mjs";
 import {
   MANIFEST_REL_PATH,
@@ -115,6 +146,135 @@ function writeCargoShim(root: string, code: number, report: string): string {
   return marker;
 }
 
+/* ═════════════ T-237 — THE CI SHIM, AND WHY IT IS NOT OPTIONAL ══════
+ *
+ * EVERY FIXTURE IN THIS FILE CARRIES A `gh` SHIM, including the ones
+ * written before this card existed, and that is a correctness
+ * requirement rather than tidiness. Measured on 2026-09-02: inside a
+ * fixture of the shape below — a local BARE `origin` — the real `gh`
+ * exits 1 with *"none of the git remotes … point to a known GitHub
+ * host"*. So a body that reached the real binary would be GREEN on a
+ * developer's machine, EXIT 4 (unauthenticated) on a CI runner, and
+ * would need the `actions: read` scope that `workflow-permissions.spec.ts`
+ * reds on — its EXCEPTIONS table is empty. The shim is first on the
+ * fixture's own PATH, exactly as `writeCargoShim`'s is, so nothing here
+ * touches the network in either direction.
+ */
+
+/** What a fixture's `gh` shim answers, per subcommand. */
+interface GhPlan {
+  list?: { code?: number; stdout?: string; stderr?: string };
+  view?: { code?: number; stdout?: string; stderr?: string };
+}
+
+/**
+ * A `gh` shim: records EACH ARGUMENT ON ITS OWN LINE, then answers.
+ *
+ * The per-argument record is this card's *"argv arrays and no shell"*
+ * criterion made mechanical. `"$*"` would flatten the list and prove
+ * nothing; `for a in "$@"` preserves the boundaries, so a body can drive
+ * a branch name carrying `;`, `$`, `&` and a backtick and read back that
+ * it arrived as ONE argument with nothing executed.
+ */
+function writeGhShim(root: string, plan: GhPlan): string {
+  const bin = path.join(root, "bin");
+  mkdirSync(bin, { recursive: true });
+  const marker = path.join(root, "gh-was-run.txt");
+  const arm = (sub: string, out: { code?: number; stdout?: string; stderr?: string } | undefined) =>
+    `if [ "$2" = ${JSON.stringify(sub)} ]; then\n` +
+    `cat <<'GHOUT'\n${out?.stdout ?? ""}\nGHOUT\n` +
+    `cat >&2 <<'GHERR'\n${out?.stderr ?? ""}\nGHERR\n` +
+    `exit ${String(out?.code ?? 0)}\nfi\n`;
+  writeFileSync(
+    path.join(bin, "gh"),
+    "#!/bin/sh\n" +
+      `for a in "$@"; do printf 'arg=%s\\n' "$a" >> ${JSON.stringify(marker)}; done\n` +
+      `printf 'end\\n' >> ${JSON.stringify(marker)}\n` +
+      arm("list", plan.list ?? { stdout: "[]" }) +
+      arm("view", plan.view) +
+      "printf 'this shim was called with something it does not model\\n' >&2\nexit 99\n",
+    { mode: 0o755 },
+  );
+  return marker;
+}
+
+/** The arguments the shim was handed, one invocation per inner array. */
+function ghCalls(fx: { ghMarker: string }): string[][] {
+  if (!existsSync(fx.ghMarker)) return [];
+  const calls: string[][] = [];
+  let current: string[] = [];
+  for (const line of readFileSync(fx.ghMarker, "utf8").split("\n")) {
+    if (line === "end") {
+      calls.push(current);
+      current = [];
+    } else if (line.startsWith("arg=")) current.push(line.slice("arg=".length));
+  }
+  return calls;
+}
+
+/** One `gh run list` row, with only what a body wants to move overridden. */
+function runRow(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    conclusion: "success",
+    createdAt: "2026-09-01T12:00:00Z",
+    databaseId: 4242,
+    displayTitle: "a run this fixture invented",
+    headSha: "0".repeat(40),
+    startedAt: "2026-09-01T12:00:05Z",
+    status: COMPLETED_RUN_STATUS,
+    url: "https://example.invalid/actions/runs/4242",
+    ...over,
+  };
+}
+
+/**
+ * A `gh run view --json jobs` answer whose failing step is `step`.
+ *
+ * The shape is the REAL one, read off this repository's own run
+ * 33575869087 on 2026-09-02: `{ jobs: [ { name, conclusion, steps: [ {
+ * name, conclusion } ] } ] }`. A passing step precedes the failing one
+ * so a body can tell "the first failing step" from "the first step".
+ */
+function jobsWithFailingStep(step: string): string {
+  return JSON.stringify({
+    jobs: [
+      {
+        name: "linux",
+        conclusion: FAILED_CONCLUSION,
+        steps: [
+          { name: "Set up job", conclusion: "success" },
+          { name: step, conclusion: FAILED_CONCLUSION },
+        ],
+      },
+    ],
+  });
+}
+
+/**
+ * The WORKFLOW a fixture plants, so the step→package map is DERIVED from
+ * the pushed checkout rather than typed by this spec.
+ *
+ * Its two working directories are this repository's own, and a body
+ * pins the same derivation against the REAL `.github/workflows/ci.yml`
+ * so a fixture that drifted from the article could not stay green alone.
+ */
+const FIXTURE_WORKFLOW =
+  "name: ci\n" +
+  "on:\n  push:\n    branches: [main]\n" +
+  "concurrency:\n  group: ci-${{ github.ref }}\n  cancel-in-progress: true\n" +
+  "jobs:\n" +
+  "  linux:\n" +
+  "    runs-on: ubuntu-24.04\n" +
+  "    steps:\n" +
+  "      - name: Set up job\n" +
+  "        run: 'true'\n" +
+  "      - name: e2e lane\n" +
+  "        working-directory: tools/e2e\n" +
+  "        run: npm test\n" +
+  "      - name: app suite\n" +
+  "        working-directory: app\n" +
+  "        run: npm test\n";
+
 /** A report shaped like the real check's STALE render (`check.rs`, `render`). */
 const STALE_REPORT =
   "[nputer-index] graph.json is STALE - the committed graph does not match a fresh index of this tree\n" +
@@ -136,6 +296,42 @@ interface Fixture {
   remote: string;
   /** The local commit that has NOT reached `remote` yet. */
   unpushed: string;
+  /** The commit BEFORE it — what a CI run in this fixture measured (T-237). */
+  base: string;
+  /** Where the `gh` shim records the arguments it was handed (T-237). */
+  ghMarker: string;
+  /**
+   * Whether this fixture's runners must build a PATH with NO `gh` on it
+   * at all — the third criterion's "absent" half. It cannot be done by
+   * omitting the shim, because this machine has a real `gh` (measured:
+   * /opt/homebrew/bin/gh) and every other machine might.
+   */
+  ghAbsent: boolean;
+}
+
+/**
+ * THE PATH A RUNNER GIVES A FIXTURE.
+ *
+ * Ordinarily the fixture's own `bin/` first and the real environment
+ * behind it, which is what every body before T-237 had. For the
+ * `ghAbsent` half it is the fixture's `bin/` plus a directory holding
+ * NOTHING BUT A LINK TO THE REAL `git` — because the arms under test
+ * still shell out to git, and dropping the environment's PATH wholesale
+ * would make "gh is absent" indistinguishable from "git is absent too".
+ */
+function fixturePath(fx: Fixture): string {
+  const bin = path.join(fx.root, "bin");
+  return fx.ghAbsent
+    ? [bin, path.join(fx.root, "gitonly")].join(path.delimiter)
+    : [bin, process.env["PATH"] ?? ""].join(path.delimiter);
+}
+
+/** The real `git`, found the way an execvp would find it. */
+function realGit(): string {
+  for (const dir of (process.env["PATH"] ?? "").split(path.delimiter)) {
+    if (dir !== "" && existsSync(path.join(dir, "git"))) return path.join(dir, "git");
+  }
+  throw new Error("no `git` on PATH — this suite cannot build its fixtures");
 }
 
 /**
@@ -153,6 +349,21 @@ type TokenState = "fresh" | "missing" | "stale" | "red" | "partial";
 
 /** A tree hash no repository has, for the STALE case. */
 const FOREIGN_TREE = "0".repeat(40);
+
+/**
+ * A `gh` that answers "no runs for that branch", for the `decide` bodies
+ * that reach the CI arm without a fixture PATH to shim (T-237).
+ *
+ * NOT AN OPTIONAL TIDINESS. `decide`'s default runner spawns the real
+ * `gh`, and this machine has one — so a body that omitted this would
+ * make a network call from the suite, and would answer differently on a
+ * developer's machine and on a CI runner.
+ */
+const NO_RUNS = (): { status: number; stdout: string; stderr: string } => ({
+  status: GH_EXIT.OK,
+  stdout: "[]",
+  stderr: "",
+});
 
 /** One suite's entry, as the runner would have written it. */
 function suiteVerdict(suite: string, verdict: string, ref: string) {
@@ -190,7 +401,18 @@ function fixture(
   name: string,
   code: number,
   report: string,
-  opts: { nputer?: boolean; branch?: string; fence?: string[]; token?: TokenState } = {},
+  opts: {
+    nputer?: boolean;
+    branch?: string;
+    fence?: string[];
+    token?: TokenState;
+    /** T-237: what this fixture's `gh` shim answers. Default: no runs. */
+    ci?: GhPlan;
+    /** T-237: build a PATH with no `gh` on it at all. */
+    ghAbsent?: boolean;
+    /** T-237: the path the SECOND commit changes — what the push carries. */
+    change?: string;
+  } = {},
 ): Fixture {
   const root = mkdtempSync(path.join(os.tmpdir(), `T-167-s8-${name}-`));
   SCRATCH.push(root);
@@ -222,9 +444,20 @@ function fixture(
   // mutant that reverted the second commit's content left the commit
   // intact anyway, so the arm's precondition could not be killed from the
   // side it actually depends on.
-  writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\nremote.git/\n");
+  // T-237: the workflow is committed in the FIRST commit, so the paths a
+  // push carries are exactly the second commit's and a body can count
+  // them. `gh-was-run.txt` and `gitonly/` join the ignore list for the
+  // reason the two above are on it — the "clean tree" control must be
+  // able to be clean.
+  mkdirSync(path.join(root, path.dirname(CI_WORKFLOW_REL_PATH)), { recursive: true });
+  writeFileSync(path.join(root, CI_WORKFLOW_REL_PATH), FIXTURE_WORKFLOW);
+  writeFileSync(
+    path.join(root, ".gitignore"),
+    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.nputer/\nremote.git/\n",
+  );
   git("add", "-A");
   git("commit", "-qm", "fixture");
+  const base = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
   // A REAL REMOTE, so a push can be observed to have happened or not
   // happened rather than inferred from an exit code. The bare repository
@@ -237,7 +470,9 @@ function fixture(
   // The commit the guarded push WOULD carry. It is deliberately made
   // after the initial push, so the remote is one commit behind and
   // "did the push happen?" has a mechanical answer.
-  writeFileSync(path.join(root, "README.md"), "fixture, second commit\n");
+  const changed = opts.change ?? "README.md";
+  mkdirSync(path.join(root, path.dirname(changed)), { recursive: true });
+  writeFileSync(path.join(root, changed), "fixture, second commit\n");
   git("add", "-A");
   git("commit", "-qm", "the commit a guarded push would carry");
   const unpushed = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], {
@@ -265,7 +500,28 @@ function fixture(
   // TREE, so a token planted before the second commit would be stale in
   // every fixture and the default would silently stop being `fresh`.
   plantToken(root, opts.token ?? "fresh");
-  return { root, remote, unpushed, marker: writeCargoShim(root, code, report) };
+  const gitonly = path.join(root, "gitonly");
+  mkdirSync(gitonly, { recursive: true });
+  symlinkSync(realGit(), path.join(gitonly, "git"));
+  return {
+    root,
+    remote,
+    unpushed,
+    base,
+    marker: writeCargoShim(root, code, report),
+    // ABSENT MEANS BOTH HALVES, and the first draft had only the second.
+    // A narrowed PATH is not enough while the fixture's own `bin/` is on
+    // it carrying a shim: the probe found that shim and the body read
+    // its exit 99 as a `gh` that answered. So the absent fixture writes
+    // NO shim, and the marker path it names is one nothing will create —
+    // which is what makes `ghCalls` empty a measurement rather than a
+    // tautology.
+    ghMarker:
+      opts.ghAbsent === true
+        ? path.join(root, "gh-was-run.txt")
+        : writeGhShim(root, opts.ci ?? {}),
+    ghAbsent: opts.ghAbsent === true,
+  };
 }
 
 /** What `origin` actually holds for `main` right now. */
@@ -297,11 +553,7 @@ function runWiredHook(fx: Fixture, command: string): { status: number | null; st
   const out = spawnSync("sh", ["-c", wired], {
     input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: fx.root }),
     encoding: "utf8",
-    env: {
-      ...process.env,
-      CLAUDE_PROJECT_DIR: repoRoot,
-      PATH: `${path.join(fx.root, "bin")}${path.delimiter}${process.env["PATH"] ?? ""}`,
-    },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: repoRoot, PATH: fixturePath(fx) },
   });
   return { status: out.status, stderr: String(out.stderr ?? "") };
 }
@@ -336,7 +588,7 @@ function runHook(fx: Fixture, command: string): { status: number | null; stderr:
         cwd: fx.root,
       }),
       encoding: "utf8",
-      env: { ...process.env, PATH: `${path.join(fx.root, "bin")}${path.delimiter}${process.env["PATH"] ?? ""}` },
+      env: { ...process.env, PATH: fixturePath(fx) },
     },
   );
   return { status: out.status, stderr: String(out.stderr ?? "") };
@@ -824,7 +1076,10 @@ function boardFixture(
   mkdirSync(path.join(root, CHECK_DIR_REL_PATH), { recursive: true });
   mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
   writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
-  writeFileSync(path.join(root, ".gitignore"), "bin/\ncargo-was-run.txt\n.nputer/\nremote.git/\n");
+  writeFileSync(
+    path.join(root, ".gitignore"),
+    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.nputer/\nremote.git/\n",
+  );
 
   mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
   const card = "docs/tasks/T-901-a-well-formed-card.md";
@@ -858,7 +1113,24 @@ function boardFixture(
   }).trim();
 
   plantToken(root, opts.token ?? "fresh");
-  return { root, remote, unpushed, card, marker: writeCargoShim(root, CHECK_EXIT.CURRENT, CURRENT_REPORT) };
+  const gitonly = path.join(root, "gitonly");
+  mkdirSync(gitonly, { recursive: true });
+  symlinkSync(realGit(), path.join(gitonly, "git"));
+  return {
+    root,
+    remote,
+    unpushed,
+    // A board fixture has no separate base to compare a CI run against —
+    // nothing here drives the reach sentence, so it names its own first
+    // commit rather than inventing a second meaning for the field.
+    base: execFileSync("git", ["-C", root, "rev-parse", "HEAD~1"], { encoding: "utf8" }).trim(),
+    card,
+    marker: writeCargoShim(root, CHECK_EXIT.CURRENT, CURRENT_REPORT),
+    // T-237: a board fixture reaches the CI arm exactly as any other
+    // does, so it gets the same shim — never the machine's real `gh`.
+    ghMarker: writeGhShim(root, {}),
+    ghAbsent: false,
+  };
 }
 
 /* ───────────── the token's own contract ─────────────────────────── */
@@ -1164,6 +1436,7 @@ test("cheap checks that could not run are announced, and allow", () => {
     { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
     () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
     cannotRun,
+    NO_RUNS,
   );
   expect(decision.verdict).toBe("allow");
   expect(decision.notices?.join("\n")).toContain("THE CHEAP CHECKS WERE NOT RUN");
@@ -1194,6 +1467,7 @@ test("a checkout whose HEAD tree git will not name is announced, and allowed", (
     { toolName: "Bash", toolInput: { command: "git push" }, cwd: root },
     () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
     () => ({ status: 0, stdout: "", stderr: "" }),
+    NO_RUNS,
   );
   expect(decision.verdict).toBe("allow");
   expect(decision.notices?.join("\n")).toContain("THE VERDICT TOKEN WAS NOT CHECKED");
@@ -1689,4 +1963,587 @@ test("the guard is wired into .claude/settings.json on the Bash matcher", () => 
   expect(bash?.hooks.map((h) => h.command).join(" ")).toContain("push-guard-hook.mjs");
   // The fence hook's own matcher is untouched by this card.
   expect(settings.hooks.PreToolUse.some((h) => h.matcher === "Edit|Write|NotebookEdit")).toBe(true);
+});
+
+/* ═══════════ T-237 — THE RUN THAT IS ALREADY RUNNING ════════════════
+ *
+ * Everything above this line asks questions about THIS MACHINE — the
+ * graph, the board, the fence, the token. Below it is the first arm that
+ * asks the one machine that is not this one, and the two facts it asks
+ * for have deliberately different shapes: a run still going REFUSES,
+ * because a push cancels it; a run that already failed ANNOUNCES,
+ * because pushing over a red is how a red gets fixed.
+ *
+ * ── NOT ONE OF THESE BODIES REACHES THE REAL `gh` ────────────────────
+ * Every fixture carries a `gh` shim on its own `bin/`, ahead of whatever
+ * the machine has, and the "absent" half is built by narrowing PATH to
+ * directories this file created rather than by deleting a shim. The
+ * reason is measured rather than stylistic: inside a fixture whose
+ * `origin` is a local bare repository the real `gh` exits 1 with *"none
+ * of the git remotes … point to a known GitHub host"*, so a body that
+ * reached it would be green here, exit 4 on a CI runner, and would want
+ * an `actions: read` scope that `workflow-permissions.spec.ts` reds on.
+ *
+ * ── AND EVERY ALLOW HERE ASSERTS THE GUARD'S STATE FIRST ─────────────
+ * docs/CONVENTIONS.md's LIFTING A SAFETY GUARD bullet, obeyed the way
+ * the bodies above obey it: each `allow` below is paired with the SAME
+ * fixture shape refusing, so an arm that never fires cannot pass.
+ */
+
+/** Re-arm a fixture's `gh` shim once facts about the fixture are known. */
+function armGh(fx: Fixture, plan: GhPlan): void {
+  writeGhShim(fx.root, plan);
+}
+
+/** `gh run list` answering exactly these rows. */
+function listOf(rows: Record<string, unknown>[]): { stdout: string } {
+  return { stdout: JSON.stringify(rows) };
+}
+
+test("the two commands this arm runs are the ones docs/CONVENTIONS.md publishes", () => {
+  // THE AUTHORITY IS THE DOCUMENT, not this file — the treatment
+  // `CHECK_ARGV` gets against the Rust bullet, applied to the bullet
+  // that already told every seat to read CI by hand.
+  const bullet = String(conventionsBullet(conventionsText(), "AND THEN READ IT"));
+  const published = [...bullet.replace(/\s+/g, " ").matchAll(/`([^`]+)`/g)].map((m) => String(m[1]));
+  expect(published.length, "the bullet publishes no backticked commands").toBeGreaterThan(0);
+  const subcommands = published
+    .filter((c) => c.startsWith(`${GH_BIN} `))
+    .map((c) => c.split(/\s+/).slice(1, 3).join(" "));
+  expect(subcommands, "the bullet no longer names `gh run list`").toContain("run list");
+  expect(subcommands, "the bullet no longer names `gh run view`").toContain("run view");
+
+  // And this guard runs those two, with the branch and the id as
+  // ELEMENTS rather than as text spliced into a command.
+  expect(ghRunListArgv("main").slice(0, 2)).toEqual(["run", "list"]);
+  expect(ghRunListArgv("main")).toContain("main");
+  expect(ghRunViewArgv("4242").slice(0, 3)).toEqual(["run", "view", "4242"]);
+  expect(ghRunListArgv("main")).toContain("--json");
+  expect(ghRunViewArgv("4242")).toContain("--json");
+
+  // The field split this arm's strictness is spent on: every REQUIRED
+  // field is asked for, and the required set is the small one.
+  for (const field of RUN_LIST_REQUIRED_FIELDS) {
+    expect(RUN_LIST_JSON_FIELDS, `${field} is required but never asked for`).toContain(field);
+  }
+  expect([...RUN_LIST_REQUIRED_FIELDS].sort()).toEqual(["conclusion", "databaseId", "status"]);
+
+  // MEASURED AGAINST THE REAL `gh` ON 2026-09-02, and pinned because the
+  // obvious code gets both wrong: `run list` publishes NO `jobs` field —
+  // a failing step is only readable through `run view` — and `updatedAt`
+  // is not a clock, so it is not asked for at all.
+  expect(RUN_LIST_JSON_FIELDS, "`gh run list --json` has no `jobs`").not.toContain("jobs");
+  expect(RUN_VIEW_JSON_FIELDS).toContain("jobs");
+  expect(RUN_LIST_JSON_FIELDS, "`updatedAt` moves while a run is still running").not.toContain(
+    "updatedAt",
+  );
+  expect(RUN_LIST_JSON_FIELDS).toContain("startedAt");
+});
+
+test("a failing step's package is READ out of the workflow, in this repository and in a fixture", () => {
+  // The map from "which step failed" to "which package it was testing"
+  // is the repository's own `working-directory:`, never a table typed
+  // here — NEVER TYPE A PATH YOU CAN DERIVE, and a step renamed in
+  // ci.yml then moves both sides at once.
+  const real = readFileSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH), "utf8");
+  for (const [step, dir] of [
+    ["e2e lane", "tools/e2e"],
+    ["app suite", "app"],
+    ["parser build", "lib/parser"],
+    ["cargo suite (both workspace crates; incl. the T-018 sentinel live tests)", "app/src-tauri"],
+  ] as const) {
+    expect(stepWorkingDirectory(real, step), `${step} no longer maps to ${dir}`).toBe(dir);
+    expect(existsSync(path.join(repoRoot, dir)), `${dir} is not in this tree`).toBe(true);
+  }
+  // A step that runs at the repository root has no working directory,
+  // and a step nobody wrote down has none either — DIFFERENT sentences
+  // in the guard, and the same `undefined` here.
+  expect(
+    stepWorkingDirectory(real, "Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)"),
+  ).toBeUndefined();
+  expect(stepWorkingDirectory(real, "a step this workflow never had")).toBeUndefined();
+  expect(stepWorkingDirectory(real, "")).toBeUndefined();
+  // The fixture's own workflow answers the same way, so a fixture that
+  // drifted from the article could not stay green by itself.
+  expect(stepWorkingDirectory(FIXTURE_WORKFLOW, "e2e lane")).toBe("tools/e2e");
+  expect(stepWorkingDirectory(FIXTURE_WORKFLOW, "Set up job")).toBeUndefined();
+
+  // And the containment test the sentence rests on.
+  expect(reachesPackage(["tools/e2e/tests/x.ts"], "tools/e2e")).toBe(true);
+  expect(reachesPackage(["tools/e2e"], "tools/e2e")).toBe(true);
+  expect(reachesPackage(["tools/e2e-other/x"], "tools/e2e")).toBe(false);
+  expect(reachesPackage(["README.md"], "tools/e2e")).toBe(false);
+  expect(reachesPackage([], "tools/e2e")).toBe(false);
+  // No working directory means the repository root, which every push reaches.
+  expect(reachesPackage(["README.md"], undefined)).toBe(true);
+});
+
+test("a run still in flight refuses the push, and unguarded that same push lands", () => {
+  // THE DEFECT, REPRODUCED. Without the guard the push goes out and the
+  // run measuring the previous tree is cancelled — four times on
+  // 2026-09-01, and main was red for five hours behind it.
+  const live = [runRow({ status: "in_progress", conclusion: "", databaseId: 7001 })];
+  const unguarded = fixture("ci-live-unguarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf(live) },
+  });
+  expect(remoteTip(unguarded), "the remote must start one commit behind").not.toBe(
+    unguarded.unpushed,
+  );
+  execFileSync(
+    "git",
+    [
+      "-C",
+      unguarded.root,
+      ...NO_BACKGROUND_MAINTENANCE,
+      "push",
+      "-q",
+      "origin",
+      "HEAD:refs/heads/main",
+    ],
+    { stdio: "pipe" },
+  );
+  expect(remoteTip(unguarded), "unguarded, the cancelling push lands — this is the red").toBe(
+    unguarded.unpushed,
+  );
+
+  // WITH the guard, through the command settings.json wires.
+  const guarded = fixture("ci-live-guarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf(live) },
+  });
+  const before = remoteTip(guarded);
+  const { refused, pushed } = pushThroughGuard(guarded);
+  expect(refused, "a live run must refuse the push").toBe(true);
+  expect(pushed).toBe(false);
+  expect(remoteTip(guarded), "the cancelling push must NOT have landed").toBe(before);
+
+  const { stderr } = runWiredHook(guarded, "git push origin main");
+  expect(stderr).toContain("PUSH REFUSED");
+  expect(stderr, "the refusal must name the run").toContain("7001");
+  expect(stderr).toContain("would CANCEL it");
+  expect(stderr, "the remedy is the run, waited for").toContain(`${GH_BIN} run watch 7001`);
+  expect(stderr, "and the acknowledgement names the run").toContain(`${CANCEL_CI_ENV}=7001`);
+  expect(stderr, "the elapsed time is the card's, and is not `an unreadable time`").toMatch(
+    /running for \d+[smh]/,
+  );
+});
+
+test("the same push lands once that run is completed — the positive control", () => {
+  // THE ARM THAT TELLS A WORKING GUARD FROM ONE THAT REFUSES EVERYTHING.
+  // Same builder, same wired hook, same remote, same run id: the ONE
+  // difference is a `status` of `completed` with a verdict behind it.
+  const fx = fixture("ci-completed", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: {
+      list: listOf([
+        runRow({ status: COMPLETED_RUN_STATUS, conclusion: "success", databaseId: 7001 }),
+      ]),
+    },
+  });
+  expect(remoteTip(fx)).not.toBe(fx.unpushed);
+  const { refused, pushed } = pushThroughGuard(fx);
+  expect(refused, "a completed run must not refuse the push").toBe(false);
+  expect(pushed).toBe(true);
+  expect(remoteTip(fx), "the ordinary push must land").toBe(fx.unpushed);
+  // And a green CI is SILENT: this file's rule that an ordinary allow
+  // says nothing.
+  expect(runWiredHook(fx, "git push origin main").stderr).toBe("");
+});
+
+test("the acknowledgement names the run, and nothing else acknowledges anything", () => {
+  const live = listOf([runRow({ status: "queued", conclusion: "", databaseId: 7002 })]);
+  const fx = fixture("ci-ack", CHECK_EXIT.CURRENT, CURRENT_REPORT, { ci: { list: live } });
+
+  // The control FIRST: unacknowledged, this push is refused.
+  expect(runWiredHook(fx, "git push origin main").status).toBe(2);
+
+  const named = runWiredHook(fx, `${CANCEL_CI_ENV}=7002 git push origin main`);
+  expect(named.status, "a seat that names the run may cancel it").toBe(0);
+  expect(named.stderr).toContain("WILL CANCEL IT");
+  expect(named.stderr).toContain("7002");
+
+  // A DIFFERENT id is not an acknowledgement of THIS run, which is what
+  // makes the hatch unable to outlive the run it was for.
+  expect(runWiredHook(fx, `${CANCEL_CI_ENV}=7001 git push origin main`).status).toBe(2);
+  // Nor is the name appearing somewhere that is not an environment
+  // prefix on the push's own segment.
+  expect(runWiredHook(fx, `echo ${CANCEL_CI_ENV}=7002 && git push origin main`).status).toBe(2);
+  expect(runWiredHook(fx, `git push origin main ${CANCEL_CI_ENV}=7002`).status).toBe(2);
+
+  // The reader under it, driven directly over the shapes above.
+  expect(acknowledgedRunIds(`${CANCEL_CI_ENV}=9 git push`, {})).toEqual(["9"]);
+  expect(acknowledgedRunIds("git push", { [CANCEL_CI_ENV]: "9" })).toEqual(["9"]);
+  expect(acknowledgedRunIds(`echo ${CANCEL_CI_ENV}=9 && git push`, {})).toEqual([]);
+  expect(acknowledgedRunIds(`${CANCEL_CI_ENV}=9 git push --dry-run`, {})).toEqual([]);
+  expect(acknowledgedRunIds("git push", {})).toEqual([]);
+});
+
+test("a red CI is ANNOUNCED with its failing step, and is never a refusal", () => {
+  // The second fact: this one may not refuse, because pushing over a red
+  // is the ordinary way a red gets fixed.
+  const fx = fixture("ci-red", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(fx, {
+    list: listOf([runRow({ conclusion: FAILED_CONCLUSION, databaseId: 7100, headSha: fx.base })]),
+    view: { stdout: jobsWithFailingStep("e2e lane") },
+  });
+  const { status, stderr } = runWiredHook(fx, "git push origin main");
+  expect(status, "a red CI must NOT refuse the push").toBe(0);
+  expect(stderr).toContain("CI IS RED UNDER THIS PUSH");
+  expect(stderr, "the run id").toContain("7100");
+  expect(stderr, "the failing step, and not merely the job").toContain("e2e lane");
+  expect(stderr, "the step's package, read out of the workflow").toContain("tools/e2e/");
+  expect(stderr).toContain("THIS IS NOT A REFUSAL");
+  expect(stderr).toContain(`${GH_BIN} run view 7100 --log-failed`);
+  // This fixture's push changes README.md, which is not under tools/e2e.
+  expect(stderr).toContain("does NOT change anything under it");
+
+  // THE DISCRIMINATION: the same run, the same failing step, and a push
+  // that DOES reach that step's package. Without this the sentence is
+  // satisfied by a guard that always says one of the two.
+  const fixing = fixture("ci-red-fix", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    change: "tools/e2e/tests/a-new-body.spec.ts",
+  });
+  armGh(fixing, {
+    list: listOf([
+      runRow({ conclusion: FAILED_CONCLUSION, databaseId: 7100, headSha: fixing.base }),
+    ]),
+    view: { stdout: jobsWithFailingStep("e2e lane") },
+  });
+  const fixRun = runWiredHook(fixing, "git push origin main");
+  expect(fixRun.status).toBe(0);
+  expect(fixRun.stderr).toContain("DOES change anything under it");
+  expect(fixRun.stderr).toContain("you are pushing a fix");
+
+  // And where the run's own commit is not in this checkout, the reach is
+  // declared unknown rather than answered — a guard that said "no"
+  // because it could not look would be telling the seat something false
+  // about its own tree.
+  const foreign = fixture("ci-red-foreign", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(foreign, {
+    list: listOf([
+      runRow({ conclusion: FAILED_CONCLUSION, databaseId: 7100, headSha: "9".repeat(40) }),
+    ]),
+    view: { stdout: jobsWithFailingStep("e2e lane") },
+  });
+  expect(runWiredHook(foreign, "git push origin main").stderr).toContain("is UNKNOWN");
+});
+
+test("the newest COMPLETED run is not the question — cancellations are skipped and counted", () => {
+  // `cancel-in-progress: true` is what makes this arm's obvious version
+  // wrong: a batch of rapid pushes leaves COMPLETED runs that concluded
+  // nothing, and this card's own instance sat behind a stack of them.
+  const workflow = readFileSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH), "utf8");
+  expect(workflow, "if CI stopped cancelling, this whole body's premise moved").toContain(
+    "cancel-in-progress: true",
+  );
+  expect(NON_VERDICT_CONCLUSIONS).toContain("cancelled");
+  expect(NON_VERDICT_CONCLUSIONS, "a running run has concluded nothing").toContain("");
+
+  const runs = [
+    runRow({ status: COMPLETED_RUN_STATUS, conclusion: "cancelled", databaseId: 3 }),
+    runRow({ status: COMPLETED_RUN_STATUS, conclusion: "cancelled", databaseId: 2 }),
+    runRow({ status: COMPLETED_RUN_STATUS, conclusion: FAILED_CONCLUSION, databaseId: 1 }),
+  ];
+  const parsed = parseRunList(JSON.stringify(runs));
+  expect("runs" in parsed).toBe(true);
+  const found = newestVerdictRun("runs" in parsed ? parsed.runs : []);
+  expect(found?.run.id, "the two cancellations are not the verdict").toBe("1");
+  expect(found?.skipped, "and the count of them is the batching rule's footprint").toBe(2);
+
+  const fx = fixture("ci-cancelled-stack", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(fx, {
+    list: listOf(runs.map((r) => (r["databaseId"] === 1 ? { ...r, headSha: fx.base } : r))),
+    view: { stdout: jobsWithFailingStep("app suite") },
+  });
+  const { status, stderr } = runWiredHook(fx, "git push origin main");
+  expect(status, "an announcement, still").toBe(0);
+  expect(stderr).toContain("CI IS RED UNDER THIS PUSH");
+  expect(stderr).toContain("2 newer run(s) reached NO verdict");
+  expect(stderr, "the failing step's package, for a different step").toContain("app/");
+
+  // THE CONTROL, from the other side: a `success` in front of an older
+  // failure is the verdict, and it is silent.
+  const green = fixture("ci-green-over-red", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(green, {
+    list: listOf([
+      runRow({ status: COMPLETED_RUN_STATUS, conclusion: "success", databaseId: 5 }),
+      runRow({ status: COMPLETED_RUN_STATUS, conclusion: FAILED_CONCLUSION, databaseId: 4 }),
+    ]),
+  });
+  expect(runWiredHook(green, "git push origin main").stderr).toBe("");
+});
+
+test("`gh` absent announces that CI was not asked and allows — reachable is the control", () => {
+  const absent = fixture("ci-gh-absent", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ghAbsent: true,
+    ci: { list: listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 7200 })]) },
+  });
+  // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED: under that PATH there
+  // really is no `gh`. This machine has one at /opt/homebrew/bin/gh, so
+  // "the shim is missing" is not the same claim as "gh is absent".
+  //
+  // PROBED FROM INSIDE A CHILD, because `spawnSync`'s own `options.env`
+  // does NOT steer executable resolution in the CALLING process: POSIX
+  // resolution is `execvp`, which reads the PARENT's environment. The
+  // first draft of this line probed from here and found the machine's
+  // real `gh` through a PATH that never names it — a green precondition
+  // about the wrong process. The hook under test is itself a child, so
+  // its own `process.env.PATH` is the narrowed one and the spawns it
+  // makes obey it; this probe reproduces exactly that arrangement.
+  const probe = spawnSync(
+    process.execPath,
+    [
+      "-e",
+      "const{spawnSync}=require('node:child_process');" +
+        "const r=spawnSync(process.argv[1],['--version']);" +
+        "process.stdout.write(`${String(r.error&&r.error.code)}|${String(r.status)}`);",
+      GH_BIN,
+    ],
+    { env: { PATH: fixturePath(absent) }, encoding: "utf8" },
+  );
+  expect(
+    String(probe.stdout),
+    "off PATH is ENOENT with a null status — never 127, which needs a shell",
+  ).toBe("ENOENT|null");
+
+  const shadowed = runHook(absent, "git push origin main");
+  expect(shadowed.status, "an unaskable CI must not refuse a push").toBe(0);
+  expect(shadowed.stderr).toContain("CI WAS NOT ASKED (absent)");
+  expect(ghCalls(absent), "nothing was asked").toEqual([]);
+
+  // THE DISCRIMINATION THE CARD ASKS FOR: the SAME fixture shape with
+  // `gh` reachable, answering the same run, refuses. So the announcement
+  // above is a statement about `gh` and not a constant.
+  const reachable = fixture("ci-gh-reachable", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 7200 })]) },
+  });
+  const asked = runHook(reachable, "git push origin main");
+  expect(asked.status, "reachable, the same run refuses").toBe(2);
+  expect(asked.stderr).not.toContain("CI WAS NOT ASKED");
+  expect(ghCalls(reachable).length, "and it was actually asked").toBeGreaterThan(0);
+});
+
+test("`gh` refusing is announced in its own words, and an unrecognised exit says whose bug it may be", () => {
+  const unauth = fixture("ci-gh-unauth", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: {
+      list: {
+        code: GH_EXIT.UNAUTHENTICATED,
+        stderr: "gh: To get started with GitHub CLI, please run: gh auth login",
+      },
+    },
+  });
+  const unauthRun = runHook(unauth, "git push origin main");
+  expect(unauthRun.status, "unauthenticated is an inability, never a verdict").toBe(0);
+  expect(unauthRun.stderr).toContain("CI WAS NOT ASKED (unauthenticated)");
+  expect(unauthRun.stderr, "gh's own words, quoted").toContain("gh auth login");
+
+  const noRemote = fixture("ci-gh-no-remote", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: {
+      list: {
+        code: GH_EXIT.GENERIC,
+        stderr:
+          "none of the git remotes configured for this repository point to a known GitHub host",
+      },
+    },
+  });
+  const noRemoteRun = runHook(noRemote, "git push origin main");
+  expect(noRemoteRun.status).toBe(0);
+  expect(noRemoteRun.stderr).toContain("CI WAS NOT ASKED (no-github-remote)");
+
+  // EXIT 1 IS OVERLOADED, so an exit 1 this guard cannot place is
+  // DISCLOSED as unrecognised — because that bucket is where a mistake in
+  // the arguments this guard itself sent would otherwise hide, wearing
+  // the costume of somebody else's network.
+  const odd = fixture("ci-gh-odd", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: { code: GH_EXIT.GENERIC, stderr: 'unknown JSON field: "jobs"' } },
+  });
+  const oddRun = runHook(odd, "git push origin main");
+  expect(oddRun.status, "still an allow").toBe(0);
+  expect(oddRun.stderr).toContain("CI WAS NOT ASKED (unrecognised)");
+  expect(oddRun.stderr).toContain("MAY BE THIS GUARD'S OWN MISTAKE");
+  expect(oddRun.stderr, "and the exact command it sent, to run by hand").toContain(
+    `${GH_BIN} ${ghRunListArgv("main").join(" ")}`,
+  );
+
+  // The classifier under all four, driven over the results it reads.
+  expect(classifyGhFailure({ status: null, stdout: "", stderr: "", spawnError: "ENOENT" }).kind).toBe(
+    "absent",
+  );
+  expect(
+    classifyGhFailure({ status: null, stdout: "", stderr: "", spawnError: "ETIMEDOUT" }).kind,
+  ).toBe("did-not-answer");
+  expect(classifyGhFailure({ status: GH_EXIT.UNAUTHENTICATED, stdout: "", stderr: "" }).kind).toBe(
+    "unauthenticated",
+  );
+  expect(classifyGhFailure({ status: 1, stdout: "", stderr: "no git remotes found" }).kind).toBe(
+    "no-github-remote",
+  );
+  expect(classifyGhFailure({ status: 1, stdout: "", stderr: "HTTP 404" }).kind).toBe("unrecognised");
+});
+
+test("an answer this guard cannot READ refuses, and a well-formed one does not", () => {
+  // THE ONE PLACE THIS ARM FAILS CLOSED. `gh` that could not run allows;
+  // `gh` that ANSWERED with a shape this guard would have to guess at
+  // refuses, because the guess is `probably nothing is in flight`.
+  const object = fixture("ci-shape-object", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: { stdout: '{"runs":[]}' } },
+  });
+  const objectRun = runHook(object, "git push origin main");
+  expect(objectRun.status).toBe(2);
+  expect(objectRun.stderr).toContain("cannot read the answer");
+
+  const missing = fixture("ci-shape-missing", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: { stdout: '[{"conclusion":"","databaseId":1}]' } },
+  });
+  expect(runHook(missing, "git push origin main").status, "a missing `status` refuses").toBe(2);
+
+  const garbage = fixture("ci-shape-garbage", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: { stdout: "not json at all" } },
+  });
+  expect(runHook(garbage, "git push origin main").status).toBe(2);
+
+  // THE POSITIVE CONTROL: the same fixture shape, well formed, is not
+  // refused — so the three refusals above are about the SHAPE and not
+  // about this arm refusing whatever it is handed.
+  const good = fixture("ci-shape-good", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow()]) },
+  });
+  expect(runHook(good, "git push origin main").status).toBe(0);
+
+  // The parser under them, one shape per line.
+  expect("problem" in parseRunList("[]")).toBe(false);
+  expect("problem" in parseRunList("{}")).toBe(true);
+  expect("problem" in parseRunList("[3]")).toBe(true);
+  expect("problem" in parseRunList('[{"status":"completed","conclusion":"success"}]')).toBe(true);
+  expect("problem" in parseRunList('[{"status":1,"conclusion":"","databaseId":1}]')).toBe(true);
+  // The optional fields are optional, and their absence is not a refusal.
+  const bare = parseRunList('[{"status":"completed","conclusion":"success","databaseId":9}]');
+  expect("runs" in bare).toBe(true);
+  expect("runs" in bare ? bare.runs[0]?.headSha : "unset").toBe("");
+
+  expect("problem" in parseRunJobs('{"jobs":[]}')).toBe(false);
+  expect("problem" in parseRunJobs("[]")).toBe(true);
+  expect("problem" in parseRunJobs('{"jobs":3}')).toBe(true);
+  expect("problem" in parseRunJobs('{"jobs":[{"name":"linux","conclusion":"failure"}]}')).toBe(true);
+  const jobs = parseRunJobs(jobsWithFailingStep("e2e lane"));
+  expect("jobs" in jobs).toBe(true);
+  expect(failingStep("jobs" in jobs ? jobs.jobs : [])).toEqual({ job: "linux", name: "e2e lane" });
+  // A job that failed while naming no failing step yields the JOB, so
+  // the seat still hears something.
+  const stepless = parseRunJobs('{"jobs":[{"name":"linux","conclusion":"failure","steps":[]}]}');
+  expect(failingStep("jobs" in stepless ? stepless.jobs : [])).toEqual({ job: "linux", name: "" });
+  const clean = parseRunJobs('{"jobs":[{"name":"linux","conclusion":"success","steps":[]}]}');
+  expect(failingStep("jobs" in clean ? clean.jobs : [])).toBeUndefined();
+});
+
+test("a running run's EMPTY conclusion is read, never rejected as an unreadable shape", () => {
+  // MEASURED ON THE REAL `gh`, 2026-09-02: a run in progress answers
+  // `"conclusion": ""`. A shape guard demanding a non-empty string would
+  // refuse every live run as unreadable — the arm's fail-closed exception
+  // eating the arm's whole subject, and passing every body that only ever
+  // checked that a live run refuses.
+  const parsed = parseRunList(JSON.stringify([runRow({ status: "in_progress", conclusion: "" })]));
+  expect("runs" in parsed, "an empty conclusion is a conclusion").toBe(true);
+
+  const fx = fixture("ci-empty-conclusion", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 7300 })]) },
+  });
+  const { status, stderr } = runHook(fx, "git push origin main");
+  expect(status).toBe(2);
+  // THE DISCRIMINATION: it is refused as a LIVE RUN and never as a shape.
+  expect(stderr).toContain("would CANCEL it");
+  expect(stderr).not.toContain("cannot read the answer");
+});
+
+test("a status this guard does not recognise is disclosed, and does not refuse", () => {
+  expect([...ACTIVE_RUN_STATUSES].sort()).toEqual([
+    "in_progress",
+    "pending",
+    "queued",
+    "requested",
+    "waiting",
+  ]);
+  expect(COMPLETED_RUN_STATUS).toBe("completed");
+
+  const fx = fixture("ci-odd-status", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow({ status: "inconceivable", conclusion: "" })]) },
+  });
+  const { status, stderr } = runHook(fx, "git push origin main");
+  expect(status, "an unknown status is this guard's ignorance, not a verdict").toBe(0);
+  expect(stderr).toContain("CI'S NEWEST RUN WAS NOT JUDGED");
+  // The control: a status it DOES recognise, in the same fixture shape.
+  const known = fixture("ci-known-status", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow({ status: "queued", conclusion: "" })]) },
+  });
+  expect(runHook(known, "git push origin main").status).toBe(2);
+});
+
+test("the branch reaches `gh` as ONE argument, through no shell", () => {
+  // A git ref may legally carry `;`, `$`, `&`, `(`, `)` and a backtick —
+  // verified by this fixture existing at all — so a branch name spliced
+  // into a command string would be a command-injection surface fed by
+  // `git checkout -b`. The shim records each argument on its own line,
+  // which is the only way to tell an argv array from a joined string.
+  const branch = "ci;echo$(id)&x";
+  const fx = fixture("ci-argv", CHECK_EXIT.CURRENT, CURRENT_REPORT, { branch });
+  const head = execFileSync("git", ["-C", fx.root, "symbolic-ref", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  expect(head, "the precondition: git accepted the ref").toBe(`refs/heads/${branch}`);
+
+  runHook(fx, "git push origin main");
+  const calls = ghCalls(fx);
+  expect(calls.length, "the arm must have asked").toBeGreaterThan(0);
+  expect(calls[0], "argv, element for element").toEqual(ghRunListArgv(branch));
+  expect(calls[0], "the branch survived as ONE argument, unexpanded").toContain(branch);
+  // A shell would have split on `;` and substituted `$(id)`; nothing did.
+  expect(calls[0]?.some((a) => a.includes("uid="))).toBe(false);
+  expect(existsSync(path.join(fx.root, "x")), "nothing was executed").toBe(false);
+});
+
+test("CI is not asked for a push the LOCAL arms already refused", () => {
+  // The ordering claim, measured rather than asserted in a comment: a
+  // push refused for an unmeasured tree spends no network round trip,
+  // and the seat is told the local problem it can actually fix.
+  const refused = fixture("ci-order-refused", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    ci: { list: listOf([runRow({ status: "in_progress", conclusion: "" })]) },
+  });
+  const run = runHook(refused, "git push origin main");
+  expect(run.status).toBe(2);
+  expect(run.stderr, "the local arm answers first").toContain("A push is a claim that the gates");
+  expect(ghCalls(refused), "and nothing was asked of the remote").toEqual([]);
+
+  // THE CONTROL: the same fixture with a fresh token reaches the arm.
+  const reached = fixture("ci-order-reached", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: { list: listOf([runRow({ status: "in_progress", conclusion: "" })]) },
+  });
+  expect(runHook(reached, "git push origin main").status).toBe(2);
+  expect(ghCalls(reached).length).toBeGreaterThan(0);
+
+  // And a command that is not a push asks nothing at all.
+  const quiet = fixture("ci-order-not-a-push", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(runHook(quiet, "git status --porcelain").status).toBe(0);
+  expect(ghCalls(quiet)).toEqual([]);
+});
+
+test("the elapsed time comes from the run's own start, and `updatedAt` is not it", () => {
+  // MEASURED: run 33577276465 read `updatedAt` 00:55:14 while it was
+  // still genuinely running at 01:02:13Z. A time derived from it is wrong
+  // by minutes and stays perfectly plausible, which is the kind of figure
+  // nobody checks.
+  const started = runRow({ startedAt: "2026-09-01T12:00:05Z", createdAt: "2026-09-01T12:00:00Z" });
+  const parsed = parseRunList(JSON.stringify([started]));
+  expect("runs" in parsed).toBe(true);
+  const run = "runs" in parsed ? parsed.runs[0] : undefined;
+  expect(runStartedAt(run as never)).toBe("2026-09-01T12:00:05Z");
+  // Absent, it falls back to when the run was created — never to nothing.
+  const noStart = parseRunList(JSON.stringify([runRow({ startedAt: undefined })]));
+  expect(runStartedAt(("runs" in noStart ? noStart.runs[0] : undefined) as never)).toBe(
+    "2026-09-01T12:00:00Z",
+  );
+
+  expect(elapsedSince("2026-09-01T12:00:00Z", Date.parse("2026-09-01T12:00:42Z"))).toBe("42s");
+  expect(elapsedSince("2026-09-01T12:00:00Z", Date.parse("2026-09-01T12:04:12Z"))).toBe("4m 12s");
+  expect(elapsedSince("2026-09-01T12:00:00Z", Date.parse("2026-09-01T14:30:00Z"))).toBe("2h 30m");
+  // An unreadable timestamp costs a phrase and never a verdict.
+  expect(elapsedSince("", Date.now())).toBe("an unreadable time");
 });
