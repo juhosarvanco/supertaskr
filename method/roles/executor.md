@@ -132,7 +132,18 @@ and absent it the work lands and the record does not:
   of a tree; name the commit each was measured at (live-environment facts
   carry when/where they were read, per the brief's rule 2).
 - **Every drill** — what was mutated, one side only, and the restoration
-  proof (a sha256 or an empty per-path diff).
+  proof. **THE SHA256 IS THE PROOF AND AN EMPTY PER-PATH DIFF IS A
+  COMPANION, NEVER AN ALTERNATIVE**, and the either/or this row used to
+  offer is retracted: a restore that writes the INDEX as well as the
+  worktree leaves a following rangeless diff comparing the file against
+  the mutation's own source, so the empty diff passes on a failed
+  restore that the hash catches — measured on a lane of this method's
+  own project, where it certified exactly that. **And where the drill
+  carried a POSITIVE CONTROL, report the demonstration that it FAILED**
+  against an implementation lacking the property, not only that it
+  passed; a control decided by the same arrangement as its subject is a
+  defect you name rather than pass on, and `roles/verifier.md` step 2b
+  is what grades it.
 - **Where the brief was wrong** — the correction clause (row 13): every
   place the repository contradicted the brief, named plainly.
 

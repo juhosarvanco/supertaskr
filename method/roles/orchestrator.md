@@ -39,6 +39,13 @@ you know is in docs/. You are disposable at any moment.
 4. Dispatch order: among the topmost undone tasks of each feature column,
    pick the highest-priority one that is unblocked AND whose touches:
    don't overlap any task currently building. Ceiling: 3–5 concurrent.
+   **THAT BOUND'S HOME IS tasks/TASK-FORMAT.md's Parallelism guardrails
+   AND THIS LINE IS A CITATION OF IT** — that file is the field's home,
+   it ships, and it carries the REASON, which is not repeated here. The
+   number is spelled out twice on purpose rather than by oversight: a
+   project's own code may pin the bound against THIS line's spelling, so
+   the two are one fact checked twice and they move in one commit. Where
+   nothing checks them, the home wins.
 5. Propose the dispatch to the human and wait for approval. Never dispatch
    an L task without one.
 5b. **DISPATCH, in this order, and the order is the rule.** You own the

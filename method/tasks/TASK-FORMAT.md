@@ -37,6 +37,45 @@ review: independent      # independent | same-model | self-verified (stamped)
                            APPROVED, or REJECTED + concrete failures
 ```
 
+**A CARD'S FIRST PARAGRAPH IS ITS SUMMARY — one paragraph a seat may
+read and STOP at**, and everything below it is the RECORD, read when a
+seat needs the world rather than the ask. No field and no status carries
+this: it is a writing discipline, and it costs one paragraph at the top
+of the body, above the sections. **The record stays**, because on a
+project run this way the record IS the product's proof and the pressure
+to shorten a card is pressure to delete evidence. What the summary buys
+is the DECISION to read the rest: cards grow into essays, a reader
+arrives cold, and without a top paragraph the only way to learn whether
+this card is the one you need is to read all of it. Measured on this
+method's own project, where a single card reached 36 KB and the seats
+reading it had no way to triage that cost.
+
+**A CARD MAY ASK FOR ONE OF ITS SENTENCES TO BE CHECKED, AND THE ASK IS
+A PLAIN BODY LINE.** The marker is
+
+    CARD CLAIM (<tracked file>): "<quoted string>"
+
+written as an ordinary line of the body — a leading list bullet and
+surrounding emphasis are fine — and a project's card-input check opens
+that ONE file at the integration ref and requires the quoted run to be
+in it. **THE MARKER IS THE REQUEST, WHICH IS WHY THIS CHECK MAY
+REFUSE**: a card's structural checks are automatic and must be measured
+narrow before they refuse anything, while nobody is refused an ask they
+wrote themselves — so a quote that is not in the file it names REFUSES
+the dispatch, and so does a marker whose named source cannot be read at
+all, because a card that asks to be checked, is not, and reads as though
+it were is the worse outcome. **IT IS READ FROM THE PROSE, SO A MARKER
+INSIDE A FENCED OR INDENTED BLOCK IS AN EXAMPLE AND NOT A CLAIM** —
+including the one above. That is the whole reason the reader is narrow:
+this marker gets quoted constantly, by the notes documenting it and by
+every room arguing about it, and a reader that saw raw blocks would turn
+documentation ABOUT the marker into live claims; a marker-shaped line
+the prose reader cannot see is REPORTED, never refused on. **It is the
+cheap shape deliberately** — a quoted string plus the file it claims to
+be in, never a parse of prose — and what it does not reach is every
+claim nobody chose to mark. Which tool reads it, and at which ref, are
+the PROJECT's to name in its own conventions; this file names no paths.
+
 **A CRITERION NAMES THE GATE'S COMMAND, NEVER ITS OUTPUT.** Write *"the
 gate SHALL report no unaccounted readers"*, or better, write the command
 and let it answer — never *"the gate SHALL name five readers across three
@@ -187,6 +226,26 @@ ordinary companion applies with full force — a guard owes a POSITIVE
 CONTROL**: prove it lets the ordinary case through, not only that it
 stops the bad one. A check that cannot tell an absence from a refusal is
 not a check.
+
+**AND THE CONTROL IS DEMONSTRATED FAILING, NOT ASSERTED.** Run it
+against an implementation that LACKS the property, SEE it red, and
+RECORD that demonstration on the card — a control nobody has watched
+fail is a claim, and it is the characteristic defect of this very
+requirement. **Where ONE arrangement decides both the guard's answer and
+the control's, that is a defect, named as one by whoever notices, and
+the remedy is to evaluate the control where that arrangement is ABSENT**
+— a fresh clone, a planted fixture, a data mutant; where the property
+lives in DATA the drill owes a DATA mutant, because a code-only drill
+mis-grades a derivation guard by construction. **Measured, because a
+rule stated without its measurement reads as advice**: four in one
+sitting on this method's own project, in four modules, found by four
+different agents, every one of them guard-class, mutant-drilled and
+read by a blind verifier — and the fourth was a control a VERIFIER had
+proposed, inside the fix for the third. The four are cited by id and
+judged in `roles/verifier.md` step 2b, which is this rule's home for
+the drill mechanics. **A rule this strong owes its own control, and the
+control is a body it PASSES**: one that graded every existing control
+degenerate would be indistinguishable from one that works.
 
 ## Task creation — single writer
 
@@ -639,7 +698,16 @@ makes an advisory period honest instead of a soft launch.
 ## Parallelism guardrails
 
 - Tasks with overlapping `touches:` never run concurrently.
-- Ceiling: 3–5 concurrent agents. Past that, verification — not
-  generation — becomes the bottleneck and quality quietly drops.
+- **Ceiling: 3–5 concurrent agents, and THIS LINE IS THE VALUE'S HOME.**
+  Past that, verification — not generation — becomes the bottleneck and
+  quality quietly drops, and the WHY lives here and nowhere else.
+  `roles/orchestrator.md`'s dispatch step CITES this line; it repeats
+  the number because a project's code may pin the bound against that
+  file's spelling, and a duplicate WITH a checker is one fact checked
+  twice while a duplicate without one is two facts. The two said the
+  same thing for a long time with neither citing the other, which is
+  what the citation repairs. **A PROJECT ADOPTING THIS AIMS ITS CHECKER
+  AT BOTH COPIES**: the copy nothing reads is the copy that drifts, and
+  it will be this one.
 - When in doubt, run turn-based; parallel is an optimization, not
   the point.
