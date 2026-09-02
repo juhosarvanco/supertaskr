@@ -3,7 +3,7 @@ id: T-120-s2
 title: 92 e2e bodies open no browser and every POISON DRILL still pays 330M of installs and a vite boot to run one of them
 feature: F-01
 milestone: 4
-priority: 11
+priority: 2
 size: M
 status: planned
 blocked_by: []
@@ -143,3 +143,16 @@ rather than a ride on a regression pin.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## TRIAGE, 2026-09-02 — priority 11 → 2, at the second Fable checkpoint
+
+The architect seat. `suite/e2e-seconds` is the one health band that
+grows with every merge: BREACHED at 372 s at the first Fable record and
+at 9.2 minutes (battery 12, 43e0fe8) at the second, against a breach
+line of 312 s, with workers: 1 and 574 bodies. This card is the remedy
+the room names (item 2). Its fence stays the `tools/e2e` token because
+the preconditions it moves sit at module scope across the tree; it runs
+ALONE on tools/e2e in the first quiet window after T-238 and T-219
+merge, beside lanes fenced elsewhere. Criterion added: the lane SHALL
+print the e2e leg's wall time before and after at its own ref, with
+workers for the no-browser project stated.
