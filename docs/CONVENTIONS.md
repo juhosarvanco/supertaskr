@@ -1150,12 +1150,11 @@ and T-236 (2026-09-02, whose pre-compaction text is
     protocol-covered. (2) A path in NO GIT CHECKOUT AT ALL is not
     judged, and since `T-199` that is the WHOLE of it: the scratchpad
     and `/tmp` stay reachable. **It read *outside the WRITING checkout*
-    until `T-199`**, which with sibling lanes (rule 3) and a nested
-    dispatching seat left EVERY lane write UNJUDGED; the root now comes
-    from the TARGET. **THE RESIDUE, NAMED AS ONE**: a sibling lane's
-    tree is judged by THAT LANE'S fence, and the hook has no term
-    separating an architect reaching in from that lane's OWN executor
-    writing in from a shell parked elsewhere. (3) A DETACHED checkout
+    until `T-199`**, which left EVERY lane write UNJUDGED; the root now
+    comes from the TARGET. **THE RESIDUE, NAMED AS ONE**: a sibling
+    lane's tree is judged by THAT LANE'S fence, and the hook has no term
+    separating an architect reaching in from that lane's OWN executor.
+    (3) A DETACHED checkout
     is not judged at all, which frees the poison drill and the human's
     app checkout. (4) A live lane whose manifest this seat cannot read
     reserves nothing. (5) It is ADVICE TO A COOPERATING HARNESS: a
@@ -1166,12 +1165,11 @@ and T-236 (2026-09-02, whose pre-compaction text is
     escape. (8) A request with no readable path is the one question the
     WRITER's cwd still answers — refused in a lane, DECLINED elsewhere,
     which a lane executor, sitting in the dispatching checkout, takes.
-    Every decline above carries `judged: false` and speaks on
-    **stderr**. And the hook FAILS OPEN in exactly one shape, the
-    harness's own contract: a command hook whose script cannot be
-    LOCATED never starts, which takes `CLAUDE_PROJECT_DIR` unset AND a
-    shell cwd outside any checkout carrying the hook, both wrong at
-    once.
+    Every decline carries `judged: false` and speaks on **stderr**. And
+    the hook FAILS OPEN in exactly one shape, the harness's own
+    contract: a command hook whose script cannot be LOCATED never
+    starts, which takes `CLAUDE_PROJECT_DIR` unset AND a shell cwd
+    outside any checkout carrying the hook, both wrong at once.
     **SO *"a PreToolUse hook enforces it"* IS A CLAIM ABOUT THE
     DISPATCHING CHECKOUT AND NEVER ABOUT THE LANE**:
     `.claude/settings.json` runs the hook out of

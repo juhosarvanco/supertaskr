@@ -108,11 +108,11 @@ deliberately."* It stated four limits (Bash, the writing checkout,
 detached, unreadable manifest) plus the FAILS OPEN shape and the runtime
 manifest.
 
-AFTER (tip `e47bf86`, lines 1145–1185, **2,573 bytes**) — all EIGHT
+AFTER (final, lines 1145–1184, **2,464 bytes**) — all EIGHT
 limits, numbered `(1)`–`(8)` to match the header, the sibling-lane hole
 named as a RESIDUE, and the enforcement claim scoped to the dispatching
-checkout. The document as a whole moved **117,645 → 119,100 bytes**
-(`wc -c`, at `42520e3` and `e47bf86`).
+checkout. The document as a whole moved **117,645 → 118,987 bytes**
+(`wc -c`, at `42520e3` and the final tip).
 
 ### Every limit, and the header line it derives from
 
@@ -211,11 +211,18 @@ line against a 65,536-byte spawn buffer:
 |---|---|---|
 | `42520e3` (base) | 1,207 | 64,043 (measured by the dispatching seat) |
 | `e609827` (first pass) | 5,326 | **68,031 — over by 2,495** |
-| `e47bf86` (tip) | 2,573 | **65,195 — 341 under** |
+| `e47bf86` | 2,573 | 65,195 — 341 under, at that moment's board |
+| final tip | 2,464 | **66,265 — 729 OVER**, and the overflow is the board's not the paragraph's: `--dispatch` is 95,569 at the same ref, and `--role executor`, the arm that starts a session, is 50,457 |
 
 The first pass was committed and then recompressed in `e47bf86` rather
-than amended, so the drill hashes above stay resolvable. Growth over base
-is **+1,152 bytes** on the arm that binds.
+than amended, so the drill hashes above stay resolvable. Growth over base is **+1,257 bytes** on the
+bullet. The `--full` arm went over the buffer between those two
+measurements while `docs/CONVENTIONS.md` did not change — other lanes
+merged into main — which is the finding routed as `T-215-s4`: two lines
+of that view are 22,485 of its 66,265 characters, and the fix is not to
+shorten the rules. A published limit was NOT deleted to reclaim 729
+bytes; the trims taken were wordiness only, and every one of the eight
+limits, the residue and the enforcement claim survive.
 
 ### Attribution of the e2e leg's six reds — a SET, not a count
 
@@ -248,6 +255,9 @@ restored-to-base run is the measurement rather than the argument.
   *limit 5* at line `144` while its own limits block and its runtime
   message both say limit 8. Fence `.claude/hooks/lane-fence.mjs`, outside
   this card's.
+- **`T-215-s4`** — `brief.mjs --full` prints the LANE PROTOCOL bullet and
+  lane-protocol rule 4 verbatim and is over its own buffer. Fence
+  `tools/e2e/scripts/brief.mjs`.
 - **`T-215-s3`** — the lane bullet publishes ONE fence layer and there are
   two: `T-210`'s physical read-only layer is named in this document only
   once, under the CAPABILITIES keeper bullet. In-fence by path but out of
