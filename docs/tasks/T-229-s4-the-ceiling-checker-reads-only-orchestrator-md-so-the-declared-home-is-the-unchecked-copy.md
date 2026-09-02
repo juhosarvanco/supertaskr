@@ -263,3 +263,68 @@ hit it are exactly the lanes whose diff fires the gate.
 - The body's own comment still warns that the DOCS GATE cannot name this
   suite, because `method/` is not `docs/` — that gap is unchanged and is
   the reason the card exists.
+
+### The dispatching seat's six tree facts, re-derived at this lane's tip
+
+Handed to this lane mid-build, measured on the dispatcher's bench at the
+base `e4cd6d4d2767`. Each is re-derived here at
+`4f7d3fdb548ea1c8a1276800d7ed99e76ace29f0` rather than adopted; five
+hold and one is superseded by this lane's own diff.
+
+1. **The home and the pointer were unchecked, the citation was not** —
+   HOLDS, and this lane's mutants A–D are the same fact measured from
+   the other side: at the base, mutant A (home only) leaves the old body
+   GREEN, which is the demonstration this card's positive-control
+   criterion asks for.
+2. **The regex hazard is the opposite of the obvious** — HOLDS, and it
+   decided the shipped spelling. Measured at this tip: the shipped
+   `/Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/` matches
+   `"Ceiling: 3–5 concurrent"` byte-identically in BOTH intended files
+   and reads **NULL** from `method/lane-protocol.md`. A loosened
+   case-insensitive form was tried against lane-protocol.md for
+   contrast and matches `"ceiling of 3–5 concurrent"` — so the
+   colon-and-capital anchor is load-bearing, not incidental, and a
+   tightened `concurrent\.` anchor would have read NULL from the home.
+   Every read is asserted non-null before either number is compared.
+3. **Do not cite the home by rule ordinal** — HOLDS and was obeyed: the
+   pointer is *"At tasks/TASK-FORMAT.md's ceiling of…"*, a file
+   reference with no ordinal, so MF-02 has nothing to resolve against
+   TASK-FORMAT's empty top-level ordinal set. MF-02 green.
+4. **MF-04's bare-name hole** — HOLDS and was obeyed: the pointer is
+   spelled `tasks/TASK-FORMAT.md`, the prefixed form MF-04's
+   `METHOD_DIRS` alternation resolves and the form this file already
+   uses for its other eight references to that path, never a bare
+   `TASK-FORMAT.md`. MF-04 green.
+5. **Rule 4 is extracted WHOLE by two assemblers** — HOLDS, and the
+   extraction was measured through the real function rather than a
+   replica. `numberedStep(laneProtocolText, 4)` from
+   `tools/e2e/scripts/dispatch-brief.mjs` returns **12,933 characters at
+   `e4cd6d4d2767` and 12,932 at `4f7d3fd`** — a one-character shrink,
+   exactly `roles/orchestrator.md` (21) → `tasks/TASK-FORMAT.md` (20) —
+   and the span still ends on rule 4's own last sentence (*"…the probe
+   stays unbuilt, and this sentence is why."*), so nothing truncated.
+   The diff adds **0** lines matching `^\d+\. ` or `^## `. The Rust twin
+   `numbered_rule(&protocol, 4)` in `app/src-tauri/src/dispatch/brief.rs`
+   is covered by the rust suite, green at 639 bodies.
+6. **"The DOCS GATE is not owed (no docs/ path)" — SUPERSEDED, and it
+   was true when measured.** It was derived against a diff that did not
+   yet exist. This lane's notes commit adds three `docs/tasks/` paths —
+   this card plus `T-229-s6` and `T-229-s7` — and `docs-gate.mjs` on
+   those three exits **1: FIRES**, owing `npm test` from `app/`, `npm
+   test` from `tools/e2e/` and `npx vitest run` from `lib/parser/`,
+   because twelve suites read `docs/tasks`. This is the structural case
+   `roles/executor.md`'s report spec names: a lane's last commit is its
+   notes, so the gate whose trigger is the documentation tree is the one
+   it is guaranteed to feed after answering for it. All three owed
+   suites are re-run at the final tip. The rest of fact 6 holds: no
+   method version bump (`lane-protocol.md` is not in `KIT_FILES`) and no
+   `CAPABILITIES` regeneration.
+
+The dispatcher's baselines re-derived here: app **1131**, parser
+**349**, e2e **574**, rust **639** (a figure the message did not carry),
+all GREEN at `a0d72d4`. **`method-evals` is the one divergence**: exit 0
+both arms on the dispatcher's bench, but exit 0 / exit **3** in this
+lane, because the bench is not a dispatched lane and so does not carry
+the fence's `r--r--r--` modes — the whole of `T-229-s6`. And
+`index --check` is CURRENT at the base and **STALE at this tip**, by
+design: GRAPH REGEN fires and regeneration is the integrator's.
