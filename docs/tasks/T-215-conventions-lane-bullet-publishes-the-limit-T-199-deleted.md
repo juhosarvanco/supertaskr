@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: building
+status: verifying
 blocked_by: [T-199]
 touches: [docs/CONVENTIONS.md]
 suggested_by: "T-199's executor, which could not correct it: docs/CONVENTIONS.md is outside `touches: [.claude, tools/e2e]` AND was held by the live T-189 lane at dispatch"
@@ -90,3 +90,186 @@ as `T-225`; when it lands, promote this card without re-triaging it.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+## Implementation notes — 2026-09-02, executor claude-opus-5@subagent
+
+**ONE FILE CHANGED: `docs/CONVENTIONS.md`, the LANE PROTOCOL bullet's
+limits paragraph, rewritten from `decide`'s own header.** Nothing else in
+the fence was touched, and the three findings below are routed, not
+built.
+
+### The paragraph, before and after
+
+BEFORE (base `42520e3`, lines 1145–1162, **1,207 bytes**) — its two false
+claims are the card's subject, quoted there verbatim: *"A path OUTSIDE
+the writing checkout is allowed in BOTH seats … the scratchpad, a drill
+tree and a sibling lane's own tree are all reachable, the last
+deliberately."* It stated four limits (Bash, the writing checkout,
+detached, unreadable manifest) plus the FAILS OPEN shape and the runtime
+manifest.
+
+AFTER (tip `e47bf86`, lines 1145–1185, **2,573 bytes**) — all EIGHT
+limits, numbered `(1)`–`(8)` to match the header, the sibling-lane hole
+named as a RESIDUE, and the enforcement claim scoped to the dispatching
+checkout. The document as a whole moved **117,645 → 119,100 bytes**
+(`wc -c`, at `42520e3` and `e47bf86`).
+
+### Every limit, and the header line it derives from
+
+All line numbers are `.claude/hooks/lane-fence.mjs` at `42520e3` (that
+file is unchanged in this lane).
+
+| published as | derived from |
+|---|---|
+| (1) Bash-mediated writes stay protocol-covered | header `159` |
+| (2) a path in NO git checkout is not judged, and since T-199 that is the WHOLE of it | header `165–188`; code `decide` → `findCheckoutRoot(path.dirname(abs))` undefined → `decline("not-a-repository")` at `1086–1091` |
+| (2) it READ *outside the WRITING checkout* until T-199, and that left every lane write unjudged | header `175–181` |
+| (2) THE RESIDUE: a sibling lane's tree is judged by THAT LANE's fence, and the hook has no term separating an architect from that lane's own executor | header `182–186`, and the same admission at `65–71` |
+| (3) a DETACHED checkout is not judged at all — the poison drill and the human's app checkout | header `187–195`; code `laneLessVerdict` → `decline("not-judged-detached")` at `927–932` |
+| (4) a live lane whose manifest this seat cannot read reserves nothing | header `196–200`; code `liveLanes` skip, and `decline("not-judged-lane-list")` at `948` |
+| (5) it is ADVICE TO A COOPERATING HARNESS | header `201–204` |
+| (6) the mid-integration window — POINTED AT, not restated, because the paragraph one above already carries it | header `205–217`; document lines `1137–1144` |
+| (7) containment compares BYTES on a case-insensitive volume | header `218–229` |
+| (8) a request with no readable path is the one question the writer's cwd answers | header `230–239`; code `noTargetVerdict` at `1015–1037` |
+| every decline carries `judged: false` and speaks on stderr | header `140–157`; the four codes at `392–395` |
+| FAILS OPEN in one shape; the manifest is a RUNTIME file | unchanged from the base paragraph |
+
+**WHAT THE PARAGRAPH DELIBERATELY DOES NOT SAY.** The header's reasons
+are not copied — one copy, per T-057, and the paragraph names the header
+as the authority in its first sentence. Limit 6 is a pointer for the same
+reason.
+
+### Criterion two: the sentence is not in any assembler
+
+`grep -rn "hook enforces"` over the whole tree at `42520e3` returns
+**seven hits and every one is a card body** (`T-190`, `T-198`, `T-199`,
+`T-204`, and this card). `grep -rn "PreToolUse" tools/e2e/scripts/`
+returns source comments only — `brief.mjs:34`, `brief.mjs:283`,
+`checkout-currency.mjs`, `lane-lock.mjs:16`. The generated brief this
+lane was dispatched with carries no such sentence: it is the TYPED half
+of the dispatch prompt, which `T-204` (status `planned`, unbuilt) exists
+to derive. **So there is no assembler site to route to**, and the
+criterion is satisfiable only inside this fence — which the new final
+paragraph does, naming `${CLAUDE_PROJECT_DIR:-.}` from
+`.claude/settings.json`, saying the binary a lane meets is the
+DISPATCHER's copy, and scoping the claim to *from `T-199`'s merge forward
+and only for a session started in a checkout carrying it*, with
+`T-216-s1`'s arm-time catcher named as what asks.
+
+### Criterion three (CONSIDER): yes, and it is routed as `T-215-s1`
+
+The comparison earns a card, and the shape is on that card: not a prose
+diff — both sides are prose and any re-wording would red — but the
+DECLARED KEYS, exactly the treatment `LANE_BRANCH_RE` and
+`INTEGRATION_SEAT_PATHS` already get in the same spec file
+(`lane-fence.spec.ts:652` and `:1029`). The limit COUNT from the header's
+numbered block against the count the page publishes, plus every declining
+verdict code required to appear in the bullet; both are greppable
+literals, the spec already `readFileSync`s the hook at `:542`, so the
+fence is one file and no new export is needed.
+
+### The reader measurement — the honest limit, with its positive control
+
+**NOTHING READS THIS PARAGRAPH.** The DOCS GATE derives eleven readers of
+`docs/CONVENTIONS.md`; a mutant of the new paragraph carrying the exact
+falsehood this card exists to delete was run against the ten e2e ones:
+**298 passed, exit 0** at `e47bf86`. `grep` for the paragraph's own
+phrases across `tools/e2e/tests/` returns nothing.
+
+**THE POSITIVE CONTROL SAYS THE READER FAMILY IS LIVE**, so the green
+above is a coverage gap and not a dead harness: a one-word mutation of
+the carve-out sentence at document line `1136`, which `:1029` DOES read,
+reds by name — **1 failed / 52 passed, exit 1**, *"the hook's carve-outs
+and the page's have drifted"*.
+
+### Drills — one side only, read back with `git diff`, restored by hash
+
+| drill | mutation | result |
+|---|---|---|
+| A (first pass) | the paragraph's limit-2 clause inverted back to *"a path OUTSIDE the writing checkout is allowed in BOTH seats … the last deliberately"*, document side only | **298 passed, exit 0** — the negative assertion |
+| B | `docs/checkpoints` → `docs/checkpoint` in the carve-out sentence, document side only (the hook's `INTEGRATION_SEAT_PATHS` untouched) | **1 failed / 52 passed, exit 1**, body named |
+| A (re-run on the FINAL compressed text) | same inversion | **298 passed, exit 0** |
+
+Restoration proof, all three, `git restore --source=<commit> --staged
+--worktree`: `git show e6098276…:docs/CONVENTIONS.md | shasum -a 256`
+→ `14555eb5720d89cb68e9ab8ca372a720ca95bfd86b3380c9d7580d262a3c9ae9`,
+equal to the worktree file (drills A-first and B); `git show
+e47bf86e…:docs/CONVENTIONS.md | shasum -a 256` →
+`f812fb3a481646e45e03946106c74975ddfccc13b83d81a6e48625f37bdd18e4`,
+equal to the worktree file (drill A re-run, and the attribution control
+below). `git status --short` empty after each.
+
+### The byte budget that actually binds is the BULLET, not the document
+
+**AND THE FIRST PASS BROKE IT.** `docs/CONVENTIONS.md`'s own ADR-019
+budget is `landed 117502 / warn 146878 / fail 176253`, so the document had
+~27 KB of headroom and the gate said *budgets hold* throughout. But
+`brief.mjs --task T-215 --full` prints the LANE PROTOCOL bullet as ONE
+line against a 65,536-byte spawn buffer:
+
+| ref | paragraph | `--full` |
+|---|---|---|
+| `42520e3` (base) | 1,207 | 64,043 (measured by the dispatching seat) |
+| `e609827` (first pass) | 5,326 | **68,031 — over by 2,495** |
+| `e47bf86` (tip) | 2,573 | **65,195 — 341 under** |
+
+The first pass was committed and then recompressed in `e47bf86` rather
+than amended, so the drill hashes above stay resolvable. Growth over base
+is **+1,152 bytes** on the arm that binds.
+
+### Attribution of the e2e leg's six reds — a SET, not a count
+
+`gate-run.mjs e2e` reds at the tip: **559 bodies, 6 failed / 553 passed,
+exit 1**. The same four spec files were then run with
+`docs/CONVENTIONS.md` restored to its BASE bytes (`42520e3`, hash
+`c84bea59…`) and the **identical six bodies** red — 6 failed / 86 passed:
+
+- `card-preflight.spec.ts:719` — a discrepancy answers ONE and a preflight that could not run answers THREE
+- `checkout-currency.spec.ts:852` — THE WIRING'S POSITIVE CONTROL
+- `checkout-currency.spec.ts:953` — THE SWEEP AT ARM TIME
+- `lane-lock.spec.ts:899` — the DISPATCH STEP arms it
+- `session-economics.spec.ts:179` — the recommended seat is a function of the CARD
+- `session-economics.spec.ts:365` — the advisory line is NOT a contract row
+
+The first four are the base being behind main's `.claude/` (T-237's push
+guard merged at `44a95c3` after this lane was cut), so `T-216-s1`'s
+catcher fires `guard-surface-behind` at every `--preflight` /
+`--write-fence`; the last two are the session-economics ref skew a lane
+takes when siblings are cut on main after its base. **None of the six is
+in the DOCS GATE's reader set for `docs/CONVENTIONS.md`**, and the
+restored-to-base run is the measurement rather than the argument.
+
+### Routed, not built
+
+- **`T-215-s1`** — the limits paragraph is tracked BY HAND and nothing
+  compares it to the hook's header. Fence
+  `tools/e2e/tests/lane-fence.spec.ts`. This is criterion three's answer.
+- **`T-215-s2`** — `lane-fence.mjs`'s header calls `no-path-to-judge`
+  *limit 5* at line `144` while its own limits block and its runtime
+  message both say limit 8. Fence `.claude/hooks/lane-fence.mjs`, outside
+  this card's.
+- **`T-215-s3`** — the lane bullet publishes ONE fence layer and there are
+  two: `T-210`'s physical read-only layer is named in this document only
+  once, under the CAPABILITIES keeper bullet. In-fence by path but out of
+  this card's ask, and it cannot be added without the `--full` budget
+  above deciding its size.
+
+### Where the brief was wrong
+
+1. **The dispatch brief's row 4 base is `4a9c68cc…`; this lane's HEAD at
+   the cut is `42520e372770c01c4ed1a8035fcfea4ce16a6a04`** (T-233's known
+   defect, flagged in the message and confirmed here). Every figure above
+   is stated at the lane's own refs.
+2. **The message said the *"a PreToolUse hook enforces it"* sentence is
+   "produced by the assembler (grep tools/e2e/scripts for it)".** It is
+   not, at any ref in this tree — see criterion two above. There is no
+   assembler site and nothing was routed to one.
+3. **The message named eight reader specs; `docs-gate.mjs` names ELEVEN
+   readers of `docs/CONVENTIONS.md`** — the eight plus
+   `shell-frame.spec.ts`, `window-contract.spec.ts` and
+   `app/src-tauri/src/agent/kit.rs` under `cargo test`. The gate's set was
+   run, not the message's.
+4. **The message pointed at `docs/CONVENTIONS.md`'s own byte budget.** The
+   binding budget is `brief.mjs --full`'s spawn buffer via the LANE
+   PROTOCOL bullet, which the document's budget does not see; the first
+   pass passed the docs gate and still broke the arm.
