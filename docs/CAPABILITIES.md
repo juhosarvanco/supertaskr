@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **619 behaviours** — 617 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **621 behaviours** — 619 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -424,6 +424,8 @@ Census: **619 behaviours** — 617 extracted sentences + 2 named-not-extracted (
 - an outside write is refused NAMING the fence, the path and the route
 - docs/tasks is always writable, and the hook takes that set from the parser
 - a card whose touches line moved under the lane blocks with `re-expand`
+- the UNFENCEABLE directory stays open while the card and the manifest disagree
+- a HALF-DELIVERED grant is still refused ON THE PATH IT GRANTED
 - a manifest the hook cannot read is a refusal, never a shrug
 - in a lane, a request with no readable path is refused rather than waved through
 - a path in NO git checkout is not judged, and the narrowed limit is declared
