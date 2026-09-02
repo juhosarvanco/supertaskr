@@ -227,6 +227,18 @@ fixture arms), and the seat SHALL name that control in the brief when a
 card's subject is the host. Absorbed into the live T-237-s2 as
 T-238-s2, first in its queue, because that lane holds the hook.
 
+**21. A verdict commit on the bench is not the end of the verifier's
+work, and the seat removed two benches under running gates.** After the
+verdict commit, verifier.md step 7 has the verifier run the gates its own
+prose commit could move — in the bench. At 07:42Z the seat merged
+T-237-s3 and T-215-s6 from their verdict commits and removed both
+benches while both verifiers were mid-e2e; each lost a leg (seventeen
+and thirteen reds that were the directory vanishing), both had already
+measured what mattered, and both reported the incident rather than
+hiding it. The rule: a bench stands until the verifier's REPORT has been
+read, not until its verdict is on disk; the dispatch brief for a verifier
+now says so, and T-239's arm removes a bench only on the report.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
