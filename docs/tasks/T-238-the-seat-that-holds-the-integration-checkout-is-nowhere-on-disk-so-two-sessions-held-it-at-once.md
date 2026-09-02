@@ -401,3 +401,207 @@ override was added to make the tests reachable.
 3. Nothing else in the brief was contradicted by the repository. The
    fence, the ceremony row (M: executor -> verifier -> integrator), the
    port, the scratch naming and the no-merge instruction all held.
+
+## VERDICT — APPROVED at `7705ac49`, 2026-09-02
+
+Blind verifier, `claude-opus-5[1m]@subagent`, bench
+`/Users/ujju/Projects/nputer-V-T-238` detached at the BASE `a03259fa`.
+**THE BLINDNESS WAS CLOCK-SHAPED, NOT DISCIPLINE-SHAPED**: phase 1 ran
+before the lane's first commit existed, so there was no diff to decline
+to read. Three artefacts sealed at `2026-09-02T04:01:09Z`, before any
+byte of the work: attack set `11891017…`, ground truth `29fcc82e…`,
+stamps `9a5ad38d…`. The lane's branch was never fetched in phase 1, its
+worktree never opened, and no executor note read until the tip arrived
+BY PATH.
+
+### The ground truth said this card's own prediction was FALSE, and said so first
+
+Sealed before the diff: at `a03259f` this bench CONTAINED `99349dba`,
+the newest `main` commit touching `.claude`, so the four bodies were
+**already green here** — the whole e2e leg read 574 bodies, exit 0.
+**The absorbed T-240's wording is false as a universal**: a bench cannot
+run the leg green *only while a `.claude`-touching commit sits strictly
+between its base and the tip*, which is a fact about the clock and not
+about any diff. That was pre-committed, so a green leg could never be
+mistaken for evidence about this fix.
+
+By phase 2 the clock had turned: at `7705ac4` this bench is judged
+**STALE** by the catcher's own CLI — `guard-surface-behind`, 50 commits
+behind, not containing `.claude` commit `7129d90b`. The condition the
+card is about arrived on its own, and the test below is the real one.
+
+### T-240's ask, measured at the judged tip in a genuinely stale bench
+
+Same bench, same HEAD `7705ac4`, same machine, minutes apart; only the
+spec files differ:
+
+    the BASE's three specs in the tree   1  — 4 failed: card-preflight:719,
+                                             checkout-currency:852 and :953,
+                                             lane-lock:899
+    the TIP's specs, HEAD UNCHANGED      0  — 4 passed
+
+That reproduces the lane's own red/green independently, at a different
+ref and by a different route, and it discharges verifier.md step 7's e2e
+column from a bench: the leg ran here, 594 bodies.
+
+### Every acceptance criterion, attacked where the deciding arrangement was mine
+
+**Criterion 1 — refuse a live holder, take over a dead one with
+disclosure.** Controls hand-written, never through the lane's own writer.
+A record naming pid 1 (alive, not ours) and one naming the OTHER live
+harness `3414` both REFUSED, exit 1, record untouched. Then a process I
+spawned myself, its true identity recorded by hand, SIGKILLed and reaped:
+alive -> REFUSED; dead -> TAKEN OVER, exit 0, **disclosing the dead
+holder's pid, start time, host and `takenAt`**. One arrangement varied,
+one answer changed.
+
+**Criterion 2 — the arming steps and the guard.** Seat MINE: the arming
+step prints no holder block and the guard emits no holder notice — silent,
+as the criterion asks. Another LIVE session: `--preflight` exits 1 with
+the finding on stderr, and `--write-fence` leaves **no manifest on disk**.
+Dead: announced, push proceeds.
+
+**AND THE GUARD'S ARM IS REACHABLE IN THE STATE THAT MATTERS.** Driven
+through `decide()` against a root with NO verdict token: a live other
+holder returns `holder-live-elsewhere`, and the same request with the
+record removed returns `token-missing`. That contrast is the placement
+proof — one arm later and the second seat would have been refused for
+the token and never told about the holder.
+
+**Criterion 3 — one derivation, measured across shells.** Stable across
+two separate tool shells (pids 31756 and 36547, both -> `65005`) and
+across six spellings: direct node, `sh -c` (the hook's own shape), `zsh
+-c`, three shells deep, `npm exec`, and under `env -i` with every
+`CLAUDE_*` variable stripped. **Identity identical in all six; hop count
+2 and 4.** Depth is an output, exactly as claimed.
+**MY STRONGEST PRE-COMMITTED PREDICTION WAS REFUTED HERE** — I expected
+the arming step (`zsh -> claude`) and the hook (`node -> claude`) to
+derive different identities and the guard to refuse the session that took
+the seat. A nearest-matching-ancestor walk survives it.
+The two traps are closed and I measured both: the shared application root
+`2295` (`/Applications/Claude.app/Contents/MacOS/Claude`) does NOT match,
+the case-sensitivity being load-bearing; and the `disclaimer` launcher
+`65004`, whose *arguments* name the harness path, does not match either,
+because `programOf` reads only the program. The other live harness on
+this machine derives a different identity — pid and start time both.
+
+**Criterion 4 — un-committable by construction.** Measured in a
+repository nobody armed: a fresh `git clone` put on `main` at the tip,
+`--take-seat`, then `git status --porcelain` **empty** and
+`git check-ignore -v` naming `.nputer/.gitignore:3:*` for the holder file
+AND for the ignore file itself. `armRuntimeDir` is imported, not
+re-spelled.
+
+**Criterion 5 — a lane does not hold a seat.** A lane worktree carrying
+the identical live-other record answers `not-integration`, writes
+nothing, adds no finding, and the arming step's exit is unchanged. A
+detached bench likewise.
+
+### Malformed input, and the security sweep
+
+Every degenerate record ANNOUNCED and none silently stepped over: pid
+`0`, pid `-1`, `"65005"` as a string, `1.5`, a torn `{"version":1,`,
+version `2`, a missing identity object and a bare array all read
+`holder-unreadable`; `999999` reads `holder-dead`. **`0` and `-1` are the
+ones that matter** — both answer ALIVE to `kill(2)` for ever, and both
+are refused at the write AND at the read.
+
+The whole surface is one `spawnSync("ps", ["-o", …, "-p", String(pid)])`
+in argv form. **No shell, no `execSync`, no template-interpolated command,
+no `process.kill`, and no signal is ever sent to a pid read off disk.**
+No dependency added. The record carries pid, start time, program path,
+checkout, clock and host — **no argv, no `--resume` token, no session id**
+— and the file-controlled `program` field is never echoed into a refusal.
+
+### Poison drills — graded by containment, each landing read from `git diff`
+
+    A  isHarnessProcess case-insensitive     kills 1  (the shared-app body)
+    B  identityAlive drops the start time    kills 1  (the recycled-pid body)
+    C  writeHolder skips armRuntimeDir       kills 4  (incl. un-committability)
+    D  the guard's holder call site neutered kills 5  (the new guard bodies)
+    E  judge() always "current"              kills 11 stale-discriminating bodies
+    G  judge() always "stale"                kills the TWO MOVED CONTROLS
+
+**E AND G TOGETHER ARE THE ANSWER TO THE ATTACK SET'S SHARPEST
+QUESTION** — whether the moved bodies became unfalsifiable when their
+vantage became a fixture. They did not. `E` leaves them alive because a
+positive control asserting CURRENT is satisfied by an always-current
+implementation; `G` kills both. Neither kill set contains the other, so
+the moved controls and the stale-discriminating bodies are both
+load-bearing, and every mutant died at the site its property lives.
+`card-preflight:753` and `lane-lock:899` survive both, correctly: their
+helpers now put the catcher in the UNANSWERED state, so their exit codes
+became facts about the preflight and the fence layer rather than about
+the runner's position. **Twenty bodies added, ZERO removed** — nothing
+was made green by deleting the teeth, and `:936` / `:971` / `:1005`
+still die under a neutered wiring.
+
+### The battery at `7705ac4`, and the two reds attributed by measurement
+
+    parser  349 GREEN · app 1131 GREEN · rust 634 GREEN
+    e2e     594 bodies, 2 failed
+    index --check CURRENT · typecheck 0 · lint:docs 0 · lint:tokens 0
+    git merge-tree against main at 34f4db2: exit 0 over 10 paths
+
+The two are `session-economics.spec.ts:179` and `:365`. **NOT THE
+DIFF, AND I DID NOT TAKE THAT ON ANYBODY'S WORD**: the file is
+byte-identical base-to-tip, and the same two bodies fail **at
+`a03259f` in this same bench at the same clock** — while this seat's own
+phase-1 leg at that ref, hours earlier, was green. Between the two
+readings `main` advanced and lanes were cut. That is T-143-s1's
+machine-scoped-list class exactly, and the lane filed the corroboration
+on that card rather than absorbing the red.
+
+`capabilities:check` is STALE by the twenty new spec names. **That is
+OWED, not a defect** — the lane's fence leaves the census read-only, the
+card reports it, and the regeneration is the INTEGRATOR'S in the merge
+commit. Forgetting it reds CI on that push; it has before (`e67cb44`).
+
+### Findings — none blocking, all recorded rather than routed
+
+1. **A dangling symbol in a user-facing refusal.**
+   `checkout-currency.mjs` tells the reader to *see
+   HARNESS_ARGV0_BASENAME*; no such symbol exists — it is
+   `HARNESS_PROGRAM_BASENAME`. CONVENTIONS' A CITATION NAMES A SYMBOL
+   rule, broken in the one sentence a reader meets when the identity
+   cannot be derived.
+2. **`--release-seat` removes a record it cannot read.** A truncated
+   record is deleted with *RELEASED. The next session to arm this
+   checkout takes it unopposed*, exit 0 — contradicting the arm's own
+   rule that it *refuses to remove a record it cannot show belongs to
+   this session*. No guarantee is lost (both readers already ANNOUNCE
+   and ALLOW in that state, so nothing was protecting that seat), but
+   the sentence misdescribes the act. `writeHolder` uses a plain
+   `writeFileSync`, which is how the state is reached.
+3. **This card's own premise is false as measured, and the lane left it
+   standing.** The construction section says *a Bash tool call carries no
+   session id*. Measured in a Bash tool call at `7705ac4`:
+   `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_HOST_SESSION_ID` and
+   `CLAUDE_PID` are all exported, and `CLAUDE_PID` equals the derived
+   harness pid. Only `CLAUDE_PROJECT_DIR` was re-measured. **The
+   derivation is still the better instrument and that is measured too** —
+   it survives `env -i`, needs no cooperation from the harness, and a pid
+   carries LIVENESS that an id does not — but a card whose own
+   instruction was to MEASURE rather than assume should not ship the
+   assumption it displaced.
+4. **A DETACHED integration checkout holds no seat.** The test is
+   `HEAD == refs/heads/main`; mid-merge and mid-rebase keep that ref, so
+   the checkpoint window is covered, but an integrator who detaches has
+   no seat and no refusal. Narrow, and worth naming in the limits.
+5. **The e2e suite now writes to the host's list of worktrees.**
+   `currentVantageCheckout` runs `git worktree add` against the real
+   repository and gives the entry back in `afterAll` with a `prune`. It
+   cleaned up across every run this seat made. But rule 4 names that list
+   as a MACHINE-scoped surface in those words, and an interrupted run
+   leaves an entry the sweep, the dispatch guard and STATE's LANES
+   derivation all read.
+
+Findings 1 and 2 are cheap edits; 3 is a card correction; 4 and 5 are
+limits to name. None of them is a defect in a shipped guard and none
+gates the merge — they are recorded here rather than filed as cards so
+that the routing stays the architect's.
+
+**APPROVED.** The construction does what the card asked, the identity
+question was measured rather than assumed and measured correctly, the
+controls fail where they should, and the four bodies that judged their
+own checkout no longer do.
