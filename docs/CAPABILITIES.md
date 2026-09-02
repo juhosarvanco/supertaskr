@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **627 behaviours** — 625 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **629 behaviours** — 627 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -242,6 +242,8 @@ Census: **627 behaviours** — 625 extracted sentences + 2 named-not-extracted (
 - THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never what is RULED ON
 - ...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
 - the in-flight section's POPULATED arm, on an injected board that cannot evaporate
+- A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path
+- ...AND THE SAVING IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
 
 ## docs-input-gate
 

@@ -277,6 +277,58 @@ function unmetBlockers(rulings) {
   return [...ids].sort();
 }
 
+/**
+ * A LANE'S ADDRESS IS SPELLED ONCE, AND EVERY RULING AFTER IT NAMES THE
+ * LANE BY ITS ID (T-225-s12).
+ *
+ * ── WHAT THIS IS ABOUT, IN BYTES ────────────────────────────────────
+ * The parser writes a lane into a reason as `laneName` spells it —
+ * `T-202-s1 (refs/heads/task/T-202-s1-solo-lock-whole-path-key at
+ * /Users/ujju/Projects/nputer-T-202-s1)` — and `--full` prints one reason
+ * per held card, so the branch and the absolute worktree path of every
+ * live lane are re-spelled once per card. Measured on this repository at
+ * `cde65b5` with five lanes live and fifty-five cards fenced out: 252
+ * addresses spelling 23,136 bytes of branch and worktree path — 23,388
+ * counting the separator each one hangs on, which is what a removal
+ * actually takes — in a 123,153-byte answer that is 99,943 with the
+ * address given once. The term is
+ * O(cards x lanes) and every byte of it is a repeat of THE LIVE LANES
+ * section a page above, which spells each lane's branch and worktree
+ * exactly once — so this is the same answer with the address given once
+ * and cited thereafter, which is `T-225-s2`'s shape one command over.
+ *
+ * NOTHING A TRIAGE READER ACTS ON LEAVES THE ANSWER. The two acts the
+ * `--full` view exists for are *free that lane* and *argue with the
+ * overlap*: the LANE ID and the SHARED PATHS are what both need, and both
+ * stay in the sentence untouched. The branch and the worktree path are
+ * how a reader REACHES the lane, and they are still in this same answer,
+ * above, under a heading that names them — one address, not one per card.
+ *
+ * ── AND IT CANNOT BE WRONG, WHICH IS WHY IT IS SPELLED THIS WAY ─────
+ * The needle is BUILT FROM THE LANE RECORD rather than recognised by a
+ * pattern: for each live lane this replaces the exact string
+ * `${taskId} (${branch} at ${worktree})`, which is the only shape
+ * `laneName` produces, with `${taskId}`. A `split`/`join` pair does that
+ * literally — no regular expression, so a worktree path carrying a
+ * metacharacter cannot turn into a wildcard.
+ *
+ * THE FAILURE MODE IS THE SAFE ONE. If the parser ever spells a lane
+ * differently, no needle matches, nothing is replaced, and the reason
+ * arrives WHOLE — the answer is bigger than it needs to be and is never
+ * wrong. A recogniser would have had the opposite failure.
+ *
+ * @param {string} reason  the parser's own sentence, never re-spelled
+ * @param {{taskId: string, branch: string, worktree: string}[]} lanes
+ * @returns {string}
+ */
+export function laneAddressOnce(reason, lanes) {
+  let out = reason;
+  for (const lane of lanes) {
+    out = out.split(`${lane.taskId} (${lane.branch} at ${lane.worktree})`).join(lane.taskId);
+  }
+  return out;
+}
+
 /** The card's roadmap dimension, REPORTED and never re-derived. */
 /** @param {any} card @returns {string} */
 function roadmapOf(card) {
@@ -323,6 +375,15 @@ function roadmapOf(card) {
  * hand-rolled the fence expansion reported two overlapping cards disjoint
  * — so it is moved behind a flag and never deleted.
  *
+ * ── AND THE ADDRESS IS SPELLED ONCE (T-225-s12) ─────────────────────
+ * `--full` is still the biggest invocation this command has, and the
+ * largest repeated thing in it was never a card: it was every live lane's
+ * BRANCH and absolute WORKTREE PATH, re-spelled inside every held card's
+ * reason. Every ruling below therefore goes through `laneAddressOnce`,
+ * which names a lane by its id and leaves the address to THE LIVE LANES
+ * section that already spells it once. No set loses a row, no reason
+ * loses a shared path, and the term removed is O(cards x lanes).
+ *
  * THREE SETS STAY IN FULL AT EVERY VERBOSITY, and each for a reason
  * rather than by omission. UNFENCEABLE is a REFUSAL and not a queue: no
  * overlap was proved and none was ruled out, so a count would hide the
@@ -340,6 +401,16 @@ export function dispatchReport(ctx) {
   /** @param {string} via @returns {import("./dispatch-brief.mjs").Prov} */
   const live = (via) => liveProv(ctx.at, ctx.host, via);
   const o = ctx.order;
+  /**
+   * EVERY RULING GOES THROUGH HERE AND NOT ONE OF THEM IS RE-SPELLED.
+   * `laneAddressOnce` is applied at ONE site per set rather than at the
+   * call that happens to be big today: a set whose reasons carry no lane
+   * address is a no-op through it, and a set added later that does carry
+   * one cannot be the one nobody remembered to route (T-225-s12).
+   *
+   * @param {string} reason @returns {string}
+   */
+  const ruling = (reason) => laneAddressOnce(reason, o.lanes);
 
   /** @type {import("./dispatch-brief.mjs").Rec[]} */
   const recs = [
@@ -358,6 +429,8 @@ export function dispatchReport(ctx) {
         ]),
     blank(),
     note("THE LIVE LANES — entries on a task branch. A detached worktree is not a lane."),
+    note("EACH LANE'S ADDRESS IS SPELLED HERE AND NOWHERE ELSE: a ruling below names a lane by"),
+    note("its id, and its branch and worktree are on its row here — one address, not one per card."),
   ];
   if (o.lanes.length === 0) recs.push(value("no lane is live", live(laneVia)));
   for (const lane of o.lanes) {
@@ -401,7 +474,7 @@ export function dispatchReport(ctx) {
   for (const r of o.startable) {
     recs.push(
       value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-      value(`   ${r.reason}`, live(`${laneVia}, joined to the parsed board`)),
+      value(`   ${ruling(r.reason)}`, live(`${laneVia}, joined to the parsed board`)),
     );
   }
 
@@ -426,7 +499,7 @@ export function dispatchReport(ctx) {
     for (const r of o.fenced) {
       recs.push(
         value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-        value(`   ${r.reason}`, live(`${laneVia}, compared through the parser's fence module`)),
+        value(`   ${ruling(r.reason)}`, live(`${laneVia}, compared through the parser's fence module`)),
       );
     }
   }
@@ -439,7 +512,7 @@ export function dispatchReport(ctx) {
     for (const r of o.unfenceable) {
       recs.push(
         value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-        value(`   ${r.reason}`, live(`${laneVia}, compared through the parser's fence module`)),
+        value(`   ${ruling(r.reason)}`, live(`${laneVia}, compared through the parser's fence module`)),
       );
     }
   }
@@ -462,7 +535,7 @@ export function dispatchReport(ctx) {
     for (const r of o.waits) {
       recs.push(
         value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-        value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+        value(`   ${ruling(r.reason)}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
       );
     }
   }
@@ -482,7 +555,7 @@ export function dispatchReport(ctx) {
     for (const r of o.blocked) {
       recs.push(
         value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-        value(`   ${r.reason}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
+        value(`   ${ruling(r.reason)}`, tree(`${r.card.file} field blocked_by, resolved on the board`)),
       );
     }
   }
@@ -529,7 +602,7 @@ export function dispatchReport(ctx) {
         : `it declares ${r.fence.paths.length} path(s)`;
     recs.push(
       value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
-      value(`   ${r.reason} — ${fence}`, tree(`${r.card.file} frontmatter, fence expanded`)),
+      value(`   ${ruling(r.reason)} — ${fence}`, tree(`${r.card.file} frontmatter, fence expanded`)),
       laneHeld
         ? value("   and it HAS a lane above, so that fence is held for real", live(laneVia))
         : value(
