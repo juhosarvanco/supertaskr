@@ -273,3 +273,19 @@ restored-to-base run is the measurement rather than the argument.
    binding budget is `brief.mjs --full`'s spawn buffer via the LANE
    PROTOCOL bullet, which the document's budget does not see; the first
    pass passed the docs gate and still broke the arm.
+
+### The four-suite battery, with the ref each leg was read at
+
+`node tools/e2e/scripts/gate-run.mjs <leg>` from the lane root,
+`NPUTER_E2E_PORT=15215`, COUNTS read from the `gate-verdict` line:
+
+| leg | ref | verdict |
+|---|---|---|
+| parser | `5fbb25d` | exit 0, **349 bodies**, 1 target, GREEN |
+| app | `5fbb25d` | exit 0, **1131 bodies**, 1 target, GREEN |
+| rust | `e609827` | exit 0, **634 bodies**, 18 targets, GREEN — this lane's diff never reaches Rust, and no gate names `cargo test` for it |
+| e2e | `5fbb25d` | exit 1, **559 bodies**, 6 failed / 553 passed, RED — the SAME SIX named above, base-attributed |
+
+The e2e leg was read twice, at `e47bf86` and again at `5fbb25d` after the
+cards landed: identical failure SET both times, and identical to the run
+with `docs/CONVENTIONS.md` restored to its base bytes.
