@@ -14,6 +14,7 @@ import { expect, test } from "@playwright/test";
 import {
   ACTIVE_RUN_STATUSES,
   ANNOUNCED_ALLOW_CODES,
+  ANNOUNCED_RED_CONCLUSIONS,
   CANCEL_CI_ENV,
   CHECK_ARGV,
   CHECK_DIR_REL_PATH,
@@ -23,11 +24,16 @@ import {
   FAILED_CONCLUSION,
   GH_BIN,
   GH_EXIT,
+  GH_MEASURED_MS,
+  GH_TIMEOUT_MS,
   GIT_GLOBAL_OPTS_WITH_VALUE,
   GRAPH_REL_PATH,
+  HEAD_REFSPEC_WORDS,
   INDEX_CRATE_MANIFEST_REL_PATH,
   NON_PUSHING_FLAGS,
   NON_VERDICT_CONCLUSIONS,
+  PUSH_OPTS_WITH_VALUE,
+  PUSH_UNRESOLVING_FLAGS,
   RUN_LIST_JSON_FIELDS,
   RUN_LIST_REQUIRED_FIELDS,
   RUN_VIEW_JSON_FIELDS,
@@ -48,6 +54,7 @@ import {
   parseRunList,
   pathsSince,
   pushCwds,
+  pushTargetBranch,
   reachesPackage,
   repointedBy,
   runStartedAt,
@@ -163,10 +170,26 @@ function writeCargoShim(root: string, code: number, report: string): string {
  * touches the network in either direction.
  */
 
+/** One `gh` answer: what the shim prints and what it exits. */
+interface GhAnswer {
+  code?: number;
+  stdout?: string;
+  stderr?: string;
+}
+
 /** What a fixture's `gh` shim answers, per subcommand. */
 interface GhPlan {
-  list?: { code?: number; stdout?: string; stderr?: string };
-  view?: { code?: number; stdout?: string; stderr?: string };
+  list?: GhAnswer;
+  /**
+   * T-237-s2: answer `run list` DIFFERENTLY PER `--branch`.
+   *
+   * The whole of T-237-s6 is that this arm asked about the wrong branch,
+   * and a shim that answers the same thing whatever it is asked cannot
+   * tell a right answer from a wrong one. A branch named here wins over
+   * `list`, which stays the answer for every branch not named.
+   */
+  listByBranch?: Record<string, GhAnswer>;
+  view?: GhAnswer;
 }
 
 /**
@@ -177,21 +200,36 @@ interface GhPlan {
  * nothing; `for a in "$@"` preserves the boundaries, so a body can drive
  * a branch name carrying `;`, `$`, `&` and a backtick and read back that
  * it arrived as ONE argument with nothing executed.
+ *
+ * IT ALSO READS THE `--branch` VALUE THE SAME WAY (T-237-s2) — by walking
+ * `"$@"` rather than by indexing, so the shim stays correct whatever
+ * order `ghRunListArgv` puts its options in.
  */
 function writeGhShim(root: string, plan: GhPlan): string {
   const bin = path.join(root, "bin");
   mkdirSync(bin, { recursive: true });
   const marker = path.join(root, "gh-was-run.txt");
-  const arm = (sub: string, out: { code?: number; stdout?: string; stderr?: string } | undefined) =>
-    `if [ "$2" = ${JSON.stringify(sub)} ]; then\n` +
+  const answer = (out: GhAnswer | undefined) =>
     `cat <<'GHOUT'\n${out?.stdout ?? ""}\nGHOUT\n` +
     `cat >&2 <<'GHERR'\n${out?.stderr ?? ""}\nGHERR\n` +
-    `exit ${String(out?.code ?? 0)}\nfi\n`;
+    `exit ${String(out?.code ?? 0)}\n`;
+  const arm = (sub: string, out: GhAnswer | undefined) =>
+    `if [ "$2" = ${JSON.stringify(sub)} ]; then\n${answer(out)}fi\n`;
+  const branchArms = Object.entries(plan.listByBranch ?? {})
+    .map(
+      ([branch, out]) =>
+        `if [ "$2" = "list" ] && [ "$ghbranch" = ${JSON.stringify(branch)} ]; then\n` +
+        `${answer(out)}fi\n`,
+    )
+    .join("");
   writeFileSync(
     path.join(bin, "gh"),
     "#!/bin/sh\n" +
       `for a in "$@"; do printf 'arg=%s\\n' "$a" >> ${JSON.stringify(marker)}; done\n` +
       `printf 'end\\n' >> ${JSON.stringify(marker)}\n` +
+      'ghbranch=""\nghprev=""\n' +
+      'for a in "$@"; do if [ "$ghprev" = "--branch" ]; then ghbranch="$a"; fi; ghprev="$a"; done\n' +
+      branchArms +
       arm("list", plan.list ?? { stdout: "[]" }) +
       arm("view", plan.view) +
       "printf 'this shim was called with something it does not model\\n' >&2\nexit 99\n",
@@ -232,20 +270,25 @@ function runRow(over: Record<string, unknown> = {}): Record<string, unknown> {
 /**
  * A `gh run view --json jobs` answer whose failing step is `step`.
  *
+ * `conclusion` DEFAULTS TO `failure` AND IS A PARAMETER (T-237-s2): a
+ * job and a step carry the same vocabulary a run does, so a `timed_out`
+ * run's job is modelled by moving one argument rather than by a second
+ * copy of this shape.
+ *
  * The shape is the REAL one, read off this repository's own run
  * 33575869087 on 2026-09-02: `{ jobs: [ { name, conclusion, steps: [ {
  * name, conclusion } ] } ] }`. A passing step precedes the failing one
  * so a body can tell "the first failing step" from "the first step".
  */
-function jobsWithFailingStep(step: string): string {
+function jobsWithFailingStep(step: string, conclusion: string = FAILED_CONCLUSION): string {
   return JSON.stringify({
     jobs: [
       {
         name: "linux",
-        conclusion: FAILED_CONCLUSION,
+        conclusion,
         steps: [
           { name: "Set up job", conclusion: "success" },
-          { name: step, conclusion: FAILED_CONCLUSION },
+          { name: step, conclusion },
         ],
       },
     ],
@@ -544,8 +587,18 @@ function remoteTip(fx: Fixture): string {
  * between *"the decision module refuses"* and *"the thing settings.json
  * invokes refuses"* — two different claims, and only the second one is
  * the guard.
+ *
+ * `cwd` IS THE SEAT'S OWN DIRECTORY and defaults to the fixture's root.
+ * T-237-s2 drives it at a LANE WORKTREE instead, which is the whole of
+ * that residual: the checkout a seat pushes FROM and the branch a push
+ * lands ON are different facts, and until that card this arm read the
+ * first where it meant the second.
  */
-function runWiredHook(fx: Fixture, command: string): { status: number | null; stderr: string } {
+function runWiredHook(
+  fx: Fixture,
+  command: string,
+  cwd: string = fx.root,
+): { status: number | null; stderr: string } {
   const settings = JSON.parse(
     readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8"),
   ) as { hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] } };
@@ -553,11 +606,22 @@ function runWiredHook(fx: Fixture, command: string): { status: number | null; st
   if (entry === undefined) throw new Error("no PreToolUse entry whose matcher matches `Bash`");
   const wired = entry.hooks.map((h) => h.command).join(" && ");
   const out = spawnSync("sh", ["-c", wired], {
-    input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: fx.root }),
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd }),
     encoding: "utf8",
     env: { ...process.env, CLAUDE_PROJECT_DIR: repoRoot, PATH: fixturePath(fx) },
   });
   return { status: out.status, stderr: String(out.stderr ?? "") };
+}
+
+/**
+ * A figure this suite MEASURED, said out loud where CI can read it.
+ *
+ * @see the disclosure precedent in brief-flush.spec.ts, brief.spec.ts and
+ *   range-rule.spec.ts — annotation for the report, stdout for the log.
+ */
+function disclose(label: string, line: string): void {
+  test.info().annotations.push({ type: label, description: line });
+  process.stdout.write(`\n  ${label}: ${line}\n`);
 }
 
 /**
@@ -2519,7 +2583,11 @@ test("the branch reaches `gh` as ONE argument, through no shell", () => {
   }).trim();
   expect(head, "the precondition: git accepted the ref").toBe(`refs/heads/${branch}`);
 
-  runHook(fx, "git push origin main");
+  // A PUSH WITH NO REFSPEC, so the branch reaches `gh` off HEAD — which
+  // is where a name like this one can come from at all. T-237-s2 changed
+  // which SPELLINGS route a name here and changed nothing about the
+  // property: whatever the branch, it is an ELEMENT of an argv array.
+  runHook(fx, "git push");
   const calls = ghCalls(fx);
   expect(calls.length, "the arm must have asked").toBeGreaterThan(0);
   expect(calls[0], "argv, element for element").toEqual(ghRunListArgv(branch));
@@ -2527,6 +2595,33 @@ test("the branch reaches `gh` as ONE argument, through no shell", () => {
   // A shell would have split on `;` and substituted `$(id)`; nothing did.
   expect(calls[0]?.some((a) => a.includes("uid="))).toBe(false);
   expect(existsSync(path.join(fx.root, "x")), "nothing was executed").toBe(false);
+
+  // AND THE OTHER ROUTE IS CLOSED RATHER THAN GUARDED (T-237-s2). A
+  // branch name can now reach `gh` off a REFSPEC as well as off HEAD, and
+  // the answer is that a hostile one cannot: `UNRESOLVABLE_TOKEN_RE`
+  // reads it as a value only a shell knows, the arm declines to ask, and
+  // `gh` is handed nothing. One fewer place a ref name travels, rather
+  // than one more place it has to be handled safely.
+  //
+  // THE NAME ABOVE CANNOT EVEN BE SPELLED AS ONE, which is worth saying:
+  // `segments` reads its `;` and `&` as COMMAND SEPARATORS, so
+  // `git push origin ci;echo$(id)&x` is a push to `ci` followed by other
+  // commands — and the quoted spelling that would keep it whole is
+  // unresolvable by the same rule. So this half drives a hostile name
+  // that carries no separator.
+  const hostile = "ci$(id)x";
+  expect(UNRESOLVABLE_TOKEN_RE.test(hostile), "the precondition for the sentence below").toBe(true);
+  expect(segments(`git push origin ${hostile}`).length, "and it is ONE segment").toBe(1);
+  const spelled = fixture("ci-argv-refspec", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const declined = runWiredHook(spelled, `git push origin ${hostile}`);
+  expect(declined.status, "an inability is announced and allowed, never refused").toBe(0);
+  expect(declined.stderr).toContain("CI WAS NOT ASKED");
+  expect(declined.stderr).toContain("only a shell knows");
+  expect(ghCalls(spelled), "and `gh` was never asked anything").toEqual([]);
+  expect(existsSync(path.join(spelled.root, "x")), "nothing was executed there either").toBe(false);
+  // The quoted form the shell would need is unresolvable too, so there is
+  // no spelling of this name that reaches the network.
+  expect("unresolved" in pushTargetBranch(`git push origin "${branch}"`)).toBe(true);
 });
 
 test("CI is not asked for a push the LOCAL arms already refused", () => {
@@ -2770,4 +2865,417 @@ test("WITH the holder arm, a push from a checkout another session holds never re
     { stdio: "pipe" },
   );
   expect(remoteTip(fx), "and the control's push does reach it").toBe(fx.unpushed);
+});
+
+/* ════════ T-237-s2 — THE THREE RESIDUALS OF T-237, IN ONE LANE ══════
+ *
+ * Each of the three was found by a seat reading T-237's own build rather
+ * than by a failure, and each is the same shape: an arm that is CORRECT
+ * about the case it was written for and SILENT about the cases beside it.
+ *
+ *   THE CONCLUSION — `failure` was the whole announced set, so a run that
+ *     TIMED OUT reached the seat as "not read". A hung suite is a suite
+ *     that did not pass.
+ *   THE BOUND — 15 s was picked in a lane and never measured against
+ *     anything. It is now measured, and the measurement is exported so a
+ *     body can hold the ratio rather than the sentence.
+ *   THE BRANCH — the arm asked about the branch the CHECKOUT is on, so a
+ *     refspec push from a lane was asked about the lane. The guard was
+ *     strictest exactly where the seat was safest.
+ *
+ * Every body below drives the WIRED hook, and every allow is paired with
+ * the same fixture shape refusing or speaking — docs/CONVENTIONS.md's
+ * LIFTING A SAFETY GUARD bullet, kept the way the bodies above keep it.
+ */
+
+/** `gh run view --json jobs` for a run that produced no jobs at all. */
+const NO_JOBS = JSON.stringify({ jobs: [] });
+
+test("a run that timed out, failed to start or waits on a human is announced as the red it is", () => {
+  // THE RESIDUAL, MEASURED. Before T-237-s2 each of these three reached
+  // the seat as `CI'S LAST VERDICT WAS NOT READ` — honest, and thin
+  // enough that the seat still owed a `gh run view` by hand, which is
+  // the manual step this whole arm exists to remove.
+  const cases = [
+    {
+      conclusion: "timed_out",
+      // A TIMED-OUT RUN'S JOB CARRIES THE SAME WORD, so the failing step
+      // is nameable and the announcement is the FULL one — run id,
+      // failing step, and whether this push reaches that step's package.
+      view: jobsWithFailingStep("e2e lane", "timed_out"),
+      names: "tools/e2e/",
+      id: 8201,
+    },
+    {
+      conclusion: "startup_failure",
+      // A RUNNER THAT NEVER STARTED HAS NO JOBS, so the step is
+      // unnameable and the guard SAYS SO rather than inventing one.
+      view: NO_JOBS,
+      names: "the failing step cannot be named from here",
+      id: 8202,
+    },
+    {
+      conclusion: "action_required",
+      view: NO_JOBS,
+      names: "the failing step cannot be named from here",
+      id: 8203,
+    },
+  ];
+
+  for (const c of cases) {
+    expect(ANNOUNCED_RED_CONCLUSIONS, `${c.conclusion} is not announced`).toContain(c.conclusion);
+    const fx = fixture(`s2-${c.conclusion}`, CHECK_EXIT.CURRENT, CURRENT_REPORT);
+    armGh(fx, {
+      list: listOf([runRow({ conclusion: c.conclusion, databaseId: c.id, headSha: fx.base })]),
+      view: { stdout: c.view },
+    });
+    const { status, stderr } = runWiredHook(fx, "git push origin main");
+    expect(status, `a ${c.conclusion} run must ANNOUNCE and never refuse`).toBe(0);
+    expect(stderr, "the same headline `failure` earns").toContain("CI IS RED UNDER THIS PUSH");
+    expect(stderr, "the run id").toContain(String(c.id));
+    expect(stderr, "AND THE CONCLUSION NAMED — four reds mean four things").toContain(
+      `\`${c.conclusion}\``,
+    );
+    expect(stderr, "the announcement's own second half").toContain(c.names);
+    expect(stderr, "and it is not the thin catch-all any more").not.toContain(
+      "CI'S LAST VERDICT WAS NOT READ",
+    );
+    expect(stderr).toContain("THIS IS NOT A REFUSAL");
+
+    // THE CONTROL, IN THE SAME FIXTURE SHAPE: `success` is SILENT. An
+    // arm that announced everything would satisfy every line above.
+    const green = fixture(`s2-${c.conclusion}-control`, CHECK_EXIT.CURRENT, CURRENT_REPORT);
+    armGh(green, {
+      list: listOf([runRow({ conclusion: "success", databaseId: c.id, headSha: green.base })]),
+      view: { stdout: c.view },
+    });
+    const control = runWiredHook(green, "git push origin main");
+    expect(control.status, "the green control must push").toBe(0);
+    expect(control.stderr, "and an ordinary allow says NOTHING").toBe("");
+  }
+
+  // AND THE FLOOR THE WIDENING RESTS ON: a conclusion on NEITHER list is
+  // still heard, as the catch-all that names it and hands over the CLI.
+  const odd = fixture("s2-unknown-conclusion", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(odd, { list: listOf([runRow({ conclusion: "neutral", databaseId: 8204 })]) });
+  const unknown = runWiredHook(odd, "git push origin main");
+  expect(unknown.status).toBe(0);
+  expect(unknown.stderr).toContain("CI'S LAST VERDICT WAS NOT READ");
+  expect(unknown.stderr).toContain("`neutral`");
+  for (const c of ANNOUNCED_RED_CONCLUSIONS) {
+    expect(unknown.stderr, "and it names the set it read, not one word of it").toContain(`\`${c}\``);
+  }
+});
+
+test("`cancelled` stays OUT of the announced set, and the reason is recorded beside the constant", () => {
+  // THIS CARD'S SECOND CRITERION, AND IT IS TWO CLAIMS. The first is
+  // about the set.
+  expect(ANNOUNCED_RED_CONCLUSIONS, "a cancellation is not a verdict about a tree").not.toContain(
+    "cancelled",
+  );
+  for (const c of ANNOUNCED_RED_CONCLUSIONS) {
+    expect(
+      NON_VERDICT_CONCLUSIONS,
+      `${c} is both skipped on the way to a verdict and announced as one`,
+    ).not.toContain(c);
+  }
+
+  // The second is about WHERE the reason lives, because a reason kept
+  // anywhere but beside the constant is a reason the next editor widening
+  // this list will not meet.
+  const source = readFileSync(path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"), "utf8");
+  const at = source.indexOf("export const ANNOUNCED_RED_CONCLUSIONS");
+  expect(at, "the announced set is no longer declared under that name").toBeGreaterThan(0);
+  const doc = source.slice(0, at).slice(source.slice(0, at).lastIndexOf("/**"));
+  expect(doc, "the constant carries no docblock").toContain("*/");
+  expect(doc, "the docblock beside the constant does not mention `cancelled`").toContain(
+    "cancelled",
+  );
+  expect(doc, "nor the workflow setting that makes it this guard's own footprint").toContain(
+    "cancel-in-progress",
+  );
+  expect(doc, "nor the word for what a cancelled run actually is").toContain("superseded");
+
+  // AND MECHANICALLY: a stack of cancellations reaches no announcement.
+  const quiet = fixture("s2-cancelled-only", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(quiet, {
+    list: listOf([
+      runRow({ conclusion: "cancelled", databaseId: 8301 }),
+      runRow({ conclusion: "cancelled", databaseId: 8300 }),
+    ]),
+  });
+  const silent = runWiredHook(quiet, "git push origin main");
+  expect(silent.status).toBe(0);
+  expect(silent.stderr, "the guard's own footprint is never announced back at the seat").toBe("");
+
+  // THE CONTROL: the same fixture shape, one conclusion moved, speaks.
+  const loud = fixture("s2-cancelled-control", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(loud, {
+    list: listOf([
+      runRow({ conclusion: "timed_out", databaseId: 8302, headSha: loud.base }),
+      runRow({ conclusion: "cancelled", databaseId: 8300 }),
+    ]),
+    view: { stdout: NO_JOBS },
+  });
+  expect(runWiredHook(loud, "git push origin main").stderr).toContain("CI IS RED UNDER THIS PUSH");
+});
+
+test("the `gh` bound is a ratio over a MEASUREMENT, and the measurement is said where CI can read it", () => {
+  // THE ABSORBED T-237-s4. The bound was picked in a lane; these are the
+  // numbers it is now kept for, re-derivable by hand from the command the
+  // constant names.
+  expect(GH_MEASURED_MS.runList.samples, "one sample is an anecdote").toBeGreaterThanOrEqual(5);
+  expect(GH_MEASURED_MS.runView.samples).toBeGreaterThanOrEqual(5);
+  expect(
+    GH_MEASURED_MS.at,
+    "a LIVE figure carries the time and host it was read at, never a commit",
+  ).toMatch(/\d{4}-\d{2}-\d{2}/);
+  expect(GH_MEASURED_MS.runList.slowestMs).toBeGreaterThanOrEqual(GH_MEASURED_MS.runList.medianMs);
+  expect(GH_MEASURED_MS.runView.slowestMs).toBeGreaterThanOrEqual(GH_MEASURED_MS.runView.medianMs);
+
+  const slowest = Math.max(GH_MEASURED_MS.runList.slowestMs, GH_MEASURED_MS.runView.slowestMs);
+  const ratio = GH_TIMEOUT_MS / slowest;
+  disclose(
+    "T-237-s2 gh bound",
+    `${String(GH_TIMEOUT_MS)}ms over a slowest measured call of ${String(slowest)}ms = ` +
+      `${ratio.toFixed(1)}x (${GH_MEASURED_MS.at})`,
+  );
+  // FIVE TIMES IS THE FLOOR AND THE ARGUMENT IS ASYMMETRIC: a bound set
+  // near the median turns ordinary network variance into a push that
+  // silently stopped asking CI, and a guard that goes quiet leaves
+  // nothing behind to notice. Too high costs bounded, visible wall time.
+  expect(
+    ratio,
+    "the bound has been moved down toward the measurement — re-read GH_TIMEOUT_MS's own header",
+  ).toBeGreaterThanOrEqual(5);
+
+  // AND THE FIGURE CI CAN ACTUALLY READ: the guard's own spawn-and-read,
+  // with no network in it. The real call cannot be timed on a runner —
+  // this file is a PreToolUse hook and never runs there, and `ci.yml`
+  // grants `contents: read` only, so `gh run list` is refused for want of
+  // `actions: read`. This floor runs everywhere and bounds the half this
+  // file controls.
+  const fx = fixture("s2-gh-floor", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const argv = ghRunListArgv("main");
+  const samples: number[] = [];
+  for (let i = 0; i < 5; i += 1) {
+    const started = Date.now();
+    // `runGh`'s OWN SPAWN SHAPE, reproduced rather than called: `runGh`
+    // inherits this process's PATH by design, and the fixture's shim has
+    // to be first or the body would reach the real binary — which is the
+    // rejection this whole file's shim exists to avoid.
+    const out = spawnSync(GH_BIN, argv, {
+      cwd: fx.root,
+      encoding: "utf8",
+      env: { ...process.env, PATH: fixturePath(fx) },
+    });
+    samples.push(Date.now() - started);
+    expect(out.status, "the shim must answer, or this is not a measurement").toBe(0);
+  }
+  const sorted = [...samples].sort((a, b) => a - b);
+  const median = Number(sorted[Math.floor(sorted.length / 2)]);
+  const slowestFloor = Math.max(...samples);
+  disclose(
+    "T-237-s2 gh floor (the HARNESS's figure, never `gh`'s)",
+    `${String(samples.length)} shim calls on ${process.platform} node ${process.version}: ` +
+      `${samples.join("/")}ms, median ${String(median)}ms, slowest ${String(slowestFloor)}ms ` +
+      `against a ${String(GH_TIMEOUT_MS)}ms bound`,
+  );
+  // THE MEDIAN AND NOT THE MAXIMUM: the first spawn on a cold runner pays
+  // for a page cache nothing else does, and a body that reds on that
+  // measures the machine's mood. The claim is about the ORDER OF
+  // MAGNITUDE between this file's own overhead and the bound it sets.
+  expect(
+    median * 10,
+    "the bound is not ten times this machine's own spawn-and-read floor",
+  ).toBeLessThan(GH_TIMEOUT_MS);
+});
+
+test("an ordinary push pays ONE round trip, and only a red pays the second", () => {
+  // THE OTHER HALF OF T-237-s4: *the two calls SHALL be issued in one
+  // round trip where the API allows, or the header SHALL say why not*.
+  // They are already one for every push that is not looking at a red —
+  // `run list` answers both of this arm's questions off one response.
+  const green = fixture("s2-trips-green", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(green, { list: listOf([runRow({ databaseId: 8400 })]) });
+  expect(runWiredHook(green, "git push origin main").status).toBe(0);
+  expect(ghCalls(green).length, "a push over a green CI asks once").toBe(1);
+  expect(ghCalls(green)[0]?.slice(0, 2)).toEqual(["run", "list"]);
+
+  const red = fixture("s2-trips-red", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  armGh(red, {
+    list: listOf([
+      runRow({ conclusion: FAILED_CONCLUSION, databaseId: 8401, headSha: red.base }),
+    ]),
+    view: { stdout: jobsWithFailingStep("e2e lane") },
+  });
+  expect(runWiredHook(red, "git push origin main").status).toBe(0);
+  expect(ghCalls(red).length, "a push over a RED asks twice, to name the step").toBe(2);
+  expect(ghCalls(red)[1]?.slice(0, 2)).toEqual(["run", "view"]);
+
+  // AND WHY THE SECOND CANNOT BE FOLDED IN — a property of `gh` and not a
+  // choice here: `run list --json` publishes no `jobs` at all, so a
+  // failing step is reachable only through `run view`. This is the pin
+  // the header's argument rests on, asserted where that argument is made.
+  expect(RUN_LIST_JSON_FIELDS, "`gh run list --json` has no `jobs`").not.toContain("jobs");
+  expect(RUN_VIEW_JSON_FIELDS, "which is why there is a second call at all").toContain("jobs");
+});
+
+test("the branch a push LANDS on is read off the refspec, and doubt is declared", () => {
+  // THE ABSORBED T-237-s6, at the reader under it. Every row is a
+  // spelling git itself resolves without consulting anything but the
+  // command line — which is the line this file draws everywhere between
+  // reading and guessing.
+  for (const [command, branch] of [
+    ["git push origin main", "main"],
+    ["git push origin HEAD:refs/heads/main", "main"],
+    ["git push origin HEAD:main", "main"],
+    ["git push origin main:refs/heads/other", "other"],
+    ["git push origin +main", "main"],
+    ["git push -u origin task/T-901-a-real-lane", "task/T-901-a-real-lane"],
+    ["git push -o ci.skip origin main", "main"],
+    ["git push --force-with-lease origin release", "release"],
+    ["git -C /somewhere push origin HEAD:refs/heads/main", "main"],
+    ["cd /somewhere && git push origin HEAD:refs/heads/main", "main"],
+  ] as const) {
+    const read = pushTargetBranch(command);
+    expect("branch" in read ? read.branch : `NOT READ: ${JSON.stringify(read)}`, command).toBe(
+      branch,
+    );
+  }
+
+  // NO REFSPEC, OR `HEAD` — the target is HEAD's own branch, which is
+  // what this arm used unconditionally and is still right about.
+  for (const command of ["git push", "git push origin", "git push origin HEAD", "git push -u origin @"]) {
+    expect("fallback" in pushTargetBranch(command), command).toBe(true);
+  }
+  for (const word of HEAD_REFSPEC_WORDS) {
+    expect("fallback" in pushTargetBranch(`git push origin ${word}`), word).toBe(true);
+  }
+
+  // AND EVERYTHING THIS CANNOT READ TO ONE BRANCH IS DECLARED, never
+  // approximated — the treatment `pushCwds` gives a `cd "$LANE"`.
+  for (const command of [
+    "git push origin $BRANCH",
+    'git push origin "main"',
+    "git push origin :main",
+    "git push origin main:",
+    "git push origin tag v1.0",
+    "git push origin refs/tags/v1.0",
+  ]) {
+    expect("unresolved" in pushTargetBranch(command), command).toBe(true);
+  }
+  for (const flag of PUSH_UNRESOLVING_FLAGS) {
+    expect("unresolved" in pushTargetBranch(`git push ${flag} origin main`), flag).toBe(true);
+  }
+
+  // SEVERAL TARGETS ARE NOT A DOUBT — every name is a real target, so
+  // asking about the first can only produce a TRUE refusal, and the rest
+  // are DISCLOSED. An earlier spelling called this unresolved and thereby
+  // let a live run through, which is weaker than the pre-card guard.
+  const many = pushTargetBranch("git push origin main dev");
+  expect("branch" in many ? many.branch : "NOT READ").toBe("main");
+  expect("branch" in many ? many.others : []).toEqual(["dev"]);
+  const mixed = pushTargetBranch("git push origin main && git push");
+  expect("branch" in mixed ? mixed.others : []).toContain("HEAD");
+  // The options that take a SEPARATE value are stepped over, so their
+  // value is never mistaken for a refspec — `GIT_GLOBAL_OPTS_WITH_VALUE`
+  // one level down, and the same failure if it is missed.
+  for (const opt of PUSH_OPTS_WITH_VALUE) {
+    const read = pushTargetBranch(`git push ${opt} some-value origin main`);
+    expect("branch" in read ? read.branch : `NOT READ: ${JSON.stringify(read)}`, opt).toBe("main");
+  }
+});
+
+test("a refspec push from a LANE checkout is judged on the branch it lands on, and is refused there", () => {
+  // THE DEFECT T-237-s6 MEASURED, AND ITS FIX, IN ONE FIXTURE. A lane
+  // worktree pushing `HEAD:refs/heads/main` used to be asked about
+  // `task/T-901-a-real-lane` — a branch with no runs — so it went out in
+  // SILENCE while the identical push from a `main` checkout was refused.
+  const live = listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 9001 })]);
+  const fx = laneFixture("s2-refspec-lane", { fence: ["docs/architecture"] });
+  armGh(fx, { listByBranch: { main: live }, list: { stdout: "[]" } });
+
+  const branchOf = (fixture: Fixture): string[] =>
+    ghCalls(fixture)
+      .filter((call) => call.includes("--branch"))
+      .map((call) => String(call[call.indexOf("--branch") + 1]));
+
+  const before = remoteTip(fx);
+  const refused = runWiredHook(fx, "git push origin HEAD:refs/heads/main", fx.lane);
+  expect(refused.status, "a live run on the branch this push LANDS on must refuse it").toBe(2);
+  expect(refused.stderr).toContain("PUSH REFUSED");
+  expect(refused.stderr, "the run it would cancel").toContain("9001");
+  expect(refused.stderr, "named for the branch the push lands on").toContain("`main`");
+  expect(branchOf(fx), "the remote was asked about the branch the push lands on").toContain("main");
+  expect(
+    branchOf(fx),
+    "and never about the lane's own branch, which is the defect this closes",
+  ).not.toContain("task/T-901-a-real-lane");
+
+  // AND NOTHING REACHED THE REMOTE — the property this file measures for
+  // every arm it has, rather than an exit code.
+  expect(remoteTip(fx), "the cancelling push must not have landed").toBe(before);
+  expect(remoteTip(fx)).not.toBe(fx.laneTip);
+
+  // THE DISCRIMINATING CONTROL: the SAME lane, the SAME command, the SAME
+  // wired hook — and the live run moved onto the LANE's branch instead.
+  // Under the old rooting this was the refusing case and the one above
+  // was the silent one, so a guard that merely refused everything, or
+  // that still read HEAD, fails exactly here.
+  const control = laneFixture("s2-refspec-control", { fence: ["docs/architecture"] });
+  armGh(control, {
+    listByBranch: { "task/T-901-a-real-lane": live },
+    list: { stdout: "[]" },
+  });
+  const allowed = runWiredHook(control, "git push origin HEAD:refs/heads/main", control.lane);
+  expect(
+    allowed.status,
+    `a run on the LANE's branch says nothing about a push landing on main: ${allowed.stderr}`,
+  ).toBe(0);
+  expect(allowed.stderr, "and it is not announced as one either").not.toContain("would CANCEL it");
+  expect(branchOf(control)).toContain("main");
+  expect(branchOf(control)).not.toContain("task/T-901-a-real-lane");
+
+  // AND THE SPELLING WITH NO REFSPEC STILL FALLS BACK TO HEAD, which is
+  // the half of the old behaviour that was right: from this lane, a bare
+  // push is asked about the lane's own branch and IS refused by that same
+  // live run.
+  const bare = laneFixture("s2-refspec-bare", { fence: ["docs/architecture"] });
+  armGh(bare, { listByBranch: { "task/T-901-a-real-lane": live }, list: { stdout: "[]" } });
+  const fellBack = runWiredHook(bare, "git push", bare.lane);
+  expect(fellBack.status, "no refspec means HEAD's branch, and that run is live").toBe(2);
+  expect(branchOf(bare)).toEqual(["task/T-901-a-real-lane"]);
+});
+
+test("a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkout (T-238's fifth criterion)", () => {
+  // THE SHARPEST HAZARD IN T-237-s2, PINNED. `decide` computes ONE
+  // `headRef` and hands it to five arms — `onLane`, the holder arm, both
+  // landing gates and the CI arm. The branch fix therefore adds a SECOND
+  // value, read off the refspec and consumed by the CI arm ALONE. Had it
+  // redefined `headRef` instead, a lane pushing `HEAD:refs/heads/main`
+  // would look like the integration checkout to the holder arm and
+  // T-238's fifth criterion would invert: a lane does not hold a seat.
+  const fx = laneFixture("s2-holder-refspec", { fence: ["docs/architecture"] });
+
+  // A LIVE OTHER HOLDER'S RECORD, IN THE LANE, and the push whose refspec
+  // names the integration branch. `pushUnderHarness` drives exactly that
+  // command through the wired hook.
+  const inLane = pushUnderHarness(fx, "other-live", { root: fx.lane });
+  expect(
+    inLane.status,
+    `a lane holds no seat, whatever branch its push lands on: ${inLane.stderr}`,
+  ).toBe(0);
+  expect(inLane.stderr, "the holder refusal must not have fired").not.toContain(
+    "HELD BY ANOTHER LIVE SESSION",
+  );
+  expect(inLane.stderr, "and nothing about a seat is said in a lane at all").not.toContain("SEAT");
+
+  // THE CONTROL: the identical record and the identical command, in the
+  // INTEGRATION checkout — where the seat exists and the refusal fires.
+  // Without it the assertions above are satisfied by a holder arm that
+  // never fires anywhere.
+  const onMain = pushUnderHarness(fx, "other-live");
+  expect(onMain.status, "the same record on the integration branch refuses").toBe(2);
+  expect(onMain.stderr).toContain("HELD BY ANOTHER LIVE SESSION");
 });
