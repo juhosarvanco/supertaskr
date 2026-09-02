@@ -1122,7 +1122,16 @@ test("the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
  * the ARM.
  * ──────────────────────────────────────────────────────────────────── */
 
-/** The unfenceable arm's own sentence, which no other arm can spell. */
+/**
+ * The unfenceable arm's own answer, BOTH HALVES AS LITERALS.
+ *
+ * Not read back from the hook's constants nor from the manifest: a test
+ * parametrised by the constant it checks cannot pin that constant
+ * (docs/CONVENTIONS.md, A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL,
+ * second face). The manifest is asserted to CARRY this domain instead,
+ * which is the arming condition rather than the expected value.
+ */
+const UNFENCEABLE_DOMAIN = "docs/tasks";
 const UNFENCEABLE_WHY = "no card may fence it and every card's protocol writes there";
 
 /** `carveOutFor`'s opening line — where the removed arm stood FIRST. */
@@ -1164,15 +1173,12 @@ function occurrences(haystack: string, needle: string): number {
  * a copy carrying the re-added arm — so the comparison under control is
  * the comparison under test, one arm apart.
  */
-function ownCardCarveComplaints(
-  carve: { domain: string; why: string } | undefined,
-  unfenceableDomain: string,
-): string[] {
+function ownCardCarveComplaints(carve: { domain: string; why: string } | undefined): string[] {
   if (carve === undefined) return ["no carve-out at all — `carveOutFor` answered undefined"];
   const complaints: string[] = [];
-  if (carve.domain !== unfenceableDomain) {
+  if (carve.domain !== UNFENCEABLE_DOMAIN) {
     complaints.push(
-      `the domain is \`${carve.domain}\` and the unfenceable arm's is \`${unfenceableDomain}\``,
+      `the domain is \`${carve.domain}\` and the unfenceable arm's is \`${UNFENCEABLE_DOMAIN}\``,
     );
   }
   if (carve.why !== UNFENCEABLE_WHY) {
@@ -1197,11 +1203,14 @@ test("a card file is carved out by the UNFENCEABLE arm, and a carve-out coming b
     manifest.excluded,
     "the card's own file was not carved out at dispatch, so no own-file arm could answer",
   ).toEqual([FIXTURE_CARD]);
-  const unfenceable = manifest.alwaysWritable.find((domain) => within(FIXTURE_CARD, domain));
   expect(
-    unfenceable,
-    "no `alwaysWritable` domain contains the card, so the arm under test cannot answer either",
-  ).toBeDefined();
+    manifest.alwaysWritable,
+    "the manifest does not carry the unfenceable directory, so the arm under test cannot answer",
+  ).toContain(UNFENCEABLE_DOMAIN);
+  expect(
+    within(FIXTURE_CARD, UNFENCEABLE_DOMAIN),
+    "the fixture card does not live under the unfenceable directory, so nothing arms the arm",
+  ).toBe(true);
 
   // DIRECTLY, BECAUSE `decide` CANNOT REACH THIS QUESTION: the seat
   // branch consults `carveOutFor` only for a path some live lane's
@@ -1209,7 +1218,7 @@ test("a card file is carved out by the UNFENCEABLE arm, and a carve-out coming b
   const carve = carveOutFor(FIXTURE_CARD, manifest);
   expect(carve, "a card file gets no carve-out at all").toBeDefined();
   expect(
-    ownCardCarveComplaints(carve, String(unfenceable)),
+    ownCardCarveComplaints(carve),
     "a card file was carved out by an arm that is not the unfenceable one",
   ).toEqual([]);
 });
@@ -1257,10 +1266,10 @@ test("THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers i
 
   // AND THE BODY ABOVE REDS ON IT, BY NAME: the same reader, the same
   // manifest, one arm apart.
-  const unfenceable = String(manifest.alwaysWritable.find((domain) => within(FIXTURE_CARD, domain)));
-  expect(ownCardCarveComplaints(carve, unfenceable)).toEqual([
-    `the domain is \`${FIXTURE_CARD}\` and the unfenceable arm's is \`${unfenceable}\``,
-    `the reason is "${String(carve.why)}" and the unfenceable arm's is "${UNFENCEABLE_WHY}"`,
+  expect(ownCardCarveComplaints(carve)).toEqual([
+    `the domain is \`${FIXTURE_CARD}\` and the unfenceable arm's is \`${UNFENCEABLE_DOMAIN}\``,
+    `the reason is "it is ${FIXTURE_ID}'s own card file, which is outside every fence including ` +
+      `its own" and the unfenceable arm's is "${UNFENCEABLE_WHY}"`,
   ]);
 });
 
