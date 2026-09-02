@@ -432,11 +432,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.8) and noted here.
+  method/ formats are version-bumped (currently v0.1.9) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.9 (T-229, 2026-09-02) — the CONTROL release: a positive control
+  is demonstrated failing, not asserted; itemised on T-229's card.
   v0.1.8 (T-159, 2026-08-30) — the METABOLISM release: one bump owning
   every method-text change ADR-020 and its reviews earned, plus the
   parked riders whose resurfacing condition named it; itemised on

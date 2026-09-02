@@ -38,7 +38,11 @@ you know is in docs/. You are disposable at any moment.
    feature, priority, size, blocked_by.
 4. Dispatch order: among the topmost undone tasks of each feature column,
    pick the highest-priority one that is unblocked AND whose touches:
-   don't overlap any task currently building. Ceiling: 3–5 concurrent.
+   don't overlap any task currently building. **The concurrency ceiling
+   is tasks/TASK-FORMAT.md's Parallelism guardrails and this step CITES
+   it rather than carrying a second copy of the number** — that file is
+   the field's home and it ships, so the value and its reason move
+   together in one place.
 5. Propose the dispatch to the human and wait for approval. Never dispatch
    an L task without one.
 5b. **DISPATCH, in this order, and the order is the rule.** You own the

@@ -37,6 +37,19 @@ review: independent      # independent | same-model | self-verified (stamped)
                            APPROVED, or REJECTED + concrete failures
 ```
 
+**A CARD'S FIRST PARAGRAPH IS ITS SUMMARY — one paragraph a seat may
+read and STOP at**, and everything below it is the RECORD, read when a
+seat needs the world rather than the ask. No field and no status carries
+this: it is a writing discipline, and it costs one paragraph at the top
+of the body, above the sections. **The record stays**, because on a
+project run this way the record IS the product's proof and the pressure
+to shorten a card is pressure to delete evidence. What the summary buys
+is the DECISION to read the rest: cards grow into essays, a reader
+arrives cold, and without a top paragraph the only way to learn whether
+this card is the one you need is to read all of it. Measured on this
+method's own project, where a single card reached 36 KB and the seats
+reading it had no way to triage that cost.
+
 **A CRITERION NAMES THE GATE'S COMMAND, NEVER ITS OUTPUT.** Write *"the
 gate SHALL report no unaccounted readers"*, or better, write the command
 and let it answer — never *"the gate SHALL name five readers across three
@@ -187,6 +200,26 @@ ordinary companion applies with full force — a guard owes a POSITIVE
 CONTROL**: prove it lets the ordinary case through, not only that it
 stops the bad one. A check that cannot tell an absence from a refusal is
 not a check.
+
+**AND THE CONTROL IS DEMONSTRATED FAILING, NOT ASSERTED.** Run it
+against an implementation that LACKS the property, SEE it red, and
+RECORD that demonstration on the card — a control nobody has watched
+fail is a claim, and it is the characteristic defect of this very
+requirement. **Where ONE arrangement decides both the guard's answer and
+the control's, that is a defect, named as one by whoever notices, and
+the remedy is to evaluate the control where that arrangement is ABSENT**
+— a fresh clone, a planted fixture, a data mutant; where the property
+lives in DATA the drill owes a DATA mutant, because a code-only drill
+mis-grades a derivation guard by construction. **Measured, because a
+rule stated without its measurement reads as advice**: four in one
+sitting on this method's own project, in four modules, found by four
+different agents, every one of them guard-class, mutant-drilled and
+read by a blind verifier — and the fourth was a control a VERIFIER had
+proposed, inside the fix for the third. The four are cited by id and
+judged in `roles/verifier.md` step 2b, which is this rule's home for
+the drill mechanics. **A rule this strong owes its own control, and the
+control is a body it PASSES**: one that graded every existing control
+degenerate would be indistinguishable from one that works.
 
 ## Task creation — single writer
 
@@ -639,7 +672,13 @@ makes an advisory period honest instead of a soft launch.
 ## Parallelism guardrails
 
 - Tasks with overlapping `touches:` never run concurrently.
-- Ceiling: 3–5 concurrent agents. Past that, verification — not
-  generation — becomes the bottleneck and quality quietly drops.
+- **Ceiling: 3–5 concurrent agents, and THIS LINE IS THE VALUE'S ONE
+  HOME.** Past that, verification — not generation — becomes the
+  bottleneck and quality quietly drops. `roles/orchestrator.md`'s
+  dispatch step CITES this line instead of restating the number, and
+  the why stays here with it: the two said the same thing without
+  either citing the other, which is two facts rather than one fact
+  checked twice, and the day the ceiling moves is the day that costs a
+  reader an hour deciding which copy is authoritative.
 - When in doubt, run turn-based; parallel is an optimization, not
   the point.

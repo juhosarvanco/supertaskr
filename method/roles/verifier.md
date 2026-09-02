@@ -66,11 +66,15 @@ to catch.
      degenerate before seeing a line of the work.**
      **AND A CONTROL YOU PROPOSE IS YOURS TO CHECK.** Suggesting a body
      is writing test code at one remove, and the same question applies to
-     it: CAN IT FAIL? One suggested on this project could not — every
-     file its fixture built shared the very property it asserted about,
-     so it passed against an implementation that lacked that property
-     entirely. The lane caught it, not the verifier who proposed it.
-     **Ask of your own suggestions what you ask of the diff.**
+     it: CAN IT FAIL? One suggested on this project could not (`T-210`) —
+     every file its fixture built shared the very property it asserted
+     about, so it passed against an implementation that lacked that
+     property entirely. The lane caught it, not the verifier who proposed
+     it, which is luck rather than a mechanism. **So a control you
+     propose carries step 2b's demonstration and you are the one who owes
+     it**: run it where the arrangement that would decide it is absent,
+     and say what you saw. **Ask of your own suggestions what you ask of
+     the diff.**
 1. Run the full test commands from docs/CONVENTIONS.md.
 2. Attack: every EARS criterion literally (each maps to a test), then
    malformed inputs, boundaries, concurrency, the unhappy paths the
@@ -90,10 +94,35 @@ to catch.
    **READ A MUTANT'S LANDING FROM `git diff`, NEVER FROM THE MUTATOR'S
    OWN REPORT** — a pattern that silently fails to match reports
    "survived", and `--numstat` is blind to a one-for-one swap.
-   **WHERE THE PROPERTY LIVES IN DATA, THE MUTANT IS A DATA MUTANT.** A
-   body proving a fixture is DERIVED rather than typed cannot be graded
-   by code mutants: its kill set will look contained and it is not. A
-   code-only drill mis-grades a derivation guard BY CONSTRUCTION.
+   **WHERE THE PROPERTY LIVES IN DATA, THE MUTANT IS A DATA MUTANT**
+   (`T-221`). A body proving a fixture is DERIVED rather than typed
+   cannot be graded by code mutants: its kill set will look contained
+   and it is not. A code-only drill mis-grades a derivation guard BY
+   CONSTRUCTION.
+   **AND A CONTROL IS ONLY A CONTROL WHERE THE ARMING DIFFERS, SO SHOW
+   IT FAILING BEFORE YOU TRUST IT PASSING.** A positive control SHALL be
+   run against an implementation that LACKS the property and SEEN to
+   red, and the card SHALL RECORD that demonstration rather than assert
+   it. **Where ONE arrangement decides both the subject's answer and the
+   control's, that is a DEFECT — named as one by whoever notices — and
+   the remedy is to evaluate the control where that arrangement is
+   ABSENT**: a fresh clone, a planted fixture, a data mutant. It is the
+   defect this method produces most, and it survives every other rule on
+   this list — four in one sitting, in four modules, each guard-class,
+   each drilled with mutants, each read by a blind verifier, and the
+   fourth found inside the fix for the third. `T-203` — the dispatcher
+   wrote the ignore rule at lane setup, so one act decided both sides;
+   that lane also ran the demonstration above unprompted and is the
+   worked example. `T-221` — only a DATA mutant separated the kill sets.
+   `T-211` — a state never measured, in which everything blocks,
+   including the control. `T-210` — every file the fixture built already
+   carried the property the control asserted about.
+   **AND THE RULE OWES THE CONTROL IT DEMANDS**: one that graded every
+   existing body degenerate would be indistinguishable from one that
+   works, so name a body it PASSES before you spend it on one it fails.
+   The shape that passes is a check whose degradation is applied where
+   the subject's arming is absent — a `--selftest` that damages a COPY
+   of the contract and requires the checker to notice.
 3. Security sweep — a large share of AI-generated code ships flaws, so
    this pass is mandatory, not optional: injection points on any new
    input path, authz on any new endpoint or query, secrets or keys in
