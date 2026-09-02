@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **T-225-s2 TOOK 12,356 BYTES OFF THIS ARM AND IT IS STILL OVER.**
