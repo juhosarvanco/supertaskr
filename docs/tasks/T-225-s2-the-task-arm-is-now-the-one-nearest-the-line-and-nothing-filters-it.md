@@ -177,3 +177,33 @@ one that is broken.* `T-225-s1` read that rule as binding on the arms as
 well as on the block, and that reading is arguable in both directions.
 
 **WHAT A FIX WOULD DECIDE.** Whether the per-caller line belongs 
+
+## Absorbs: T-225-s9 (2026-09-02, handed to this live lane at T-225-s1's verifier report)
+
+The absence half is scoped to the line its key anchors, so a clause that is false about ONE caller survives on ANOTHER caller's line
+
+**NOT A FAILURE OF T-225-s1, AND FILED SO IT IS NOT RE-DERIVED.** That
+card's two rejections are both closed and drilled: the default is
+bracketed from both sides to ±1, and `Claim` gained the `absent` half that
+catches the retired clause restored beside the true text. This is a
+THIRD-ORDER variant the fix does not reach, measured while confirming that
+it does reach the first two.
+
+`disagreements()` narrows the haystack to the line its `key` anchors —
+which is SHAPE EIGHT's remedy and is right — and then asks both questions
+of that line only. So a sentence about caller A, planted on caller B's
+line, meets neither B's needles nor B's ban list.
+
+Measured at `b1dc556`, one substitution in `dispatch-brief.mjs`, the
+pipe-reader arm's tail `"on the tail"` extended to
+`"on the tail, and spawnSync past its maxBuffer likewise receives a prefix
+with no error"`. That clause is FALSE — the same run measures `ENOBUFS`,
+`SIGTERM` and an overrun — and `brief.spec.ts` answers 4 passed on the
+margin bodies, 39 passed whole. A neighbouring mutant that plants the
+clause where it is TRUE but misplaced survives for the same reason, and
+that one is only untidy.
+
+**WHY IT WAS NOT A REJECTION.** The criterion the parent card carries is
+that each named caller's own line agrees with what that caller was
+measured doing, and it now does, on both questions, with two controls that
+themselves red when disarm
