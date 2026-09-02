@@ -673,6 +673,23 @@ test("THE DISCLOSED LIMIT, MEASURED: a lane moves local `main` with `update-ref`
     laneTip,
   );
   const followed = pushThroughGuard(fx, fx.laneRef);
+  // WHICH ROUTE THE ALLOW CAME DOWN (T-223-s3). The three closing
+  // assertions below are satisfied by TWO different states, and only one
+  // of them is what this body's name claims. Moving `main` onto the
+  // LANE'S OWN TIP also allows this push — the merge-base becomes the
+  // tip, `rangePaths` returns nothing, and every path is trivially inside
+  // any fence. The fence is never widened; the RANGE is emptied. Both are
+  // real consequences of the same disclosed limit, so this assertion pins
+  // the body to the half its name states: the merge-base is still the
+  // commit the dispatcher left `main` at, which is only true when the ref
+  // was moved SIDEWAYS onto a widened card rather than FORWARD onto this
+  // lane. Measured able to fail: under the data mutant that moves `main`
+  // to `laneTip` the whole body passes without this line and fails here
+  // with it.
+  expect(
+    git(fx.root, "merge-base", "main", "HEAD").trim(),
+    "the allow came from an EMPTIED range, not from a widened fence",
+  ).toBe(narrow);
   expect(
     followed.refused,
     `the gate did not follow the moved ref, so this limit no longer exists and the header ` +
