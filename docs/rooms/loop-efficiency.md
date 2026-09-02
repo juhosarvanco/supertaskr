@@ -211,6 +211,22 @@ that arrangement and prove nothing about it — the executor SHALL measure
 under a clone fenced like the lanes that owe the gate, and the dispatcher
 SHALL say so in the brief when it widens.
 
+**20. A property of the host's process tree is green on every checkout
+on the host and red only on the runner.** T-238's holder arm derives the
+seat's identity from the nearest harness ancestor and answers nothing
+when none matches; the lane, the bench and the integration checkout all
+have that ancestor, so twenty bodies were green in all three and the
+push that merged it (763548c, CI run 33602096600) was the sitting's first
+red main — one body, expecting the integration-branch fixture's record
+to be read, on a runner with no harness in the tree. Every gate the
+method runs before a push runs on this machine; only CI runs on another,
+which CONVENTIONS already says in capitals. The construction: a
+derivation keyed on the host owes a CI-shaped control in the lane (an
+environment with the ancestor stripped, or an injected derivation the
+fixture arms), and the seat SHALL name that control in the brief when a
+card's subject is the host. Absorbed into the live T-237-s2 as
+T-238-s2, first in its queue, because that lane holds the hook.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
