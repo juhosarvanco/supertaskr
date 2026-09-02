@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **602 behaviours** — 600 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **604 behaviours** — 602 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -73,6 +73,8 @@ Census: **602 behaviours** — 600 extracted sentences + 2 named-not-extracted (
 - THE EXIT CODES keep `I derived it` apart from `I could not tell you`
 - THE MARGIN IS DISCLOSED IN THE COMMAND'S OWN OUTPUT, and the size it declares is the size it is
 - ...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped values, never as prose
+- ...and the OVER arm says what each named caller actually does past the line, measured in this run against this command's own answer
+- ...and the UNSETTLED fallback is DRIVEN at a REAL width: the fixed point oscillates and the block discloses the derivation's own size, labelled
 - a brief assembled at this ref names the lanes the repository holds, and no others
 - THE INTEGRATION REF IS RESOLVED, NOT ASSUMED — and the bare name still wins wherever it exists
 - the WHOLE brief assembles on a pull_request-shaped checkout, and names the ref it actually spent
