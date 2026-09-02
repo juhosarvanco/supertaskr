@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 size: S
 priority: 4
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-018-s6
 blocked_by: []
 touches: [app/test/startup-recovery.test.ts]
@@ -89,3 +89,36 @@ drive through the shipped store, which needs a jsdom body in a
 node-environment file. One body, one file; the T-018-s6 verifier
 measured the base's second echo and the tip's single one through the
 shipped store already, so the lane has its expected values.
+
+## BUILD NOTE, 2026-09-02 — the recipe above did not run as written, and what was changed inside the fence to make it
+
+BUILD RULING (2026-09-02) on "release the invoke with an `open` status":
+**the card's own drive was not buildable on the shipped harness.** In
+`startup-recovery.test.ts`'s `invoke` mock the `docs_snapshot` branch
+ANSWERED before `ipc.parked` was ever consulted, so the one command whose
+in-flight window this race lives in was the one command no body in that
+file could hold open. Three routes were available — the sync drive
+(`startDocsWatcher` reaches `listen` synchronously and `invoke` only after
+an await), a `listenParks` release, or editing the harness — and the
+harness edit was taken, because it is INSIDE this card's fence, because it
+leaves the card's recipe exactly as written, and because the other two
+drive a DIFFERENT interleaving from the one the card specifies. The
+`docs_snapshot` branch now consults `parked` after `invokeRejects` and
+before `Promise.resolve(ipc.status)`; every other body in the file is
+unchanged by construction, since `freshStore` empties the set.
+
+**IT IS LOAD-BEARING AND DEMONSTRATED SO** (drill M4, below): with that
+branch reverted, both new bodies red on the positive control that proves
+the pull is genuinely in flight — *"and it really is still in flight:
+expected undefined to be 'STILL PARKED'"* — rather than passing quietly
+over a pull that had already answered.
+
+**A SECOND BODY WAS ADDED BEYOND THE CARD'S ONE**, and it is the
+discriminating half a negative assertion is owed: the same parked-pull
+drive with the single `generatedAtMs` the guard reads moved the other way,
+which applies and echoes TWICE. Without it "exactly one echo" is satisfied
+equally by a guard that dropped the pull and by a harness that never
+delivered it.
+
+**NO SOURCE CHANGE, as the card requires**: the merge's diff is exactly
+`app/test/startup-recovery.test.ts`.
