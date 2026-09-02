@@ -1,6 +1,6 @@
 ---
 id: T-225-s12
-title: `--dispatch --full` is the TRIAGE view and is 40,672 bytes past one pipe buffer — the biggest arm there is, now announced on every run and filtered by nothing
+title: The triage view `--dispatch --full` is 40,672 bytes past one pipe buffer — the biggest arm there is, now announced on every run and filtered by nothing
 feature: F-06
 milestone: 4
 size: M

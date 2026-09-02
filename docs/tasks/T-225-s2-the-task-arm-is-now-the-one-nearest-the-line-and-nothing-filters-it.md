@@ -435,3 +435,29 @@ plus this card and the four routed suggestions once this commit lands.
   M11 shows it still kills the flush defect.
 - `--dispatch --full` and `--task <id> --preflight` add about 30 seconds
   to the e2e lane. The seconds band is already breached (`T-120-s2`).
+
+### Addendum, same sitting — the docs gate caught one of mine
+
+`docs-gate.mjs` on the resolved forecast answered exit **1** and named
+`T-225-s12`'s own frontmatter: its `title:` opened with a backtick, so
+the card did not parse as YAML. That is the `9c64cd8` incident this
+project already paid for — *two card titles opening with a backtick,
+both cards silently unparseable, four bodies red* — reproduced by the
+lane that quotes it. Repaired in the same sitting by moving the backticked
+command out of the title's first position; all four routed cards then
+parse, and the gate's remaining answer is the three suites it names.
+
+**AND THE MERGE FORECAST IS A CONFLICT, WHICH IS THE ANSWER AND NOT A
+FAILURE.** `git merge-tree --write-tree main HEAD` exits **1** and prints
+a CONFLICT report for this card: `main` gained the `## Absorbs: T-225-s9`
+section as its own commit after this lane's base, and the lane committed
+the same text from its worktree. The two sides added the same lines to a
+base that had neither. **The lane's copy is main's card byte for byte
+plus the `verifying` stamp and these notes** — verified by comparing the
+first 209 lines of each, which differ on the status line alone — so the
+resolution is to take the lane's side, and it is stated here rather than
+left for the integrator to derive under a merge marker. The forecast in
+the gate section above was built on the RESOLVED tree with a scratch
+index (`git read-tree -m --aggressive`, one `update-index --cacheinfo`,
+`git write-tree`), which moves no ref and is a real tree rather than a
+proxy: `259e3ad`, 9 paths.
