@@ -350,3 +350,229 @@ at the ref it was derived on. `npm run capabilities:check` exits **0**,
 **A COMMIT CANNOT MEASURE ITSELF**, so this paragraph's own commit is
 docs/tasks-only and moves no suite input but the two card files the gate
 already named. The integrator re-derives at its own ref.
+
+## VERDICT — APPROVED at `4e85b4d`, 2026-09-02, blind verifier claude-opus-5@subagent
+
+Bench `/Users/ujju/Projects/nputer-V-T-018-s2`, detached, cut at the
+lane's BASE `69a8477` alongside the lane (orchestrator 5c). Phase 1 was
+sealed before the diff was opened:
+
+    attack-V-T-018-s2.md  32e90b59311aaf87085cbbca6fd4a6f8689fa1d51b414b8a6ad84020230ae822
+    ground-V-T-018-s2.md  3dc1d2acc18f4824101834276862173c9cffa39668d22615de1171940c36d0c3
+    sealed 2026-09-02T02:27Z, stamps rewritten 02:28Z (both hashes unchanged)
+
+**MY BLINDNESS WAS DISCIPLINE-SHAPED, NOT CLOCK-SHAPED, AND THE BRIEF
+SAID OTHERWISE.** The dispatch said the lane's work did not yet exist.
+Inventorying my OWN scratch files at the seal, the shared scratchpad
+listing showed eighteen carrying the LANE's suffix — `base-body`,
+`after-body`, `drill-d1/d2/d3`, four gate logs, a fence, a preflight —
+so work existed while I wrote. I opened none of them, did not open
+`/Users/ujju/Projects/nputer-T-018-s2`, and did not fetch, list or read
+the branch until phase 2. The listing alone told me a drill and a
+battery had been run; it told me nothing about what the diff does, and
+the attack set was already written when it printed. **A SECOND
+DISCLOSURE, OWED BY THE SAME RULE:** the phase-2 dispatch relayed the
+executor's own account — the chain, the three drill names with their
+kill counts, the suite figures — so my phase-2 reading was NOT innocent
+of the rationale. Phase 1 was, and every measurement below is my own.
+
+### What the diff is
+
+`git diff 69a8477 4e85b4d` — three paths, all in fence (`docs/tasks` is
+`alwaysWritable`, pinned by `lane-fence.spec.ts`'s *"docs/tasks is
+always writable, and the hook takes that set from the parser"*):
+`app/src-tauri/src/docs_watch.rs` (+78 -2), this card, and `T-018-s5`.
+**BOTH RUST HUNKS FALL INSIDE `mod tests`** — the diff changes no
+production line, which retires my whole A7 arm (a production change
+trading one hazard for another) by inspection rather than by argument.
+
+### The pin, checked against the code rather than against the notes
+
+The claim is narrower than what it replaced and the narrowing is right:
+`next_seq` (`fetch_add(1, SeqCst) + 1`) promises UNIQUENESS and order of
+DRAWS, and its own doc-comment says the draw precedes the collect on
+every path — so a stamp dates the start of a collection, never its
+content, and the arm-before-commit overtake pinned by
+`the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`
+is legal. I derived exactly that in phase 1, from the code, before the
+diff existed, and my sealed ground truth names the same remedy the lane
+took (`barrier`, placed after the pick's draw and before the write).
+
+**THE ONE EDGE EVERYTHING RESTS ON, VERIFIED RATHER THAN ACCEPTED.**
+`spawn_watcher_thread` does `let fs_tx = tx.clone();` — one `mpsc`
+channel for fs batches and control messages — and `run_watcher`'s
+`for msg in rx` drains it on one thread, synchronously. I also derived
+that **`sink(&snapshot)` has exactly ONE call site**, inside
+`handle_fs_batch`, so no second emitter can route around the queue. Both
+arms then hold with no clock in either: a batch enqueued BEFORE the Ping
+has finished its collect before the ack, hence before `beta v2` exists,
+so it cannot carry those bytes; a batch enqueued AFTER the Ping draws
+after the Ping was handled, hence after `picked.seq`. No interleaving of
+the two threads violates it — a concurrent `send` either completes
+before the Ping's or after it, and either case lands in one of the two
+arms.
+
+### The drill — six mutants, landings read from `git diff`, restores by hash
+
+All run in this bench at `4e85b4d`, one side only, whole `cargo test
+--lib` each. `git restore --source=4e85b4d --staged --worktree --
+app/src-tauri/src/docs_watch.rs` after every one, and the worktree file
+hashed back to
+`4d2fb9f648f5fb39fc95f11610ca2ba0a4c86994a8f5eace091774a3de929df6`
+**six times for six mutants**.
+
+| mutant | landing | result | kill set |
+|---|---|---|---|
+| **M2** = the lane's D1 | `handle_fs_batch`: `next_seq(seq)` → `seq.load(SeqCst)` | **RED 101**, 267/3 | `picker_rearms` **at the CHANGED line 2681**, `rearm_baseline` 2730, `a_genesis_switch…` 4305 — and `seq_is_monotonic_from_one` **SURVIVES** |
+| **M6** = the lane's D3 | `open_as_project`'s no-docs return also commits the dir | **RED 101**, 267/3 | `picker_rearms` 2603, `picking_a_folder_without_docs…` 2481, `picking_a_root_whose_docs_is_a_symlink…` 2499 — `rearm_baseline` **SURVIVES** |
+| M1 | `next_seq`: `fetch_add(1)+1` → `load()+1` | RED 101, 266/4 | `picker_rearms` **at 2611**, `rearm_baseline` 2730, genesis 4305, `seq_is_monotonic` 2392 |
+| M3 | `open_as_project`: the seq draw hoisted ABOVE the re-arm ack | **GREEN 0**, 270/0 | empty — a SURVIVOR, see note 2 |
+| M4 | `rearm`: the emit-baseline reset deleted (3 sites) | RED 101, 267/3 | `a_dead_sentinel…`, `the_suppression_invariant…`, `index_cmd::reindex_is_snapshot_silent…` — `picker_rearms` survives |
+| **M5** | the new `barrier(&state)` deleted | **GREEN, 30 runs of 30** | empty — **and that is the point**, see below |
+
+**M2 IS THE MUTANT THE CARD ASKED FOR AND IT LANDS WHERE THE PROPERTY
+LIVES.** It reds the changed assertion by name, printing the tie in its
+own words: *"from_b.seq=2 must exceed picked.seq=2"*. **CONTAINMENT,
+MEASURED IN BOTH THE DIRECTIONS THAT MATTER:** `seq_is_monotonic_from_one`
+survives M2, so this body's kill set is not contained in the counter's
+own unit test; `rearm_baseline_…` survives M6, so it is not contained in
+its sibling's either. The lane's remaining direction is argued rather
+than measured and IS DISCLOSED as such on this card — I checked that
+disclosure is accurate and did not run that mutant either.
+
+**AND THE OBVIOUS MUTANT IS THE WRONG ONE, WHICH IS WORTH THE INK.** M1
+— break the counter itself — reds this body at line **2611**
+(`picked.seq > still_a.seq`), an assertion this diff never touched. So a
+reader who reaches for the counter to prove the new pin load-bearing
+proves something else. Only a mutant on the EMIT's own draw (M2/D1) dies
+at 2681.
+
+### THE M5 REFUSAL, AND ITS OWN CONTROL
+
+My sealed attack set pre-committed to REFUSING one class of evidence:
+*deleting the barrier restores nondeterminism, it does not create a
+defect.* **I OWED THAT REFUSAL A DEMONSTRATION AND HERE IT IS.** With
+`barrier(&state)` removed at `4e85b4d`, the body passed **30 runs out of
+30** on this darwin host — the same score the UNFIXED body scored at the
+base (**30 of 30**, measured in phase 1 before the diff existed). So no
+darwin drill can show the barrier is load-bearing, and none was offered:
+the lane rests it on the happens-before chain, which is the only thing
+that could carry it, and which I verified line by line above. **A green
+re-run count on this host is worth zero here in either direction, and I
+priced my own the same way** — the 12-of-12 under load below is a sample
+that could only have refuted, not confirmed.
+
+### Measured in this bench, each figure at its ref
+
+- `cargo test` (app/src-tauri) at **`4e85b4d`**: exit **0**, summed over
+  18 binaries, **630 passed · 0 failed · 4 ignored** — identical to my
+  phase-1 baseline at `69a8477`, which is what a test-only diff should
+  read. (The lane's `bodies=634` is the same tree counted with the four
+  ignored included; both figures are honest and they are not the same
+  number.)
+- `npx vitest run` (lib/parser) at `4e85b4d`: exit **0**, **349 passed**
+  in 16 files. Its smoke test parses the live `docs/` tree, so the new
+  `T-018-s5` card parses.
+- `node tools/e2e/scripts/docs-gate.mjs <the three paths>` **from the
+  repository root** at `4e85b4d`: exit **1 — FIRES**, naming `npm test`
+  from app/, `npm test` from tools/e2e/ and `npx vitest run` from
+  lib/parser/; **0 frontmatter issues in the live tree**, *"every live
+  task card's frontmatter parses, with a legal status"*. (Run from
+  tools/e2e/ it exits **2** and refuses plain relative paths — called
+  wrong, never a clean gate. Worth knowing.)
+- `index --check --root ../..` at `4e85b4d`: exit **1, STALE**, and it
+  is the REAL red, not the `committed: MISSING` false one — both sides
+  print `1168002 bytes · 200 files · 2501 symbols · 2388 edges` and the
+  file diff is `files +0 -0 ~1`,
+  `~ app/src-tauri/src/docs_watch.rs (content, loc 4662 -> 4738)`.
+  **The regeneration is the INTEGRATOR'S, in the merge commit** — the
+  lane's routing of it is correct and its numbers reproduce here exactly.
+- The body 12 times under 6 spinning burners at `4e85b4d`: **12 of 12**.
+- The host asymmetry, re-measured rather than taken: three
+  `--nocapture` runs at `4e85b4d` printed **4 `docs-changed` lines,
+  `fs_events=1` each** — ONE batch per write on darwin, so no residual
+  batch is ever in the loop when the pick draws. Against CI run
+  `33566291111` attempt 1, where `alpha v2` split into `seq=2` and
+  `seq=3` one millisecond apart with `fs_events=3`. **That asymmetry is
+  the whole account of why three sightings are Linux-only**, and the
+  lane's refusal to widen a window to reproduce it locally is the right
+  call, not a gap.
+
+### Security sweep (mandatory, step 3)
+
+Clean. No production line changes; no `unsafe`; no dependency; no
+traversal, symlink, `MAX_FILES` or `is_plain_dir`/`has_plain_docs_dir`
+relaxation; no new fixture path (the body's `TempTree` names keep their
+pid-and-timestamp stems, so two concurrent runners cannot collide); no
+process spawn, no environment read, no secret. The only `/tmp` strings
+in the diff are prose naming the removed drill worktree, and
+`/private/tmp/nd-T-018-s2` is gone from disk — I checked.
+
+### Claims I re-derived rather than accepted
+
+- The three CI transcripts, read myself with `--attempt 1` (plain
+  `--log-failed` is EMPTY on all three; each was re-run green). Sighting
+  two's run id, which this card carries only as a sha, is
+  **`33321774720`**. All three fail by exactly one draw: the emit is
+  `seq=5`, the pick's draw is 6 or more.
+- The sweep of the class. I derived it independently in phase 1 and
+  reached the same answer the lane did: three bodies make the
+  "emit outranks a pick" claim (2622/2681, 2654/2730, 4229/4305) and
+  **only the picker body crosses a re-arm from a PREVIOUSLY ARMED
+  watch**; the other two open with `live_state(None)`, so nothing can be
+  in flight. The comment recording that at the sibling's own site is the
+  right place for it.
+- `T-018-s5`'s premise, which I checked in the frontend it names:
+  `genesisSwitchIsOvertaken` is defined at `watcher-store.ts:550` and
+  consulted in the `"genesis"` branch at `:606`, while the `"picked"`
+  branch at `:586` calls `reduceDocs(prev.docs, outcome.snapshot)` with
+  no guard at all. **The card is true.** I record that my sealed ground
+  truth reached the same question before the diff existed and parked it
+  as out-of-fence — so this is corroboration by two seats that could not
+  see each other, not a verifier agreeing with a report.
+
+### Findings
+
+**NONE at REJECTED level.** Every arm of my sealed attack set is
+discharged: the pin was not weakened (the assertion is the same
+comparison, now with a message); it is not folded into `recv_until`'s
+predicate, so a violating emit FAILS rather than being skipped; there is
+no sleep, settle, retry, `#[ignore]` or platform `cfg`; no assertion the
+body had at the base was lost; the fence holds; nothing passes on darwin
+by construction that would race on Linux.
+
+Three notes, none blocking:
+
+1. **The card's ask names the wrong mutant for its own pin.** "The
+   mutant that makes the tie legal" is satisfied at the changed line
+   only by D1/M2. A future reader reaching for `next_seq` gets a red at
+   2611 instead and may conclude the new pin is drilled when it is not.
+   Recorded here so the next reader of this card does not repeat it.
+2. **M3 is a live survivor, and it is PRE-EXISTING rather than this
+   diff's.** Hoisting `open_as_project`'s seq draw above the re-arm ack
+   — the ordinary pick stamping itself before the arm — leaves the lib
+   suite **270 of 270 green**. The genesis path's equivalent IS pinned,
+   by arm A of
+   `the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`;
+   the ordinary path has no such body. This diff adds only test code, so
+   it cannot have created the survivor. Not filed as a card by me — the
+   ordering it would pin is exactly what `T-018-s5` is about to move.
+3. `barrier` blocks on an unbounded `recv()`, so an ALIVE-but-stuck
+   watcher hangs it with no message, where `recv_until` would have named
+   itself at `SILENCE_BACKSTOP`. Pre-existing and deliberate — its
+   doc-comment argues the case (*"a watcher that is merely SLOW makes
+   this call slow, which is the entire point"*) — and `live_state`
+   already calls it on every live body. Noted, not charged to this diff.
+
+### Gates at MY OWN tip, not at the commit I was sent
+
+This verdict is a write to a card that the docs gate names as a code
+input, so the three suites it named are owed at the tip this commit
+creates, and they are recorded in the commit that follows this
+paragraph rather than in it — a commit cannot measure itself.
+
+**APPROVED.** The card asked for three things and got all three: the
+ordering the watcher actually promises, derived from the code; that
+ordering pinned rather than the wish; and the pin shown red under the
+mutant that makes the tie legal, at the line that moved, in a run I made
+myself.
