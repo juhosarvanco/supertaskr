@@ -288,6 +288,16 @@ value is refusing on an absence must not turn an unreadable command
 into an allow. Filed and dispatched as T-216-s8; the seat's own rule
 from now: `git -C <checkout> push`, never after a `cd`.
 
+**26. The gate runner's solo lock serialises a verifier bench against
+its own lane for every eight-character card id.** `lockPath` keys on
+the last eight bytes of the checkout path, and `nputer-T-223-s3` and
+`nputer-V-T-223-s3` end in the same eight. V-T-223-s3 measured it at
+12:10Z after its e2e baseline was refused against a pid it never
+started; V-T-216-s8 and V-T-112-s6 had reported the same refusal and
+read it as another checkout's lock. Every `T-NNN-sN` card this sitting
+paid a suite length of wall-clock for it, unseen, because the runner's
+header says a foreign lock cannot happen. Filed as T-202-s1, p2.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
