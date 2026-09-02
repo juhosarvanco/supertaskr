@@ -576,3 +576,30 @@ ordering the watcher actually promises, derived from the code; that
 ordering pinned rather than the wish; and the pin shown red under the
 mutant that makes the tie legal, at the line that moved, in a run I made
 myself.
+### The verdict's own gates, measured at the verdict commit `3f7b43b`
+
+**A COMMIT CANNOT MEASURE ITSELF**, so these were read at the tip the
+verdict created and are recorded by the commit after it, which is
+docs/tasks-only and moves no input the gate has not already named.
+
+- `gate-run.mjs parser` — exit **0**, `bodies=349 targets=1 ref=3f7b43b verdict=GREEN`
+- `gate-run.mjs app` — exit **0**, `bodies=1131 targets=1 ref=3f7b43b verdict=GREEN`
+- `NPUTER_E2E_PORT=25018 gate-run.mjs e2e` — exit **1**, `bodies=548 verdict=RED`,
+  **544 passed / 4 failed — AND NOT THIS DIFF'S.** Attributed rather
+  than assumed: the SAME four bodies fail at `69a8477`, the lane's base,
+  where neither the diff nor this verdict exists (73 passed / 4 failed
+  over those three spec files). One cause under all four —
+  `checkout-currency.mjs` judges the checkout the command runs in and
+  answers `verdict: stale`, `STALE [guard-surface-behind] ... 28
+  commit(s) behind main`, because **a verifier bench is detached at the
+  lane's BASE by design** (orchestrator 5c) and is therefore behind
+  `main` by construction. Filed as **`T-240`**, `status: suggested`; it
+  is `T-216-s4`'s shape one layer over. The rust leg is not owed (no
+  docs/tasks reader in that suite) and read 630/0/4 at `4e85b4d`
+  regardless.
+- `docs-gate.mjs` over both card paths, **run from the repository root**:
+  `0 frontmatter issue(s) in the live tree`, *"every live task card's
+  frontmatter parses, with a legal status"*, governing-document budgets
+  hold. `npx vitest run` from lib/parser — **349 passed**, and its smoke
+  test parses the live `docs/` tree, so `T-018-s5` and `T-240` both
+  parse.
