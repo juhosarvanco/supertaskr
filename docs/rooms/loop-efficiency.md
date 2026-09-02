@@ -131,6 +131,17 @@ already demands. Worth one sentence beside that rule: prefer the
 harness's own file tools for frontmatter, and never end a substitution
 pattern in a whitespace class.
 
+**14. A merged lane's worktree holds its fence until the checkpoint, so
+the next lane on those paths cannot arm.** Rule 6 removes a worktree
+after the merge AND the checkpoint; the disjointness guard reads live
+worktrees on task branches; so T-225's first arming was REFUSED at 23:36Z
+on T-223's worktree, merged forty minutes earlier and still standing.
+The guard was right by its rule and the rule's timing is the friction.
+CONVENTIONS already says a merged lane's worktree goes before the
+reconciling writes; the cheaper spelling is "before the next arming on
+its paths", and T-239's arm should remove the merged lane's worktree as
+its first step when the guard names it.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
