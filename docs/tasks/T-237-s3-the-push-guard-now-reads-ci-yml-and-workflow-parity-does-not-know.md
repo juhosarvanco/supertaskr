@@ -232,3 +232,36 @@ file THE spec SHALL red rather than skip"*) is demonstrated by M4. The
 card's third criterion asks for two shapes; four are built, the fourth
 being the direction none of the others reach — the scanner reading a
 `working-directory` the YAML parser does not, out of a `run: |` block.
+
+### Addendum — the e2e red, re-measured at the tip and at the base
+
+The e2e leg was run twice, and **the red GREW between the two runs while
+this lane's diff did not move** — which is itself the finding. At
+`80f065c` it was **2 failed / 576 passed**; at the tip `3001130`, twenty
+minutes later, **6 failed / 572 passed**. The four that joined are
+`card-preflight.spec.ts:719`, `checkout-currency.spec.ts:852` and `:953`,
+and `lane-lock.spec.ts:899` — docs/STATE.md's `guard-surface-behind`
+hazard, exactly four bodies, on a lane cut before the guard that owns
+them merged.
+
+**MEASURED, NOT ARGUED.** A detached worktree at this lane's base
+`47c8845` — **without this lane's diff** — run at 2026-09-02T07:03:29Z on
+Mac.lan, reds **the same six bodies by name**: 6 failed, 86 passed. The
+cause is machine-scoped and moved under both runs: `git worktree list`
+read at 06:50:07Z named four task branches, at 07:05:11Z it named five,
+with `T-215-s6` (no card at this base), `T-230-s7` and `T-237-s2` arriving
+after this lane was cut, and the assembler's own disclosure naming a
+`T-133` lane fenced on all of `tools/e2e` — so every older lane's fence
+now reads as non-disjoint. That is `method/lane-protocol.md` rule 4's
+named class: a MACHINE-scoped list joined to a CHECKOUT-scoped one,
+reddening every older lane the moment a newer lane is cut.
+
+**Nothing in this lane's fence can move any of the six**, and
+`workflow-parity.spec.ts` is green in every run: 20 of 20, at `2474476`,
+at `80f065c` and at `3001130`.
+
+**This addendum is the lane's last commit and it changes one path
+already counted in the merge forecast** (`docs/tasks/T-237-s3-*.md`), so
+no gate answer above moves: the forecast is still `git merge-tree
+--write-tree main HEAD` exit **0**, **3** paths, against `main` at
+`d2702e4`.
