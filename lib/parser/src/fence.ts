@@ -76,7 +76,12 @@ export type FenceTokenKind =
    * CONTAINS one (T-219); reserves nothing either way.
    */
   | 'rejected'
-  /** Neither a slug nor anything this module can read as a path. */
+  /**
+   * Neither a slug nor anything this module can read as a path — which
+   * includes a token that PARSES as a path and names a domain no
+   * repository-relative path can sit inside: `.` (the root under its
+   * other spelling) and `..`/`../…` (outside the repository) (T-219-s4).
+   */
   | 'unresolved';
 
 /** One `touches:` token, classified and expanded. */
@@ -204,6 +209,19 @@ export interface ExpandFenceOptions {
 
 /** Characters this module does not interpret; see `normalizeFenceToken`. */
 const GLOB_CHARS = /[*?[\]!]/;
+
+/**
+ * A normalised token whose FIRST SEGMENT is `.` or `..` — the repository
+ * root under its other spelling, or a domain that climbs out of the
+ * repository altogether (T-219-s2, absorbed by T-219-s4).
+ *
+ * MATCHED ON THE NORMALISED FORM, WHICH IS WHY THIS IS THREE SHAPES AND
+ * NOT SIX. `normalizeFenceToken` already strips every leading `./` run,
+ * so `./x` and `.//x` arrive as `x` and never reach this test; what
+ * survives it is exactly `.`, `..` and `../…`. The refusal `expandFence`
+ * hangs on this is spelled there, next to the two it sits between.
+ */
+const DOT_DOMAIN = /^\.\.?(?:\/|$)/;
 
 /**
  * Normalise one `touches:` token to the spelling everything below
@@ -440,6 +458,51 @@ export function expandFence(
       tokens.push({ raw, normalized, kind: 'unresolved', components: [], paths: [] });
       invalid(
         `entry ${JSON.stringify(raw)} normalises to nothing — it names no slug and no path, and a fence cannot reserve the repository root`,
+      );
+      continue;
+    }
+
+    // THE ROOT HAS TWO SPELLINGS AND ONLY THE EMPTY ONE WAS REFUSED
+    // (T-219-s2, absorbed by T-219-s4). `./` and `.//` normalise to
+    // nothing and hit the branch above, which says in as many words that
+    // *a fence cannot reserve the repository root*. A BARE DOT normalises
+    // to `.` — the loop that strips a leading `./` has nothing left to
+    // strip — and `.` carries a `.`, so `looksLikePath` below classified
+    // it a PATH reserving the domain `.`.
+    //
+    // THAT IS THE WORST OF BOTH ANSWERS AND IT IS SILENT. Every path this
+    // module compares is repository-relative and normalised, so none of
+    // them begins `./` and `sharedDomain` can never meet `.` — the fence
+    // permits nothing, collides with nothing, raises no issue and comes
+    // back `disjoint` from every card on the board. The empty spelling of
+    // the same token is refused with a sentence; this one was accepted
+    // with a lie, and the two spellings mean the identical thing.
+    //
+    // REFUSED BY THE CLASS AND NOT BY THE ONE SPELLING, which is T-219's
+    // own lesson turned on its residual: the parent card exists because
+    // `docs/tasks` was refused while the `docs` containing it was waved
+    // through, a rule built for one spelling of one fence. So the test is
+    // the FIRST SEGMENT — `.` is the root, and `..` or `../x` climbs out
+    // of the repository — and every one of them names a domain no
+    // repository-relative path can sit inside.
+    //
+    // THE CEILING IS DECLARED RATHER THAN LEFT TO BE DISCOVERED, the same
+    // way `normalizeFenceToken` declares its glob ceiling. An INTERIOR
+    // dot segment (`a/./b`, `a/../b`) has the identical symptom and a
+    // different remedy — it is a normalisation gap, and the honest fix
+    // resolves the segment rather than refusing the token — so it is
+    // routed (`T-219-s6`) rather than folded in here. Censused at
+    // `24bfec8e10b3`: 0 live tokens normalise to a dot domain and 0 carry
+    // an interior dot segment, so both arms are structural today.
+    if (DOT_DOMAIN.test(normalized)) {
+      unusable.push(raw);
+      tokens.push({ raw, normalized, kind: 'unresolved', components: [], paths: [] });
+      const naming =
+        normalized === '.'
+          ? `is the repository ROOT under its other spelling — './' and './/' normalise to nothing and are refused for exactly this reason, and refusing one spelling of a token while accepting the other is how a rule ends up half-built (T-219)`
+          : `climbs OUT of the repository — a fence is repository-relative, so this domain is not one this board can name`;
+      invalid(
+        `entry ${JSON.stringify(raw)} normalises to '${normalized}', which ${naming}. No repository-relative path can sit inside it, so the fence would reserve NOTHING while colliding with nothing and reporting no issue — which is a fence answering "no overlap" when it means "I do not know". Name the directories or files this card's work reaches, spelled from the repository root`,
       );
       continue;
     }

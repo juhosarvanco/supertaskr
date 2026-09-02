@@ -566,3 +566,175 @@ describe('T-219/T-227 — a card that declares NO fence is not a card whose fenc
     expect(ok.startable[0]?.reason).toContain('disjoint from every live lane');
   });
 });
+
+describe('T-219-s4 — a fence that cannot be RESOLVED is not a fence that is free either', () => {
+  it('an UNRESOLVABLE token is refused with NO LANE LIVE, which is the moment dispatch asks', () => {
+    // THE RESIDUAL OF V-T-219'S OWN FINDING, ONE CRITERION OVER. That
+    // verdict's sentence — "`rule()` reaches `compareFences` only through
+    // `holds`, and `holds` is empty when the lane list is" — is true of a
+    // fence whose tokens cannot be RESOLVED exactly as it was of a fence
+    // with no tokens at all. The body above closed the second half; this
+    // is the first. `compareFences` answers `unusable` for such a fence
+    // the moment any lane is live and `buildLaneFence` refuses to arm it
+    // outright, so with nothing live this site was the one place in the
+    // pipeline that called it FREE.
+    //
+    // KILLED BY: dropping `&& fence.unusable.length === 0` from the
+    // `holds.length === 0` guard in `rule()` — which is what this module
+    // shipped at `24bfec8e`, where the card came back `startable` wearing
+    // "its fence is nowhere, disjoint from every live lane".
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, touches: ['nowhere'] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+
+    expect(order.lanes, 'a lane was handed in and this body cannot see the defect').toEqual([]);
+    expect(
+      order.startable.map((r) => r.id),
+      'an unresolvable fence got a green light at the dispatch moment',
+    ).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+
+    const reason = order.unfenceable[0]?.reason ?? '';
+    // THE REASON SAYS WHICH TOKEN, not merely that something was wrong —
+    // the card's own criterion, and the difference between a sentence a
+    // human can argue with and a state code.
+    expect(reason).toContain('nowhere');
+    expect(reason).toContain("T-001's own `touches:` carries");
+    expect(reason).toContain('A fence that cannot be COMPUTED is not a fence that is free.');
+    // AND THE SENTENCE IT NO LONGER WEARS, asserted by name.
+    expect(reason, 'the refused sentence came back').not.toContain('disjoint from every live lane');
+    // NOT THE WRONG CLAUSE EITHER: this card DECLARES a fence, so the
+    // absorbed T-227 clause must not speak for it, and the sentence must
+    // not arrive with an empty middle.
+    expect(reason).not.toContain('declares no `touches:` at all');
+    expect(reason, 'the clause list came back empty').not.toContain(': . A fence');
+
+    // THE CONTROL, on the SAME zero-lane board: a card whose tokens all
+    // RESOLVE is still startable. Without it every assertion above is
+    // satisfied by a module that refuses every card once the lane list is
+    // empty — which breaks dispatch in the opposite direction and looks
+    // just as green.
+    const declared = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['lib/parser'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(declared), []);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(ok.startable[0]?.reason).toContain('disjoint from every live lane');
+
+    // AND THE SECOND CONTROL, which pins the refusal to RESOLVABILITY and
+    // not to the word: the same board, the same token, plus an oracle
+    // that CARRIES it — and the card is startable again.
+    const resolved = readDispatchOrder(parseProjectFromFiles(board), [], {
+      knownPaths: ['nowhere'],
+    });
+    expect(resolved.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(resolved.unfenceable.map((r) => r.id)).toEqual([]);
+
+    // AND THE DEFECT IS REAL AT THE SURFACE THAT DISPATCHES, which is
+    // the half the card's TRIAGE was amended to require. `brief.mjs
+    // --dispatch` never calls this function bare: it supplies
+    // `knownPathOracle`, every tracked path plus every ancestor prefix.
+    // An oracle settles a bare word it CARRIES and says nothing about
+    // one it does not, so a planted token no repository contains is
+    // unresolvable with the oracle supplied exactly as it is without —
+    // and the zero-lane board is still where it got a green light.
+    const oracled = readDispatchOrder(parseProjectFromFiles(board), [], {
+      knownPaths: ['lib/parser', 'lib/parser/src/lanes.ts', 'docs', 'app'],
+    });
+    expect(
+      oracled.startable.map((r) => r.id),
+      'the oracle was read as a licence for the tokens it does NOT carry',
+    ).toEqual([]);
+    expect(oracled.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+
+    // …AND THE ASYMMETRY THAT MADE IT V-T-219'S SHAPE: with one real
+    // lane live, the SAME board and the SAME oracle already answered
+    // `unfenceable` before this card. The refusal was armed exactly when
+    // the card would have been held anyway and disarmed when nothing was
+    // live, which is the canonical dispatch moment.
+    const held = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['nowhere'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const live = readDispatchOrder(parseProjectFromFiles(held), [lane('T-002')], {
+      knownPaths: ['lib/parser', 'lib/parser/src/lanes.ts', 'docs', 'app'],
+    });
+    expect(live.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+  });
+
+  it('names the card that owns each unresolved token, and never the same token twice', () => {
+    // THE CLAUSE LIST GAINED A CAUSE, and the cause it gained is the only
+    // one that needs no lane. Before T-219-s4 every clause was keyed on a
+    // HOLD, so with the lane list empty the sentence had nothing to say
+    // about the card's own token; and with a lane live, `compareFences`
+    // returns the UNION of both sides' `unusable`, so one token bought
+    // two clauses pointing at two different cards to repair.
+    //
+    // KILLED BY: dropping the `own` clause (the first expectation), or
+    // dropping the `.filter((t) => !own.includes(t))` subtraction (the
+    // one after it, where the card's own token is re-attributed to the
+    // lane it was merely compared against).
+    const board = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['nowhere'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['elsewhere'] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-002')]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+
+    expect(reason).toContain("T-001's own `touches:` carries nowhere");
+    expect(reason).toContain('T-002 (refs/heads/task/T-002-lane at /w/T-002)');
+    expect(reason).toContain('elsewhere resolved to neither a slug nor a path');
+    // THE SUBTRACTION: the card's own token is attributed to the card and
+    // NOT a second time to the lane that merely met it.
+    expect(reason).not.toContain('elsewhere, nowhere resolved');
+
+    // AND THE OTHER SIDE OF THE SAME RULE: when the ONLY uncomparable
+    // token is the card's own, the hold clause disappears entirely rather
+    // than naming the lane for somebody else's defect.
+    const oneSided = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['nowhere'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser'] }),
+    ];
+    const only = readDispatchOrder(parseProjectFromFiles(oneSided), [lane('T-002')]);
+    const solo = only.unfenceable[0]?.reason ?? '';
+    expect(only.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    expect(solo).toContain("T-001's own `touches:` carries nowhere");
+    expect(solo, "the lane was blamed for the card's own token").not.toContain(
+      'nowhere resolved to neither',
+    );
+  });
+
+  it('T-219-s2 — a BARE DOT is unresolvable at the expansion, and unstartable here', () => {
+    // THE TWO HALVES MEETING. `expandFence` refuses `.` (fence.test.ts
+    // carries that half with its live census); this body is the
+    // consequence at the dispatch site, and it is the pair the card asks
+    // for: the refusal has to reach the ANSWER, not only the issue list.
+    //
+    // KILLED BY: either half — removing the `DOT_DOMAIN` branch from
+    // `expandFence` (the token classifies `path`, reserves '.', and the
+    // guard sees an empty `unusable`), or removing the `unusable` term
+    // from the `rule()` guard (the token is refused and the card is
+    // startable anyway).
+    const board = [ROADMAP, card('T-001', 'A', { milestone: 4, priority: 1, touches: ['.'] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+    expect(order.startable.map((r) => r.id)).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.unfenceable[0]?.fence.paths, 'the dot still reserves a domain').toEqual([]);
+    expect(order.unfenceable[0]?.reason).toContain("T-001's own `touches:` carries .");
+
+    // THE CONTROL: `./lib/parser` is the SAME leading character, which
+    // normalisation strips — so it resolves, and the refusal is about the
+    // repository ROOT rather than about the character.
+    const dotted = [
+      ROADMAP,
+      card('T-001', 'A', { milestone: 4, priority: 1, touches: ['./lib/parser'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(dotted), []);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(ok.startable[0]?.fence.paths).toEqual(['lib/parser']);
+  });
+});
