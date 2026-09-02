@@ -406,3 +406,281 @@ phase-1 ground truth relayed into this lane. It agrees with this lane's
 independent seven-sample run and it is NOT independent corroboration,
 because the seat that measured it is the seat that judged the constant.
 The comment now attributes it.
+
+## VERDICT
+
+2026-09-02, verifier claude-opus-5@subagent, `review: independent`.
+Judged over base `763548cc61392f4f034b9c0fb334142f926d4c8b`, in the
+bench `/Users/ujju/Projects/nputer-V-T-237-s2`, ports 25238/26238.
+
+**THE BRANCH MOVED UNDER THIS PASS, AND IT IS RECORDED RATHER THAN
+SMOOTHED.** Every measurement below was taken at tip
+`410ab7383acd9eabe3a30d72196ccd73a2ccc9de`. Before this verdict was
+committed the branch stood at `d944c255a3ce26c12aee48eff1978b35ff39ffd9`
+— it moved twice under this pass, adding one routed suggestion card
+(`T-237-s8`) at `f430ad4` and the forecast addendum above at `d944c25`,
+and nothing else:
+`git diff --numstat 410ab73..f430ad4 -- .claude/hooks/push-guard.mjs
+tools/e2e/tests/push-guard.spec.ts` is EMPTY for `410ab73..d944c25`, so
+the two files under this fence are byte-identical across all three refs
+and every finding below stands unchanged. This verdict is committed on
+`d944c25`. The routed card was
+read as prose the gates read: `status: suggested` is legal, the id is
+one-level, and `docs-gate` answers *every live task card's frontmatter
+parses, with a legal status*.
+
+**BLINDNESS: CLOCK-SHAPED, NOT DISCIPLINE-SHAPED.** Phase 1 reached this
+seat before the lane's work existed, so there was no diff to decline to
+read. The attack set and a measured ground truth were written and hashed
+at the base before the tip was named — `attack-V-T-237-s2.md` sha256
+`417e3cfbc037179f03bd300a3fc226ad471c65b61797cd8b1a1c01ea540a3717`,
+`ground-V-T-237-s2.md` sha256
+`31b9d1a25a397a5309775f81a022b7c6a47282acc7ae51d6fea3b243345da805`,
+sealed 2026-09-02T07:11:49Z. Every base figure quoted below is from that
+sealed record.
+
+### T-238-s2 (main's red) — APPROVED, and it is separable
+
+**REPRODUCED INDEPENDENTLY AND THEN SEEN TO GO.** Not taken from the
+lane's report: this seat built the runner shape itself — a double-forked
+`/bin/sh` reparented to launchd, ancestry `sh ← launchd` with no harness
+anywhere in it, asserted by walking `ps` before the suite ran.
+
+- At the **base**, that tree fails `push-guard.spec.ts:2718` with CI run
+  33602096600's exact message — `the same record on the integration
+  branch is not ignored` — while the other three holder bodies pass. So
+  the red is the body's arming and not the guard, `pushUnderHarness`'s
+  symlinked stand-in harness was already machine-independent, and :2718
+  was the sole borrower of the real process tree.
+- At the **tip**, the same tree runs six holder bodies and all six pass.
+
+The seam is right in kind: `decide` takes `holder` as a fifth parameter
+for the reason it already takes `check`, `cheap` and `gh`; the default is
+`holderVerdict`, so production is unchanged. **There is no environment
+override** — swept: the only `process.env` reads in the hook are `gh`'s
+own spawn environment and `ciVerdict`'s `NPUTER_CANCEL_CI`, so nothing
+outside the process can reach the seam to silence the arm. The new body's
+positive control differs from its subject by ONE argument (`{ok:false}`
+against a live, non-holder identity) and asserts the opposite verdict, so
+the arming genuinely differs. The declared-limits header names the runner
+as the case, with the incident that found it.
+
+**This half may merge ahead of the rest.** It is commit `17e764f`, it
+touches regions `67563b4` does not, and it is what takes main off red.
+
+### The three residuals — REJECTED, on one defect
+
+Everything else measured clean. The conclusion set, the failing-step
+widening, the bound and its header, and the refspec reader all answer the
+attack set: `timed_out` / `startup_failure` / `action_required` now get
+the full announcement naming their OWN conclusion; a `timed_out` run
+whose jobs are `cancelled` and a `startup_failure` with no jobs both say
+the step cannot be named rather than blaming the job list; `neutral`,
+`stale` and an invented `mystery_conclusion_9000` still reach the seat
+through the catch-all, which now names the whole set; `cancelled` and
+`skipped` stay silent and the two lists are disjoint; no body reaches a
+`gh` outside its fixture shim (proved by prepending a poisoned `gh` that
+records and exits 66 — never called across all 84 bodies); `headRef` is
+untouched and a lane pushing `HEAD:refs/heads/main` with a LIVE holder
+record planted in it is still not refused, while the same record in a
+`main` checkout refuses at exit 2. 84 passed, `typecheck` 0,
+`index --check` CURRENT.
+
+**THE DEFECT: `--all` AND `--mirror` MAKE THIS GUARD WEAKER THAN THE ONE
+IT REPLACES.** `PUSH_UNRESOLVING_FLAGS` sends them to `unresolved`, and
+`ciVerdict` then returns without asking `gh` anything — so a push that
+lands on `main` while a run is in flight on `main` is no longer refused.
+
+Reproduce, from a `main` checkout with one `in_progress` run on `main`
+(`probe3-V-T-237-s2.mjs`, driven through the WIRED hook):
+
+| command | base 763548c | tip 410ab73 |
+|---|---|---|
+| `git push origin main` | exit 2 REFUSED | exit 2 REFUSED |
+| `git push` | exit 2 REFUSED | exit 2 REFUSED |
+| `git push origin HEAD:refs/heads/main` | exit 2 REFUSED | exit 2 REFUSED |
+| **`git push --mirror origin`** | **exit 2 REFUSED** | **exit 0 ALLOWED** |
+| **`git push origin --all`** | **exit 2 REFUSED** | **exit 0 ALLOWED** |
+
+Both flags push a set that INCLUDES HEAD's own branch — that is what they
+mean — so the run really is cancelled and the refusal the base gave was
+TRUE. This is the lane's own disqualifying rule, left unapplied to two of
+its instances: the body at the `pushTargetBranch` census says, of the
+several-targets case, *"An earlier spelling called this unresolved and
+thereby let a live run through, which is weaker than the pre-card
+guard."* `--all` and `--mirror` are that case, not the no-target case —
+they name MORE targets, not none — and the absorbed T-237-s6 criterion
+covers them literally: *"fall back to HEAD's when none is [spelled]"*.
+
+`--delete`/`-d` are correctly on that list and must stay: a deletion does
+not land on HEAD's branch, and the base refusing it was a FALSE refusal
+this lane removes. The list conflates the two.
+
+**The remedy is small and is in the lane's own idiom**: `--all`/`--mirror`
+take the `{fallback}` path — HEAD's branch, asked about, the rest
+DISCLOSED — exactly as `git push origin main dev` already does. No body
+covers this today, so add one that drives an in-flight run against those
+two spellings and sees exit 2.
+
+### Findings that do NOT block, filed rather than folded in
+
+1. **`git push origin $BRANCH` and `git push origin "main"` are also
+   weaker than the base** (exit 2 → exit 0, measured above). Unlike
+   `--all`/`--mirror` this is a defensible trade — HEAD's branch may not
+   be the target, so the base's refusal could be false — but the header's
+   limits block calls each of these *"the pre-guard state"*, and for
+   these two that sentence is false: the state immediately before this
+   card refused them. Correct the sentence when the defect above is
+   repaired.
+2. **`git push --repo=origin HEAD:main` falls back to HEAD's branch.**
+   `--repo=<v>` is skipped as a one-token option, but it also removes the
+   repository from the positionals, so the refspec is eaten as the
+   repository. A false negative only, and undeclared.
+3. **A target beginning with `-` reaches `gh` as `--branch`'s value**
+   (`git push origin HEAD:--version` → `--branch --version`). Bounded —
+   nothing executes, and the poisoned-`gh` sweep shows nothing escapes —
+   but the base shape-checks `headSha` against exactly this class
+   (*"where a commit id was expected"*), and the new value off the
+   command line carries no such check.
+
+### One disclosure this seat owes
+
+`GH_MEASURED_MS`'s comment reads *"READ A SECOND TIME BY A SECOND SEAT,
+on the same machine at 07:03:05Z on 763548c: 1150 ms and 1390 ms"*. That
+is **this verifier's own phase-1 ground truth**, relayed into the lane.
+It is genuine and it was sealed and hashed before the lane wrote it, and
+it does agree with the executor's independent seven-sample run
+(1026–1256 / 1232–1499) — but a later reader must not count it as
+independent corroboration, because the seat that measured it is the seat
+that judged the constant. Attribute it to the verifier where it stands.
+
+### Gates at this verdict's own tip
+
+`index --check` CURRENT (1170079 bytes / 200 files / 2504 symbols / 2395
+edges) · `typecheck` 0 · `push-guard.spec.ts` 84 passed ·
+`capabilities:check` **1 STALE** (committed 50248, fresh 50969) — OWED
+AND CORRECTLY THE INTEGRATOR'S under CONVENTIONS' T-201 rule, seven new
+spec names, and the lane reports it rather than regenerating inside its
+fence. Not attributed to the diff as a defect.
+
+## RE-VERDICT — APPROVED
+
+2026-09-02, verifier claude-opus-5@subagent, `review: independent`. The
+section above is my first verdict, carried forward VERBATIM from
+`d8db32f` (which sits on `d944c25`); it measured `410ab73` and its
+findings stand as written. This re-verdict judges the fix pass at tip
+`ce2ffbab492deecf14b713c5fa966cdf5feb1919` over `d944c25`, in the bench
+`/Users/ujju/Projects/nputer-V-T-237-s2`, ports 25238/26238. **Nothing
+in the executor's report was taken as read; every claim below is a
+measurement of my own.**
+
+### T-238-s2 (main's red) — STILL APPROVED, re-measured under the fix
+
+The fix pass edits the same hook, so this half was re-run rather than
+assumed. Under my own runner shape — a double-forked `/bin/sh`
+reparented to launchd, ancestry `sh ← launchd` asserted by walking `ps`
+before the suite ran, no harness anywhere in it — **all six holder
+bodies pass at `ce2ffba`**. The base's failure of that same tree
+(`the same record on the integration branch is not ignored`, CI run
+33602096600's own message) is unchanged and remains the red this half
+closes. The seam is untouched by the fix.
+
+### The defect is CLOSED, measured against the pre-card guard
+
+My probe3 matrix, re-run at `ce2ffba` and at the base `763548c`, from a
+`main` checkout with one `in_progress` run on `main`, through the WIRED
+hook. Exit 2 is the refusal.
+
+| command | base 763548c | first tip 410ab73 | fix ce2ffba |
+|---|---|---|---|
+| `git push --mirror origin` | 2 REFUSED | **0 allowed** | **2 REFUSED** |
+| `git push origin --all` | 2 REFUSED | **0 allowed** | **2 REFUSED** |
+| `git push --all origin` | 2 REFUSED | — | **2 REFUSED** |
+| `git push --mirror origin main` | 2 REFUSED | — | **2 REFUSED** |
+| `git push --delete origin gone` | 2 REFUSED | 0 allowed | 0 allowed |
+| `git push -d origin gone` | 2 REFUSED | 0 allowed | 0 allowed |
+| `git push origin main` / `git push` / `HEAD:refs/heads/main` / `--force origin main` | 2 | 2 | 2 |
+
+The two spellings that regressed are refused again, and `--delete`/`-d`
+keep their allow — which is the FALSE refusal this card deliberately
+removes, argued at the constant that now holds them alone. The split is
+real and each list carries its own half of the argument.
+
+**AND THE REFUSAL IS KEYED TO THE RUN, NOT THE FLAG** — the lane's own
+control, which I checked rather than trusted: the same two spellings over
+a COMPLETED `success` run push at exit 0.
+
+**THE DISCLOSURE FIRES.** From a lane checkout, `git push --mirror origin`
+now says *"CI WAS ASKED ABOUT `task/T-901-probe` AND NOT ABOUT every
+other branch `--mirror` pushes"* — HEAD's branch asked, the unnamed set
+declared, the round trip still one.
+
+### The control CAN fail — my own mutant, not the lane's report
+
+Step 2b's demand, paid by this seat. **DATA MUTANT**, one side only:
+`PUSH_ALL_BRANCHES_FLAGS` emptied and both flags returned to
+`PUSH_UNRESOLVING_FLAGS` — my finding, re-armed. Landing read from
+`git diff`, never from a mutator's report:
+
+    -export const PUSH_ALL_BRANCHES_FLAGS = Object.freeze(["--all", "--mirror"]);
+    +export const PUSH_ALL_BRANCHES_FLAGS = Object.freeze([]);
+    -export const PUSH_UNRESOLVING_FLAGS = Object.freeze(["--delete", "-d"]);
+    +export const PUSH_UNRESOLVING_FLAGS = Object.freeze(["--all", "--mirror", "--delete", "-d"]);
+
+Pristine `push-guard.mjs` sha256
+`37b7eebea29aa05316d1088c3ec5da75eb42433882061a9524e2979fa925d458`;
+mutated `57cb1bf4b8ec7589fbc0ad8ec7fbc90530e9f851df6ae8af406fcea9ec0970bd`;
+restored and re-hashed to the pristine value with `git status` clean and
+`git diff --stat` empty.
+
+**KILL SET: 2 of 85** — `the branch a push LANDS on is read off the
+refspec, and doubt is declared` and ``` `--all` and `--mirror` are
+REFUSED against a live run — they push HEAD's branch too ```. 83 passed.
+Both deaths are at the site the property lives, the set is CONTAINED to
+the refspec residual, and the new body dies for the exact reason it was
+written — so it is a control and not a restatement.
+
+### No collateral damage
+
+Re-run at `ce2ffba` and identical to what I approved at `410ab73`:
+`failure`/`timed_out`/`startup_failure`/`action_required` announced with
+their own conclusion at two `gh` calls; `timed_out` with `cancelled` jobs
+and `startup_failure` with no jobs both declare the step unnameable;
+`neutral`, `stale` and an invented `mystery_conclusion_9000` still reach
+the catch-all at one call; `cancelled`, `skipped` and `success` silent.
+The ONE-`headRef` hazard still holds: a lane pushing
+`HEAD:refs/heads/main` with a LIVE holder record planted in it is not
+refused, while the same record in a `main` checkout refuses at exit 2.
+
+### My three non-blocking findings, checked
+
+1. **Corrected.** The limits block no longer calls the literal-refspec
+   case *"the pre-guard state"*; it says in its own words that
+   `$BRANCH` and a quoted refspec were REFUSED at the base and are
+   allowed here, and that it is a trade taken rather than a hole
+   inherited. Measured true: both still allow at `ce2ffba`, both refused
+   at `763548c`.
+2. and 3. **Declared and routed.** `--repo=<value>` eating the only
+   refspec, and a destination beginning with `-` reaching `gh` as
+   `--branch`'s value, are both named in the limits block with their
+   direction of failure, and carried by `T-237-s9` — whose frontmatter
+   parses, `status: suggested`, one-level id, `blocked_by: [T-237-s2]`.
+4. **My disclosure was taken up.** `GH_MEASURED_MS` now attributes the
+   second reading to this card's verifier and says in as many words that
+   it is not a second opinion. That is the correct disposal.
+
+### Gates at this re-verdict's own tip
+
+`push-guard.spec.ts` **85 passed** · `typecheck` 0 · `index --check`
+CURRENT · parser 363 · app 1141 · the four card-reader e2e specs green ·
+`docs-gate` *every live task card's frontmatter parses, with a legal
+status* · **no body reaches a `gh` outside its fixture shim** (re-proved
+by prepending a poisoned `gh` that records and exits 66 — never called
+across all 85 bodies) · `capabilities:check` **1 STALE** (committed
+50248, fresh 51057) — OWED AND THE INTEGRATOR'S under CONVENTIONS'
+T-201 rule, reported by the lane rather than regenerated inside its
+fence, and not attributed to the diff.
+
+**APPROVED at `ce2ffbab492deecf14b713c5fa966cdf5feb1919`.** The merge
+conflicts on this card alone, both sides carrying the absorbed section;
+the lane's copy is the superset and is the one to take.
