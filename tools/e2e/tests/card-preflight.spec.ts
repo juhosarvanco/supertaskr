@@ -24,6 +24,7 @@ import {
   frontmatterScalars,
   NOT_A_CLAIM_CLASS,
   componentOwners,
+  markerEnd,
   MIN_QUOTE_CHARS,
   ownersOf,
   pathOracle,
@@ -1777,6 +1778,81 @@ test("a run that opens in one paragraph and closes in another stays UNSEEN, said
   expect(unmarkedListing(together.text)).toEqual([
     "NOT CHECKED, no source named, line N: " +
       JSON.stringify("that never closes on this side and goes on past a blank line"),
+  ]);
+});
+
+test("a marker whose NEEDLE wraps ends its own unit, and the run after it survives", async () => {
+  // V-T-230-s7's attack A4, planted. A marker wraps like everything else
+  // in a seventy-column document, and its CONTINUATION line is not itself
+  // a marker line: ending the segment at the LINE left the needle's
+  // orphan closing quote to join the NEXT unit, where a class bounded by
+  // the unit paired it with the following run's OPENING quote. The
+  // author's real assertion was swallowed and a run nobody wrote was
+  // listed in its place — a false-negative census AND a fabricated
+  // listing, which is the direction this card calls the wrong kind.
+  const root = oneDocRepo("docs/CONVENTIONS.md", "anything\n");
+  const oracle = pathOracle(root);
+  const head = ["---", "id: T-903", "---", "", "The rule this card rests on is stated in docs/CONVENTIONS.md."];
+  const after = 'And the card also asserts "a sentence nobody marked at all" beside it.';
+  const wrapped = [
+    ...head,
+    'CARD CLAIM (docs/CONVENTIONS.md): "search the COLLAPSED text, the way',
+    'every mechanical reader of this file does before it matches anything"',
+    after,
+    "",
+  ].join("\n");
+  // THE MARKER IS WRITTEN THE WAY THIS REPOSITORY WRITES ONE, and the
+  // plant is asserted: the needle must span a line break, or the body
+  // measures nothing.
+  expect(
+    ((wrapped.split("\n")[5] ?? "").match(/"/g) ?? []).length % 2,
+    "the planted marker stopped wrapping its needle",
+  ).toBe(1);
+
+  const loose = unmarkedQuotes(wrapped, oracle);
+  expect(loose.map((q) => q.text)).toEqual(["a sentence nobody marked at all"]);
+  expect(loose.map((q) => q.line), "the surviving run lost its own line").toEqual([8]);
+
+  // "EXACTLY AS IT TREATS A SINGLE-LINE MARKED RUN", in the second
+  // criterion's own words: the same card with a needle short enough to
+  // fit reports the same assertion. Before the repair the wrapped one
+  // reported `And the card also asserts` — a sentence nobody wrote.
+  const single = [...head, 'CARD CLAIM (docs/CONVENTIONS.md): "the COLLAPSED text"', after, ""].join(
+    "\n",
+  );
+  expect(unmarkedQuotes(single, oracle).map((q) => q.text)).toEqual(loose.map((q) => q.text));
+
+  // AND THE BOUNDARY ITSELF, DRIVEN DIRECTLY: the payload's last line,
+  // never the marker's own, and a marker whose quoting never closes
+  // inside its paragraph falls back to its own line rather than eating
+  // the rest of it.
+  const para = (lines: string[]) => lines.map((text, i) => ({ line: i + 1, text, scope: "body" as const }));
+  expect(markerEnd(para(['CARD CLAIM (a/b): "one', 'two" and more.', "tail."]), 0)).toBe(1);
+  expect(markerEnd(para(['CARD CLAIM (a/b): "closed here"', "tail."]), 0)).toBe(0);
+  expect(markerEnd(para(["CARD CLAIM (a/b): no needle at all", "tail."]), 0)).toBe(0);
+  expect(
+    markerEnd(para(['CARD CLAIM (a/b): "never closed', "tail.", "more tail."]), 0),
+    "an unbalanced marker ate its whole paragraph",
+  ).toBe(0);
+
+  // THROUGH THE WHOLE ARM, on the fixture world: the assertion after a
+  // wrapped marker is COUNTED, and the marker is still read as a marker.
+  const whole = await run(
+    makeFixture({
+      files: [{ rel: TRUE_CLAIM.source, content: TRUE_CLAIM.sourceText }],
+      body: [
+        `CARD CLAIM (${TRUE_CLAIM.source}): "A substitution count is not a`,
+        'diff" — quoted across the wrap the way this repository writes one.',
+        'And the card also asserts "a sentence nobody marked at all" beside',
+        "docs/CONVENTIONS.md.",
+      ],
+    }),
+  );
+  expect(whole.text).toContain("quoted and NOT marked, beside a path this card names: 1");
+  expect(unmarkedListing(whole.text)).toEqual([
+    `NOT CHECKED, a path is named nearby, line N: ${JSON.stringify(
+      "a sentence nobody marked at all",
+    )}`,
   ]);
 });
 

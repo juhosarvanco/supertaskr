@@ -376,6 +376,50 @@ export const QUOTED_RUN = /"([^"]+)"|“([^”]+)”/g;
 export const MARKED_NEEDLE = /"([^"\n]+)"|“([^”\n]+)”|`([^`\n]+)`/g;
 
 /**
+ * WHERE A MARKER'S PAYLOAD ENDS — the LAST line of it, which is not
+ * always the line the marker opens on.
+ *
+ * **A MARKER WRAPS LIKE EVERYTHING ELSE IN A SEVENTY-COLUMN DOCUMENT,
+ * AND ITS CONTINUATION LINE IS NOT ITSELF A MARKER LINE** (V-T-230-s7,
+ * attack A4). Ending the marked segment at the marker LINE left the
+ * needle's orphan closing quote on the next line, which joined the NEXT
+ * unit — and under a class bounded by the unit rather than the line that
+ * orphan pairs with the following run's OPENING quote. The author's real
+ * assertion was swallowed and a run nobody wrote was listed in its
+ * place: a false-negative census AND a fabricated listing, on a line a
+ * dispatcher decides on. This is the exact leak the fold's marker branch
+ * was built to prevent, one line further down than the branch reached.
+ *
+ * **BALANCE IS THE TEST, AND THE END OF THE PARAGRAPH IS THE FLOOR.**
+ * The segment grows while the marker's own quoting is open — an odd
+ * number of straight quotes, or a typographic pair still unclosed — and
+ * stops the moment it closes. A marker whose quoting NEVER closes inside
+ * its paragraph is malformed, and the answer there is to consume only
+ * its own line, exactly as before: swallowing the rest of the paragraph
+ * would drop real assertions in silence, which is the failure this
+ * whole class exists against. Backticks are not balanced here on
+ * purpose — a backticked needle is a needle to `MARKED_NEEDLE` but not
+ * to `QUOTED_RUN`, so an orphan backtick cannot corrupt this census.
+ *
+ * @param {CardLine[]} para  the paragraph, in order
+ * @param {number} at        the index of the marker line
+ * @returns {number} the index of the payload's last line, never before `at`
+ */
+export function markerEnd(para, at) {
+  let straight = 0;
+  let opened = 0;
+  let closed = 0;
+  for (let i = at; i < para.length; i += 1) {
+    const text = /** @type {CardLine} */ (para[i]).text;
+    straight += (text.match(/"/g) ?? []).length;
+    opened += (text.match(/\u201c/g) ?? []).length;
+    closed += (text.match(/\u201d/g) ?? []).length;
+    if (straight % 2 === 0 && opened === closed) return i;
+  }
+  return at;
+}
+
+/**
  * The shortest quoted run the unmarked report treats as an assertion.
  * Measured over the live board: below this the hits are initials, single
  * words and punctuation samples rather than sentences anybody meant as a
@@ -660,12 +704,16 @@ export function unseenMarkers(cardText) {
  * the line it OPENS on, carried through the fold, so a listing still
  * names a place in the file rather than the top of a paragraph.
  *
- * **A MARKER LINE BREAKS THE FOLD RATHER THAN JOINING IT.** A marker's
- * own needle belongs to the MARKED half, which is why the line was
- * skipped before the fold existed; folding across it would carry a
- * needle the author asked to have CHECKED into the census of what was
- * not, and would also pair quotes on either side of it that no author
- * wrote as a pair. So the lines around a marker are two units.
+ * **A MARKER BREAKS THE FOLD RATHER THAN JOINING IT, AND IT BREAKS IT AT
+ * THE NEEDLE RATHER THAN AT THE LINE.** A marker's own needle belongs to
+ * the MARKED half, which is why the line was skipped before the fold
+ * existed; folding across it would carry a needle the author asked to
+ * have CHECKED into the census of what was not, and would also pair
+ * quotes on either side of it that no author wrote as a pair. So the
+ * lines around a marker are two units — and the boundary between them is
+ * where the marker's PAYLOAD ends, because a marker wraps like every
+ * other sentence here and its continuation line is not a marker line.
+ * `markerEnd` is that boundary and carries the measurement.
  *
  * **A RUN THAT OPENS IN ONE PARAGRAPH AND CLOSES IN ANOTHER STAYS
  * UNSEEN, AND THE CLASS SAYS SO IN WORDS.** A blank line ends the unit.
@@ -755,12 +803,17 @@ export function unmarkedQuotes(cardText, oracle) {
     // it is about on the next, and a marker line is part of that reading
     // even though it is not part of any fold.
     const nearPath = namesAPath(para.map((l) => l.text).join("\n"));
-    for (const l of para) {
-      if (CARD_CLAIM.test(l.text)) {
-        fold(nearPath);
+    for (let i = 0; i < para.length; i += 1) {
+      const l = /** @type {CardLine} */ (para[i]);
+      if (!CARD_CLAIM.test(l.text)) {
+        unit.push(l);
         continue;
       }
-      unit.push(l);
+      // THE SEGMENT ENDS AT THE NEEDLE, NOT AT THE LINE. `markerEnd`
+      // carries the reason; skipping to it is what keeps a wrapped
+      // marker's orphan closing quote out of the next unit.
+      fold(nearPath);
+      i = markerEnd(para, i);
     }
     fold(nearPath);
     para = [];
