@@ -108,22 +108,21 @@ opens with the card id that still holds its story.
   since T-127-s6 (2026-08-29), with C-17/C-18 minted and no import
   severed; the file ceiling PRINTS from `index --check` every run
   (T-140), and an oversize graph tells the map the truth (payload
-  shape: T-140-s1, @human's). On 2026-09-02 the landing gate
-  stopped claiming an absolute and measures its sixth limit (T-223),
-  the preflight checks a card's quoted claims against the named file
-  (T-230), and every lane can measure its own battery with the physical
-  layer armed (T-216-s4); the wave was fenced by PATH for the first time
-  and every pair was proved disjoint.
-  The method is at v0.1.9 (T-229: a positive control is DEMONSTRATED
-  failing and the record carries it), the push guard reads CI so a
-  run in flight refuses a push by construction (T-237), the dispatch
-  view answers what can START under a disclosed byte margin with
-  `--full` as the triage view (T-225), and a fence is refused when
-  it CONTAINS the unfenceable directory (T-219).
-  The holder of the integration checkout is a record on disk the
-  arms and the push guard read (T-238); the eval gate's control runs
-  inside a fenced lane (T-229-s6); the limits paragraph has a keeper
-  (T-215-s1).
+  shape: T-140-s1, @human's). On 2026-09-02 the landing
+  gate measures its sixth limit (T-223) and derives the card from the
+  lane branch at the merge; the preflight checks a card's quoted
+  claims (T-230) and fences by PATH, proved disjoint per pair
+  (T-216-s4); the method is v0.1.9 with positive controls DEMONSTRATED
+  failing (T-229); the push guard reads CI and refuses a push into a
+  running run (T-237); the dispatch view answers what can START under
+  a disclosed margin, `--full` the triage view (T-225), citing rule
+  four instead of transcribing it (T-225-s2); a fence containing the
+  unfenceable directory (T-219) or an unresolvable token (T-219-s4) is
+  refused; the holder of the integration checkout is a record on disk
+  (T-238); the stale-stamp check no longer suspends docs/tasks (T-228);
+  and blindness is a property of the spawn — phase 1 tool-less, its
+  attack set hashed, a mismatched citation refused (T-205), the eval
+  gate at nine.
 
 ## Milestones
 
