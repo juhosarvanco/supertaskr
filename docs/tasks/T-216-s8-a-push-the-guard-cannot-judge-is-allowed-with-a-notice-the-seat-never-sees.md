@@ -106,27 +106,38 @@ are code inputs — app, tools/e2e, lib/parser), BOOT GATE and METHOD
 EVAL **not owed** (nothing under `app/src-tauri/**`, `app/src/**`,
 either manifest, or `method/**`).
 
-`gate-run parser` GREEN 372, `gate-run app` GREEN 1141, `index --check`
-CURRENT — all at `73981da`. **`gate-run e2e` RED at `73981da`: 2 failed
-/ 620 passed, both in `session-economics.spec.ts`, and neither is this
-diff.** `brief.mjs` refuses three worktrees on task branches
-(`T-202-s1`, `T-205-s8`, `T-225-s12`) whose cards *"no live card
-declares"* — the REF-SKEW class this project already names (T-143-s1,
-T-187): all three cards exist on main and none exists at this lane's
-base `2f813e8`, so the check joins a MACHINE-scoped surface (the host's
-worktree list) to a CHECKOUT-scoped one (this base's cards) and reds
-every older lane the moment a newer lane is cut. **Measured, not
-argued**: the two bodies red alone at this tip (2 failed / 8 passed) and
-are GREEN 10/10 in a detached worktree at the merge tree, where main's
-cards are present. The full merge forecast is **GREEN, exit 0, 625
-bodies** at `a944722` (main `cde65b5` ⨝ `73981da`), run in
-`../nputer-T-216-s8-forecast` and removed afterwards.
+`gate-run parser` GREEN 372 and `gate-run app` GREEN 1141 at both
+`73981da` and `e72cf2d`; `index --check` CURRENT at `73981da`.
+**`gate-run e2e` RED at both: 2 failed / 620 passed, both in
+`session-economics.spec.ts`, and neither is this diff.** `brief.mjs`
+refuses three worktrees on task branches (`T-202-s1`, `T-205-s8`,
+`T-225-s12`) whose cards *"no live card declares"* — the REF-SKEW class
+this project already names (T-143-s1, T-187): all three cards exist on
+main and none exists at this lane's base `2f813e8`, so the check joins a
+MACHINE-scoped surface (the host's worktree list) to a CHECKOUT-scoped
+one (this base's cards) and reds every older lane the moment a newer
+lane is cut. **Measured, not argued**: the two bodies red ALONE at this
+tip (2 failed / 8 passed) and are GREEN 10/10 in a detached worktree at
+the merge tree, where main's cards are present.
 
-The forecast's own `index --check` read STALE on two files this lane
-never opened — `app/test/architecture-dogfood.test.ts` and
-`app/test/map-dogfood-render.test.tsx`, identical blobs to main's — and
-main regenerated exactly those at `7b4ed3e` while this lane was
-measuring. Main moved four commits during this build.
+**THE MERGE FORECAST IS GREEN, MEASURED TWICE AGAINST A MOVING MAIN, AND
+THE INVARIANT IS THE DELTA.** `a944722` (main `cde65b5` ⨝ `73981da`) and
+`9d53074` (main `ecbc26f` ⨝ `e72cf2d`) both read `gate-run e2e` **exit
+0, 625 bodies, GREEN** — +5 on this lane's own 620, being the two
+ref-skew bodies the merge repairs and three bodies main gained. Run in a
+detached `../nputer-T-216-s8-forecast`, removed afterwards. The second
+forecast's `index --check` is CURRENT, so **the merge owes no regen**;
+the first read STALE on two files this lane never opened
+(`app/test/architecture-dogfood.test.ts`,
+`app/test/map-dogfood-render.test.tsx`, blobs identical to main's) and
+main regenerated exactly those at `7b4ed3e` while this lane measured.
+Main moved eight commits during this build.
+
+**THE CENSUS IS OWED AND IS NOT THIS LANE'S TO PAY**: one test name is
+added, `capabilities:check` reads STALE (committed 52442 bytes, fresh
+52556), and `docs/CAPABILITIES.md` is outside this fence — the
+integrator regenerates it in the merge commit. It is LOCAL_ONLY, so CI
+does not read it.
 
 **THE ROUTED CARD'S ID WAS TAKEN WHILE THIS LANE HELD IT.** It was filed
 as `T-216-s9`; `ecbc26f` landed a different `T-216-s9` on main an hour
