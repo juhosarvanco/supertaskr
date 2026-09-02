@@ -497,3 +497,32 @@ holds a worktree ... and no live card declares that id"*. That worktree
 belonged to another seat and was removed during the sitting; both bodies
 then passed at the base AND at this tip, back to back, 86 of 86 each. A
 lane's battery is measured on a machine other lanes are moving.
+
+### Closing figures, at the tip
+
+Every arm at `188a550`, bytes to a FILE destination, exit read from `$?`
+unpiped, on a board of 17 worktrees — a DIFFERENT board from the held one
+the before/after table above was measured on, which is why the two tables
+are stated separately rather than reconciled:
+
+    --dispatch                     31,217   34,319 UNDER
+    --dispatch --full             100,269   34,733 PAST
+    --task T-133                   40,620   24,916 UNDER
+    --task T-133 --state           51,494   14,042 UNDER
+    --task T-133 --state --full    58,111    7,425 UNDER
+    --task T-133 --role executor   40,620   24,916 UNDER
+    --task T-133 --preflight       70,491    4,955 PAST
+    --state                        12,294   53,242 UNDER
+    --card T-133                    5,245   60,291 UNDER
+
+Gates at `188a550`: parser **363 GREEN**, app **1141 GREEN**, rust **639
+GREEN**; `index --check` CURRENT; `docs-gate.mjs` on the resolved
+forecast `c6ea4dd` (10 paths) FIRES for `npm test from app/`, `npm test
+from tools/e2e/` and `npx vitest run from lib/parser/`, and reports every
+live task card's frontmatter parsing with a legal status. The e2e leg's
+verdict was taken at `855db9b`; the only delta to this tip is two card
+files under docs/tasks, and the forecast-derived gate SET does not move
+with them.
+
+**THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S**: `capabilities:check`
+exits 1 at this tip. Three test names ADDED, none renamed or removed.
