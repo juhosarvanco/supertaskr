@@ -75,3 +75,13 @@ reject, so it is a card.
   citation for a code OTHER than `no-path-to-judge` — the plant that
   passes silently today.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — left `suggested`, with the verifier's correction, at the T-215-s2 merge
+
+The architect seat. V-T-215-s2 measured that this card's stated reason
+is false as written: `not-a-repository`'s decline also carries a
+"(limit 2 in this file's header)" string, split across a `+`
+concatenation the regex never sees. The conclusion holds (arm two binds
+only a code the numbered block spells, one of four); closing it needs
+the string joined or the reader taught concatenation. No dispatch
+follows today by the user's instruction.
