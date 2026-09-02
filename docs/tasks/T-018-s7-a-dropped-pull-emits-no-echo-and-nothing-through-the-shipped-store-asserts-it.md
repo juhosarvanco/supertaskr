@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-018-s6
 blocked_by: []
 touches: [app/test/startup-recovery.test.ts]
@@ -79,3 +79,13 @@ directions, the `generatedAtMs: 0` abstain, and the cross-project
 direction) plus one ruling body in `app/test/docs-model.test.ts`. This
 card adds no source change at all: if it reds, the store changed, not
 the reducer.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at T-018-s6's merge (f2a3ed0)
+
+The architect seat. True by inheritance today (`applyDocsPayload`'s
+identity return precedes `setShell` and `sendEcho`) and pinned by
+identity in the store's own bodies; what is missing is the end-to-end
+drive through the shipped store, which needs a jsdom body in a
+node-environment file. One body, one file; the T-018-s6 verifier
+measured the base's second echo and the tip's single one through the
+shipped store already, so the lane has its expected values.
