@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-225
@@ -82,3 +82,23 @@ Independently derived: the ENOBUFS behaviour is in this verifier's
 phase-1 ground truth, stamped at the base ref `5f193e6` as
 `709f2046ab0f25f188a5425e86df8e6e6817ee67e96edfe6efa06ae12cbc08d3`
 before this lane's first commit existed.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3
+
+The architect seat, at the stamp of T-225's merge (7435eae). The OVER
+arm's sentence is false against `spawnSync` (the verifier's V-225
+corroboration: `maxBuffer: 65536` returns the whole 102,752 bytes with
+`ENOBUFS` and `SIGTERM`), and the executor concurred while correctly
+declining to fix a producer in a pass scoped to F1. Criterion: the
+margin's OVER arm SHALL describe what each named caller actually does
+past the line, measured, and a body SHALL red when the sentence and the
+measurement disagree. Fence is free now that T-225 has merged; T-239
+serialises behind this card on dispatch-brief.mjs.
+
+## Absorbs: T-225-s3 (2026-09-02)
+
+`withMargin`'s UNSETTLED fallback is a branch no body drives. The same
+file, the same block: the lane SHALL drive it with a planted
+non-converging total and show the labelled honest answer printed, and
+SHALL say whether the fixed point can fail to converge at any real
+width or only at a planted one.

@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-175
 blocked_by: []
 touches: [app-shell, app-agent, app-interview]
@@ -130,3 +130,8 @@ tool limit, never as a verdict on the finding.
 
 **Holds**; F-03 p4, the fence already reaches all three components, and
 the ceremony row is "touching shipped code", so a verifier is owed.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

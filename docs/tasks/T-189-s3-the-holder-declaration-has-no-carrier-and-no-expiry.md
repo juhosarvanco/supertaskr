@@ -1,7 +1,7 @@
 ---
 id: T-189-s3
 title: The holder declaration T-189 rests on has no carrier and no expiry — the assembler emits no holder line, and a grant issued at dispatch is used after a verdict
-status: suggested
+status: planned
 feature: F-06
 milestone: 4
 priority: 3
@@ -112,3 +112,8 @@ NOT DERIVED where it cannot say; the grant holds from dispatch until the
 verdict lands, and the dispatcher re-confirms it in the message that
 sends the verdict, so no lane infers solitude at any moment. No new
 frontmatter field.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

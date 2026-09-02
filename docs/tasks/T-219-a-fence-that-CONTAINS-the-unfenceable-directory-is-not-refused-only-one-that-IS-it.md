@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [lib-parser]
 suggested_by: "T-209's executor, which needed the exact semantics of `alwaysWritable` to decide how it participates in a lane-vs-lane intersection and found the refusal is token-shaped where the rule is path-shaped"
@@ -109,3 +109,8 @@ live. When this card is promoted its criteria SHALL include: IF a card's
 `touches:` is empty THEN `expandFence` SHALL refuse it, naming the card,
 and the dispatch guard SHALL never report it disjoint. Same mechanism,
 same file, one refusal short.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

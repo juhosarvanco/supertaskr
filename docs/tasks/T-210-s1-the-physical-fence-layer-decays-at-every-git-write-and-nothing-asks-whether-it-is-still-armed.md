@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [.claude, tools/e2e]
 suggested_by: "T-210's executor, 2026-09-01 — found by measuring the failure its own card predicted and meeting a quieter one instead"
@@ -56,3 +56,8 @@ names the drift), on T-212's own announced-allow precedent for CANNOT
 COMPARE. A refusal would block every lane after every git write until a
 hand re-armed it, which is a guard somebody turns off. `review:
 independent` set at the seat: the subject is a guard.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

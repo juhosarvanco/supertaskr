@@ -1,7 +1,7 @@
 ---
 id: T-189-s1
 title: The clause ROW 11 depends on can be deleted and the brief comes back GREEN — nothing in the tree reds when the self-integration condition is removed
-status: suggested
+status: planned
 feature: F-06
 milestone: 4
 priority: 3
@@ -73,3 +73,8 @@ tool limit, never as a verdict on the finding.
 `[tools/e2e]`, review independent — a keeper over a deletable clause is
 guard-class). The body pins ROW 11's clause against a literal typed from
 T-189's criteria, never against the document it grades.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-216-s1, which read the row as its own base; confirmed at the integration seat against the lane it was wrong about"
 blocked_by: []
 touches: [tools/e2e]
@@ -97,3 +97,8 @@ tool limit, never as a verdict on the finding.
 was RED (inherited from the retired seat, repaired at 85dda6d) — so
 tonight's lanes are cut from the green tip and the covering message
 overrides the row. A live instance, recorded here rather than filed.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

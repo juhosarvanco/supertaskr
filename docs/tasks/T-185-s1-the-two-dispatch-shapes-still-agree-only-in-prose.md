@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185 (2026-08-31) — routed from inside the lane rather than widening its fence
 touches: [app-dispatch, app-board, docs/architecture/components/C-15-dispatch.md, app/test/architecture-dogfood.test.ts]
@@ -102,3 +102,8 @@ imports nothing from C-17. The lane runs `arch cycles` and reconciles
 `cargo test`'s exact-set census and the dogfood fixture in the same
 commit; IF `arch cycles` names a cycle THEN the lane stops and routes.
 The fence already reaches all four paths. `review: independent` set.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

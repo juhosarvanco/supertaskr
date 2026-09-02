@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185-s2 (2026-08-31) — measured in-lane with two one-sided drills, not taken because the repair cannot be green before its blocker lands
 touches: [app-shell]
@@ -87,3 +87,8 @@ tool limit, never as a verdict on the finding.
 ruled the blocker bound option 1 only. `review: independent` set (a
 fixture guard). Take option 2 — assert the key set at runtime — unless
 the lane measures option 1 cheaper.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

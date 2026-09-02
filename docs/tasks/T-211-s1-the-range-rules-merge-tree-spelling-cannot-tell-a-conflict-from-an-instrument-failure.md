@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e]
 suggested_by: "T-211's executor, which measured the exit codes while writing fast path B's exit typing into method/lane-protocol.md; class parent T-083 (the RANGE RULE's owner). DISPOSITION HINT: promote — it is one sentence in an existing bullet, and the bullet is the one every gate derivation in this repository routes through."
@@ -121,3 +121,8 @@ set, because the bullet is the recipe every gate derivation routes
 through. The three-valued reading is already law in lane-protocol's fast
 path B; this card is the RANGE RULE's pointer to it plus the
 discriminator sentence — a tree oid on stdout, never the exit code alone.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

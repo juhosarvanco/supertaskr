@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [app-agent]
 suggested_by: executor claude-opus-5@subagent @T-167-s9
@@ -108,3 +108,8 @@ Criteria added by the absorption:
 - THE new assertion SHALL be shown able to fail by that drill, with the
   restoration proved by sha256.
 - THE existing guards and both comparison directions SHALL be unchanged.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

@@ -965,3 +965,14 @@ integrator regenerates in the merge commit (T-210).
 **READY TO MERGE at `e086e1c8a06ec96fa692b76e7115abc4b4ed6191`**, with
 `docs/CAPABILITIES.md` owed in the merge commit and `T-225-s1`…`s5`
 carried to triage.
+
+## Absorbs: T-225-s5 (2026-09-02, at the fix pass)
+
+The verifier filed T-225-s5 with the REJECTED verdict: a control that
+asserts a race outcome must derive its own reliability in-run. The fix
+pass at f16f019 built exactly that — control two now derives the
+draining reader over the max of five samples and discloses the spread —
+and the re-verification measured it at twice the load. The one residual
+the verifier named (nothing pins max over min; a min mutant survives on a
+quiet machine, bounded by the disclosure) is recorded here rather than
+carded, on the verifier's own reading that it is not worth a second card.

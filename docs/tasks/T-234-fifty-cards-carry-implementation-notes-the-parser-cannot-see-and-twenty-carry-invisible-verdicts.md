@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: suggested
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1, as a verdict item against one card; the board-wide census was measured at the integration seat, which is what turned it from a nit into this"
 blocked_by: []
 touches: [lib/parser, tools/e2e]
@@ -197,3 +197,8 @@ tool limit, never as a verdict on the finding.
 **Criterion 3 rewritten as a ROUTE at the seat**: the TASK-FORMAT sentence
 rides the next method bump (T-229 owes it); the fence stays
 `[lib/parser, tools/e2e]`. Guard-class, review independent already set.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

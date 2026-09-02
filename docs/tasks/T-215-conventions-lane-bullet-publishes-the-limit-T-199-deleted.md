@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 blocked_by: [T-199]
 touches: [docs/CONVENTIONS.md]
 suggested_by: "T-199's executor, which could not correct it: docs/CONVENTIONS.md is outside `touches: [.claude, tools/e2e]` AND was held by the live T-189 lane at dispatch"
@@ -84,3 +84,8 @@ Four went through; this one is the arithmetic's remainder, not triage's.
 held back by a byte ceiling looks identical on the board to one triage
 declined, and that is the thing this paragraph exists to prevent. Filed
 as `T-225`; when it lands, promote this card without re-triaging it.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

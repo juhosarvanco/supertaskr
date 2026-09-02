@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 suggested_by: "the architect/integrator seat, 2026-09-01 — met while dispatching T-216-s1, measured rather than predicted"
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
@@ -104,3 +104,8 @@ tool limit, never as a verdict on the finding.
 criterion 4 reconciles the published lane spelling and that file was
 outside the fence — a card whose criterion and fence disagree is a
 defective card (TASK-FORMAT), and this is the repair.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.

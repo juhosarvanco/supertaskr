@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
+status: planned
 blocked_by: []
 touches: [docs/CONVENTIONS.md, docs/STATE.md]
 suggested_by: executor claude-opus-5@subagent @T-225
@@ -46,3 +46,11 @@ correct and complete for its own question, so nothing reds.
 `docs/CONVENTIONS.md` is not, so the MECHANISM belongs in CONVENTIONS
 and STATE takes a pointer at most — that document's own contract, and
 the T-146 class it names.
+
+## TRIAGE, 2026-09-02 — `planned`, the integrator's, no lane
+
+The architect seat, at the stamp of T-225's merge (7435eae). Both edits
+are reconciling writes of the kind the checkpoint owns: STATE is
+regenerated there, and the CONVENTIONS sentence that sends a seat to
+`brief.mjs --dispatch` for triage gains `--full` in the same commit,
+which closes this card.

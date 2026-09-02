@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: suggested
+status: planned
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-225
@@ -64,3 +64,11 @@ TRIAGED**: the disclosure T-225 landed prints `OVER by 8,903` on that
 invocation, so the failure is no longer silent. This card is about
 whether the arm should be smaller, not about whether the reader is
 warned.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, size M
+
+The architect seat, at the stamp of T-225's merge (7435eae). Measured by
+the lane's own margin guard: `--task <id> --state --full` is past the
+`spawnSync` line today and the row set grows with the board, so the
+ceiling T-225 moved off `--dispatch` now sits on the arm every executor
+reads. Serialises behind T-225-s1 on dispatch-brief.mjs and brief.spec.ts.

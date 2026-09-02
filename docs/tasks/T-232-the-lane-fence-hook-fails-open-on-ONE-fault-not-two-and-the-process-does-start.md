@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1 phase 1 ground truth, 2026-09-01; re-derived independently at the integration seat before filing"
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
@@ -110,3 +110,8 @@ tool limit, never as a verdict on the finding.
 **Fence widened at the seat to `[tools/e2e, docs/CONVENTIONS.md]`**:
 three of its four criteria edit that document. Claim-check at cf9d462:
 the FAILS OPEN sentence still reads the two-fault shape, unchanged.
+
+**APPLIED, 2026-09-02, at the stamp of T-225's merge (7435eae):** the
+byte ceiling that held this promotion no longer binds — `brief.mjs
+--dispatch` answers what can START and `--full` is the triage view — so
+the disposition above is now the stamp: `status: planned`.
