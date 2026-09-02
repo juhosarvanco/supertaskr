@@ -393,3 +393,92 @@ Nothing. Every ask on this card and on the four it absorbs is inside the
 fence and was built; the one thing this lane deliberately did not do is
 change `dispatch-brief.mjs`'s `stripInlineComment`, which T-230-s11 rules
 out by name.
+
+## Fix pass — 2026-09-02, executor claude-opus-5@subagent
+
+Against V-T-230-s7's REJECTED verdict (its own copy is on the bench
+`/Users/ujju/Projects/nputer-V-T-230-s7`, commit `5b2c251`). One finding,
+its sealed attack A4; the verdict is upheld in full and nothing else was
+reopened.
+
+**THE FINDING, IN THE VERIFIER'S WORDS.** The fold ends a unit at a
+`CARD CLAIM` LINE, which is the right idea, but a marker's payload wraps
+like everything else in a seventy-column document, and the CONTINUATION
+line of a wrapped marker is not itself a marker line: it joins the NEXT
+unit carrying the needle's orphan closing quote, and under `[^"]+` that
+orphan pairs with the next run's OPENING quote, so the real unmarked run
+is swallowed and a run nobody wrote is listed in its place. It is the
+second acceptance criterion's own arrangement, and the direction this
+card calls the wrong kind — a false-negative census AND a fabricated
+listing, on a line a dispatcher decides on. The module's own comment had
+promised exactly this containment and the branch reached one line short
+of it.
+
+**REPRODUCED FIRST, AT MY OWN TIP.** Driving the module's own export over
+the verifier's fixture, `unmarkedQuotes` returns
+`a sentence nobody marked at all` with the base module and
+`And the card also asserts` at `70cd426`. One difference from the
+verdict's transcript, stated because a figure is a figure: my reading
+dates the fabricated run at line **7** — the orphan quote's own line —
+where the verdict prints line 8. The text, which is the finding, is
+identical.
+
+**THE REPAIR IS ONE BRANCH AND ONE HELPER.** `markerEnd` is the
+boundary: the marked segment grows while the marker's own quoting is
+open — an odd number of straight quotes, or a typographic pair still
+unclosed — and stops the moment it closes; `flush()` skips to that index
+instead of to the marker's own line. A marker whose quoting NEVER closes
+inside its paragraph falls back to consuming only its own line, exactly
+as before, because swallowing the rest of the paragraph would drop real
+assertions in silence — the failure this whole class exists against.
+Backticks are deliberately not balanced: a backticked needle is a needle
+to `MARKED_NEEDLE` and not to `QUOTED_RUN`, so an orphan backtick cannot
+corrupt this census.
+
+**THE BODY IS THE VERIFIER'S FIXTURE**, planted as `a marker whose NEEDLE
+wraps ends its own unit, and the run after it survives`: the wrapped
+marker with an ordinary unmarked assertion after it in the same
+paragraph, the plant itself guarded (the marker line must carry an ODD
+number of quotes), the single-line twin asserted equal — the criterion's
+*exactly as* in its own words — the boundary driven directly at four
+edges including the malformed fallback, and the whole arm asserted
+through a fixture world.
+
+**RED BEFORE, GREEN AFTER.** Drill at `17711d5` in a detached worktree
+`/private/tmp/nd-T-230-s7`, module mutated ONE SIDE ONLY, the landing
+read from `git diff --stat` rather than from the mutator: **M19 — the
+marker segment ends at the LINE again** kills exactly this body and
+nothing else, `1 failed / 51 passed`. Baseline in that tree before and
+after the drill: **52 passed, exit 0**. Restored by `git restore
+--source=17711d5 --staged --worktree`, proved by sha256
+`e816eba056d843dba881fc6fb82ab3c04b40bd04fb438327dbd14d4c93411374` for
+the module and
+`a6f6e1bb5f99f77e2492ad114f4903f2b8a85e337c12d203960bfc7ebb2ebb27` for
+the spec, with an empty per-path diff against `17711d5` as companion.
+The body's kill set is `{M19}`; no other body's contains it and it
+contains no other's. The worktree is removed.
+
+**EVERY BOARD FIGURE IS UNCHANGED BY THE REPAIR, AND THE REASON IS
+MEASURED HERE RATHER THAN QUOTED.** At `17711d5` over the same 473 flat
+cards: 8,421 runs (8,376 body + 45 frontmatter) across 451 cards, 356
+below the floor, 2,561 wrap-spanning across 386, 233 lost to re-pairing
+across 127 — every one identical to the pre-fix reading, and **zero
+cards moved**. The cause is that **the live board carries 0 marked
+claims across 473 flat cards** (3 marker-shaped sightings, all in blocks
+or frontmatter), re-derived at this tip rather than taken from the
+verdict. Nothing on the board was wrong today; that is a latency and not
+a defence, for a guard whose whole subject is the marker. One
+consequence worth stating: the scratch estimator that re-implements the
+fold now lags production by this one branch, and it agrees only because
+that marker count is zero.
+
+**COMMANDS, in order, with exits read from `$?`:** reproduction 0 · repair
+written, diff read back · `npm run typecheck` 0 · spec 1 (the plant
+guard, mis-written on its first draft) · guard corrected, `npm run
+typecheck` 0 · spec 0 (**48 passed**, was 47) · census at the fix 0 ·
+estimator at the fix 0 · live marker census 0 · commit 0 · drill setup
+(parser ci+build, app ci, e2e ci) 0 · drill baseline 0 (52) · M19 ·
+drill baseline after 0 (52) · worktree removed 0. The four-suite battery
+and the standing gates at the fix-pass tip are in the report; the gate
+DECISIONS do not move, because the merge forecast names the same three
+paths it named before.
