@@ -5,11 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: []
-touches: [method/tasks/TASK-FORMAT.md, method/roles]
+touches: [method/tasks/TASK-FORMAT.md, method/roles, docs/CONVENTIONS.md, method/interview/plan-interview.md, app/src-tauri/src/agent/kit.rs, tools/method-evals]
 suggested_by: "the architect/integrator seat, 2026-09-01 — filed after noticing that the sitting's largest finding was the only one with no card, while four narrower ones had been filed the same night"
-builder:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -135,3 +136,42 @@ Two editorial riders ride the same bump:
   Parallelism guardrails, neither citing the other. RULED: TASK-FORMAT
   owns the value — it is the field's home and it ships — and
   orchestrator.md cites it. Keep the why in one place.
+
+## DISPATCH, 2026-09-02 — the stamp, the bump, and what the audit found
+
+**This lane carries method version bump v0.1.9.** TASK-FORMAT and the
+role files SHIP (KIT_FILES in app/src-tauri/src/agent/kit.rs), so the
+change is owed a bump, and a bump is a three-file commit whose third
+file is Rust: the `currently v0.1.8` stamp in docs/CONVENTIONS.md's
+first gotcha, the `(v0.1.8` stamp in method/interview/plan-interview.md's
+Output heading, and `METHOD_SNAPSHOT_VERSION` in kit.rs — moved in ONE
+commit, or `cargo test` reds by name on whichever moved alone. The
+fence is widened at dispatch to reach all three plus `tools/method-evals`,
+because the METHOD EVAL GATE is the bump's fourth obligation:
+`node tools/method-evals/run.mjs --bump` prints the block that goes into
+the bump commit's message, the model-free set must pass, and the
+model-in-loop set is owed at a bump and reported as a pass rate naming
+its runner. The CONVENTIONS changelog gets one line — date, card, theme —
+and nothing itemised (ADR-019's law applied to the changelog).
+
+**Two riders absorbed on 2026-09-02 ride this bump** (the section
+above): T-167-s11's conjunction in the executor's report row, and
+T-189-s2's single home for the concurrent ceiling (TASK-FORMAT owns it,
+orchestrator.md cites it). A THIRD rider joins at dispatch from
+docs/rooms/loop-efficiency.md item 8, ruled by @human's "apply all":
+TASK-FORMAT SHALL say that a card's FIRST PARAGRAPH is its summary — one
+paragraph a seat may read and stop at — and that everything below it is
+the record a seat reads when it needs the world. No field, no status.
+
+**Audit (orchestrator 5b)**: the four instances in the card's table are
+historical and carry their card ids; T-203, T-221, T-211 and T-210 are
+all `done` at 4fc76fe. plan-interview.md's banking table is pinned cell
+by cell by app/test/genesis-derive.test.ts — the stamp line may move,
+the table may not. T-236 landed the CONVENTIONS compaction at c596847;
+this lane opens that document for the stamp line and the changelog line
+only.
+
+**Holder**: this lane does NOT hold the integration checkout and does not
+merge; it stamps `verifying`, reports ready-to-merge with branch and tip,
+and leaves its worktree standing. Ceremony row M, guard-class, review
+independent.
