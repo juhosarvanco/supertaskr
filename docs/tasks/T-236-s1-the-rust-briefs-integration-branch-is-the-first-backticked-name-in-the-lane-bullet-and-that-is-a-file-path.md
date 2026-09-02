@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: building
 suggested_by: executor claude-fable-5-1@subagent @T-236
 blocked_by: []
 touches: [app/src-tauri/src/dispatch/brief.rs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
@@ -53,3 +53,13 @@ belongs, two implementations of one rule disagree (T-057), and no cargo
 body asserts the value. Read by label as `laneSpellings` does, and add
 the body. T-233 is the sibling row; one lane may take both if fences
 allow.
+
+## DISPATCH, 2026-09-02 — the stamp
+
+**Audit (orchestrator 5b)**: `row_lane` in app/src-tauri/src/dispatch/brief.rs
+at 37ac590 finds the bullet containing "integration branch `" and takes
+the first backticked name — the claim's mechanism holds; re-measure what
+that name is after T-236's compaction at your ref. Fence: brief.rs alone
+(C-15). The boot gate is owed by the app/src-tauri path. Ceremony: S
+touching shipped code, review independent — executor, then verifier;
+this lane does NOT hold the integration checkout and does not merge.
