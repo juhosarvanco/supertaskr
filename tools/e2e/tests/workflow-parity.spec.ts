@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse } from "yaml";
+import { CI_WORKFLOW_REL_PATH, stepWorkingDirectory } from "../../../.claude/hooks/push-guard.mjs";
 import { repoRoot } from "../preflight";
 
 /**
@@ -65,6 +66,34 @@ import { repoRoot } from "../preflight";
  * while CI is the seat that sees every merge. So this file gains two
  * DATA entries and no assertion — the parity bodies that already exist
  * are what bind them, in both directions.
+ *
+ * ── WHAT T-237-s3 CHANGED ────────────────────────────────────────────
+ * THIS FILE GAINED A SECOND READER AND DID NOT KNOW. T-237 made
+ * `.claude/hooks/push-guard.mjs` READ `.github/workflows/ci.yml` at push
+ * time: `gh` names the step that failed, and the guard looks that step
+ * up in the workflow's own `working-directory:` keys to tell the seat
+ * which package the red run was testing and whether the tree being
+ * pushed reaches it. Every body above pins a step's COMMAND against
+ * docs/CONVENTIONS.md and none of them looks at a step's NAME — which is
+ * the key that map is keyed on — so the guard's most useful sentence
+ * could degrade with this suite entirely green.
+ *
+ * AND THE DEGRADATION IS NOT AN ADMISSION, which is the half worth
+ * writing down. `reachSentence` collapses "this step is unplaceable"
+ * into "this step declares no `working-directory`": `stepWorkingDirectory`
+ * answers `undefined` for both and the guard has no third value to read,
+ * so a step the scanner cannot place is announced as running at the
+ * REPOSITORY ROOT where EVERY push reaches it — byte-identical to what a
+ * genuinely root-running step gets. A confident falsehood, not a lost
+ * sentence. (The hook's own "that step's package is unknown here" is a
+ * DIFFERENT branch: an unreadable workflow file, never an unreadable
+ * step. T-237-s3's card predicted that sentence and the code does not
+ * produce it; the repository won, and the guard-side repair is routed as
+ * T-237-s7 because the hook is another card's fence.)
+ *
+ * The last section of this file is the keeper for that dependency, and
+ * the scanner it checks is IMPORTED rather than re-implemented, for the
+ * same reason the command list stopped being a sixteen-entry array.
  */
 
 interface WorkflowStep {
@@ -965,4 +994,363 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
   expect(deriveExpectedSteps(truncated).problems.join("\n")).toContain(
     "this spec expects [app/src-tauri] cargo audit",
   );
+});
+
+// ── the OTHER reader of this workflow: the push guard (T-237-s3) ───────
+//
+// T-237 gave `.github/workflows/ci.yml` a second reader that nothing in
+// this file knew about. At push time `.claude/hooks/push-guard.mjs`
+// asks `gh` which STEP failed, then looks that step's NAME up in this
+// workflow's own `working-directory:` keys to answer *"which package was
+// it testing, and does this push change anything under it"*. The map is
+// READ out of the repository rather than typed into the hook — NEVER
+// TYPE A PATH YOU CAN DERIVE (docs/CONVENTIONS.md) — and that derivation
+// is what creates the dependency this section keeps.
+//
+// EVERY BODY ABOVE PINS A COMMAND AND NONE OF THEM PINS A NAME, which is
+// the key the map is keyed on. `push-guard.spec.ts` pins four step names
+// against the real file and nothing else; the general property belongs
+// beside the workflow's other keepers rather than inside a hook's spec:
+//
+//   every step in every workflow file that declares a `working-directory`
+//   names a directory that is in this tree, and the guard's own scanner
+//   reads exactly the value the YAML parser reads — for the steps that
+//   declare none as much as for the steps that do, because the guard
+//   says a DIFFERENT sentence for those ("runs at the repository root
+//   and EVERY push reaches it").
+//
+// The scanner is IMPORTED, never re-implemented. A second copy of its
+// line regex here would agree with itself while drifting from the hook,
+// which is the mirror failure T-045 already took out of this file once.
+
+/** A workflow file and its bytes — the pair every check below needs. */
+interface WorkflowFile {
+  /** repo-relative, POSIX-spelled, so a complaint names a path a reader can open */
+  rel: string;
+  raw: string;
+}
+
+/** One step of one workflow file, as the YAML parser sees it. */
+interface StepSite {
+  file: string;
+  job: string;
+  /** position in that job's `steps:` list, so an UNNAMED step still has a site */
+  index: number;
+  name: string | undefined;
+  /** the YAML parser's own `working-directory`, undefined when the step declares none */
+  dir: string | undefined;
+}
+
+/**
+ * EVERY workflow file in the tree, not only the one the guard names.
+ *
+ * THROWS on an empty enumeration, and `readdirSync` throws on a missing
+ * directory — the same red by a different message. This section exists
+ * because a reader of these files went unnoticed, so a census that found
+ * nothing must be a hard failure rather than a loop that passes by
+ * having nothing to iterate (docs/CONVENTIONS.md, A NEGATIVE ASSERTION
+ * NEEDS A POSITIVE CONTROL, and its census clause).
+ */
+export function workflowFiles(): WorkflowFile[] {
+  const dir = path.join(repoRoot, ".github", "workflows");
+  const names = readdirSync(dir)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .sort();
+  if (names.length === 0) {
+    throw new Error(
+      `${dir} holds no workflow file — push-guard.mjs reads one at push time ` +
+        "(T-237) and this section is that dependency's keeper, so an empty " +
+        "enumeration is a failure and never a vacuous pass.",
+    );
+  }
+  return names.map((f) => ({
+    rel: path.posix.join(".github", "workflows", f),
+    raw: readFileSync(path.join(dir, f), "utf8"),
+  }));
+}
+
+/** Every step of every job, in file order. */
+export function stepSites(files: WorkflowFile[]): StepSite[] {
+  const sites: StepSite[] = [];
+  for (const { rel, raw } of files) {
+    const doc = parse(raw) as { jobs?: Record<string, { steps?: WorkflowStep[] }> };
+    for (const [job, body] of Object.entries(doc.jobs ?? {})) {
+      (body.steps ?? []).forEach((step, index) => {
+        sites.push({ file: rel, job, index, name: step.name, dir: step["working-directory"] });
+      });
+    }
+  }
+  return sites;
+}
+
+const siteLabel = (s: StepSite): string =>
+  `${s.file} job \`${s.job}\` step ${String(s.index)} ` +
+  (s.name === undefined ? "(UNNAMED)" : `\`${s.name}\``);
+
+/**
+ * Where the guard's step->package map disagrees with the workflow, or
+ * names a package that is not here. `problems` empty is the assertion;
+ * each entry names the step it is about and what to do, the way
+ * `deriveExpectedSteps` does for the command list.
+ *
+ * Takes its files as ARGUMENTS so a fixture can feed it a synthetic
+ * workflow — no body here writes to `.github/`, and the real ci.yml is
+ * never renamed by this suite.
+ */
+export function stepPackageProblems(files: WorkflowFile[]): {
+  sites: StepSite[];
+  problems: string[];
+} {
+  const sites = stepSites(files);
+  const bytes = new Map(files.map((f) => [f.rel, f.raw]));
+  const problems: string[] = [];
+  for (const site of sites) {
+    const where = siteLabel(site);
+    const text = bytes.get(site.file) ?? "";
+    if (site.name === undefined) {
+      if (site.dir !== undefined) {
+        problems.push(
+          `${where} declares \`working-directory: ${site.dir}\` but the item has no ` +
+            "`name:`. `gh` reports a failing step BY NAME and push-guard.mjs looks " +
+            "that name up in this file, so an unnamed step is unplaceable by " +
+            "construction and its package can never reach the seat. Name it.",
+        );
+      }
+      continue;
+    }
+    const read = stepWorkingDirectory(text, site.name);
+    if (read !== site.dir) {
+      problems.push(
+        `${where}: the workflow says ` +
+          (site.dir === undefined
+            ? "this step has NO `working-directory`"
+            : `\`working-directory: ${site.dir}\``) +
+          ", and push-guard.mjs's own stepWorkingDirectory reads " +
+          (read === undefined ? "NOTHING" : `\`${read}\``) +
+          " for that name. The guard's step->package map is READ out of this file " +
+          "(T-237), and the one shape that scanner claims is a sequence item whose " +
+          "FIRST key is `name:` with `working-directory:` indented under it. A step " +
+          "the scanner cannot place is NOT announced as unplaceable: the guard reads " +
+          "`undefined` for it, which is also what a root-running step reads as, and " +
+          "announces the step as running at the repository root where EVERY push " +
+          "reaches it.",
+      );
+    }
+    if (site.dir !== undefined && !existsSync(path.join(repoRoot, site.dir))) {
+      problems.push(
+        `${where} names \`working-directory: ${site.dir}\`, which is not in this tree. ` +
+          "push-guard.mjs prints that path at the seat when CI is red and tests the " +
+          'pushed paths against it, so a package that is not there answers "does NOT ' +
+          'change anything under it" for every push.',
+      );
+    }
+  }
+  return { sites, problems };
+}
+
+test("every workflow step's package is readable by the push guard and is in the tree", () => {
+  const files = workflowFiles();
+
+  // The file the guard actually opens is one of these, and it is HERE.
+  // A `CI_WORKFLOW_REL_PATH` that stops naming a file reds this body
+  // rather than skipping it — the hook's own catch turns that case into
+  // a lost sentence at the seat, which is exactly the silence this
+  // section exists to break.
+  expect(
+    files.map((f) => f.rel),
+    `push-guard.mjs reads ${CI_WORKFLOW_REL_PATH} at push time; the enumeration must cover it`,
+  ).toContain(CI_WORKFLOW_REL_PATH);
+  expect(
+    existsSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH)),
+    `${CI_WORKFLOW_REL_PATH} is the path push-guard.mjs opens, and it is not in this tree`,
+  ).toBe(true);
+
+  const { sites, problems } = stepPackageProblems(files);
+
+  // THE CENSUS BEFORE ITS ZERO. A scanner that matched no steps would
+  // satisfy the loop by finding nothing. FLOORS, not counts: ci.yml
+  // gains steps, and an equality would make every such edit a two-file
+  // change for no property — the argument the derived-step floor above
+  // already makes.
+  expect(sites.length, "enumerated workflow steps").toBeGreaterThan(0);
+  expect(
+    sites.filter((s) => s.dir !== undefined).length,
+    "steps declaring a `working-directory` — the entries of the guard's map",
+  ).toBeGreaterThan(0);
+  // ...and the other category is non-empty too, so the guard's OTHER
+  // sentence is exercised by a real step rather than assumed unreachable.
+  expect(
+    sites.some((s) => s.dir === undefined),
+    "at least one step runs at the repository root",
+  ).toBe(true);
+
+  expect(
+    problems,
+    "these are the ways the workflow and the push guard's step->package map disagree",
+  ).toEqual([]);
+});
+
+test("FIXTURE: renaming a step in a copy of ci.yml degrades the guard's lookup BY NAME", () => {
+  const raw = readFileSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH), "utf8");
+  const victim = stepSites([{ rel: CI_WORKFLOW_REL_PATH, raw }]).find(
+    (s) => s.name !== undefined && s.dir !== undefined,
+  );
+  expect(victim, "ci.yml has a named step carrying a `working-directory`").toBeDefined();
+  const oldName = victim!.name!;
+  const dir = victim!.dir!;
+
+  // THE CONTROL'S OTHER HALF, and it is the same arrangement minus the
+  // one edit: against the UNRENAMED copy the map is complete and the
+  // guard answers with the package.
+  expect(stepWorkingDirectory(raw, oldName), "the complete map answers with the package").toBe(dir);
+
+  const marker = `name: ${oldName}`;
+  expect(raw.split(marker).length - 1, "the step this fixture renames is written once").toBe(1);
+  const newName = `${oldName} (renamed by this fixture)`;
+  const renamed = raw.replace(marker, `name: ${newName}`);
+  expect(renamed, "the fixture must actually change the workflow").not.toBe(raw);
+
+  // THE DEGRADATION, BY NAME. Nothing was deleted — the KEY MOVED, and
+  // every holder of the old name now gets `undefined`. That is the
+  // production case rather than a hypothetical: `gh` reports the step
+  // name from the run that ALREADY RAN, so the push that CARRIES a
+  // rename is exactly the push whose announcement moves.
+  expect(
+    stepWorkingDirectory(renamed, oldName),
+    `${oldName} no longer maps to ${dir} — the guard reads nothing for that name`,
+  ).toBeUndefined();
+  expect(stepWorkingDirectory(renamed, newName), "the key moved rather than vanished").toBe(dir);
+
+  // AND WHAT IT MOVES TO, pinned at the guard's own input. `undefined`
+  // is ALSO what a step that genuinely declares no `working-directory`
+  // reads as, and the guard has no third value — so `reachSentence`
+  // announces the renamed step as running at the repository root where
+  // every push reaches it, which is a confident falsehood rather than
+  // an admission. This body pins the collapse; the repair is the hook's
+  // (T-237-s7) and cannot be made from inside this fence.
+  const rootStep = stepSites([{ rel: CI_WORKFLOW_REL_PATH, raw }]).find(
+    (s) => s.name !== undefined && s.dir === undefined,
+  );
+  expect(rootStep, "ci.yml has a step that genuinely runs at the repository root").toBeDefined();
+  expect(
+    stepWorkingDirectory(raw, rootStep!.name!),
+    "a genuinely root-running step reads as nothing...",
+  ).toBeUndefined();
+  expect(
+    stepWorkingDirectory(renamed, oldName),
+    "...and the unplaceable step reads as the SAME value, so no sentence downstream can separate them",
+  ).toBe(stepWorkingDirectory(raw, rootStep!.name!));
+
+  // And a rename that moves BOTH sides at once is NOT a defect this
+  // keeper reports: the parity above is scanner-against-YAML and both
+  // read the new name. Asserted so this body cannot be read as banning
+  // renames — what it pins is that the map stays READABLE.
+  expect(
+    stepPackageProblems([{ rel: CI_WORKFLOW_REL_PATH, raw: renamed }]).problems,
+    "a rename keeps the workflow and the scanner in agreement",
+  ).toEqual([]);
+});
+
+/**
+ * A minimal workflow whose ONE step is spelled by the caller. The
+ * control and each mutant differ in exactly the line under test, which
+ * is what makes the pair a control rather than two arrangements decided
+ * by one arming (method/roles/verifier.md step 2b).
+ */
+const fixtureWorkflow = (stepLines: string[]): WorkflowFile => ({
+  rel: ".github/workflows/FIXTURE-never-written-to-disk.yml",
+  raw: ["name: fixture", "jobs:", "  linux:", "    steps:"]
+    .concat(stepLines.map((l) => `      ${l}`))
+    .concat([""])
+    .join("\n"),
+});
+
+const FIXTURE_STEP_NAME = "fixture step";
+
+test("FIXTURE: an absent package, an unreadable step, an unnamed one and one read out of a run block each red BY NAME", () => {
+  // THE CONTROL: the readable shape over a directory that really is
+  // here derives clean, so every red below is the one edit and not the
+  // scaffolding.
+  const ok = fixtureWorkflow([
+    `- name: ${FIXTURE_STEP_NAME}`,
+    "  working-directory: tools/e2e",
+    "  run: npm test",
+  ]);
+  expect(stepPackageProblems([ok]).problems, "the readable shape derives clean").toEqual([]);
+  expect(stepWorkingDirectory(ok.raw, FIXTURE_STEP_NAME)).toBe("tools/e2e");
+
+  // (1) a `working-directory` naming a directory that is NOT in the
+  //     tree. Not a stub — `existsSync` is asked about the real repo,
+  //     the same call the live body makes.
+  const gone = fixtureWorkflow([
+    `- name: ${FIXTURE_STEP_NAME}`,
+    "  working-directory: tools/e2e-that-is-not-in-this-tree",
+    "  run: npm test",
+  ]);
+  const goneSaid = stepPackageProblems([gone]).problems.join("\n");
+  expect(goneSaid, "the step is named").toContain(FIXTURE_STEP_NAME);
+  expect(goneSaid, "the package is named").toContain("tools/e2e-that-is-not-in-this-tree");
+  expect(goneSaid).toContain("is not in this tree");
+
+  // (2) a step the SCANNER cannot read: the same two keys, the other way
+  //     round. The YAML parser answers `tools/e2e`; the guard's line
+  //     scanner requires `name:` to be the item's FIRST key and answers
+  //     nothing, so the map loses an entry with no other symptom — the
+  //     silent shape this whole section is for.
+  const unreadable = fixtureWorkflow([
+    "- working-directory: tools/e2e",
+    `  name: ${FIXTURE_STEP_NAME}`,
+    "  run: npm test",
+  ]);
+  expect(
+    stepWorkingDirectory(unreadable.raw, FIXTURE_STEP_NAME),
+    "the scanner genuinely cannot read this shape — that is the premise",
+  ).toBeUndefined();
+  const unreadableSaid = stepPackageProblems([unreadable]).problems.join("\n");
+  expect(unreadableSaid, "the step is named").toContain(FIXTURE_STEP_NAME);
+  expect(unreadableSaid).toContain("reads NOTHING");
+  //     ...and that NOTHING is the same value a genuinely root-running
+  //     step reads as, which is why the guard announces the unplaceable
+  //     step as running at the root instead of saying it cannot place
+  //     it. The root-running step is not itself a defect — asserted, so
+  //     this keeper cannot be read as banning one.
+  const rooted = fixtureWorkflow([`- name: ${FIXTURE_STEP_NAME}`, "  run: npm test"]);
+  expect(stepWorkingDirectory(rooted.raw, FIXTURE_STEP_NAME)).toBe(
+    stepWorkingDirectory(unreadable.raw, FIXTURE_STEP_NAME),
+  );
+  expect(
+    stepPackageProblems([rooted]).problems,
+    "a step that genuinely runs at the repository root is not a defect",
+  ).toEqual([]);
+
+  // (4) THE OTHER DIRECTION, which no body above reaches: the scanner
+  //     reads a `working-directory:` the YAML parser does NOT. Its line
+  //     scan knows nothing about block scalars, so a `run: |` script
+  //     that writes YAML hands it a package the step never declared —
+  //     and the guard would then announce a package, and a reach
+  //     verdict, for a step that actually runs at the root.
+  const fromRunBlock = fixtureWorkflow([
+    `- name: ${FIXTURE_STEP_NAME}`,
+    "  run: |",
+    "    cat > snippet.yml <<'YAML'",
+    "    working-directory: tools/e2e",
+    "    YAML",
+  ]);
+  expect(
+    stepWorkingDirectory(fromRunBlock.raw, FIXTURE_STEP_NAME),
+    "the scanner reads inside the block scalar — that is the premise",
+  ).toBe("tools/e2e");
+  const blockSaid = stepPackageProblems([fromRunBlock]).problems.join("\n");
+  expect(blockSaid, "the step is named").toContain(FIXTURE_STEP_NAME);
+  expect(blockSaid).toContain("has NO `working-directory`");
+  expect(blockSaid).toContain("reads `tools/e2e`");
+
+  // (3) a step carrying a package and no name at all. `gh` reports steps
+  //     BY NAME, so this one is unplaceable however the scanner is
+  //     written — a different repair from (2), hence a different
+  //     sentence.
+  const unnamed = fixtureWorkflow(["- working-directory: tools/e2e", "  run: npm test"]);
+  const unnamedSaid = stepPackageProblems([unnamed]).problems.join("\n");
+  expect(unnamedSaid, "the site is named even without a step name").toContain("(UNNAMED)");
+  expect(unnamedSaid).toContain("has no `name:`");
 });

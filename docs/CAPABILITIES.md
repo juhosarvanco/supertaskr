@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **597 behaviours** — 595 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **600 behaviours** — 598 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -704,6 +704,9 @@ Census: **597 behaviours** — 595 extracted sentences + 2 named-not-extracted (
 - FIXTURE: a command the DOC gains that the spec does not claim reds BY NAME
 - FIXTURE: the shape that IS silent — a command in a bullet with no `run from` marker
 - FIXTURE: a middle dot inside a parenthetical drops every command behind it
+- every workflow step's package is readable by the push guard and is in the tree
+- FIXTURE: renaming a step in a copy of ci.yml degrades the guard's lookup BY NAME
+- FIXTURE: an absent package, an unreadable step, an unnamed one and one read out of a run block each red BY NAME
 
 ## workflow-permissions
 
