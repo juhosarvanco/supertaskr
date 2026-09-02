@@ -5,9 +5,9 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-225-s11
-blocked_by: [T-239]
+blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief-flush.spec.ts]
 builder:
 verifier:
@@ -69,3 +69,9 @@ printed`, and both have a worked precedent in this file family now.
   still names the count.
 - No finding and no stale-checkout row is dropped at either verbosity;
   the finding sets at base and tip are compared and shown identical.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s11 merge (4363ca4)
+
+The architect seat. T-239 has landed, so the blocker is discharged; the
+sweep and the row set are the arm's last 47,000 bytes and they scale
+with the machine. No dispatch follows today by the user's instruction.
