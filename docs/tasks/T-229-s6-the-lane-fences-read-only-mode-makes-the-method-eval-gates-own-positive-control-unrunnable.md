@@ -462,3 +462,239 @@ read-only — a fence that EXCLUDES it, which is what this lane had at
 dispatch. The phenomenon and the repair are unchanged; the sentence
 naming which lanes is inverted, and it is recorded rather than corrected
 in place because it is the card's premise and not this pass's to rewrite.
+
+## VERDICT — 2026-09-02, claude-opus-5@subagent (verifier seat, `review: independent`)
+
+**REJECTED at `5ff00ab6a2684edeed68f8a096eecda6e761e8f4`**, on ONE
+reproducible failure — and it is this card's own acceptance criterion 2,
+failing in exactly the lanes the card was cut for. The subject module is
+right; the eval written to guard it reintroduces the defect.
+
+Judged from `/Users/ujju/Projects/nputer-V-T-229-s6`, cut detached at the
+lane's base `fafb6a7`. Every figure below was measured on that bench or
+on a scratch clone of it, at the tip named.
+
+### THE FAILURE
+
+The card's criterion 2: *WHEN `run.mjs --selftest` runs inside a checkout
+whose tracked files are mode `444` THE suite SHALL exit 0.* Measured:
+
+| vantage | plain `run.mjs` | `--selftest` |
+|---|---|---|
+| base `fafb6a7`, writable | 0 (6 evals) | 0 |
+| base `fafb6a7`, **all 1169 tracked files 444** | **0** | 3 — MF-01 EACCES |
+| tip `5ff00ab`, writable | 0 (7 evals) | 0 |
+| tip `5ff00ab`, **all 1171 tracked files 444** | **3** | **3** |
+
+    method-evals: 1 eval(s) COULD NOT RUN — this run is not a claim about the method.
+      MF-07: COULD NOT RUN — EACCES: permission denied, open
+        '<tmp>/nputer-method-eval-mf07-WUqgra/source/tools/method-evals/lib/fixture-root.mjs'
+
+**This is a REGRESSION, not a residue.** At the base the standing gate —
+plain `node tools/method-evals/run.mjs`, the one docs/CONVENTIONS.md
+mandates at every `method/**` merge — exited **0** under the fence; only
+`--selftest` reded. At the tip the **plain gate run also exits 3**. The
+change moves the breakage from the control onto the gate itself.
+
+### THE CAUSE, one line
+
+`evals/mf-07-fixture-root-writable.mjs`, `replicaSource`, lines 113–115:
+
+    const live = readFileSync(path.join(repoRoot, SUBJECT), "utf8");
+    cpSync(path.join(repoRoot, SUBJECT), path.join(root, SUBJECT_IN_REPLICA));   // <- line 114
+    writeFileSync(path.join(root, SUBJECT_IN_REPLICA), mutate === undefined ? live : mutate(live));
+
+Line 114's `cpSync` is **redundant** — line 115 overwrites the content
+unconditionally, so the copy's only surviving effect is its MODE. And
+`cpSync` preserves modes, which is the entire subject of this card. In
+any checkout where `tools/method-evals/lib/fixture-root.mjs` is `444`,
+the replica's copy of the subject lands `444` and line 115's
+`writeFileSync` dies with `EACCES`. Measured directly at the tip:
+
+    live subject mode: 444 · replica copy mode: 444 · writeFileSync: EACCES
+
+**IT IS THE T-203 SHAPE, AND THAT IS WHY IN-LANE MEASUREMENT MISSED IT.**
+The fence was widened to the whole `tools/method-evals` tree, so in THIS
+lane the subject is writable and the bug is invisible. It is visible in
+every lane whose fence does not include the suite — which is every lane
+that owes the gate:
+
+| fence | plain | `--selftest` |
+|---|---|---|
+| `tools/method-evals` + `docs/tasks` (**this lane**) | 0 | 0 |
+| `method` + `docs/tasks` (**a lane that OWES the gate**) | **3** | **3** |
+
+So the card's own sentence — *"the sessions that owe `--selftest` are
+precisely the sessions holding a lane whose fence includes a `method/`
+path, and precisely those sessions cannot run it"* — is **still true at
+this tip**, and now for the plain run as well. One arrangement (the
+widened fence) decided both the subject's answer and the control's.
+
+### THE REPAIR, measured rather than suggested
+
+Drop line 114 and create the parent instead — the copy was never needed:
+
+    mkdirSync(path.dirname(path.join(root, SUBJECT_IN_REPLICA)), { recursive: true });
+    writeFileSync(path.join(root, SUBJECT_IN_REPLICA), mutate === undefined ? live : mutate(live));
+
+(with `mkdirSync` added to the `node:fs` import). Applied to the tip and
+run under the full `444` fence: plain **0**, `--selftest` **0**. And the
+control still CAN fail on top of the repair — deleting `makeWritable(dir)`
+reds MF-07 by name, exit **1**. One line, and it re-arms nothing.
+
+### WHAT PASSED, so the re-run knows what not to disturb
+
+**`lib/fixture-root.mjs` is correct.** `makeWritable` was walked whole
+from a fenced checkout: **49 files, 13 dirs, 0 not owner-writable, 0
+symlinks, 0 group/other-writable**, `git status` in the fixture empty, all
+**49 tree entries `100644`**, `restore()` clean. It covers all four former
+copy calls (my base census: `method/` 25, `docs/architecture/` 16, the 7
+live docs/adapters, the card fixture 1 = 49), runs before `git init` so
+`.git` is never walked, adds `| 0o200` rather than assigning a mode, and
+skips symlinks by `lstat`. That matches the house precedents
+(`lane-lock.mjs:393`'s `& ~0o222`, `token-scan.spec.ts:114`'s `| 0o200`).
+
+**MF-07 is a real control, and its kill set is not contained by MF-01's.**
+Re-run rather than taken from the notes:
+
+- delete `makeWritable(dir)` → MF-07 reds **by name**, **49 of 49**
+  unwritable, with a real write failure; MF-01–MF-06 stay green.
+- narrow `makeWritable` to `method/` only → MF-01's `--selftest` **passes**
+  while MF-07 reds **24 of 49** (`AGENTS.md`, `CLAUDE.md`,
+  `docs/ARCHITECTURE.md` …). Neither kill set contains the other, and the
+  mutant lands at the site the property lives. The executor's figure of
+  24 of 49 reproduces exactly.
+
+The arming is the eval's own act, built in scratch and never the fixture
+and never the checkout — the correct answer to verifier.md 2b, and the
+reason the control is not degenerate. My phase-1 pre-committed
+demonstration in its literal form (revert the whole subject to the base)
+is a loud `COULD NOT RUN` on a missing export rather than a clean red, so
+the re-aimed form above is the one that carries the proof; I report both.
+
+**Zero dependencies intact** — no manifest hunk in the diff, `node:`
+builtins only, and the whole suite runs green from a clone with no
+`node_modules` anywhere. **Fence compliant** — the four changed paths sit
+inside `touches: [tools/method-evals]` and the unfenceable `docs/tasks`,
+matching the lane manifest at `fd103b0`. **Security sweep: nothing.** No
+new input path, no endpoint, no secret; the only new capability is a
+`chmod` that adds one owner bit to a `0700` temp tree, never widening
+group or other, and the live checkout is provably untouched — after every
+run above, **0 of 1171** tracked files had gained a write bit and `git
+status` was empty. **Criterion 3 is met**, demonstrated by the bug
+itself: the throw surfaced as `COULD NOT RUN` with the path and reason,
+never as a pass.
+
+### Phase 1 seal
+
+Blindness on this pass was **CLOCK-SHAPED, not discipline-shaped**: phase
+1 was dispatched before the work existed, so there was no diff to decline
+to read. The attack set and the base ground truth were sealed before the
+branch was fetched:
+
+    2026-09-02T05:36:33Z UTC
+    attack-V-T-229-s6.md  7bf4b9e4d835a5f6539f4a801c8fee851335b11e02dc2afd1717e69090bd11ea
+    ground-V-T-229-s6.md  52d13a23e8b611bfe2287a916a39c4ebff4c0b727aee485b78b18a101c836caf
+    stamps-V-T-229-s6.txt 38128999c19b162f55cb2dfa0d9958388776e36b3d199687d5030a21aebd0e1d
+
+The finding above is attack **A5** ("a control armed by the checkout
+rather than by itself") landing on the half of the eval nobody aimed it
+at, and the four-copy census in **A1** is what let the second table be
+read as a regression rather than a curiosity.
+
+## RE-VERDICT — 2026-09-02, claude-opus-5@subagent (verifier seat, `review: independent`)
+
+**APPROVED at `90e14bd34085482608076c080fb834cfcb4b945e`.** The rejection
+above is repaired at its site, the repair is the one the rejection named,
+and the control it protects still reds when disarmed. Re-measured on the
+same bench, on fresh clones cut from it at the new tip.
+
+### The fix is the fix
+
+`evals/mf-07-fixture-root-writable.mjs` drops the redundant `cpSync` and
+creates the parent instead, `mkdirSync` added to the `node:fs` import.
+`cpSync` remains imported and used for `LIVE_COPY_SET`, so nothing went
+dead. The twenty-line comment above the two lines names why folding them
+back is the bug — which is the right place for it, because the next
+reader's instinct will be to tidy them.
+
+### The matrix, re-run rather than read
+
+Every cell measured at `90e14bd` on a clone with no `node_modules`
+anywhere. Fences applied by the lane-lock arithmetic (`mode & ~0o222` over
+`git ls-files -z`, non-symlink regular files only).
+
+| vantage | plain | `--selftest` |
+|---|---|---|
+| writable | **0** (7 evals) | **0** |
+| fence `method` + `docs/tasks` | **0** | **0** |
+| fence: **all 1171 tracked files 444** | **0** | **0** |
+
+Both rows that were `3 · 3` at `5ff00ab` are now `0 · 0`. The executor's
+reported matrix reproduces.
+
+### The control is still armed — the probe that matters
+
+A repair that quietly disarmed MF-07 would produce the same three green
+rows. It does not:
+
+| mutation | fence | result |
+|---|---|---|
+| `makeWritable(dir)` deleted | full 444 | MF-07 reds **by name**, **49 of 49** unwritable, real write failed, exit **1** |
+| `makeWritable(dir)` deleted | `method` | MF-07 reds **by name**, **49 of 49**, exit **1** |
+| `makeWritable` narrowed to `method/` | full 444 | MF-07 reds **24 of 49** while MF-01's `--selftest` **passes**, exit **1** |
+
+MF-01–MF-06 stay green in all three. The kill sets are still not nested,
+and the second row is the one the rejection bought: the control now fails
+correctly in the lanes that could not run it at all before.
+
+`materialize` re-walked whole from the full-444 clone: **49 files, 13
+dirs, 0 not owner-writable, 0 symlinks, 0 group/other-writable**, fixture
+`git status` empty, **49 tree entries, 0 non-`100644`**, `restore()`
+clean. After all six runs the source was untouched — **0 of 1171** tracked
+files gained a write bit under the full fence, **539 of 1171** writable
+under the `method` fence exactly as armed, and no working tree dirtied
+except by my own drill edits.
+
+### Two disclosures checked rather than accepted
+
+**The space-bearing paths are real.** Two tracked files carry spaces —
+`docs/design/claudedesign_handoff/nputer app.dc.html` and `… tokens.dc.html`
+— so a whitespace-splitting fence helper would leave exactly two files
+writable, which is the executor's account of its own first proof. My
+helpers read `git ls-files -z` and split on NUL from the first run, so the
+phase-1 ground truth and the rejection matrix were never exposed to it.
+
+**The card's premise really was inverted, and the correction is more
+precise than the card.** Measured at the base `fafb6a7`:
+
+| fence at the base | plain | `--selftest` |
+|---|---|---|
+| whole `method/` | 0 | **0** — the control PASSES |
+| `method/roles/executor.md` | 0 | **0** |
+| `method/lane-protocol.md` | 0 | **3** |
+| all tracked files 444 | 0 | **3** |
+
+So the defect needs `method/roles/executor.md` READ-ONLY — a fence that
+EXCLUDES it — and a lane fencing the whole of `method/` never had the
+problem. The card's sentence said the opposite. The gate is still owed by
+those lanes and most of them still could not run the control (any lane
+fencing one method file other than `executor.md`), so the phenomenon and
+the repair are unchanged; only the sentence naming which lanes was wrong.
+Recording it rather than rewriting the premise in place is the right call.
+**This does not disturb the rejection above**: MF-07's subject is
+`fixture-root.mjs`, which a `method` fence excludes, so the `3 · 3` row at
+`5ff00ab` was measured correctly and for the right reason.
+
+### Gates at MY tip, not at the one I was sent
+
+Re-run after this commit, because appending prose under `docs/tasks/` is a
+code input here: docs-gate FIRES and names three suites; parser **363**,
+app **1135**, the four e2e card readers **46**, `index --check`
+**CURRENT**. Figures re-derived at this tip rather than transcribed from
+the notes; parser, app and the card readers match the lane's report.
+
+Security sweep: nothing. The diff adds one `mkdirSync` of a temp path and
+removes a copy; no input path, no endpoint, no secret, no dependency, and
+the widest permission the suite now sets is one owner-write bit inside a
+`0700` temp tree.
