@@ -316,3 +316,223 @@ this commit adds a third, `docs/tasks/` alone.
 
 Nothing routed. Both absorbed suggestions (T-236-s6, T-236-s7) are built
 here; nothing outside this fence was found wanting.
+
+## VERDICT
+
+VERDICT (2026-09-02, verifier claude-opus-5@subagent, bench
+`../nputer-V-T-236-s5`): **APPROVED** at
+`b0d84ebb88621e9944d12db197b4112803e6f020` (code commit `f371281`).
+
+**BLINDNESS WAS CLOCK-SHAPED, NOT DISCIPLINE-SHAPED**, and the difference
+is stated because a later reader cannot tell them apart and only one is a
+guarantee (verifier.md). Phase 1 was dispatched before the work existed,
+so there was no diff to decline to read. The attack set and the ground
+truth were written and hashed BEFORE this branch was fetched —
+`attack-V-T-236-s5.md`
+`9fc49d407604f7b014b5879926069a8a7160f0598e700e94ea8e5e13a5a3f7a9`,
+`ground-V-T-236-s5.md`
+`ff3e563e094a70beaaf840ea9c27a79d587cfc5be0ec1f6880397f9cd658c9e4`,
+stamped `2026-09-02T02:22:45Z` in
+`stamps-V-T-236-s5.txt`
+`0a6bc60c1d18e3971b930ba4c81f235bc2f001cde2dadbc6af215a8578eb125e`.
+**The phase-2 dispatch DID relay executor-derived specifics** — mutant
+counts, the nine-mutant summary, four suite figures, the `index --check`
+reading, the boot-gate port. That is the shape verifier.md says breaks
+phase 1 above the line; here it arrived after the stamp, so the
+contamination is nil, and **every relayed figure below is re-measured in
+this bench rather than repeated**.
+
+### The card's own claims, measured at the BASE before the diff existed
+
+Both Absorbs sections were true, and neither was taken on trust:
+
+- **T-236-s7.** At `69a8477`, `tail_of_longer_label` neutered to `false`
+  left `cargo test` at **exit 0, 630 passed / 0 failed / 4 ignored** —
+  totals identical to the unmutated baseline, zero `failures:` blocks.
+  Restored with sha256 `582707f9…` equal to the pre-mutant hash. The
+  reason is structural: the guard's only call site was reached only from
+  the `integration branch` read, whose one live occurrence is preceded by
+  `"- "`, so the guard never fired on the real document.
+- **T-236-s6.** At the base, `cargo build` from `app/src-tauri` printed
+  exactly one warning, `unused import: Path` at `src/arch_cmd.rs:2:17`.
+  **And the one-word fix was a trap**: `Path` is used at
+  `src/arch_cmd.rs:225` inside the `#[cfg(test)]` module opening at 202,
+  so deleting it from line 2 alone breaks the test build. The diff moves
+  the import into the test module, which is the correct shape.
+
+### What the attack set found, and where it was WRONG
+
+- **THE REVERT PROBE, PRE-COMMITTED IN PHASE 1, PASSES — one body per
+  read.** At the tip, restoring each base read while leaving the new
+  bodies untouched (`cargo test -p nputer --lib --no-fail-fast`, exit 101
+  each): the `task/` shape read kills the BRANCH body alone; the `../`
+  shape read kills the WORKTREE body alone; the `git worktree add` shape
+  read kills the CREATE body alone; the marker's
+  `unwrap_or_else(|| "Checkpoint:")` default kills the MARKER body alone.
+  All four at once: **4 failed, 271 passed**, exactly those four bodies.
+- **MY PRE-COMMITTED DEGENERATE-CONTROL PREDICTION WAS WRONG, AND IT IS
+  RECORDED AS WRONG.** I predicted in phase 1 that a lane copying
+  T-236-s1's plant (`docs/planted-first-backtick.md`) would produce a
+  control that cannot fail, because that string satisfies none of the
+  three shape filters. **The hazard is real — measured on the live
+  document, that decoy moves none of the three shape reads** — but this
+  lane did not take it. Each decoy matches its own filter and only its
+  own: `task/T-000-a-planted-branch` moves the branch read alone,
+  `../nputer-a-planted-worktree` the worktree read alone,
+  `git worktree add --detach /tmp/…` the create read alone. That
+  disjointness is what makes the three revert mutants kill one body each,
+  and **the executor's disclosed self-correction — the create decoy once
+  carried `../` and made the worktree revert kill two — is the reason it
+  holds.** The plants are load-bearing.
+- **MY PRE-COMMITTED MARKER-ARITY PREDICTION WAS RIGHT ABOUT THE HAZARD
+  AND THE FIX AVOIDS IT.** Measured at the base: the folded DISPATCH
+  bullet carries three backticked runs, of which **two** pass the marker's
+  shape test and both are the identical string `Checkpoint:`. So an arity
+  rule counting OCCURRENCES refuses at the document this project
+  publishes. I ran that mutant at the tip — deleting the `distinct`
+  dedupe — and it reds **19 bodies**, row 4 down across the suite. The
+  DISTINCT-spellings rule is what keeps the live document readable, and it
+  is not a preference: it is the only rule that admits agreeing repeats.
+  The same measurement kills the other half of my prediction: a marker
+  read keyed on a LABEL also refuses at the live document, because
+  `newest \`` occurs twice and both are tails of *"the newest"* under the
+  lookbehind. **Keeping the marker a SHAPE test is correct, and the
+  comment in the diff gives that reason rather than asserting it.**
+- **THE `create` LABEL IS THE ONE THE DOCUMENT USES.** `create \`` occurs
+  **0** times in the folded lane bullet and `Created with \`` occurs
+  **1**; the diff keys on `Created with`, the JS reader's own label. A fix
+  keyed on `create` would have refused at every ref.
+- **THE BARE `branch` READ DOES NOT ANSWER `main`.** `branch \`` occurs
+  **twice** — at offset 389 as the tail of *"integration branch"* (value
+  `main`) and at 404 (value `task/T-NNN-<slug>`). The lookbehind is what
+  separates them, and it is now load-bearing on the live document rather
+  than latent.
+- **NO NEW LITERAL.** Every string left in `row_lane` is a label, a
+  refusal noun, an anchor needle or the command template. `"task/"`,
+  `"../"`, `"git worktree add"` and `"Checkpoint:"` survive only in
+  comments and inside the test bodies, where the pre-T-236-s5 shape
+  filters are written down deliberately because they no longer exist in
+  the module under test.
+- **THE `is_empty` GUARD'S REMOVAL IS SOUND, NOT AN OMISSION.**
+  `backticked_after_label` pushes a run only when `close > open`, so every
+  `Ok` is non-empty by construction. I attacked it with a mutant that
+  makes `spell` fall back to the first backticked run on `Err`: it kills
+  `an_integration_branch_the_bullet_does_not_spell_exactly_once_is_a_refusal_never_a_default`
+  — the pre-existing T-236-s1 body — which is the keeper of the shared
+  refusal path all four labels now travel.
+
+### The drill, re-run at the tip and never read from a report
+
+Ten mutants of my own, each landing confirmed by `git diff` and each
+restored to sha256 `d1ec2230554bf674361ae3a80b5f1ae56f7ced122fef7ad04e021ef883c0c88b`.
+**Kill sets are per BODY** (the mutants that kill it), which is what
+containment is about:
+
+| body | killed by |
+|---|---|
+| branch plant | branch-revert, all-four, guard-false, guard-callsite, marker-occurrences |
+| worktree plant | worktree-revert, all-four, guard-false, guard-callsite, marker-occurrences |
+| create plant | create-revert, all-four, guard-false, guard-callsite, marker-occurrences |
+| marker | marker-default, all-four, guard-false, guard-callsite, marker-occurrences, disagreement-never-refuses |
+| lookbehind (T-236-s7) | guard-false, guard-callsite, **tail-fallback** |
+| integration (T-236-s1, pre-existing) | guard-false, guard-callsite, **spell-falls-back**, marker-occurrences |
+
+**NEITHER CONTAINS THE OTHER, FOR EVERY PAIR — but the last row of that
+took a mutant the drill did not have.** Over the eight mutants I started
+with, the lookbehind body's kill set `{guard-false, guard-callsite}` was a
+strict SUBSET of every other body's, which would have graded it a
+restatement. My own `guard-callsite` mutant (deleting
+`!tail_of_longer_label(bullet, at) &&`) is not a discriminator: it kills
+the same 20 bodies `guard-false` does. **So I built the one that isolates
+it** — the guard falling back to its tail matches when it excluded
+everything, a lenient-defect shape: exit 101, **the lookbehind body
+ALONE**. With it, no kill set contains another and every body is
+load-bearing.
+**AND THE NOTES' OWN M5 IS HONEST**: I re-ran it —
+`tail_of_longer_label` narrowed to `bullet[..at].ends_with("integration ")`
+— exit 101, the lookbehind body alone. The drill table's discriminator
+claim holds; mine is an independent second one. Per verifier.md 2b the
+COUNT was never the invariant, so M4's twenty is a property of a
+well-aimed mutant and not a defect.
+
+**AND SOMETHING DIED AT THE SITE THE PROPERTY LIVES.** Three of the
+mutants are DATA-shaped by construction — the plants are edits to the
+real `docs/CONVENTIONS.md` text, and the property under test is a
+derivation from that document, which a code-only drill mis-grades.
+
+### Security sweep
+
+No new dependency and no manifest in the diff (`*.toml`, `*.json`,
+`*.lock`: none). No new subprocess — `no_subprocess_in_this_file` passes
+at the tip. No new byte indexing: `backticked_after_label` is unchanged,
+and the test helper's one slice takes its index from `str::find`, a char
+boundary. The dedupe loop is bounded by one bullet's backtick count
+(three, live). No secret, no new input path: the only reader is a
+repository-local document already read, and the diff NARROWS what an
+unreadable one can do — a defaulted marker used to travel into a printed
+pipeline that ends in `cut` and exits 0 on no match. I considered whether
+a document-derived marker or ref can inject into that printed command and
+ruled it out as a finding: both moving parts have been document-derived
+since T-236-s1, the assembler executes nothing, and the surface is
+narrowed rather than widened here.
+
+### Gates, every figure with the ref it was measured at
+
+All at `b0d84eb` unless stated, in this bench, ports 25236 / 26236, 1420
+untouched.
+
+- `cargo test` from app/src-tauri: exit 0, **635 passed / 0 failed / 4
+  ignored** (base `69a8477`: 630/0/4 — five new bodies, no body lost).
+- `cargo build`: exit 0, **zero warnings** (base: one). T-236-s6 closed.
+- `npx vitest run` from lib/parser: exit 0, **349 passed**, 16 files.
+  `npx tsc --noEmit`: exit 0.
+- `npm run build` from app/: exit 0. `npm test` from app/: exit 0,
+  **1131 passed**, 50 files.
+- `npm test` from tools/e2e, run in five batches because two other e2e
+  runs held this machine: **544 passed, 4 failed of 548**.
+- `npm run typecheck`, `lint:tokens`, `lint:tokens -- --selftest`,
+  `capabilities:check` (CURRENT, 45968 bytes — no regeneration owed),
+  `lint:docs` census: all exit 0.
+- The docs gate's DIFF half, run from the repository root over this
+  lane's three paths: FIRES, naming app/, tools/e2e/ and lib/parser —
+  all three run above.
+- `boot:check` on `NPUTER_BOOT_PORT=26236`: exit 0, both startup lines.
+- `git merge-tree --write-tree <origin/main> b0d84eb`: exit 0 against
+  `7203db8`, three paths. Main moved twice during this pass
+  (`42520e3` → `610bb4e` → `7203db8`), which is why the ref is named.
+- `index --check --root ../..` from app/src-tauri: **exit 1, STALE, and
+  it is a REAL red read from its second line** — `committed 1168002` vs
+  `fresh 1167986`, `files ~2` naming exactly this lane's two files, and
+  `edges +1 -1` for the moved `Path` import. Per CONVENTIONS' GRAPH REGEN
+  rule the regeneration is the integrator's at the checkpoint and never
+  the lane's. **Not a defect of this diff.**
+
+### The four e2e reds are this bench's, not this diff's
+
+`card-preflight.spec.ts:684`, `checkout-currency.spec.ts:852` and `:953`,
+and `lane-lock.spec.ts:899` fail at the tip. **All four reproduce
+identically at the BASE `69a8477` in this same bench, with the diff
+absent** — I re-ran them there rather than reasoning about them. The cause
+is printed in the failure: the checkout-currency guard reports *the
+checkout this session was started in* as
+`STALE [guard-surface-behind]`, because this verifier bench is detached
+25–27 commits behind main and does not contain the newest main commit
+touching `.claude`. The sweep names every checkout on this machine the
+same way, the lane's own worktree included. A bench cut at a lane's base
+cannot satisfy a body that requires its own checkout to be current, so
+this is a property of the seat verifier.md itself prescribes
+(orchestrator 5c, "cut the verifier's bench with the lane"), not of the
+work. **The integrator should read these four at a current checkout
+before the merge rather than take my attribution on trust.**
+
+### Observation, not a failure, and not blocked on
+
+The refusal messages now carry a per-spelling noun (`lane branch`, `lane
+worktree`, `lane create command`) and the count. The refusal PATH is
+pinned — the spell-falls-back mutant reds the T-236-s1 body — and the
+criterion's "naming the row and the source" is asserted as
+`r.number == 4 && r.path == CONVENTIONS`. The nouns themselves are
+unpinned prose: swapping two of them reds nothing. Cosmetic, inside the
+class parent's own territory, and named here rather than filed.
+
+**Both criteria are met and both are drilled. APPROVED.**
