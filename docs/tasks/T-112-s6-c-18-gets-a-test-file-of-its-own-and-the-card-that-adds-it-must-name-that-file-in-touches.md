@@ -12,7 +12,7 @@ suggested_by: executor claude-opus-5@subagent @T-112-s4 — routed under TASK-FO
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -180,3 +180,194 @@ The fence was re-armed on the three-token spelling and the card built
 under it. **The cost of the two refusals was two dispatches and no
 rejected build**, which is the trade the preflight and the lane hook are
 both for.
+
+## VERDICT — 2026-09-02 — claude-opus-5@subagent — APPROVED
+
+Blind verifier, independent bench `nputer-V-T-112-s6`, judged at
+`a3cafbe2cce5d2681f4cfbb9a3114250c8fe9b0a` checked out DETACHED from the
+base `695954f`. Every figure below names the ref it was measured at, and
+every one was re-derived on this bench rather than read from the lane.
+
+### Which blindness this was, said plainly
+
+**A DISCIPLINE, NOT A FACT ABOUT THE CLOCK — the weaker of the two
+shapes.** The lane worktree and branch already existed when phase 1
+began, so there was a diff available to decline to read, and this seat
+declined it by hand. The attack set and a ground-truth table were
+written against the card at `695954f` and SEALED before any lane ref,
+branch or diff was opened —
+`attack-V-T-112-s6.md` `191bb7379bcb4c79d167610d004a51e42d6d01aab7c5f68a233a3e32501eaaa5`,
+`ground-V-T-112-s6.md` `4ff8147ba21fa8328c20a6bd395b4b1572f8376f375eb11aa6b5193940fc27cf`,
+sealed `2026-09-02T11:44:15Z`; both re-verified unchanged after this
+verdict was written. **The phase-1 brief named no executor-derived
+figure above the line.** The phase-2 brief DID carry the executor's
+report — mutant map and suite counts — and it arrived after the seal;
+every figure it named is re-derived below from this seat's own runs, and
+none is transcribed.
+
+### The fence widening was the DISPATCHING SEAT's, at the executor's request
+
+`5225b99` on `main` (2026-09-02) widened `touches:` to the three-token
+spelling by exact path. The executor met the lane hook's refusal on
+`docs/architecture/components/C-18-board-root.md`, **stopped, and routed
+it** rather than working around it; the manifest is outside every fence
+and no lane can re-arm its own. The card's `touches:` at this tip is
+byte-identical to `5225b99`'s, and the lane touched nothing under
+`.nputer/`. The diff is exactly three paths — the new test file, the
+registry file, and this card — all inside the widened fence.
+
+### Criterion by criterion, re-derived
+
+**1 — C-18 declares an `app/test/**` path of its own; the file exists and
+is collected.** MET. The anchored derivation this component's own body
+prescribes answers exactly one line, in the right file:
+
+    command grep -n '^  - app/test/board-root' docs/architecture/components/*.md
+    -> docs/architecture/components/C-18-board-root.md:7   (one match, at a3cafbe)
+
+Collected without touching `app/vitest.config.ts`, whose `include` is
+already `test/**/*.test.{ts,tsx}`: the app suite moves **50 files / 1141
+bodies at `695954f` to 51 files / 1146 bodies at `a3cafbe`**, both
+GREEN through the blessed runner, with `test/board-root.test.tsx (5
+tests)` named in the run. `npm run build` from app/ is exit 0 at both
+refs, so the annotated fixtures typecheck.
+
+**2 — the file drives `Board` with a lane reading and REQUIRES the
+drawer's dispatch block.** MET, and the kill sets are this seat's own,
+each mutant landed one side only, read back from `git diff`, restored by
+`git checkout` and PROVED restored against
+`Board.tsx` sha256 `2533b8a7…` / `TaskDetailPanel.tsx` sha256
+`2d190c1a…`:
+
+| mutant (at `a3cafbe`) | app suite | dies in the new file | dies elsewhere |
+|---|---|---|---|
+| `dispatch={dispatch}` deleted | 6 failed / 1140 passed | 4 bodies | board-truth 2 |
+| `brief={brief}` deleted | 4 failed / 1142 passed | 3 bodies | board-truth 1 |
+| `{ ...dispatch, truncated: false }` | 1 failed / 1145 passed | **1 body, alone** | **none** |
+| `{ ...dispatch, truncated: true }` | 1 failed / 1145 passed | **1 body, alone** | **none** |
+| dispatch block rendered unconditionally | 3 failed / 1143 passed | 1 body | board-truth 1, detail-assignment 1 |
+
+Both threading lines die in a file `[app-board]` may itself edit, which
+is the criterion. **AND THE KILL SETS ARE NOT CONTAINED, which is the
+finding this seat came closest to getting wrong.** The card is filed as
+placement debt with a working pin, so containment BY `board-truth` would
+have been expected and was pre-committed as NOT a rejection ground. It
+does not arise: the normalising mutant — a root that threads both props
+while quietly rewriting one field inside them — leaves
+`board-truth.test.tsx` and `detail-assignment.test.tsx` at **38 passed,
+exit 0** and kills exactly ONE body out of 1146, in the new file. Its
+mirror kills the other one alone. Two singleton kill sets, disjoint, at
+the site the property lives: the composition root's claim that it threads
+VERBATIM, which `board-truth`'s own header records itself unable to
+check. This file is therefore load-bearing at the PROPERTY level and not
+only at the placement level.
+
+**And the positive control was seen to FAIL before it was trusted**
+(roles/verifier.md 2b, run by this seat rather than asserted): the body
+asserting the block does NOT render with both props absent reds under the
+unconditional-render mutant, in the same run as `board-truth`'s and
+C-09's equivalents. The control's arrangement differs from its subject's
+— no props versus both — so one arrangement does not decide both answers.
+
+**3 — `arch cycles` exit 0; `arch` reports the new file mapped rather
+than unmapped, at the lane's own ref.** FIRST HALF MET, SECOND HALF
+**UNSATISFIABLE AS WRITTEN AND CORRECTLY DISCLOSED** — and this seat
+pre-committed to that reading in its sealed ground truth at `695954f`,
+before the diff existed, by planting a throwaway file and registry line
+at the base and finding `arch`'s output byte-identical.
+
+    arch cycles --root ../..   at a3cafbe: ACYCLIC, exit 0,
+                               15 components, 43 declared edges  (unmoved)
+    arch --root ../..          at a3cafbe: BYTE-IDENTICAL to the same
+                               command at 695954f — files=200 mapped=200
+                               unmapped=0 edges=45 findings=4, C-18 files=1
+    index --check --root ../..  at a3cafbe: STALE exit 1, files +1 -0,
+                               edges +12 -0
+
+`arch` and `arch drift` compute from the COMMITTED
+`docs/architecture/graph.json`; no component's `paths:` claims that file,
+so no board fence reaches it and the regen is the integrator's. At this
+tip the new file is **neither mapped nor unmapped** — it is absent from
+the graph. **The lane claims nothing else**, names its forward figures as
+a throwaway copy's in both the card and the registry file, and left
+`graph.json` byte-identical to `695954f`. Reproduced independently on
+this bench in this seat's own `git archive` copies of `a3cafbe`, graph
+regenerated inside each copy:
+
+    with the registry line:     files=201 mapped=201 unmapped=0 edges=45
+                                findings=4 dangling=0, C-18 files=2,
+                                C-18->C-06 observed 1 to 2,
+                                C-18->C-17 observed 2 to 4,
+                                arch blast names component=C-18
+    without it (the half-fence): files=201 mapped=200 unmapped=1 edges=48
+                                findings=5 — the D2 the card cites
+
+So the harm argument for stopping is real, and the twelve new graph edges
+are seven `import`s (C-18's own file, two C-17 symbols, the parser
+package, and react/react-dom/vitest, which are no component's), three
+`type_ref`s into the same C-17 symbols and two intra-file `call`s —
+**not one new component edge**, exactly as claimed. The `index --check`
+exit 1 is EXPECTED and owed to the merge's GRAPH REGEN; it is not a
+finding against this lane, and was pre-committed as a non-finding.
+
+**4 — say what becomes of the existing pin; do not delete it from outside
+`[app-shell]`.** MET. `app/test/board-truth.test.tsx` is byte-identical
+to `695954f` (sha256 `8b45cb81…`), the diff does not name it, and both
+the new file's header and the registry file state that the pin stays and
+why. `Board.tsx` is likewise byte-identical.
+
+### Imports, security, adjacent features
+
+The new file imports `react`, `react-dom/client`, `vitest`,
+`@nputer/parser/pure` (C-06, declared), `../src/lib/board-model` and
+`../src/lib/task-detail` (C-17, declared) and `../src/components/board/Board`
+(this component's own). **No `App`, nothing under
+`app/src/components/shell/`, nothing of C-15's or C-16's** — so the
+forbidden import is absent and no undeclared component edge is bought,
+confirmed against the twelve edges the gate itself printed. Security
+sweep: no dependency added, no `process.env`, no network or process
+surface, no secret-shaped string, no new input path — the only executable
+addition is a test file, and the other two paths are prose. Nothing
+adjacent broke: the whole app suite is green at the tip, and the only
+files that move under any mutant are the three that pin this threading.
+
+### The figures this verdict is measured at
+
+`695954f` (base): parser 372, app 1141, rust 639 / 18 targets, all GREEN.
+`a3cafbe` (this tip): app 1146 GREEN, `npm run build` exit 0.
+The four suites `docs-gate.mjs` names for this card and the registry file
+— `cargo test` from app/src-tauri, `npm test` from app, `npm test` from
+tools/e2e, `npx vitest run` from lib/parser — were re-run by this seat at
+the VERDICT COMMIT rather than at the tip it was sent, because appending
+this section makes a tree nobody has tested and both changed paths are
+code inputs. `docs/CAPABILITIES.md` is NOT stale (`capabilities:check`
+CURRENT, 52297 bytes); `npx tsc --noEmit` from lib/parser and
+`npm run typecheck` from tools/e2e are both exit 0.
+
+**AND THE e2e LEG IS RED FOR A REASON THAT IS NOT THIS TREE'S — ATTRIBUTED
+AT THE BASE BY NAME RATHER THAN COUNTED.** `gate-run e2e` answers
+`bodies=619 RED`, 617 passed and **2 failed, both in
+`tools/e2e/tests/session-economics.spec.ts`** (the recommended-seat body
+and the advisory-line body). Both fail on the same assembler refusal:
+
+    T-202-s1 holds a worktree on
+    refs/heads/task/T-202-s1-solo-lock-whole-path-key and no live card
+    declares that id
+
+`/Users/ujju/Projects/nputer-T-202-s1` exists on this MACHINE, and its
+card — `T-202-s1-the-solo-lock-keys-on-the-last-eight-bytes-…` — is
+present on `main` and on that lane's own branch but **absent at this
+bench's base `695954f`**, which predates it. So this is REF SKEW between
+an older tree under judgement and the machine's live worktree list, the
+class `docs/STATE.md` names. **Reproduced at the base to prove it**: the
+same two bodies, run alone at `695954f` before this lane wrote a byte and
+before this verdict existed, fail with the identical message — 2 failed,
+8 passed. It is therefore not the diff's, not this verdict's, and it
+cannot reach CI, which has no worktrees. The lane reported e2e green; the
+worktree that reds it was cut between that run and this one.
+
+**Non-blocking, filed as neither a failure nor a task.** Criterion 3's
+second half cannot be derived at any lane's own ref for any card that
+ADDS a file — a future card of this shape should ask for
+`index --check`'s file line plus a named copy, which is what this lane
+produced anyway.
