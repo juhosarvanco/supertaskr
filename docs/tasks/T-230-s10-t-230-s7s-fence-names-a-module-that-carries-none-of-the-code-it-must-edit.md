@@ -8,7 +8,7 @@ size: S
 status: suggested
 suggested_by: executor claude-opus-5@subagent @T-230-s3
 blocked_by: []
-touches: [docs/tasks]
+touches: []
 builder:
 verifier:
 built_by:
@@ -54,6 +54,19 @@ triage's write and not this lane's: correct `touches:` to
 and correct the two body sentences that name the module, BEFORE the
 dispatch stamp — `docs/STATE.md` already warns that a fence narrowed
 after the first cut reds session-economics in every earlier lane.
+
+**THIS CARD'S OWN `touches:` IS EMPTY, DELIBERATELY, AND THE REASON IS
+THE SAME CENSUS THAT CAUGHT IT.** The whole repair lands under
+`docs/tasks/`, which every lane manifest carries as `alwaysWritable` and
+which no fence may name: `expandFence` runs ORACLE-LESS in
+`lib/parser/test/fence.test.ts`'s live-board census, where a bare token
+resolves only through a component's declared paths, so `docs/tasks` is
+`rejected` and any `docs/tasks/T-*.md` path is `unusable` — measured
+here by writing it, at exit 1 over 2 of 349 parser bodies, and undone in
+the same lane. So this card needs no lane and no fence; triage stamps
+the correction directly. Both census bodies SKIP a card whose `touches:`
+is empty, which is the shape that says *there is nothing to reserve*
+rather than *I forgot*.
 
 ## AND THE CLASS IS WORTH A SENTENCE
 
