@@ -80,9 +80,24 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: (command: string) => {
     if (command === "docs_snapshot") {
       ipc.invokeCalls += 1;
-      return ipc.invokeRejects
-        ? Promise.reject(new Error("docs_snapshot: the command was refused"))
-        : Promise.resolve(ipc.status);
+      if (ipc.invokeRejects) {
+        return Promise.reject(new Error("docs_snapshot: the command was refused"));
+      }
+      // T-018-s7: THE STARTUP PULL CAN BE PARKED LIKE ANY OTHER COMMAND.
+      // This branch used to answer before `parked` was ever consulted, so
+      // the ONE command whose in-flight window the overtake race lives in
+      // was the one command no body in this file could hold open. Nothing
+      // else moves: with `docs_snapshot` not in `parked` — which is every
+      // other body here, since `freshStore` empties the set — this is the
+      // same `Promise.resolve(ipc.status)` it has always been, reached on
+      // the same `invokeCalls` increment.
+      if (ipc.parked.has(command)) {
+        // No `resolve` is ever called unless a body reaches for `release`.
+        return new Promise((resolve) => {
+          ipc.release = resolve;
+        });
+      }
+      return Promise.resolve(ipc.status);
     }
     if (ipc.parked.has(command)) {
       // No `resolve` is ever called unless a body reaches for `release`.
@@ -1376,5 +1391,211 @@ describe("a shell command that never answers is answered for (T-192)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// ---- T-018-s7: the DROPPED pull's other half — no echo ------------------
+
+/**
+ * T-018-s7, the half T-018-s6's fence could not reach.
+ *
+ * WHAT T-018-s6 BUILT. `reduceDocs` returns `prev` BY IDENTITY when a
+ * pulled snapshot carries a HIGHER `seq` over an OLDER collection than an
+ * emit already applied for the same project (`readingIsOvertaken`). That
+ * identity is not decoration: `applyDocsPayload` opens
+ *
+ *     const next = reduceDocs(shell.docs, payload);
+ *     if (next === shell.docs) return;   // stale/duplicate: no re-render, no echo
+ *
+ * and the early return precedes BOTH `setShell` and `sendEcho`. So "the
+ * dropped pull emits no `model-updated`" is TRUE — and it was true only
+ * by INHERITANCE from a reference comparison, asserted with `toBe` in
+ * `test/watcher-store.test.ts` and nowhere driven. `sendEcho` is
+ * module-private and the echo is a boundary EFFECT, so the property is
+ * only observable from a jsdom body that mocks the Tauri boundary; this
+ * is that file, and these are those bodies.
+ *
+ * THE INTERLEAVING, CONSTRUCTED RATHER THAN DESCRIBED. `project_status`
+ * calls `build_snapshot(&root, state.next_seq())` on a COMMAND thread
+ * while `handle_fs_batch` draws, collects and sinks on the debouncer
+ * thread — so the startup pull can draw a seq AFTER an emit drew its own
+ * and finish its walk BEFORE it. Here that is the `docs_snapshot` invoke
+ * PARKED with the subscription already live, an emit delivered through
+ * the handler the store really registered, and then the parked pull
+ * released with the overtaking reading.
+ *
+ * THE STAMPS DISAGREE ON PURPOSE, AND THAT IS WHY THE PAIR IS HAND-BUILT.
+ * Every fixture in this file — and both of T-018-s6's — stamps
+ * `generatedAtMs` monotone with `seq`, so a higher seq over an older
+ * collection is UNREPRESENTABLE in them and the interleaving cannot be
+ * spelled with `{ ...SNAPSHOT, seq: N }`.
+ */
+
+const taskCard = (id: string, title: string): string =>
+  `---\nid: ${id}\ntitle: ${title}\nfeature: F-01\nmilestone: 1\n` +
+  `priority: 1\nsize: S\nstatus: building\n---\n`;
+
+/** The EMIT: drawn first, collected LAST — three files, the newer tree. */
+const EMITTED_READING = {
+  seq: 5,
+  projectDir: SNAPSHOT.projectDir,
+  generatedAtMs: SNAPSHOT.generatedAtMs + 2_000,
+  files: [
+    { path: "docs/tasks/T-901-alpha.md", content: taskCard("T-901", "Alpha") },
+    { path: "docs/tasks/T-902-beta.md", content: taskCard("T-902", "Beta") },
+    { path: "docs/tasks/T-903-gamma.md", content: taskCard("T-903", "Gamma") },
+  ],
+};
+
+/** The PULL that overtakes it: a HIGHER ordering stamp over an EARLIER
+ * collection, so its two files are the tree as it was before the emit's
+ * walk saw the third. Fresh by `seq`, older by the clock. */
+const OVERTAKING_PULL = {
+  seq: 6,
+  projectDir: SNAPSHOT.projectDir,
+  generatedAtMs: SNAPSHOT.generatedAtMs + 1_000,
+  files: [
+    { path: "docs/tasks/T-901-alpha.md", content: taskCard("T-901", "Alpha") },
+    { path: "docs/tasks/T-902-beta.md", content: taskCard("T-902", "Beta") },
+  ],
+};
+
+/** The same pull with the ONE stamp the guard reads moved the other way:
+ * a higher seq over a LATER collection, which is an ordinary newer
+ * reading and must apply. The discriminating half — see the second body.
+ */
+const HONESTLY_NEWER_PULL = {
+  ...OVERTAKING_PULL,
+  generatedAtMs: SNAPSHOT.generatedAtMs + 3_000,
+};
+
+/** Every `model-updated` echo, in order. */
+const echoes = (): { seq: number; taskCount: number; taskIds: string[] }[] =>
+  ipc.emits
+    .filter((e) => e.name === "model-updated")
+    .map((e) => e.payload as { seq: number; taskCount: number; taskIds: string[] });
+
+/** Drive the race up to the release: subscribe, park the pull, and land
+ * the emit on the handler the store registered. The still-in-flight
+ * `startDocsWatcher` promise comes back WRAPPED, deliberately: an `async`
+ * function that RETURNS a promise adopts it, so handing this one back
+ * bare would make `await` here block on the very attempt the caller has
+ * not released yet — measured, as a 5 s test timeout. */
+async function raceToTheParkedPull(store: StoreModule): Promise<{ startup: Promise<void> }> {
+  ipc.parked.add("docs_snapshot");
+  const first = store.startDocsWatcher();
+  await settle();
+
+  // POSITIVE CONTROL A — the race is REAL, not a sequential drive. The
+  // subscription is live, the pull was genuinely issued, and it is still
+  // in flight: without these three the bodies below would be measuring a
+  // pull that never happened.
+  expect(ipc.listenCalls, "the subscription really was opened").toBe(1);
+  expect(ipc.onDocsChanged, "and the store really registered a handler").not.toBeNull();
+  expect(ipc.invokeCalls, "the startup pull really was issued").toBe(1);
+  expect(
+    await Promise.race([first, Promise.resolve("STILL PARKED" as const)]),
+    "and it really is still in flight",
+  ).toBe("STILL PARKED");
+
+  // The emit overtakes it on the wire: seq 5, the LATER collection.
+  ipc.onDocsChanged!({ payload: EMITTED_READING });
+
+  // POSITIVE CONTROL B — the emit was APPLIED and it DID echo. So the
+  // counts below are counts of a channel that demonstrably carries
+  // `model-updated`, and "exactly one" is a measurement rather than the
+  // shape an empty list happens to have.
+  expect(store.getShellState().docs.seq, "the emit landed").toBe(5);
+  expect(echoes(), "and echoed, once").toHaveLength(1);
+  expect(echoes()[0].seq, "at its own seq").toBe(5);
+
+  return { startup: first };
+}
+
+describe("a pull the overtake guard DROPS emits no `model-updated` (T-018-s7)", () => {
+  it("the overtaking pull is dropped, and exactly ONE echo was sent — at seq 5", async () => {
+    const store = await freshStore();
+    const { startup } = await raceToTheParkedPull(store);
+
+    // The parked pull answers, carrying the overtaking reading.
+    ipc.release!({ kind: "open", snapshot: OVERTAKING_PULL });
+    await startup;
+    await settle();
+
+    // POSITIVE CONTROL C — the attempt settled because the PULL ARRIVED
+    // and was processed, not because the 8 s deadline gave up on it: a
+    // deadline records `step: "deadline"` and leaves the pull in flight,
+    // which would make every count below a count over a payload the store
+    // never saw.
+    expect(store.getShellState().startupFailure, "no deadline fired").toBeNull();
+    expect(store.getShellState().starting, "the handshake ran to the end").toBe(false);
+
+    // Half one: the model still holds the EMIT's tree. The pull's higher
+    // seq did not carry it, and the third file was not dropped back off.
+    const docs = store.getShellState().docs;
+    expect({
+      seq: docs.seq,
+      generatedAtMs: docs.generatedAtMs,
+      fileCount: docs.fileCount,
+      taskIds: docs.model.tasks.map((t) => t.id),
+    }).toEqual({
+      seq: 5,
+      generatedAtMs: EMITTED_READING.generatedAtMs,
+      fileCount: 3,
+      taskIds: ["T-901", "T-902", "T-903"],
+    });
+
+    // HALF TWO, AND THE WHOLE OF THIS CARD: the drop is SILENT. Driven
+    // through the shipped store at the base, the unguarded defect sent a
+    // SECOND `model-updated` at seq 6 over a model the emit had already
+    // echoed at seq 5 — the one observable symptom of the overwrite that
+    // a pure-reducer body cannot show, because `sendEcho` is
+    // module-private and the echo is a boundary effect.
+    expect(echoes(), "the dropped pull echoed nothing").toHaveLength(1);
+    expect(echoes()[0], "and the one echo is still the EMIT's").toMatchObject({
+      seq: 5,
+      taskCount: 3,
+      taskIds: ["T-901", "T-902", "T-903"],
+    });
+    // Nothing else reached the boundary either — no second name, no
+    // `startup-failed` standing in for a silence.
+    expect(ipc.emits.map((e) => e.name)).toEqual(["model-updated"]);
+  });
+
+  it("...and the SAME drive with an honestly newer pull echoes TWICE — the drop is the GUARD'S", async () => {
+    // THE DISCRIMINATING HALF. Everything above is a negative assertion,
+    // and a negative assertion needs a positive control: this body is the
+    // same parked-pull interleaving, the same release, the same harness,
+    // with exactly ONE byte of the fixture moved — the `generatedAtMs`
+    // the guard reads. It applies, and it echoes. So the silence in the
+    // body above is attributable to the overtake predicate and not to the
+    // parking, the release, the mock, or an echo channel that was never
+    // going to carry a second event.
+    const store = await freshStore();
+    const { startup } = await raceToTheParkedPull(store);
+
+    ipc.release!({ kind: "open", snapshot: HONESTLY_NEWER_PULL });
+    await startup;
+    await settle();
+
+    expect(store.getShellState().startupFailure, "no deadline fired").toBeNull();
+    const docs = store.getShellState().docs;
+    expect({
+      seq: docs.seq,
+      generatedAtMs: docs.generatedAtMs,
+      fileCount: docs.fileCount,
+      taskIds: docs.model.tasks.map((t) => t.id),
+    }).toEqual({
+      seq: 6,
+      generatedAtMs: HONESTLY_NEWER_PULL.generatedAtMs,
+      fileCount: 2,
+      taskIds: ["T-901", "T-902"],
+    });
+    expect(echoes(), "two applied readings, two echoes").toHaveLength(2);
+    expect(echoes()[1], "and the second is the PULL's").toMatchObject({
+      seq: 6,
+      taskCount: 2,
+      taskIds: ["T-901", "T-902"],
+    });
   });
 });
