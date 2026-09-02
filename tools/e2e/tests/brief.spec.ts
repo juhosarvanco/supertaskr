@@ -1,7 +1,9 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  closeSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -19,6 +21,7 @@ import {
   DERIVERS,
   EXIT,
   PIPE_BUFFER_BYTES,
+  SPAWNSYNC_DEFAULT_MAXBUFFER,
   architectureText,
   assembleBrief,
   boardCensus,
@@ -1030,6 +1033,15 @@ test("THE MARGIN IS DISCLOSED IN THE COMMAND'S OWN OUTPUT, and the size it decla
     );
     expect(line).toContain(`of ${PIPE_BUFFER_BYTES} bytes`);
 
+    // AND THE DISCLOSED BUFFER NAMES ITS READER IN THE LIVE OUTPUT, not
+    // only in the module (T-225-s1). A denominator whose owner lives in a
+    // comment never reaches the dispatcher holding the decision, which is
+    // the argument for this whole block.
+    const buf = text.split("\n").find((l) => l.startsWith(`buffer: ${PIPE_BUFFER_BYTES} bytes`)) ?? "";
+    expect(buf, "the command disclosed a buffer figure and named no reader for it").toContain(
+      "the floor for a reader that takes ONE fixed-size read and stops",
+    );
+
     // AND IT IS AT THE TOP, WHICH IS THE WHOLE POINT. A truncation eats
     // the TAIL, so a margin line under an answer too big to arrive is
     // lost in the one case it was written for.
@@ -1070,8 +1082,34 @@ test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped
 
   expect(under).toContain(`output: 1000 of ${PIPE_BUFFER_BYTES} bytes (1.5%) - 64536 left`);
   expect(over).toContain(`(100.8%) - OVER by 500`);
-  expect(under).not.toContain("OVER by");
-  expect(over).not.toContain(" left");
+
+  // THE ARMS ARE EXCLUSIVE ON THE FIGURE LINE, WHICH IS WHERE THE
+  // PROPERTY LIVES — not merely "somewhere in the block" (SHAPE EIGHT,
+  // the same narrowing the density assertion below now carries). The
+  // block's prose may legitimately contain either phrase; the line that
+  // states the size may not contain both.
+  const figure = (block: string): string =>
+    block.split("\n").find((l) => l.startsWith("output: ")) ?? "";
+  expect(figure(under), "the UNDER arm's figure line spoke in the OVER arm's words").not.toContain(
+    "OVER by",
+  );
+  expect(figure(over), "the OVER arm's figure line spoke in the UNDER arm's words").not.toContain(
+    " left",
+  );
+
+  // AND THE FIGURE NAMES THE READER IT IS THE FLOOR FOR, IN BOTH ARMS
+  // (T-225-s1). A buffer size printed bare is a figure whose owner lives
+  // in a comment: `PIPE_BUFFER_BYTES` is the line for a reader taking ONE
+  // fixed read, and it is NOT `spawnSync`'s line — the caller this
+  // repository reads with meets `SPAWNSYNC_DEFAULT_MAXBUFFER` instead.
+  // Which caller does what is the body below's, measured; that it is SAID
+  // at all, on both sides of the line, is this one's.
+  for (const arm of [under, over]) {
+    expect(arm).toContain(`buffer: ${PIPE_BUFFER_BYTES} bytes is ONE PIPE BUFFER here`);
+    expect(arm).toContain("the floor for a reader that takes ONE fixed-size read and stops");
+  }
+  expect(under).toContain("under it: this answer fits inside the transfer the writer completes");
+  expect(over).toContain("past it, spawnSync at a maxBuffer this answer exceeds:");
 
   // THE PROVENANCE FLOOR REACHES IT TOO: a size is a figure, and a figure
   // leaves this module through a stamped value or not at all.
@@ -1084,7 +1122,14 @@ test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped
   // AND THE DENSITY IS ABSENT WHEN NOTHING DERIVED A DENOMINATOR. A
   // per-card cost divided by a count this command did not derive is
   // exactly the figure with no keeper the whole module exists against.
-  expect(under).not.toContain("per ");
+  //
+  // THE HAYSTACK IS THE LINE, NOT THE BLOCK (SHAPE EIGHT, both ways).
+  // This read `not.toContain("per ")` over the whole arm, which is an
+  // absence assertion satisfied by any prose anywhere: the buffer line
+  // gained the words "per run" and the body reported a density line that
+  // does not exist. What is absent is a LINE that opens with the density
+  // key, and that is what is asked for now.
+  expect(under.split("\n").filter((l) => l.startsWith("per "))).toEqual([]);
   expect(
     render(marginRecs({ bytes: 1_000, at, host, units: { count: 4, label: "listed card" } })),
   ).toContain("per listed card: 250 bytes");
@@ -1100,6 +1145,431 @@ test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped
   expect(Buffer.byteLength(wrapped.text, "utf8")).toBe(wrapped.bytes);
   expect(wrapped.text).toContain(`output: ${wrapped.bytes} of`);
   expect(wrapped.text.endsWith(body)).toBe(true);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE READERS THE OVER ARM SPEAKS ABOUT — driven, never described
+ * (T-225-s1).
+ *
+ * The arm used to end *"a caller collecting into a fixed buffer of that
+ * size receives a prefix with no error"*. The sentence is TRUE — of a
+ * reader doing ONE fixed-size read — and it named nobody, so it was also
+ * read as a claim about `spawnSync`, which is the reader this repository
+ * itself uses and which is KILLED past its `maxBuffer` with the loudest
+ * signal node has. One clause, two readers, opposite outcomes.
+ *
+ * SO EVERY CALLER THE ARM NAMES IS RUN HERE, against this command's own
+ * answer, and the needles the sentence is checked against are BUILT OUT
+ * OF WHAT WAS MEASURED rather than typed beside it. `brief-flush.spec.ts`
+ * drives two of these readers already and asks a different question of
+ * them — whether the WRITER loses bytes — so nothing below re-asserts its
+ * property; what is new here is the join between a measurement and a
+ * sentence.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A `spawnSync` caller's own view of one run. */
+interface CallerRead {
+  bytes: number;
+  status: number | null;
+  signal: string | null;
+  errorCode: string;
+}
+
+/** A pipe reader's view: what arrived, and how the WRITER ended. */
+interface PipeRead {
+  bytes: number;
+  writerStatus: number | null;
+  readerStatus: number | null;
+}
+
+/** A limit no plausible answer is under, for the "by a mile" ceiling. */
+const TINY_MAXBUFFER = 1_024;
+
+function readViaSpawnSync(argv: string[], maxBuffer?: number): CallerRead {
+  const r = spawnSync(process.execPath, argv, {
+    cwd: repoRoot,
+    ...(maxBuffer === undefined ? {} : { maxBuffer }),
+  });
+  const err = r.error as NodeJS.ErrnoException | undefined;
+  return {
+    bytes: r.stdout === undefined || r.stdout === null ? 0 : r.stdout.length,
+    status: r.status,
+    signal: r.signal,
+    errorCode: err?.code ?? "none",
+  };
+}
+
+/** POSIX single-quoting, so a path with a space cannot become two words. */
+function shq(s: string): string {
+  return `'${s.replace(/'/g, "'\\''")}'`;
+}
+
+/**
+ * THE WRITER'S OWN `$?` IS RECOVERED WITHOUT A SHELL DIALECT — a
+ * pipeline's status is the READER's, and `PIPESTATUS` is a bash/zsh array
+ * `dash` does not carry. `brief-flush.spec.ts` pays for this the same way
+ * and for the same reason; the status goes to a FILE from inside the
+ * pipeline's left side, which is POSIX everywhere.
+ */
+function readViaPipeline(argv: string[], dir: string, stem: string, right: string): PipeRead {
+  const out = path.join(dir, `${stem}.out`);
+  const st = path.join(dir, `${stem}.status`);
+  const left = [process.execPath, ...argv].map(shq).join(" ");
+  const r = spawnSync(
+    "/bin/sh",
+    ["-c", `{ ${left} 2>/dev/null; echo $? > ${shq(st)}; } | ${right} > ${shq(out)} 2>/dev/null`],
+    { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
+  const written = Number.parseInt(readFileSync(st, "utf8").trim(), 10);
+  return {
+    bytes: statSync(out).size,
+    writerStatus: Number.isInteger(written) ? written : null,
+    readerStatus: r.status,
+  };
+}
+
+/**
+ * READER ONE — a consumer that PAUSES, which is what a pager is. It is a
+ * subprocess on the far side of a real pipe rather than a paused
+ * `child.stdout`, because node tears down a child's stdio at exit and a
+ * harness that drops bytes on a writer that dropped none reds for its own
+ * reason (`brief-flush.spec.ts` measured that and says so).
+ */
+function pausingReader(dir: string): string {
+  const file = path.join(dir, "pausing-reader.mjs");
+  writeFileSync(
+    file,
+    "// Small slices, a wait between them: it owns its own stdin, so\n" +
+      "// nothing but this loop decides how fast the pipe drains.\n" +
+      "const CHUNK = 4096;\nconst DELAY = 5;\nconst inp = process.stdin;\ninp.pause();\n" +
+      "let ended = false;\ninp.on('end', () => { ended = true; });\n" +
+      "const sleep = (ms) => new Promise((r) => setTimeout(r, ms));\n" +
+      "for (;;) {\n" +
+      "  const c = inp.read(CHUNK);\n" +
+      "  if (c === null) { if (ended) break; await sleep(DELAY); continue; }\n" +
+      "  process.stdout.write(c);\n" +
+      "  await sleep(DELAY);\n" +
+      "}\n",
+    "utf8",
+  );
+  return file;
+}
+
+/**
+ * THE JOIN. Each claim narrows the haystack to the ONE line its key
+ * anchors before looking for a needle — SHAPE EIGHT's remedy, because a
+ * search over the whole block is satisfied by any occurrence anywhere,
+ * and this block deliberately says similar things in two arms.
+ */
+interface Claim {
+  key: string;
+  needles: string[];
+}
+
+function disagreements(block: string, claims: readonly Claim[]): string[] {
+  const lines = block.split("\n");
+  const found: string[] = [];
+  for (const claim of claims) {
+    const line = lines.find((l) => l.startsWith(claim.key));
+    if (line === undefined) {
+      found.push(`no line opens with ${JSON.stringify(claim.key)}`);
+      continue;
+    }
+    for (const needle of claim.needles) {
+      if (!line.includes(needle)) {
+        found.push(`the line at ${JSON.stringify(claim.key)} does not say ${JSON.stringify(needle)}`);
+      }
+    }
+  }
+  return found;
+}
+
+test("...and the OVER arm says what each named caller actually does past the line, measured in this run against this command's own answer", () => {
+  // KILLED BY: any drift between what the arm SAYS and what the callers
+  // DO — moving `SIGTERM` to `SIGKILL`, `ENOBUFS` to `EPIPE`, `status
+  // null` to `status 0`, dropping the default-maxBuffer line, or putting
+  // the retired *"receives a prefix with no error"* back on the
+  // `spawnSync` line. Each needle is built from the measurement in this
+  // run, so the producer and the assertion share no constant.
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t225s1-callers-"));
+  try {
+    const argv = [CLI, "--dispatch", "--full"];
+
+    // GROUND TRUTH FIRST: node's stdout is SYNCHRONOUS to a file, so this
+    // is the size every reader below is judged against.
+    const whole = path.join(dir, "whole.txt");
+    const fd = openSync(whole, "w");
+    let fileStatus: number | null;
+    try {
+      fileStatus = spawnSync(process.execPath, argv, {
+        cwd: repoRoot,
+        stdio: ["ignore", fd, "ignore"],
+      }).status;
+    } finally {
+      closeSync(fd);
+    }
+    expect(fileStatus, "the command under measurement did not answer cleanly").toBe(EXIT.CLEAN);
+    const actual = statSync(whole).size;
+    expect(actual, "there is no answer here to measure a reader against").toBeGreaterThan(
+      TINY_MAXBUFFER,
+    );
+
+    /**
+     * THE CEILINGS ARE DERIVED FROM THE ANSWER AND NEVER FROM THE BOARD.
+     * The arm's subject is "a maxBuffer this answer exceeds", which is a
+     * class rather than a number, so the body instantiates it twice —
+     * the smallest limit this answer crosses and one it crosses by a
+     * mile. A body that instead needed the live board to be past one
+     * pipe buffer would be a red on somebody else's work the day the
+     * board shrank.
+     */
+    const tightCeiling = actual - 1;
+    const tight = readViaSpawnSync(argv, tightCeiling);
+    const loose = readViaSpawnSync(argv, TINY_MAXBUFFER);
+    const unset = readViaSpawnSync(argv);
+
+    const keeps = readViaPipeline(
+      argv,
+      dir,
+      "pausing",
+      `${shq(process.execPath)} ${shq(pausingReader(dir))}`,
+    );
+    const oneRead = readViaPipeline(argv, dir, "one-read", `dd bs=${PIPE_BUFFER_BYTES} count=1`);
+
+    /**
+     * WHAT WAS MEASURED, ASSERTED BEFORE IT IS COMPARED TO ANYTHING —
+     * SHAPE TEN: a join whose measured side was never shown non-empty
+     * reports agreement between two absences.
+     *
+     * THE BYTE COUNT OF A KILLED CHILD IS A RACE AND IS NEVER PINNED.
+     * The same limit returns the whole answer against a fast producer and
+     * a part-way kill against a slow one, because what comes back is
+     * quantised to node's own reads. `>` is the property; an equality
+     * would be a flake wearing a measurement.
+     */
+    for (const [label, m, ceiling] of [
+      ["the smallest limit it crosses", tight, tightCeiling],
+      ["a limit it crosses by a mile", loose, TINY_MAXBUFFER],
+    ] as const) {
+      expect(m.status, `${label}: a killed child reported a status`).toBeNull();
+      expect(m.signal, `${label}: the kill did not arrive as SIGTERM`).toBe("SIGTERM");
+      expect(m.errorCode, `${label}: the caller was not told through error.code`).toBe("ENOBUFS");
+      expect(
+        m.bytes,
+        `${label}: the stdout handed back did not overrun the caller's own maxBuffer of ${ceiling}`,
+      ).toBeGreaterThan(ceiling);
+    }
+    expect(keeps.bytes, "a reader that pauses lost bytes this writer waits to deliver").toBe(actual);
+    expect(keeps.writerStatus, "the writer did not end cleanly for the pausing reader").toBe(
+      EXIT.CLEAN,
+    );
+    expect(oneRead.bytes, "one fixed read took more than the buffer it asked for").toBeLessThanOrEqual(
+      PIPE_BUFFER_BYTES,
+    );
+    expect(oneRead.readerStatus, "the fixed-buffer reader itself failed").toBe(EXIT.CLEAN);
+
+    /**
+     * AND THE WRITER'S OWN EXIT BEHIND THAT READER IS A RACE, MEASURED
+     * RATHER THAN CLAIMED (T-225-s1). Three runs by hand and three on the
+     * dispatching seat's bench all read 0; this body read 1 on its first
+     * loaded run, because whether the EPIPE from the closed pipe reaches
+     * node before the process ends is a matter of timing. So neither the
+     * arm nor this body says anything about it — what the sentence claims
+     * is the READER's side, which is stable and is the half the retired
+     * clause got right. It is recorded here so the next reader does not
+     * spend the finding again.
+     */
+    expect(
+      oneRead.writerStatus,
+      "the writer's own exit was not recorded at all, so the pipeline never ran",
+    ).not.toBeNull();
+
+    /**
+     * THE ARM UNDER TEST IS THE OVER ONE, so the size it is rendered at
+     * is the live answer wherever that is past the line and is raised
+     * past it otherwise — the TEXT is the same text either way, and the
+     * needles below are prose about a class of caller rather than about
+     * this board's size.
+     */
+    const at = "1999-01-01T00:00:00.000Z";
+    const host = "a-test-host";
+    const overBytes = Math.max(actual, PIPE_BUFFER_BYTES + 1);
+    const over = render(marginRecs({ bytes: overBytes, at, host }));
+
+    /** Every needle below is a function of the measurement, not a literal. */
+    const claims: Claim[] = [
+      {
+        key: "past it, a pipe reader that keeps reading:",
+        needles: [keeps.bytes === actual ? "receives every byte" : "loses the tail"],
+      },
+      {
+        key: `past it, a reader taking ONE fixed read of that size (dd bs=${PIPE_BUFFER_BYTES} count=1):`,
+        needles: [
+          oneRead.bytes < actual ? "a PREFIX of at most one buffer" : "at most one buffer",
+          oneRead.readerStatus === EXIT.CLEAN
+            ? "NO error on the reader's side at all"
+            : "an error on the reader's side",
+        ],
+      },
+      {
+        key: "past it, spawnSync at a maxBuffer this answer exceeds:",
+        needles: [
+          `status ${String(tight.status)}`,
+          `signal ${String(tight.signal)}`,
+          `error.code ${tight.errorCode}`,
+          tight.bytes > tightCeiling && loose.bytes > TINY_MAXBUFFER
+            ? "OVERRUNS that maxBuffer"
+            : "stops at that maxBuffer",
+        ],
+      },
+      {
+        key: `past it, spawnSync at its ${SPAWNSYNC_DEFAULT_MAXBUFFER}-byte DEFAULT maxBuffer:`,
+        needles:
+          overBytes > SPAWNSYNC_DEFAULT_MAXBUFFER
+            ? ["OVER that default", "same ENOBUFS"]
+            : [
+                "UNDER that default",
+                `status ${String(unset.status)}`,
+                unset.errorCode === "none" ? "no error" : `error.code ${unset.errorCode}`,
+              ],
+      },
+    ];
+
+    expect(
+      disagreements(over, claims),
+      "the OVER arm and the readers it names disagree in this run — the sentence is what has to " +
+        "move, because the measurement is what a dispatcher will meet",
+    ).toEqual([]);
+
+    /**
+     * THE POSITIVE CONTROL, AND IT IS A PLANTED SENTENCE BECAUSE THE
+     * PROPERTY LIVES IN TEXT. A checker that has only ever seen the true
+     * arm cannot be told from one that decides nothing, so it is run
+     * against the exact clause this card was filed about — a sentence
+     * that was TRUE of the fixed-read reader, printed on the line about
+     * `spawnSync`, with the default-maxBuffer caller named nowhere.
+     */
+    const RETIRED =
+      "past it, a pipe reader that keeps reading: the tail arrives only while the reader drains\n" +
+      "past it, spawnSync at a maxBuffer this answer exceeds: a caller collecting into a fixed " +
+      "buffer of that size receives a prefix with no error";
+    const planted = disagreements(RETIRED, claims);
+    expect(
+      planted.length,
+      "the checker accepted the retired sentence, so it is deciding nothing and this body is a " +
+        "green that proves the readers could not disagree",
+    ).toBeGreaterThan(0);
+    const said = planted.join(" | ");
+    expect(said, "the planted sentence passed the loud half of the measurement").toContain(
+      `error.code ${tight.errorCode}`,
+    );
+    expect(said, "a caller the arm never named was not reported missing").toContain(
+      "no line opens with",
+    );
+
+    process.stdout.write(
+      `\n  brief CALLERS past the line (answer ${actual} bytes): pausing pipe reader ${keeps.bytes}` +
+        ` bytes at writer status ${String(keeps.writerStatus)}; one fixed read ${oneRead.bytes}` +
+        ` bytes at writer status ${String(oneRead.writerStatus)}; spawnSync at maxBuffer` +
+        ` ${tightCeiling} -> ${tight.bytes} bytes, status ${String(tight.status)}, signal` +
+        ` ${String(tight.signal)}, error.code ${tight.errorCode}; at ${TINY_MAXBUFFER} ->` +
+        ` ${loose.bytes} bytes, error.code ${loose.errorCode}; at node's default ->` +
+        ` ${unset.bytes} bytes, status ${String(unset.status)}, error.code ${unset.errorCode}.` +
+        ` The retired sentence disagreed with ${planted.length} of the measurements.\n`,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("...and the UNSETTLED fallback is DRIVEN at a REAL width: the fixed point oscillates and the block discloses the derivation's own size, labelled", () => {
+  // KILLED BY: returning `{ whole: true }` from the loop's fall-through,
+  // by disclosing the unsettled TOTAL instead of the derivation's exact
+  // size, or by dropping the label that says which of the two is being
+  // reported. Until this body the fallback was a branch no test drove.
+  const at = "1999-01-01T00:00:00.000Z";
+  const host = "a-test-host";
+  const head = (n: number): string => `${render(marginRecs({ bytes: n, at, host }))}\n\n`;
+  const bodyOf = (bytes: number): string => `${"z".repeat(bytes - 1)}\n`;
+
+  /**
+   * THE OSCILLATING WIDTHS ARE DERIVED, NEVER PINNED. A period-2 cycle
+   * needs the block to get exactly one byte SHORTER as the declared total
+   * grows by one, and `left` is the only field that shrinks — so the
+   * candidates are the digit boundaries of `left`, one per power of ten,
+   * and each width is a function of this block's own prose, which moves
+   * whenever a sentence in it moves. Over the line there is no candidate
+   * at all: the total, the percentage and `OVER by` all grow together.
+   */
+  const widths: Array<{ width: number; edge: number }> = [];
+  let shrinking = 0;
+  for (let k = 1; k < 5; k += 1) {
+    const edge = PIPE_BUFFER_BYTES - 10 ** k;
+    const width = edge + 1 - Buffer.byteLength(head(edge), "utf8");
+    if (width <= 0) continue;
+    if (Buffer.byteLength(head(edge + 1), "utf8") === Buffer.byteLength(head(edge), "utf8") - 1) {
+      shrinking += 1;
+    }
+    if (!withMargin(bodyOf(width), { at, host }).whole) widths.push({ width, edge });
+  }
+  expect(
+    widths.length,
+    "no width was found at which the fixed point fails to settle, so the fallback below is being " +
+      "reported on a case this run never reached",
+  ).toBeGreaterThan(0);
+
+  // AND THE COVERAGE FOLLOWS THE DERIVATION RATHER THAN A TALLY (SHAPE
+  // FIVE's remedy): every boundary where the block loses a byte is a
+  // boundary that oscillates, so a prose change that moves one of them
+  // moves this count with it instead of quietly covering fewer widths.
+  expect(
+    widths.length,
+    "a boundary where the block loses a byte did not produce a cycle, or one that keeps its " +
+      "length did — the derivation and the drive disagree",
+  ).toBe(shrinking);
+
+  for (const { width, edge } of widths) {
+    const body = bodyOf(width);
+    const wrapped = withMargin(body, { at, host });
+
+    // THE HONEST ANSWER: what is disclosed is the DERIVATION's size, which
+    // is exact, rather than a total that is off by a byte — and it SAYS
+    // which of the two it is.
+    expect(wrapped.whole, `width ${width} settled after all`).toBe(false);
+    expect(wrapped.bytes, "the disclosed figure is not the derivation's own size").toBe(
+      Buffer.byteLength(body, "utf8"),
+    );
+    expect(wrapped.text).toContain("did not settle");
+    expect(wrapped.text).toContain(`derivation below: ${width} of ${PIPE_BUFFER_BYTES} bytes`);
+    expect(wrapped.text.endsWith(body)).toBe(true);
+
+    // AND THE LABEL IS LOAD-BEARING: the block is NOT the size it names,
+    // which is exactly why it must not be read as the settled figure.
+    expect(Buffer.byteLength(wrapped.text, "utf8")).toBeGreaterThan(wrapped.bytes);
+
+    // THE PROVENANCE FLOOR REACHES THE FALLBACK TOO — the arm the notes
+    // are dropped from must not take a stamped value with them.
+    const headOnly = wrapped.text.slice(0, wrapped.text.length - body.length);
+    expect(unstampedLines(headOnly)).toEqual([]);
+    expect(headOnly).toContain(`buffer: ${PIPE_BUFFER_BYTES} bytes is ONE PIPE BUFFER here`);
+
+    // THE POSITIVE CONTROL: one byte either side of the knife edge the
+    // SAME function settles. Without it "did not settle" is satisfied by
+    // a fallback that fires on everything.
+    for (const delta of [-1, 1]) {
+      expect(
+        withMargin(bodyOf(width + delta), { at, host }).whole,
+        `a body ${delta} byte from ${width} also failed to settle, so this is not a knife edge`,
+      ).toBe(true);
+    }
+
+    process.stdout.write(
+      `\n  brief MARGIN UNSETTLED: body ${width} bytes cycles across the left-digit edge ${edge};` +
+        ` the block discloses "${
+          wrapped.text.split("\n").find((l) => l.startsWith("derivation below: "))?.split("  <- ")[0]
+        }" and is ${Buffer.byteLength(wrapped.text, "utf8")} bytes itself.\n`,
+    );
+  }
 });
 
 test("a brief assembled at this ref names the lanes the repository holds, and no others", () => {

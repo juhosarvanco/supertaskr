@@ -1226,8 +1226,38 @@ export function unstampedLines(rendered) {
  * the reader it belongs to; this constant is the FLOOR both readers
  * measured there share, and the only number about this that does not move
  * with who is reading.
+ *
+ * **WHICH READER IT IS THE FLOOR FOR IS NOW PRINTED BESIDE IT** — the
+ * half this comment carried while the disclosure emitted the number bare
+ * (T-225-s1). A figure whose owner lives in a comment is a figure the
+ * reader holding the decision never meets, which is the whole argument
+ * for this block existing.
  */
 export const PIPE_BUFFER_BYTES = 65_536;
+
+/**
+ * THE SECOND CEILING, AND THE ONE THAT ACTUALLY TRUNCATES THE CALLER
+ * THIS REPOSITORY READS WITH — node's own `maxBuffer` default for
+ * `spawnSync`, an order of magnitude away from the buffer above (T-225-s1).
+ *
+ * A caller past it is NOT handed a quiet prefix. The child is killed and
+ * the result carries `status: null`, `signal: "SIGTERM"` and an `error`
+ * whose `code` is `ENOBUFS` — loud, in a field most callers never read.
+ * And the stdout that comes back OVERRUNS the number the caller set: it
+ * is whatever node had already read when the limit tripped, quantised to
+ * node's own read chunks rather than to the caller's figure. HOW MUCH IS
+ * A RACE and is asserted nowhere — a fast producer's whole answer and a
+ * slow one's part-way kill both come back over the limit, so `>` is the
+ * claim and an equality would be a flake wearing a measurement.
+ *
+ * **EVERY CLAIM IN THIS PARAGRAPH AND IN THE ARMS BELOW IS DRIVEN AND
+ * NOT ASSERTED**, by `brief.spec.ts`'s *"...and the OVER arm says what
+ * each named caller actually does past the line, measured in this run
+ * against this command's own answer"*, which builds its needles out of
+ * the measurement and reds when the sentence and the measurement
+ * disagree. No figure from that measurement is transcribed here.
+ */
+export const SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 * 1024;
 
 /**
  * THE NUMBER THIS COMMAND USED NOT TO PRINT — how big its own answer is,
@@ -1255,6 +1285,26 @@ export const PIPE_BUFFER_BYTES = 65_536;
  * one — the answer is complete either way, and what changes is who has to
  * drain it.
  *
+ * AND WHAT CHANGES FOR WHOM IS NOW SAID PER CALLER, MEASURED (T-225-s1).
+ * The OVER arm used to end *"a caller collecting into a fixed buffer of
+ * that size receives a prefix with no error"*. **THAT SENTENCE IS TRUE,
+ * AND IT NAMED NOBODY** — which is the whole defect. It is true of a
+ * reader doing ONE fixed-size read and stopping, and false of the reader
+ * this repository itself uses: `spawnSync` past its `maxBuffer` is
+ * killed, loudly, with an error the sentence promised was absent. A
+ * figure detached from its source is the defect this module exists
+ * against; a CONSEQUENCE detached from the caller it belongs to is the
+ * same defect one level up, and it is worse, because the reader cannot
+ * even tell which of the two claims was meant for them.
+ *
+ * So each arm names its callers and says what each one does, and NO
+ * outcome below is written from memory: `brief.spec.ts` drives every
+ * named caller against this command's own answer in the same run, builds
+ * its needles out of what it measured, and reds when the sentence and the
+ * measurement disagree — with the retired sentence itself as the planted
+ * control, because a checker that has only ever seen the true text cannot
+ * be told from one that decides nothing.
+ *
  * @param {{ bytes: number, at: string, host: string, buffer?: number,
  *   what?: string, units?: { count: number, label: string } }} opts
  * @returns {Rec[]}
@@ -1273,19 +1323,90 @@ export function marginRecs(opts) {
   const prov = liveProv(opts.at, opts.host, via);
   const percent = ((bytes * 100) / buffer).toFixed(1);
   const what = opts.what ?? "output";
+  /**
+   * THE FIGURE NAMES ITS OWNER. One pipe buffer is the floor for the
+   * reader that takes ONE fixed read and stops, and for nobody else — the
+   * arms below are the consequences OF crossing it, and they are not the
+   * same consequences — so the number and the reader it belongs to travel
+   * on one line and are never printed apart.
+   */
+  const bufferProv = liveProv(
+    opts.at,
+    opts.host,
+    "one pipe buffer here, and the reader this figure is the floor for",
+  );
+  /**
+   * WHAT EACH NAMED CALLER DOES, on the side of the line this answer is
+   * actually on. Both arms speak, because a disclosure that appears only
+   * past a threshold cannot be told from one that is broken — the same
+   * reason the block itself prints at every run.
+   */
+  const readerProv = liveProv(
+    opts.at,
+    opts.host,
+    "what each named caller does at this size, measured by brief.spec.ts's OVER-arm body",
+  );
   /** @type {Rec[]} */
   const recs = [
     note("THE MARGIN — this answer's own size against one buffer, disclosed here because a"),
-    note("truncation eats the TAIL and a reader meeting the ceiling as a cut line is told nothing"),
+    note("truncation eats the TAIL and the caller that meets a ceiling is told in a field it may not read"),
     value(
       bytes > buffer
-        ? `${what}: ${bytes} of ${buffer} bytes (${percent}%) - OVER by ${bytes - buffer}: past one ` +
-          "buffer the tail arrives only while the reader drains, and a caller collecting into a " +
-          "fixed buffer of that size receives a prefix with no error"
+        ? `${what}: ${bytes} of ${buffer} bytes (${percent}%) - OVER by ${bytes - buffer}`
         : `${what}: ${bytes} of ${buffer} bytes (${percent}%) - ${buffer - bytes} left`,
       prov,
     ),
+    value(
+      `buffer: ${buffer} bytes is ONE PIPE BUFFER here — the floor for a reader that takes ONE ` +
+        "fixed-size read and stops, the transfer this writer completes before it must stay " +
+        "alive, and no other reader's limit; tests/brief-flush.spec.ts derives each named " +
+        "reader's own point per run",
+      bufferProv,
+    ),
   ];
+  if (bytes > buffer) {
+    recs.push(
+      value(
+        "past it, a pipe reader that keeps reading: receives every byte however slowly it " +
+          "drains, because this writer stays alive until stdout has drained rather than exiting " +
+          "on the tail",
+        readerProv,
+      ),
+      value(
+        `past it, a reader taking ONE fixed read of that size (dd bs=${buffer} count=1): a ` +
+          "PREFIX of at most one buffer and NO error on the reader's side at all — this is the " +
+          "caller the figure above is the floor for, and the only one that meets the line as a " +
+          "cut nobody is told about",
+        readerProv,
+      ),
+      value(
+        "past it, spawnSync at a maxBuffer this answer exceeds: the child is KILLED — status " +
+          "null, signal SIGTERM, error.code ENOBUFS — and the stdout handed back OVERRUNS that " +
+          "maxBuffer by however much node had already read, so the caller's own number bounds " +
+          "nothing",
+        readerProv,
+      ),
+      value(
+        `past it, spawnSync at its ${SPAWNSYNC_DEFAULT_MAXBUFFER}-byte DEFAULT maxBuffer: this ` +
+          (bytes > SPAWNSYNC_DEFAULT_MAXBUFFER
+            ? "answer is OVER that default too, so a caller that configured nothing meets that " +
+              "same ENOBUFS"
+            : "answer is UNDER that default, so a caller that configured nothing receives the " +
+              "whole answer at status 0 with no error"),
+        readerProv,
+      ),
+    );
+  } else {
+    recs.push(
+      value(
+        "under it: this answer fits inside the transfer the writer completes unaided, so no " +
+          "named caller meets a ceiling here — not the one-read fixed-buffer reader, not " +
+          "spawnSync at any maxBuffer this size does not exceed, and not spawnSync at its " +
+          `${SPAWNSYNC_DEFAULT_MAXBUFFER}-byte default`,
+        readerProv,
+      ),
+    );
+  }
   if (opts.units !== undefined && opts.units.count > 0) {
     /**
      * THE PROJECTION, derived here and never quoted — `floor_line`'s own
@@ -1321,6 +1442,18 @@ export function marginRecs(opts) {
  * discloses the DERIVATION's size, which is exact and is a different
  * measurement, instead of declaring a total that is off by a byte.
  *
+ * **THE KNIFE EDGE IS REAL AND IT IS THE UNDER ARM'S ALONE** (T-225-s1,
+ * which drove this branch instead of reasoning about it). A two-cycle
+ * needs the block to get SHORTER by exactly one byte as the candidate
+ * total grows by one, and `left` is the only field that shrinks: over the
+ * line every field — the total, the percentage, `OVER by` — grows with
+ * the body, so the OVER arm cannot oscillate at all. Under the line the
+ * widths that oscillate are REAL rather than contrived, one per digit
+ * boundary of `left`, and each is a single body width; `brief.spec.ts`'s
+ * unsettled body DERIVES them at run time rather than pinning them,
+ * because every one of those widths moves with every byte of this block's
+ * own prose.
+ *
  * @param {string} body   the rendered answer, newline-terminated
  * @param {{ at: string, host: string, buffer?: number,
  *   units?: { count: number, label: string } }} opts
@@ -1340,7 +1473,13 @@ export function withMargin(body, opts) {
   const text = `${render([
     note("THE MARGIN — the total including this block did not settle, so what is disclosed is"),
     note("the DERIVATION below, which this block measures exactly"),
-    ...marginRecs({ ...opts, bytes: bodyBytes, what: "derivation below" }).slice(2),
+    // The label is this block's own; everything the arm says about the
+    // figure travels with it. FILTERED BY KIND rather than by a count of
+    // leading notes — an arm that gains a sentence must not silently take
+    // a stamped value away from the honest answer.
+    ...marginRecs({ ...opts, bytes: bodyBytes, what: "derivation below" }).filter(
+      (r) => r.kind !== "note",
+    ),
   ])}\n\n`;
   return { text: text + body, bytes: bodyBytes, whole: false };
 }
