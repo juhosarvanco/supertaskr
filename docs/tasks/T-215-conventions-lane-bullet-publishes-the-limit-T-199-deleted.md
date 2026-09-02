@@ -299,3 +299,160 @@ restored-to-base run is the measurement rather than the argument.
 The e2e leg was read three times — `e47bf86`, `5fbb25d`, `fe2a3c6` —
 with an identical failure SET each time, and identical to the run with
 `docs/CONVENTIONS.md` restored to its base bytes. A SET, never a count.
+
+## VERDICT
+
+**APPROVED** — 2026-09-02, verifier `claude-opus-5@subagent`, judged at
+tip `49f2e8cc1b360b1799fd0018849a63cd8580ae27` from the bench
+`../nputer-V-T-215`, detached at the lane's base `42520e3`. Every figure
+below was re-measured on that bench at that tip; where mine differs from
+the notes' I give both.
+
+**BLINDNESS: CLOCK-SHAPED, NOT DISCIPLINE-SHAPED.** Phase 1 reached this
+seat before the lane's work existed. The attack set and the ground truth
+were written and hashed at `2026-09-02T03:24:11Z` — `attack` sha256
+`737bf62eb387c291797d7c54fd0738e29166f63fcf26563420ec790880915af5`,
+`ground` sha256
+`ea59b9c75c7453cee70038a88469ef625a885022ca0d306957b430c875df8aca` —
+with no branch fetched and no note read. **The PHASE 2 message carried
+executor-derived specifics** (mutant counts, suite figures, byte
+figures), which roles/verifier.md requires me to disclose rather than
+pretend away: it arrived after the seal, so the attack set is untainted,
+and I re-measured every figure I quote here.
+
+### The criteria
+
+**Criterion 1 — MET.** All eight limits are published, numbered to match
+the header, and I checked each against the header AND against `decide`
+rather than against the header alone: (1) 159; (2) 165–186 and
+`findCheckoutRoot(path.dirname(abs))` → `decline("not-a-repository")`;
+(3) 187 and `laneLessVerdict`'s first branch; (4) 196 and `liveLanes`;
+(5) 201; (6) pointed at, not duplicated — the mid-integration window
+stands eight lines above at 1137–1144, so the T-057 copy was avoided;
+(7) 218, stated exactly, including that the LANE arm has no such escape;
+(8) 230 and `noTargetVerdict`, including the live hole that a lane
+executor's cwd is the dispatching checkout so its unreadable request
+takes the lane-less answer. *"Every decline carries `judged: false` and
+speaks on stderr"* checks out at `DECLINE_CODES` (391–395) and
+`lane-fence-hook.mjs:87–88`.
+**The two false sentences are gone.** *"outside the WRITING checkout"*
+survives only as a dated historical clause whose subject is the past, and
+the drill tree has moved from limit 2 to limit 3, which is what the card
+asked for in terms. **The residue is named as one** — the header's own
+*"no term separating an architect reaching in from THE LANE'S OWN
+EXECUTOR"* is carried across, and `deliberately` no longer attaches to
+it anywhere in the bullet.
+
+**Criterion 2 — MET, in-fence.** I sealed this in phase 1 before the
+lane's work existed: **no assembler emits *"a PreToolUse hook enforces
+it"* at any ref in this tree.** `grep -rn "PreToolUse"
+tools/e2e/scripts/` returns source comments only; `grep -rn "hook
+enforces"` returns card bodies only; `T-204`, which exists to derive the
+typed half of the dispatch prompt, is `status: planned`. So the sentence
+had no assembler site to be made true at, and the criterion was
+satisfiable only here. The paragraph now scopes it to the DISPATCHING
+checkout, names `${CLAUDE_PROJECT_DIR:-.}` — verified verbatim against
+`.claude/settings.json`, where the fallback is `.`, the shell's cwd, and
+never the lane — dates it from `T-199`'s merge (`a2b53e3`, 2026-08-31
+22:19:35 +0300) forward, and conditions it on the checkout the SESSION
+was started in with `T-216-s1`'s catcher named as what asks. That last
+condition is the half a flat claim would have got wrong, and this bench
+is its own proof: see the attribution below.
+
+**Criterion 3 (CONSIDER) — ANSWERED and routed as `T-215-s1`**, with the
+right shape: compare DECLARED KEYS, not prose, and require the body's own
+fixture positive control. A prose diff would have reddened on every
+re-wording, which is the gate this project learns to ignore.
+
+### What I ran, and what it says
+
+| measurement | at `49f2e8c` |
+|---|---|
+| scope | ONE hunk in `docs/CONVENTIONS.md` (the fence) + five `docs/tasks/` files; **no path outside `docs/`** |
+| `rawBullet`/`conventionsBullet` on THE LANE PROTOCOL | one bullet, no column-zero `- ` introduced; the two readers agree |
+| `laneSpellings` | identical to base — `main`, `task/T-NNN-<slug>`, `../nputer-T-NNN`, the create command |
+| `lane-fence.spec.ts:1029` regex | captures `` `docs/STATE.md` and `docs/checkpoints` `` — unmoved |
+| `subBullet(…, "A FRESH WORKTREE…")` | found, exactly one |
+| `gate-run.mjs` / `gate-verdict` occurrences | 1 / 1 |
+| `wc -c docs/CONVENTIONS.md` | 118,987 — warn 146,878, headroom 18.99 %, above the 10 % drift line |
+| `cargo test` from `app/src-tauri/` | **exit 0, 630 passed / 0 failed, 18 targets** (the notes say 634 bodies; my summation of `test result:` lines gives 630) |
+| e2e `npm test` | **553 passed / 6 failed**, 559 bodies |
+| `git merge-tree --write-tree main 49f2e8c` | **exit 0, no conflict**, at `main = e4cd6d4` (past the `6cc3890` named at dispatch — re-derived at my own ref). Main's CONVENTIONS moved at line ~205, a different region. I ran the pins on the MERGED tree too: all hold, 119,470 bytes. |
+
+**ATTRIBUTION OF THE SIX, MEASURED RATHER THAN ARGUED.** My own phase-1
+baseline at the BASE, sealed before the diff existed, was 555 passed /
+**4** failed. At the tip it is 553 / **6**. I did not take the notes'
+attribution: I restored `docs/CONVENTIONS.md` to its base bytes
+(`c84bea59…`) in my bench and re-ran the four spec files —
+**6 failed / 86 passed, the identical six.** So none of the six is this
+diff's. The first four are this bench being behind main on `.claude/`,
+so `T-216-s1`'s catcher fires `guard-surface-behind`; the two
+session-economics bodies are a live-environment fact I read out of the
+failure text rather than inferring — `T-018-s5 holds a worktree … and no
+live card declares that id`, which is a `git worktree list` walk finding
+a sibling lane cut after this base. None of the six is in the DOCS GATE's
+reader set for `docs/CONVENTIONS.md`.
+
+**THE DRILLS, RE-RUN BY THIS SEAT RATHER THAN READ.** Subject: the new
+paragraph's limit-2 clause replaced with the exact falsehood this card
+deletes, landing read from `git diff` and not from the mutator, against
+the ten e2e readers the DOCS GATE derives — **298 passed, exit 0.**
+Positive control, armed where the subject's arrangement is ABSENT (the
+limits paragraph untouched): one word of the carve-out sentence,
+`docs/checkpoints` → `docs/checkpoint` — **1 failed / 52 passed, exit
+1**, `:1029` red by name, *"the hook's carve-outs and the page's have
+drifted"*. So the reader family is LIVE and this paragraph is simply
+outside it: the change rests on review, not on a gate, which is exactly
+what `T-215-s1` exists to close. Bench restored by hash after each
+(`3e3a14a0…`), `git status` empty. The three restoration hashes the notes
+give all verify: `14555eb5…`, `f812fb3a…`, base `c84bea59…`.
+
+### Findings — none blocking
+
+1. **`"the hook FAILS OPEN in exactly one shape"` IS FALSE; THERE ARE
+   TWO.** `checkout-currency.spec.ts:387` measures the second in its own
+   name: registration complete, `CLAUDE_PROJECT_DIR` resolving
+   CORRECTLY, only the hook `.mjs` absent → node starts, exits 1, and 1
+   is not 2, so nothing refuses the write. `checkout-currency.mjs`'s
+   header calls it *"ONE fault, not two"*, while the published sentence
+   requires *"both wrong at once"*. The sentence is carried VERBATIM from
+   the base — this lane did not author it — so it is not a rejection
+   under the pre-commitment I sealed before seeing the diff. But it is
+   this card's own class, in the paragraph this card exists to correct,
+   and it survived an audit of all eight limits. Filed as **`T-215-s5`**.
+2. **`T-215-s1`'s second criterion cannot be met inside its own fence.**
+   It requires every declining verdict code to appear in the lane bullet.
+   Measured at this tip: `not-a-repository`, `not-judged-detached`,
+   `not-judged-lane-list`, `no-path-to-judge`, `unreadable-request`,
+   `held-by-a-live-lane` and `outside-the-fence` each occur **0** times
+   in `docs/CONVENTIONS.md`. Satisfying it needs a write to that file,
+   outside `touches: [tools/e2e/tests/lane-fence.spec.ts]` — rule 5's
+   shape, to be settled at triage rather than discovered in the lane.
+3. **The `--full` overflow, and a pre-commitment I tested and dropped.**
+   Blind, I pre-committed that `--full` over 65,536 would be
+   REJECT-level. It did not survive the tree. `--full` is the TRIAGE
+   view; the dispatch spelling CONVENTIONS publishes is `--task T-NNN`,
+   **50,501** bytes here. The margin block prints FIRST by design so a
+   truncated reader is told. `--dispatch --full` is **120,123** at this
+   ref, and `T-225-s2` was already filed on `--task --state --full` at
+   74,439. So the condition is pre-existing, known and routed, and this
+   lane's contribution (64,043 → **66,309** on my bench; the notes say
+   66,265, and the delta is live board rows, so that figure carries a
+   HOST as well as a ref) is correctly routed as `T-215-s4`. Trimming
+   wordiness rather than deleting a published limit is this document's
+   own rule applied — a hazard is never deleted to fit.
+4. **Minor, the notes' own figures.** The paragraph is lines **1145–1183**
+   at this tip (1184 is the next bullet) and `sed -n '1145,1183p' | wc -c`
+   is **2,549**, not 2,464.
+5. **Minor.** Limit 2's header text also names the unrelated-repository
+   consequence — *"it IS a checkout, so it is rooted and asked, and its
+   own lane list — empty — allows the write"*, a JUDGED allow rather than
+   a decline. The published (2) omits it. Not false, since *"in NO GIT
+   CHECKOUT AT ALL"* excludes it by construction, but it is the one part
+   of limit 2 the by-hand tracking dropped.
+
+**Two things the lane got right that the dispatch got wrong**, and it
+found both independently of me: there is no assembler site for criterion
+2, and the binding budget is `--full`'s buffer rather than the document's
+ADR-019 budget. I had sealed both in phase 1; the convergence is
+evidence, not contamination.
