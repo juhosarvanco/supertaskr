@@ -667,6 +667,11 @@ test("one checkout's two runs reach ONE lock file however each was started, so t
         "-e",
         `import { acquireSolo, lockPath } from ${JSON.stringify(path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"))};` +
           `const r = acquireSolo("e2e", ${JSON.stringify(root)});` +
+          // A REFUSED acquire writes nothing, so this clause is dead on
+          // the passing path — it exists for the mutants. When a poison
+          // drill breaks the key, the probe is GRANTED a lock instead,
+          // and a one-line child has no `finally` to give it back.
+          `if (r.ok) r.release();` +
           `process.stdout.write(JSON.stringify({ ok: r.ok, lock: lockPath(${JSON.stringify(root)}) }));`,
       ],
       { cwd: elsewhere, encoding: "utf8" },
