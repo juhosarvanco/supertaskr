@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: verifier claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/e2e/tests/session-economics.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **THE SAME TREE MEASURED GREEN AND THEN RED WITH NO COMMIT BETWEEN
