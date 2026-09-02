@@ -12,7 +12,7 @@ touches: [lib-parser]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -446,3 +446,246 @@ Six paths in the forecast diff (`git merge-tree --write-tree main HEAD`
    executor → verifier*. The card carries `review: independent` and a
    named verifier, and the dispatch message says this lane does not
    merge; the three agree, so nothing was guessed upward.
+
+## VERDICT — APPROVED at `9970370a`, 2026-09-02, blind verifier `claude-opus-5[1m]@subagent`
+
+Bench `/Users/ujju/Projects/nputer-V-T-219-s4`, cut alongside the lane at
+this card's BASE `24bfec8e10b3` (orchestrator 5c) and installed there in
+CONVENTIONS' fresh-clone ORDER. Judged over
+`git diff 24bfec8e10b3..9970370a99066f3a4d0dc9f3bfedd59710c67a2e` —
+6 files, +942/−11, of which 0 lines were DELETED from either test file.
+
+**THE BLINDNESS WAS CLOCK-SHAPED, NOT MERELY DISCIPLINED**, and it is
+stamped rather than asserted. Phase 1 was sealed before the lane's tip
+existed:
+
+    attack-V-T-219-s4.md   sha256 1b010fd57acdf66a5abeca1ed52494d7bde1fdd8c95c05249e30cedde6f103cd
+    ground-V-T-219-s4.md   sha256 04cd98522444238d392380c5935739b9dbd275df895a36f70f3b789460fe5b9c
+                           sealed 2026-09-02T07:57:38Z
+    addendum (below)       sha256 eececdc0a5c5a2afb2e40faccfa03e81dc27777af55d1543a1be8508772e92b7
+                           sealed 2026-09-02T08:01:40Z
+
+The phase-2 dispatch message DID carry executor-derived specifics (the
+guard's text, body counts, suite figures, blast radii). **That did not
+break phase 1, and the hashes are why**: both files were sealed and their
+digests reported before that message was written, so the attack set cannot
+have been assembled from it. Every figure this verdict prints was
+re-derived in this bench; where mine and the lane's differ, §6 reconciles
+them rather than picking one.
+
+**The card was amended BY PATH mid-phase-1** (`65010e4d63e7`, after my
+phase-1 measurement found the TRIAGE stamp's T-164-s1 casualty false at
+the dispatch surface). I sealed a separate ADDENDUM against the amended
+text rather than editing the first seal, so the pre-amendment record stays
+auditable. **A28**: the card copy at this tip is NOT byte-identical to
+`65010e4d`'s — it differs by `status: building`→`verifying` and an
+appended notes section, which is exactly the permitted set; the amended
+TRIAGE paragraph is byte-unchanged.
+
+### 1. The criteria, each measured
+
+**`rule()`'s guard SHALL also require the fence to be COMPARABLE** — met.
+The term is `fence.unusable.length === 0`, added INSIDE the
+`holds.length === 0` guard rather than as an early return (T-057; the
+module's own comment demands this so the `cardMissing` clause can still
+accumulate). It is read off `expandFence`'s own answer, not re-derived —
+and it is not `fence.paths.length > 0`, which I had pre-committed as the
+wrong term because it would silently also move a card whose own-file
+carve-out emptied `paths` (§7).
+
+**The `unfenceable` clause list SHALL gain a cause naming the unresolvable
+tokens** — met, and the gap was real: every pre-existing clause is keyed
+on a HOLD, and `holds` is empty when the lane list is, so before this diff
+a zero-lane refusal would have printed `"…none could be ruled out: . A
+fence that cannot be COMPUTED…"`. The new `own` clause is read off the
+same `fence.unusable` the guard tests, so the word that refuses and the
+word that explains cannot diverge. **Unasked-for and correct**: the hold
+clause now SUBTRACTS the card's own tokens, because `compareFences`
+returns the UNION and one token previously bought two clauses pointing at
+two different cards to repair. I had this as attack item A7 and the lane
+had already closed it.
+
+**A body SHALL hand in NO lane, with the control** — met. The zero-lane
+body asserts `expect(order.lanes).toEqual([])` by name (V-T-219's exact
+finding, pinned), and carries FOUR controls, not one: a resolving card
+still startable; the same token plus an oracle that CARRIES it, startable
+again (pinning the refusal to resolvability rather than to the word); an
+oracle that does NOT carry it, still refused; and the one-lane arm showing
+the asymmetry that made this V-T-219's shape.
+
+**THE LIVE-BOARD EFFECT SHALL BE STATED, derived, at its ref** — met, and
+correctly qualified. Re-derived by me at `9970370a` with my own phase-1
+scripts, over the live board with no lanes:
+
+| | startable | unfenceable |
+|---|---|---|
+| base `24bfec8e`, WITH the dispatch oracle | 111 | 0 |
+| tip `9970370a`, WITH the dispatch oracle | **111** | **0** |
+| base `24bfec8e`, oracle-less | 111 | 0 |
+| tip `9970370a`, oracle-less | **110** | **1** (`T-164-s1`) |
+
+**No live card moves at the surface that dispatches.** This matches the
+lane's own table cell for cell and matches the amended TRIAGE.
+
+**With the oracle supplied, proved on a PLANTED card** (the amendment's
+criterion) — met, and I proved it independently. Planted
+`touches: [zzzznosuchthing]` with the FULL `knownPathOracle` (1324
+entries) supplied: `startable` at `24bfec8e`, **`unfenceable` at
+`9970370a`**, reason naming the token. Planted `touches: [.]`, same
+oracle: `startable` with `paths: ["."]` at the base, **`unfenceable` with
+`unusable: ["."]`** at the tip. The resolving control `[lib-parser]` stays
+`startable` in all four cells — it did not move, which is what makes it a
+control.
+
+**SHALL NOT edit T-164-s1's card** — met.
+`git diff --stat 24bfec8e..9970370a -- 'docs/tasks/T-164*'` is empty.
+
+### 2. The bare dot, and the two halves meeting
+
+`DOT_DOMAIN = /^\.\.?(?:\/|$)/`, a FIRST-SEGMENT test on the NORMALISED
+form, hung in `expandFence` between the empty-token refusal and
+`unfenceableWithin`. **It pushes the raw token onto `unusable`**, which is
+the half I pre-committed as the one that could silently be missing (A17):
+an issue-only refusal would have left the dispatch answer `startable`.
+Measured at `9970370a`: `.` `..` `../x` `./x` → `unresolved`, `paths: []`;
+`./lib/parser` → `path` `["lib/parser"]`; `.claude`, `.github/workflows/`,
+`.gitignore`, `./docs/tasks/x.md` → all still `path`. **No legitimate
+token was broken.**
+
+### 3. THE DRILL — kill-set containment, run by me, landings read from `git diff`
+
+Six mutants, each landing verified from `git diff --unified=0`, each
+reverted before the next, tree clean after (`67` bodies in
+`lanes.test.ts` + `fence.test.ts` at this tip):
+
+| mutant | kill set |
+|---|---|
+| **M1** drop `&& fence.tokens.length > 0` | T-219's *"refused with NO LANE LIVE"* — **and nothing else** |
+| **M2** drop `&& fence.unusable.length === 0` | s4 *"UNRESOLVABLE … NO LANE LIVE"*, s4 *"BARE DOT … unstartable here"* |
+| **M5** drop `.filter((t) => !own.includes(t))` | s4 *"names the card that owns each unresolved token"* |
+| **M6** disable the `own` clause | L210 *"an unresolvable token is `unfenceable`"* + all three s4 bodies |
+| **M3 (DATA)** new body's fixture token made RESOLVABLE | s4 *"UNRESOLVABLE … NO LANE LIVE"* |
+| **M4** disable the `DOT_DOMAIN` branch | s4 bare-dot body + all four `expandFence` bare-dot bodies |
+
+**M1's kill set and M2's kill set are DISJOINT.** Neither contains the
+other, so T-219's own body and this card's are both load-bearing and the
+new one is not a restatement — which is the finding step 2b asks for, and
+the reason a kill count of one was never the test. M5 is independently
+load-bearing. **M3 is the data mutant**: the body reds when its fixture
+token is made resolvable, so the fixture carries the property rather than
+the assertions passing vacuously. Every mutant landed at the site the
+property lives — `rule()`'s guard, `rule()`'s clause list, `expandFence`'s
+token loop — never in a reason string or a sort.
+
+### 4. Controls, judged as test code (verifier.md 2b)
+
+Both new live-board censuses expect ZERO and **run their control FIRST,
+where the arming is ABSENT**: a planted card is pushed through the
+identical predicate over the identical loop and is FOUND, before the live
+zero is asserted. That is the T-210/T-203 defect answered by construction
+rather than by assertion — one arrangement does not decide both sides. The
+oracle-less row is what stops the oracle-supplied zero being vacuous, run
+through the same predicate over the same population. The `interior` row
+censuses the DECLARED CEILING at zero so it reds the day one is written,
+rather than leaving it silent.
+
+### 5. Security sweep — clean
+
+No dependency change (`package.json`/lock untouched). No new import, no
+`readFileSync`, no `process.`, no `eval`/`new Function` anywhere in the
+`lib/parser/src` diff — the package stays pure and browser-safe. One new
+regex, `/^\.\.?(?:\/|$)/`: start-anchored, no nested quantifier, no
+alternation over a repeated group — linear, so no backtracking exposure on
+attacker-controlled `touches:` text. No object-literal map introduced
+(ADR-009). **The guard fails CLOSED**: every ambiguity lands in `unusable`
+and therefore in `unfenceable`, never in `disjoint`.
+
+### 6. Figures reconciled rather than disputed
+
+The lane reports the blast radii over **118 distinct NORMALISED** tokens
+(8 / 89 / 0); I measured **124 distinct RAW** tokens (10 / 91 / 0). Both
+are true at `9970370a` — `.claude` and `.claude/` are two raw tokens and
+one normalised one — and **the CARD counts agree exactly: 34, 139, 0.**
+Not a discrepancy; two denominators, and the lane named its own.
+Independently confirmed: `startsWith('.')` would refuse 34 live cards,
+`includes('.')` 139, the segment test **0**. The lane chose the only shape
+that costs nothing.
+
+Also re-derived here: parser **372** bodies green at `9970370a`
+(363 at `24bfec8e`, so +9 = +3 `lanes` +6 `fence`), `tsc --noEmit` 0.
+`index --check` is **STALE** at this tip — 2504→2505 symbols, +232 bytes,
+one new symbol (`DOT_DOMAIN`), with the real two-sided second line rather
+than the `committed: MISSING` false red. **That is not a finding**: the
+GRAPH REGEN bullet makes regeneration the INTEGRATOR's at the merge, and a
+`lib-parser` lane that regenerated `docs/architecture/graph.json` would
+have written outside its fence. The lane disclosed it.
+
+### 7. NOT failures — routed, never blocking (verifier.md step 6)
+
+1. **A trailing or interior dot segment is still accepted**: `x/.`,
+   `x/./y`, `x/../y` classify `path` at `9970370a` and reserve domains
+   nothing can match. This is the lane's DECLARED ceiling, said in the
+   code at the site, censused at zero, and routed as **`T-219-s6`**
+   (`status: suggested`, `suggested_by` set) — whose remedy, resolving a
+   `.` segment and a `..` segment in `normalizeFenceToken`, covers the
+   trailing shape as well as the interior one. Correctly routed, not
+   folded in.
+2. **A FIFTH instance of the same "two halves disagree" class, and it is
+   PRE-EXISTING.** A subject whose fence fully resolves, held by a lane
+   whose CARD declares no `touches:`, reaches `unfenceable` with an EMPTY
+   clause middle: *"…none could be ruled out: . A fence that cannot be
+   COMPUTED…"* — the exact string T-219's own body asserts against, from
+   the other side. I measured it at BOTH `24bfec8e` and `9970370a` and it
+   is byte-identical, so this diff neither caused nor worsened it.
+   `compareFences` returns `unusable` with an EMPTY `unusable` list for a
+   token-less counterparty, and no clause can speak. Worth a card.
+3. **A card whose only token is its own file** (`touches:` = its own path)
+   is `startable` at both refs with `paths: []`, while `buildLaneFence`
+   refuses to arm it on `fence.paths.length === 0`. Also pre-existing,
+   also outside this card's ask.
+
+### 8. Step 7 — the gates my OWN commit could move
+
+This verdict is prose in `docs/tasks/`, and prose is a code input here.
+Re-run at MY tip, not at the tip I was sent — results in the commit
+message of the verdict commit itself.
+
+**AND IT CAUGHT ONE — MINE.** The first form of this stamp was
+`verified_by: claude-opus-5[1m]@subagent`, this seat's exact model id.
+`gate-run parser` came back `exit=1 bodies=372 verdict=RED`: four bodies
+across `assignment.test.ts` and `smoke.test.ts`, on one
+`assignment-violation` issue — *"'verifier' assigns "claude-opus-5@subagent"
+but 'verified_by' records "claude-opus-5[1m]@subagent" … 'claude-opus-5'
+is not among the models the stamp names"*. The `[1m]` context-window
+suffix is not read as the model it qualifies, and **assignment is binding
+(D5)**, so the FIELD carries the assigned identity and this prose carries
+the exact one. A verdict measured green at the commit it was sent and
+committed without re-running would have handed that red to whoever picked
+the branch up next, attributed to them. It is recorded here rather than
+quietly fixed, because the rule that caught it is only worth what its
+instances are.
+
+Gates at the tree this commit carries, all four re-run AFTER the verdict
+prose was written, none inherited from the tip I was sent:
+
+    gate-verdict suite=parser exit=0 bodies=372  ref=9970370a  GREEN
+    gate-verdict suite=app    exit=0 bodies=1141 ref=9970370a  GREEN
+    gate-verdict suite=e2e    exit=0 bodies=602  ref=9970370a  GREEN
+    docs-gate <this card>  FIRES — names app/, tools/e2e/ and lib/parser
+      as owed (all three run above); 0 frontmatter issues; every live
+      task card parses with a legal status; ADR-019 budgets hold.
+
+**AND ONE MORE ATTRIBUTION, RECORDED BECAUSE I NEARLY GOT IT WRONG.**
+While my e2e run was in flight the sibling lane `T-229-s8` was running
+its own on this machine, and I spent several minutes tailing ITS
+temporary output directory believing it was mine — watching
+`push-guard.spec.ts:2718 › a lane holds no seat, so a holder record in
+one refuses nothing` go red. It is not this tree's red: the assertion's
+own stack names `/Users/ujju/Projects/nputer-T-229-s8/tools/e2e/tests/
+push-guard.spec.ts:2753`, every spec path in MY run resolves under
+`/Users/ujju/Projects/nputer-V-T-219-s4`, and my run finished
+`602 passed`. STATE's rule is *attribute a red by NAME, never by count* —
+here the name that settled it was a PATH, and two concurrent e2e runs on
+one machine are exactly the arrangement that makes a temp-directory guess
+look like a measurement. **Reported to the dispatching seat as an
+observation about that lane, not a ruling on it.**
