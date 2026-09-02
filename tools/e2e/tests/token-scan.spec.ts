@@ -1,9 +1,21 @@
 import { createHash } from "node:crypto";
-import { readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CONTROL_PATTERN,
   CONTROL_UNCOVERED_SUFFIXES,
@@ -22,6 +34,142 @@ import {
 const wrapper = path.join(repoRoot, "tools", "e2e", "scripts", "lint-tokens.mjs");
 
 const sha256 = (raw: Buffer): string => createHash("sha256").update(raw).digest("hex");
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE TREE A PLANT GOES INTO IS A SCRATCH REPOSITORY, NEVER THIS ONE
+ * (T-216-s4)
+ * ────────────────────────────────────────────────────────────────────
+ * Two bodies below PLANT a violation and require the gate to red on it.
+ * Until this card they planted into this repository's OWN tracked files
+ * and restored them, sha256-proved — so restoration was never the
+ * defect. THE WRITE was. Since `T-210` a lane worktree's tracked files
+ * OUTSIDE its fence are `-r--r--r--`, so inside a lane those writes
+ * raise `EACCES` and the bodies never run at all:
+ *
+ *     EACCES: permission denied, open '<lane>/app/package.json'
+ *
+ * Measured at `e648590` in this repository's own lane for `T-216-s4`,
+ * whose fence is five files by path — all eight plant targets are
+ * outside it, so both bodies failed at their first write.
+ *
+ * `lane-lock.mjs --release` would make them writable and is not an
+ * option: a lane that drops its own guard to make a suite pass is
+ * certifying itself. `method/lane-protocol.md` fast path B drops the
+ * layer for a protocol-performed MERGE and for nothing else.
+ *
+ * SO THE GATE IS POINTED AT A DIFFERENT TREE. `token-scan.mjs` resolves
+ * the tree it walks from ITS OWN LOCATION and never from the cwd, so a
+ * scratch directory carrying a COPY of the scanner and its wrapper under
+ * `tools/e2e/scripts/` is a whole repository as far as the gate is
+ * concerned. CONTROL's corpus is `git ls-files`, which is why the
+ * fixture is a real repository with a real index rather than a
+ * directory.
+ *
+ * WHAT A SCRATCH TREE CANNOT SAY, THE LIVE CORPUS SAYS INSTEAD. A plant
+ * in a copy proves the POLICY admits a path; it cannot prove that THIS
+ * repository tracks a text file at each first-party root, which is what
+ * the first body's name claims. Both bodies therefore open by asking the
+ * LIVE corpus that question, read-only, and close by proving they left
+ * this tree alone — the sha256 the restoration proof always used, now
+ * aimed at the property that replaced restoration.
+ */
+
+/** The gate's own two implementation files, copied so the scanner's
+ *  `repoRoot` resolves INSIDE the fixture. Both are TOKEN-excluded by
+ *  name, so they add nothing to the TOKEN corpus and only the CONTROL
+ *  entry every tracked text file gets. */
+const GATE_IMPLEMENTATION = [
+  "tools/e2e/scripts/token-scan.mjs",
+  "tools/e2e/scripts/lint-tokens.mjs",
+];
+
+/** The TOKEN walk THROWS on a missing root and a throw is exit 3 — a
+ *  gate that did not run, which is not the answer either body is asking
+ *  for. The roots the fixture has no files for exist as empty
+ *  directories for exactly that reason. */
+const TOKEN_ROOT_DIRS = ["app/src", "app/test", "tools/e2e"];
+
+/** Every scratch root this file made, removed together at the end. */
+const SCRATCH: string[] = [];
+
+test.afterAll(() => {
+  // T-178: a teardown finding is the FIXTURE's, never a red on whichever
+  // body happened to run last.
+  for (const dir of SCRATCH.splice(0)) removeGitFixture(dir, "token-scan gate fixture");
+});
+
+/**
+ * Copy one live file into the fixture and CLEAR THE SOURCE'S MODE FROM
+ * THE COPY. `copyFileSync` carries permission bits, so inside a lane
+ * every copy below would arrive read-only and the plant would take the
+ * same `EACCES` one directory over — the fixture inheriting the very
+ * condition it exists to escape. `lane-lock.spec.ts` met this trap
+ * through `cpSync`; one class, two call sites, and its
+ * `the fixture does NOT inherit the mode bits of the tree it is copied
+ * from` is the control both share.
+ */
+function copyIntoFixture(fromAbs: string, toAbs: string): void {
+  mkdirSync(path.dirname(toAbs), { recursive: true });
+  copyFileSync(fromAbs, toAbs);
+  chmodSync(toAbs, lstatSync(toAbs).mode | 0o200);
+}
+
+/**
+ * A scratch repository the gate can walk, carrying a byte-identical copy
+ * of each named path at the same repo-relative spelling — so every byte
+ * offset, line number and corpus census asserted below is the number the
+ * body would have asserted against this tree.
+ */
+function gateFixture(targets: readonly string[]): { root: string; wrapper: string } {
+  // THE STEM IS DERIVED FROM THE CARD, never chosen: the scratch
+  // directory is shared between concurrent sessions, and
+  // docs/CONVENTIONS.md's POISON DRILL bullet measured four of them
+  // picking one literal path and losing each other's files.
+  const root = mkdtempSync(path.join(os.tmpdir(), "nputer-T-216-s4-token-scan-"));
+  SCRATCH.push(root);
+  for (const dir of TOKEN_ROOT_DIRS) mkdirSync(path.join(root, dir), { recursive: true });
+  for (const relative of [...GATE_IMPLEMENTATION, ...targets]) {
+    copyIntoFixture(path.join(repoRoot, relative), path.join(root, relative));
+  }
+  const git = (...args: string[]): void => {
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
+  };
+  // `--initial-branch=main` PINNED (docs/CONVENTIONS.md): `init
+  // .defaultBranch` is MACHINE config, so an unpinned fixture is a
+  // different repository here and on a runner. NOTHING IS COMMITTED —
+  // CONTROL's corpus is `git ls-files`, which reads the INDEX, and `add`
+  // is the whole of what fills it.
+  git("init", "--initial-branch=main", "--quiet");
+  git("add", "-A");
+  return { root, wrapper: path.join(root, "tools", "e2e", "scripts", "lint-tokens.mjs") };
+}
+
+/** A path's first-party ROOT. `AGENTS.md` is its own — the repository
+ *  root is a first-party root like any other. */
+const firstPartyRoot = (relative: string): string => relative.split("/")[0]!;
+
+/**
+ * Prove a body left THIS repository alone: content by sha256, with the
+ * companion empty diff docs/CONVENTIONS.md asks for beside it.
+ *
+ * IT IS THE RESTORATION PROOF, RE-AIMED, AND IT IS NOT VACUOUS. Point a
+ * plant back at `repoRoot` and this reds in any checkout the physical
+ * layer has not already refused the write in — which is every checkout a
+ * poison drill runs in. The diff runs HERE rather than inside the
+ * fixture on purpose: nothing rewrote a clock in this tree, so the
+ * stat-cache interaction the P6 body's own comment records cannot reach
+ * it, and the fixture keeps the hash, which is the proof either way.
+ */
+const expectUntouched = (targets: readonly string[], before: ReadonlyMap<string, string>): void => {
+  for (const relative of targets) {
+    expect(
+      sha256(readFileSync(path.join(repoRoot, relative))),
+      `${relative} — this body must not write this repository's own tree`,
+    ).toBe(before.get(relative));
+  }
+  const diff = spawnSync("git", ["diff", "--quiet", "--", ...targets], { cwd: repoRoot });
+  expect(diff.status, "and every target stays diff-clean in the live tree").toBe(0);
+};
 
 /**
  * ── THE CLOCK RESTORE IS A MICROSECOND ROUND-TRIP, NEVER AN EXACT ONE ─
@@ -232,22 +380,47 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     "AGENTS.md",
     ".github/workflows/ci.yml",
   ];
+  // ── HALF ONE: THIS REPOSITORY'S OWN CORPUS, ASKED AND NEVER WRITTEN.
+  // "All seven FIRST-PARTY ROOTS" is a claim about THIS tree — that each
+  // root really carries a tracked text file CONTROL really covers — and
+  // it is the half a scratch fixture cannot make, so it is made here,
+  // with no plant anywhere near it.
+  const covered = new Set(corpus(CORPORA.CONTROL));
+  for (const relative of targets) {
+    expect(covered, `${relative} must be in this repository's CONTROL corpus`).toContain(relative);
+  }
+  expect(
+    new Set(targets.map(firstPartyRoot)).size,
+    "SEVEN DISTINCT first-party roots, or the name above is a claim about fewer",
+  ).toBe(7);
+  const live = new Map(
+    targets.map(
+      (relative) => [relative, sha256(readFileSync(path.join(repoRoot, relative)))] as const,
+    ),
+  );
+
+  // ── HALF TWO: THE PLANT, IN A TREE OF THIS BODY'S OWN.
+  const fx = gateFixture(targets);
   const originals = new Map(
-    targets.map((relative) => [relative, readFileSync(path.join(repoRoot, relative))] as const),
+    targets.map((relative) => [relative, readFileSync(path.join(fx.root, relative))] as const),
   );
   const hashes = new Map([...originals].map(([relative, raw]) => [relative, sha256(raw)] as const));
   // T-130. Captured AFTER the reads above, exactly as the P6 body captures
   // its own — so this file holds ONE answer to what restoring a fixture
   // means. A CONTENT-EXACT RESTORE IS NOT A RESTORE: this body plants into
-  // seven tracked files across four packages, and until T-130 it put every
-  // byte back and left all seven clocks on the moment of the plant.
+  // seven files across four packages, and until T-130 it put every byte
+  // back and left all seven clocks on the moment of the plant.
   // T-153-s5. Two readings of the same file in the same moment: the `Stats`
   // the restore is DRIVEN from, and the nanosecond reading the guard below is
   // MEASURED against — see the clock-restore block at the top of this file
-  // for why the two are not the same number on every platform.
+  // for why the two are not the same number on every platform. T-216-s4 moved
+  // the targets into a scratch copy and DELIBERATELY kept this guard on them:
+  // what it measures is libuv's round-trip, which is a property of the host
+  // rather than of which file is written, so the measurement survives the
+  // move intact while the write stops touching this repository.
   const clocks = new Map(
     targets.map((relative) => {
-      const absolute = path.join(repoRoot, relative);
+      const absolute = path.join(fx.root, relative);
       return [relative, { absolute, stats: statSync(absolute), capturedNs: mtimeNs(absolute) }] as const;
     }),
   );
@@ -259,9 +432,9 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
   try {
     for (const [relative, original] of originals) {
       offsets.set(relative, original.length + prefix.length);
-      writeFileSync(path.join(repoRoot, relative), Buffer.concat([original, prefix, poison]));
+      writeFileSync(path.join(fx.root, relative), Buffer.concat([original, prefix, poison]));
     }
-    const planted = spawnSync(process.execPath, [wrapper], { cwd: repoRoot, encoding: "utf8" });
+    const planted = spawnSync(process.execPath, [fx.wrapper], { cwd: fx.root, encoding: "utf8" });
     result = {
       status: planted.status,
       stdout: planted.stdout ?? "",
@@ -269,7 +442,7 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     };
   } finally {
     for (const [relative, original] of originals) {
-      const absolute = path.join(repoRoot, relative);
+      const absolute = path.join(fx.root, relative);
       writeFileSync(absolute, original);
       const { stats } = clocks.get(relative)!;
       // SECONDS AS A NUMBER, never `clock.atime, clock.mtime`: a `Date` holds
@@ -279,7 +452,7 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
   }
 
   for (const [relative, expectedHash] of hashes) {
-    expect(sha256(readFileSync(path.join(repoRoot, relative))), `${relative} restored byte-exact`).toBe(
+    expect(sha256(readFileSync(path.join(fx.root, relative))), `${relative} restored byte-exact`).toBe(
       expectedHash,
     );
   }
@@ -292,15 +465,9 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
       capturedNs,
     })),
   );
-  // The clock restore above does NOT put this proof at risk, which was
-  // measured rather than assumed (T-130): `git diff --quiet` answers from the
-  // index's cached stat info and `utimesSync` cannot restore `ctime`, so the
-  // P6 comment below records a red-green-green intermittent from exactly this
-  // pairing. Replayed over these seven targets, both arms — with and without
-  // the clock restore — exit 0 in 12 of 12 cycles across two checkouts, one of
-  // them a freshly-cut worktree with an unrefreshed index.
-  const diff = spawnSync("git", ["diff", "--quiet", "--", ...targets], { cwd: repoRoot });
-  expect(diff.status, "all seven plant targets restore to an empty diff").toBe(0);
+  // AND THE LIVE TREE IS UNTOUCHED, hash and diff both — the assertion the
+  // seven-file restoration proof became once the plant moved off them.
+  expectUntouched(targets, live);
 
   expect(result).toBeDefined();
   expect(result!.status, result!.stderr).toBe(1);
@@ -352,10 +519,36 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
  * touched by a lint test at all. The `app/src` plant is still on the
  * record: T-079's Implementation notes carry it, run by hand, red at
  * exit 1 with its twin silent and restoration proved by sha256.
+ *
+ * ── AND THEN IT MOVED OUT OF EVERY FENCE (T-216-s4) ──────────────────
+ * "Inside this package's own fence" was true of the fences of the day and
+ * is not a property a body can hold: `T-216-s4`'s own fence is FIVE FILES
+ * BY PATH, and `tools/e2e/fixtures/shell.ts` is not one of them, so this
+ * plant took the same `EACCES` the body above did. **A plant target
+ * chosen to sit inside a fence is a plant target that moves whenever a
+ * fence narrows** — which is why the target is now a COPY in a scratch
+ * repository and no fence can reach it. The reasoning above survives
+ * unchanged as the reason the target is `tools/e2e/fixtures/shell.ts`
+ * rather than something under `app/src`; what it no longer decides is
+ * WHICH TREE gets written.
  */
 test("P6 reds a planted bare motion utility and leaves its motion-safe twin alone", () => {
   const relative = "tools/e2e/fixtures/shell.ts";
-  const target = path.join(repoRoot, relative);
+  // ── HALF ONE, AS ABOVE: the live TOKEN corpus really walks this path.
+  // The fixture below proves the POLICY reds a bare utility in a file at
+  // this spelling; only the live corpus can say this repository has one
+  // there, and the plant target being inside a TOKEN root is the whole
+  // reason T-079 moved it here.
+  expect(
+    corpus(CORPORA.TOKEN),
+    `${relative} must be in this repository's live TOKEN corpus`,
+  ).toContain(relative);
+  const live = new Map([[relative, sha256(readFileSync(path.join(repoRoot, relative)))]]);
+
+  // ── HALF TWO: THE PLANT, IN A TREE OF THIS BODY'S OWN (T-216-s4 — read
+  // the fixture block above for why, and for the `EACCES` that moved it).
+  const fx = gateFixture([relative]);
+  const target = path.join(fx.root, relative);
   const original = readFileSync(target);
   const before = sha256(original);
   const clock = statSync(target);
@@ -375,7 +568,7 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
 
   try {
     writeFileSync(target, Buffer.concat([original, Buffer.from(plant, "utf8")]));
-    const planted = spawnSync(process.execPath, [wrapper], { cwd: repoRoot, encoding: "utf8" });
+    const planted = spawnSync(process.execPath, [fx.wrapper], { cwd: fx.root, encoding: "utf8" });
     result = { status: planted.status, stdout: planted.stdout ?? "", stderr: planted.stderr ?? "" };
   } finally {
     writeFileSync(target, original);
@@ -403,6 +596,9 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
   expectClocksRestored("P6 plant target", [
     { relative, absolute: target, capturedMs: clock.mtimeMs, capturedNs: clockNs },
   ]);
+  // AND THE LIVE TREE IS UNTOUCHED — the same guard the body above closes
+  // with, over this body's one target.
+  expectUntouched([relative], live);
 
   expect(result).toBeDefined();
   expect(result!.status, result!.stdout + result!.stderr).toBe(1);

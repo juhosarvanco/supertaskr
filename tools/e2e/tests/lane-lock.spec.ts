@@ -1,13 +1,13 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
-  copyFileSync,
   cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
@@ -138,6 +138,54 @@ function writeFixtureFile(root: string, rel: string, content: string): void {
   writeFileSync(file, content, "utf8");
 }
 
+/**
+ * ── A FIXTURE THAT MEASURES THIS LAYER IS NEVER BUILT OUT OF A TREE THE
+ *    LAYER HAS ALREADY TOUCHED (T-216-s4) ─────────────────────────────
+ *
+ * `cpSync` and `copyFileSync` both carry the SOURCE's permission bits,
+ * and the tree `makeFixture` copies from is a LANE worktree whenever
+ * this suite runs inside one — where every tracked file outside that
+ * lane's fence is `-r--r--r--`, by this very layer's doing.
+ * `method/roles/executor.md` is one of them, and it is this file's own
+ * `OUT_OF_FENCE_2`.
+ *
+ * SO THE CONTROL WAS DEFEATED BY ITS OWN SUBJECT. `POSITIVE CONTROL —
+ * the protocol's own writes all still succeed under the layer` asserts
+ * that the fixture's INTEGRATION CHECKOUT copy stays WRITABLE — the
+ * assertion that separates *the layer reached the lane* from *the layer
+ * reached everything* — and it received `false` for that file in every
+ * lane, because the fixture had INHERITED the answer instead of
+ * measuring it. Measured at `e648590` in this repository's own lane for
+ * `T-216-s4`: `Error: the integration checkout's
+ * method/roles/executor.md — Expected: true, Received: false`.
+ *
+ * Node offers no mode option on either copy call — `COPYFILE_*` covers
+ * clone, exclusive and symlink and nothing else — so the write bit is
+ * put back by the walk below, on the COPY and never on the source.
+ */
+function copyIntoFixture(fromAbs: string, toAbs: string): void {
+  mkdirSync(path.dirname(toAbs), { recursive: true });
+  cpSync(fromAbs, toAbs, { recursive: true });
+  unlockTree(toAbs);
+}
+
+/**
+ * Owner-write back on, every other bit exactly as the copy found it.
+ *
+ * `| 0o200` rather than a flat `0o644`: git records the executable bit,
+ * so a walk that rewrote modes wholesale would dirty the fixture's own
+ * tree — which is the failure the `755 -> 555, never 444` assertion in
+ * the first body is written against, one layer down.
+ */
+function unlockTree(abs: string): void {
+  const st = lstatSync(abs);
+  // A symlink's mode is the LINK's and `chmodSync` would follow it to a
+  // target that may be outside the fixture. Nothing here needs one.
+  if (st.isSymbolicLink()) return;
+  chmodSync(abs, st.mode | 0o200);
+  if (st.isDirectory()) for (const name of readdirSync(abs)) unlockTree(path.join(abs, name));
+}
+
 function cardText(touchesLine: string): string {
   return [
     "---",
@@ -178,11 +226,9 @@ function makeFixture(touchesLine = TOUCHES): Fixture {
   git(repo, ["init", "--initial-branch=main", "--quiet"]);
 
   for (const rel of ["docs/CONVENTIONS.md", "docs/ROADMAP.md", "CLAUDE.md", "AGENTS.md"]) {
-    const dest = path.join(repo, rel);
-    mkdirSync(path.dirname(dest), { recursive: true });
-    copyFileSync(path.join(repoRoot, rel), dest);
+    copyIntoFixture(path.join(repoRoot, rel), path.join(repo, rel));
   }
-  cpSync(path.join(repoRoot, "method"), path.join(repo, "method"), { recursive: true });
+  copyIntoFixture(path.join(repoRoot, "method"), path.join(repo, "method"));
   // THE ARCHITECTURE DOC'S SLUG BLOCK IS RE-DERIVED FROM THIS FIXTURE'S OWN
   // REGISTRY, and the reason is the rule that block is under: the brief
   // compares the doc's PROSE block against each component file's own
@@ -326,6 +372,47 @@ test("out-of-fence TRACKED files go read-only and in-fence files stay writable",
   // therefore the half that could dirty the tree. 755 -> 555, never 444.
   expect(lstatSync(path.join(fx.lane, OUT_OF_FENCE_EXEC)).mode & 0o777).toBe(0o555);
   expect(git(fx.lane, ["status", "--porcelain"]), "the armed lane must be clean").toBe("");
+});
+
+test("the fixture does NOT inherit the mode bits of the tree it is copied from", () => {
+  // THE CONTROL FOR `copyIntoFixture`, AND THE REASON IT EXISTS (T-216-s4).
+  // Read that helper's header for the defect; this is the body that keeps
+  // the repair honest, and every body in this file rests on it — a fixture
+  // that arrived read-only measures the checkout it was cut in rather than
+  // the layer under test.
+  //
+  // THE SOURCE IS MANUFACTURED READ-ONLY HERE RATHER THAN FOUND READ-ONLY,
+  // and that is the whole design. The defect's precondition is a property
+  // of the CHECKOUT: `method/roles/executor.md` is `444` in an armed lane
+  // and `644` in the integration checkout and in the detached worktree a
+  // poison drill runs in (docs/CONVENTIONS.md) — so a body that leaned on
+  // the ambient tree would let the mutant survive exactly where the drill
+  // looks for it.
+  const root = scratchRoot();
+  const from = path.join(root, "live-tree");
+  const to = path.join(root, "fixture-copy");
+  const rel = "roles/executor.md";
+  mkdirSync(path.join(from, "roles"), { recursive: true });
+  writeFileSync(path.join(from, rel), "# Role: executor\n", "utf8");
+  chmodSync(path.join(from, rel), 0o444);
+  // THE PRECONDITION, ASSERTED: without it a filesystem that ignored the
+  // chmod would satisfy everything below for a reason that has nothing to
+  // do with the property.
+  expect(writable(path.join(from, rel)), "the manufactured source must be read-only").toBe(false);
+
+  copyIntoFixture(from, to);
+
+  expect(writable(path.join(to, rel)), "the copy must not inherit the source's mode").toBe(true);
+  // AND THE MODE IS NOT THE CLAIM — THE WRITE IS, through the same shell
+  // vector the rest of this file spends.
+  const wrote = bashWrite(path.join(to, rel), "# Role: executor, edited\n");
+  expect(wrote.status, `writing the fixture's copy; stderr: ${wrote.stderr}`).toBe(0);
+
+  // AND THE SOURCE IS UNTOUCHED. The cheap wrong repair is to chmod the
+  // tree being READ, which in a lane is this layer's own arming being
+  // undone by a test — so the helper is pinned as one-directional here.
+  expect(writable(path.join(from, rel)), "the live tree is never chmodded").toBe(false);
+  expect(readFileSync(path.join(from, rel), "utf8"), "nor rewritten").toBe("# Role: executor\n");
 });
 
 test("a writer that RENAMES is NOT blocked — the coverage edge, pinned so the prose cannot drift back", async () => {

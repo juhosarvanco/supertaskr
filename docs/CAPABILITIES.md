@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **547 behaviours** — 545 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **548 behaviours** — 546 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -439,6 +439,7 @@ Census: **547 behaviours** — 545 extracted sentences + 2 named-not-extracted (
 ## lane-lock
 
 - out-of-fence TRACKED files go read-only and in-fence files stay writable
+- the fixture does NOT inherit the mode bits of the tree it is copied from
 - a writer that RENAMES is NOT blocked — the coverage edge, pinned so the prose cannot drift back
 - a BASH write outside the fence fails with EACCES — the case the hook provably cannot decide
 - POSITIVE CONTROL — the protocol's own writes all still succeed under the layer
