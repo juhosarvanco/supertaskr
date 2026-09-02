@@ -682,3 +682,119 @@ a restatement. The executor's disclosure that its first attempt at A was a
 silent no-op — a perl pattern assuming a wrap the text does not have, spec
 green at 53/53, caught by reading the mutation back — is the POISON DRILL's
 own rule self-applied, and it is the reason to believe the second attempt.
+
+### V-236 re-verdict, 2026-09-02 — claude-opus-5@subagent, independent — APPROVED
+
+Re-verified at **`fc0521b`** in the same bench, `NPUTER_E2E_PORT=25236`.
+**I have not read the fix pass's notes or its commit messages** — the
+checkout was made quietly for that reason — and this entry was drafted
+from the diff, my own stamped phase-1 set and my own re-runs.
+
+**THE FINDING IS REPAIRED, AND I RE-RAN THE AUDIT THAT FOUND IT RATHER
+THAN THE CLAIM THAT IT WAS FIXED.** The LANE PROTOCOL bullet now reads
+*"derive the pair at your own ref (T-110-s2's card holds the census at
+`4d2f03c`)"*. `T-089's card holds` occurs zero times in the document.
+`docs/tasks/T-110-s2-the-older-branch-spelling-reads-as-not-a-lane.md`
+carries *"69 branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`"* and
+`4d2f03c` verbatim, so the citation now points at a holder. Citation
+audit re-derived at this ref: 145 cited ids, three of them new since the
+base (`T-110-s2`, `T-216-s5`, `T-236`), and **zero new dangling
+citations** — the 40 ids with no card file are the same 40 the base
+already cited.
+
+**THE REPAIR IS THE REPAIR AND NOTHING ELSE.** The document diff is four
+lines (2 − / 2 +), **+3 bytes, 117,502 → 117,505**. ADR-019 and
+`docs-scan.mjs` are untouched since the landing (`git diff 560bac3..fc0521b`
+over both is empty). Re-run against the base `3170247`:
+`parseRangeRule`, `bootGateTrigger`, `graphRegenTrigger` and
+`parseDocsGateRecipe` still produce **byte-identical** output; the four
+command lists identical (4/5/7/9); the DOCS GATE four-suite set, its
+`I WAS NOT ASKED` legend and the push-guard exit legend identical; all 13
+uniqueness-pinned phrases resolve to exactly one bullet; `laneSpellings`
+returns the same five values; 56 bullets, same order; and the stamp line
+is still sha256 `c5738e37…d135d3` with its anchor on exactly one line.
+
+**THE RE-WRAP LANDED INSIDE THE LANE PROTOCOL BULLET, SO I DRILLED
+THERE** rather than re-using a drill aimed somewhere the repair never
+touched. D3, document side only, read back from `git diff`: `worktree`
+→ `lane worktree` in the spellings sub-bullet.
+
+    node tools/e2e/scripts/brief.mjs --task T-236   -> exit 3
+    dispatch-brief: the lane bullet spells "worktree" followed by a
+    backticked name 0 times, expected exactly one.
+
+That is the negative-lookbehind pin my phase-1 set predicted (mutant M3),
+alive at this ref and undeadened by the re-wrap. Restored with
+`git restore --source=fc0521b --staged --worktree --`, sha256
+`f795f229d55a5348c8b90bc3962a92b50ea97e2f7a681f67faf2d3b1e169b1d9`
+both sides, tree clean.
+
+**AND D3 IS WHAT SETTLES `brief.mjs`'s EXIT 1.** `--state` 0,
+`--dispatch` 0, `--task T-236` **1**, with 13 rows and zero NOT DERIVED.
+A pin break in that bullet is exit **3**, as D3 just demonstrated, so an
+exit of 1 is a VERDICT and not a broken derivation — this project's own
+four-code legend, checked rather than quoted. I verified the finding's
+cause independently instead of taking it on report: line 55 of the brief
+reads *"T-225 and T-236: OVERLAP — T-225 tools/e2e against T-236
+tools/e2e/scripts/docs-scan.mjs"*, and
+
+    git show fc0521b:docs/tasks/T-225-….md | grep '^touches:'  -> [tools/e2e]
+    git show 2dbf2dc:docs/tasks/T-225-….md | grep '^touches:'  -> six explicit
+        paths (dispatch-order.mjs, dispatch-brief.mjs, brief.mjs and their
+        three specs) — none of them docs-scan.mjs
+
+The overlap exists only against the **pre-narrowing copy of T-225's card
+this branch inherited from its base**. On `main` the two fences are
+disjoint. That is ref skew of the machine-and-ref-scoped class my phase-1
+ground truth named, not a collision and not this card's.
+
+**READERS AND GATES AT `fc0521b`.** The eight CONVENTIONS reader specs by
+name — brief, dispatch-order, docs-input-gate, gate-run, lane-fence,
+push-guard, range-rule, workflow-parity — **282 passed, exit 0**, which
+is the executor's own figure reproduced. `lint:docs` 0 (frontmatter clean,
+budgets hold, 4 gated) · `lint:tokens` clean (CONTROL 1119) ·
+`capabilities:check` CURRENT · `health` 3 by design, with
+`docs-headroom/docs/CONVENTIONS.md` **inside**; the two drifting bands are
+STATE (pre-existing, 2.74%) and `triage/live-suggestions` at 21, which is
+**mine** — T-236-s4 — and already disclosed above.
+
+**ON `DOC_BUDGETS` LEFT AT 117,502 AGAINST A 117,505-BYTE FILE: THAT IS
+RIGHT, AND MOVING IT WOULD HAVE BEEN WRONG.** Three reasons, in the order
+that decides it.
+
+1. **`landed` is the tripwire's BASELINE, not a mirror of the file.** The
+   budget measures growth SINCE the landing; every later commit makes the
+   file diverge from it, and that divergence is the mechanism working.
+   Resetting `landed` to 117,505 would move `warn` from 146,878 to
+   **146,882 — a LOOSER line** — to absorb three bytes of post-landing
+   growth. That is the keep-absorbing behaviour ADR-019 addendum 4
+   rejected in as many words, and it would be the gate swallowing exactly
+   the kind of change it exists to see.
+2. **The recorded measurement is still TRUE at the ref it names.**
+   Addendum 6 stamps `git cat-file -s d01b24f:docs/CONVENTIONS.md`, which
+   still returns **117502**. A past reading bound to a named occasion is
+   HISTORY and cannot go stale — this document's own rule, applied to
+   itself. Leaving it also holds the TIGHTER line, the same safe direction
+   addendum 5 blessed for STATE's 360-byte disagreement.
+3. **Changing it would cost an edit to an append-only record.** Addendum 6
+   is a RECORD; re-deriving means either editing its table, which §Records
+   forbids, or appending a seventh addendum for three bytes, which would
+   put two landings on one card and make the next reader ask which is the
+   landing.
+
+Nothing byte-compares `landed` — the health band derives from `wc -c`
+against `warn` — which is precisely the keeperless-figure class the lane
+itself filed as T-236-s2, and which my phase-1 data mutant M8 predicted
+would kill nothing. **The honest residual, stated rather than smoothed
+over**: addendum 6's sentence *"re-landed at 117,502 bytes"* is three
+bytes off what will actually merge. It is true of the ref it names, no
+gate reads it, and the merged byte count belongs in the integrator's
+checkpoint record, which is where the final measurement is available
+anyway. Not a finding.
+
+**VERDICT: APPROVED.** The one criterion-3 failure is repaired at its
+root rather than papered over, the repair is three bytes wide, every pin
+I checked in the rejection still holds, and the two exits that look like
+failures — `brief.mjs` 1 and the e2e reds recorded above — were each
+attributed to a cause outside this diff by measurement rather than by
+argument.
