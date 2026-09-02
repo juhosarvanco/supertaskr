@@ -319,13 +319,18 @@ export const LANE_BRANCH_RE = /^refs\/heads\/task\/T-(\d+)-.+$/;
  *
  * THESE ARE @HUMAN'S RULING WRITTEN AS CRITERIA, NOT THE HOOK'S
  * JUDGEMENT (`T-154-s2`, 2026-08-30). The ruling names three carve-outs
- * and two of them are already IN THE MANIFEST — `docs/tasks/` arrives as
- * every manifest's `alwaysWritable` (the parser's `UNFENCEABLE_PATHS`)
- * and a card's own file as its `excluded` — so this constant holds only
- * the third: the writes the integration seat makes constantly and
- * legitimately, which no lane's fence may stop. `docs/tasks/` is where
+ * and this constant holds ONE of them: the writes the integration seat
+ * makes constantly and legitimately, which no lane's fence may stop.
+ * `docs/tasks/` is the second and arrives IN THE MANIFEST, as every
+ * manifest's `alwaysWritable` (the parser's `UNFENCEABLE_PATHS`), so
+ * `carveOutFor` reads it rather than re-spelling it — and it is where
  * the dispatch and closing stamps land, so the ruling's fourth item
  * needs no entry here; a second copy of it would be a second fact.
+ * THE THIRD — A CARD'S OWN FILE — NEEDS NO ARM AND NO LONGER HAS ONE
+ * (`T-219-s3`). It is subtracted from `paths` by `expandFence` before
+ * this hook ever reads the manifest, so it is never reserved and never
+ * has to be carved back out; the manifest records it in `excluded` for
+ * the reader's benefit and for `compareFences`, not for an arm here.
  *
  * THE AUTHORITY IS docs/CONVENTIONS.md's own lane bullet, which
  * publishes this set in as many words, and `lane-fence.spec.ts` COMPARES
@@ -852,6 +857,15 @@ export function integrationInProgress(root) {
  * and where rather than a ref because a worktree list is not a function
  * of a tree: all five manifests on `Mac.lan` on 2026-09-02 carried
  * `excluded: []` outright.
+ *
+ * THE WRITER NARROWS IT FURTHER, WHICH IS WHY THE ARM IS DEAD AND NOT
+ * MERELY UNUSED. `tools/e2e/scripts/lane-fence.mjs` refuses to write a
+ * manifest at all for a fence carrying an `unusable` token — so `docs`,
+ * `docs/`, `docs/tasks`, `docs/tasks/` and `docs/tasks/**` never become
+ * a manifest, they become a dispatch that stops — and it refuses one
+ * expanding to NO path, which is what a card fencing only its own file
+ * expands to. So the shapes `expandFence` merely declines to reserve
+ * are the shapes the dispatch never gets past either.
  *
  * SO IT IS REMOVED RATHER THAN LEFT INERT, which is this file's own
  * standing rule applied a second time: *an allow no mutation can kill is
