@@ -46,6 +46,7 @@ import {
   newestVerdictRun,
   parseRunJobs,
   parseRunList,
+  pathsSince,
   pushCwds,
   reachesPackage,
   repointedBy,
@@ -2224,6 +2225,34 @@ test("a red CI is ANNOUNCED with its failing step, and is never a refusal", () =
     view: { stdout: jobsWithFailingStep("e2e lane") },
   });
   expect(runWiredHook(foreign, "git push origin main").stderr).toContain("is UNKNOWN");
+
+  // AND A `headSha` THAT IS NOT A COMMIT ID NEVER REACHES `git`.
+  // FOUND BY THIS CARD'S SECURITY SWEEP RATHER THAN BY A FAILURE, and it
+  // is not a quoting bug: there is no shell anywhere in this arm, and an
+  // argv array does nothing to stop `git`'s OWN parser reading a leading
+  // `-` as an option. This is the single value the arm takes off the
+  // wire and hands to a second binary, so it is shape-checked first.
+  const hostile = fixture("ci-red-hostile-sha", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const planted = path.join(hostile.root, "written-by-a-flag.txt");
+  armGh(hostile, {
+    list: listOf([
+      runRow({ conclusion: FAILED_CONCLUSION, databaseId: 7100, headSha: `--output=${planted}` }),
+    ]),
+    view: { stdout: jobsWithFailingStep("e2e lane") },
+  });
+  const hostileRun = runWiredHook(hostile, "git push origin main");
+  expect(hostileRun.status, "still an announcement, never a refusal").toBe(0);
+  expect(hostileRun.stderr).toContain("where a commit id was expected");
+  expect(existsSync(planted), "`git` was never handed that as a revision").toBe(false);
+
+  // The bound, and THE POSITIVE CONTROL that it is a bound rather than a
+  // refusal of everything: a real commit id still answers.
+  expect("problem" in pathsSince(hostile.root, `--output=${planted}`)).toBe(true);
+  expect("problem" in pathsSince(hostile.root, "HEAD")).toBe(true);
+  expect("problem" in pathsSince(hostile.root, "")).toBe(true);
+  const real = pathsSince(fx.root, fx.base);
+  expect("paths" in real, "a genuine sha is not caught by the shape check").toBe(true);
+  expect("paths" in real ? real.paths : []).toEqual(["README.md"]);
 });
 
 test("the newest COMPLETED run is not the question — cancellations are skipped and counted", () => {

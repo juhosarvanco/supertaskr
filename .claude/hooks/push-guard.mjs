@@ -1686,15 +1686,37 @@ function yamlScalar(raw) {
  * A sha this checkout does not have is SAID to be missing rather than
  * substituted for.
  *
+ * ── THE ONE VALUE IN THIS ARM THAT REACHES ANOTHER PROGRAM ──────────
+ * `sha` is the only field this file takes out of `gh`'s JSON and hands
+ * to a second binary, so it is SHAPE-CHECKED FIRST. There is no shell
+ * here and there never was, so this is not about quoting: `git`'s own
+ * argument parser reads a leading `-` as an OPTION, and an argv array
+ * does nothing to stop that. A `headSha` of `--output=/tmp/x` would be a
+ * flag rather than a revision. The check is the narrowest thing that can
+ * be true of a commit id, and a value that fails it is DECLARED — the
+ * announcement loses a sentence and no verdict moves.
+ *
+ * Found by this card's own security sweep rather than by a failure,
+ * which is why the bound is written here with its reason: the next
+ * reader should meet the argument, not just the regex.
+ *
  * @param {string} root
  * @param {string} sha
  * @returns {{ paths: string[] } | { problem: string }}
  */
 export function pathsSince(root, sha) {
+  if (!/^[0-9a-f]{7,64}$/.test(sha)) {
+    return {
+      problem: `the run named \`${sha}\` where a commit id was expected, and this guard will not ` +
+        "hand that to `git` as a revision",
+    };
+  }
   /** @type {ReturnType<typeof spawnSync>} */
   let out;
   try {
-    out = spawnSync("git", ["diff", "--name-only", sha, "HEAD"], {
+    // `--` closes the revision list, so nothing after it can be read as
+    // a path either. Belt and braces on a value that came off the wire.
+    out = spawnSync("git", ["diff", "--name-only", sha, "HEAD", "--"], {
       cwd: root,
       encoding: "utf8",
       maxBuffer: 32 * 1024 * 1024,
