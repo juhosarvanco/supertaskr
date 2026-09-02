@@ -12,7 +12,7 @@ suggested_by: executor claude-opus-5@subagent @T-225
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -526,3 +526,173 @@ with them.
 
 **THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S**: `capabilities:check`
 exits 1 at this tip. Three test names ADDED, none renamed or removed.
+
+## VERDICT, 2026-09-02 — APPROVED — verifier claude-opus-5@subagent
+
+Judged at tip `098bbb1deb1e1de517b134f91b5ebc7ceaa0d7fe`, base
+`09526da2234fe9a02453d641bf81d04d43d7b4b0`, on bench
+`/Users/ujju/Projects/nputer-V-T-225-s2` (detached), ports 25225/26225,
+node v22.22.0, `Mac.lan`. Every figure below carries the ref it was
+measured at.
+
+### The blindness, stated because a later reader cannot tell
+
+**PHASE 1 WAS CLOCK-SHAPED, NOT DISCIPLINE-SHAPED** (verifier.md's own
+distinction): this bench was cut alongside the lane and the attack set
+was written and SEALED before the work existed — there was no diff and no
+report to decline to read. The seals, made 2026-09-02T08:42:43Z UTC:
+
+    8f650c748d225d1f35b402255653b81121e56561870da5d19065af0c01449e31  attack-V-T-225-s2.md
+    c1ff16436355a5b1806ea4d9ecc84bd84210460f37bdaa46f58f30159032103d  ground-V-T-225-s2.md
+
+**AND THE PHASE-2 BRIEF CARRIED THE EXECUTOR'S OWN FIGURES AND CLAIMS**
+— the before/after table, the mutant count, the suite counts, the
+attribution of the one red. Phase 1 was already sealed, so the guarantee
+holds where it matters; but this seat's phase-2 reading was NOT blind to
+the executor's narrative, and verifier.md requires that be said rather
+than pretended past. Every criterion below was therefore re-derived on
+this bench with this seat's own mutants, and no figure is relayed.
+
+### The card's subject, at ONE HELD BOARD
+
+Bytes to a FILE destination, base and tip alternated three times in one
+window; **all three rounds returned identical figures at both refs**, so
+the board was genuinely held and the deltas are the diff's:
+
+    arm                            BASE      TIP      delta   TIP vs 65,536
+    --dispatch                    42,204   42,495     +291    23,041 UNDER
+    --dispatch --full            121,296  121,588     +292    56,052 PAST
+    --task T-133                  52,071   39,699  -12,372    25,837 UNDER
+    --task T-133 --state          64,503   52,216  -12,287    13,320 UNDER
+    --task T-133 --state --full   82,038   58,833  -23,205     6,703 UNDER
+    --task T-133 --preflight      82,070   69,697  -12,373     4,161 PAST
+    --state                       13,563   13,937     +374    51,599 UNDER
+    --card T-133                   4,993    5,371     +378    60,165 UNDER
+    --task T-225-s2 --state --full 80,732  57,528  -23,204     8,008 UNDER
+
+**THIS CARD'S OWN ARM CROSSES THE LINE THE RIGHT WAY.** The two still
+past are routed (`T-225-s11`, `T-225-s12`), neither fixable in this
+fence. My own phase-1 baseline at `09526da` on a different board read
+`--task <id> --state --full` at 80,715 and `--preflight` at 73,212; the
+lane's table read 82,479 and 83,021. **Neither is wrong and I pre-committed
+to saying so**: I measured the live board move `--task T-133` by +169
+bytes in nine minutes at one unchanged ref, so only a held-board pair is
+attributable, and the lane bracketed its own table for the same reason.
+
+### The criteria, each drilled by this seat's own mutant
+
+Six mutants applied in this bench, read back from `git diff`, each
+restored to an empty `git status`:
+
+    id   site                                          killed                     survived
+    M-A  brief.mjs: stdout EPIPE handler detached      one-read body              rest of 46
+    M-B  dispatch-brief.mjs: rule four transcribed     CITED body                 rest of 46
+    M-C  withMargin: block blinded to the body size    margin-disclosure body     rest of 46
+    M-D  LIVE_ARMS: `--dispatch --full` dropped        MARGIN GUARD               ARM COVERAGE
+    M-E  brief.mjs: a flag nothing announces           ARM COVERAGE               MARGIN GUARD
+    M-G  brief.spec.ts: cross-line ban disarmed        OVER-arm body              rest of 46
+
+**M-D AND M-E ARE THE CONTAINMENT PROOF** (verifier.md 2b): neither kill
+set contains the other, so the two arm-list bodies are both load-bearing
+rather than one restating the other. M-D's message names the twin it
+lost — *"the biggest arm measured this run is --task T-133 --preflight at
+70182 bytes and it does not carry --full"* — which is the property
+landing at the site it lives. The residual the coverage body cannot see
+(a missing COMBINATION of covered flags) is stated in the file and routed
+as `T-225-s13` rather than claimed away; M-D is the demonstration that
+the claim is honest in both directions.
+
+- **`T-215-s4` — cited, not transcribed.** Both addresses resolve. Pasted
+  verbatim from the tip's own output at `098bbb1`: `grep -n "THE LANE
+  PROTOCOL" docs/CONVENTIONS.md` → 1 hit, line 1044; `grep -n "NO SEAT
+  BUT THE INTEGRATOR'S INSTALLS OR RUNS A SUITE IN THE"
+  method/lane-protocol.md` → 1 hit, line 51. Each citation carries file,
+  the passage's own capitals, its flattened size and a runnable command —
+  which is what CONVENTIONS' A CITATION NAMES A SYMBOL, NOT A LINE asks
+  for. **The operational content survives**: `integration branch:`,
+  `branch:`, `worktree`, `create:` and the `never touch the integration
+  branch` imperative are all still emitted as their own rows, so nothing
+  a dispatcher acts on moved behind an address.
+- **Citing rule four in the DEFAULT arm exceeds the brief's literal "in
+  `--full`" and is right anyway.** I verified independently in phase 1
+  that rule four was never `--full`-gated (13,078 bytes in every `--task`
+  answer at `09526da`); a `--full` view printing LESS than the default
+  would be incoherent, and the card's own CORROBORATION names
+  `--preflight`, which never passes `--full`. The lane names the brief's
+  error rather than inheriting it.
+- **`T-225-s6` — the race.** `EPIPE` now maps to `CANNOT_RUN`. The body
+  asserts the READER's side and the reachable SET, and discloses the
+  writer's spread. My phase-1 ground truth (40 runs at `09526da`: 37×0,
+  3×1, every non-zero an uncaught EPIPE at exit 1 — the same code as
+  `EXIT.FOUND`) is what the fix removes, and the tip's own run reports
+  `0, 3, 0, 0, 3` over five — never 1. **Nothing asserts which side of
+  the race a run lands on**, which is what I pre-committed to reject.
+- **`T-225-s8` — the block's own cost.** Declared in both arms, `NOT
+  COUNTED` in the fallback, and EXACT: at `098bbb1` the two halves add up
+  to the declared figure at **9 of 9 arms**, and the declared figure
+  equals `wc -c` at **9 of 9**. The fixed point still settles on every
+  live arm.
+- **`T-225-s9` — the absence half.** M-G confirms the cross-line ban is
+  load-bearing and the carve-out is checked rather than trusted.
+
+### Findings — none blocking, all filed rather than folded in
+
+1. **`numberedStep`'s ordinal locator resolves a MOVED anchor silently.**
+   Control run in this bench: renaming `4.` to `4x.` in
+   `method/lane-protocol.md` did NOT refuse — it matched a different
+   `4. ` line further down and printed *"method/lane-protocol.md rule
+   four, 517 bytes flattened at this ref, opening \"THE CHECKPOINT RECORD
+   CARRIES THE WHY…\""*, exit 1, a confident citation of the wrong
+   passage. **The DELETED-anchor case is loud** (renaming the CONVENTIONS
+   bullet gives exit 3 with `range-rule: … 0 bullets … expected exactly
+   one`), so only the ordinal half is soft. **This is PRE-EXISTING** —
+   `numberedStep` is unchanged by this diff — and the citation exposes it
+   no worse than the transcription did. But `brief.spec.ts`'s
+   `ruleFourFlat()` is offered as an independent second reader and uses
+   the same `startsWith("4. ")` heuristic, so for this failure mode the
+   two readers agree with each other on the wrong passage. Filed.
+2. **`findableNeedle` stops the needle at a backtick or a `"` but not at
+   `$`, `\` or `!`.** Neither current passage contains one — I scanned
+   both printed needles at `098bbb1` — so today's commands are safe; a
+   future passage opening with a `$` would print a `grep -n "…"` the
+   reader's shell expands. One character class away.
+3. **Provenance nit.** The new comment in `brief.mjs` and the body in
+   `brief-flush.spec.ts` attribute the 40-run EPIPE spread to *"the
+   dispatching seat's bench at `09526da`"*. It was measured on the
+   VERIFIER's bench. The figure is correct — I re-derived it — but *a
+   relayed fact is a claim: say whose* (docs/STATE.md).
+4. **The block grew and the card says so.** The UNDER arm's block went
+   1,130 → 1,418 bytes (+288) at the held board, and every arm that lost
+   no prose gained +291…+378. `T-225-s8` asked whether the per-caller
+   line belongs; the lane's ruling is *"a figure, not a deletion"*, made
+   on the symmetry rule the block already stands on and disclosed in the
+   notes. Recorded as a ruling, not a defect.
+
+### Security sweep (mandatory)
+
+No dependency change (`package.json` untouched in all three packages), no
+secrets, no new write surface. The one new `/bin/sh -c` construction
+(`readViaOneRead`) uses the file's existing single-quote escaping helper
+for every interpolated argument. **The suite still writes nothing**: after
+a full run of both fenced spec files this bench has no `.nputer/` at all
+and an empty `git status`, and `--write-fence`, `--take-seat` and
+`--release-seat` are excused from the arm list in writing, each with the
+reason.
+
+### Fence and adjacency
+
+`git diff --name-only 09526da..098bbb1` is the four `touches:` paths, this
+card, and five `status: suggested` cards with `suggested_by` set — which
+`method/roles/executor.md` explicitly prescribes for an out-of-fence
+discovery. `docs/CONVENTIONS.md`, `method/lane-protocol.md`,
+`method/roles/executor.md` and `docs/CAPABILITIES.md` are untouched: the
+tempting fix (shortening the passages at source) was not taken.
+`dispatch-order.spec.ts`, `docs-gate.spec.ts` and `token-scan.spec.ts`
+pass at the tip (27 passed). `typecheck` 0, `lint:tokens` 0, `--selftest`
+0, `lint:docs` 0.
+
+**THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S** (`T-201`). At
+`098bbb1` `capabilities:check` exits 1, committed 51,025 against a fresh
+51,380; regenerating adds exactly the three new test names and nothing
+else — I ran the generator, read the diff and restored it. The lane
+correctly did not commit it.
