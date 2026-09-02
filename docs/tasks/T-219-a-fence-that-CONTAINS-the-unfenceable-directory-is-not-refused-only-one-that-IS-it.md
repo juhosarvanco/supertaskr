@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [lib-parser]
 suggested_by: "T-209's executor, which needed the exact semantics of `alwaysWritable` to decide how it participates in a lane-vs-lane intersection and found the refusal is token-shaped where the rule is path-shaped"
-builder:
-review:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
+review: independent
 ---
 
 `method/lane-protocol.md` rule 5:
