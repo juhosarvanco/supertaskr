@@ -5,15 +5,15 @@ feature: F-02
 milestone: 4
 size: S
 priority: 4
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-018-s6
 blocked_by: []
 touches: [app/test/startup-recovery.test.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **Class parent: `T-018-s6`** (the startup `docs_snapshot` pull could
