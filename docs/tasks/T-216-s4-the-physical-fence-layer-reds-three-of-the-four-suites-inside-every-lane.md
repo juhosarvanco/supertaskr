@@ -619,3 +619,16 @@ source that was never read-only. Restoration sha256-proved against `1757f33` bot
 `common::copy_dir` losing `unlock()` (kill count 1, in a detached drill worktree with its
 own `CARGO_TARGET_DIR`) and `copyIntoFixture` losing `unlockTree` — were each run
 directly and are unaffected. The verdict stands at **APPROVED**.
+
+#### Third attribution pass, same date and seat — the six are standing, not a race
+
+The dispatching seat notes that around 23:37Z `T-223`'s and `T-230`'s worktrees were
+removed, and that a body comparing two live reads of `git worktree list` can red if a
+removal lands between them. **Re-run alone after the list settled** — lanes now
+`T-216-s4`, `T-225`, `T-236` — all six fail again, identically, in 55 seconds
+(`70 passed / 6 failed`). So they are NOT that race: they are standing, and their cause
+is the one already named — this bench sits 16 commits behind `main` and lacks the newest
+`main` commit touching `.claude`, plus the ref-skew pair. **Every one of the six is now
+attributed three ways**: at the card's base `e648590`, at the pre-commit tip `1757f33`,
+and again after the worktree list settled. None is this diff's, and the failure set is
+identical at `7771c28`, `16e7d5e` and `081dcef`.
