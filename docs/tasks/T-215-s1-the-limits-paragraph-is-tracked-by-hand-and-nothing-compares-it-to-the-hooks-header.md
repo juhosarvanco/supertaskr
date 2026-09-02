@@ -468,3 +468,208 @@ discriminator, the reason presence proves nothing, and the control.
    the four codes was checking the wrong thing. The authority is the
    exported frozen `DECLINE_CODES`, and the text reader that makes the
    planted control possible is asserted equal to it rather than trusted.
+
+## VERDICT — APPROVED, 2026-09-02, verifier claude-opus-5@subagent
+
+Judged at tip `8debbfededf2f4ab534ee37f7ad151b8edbf4abd`, base
+`838e74b87628f50595b029841caf37527b55b73d`, in the bench
+`/Users/ujju/Projects/nputer-V-T-215-s1`. Nothing was written in the
+lane.
+
+**THE BLINDNESS WAS CLOCK-SHAPED FOR THE DIFF AND DISCIPLINE-SHAPED FOR
+THE LANE, AND THE LINE IS STAMPED.** Phase 1 reached this seat before
+the work existed. The attack set and a measured ground truth were
+sealed BEFORE the branch was fetched:
+
+    attack-V-T-215-s1.md  f25cd38bf2bb56e037983105dd1302fa22978bea97ef45f7c0576ec8f7454870
+    ground-V-T-215-s1.md  d8300efbbe92925631f0fea4495463371c072158b25eb76bc678efeb2ed64444
+    stamps-V-T-215-s1.txt be2f68a587d5fb9fca33d0a14e85eac8dcd346f254cbef64dc36ac11e6130722
+    sealed 2026-09-02T05:18:02Z
+
+The executor's report reached this seat only in the phase-2 dispatch,
+AFTER that seal, and every figure it carried was re-measured here rather
+than taken as read. The lane's worktree and branch existed on this
+machine throughout phase 1 and were left unopened by hand — that half
+was discipline, not the clock, and a later reader cannot verify it from
+the artefacts.
+
+### The criteria, each attacked literally
+
+**AC1 — the count, naming both sides.** Met. `headerLimitNumbers`
+slices the hook's LEADING BLOCK COMMENT (`indexOf("\n */")`, ending at
+line 238), then from `── THE HONEST LIMITS`, then matches
+`^ \* (\d+)\. `. Measured here: declared `[1..8]`, published `[1..8]`,
+count word `"eight"`. **The `:100` decoy was the pre-committed trap and
+the keeper is immune to it twice over**: deleting that line
+(`* 38.4 → 41.4 ms (refusal)`) does not move the answer, while the
+loose whole-file matcher this body could have used answers **9**. The
+comparison is SEQUENCE equality, not a count, so a re-ordering reds too,
+and a third check compares the paragraph's count word against
+`declared.length`. Both sides are named on a red — verified, not read:
+M-C below prints *"the header numbers its limits 1/2/3/4/5/6/7/8/9 and
+the lane bullet publishes 1/2/3/4/5/6/7/8"*.
+
+**AC2 — every declining code in the bullet.** Met. All four are
+published beside the limit each belongs to and all four survive the
+whitespace collapse. `DECLINE_CODES` is the authority (already imported,
+not re-typed), bound by assertion to a source-text reader that exists so
+the control can read a PLANTED file. Correctly scoped to the four
+DECLINING codes: the widening this seat pre-committed to check would
+have scored `mid-integration` present on a prose accident at line 1168,
+and no such widening was made.
+
+**AC3 — the fixture positive control.** Met, and it is a real control:
+it writes a COPY of the hook to a fresh `mkdtemp` scratch dir, reads it
+back through the same `readFileSync`, and drives the SAME `limitsDrift`
+function the subject drives. The arrangement that decides the control
+(a planted file) is not the arrangement that decides the subject (the
+live hook), which is the defect class `verifier.md` 2b says this method
+produces most.
+
+**The two absorbed corrections, made first.** Met and TRUE. The
+fence-layer sentence matches its keeper clause for clause —
+`lane-lock.spec.ts:418` uses the same word, *"`sed -i` is the canonical
+instance"*, and holds that the rename succeeds because the PARENT
+DIRECTORY is deliberately left writable; `:558` holds that the layer
+arms lanes and nothing else, which is why *"TWO LAYERS FENCE A LANE"* is
+correctly scoped; `:667` and `T-210-s1` hold the disarming the sentence
+names. The fail-open sentence states both shapes and cites
+`checkout-currency.spec.ts` ARM B by name rather than claiming a
+first-hand measurement of this hook — the relayed-fact trap this seat
+pre-committed to check.
+
+**The hook's own `:144` error was NOT propagated.** The header calls
+`no-path-to-judge` *"limit 5"* where the numbered block puts it at 8.
+The page places it at **(8)** and the card routes the header-side repair
+elsewhere. This seat pre-committed to rejecting if that error were
+copied into the document; it was not.
+
+### The drill — kill-set containment, both ways, run here
+
+| mutant | site | subject | control |
+|---|---|---|---|
+| M-A pre-`T-215` paragraph replanted | doc | **RED** (7 complaints) | red |
+| M-B a code WRAPPED across two lines | **doc (data)** | **RED alone** | green |
+| M-C live hook gains a 9th limit | hook | **RED alone** | green |
+| M-D a code renamed in the page only | doc | **RED alone** | green |
+| M-E `limitsDrift` loses its number comparison | spec | green | **RED alone** |
+| M-F `limitsDrift` loses its code loop | spec | green | **RED alone** |
+
+**Neither kill set contains the other**, so both bodies are
+load-bearing rather than one restating the other. M-B is a **DATA
+mutant**, which 2b requires where the property lives in data, and it is
+the failure this seat pre-committed as most likely: a hyphenated code
+reflowed across a 70-column line collapses to `not-judged- lane-list`
+and matches nothing. It reds, and the complaint text names the cause.
+
+**AND THE CONTROL WAS SHOWN TO FAIL BEFORE IT WAS TRUSTED TO PASS.**
+M-E and M-F damage the comparison the control guards; the control reds
+alone in both while the subject stays green. That demonstration is 2b's
+requirement of whoever grades a control, and it is run above rather than
+asserted.
+
+M-A additionally answers the card's own premise: the paragraph `T-215`
+repaired by hand carries none of the four codes, no numbered items and
+no count word, so the keeper reds seven ways on the exact drift that
+reddened nothing before this card.
+
+Restoration proved by sha256 at every step; the tree is clean
+(`git status --porcelain` empty) and the planted headers never left
+`mkdtemp`.
+
+### Gates, all run at `8debbfe` in this bench
+
+The docs gate was asked with the WHOLE changed-path set — the two new
+card files pull in two suites that `docs/CONVENTIONS.md` alone does not
+owe, which is easy to miss on a card that looks like prose and a test.
+It FIRES and owes four suites; all four were run.
+
+| gate | result |
+|---|---|
+| `cargo test` from `app/src-tauri/` | **635 passed, 0 failed, 4 ignored, exit 0** |
+| `npx vitest run` from `lib/parser/` | **363 passed, exit 0** |
+| `npm test` from `app/` | **1135 passed, exit 0** |
+| `npm test` from `tools/e2e/` | **571 passed, 6 failed, exit 1** — every red attributed below |
+| `lane-fence.spec.ts` alone | 56 passed, exit 0 |
+| `index --check` | **CURRENT, exit 0** |
+| `capabilities:check` | **STALE, 48201 → 48363, exit 1 — CORRECT** |
+| docs-gate reader derivation | unchanged: 28 readers, 11 for CONVENTIONS, this spec still `(call conventionsText())` |
+| `laneSpellings` | all four labels still resolve to exactly one |
+| byte budget | CONVENTIONS 120,370 of warn 146,878 — holds |
+
+**THE SIX e2e REDS ARE NOT THIS LANE'S, ATTRIBUTED BY NAME AT THE BASE
+RATHER THAN BY COUNT.** The same six bodies — `card-preflight:719`,
+`checkout-currency:852`, `checkout-currency:953`, `lane-lock:899`,
+`session-economics:179`, `session-economics:365` — were re-run at
+`838e74b`, where this diff does not exist, and **all six red there
+too**. They are the `guard-surface-behind` family plus the machine's
+newer lane cuts, exactly as `docs/STATE.md` warns.
+
+The STALE census is correct and must not be repaired here:
+`docs/CONVENTIONS.md`'s own rule makes regeneration the INTEGRATOR's, in
+the merge commit, and `docs/CAPABILITIES.md` is absent from the diff.
+
+**Fence**: `docs/CONVENTIONS.md`, `tools/e2e/tests/lane-fence.spec.ts`
+and two files under the unfenceable `docs/tasks/`. Nothing out of fence
+— in particular the hook, `lane-lock.mjs` and `docs/CAPABILITIES.md` are
+untouched.
+
+**Security sweep**: no new import, dependency, subprocess, `chmod` or
+environment read. The planted headers are written under `mkdtemp` and
+read as TEXT — never imported — so a generated `.mjs` is never executed,
+and the live `.claude/hooks/lane-fence.mjs` is never edited in place.
+Nothing to report.
+
+### Two corrections to the record
+
+1. **`--full` COULD be re-measured, and the lane did not grow it.** The
+   handoff says the assembler refuses on `T-229-s6`'s undeclared
+   worktree. It prints that FOUND block and then renders the brief
+   anyway, margin included: **67,632 of 65,536 bytes, OVER by 2,096** at
+   `8debbfe`, against **68,301, OVER by 2,765** measured at `838e74b`
+   in phase 1. The brief SHRANK by 669 bytes despite the bullet growing
+   852. The ceiling was already breached at the base; this lane moved it
+   the safe way.
+2. **A prediction of this seat's measured FALSE.** Phase 1 pre-committed
+   that editing the spec would make `index --check` STALE and that a
+   stale graph would therefore be correct at the tip. It stayed CURRENT
+   with byte-identical figures — `tools/e2e/tests/` is not in the
+   indexed set. Recorded because a pre-commitment that is quietly
+   dropped is worth nothing.
+
+### Residues — disclosed, none blocking
+
+1. **The corrections' PROSE is not itself compared.** The keeper pins
+   the numbering, the count word and the four codes. Reverting the
+   two-layers sentence or the fail-open sentence would NOT red. That is
+   the card's own deliberate trade — it argues at length against a prose
+   diff — but *"covered by the same keeper"* means the corrections land
+   inside the paragraph the keeper anchors on, not that every clause is
+   pinned. The clauses about `T-210`'s layer are held by
+   `lane-lock.spec.ts` instead, which is the right home for them.
+2. **"IT FAILS OPEN IN TWO SHAPES" is still a count claim.** The general
+   rule is that ANY exit that is not 2 fails open — an absent file, a
+   throw at import, a missing `node`. Two shapes are MEASURED; the class
+   is open, and a third will stale *"two"* the way it staled *"one"*.
+   The sentence does expose the mechanism (*"exits 1 where blocking is
+   2"*), so the class is derivable by a reader, which is why this is a
+   residue and not a defect.
+3. **A merge-order dependency.** Sites 1 and 2 describe `carveOutFor`'s
+   own-file arm in the past tense, and at THIS tip the hook still
+   carries that arm — `838e74b` predates `T-219-s3`'s merge `f6e3924`.
+   The comments are true of the MERGED tree and transiently false on the
+   branch. They come true at the merge, and main already carries
+   `T-219-s3`; this branch must not be landed on a base that lacks it.
+   The assertion beside them passes in both worlds, which is why nothing
+   reds either way — and `T-219-s5`'s fourth criterion was correctly
+   ROUTED as `T-215-s6` rather than built, because a body discriminating
+   on the arm cannot be demonstrated red against a tree that still has
+   it.
+
+### Verdict
+
+**APPROVED.** All three acceptance criteria are met literally, the two
+absorbed corrections are true and traceable to live keepers, the
+positive control was demonstrated to FAIL before it was trusted to pass,
+and the two kill sets are disjoint in both directions with a data mutant
+separating them. The third copy is now compared.
