@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   closeSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   openSync,
@@ -18,7 +19,10 @@ import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsText, liveTaskCards, trackedFiles } from "../scripts/docs-scan.mjs";
 import {
+  BASE_TOKEN,
   DERIVERS,
+  DISPATCH_STEPS,
+  DispatchLaneFinding,
   EXIT,
   PIPE_BUFFER_BYTES,
   SPAWNSYNC_DEFAULT_MAXBUFFER,
@@ -30,6 +34,9 @@ import {
   components,
   contractRows,
   context,
+  createLaneArgv,
+  dispatchLanePlan,
+  dispatchSpellings,
   docsNamed,
   fenceLedger,
   fenceOverlaps,
@@ -38,8 +45,11 @@ import {
   frontmatterFields,
   insideRepository,
   integrationRefCandidates,
+  laneScratchName,
+  laneScratchStem,
   laneSpellings,
   laneWorktrees,
+  lanePort,
   liveProv,
   mainWorktree,
   marginRecs,
@@ -49,13 +59,17 @@ import {
   parseWorktreePorcelain,
   readAdditions,
   readDoc,
+  manifestVerdict,
   readSubtractions,
   render,
   resolveIntegrationRef,
   roleText,
+  runDispatchLane,
   slugMapFromFields,
   slugMapFromProse,
   slugsSharingComponents,
+  stampCard,
+  stampVerdict,
   standingGates,
   stateReport,
   treeProv,
@@ -2993,4 +3007,763 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
   } finally {
     removeGitFixture(fx.dir, "nestedShapes");
   }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE DISPATCH RITUAL, PERFORMED (T-239).
+ *
+ * Every step of a dispatch already had a command; nothing joined them but
+ * the dispatching seat's memory, and every step had failed at least once
+ * by the sitting this card was written in. The bodies below are about the
+ * JOIN: that the order holds, that a failure stops the ritual where it
+ * happened rather than half-arming a lane, and that what the arm leaves
+ * behind is what the eight hand steps leave.
+ *
+ * ── WHAT EACH SHAPE OF BODY IS FOR ──────────────────────────────────
+ * The END-TO-END body runs the real command twice on two scratch
+ * repositories — once as the arm, once as a hand-run ritual typed here —
+ * and compares the two trees file for file. It is the only body that
+ * proves the commands themselves work, and its kill set therefore
+ * INCLUDES the arms it re-enters: a mutant that stops `--preflight` or
+ * `--write-fence` from running reds it. That is stated rather than
+ * hidden.
+ *
+ * The PER-STEP bodies drive `runDispatchLane` in process against a
+ * stubbed world. Every failure they inject is a real one — a `git commit`
+ * that exits non-zero, a manifest that is not there, a port something
+ * holds — and the stub is the ONLY executor, so nothing they do can touch
+ * a checkout. What they see that the end-to-end body cannot is WHICH
+ * COMMANDS WERE NEVER ATTEMPTED, which is the second acceptance criterion
+ * in as many words.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** The fixture card every ritual body dispatches. Its claims are all re-derivable. */
+const FIXTURE_CARD_ID = "T-901";
+const FIXTURE_CARD_FILE = `docs/tasks/${FIXTURE_CARD_ID}-a-fixture-card-the-ritual-can-dispatch.md`;
+const FIXTURE_SLUG = "fixture-lane";
+const FIXTURE_CARD = [
+  "---",
+  `id: ${FIXTURE_CARD_ID}`,
+  "title: A FIXTURE CARD THE RITUAL CAN DISPATCH — it exists only inside a scratch repository",
+  "feature: F-06",
+  "milestone: 4",
+  "priority: 3",
+  "size: S",
+  "status: planned",
+  "blocked_by: []",
+  "touches: [README.md]",
+  "builder:",
+  "verifier:",
+  "built_by:",
+  "verified_by:",
+  "review: default",
+  "---",
+  "",
+  "The fixture's own card. It claims nothing a preflight cannot re-derive.",
+  "",
+  "## Acceptance criteria",
+  "",
+  "- THE card SHALL exist.",
+  "",
+].join("\n");
+
+interface RitualFixture {
+  /** the mkdtemp root, for the teardown */
+  dir: string;
+  /** the integration checkout the ritual is run in */
+  root: string;
+  /** where the brief is written — the SCRATCH RULE's directory half */
+  scratch: string;
+}
+
+/**
+ * A scratch repository a whole dispatch can be performed in.
+ *
+ * IT IS A REAL CHECKOUT OF THIS TREE and not a stub, because the ritual's
+ * middle steps re-enter this command against it: the preflight reads the
+ * card, the fence expands `touches:` through the component registry, and
+ * the brief reads `method/` and `docs/`. A fixture missing any of those
+ * would prove something about a different repository. The parser it is
+ * expanded by is THIS checkout's, which is the arm's own rule — the
+ * ritual re-enters the command it is part of, never the copy sitting in
+ * whatever `--root` names.
+ *
+ * The two names the callers pass are the same LENGTH on purpose: the
+ * brief the ritual writes discloses its own byte size, and two fixtures
+ * whose paths differ in length would disclose two different sizes for the
+ * same document.
+ */
+function ritualFixture(name: string): RitualFixture {
+  // REALPATH, and it is load-bearing for the same reason `nestedShapes`
+  // gives: `/var` is a symlink to `/private/var` on macOS, git reports the
+  // resolved spelling and `mkdtemp` hands back the symlinked one.
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t239-ritual-")));
+  const home = path.join(dir, name);
+  const root = path.join(home, "nputer");
+  mkdirSync(root, { recursive: true });
+  const tar = path.join(dir, "tree.tar");
+  writeFileSync(
+    tar,
+    execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
+  );
+  execFileSync("tar", ["-x", "-f", tar, "-C", root]);
+  writeFileSync(path.join(root, FIXTURE_CARD_FILE), FIXTURE_CARD);
+  fixtureGit(root, ["init", "--initial-branch=main", "--quiet"]);
+  fixtureGit(root, ["add", "-A"]);
+  // A `Checkpoint:` commit, because the base rule reads the newest one out
+  // of the first-parent log and a fixture with none would fail for a
+  // reason that has nothing to do with this card.
+  fixtureGit(root, ["commit", "--quiet", "-m", "Checkpoint: fixture base"]);
+  return { dir, root, scratch: path.join(home, "scratch") };
+}
+
+/** Every file under one tree, repository-relative and sorted. */
+function inventory(root: string): string[] {
+  const out = execFileSync(
+    "find",
+    [root, "-type", "f", "-not", "-path", `${root}/.git/*`, "-not", "-name", ".DS_Store"],
+    { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
+  );
+  return out
+    .split("\n")
+    .filter((l) => l !== "")
+    .map((l) => path.relative(root, l))
+    .sort();
+}
+
+/**
+ * The THREE things that legitimately differ between two runs of one
+ * ritual on two scratch repositories: WHERE they sit, WHICH COMMITS they
+ * made, and WHEN they ran. Everything else has to match, and this is
+ * where that claim is narrowed to exactly those three — each of them a
+ * LIVE fact by this module's own rule, which is why none of them can be
+ * asserted equal and why every one of them is spelled out here instead of
+ * being dropped from the comparison silently.
+ *
+ * Every substitution is FIXED-WIDTH in the source it replaces (a forty-hex
+ * sha, a twelve-hex short, an ISO instant), so the brief's own disclosed
+ * byte size — a VALUE, and compared like any other — is unaffected by
+ * this normalisation and still has to agree between the two runs.
+ */
+function normalise(text: string, fx: RitualFixture): string {
+  return text
+    .split(path.dirname(fx.root))
+    .join("<HOME>")
+    .replace(/\b[0-9a-f]{40}\b/g, "<sha>")
+    .replace(/\b[0-9a-f]{12}\b/g, "<short>")
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, "<clock>");
+}
+
+test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", () => {
+  // KILLED BY: a step dropped from `DISPATCH_STEPS`, a step reordered, the
+  // bench cut on a branch instead of detached, the lane cut at the
+  // integration tip instead of at the stamp, and the brief written under a
+  // name the SCRATCH RULE does not publish. IT IS AN END-TO-END BODY and
+  // its kill set therefore also covers the arms the ritual re-enters —
+  // `--preflight`, `--write-fence` and `--task` — because a ritual that
+  // cannot run them leaves nothing to compare.
+  const arm = ritualFixture("one");
+  const hand = ritualFixture("two");
+  try {
+    // ── THE ARM: one command, and it performs all eight steps ──────────
+    const ran = spawnSync(
+      process.execPath,
+      [
+        CLI,
+        "--dispatch-lane",
+        FIXTURE_CARD_ID,
+        "--slug",
+        FIXTURE_SLUG,
+        "--root",
+        arm.root,
+        "--scratch",
+        arm.scratch,
+      ],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expect(ran.status, ran.stderr).toBe(EXIT.CLEAN);
+
+    // ── THE HAND RITUAL: the same eight steps, typed here ──────────────
+    // Two sides sharing no constant: the arm derives its lane names from
+    // the document, and this side derives them from the fixture's own
+    // layout and the same document read independently.
+    const s = laneSpellings(conventions());
+    const home = path.dirname(hand.root);
+    const laneWt = path.join(home, s.worktreePattern.replace("T-NNN", FIXTURE_CARD_ID).replace("../", ""));
+    const benchWt = path.join(home, `nputer-V-${FIXTURE_CARD_ID}`);
+    const branch = s.branchPattern.replace("T-NNN", FIXTURE_CARD_ID).replace("<slug>", FIXTURE_SLUG);
+    const cardPath = path.join(hand.root, FIXTURE_CARD_FILE);
+
+    // 1 — stamp on the integration branch, commit, and read it back.
+    writeFileSync(cardPath, readFileSync(cardPath, "utf8").replace("status: planned", "status: building"));
+    fixtureGit(hand.root, ["commit", "--quiet", "-m", "hand-run dispatch stamp", "--", FIXTURE_CARD_FILE]);
+    const base = fixtureGit(hand.root, ["rev-parse", "HEAD"]).trim();
+    expect(
+      fixtureGit(hand.root, ["show", `${base}:${FIXTURE_CARD_FILE}`]),
+      "the hand run's own stamp did not reach its commit, so there is nothing to compare against",
+    ).toContain("status: building");
+    // 2 — cut the lane at that commit.
+    fixtureGit(hand.root, ["worktree", "add", laneWt, "-b", branch, base]);
+    // 3 and 4 — preflight, then arm the fence.
+    for (const argv of [
+      [CLI, "--task", FIXTURE_CARD_ID, "--preflight", "--root", hand.root],
+      [CLI, "--task", FIXTURE_CARD_ID, "--write-fence", laneWt, "--root", hand.root],
+    ]) {
+      const step = spawnSync(process.execPath, argv, {
+        cwd: hand.root,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      expect(step.status, `${argv[1]} ${argv[4]}: ${step.stderr}`).toBe(EXIT.CLEAN);
+    }
+    // 5 — read the manifest back.
+    const handManifest = JSON.parse(readFileSync(path.join(laneWt, ".nputer", "lane-fence.json"), "utf8"));
+    expect(handManifest.taskId).toBe(FIXTURE_CARD_ID);
+    // 6 — the bench, detached, at the same commit.
+    fixtureGit(hand.root, ["worktree", "add", "--detach", benchWt, base]);
+    // 7 — the brief, into the lane's own scratch file.
+    mkdirSync(hand.scratch, { recursive: true });
+    const handBrief = path.join(hand.scratch, `brief-${FIXTURE_CARD_ID}.txt`);
+    const fd = openSync(handBrief, "w");
+    try {
+      const wrote = spawnSync(
+        process.execPath,
+        [CLI, "--task", FIXTURE_CARD_ID, "--root", hand.root],
+        { cwd: hand.root, encoding: "utf8", stdio: ["ignore", fd, "pipe"] },
+      );
+      expect([EXIT.CLEAN, EXIT.FOUND], wrote.stderr ?? "").toContain(wrote.status);
+    } finally {
+      closeSync(fd);
+    }
+
+    // ── THE COMPARISON, FILE FOR FILE ──────────────────────────────────
+    const armHome = path.dirname(arm.root);
+    const armLane = path.join(armHome, `nputer-${FIXTURE_CARD_ID}`);
+    const armBench = path.join(armHome, `nputer-V-${FIXTURE_CARD_ID}`);
+
+    // The worktree administration first: same entries, same branches, same
+    // detached-ness. A bench cut on a branch would be a second lane.
+    const admin = (root: string, fx: RitualFixture) =>
+      normalise(fixtureGit(root, ["worktree", "list", "--porcelain"]), fx)
+        .split("\n")
+        .filter((l) => !l.startsWith("HEAD "))
+        .join("\n");
+    expect(admin(arm.root, arm)).toBe(admin(hand.root, hand));
+    expect(
+      admin(arm.root, arm),
+      "the fixture has no detached bench, so the comparison above is between two two-worktree trees",
+    ).toContain("detached");
+
+    // The stamped card, as the COMMIT carries it — which is what the lane
+    // inherits in its base.
+    const armBase = fixtureGit(arm.root, ["rev-parse", "HEAD"]).trim();
+    expect(fixtureGit(arm.root, ["show", `${armBase}:${FIXTURE_CARD_FILE}`])).toBe(
+      fixtureGit(hand.root, ["show", `${base}:${FIXTURE_CARD_FILE}`]),
+    );
+    // And the lane really is cut AT that commit, on its own branch.
+    expect(fixtureGit(armLane, ["rev-parse", "HEAD"]).trim()).toBe(armBase);
+    expect(fixtureGit(armLane, ["symbolic-ref", "HEAD"]).trim()).toBe(`refs/heads/${branch}`);
+    expect(fixtureGit(armBench, ["rev-parse", "HEAD"]).trim()).toBe(armBase);
+
+    // Every file in each of the three trees.
+    for (const [what, a, b] of [
+      ["the lane worktree", armLane, laneWt],
+      ["the bench", armBench, benchWt],
+      ["the integration checkout", arm.root, hand.root],
+    ] as const) {
+      const left = inventory(a);
+      expect(left.length, `${what} is empty, so comparing it proves nothing`).toBeGreaterThan(0);
+      expect(left, `${what} does not hold the same files as the hand-run ritual's`).toEqual(
+        inventory(b),
+      );
+    }
+    expect(
+      inventory(armLane),
+      "the manifest step five reads back is not in the lane at all",
+    ).toContain(path.join(".nputer", "lane-fence.json"));
+
+    // The manifest, and the brief, byte for byte once the two things that
+    // legitimately differ are normalised away.
+    expect(
+      normalise(readFileSync(path.join(armLane, ".nputer", "lane-fence.json"), "utf8"), arm),
+    ).toBe(normalise(readFileSync(path.join(laneWt, ".nputer", "lane-fence.json"), "utf8"), hand));
+    const armBrief = path.join(arm.scratch, `brief-${FIXTURE_CARD_ID}.txt`);
+    const briefValues = (file: string, fx: RitualFixture) =>
+      values(normalise(readFileSync(file, "utf8"), fx));
+    expect(briefValues(armBrief, arm).length).toBeGreaterThan(0);
+    expect(
+      briefValues(armBrief, arm),
+      "the brief the arm wrote is not the brief the hand ritual wrote",
+    ).toEqual(briefValues(handBrief, hand));
+  } finally {
+    removeGitFixture(arm.dir, "ritualFixture(one)");
+    removeGitFixture(hand.dir, "ritualFixture(two)");
+  }
+});
+
+/* ── THE PER-STEP BODIES, AND THE WORLD THEY RUN AGAINST ──────────────
+ * `runDispatchLane` takes its whole world as an argument, so the stub
+ * below is the ONLY thing that can start a process or touch a disk in
+ * every body that uses it. That is what makes it safe to build the plan
+ * against this repository's own board — no path in it is ever reached —
+ * and it is what lets each body see the one thing an end-to-end run
+ * cannot show: which commands were NEVER ATTEMPTED.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A commit this ritual never makes: the stub answers `rev-parse` with it. */
+const STUB_BASE = "b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1";
+
+interface StubCall {
+  argv: string[];
+  cwd: string;
+  out?: string;
+}
+
+interface RitualStub {
+  io: Parameters<typeof runDispatchLane>[1];
+  calls: StubCall[];
+  reads: string[];
+  writes: string[];
+}
+
+/**
+ * A world in which every step succeeds except the one named — and the
+ * failure injected is the REAL one that step meets: a `git commit` that
+ * exits non-zero, a `git worktree add` refusing a path, a preflight that
+ * found stale claims, a manifest that is not on disk, a probe that names
+ * a process holding the port.
+ */
+function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string): RitualStub {
+  const calls: StubCall[] = [];
+  const reads: string[] = [];
+  const writes: string[] = [];
+  const stamped = stampCard(FIXTURE_CARD, plan.stamp).text;
+  const manifest = JSON.stringify({
+    version: 1,
+    taskId: plan.taskId,
+    branch: plan.branch,
+    worktree: plan.worktree,
+    card: plan.card,
+    paths: ["README.md"],
+  });
+  const ok = { status: EXIT.CLEAN, stdout: "", stderr: "" };
+  const io = {
+    run: (argv: string[], opts: { cwd: string; out?: string }) => {
+      calls.push({ argv, cwd: opts.cwd, ...(opts.out === undefined ? {} : { out: opts.out }) });
+      const has = (a: string) => argv.includes(a);
+      if (argv[0] === "lsof") {
+        return failing === "port"
+          ? { status: 0, stdout: "COMMAND PID USER\nnode 4242 someone\n", stderr: "" }
+          : { status: 1, stdout: "", stderr: "" };
+      }
+      if (has("--preflight")) {
+        return failing === "preflight"
+          ? { status: EXIT.FOUND, stdout: "", stderr: "brief: FOUND 1 thing" }
+          : ok;
+      }
+      if (has("--write-fence")) {
+        return failing === "fence"
+          ? { status: EXIT.FOUND, stdout: "", stderr: "lane-fence: overlapping" }
+          : ok;
+      }
+      if (opts.out !== undefined) {
+        return failing === "brief"
+          ? { status: EXIT.CANNOT_RUN, stdout: "", stderr: "brief: COULD NOT WRITE THE ANSWER" }
+          : ok;
+      }
+      if (has("worktree") && has("add")) {
+        const bench = has("--detach");
+        return (bench ? failing === "bench" : failing === "cut")
+          ? { status: 128, stdout: "", stderr: "fatal: a path already exists" }
+          : ok;
+      }
+      if (has("commit")) {
+        return failing === "stamp"
+          ? { status: 1, stdout: "", stderr: "error: could not write the commit" }
+          : ok;
+      }
+      if (has("rev-parse")) return { status: 0, stdout: `${STUB_BASE}\n`, stderr: "" };
+      if (has("show")) {
+        return { status: 0, stdout: failing === "read-back" ? FIXTURE_CARD : stamped, stderr: "" };
+      }
+      return ok;
+    },
+    read: (file: string) => {
+      reads.push(file);
+      if (file === plan.manifestFile) {
+        if (failing === "manifest") {
+          throw new Error(`ENOENT: no such file or directory, open '${file}'`);
+        }
+        return manifest;
+      }
+      if (file === plan.cardFile) return FIXTURE_CARD;
+      throw new Error(`the stub was asked for ${file}, which no step of this ritual reads`);
+    },
+    write: (file: string, _text: string) => {
+      writes.push(file);
+    },
+  };
+  return { io, calls, reads, writes };
+}
+
+/** Was this step ATTEMPTED at all? Derived from the plan, never typed. */
+function attempted(stub: RitualStub, plan: ReturnType<typeof dispatchLanePlan>, id: string): boolean {
+  const call = (p: (c: StubCall) => boolean) => stub.calls.some(p);
+  switch (id) {
+    case "stamp":
+      return call((c) => c.argv.includes("commit"));
+    case "cut":
+      return call((c) => c.argv.includes("add") && c.argv.includes(plan.worktree));
+    case "preflight":
+      return call((c) => c.argv.includes("--preflight"));
+    case "fence":
+      return call((c) => c.argv.includes("--write-fence"));
+    case "manifest":
+      return stub.reads.includes(plan.manifestFile);
+    case "bench":
+      return call((c) => c.argv.includes("add") && c.argv.includes(plan.bench));
+    case "brief":
+      return call((c) => c.out === plan.briefFile);
+    case "port":
+      return call((c) => c.argv[0] === "lsof");
+    default:
+      throw new Error(`no signature for step ${id}`);
+  }
+}
+
+/** The plan every per-step body drives, over a card this board really holds. */
+function stubPlan(): ReturnType<typeof dispatchLanePlan> {
+  return dispatchLanePlan(context({}), { taskId: "T-133", slug: FIXTURE_SLUG, scratch: os.tmpdir() });
+}
+
+for (const step of DISPATCH_STEPS) {
+  test(`THE RITUAL STOPS AT STEP ${step.n} (${step.id}) and performs no later step`, () => {
+    // KILLED BY: a runner that continues past a failed step, one that
+    // reports a step other than the one that failed, one that drops the
+    // command or the exit from its refusal, and one that unwinds a
+    // worktree it did not cut — or fails to unwind one it did.
+    const plan = stubPlan();
+    const stub = ritualStub(plan, step.id);
+    const result = runDispatchLane(plan, stub.io);
+
+    expect(result.stopped, `step ${step.n} was injected with a failure and the ritual ran on`).toBeDefined();
+    const stopped = result.stopped as NonNullable<typeof result.stopped>;
+    expect(stopped.n).toBe(step.n);
+    expect(stopped.id).toBe(step.id);
+    expect(
+      result.done.length,
+      "the ledger of completed steps does not end where the ritual stopped",
+    ).toBe(step.n - 1);
+    // The brief step's injected failure is a COULD NOT RUN, because 1 is a
+    // code that step legitimately answers with the document written.
+    expect(result.code).toBe(step.id === "brief" ? EXIT.CANNOT_RUN : EXIT.FOUND);
+
+    // THE REFUSAL NAMES THE STEP, THE COMMAND AND THE EXIT.
+    const refusal = result.findings.join("\n");
+    expect(refusal).toContain(`step ${step.n} (${step.id})`);
+    expect(refusal).toContain(stopped.ran);
+    expect(refusal).toContain(`exit ${stopped.exit}`);
+    expect(stopped.ran.length, "the refusal names no command at all").toBeGreaterThan(0);
+
+    // AND IT PERFORMED NO LATER STEP. This is the half an end-to-end body
+    // cannot see: an absence is only evidence beside the presences below.
+    for (const later of DISPATCH_STEPS.filter((d) => d.n > step.n)) {
+      expect(attempted(stub, plan, later.id), `step ${later.n} (${later.id}) ran after the stop`).toBe(
+        false,
+      );
+    }
+    for (const earlier of DISPATCH_STEPS.filter((d) => d.n < step.n)) {
+      expect(
+        attempted(stub, plan, earlier.id),
+        `step ${earlier.n} (${earlier.id}) never ran, so this ritual did not reach step ${step.n}`,
+      ).toBe(true);
+    }
+
+    // THE STAMP IS NEVER UNDONE (T-226): it is a fact about the card, and a
+    // card un-stamped after a refusal is a lifecycle nobody can read.
+    for (const undo of ["revert", "reset", "restore"]) {
+      expect(
+        stub.calls.some((c) => c.argv.includes(undo)),
+        `the ritual ran git ${undo} after refusing, and the stamp is not its to take back`,
+      ).toBe(false);
+    }
+
+    // AND EVERY WORKTREE THIS RUN CUT IS TAKEN AWAY, AND ONLY THOSE.
+    const expected = [
+      ...(step.n > 6 ? [plan.bench] : []),
+      ...(step.n > 2 ? [plan.worktree] : []),
+    ];
+    expect(result.removed, "the unwind removed a different set of worktrees than this run cut").toEqual(
+      expected,
+    );
+    for (const gone of expected) {
+      expect(
+        stub.calls.some((c) => c.argv.includes("remove") && c.argv.includes(gone)),
+        `${gone} was reported removed and no command removed it`,
+      ).toBe(true);
+    }
+    expect(
+      stub.calls.some((c) => c.argv.includes("-D") && c.argv.includes(plan.branchName)),
+      "the branch this run created outlived the worktree, so a re-run fails at the cut",
+    ).toBe(step.n > 2);
+  });
+}
+
+test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at step one", () => {
+  // KILLED BY: reading the stamp off the WORKING TREE (which the writer
+  // just wrote, so it always agrees), and by dropping the read-back
+  // altogether. The lane inherits its stamp in its BASE, so a commit that
+  // does not carry it is a lane cut from a card the board calls unstarted.
+  const plan = stubPlan();
+  const stub = ritualStub(plan, "read-back");
+  const result = runDispatchLane(plan, stub.io);
+  const stopped = result.stopped as NonNullable<typeof result.stopped>;
+  expect(stopped.n).toBe(1);
+  expect(stopped.id).toBe("stamp");
+  expect(result.code).toBe(EXIT.FOUND);
+  expect(stopped.ran, "the refusal does not name the read that caught it").toContain("show");
+  expect(stopped.detail).toContain("status");
+  // POSITIVE CONTROL: the commit WAS made and the write WAS attempted, so
+  // this is a read-back catching a silent no-op rather than a step that
+  // never happened.
+  expect(stub.writes).toEqual([plan.cardFile]);
+  expect(stub.calls.some((c) => c.argv.includes("commit"))).toBe(true);
+  expect(attempted(stub, plan, "cut"), "the lane was cut from an unstamped commit").toBe(false);
+  expect(result.removed).toEqual([]);
+});
+
+test("A STAMP ANCHORED ON A KEY THE CARD DOES NOT CARRY IS A REFUSAL, never a silent no-op", () => {
+  // KILLED BY: a writer that appends a missing key instead of refusing,
+  // one that reports success over a substitution that matched nothing, and
+  // one whose replacement swallows the line after it — the two failures
+  // measured on the dispatching seat's own `perl -pi` stamps.
+  const missing = () => stampCard(FIXTURE_CARD, { built_at: "now" });
+  expect(missing).toThrow(DispatchLaneFinding);
+  expect(missing).toThrow(/built_at:/);
+
+  const before = FIXTURE_CARD.split("\n");
+  const after = stampCard(FIXTURE_CARD, { status: "building", builder: "a-seat" }).text.split("\n");
+  expect(after.length, "the stamp changed the card's line count, so a line was swallowed").toBe(
+    before.length,
+  );
+  for (const [i, line] of before.entries()) {
+    if (line.startsWith("status:") || line.startsWith("builder:")) continue;
+    expect(after[i], `line ${i + 1} moved under a stamp that was not addressed to it`).toBe(line);
+  }
+  expect(after).toContain("status: building");
+  expect(after).toContain("builder: a-seat");
+
+  // AND THE VERDICT IS NOT VACUOUS: it disagrees with the card as it was.
+  expect(stampVerdict(FIXTURE_CARD, { status: "building" }).length).toBe(1);
+  expect(stampVerdict(after.join("\n"), { status: "building", builder: "a-seat" })).toEqual([]);
+});
+
+test("THE MANIFEST IS READ BACK, and a manifest for another lane is not this lane's fence", () => {
+  // KILLED BY: trusting `--write-fence`'s exit code instead of reading the
+  // file it claims to have written. The hook reads that file and nothing
+  // else, so a manifest naming another card is a fence nobody declared.
+  const want = {
+    taskId: "T-133",
+    branch: "refs/heads/task/T-133-a-lane",
+    worktree: "/Users/x/nputer-T-133",
+    card: "docs/tasks/T-133-a-card.md",
+  };
+  const good = { version: 1, ...want, paths: ["tools/e2e/scripts/brief.mjs"] };
+  expect(manifestVerdict(JSON.stringify(good), want)).toEqual([]);
+  expect(manifestVerdict("{not json", want)[0]).toContain("not readable JSON");
+  expect(manifestVerdict("[]", want)[0]).toContain("not a JSON object");
+  for (const key of ["taskId", "branch", "worktree", "card"] as const) {
+    const wrong = manifestVerdict(JSON.stringify({ ...good, [key]: "somebody else's" }), want);
+    expect(wrong.join(" "), `a manifest carrying another lane's ${key} was accepted`).toContain(key);
+  }
+  expect(
+    manifestVerdict(JSON.stringify({ ...good, paths: [] }), want).join(" "),
+    "a manifest reserving nothing would refuse every write in the lane",
+  ).toContain("no path at all");
+  expect(manifestVerdict(JSON.stringify({ ...good, version: undefined }), want).join(" ")).toContain(
+    "version",
+  );
+});
+
+test("THE PORT, THE SCRATCH STEM AND THE BENCH FOLLOW THE SPELLINGS CONVENTIONS PUBLISHES", () => {
+  // KILLED BY: a port base, a scratch name or a bench path typed into the
+  // module. ONE SIDE ONLY: the DOCUMENT moves and the derivation has to
+  // follow it — a constant would not.
+  const md = conventions();
+  const sp = dispatchSpellings(md);
+  expect(sp.portPattern).toContain("<card number>");
+  expect(sp.scratchPattern).toContain("<card id>");
+  expect(sp.benchPattern).toContain("T-NNN");
+  expect(lanePort("T-239", sp)).toBe(sp.portBase + 239);
+  // A SUFFIXED CARD SHARES ITS PARENT'S NUMBER AND GETS ITS OWN STEM, and
+  // that asymmetry is the two bullets' own: one says `<card number>` and
+  // the other says `<card id>`.
+  expect(lanePort("T-216-s1", sp)).toBe(lanePort("T-216", sp));
+  expect(laneScratchStem("T-216-s1", sp)).not.toBe(laneScratchStem("T-216", sp));
+  expect(laneScratchName("battery", "sh", "T-216-s1", sp)).toBe("battery-T-216-s1.sh");
+
+  const moved = md
+    .replace(`\`${sp.portPattern}\``, "`NPUTER_E2E_PORT=27000+<card number>`")
+    .replace(`bench worktree \`${sp.benchPattern}\``, "bench worktree `../bench-T-NNN`")
+    .replace(`\`${sp.scratchPattern}\``, "`<purpose>_<card id>_<ext>`");
+  expect(moved).not.toBe(md);
+  const after = dispatchSpellings(moved);
+  expect(after.portBase).toBe(27000);
+  expect(lanePort("T-239", after)).toBe(27239);
+  expect(after.benchPattern).toBe("../bench-T-NNN");
+  expect(laneScratchName("battery", "sh", "T-216-s1", after)).toBe("battery_T-216-s1_sh");
+
+  // AND A BULLET THAT NO LONGER SPELLS IT THROWS, rather than defaulting.
+  const gone = md.replace(`\`${sp.portPattern}\``, "the port for the lane");
+  expect(gone).not.toBe(md);
+  expect(() => dispatchSpellings(gone)).toThrow(/backticked runs carrying/);
+  const noBench = md.replace(`bench worktree \`${sp.benchPattern}\``, "no bench is published");
+  expect(noBench).not.toBe(md);
+  expect(() => dispatchSpellings(noBench)).toThrow(/bench worktree/);
+});
+
+test("THE CREATE COMMAND IS THE ONE CONVENTIONS PUBLISHES, SUBSTITUTED — never one typed here", () => {
+  // KILLED BY: a `git worktree add` assembled in the module. The document
+  // moves on one side only, and the argv has to move with it.
+  const ctx = context({});
+  const lane = { branchName: "task/T-901-a-lane", worktree: "/Users/x/nputer-T-901" };
+  const argv = createLaneArgv(ctx, lane);
+  expect(argv.slice(0, 3)).toEqual(["git", "-C", ctx.root]);
+  expect(argv).toContain(lane.worktree);
+  expect(argv).toContain(lane.branchName);
+  expect(argv, "the base is substituted at run time, so the plan carries the placeholder").toContain(
+    BASE_TOKEN,
+  );
+  expect(
+    argv.some((a) => a.includes("T-NNN") || a.includes("<slug>")),
+    "a placeholder reached the command, so a worktree would be cut at a literal `T-NNN`",
+  ).toBe(false);
+  // AND A DOCUMENT THAT NO LONGER SPELLS IT REFUSES, rather than falling
+  // back on a command this module remembers.
+  const broken = {
+    ...ctx,
+    spellings: { ...ctx.spellings, createCommand: "git worktree add somewhere -b something" },
+  };
+  expect(() => createLaneArgv(broken, lane)).toThrow(DispatchLaneFinding);
+  expect(() => createLaneArgv(broken, lane)).toThrow(/typed from memory/);
+});
+
+test("THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING", () => {
+  // KILLED BY: a dry run that performs a step, one that prints the plan in
+  // an order other than DISPATCH_STEPS', and one that omits a lane fact
+  // the first acceptance criterion names. The plan is what a dispatcher
+  // reads BEFORE it spends anything, so a plan that lies is worse than no
+  // plan.
+  const fx = ritualFixture("one");
+  try {
+    const before = {
+      status: fixtureGit(fx.root, ["status", "--porcelain"]),
+      head: fixtureGit(fx.root, ["rev-parse", "HEAD"]),
+      worktrees: fixtureGit(fx.root, ["worktree", "list", "--porcelain"]),
+      files: inventory(fx.root),
+    };
+    const ran = spawnSync(
+      process.execPath,
+      [CLI, "--dispatch-lane", FIXTURE_CARD_ID, "--slug", FIXTURE_SLUG, "--root", fx.root,
+        "--scratch", fx.scratch, "--dry-run"],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expect(ran.status, ran.stderr).toBe(EXIT.CLEAN);
+
+    // THE ORDER IS THE LAW, and the plan is where a reader checks it.
+    const printed = values(ran.stdout).filter((l) => /^step \d+ — /.test(l));
+    expect(printed.map((l) => l.replace(/^step (\d+) — ([a-z]+):.*$/, "$1 $2"))).toEqual(
+      DISPATCH_STEPS.map((s) => `${s.n} ${s.id}`),
+    );
+    // AND THE BLOCK OF LANE FACTS IS ALL SEVEN, plus the card they derive from.
+    for (const label of ["branch: ", "worktree: ", "base hash: ", "bench: ", "port: ",
+      "scratch stem: ", "brief path: "]) {
+      expect(values(ran.stdout).some((l) => l.trim().startsWith(label)), `no ${label} row`).toBe(true);
+    }
+    expect(ran.stdout, "the base is a commit the dry run has not made, and must not be named").toContain(
+      `base hash: ${BASE_TOKEN}`,
+    );
+    // EVERY LINE THE ARM EMITS IS STAMPED — the module's own provenance
+    // floor, applied to the rows this card adds.
+    expect(unstampedLines(ran.stdout.split("\n").filter((l) => /^(step \d| *(branch|worktree|base hash|bench|port|scratch stem|brief path): )/.test(l)).join("\n"))).toEqual([]);
+
+    expect(fixtureGit(fx.root, ["status", "--porcelain"])).toBe(before.status);
+    expect(fixtureGit(fx.root, ["rev-parse", "HEAD"])).toBe(before.head);
+    expect(
+      fixtureGit(fx.root, ["worktree", "list", "--porcelain"]),
+      "a dry run cut a worktree",
+    ).toBe(before.worktrees);
+    expect(inventory(fx.root)).toEqual(before.files);
+    expect(existsSync(fx.scratch), "a dry run wrote the brief it only meant to plan").toBe(false);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(dry-run)");
+  }
+});
+
+test("A CHECKOUT THAT IS NOT THE INTEGRATION ONE IS REFUSED BEFORE THE RITUAL'S FIRST STEP", () => {
+  // KILLED BY: an arm that stamps wherever it is pointed. The dispatch
+  // stamp belongs on the integration branch and the lane inherits it in
+  // its base (orchestrator 5b), so a lane is not a seat this ritual can be
+  // run from — and a stamp committed onto a lane branch is the two-writer
+  // conflict the pre-cut stamp exists to prevent.
+  const fx = ritualFixture("one");
+  try {
+    fixtureGit(fx.root, ["checkout", "--quiet", "-b", `task/${FIXTURE_CARD_ID}-not-a-seat`]);
+    const head = fixtureGit(fx.root, ["rev-parse", "HEAD"]);
+    const ran = spawnSync(
+      process.execPath,
+      [CLI, "--dispatch-lane", FIXTURE_CARD_ID, "--slug", FIXTURE_SLUG, "--root", fx.root,
+        "--scratch", fx.scratch],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expect(ran.status, "a refusal must not look like a clean dispatch").toBe(EXIT.FOUND);
+    expect(ran.stderr).toContain("not the integration one");
+    expect(ran.stdout).toContain("REFUSED before its first step");
+    // NOTHING WAS DONE: no stamp, no commit, no worktree, no brief.
+    expect(fixtureGit(fx.root, ["rev-parse", "HEAD"])).toBe(head);
+    expect(fixtureGit(fx.root, ["status", "--porcelain"])).toBe("");
+    expect(fixtureGit(fx.root, ["worktree", "list", "--porcelain"]).split("worktree ").length).toBe(2);
+    expect(existsSync(fx.scratch)).toBe(false);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(not-integration)");
+  }
+});
+
+test("THE RITUAL IS A NAMED ARM — its dials mean nothing without it, and it refuses the acts it performs", () => {
+  // KILLED BY: accepting a dial this command then ignores, and by letting
+  // `--dispatch-lane` share an invocation with an arm that performs one of
+  // its own steps. Every case below returns before this command reads a
+  // card, so the checkout it runs in is untouched — which is the fifth
+  // acceptance criterion's second half, and the reason the existing body
+  // *THE COMMAND IS A READ* is still about the same command.
+  const statusBefore = spawnSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" });
+  const run = (args: string[]) =>
+    spawnSync(process.execPath, [CLI, ...args], { cwd: repoRoot, encoding: "utf8" });
+
+  const stray = run(["--slug", "a-lane"]);
+  expect(stray.status).toBe(EXIT.USAGE);
+  expect(stray.stderr).toContain("--slug");
+  expect(run(["--dry-run", "--task", "T-133"]).status).toBe(EXIT.USAGE);
+  expect(run(["--executor", "a-seat", "--state"]).status).toBe(EXIT.USAGE);
+
+  const noSlug = run(["--dispatch-lane", "T-133"]);
+  expect(noSlug.status).toBe(EXIT.USAGE);
+  expect(noSlug.stderr).toContain("--slug");
+
+  const both = run(["--dispatch-lane", "T-133", "--slug", "a-lane", "--write-fence", "/nowhere"]);
+  expect(both.status).toBe(EXIT.USAGE);
+  expect(both.stderr).toContain("already performs --write-fence");
+
+  const seat = run(["--dispatch-lane", "T-133", "--slug", "a-lane", "--take-seat"]);
+  expect(seat.status).toBe(EXIT.USAGE);
+  expect(seat.stderr).toContain("take the seat, then dispatch");
+
+  // AND THE ARM IS ON THE HELP LINE, because a named arm nobody is told
+  // about is a hand step that stayed a hand step.
+  const help = run(["--help"]);
+  expect(help.status).toBe(EXIT.CLEAN);
+  expect(help.stdout).toContain("--dispatch-lane");
+
+  const statusAfter = spawnSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" });
+  expect(statusAfter.stdout, "a refused invocation moved the working tree").toBe(statusBefore.stdout);
 });

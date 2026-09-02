@@ -1073,7 +1073,11 @@ and T-236 (2026-09-02, whose pre-compaction text is
   project, and these are this project's:
   - integration branch `main`; branch `task/T-NNN-<slug>`; worktree
     `../nputer-T-NNN`, a sibling of the repo root and never a path
-    inside it. Created with
+    inside it; bench worktree `../nputer-V-T-NNN`, the verifier's, cut
+    DETACHED at the same base and never on a branch — a detached entry
+    is not a lane and holds no fence, which is what keeps it out of the
+    lane list (T-239 published this spelling; every bench on this
+    machine already wore it and nothing stated it). Created with
     `git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>`, and
     the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
     THIS REPO and the older `tNNN-…` one is not a mistake to fix**: the
@@ -1126,8 +1130,29 @@ and T-236 (2026-09-02, whose pre-compaction text is
     <the lane worktree>`: it expands the card's `touches:` through the
     parser's ONE fence implementation and leaves the answer in the lane
     as `.nputer/lane-fence.json`. **AND THE STEP BEFORE IT IS THE
-    PREFLIGHT** (T-160): the ritual is derive the brief, PREFLIGHT the
-    card, write the fence, stamp and cut —
+    PREFLIGHT** (T-160). **THE RITUAL IS EIGHT STEPS AND THE ORDER IS
+    THE LAW**: stamp `building` on the integration branch and COMMIT,
+    cut the lane worktree at that commit, PREFLIGHT, write the fence,
+    READ THE MANIFEST BACK, cut the bench, assemble the brief to a file,
+    derive the port and the scratch stem. That sentence read "derive the
+    brief, PREFLIGHT the card, write the fence, stamp and cut" until
+    T-239, an order no seat could perform — `--write-fence` is handed
+    the worktree the CUT creates, and the stamp precedes the cut (the
+    serial-ritual bullet above, method/roles/orchestrator.md 5b) — so it
+    is CORRECTED here rather than argued beside. **ONE ARM PERFORMS ALL
+    EIGHT AND REFUSES AT THE FIRST THAT FAILS**, naming the step, the
+    command it ran and its exit in the four house codes, removing every
+    worktree it cut and leaving the stamp standing (a stamp is a fact
+    about the card, T-226):
+
+        node tools/e2e/scripts/brief.mjs --dispatch-lane T-NNN --slug <slug>
+          [--executor <seat>] [--verifier <seat>] [--scratch <dir>] [--dry-run]
+
+    Run from the integration checkout by the seat that HOLDS it: it
+    refuses a checkout that is not the integration one and a checkout
+    another live session holds, before its first step. `--dry-run`
+    prints the plan and performs nothing. The hand spellings below stay
+    exactly what the arm runs, one at a time —
     `node tools/e2e/scripts/brief.mjs --task T-NNN --preflight` from the
     repository root re-derives at HEAD every claim the card makes that
     IS derivable (paths, the fence through the live slug map, stamped

@@ -73,8 +73,10 @@
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   conventionsText,
   frontmatterBlock,
@@ -3032,5 +3034,1042 @@ export function stateReport(ctx) {
     if (!/^#{2,3} /.test(line)) continue;
     recs.push(value(line.trim(), tree(ctx, "docs/STATE.md headings")));
   }
+  return recs;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+ * THE DISPATCH RITUAL, PERFORMED (T-239) — eight steps, in the order the
+ * documents fix, refusing at the first that fails.
+ *
+ * ── WHAT WAS WRONG ───────────────────────────────────────────────────
+ * Every step of the dispatch already had a command. NOTHING JOINED THEM
+ * BUT THE SEAT'S MEMORY, and the seat is where the failures were: the
+ * order was inverted once (T-226 stamped after the cut and met a
+ * three-way conflict at the merge), four worktrees were cut before any
+ * was armed (T-209's refusal, and two lanes cut before either is armed
+ * cannot both be armed), and a stamp anchored on a key the card did not
+ * carry was a silent no-op nobody read back.
+ *
+ * ── THE ORDER IS THE LAW, AND IT IS READ FROM THREE DOCUMENTS ────────
+ * `method/roles/orchestrator.md` 5b — stamp on the integration branch
+ * and COMMIT, *then* cut the lane from that commit, *then* hand over the
+ * brief. `docs/CONVENTIONS.md`'s serial-ritual bullet — cut ONE worktree,
+ * arm it, READ THE MANIFEST BACK, then cut the next, and stamp
+ * `building` BEFORE you cut. `method/roles/orchestrator.md` 5c — cut the
+ * verifier's bench when you cut the lane. The eight steps below are that
+ * order, and `DISPATCH_STEPS` is the only place it is written down.
+ *
+ * ── WHAT THIS SECTION MAY AND MAY NOT DO ─────────────────────────────
+ * THE DERIVATIONS ARE PURE AND THE ONE ACTING FUNCTION TAKES ITS WORLD
+ * AS AN ARGUMENT. `dispatchLanePlan` reads and computes; it spawns
+ * nothing and writes nothing, so a `--dry-run` is the plan printed and
+ * no more. `runDispatchLane` is the single function that acts, and every
+ * process it starts and every byte it writes goes through the `DispatchIo`
+ * it is handed — which is what lets a body drive a real failure at any
+ * one of the eight steps without cutting eight worktrees. This is the
+ * module header's rule 6 kept rather than broken: the derivers still
+ * write nothing, and the acting function is never called at import.
+ *
+ * ── THE REFUSAL CONTRACT ─────────────────────────────────────────────
+ * Every refusal names THE STEP, THE COMMAND IT RAN and ITS EXIT, in the
+ * four house codes this file already publishes. A later step is never
+ * attempted. What was already done is not undone where undoing it would
+ * be a lie — the stamp is a fact about the card (T-226) and stays — but
+ * every worktree THIS RUN cut is removed, and the removal is announced.
+ * A worktree this run did not cut is never touched.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** The bullet that publishes the per-lane port. A locator, not its text. */
+export const E2E_PORT_PHRASE = "E2E PORT — DERIVE IT PER LANE";
+
+/** The bullet that publishes the scratch file name. Also a locator. */
+export const SCRATCH_RULE_PHRASE = "SCRATCH RULE — NAME EVERY SCRATCH FILE";
+
+/**
+ * The label the lane bullet publishes the VERIFIER'S BENCH under. It had
+ * none until T-239: the lane bullet published the lane's branch, its
+ * worktree and the command that creates it, the bench bullet published
+ * the attack set's file name and the digest a verdict cites, and the
+ * bench WORKTREE — live on this machine under one spelling for weeks —
+ * was stated nowhere. A path this ritual typed would have been the fifth
+ * unpublished name in a file whose whole point is that the names live in
+ * the document.
+ */
+export const BENCH_LABEL = "bench worktree";
+
+/** This command's own runnable half, beside this file. The ritual re-enters
+ *  IT and never the copy sitting in whatever `--root` names: a dispatch that
+ *  ran a different implementation from the one it was asked of is exactly the
+ *  stale-checkout split `checkout-currency.mjs` exists to catch. */
+export const BRIEF_CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "brief.mjs");
+
+/**
+ * @typedef {object} DispatchSpellings
+ * @property {string} portVariable  the environment variable the bullet names
+ * @property {number} portBase      the base it publishes
+ * @property {string} portPattern   the whole published spelling, verbatim
+ * @property {string} scratchPattern the SCRATCH RULE's published file name
+ * @property {string} benchPattern   the lane bullet's bench worktree spelling
+ */
+
+/**
+ * The two spellings the ritual's LAST step derives from the card number,
+ * READ off docs/CONVENTIONS.md rather than typed here — the fourth
+ * acceptance criterion in as many words, and the same idiom
+ * `laneSpellings` already uses for the branch and the worktree.
+ *
+ * @param {string} conventionsMd
+ * @returns {DispatchSpellings}
+ */
+export function dispatchSpellings(conventionsMd) {
+  /**
+   * @param {string} phrase
+   * @param {string} placeholder
+   * @returns {string}
+   */
+  const backtickedAround = (phrase, placeholder) => {
+    const bullet = rawBullet(conventionsMd, phrase).replace(/\s+/g, " ");
+    const found = [...bullet.matchAll(/`([^`]+)`/g)]
+      .map((m) => /** @type {string} */ (m[1]))
+      .filter((s) => s.includes(placeholder));
+    if (found.length !== 1) {
+      throw new Error(
+        `dispatch-brief: the bullet containing ${JSON.stringify(phrase)} spells ${found.length} ` +
+          `backticked runs carrying ${JSON.stringify(placeholder)}, expected exactly one. This ` +
+          "module derives that spelling rather than carrying a copy of it, so a reworded bullet " +
+          "is a hard failure and never a default.",
+      );
+    }
+    return /** @type {string} */ (found[0]);
+  };
+
+  const portPattern = backtickedAround(E2E_PORT_PHRASE, "<card number>");
+  const port = /^([A-Za-z_][A-Za-z0-9_]*)=(\d+)\+<card number>$/.exec(portPattern);
+  if (port === null) {
+    throw new Error(
+      `dispatch-brief: the per-lane port spelling ${JSON.stringify(portPattern)} is not ` +
+        "`<VARIABLE>=<base>+<card number>`, so this module cannot derive a port from it. A lane " +
+        "port guessed at is the machine-scoped surface that bullet exists to remove.",
+    );
+  }
+  const scratchPattern = backtickedAround(SCRATCH_RULE_PHRASE, "<card id>");
+
+  // THE BENCH, READ OFF THE LANE BULLET BY ITS LABEL — the same idiom
+  // `laneSpellings` uses for the lane's own three names, and anchored on
+  // the label rather than on a backtick count so a bullet that gains a
+  // sentence does not move it.
+  const laneBullet = rawBullet(conventionsMd, "THE LANE PROTOCOL").replace(/\s+/g, " ");
+  const bench = [...laneBullet.matchAll(new RegExp(`${BENCH_LABEL} \`([^\`]+)\``, "g"))].map(
+    (m) => /** @type {string} */ (m[1]),
+  );
+  if (bench.length !== 1 || !(/** @type {string} */ (bench[0]).includes("T-NNN"))) {
+    throw new Error(
+      `dispatch-brief: the lane bullet spells ${JSON.stringify(BENCH_LABEL)} followed by a ` +
+        `backticked pattern carrying \`T-NNN\` ${bench.length} time(s), expected exactly one. The ` +
+        "verifier's bench is cut beside the lane (method/roles/orchestrator.md 5c) and this module " +
+        "derives its path rather than typing one, so a missing spelling is a hard failure.",
+    );
+  }
+  return {
+    portVariable: /** @type {string} */ (port[1]),
+    portBase: Number(port[2]),
+    portPattern,
+    scratchPattern,
+    benchPattern: /** @type {string} */ (bench[0]),
+  };
+}
+
+/**
+ * The CARD NUMBER — what the port spelling substitutes. A suffixed card
+ * shares its parent's number by that spelling and gets its own scratch
+ * STEM, which is the asymmetry the two bullets publish rather than one
+ * this module invented: the port bullet says `<card number>` and the
+ * scratch bullet says `<card id>`.
+ *
+ * @param {string} taskId a normalised id
+ * @returns {number}
+ */
+export function laneCardNumber(taskId) {
+  const m = /^T-(\d+)(?:-s\d+)?$/.exec(taskId);
+  if (m === null) {
+    throw new Error(
+      `dispatch-brief: ${JSON.stringify(taskId)} carries no card number, so the per-lane port ` +
+        "cannot be derived from it.",
+    );
+  }
+  return Number(m[1]);
+}
+
+/** @param {string} taskId @param {DispatchSpellings} sp @returns {number} */
+export function lanePort(taskId, sp) {
+  return sp.portBase + laneCardNumber(taskId);
+}
+
+/**
+ * One scratch file's name, by the published pattern. The pattern is split
+ * on its own `<card id>` placeholder and the remaining `<…>` tokens are
+ * filled BY POSITION, so no placeholder's spelling is transcribed here.
+ *
+ * @param {string} purpose
+ * @param {string} ext
+ * @param {string} taskId
+ * @param {DispatchSpellings} sp
+ * @returns {string}
+ */
+export function laneScratchName(purpose, ext, taskId, sp) {
+  const parts = sp.scratchPattern.split("<card id>");
+  if (parts.length !== 2) {
+    throw new Error(
+      `dispatch-brief: the scratch spelling ${JSON.stringify(sp.scratchPattern)} does not carry ` +
+        "exactly one `<card id>` placeholder, so a name derived from it would be a guess.",
+    );
+  }
+  const head = /** @type {string} */ (parts[0]).replace(/<[^>]+>/, purpose);
+  const tail = /** @type {string} */ (parts[1]).replace(/<[^>]+>/, ext);
+  return `${head}${taskId}${tail}`;
+}
+
+/**
+ * The scratch STEM a lane owns: the published pattern with the card id
+ * filled in and the other placeholders left standing, which is the thing
+ * a seat has to be told once and then obeys for every file it writes.
+ *
+ * @param {string} taskId
+ * @param {DispatchSpellings} sp
+ * @returns {string}
+ */
+export function laneScratchStem(taskId, sp) {
+  return sp.scratchPattern.split("<card id>").join(taskId);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE STAMP — step one's write, and the read-back that makes it a fact.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * A problem with the CARD or the checkout, not with this command — the
+ * same split `LaneFenceFinding` takes next door, for the same reason: the
+ * house contract keeps "I derived it and found something" apart from "I
+ * could not tell you", and the caller reads the CLASS rather than
+ * pattern-matching a message.
+ */
+export class DispatchLaneFinding extends Error {}
+
+/**
+ * Rewrite frontmatter fields on a card, IN PLACE and by whole line.
+ *
+ * **A STAMP ANCHORED ON A MISSING KEY IS A NO-OP**, and that is measured
+ * rather than feared: the dispatching seat's own `perl -pi` substitutions
+ * silently changed nothing when a card carried no `built_by:` line, and a
+ * pattern ending in `\s*$` glued the following frontmatter line onto the
+ * one it rewrote. Both failures are structural here — a key this function
+ * is asked to stamp and cannot find is a REFUSAL, and a line is replaced
+ * whole rather than patched.
+ *
+ * @param {string} text the card, verbatim
+ * @param {Record<string, string>} fields key -> value; "" writes a bare `key:`
+ * @returns {{ text: string, changed: string[] }}
+ */
+export function stampCard(text, fields) {
+  const block = frontmatterBlock(text);
+  if (block === null) {
+    throw new DispatchLaneFinding(
+      "dispatch-brief: the card carries no frontmatter block, so there is no field to stamp and " +
+        "no lifecycle for a lane to inherit.",
+    );
+  }
+  const start = text.indexOf(block);
+  if (start < 0 || !/^﻿?---\r?\n$/.test(text.slice(0, start))) {
+    throw new DispatchLaneFinding(
+      "dispatch-brief: the card's frontmatter block is not where its own opening fence puts it, " +
+        "so this writer will not guess at an offset to edit.",
+    );
+  }
+  const eol = block.includes("\r\n") ? "\r\n" : "\n";
+  const lines = block.split(/\r?\n/);
+  /** @type {string[]} */
+  const changed = [];
+  for (const [key, want] of Object.entries(fields)) {
+    const at = lines.findIndex((l) => new RegExp(`^${key}:(?:[ \\t]|$)`).test(l));
+    if (at < 0) {
+      throw new DispatchLaneFinding(
+        `dispatch-brief: the card has no ${JSON.stringify(`${key}:`)} line in its frontmatter. A ` +
+          "stamp anchored on a key that is not there writes nothing and reports success, which is " +
+          "the dispatch failure this step exists to remove — add the field to the card first.",
+      );
+    }
+    const next = lines[at + 1];
+    if (next !== undefined && /^[ \t]+-[ \t]+/.test(next)) {
+      throw new DispatchLaneFinding(
+        `dispatch-brief: ${JSON.stringify(key)} is a block LIST on this card, and this writer only ` +
+          "replaces a scalar's own line. Rewriting it would silently orphan the items under it.",
+      );
+    }
+    const line = want === "" ? `${key}:` : `${key}: ${want}`;
+    if (lines[at] === line) continue;
+    lines[at] = line;
+    changed.push(key);
+  }
+  if (changed.length === 0) return { text, changed };
+  const rebuilt = lines.join(eol);
+  return { text: text.slice(0, start) + rebuilt + text.slice(start + block.length), changed };
+}
+
+/**
+ * READ THE STAMP BACK OUT OF THE COMMIT, never off the working tree.
+ * The lane inherits the stamp in its BASE (orchestrator 5b), so what
+ * matters is what the commit carries — and a working-tree read cannot
+ * tell a committed stamp from an uncommitted one.
+ *
+ * @param {string} committed the card's text at the stamp commit
+ * @param {Record<string, string>} fields what the stamp asked for
+ * @returns {string[]} the disagreements, empty when the commit carries the stamp
+ */
+export function stampVerdict(committed, fields) {
+  const f = frontmatterFields(committed);
+  /** @type {string[]} */
+  const wrong = [];
+  for (const [key, want] of Object.entries(fields)) {
+    const got = fieldScalar(f, key);
+    if (got !== want) {
+      wrong.push(
+        `${key}: the stamp commit carries ${JSON.stringify(got)} and the dispatch asked for ` +
+          `${JSON.stringify(want)}`,
+      );
+    }
+  }
+  return wrong;
+}
+
+/**
+ * READ THE MANIFEST BACK — the serial-ritual bullet's own third clause,
+ * and the step that turns `--write-fence`'s exit code into a fact about
+ * the lane. An arm that trusted the exit alone would hand a seat a lane
+ * whose every write the hook refuses.
+ *
+ * @param {string} text the manifest's bytes
+ * @param {{ taskId: string, branch: string, worktree: string, card: string }} want
+ * @returns {string[]} the disagreements, empty when the manifest governs this lane
+ */
+export function manifestVerdict(text, want) {
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    return [
+      `the manifest is not readable JSON — ${err instanceof Error ? err.message : String(err)}`,
+    ];
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return ["the manifest is not a JSON object, so it governs nothing"];
+  }
+  const m = /** @type {Record<string, unknown>} */ (parsed);
+  /** @type {string[]} */
+  const wrong = [];
+  if (typeof m["version"] !== "number") wrong.push("the manifest declares no version");
+  for (const [key, expected] of /** @type {[string, string][]} */ ([
+    ["taskId", want.taskId],
+    ["branch", want.branch],
+    ["worktree", want.worktree],
+    ["card", want.card],
+  ])) {
+    if (m[key] !== expected) {
+      wrong.push(
+        `${key}: the manifest carries ${JSON.stringify(m[key])} and this lane is ` +
+          `${JSON.stringify(expected)}`,
+      );
+    }
+  }
+  const paths = m["paths"];
+  if (!Array.isArray(paths) || paths.length === 0) {
+    wrong.push("the manifest reserves no path at all, so every write in the lane would be refused");
+  }
+  return wrong;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE PLAN — pure. It spawns nothing and writes nothing.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * @typedef {object} DispatchStep
+ * @property {number} n     the ritual's own order, and it is the law
+ * @property {string} id
+ * @property {string} what  one line, in a reader's words
+ */
+
+/**
+ * THE EIGHT STEPS, IN ORDER, WRITTEN DOWN ONCE.
+ *
+ * The order is orchestrator 5b (stamp, commit, THEN cut, THEN brief), the
+ * serial-ritual bullet (cut one, arm it, read the manifest back) and
+ * orchestrator 5c (the bench is cut WITH the lane, never when the lane
+ * reports). Nothing here may be reordered without moving those documents
+ * first.
+ *
+ * @type {readonly DispatchStep[]}
+ */
+export const DISPATCH_STEPS = Object.freeze([
+  Object.freeze({
+    n: 1,
+    id: "stamp",
+    what: "stamp the card on the integration branch, commit it, and read the stamp back out of the commit",
+  }),
+  Object.freeze({
+    n: 2,
+    id: "cut",
+    what: "cut the lane worktree on its task branch at that commit, as a sibling and absolutely",
+  }),
+  Object.freeze({ n: 3, id: "preflight", what: "re-derive the card's own claims at that commit" }),
+  Object.freeze({ n: 4, id: "fence", what: "expand the fence into the lane as its manifest" }),
+  Object.freeze({ n: 5, id: "manifest", what: "read that manifest back and check it governs this lane" }),
+  Object.freeze({ n: 6, id: "bench", what: "cut the verifier's bench, detached, at the same commit" }),
+  Object.freeze({ n: 7, id: "brief", what: "assemble the brief into the lane's own scratch file" }),
+  Object.freeze({ n: 8, id: "port", what: "derive the lane's port and scratch stem, and prove the port is free" }),
+]);
+
+/**
+ * @typedef {object} DispatchLaneOptions
+ * @property {string} taskId
+ * @property {string} slug     the dispatcher's, and the one thing here that is not derived
+ * @property {string} [executor] the seat to stamp as `builder:`
+ * @property {string} [verifier] the seat to stamp as `verifier:`
+ * @property {string} [scratch]  the directory the brief is written into
+ */
+
+/**
+ * @typedef {object} DispatchPlan
+ * @property {string} root
+ * @property {string} taskId
+ * @property {string} slug
+ * @property {string} card       repository-relative
+ * @property {string} cardFile   absolute
+ * @property {string} branch     the FULL ref the lane will be on
+ * @property {string} branchName the short name `git worktree add -b` takes
+ * @property {string} worktree   absolute, a sibling of the repository root
+ * @property {string} bench      absolute, the verifier's detached checkout
+ * @property {number} port
+ * @property {string} portVariable
+ * @property {string} scratchStem
+ * @property {string} briefFile
+ * @property {string} manifestFile
+ * @property {Record<string, string>} stamp
+ * @property {string[]} createArgv  the published create command, substituted
+ * @property {readonly DispatchStep[]} steps
+ */
+
+/** The token the published create command leaves for the base commit. */
+export const BASE_TOKEN = "<base>";
+
+/**
+ * Derive everything the ritual needs and NOTHING it does not. Reads the
+ * tree; writes nothing; starts no process.
+ *
+ * @param {Ctx} ctx
+ * @param {DispatchLaneOptions} opts
+ * @returns {DispatchPlan}
+ */
+export function dispatchLanePlan(ctx, opts) {
+  const taskId = normaliseTaskId(opts.taskId);
+  const slug = opts.slug.trim();
+  if (slug === "") {
+    throw new DispatchLaneFinding(
+      "dispatch-brief: a lane needs a slug and this command will not invent one — the branch name " +
+        "is what a reader of `git branch` sees for the life of the repository, and the assembler " +
+        "has left the document's placeholder there since T-133 for exactly this reason.",
+    );
+  }
+  const card = ctx.cards.get(taskId);
+  if (card === undefined) {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: no live card declares id ${taskId} — the board is read off the tree (flat ` +
+        "docs/tasks/T-*.md), so an id with no card is a lane with no contract.",
+    );
+  }
+  const s = ctx.spellings;
+  const sp = dispatchSpellings(ctx.conventions);
+  const repo = mainWorktree(ctx.porcelain);
+  if (repo.path === "") {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: ${repo.reason} A lane worktree is a SIBLING of the repository root ` +
+        "(method/lane-protocol.md rule three), so without that root there is no path to cut it at " +
+        "— and a relative spelling resolves against whatever directory the dispatching shell " +
+        "happens to sit in, which is the failure that rule is written against.",
+    );
+  }
+  const branchName = s.branchPattern.replace("T-NNN", taskId).replace("<slug>", slug);
+  const worktree = path.resolve(repo.path, s.worktreePattern.replace("T-NNN", taskId));
+  const bench = path.resolve(repo.path, sp.benchPattern.replace("T-NNN", taskId));
+  if (insideRepository(repo.path, worktree) || insideRepository(repo.path, bench)) {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: the worktree spelling ${JSON.stringify(s.worktreePattern)} resolves INSIDE ` +
+        `the repository (${repo.path}), and method/lane-protocol.md rule three says "The worktree ` +
+        'is a sibling directory, never a path inside the repository." A lane cut there is a second ' +
+        "copy of every file to everything that walks the tree.",
+    );
+  }
+  /** @type {Record<string, string>} */
+  const stamp = { status: "building" };
+  if (opts.executor !== undefined && opts.executor !== "") stamp["builder"] = opts.executor;
+  if (opts.verifier !== undefined && opts.verifier !== "") stamp["verifier"] = opts.verifier;
+  const scratch = opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch;
+  return {
+    root: ctx.root,
+    taskId,
+    slug,
+    card: card.file,
+    cardFile: path.join(ctx.root, card.file),
+    branch: `refs/heads/${branchName}`,
+    branchName,
+    worktree,
+    bench,
+    port: lanePort(taskId, sp),
+    portVariable: sp.portVariable,
+    scratchStem: laneScratchStem(taskId, sp),
+    briefFile: path.resolve(scratch, laneScratchName("brief", "txt", taskId, sp)),
+    manifestFile: path.join(worktree, ".nputer", "lane-fence.json"),
+    stamp,
+    createArgv: createLaneArgv(ctx, { branchName, worktree }),
+    steps: DISPATCH_STEPS,
+  };
+}
+
+/**
+ * THE CREATE COMMAND IS THE PROJECT'S OWN, SUBSTITUTED — never typed.
+ *
+ * `docs/CONVENTIONS.md`'s lane bullet publishes the command in as many
+ * words, and row 4 of every brief has printed it since T-133. Here it is
+ * turned into an argv ARRAY — a shell string can hold a pipe, and this
+ * ritual never uses a shell — by substituting the three tokens the
+ * document itself leaves: the worktree spelling, the branch spelling and
+ * `<base>`. A token the document no longer carries is a hard failure,
+ * because the alternative is a command assembled from memory.
+ *
+ * @param {Ctx} ctx
+ * @param {{ branchName: string, worktree: string }} lane
+ * @returns {string[]} argv with `<base>` still standing
+ */
+export function createLaneArgv(ctx, lane) {
+  const s = ctx.spellings;
+  const words = s.createCommand.trim().split(/\s+/);
+  /** @type {Record<string, string>} */
+  const substitution = {
+    [s.worktreePattern]: lane.worktree,
+    [s.branchPattern]: lane.branchName,
+  };
+  let filled = 0;
+  const argv = words.map((w) => {
+    const sub = substitution[w];
+    if (sub === undefined) return w;
+    filled += 1;
+    return sub;
+  });
+  if (filled !== Object.keys(substitution).length || !argv.includes(BASE_TOKEN)) {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: the create command docs/CONVENTIONS.md publishes ` +
+        `(${JSON.stringify(s.createCommand)}) no longer carries its worktree spelling, its branch ` +
+        `spelling and ${JSON.stringify(BASE_TOKEN)} as separate words, so this ritual cannot ` +
+        "substitute into it. The alternative is a `git worktree add` typed from memory, which is " +
+        "what this whole arm exists to stop.",
+    );
+  }
+  if (argv[0] !== "git") {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: the published create command starts with ${JSON.stringify(argv[0] ?? "")} ` +
+        "rather than `git`, so this ritual cannot aim it at a checkout with `-C`.",
+    );
+  }
+  return ["git", "-C", ctx.root, ...argv.slice(1)];
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE RUNNER — the one function in this module that acts, and it acts
+ * only through the world it is handed.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * @typedef {object} RunResult
+ * @property {number} status  the process's exit, or -1 when it never started
+ * @property {string} stdout
+ * @property {string} stderr
+ */
+
+/**
+ * @typedef {object} DispatchIo
+ * @property {(argv: string[], opts: { cwd: string, out?: string }) => RunResult} run
+ * @property {(file: string) => string} read
+ * @property {(file: string, text: string) => void} write
+ */
+
+/**
+ * The real world: a synchronous spawn with NO SHELL and an argv array, a
+ * read, and a write. `out` redirects the child's stdout into a file
+ * rather than piping it — the gate-runner's own doctrine, and the reason
+ * the brief step can write a document larger than any pipe buffer.
+ *
+ * @returns {DispatchIo}
+ */
+export function defaultDispatchIo() {
+  return {
+    run: (argv, opts) => {
+      const [file, ...args] = argv;
+      if (file === undefined) return { status: -1, stdout: "", stderr: "an empty argv" };
+      /** @type {number | undefined} */
+      let fd;
+      try {
+        if (opts.out !== undefined) {
+          mkdirSync(path.dirname(opts.out), { recursive: true });
+          fd = openSync(opts.out, "w");
+        }
+        const r = spawnSync(file, args, {
+          cwd: opts.cwd,
+          encoding: "utf8",
+          shell: false,
+          maxBuffer: 64 * 1024 * 1024,
+          ...(fd === undefined ? {} : { stdio: [/** @type {const} */ ("ignore"), fd, "pipe"] }),
+        });
+        if (r.error !== undefined && r.error !== null) {
+          return { status: -1, stdout: r.stdout ?? "", stderr: r.error.message };
+        }
+        return { status: r.status ?? -1, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
+      } catch (err) {
+        return { status: -1, stdout: "", stderr: err instanceof Error ? err.message : String(err) };
+      } finally {
+        if (fd !== undefined) closeSync(fd);
+      }
+    },
+    read: (file) => readFileSync(file, "utf8"),
+    write: (file, text) => {
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeFileSync(file, text);
+    },
+  };
+}
+
+/**
+ * @typedef {object} StepResult
+ * @property {number} n
+ * @property {string} id
+ * @property {string} ran     the command, verbatim, or the act it performed
+ * @property {number} exit    the four house codes
+ * @property {string} detail
+ */
+
+/**
+ * @typedef {object} DispatchResult
+ * @property {number} code    the four house codes
+ * @property {StepResult[]} done
+ * @property {StepResult | undefined} stopped
+ * @property {string[]} findings
+ * @property {string[]} removed   the worktrees THIS run cut and then took away
+ * @property {string} base        the stamp commit, once step one has made it
+ * @property {string[]} notes     what a reader must be told and is not a finding
+ */
+
+/**
+ * One argv, spelled for a reader to re-run. Verbatim: an argument
+ * carrying whitespace is quoted and nothing else is touched, because a
+ * command printed as anything but what ran is a command nobody can
+ * reproduce.
+ *
+ * @param {string[]} argv
+ * @returns {string}
+ */
+export function spellCommand(argv) {
+  return argv.map((a) => (/[\s"'$`\\]/.test(a) ? JSON.stringify(a) : a)).join(" ");
+}
+
+/**
+ * PERFORM THE RITUAL. Eight steps, in order, refusing at the first that
+ * fails and never attempting a later one.
+ *
+ * @param {DispatchPlan} plan
+ * @param {DispatchIo} io
+ * @returns {DispatchResult}
+ */
+export function runDispatchLane(plan, io) {
+  /** @type {StepResult[]} */
+  const done = [];
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const notes = [];
+  /** @type {{ path: string, branch: string }[]} */
+  const cut = [];
+  /** @type {string[]} */
+  const removed = [];
+  let base = "";
+
+  /**
+   * Undo what THIS RUN cut, and nothing else. The stamp stays: it is a
+   * fact about the card (T-226) and a card un-stamped after a lane was
+   * refused is a card whose lifecycle nobody can read.
+   */
+  const unwind = () => {
+    for (const w of [...cut].reverse()) {
+      const gone = io.run(["git", "-C", plan.root, "worktree", "remove", "--force", w.path], {
+        cwd: plan.root,
+      });
+      if (gone.status !== 0) {
+        findings.push(
+          `the worktree this run cut at ${w.path} could not be removed (exit ` +
+            `${String(gone.status)}) — ${gone.stderr.trim()}. It is still there and it is this ` +
+            "run's to take away, so remove it by hand before dispatching again.",
+        );
+        continue;
+      }
+      removed.push(w.path);
+      if (w.branch === "") continue;
+      const dropped = io.run(["git", "-C", plan.root, "branch", "-D", w.branch], { cwd: plan.root });
+      if (dropped.status !== 0) {
+        findings.push(
+          `the branch this run created (${w.branch}) could not be deleted (exit ` +
+            `${String(dropped.status)}) — ${dropped.stderr.trim()}. A dispatch re-run will fail at ` +
+            "the cut until it is gone.",
+        );
+      }
+    }
+  };
+
+  /**
+   * @param {DispatchStep} step
+   * @param {string} ran
+   * @param {number} exit
+   * @param {string} detail
+   * @returns {DispatchResult}
+   */
+  const stopAt = (step, ran, exit, detail) => {
+    unwind();
+    // THE COMMAND IS EMBEDDED RATHER THAN QUOTED, and the reason is that a
+    // reader has to be able to copy it: `JSON.stringify` around an argv
+    // that already carries its own quoting escapes them a second time, and
+    // what a dispatcher then pastes is not the command that ran.
+    findings.push(
+      `the dispatch stopped at step ${String(step.n)} (${step.id}) — ${step.what}. It ran: ` +
+        `${ran} — and got exit ${String(exit)}. ${detail}`,
+    );
+    return {
+      code: exit === EXIT.CANNOT_RUN ? EXIT.CANNOT_RUN : EXIT.FOUND,
+      done,
+      stopped: { n: step.n, id: step.id, ran, exit, detail },
+      findings,
+      removed,
+      base,
+      notes,
+    };
+  };
+
+  for (const step of plan.steps) {
+    if (step.id === "stamp") {
+      let stamped;
+      try {
+        stamped = stampCard(io.read(plan.cardFile), plan.stamp);
+      } catch (err) {
+        return stopAt(
+          step,
+          `read ${plan.card}`,
+          err instanceof DispatchLaneFinding ? EXIT.FOUND : EXIT.CANNOT_RUN,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+      if (stamped.changed.length === 0) {
+        notes.push(
+          `the card already carried every field this dispatch stamps (${Object.keys(plan.stamp).join(", ")}), ` +
+            "so no stamp commit was made and the lane is cut at the integration tip.",
+        );
+      } else {
+        io.write(plan.cardFile, stamped.text);
+        const message = `${plan.taskId}: dispatch stamp — ${Object.entries(plan.stamp)
+          .map(([k, v]) => `${k}: ${v === "" ? "(empty)" : v}`)
+          .join(", ")}`;
+        // THE PATHSPEC IS LOAD-BEARING. The integration checkout is shared
+        // with a human running the app (docs/CONVENTIONS.md), so a commit
+        // that swept up whatever else was in the tree would be this arm
+        // taking somebody else's work with it.
+        const commit = ["git", "-C", plan.root, "commit", "--quiet", "-m", message, "--", plan.card];
+        const r = io.run(commit, { cwd: plan.root });
+        if (r.status !== 0) {
+          return stopAt(step, spellCommand(commit), r.status, r.stderr.trim());
+        }
+      }
+      const headArgv = ["git", "-C", plan.root, "rev-parse", "HEAD"];
+      const head = io.run(headArgv, { cwd: plan.root });
+      if (head.status !== 0) {
+        return stopAt(step, spellCommand(headArgv), head.status, head.stderr.trim());
+      }
+      base = head.stdout.trim();
+      // READ IT BACK OUT OF THE COMMIT. A stamp that wrote nothing exits 0
+      // exactly like one that wrote everything, which is why this is a
+      // step and not a comment.
+      const showArgv = ["git", "-C", plan.root, "show", `${base}:${plan.card}`];
+      const shown = io.run(showArgv, { cwd: plan.root });
+      if (shown.status !== 0) {
+        return stopAt(step, spellCommand(showArgv), shown.status, shown.stderr.trim());
+      }
+      const wrong = stampVerdict(shown.stdout, plan.stamp);
+      if (wrong.length > 0) {
+        return stopAt(
+          step,
+          spellCommand(showArgv),
+          EXIT.FOUND,
+          `the commit does not carry the stamp: ${wrong.join("; ")}. The lane inherits its stamp ` +
+            "in its BASE (orchestrator 5b), so a lane cut here would be cut from a card the board " +
+            "still calls unstarted.",
+        );
+      }
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran: spellCommand(showArgv),
+        exit: EXIT.CLEAN,
+        detail: `${plan.card} carries ${Object.entries(plan.stamp).map(([k, v]) => `${k}: ${v}`).join(", ")} at ${base}`,
+      });
+      continue;
+    }
+
+    if (step.id === "cut" || step.id === "bench") {
+      const lane = step.id === "cut";
+      const argv = lane
+        ? plan.createArgv.map((a) => (a === BASE_TOKEN ? base : a))
+        : ["git", "-C", plan.root, "worktree", "add", "--detach", plan.bench, base];
+      const r = io.run(argv, { cwd: plan.root });
+      if (r.status !== 0) {
+        return stopAt(step, spellCommand(argv), r.status, r.stderr.trim());
+      }
+      cut.push({ path: lane ? plan.worktree : plan.bench, branch: lane ? plan.branchName : "" });
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran: spellCommand(argv),
+        exit: EXIT.CLEAN,
+        detail: lane ? `${plan.worktree} on ${plan.branch}` : `${plan.bench}, detached at ${base}`,
+      });
+      continue;
+    }
+
+    if (step.id === "preflight" || step.id === "fence" || step.id === "brief") {
+      const argv =
+        step.id === "preflight"
+          ? [process.execPath, BRIEF_CLI, "--task", plan.taskId, "--preflight", "--root", plan.root]
+          : step.id === "fence"
+            ? [process.execPath, BRIEF_CLI, "--task", plan.taskId, "--write-fence", plan.worktree, "--root", plan.root]
+            : [process.execPath, BRIEF_CLI, "--task", plan.taskId, "--root", plan.root];
+      const r = io.run(
+        argv,
+        step.id === "brief" ? { cwd: plan.root, out: plan.briefFile } : { cwd: plan.root },
+      );
+      // THE BRIEF STEP IS THE ONE THAT MAY ANSWER 1 AND STILL HAVE DONE ITS
+      // JOB, and the difference is what the code MEANS: `FOUND` is
+      // "assembled and found something", and the assembled brief is on
+      // disk. It is ANNOUNCED rather than swallowed — the dispatcher reads
+      // the findings before it spends a seat — where a `FOUND` preflight is
+      // a card whose claims no longer hold and a `FOUND` fence is a
+      // manifest that was not written.
+      const ok = step.id === "brief" ? r.status === EXIT.CLEAN || r.status === EXIT.FOUND : r.status === EXIT.CLEAN;
+      if (!ok) {
+        return stopAt(step, spellCommand(argv), r.status, r.stderr.trim());
+      }
+      if (step.id === "brief" && r.status === EXIT.FOUND) {
+        notes.push(
+          `the brief assembled and answered ${String(EXIT.FOUND)} — it found something the ` +
+            "repository does not settle. The file is complete; read its findings before you spend " +
+            `a seat on it: ${r.stderr.trim()}`,
+        );
+      }
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran: spellCommand(argv),
+        exit: r.status,
+        detail: step.id === "brief" ? plan.briefFile : step.what,
+      });
+      continue;
+    }
+
+    if (step.id === "manifest") {
+      const act = `read ${plan.manifestFile}`;
+      /** @type {string} */
+      let text;
+      try {
+        text = io.read(plan.manifestFile);
+      } catch (err) {
+        return stopAt(
+          step,
+          act,
+          EXIT.FOUND,
+          `the manifest the step before it was supposed to write is not there — ` +
+            `${err instanceof Error ? err.message : String(err)}. A lane branch with no manifest ` +
+            "is REFUSED every write by the hook, so this lane would be born unable to build.",
+        );
+      }
+      const wrong = manifestVerdict(text, {
+        taskId: plan.taskId,
+        branch: plan.branch,
+        worktree: plan.worktree,
+        card: plan.card,
+      });
+      if (wrong.length > 0) {
+        return stopAt(
+          step,
+          act,
+          EXIT.FOUND,
+          `the manifest does not govern this lane: ${wrong.join("; ")}. The hook reads that file ` +
+            "and nothing else, so a manifest for another card is a fence nobody declared.",
+        );
+      }
+      done.push({ n: step.n, id: step.id, ran: act, exit: EXIT.CLEAN, detail: plan.manifestFile });
+      continue;
+    }
+
+    if (step.id === "port") {
+      // THE ONE PROBE THE PORT BULLET ASKS FOR. `lsof` to zero rows before
+      // binding: a derived port is still a MACHINE-scoped surface, and a
+      // lane handed a port something already holds is the collision the
+      // bullet exists to remove, arriving one step later.
+      const argv = ["lsof", "-nP", `-iTCP:${String(plan.port)}`, "-sTCP:LISTEN"];
+      const r = io.run(argv, { cwd: plan.root });
+      if (r.status === -1) {
+        return stopAt(step, spellCommand(argv), EXIT.CANNOT_RUN, r.stderr.trim());
+      }
+      const rows = r.stdout.split("\n").filter((l) => l.trim() !== "");
+      if (rows.length > 0) {
+        return stopAt(
+          step,
+          spellCommand(argv),
+          EXIT.FOUND,
+          `something already holds the port this card derives — ${rows.join(" / ")}. The lane's ` +
+            "port is a function of the card number, so this is a machine to clear rather than a " +
+            "number to change.",
+        );
+      }
+      // THE ROWS ARE THE VERDICT AND `lsof`'s OWN EXIT IS NOT. It answers
+      // 1 when nothing matches, which is exactly the case this step wants,
+      // so recording that 1 as the step's code would print a refusal shape
+      // over a clean probe. The probe's own exit goes in the detail, where
+      // a reader can still see it.
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran: spellCommand(argv),
+        exit: EXIT.CLEAN,
+        detail:
+          `${plan.portVariable}=${String(plan.port)} is free (the probe itself exited ` +
+          `${String(r.status)} over no rows), and the scratch stem is ${plan.scratchStem}`,
+      });
+      continue;
+    }
+
+    return stopAt(
+      step,
+      step.id,
+      EXIT.CANNOT_RUN,
+      "this ritual declares a step it does not perform, which is a second order of steps and " +
+        "exactly the divergence DISPATCH_STEPS exists to prevent.",
+    );
+  }
+
+  return { code: EXIT.CLEAN, done, stopped: undefined, findings, removed, base, notes };
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE REPORT — the plan, the ledger and the block of lane facts.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * THE PLAN, PRINTED AND NOT PERFORMED. `<base>` stands where the commit
+ * step one has not made yet would go: a dry run that named a hash would
+ * be naming a commit that does not exist.
+ *
+ * @param {Ctx} ctx
+ * @param {DispatchPlan} plan
+ * @returns {Rec[]}
+ */
+export function dispatchPlanRecs(ctx, plan) {
+  const t = treeProv(ctx.ref, "method/roles/orchestrator.md 5b and 5c, and CONVENTIONS' serial-ritual bullet");
+  return [
+    note("THE DISPATCH RITUAL, PLANNED AND NOT PERFORMED — the order below is the law, and the"),
+    note("arm refuses at the first step that fails rather than leaving a lane half-armed"),
+    ...plan.steps.map((s) => value(`step ${String(s.n)} — ${s.id}: ${s.what}`, t)),
+    blank(),
+    ...dispatchLaneRecs(ctx, plan, undefined),
+    blank(),
+    note("Nothing above was done. Re-run this invocation without the dry-run flag to perform it."),
+  ];
+}
+
+/**
+ * THE BLOCK OF LANE FACTS — the first acceptance criterion's own list, in
+ * its own order, every figure derived and every one stamped.
+ *
+ * @param {Ctx} ctx
+ * @param {DispatchPlan} plan
+ * @param {DispatchResult | undefined} result
+ * @returns {Rec[]}
+ */
+export function dispatchLaneRecs(ctx, plan, result) {
+  const spelling = treeProv(ctx.ref, "docs/CONVENTIONS.md, the spellings this project publishes");
+  const machine = liveProv(ctx.at, ctx.host, "the repository's own main worktree, from git worktree list --porcelain");
+  const moving = liveProv(ctx.at, ctx.host, "git rev-parse HEAD in the integration checkout, after the stamp");
+  return [
+    note("THE LANE — every figure below is derived, and the card number is what derives them"),
+    value(`task: ${plan.taskId}`, treeProv(ctx.ref, "the card named by this dispatch, and nothing else")),
+    value(`branch: ${plan.branchName}`, spelling),
+    value(`worktree: ${plan.worktree}`, machine),
+    value(
+      `base hash: ${result === undefined || result.base === "" ? BASE_TOKEN : result.base}`,
+      moving,
+    ),
+    value(`bench: ${plan.bench}`, machine),
+    value(
+      `port: ${plan.portVariable}=${String(plan.port)}`,
+      treeProv(ctx.ref, "docs/CONVENTIONS.md's E2E PORT bullet, with the card number substituted"),
+    ),
+    value(
+      `scratch stem: ${plan.scratchStem}`,
+      treeProv(ctx.ref, "docs/CONVENTIONS.md's SCRATCH RULE bullet, with the card id substituted"),
+    ),
+    value(
+      `brief path: ${plan.briefFile}`,
+      liveProv(
+        ctx.at,
+        ctx.host,
+        "the scratch directory this dispatch was given, with the SCRATCH RULE's own file name in it",
+      ),
+    ),
+  ];
+}
+
+/**
+ * THE LEDGER — what each step ran and what it answered, printed on a
+ * refusal AND on a clean run. A ritual whose steps are only visible when
+ * it fails is one nobody can check while it works.
+ *
+ * @param {Ctx} ctx
+ * @param {DispatchResult} result
+ * @returns {Rec[]}
+ */
+export function dispatchLedgerRecs(ctx, result) {
+  const p = liveProv(ctx.at, ctx.host, "this ritual's own steps, in the order DISPATCH_STEPS fixes");
+  /** @type {Rec[]} */
+  const recs = [note("THE RITUAL, STEP BY STEP — each with the command it ran and the exit it got")];
+  for (const s of result.done) {
+    recs.push(value(`step ${String(s.n)} ${s.id}: exit ${String(s.exit)} — ${s.ran}`, p));
+  }
+  if (result.stopped !== undefined) {
+    const s = result.stopped;
+    recs.push(
+      value(`step ${String(s.n)} ${s.id}: REFUSED at exit ${String(s.exit)} — ${s.ran}`, p),
+      value(`  ${s.detail}`, p),
+    );
+    const later = DISPATCH_STEPS.filter((d) => d.n > s.n);
+    for (const d of later) {
+      recs.push(value(`step ${String(d.n)} ${d.id}: NOT ATTEMPTED — ${d.what}`, p));
+    }
+  }
+  for (const gone of result.removed) {
+    recs.push(value(`removed the worktree this run cut: ${gone}`, p));
+  }
+  for (const n of result.notes) recs.push(value(n, p));
   return recs;
 }

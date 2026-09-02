@@ -691,6 +691,30 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "a WRITER, and the more dangerous half — it REMOVES a holder record, which is somebody else's declaration.",
   },
   {
+    flag: "--dispatch-lane",
+    why: "THE WRITER THAT COMMITS (T-239). It stamps a card on the integration branch and commits that, cuts two worktrees and writes a brief — so a guard that measured its size would perform a dispatch every time this suite ran, which is the same argument the three writers above already make and one degree worse. `brief.spec.ts` drives it end to end against scratch repositories instead.",
+  },
+  {
+    flag: "--slug",
+    why: "a MODIFIER of --dispatch-lane, and the one input in that whole ritual the documents leave to a person: the branch name a reader of `git branch` sees for the life of the repository. It changes no size this file measures, and alone it is a usage error.",
+  },
+  {
+    flag: "--executor",
+    why: "a MODIFIER of --dispatch-lane: which seat the dispatch stamps as the card's `builder:`. It moves one frontmatter field on one card and nothing this file measures, and alone it is a usage error.",
+  },
+  {
+    flag: "--verifier",
+    why: "a MODIFIER of --dispatch-lane: which seat the dispatch stamps as the card's `verifier:`. Same shape as --executor above, and alone it is the same usage error.",
+  },
+  {
+    flag: "--scratch",
+    why: "a MODIFIER of --dispatch-lane: the directory the ritual writes its brief into. Its size is the size of the brief that arm ALREADY writes, measured against whatever tree --root names rather than against this command.",
+  },
+  {
+    flag: "--dry-run",
+    why: "a MODIFIER of --dispatch-lane that turns the writer into a printer: the plan and the block of lane facts, a few dozen lines, and no step performed. It is exercised by `brief.spec.ts` where its subject — that NOTHING was written — can actually be asserted.",
+  },
+  {
     flag: "--help",
     why: "one line, and it is the usage string rather than a derivation; `brief.spec.ts` pins its exit.",
   },
