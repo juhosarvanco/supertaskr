@@ -12,7 +12,7 @@ touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
-verified_by:
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -181,3 +181,194 @@ the one recorded.
 **THE CHEAPEST NEXT STEP IS NOT A FIX**: put `d.code` and the notices
 into the two assertions' own messages, so the next red attributes itself
 instead of costing another lane this derivation.
+
+## Verdicts
+
+### APPROVED — 2026-09-02 — claude-opus-5@subagent — blind verifier, measured at `8b5000d`
+
+Judged on the detached bench `../nputer-V-T-216-s8`, base `2f813e8`.
+Bodies are cited by NAME, never by line number — a line number is a
+coordinate in a mutable object that fails silently. Every figure is my
+own, at a named ref; where mine disagrees with the lane's record I say so.
+
+**WHICH BLINDNESS I HAD: the preferred one, and it is a fact about the
+clock rather than a discipline** (roles/verifier.md; orchestrator 5c).
+Phase 1 was dispatched before this tip existed, so there was no diff to
+decline to read. The attack set and the ground truth were written from
+the card at its base ref and SEALED before it arrived:
+
+    2026-09-02T11:53:19Z
+    b8e75ccaf0ede1621f62dea8c15403daef90d632f607aaa7d1910728b5ae5806  attack-V-T-216-s8.md
+    5135da2b540dcb3496c0ecbf8520d0a4740ff947f3ccd9e3a782a82222510903  ground-V-T-216-s8.md
+
+Both re-verified byte-unchanged after this verdict was written. **AND THE
+DISCLOSURE THE SAME RULE OWES**: the phase-2 dispatch carried the
+executor's own figures in the message that named the tip, so from that
+message on I was not blind. The seal timestamp predates it, which is what
+makes phase 1 auditable rather than merely claimed.
+
+**The card's central prediction was TRUE, measured before the diff.** At
+`2f813e8` the finding's own line exits **0**, allowed, notice on stderr.
+
+#### Every criterion re-derived: fourteen spellings, base against tip
+
+Probed by piping `{"tool_name":"Bash","tool_input":{"command":…}}` into
+`push-guard-hook.mjs` from the bench root at BOTH refs under an IDENTICAL
+token state — no `.nputer/gate-verdict.json` in either reading, the
+bench's own state as cut, restored for the tip — and the two runs diffed
+byte for byte. **The entire diff is six cases and two sentences:**
+
+| spelling | base | tip |
+|---|---|---|
+| bare push | 2, token arm | **2, byte-identical** |
+| `cd <dir> &&` push | 2, token arm | **2, byte-identical** |
+| `git -C <dir>` push | 2, token arm | **2, byte-identical** |
+| push piped to `grep` | 2, token arm | **2, byte-identical** |
+| `cd <dir> &&` push piped | 2, token arm | **2, byte-identical** |
+| `ls -la docs` | 0, EMPTY stderr | **0, EMPTY, byte-identical** |
+| `cd <dir>; ls -la docs` | 0, EMPTY stderr | **0, EMPTY, byte-identical** |
+| `cd <dir>;` push `--dry-run` | 0, EMPTY stderr | **0, EMPTY, byte-identical** |
+| `cd <dir>;` push | 0, announced allow | **2, refused** |
+| the card's exact line | 0, announced allow | **2, refused** |
+| `cd "$LANE";` push | 0 | **2** |
+| `cd <dir>; git -C <dir>` push | 0 | **2** |
+| `echo cd <dir>;` push | 0 | **2** |
+| `pushd <dir>;` push | 0 | **2** |
+
+**FIRST CRITERION — MET.** The card's exact line exits **2**, carries the
+cause verbatim (*"a `cd` reaches this push through a separator that is
+not `&&`"*) and the remedy verbatim (`git -C <the checkout being pushed>
+push`). The graph is not asked: 78 ms against 2.9 s for a judged push.
+
+**SECOND CRITERION — MET, GRADED BY ARM IDENTITY, WHICH I PRE-COMMITTED
+TO IN PHASE 1 BECAUSE THE CRITERION IS DEGENERATE ON A ONE-SUITE BENCH.**
+*"Still allowed"* is unmeasurable here — with no green four-suite token
+every determinable push is refused by the TOKEN arm whatever this card
+did — so the graded property is that each determinable spelling still
+reaches the token/graph arms with **byte-identical** text. Proved by an
+empty diff, not asserted. The half the bench cannot show, the lane's new
+body shows with a fixture, and I drilled that fixture rather than
+trusting it: under the restore-the-allow mutant its `&&` control reds, so
+it can fail.
+
+**THIRD CRITERION — MET, AND THE CARD NAMES THE WRONG MUTANT.** I derived
+this from my own drill before reading the lane's claim of it, and I
+confirm it. `block(` → `allow(` reds **four** bodies, not one, and could
+not red one: three sibling bodies assert this arm's verdict and cannot
+survive it flipping. The mutant that reds **exactly the new body and
+nothing else** is the one aimed at what only that body reads — the cause
+sentence. Replacing the interpolated reason with a generic phrase reds
+**1 of 86**, and it is the new body. **The criterion should have named
+the property, not the mutant**; the property it wanted is present.
+
+**FOURTH CRITERION — MET.** 86/86 green at the tip before any drill. No
+other arm's verdict moves — the byte-diff above is the proof, and it is
+empty for every determinable and non-push spelling.
+
+#### The drill: ten one-sided mutants over 86 bodies at `8b5000d`
+
+Each landing READ BACK from `git diff` — never a substitution count —
+each restored with `git restore --source=8b5000d --staged --worktree` and
+PROVED by sha256 against the commit (`push-guard.mjs` `54f4546b…4e717`,
+`push-guard-hook.mjs` `668080a7…b8499`), byte-exact after all ten. Kills
++ passes = 86 on every run, so no exit hid a harness failure.
+
+| mutant | kills | which bodies |
+|---|---|---|
+| `block` → `allow` | 4 | *cannot read*, *outside is silent*, *`;` and `\|\|`*, **the new body** |
+| refuse OUTSIDE this repo too | 1 | *outside is silent* |
+| remedy line dropped | 2 | *cannot read*, **the new body** |
+| **cause sentence made generic** | **1** | **the new body ALONE** |
+| hook `exit(2)` → `exit(1)` | 36 | incl. **the new body** |
+| **refusal narrowed to sentences naming `cd`** | **0 — SURVIVOR** | — |
+| no separator determines the cwd | 8 | incl. **the new body**, the resolver table |
+| census row put back (a DATA mutant) | 2 | *announced allows*, *outside is silent* |
+| `\|\|` accepted as determining | 2 | *`;` and `\|\|`*, the resolver table |
+| cross-checkout notice dropped | 6 | incl. *cannot read*, *`;` and `\|\|`* |
+
+**CONTAINMENT, BOTH DIRECTIONS, SETTLED BY MEASUREMENT RATHER THAN BY
+INSPECTION** (roles/verifier.md 2b: containment, never the count). No
+other body's kill set contains the new body's — the cause mutant is its
+alone. Two bodies LOOKED contained in it after eight mutants, so rather
+than declare a restatement I built the two mutants that would separate
+them: `||`-accepted kills *`;` and `||`* and not the new body, and the
+dropped cross-checkout notice kills *cannot read* and not the new body.
+**Neither contains the other in any pair; all three are load-bearing.**
+The two controls I proposed for arms the card does not enumerate carry
+their own demonstration — refusing outside this repository reds *outside
+is silent*, so that control CAN fail, and T-216's sixth criterion is
+pinned by a body rather than by argument.
+
+#### One SURVIVOR — a coverage gap, filed as T-216-s11, not blocking
+
+A mutant firing the refusal **only when the unresolved sentence names
+`cd`** kills nothing: 86/86 green. The shipped behaviour is correct and
+general — `pushd <dir>;` push and `echo cd <dir>;` push both exit 2 and
+neither sentence contains `cd` — so the implementation is keyed on the
+determinability answer exactly as asked. What is unpinned is the
+GENERALITY: `pushd`/`popd`, `GIT_DIR=…`, `--git-dir`, a non-literal `-C`
+and *"pushes from N different working directories"* all reach the new
+refusal and no body would notice a later narrowing. That is shape SEVEN,
+found by deriving from the criteria with the spec file closed. It fails
+no acceptance criterion, so it is a suggestion and not a rejection.
+
+#### Security sweep — clean
+
+Four files; no dependency added (no manifest or lockfile in the diff), no
+secret, no new input path, no new spawn, nothing executes or shells out
+the command text. The two interpolations into the refusal already existed
+at the base in the same string and reach stderr only. The change is
+strictly STRICTER, so no bypass is introduced, and its one availability
+risk — a push wedged by a refusal — is answered inside the refusal by a
+one-line remedy. **The sixth criterion keeps it from firing outside this
+repository's checkouts, and I verified that from a foreign
+`git init -b main` scratch repo**: silent allow there, exit 2 for the
+identical text from inside. That control is armed SEPARATELY from its
+subject — the arrangement deciding the inside answer, a checkout carrying
+the indexer manifest, is ABSENT in the scratch repo — which is the
+separation this method most often loses.
+
+#### Architecture and adjacent features
+
+The census argument in `ANNOUNCED_ALLOW_CODES` stays honest: the row goes
+BECAUSE the code now blocks, and the spec pins the absence with a second
+assertion so deleting the arm outright would not satisfy it (shape five).
+`push-repository-unresolved-outside` is untouched. Four header claims
+that the token arm is the only fail-closed arm were amended rather than
+left to rot; I checked each site. The routed card `T-216-s10` is
+well-formed — `status: planned`, `suggested_by` naming the seat and the
+ref, `touches` inside this lane's fence.
+
+#### Gates, and the RED that is not this lane's
+
+Mine, at the refs named. At `8b5000d`: `gate-run parser` **GREEN 372**,
+`gate-run app` **GREEN 1141**, `push-guard.spec.ts` **86/86**.
+`gate-run e2e` **RED, exit 1, 622 bodies, 2 failed / 620 passed**, both
+in `session-economics.spec.ts`.
+
+**ATTRIBUTED, NOT ASSUMED, AND THE ATTRIBUTION IS A MEASUREMENT.** The
+same spec run ALONE at the base `2f813e8` — this lane's diff entirely
+absent, and my own suggested card moved out of the tree so it could not
+contaminate the reading — reds **the same two bodies**, 2 failed / 8
+passed. The cause is named by `brief.mjs` in its own words: a live
+worktree on `refs/heads/task/T-225-s12-…` that *"no live card declares"*.
+That card exists on `main` and at NEITHER this base nor this tip, and the
+diff touches four paths, none of them `session-economics.spec.ts`,
+`brief.mjs`, or anything either reads. It is the REF-SKEW class this
+project already names (T-143-s1, T-187): a MACHINE-scoped surface (the
+host's worktree list) joined to a CHECKOUT-scoped one (this base's
+cards).
+
+**AND THE READING MOVED BETWEEN TWO RUNS OF THE SAME TREE, WHICH IS THE
+DIAGNOSIS RATHER THAN A COMPLICATION.** The lane's record names three
+unsettled lanes; mine names one. Neither tree changed — the MACHINE's
+live lanes did, between the two runs. A red whose content is a function
+of the host at the moment of the run cannot be a function of the diff.
+
+**docs-gate FIRES on two card paths** (`T-216-s8`, `T-216-s10`) and now a
+third of my own, owing `npm test` from `app/`, `npm test` from
+`tools/e2e/` and `npx vitest run` from `lib/parser/`. Those are the gates
+THIS VERDICT COMMIT owes, not the ones I was sent, and the figures for
+them are recorded at my own tip in the commit message — because a figure
+measured at the commit under review is stale at the tip the verdict
+itself creates.
