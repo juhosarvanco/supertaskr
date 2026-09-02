@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: suggested
+status: building
 blocked_by: []
-touches: [tools/e2e/tests/lane-fence.spec.ts]
+touches: [tools/e2e/tests/lane-fence.spec.ts, docs/CONVENTIONS.md]
 suggested_by: "executor claude-opus-5@subagent @T-215"
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 review: independent
 ---
 
@@ -85,3 +85,30 @@ passes against a page that publishes nothing.
 - A FIXTURE positive control SHALL prove the body reds when the header
   gains a limit the page does not carry.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted and dispatched, priority 2, at T-215's merge (c8f69aa)
+
+The architect seat. The verifier measured that this card's second
+criterion (every declining verdict code appearing in the bullet) cannot
+be met inside a one-spec fence — the codes occur zero times in
+CONVENTIONS — so the fence gains docs/CONVENTIONS.md, and the two
+sibling corrections to the same paragraph ride this lane so the keeper
+lands on a paragraph that is already true. Criteria: a body SHALL
+compare the header's numbered-limit count and its declining verdict
+codes against what the lane bullet publishes and red when either
+drifts, with a positive control against a planted header; the
+paragraph SHALL carry the codes; the two absorbed corrections SHALL be
+made first and covered by the same keeper.
+
+## Absorbs: T-215-s3 (2026-09-02)
+
+The bullet publishes ONE fence layer and there are two: limit 1's
+"stays protocol-covered" understates T-210's physical read-only layer.
+The paragraph SHALL name both layers and what each catches.
+
+## Absorbs: T-215-s5 (2026-09-02)
+
+"The hook FAILS OPEN in exactly one shape" is false — checkout-currency
+.spec.ts:387 measures ARM B, one fault (only the hook file absent) where
+the published shape needs two. The paragraph SHALL state both shapes,
+and the keeper SHALL read the count from the hook.

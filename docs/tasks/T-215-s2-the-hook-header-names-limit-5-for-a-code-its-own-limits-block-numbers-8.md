@@ -5,8 +5,8 @@ feature: F-06
 milestone: 4
 priority: 3
 size: S
-status: suggested
-blocked_by: []
+status: planned
+blocked_by: [T-219-s3]
 touches: [.claude/hooks/lane-fence.mjs]
 suggested_by: "executor claude-opus-5@subagent @T-215"
 builder:
@@ -65,3 +65,9 @@ than noticed by hand.
   the existing bodies in `tools/e2e/tests/lane-fence.spec.ts` SHALL stay
   green unchanged.
 - Verification: headless.
+
+## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, behind T-219-s3
+
+The architect seat, at T-215's merge (c8f69aa). One number in the hook's
+header; T-219-s3 holds the hook now and rewrites the same header, so this
+rides after it rather than beside it.

@@ -5,15 +5,15 @@ feature: F-02
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: building
 suggested_by: executor claude-opus-5@subagent @T-018-s5
 blocked_by: []
 touches: [app/src/lib/watcher-store.ts, app/src/lib/docs-model.ts, app/test/watcher-store.test.ts, app/test/docs-model.test.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 **Class parent: `T-018-s5`** (the ordinary pick's reply overwrote an emit
@@ -87,3 +87,18 @@ producer mints them, so `seq` is the only reading they have and the
 here so the next sweep does not re-open it. The same goes for the
 snapshot-less genesis arm's `Math.max(switched.seq, outcome.seq)`: no
 collection produced it, so there is no content time to compare.
+
+## TRIAGE, 2026-09-02 — promoted and dispatched, priority 3, at T-018-s5's merge (c8f69aa)
+
+The architect seat. The same class T-018-s5 closed on the pick reply,
+one emitter over: the startup `docs_snapshot` pull runs on a command
+thread off the same counter and can overtake a `docs-changed` emit, and
+`reduceDocs` decides on `seq` alone. Criteria: WHEN a pulled snapshot
+carries a higher `seq` and an older content time than an emit already
+applied for the same project THE reducer SHALL keep the emit, reusing
+`switchIsOvertaken`'s decision rather than copying it; the sweep's other
+seq-only readers (`applyDocsPayload`, `applyProjectStatus`'s open arm,
+`applySnapshot` in docs-model.ts) SHALL each be ruled on the card —
+guarded, or named correct with the reason; a positive control SHALL red
+against the unguarded pull. Guard-class by consequence, `review:
+independent`.

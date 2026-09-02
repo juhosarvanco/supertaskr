@@ -3,11 +3,11 @@ id: T-225-s2
 title: With the dispatchable-now filter landed, `--task` is the arm nearest the line and NOTHING filters it — `--task <id> --state --full` prints 74,439 bytes against a 65,536-byte buffer, and the row set grows with the documents rather than with the card
 feature: F-06
 milestone: 4
-priority: 3
+priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
+touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-225
 builder:
 verifier:
@@ -81,3 +81,14 @@ T-018-s5 --preflight` printed 68,078 bytes, OVER the 65,536-byte buffer by
 redirect and lost nothing; a `spawnSync` caller would have received a
 prefix. Same class as `--task --state --full`; the row set grows with the
 board and the preflight carries the whole row set plus its findings.
+
+## Absorbs: T-215-s4 (2026-09-02), priority raised to 2
+
+At T-215's merge (c8f69aa). `brief.mjs --full` prints the LANE PROTOCOL
+bullet and lane-protocol rule 4 VERBATIM — 22.5 KB of a 66 KB answer —
+so any correction to either pushes the triage view past the buffer, and
+T-215 measured it at 68,031 before recompressing to 66,265. The same
+class as this card's `--task --state --full` overflow; the fence gains
+brief.mjs, and the lane SHALL cite the two bullets by ref and section in
+`--full` rather than printing them, or split the arm — with the byte
+count of every arm printed before and after at its ref.
