@@ -354,3 +354,77 @@ Routed as **`T-162-s2`**, fenced on `tools/e2e`. Until it lands, this
 ADR and `DOC_BUDGETS` disagree about STATE's warn line by 360 bytes,
 **in the safe direction** — the code holds the TIGHTER line, so the gate
 fires early rather than late, and nothing is unguarded in the window.
+
+## Addendum 6 (2026-09-02, T-236): CONVENTIONS re-lands a second time, and the bar it was set is reported unmet
+
+docs/CONVENTIONS.md re-landed at **117,502 bytes**, measured with
+`git cat-file -s d01b24f:docs/CONVENTIONS.md` at the lane's final
+text commit `d01b24f`, from **160,043** at the lane's base `3170247`
+(`git cat-file -s 3170247:docs/CONVENTIONS.md`) — **−42,541 bytes,
+−26.6%**. Gate values re-derived by §Budgets as it stands at this ref,
+floor included:
+
+    document             landed     warn      fail    target   note
+    docs/CONVENTIONS.md 117,502   146,878   176,253   49,152   OVER
+
+`warn = ceil(landed + max(F, landed × 0.25))` with `F = 2 053`
+(addendum 5): the floor binds only where `landed < 4F` = 8 212, so at
+this size it is inert and `warn = ceil(117 502 × 1.25) = 146 878`;
+`fail = ceil(117 502 × 1.5) = 176 253`. The table's home is
+`DOC_BUDGETS` in tools/e2e/scripts/docs-scan.mjs, re-landed in the
+same lane. STATE, ROADMAP and ARCHITECTURE keep their landings.
+
+**WHAT THE COMPACTION MOVED.** The instance narratives — the second and
+third worked examples, the re-measurement tables that no program reads,
+the stories of a rule broken after it was written, and the counts a
+card already stamps at a ref — went to citations of the card, the
+checkpoint record or the pre-compaction ref that holds them; the whole
+pre-compaction text is `git show 3170247:docs/CONVENTIONS.md`, and the
+document's new preamble says so. Every rule, tell, remedy, hazard,
+command, exit-code legend and poison-shape ordinal is where it was,
+shorter. **Every sentence a program derives stayed byte for byte**: the
+RANGE RULE bullet whole (range-rule.mjs parses it sentence by sentence
+and addendum 1's ruling stands), the four per-package command bullets'
+command lists with their middle-dot structure (workflow-parity.spec.ts,
+docs-input-gate.spec.ts, push-guard.spec.ts), the BOOT GATE and GRAPH
+REGEN trigger sentences (range-rule.mjs), the DOCS GATE's two printed
+recipe lines and its four-column exit matrix (range-rule.mjs,
+docs-input-gate.spec.ts), the blessed runner's one naming and its suite
+list (gate-run.spec.ts), the four naming phrases dispatch-brief.mjs's
+`rawBullet` demands of exactly one bullet each, the lane spellings and
+the carve-out sentence (brief.spec.ts, dispatch-order.spec.ts,
+lane-fence.spec.ts, and `row_lane` in app/src-tauri/src/dispatch/brief.rs),
+and the `currently v0.1.8` stamp line (kit.rs under `cargo test`). One
+stale sentence was corrected in place per §Scope: the CI bullet opened
+with *"dormant until the repo's first GitHub push"* while GRAPH REGEN's
+own bullet recorded that push as 2026-08-29; it now reads ENFORCING
+since that date.
+
+**THE BAR, STATED RATHER THAN SMOOTHED OVER.** T-236's criterion asked
+for at least a third off `wc -c`, which is ≤ 106,695 from this base;
+the landing is 10,807 bytes short of it. The pins above hold roughly
+17.6 KB verbatim and do not by themselves make the bar unreachable;
+what does is rule 6 and the card's own "what moves" clause — a
+sentence moves only when it is an INSTANCE, and after five passes the
+remaining bytes are rule text, tells, remedies and hazards with no
+other home, named bullet by bullet in T-236's Implementation notes.
+The card's stop-short clause was taken rather than a rule cut to fit,
+which is the reading addendum 4 already gave this document: the
+compaction goes exactly as far as the law reaches and not one hazard
+further.
+
+**THE RUNWAY, RE-STATED BECAUSE ADDENDUM 4 PREDICTED IT.** Against the
+old line the landing size had 46,891 bytes of warn headroom; against
+the new line it has 29,376 — a compaction of 42,541 bytes COST 17,515
+bytes of runway, the proportional shape addendum 4 measured one order
+down. Derive the growth rate rather than quoting it (the
+`git cat-file -s` series that addendum prescribes); at addendum 4's
+measured velocity the new line is about a day and a half of rule-text
+landings away, exactly as before. The floor does not reach a document
+of this size, and addendum 5's condition for revisiting the per-merge
+delta budget — a governing document crossing its warn line again
+*under the floor* — is unchanged by this landing.
+
+Record of execution: T-236's card (Implementation notes) and the
+integrator's checkpoint record for this merge, which is not this
+lane's to write (§Records).
