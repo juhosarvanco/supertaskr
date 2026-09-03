@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021): nputer is a skill, a CLI and a mirror — and ARCHITECTURE lists C-02 as planned because nothing packages the scripts"
 blocked_by: []
-touches: [tools/e2e/scripts, tools/e2e/package.json, README.md]
+touches: [tools/e2e/scripts, tools/e2e/package.json, tools/e2e/tests, README.md]
 builder:
 verifier:
 built_by:
