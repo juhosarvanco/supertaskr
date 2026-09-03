@@ -101,3 +101,74 @@ Charter entry 22; builds under this room's own standing rule, at a
 version sitting, like everything else on that page. The draft
 partition markup @human owes could be its first customer — until the
 surface exists, the markup happens in prose or widgets.
+
+## THE v1 FUNCTION LIST — sitting of 2026-09-03 (@human: "Lets move forward with what you just said")
+
+The 2026-08-30 partition named v1 by charter entry and feature; @human
+asked on 2026-09-03 for the FUNCTIONS ("What will all the features and
+functions be in v1 of nputer?") and whether one file lists v1, v2 and
+v3. There was none — the ruling here, the charter artifact, the older
+docs/future.md and ROADMAP's milestones each held a piece. This
+section is the function list; the charter is now checked in beside it
+(docs/research/beyond-the-playbook-charter.md, every entry carrying
+its ruled column). One planning sitting, one record of its moves (the
+version-table addendum's own rule).
+
+**v1 — what the solo developer gets** (the partition of 2026-08-30 plus
+ADR-021 of this sitting):
+
+- **Method** (F-01): the convention as versioned and eval-gated —
+  cards, fences, verdicts, checkpoints, the three-tier governing docs,
+  the generated behaviour census, health bands over the method's own
+  metrics. Genesis ships it into any empty folder.
+- **Interview** (F-03): the seven-question genesis producing the five
+  governing docs, the first cards and a board; skill packs loaded into
+  genesis (entry 01, T-167 done); customization by interview (entry
+  03, T-173 planned, size L); the cold-start seam's operational owner
+  (T-175 planned). **Per ADR-021 the interview ships as ONE interview
+  in two lenses** — a skill in the agent app (T-242) and the app's
+  split view; one prompt, one file contract.
+- **Board** (F-02): the story map rendered live off files, the detail
+  panel, the lanes view reading git with no subprocess, per-card
+  dispositions with reasons.
+- **Dispatch** (F-04): the dispatch view (what can start and why the
+  rest cannot), the brief as a written contract, the fence enforced at
+  the write, card preflight, blind verification as a property of the
+  spawn, binding model assignment with mismatches flagged, T-239's
+  one-command arm. The app spawns nothing. **Per ADR-021 the seat
+  itself ships as a skill** (T-241) over that arm.
+- **Map** (F-06): architecture and tasks lenses, intent overlaid on
+  reality, drift, cycles, blast radius, churn, the graph budget with a
+  measured reason.
+- **Ring 2 machinery, shipped as it is** (entries 05–13): preflight,
+  fences and dispatch sets, proof of teeth, blind verification,
+  record-first landings, merge pre-proof, process vital signs, the
+  metabolism, seat economics. Working internals, documented; the
+  productization pass is v2.
+- **The launcher** (T-164, done).
+- **New at this sitting (ADR-021):** the seat skill (T-241), the
+  interview skill (T-242), the app opening on a folder from outside so
+  a skill can put the mirror beside the chat (T-243), and nputer's CLI
+  packaged as `npx nputer` — C-02, listed planned in ARCHITECTURE
+  because nothing packages the scripts yet (T-244, size L).
+
+**Left v1 at this sitting:** F-05's in-app orchestrator conversation
+and any in-app spawn path (ADR-021) — "not before v2, and only on
+evidence a user wants it". Rooms and resolutions stay files under the
+method. Still outside v1 as before: a Codex spawn adapter inside the
+app (`ADAPTERS` stays at one entry), the archaeology variant
+(ADR-005), the non-coder spec studio (ADR-006 layer 2), charter rings
+3 and 4. Milestone 0 still carries its one open box, the domain and
+trademark sweep.
+
+**The moves, listed:** F-05's conversation and spawn path: v1 → v2 or
+later. Added to v1: T-241, T-242, T-243, T-244 (all PLANNED, none
+dispatched — @human's standing instruction of 2026-09-02 holds). No
+charter entry changed column. The charter carries 32 entries where
+this room said 31 (entry 23 sits in Ring 3 in the artifact; the
+registry is 24–32); entry 32 reads v3+ by its ring and awaits
+@human's word.
+
+**Asked at the same sitting, measured, NOT ruled:** a rename of the
+product. The measurement is in the 2026-09-03 sitting record in
+docs/checkpoints/; docs/rooms/naming.md is where a rename reopens.

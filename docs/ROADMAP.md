@@ -47,13 +47,9 @@ opens with the card id that still holds its story.
   awaiting the CONVERGED state across platforms (T-153). Next:
   T-149-s1…s5.
   The watcher's re-arm ordering is pinned as the watcher promises it
-  — an emit whose batch began after the pick's draw outranks the
-  reply, and the overtake itself stays legal (T-018-s2) — and the
-  ordinary pick's reply gains the genesis branch's overtake guard
-  (T-018-s5).
-  The pick reply and the startup pull ask the genesis switch's own
-  overtake question, so an older snapshot with a higher seq no
-  longer overwrites an emit that overtook it (T-018-s5, T-018-s6).
+  (T-018-s2), and the pick reply and the startup pull ask the genesis
+  switch's own overtake question, so an older snapshot with a higher
+  seq never overwrites an emit that overtook it (T-018-s5, T-018-s6).
 - F-03: In-app genesis — planning interview as split view (planner
   chat + board materializing live); archaeology variant
   The screen is a conversation (T-027): ask, answer, watch the answer
@@ -66,7 +62,9 @@ opens with the card id that still holds its story.
   affordance (T-069/T-101/T-102/T-107/T-113), and nothing the runner
   hands execve is unbounded (T-153-s2). THE GATE THAT REMAINS is
   milestone 3's, stated there and not restated here. The archaeology
-  variant stays parked (ADR-005).
+  variant stays parked (ADR-005). The interview ships as ONE
+  interview in two lenses — a skill in the agent app and this split
+  view, one prompt, one file contract (ADR-021, T-242).
 - F-04: Dispatch — worktrees, model@session, verify/merge, from the
   board; CLI as plumbing/power path
   The board reads its own lanes off git's files with no subprocess
@@ -76,17 +74,16 @@ opens with the card id that still holds its story.
   named slice deliberately spawns nothing. The fence is a PROPERTY at
   the write (T-154 — a dispatch-stamped manifest, a zero-dependency
   hook, hostile-payload verified), and dispatch PREFLIGHTS the card
-  itself (T-160 — a failed preflight refuses the manifest). Next:
-  T-112 hands you the brief and lane commands from the board (the
-  slice's third clause); it is also the board's most colliding card —
-  derive the flip pairs first. Open ruling: D5 (`model@session`
-  per-adapter); D3 ruled narrow 2026-08-30 (both in
-  rooms/cockpit-or-mirror.md).
+  itself (T-160 — a failed preflight refuses the manifest). T-112
+  LANDED (the board hands you the brief); D3 and D5 RULED 2026-08-30;
+  and on 2026-09-03 the seat's chair was ruled for v1 — the architect
+  sits in the user's agent app, the app assembles briefs and spawns
+  nothing (ADR-021). Next: T-241 (the seat skill), T-244 (`npx nputer`).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
-  Not started; follower-first ordering ruled in
-  rooms/cockpit-or-mirror.md — the in-app orchestrator conversation
-  comes after F-04's spawn path.
+  Not started. The in-app orchestrator conversation and any in-app
+  spawn path LEFT v1 on 2026-09-03 (ADR-021): rooms stay files under
+  the method; the registry pane waits for evidence a user wants it.
 - F-06: Architecture map — intent + reality overlaid, drift as a
   first-class signal (docs/design/map-technical-plan.md, ADR-013/014/
   015; added 2026-08-15, sequencing open in rooms/map-sequencing.md).
@@ -108,21 +105,15 @@ opens with the card id that still holds its story.
   since T-127-s6 (2026-08-29), with C-17/C-18 minted and no import
   severed; the file ceiling PRINTS from `index --check` every run
   (T-140), and an oversize graph tells the map the truth (payload
-  shape: T-140-s1, @human's). On 2026-09-02 the landing
-  gate measures its sixth limit (T-223) and derives the card from the
-  lane branch at the merge; the preflight checks a card's quoted
-  claims (T-230) and fences by PATH, proved disjoint per pair
-  (T-216-s4); the method is v0.1.9 with positive controls DEMONSTRATED
-  failing (T-229); the push guard reads CI and refuses a push into a
-  running run (T-237); the dispatch view answers what can START under
-  a disclosed margin, `--full` the triage view (T-225), citing rule
-  four instead of transcribing it (T-225-s2); a fence containing the
-  unfenceable directory (T-219) or an unresolvable token (T-219-s4) is
-  refused; the holder of the integration checkout is a record on disk
-  (T-238); the stale-stamp check no longer suspends docs/tasks (T-228);
-  and blindness is a property of the spawn — phase 1 tool-less, its
-  attack set hashed, a mismatched citation refused (T-205), the eval
-  gate at nine.
+  shape: T-140-s1, @human's). The 2026-09-02 wave — the landing
+  gate's sixth limit and the card derived from the lane branch (T-223),
+  preflight of a card's quoted claims and path fences proved disjoint
+  (T-230, T-216-s4), method v0.1.9 with demonstrated positive controls
+  (T-229), the CI-reading push guard (T-237), the dispatch view under a
+  disclosed margin (T-225), refused unfenceable or unresolvable fences
+  (T-219), the holder on disk (T-238), blindness as a property of the
+  spawn (T-205) — is one record per merge in docs/checkpoints/, the
+  fourth Fable sitting record their index.
 
 ## Milestones
 

@@ -92,3 +92,44 @@ VERIFIES instead — `built_by:`/`verified_by:` record what actually
 ran, and any mismatch between assignment and execution is a
 VIOLATION FLAGGED ON THE BOARD, never a silently accepted
 substitution. The flag's card: T-169.
+
+## RE-RULED FOR v1 (2026-09-03, @human, with the architect seat of the fourth Fable sitting)
+
+**The question, as @human re-asked it the day after the 2026-09-02
+wave:** *"The most important decision now is the form of the system.
+Will the user run the process from Claude or Codex, or will they run
+the process from nputer. The question is, where is the main
+architecture conversation going to happen. That defines where the
+process will be run. You anyway need to go to the Claude or Codex to
+follow the subagent sessions work and maybe it is easier to control
+the models etc from the Claude/Codex desktop apps or terminal. So
+maybe the best place to run the process is from the Claude or Codex
+apps. Should we move the interview also to Claude or Codex as a skill
+or in other format?"*
+
+**The evidence:** the fourth Fable sitting record in docs/checkpoints/
+— the whole wave ran from the Claude desktop app, the app spawned
+nothing, the board was a mirror, and every load-bearing piece was a
+file, a script or a gate. The 2026-08-20 ruling's central property
+held: the repo could not tell.
+
+**The seat's recommendation (the thing ruled on):** the architect sits
+in Claude or Codex; nputer is the record, the gates and the mirror; the
+cockpit half (F-05's in-app orchestrator conversation, an in-app spawn
+path) leaves v1; the interview ships as ONE interview in two lenses (a
+skill in the agent app, the app's split view; one prompt, one file
+contract); what gets packaged is the architect's hand work as a seat
+skill over T-239's arm, nputer's CLI as `npx nputer`, and the app open
+beside the chat as the mirror; and "a skill, a CLI and a mirror app"
+is what nputer is for the technical first user.
+
+**RULED (@human, 2026-09-03, verbatim): "Lets move forward with what you
+just said."** Recorded as ADR-021.
+
+Consequences here: the 2026-08-20 order "follower first, cockpit next"
+becomes "follower is v1; the cockpit is not before v2 and only on
+evidence a user wants it". D-X1 of docs/design/cross-harness-plan.md is
+answered for v1: the app assembles briefs and spawns no Codex. D3 and
+D5 stand as ruled. The cards cut (planned, NOT dispatched under
+@human's standing instruction of 2026-09-02): T-241, T-242, T-243,
+T-244.
