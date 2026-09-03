@@ -179,12 +179,10 @@ is now a command. The slice's remaining clause is T-112's brief.
 
 ## Parked
 
-The staged future lives in docs/future.md (two expert-room batches:
-v0.2 cost telemetry, retro role, sandboxing, pocket cockpit; v0.3
-N-version, spec red team, time machine, handoff score, dry run;
-horizon: truth maintenance, production feedback, synthetic users,
-seeds, explainer, proof of process). Nothing there enters scope until
-the first real project run — one recorded exception: the
+The staged future — every charter entry and every parked item, by
+version — is docs/VERSIONS.md (ruled in rooms/version-planning.md; the
+parked texts stay in docs/future.md). Nothing unruled enters scope
+until the first real project run — one recorded exception: the
 architecture-drift slice of truth maintenance was pulled forward into
 F-06 v1 by human directive (ADR-013, 2026-08-15). Also parked:
 archaeology/Adopt variant — after the first real greenfield genesis

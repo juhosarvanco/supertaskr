@@ -172,3 +172,9 @@ registry is 24–32); entry 32 reads v3+ by its ring and awaits
 **Asked at the same sitting, measured, NOT ruled:** a rename of the
 product. The measurement is in the 2026-09-03 sitting record in
 docs/checkpoints/; docs/rooms/naming.md is where a rename reopens.
+
+**THE BY-VERSION VIEW (same sitting, @human: "I need a file where i can
+go and see which features are v1, v2, v3+"):** docs/VERSIONS.md — one
+page transcribing this room by version, the charter entries by number,
+and docs/future.md's parked items as UNRULED. It never rules; every
+version sitting re-touches it in the same commit as this room.
