@@ -8,7 +8,7 @@ priority: 4
 status: building
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022, docs/rooms/naming.md); measured at the form sitting of 2026-09-03"
 blocked_by: []
-touches: [app/, lib/, tools/, .claude/, .github/, README.md, CLAUDE.md, AGENTS.md, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/architecture/]
+touches: [app/, lib/, tools/, .claude/, .github/, README.md, CLAUDE.md, AGENTS.md, .nputerignore, .supertaskrignore, .gitignore, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/architecture/]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
