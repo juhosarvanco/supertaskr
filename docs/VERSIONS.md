@@ -25,15 +25,16 @@ with the app as the mirror.
 | area | in v1 | where (status read 2026-09-03) |
 |---|---|---|
 | Method (F-01) | the convention, versioned and eval-gated; genesis ships it into any folder | shipped, v0.1.9 |
-| Interview (F-03) | seven questions → the five governing docs, first cards, a board; ONE interview in two lenses (skill + split view) | shipped; T-242 planned |
+| Interview (F-03) | seven questions → the five governing docs, first cards, a board; ONE interview in two lenses — the skill in the native agent app is PRIMARY (ADR-021 Addendum 1), the app's split view stays as shipped | shipped; T-242 planned p1 |
 | — charter 01 Skill Packs | skills loaded into genesis, stamped into the record | T-167 done |
 | — charter 03 Customization by Interview | more interview, not a settings screen | T-173 planned (size L) |
 | — cold-start seam | the method's cold-start test gets an operational owner | T-175 planned |
 | Board (F-02) | story map live off files, detail panel, lanes off git, dispositions with reasons | shipped |
 | — app opens on a folder from outside | so a skill can put the mirror beside the chat | T-243 planned |
 | Dispatch (F-04) | dispatch view, brief as contract, fence at the write, preflight, blind verification as a spawn property, binding assignment, the one-command arm; the app spawns nothing | shipped (T-112, T-239 done) |
-| — the seat skill | the architect's hand work as a slash command over the arm | T-241 planned |
-| CLI (C-02) | the scripts and the indexer behind `npx nputer` | T-244 planned (size L) |
+| — the seat skill | the architect's hand work as a slash command over the arm — the primary way v1 is driven (ADR-021 Addendum 1) | T-241 planned p1 |
+| CLI (C-02) | the scripts and the indexer behind `npx nputer`, what both skills call | T-244 planned p1 (size L) |
+| — Codex's skill form, measured | how a skill is installed and invoked in the ChatGPT app's Codex and its CLI, captured before any Codex claim | T-246 planned p1 |
 | Map (F-06) | architecture + tasks lenses, intent over reality, drift, cycles, blast, churn, budget with a measured reason (the ADR-013 slice of truth maintenance) | shipped |
 | Ring 2, as it is | 05 Card Preflight · 06 Fences & Dispatch Sets · 07 Proof-of-Teeth · 08 Blind Adversarial Verification · 09 Record-First Landings · 10 Merge Pre-Proof · 11 Process Vital Signs · 12 The Metabolism · 13 Seat Economics — working internals, documented, no productization pass in v1 | shipped inside |
 | The launcher | one command launches the human's app worktree fresh | T-164 done |
@@ -82,3 +83,4 @@ the archaeology/Adopt variant (ADR-005); the non-coder spec studio
 - **2026-08-30** — the partition ruled as drafted: v1 = the F-01…F-04 arc + 01 + 03 + the launcher, Ring 2 as-is; v2 = 02, 04, 16, 21, the productization pass; v3+ = 14–20 and the registry (rooms/version-planning.md).
 - **2026-09-03** — F-05's conversation and spawn path v1 → v2-or-later; T-241, T-242, T-243, T-244 added to v1 (planned, none dispatched); the charter checked in; this page created (ADR-021, the form sitting record).
 - **2026-09-08** — ten competitor-sweep candidates added to UNRULED at @human's "do both"; no ruling, no column changed (T-245 filed for the map).
+- **2026-09-08, later** — @human: drive from the native apps, the app keeps its interview (ADR-021 Addendum 1); T-241, T-242, T-244 to priority 1; T-246 added to v1 (planned). No column changed.

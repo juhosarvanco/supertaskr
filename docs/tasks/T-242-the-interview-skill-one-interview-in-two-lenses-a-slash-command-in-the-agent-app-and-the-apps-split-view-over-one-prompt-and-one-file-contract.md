@@ -4,7 +4,7 @@ title: The interview skill — one interview in two lenses, a slash command in t
 feature: F-03
 milestone: 4
 size: M
-priority: 2
+priority: 1
 status: planned
 suggested_by: "@human (2026-09-03): \"Should we move the interview also to Claude or Codex as a skill or in other format?\" — ruled with ADR-021 (rooms/cockpit-or-mirror.md RE-RULED)"
 blocked_by: []

@@ -91,3 +91,37 @@ Codex as a skill or in other format?"*
   docs/rooms/version-planning.md (sitting of 2026-09-03), the
   charter is checked in at
   docs/research/beyond-the-playbook-charter.md with a version column.
+
+## Addendum 1 (2026-09-08, @human): drive from the native apps; the app keeps the interview
+
+@human, verbatim: *"I'm thinking we should go more strongly in the
+direction of running the process from Chatgpt or Claude apps. We can
+keep the current interview features in the app, but lets keep the
+focus on driving from the native apps."*
+
+What this sharpens:
+
+1. **The native agent apps are the primary driver** — Claude Code (the
+   desktop app and the CLI) and Codex (the ChatGPT desktop app and the
+   CLI that ships inside it). The seat skill (T-241), the CLI it calls
+   (T-244) and the interview skill (T-242) move to priority 1; the
+   app's front-door and shell backlog (F-02, F-03 hardening) is
+   maintenance, not focus, for the rest of v1.
+2. **The app keeps its interview as shipped** — the split view stays
+   the second lens and the later non-coder layer's asset (ADR-006);
+   no new interview UI is designed in v1. The mirror (board, lanes,
+   map, health) stays the app's job, and T-243 (open on a folder from
+   outside) is what lets a skill put it beside the chat.
+3. **Two vendors, one contract.** The Claude skill and the Codex
+   prompt-file form must read the same prompt and land the same files;
+   a parity test between them is owed (the shape of
+   workflow-parity.spec.ts). Codex's skill and slash-command mechanism
+   is UNMEASURED on this machine (cross-harness plan §0's rule): T-246
+   measures it before any Codex claim is made.
+4. **NORTH_STAR criterion 2 keeps both mechanisms**; the skill path is
+   now the primary one and the app's interview the second. The
+   marketing spine (M3, 2026-08-30) is unchanged: the loop is the
+   story, and "chat beside the mirror" is its demo.
+5. Follower posture unchanged: the app spawns nothing, `ADAPTERS`
+   stays at one entry, and a skill-driven turn is indistinguishable on
+   disk from a hand-driven one.

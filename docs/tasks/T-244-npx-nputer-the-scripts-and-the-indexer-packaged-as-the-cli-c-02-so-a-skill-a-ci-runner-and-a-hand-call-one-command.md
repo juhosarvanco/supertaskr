@@ -4,7 +4,7 @@ title: npx nputer — the dispatch view, the fence writer, the preflight, the ga
 feature: F-01
 milestone: 4
 size: L
-priority: 3
+priority: 1
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021): nputer is a skill, a CLI and a mirror — and ARCHITECTURE lists C-02 as planned because nothing packages the scripts"
 blocked_by: []

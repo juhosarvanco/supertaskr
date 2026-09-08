@@ -133,3 +133,9 @@ answered for v1: the app assembles briefs and spawns no Codex. D3 and
 D5 stand as ruled. The cards cut (planned, NOT dispatched under
 @human's standing instruction of 2026-09-02): T-241, T-242, T-243,
 T-244.
+
+**SHARPENED (2026-09-08, @human):** *"lets keep the focus on driving
+from the native apps"* — the Claude and ChatGPT/Codex apps are the
+primary driver, the app keeps its interview as shipped and stays the
+mirror. ADR-021 Addendum 1; T-241/T-242/T-244 to priority 1; T-246
+(measure Codex's skill form) filed.

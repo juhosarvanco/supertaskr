@@ -4,7 +4,7 @@ title: The seat skill — the architect's hand work becomes a slash command in t
 feature: F-04
 milestone: 4
 size: M
-priority: 2
+priority: 1
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021, rooms/cockpit-or-mirror.md RE-RULED): the architect sits in the user's agent app; nputer is a skill, a CLI and a mirror"
 blocked_by: []
