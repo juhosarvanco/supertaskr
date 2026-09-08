@@ -1814,19 +1814,30 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
   expect(window, "the call is guarded, or a bad pattern becomes the gate's exit 3").toContain(
     "catch",
   );
+
+  // AND THE SEARCH IS OVER CODE, NOT OVER PROSE — the second thing this
+  // drill taught. The block's own comment EXPLAINS that `found` is out
+  // of scope for the scan, so a window opened at that comment contains
+  // the word by construction and the assertion below reds on a correct
+  // gate. `stripComments` is the derivation's own lexer, already used by
+  // every site scan in this file, so the code half is taken the same way
+  // everywhere rather than by a second hand-rolled rule (T-057).
+  const windowCode = stripComments(window);
+  expect(windowCode, "the stripped window still holds the call").toContain(anchor);
   expect(
-    window,
-    "and nothing in the scan's call site touches the counter that decides the exit",
-  ).not.toContain("found");
+    windowCode,
+    "and nothing in the scan's CODE touches the counter that decides the exit",
+  ).not.toMatch(/\bfound\b/);
 
   // THE POSITIVE CONTROL FOR THAT NEGATIVE, because "the window has no
-  // `found` in it" is satisfied equally by a correct gate and by a
-  // window this body picked out of the wrong part of the file. The
-  // FIRES branch immediately above the call site DOES move `found`, and
-  // a haystack that could not see it there could not see it here.
-  const firesBranch = source.slice(source.indexOf("docs-gate: FIRES"), from);
+  // `found` in it" is satisfied equally by a correct gate, by a window
+  // picked out of the wrong part of the file, and by a `stripComments`
+  // that returned nothing. The FIRES branch immediately above the call
+  // site DOES move `found`, and it is stripped by the SAME call, so a
+  // haystack that could not see it there could not see it here.
+  const firesBranch = stripComments(source.slice(source.indexOf("docs-gate: FIRES"), from));
   expect(
     firesBranch,
     "the branch above really does move the counter, so this search can find one",
-  ).toContain("found += 1");
+  ).toMatch(/\bfound\b/);
 });
