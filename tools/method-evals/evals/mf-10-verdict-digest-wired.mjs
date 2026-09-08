@@ -36,6 +36,13 @@
  *      committed rather than synthesized so the ACCEPT path is checkable
  *      with no scratchpad and no machine-scoped path anywhere.
  *
+ *   3b. A POINTED-AT FILE THAT IS NOT THERE is MISSING and not merely
+ *      unreachable — exit 1, not 3. The two are both non-zero, so MF-09's
+ *      matrix cannot separate them; collapsing them tells a caller *I could
+ *      not tell you* about a file somebody DELETED, and deleting the file
+ *      is the bypass again. A mutant survived the whole eval until this arm
+ *      existed.
+ *
  *   4. THE REAL BOARD. Every `docs/tasks/*.md` at this ref, walked with NO
  *      resolution root. A citation whose file is reachable and does not
  *      match is a finding NAMING THE CARD. A citation that is merely
@@ -64,7 +71,8 @@
  * start verifying instead, with no code change here.
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { EXIT } from "../lib/exit.mjs";
@@ -279,6 +287,40 @@ export default {
         findings.push(`${e.card} (${e.what}): wanted exit ${e.exit}, got ${code}`);
       } else if (!out.includes(e.says)) {
         findings.push(`${e.card} exits ${code} but never says "${e.says}" — ${out.split("\n")[0]}`);
+      }
+    }
+
+    // 3b. A POINTED-AT FILE THAT IS NOT THERE IS *MISSING*, NEVER MERELY
+    // *UNAVAILABLE* — and this arm exists because a mutant SURVIVED without
+    // it (the drill's M6). Collapsing the two is a fail-open wearing a
+    // refusal's clothes: it still exits non-zero, so MF-09's matrix — which
+    // only asks ACCEPT or REFUSE — cannot see it, while the CALLER is told
+    // `3`, *I could not tell you*, about a saved file somebody DELETED.
+    // Deleting the file becomes the bypass again, one level above MF-09's
+    // MISSING row.
+    {
+      const dir = mkdtempSync(path.join(tmpdir(), "supertaskr-mf10-gone-"));
+      try {
+        // Inside a directory we just made, so it provably does not exist,
+        // and ABSOLUTE, so resolution points at it rather than giving up.
+        const gone = path.join(dir, "attack-set-T-906.md");
+        const digest = createHash("sha256")
+          .update(readFileSync(path.join(SAVED, "attack-set-T-901.md"), "utf8"), "utf8")
+          .digest("hex");
+        const card = path.join(dir, "T-906-the-saved-file-is-gone.md");
+        writeFileSync(card, `## Verdicts\n\nattack set: sha256:${digest} (${gone})\n`);
+        const { code, out } = runChecker([card]);
+        if (code !== EXIT.FOUND) {
+          findings.push(
+            `a citation POINTING AT a file that is not there exited ${code} instead of ` +
+              `${EXIT.FOUND} — a deleted saved file is a REFUSAL, never an "I could not reach it"`,
+          );
+        }
+        if (!out.includes("could not be read")) {
+          findings.push("the refusal for a deleted saved file does not say the file could not be read");
+        }
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
       }
     }
 
