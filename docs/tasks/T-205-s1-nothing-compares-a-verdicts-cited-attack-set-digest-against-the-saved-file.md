@@ -269,10 +269,22 @@ correct, the card is real, and only the base ref makes it wrong.
 
 ### THE PARSER LEG IS RED AT THE BASE AND THIS LANE DID NOT MOVE IT
 
-`gate-run.mjs parser` at `01afd48`: **exit 1, 377 bodies, 3 failed** —
+`gate-run.mjs parser` at `f840f8f`: **exit 1, 377 bodies, 3 failed** —
 `test/fence.test.ts`'s three live-board census bodies, every one naming
-`T-274 docs/tasks`. Attributed at the base in a detached worktree at
-`6dd44a6`: **identical — 3 failed / 374 passed of 377, same three bodies,
-same name.** The diff moves nothing. Main has since repaired it at
-`ab00399`, whose own subject says *"the lanes cut in between attribute
-the red at their base"*, which is what this is.
+`T-274 docs/tasks` and nothing else. Attributed at the base in a detached
+worktree at `6dd44a6` with `npx vitest run`: **identical — 3 failed / 374
+passed of 377, the same three bodies, the same name.** The diff moves
+nothing, and the four cards this lane files all expand cleanly. Main has
+since repaired it at `ab00399`, whose own subject says *"the lanes cut in
+between attribute the red at their base"*, which is exactly this.
+
+### THE BATTERY AT THE TIP `f840f8f`
+
+    gate-verdict suite=app    exit=0 bodies=1163 targets=1  GREEN
+    gate-verdict suite=e2e    exit=0 bodies=690  targets=1  GREEN
+    gate-verdict suite=rust   exit=0 bodies=639  targets=18 GREEN
+    gate-verdict suite=parser exit=1 bodies=377  targets=1  RED  (T-274, at the base)
+
+`node tools/method-evals/run.mjs` exit 0 over 10 evals; `--selftest` exit
+0 over 10, MF-10's five degradations all detected. `npm run typecheck`,
+`lint:tokens --selftest`, `lint:tokens` and `lint:docs` all exit 0.
