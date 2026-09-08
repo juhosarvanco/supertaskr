@@ -22,13 +22,18 @@ import {
   LANE_BRANCH_RE,
   MANIFEST_REL_PATH,
   MANIFEST_VERSION,
+  READ_TOOL_NAMES,
   ROUTE,
   ROUTE_LANE_LESS,
+  ROUTE_SECRET,
+  SECRET_READ_CODES,
+  SECRET_SET,
   WRITE_TOOL_PATH_FIELDS,
   carveOutFor,
   decide,
   findCheckoutRoot,
   liveLanes,
+  matchesEntry,
   readHeadRef,
   touchesLineOf,
   within,
@@ -2727,4 +2732,434 @@ test("THE COMPARISON IS THE PARSER'S — this module holds no second intersectio
   const text = disjointnessRefusal(report, FIXTURE_ID, "touches: [app/src/main.tsx]");
   expect(text).toContain("invented/domain");
   expect(text).toContain("T-902");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE SECRET READ GUARD (T-249)
+ *
+ * A SECOND QUESTION ASKED OF A DIFFERENT TOOL, and every body below is
+ * written against the asymmetry that makes it not a fence: it screens a
+ * READ, it consults no manifest, and it fails OPEN where the lane arm
+ * fails closed. The `LIFTING A SAFETY GUARD` rules the header quotes
+ * hold here unchanged — the allow bodies assert the guard's state first,
+ * and every path named resolves under a fixture root or under a
+ * `/Users/somebody/…` stem that exists on no machine. Nothing is read
+ * off the real disk, which is the one thing a guard about reading must
+ * not do to prove itself.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** One PreToolUse request from a READ tool, as the harness shapes it. */
+function askRead(cwd: string, filePath: string, toolName = "Read"): ReturnType<typeof decide> {
+  return decide({ toolName, cwd, toolInput: { file_path: filePath } });
+}
+
+/** Which entries of the secret set claim a path — the spec's own walk. */
+function claimants(cwd: string, target: string): string[] {
+  const abs = path.resolve(cwd, target);
+  const segments = abs.split(path.sep).filter((s) => s !== "");
+  const base = segments[segments.length - 1] ?? "";
+  return SECRET_SET.filter((e) => matchesEntry(e, base, segments)).map((e) => e.name);
+}
+
+/**
+ * The tree's own sources, and the NEAR-MISSES are the whole point.
+ *
+ * A negative list of unrelated paths would be satisfied by a guard whose
+ * entries were all typos. Half of these are one character from an entry:
+ * `settings.local.json` does not END in `.local`, `keys.ts` does not end
+ * in `.key`, a `.pub` key is not a private one, `docker/` is not
+ * `.docker/`, and `environment.ts` is not an env file.
+ */
+const PLANTED_NEGATIVES = [
+  "docs/STATE.md",
+  "docs/CONVENTIONS.md",
+  ".claude/hooks/lane-fence.mjs",
+  ".claude/settings.local.json",
+  "app/src/main.tsx",
+  "app/src/keys.ts",
+  "app/src/environment.ts",
+  "lib/parser/src/fence.ts",
+  "tools/e2e/tests/lane-fence.spec.ts",
+  "docs/id_ed25519.pub",
+  "docker/Dockerfile",
+] as const;
+
+test("THE POSITIVE CONTROL, PER ENTRY: every entry refuses its OWN sample, and no other entry claims it", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // THE ANTI-VACUITY HALF FIRST: an empty set satisfies every loop below
+  // at once, and "the guard has no entries" is exactly how this would
+  // rot — an entry deleted in a merge leaves a shorter list and no red.
+  expect(SECRET_SET.length, "the secret set is empty, so this body proves nothing").toBeGreaterThan(
+    0,
+  );
+
+  for (const entry of SECRET_SET) {
+    // ARM ONE — the sample is claimed by THIS entry and by NO OTHER. An
+    // entry whose sample another entry already covers is decoration: it
+    // could be deleted and every refusal below would still pass, which
+    // is the one failure a per-entry control exists to exclude.
+    expect(
+      claimants(fx.lane, entry.sample),
+      `${entry.name}'s sample is not matched by exactly that entry`,
+    ).toEqual([entry.name]);
+
+    // ARM TWO — and the guard's own answer NAMES it, so a session that
+    // is refused learns which rule refused it rather than that "a guard"
+    // did.
+    const refused = askRead(fx.lane, entry.sample);
+    expect(refused.verdict, `${entry.name} did not refuse its own sample: ${refused.reason}`).toBe(
+      "block",
+    );
+    expect(refused.code).toBe("secret-read");
+    expect(refused.judged, "a refusal reported as unjudged").toBe(true);
+    expect(refused.reason, "the refusal does not name the entry that matched").toContain(entry.name);
+    expect(refused.reason, "the refusal does not carry the entry's reason for existing").toContain(
+      entry.why,
+    );
+    expect(refused.reason, "the refusal does not carry the route").toContain(ROUTE_SECRET);
+  }
+
+  // AND THE SET IS PUBLISHED IN EVERY REFUSAL, so a seat can see what
+  // else it will meet without opening the hook.
+  const one = askRead(fx.lane, ".env");
+  for (const entry of SECRET_SET) expect(one.reason).toContain(entry.name);
+});
+
+test("THE PLANTED NEGATIVE: the tree's own sources read freely, and the near-misses stay readable", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  // THE DISCRIMINATING HALF FIRST, in this same body and this same
+  // fixture: without it, a guard that allowed EVERYTHING would pass
+  // every assertion below.
+  const refused = askRead(fx.lane, ".env");
+  expect(refused.verdict, "the guard allows a `.env`, so the allows below prove nothing").toBe(
+    "block",
+  );
+
+  expect(PLANTED_NEGATIVES.length).toBeGreaterThan(0);
+  for (const rel of PLANTED_NEGATIVES) {
+    const allowed = askRead(fx.lane, rel);
+    expect(allowed.verdict, `${rel} is refused as a secret: ${allowed.reason}`).toBe("allow");
+    expect(allowed.code, `${rel} was allowed without being classified`).toBe("not-a-secret");
+    expect(allowed.judged, `${rel} was allowed without a judgement`).toBe(true);
+    expect(claimants(fx.lane, rel), `${rel} is claimed by an entry`).toEqual([]);
+  }
+});
+
+test("A FENCE WIDENS WRITES AND NEVER SECRETS — the same path is written inside the fence and refused to a read", async () => {
+  const fx = makeFixture();
+  const manifest = await arm(fx);
+
+  // THE GUARD'S STATE FIRST, and here it is the FENCE's state that has
+  // to be proved: `tools/e2e` is a domain this card really holds, so the
+  // secret below is genuinely INSIDE the fence and the refusal cannot be
+  // the ordinary out-of-fence one wearing a new code.
+  const secret = "tools/e2e/.env";
+  expect(manifest.paths, "the fixture card does not hold tools/e2e").toContain("tools/e2e");
+  expect(
+    manifest.paths.some((d: string) => within(secret, d)),
+    "the planted secret is not inside this card's fence, so the body proves nothing",
+  ).toBe(true);
+
+  // THE WRITE IS ALLOWED — the fence really does name this path.
+  const written = ask(fx.lane, path.join(fx.lane, secret));
+  expect(written.verdict, written.reason).toBe("allow");
+  expect(written.code).toBe("inside-the-fence");
+
+  // AND THE READ OF THE VERY SAME PATH IS REFUSED. Not by an arm that
+  // consults the manifest and overrides it — by a branch taken before
+  // any manifest is opened, which is why `touches:` has no reach here.
+  const read = askRead(fx.lane, path.join(fx.lane, secret));
+  expect(read.verdict, "a card's own fence opened a secret").toBe("block");
+  expect(read.code).toBe("secret-read");
+  expect(read.reason).toContain("env-file");
+});
+
+test("READS ARE SCREENED AND NOT FENCED — a lane reads OUTSIDE its own fence, and still may not write there", async () => {
+  const fx = makeFixture();
+  const manifest = await arm(fx);
+
+  const outside = "app/src/main.tsx";
+  expect(
+    manifest.paths.some((d: string) => within(outside, d)),
+    "the path is inside the fence, so this body measures nothing",
+  ).toBe(false);
+
+  // THE WRITE IS REFUSED — the fence is armed and holds.
+  const written = ask(fx.lane, path.join(fx.lane, outside));
+  expect(written.verdict, "the fence is not armed, so the read below proves nothing").toBe("block");
+  expect(written.code).toBe("outside-the-fence");
+
+  // THE READ IS ALLOWED. A read guard that inherited the fence would
+  // refuse here, and a lane that cannot read outside its own `touches:`
+  // cannot read docs/STATE.md — which is step one of every role file.
+  const read = askRead(fx.lane, path.join(fx.lane, outside));
+  expect(read.verdict, "the read guard has become a second fence").toBe("allow");
+  expect(read.code).toBe("not-a-secret");
+  expect(askRead(fx.lane, path.join(fx.lane, "docs/STATE.md")).verdict).toBe("allow");
+});
+
+test("IT FAILS OPEN ON CLASSIFICATION, and every allow it cannot justify SAYS SO", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const nul = String.fromCharCode(0);
+
+  // THE THREE UNCLASSIFIABLE SHAPES, each planted rather than described.
+  const shapes: { what: string; request: Parameters<typeof decide>[0]; names?: string }[] = [
+    {
+      what: "no path field at all",
+      request: { toolName: "Read", cwd: fx.lane, toolInput: {} },
+    },
+    {
+      what: "a target that resolves to a filesystem root",
+      request: { toolName: "Read", cwd: fx.lane, toolInput: { file_path: "/" } },
+      names: "/",
+    },
+    {
+      what: "a target carrying a NUL, which truncates a path rather than naming one",
+      request: { toolName: "Read", cwd: fx.lane, toolInput: { file_path: `a${nul}b/.env` } },
+      names: "b/.env",
+    },
+  ];
+
+  // THE DISCRIMINATING HALF: the same tool, the same fixture, a path the
+  // guard CAN classify — without it, "everything is allowed" passes.
+  expect(askRead(fx.lane, ".env").verdict, "the guard refuses nothing at all").toBe("block");
+
+  for (const shape of shapes) {
+    const answer = decide(shape.request);
+    expect(answer.verdict, `${shape.what} was refused, and this guard fails OPEN`).toBe("allow");
+    expect(answer.code, `${shape.what} was not reported as unclassified`).toBe(
+      "secret-unclassified",
+    );
+    // LOGGED, NOT SILENT: `judged: false` is the runner's whole trigger
+    // for printing, so an allow that claims to be judged is an allow
+    // nobody will ever see.
+    expect(answer.judged, `${shape.what} was allowed SILENTLY`).toBe(false);
+    expect(answer.reason, "the log line does not give the reason").toContain("could not classify");
+    if (shape.names !== undefined) {
+      expect(answer.reason, "the log line does not name the path").toContain(shape.names);
+    }
+  }
+
+  // AND A LANE DOES NOT REVERSE IT. `noTargetVerdict` refuses a pathless
+  // WRITE inside a lane (limit 8) and that is right for a write; a read
+  // taking the same arm would turn the fail-open rule inside out at the
+  // one seat this guard exists to protect.
+  const pathless = decide({ toolName: "Read", cwd: fx.lane, toolInput: {} });
+  const pathlessWrite = decide({ toolName: "Write", cwd: fx.lane, toolInput: {} });
+  expect(pathlessWrite.verdict, "a pathless WRITE in a lane is no longer refused").toBe("block");
+  expect(pathless.verdict, "a pathless READ took the write arm and failed closed").toBe("allow");
+});
+
+test("the runner carries the secret refusal as an exit code, and the fail-open allow as a log line", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const hook = path.join(repoRoot, ".claude/hooks/lane-fence-hook.mjs");
+  const call = (cwd: string, filePath: string | undefined) =>
+    spawnSync(process.execPath, [hook], {
+      input: JSON.stringify({
+        hook_event_name: "PreToolUse",
+        tool_name: "Read",
+        cwd,
+        tool_input: filePath === undefined ? {} : { file_path: filePath },
+      }),
+      encoding: "utf8",
+    });
+
+  const refused = call(fx.lane, path.join(fx.lane, ".env"));
+  expect(refused.status, "a secret read was not refused by exit code").toBe(2);
+  expect(refused.stderr).toContain("SECRET READ");
+  expect(refused.stderr, "the refusal does not name the entry").toContain("env-file");
+  expect(refused.stdout, "a refusal that prints on stdout depends on being parsed").toBe("");
+
+  // THE ORDINARY READ IS SILENT, which is what makes the log line below
+  // mean something: without this pair, "the hook printed nothing" is
+  // what a working guard and an absent one both look like (T-199).
+  const ordinary = call(fx.lane, path.join(fx.lane, "docs/STATE.md"));
+  expect(ordinary.status, ordinary.stderr).toBe(0);
+  expect(ordinary.stderr, "an ordinary read speaks, so a fail-open cannot be told from one").toBe(
+    "",
+  );
+
+  const failedOpen = call(fx.lane, undefined);
+  expect(failedOpen.status, "a fail-open must not change which reads proceed").toBe(0);
+  expect(failedOpen.stdout, "a log line on stdout could be parsed as a permission GRANT").toBe("");
+  expect(failedOpen.stderr).toContain("LANE FENCE (not judged)");
+  expect(failedOpen.stderr).toContain("secret-unclassified");
+});
+
+/** Every ignore file this tree TRACKS, by the tree's own list. */
+function trackedIgnoreFiles(): string[] {
+  return execFileSync("git", ["-C", repoRoot, "ls-files"], { encoding: "utf8" })
+    .split("\n")
+    .filter((f) => /(^|\/)_?\.?(git|nputer)ignore$/.test(f));
+}
+
+/**
+ * The words that make an ignore pattern SECRET-BEARING.
+ *
+ * DECLARED HERE AND NOT DERIVED, because there is nothing to derive it
+ * from: it is a reading of what a pattern means, and a reading is what a
+ * body like this is for. `local` earns its place — vite's `*.local` is
+ * the file a front-end project keeps its live keys in, and it is the one
+ * pattern this tree actually contributes.
+ */
+const SECRET_BEARING_WORDS = [
+  "env",
+  "secret",
+  "credential",
+  "key",
+  "token",
+  "password",
+  "pem",
+  "keychain",
+  "local",
+  "netrc",
+  "npmrc",
+] as const;
+
+/** A concrete path a gitignore-style pattern would match. */
+function sampleForPattern(pattern: string): string {
+  const bare = pattern.replace(/^!/, "").replace(/^\//, "").replace(/\/$/, "");
+  return bare.replace(/\*/g, "x");
+}
+
+test("the secret set covers every secret-bearing pattern the tree's OWN ignore files name", () => {
+  const files = trackedIgnoreFiles();
+  // ANTI-VACUITY ON THE SCAN, not on its yield: this tree names ONE
+  // secret-bearing pattern today, so a body asserting "many" would be
+  // false — what must never be true is that the scan read nothing.
+  expect(files.length, "no ignore file was found, so this body scanned nothing").toBeGreaterThan(2);
+
+  const derived: { file: string; pattern: string }[] = [];
+  for (const file of files) {
+    const text = readFileSync(path.join(repoRoot, file), "utf8");
+    for (const raw of text.split("\n")) {
+      const line = raw.trim();
+      // A comment, a blank, or a NEGATION — `!x` un-ignores and so names
+      // nothing the tree is hiding.
+      if (line === "" || line.startsWith("#") || line.startsWith("!")) continue;
+      if (SECRET_BEARING_WORDS.some((w) => line.toLowerCase().includes(w))) {
+        derived.push({ file, pattern: line });
+      }
+    }
+  }
+
+  // THE LOOP BINDS ON SOMETHING. Measured at T-249's base `828621f5`:
+  // exactly one — `*.local` in app/.gitignore. A future ignore file that
+  // gains `.env` lands here and the hook's list is what reds.
+  expect(
+    derived.length,
+    "the tree's ignore files name no secret-bearing pattern, so the coverage loop is vacuous",
+  ).toBeGreaterThan(0);
+
+  for (const { file, pattern } of derived) {
+    const sample = sampleForPattern(pattern);
+    expect(
+      claimants(repoRoot, sample),
+      `${file} ignores ${pattern} and no entry in the secret set covers ${sample}`,
+    ).not.toEqual([]);
+  }
+
+  // AND THE ENTRY THAT CAME FROM THE TREE SAYS SO, so a reader of the
+  // hook can tell a derived entry from an invented one.
+  const cited = SECRET_SET.filter((e) => e.derivedFrom !== undefined);
+  expect(cited.length, "no entry records the ignore file it was derived from").toBeGreaterThan(0);
+  for (const entry of cited) {
+    expect(files.some((f) => String(entry.derivedFrom).includes(path.basename(f)))).toBe(true);
+  }
+});
+
+test("the read guard answers with its OWN code set, and the write fence's four are untouched", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+
+  expect(SECRET_READ_CODES.length).toBeGreaterThan(0);
+  // THE TWO SETS ARE DISJOINT. `DECLINE_CODES` is the four codes
+  // docs/CONVENTIONS.md publishes entry for entry as the WRITE fence's
+  // limits; a read-guard code smuggled into it would be a false claim
+  // about those limits, and the keeper body above would then require the
+  // page to publish it.
+  for (const code of SECRET_READ_CODES) {
+    expect(DECLINE_CODES, `${code} has been added to the write fence's limit codes`).not.toContain(
+      code,
+    );
+  }
+
+  // EVERY ANSWER A READ CAN GET IS ONE OF THREE, and the partition is
+  // driven rather than asserted: a refusal, a classified allow, a
+  // fail-open.
+  const answers = [
+    askRead(fx.lane, ".env"),
+    askRead(fx.lane, "docs/STATE.md"),
+    decide({ toolName: "Read", cwd: fx.lane, toolInput: {} }),
+  ];
+  expect(answers.map((a) => a.code)).toEqual([
+    "secret-read",
+    "not-a-secret",
+    "secret-unclassified",
+  ]);
+  expect(answers.map((a) => a.judged)).toEqual([true, true, false]);
+  // A judged read allow is NOT a decline, so the runner stays silent on
+  // it — the property the body two sections up rests on.
+  expect(DECLINE_CODES).not.toContain("not-a-secret");
+});
+
+/** The tools `.claude/settings.json` actually routes to this hook. */
+function routedTools(): string[] {
+  const settings = JSON.parse(readFileSync(path.join(repoRoot, ".claude/settings.json"), "utf8"));
+  const entries: { matcher?: string; hooks?: { command?: string }[] }[] =
+    settings?.hooks?.PreToolUse ?? [];
+  const routed: string[] = [];
+  for (const entry of entries) {
+    const commands = (entry.hooks ?? []).map((h) => h.command ?? "").join(" ");
+    if (!commands.includes(".claude/hooks/lane-fence-hook.mjs")) continue;
+    for (const tool of String(entry.matcher ?? "").split("|")) {
+      if (tool !== "") routed.push(tool);
+    }
+  }
+  return routed;
+}
+
+test("the secret read guard is UNARMED at the harness until settings.json names a read tool, and this body is the record of which", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const routed = routedTools();
+  expect(routed.length, "no tool is routed to this hook at all").toBeGreaterThan(0);
+  const armed = routed.filter((t) => (READ_TOOL_NAMES as readonly string[]).includes(t));
+
+  // THE GUARD'S OWN ANSWER DOES NOT DEPEND ON THE WIRING, and this half
+  // runs in both worlds — the decision is a property of `decide`, and
+  // only whether anything ASKS it is a property of the registration.
+  expect(askRead(fx.lane, ".env").code).toBe("secret-read");
+
+  if (armed.length === 0) {
+    // TODAY. The matcher is `Edit|Write|NotebookEdit`, so no read event
+    // reaches the hook and the guard is advice to `decide`'s callers
+    // alone. A guard believed wider than it is is worse than no guard,
+    // so the HOOK ITSELF carries the sentence — a reader of the hook
+    // meets the same fact as a reader of this file.
+    expect(
+      hookSourceText(),
+      "the guard is unarmed and the hook does not say so",
+    ).toContain("IT IS UNARMED AT THE HARNESS UNTIL");
+  } else {
+    // ONCE WIRED, the refusal has to survive the real process boundary —
+    // the same arm the write fence's own runner body drives.
+    const refused = spawnSync(process.execPath, [path.join(repoRoot, ".claude/hooks/lane-fence-hook.mjs")], {
+      input: JSON.stringify({
+        hook_event_name: "PreToolUse",
+        tool_name: armed[0],
+        cwd: fx.lane,
+        tool_input: { file_path: path.join(fx.lane, ".env") },
+      }),
+      encoding: "utf8",
+    });
+    expect(refused.status, "a read tool is wired and a secret read was not refused").toBe(2);
+    expect(refused.stderr).toContain("SECRET READ");
+  }
 });

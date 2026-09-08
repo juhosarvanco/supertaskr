@@ -140,6 +140,74 @@
  * would otherwise be asked about. This hook exists to subtract
  * permission, never to grant it. So it refuses, or it stands aside.
  *
+ * ── THE SECRET READ GUARD (T-249) ────────────────────────────────────
+ * A SECOND QUESTION, ASKED OF A DIFFERENT TOOL, AND IT IS NOT A FENCE.
+ * Everything above judges a WRITE against a lane's `touches:`. A READ was
+ * free, and a seat that reads `.env`, a `*.pem`, `~/.ssh/*` or a keychain
+ * export can carry the VALUE into a card body, a verdict or a record —
+ * and records are append-only, so the leak is permanent from the moment
+ * it is written. `SECRET_SET` below is the whole list, as DATA, and
+ * `decide` consults it FIRST for a read tool and never reaches the fence.
+ *
+ * THREE PROPERTIES, AND EACH ONE IS A DELIBERATE ASYMMETRY WITH THE
+ * FENCE ABOVE:
+ *
+ *   A FENCE WIDENS WRITES, NEVER SECRETS. The read arm opens no manifest
+ *   and asks no lane, so a card whose `touches:` NAMES the secret still
+ *   cannot read it — by construction rather than by an arm that could be
+ *   forgotten. The seat that needs a secret's SHAPE gets a redacted
+ *   sample from the human, in the transcript, not off the disk.
+ *
+ *   READS ARE NOT FENCED, ONLY SCREENED. A read of an ordinary file
+ *   OUTSIDE the lane's fence is ALLOWED — this guard is not a second
+ *   fence with the word "read" in front of it, and a lane that cannot
+ *   read docs/ cannot work at all.
+ *
+ *   IT FAILS **OPEN** ON CLASSIFICATION, which is the opposite of the
+ *   lane arm's every-uncertainty-is-a-refusal. A read guard that blocks
+ *   the tree's own sources is a lane killer, and the failure mode of a
+ *   too-eager read guard is that somebody turns it off. So a path this
+ *   file cannot classify is ALLOWED and LOGGED, naming the path and the
+ *   reason, through the same `judged: false` channel a decline uses.
+ *
+ * WHY ITS CODES ARE NOT IN `DECLINE_CODES`. That set is the four codes
+ * that reach an allow through one of the NUMBERED LIMITS below, and
+ * `docs/CONVENTIONS.md` publishes it entry for entry — a fifth member
+ * would be a claim about the write fence's limits that is not true. The
+ * read guard's two answers are their own frozen set, `SECRET_READ_CODES`,
+ * declared here and asserted in `lane-fence.spec.ts` beside the other.
+ *
+ * THE LIMITS OF THIS GUARD IN PARTICULAR, and they are deliberately NOT
+ * numbered into the block below, which enumerates the WRITE fence's:
+ *
+ *   IT SCREENS A PATH, NEVER AN INODE. A symlink named `notes.md`
+ *   pointing at `~/.ssh/id_ed25519` is read as `notes.md` and allowed.
+ *   Resolving it means a `stat` per keystroke on a hook that runs at
+ *   every tool call, and `realpathSync` THROWS on a path that does not
+ *   exist yet — which is most of what a write tool is handed. The
+ *   physical layer (`method/lane-protocol.md` rule 5's read-only bit)
+ *   is where an inode-level answer belongs.
+ *
+ *   IT SCREENS `Read`, NOT EVERY TOOL THAT CAN PRINT A FILE. A `Bash`
+ *   `cat`, and a `Grep` in content mode, both reach the same bytes and
+ *   neither is a read tool by name — limit 1's argument about parsing a
+ *   shell applies unchanged, and the `Grep` case is a routed suggestion
+ *   rather than a silent gap.
+ *
+ *   A NUL IN THE TARGET IS NOT CLASSIFIED, AND FAILING OPEN THERE IS
+ *   SAFE FOR A REASON WORTH WRITING DOWN. In C a path truncates at the
+ *   NUL, so `~/.env\0/harmless.txt` names `.env` to the filesystem while
+ *   its basename reads `harmless.txt` — a classifier that answered would
+ *   answer confidently and wrongly. Node's own `fs` layer rejects a NUL
+ *   path (`ERR_INVALID_ARG_VALUE`) before it reaches the filesystem, so
+ *   the allow this guard returns is one the read cannot cash.
+ *
+ *   IT IS UNARMED AT THE HARNESS UNTIL `.claude/settings.json` MATCHES A
+ *   READ TOOL. At T-249's tip that matcher reads `Edit|Write|NotebookEdit`
+ *   and no read event reaches this file at all; `decide` answers
+ *   correctly when asked, and nothing asks it. That registration is
+ *   outside T-249's fence and is named in its report.
+ *
  * ── AN UNJUDGED WRITE SAYS SO (T-199) ────────────────────────────────
  * EVERY LIMIT BELOW ENDS IN AN ALLOW, and that is exactly what made this
  * file's inertness survive seven lanes: *"a fence that judges nothing and
@@ -404,6 +472,300 @@ export const DECLINE_CODES = Object.freeze([
   "not-judged-lane-list",
   "no-path-to-judge",
 ]);
+
+/**
+ * The tools whose target this file screens for a SECRET rather than
+ * fencing (T-249).
+ *
+ * BY NAME AND NOT BY GUESS. A tool this list does not carry takes the
+ * write fence, which is the answer that has been right for every tool
+ * `.claude/settings.json` has ever routed here; a tool it does carry
+ * NEVER reaches the fence, because reads are screened and not fenced.
+ * `NotebookRead` is listed though this harness folded it into `Read`: a
+ * name that costs nothing to carry is cheaper than the day it comes
+ * back and the guard silently sends a notebook read through the fence.
+ */
+export const READ_TOOL_NAMES = Object.freeze(["Read", "NotebookRead"]);
+
+/**
+ * The two answers the read guard gives, as its own frozen set.
+ *
+ * NOT MEMBERS OF `DECLINE_CODES`, and the header says why at length: that
+ * set is the write fence's four limit-codes, published entry for entry by
+ * docs/CONVENTIONS.md, and a fifth member would be a false claim about
+ * those limits. `secret-unclassified` still carries `judged: false`, so
+ * the runner logs it exactly as it logs a decline.
+ */
+export const SECRET_READ_CODES = Object.freeze(["secret-read", "secret-unclassified"]);
+
+/**
+ * THE SECRET SET — ONE LIST, AS DATA, WITH A SAMPLE PER ENTRY (T-249).
+ *
+ * DATA AND NOT SEVEN PREDICATES, because a list of functions is a list
+ * only a reader of this file can enumerate: `lane-fence.spec.ts` walks
+ * these entries, drives `decide` over each `sample`, and requires the
+ * refusal to NAME that entry — so every entry carries its own positive
+ * control by construction, and an entry added without one cannot pass.
+ * The four fields are matched by `matchesEntry` below and nothing else
+ * reads them.
+ *
+ *   `basenames` the file name, exactly
+ *   `prefixes`  the file name starts with this
+ *   `suffixes`  the file name ends with this
+ *   `segments`  ANY directory component of the path equals this
+ *   `pairs`     two ADJACENT components, in order — for the credential
+ *               directory whose own name is an ordinary word
+ *
+ * `sample` IS A CONTROL AND NOT A COMMENT: the spec asserts each sample
+ * is matched by ITS OWN entry AND BY NO OTHER, so two entries that have
+ * grown into each other red by name instead of one of them quietly
+ * becoming decoration.
+ *
+ * ── DERIVED FROM THE TREE'S OWN IGNORE FILES WHERE IT CAN BE ─────────
+ * The card asks for that and the tree gives almost nothing: measured at
+ * `828621f5`, the NINE tracked ignore files name exactly ONE
+ * secret-bearing pattern between them — `*.local` in `app/.gitignore`,
+ * vite's convention for the local override file a project keeps its live
+ * keys in. That is `local-override-file`, and it is the only entry here
+ * with a `derivedFrom`. The spec re-derives the set at ITS ref and
+ * requires every pattern it finds to be covered here, so the day an
+ * ignore file gains `.env` this list is what reds.
+ *
+ * ── ONE DELIBERATE OVER-REFUSAL, DECLARED ───────────────────────────
+ * `.env.example`, `.env.sample` and `.env.template` are REFUSED with
+ * every other `.env.*`. They are the redacted sample by convention, and
+ * convention is exactly what a guard may not trust: the suffix is chosen
+ * by whoever named the file, and a real key in a file called
+ * `.env.example` is a thing that happens. The card's own answer to the
+ * seat that needs a secret's shape is a sample THE HUMAN provides, which
+ * costs one message and cannot be wrong about itself.
+ *
+ * @typedef {object} SecretEntry
+ * @property {string} name      a stable, greppable id, named in the refusal
+ * @property {string} why       the sentence the refused session reads
+ * @property {string} sample    a path this entry — and only this one — matches
+ * @property {readonly string[]} [basenames]
+ * @property {readonly string[]} [prefixes]
+ * @property {readonly string[]} [suffixes]
+ * @property {readonly string[]} [segments]
+ * @property {readonly (readonly [string, string])[]} [pairs]
+ * @property {string} [derivedFrom] the tree's own ignore file this came from
+ */
+/** @type {readonly SecretEntry[]} */
+export const SECRET_SET = Object.freeze([
+  Object.freeze({
+    name: "env-file",
+    why: "a dotenv file is where a project keeps its live credentials, and it is the single most copied secret in this trade",
+    sample: ".env",
+    basenames: Object.freeze([".env"]),
+    prefixes: Object.freeze([".env."]),
+    suffixes: Object.freeze([".env"]),
+  }),
+  Object.freeze({
+    name: "local-override-file",
+    why: "`*.local` is this tree's OWN ignore pattern for machine-local overrides (app/.gitignore), which is where a vite project's live keys sit",
+    sample: "app/config.local",
+    suffixes: Object.freeze([".local"]),
+    derivedFrom: "app/.gitignore `*.local`",
+  }),
+  Object.freeze({
+    name: "private-key-file",
+    why: "a private key is not a path to the credential, it IS the credential",
+    sample: "certs/server.pem",
+    basenames: Object.freeze(["id_rsa", "id_dsa", "id_ecdsa", "id_ed25519"]),
+    suffixes: Object.freeze([
+      ".pem",
+      ".key",
+      ".p8",
+      ".p12",
+      ".pfx",
+      ".jks",
+      ".keystore",
+      ".ppk",
+      ".asc",
+      ".gpg",
+    ]),
+  }),
+  Object.freeze({
+    name: "ssh-directory",
+    why: "everything under an ssh directory is credential material, the `config` and `known_hosts` included — they name the hosts a stolen key opens",
+    sample: "/Users/somebody/.ssh/known_hosts",
+    segments: Object.freeze([".ssh"]),
+  }),
+  Object.freeze({
+    name: "cloud-credentials-directory",
+    why: "a cloud credential directory holds long-lived tokens for a whole account, and its plainest-looking file is usually the one with the token in it",
+    sample: "/Users/somebody/.aws/credentials",
+    segments: Object.freeze([".aws", ".azure", ".gcloud", ".kube", ".docker", ".gnupg"]),
+    pairs: Object.freeze([Object.freeze(/** @type {[string, string]} */ ([".config", "gcloud"]))]),
+  }),
+  Object.freeze({
+    name: "credential-config-file",
+    why: "a registry or host rc file carries an auth token in plain text beside its ordinary settings",
+    sample: ".npmrc",
+    basenames: Object.freeze([
+      ".npmrc",
+      ".netrc",
+      "_netrc",
+      ".pypirc",
+      ".pgpass",
+      ".git-credentials",
+      ".htpasswd",
+    ]),
+  }),
+  Object.freeze({
+    name: "keychain-export",
+    why: "a keychain export is every credential the machine holds, in one file, and an export exists only because somebody meant to move it",
+    sample: "/Users/somebody/Library/Keychains/login.keychain-db",
+    suffixes: Object.freeze([
+      ".keychain",
+      ".keychain-db",
+      ".kdbx",
+      ".agilekeychain",
+      ".opvault",
+    ]),
+    segments: Object.freeze(["Keychains"]),
+  }),
+]);
+
+/**
+ * The route a session refused a secret read takes.
+ *
+ * IT NAMES THE REMEDY, because a guard that refuses without one is a
+ * guard somebody works around: the shape of a secret is a thing a human
+ * can paste redacted in one message, and the value is a thing no record
+ * should ever hold.
+ */
+export const ROUTE_SECRET =
+  "A fence widens WRITES and never secrets (T-249), so naming this file in a card's `touches:` " +
+  "does not open it. If the work needs the secret's SHAPE — which keys exist, what a line looks " +
+  "like — ask the human for a REDACTED sample in the transcript, where it is not a record. If it " +
+  "needs the VALUE, it is not work a seat does: the value belongs in the environment the command " +
+  "reads it from, never in a card body, a verdict or a checkpoint, all of which are append-only.";
+
+/**
+ * Does this entry match a path already split into its parts?
+ *
+ * THE ONE MATCHER FOR THE WHOLE LIST. Seven entries and one rule: a
+ * second matching rule would be a second chance to disagree about what
+ * "inside a credential directory" means, which is `within`'s lesson one
+ * question over.
+ *
+ * @param {SecretEntry} entry
+ * @param {string} base the file name
+ * @param {string[]} segments every path component, the file name last
+ * @returns {boolean}
+ */
+export function matchesEntry(entry, base, segments) {
+  if (entry.basenames?.includes(base) === true) return true;
+  if (entry.prefixes?.some((p) => base.startsWith(p)) === true) return true;
+  if (entry.suffixes?.some((s) => base.endsWith(s)) === true) return true;
+  // THE FILE NAME IS NOT A DIRECTORY. `segments` carries it last so one
+  // split serves both questions, so the directory arms stop one short —
+  // otherwise a file literally named `.ssh` would read as being inside
+  // one, which is a different claim from the one this entry makes.
+  const dirs = segments.slice(0, -1);
+  if (entry.segments?.some((s) => dirs.includes(s)) === true) return true;
+  for (const [first, second] of entry.pairs ?? []) {
+    for (let i = 0; i + 1 < dirs.length; i += 1) {
+      if (dirs[i] === first && dirs[i + 1] === second) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Classify a read target: which entry claims it, or why it could not be
+ * classified at all.
+ *
+ * THE THREE UNCLASSIFIABLE SHAPES ARE EXHAUSTIVE AND EACH IS PLANTED IN
+ * THE SPEC: no target at all, a target carrying a NUL (the header says
+ * why that is a refusal to classify rather than a match), and a target
+ * that resolves to a filesystem ROOT, which has no file name for any
+ * entry to key off. Everything else is classified, and "classified"
+ * includes the ordinary answer that it is not a secret.
+ *
+ * @param {string | undefined} target the raw path the tool was called with
+ * @param {string} cwd for resolving a relative one
+ * @returns {{ entry: SecretEntry, abs: string } | { unclassified: string } | { safe: string }}
+ */
+export function classifySecret(target, cwd) {
+  if (target === undefined) {
+    return {
+      unclassified:
+        "the request carries no path this hook can read (it looks for " +
+        `${WRITE_TOOL_PATH_FIELDS.join(", ")})`,
+    };
+  }
+  if (target.includes("\u0000")) {
+    return {
+      unclassified: `the target ${JSON.stringify(target)} carries a NUL, which truncates a path ` +
+        "rather than naming one — a classifier that answered here would answer confidently and " +
+        "wrongly",
+    };
+  }
+  const abs = path.resolve(cwd, target);
+  const segments = abs.split(path.sep).filter((s) => s !== "");
+  const base = segments[segments.length - 1];
+  if (base === undefined) {
+    return {
+      unclassified: `the target ${JSON.stringify(target)} resolves to ${abs}, a filesystem root, ` +
+        "which has no file name for any entry in the secret set to key off",
+    };
+  }
+  for (const entry of SECRET_SET) {
+    if (matchesEntry(entry, base, segments)) return { entry, abs };
+  }
+  return { safe: abs };
+}
+
+/**
+ * The read guard's whole verdict — the first thing `decide` asks for a
+ * read tool, and the only thing it asks.
+ *
+ * NO MANIFEST IS OPENED HERE AND NO LANE IS CONSULTED, which is the
+ * property "a fence widens writes, never secrets" rests on. It is
+ * cheaper to state as an absence than to test as an arm, so the absence
+ * is the design: there is nothing in this function for a card's
+ * `touches:` to reach.
+ *
+ * @param {Request} request
+ * @param {string} cwd
+ * @returns {Decision}
+ */
+export function secretReadVerdict(request, cwd) {
+  const target = targetOf(request.toolInput);
+  const found = classifySecret(target, cwd);
+  if ("unclassified" in found) {
+    return decline(
+      "secret-unclassified",
+      `${request.toolName ?? "this tool"} reads a path this guard could not classify, so it is ` +
+        `ALLOWED and logged: ${found.unclassified}. The secret read guard fails OPEN on ` +
+        "classification (T-249) — a read guard that blocks the tree's own sources is a lane " +
+        "killer, and the failure it must not have is silence.",
+    );
+  }
+  if ("safe" in found) {
+    return allow(
+      "not-a-secret",
+      `${found.safe} matches no entry in the secret set (${SECRET_SET.map((e) => e.name).join(", ")})`,
+    );
+  }
+  const { entry, abs } = found;
+  return block(
+    "secret-read",
+    `LANE FENCE: ${abs} is refused as a SECRET READ, and the entry that matched is ` +
+      `${entry.name}.\n` +
+      `  why that entry exists: ${entry.why}\n` +
+      (entry.derivedFrom === undefined
+        ? ""
+        : `  and it is derived from the tree's own ignore files: ${entry.derivedFrom}\n`) +
+      `  the tool refused: ${request.toolName ?? "this tool"}\n` +
+      `  the path refused: ${abs}\n` +
+      `  the whole secret set: ${SECRET_SET.map((e) => e.name).join(", ")}\n` +
+      `  ${ROUTE_SECRET}`,
+  );
+}
 
 /**
  * @param {string} code
@@ -1135,6 +1497,28 @@ function noTargetVerdict(request, cwd) {
  */
 export function decide(request) {
   const cwd = typeof request.cwd === "string" && request.cwd !== "" ? request.cwd : process.cwd();
+
+  // ── THE READ GUARD IS ASKED FIRST, AND IT IS THE WHOLE ANSWER (T-249)
+  // A READ TOOL NEVER REACHES THE FENCE BELOW, and that position is the
+  // property rather than an optimisation. Two things follow from it and
+  // neither could be had by adding an arm further down:
+  //
+  //   a card's `touches:` cannot open a secret, because no manifest is
+  //   read on this path at all — "a fence widens writes, never secrets"
+  //   is an ABSENCE here, and an absence cannot be forgotten; and
+  //
+  //   a read OUTSIDE the lane's fence is ALLOWED, because the fence is
+  //   never consulted — reads are screened, not fenced, and a lane that
+  //   may not read docs/ cannot work.
+  //
+  // IT ALSO CANNOT FAIL CLOSED HERE. `noTargetVerdict` below REFUSES a
+  // pathless request inside a lane (limit 8), which is right for a write
+  // and wrong for a read; taking the read branch first is what keeps this
+  // guard's fail-OPEN rule from being quietly reversed by the arm under
+  // it.
+  if (typeof request.toolName === "string" && READ_TOOL_NAMES.includes(request.toolName)) {
+    return secretReadVerdict(request, cwd);
+  }
 
   const target = targetOf(request.toolInput);
   if (target === undefined) return noTargetVerdict(request, cwd);
