@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **652 behaviours** — 650 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **653 behaviours** — 651 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -89,6 +89,7 @@ Census: **652 behaviours** — 650 extracted sentences + 2 named-not-extracted (
 - THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no working tree is REFUSED
 - THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named
 - THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file
+- THE RITUAL FIXTURE CARRIES ITS OWN GIT IDENTITY, so a git that inherits none can still commit in it
 - THE RITUAL STOPS AT STEP 1 (stamp) and performs no later step
 - THE RITUAL STOPS AT STEP 2 (cut) and performs no later step
 - THE RITUAL STOPS AT STEP 3 (preflight) and performs no later step
