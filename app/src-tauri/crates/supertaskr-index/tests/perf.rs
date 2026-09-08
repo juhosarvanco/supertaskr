@@ -17,6 +17,23 @@ use supertaskr_index::{index, IndexOptions};
 
 /// Copy the repo's walkable content (skip the heavyweight generated
 /// trees) so the single-file-edit trial never mutates the real repo.
+///
+/// **THE NAME LIST IS NOT THE WHOLE RULE, AND THAT IS `T-153-s3`'s SWEEP
+/// LANDING WHERE IT STOOD.** The defect that card fixes is a walk keyed
+/// on the NAME `target`, and this helper was the same defect a few lines
+/// away: a drill's `CARGO_TARGET_DIR` carries the lane-derived stem
+/// CONVENTIONS' POISON DRILL and `T-092` require, so it is not called
+/// `target`, and this copied the whole build tree — gigabytes — into a
+/// scratch directory and then timed an index over it.
+///
+/// **THE TEST HERE IS DELIBERATELY WEAKER THAN THE WALK'S, WHICH IS A
+/// CHOICE RATHER THAN AN OVERSIGHT.** `walk_root` keys on the tag's
+/// 43-byte SIGNATURE because dropping a directory it should have kept
+/// loses repository content from the graph; copying one it could have
+/// kept costs a perf harness nothing. So this asks only whether the
+/// directory declares itself a cache directory at all — which is the
+/// question the tag's own spec (<https://bford.info/cachedir/>) exists to
+/// let a COPYING tool ask.
 fn copy_repo_to(dst: &Path) {
     fn copy_dir(from: &Path, to: &Path) {
         for entry in std::fs::read_dir(from).expect("read dir") {
@@ -25,6 +42,9 @@ fn copy_repo_to(dst: &Path) {
             let name = name.to_str().unwrap_or("");
             if matches!(name, ".git" | "node_modules" | "target" | "dist") {
                 continue;
+            }
+            if entry.path().join("CACHEDIR.TAG").is_file() {
+                continue; // a build directory under a chosen name
             }
             let src = entry.path();
             let meta = std::fs::symlink_metadata(&src).expect("meta");

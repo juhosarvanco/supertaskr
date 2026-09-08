@@ -88,6 +88,51 @@ walk nothing is currently mis-walking — real, and not first.
   the POISON DRILL bullet, including the sentence naming this card's fix
   as the class remedy. This card changes code only.
 
+## DISCHARGED BY OTHER WORK — the status stays, the disposition is TRIAGE's
+
+`closed_by: T-153-s3`, branch `task/T-153-s3-drill-target-in-walk`.
+
+**Every criterion above was BUILT in that lane and nothing here is left
+to do**, which is why this note exists rather than a stamp: *"resolved by
+other work" is not a fourth move and `closed` is not a ninth status*
+(docs/CONVENTIONS.md, THE FOURTH QUESTION). A card whose work was
+resolved elsewhere KEEPS its status and records the discharge in its own
+body; TRIAGE then makes the move. **Do not dispatch this card** — a lane
+cut from it would rebuild a landed walk.
+
+**WHY THE WORK WENT THERE AND NOT HERE.** The two cards carry the
+IDENTICAL fence, `touches: [crate-index]`, and describe one defect from
+two directions — this one from `index --check`'s wrong answer, `T-153-s3`
+from the drill convention that produces it. `T-153-s3`'s own body already
+says *"`T-153-s3` IS that card"* about `T-111-s10`'s routing criterion,
+and this card says the same thing about the same criterion. `T-153-s3`'s
+executor was dispatched with both and built to THESE criteria, which are
+the exact ones.
+
+Criterion by criterion, at `c2f4d55`:
+
+- **the tag, not the name** — `walk_root`'s `filter_entry` gains a
+  CACHE-DIRECTORY SKIP beside the `.git`/`node_modules` hard skip;
+  `carries_cachedir_tag` requires the first line of `<dir>/CACHEDIR.TAG`
+  to be the 43-byte signature.
+- **derived from the tag FILE, not a widened ignore list** — nothing in
+  `.gitignore` or `.supertaskrignore` moved, and a body drives the same
+  signature under a NON-cargo comment body to pin *"any tool that writes
+  the same tag"*.
+- **the positive control** — every body's control is built the way the
+  producer builds it (the same directory with only the tag removed), and
+  the near-miss body drives both directions in one tree.
+- **`index --check` before and after** — measured against the SAME
+  planted tagged directory in one detached scratch worktree: at the base
+  `bcc833f` it reported `files +2 -0 ~0` naming both artefacts and moved
+  the header's language set; at `c2f4d55` it reported `files +0 -0 ~2`,
+  the two movements being that lane's own edited source files.
+- **the doc half not re-taken** — `docs/CONVENTIONS.md` is untouched by
+  that lane, and it is outside its fence besides.
+
+`T-153-s3`'s Implementation notes carry the drill, the figures and their
+refs.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
