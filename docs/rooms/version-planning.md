@@ -230,3 +230,7 @@ form, behind T-252); v2 catalogue-generated negatives, the two-lane
 blind builder, the uncertainty-bounded pattern and the static
 side-effect enumerator; six items recorded as already delivered. No
 card dispatched at the sitting; the wave of five lanes was live.
+
+## Sitting of 2026-09-09 — rooms in the mirror
+
+@human: *"Add rooms to the mirror app in v1"* (asked after learning the mirror does not render rooms and that rooms are never deleted). Ruled: the rooms lens is v1, filed as T-275 (F-02, M, p4): every room off docs/rooms/, status, type, card, addressee, the ruling at the top, live off the watcher, read-only. docs/VERSIONS.md carries the row and the move.

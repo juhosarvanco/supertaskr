@@ -31,6 +31,7 @@ with the app as the mirror.
 | — cold-start seam | the method's cold-start test gets an operational owner | T-175 planned |
 | Board (F-02) | story map live off files, detail panel, lanes off git, dispositions with reasons | shipped |
 | — app opens on a folder from outside | so a skill can put the mirror beside the chat | T-243 planned |
+| — the rooms lens (ruled 2026-09-09) | every room off docs/rooms/ with status, type, card, addressee, the ruling at the top; read-only, live off the watcher | T-275 planned p4 |
 | Dispatch (F-04) | dispatch view, brief as contract, fence at the write, preflight, blind verification as a spawn property, binding assignment, the one-command arm; the app spawns nothing | shipped (T-112, T-239 done) |
 | — the seat skill | the architect's hand work as a slash command over the arm — the primary way v1 is driven (ADR-021 Addendum 1) | T-241 planned p1 |
 | CLI (C-02) | the scripts and the indexer behind `npx nputer`, what both skills call | T-244 planned p1 (size L) |
@@ -114,6 +115,8 @@ has; no ruling needed, only the name to look under.
 - (The second-pass items of 2026-09-08 were ruled the same day — see the v1 table, the v2 and v3+ lists, and the moves log.)
 
 ## Moves, by sitting
+
+- **2026-09-09** — @human: *"Add rooms to the mirror app in v1"*. The rooms layer of the original dashboard moves from v2 to v1 as T-275 (F-02 p4); nothing else moves.
 
 - **2026-09-08, the agent-reference reading** — @human: *"only add features that actually make our system reliably better"*. v1 gains T-261 (tool surfaces per role) and T-262 (the verdict marker and the registry); the coincidental-reliance rule folds into T-258; two efficiency items recorded in the loop-efficiency room, nothing else taken.
 
