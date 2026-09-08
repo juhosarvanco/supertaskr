@@ -8,7 +8,7 @@ priority: 1
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021): nputer is a skill, a CLI and a mirror — and ARCHITECTURE lists C-02 as planned because nothing packages the scripts"
 blocked_by: []
-touches: [tools/e2e/bin/, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/undo.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/package.json, tools/e2e/package-lock.json, tools/e2e/tests/cli.spec.ts, README.md, docs/CONVENTIONS.md]
+touches: [tools/e2e/, README.md, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -40,7 +40,13 @@ table says so in one word: C-02 planned. **Size L: dispatch needs
   method's relative paths SHALL resolve from the project root, and
   the docs-input-gate SHALL see the package as a derived reader of
   docs/ (T-231's account).
-- IF a verb needs a build (the indexer, lib/parser) THEN the package
+- WHEN the package is built THE tree SHALL carry tools/e2e/bin/ (the
+  bin entry), tools/e2e/scripts/cli.mjs, tools/e2e/scripts/undo.mjs,
+  tools/e2e/scripts/merge.mjs and tools/e2e/tests/cli.spec.ts — the
+  card's creation targets, absent at dispatch and inside its fence
+  (amended 2026-09-09 by the architect seat: the preflight reads a
+  creation target off the criteria, not the notes).
+- IF a verb needs a build (the indexer, the parser package) THEN the package
   SHALL say so on first run with the one command that builds it,
   never fail silently.
 - **Folded 2026-09-08 (second version sitting, @human: "fold safe undo

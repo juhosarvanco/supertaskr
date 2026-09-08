@@ -8,7 +8,7 @@ priority: 1
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021, rooms/cockpit-or-mirror.md RE-RULED): the architect sits in the user's agent app; nputer is a skill, a CLI and a mirror"
 blocked_by: []
-touches: [method/adapters, method/roles]
+touches: [method/]
 builder:
 verifier:
 built_by:
@@ -73,3 +73,11 @@ skill-driven turn from a hand-driven one.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Fence amended at dispatch (the architect seat, 2026-09-09)
+
+`touches:` widened to `method/`: the criteria name
+`method/skills/<name>/SKILL.md` as the skill's home, the preflight refuses a
+creation target the fence does not reserve, and a fence token for a path
+nothing tracked sits under is a DEAD entry — so the fence names the parent
+that exists.
