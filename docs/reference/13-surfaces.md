@@ -1,8 +1,8 @@
 # 13 — Surfaces
 
-Where a person meets nputer. Since ADR-021 (2026-09-03) and its
+Where a person meets Supertaskr. Since ADR-021 (2026-09-03) and its
 addendum (2026-09-08) the shape is: the architect conversation lives in
-the user's agent app (Claude Code or Codex), nputer ships the seat's
+the user's agent app (Claude Code or Codex), Supertaskr ships the seat's
 hand work as a skill, a CLI underneath it, and a desktop app that
 mirrors the files beside the chat. The app keeps its interview and
 spawns nothing.
@@ -12,7 +12,7 @@ spawns nothing.
 The user runs Claude Code or the ChatGPT app's Codex; the skill is
 installed into that app and invoked as a slash command; the
 conversation, the model choice, the permission prompts and the billing
-are the vendor's. nputer never spawns a session of its own from the
+are the vendor's. Supertaskr never spawns a session of its own from the
 app (ADR-021), and it passes no `--model` anywhere (ADR-003). What it
 ships for that chair:
 
@@ -42,7 +42,7 @@ indexer, run from the repo root or their package directories: the
 dispatch view, the brief, the preflight, the fence writer, the seat
 lock, the arm, the docs gate, the gate runner, the health reporter,
 the census generator, `index`, `arch`, `arch drift`, `arch cycles`,
-`arch blast`. `npx nputer` (planned: T-244, size L, p1) packages them
+`arch blast`. `npx supertaskr` (planned: T-244, size L, p1) packages them
 as one command a skill can call from any project, with `undo <card>`
 (safe undo with a dependency check) and the two-harness install. The
 CLI is the plumbing and the power and CI path (ADR-008).

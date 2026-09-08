@@ -4,7 +4,7 @@ The house terms, each with the standard word beside it.
 
 | house term | standard word | one line |
 |---|---|---|
-| The Model | the system's shape | your agent app drives; nputer is the skill, the CLI and the mirror |
+| The Model | the system's shape | your agent app drives; Supertaskr is the skill, the CLI and the mirror |
 | The Loop | the development cycle | interview, board, dispatch, build, verify, merge, record |
 | The Architect | planner, orchestrator, integrator | the seat that plans the board, dispatches lanes and merges |
 | seat | role, session | one fresh agent session holding one written contract |

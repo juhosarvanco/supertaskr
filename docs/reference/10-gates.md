@@ -87,7 +87,7 @@ reserved. `npm test` plants a control byte into seven tracked files and
 restores them sha256-proved, so the lane is run in a worktree, never
 beside the human's live app.
 
-**The boot check** (`npm run boot:check`, `NPUTER_BOOT_PORT=14521`
+**The boot check** (`npm run boot:check`, `SUPERTASKR_BOOT_PORT=14521`
 beside a live app): spawns `tauri dev` and asserts the two startup
 lines; 0 booted, 1 failed with the child's last output, 2 the port is
 busy, 3 refused before probing. The orphan drill
@@ -97,7 +97,7 @@ leaves no listener.
 **The census currency check** (`npm run capabilities:check`): byte-
 compares the generated census; 1 STALE naming the regeneration.
 
-**The graph currency check** (`cargo run -p nputer-index -- index
+**The graph currency check** (`cargo run -p supertaskr-index -- index
 --check --root ../..` from app/src-tauri/): 0 current, 1 STALE with a
 file diff naming what moved, 2 usage, 3 could not run. The `--root` is
 load-bearing: without it the check looks in the wrong place and prints

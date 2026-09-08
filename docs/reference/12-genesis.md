@@ -67,7 +67,7 @@ end, so a kill at any stage leaves every earlier stage on disk:
 
 | stage | step | banks into |
 |---|---|---|
-| 0 | scaffold, before Q1 | docs/ copied from the templates; empty decisions/, tasks/, rooms/; the adapter files at the root; `.nputer/` in .gitignore; `git init` if absent; STATE stamped "next stage: 1" |
+| 0 | scaffold, before Q1 | docs/ copied from the templates; empty decisions/, tasks/, rooms/; the adapter files at the root; `.supertaskr/` in .gitignore; `git init` if absent; STATE stamped "next stage: 1" |
 | 1 | Q1 | NORTH_STAR § Vision, § Users; the adapters' project name and one-liner |
 | 2 | Q2 | NORTH_STAR § Success criteria |
 | 3 | Q3 | NORTH_STAR § Non-goals |
@@ -151,7 +151,7 @@ with a spawned planner and banks the same artifacts (docs/CAPABILITIES.md
 
 More interview, not a settings screen: the planner drafts the answers
 first and the human corrects, and what a project needs configured is
-asked as questions whose answers bank into CONVENTIONS and nputer.yaml.
+asked as questions whose answers bank into CONVENTIONS and supertaskr.yaml.
 
 ## Archaeology (parked, ADR-005)
 

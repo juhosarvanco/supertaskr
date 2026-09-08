@@ -88,11 +88,13 @@ nothing under rejected/ is a model input.
 
 docs/decisions/NNN-<slug>.md, numbered, dated, append-only, with the
 measured reason. Later work cites them; re-arguing a ratified decision
-requires a new room. Twenty-one to date, from ADR-001 (build nputer
-with nputer) through ADR-019 (the three tiers), ADR-020 (determinism at
-the moment of action) and ADR-021 (the architect sits in the agent app;
-nputer is a skill, a CLI and a mirror), with an addendum where a ruling
-is sharpened rather than replaced.
+requires a new room. Twenty-two to date, from ADR-001 — whose title is
+QUOTED here because records keep the pre-rename name, "Build nputer with
+nputer" — through ADR-019 (the three tiers), ADR-020 (determinism at the
+moment of action), ADR-021 (the architect sits in the agent app;
+Supertaskr is a skill, a CLI and a mirror) and ADR-022 (the product and
+the method are named Supertaskr), with an addendum where a ruling is
+sharpened rather than replaced.
 
 ## Rooms
 
@@ -121,7 +123,7 @@ moment its test reds, and nobody keeps it true by hand.
 ## The architecture graph
 
 docs/architecture/graph.json is committed (ADR-014), derived by the Rust
-indexer nputer-index (C-07, ADR-015) over the TypeScript and Rust
+indexer supertaskr-index (C-07, ADR-015) over the TypeScript and Rust
 sources, and checked for currency by `index --check`. The component
 registry docs/architecture/components/C-NN-*.md declares each
 component's paths, dependencies, decisions, status and touch slugs; the

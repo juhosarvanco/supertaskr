@@ -2,18 +2,18 @@
 
 ## One sentence
 
-Your agent app runs the conversation; nputer runs the discipline.
+Your agent app runs the conversation; Supertaskr runs the discipline.
 
 ## Where the work happens
 
-nputer does not host the chat. You talk to The Architect inside the
-agent app you already use — Claude Code or Codex — and nputer is what
+Supertaskr does not host the chat. You talk to The Architect inside the
+agent app you already use — Claude Code or Codex — and Supertaskr is what
 that seat holds:
 
 - **a skill** the app loads **(v1, on the board)**, which gives the seat the loop: read the
   record, pick the next card, cut a lane, spawn a builder and a blind
   verifier, fold the verdict, merge, push;
-- **a command line**, `npx nputer` **(v1, on the board; today the same
+- **a command line**, `npx supertaskr` **(v1, on the board; today the same
   commands run as scripts in the repository)**, that the skill calls and that you can
   call by hand — the dispatch view, the fence, the preflight, the gates,
   the push guard, the architecture indexer;
@@ -29,7 +29,7 @@ the board)**. Both write the same files.
 
 Everything. The plan, the board, the fences, the verdicts, the decisions,
 the records — plain Markdown in your repository, in git. No database, no
-server, no account, no telemetry. If nputer vanished tomorrow, your
+server, no account, no telemetry. If Supertaskr vanished tomorrow, your
 project would still be readable, drivable by hand, and true.
 
 ```
@@ -63,7 +63,7 @@ The verifier is a different model from the builder where the card asks
 for it, and its verdict is binding: a REJECTED verdict stops the merge.
 That combination — a different model, denied the builder's reasoning,
 returning a binding verdict, as a file in your repo — is the property
-nputer is built around.
+Supertaskr is built around.
 
 ## What you own
 
@@ -74,10 +74,10 @@ nputer is built around.
 - **The rulings.** Open questions live in rooms and close with a
   resolution in your words, quoted verbatim.
 - **The scope.** A large card does not run without your approval.
-- **The keys.** nputer never proxies tokens or holds API keys. It spawns
+- **The keys.** Supertaskr never proxies tokens or holds API keys. It spawns
   the agent CLIs you already pay for.
 
-## What nputer owns
+## What Supertaskr owns
 
 - **The fence.** Every card declares what it touches; a hook refuses a
   write outside it at the moment of the write.

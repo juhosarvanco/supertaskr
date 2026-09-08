@@ -42,7 +42,7 @@ guard (T-249, merged 2026-09-08). The security layer at the write.
 **Planned, in priority order:**
 
 - p1 — the seat skill (T-241), the interview skill (T-242), `npx
-  nputer` (T-244, size L, needs the human's approval to dispatch).
+  Supertaskr` (T-244, size L, needs the human's approval to dispatch).
 - p2 — the context pack (T-254: an executor reads the method's
   protocol files plus the brief's quoted overlay, not CONVENTIONS
   whole), the CONVENTIONS compaction (T-255, behind T-254), two
@@ -115,7 +115,7 @@ Per-agent model cost profiles are seat economics plus binding
 assignment; cross-session memory is the record under the cold-start
 test; PR bodies from the record are record-first landings; the honest
 fallback line is T-169; a gate taxonomy with stall detection is the
-four types nputer runs; shortcut markers into a debt ledger are the
+four types Supertaskr runs; shortcut markers into a debt ledger are the
 metabolism; cost telemetry is the `Tokens:` line; enforced touches'
 write half is the fence; test-writer independence is the blind
 verifier inverted; coverage per requirement is the census.
