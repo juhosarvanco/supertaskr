@@ -247,6 +247,26 @@ Also filed, and outside the ask entirely: **`T-276`** —
 is, and it carries two JSDoc errors today (`mf-05:60` TS2532,
 `mf-09:203` TS7006, both pre-existing).
 
+### A LANE MAY NOT `blocked_by` A CARD THAT LANDED AFTER ITS BASE — MEASURED, NOT REASONED
+
+`T-205-s14` was filed with `blocked_by: [T-205-s6]`, which is the true
+dependency and which **`T-205-s6` landed on main for at `b825e87`, after
+this lane's base `6dd44a6`.** The lane cannot see it, so the parser
+records a `dangling-reference` issue against the LIVE BOARD — and that
+issue count is pinned in four places at once. It redded **seven bodies
+across two suites**: `app/test/architecture-dogfood.test.ts`'s
+*both input layers parse clean*, `app/test/select-board.test.ts`'s
+*no live card names a blocker that does not exist*,
+`tools/e2e/tests/push-checks.spec.ts`'s
+*this repository's own board passes every cheap check*, and four
+`tools/e2e/tests/shell-frame.spec.ts` bodies whose parse-error list pin
+moved 60 → 61. One character of frontmatter, seven bodies, two suites.
+
+The field is now `[]` and the card says in its own text that the
+INTEGRATOR sets it at the merge, where `T-205-s6` exists. **Recorded here
+because the failure is invisible from inside a lane**: the reference is
+correct, the card is real, and only the base ref makes it wrong.
+
 ### THE PARSER LEG IS RED AT THE BASE AND THIS LANE DID NOT MOVE IT
 
 `gate-run.mjs parser` at `01afd48`: **exit 1, 377 bodies, 3 failed** —

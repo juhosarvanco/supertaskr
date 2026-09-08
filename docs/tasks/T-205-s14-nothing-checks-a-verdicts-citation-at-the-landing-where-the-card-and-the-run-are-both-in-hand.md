@@ -7,7 +7,7 @@ size: S
 priority: 8
 status: suggested
 suggested_by: executor claude-opus-5@subagent @T-205-s1, 2026-09-09
-blocked_by: [T-205-s6]
+blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs]
 builder:
 verifier:
@@ -16,7 +16,15 @@ verified_by:
 review:
 ---
 
-CLASS PARENT: `T-205-s1`. DISPOSITION HINT: **park behind `T-205-s6`.**
+CLASS PARENT: `T-205-s1`. DISPOSITION HINT: **park behind `T-205-s6`, and
+INTEGRATOR: set `blocked_by: [T-205-s6]` at the merge.** It is empty here
+because `T-205-s6` landed on main at `b825e87`, AFTER this lane's base
+`6dd44a6`, and a `blocked_by` naming a card the lane cannot see is a
+dangling reference: the parser records it as a live-board parse error and
+three suites pin that count (`app/test/architecture-dogfood.test.ts`,
+`app/test/select-board.test.ts`, `tools/e2e/tests/push-checks.spec.ts`,
+plus `shell-frame.spec.ts`'s 60-error pin). Measured — it redded seven
+bodies across two suites before it was taken out.
 A landing leg that can only ever answer "unavailable" buys a step and no
 verdict; give the sets a home first, then this is worth its bytes.
 
