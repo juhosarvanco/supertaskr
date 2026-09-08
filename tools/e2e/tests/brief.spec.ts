@@ -2212,6 +2212,27 @@ test("a brief assembled at this ref names the lanes the repository holds, and no
  * ──────────────────────────────────────────────────────────────────── */
 
 /**
+ * ONE IDENTITY FOR THIS MODULE'S FIXTURES, SPELLED ONCE (T-239-s4).
+ *
+ * It reaches a fixture repository by TWO channels, and they are NOT
+ * interchangeable — which is the whole of that card:
+ *
+ * - the ENVIRONMENT below, which every `git` THIS PROCESS runs through
+ *   `fixtureGit` inherits and nothing else does; and
+ * - the fixture repository's OWN CONFIG, which every `git` run against
+ *   that repository reads whoever runs it — a subprocess this module
+ *   spawns included, and the dispatch arm is one.
+ *
+ * A fixture carrying only the first is green on a developer machine and
+ * red on a runner. `configureFixtureIdentity` below is the second, and
+ * carries the measurement.
+ */
+const FIXTURE_IDENT = Object.freeze({
+  name: "t153s9",
+  email: "t153s9@example.invalid",
+});
+
+/**
  * Author and committer come from the environment, so a runner with no
  * configured identity can still commit.
  *
@@ -2224,10 +2245,10 @@ test("a brief assembled at this ref names the lanes the repository holds, and no
  */
 const FIXTURE_GIT_ENV = {
   ...process.env,
-  GIT_AUTHOR_NAME: "t153s9",
-  GIT_AUTHOR_EMAIL: "t153s9@example.invalid",
-  GIT_COMMITTER_NAME: "t153s9",
-  GIT_COMMITTER_EMAIL: "t153s9@example.invalid",
+  GIT_AUTHOR_NAME: FIXTURE_IDENT.name,
+  GIT_AUTHOR_EMAIL: FIXTURE_IDENT.email,
+  GIT_COMMITTER_NAME: FIXTURE_IDENT.name,
+  GIT_COMMITTER_EMAIL: FIXTURE_IDENT.email,
 };
 
 function fixtureGit(cwd: string, args: string[]): string {
@@ -3092,8 +3113,28 @@ interface RitualFixture {
  * brief the ritual writes discloses its own byte size, and two fixtures
  * whose paths differ in length would disclose two different sizes for the
  * same document.
+ *
+ * `identity: false` WITHHOLDS the step below, and it exists for exactly
+ * one caller: the positive control of the body that proves the step is
+ * load-bearing. A control BUILT by the producer cannot drift from its
+ * subject the way one written to look similar can (docs/CONVENTIONS.md,
+ * A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL).
  */
-function ritualFixture(name: string): RitualFixture {
+function configureFixtureIdentity(root: string): void {
+  // THE ARM'S OWN `git commit` IS A SUBPROCESS AND INHERITS NOTHING FROM
+  // `FIXTURE_GIT_ENV` (T-239-s4). The ritual is re-entered as a spawned
+  // node process, which runs `git -C <root> commit …` with whatever
+  // identity the MACHINE has — so on every developer machine here the
+  // dispatch stamped happily and on the CI runner it stopped at step 1
+  // with *"Please tell me who you are"* (run 33672240360, main red at
+  // 9646618). The repository's own config is the one channel both this
+  // process and that subprocess read, so the identity goes HERE and the
+  // arm stays exactly what a real dispatch runs.
+  fixtureGit(root, ["config", "user.name", FIXTURE_IDENT.name]);
+  fixtureGit(root, ["config", "user.email", FIXTURE_IDENT.email]);
+}
+
+function ritualFixture(name: string, opts: { identity?: boolean } = {}): RitualFixture {
   // REALPATH, and it is load-bearing for the same reason `nestedShapes`
   // gives: `/var` is a symlink to `/private/var` on macOS, git reports the
   // resolved spelling and `mkdtemp` hands back the symlinked one.
@@ -3109,6 +3150,7 @@ function ritualFixture(name: string): RitualFixture {
   execFileSync("tar", ["-x", "-f", tar, "-C", root]);
   writeFileSync(path.join(root, FIXTURE_CARD_FILE), FIXTURE_CARD);
   fixtureGit(root, ["init", "--initial-branch=main", "--quiet"]);
+  if (opts.identity !== false) configureFixtureIdentity(root);
   fixtureGit(root, ["add", "-A"]);
   // A `Checkpoint:` commit, because the base rule reads the newest one out
   // of the first-parent log and a fixture with none would fail for a
@@ -3371,6 +3413,115 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
   } finally {
     removeGitFixture(arm.dir, "ritualFixture(one)");
     removeGitFixture(hand.dir, "ritualFixture(two)");
+  }
+});
+
+/**
+ * A `git` ENVIRONMENT WITH NO IDENTITY IN IT, ON EVERY HOST — which is
+ * strictly more than "no config files", and the distinction is what made
+ * the defect above invisible to every local battery (T-239-s4).
+ *
+ * Suppressing the two config files is the recipe docs/CONVENTIONS.md
+ * publishes for borrowing a runner's git environment, and it does NOT
+ * reproduce this failure: with no configured identity git AUTO-DETECTS
+ * one from the OS — `<user>@<hostname>` — and commits with a warning.
+ * Whether that auto-detection SUCCEEDS is a property of the HOST: this
+ * developer's machine answers to `Mac.lan`, git reads the dot as a
+ * domain and is satisfied; a runner's hostname carries none, git refuses
+ * with *"unable to auto-detect email address"*, and the same tree is
+ * green here and red there. That is the T-238-s2 class the card names.
+ *
+ * `user.useConfigOnly` is git's OWN switch for "do not auto-detect", so
+ * it produces the runner's ANSWER on every host instead of only on hosts
+ * whose hostname happens to lack a dot — and it is written into a
+ * GIT_CONFIG_GLOBAL file rather than passed with `-c`, because the
+ * subject of the assertion is a `git` this body does not spell.
+ *
+ * HOME IS DELIBERATELY NOT TOUCHED: Playwright caches its browsers under
+ * `~/`, and clobbering it reds 54 browser bodies for an unrelated reason
+ * (docs/CONVENTIONS.md, the borrowed-git-environment bullet, which was
+ * itself written from that mistake).
+ */
+function noIdentityEnv(dir: string): NodeJS.ProcessEnv {
+  const file = path.join(dir, "gitconfig-no-identity");
+  writeFileSync(file, "[user]\n\tuseConfigOnly = true\n");
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  for (const key of [
+    "GIT_AUTHOR_NAME",
+    "GIT_AUTHOR_EMAIL",
+    "GIT_COMMITTER_NAME",
+    "GIT_COMMITTER_EMAIL",
+    "EMAIL",
+  ]) {
+    delete env[key];
+  }
+  env["GIT_CONFIG_GLOBAL"] = file;
+  env["GIT_CONFIG_SYSTEM"] = "/dev/null";
+  return env;
+}
+
+test("THE RITUAL FIXTURE CARRIES ITS OWN GIT IDENTITY, so a git that inherits none can still commit in it", () => {
+  // KILLED BY: the two `git config` lines dropped from the fixture, an
+  // identity written only into this process's environment, and a
+  // `user.email` configured without a `user.name` or the other way round.
+  // IT IS THE ONE BODY IN THIS FILE THAT ANSWERS THE SAME WAY ON A
+  // DEVELOPER MACHINE AND ON A RUNNER, which is its whole reason for
+  // existing: the end-to-end body above spawns the arm with the MACHINE'S
+  // identity, so it is the machine and not the tree that it measures, and
+  // it was green in the lane, on the bench and in twenty-eight batteries
+  // while CI run 33672240360 stopped the same dispatch at step 1.
+  const fx = ritualFixture("one", { identity: false });
+  try {
+    const env = noIdentityEnv(fx.dir);
+    // The arm's step-1 shape: a `git` run AGAINST the fixture by somebody
+    // who is not this process. `--allow-empty` keeps the probe off the
+    // tree — identity is resolved before a commit is written either way.
+    const commit = (): { status: number | null; stderr: string } => {
+      const r = spawnSync(
+        "git",
+        ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "commit", "--quiet", "--allow-empty", "-m", "identity probe"],
+        { encoding: "utf8", env },
+      );
+      return { status: r.status, stderr: r.stderr };
+    };
+    const configured = (key: string) =>
+      spawnSync("git", ["-C", fx.root, "config", "--get", key], { encoding: "utf8", env });
+
+    // ── THE POSITIVE CONTROL, RUN FIRST AND REQUIRED TO FAIL ───────────
+    // Without it a green below is satisfied equally by an environment
+    // that never disabled anything.
+    expect(
+      configured("user.email").status,
+      "the control repository already carries an identity, so it controls for nothing",
+    ).not.toBe(0);
+    const control = commit();
+    expect(
+      control.status,
+      `the borrowed environment did not disable git's identity at all: ${control.stderr}`,
+    ).not.toBe(0);
+    expect(
+      control.stderr,
+      "the control failed for some reason other than the one the runner failed for",
+    ).toContain("Please tell me who you are");
+
+    // ── THE SUBJECT: the producer's own step, and nothing else ─────────
+    configureFixtureIdentity(fx.root);
+    expect(configured("user.name").stdout.trim()).toBe(FIXTURE_IDENT.name);
+    expect(configured("user.email").stdout.trim()).toBe(FIXTURE_IDENT.email);
+    const subject = commit();
+    expect(
+      subject.status,
+      `a git inheriting no identity could not commit in the fixture: ${subject.stderr}`,
+    ).toBe(0);
+    expect(
+      spawnSync("git", ["-C", fx.root, "log", "-1", "--format=%an <%ae>"], {
+        encoding: "utf8",
+        env,
+      }).stdout.trim(),
+      "the commit was authored by somebody other than the fixture's own identity",
+    ).toBe(`${FIXTURE_IDENT.name} <${FIXTURE_IDENT.email}>`);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(identity)");
   }
 });
 
