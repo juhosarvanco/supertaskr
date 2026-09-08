@@ -328,6 +328,53 @@ code from a work item. The standalone-planning window is narrowing.
    skill, a CLI, a mirror) is the only channel in which the comparison
    is even made.
 
+   **Sharpened 2026-09-08 after the whole docs folder was read (609
+   files, shallow clone; FEATURES.md's 99 entries, 90 ADRs, 73 how-tos,
+   the design note, the testing doc, the registries).** Three sentences
+   of "what nobody in the ring has" were too strong:
+   - *"a record that keeps itself honest"* — GSD Core has byte budgets
+     with a ratchet on every workflow and agent file (ADR-1610, tier
+     hard caps, a differential size ratchet), a STATE.md rebuild
+     derivability contract and consistency gates (ADR-1817, feature 69),
+     provenance tags on research claims with assumptions logged apart
+     (feature 65), an append-only review-dispositions ledger keyed by
+     commit sha (feature 3806), a QA smell baseline where an
+     unacknowledged NEW smell fails the build, and "shell guards must
+     observe their own failure arm" (ADR-3409). What stays ours: the
+     killed mutant behind every guard — ADR-456 says in its own words
+     "no mutation testing runs in CI" and that a mutant survived for
+     weeks; records that are immutable by rule with figures stamped to
+     a ref or a clock; and health bands over the METHOD's own metrics
+     with named keepers. Write "records and drills", not "honesty".
+   - *"the architecture map with drift as a finding"* — GSD Core detects
+     post-execute codebase drift (new directories, barrels, migrations,
+     routes; feature 27a, warn or auto-remap), plan drift (every symbol a
+     plan cites must resolve in source; cross-artifact fact drift across
+     ROADMAP, PLAN, STATE and CONTEXT; the Plan Drift Guard, default-on),
+     and schema drift (feature 59). What stays ours: the INTENT layer —
+     a declared component registry with an overlay of reality, cycles
+     and blast radius as derivations. Write "intent against reality",
+     not "drift".
+   - *"a file in your repo"* — GSD documents two supported modes that
+     keep `.planning/` OUT of the shared repository (gitignored and
+     uncommitted; or committed on the author's branch and stripped from
+     the PR by `planning.pr_strict`). Their record is in the repo by
+     default and optional by design; ours is the repo. The clause holds
+     as written and should say "by construction, not by default".
+   Two things read there are genuinely new to the map: **"verifier
+   reach = spec reach"** (docs/design/verifier-reach.md — their own
+   calibration data: on non-inferable edge defects the verifier caught
+   0 of 12 at 0.93 confidence, so they widen the SPEC with an edge probe
+   and a prohibition probe at spec time and grade the verifier
+   exogenously against predicates, abstaining and flagging where none
+   exists) — the same conclusion T-225-s11's "criteria demand a test
+   body" reached from the other side, and a design for the interview to
+   learn from; and **Nyquist validation** (a mapped test command per
+   requirement BEFORE code, Wave 0 scaffolding, an eighth plan-checker
+   dimension). And they already run three community registries —
+   capabilities, EoS hosts, reviewer lanes — with a stated
+   non-endorsement policy: charter 19's marketplace exists in a form.
+
 Supporting moves: make the rejection corpus the moat (repo-specific,
 compounding, invisible to hosted trackers); sell the fence as safe
 parallelism ([FALSIFIED 2026-09-08, conclusion 6: GSD's plans name their
@@ -410,6 +457,23 @@ candidate in docs/VERSIONS.md's UNRULED section, never a card by itself**
 - Setup with zero model round-trips (pi-gsd's WXP): the brief assembler
   already does this; the lesson is to keep every ritual step out of the
   model's hands.
+- **From the rest of the docs folder (2026-09-08):** Nyquist validation
+  (a test command per requirement before code; Wave 0 scaffolding);
+  the edge probe and the prohibition probe at spec time ("verifier reach
+  = spec reach") — candidates for the interview's decomposition; a
+  cross-phase regression gate (prior phases' suites before verify —
+  parity with our battery, named); verification-debt tracking across
+  phases (outstanding human-needed items never silently lost);
+  scope-reduction detection with orchestrator re-injection; a
+  reversibility rating on a task (one-way doors named); a
+  complexity-triggered refactor that measures the entropy a phase just
+  added (ADR-1953); phase effort estimated against a calibrated budget
+  with an actuals loop (ADR-2629 — our parked "calibration scorecards");
+  safe undo by phase or plan with a dependency check; forensics over
+  git history for stuck loops; a `.planning/state.json` contract for
+  dashboards (parity with lib-parser); seeds with trigger conditions
+  (parity with parked cards' wake conditions); a byte-size ratchet on
+  prompt files (parity with ADR-019's budgets, extended to method/).
 - **An MCP transport onto the CLI and the board** (GSD's `gsd-mcp-server`
   over its `command` and `state` interface points; read 2026-09-08): Claude
   Code and Codex both speak MCP, so one server exposing `npx nputer`'s
@@ -479,6 +543,12 @@ it is denied) is a claim. Never let a nputer sentence rest on "told to".
   is no longer exclusive; the claim's weight moves to "denied".
 - Notion: named by @human 2026-09-08 for the comparison pages; not
   mapped — a wiki with agents, not a tracker; map or drop before copy.
+- GSD Core's own limits, in their words, to cite rather than infer:
+  "no mutation testing runs in CI" (ADR-456); a verifier "most
+  confidently wrong on exactly the cases that matter" without a written
+  predicate (design/verifier-reach.md); the walk test "proves nothing
+  about whether a real LLM agent emits artifacts" (ADR-2966); no
+  sandbox for third-party capabilities (capability-trust-model.md).
 
 Sources for Ring 1.5 and agentplane, read 2026-08-25 (addendum) and
 re-verified 2026-08-30 (this draft): linear.app, /developers/
@@ -498,6 +568,11 @@ docs/ARCHITECTURE.md; docs/CONFIGURATION.md; docs/reference/gate-predicates.md,
 review-verification-capabilities.md; agents/gsd-verifier.md,
 gsd-executor.md; hooks/gsd-agent-isolation-guard.js, gsd-read-guard.js,
 gsd-prompt-guard.js; gsd-core/references/gates.md; gsd-core/workflows/ship.md;
+the whole docs/ folder by shallow clone (609 files): FEATURES.md, USER-GUIDE.md,
+COMMANDS.md, TESTING-SUITES.md, design/verifier-reach.md, registries/README.md,
+adr/ (3473, 1610, 1817, 1953, 1577, 3409, 456, 2966, 1411, 2629, 3942 read;
+the rest by title), how-to/ by title plus keep-planning-docs-private and
+publish-prs-without-planning-artifacts, reference/plan-md.md;
 docs/explanation/ — all ten, on `next` and `main`: capability-overlay-model,
 capability-trust-model, claude-orchestration-capability, context-engineering,
 embeddable-orchestration-system, interface-versioning-policy,

@@ -96,6 +96,7 @@ has; no ruling needed, only the name to look under.
 ## Unruled — needs a version ruling before it can become a card
 
 - **32 The Accountability Layer** — v3+ by its ring; never named in a ruling; awaits @human's word.
+- **Learned from the rest of GSD Core's docs folder (2026-09-08, second pass; T-245's map addendum names the source of each):** Nyquist validation — a test command mapped per requirement before code, with scaffolding as a first wave; the edge probe and the prohibition probe at spec time ("verifier reach = spec reach") as an interview stage; verification-debt tracking across phases; scope-reduction detection with re-injection; a reversibility rating on a card; a complexity-triggered refactor measuring the entropy a lane added; phase effort estimated against a calibrated budget with an actuals loop (the parked "calibration scorecards" in a shipped form); safe undo by card or lane with a dependency check; forensics over git history for stuck loops. Already delivered under other names: seeds with trigger conditions (parked cards' wake conditions), a byte-size ratchet on prompt files (ADR-019's budgets), the plan drift guard (T-230's quoted-claims preflight), the cross-phase regression gate (the four-suite battery), STATE consistency gates (STATE regenerated from the template; derive, never quote), a state.json contract for dashboards (lib-parser).
 
 ## Moves, by sitting
 
