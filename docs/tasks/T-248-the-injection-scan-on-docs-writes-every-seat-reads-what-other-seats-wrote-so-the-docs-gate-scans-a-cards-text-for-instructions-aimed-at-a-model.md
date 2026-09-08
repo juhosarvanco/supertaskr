@@ -661,3 +661,311 @@ re-run once, then attribute by NAME at the base.
 at `27cbd9b` — the lane's two (T-101 J2, T-221 J4) plus the one
 `T-248-s2` adds by quoting the phrase as prose. The integrator re-derives
 at the merge; this figure is true at the ref beside it and nowhere else.
+
+### 2026-09-08 — claude-opus-5@subagent (phase 2, re-verification after REJECTED 68c438b)
+
+VERDICT: APPROVED
+
+attack set: sha256:7043163ea15906b6696d7d52e7000082e1f2ccc1bdfa06c45ae5a9eafaabb939 (attack-set-T-248.md)
+ground truths: sha256:ce44dc0fd20ca2c693d7912d80c1f6a5e11085fbb2edf680679413b87db8b99d (ground-T-248.md)
+
+Both digests checked with `shasum -a 256` BEFORE either file was opened;
+both matched. Previous verdict: 68c438b (REJECTED). Tip judged:
+6970e37. Base: d1603bb. Bench: /Users/ujju/Projects/nputer-V-T-248,
+detached; the lane worktree and the integration checkout were never
+touched.
+
+THE FRAME I ACTUALLY HAD, in the order I read it: (0) method/roles/
+verifier.md in FULL, at the bench — the role document, carrying nothing
+lane-derived; (1) the card at its BASE ref, via `git show d1603bb:docs/
+tasks/T-248-...md`; (2) the sealed attack set, digest first; (3) the
+dispatcher's ground truths, digest first; (4) the previous verdict AS
+COMMITTED at 68c438b, which is what this pass judges the fix against;
+(5) STATE, ARCHITECTURE and CONVENTIONS at the tip; (6) ONLY THEN the
+diff — `git diff --stat` and then the hunks, whole lane and rework
+alone. I moved the bench with `checkout --quiet --detach`, took the
+commit list with `git rev-list` (hashes only), and ran no `git log` on
+the lane's range, so no commit subject was printed at me. The card's
+Implementation notes at the tip were read after the diff, to ENUMERATE
+the claims; every one of them below is re-derived here, not relayed.
+
+PHASE 1 WAS A SEPARATE SPAWN AND ITS NO-TOOL PROPERTY WAS KEPT BY
+INSTRUCTION AND BY ITS OWN DISCLOSURE — this harness cannot deny a
+subagent tools, so that is a construction, not a guarantee, and I say so
+rather than assert a blindness I cannot prove about another spawn. The
+attack set and the ground truths are unchanged from the first pass and
+were sealed at the base, so phase 1's blindness is spent where it was
+spent; what is new here is only the fix.
+
+AND MY OWN BRIEF NAMED EXECUTOR-DERIVED SPECIFICS ABOVE THE LINE, which
+verifier.md requires me to disclose rather than pretend away. My duties
+section named the body count (52 to 53), the gate's sha256, the mutant's
+landing at line 390, the routed card T-248-s5, and the expected e2e body
+figure. It was right to: this pass is a re-verification against a
+standing rejection, and those specifics ARE the rejection's own text. I
+treated each as a claim to falsify, and re-derived every one of them
+below from the tree.
+
+---
+
+#### THE REJECTED FINDING IS CLOSED — measured with three mutants, not one
+
+The rejection: criterion one's "print EACH hit with file, line and
+pattern name" had no body, and a one-line mutant that dropped every hit
+after the first passed all 52 bodies.
+
+THE GATE IS BYTE-IDENTICAL, so nothing in the shipped behaviour moved to
+make the test pass. sha256 of tools/e2e/scripts/docs-gate.mjs, read at
+six refs:
+
+    d1603bb  171dcdef992e958a299f57b085bfddb606bb822a04121315d61b3367711b78bc
+    1c60da3  5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f
+    27cbd9b  5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f
+    68c438b  5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f
+    80fdd70  5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f
+    6970e37  5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f
+
+1c60da3 is the ref the previous verdict measured at. The gate has not
+changed a byte since.
+
+THE REWORK'S WHOLE DIFF, read from `git diff --stat 68c438b..6970e37`: 3
+files, 317 insertions, **0 deletions** (`git diff 68c438b..6970e37 |
+grep -c '^-[^-]'` reads 0) — one new body in
+tools/e2e/tests/docs-input-gate.spec.ts, the rework note inside
+`## Implementation notes` under an `###` heading, and one
+`status: suggested` card. Body census 52 at 68c438b, 53 at the tip;
+diffing the two extracted name lists shows EXACTLY ONE ADDITION and no
+deletion or rename.
+
+THE DRILL. A detached scratch worktree
+/Users/ujju/Projects/nputer-drill-V-T-248 was cut at 6970e37 and
+installed in CONVENTIONS' fresh-clone order with its OWN caches
+(lib/parser `npm ci` + build, then app/, then tools/e2e). Every mutant's
+landing was read from `git diff -U0`, never from the mutator; every
+restore was proved by sha256 back to 5446e8de... with an empty per-path
+diff; the whole 53-body file was run each time; the worktree was removed
+afterwards (`git worktree list` shows no drill entry).
+
+| mutant | landing, from `git diff -U0` | numstat | run | kill set |
+|---|---|---|---|---|
+| **A** — the verdict's own M6, re-planted character for character | `@@ -389,0 +390 @@` in `scanInjection`, `if (hits.length > 0) break;` BEFORE `hits.push` | 1 0 | exit 1 — **1 failed, 52 passed** (4.9m) | **{the new body} alone.** Expected 3, Received 1 |
+| **B** — MINE, not run by the executor: the same statement AFTER the push, so each pattern keeps its FIRST hit | `@@ -395,0 +396 @@`, same line, one statement later | 1 0 | exit 1 — **1 failed, 52 passed** (4.8m) | **{the new body} alone.** Expected 3, Received **2** — the "leaves 2 of 3" shape |
+| **D** — MINE, at a DIFFERENT SITE: the reporter prints only the first hit per file while the summary still counts three | `@@ -505 +505 @@` in `reportInjectionScan`, `for (const hit of hits)` becomes `for (const hit of hits.slice(0, 1))` | 1 1 | exit 1 — **1 failed, 52 passed** (4.8m) | **{the new body} alone.** Expected 3, Received 1 |
+
+D is the sharpest of the three and the one that most nearly escapes: the
+summary line still reads "3 hit(s)", so a body that checked only the
+count the gate PRINTS AS A NUMBER would pass it. The new body counts the
+LINES, and dies. It also lands in the reporter rather than the scanner,
+which answers 2b's third proof for the printing half of the limb as well
+as the scanning half — the property lives in both places and something
+died in each.
+
+I did not spend a fourth run on "drop the line number from the printed
+form": body 1528 already asserts the rendered line contains `:3` against
+a typed line number, so that mutant has a home.
+
+CONTAINMENT (2b, kill sets and never counts). The new body's kill set
+contains A, B and D; **no other body in the file kills any of the
+three** — measured, 52 passed under each. So it is NOT CONTAINED by any
+existing body's kill set, and it is not a restatement of one. It
+overlaps the previous verdict's M2 and M5 (which body 1703 also kills)
+WITHOUT containment, because A, B and D separate them. By reading, not
+by measurement, it is not killed by M1 (J4 neutered — the fixture uses
+J1 and J2), by M3 (which moves an exit this body does not assert), by M4
+(the cannot-run line), or by M7 (a controls-less pattern appended — the
+body's summary assertion stops before "against N pattern(s)", so an
+eighth pattern does not move it). A wider kill set would only strengthen
+the finding; the non-containment stands on the three measured rows.
+
+IS THE EXPECTATION A TAUTOLOGY? No, and this is the difference from the
+body it sits beside. Body 1703 builds its expected side out of
+`scanInjection` and `injectionLine` themselves, so under A, B and D both
+sides move together and it survives — which is exactly why the limb was
+undefended. In the new body the COUNT (3), the THREE LINE NUMBERS (3, 9,
+15), the two-pattern spread, and the summary substring are TYPED
+LITERALS. Only the payload TEXT and the printed `[id: what]` string come
+from `INJECTION_PATTERNS`, which is the data table the gate reads and
+not the function under test — the single-source choice T-057 asks for.
+The residual that leaves is bounded and already covered: a data mutant
+on a pattern's `what` would move both sides, and the id half is pinned
+against typed literals by body 1528 and by the teeth bodies at 1410,
+1442 and 1491.
+
+The premise is asserted rather than assumed (shape ten): three hits over
+two ids, both checked before the fixture is written, and the fixture
+path is asserted FREE before the write so the body clobbers nothing.
+
+---
+
+#### THE FIXTURE HAZARD THE REWORK ROUTED (T-248-s5) — measured, bounded, loud
+
+The new body plants a real untracked file, docs/rooms/zz-each-hit-T-248.md,
+in whatever checkout it runs in, and removes it in a `finally`. I read
+`git status --porcelain` on both sides of the full spec run at my tip:
+
+    STATUS BEFORE the 53-body run: empty
+    STATUS AFTER  the 53-body run: empty
+    ls docs/rooms/ before and after: identical, 12 files, no zz- entry
+
+WHAT DEBRIS WOULD COST, if a run were killed between the write and the
+`finally`. I planted the identical file myself at the tip and measured
+each reader that could see it:
+
+| reader | with the debris present | reading |
+|---|---|---|
+| `git status --porcelain` | `?? docs/rooms/zz-each-hit-T-248.md` | LOUD — a seat sees it |
+| criterion five's census, `git ls-files -z docs/` fed to the gate | 3 hit(s) in 3 of 743 path(s) — UNCHANGED | the stamped count is tracked-only; debris cannot inflate it |
+| `npm run lint:docs` from tools/e2e | exit 0, zero mentions of the file | the whole-tree half is unmoved |
+| `gate-run.mjs parser` | exit 0, GREEN, 377 bodies | the parser's live-tree smoke test is unmoved |
+
+So the residual is exactly one untracked file of payload prose in the
+lane's own worktree, invisible to every gate above and visible to
+`git status` and to a filesystem walker. It cannot reach a commit made
+with explicit paths, and CONVENTIONS already forbids running the lane in
+the checkout whose watcher the human is looking at.
+
+A CONCURRENT RUNNER IN THE SAME CHECKOUT cannot corrupt an answer
+silently. The body asserts `existsSync(abs)` is false BEFORE it writes,
+so a second runner meeting the first's fixture REDS rather than
+clobbers; and if the first runner's `finally` fires while the second is
+scanning, the second's gate reports the path unreadable on its own
+cannot-run line and the `toBe(3)` fails. Both outcomes are loud. Within
+one run there is no concurrency at all: the config pins `workers: 1`.
+The blast radius is confined to this body — every other tree-reading
+body in the suite reads `trackedFiles()`, which excludes an untracked
+fixture (body 1703's corpus is exactly that call), which I confirmed by
+running the parser suite and lint:docs with the debris in place.
+
+This is the class CONVENTIONS already names and accepts for the token
+lint, which plants a control byte into seven TRACKED files, one of them
+under docs/. Disclosed, routed to T-248-s5 as `status: suggested` with
+`suggested_by` set, and correctly NOT folded into the work. Not
+blocking.
+
+---
+
+#### THE REST OF THE PREVIOUS VERDICT CARRIES, AND HERE IS THE LINE
+
+The 29-of-30 defeated attacks and the M1..M5/M7 kill sets were measured
+at 1c60da3 against docs-gate.mjs sha256 5446e8de..., and that file is
+byte-identical at 6970e37 (table above), with zero deletions anywhere in
+the rework diff. Every attack whose subject is the GATE'S BEHAVIOUR is
+therefore a measurement of the same bytes and carries unchanged: items
+1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 25, 26
+and 27. Re-running them would measure one file twice.
+
+WHAT THE DIFF COULD MOVE, AND WHICH I THEREFORE RE-DERIVED HERE:
+
+- **item 5 / M6 — the "each hit" limb.** The rejection itself. Closed;
+  three mutants above.
+- **item 28 — fixture leakage.** Re-derived: clean before and after the
+  full run, plus the debris matrix above, which is new surface this diff
+  introduced.
+- **item 29 — the existing contract and the body census.** Re-derived:
+  52 to 53, exactly one added, none deleted or renamed; the `EXIT`
+  object and `CANNOT_RUN: 3` are untouched because the file is
+  byte-identical.
+- **item 30 — containment.** Re-derived for the new body; M6's row moves
+  from SURVIVED to killed by one body.
+- **items 22 and 24 — the stamped count.** Re-derived at my tip: **3
+  hit(s) in 3 of 743 path(s) scanned under docs/ against 7 pattern(s)**,
+  the same three the previous verdict names (T-101 J2 line 1398, T-221
+  J4 line 303, T-248-s2 J1 line 31). The rework adds one path to the
+  corpus (743, was 742) and it fires nothing.
+- **item 9's exemption smell.** Re-derived at the tip rather than
+  relayed: the scan is handed `gate.docsPaths`, which docs-scan.mjs
+  builds as every changed path equal to or under `docs/` with NO filter,
+  and the gate carries no exclusion list, no `method/` carve-out and no
+  self-exemption for T-248.
+
+---
+
+#### SECURITY SWEEP ON THE REWORK'S DIFF (step 3)
+
+- **No pattern weakened and no path exclusion added** — the gate is
+  byte-identical, so this is settled by the hash rather than by reading;
+  and the unfiltered `docsPaths` derivation above is re-derived at the
+  tip.
+- **The new body's fixture text is planted injection payload, and that
+  is the right payload**: it is the pattern table's own `positive`
+  strings, not a new payload vocabulary invented in a test, so the file
+  introduces no string the repository did not already carry under
+  tools/.
+- **No dependency, no manifest, no network, no endpoint, no secret** in
+  the diff; the other two files are prose.
+- The one security-shaped observation is the debris residual, measured
+  and bounded above.
+
+---
+
+#### THE OWED SUITES, EACH EXIT READ FROM `$?` UNPIPED, WITH ITS COUNT
+
+Measured at **6970e37**, before this verdict's own commit.
+
+| command | cwd | exit | count / reading |
+|---|---|---|---|
+| `npx playwright test tests/docs-input-gate.spec.ts` | tools/e2e | **0** | **53 passed** (4.8m) |
+| `node tools/e2e/scripts/gate-run.mjs parser` | bench root | **0** | gate-verdict GREEN, **377 bodies** |
+| `node tools/e2e/scripts/gate-run.mjs app` | bench root | **0** | gate-verdict GREEN, **1163 bodies** |
+| `node tools/e2e/scripts/gate-run.mjs e2e` | bench root | **1** | gate-verdict RED, **662 bodies** — 661 passed, 1 failed, attributed below |
+| `npm run lint:docs` | tools/e2e | **0** | whole-tree half, 0 findings |
+| `npm run lint:tokens` | tools/e2e | **0** | clean — TOKEN 175 files, CONTROL 1222 tracked text files |
+| `npm run lint:tokens -- --selftest` | tools/e2e | **0** | 65 TOKEN + 4 CONTROL samples, 90 walk-policy, 9 evidence-floor |
+| `npm run typecheck` | tools/e2e | **0** | clean |
+| `npm run capabilities:check` | tools/e2e | **1** | **STALE** — committed 55273 bytes, fresh generation 56250 |
+| `docs-gate.mjs <this card> <T-248-s5>` | bench root | **1** | FIRES on 2 paths; 3 suites named (app, tools/e2e, lib/parser); 0 frontmatter issues; budgets hold; injection scan **0 hit(s) in 0 of 2** |
+
+The e2e port was `NPUTER_E2E_PORT=25248` throughout; 14520 and 1420 were
+never bound.
+
+**THE CENSUS IS STALE AND THAT IS CORRECT — a note for the integrator,
+not a correction for the lane.** The rework adds a test body,
+docs/CAPABILITIES.md is GENERATED from test names, and T-210 leaves that
+file outside every lane fence. `npm run capabilities` belongs in the
+MERGE commit (CONVENTIONS, WHOSE COMMIT; T-201). My own verdict commit
+adds no test body, so the two byte figures above are still true at the
+tip this verdict creates — but re-derive at the merge rather than
+transcribe them.
+
+**THE ONE E2E RED IS NOT THIS LANE'S, AND I ATTRIBUTED IT MYSELF RATHER
+THAN RELAYING THE PREVIOUS VERDICT'S ATTRIBUTION.**
+tests/brief.spec.ts:3230 — "THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND
+STEPS LEAVE, file for file". Symptom: the arm's dispatch reports "the
+dispatch stopped at step 3 (preflight)" where the body expects "the
+checkout this session was started in is STALE".
+
+- CLASSIFIED AGAINST THE FENCE FIRST: this card's `touches` is
+  tools/e2e/scripts/docs-gate.mjs and
+  tools/e2e/tests/docs-input-gate.spec.ts, and the whole lane diff
+  d1603bb..6970e37 touches eight files — six docs/tasks cards, the gate
+  and that spec. tests/brief.spec.ts and scripts/brief.mjs are outside
+  the fence and outside the diff. Nor can the lane reach them through
+  code: brief.mjs imports card-figures, card-preflight, dispatch-brief,
+  checkout-currency, dispatch-order, lane-fence, lane-lock and
+  session-economics, and NOTHING in the tree imports docs-gate.mjs
+  except the new spec — every other mention of it is a string, a comment
+  or a subprocess invocation.
+- RE-RUN ONCE ALONE AT MY TIP: still red, same symptom.
+- THEN RUN AT THE BASE d1603bb, with the whole lane absent, on this same
+  bench: **RED THERE TOO, with the identical Received string**. It is
+  the bench's own age against a moving main, which is what the arm's
+  preflight is reporting. Not this lane's and not this pass's. STATE's
+  rule applied: re-run once, attribute by NAME at the base.
+
+---
+
+#### FILED AS SUGGESTIONS
+
+None. The one improvement this pass surfaced — the gate's root is not
+injectable, so a body about what the gate PRINTS has to plant a real
+file under docs/ — was already filed by the rework as T-248-s5, with
+`status: suggested`, `suggested_by` set, and acceptance criteria that
+name both acceptable outcomes. Filing a second card for the same fact
+would be ceremony. The previous verdict's T-248-s1 through T-248-s4
+stand as filed.
+
+---
+
+#### THE GATES THIS VERDICT'S OWN COMMIT MOVES (step 7)
+
+Recorded beneath the commit that carries them.
