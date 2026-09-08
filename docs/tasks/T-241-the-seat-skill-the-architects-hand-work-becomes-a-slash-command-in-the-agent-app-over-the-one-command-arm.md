@@ -8,7 +8,7 @@ priority: 1
 status: building
 suggested_by: "@human ruling (2026-09-03, ADR-021, rooms/cockpit-or-mirror.md RE-RULED): the architect sits in the user's agent app; nputer is a skill, a CLI and a mirror"
 blocked_by: []
-touches: [method/]
+touches: [method/, app/src-tauri/src/agent/kit.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -81,3 +81,13 @@ skill-driven turn from a hand-driven one.
 creation target the fence does not reserve, and a fence token for a path
 nothing tracked sits under is a DEAD entry — so the fence names the parent
 that exists.
+
+## Fence widened mid-lane by fast path A (the architect seat, 2026-09-09)
+
+`app/src-tauri/src/agent/kit.rs` added at the executor's ask
+(ask-T-241.md): criterion 1's "carry it into a new project at genesis" is
+`KIT_FILES`, and only the table entry sat outside `method/`. No live lane
+held the path (T-244, T-153-s3, T-205-s1 re-derived at the grant). The
+method version bump the new materialized file owes is the INTEGRATOR's at
+the merge — three stamps in one commit, docs/CONVENTIONS.md being inside
+T-244's live fence — never the lane's.
