@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 size: S
 priority: 1
-status: planned
+status: building
 suggested_by: "@human (2026-09-08): \"lets keep the focus on driving from the native apps\" — ADR-021 Addendum 1; the cross-harness plan's rule that a Codex claim is a hypothesis until captured"
 blocked_by: []
 touches: [docs/research/captures, docs/design/cross-harness-plan.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
