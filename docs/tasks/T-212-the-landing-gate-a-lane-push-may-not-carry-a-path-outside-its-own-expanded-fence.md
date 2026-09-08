@@ -125,6 +125,22 @@ across the range rather than the file. The directory stays unfenceable.
 defect this section exists to prevent: a limits paragraph that omits the
 guard's own bypass is the shape this project keeps finding.*
 
+2026-09-08 (`T-224`): the `touches:` AMENDMENT above is CLOSED — the gate
+now judges the `touches:` LINE across the judged range at both landing
+moments and REFUSES a card whose line moved, its own or a sibling's,
+while `docs/tasks` stays unfenceable and every other write to a card
+(the stamp, the notes, a suggestion, a whole new card) is admitted
+exactly as before. What that arm still cannot see is FIVE things, listed
+in `landing-gate.mjs`'s own limit 5 and not copied here: a card the range
+ADDS, a card it DELETES, a range the containment arm already refuses, a
+card whose fence this gate could not expand from the integration branch,
+and limit 6, which reaches the new arm through the same movable local
+ref. The line a legitimate fast-path-A grant leaves in a lane's working
+copy is exonerated by comparing it against the integration branch's own
+copy — argued in that module's header, since a gate refusing the route
+its own `ROUTE` text prescribes would be the `T-223` trap one paragraph
+over.
+
 ## Acceptance criteria
 
 - A PUSH of a lane branch whose merge-base-to-tip diff contains a path

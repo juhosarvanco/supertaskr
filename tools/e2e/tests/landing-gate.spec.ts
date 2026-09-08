@@ -212,15 +212,24 @@ function writeCard(
   // body could name predates it, which keeps the age rule out of the way
   // of every body that is not about the age rule.
   suggested: string | null = "2000-01-01",
+  // THE TWO WRITES A LANE ACTUALLY OWES ITS OWN CARD (T-224): the closing
+  // status stamp and the implementation notes. They are parameters so a
+  // body can change the FILE while leaving the `touches:` LINE exactly
+  // where it stood — the state the fifth limit's arm must keep ADMITTING,
+  // and the only thing that makes its refusal distinguishable from a
+  // guard that refuses every write to a card.
+  status = "building",
+  notes = "",
 ): void {
   mkdirSync(path.join(root, path.dirname(rel)), { recursive: true });
   writeFileSync(
     path.join(root, rel),
     `---\nid: ${id}\ntitle: a fixture card\nfeature: F-01\nmilestone: 1\n` +
-      `priority: 1\nsize: S\nstatus: building\n` +
+      `priority: 1\nsize: S\nstatus: ${status}\n` +
       (suggested === null ? "" : `suggested_by: "@human ruling (${suggested}): a fixture"\n`) +
       (touches === null ? "" : `touches: ${touches}\n`) +
-      `---\n\nA card the landing gate reads.\n`,
+      `---\n\nA card the landing gate reads.\n` +
+      notes,
   );
 }
 
@@ -996,6 +1005,274 @@ test("a merge whose lane branch is gone is announced as unjudged, never allowed 
   expect(push.stderr).toContain("DID NOT JUDGE");
   expect(push.stderr).toContain("lane branch(es) point at its second parent");
   expect(remoteRef(fx, "refs/heads/main")).not.toBe(mainBefore);
+});
+
+/* ───────────── the fifth limit's arm: the `touches:` LINE (T-224) ────── */
+
+/**
+ * WHAT THESE BODIES MEASURE, AND WHY THE CONTROL IS NOT OPTIONAL HERE.
+ *
+ * `docs/tasks` is UNFENCEABLE and stays so, so every write to a card is
+ * admitted as a PATH — which is what let a lane commit a `touches:`
+ * amendment, land it, and have the next push read the widened fence as
+ * the card of record (`T-212`'s limit 5, found by that card's verifier).
+ * The arm judges the LINE across the range instead of the file.
+ *
+ * **A GUARD THAT REFUSED EVERY CARD WRITE WOULD BE INDISTINGUISHABLE FROM
+ * ONE THAT WORKS, AND HERE THE MISTAKE WOULD LOOK PRINCIPLED** — the
+ * refusal would read exactly like rule 5 being enforced while it was
+ * actually making every lane's status stamp and every set of
+ * implementation notes a fence breach. So the first body is
+ * REFUSE-THEN-ALLOW inside ONE fixture on ONE armed lane, and the allowed
+ * half makes the three writes a lane really owes its own card: the status
+ * stamp, the notes, and a suggestion filed beside it.
+ */
+
+test("THE POSITIVE CONTROL: a `touches:` move is refused, and the ordinary card write in the same lane is allowed", () => {
+  const fx = fixture("touches-amendment");
+  const before = remoteRef(fx, fx.laneRef);
+
+  // ARM ONE — the amendment, and NOTHING else out of place: the only
+  // other path in this range is inside the fence. So the containment arm
+  // has nothing to say, and a refusal here can only be this one.
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs]");
+  commit(fx, { "tools/e2e/work.txt": "ordinary in-fence work\n" }, "widen the fence for next time");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "a `touches:` amendment landed").toBe(true);
+  expect(refusal.stderr, "the refusal did not name the card it refused").toContain(fx.card);
+  expect(refusal.stderr, "the refusal did not name the line BEFORE").toContain("touches: [tools/e2e]");
+  expect(refusal.stderr, "the refusal did not name the line AFTER").toContain(
+    "touches: [tools/e2e, docs]",
+  );
+  // THE ROUTE IT IS NOT, named: fast path A, on main, by triage.
+  expect(refusal.stderr).toContain("fast path A");
+  expect(refusal.stderr).toContain("by triage");
+  // ARM THREE — the remote ref is UNCHANGED. Not an exit code: the ref.
+  expect(remoteRef(fx, fx.laneRef), "the refused push reached the remote anyway").toBe(before);
+
+  // THE CONTROL, in the SAME body against the SAME armed lane: put the
+  // LINE back where the integration branch has it and make every write a
+  // lane owes its own card — the closing stamp, the implementation notes,
+  // and a suggestion card filed beside it. The FILE changes; the LINE
+  // does not. An allow here cannot be a mechanism that failed to arm —
+  // the mechanism just refused, six statements up.
+  writeCard(
+    fx.root,
+    fx.card,
+    "T-901",
+    "[tools/e2e]",
+    "2000-01-01",
+    "verifying",
+    "\n## Implementation notes\n\nWhat this lane built, appended by its executor.\n",
+  );
+  writeCard(fx.root, "docs/tasks/T-901-s1-a-finding.md", "T-901-s1", "[tools/e2e, method/]");
+  commit(fx, {}, "stamp, note, and file a suggestion");
+  const allowed = pushThroughGuard(fx, fx.laneRef);
+  expect(allowed.refused, `an ordinary write to a lane's own card was refused: ${allowed.stderr}`).toBe(
+    false,
+  );
+  expect(remoteRef(fx, fx.laneRef), "the allowed push did not reach the remote").not.toBe(before);
+  // …and the card really did change in the allowed half, so the allow is
+  // about the LINE and not about a file nobody touched.
+  const landed = git(fx.root, "show", `HEAD:${fx.card}`);
+  expect(landed, "the control changed no card, so it proves nothing").toContain("status: verifying");
+  expect(landed).toContain("## Implementation notes");
+  expect(landed).toContain("touches: [tools/e2e]");
+});
+
+test("a lane amending a SIBLING's card is refused too, not only its own", () => {
+  const fx = fixture("sibling-amendment");
+  const before = remoteRef(fx, fx.laneRef);
+  // T-900 is the fixture's second card and is nobody's card here — which
+  // is the point. The route that widens a lane's own fence reaches every
+  // other lane's, so lane A can widen lane B's; a gate that judged only
+  // the lane's own card would answer this ALLOW.
+  writeCard(
+    fx.root,
+    "docs/tasks/T-900-another-card.md",
+    "T-900",
+    "[method/, docs/ARCHITECTURE.md]",
+  );
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "widen the sibling's fence");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "a lane widened a SIBLING lane's fence").toBe(true);
+  expect(refusal.stderr).toContain("docs/tasks/T-900-another-card.md");
+  expect(refusal.stderr).toContain("touches: [method/]");
+  expect(refusal.stderr).toContain("touches: [method/, docs/ARCHITECTURE.md]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(before);
+});
+
+test("a fast-path-A grant is not refused: a lane CUT after the amendment, and one that MERGES main down", () => {
+  // THE ONE WIDENING ROUTE THIS GATE'S OWN `ROUTE` TEXT PRESCRIBES — a
+  // card amendment COMMITTED ON MAIN plus a re-expansion (`T-211`) — must
+  // survive this arm, or the guard refuses the remedy it recommends.
+  // These are the two deliveries where the line never moves inside the
+  // lane's own range at all, and both are measured rather than argued.
+  const fx = fixture("fastpath-cut-and-sync");
+
+  // The granting seat's half: the amendment, on main.
+  git(fx.root, "checkout", "-q", "main");
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs/ARCHITECTURE.md]");
+  commit(fx, {}, "fast path A: the amendment, committed on main");
+  git(fx.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+
+  // DELIVERY ONE — a lane CUT after the amendment. Its base already
+  // carries the widened line, so both endpoints agree.
+  git(fx.root, "branch", "-q", "-D", fx.lane);
+  git(fx.root, "checkout", "-q", "-b", fx.lane, "main");
+  commit(fx, { "docs/ARCHITECTURE.md": "the newly granted path\n" }, "work in the widened fence");
+  const cutAfter = pushThroughGuard(fx, fx.laneRef);
+  expect(cutAfter.refused, `a lane cut after the grant was refused: ${cutAfter.stderr}`).toBe(false);
+
+  // DELIVERY TWO — a lane cut BEFORE it, which merges main down (fast
+  // path B) and then works. The merge moves its merge-base past the
+  // amendment, so both endpoints agree again.
+  const second = fixture("fastpath-merge-down");
+  git(second.root, "checkout", "-q", "main");
+  writeCard(second.root, second.card, "T-901", "[tools/e2e, docs/ARCHITECTURE.md]");
+  commit(second, {}, "fast path A: the amendment, committed on main");
+  git(second.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+  git(second.root, "checkout", "-q", second.lane);
+  git(second.root, "merge", "-q", "--no-edit", "main");
+  commit(second, { "docs/ARCHITECTURE.md": "the newly granted path\n" }, "work after the sync");
+  // The precondition, measured rather than assumed: the amendment really
+  // is inside this lane's history and outside its judged range.
+  const mergeBase = git(second.root, "merge-base", "main", "HEAD").trim();
+  expect(
+    frontmatterLineOf(git(second.root, "show", `${mergeBase}:${second.card}`), "touches"),
+    "the sync did not carry the amendment into the range's base",
+  ).toBe("touches: [tools/e2e, docs/ARCHITECTURE.md]");
+  const synced = pushThroughGuard(second, second.laneRef);
+  expect(synced.refused, `a synced lane carrying the grant was refused: ${synced.stderr}`).toBe(false);
+});
+
+test("THE THIRD DELIVERY: the grant handed to an UNSYNCED lane's working copy is allowed, and one line further is refused", () => {
+  // THE DELIVERY THE DISPATCH BRIEF SAID COULD NOT HAPPEN, AND THE
+  // REPOSITORY SAYS DOES. `method/lane-protocol.md`'s fast path A: "the
+  // amendment goes onto the integration branch AND into the lane's
+  // working copy of the card". A lane that has not synced then commits,
+  // inside its own merge-base-to-tip range, a line its base does not
+  // carry — so base-against-tip alone would refuse the sanctioned route.
+  // The exoneration is exact and opens nothing: the tip's line is
+  // character for character the line the INTEGRATION BRANCH carries, and
+  // that is the copy the fence itself is read from, so the lane has moved
+  // the fence by zero.
+  const fx = fixture("fastpath-working-copy");
+
+  git(fx.root, "checkout", "-q", "main");
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs/ARCHITECTURE.md]");
+  commit(fx, {}, "fast path A: the amendment, committed on main");
+  git(fx.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+  git(fx.root, "checkout", "-q", fx.lane);
+
+  // The lane's copy, delivered by the granting seat and committed by the
+  // lane with its own notes — the second of fast path A's two writes.
+  writeCard(
+    fx.root,
+    fx.card,
+    "T-901",
+    "[tools/e2e, docs/ARCHITECTURE.md]",
+    "2000-01-01",
+    "building",
+    "\n## Implementation notes\n\nWork in the newly granted path.\n",
+  );
+  commit(fx, { "docs/ARCHITECTURE.md": "the newly granted path\n" }, "work in the widened fence");
+
+  // THE PRECONDITION THAT MAKES THIS BODY DECISIVE: the line really did
+  // move inside the range, so an arm comparing base against tip alone
+  // WOULD refuse here.
+  const mergeBase = git(fx.root, "merge-base", "main", "HEAD").trim();
+  expect(
+    frontmatterLineOf(git(fx.root, "show", `${mergeBase}:${fx.card}`), "touches"),
+    "the fixture did not reproduce an unsynced lane",
+  ).toBe("touches: [tools/e2e]");
+  expect(frontmatterLineOf(git(fx.root, "show", `HEAD:${fx.card}`), "touches")).toBe(
+    "touches: [tools/e2e, docs/ARCHITECTURE.md]",
+  );
+
+  const granted = pushThroughGuard(fx, fx.laneRef);
+  expect(granted.refused, `a delivered fast-path-A grant was refused: ${granted.stderr}`).toBe(false);
+  const landed = remoteRef(fx, fx.laneRef);
+
+  // THE CONTROL FROM THE OTHER SIDE, in the same fixture: one token
+  // further than the grant, which the integration branch does NOT carry.
+  // Without this the allow above is equally satisfied by an arm that
+  // never looked.
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs/ARCHITECTURE.md, method/]");
+  commit(fx, {}, "and one token further than the grant");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "a lane widened past its grant and landed").toBe(true);
+  expect(refusal.stderr).toContain("AMENDMENT");
+  expect(refusal.stderr).toContain("touches: [tools/e2e, docs/ARCHITECTURE.md, method/]");
+  // …and the refusal prints what the integration branch actually says,
+  // which is the whole diagnosis a half-delivered widening needs.
+  expect(refusal.stderr).toContain("on the integration branch");
+  expect(remoteRef(fx, fx.laneRef)).toBe(landed);
+});
+
+test("THE DISCLOSED LIMIT, MEASURED: a card the range ADDS or DELETES is not an amendment", () => {
+  // Limit 5(a) and 5(b) in `landing-gate.mjs`'s header, driven rather
+  // than asserted. An ADDED card has no line at the base to have moved
+  // from — that is how a lane files a suggestion at all, which the
+  // positive control above measures on the allowed side. A DELETED card
+  // has none at the tip, and the reachable damage is a DENIAL rather than
+  // a licence: the lane whose card was deleted has no card on the
+  // integration branch, and *"a lane whose card is not on the integration
+  // branch is refused, never widely allowed"* — the body above — is what
+  // catches it.
+  const fx = fixture("card-added-and-deleted");
+  const before = remoteRef(fx, fx.laneRef);
+  git(fx.root, "rm", "-q", "docs/tasks/T-900-another-card.md");
+  writeCard(fx.root, "docs/tasks/T-903-a-new-card.md", "T-903", "[app/src, method/, docs]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "delete one card, add another");
+  const push = pushThroughGuard(fx, fx.laneRef);
+  expect(push.refused, `an added or deleted card was read as an amendment: ${push.stderr}`).toBe(
+    false,
+  );
+  expect(remoteRef(fx, fx.laneRef)).not.toBe(before);
+});
+
+test("THE MERGE MOMENT: a merge carrying a `touches:` amendment is refused, then a clean one lands", () => {
+  const fx = fixture("merge-amendment");
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "widen the fence for next time");
+  git(fx.root, "checkout", "-q", "main");
+  const mainBefore = remoteRef(fx, "refs/heads/main");
+  git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+
+  const refusal = pushThroughGuard(fx, "refs/heads/main");
+  expect(refusal.refused, "a merge carrying a `touches:` amendment landed on main").toBe(true);
+  expect(refusal.stderr).toContain("AMENDMENT");
+  expect(refusal.stderr).toContain("touches: [tools/e2e, docs]");
+  expect(refusal.stderr).toContain("first parent");
+  expect(remoteRef(fx, "refs/heads/main"), "the refused merge push reached the remote").toBe(
+    mainBefore,
+  );
+
+  // THE CONTROL, same fixture, same remote: undo the merge, put the LINE
+  // back and keep every other card write, merge again. A merge carrying a
+  // lane's closing stamp and its notes is the ordinary case and must land.
+  git(fx.root, "reset", "-q", "--hard", String(mainBefore));
+  git(fx.root, "checkout", "-q", fx.lane);
+  writeCard(
+    fx.root,
+    fx.card,
+    "T-901",
+    "[tools/e2e]",
+    "2000-01-01",
+    "verifying",
+    "\n## Implementation notes\n\nWhat this lane built.\n",
+  );
+  commit(fx, {}, "the line back, the stamp and the notes kept");
+  git(fx.root, "checkout", "-q", "main");
+  git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+  const allowed = pushThroughGuard(fx, "refs/heads/main");
+  expect(
+    allowed.refused,
+    `a merge carrying only ordinary card writes was refused: ${allowed.stderr}`,
+  ).toBe(false);
+  expect(remoteRef(fx, "refs/heads/main")).not.toBe(mainBefore);
+  expect(git(fx.root, "show", `HEAD:${fx.card}`)).toContain("status: verifying");
 });
 
 test("every manifest and lockfile the live tree carries has a reader in this gate", () => {
