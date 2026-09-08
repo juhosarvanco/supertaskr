@@ -1232,6 +1232,40 @@ test("THE DISCLOSED LIMIT, MEASURED: a card the range ADDS or DELETES is not an 
   expect(remoteRef(fx, fx.laneRef)).not.toBe(before);
 });
 
+test("a fence this gate cannot RESOLVE does not excuse an amendment — the arm is asked there too", () => {
+  // THE ORDINARY CASE ON THIS BOARD, NOT A CORNER. A component SLUG
+  // cannot be expanded inside the hook's dependency budget (`T-220`), so
+  // a slug-fenced lane's out-of-domain paths reach the announced
+  // cannot-compare rather than a verdict — and if the `touches:` arm were
+  // asked only where the containment arm CONCLUDED, `T-224`'s fix would
+  // be inert for every lane whose fence names a component. It is asked
+  // after that arm, never instead of it.
+  const fx = fixture("unresolvable-fence-amendment", { touches: "[app-shell, tools/e2e]" });
+  const before = remoteRef(fx, fx.laneRef);
+
+  // ARM ONE — the same unjudged path with NO amendment: allowed, and
+  // announced. Without it the refusal below could be the path's.
+  commit(fx, { "docs/ARCHITECTURE.md": "outside the resolved half\n" }, "outside the resolved half");
+  const announced = pushThroughGuard(fx, fx.laneRef);
+  expect(announced.refused, `an unresolved token turned into a refusal: ${announced.stderr}`).toBe(
+    false,
+  );
+  expect(announced.stderr).toContain("DID NOT JUDGE");
+  const landed = remoteRef(fx, fx.laneRef);
+  expect(landed, "the announced push did not reach the remote").not.toBe(before);
+
+  // ARM TWO — the same fence, the same unjudged path, plus the amendment.
+  // The containment arm still cannot compare; this one still refuses.
+  writeCard(fx.root, fx.card, "T-901", "[app-shell, tools/e2e, docs]");
+  commit(fx, {}, "widen under an unresolvable fence");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "an unresolvable fence excused a `touches:` amendment").toBe(true);
+  expect(refusal.stderr).toContain("AMENDMENT");
+  expect(refusal.stderr).toContain("touches: [app-shell, tools/e2e]");
+  expect(refusal.stderr).toContain("touches: [app-shell, tools/e2e, docs]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(landed);
+});
+
 test("THE MERGE MOMENT: a merge carrying a `touches:` amendment is refused, then a clean one lands", () => {
   const fx = fixture("merge-amendment");
   writeCard(fx.root, fx.card, "T-901", "[tools/e2e, docs]");
