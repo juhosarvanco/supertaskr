@@ -443,3 +443,39 @@ correct behaviour, accidentally demonstrated.
 `T-248-s2` DOES fire one J1 hit, because it quotes the phrase as prose.
 So the seat's own census moves from 2 to 3 with this commit — derived,
 not predicted, and recorded with the gate runs below.
+
+**THE GATES, RE-RUN AT MY OWN TIP `27cbd9b` (verifier step 7).**
+
+| gate | exit | reading |
+|---|---|---|
+| `docs-gate.mjs` on this commit's four card paths | 1 | FIRES on 4; 0 frontmatter issues; budgets hold; 1 advisory hit |
+| `npm run lint:docs` (census) from `tools/e2e/` | 0 | clean |
+| `npx vitest run` from `lib/parser/` | 0 | 377 passed, 16 files — board smoke test green |
+| `npm test` from `app/` | 0 | 1163 passed, 51 files — both dogfood pins green |
+| `npm test` from `tools/e2e/` | 1 | 660 passed, **1 failed** — attributed below |
+| `docs-input-gate.spec.ts` at my tip | 0 | 52 passed (4.6m) |
+
+**THE ONE RED, ATTRIBUTED AT THE BASE AND NOT MINE.**
+`tests/brief.spec.ts:3230` — "THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND
+STEPS LEAVE, file for file". Re-run once at my tip: still red. Then run
+at the BASE ref `d1603bb`, with the lane and my verdict absent:
+
+    git checkout --quiet --detach d1603bb
+    cd tools/e2e && npx playwright test tests/brief.spec.ts \
+      -g "THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE"
+
+RED AT THE BASE TOO, with the identical symptom — "the dispatch stopped
+at step 3 (preflight)" where the body expects the staleness finding. It
+is a bench condition (this worktree is detached and older than the live
+tree), not this lane's and not my commit's. STATE's rule applied:
+re-run once, then attribute by NAME at the base.
+
+**THE C5 CENSUS AT MY TIP**, derived from the repository root:
+
+    paths=(${(0)"$(git ls-files -z docs/)"})
+    node tools/e2e/scripts/docs-gate.mjs "${paths[@]}"
+
+`3 hit(s) in 3 of 742 path(s) scanned under docs/ against 7 pattern(s)`
+at `27cbd9b` — the lane's two (T-101 J2, T-221 J4) plus the one
+`T-248-s2` adds by quoting the phrase as prose. The integrator re-derives
+at the merge; this figure is true at the ref beside it and nowhere else.
