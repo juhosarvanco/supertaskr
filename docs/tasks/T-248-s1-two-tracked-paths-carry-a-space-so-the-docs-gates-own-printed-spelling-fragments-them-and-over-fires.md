@@ -4,11 +4,11 @@ title: Two tracked paths carry a space, so the DOCS GATE's own printed spelling 
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 7
+status: planned
 suggested_by: the T-248 executor, 2026-09-08, measured at d1603bb while deriving that card's own docs/ census
 blocked_by: []
-touches: []
+touches: [tools/e2e/scripts/docs-gate.mjs, docs/CONVENTIONS.md, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:
@@ -66,3 +66,24 @@ not run on. Before that, the over-fire was a silent count.
 ## Implementation notes
 
 ## Verdicts
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as filed: the gate's own printed invocation must survive a
+tracked path with a space, F-06 milestone 4, S, p7, guard-class.
+
+## Acceptance criteria
+
+- WHEN the DOCS GATE bullet in CONVENTIONS prints the whole-tree
+  invocation THE spelling SHALL be NUL-safe (`git ls-files -z` into an
+  array, or the gate reading `-z` input itself), so the two tracked
+  paths carrying a space reach the gate whole; the bullet SHALL carry
+  the cwd beside the command.
+- WHEN the gate is handed a fragment that names no tracked file THE
+  gate SHALL refuse it as exit 2 (called wrong) naming the fragment,
+  never answer about a file that does not exist.
+- IF a tracked path with a space is handed whole THEN the gate SHALL
+  answer for it exactly as for any other path — a body plants such a
+  path in the fixture and reds on either failure.
+- The header sentence that claimed the tree holds no such path SHALL
+  say what is true, derived (`git ls-files | grep ' '`).

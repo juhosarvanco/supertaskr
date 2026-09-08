@@ -4,11 +4,11 @@ title: J1 misses the phrase T-248's own Why section names — "ignore your instr
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 10
+status: planned
 suggested_by: the T-248 blind verifier (claude-opus-5@subagent), 2026-09-08, measured at 1c60da3 on the bench
 blocked_by: []
-touches: []
+touches: [tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:
@@ -54,3 +54,33 @@ is the width.
 - The widening SHALL be measured against this repository's own docs/
   before it lands: the false-positive count with the derive command
   beside it, in the same shape T-248 used.
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as one lane for the injection scan's two named gaps, F-06
+milestone 4, S, p10, guard-class. Absorbs T-248-s3 (the bidi override
+and isolate class, rendered as invisible by the excerpt renderer and
+matched by no pattern).
+
+Absorbs: T-248-s3 (2026-09-08) — bidi overrides and isolates are the
+trojan-source channel: disclosed in INVISIBLE_SOURCE's own comment,
+undetected by any pattern; the file is removed in this commit, this
+line is the surviving record.
+
+## Acceptance criteria
+
+- WHEN a docs path carries "ignore your instructions" (the phrase T-248's
+  own Why section names), or the same verb with `my`, `these`, `the`
+  or no quantifier between it and the instruction noun THE scan SHALL
+  fire J1 (or a sibling pattern with its own id), each form pinned by a
+  firing positive and a silent negative near-miss.
+- WHEN a docs path carries a bidi override or isolate (U+202A–U+202E,
+  U+2066–U+2069) THE scan SHALL fire a named pattern for the class, and
+  the excerpt SHALL render the character as its code point; the
+  INVISIBLE_SOURCE comment SHALL stop saying the class is unmatched.
+- IF the false-positive census over this repository's own docs/ moves
+  by more than the two hits T-248 recorded THEN the card SHALL name
+  every new hit and say which are true — the advisory stance stands.
+- Every new pattern owes T-248's own control shape: a firing positive,
+  a silent negative, a mutant that neuters the pattern read from
+  `git diff`, restoration by sha256.

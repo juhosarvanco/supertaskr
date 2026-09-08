@@ -4,11 +4,11 @@ title: The gate's root is derived from the script's own location, so a body that
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 25
+status: planned
 suggested_by: the T-248 rework executor, 2026-09-08, met while writing the body the verdict of 2026-09-08 asked for
 blocked_by: []
-touches: []
+touches: [tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:
@@ -60,3 +60,25 @@ remain, and neither is repaired by care:
 ## Implementation notes
 
 ## Verdicts
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as filed, F-06 milestone 4, S, p25: the binary gains a root
+override so a body testing what the gate prints runs against a scratch
+tree, and the one body T-248's rework planted under docs/ moves onto it.
+
+## Acceptance criteria
+
+- WHEN the docs gate binary is run with a root override (an environment
+  variable named in CONVENTIONS, refused when it does not resolve to a
+  directory holding a docs/ tree) THE gate SHALL derive its paths, its
+  census and its printed spelling from that root and never from the
+  script's own location.
+- WHEN the override is absent THE gate SHALL behave exactly as today (a
+  body pins the default root byte-for-byte against `repoRoot`).
+- WHEN the "EVERY hit in one file is printed" body runs THE fixture
+  SHALL live in a scratch tree under the override, and `git status
+  --porcelain` in the checkout SHALL be empty before and after the run
+  with no `finally` needed.
+- IF the override names a path outside a repository THEN the gate SHALL
+  exit 2 naming it, never scan it.
