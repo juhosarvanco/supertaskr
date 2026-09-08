@@ -39,6 +39,14 @@
  *              attacker at all — this is the row that separates equality
  *              from resemblance.
  *
+ * AND SINCE T-205-s1 THE MATRIX AND THE JUDGES HAVE A SECOND READER.
+ * `tools/method-evals/verdict-digest.mjs` is the CHECKER that runs this
+ * comparison against a REAL verdict and a REAL saved file, and `MF-10` runs
+ * THIS matrix through that checker's whole walk — so a row this eval holds
+ * and the walk loses is caught by name. `CITATION`, `judge`, `matrix` and
+ * the three degraded judges are exported for that reader and for no other
+ * reason; the comparison is still written once (`T-057`).
+ *
  * AND THE POSITIVE CONTROL IS THE MATRIX RUN AGAINST IMPLEMENTATIONS
  * THAT LACK THE PROPERTY (`docs/CONVENTIONS.md`'s A NEGATIVE ASSERTION
  * NEEDS A POSITIVE CONTROL, and the `--selftest` shape it names): three
@@ -55,7 +63,7 @@ import path from "node:path";
 import { readCorpus } from "../lib/corpus.mjs";
 
 /** The one citation grammar, the same one docs/CONVENTIONS.md spells. */
-const CITATION = /attack set:\s*sha256:([0-9a-f]{64})\b/i;
+export const CITATION = /attack set:\s*sha256:([0-9a-f]{64})\b/i;
 
 /** @param {string} s @returns {string} */
 const sha256 = (s) => createHash("sha256").update(s, "utf8").digest("hex");
@@ -95,7 +103,7 @@ export function judge(verdict, file) {
 
 /** A degraded judge: does the verdict carry SOMETHING digest-shaped? */
 /** @param {string} verdict @param {string} file */
-function presenceJudge(verdict, file) {
+export function presenceJudge(verdict, file) {
   void file;
   return CITATION.test(verdict)
     ? { verdict: /** @type {const} */ ("ACCEPT"), reason: "a digest is cited" }
@@ -104,7 +112,7 @@ function presenceJudge(verdict, file) {
 
 /** A degraded judge: resemblance instead of equality. */
 /** @param {string} verdict @param {string} file */
-function prefixJudge(verdict, file) {
+export function prefixJudge(verdict, file) {
   const m = /attack set:\s*sha256:([0-9a-f]+)/i.exec(verdict);
   if (m === null) return { verdict: /** @type {const} */ ("REFUSE"), reason: "no digest cited" };
   const actual = sha256(readFileSync(file, "utf8"));
@@ -115,7 +123,7 @@ function prefixJudge(verdict, file) {
 
 /** A degraded judge: nothing to compare against, so let it through. */
 /** @param {string} verdict @param {string} file */
-function failOpenJudge(verdict, file) {
+export function failOpenJudge(verdict, file) {
   const m = CITATION.exec(verdict);
   if (m === null) return { verdict: /** @type {const} */ ("REFUSE"), reason: "no digest cited" };
   /** @type {string} */
@@ -140,7 +148,7 @@ const OTHER = "# attack set — T-901\n1. a different set entirely\n";
  * @param {(v: string, f: string) => { verdict: string; reason: string }} subject
  * @returns {string[]}  a line per row whose outcome was wrong; empty is correct
  */
-function matrix(subject) {
+export function matrix(subject) {
   const dir = mkdtempSync(path.join(tmpdir(), "supertaskr-mf09-"));
   const file = path.join(dir, "attack-set-T-900.md");
   const gone = path.join(dir, "attack-set-T-902.md");

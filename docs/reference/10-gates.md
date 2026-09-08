@@ -146,7 +146,10 @@ MF-05 the vocabularies agree between the method and the parser; MF-06
 the corpus of settled review claims re-derives; MF-07 the fixture root
 is writable; MF-08 the two-spawn construction has one source; MF-09 a
 verdict citing a wrong attack-set digest is refused, demonstrated
-against three implementations lacking the property. MIL-01 a verifier
+against three implementations lacking the property; MF-10 that
+comparison is RUN — `verdict-digest.mjs` over the board's citations
+and committed fixtures, an unreachable saved file exiting 3 and never
+passing. MIL-01 a verifier
 rejects a planted defect; MIL-02 executor notes land in the card;
 MIL-03 the verifier approves the clean twin; MIL-04 a review claim is
 re-derived. The version pin: a test holds method/'s version stamp, so

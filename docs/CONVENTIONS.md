@@ -318,11 +318,18 @@ and T-236 (2026-09-02, whose pre-compaction text is
   re-run** — `MF-09` in the method eval gate holds that refusal and
   DEMONSTRATES it, running the comparison against three implementations
   that lack the property (a presence check, a prefix compare, a
-  fail-open missing-file branch) and requiring each to be caught. **WHAT
-  IS STILL A HAND STEP IS THE WIRING**: nothing runs that comparison
-  against a real verdict and a real saved file, because the file lives
-  in a scratchpad and not in the tree. Do it by hand until `T-205-s1`
-  lands, and read the gap as a gap rather than as a mechanism.
+  fail-open missing-file branch) and requiring each to be caught. **THE
+  WIRING LANDED WITH `T-205-s1`**: `node
+  tools/method-evals/verdict-digest.mjs` hands every `attack set:` line
+  on the board to MF-09's judge — VERIFIED, REFUSED (exit 1), or
+  UNAVAILABLE (exit 3, never a pass: a bare filename and no root named
+  at the call) — and `MF-10` runs it in this gate over the board and
+  over committed fixtures. **WHAT IS STILL A HAND STEP IS REACHING THE
+  SCRATCHPAD**: the checker takes roots only from the call — `--scratch
+  <dir>`, repeatable, or `SUPERTASKR_ATTACK_SET_DIR` — never a default
+  (rule 4). Do it by hand at the merge — the landing card as the
+  argument, `--scratch` on the dispatching session's scratchpad, exit
+  read unpiped — until `T-205-s6` gives sealed sets a home in the tree.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `SUPERTASKR_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
@@ -1541,8 +1548,10 @@ and T-236 (2026-09-02, whose pre-compaction text is
   decided" cannot be mistaken for "we forgot".
 - METHOD EVAL GATE (T-155, ADR-020 decision 2 — the FOURTH standing gate,
   and the one the three above exclude BY CONSTRUCTION): at any merge whose
-  diff touches `method/**`, run the model-free eval set and RECORD its
-  exit in the checkpoint. **"The merge's diff" is the PAIR OF COMMITS THE
+  diff touches `method/**`, OR ADDS A LINE MATCHING THE CITATION GRAMMAR
+  (`attack set: sha256:<hex> (<file>)`) under `docs/tasks/` — a verdict
+  landing, the merge `MF-10` was built for — run the model-free eval set
+  and RECORD its exit in the checkpoint. **"The merge's diff" is the PAIR OF COMMITS THE
   RANGE RULE names**, the same pair all three gates above take, and a
   different pair before the merge exists than at it.
   DERIVE THE HOLE RATHER THAN TAKING IT ON FAITH — match a

@@ -79,3 +79,14 @@ The first sets to land are the ones already sealed in the architect's
 scratchpad for T-264, T-265, T-224, T-219-s6, T-153-s3 and T-205-s1 (their
 stamps files carry the digests their verdicts cite); back-filling them is the
 integrator's, at the checkpoint after this card lands, one commit, named.
+
+VERIFIER NOTE (T-205-s1's verdict at faf1b69, measured): a citation naming a
+repo-root-relative path (`docs/benches/T-901/attack-set.md`) with no
+`--scratch` and no `SUPERTASKR_ATTACK_SET_DIR` is UNAVAILABLE, exit 3,
+whatever the cwd; only an absolute path resolves without a root. Criterion 2
+therefore needs the code change its own text allows for: `resolveCited` gains
+the checkout-scoped repo root, derived from the file's location as
+`boardCards` derives `docs/tasks` — checkout-scoped, not the machine-scoped
+default rule 4 forbids. And criterion 1's `sha256sum -c` is `shasum -a 256 -c`
+on this platform (CONVENTIONS' bench bullet). (Appended by the integrator at
+T-205-s1's merge, correction 5.)
