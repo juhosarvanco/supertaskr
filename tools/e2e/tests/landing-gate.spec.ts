@@ -1,14 +1,31 @@
-import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import {
   CARD_FILE_RE,
   INTEGRATION_BRANCH,
+  MANIFEST_KINDS,
+  MAX_DEPENDENCIES_PROBED,
+  REGISTRIES,
+  addedDependencies,
+  cardSuggestedDate,
+  cargoManifestDeps,
+  dependencyRefusals,
   expandTouches,
   judgePaths,
   laneCardIds,
+  manifestKindOf,
+  npmManifestDeps,
   integrationRefCandidates as hookCandidates,
   touchesTokens,
 } from "../../../.claude/hooks/landing-gate.mjs";
@@ -79,6 +96,12 @@ interface FxOptions {
   cardId?: string;
   /** `false` writes NO card at all — a checkout that is not this board. */
   board?: boolean;
+  /**
+   * The card's `suggested_by:` date. `null` writes NO `suggested_by:`
+   * line — the state in which "does this package predate the card?"
+   * has no answer (T-247).
+   */
+  suggested?: string | null;
 }
 
 function git(root: string, ...args: string[]): string {
@@ -132,7 +155,13 @@ function fixture(name: string, opts: FxOptions = {}): Fx {
   const card = `docs/tasks/${id}-a-fixture-card.md`;
   if (opts.board !== false) {
     mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
-    writeCard(root, card, id, opts.touches === undefined ? "[tools/e2e]" : opts.touches);
+    writeCard(
+      root,
+      card,
+      id,
+      opts.touches === undefined ? "[tools/e2e]" : opts.touches,
+      opts.suggested,
+    );
     // A SECOND, UNRELATED CARD, so "this board carries cards" and "this
     // board carries THIS lane's card" are separable states. Without it,
     // deleting the lane's card empties the board and the two collapse.
@@ -173,12 +202,23 @@ function fixture(name: string, opts: FxOptions = {}): Fx {
  * would refuse, standing in for cards it would not, and the new check
  * found them on its first run against this file.
  */
-function writeCard(root: string, rel: string, id: string, touches: string | null): void {
+function writeCard(
+  root: string,
+  rel: string,
+  id: string,
+  touches: string | null,
+  // T-247 reads `suggested_by:` off this same card, so the fixture writes
+  // one. The default is a date far enough back that every REAL package a
+  // body could name predates it, which keeps the age rule out of the way
+  // of every body that is not about the age rule.
+  suggested: string | null = "2000-01-01",
+): void {
   mkdirSync(path.join(root, path.dirname(rel)), { recursive: true });
   writeFileSync(
     path.join(root, rel),
     `---\nid: ${id}\ntitle: a fixture card\nfeature: F-01\nmilestone: 1\n` +
       `priority: 1\nsize: S\nstatus: building\n` +
+      (suggested === null ? "" : `suggested_by: "@human ruling (${suggested}): a fixture"\n`) +
       (touches === null ? "" : `touches: ${touches}\n`) +
       `---\n\nA card the landing gate reads.\n`,
   );
@@ -241,7 +281,11 @@ function gatesWereRun(root: string): void {
   );
 }
 
-function runWiredHook(fx: Fx, command: string): { status: number | null; stderr: string } {
+function runWiredHook(
+  fx: Fx,
+  command: string,
+  extraEnv: Record<string, string> = {},
+): { status: number | null; stderr: string } {
   gatesWereRun(fx.root);
   const settings = JSON.parse(
     readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8"),
@@ -255,6 +299,7 @@ function runWiredHook(fx: Fx, command: string): { status: number | null; stderr:
       ...process.env,
       CLAUDE_PROJECT_DIR: repoRoot,
       PATH: `${path.join(fx.root, "bin")}${path.delimiter}${process.env["PATH"] ?? ""}`,
+      ...extraEnv,
     },
   });
   return { status: out.status, stderr: String(out.stderr ?? "") };
@@ -266,12 +311,126 @@ function runWiredHook(fx: Fx, command: string): { status: number | null; stderr:
  * The property under test is WHAT REACHES THE REMOTE, never what an exit
  * code was.
  */
-function pushThroughGuard(fx: Fx, ref: string): { refused: boolean; stderr: string } {
+function pushThroughGuard(
+  fx: Fx,
+  ref: string,
+  extraEnv: Record<string, string> = {},
+): { refused: boolean; stderr: string } {
   const command = `git push origin HEAD:${ref}`;
-  const decision = runWiredHook(fx, command);
+  const decision = runWiredHook(fx, command, extraEnv);
   if (decision.status === 2) return { refused: true, stderr: decision.stderr };
   git(fx.root, "push", "-q", "origin", `HEAD:${ref}`);
   return { refused: false, stderr: decision.stderr };
+}
+
+/* ───────────── the seventh limit: dependency legitimacy (T-247) ─────── */
+
+/**
+ * A REGISTRY ON LOOPBACK, IN A PROCESS OF ITS OWN, and both halves of
+ * that sentence were paid for.
+ *
+ * Every refusal body in this file drives the REAL wired hook, and the
+ * seventh limit's hook makes a NETWORK CALL. A body that reached
+ * registry.npmjs.org would be measuring somebody else's uptime and would
+ * break the live-config hermeticity every other body here has, so
+ * `landing-gate.mjs` publishes `NPUTER_REGISTRY_NPM` and
+ * `NPUTER_REGISTRY_CRATES` and its own header prices that override as
+ * part of limit 7. This is what they point at.
+ *
+ * ── WHY IT IS NOT AN `http.createServer` IN THIS PROCESS ─────────────
+ * MEASURED, and it is a deadlock rather than a preference. `runWiredHook`
+ * drives the hook through `spawnSync`, which BLOCKS this worker's event
+ * loop for the whole of the hook's life — and an in-process listener
+ * cannot accept a connection while the loop is blocked. The probe then
+ * sat on an open socket until its own 8-second abort and every body read
+ * `THE REGISTRY COULD NOT BE REACHED`, which is a true sentence about a
+ * fixture that could not answer and says nothing about the gate. So the
+ * server runs in a child, and the names it was asked about come back
+ * through a FILE it appends to before it answers — a channel that needs
+ * no event loop on this side either.
+ *
+ * ONE BODY SATISFIES BOTH REGISTRIES: npm's date lives at `time.created`
+ * and crates.io's at `crate.created_at`, so answering with both fields
+ * lets one fixture stand in for either without pretending the two
+ * services have the same shape — the FIELD PATHS are still each
+ * registry's own, read from `REGISTRIES`.
+ *
+ * PORT 0, on purpose. The E2E PORT rule derives a per-lane port for the
+ * MACHINE-WIDE vite listener; this is an ephemeral loopback socket whose
+ * port the kernel picks and hands back, which is the construction that
+ * beats the check (lane-protocol rule 4) rather than another number to
+ * collide on.
+ */
+const REGISTRY_SOURCE = [
+  "const answers = JSON.parse(process.argv[1]);",
+  "const logPath = process.argv[2];",
+  "const http = require('node:http');",
+  "const fs = require('node:fs');",
+  "const s = http.createServer((req, res) => {",
+  "  const name = decodeURIComponent(String(req.url || '/').replace(/^\\//, ''));",
+  "  fs.appendFileSync(logPath, name + '\\n');",
+  "  const a = answers[name];",
+  "  if (a === undefined || typeof a === 'number') {",
+  "    res.writeHead(typeof a === 'number' ? a : 404, { 'content-type': 'application/json' });",
+  "    res.end(JSON.stringify({ error: 'Not found' }));",
+  "    return;",
+  "  }",
+  "  res.writeHead(200, { 'content-type': 'application/json' });",
+  "  res.end(JSON.stringify({ time: { created: a }, crate: { created_at: a } }));",
+  "});",
+  "s.listen(0, '127.0.0.1', () => { process.stdout.write(String(s.address().port) + '\\n'); });",
+].join("\n");
+
+interface FakeRegistry {
+  /** What to set both `NPUTER_REGISTRY_*` variables to. */
+  env: Record<string, string>;
+  /** Every package name this server was asked about, in order. */
+  asked: () => string[];
+  close: () => void;
+}
+
+async function fakeRegistry(answers: Record<string, string | number>): Promise<FakeRegistry> {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "T-247-registry-"));
+  const log = path.join(dir, "asked.log");
+  const child = spawn(process.execPath, ["-e", REGISTRY_SOURCE, JSON.stringify(answers), log], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const port = await new Promise<number>((resolve, reject) => {
+    let buffered = "";
+    const timer = setTimeout(() => reject(new Error("the fake registry never announced a port")), 15000);
+    timer.unref();
+    child.on("error", reject);
+    child.stdout.on("data", (chunk: Buffer) => {
+      buffered += String(chunk);
+      const nl = buffered.indexOf("\n");
+      if (nl < 0) return;
+      clearTimeout(timer);
+      resolve(Number(buffered.slice(0, nl)));
+    });
+  });
+  expect(Number.isInteger(port) && port > 0, "the fake registry announced no usable port").toBe(true);
+  const base = `http://127.0.0.1:${port}`;
+  return {
+    env: { NPUTER_REGISTRY_NPM: base, NPUTER_REGISTRY_CRATES: base },
+    asked: () =>
+      existsSync(log) ? readFileSync(log, "utf8").split("\n").filter((l) => l !== "") : [],
+    close: () => {
+      child.kill("SIGKILL");
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
+/** A `package-lock.json` in the v3 shape, carrying exactly these names. */
+function npmLock(names: string[]): string {
+  const packages: Record<string, unknown> = { "": { name: "a-fixture" } };
+  for (const name of names) {
+    packages[`node_modules/${name}`] = {
+      version: "1.0.0",
+      resolved: `https://registry.npmjs.org/${name}/-/${name}-1.0.0.tgz`,
+    };
+  }
+  return `${JSON.stringify({ name: "a-fixture", lockfileVersion: 3, packages }, null, 2)}\n`;
 }
 
 /* ───────────── the constants, compared against their authorities ─────── */
@@ -837,4 +996,450 @@ test("a merge whose lane branch is gone is announced as unjudged, never allowed 
   expect(push.stderr).toContain("DID NOT JUDGE");
   expect(push.stderr).toContain("lane branch(es) point at its second parent");
   expect(remoteRef(fx, "refs/heads/main")).not.toBe(mainBefore);
+});
+
+test("every manifest and lockfile the live tree carries has a reader in this gate", () => {
+  // THE CARD'S OWN INSTRUCTION — "derive the manifest set from the tree,
+  // never list it" — measured, and the split `landing-gate.mjs`'s header
+  // draws is what makes it measurable. The PATHS are derived: nothing in
+  // the hook names an instance. The FORMATS cannot be, because a reader
+  // for a file shape is code. So this body carries the WIDER oracle — the
+  // basenames package managers actually use, several of which this
+  // repository does not carry — and requires that every one of them
+  // PRESENT in the tree has a reader. The day a `pyproject.toml` or a
+  // `go.mod` lands here, this reds by name rather than letting a whole
+  // ecosystem go silently unjudged.
+  const couldBeAManifest = [
+    "package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml",
+    "Cargo.toml", "Cargo.lock", "pyproject.toml", "requirements.txt", "Pipfile", "Pipfile.lock",
+    "poetry.lock", "uv.lock", "go.mod", "go.sum", "Gemfile", "Gemfile.lock", "composer.json",
+    "composer.lock", "pom.xml", "build.gradle", "build.gradle.kts", "mix.exs", "pubspec.yaml",
+  ];
+  const tracked = execFileSync("git", ["-C", repoRoot, "ls-files"], { encoding: "utf8" })
+    .split("\n")
+    .filter((f) => f !== "");
+  const carried = tracked.filter((f) => couldBeAManifest.includes(f.slice(f.lastIndexOf("/") + 1)));
+  // THE POSITIVE CONTROL FOR A CENSUS (docs/CONVENTIONS.md: a ZERO is
+  // what you hoped for). A filter that matched nothing would satisfy the
+  // assertion below for free.
+  expect(carried.length, "this census found no manifest at all, so it measured nothing").toBeGreaterThan(4);
+  const unreadable = carried.filter((f) => manifestKindOf(f) === undefined);
+  expect(
+    unreadable,
+    "the tree carries a manifest this gate has no reader for, so its dependencies land unjudged",
+  ).toEqual([]);
+  // …and the map is not wider than the oracle either, which is what stops
+  // a key being added here to satisfy the line above without a reader
+  // behind it.
+  for (const base of Object.keys(MANIFEST_KINDS)) {
+    expect(couldBeAManifest, `${base} has a reader but is not a manifest name this body knows`).toContain(base);
+    expect(Object.keys(REGISTRIES)).toContain(manifestKindOf(`x/${base}`)?.registry);
+  }
+});
+
+test("the readers judge this repository's OWN manifests, and skip the two entries a probe would refuse", () => {
+  // BUILT THE WAY THE PRODUCER BUILDS IT (docs/CONVENTIONS.md's positive
+  // control bullet): these are the live files, not fixtures written to
+  // look like them. Both entries below are the ones that would make this
+  // gate refuse nputer's own tree on its first real push.
+  const appManifest = npmManifestDeps(readFileSync(path.join(repoRoot, "app/package.json"), "utf8"));
+  expect("problem" in appManifest, "app/package.json did not read").toBe(false);
+  const npmNames = (appManifest as { names: string[] }).names;
+  expect(npmNames.length, "the reader found no npm dependency, so the next line proves nothing").toBeGreaterThan(5);
+  // `@nputer/parser` resolves through `file:../lib/parser` — the
+  // fresh-clone ORDER docs/CONVENTIONS.md publishes — and npm has never
+  // heard of it.
+  expect(
+    npmNames,
+    "a `file:` dependency was read as registry-bound, which refuses this project's own manifest",
+  ).not.toContain("@nputer/parser");
+  expect(readFileSync(path.join(repoRoot, "app/package.json"), "utf8")).toContain("@nputer/parser");
+
+  const cargo = cargoManifestDeps(readFileSync(path.join(repoRoot, "app/src-tauri/Cargo.toml"), "utf8"));
+  const crateNames = (cargo as { names: string[] }).names;
+  expect(crateNames.length, "the reader found no crate, so the next lines prove nothing").toBeGreaterThan(3);
+  // THE TWO HALVES OF THE ACCUMULATION RULE, ON THE ONE FILE THAT
+  // CONTAINS BOTH. `serde` is `{ workspace = true }` under
+  // `[dependencies]` and a real version under `[workspace.dependencies]`
+  // — a plain AND over occurrences drops it. `nputer-index` is a `path`
+  // dependency — a plain OR over occurrences keeps it and then refuses
+  // it, because crates.io has never heard of it.
+  expect(crateNames, "a workspace-inherited crate went unjudged").toContain("serde");
+  expect(crateNames, "a `path` dependency was read as registry-bound").not.toContain("nputer-index");
+});
+
+test("THE POSITIVE CONTROL: a lockfile name that does not resolve is refused BY NAME, then a resolving one lands", async () => {
+  // THE SHAPE THIS FILE ALREADY USES — refuse-then-allow inside ONE
+  // fixture on ONE armed lane, against the same remote and the same
+  // wiring, with only the committed content changing between the halves.
+  // The mutant that makes this gate see no added dependency reds the
+  // CONTROL rather than the refusal, which is the property that shape
+  // was chosen for.
+  const registry = await fakeRegistry({ "a-package-that-is-real": "2024-03-01T00:00:00.000Z" });
+  try {
+    const fx = fixture("dependency-control", { suggested: "2026-09-08" });
+    const before = remoteRef(fx, fx.laneRef);
+    expect(before, "the fixture never pushed its lane branch").toBeDefined();
+
+    // ARM ONE — a lockfile carrying a name the registry answers 404 for.
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["nputer-hallucinated-t247"]) },
+      "a lockfile naming a package that does not exist",
+    );
+    const refusal = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(refusal.refused, "a hallucinated package name pushed anyway").toBe(true);
+    // BY NAME, which is the card's word: a refusal that says only "a
+    // dependency" sends the seat back to reading the lockfile by hand.
+    expect(refusal.stderr, "the refusal did not name the package").toContain("nputer-hallucinated-t247");
+    expect(refusal.stderr).toContain("DOES NOT RESOLVE");
+    expect(refusal.stderr).toContain("tools/e2e/package-lock.json");
+    expect(registry.asked(), "the gate never asked the registry at all").toContain("nputer-hallucinated-t247");
+    expect(remoteRef(fx, fx.laneRef), "the refused push reached the remote anyway").toBe(before);
+
+    // THE CONTROL, same lane, same fence, same remote: a name the
+    // registry DOES answer for, published long before the card.
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["a-package-that-is-real"]) },
+      "a lockfile naming a package that exists and predates the card",
+    );
+    const allowed = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(allowed.refused, `a legitimate dependency was refused: ${allowed.stderr}`).toBe(false);
+    expect(registry.asked()).toContain("a-package-that-is-real");
+    expect(remoteRef(fx, fx.laneRef), "the allowed push did not reach the remote").not.toBe(before);
+  } finally {
+    registry.close();
+  }
+});
+
+test("a package first published AFTER the card was suggested is refused, naming both dates", async () => {
+  const registry = await fakeRegistry({
+    "an-old-package": "2019-05-04T00:00:00.000Z",
+    "a-brand-new-package": "2026-09-30T11:22:33.000Z",
+  });
+  try {
+    const fx = fixture("dependency-age", { suggested: "2026-09-08" });
+    const before = remoteRef(fx, fx.laneRef);
+
+    // THE CONTROL FIRST, so the refusal below cannot be a gate that
+    // refuses every lockfile: the same fixture, the same registry, a name
+    // whose only difference is WHEN it was first published.
+    commit(fx, { "tools/e2e/package-lock.json": npmLock(["an-old-package"]) }, "an old dependency");
+    const allowed = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(allowed.refused, `a package older than the card was refused: ${allowed.stderr}`).toBe(false);
+    const afterAllow = remoteRef(fx, fx.laneRef);
+    expect(afterAllow).not.toBe(before);
+
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["an-old-package", "a-brand-new-package"]) },
+      "a dependency registered after the card was written",
+    );
+    const refusal = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(refusal.refused, "a package younger than its own card landed").toBe(true);
+    expect(refusal.stderr).toContain("a-brand-new-package");
+    // BOTH DATES, which the criterion asks for by name — a refusal
+    // carrying one of them cannot be checked by the seat reading it.
+    expect(refusal.stderr, "the refusal did not name the package's own date").toContain("2026-09-30");
+    expect(refusal.stderr, "the refusal did not name the card's date").toContain("2026-09-08");
+    expect(remoteRef(fx, fx.laneRef)).toBe(afterAllow);
+  } finally {
+    registry.close();
+  }
+});
+
+test("a registry that cannot be reached refuses the landing rather than allowing it loudly", async () => {
+  // THE ONE PLACE THIS GATE INVERTS ITS OWN FAIL-OPEN CONTRACT, and the
+  // body drives the inversion rather than quoting the header. Every other
+  // inability in this file ALLOWS and announces; this one refuses,
+  // because a range that adds no dependency never reaches it.
+  const registry = await fakeRegistry({ "some-package": 503 });
+  try {
+    const fx = fixture("registry-unreachable", { suggested: "2026-09-08" });
+    const before = remoteRef(fx, fx.laneRef);
+    commit(fx, { "tools/e2e/package-lock.json": npmLock(["some-package"]) }, "a dependency");
+    const refusal = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(refusal.refused, "an unverifiable dependency was allowed through").toBe(true);
+    expect(refusal.stderr).toContain("some-package");
+    expect(refusal.stderr).toContain("THE REGISTRY COULD NOT BE REACHED");
+    // AND IT IS A REFUSAL AND NOT AN ANNOUNCED ALLOW, which is the whole
+    // distinction: `DID NOT JUDGE` is this module's vocabulary for an
+    // allow it could not stand behind.
+    expect(refusal.stderr, "an unreachable registry was announced instead of refused").not.toContain(
+      "DID NOT JUDGE",
+    );
+    expect(remoteRef(fx, fx.laneRef)).toBe(before);
+  } finally {
+    registry.close();
+  }
+});
+
+test("a card with no `suggested_by:` cannot answer the age question, so the gate refuses closed", async () => {
+  const registry = await fakeRegistry({ "some-package": "2019-05-04T00:00:00.000Z" });
+  try {
+    const fx = fixture("no-suggested-by", { suggested: null });
+    const before = remoteRef(fx, fx.laneRef);
+    commit(fx, { "tools/e2e/package-lock.json": npmLock(["some-package"]) }, "a dependency");
+    const refusal = pushThroughGuard(fx, fx.laneRef, registry.env);
+    // The package RESOLVES — so this refusal is about the missing date
+    // and nothing else, which the assertion below pins.
+    expect(refusal.refused, "a dependency whose age could not be checked landed").toBe(true);
+    expect(refusal.stderr).toContain("some-package");
+    expect(refusal.stderr).toContain("declares no `suggested_by:`");
+    expect(refusal.stderr, "the gate reported an absence as a non-resolving name").not.toContain(
+      "DOES NOT RESOLVE",
+    );
+    expect(remoteRef(fx, fx.laneRef)).toBe(before);
+    // AND THE READER ITSELF ANSWERS THE TWO STATES DIFFERENTLY, measured
+    // on the same fixture: a card WITH the line yields a date.
+    const withDate = cardSuggestedDate(fx.root, "main", "docs/tasks/T-900-another-card.md");
+    expect("date" in withDate, "the fixture's control card carries no readable date").toBe(true);
+    expect((withDate as { date: string }).date).toBe("2000-01-01");
+  } finally {
+    registry.close();
+  }
+});
+
+test("a range that changes no manifest asks the registry nothing and reads no card", () => {
+  // THE COST PROPERTY, COUNTED. This arm runs on every push in this
+  // repository, so "it is cheap when nothing changed" has to be a
+  // measurement and not a comment: the probe THROWS if it is reached and
+  // the git shim COUNTS what it was asked for.
+  const asked: string[][] = [];
+  const git = (_root: string, args: string[]) => {
+    asked.push(args);
+    return { status: 1, stdout: "", stderr: "the gate should not have asked" };
+  };
+  const answer = dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["tools/e2e/tests/landing-gate.spec.ts", ".claude/hooks/landing-gate.mjs", "docs/tasks/T-901-x.md"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    {
+      git,
+      probe: () => {
+        throw new Error("the registry was reached on a range that changed no manifest");
+      },
+    },
+  );
+  expect(answer.refusals).toEqual([]);
+  expect(answer.manifests, "a path with no manifest basename was taken for one").toEqual([]);
+  expect(asked, "the gate spent a git call on a range that changed no manifest").toEqual([]);
+
+  // THE POSITIVE CONTROL FOR THAT ZERO: the same call with ONE manifest
+  // path in the range does reach git. Without this the assertion above is
+  // satisfied by a function that does nothing at all.
+  dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["tools/e2e/package.json"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    { git, probe: () => ({ absent: true }) },
+  );
+  expect(asked.length, "a manifest in the range did NOT reach git, so the zero above proves nothing").toBeGreaterThan(0);
+});
+
+test("only what the range ADDS is judged — a name the merge-base already carried is not re-probed", async () => {
+  const registry = await fakeRegistry({
+    "already-here": "2019-05-04T00:00:00.000Z",
+    "newly-added": "2019-05-04T00:00:00.000Z",
+  });
+  try {
+    const fx = fixture("dependency-added-only", { suggested: "2026-09-08" });
+    // MAIN carries the lockfile first, so the merge-base carries the name
+    // — the only arrangement in which "already there" and "added by this
+    // lane" are different states. An earlier LANE commit would not do:
+    // the range is merge-base-to-tip and would still contain it.
+    git(fx.root, "checkout", "-q", "main");
+    commit(fx, { "tools/e2e/package-lock.json": npmLock(["already-here"]) }, "main carries a dependency");
+    git(fx.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+    git(fx.root, "checkout", "-q", fx.lane);
+    git(fx.root, "merge", "-q", "--no-edit", "main");
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["already-here", "newly-added"]) },
+      "the lane adds one more",
+    );
+
+    const push = pushThroughGuard(fx, fx.laneRef, registry.env);
+    expect(push.refused, `a legitimate addition was refused: ${push.stderr}`).toBe(false);
+    expect(registry.asked(), "the added name was never checked").toContain("newly-added");
+    expect(
+      registry.asked(),
+      "a name the merge-base already carried was re-probed, which puts this gate's whole network cost on every routine push",
+    ).not.toContain("already-here");
+  } finally {
+    registry.close();
+  }
+});
+
+test("THE MERGE MOMENT: a merge whose lane added an unresolvable dependency is refused, then a clean one lands", async () => {
+  // THE MOMENT THE CARD'S TITLE NAMES — "cannot RIDE A MERGE into main".
+  // A lane merged locally by the seat holding the integration checkout
+  // never pushes its own branch, so the arm above never sees it.
+  const registry = await fakeRegistry({ "a-package-that-is-real": "2024-03-01T00:00:00.000Z" });
+  try {
+    const fx = fixture("merge-dependency", { suggested: "2026-09-08" });
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["nputer-hallucinated-t247"]) },
+      "a lockfile naming a package that does not exist",
+    );
+    git(fx.root, "checkout", "-q", "main");
+    const mainBefore = remoteRef(fx, "refs/heads/main");
+    git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+
+    const refusal = pushThroughGuard(fx, "refs/heads/main", registry.env);
+    expect(refusal.refused, "a hallucinated package rode a merge into main").toBe(true);
+    expect(refusal.stderr).toContain("nputer-hallucinated-t247");
+    expect(refusal.stderr).toContain("merge commit(s)");
+    expect(remoteRef(fx, "refs/heads/main"), "the refused merge push reached the remote").toBe(mainBefore);
+
+    // THE CONTROL, same fixture and same remote: undo the merge, fix the
+    // lane, merge again. An allow here cannot be a mechanism that failed
+    // to arm — it just refused.
+    git(fx.root, "reset", "-q", "--hard", String(mainBefore));
+    git(fx.root, "checkout", "-q", fx.lane);
+    commit(
+      fx,
+      { "tools/e2e/package-lock.json": npmLock(["a-package-that-is-real"]) },
+      "a lockfile naming a package that exists",
+    );
+    git(fx.root, "checkout", "-q", "main");
+    git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+    const allowed = pushThroughGuard(fx, "refs/heads/main", registry.env);
+    expect(allowed.refused, `a clean merge was refused: ${allowed.stderr}`).toBe(false);
+    expect(remoteRef(fx, "refs/heads/main")).not.toBe(mainBefore);
+  } finally {
+    registry.close();
+  }
+});
+
+test("a range adding more names than this gate will probe is refused, and NONE of them is probed", () => {
+  // A DECISION RATHER THAN A LIMIT, and `landing-gate.mjs`'s header says
+  // so: an unbounded network loop inside a `PreToolUse` hook is a push
+  // that hangs. The refusal states the count and the ceiling, so the seat
+  // that meets it is not left guessing which package was the problem —
+  // there is no such package, and that is the point.
+  const names = Array.from({ length: MAX_DEPENDENCIES_PROBED + 1 }, (_, i) => `pkg-${i}`);
+  const lock = npmLock(names);
+  const git = (_root: string, args: string[]) =>
+    args[0] === "show" && String(args[1]).startsWith("tip:")
+      ? { status: 0, stdout: lock, stderr: "" }
+      : { status: 1, stdout: "", stderr: "absent" };
+  let probed = 0;
+  const answer = dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["tools/e2e/package-lock.json"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    {
+      git,
+      probe: () => {
+        probed += 1;
+        return { absent: true };
+      },
+    },
+  );
+  expect(answer.added.length, "the fixture lockfile did not read as this many additions").toBe(names.length);
+  expect(answer.refusals.length).toBe(1);
+  expect(answer.refusals[0]).toContain(String(names.length));
+  expect(answer.refusals[0]).toContain(String(MAX_DEPENDENCIES_PROBED));
+  expect(probed, "the cap refused AND probed, which is the cost it exists to avoid").toBe(0);
+
+  // THE CONTROL: one name fewer and the same call probes every one of
+  // them. Without it the zero above is satisfied by a probe never wired.
+  let probedUnderCap = 0;
+  const underCap = npmLock(names.slice(0, MAX_DEPENDENCIES_PROBED));
+  dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["tools/e2e/package-lock.json"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    {
+      git: (_root: string, args: string[]) =>
+        args[0] === "show" && String(args[1]).startsWith("tip:")
+          ? { status: 0, stdout: underCap, stderr: "" }
+          : { status: 1, stdout: "", stderr: "absent" },
+      probe: () => {
+        probedUnderCap += 1;
+        return { absent: true };
+      },
+    },
+  );
+  expect(probedUnderCap).toBe(MAX_DEPENDENCIES_PROBED);
+});
+
+test("a manifest the gate cannot READ refuses the landing, and is not read as empty", () => {
+  // THE THIRD ANSWER, KEPT APART FROM THE OTHER TWO — this module's own
+  // rule 5 discipline applied to a lockfile. An unreadable manifest is
+  // not a manifest that added nothing.
+  const git = (_root: string, args: string[]) =>
+    args[0] === "show" && String(args[1]).startsWith("tip:")
+      ? { status: 0, stdout: "{ this is not json", stderr: "" }
+      : { status: 1, stdout: "", stderr: "absent" };
+  const answer = dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["app/package.json"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    { git, probe: () => ({ absent: true }) },
+  );
+  expect(answer.refusals.length, "an unparseable manifest was read as adding nothing").toBe(1);
+  expect(answer.refusals[0]).toContain("could not be READ");
+  expect(answer.refusals[0]).toContain("app/package.json");
+
+  // THE CONTROL: the same call over a manifest that DOES parse refuses
+  // nothing, so the refusal above is about the parse and not about the
+  // path being a manifest at all.
+  const clean = dependencyRefusals(
+    "/nowhere",
+    "base",
+    "tip",
+    ["app/package.json"],
+    { rev: "main", file: "docs/tasks/T-901-x.md" },
+    {
+      git: (_root: string, args: string[]) =>
+        args[0] === "show" && String(args[1]).startsWith("tip:")
+          ? { status: 0, stdout: '{"dependencies":{}}', stderr: "" }
+          : { status: 1, stdout: "", stderr: "absent" },
+      probe: () => ({ absent: true }),
+    },
+  );
+  expect(clean.refusals).toEqual([]);
+});
+
+test("`addedDependencies` reads a lockfile's registry entries and skips its linked ones", () => {
+  // The npm lockfile's discriminator is `resolved`, and this is the pair
+  // that makes it a discriminator rather than a formality: a workspace
+  // link carries `link: true` and a relative `resolved`, and npm never
+  // serves either one.
+  const lock = JSON.stringify({
+    name: "a-fixture",
+    lockfileVersion: 3,
+    packages: {
+      "": { name: "a-fixture" },
+      "node_modules/from-the-registry": {
+        version: "1.0.0",
+        resolved: "https://registry.npmjs.org/from-the-registry/-/from-the-registry-1.0.0.tgz",
+      },
+      "node_modules/@local/linked": { resolved: "../lib/parser", link: true },
+      "lib/parser": { name: "@local/linked", version: "0.0.1" },
+    },
+  });
+  const git = (_root: string, args: string[]) =>
+    args[0] === "show" && String(args[1]).startsWith("tip:")
+      ? { status: 0, stdout: lock, stderr: "" }
+      : { status: 1, stdout: "", stderr: "absent" };
+  const found = addedDependencies("/nowhere", "base", "tip", ["tools/e2e/package-lock.json"], git);
+  expect(found.problems).toEqual([]);
+  expect(found.added.map((d) => d.name)).toEqual(["from-the-registry"]);
+  expect(found.added[0]?.registry).toBe("npm");
+  expect(found.manifests).toEqual(["tools/e2e/package-lock.json"]);
 });

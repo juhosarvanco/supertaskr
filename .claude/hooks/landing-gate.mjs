@@ -199,6 +199,78 @@
  *    ordinary lane runs, and the same seat could `--no-verify` past this
  *    hook entirely — so what was owed was an honest limit rather than a
  *    guard rebuilt around a threat it cannot reach.
+ * 7. **THE DEPENDENCY CHECK READS FOUR MANIFEST FORMATS BY HAND, TAKES
+ *    THE REGISTRY'S WORD, AND ITS BASE URL IS AN ENVIRONMENT VARIABLE**
+ *    (`T-247`). The section below states all three costs and why each
+ *    was paid rather than closed.
+ *
+ * ── THE SEVENTH LIMIT IS A CHECK, AND IT REFUSES WHERE THE OTHERS ALLOW
+ * `T-247`. A lane's diff that ADDS a dependency name to a manifest or a
+ * lockfile is answered by `dependencyRefusals`: the name must RESOLVE on
+ * its registry, and its first publication must not be LATER than the day
+ * its own card was suggested. A name that does not resolve, a package
+ * younger than the card, a registry that cannot be reached and a manifest
+ * that cannot be read all REFUSE the landing, naming the package.
+ *
+ * **THIS INVERTS THE FAIL-OPEN CONTRACT THE PARAGRAPH ABOVE ARGUES, ON
+ * PURPOSE, AND THE INVERSION IS AFFORDABLE FOR ONE MEASURABLE REASON.**
+ * A cannot-compare about PATHS is unavoidable — every push has paths, so
+ * a guard that halted on its own inability would halt the project, and
+ * `push-guard.mjs`'s header is right about what happens next. A
+ * cannot-verify about DEPENDENCIES is not: this arm asks nothing at all
+ * of a range that adds no dependency name, which is very nearly every
+ * range this project pushes. So the seat inconvenienced by an unreachable
+ * registry is exactly the seat that just added a package — the one
+ * occasion where stopping is the point. That is the same rule GSD's
+ * isolation guard states in its own header and this card's third
+ * criterion states in as many words: **a guard that cannot verify never
+ * answers "safe."**
+ *
+ * ── WHAT IS DERIVED FROM THE TREE AND WHAT CANNOT BE ─────────────────
+ * The card rules "derive the manifest set from the tree, never list it",
+ * and the split this module draws is exact. **The PATHS are derived**:
+ * nothing here names `app/package.json` or `lib/parser/package-lock.json`
+ * or any other instance, and a manifest added anywhere in the tree
+ * tomorrow is judged with no edit to this file — `manifestKindOf` keys on
+ * the BASENAME and the range supplies the paths. **The FORMATS cannot
+ * be**: a reader for a file shape is code, and a shape nobody wrote a
+ * reader for cannot be parsed by deriving it. So `MANIFEST_KINDS` is a
+ * map from basename to reader, and `landing-gate.spec.ts`'s *"every
+ * manifest and lockfile the tree carries has a reader in this gate"*
+ * measures the tree's own inventory against that map's keys — so the day
+ * a fifth format lands in this repository a body reds by name instead of
+ * a whole ecosystem going silently unjudged.
+ *
+ * ── THE THREE COSTS, PRICED ──────────────────────────────────────────
+ * **ONE, THE READERS ARE A SUBSET OF EACH FORMAT.** No `yaml` and no TOML
+ * library fit the hook budget (`expandTouches`'s own comment prices that
+ * budget one function up), so `cargoManifestDeps` scans the dependency
+ * TABLES it recognises and `npmManifestDeps` reads the four dependency
+ * objects `package.json` declares. A construct outside that subset is
+ * read as declaring no dependency, which is a MISS and not a false
+ * refusal. The lockfiles are the tighter half and are where the real
+ * coverage is: `Cargo.lock` names every crate that will be compiled and
+ * `package-lock.json` every package that will be installed, so a
+ * dependency that reaches a machine reaches one of those two files.
+ * **TWO, A NAME THAT RESOLVES IS TAKEN AT THE REGISTRY'S WORD.** This
+ * gate asks whether the name EXISTS and WHEN it was first published. It
+ * does not compare an integrity hash, does not look at who owns the name,
+ * and cannot tell a typosquat that was registered two years ago from an
+ * honest package — `T-247`'s card is about the hallucinated name and the
+ * freshly-registered one, and those are the two this answers.
+ * **THREE, `NPUTER_REGISTRY_NPM` AND `NPUTER_REGISTRY_CRATES` MOVE THE
+ * BASE URL, AND A LANE CAN SET THEM.** They exist because
+ * `landing-gate.spec.ts` drives its refusals through the REAL wired hook
+ * against a REAL remote, and a suite that reached the live internet would
+ * be neither hermetic nor honest. The bypass is limit 6's shape and takes
+ * limit 6's ruling: it costs a deliberate act by a seat that could
+ * `--no-verify` past this hook entirely, so what is owed is the honest
+ * limit rather than a guard rebuilt around a threat it cannot reach.
+ * **AND `MAX_DEPENDENCIES_PROBED` IS A FOURTH DECISION, NOT A LIMIT**: a
+ * range adding more names than that is REFUSED rather than probed,
+ * because an unbounded network loop inside a `PreToolUse` hook is a push
+ * that hangs, and a lockfile regeneration that adds that many names at
+ * once is the one supply-chain event that deserves a human eye anyway.
  */
 
 import { spawnSync } from "node:child_process";
@@ -579,6 +651,589 @@ export const ROUTE =
   "re-run of `brief.mjs --task <id> --write-fence <worktree>` (T-211's fast path A) — that is the " +
   "one route that moves this gate, and it is triage's to take, never this hook's.";
 
+/* ───────────── THE SEVENTH LIMIT: dependency legitimacy (T-247) ─────── */
+
+/**
+ * Every name a manifest DECLARES that a registry would have to serve.
+ *
+ * A reader answers `{ names }` or `{ problem }` and NEVER throws: a
+ * manifest this gate cannot parse is a manifest whose additions are
+ * unknown, and the caller refuses on that rather than reading it as
+ * empty. An empty answer and an unreadable one are the two states this
+ * whole module exists to keep apart.
+ *
+ * @typedef {{ names: string[] } | { problem: string }} DepRead
+ */
+
+/**
+ * Is this `package.json` version spec one the REGISTRY would answer for?
+ *
+ * A semver range carries neither `:` nor `/`. Everything that does is a
+ * spec pointing somewhere else — `file:`, `link:`, `workspace:`,
+ * `git+https:`, `npm:` aliasing, `github:owner/repo` and the bare
+ * `owner/repo` shorthand — and this repository ships one of them:
+ * `app/package.json` resolves `@nputer/parser` through `file:../lib/parser`
+ * (docs/CONVENTIONS.md's fresh-clone ORDER). Judging that name against
+ * npm would refuse this project's own tree on the first push.
+ *
+ * @param {unknown} spec
+ * @returns {boolean}
+ */
+export function isRegistrySpec(spec) {
+  if (typeof spec !== "string") return false;
+  const s = spec.trim();
+  if (s === "") return false;
+  return !s.includes(":") && !s.includes("/") && !s.startsWith(".");
+}
+
+/**
+ * `package.json` — the four dependency objects npm resolves from a
+ * registry. `bundleDependencies` is a NAME LIST rather than a spec map
+ * and every name in it must already appear in one of these four, so
+ * reading it would add nothing but a second spelling.
+ *
+ * @param {string} text
+ * @returns {DepRead}
+ */
+export function npmManifestDeps(text) {
+  /** @type {unknown} */
+  let doc;
+  try {
+    doc = JSON.parse(text);
+  } catch (err) {
+    return { problem: `it is not readable JSON (${err instanceof Error ? err.message : String(err)})` };
+  }
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+    return { problem: "it is not a JSON object" };
+  }
+  const obj = /** @type {Record<string, unknown>} */ (doc);
+  /** @type {string[]} */
+  const names = [];
+  for (const field of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
+    const block = obj[field];
+    if (block === null || typeof block !== "object" || Array.isArray(block)) continue;
+    for (const [name, spec] of Object.entries(/** @type {Record<string, unknown>} */ (block))) {
+      if (isRegistrySpec(spec)) names.push(name);
+    }
+  }
+  return { names };
+}
+
+/**
+ * `package-lock.json` — BOTH shapes, because which one a tree carries is
+ * npm's choice and not this gate's. v2/v3 key a `packages` map on install
+ * paths; v1 nests a `dependencies` tree. In either, the registry-bound
+ * entries are exactly those whose `resolved` is an http(s) URL: a linked
+ * workspace carries `link: true`, and a file dependency resolves to a
+ * relative path.
+ *
+ * @param {string} text
+ * @returns {DepRead}
+ */
+export function npmLockDeps(text) {
+  /** @type {unknown} */
+  let doc;
+  try {
+    doc = JSON.parse(text);
+  } catch (err) {
+    return { problem: `it is not readable JSON (${err instanceof Error ? err.message : String(err)})` };
+  }
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+    return { problem: "it is not a JSON object" };
+  }
+  const obj = /** @type {Record<string, unknown>} */ (doc);
+  /** @type {string[]} */
+  const names = [];
+  /** @param {unknown} v */
+  const fromRegistry = (v) =>
+    v !== null && typeof v === "object" && !Array.isArray(v) &&
+    typeof (/** @type {Record<string, unknown>} */ (v))["resolved"] === "string" &&
+    /^https?:\/\//.test(/** @type {string} */ ((/** @type {Record<string, unknown>} */ (v))["resolved"]));
+
+  const packages = obj["packages"];
+  if (packages !== null && typeof packages === "object" && !Array.isArray(packages)) {
+    for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (packages))) {
+      if (key === "" || !fromRegistry(entry)) continue;
+      const declared = (/** @type {Record<string, unknown>} */ (entry))["name"];
+      const name = typeof declared === "string" && declared !== ""
+        ? declared
+        : key.replace(/^.*node_modules\//, "");
+      if (name !== "") names.push(name);
+    }
+  }
+  /** @param {unknown} tree */
+  const walk = (tree) => {
+    if (tree === null || typeof tree !== "object" || Array.isArray(tree)) return;
+    for (const [name, entry] of Object.entries(/** @type {Record<string, unknown>} */ (tree))) {
+      if (fromRegistry(entry)) names.push(name);
+      if (entry !== null && typeof entry === "object" && !Array.isArray(entry)) {
+        walk((/** @type {Record<string, unknown>} */ (entry))["dependencies"]);
+      }
+    }
+  };
+  walk(obj["dependencies"]);
+  return { names: [...new Set(names)] };
+}
+
+/** The `[…]` headers whose keys declare a crate this gate would judge. */
+export const CARGO_DEP_TABLE_RE =
+  /^(?:workspace\.)?(?:target\.[^\]]*?\.)?(?:dependencies|dev-dependencies|build-dependencies)(?:\.(.+))?$/;
+
+/**
+ * `Cargo.toml` — the dependency TABLES, scanned rather than parsed.
+ *
+ * A dependency is registry-bound unless it says otherwise: `path`, `git`
+ * and `workspace` each point somewhere that is not crates.io, in every
+ * spelling cargo accepts them — as a key of an inline table
+ * (`serde = { path = "…" }`), as a dotted key inside the table
+ * (`serde.workspace = true`), and as a line inside a
+ * `[dependencies.serde]` sub-table. **A shape outside this subset is read
+ * as declaring nothing**, which is the miss the header prices; there is
+ * no TOML parser inside the hook's dependency budget and a hand-rolled
+ * one pretending to be complete would be the worse of the two options.
+ *
+ * ── ONE NAME CAN BE DECLARED TWICE, AND THAT DECIDES THE ACCUMULATION ─
+ * The rule is **AND within one declaration, OR across declarations**, and
+ * this repository is the reason it is not one or the other.
+ * `app/src-tauri/Cargo.toml` gives `serde` a real version under
+ * `[workspace.dependencies]` and then writes `serde = { workspace = true }`
+ * under `[dependencies]`. A single AND over every occurrence answers
+ * NOT-registry-bound and `serde` goes unjudged; a single OR over every
+ * occurrence answers registry-bound for `nputer-index`, whose
+ * `[dependencies]` entry is a `path` — and THAT is a false refusal of
+ * this project's own tree on the first push. Keying the accumulator on
+ * the TABLE as well as the name keeps a local marker binding on its own
+ * declaration and on no other. Both halves are measured in
+ * `landing-gate.spec.ts` against the LIVE manifest rather than against a
+ * fixture written to look like it.
+ *
+ * @param {string} text
+ * @returns {DepRead}
+ */
+export function cargoManifestDeps(text) {
+  /** One verdict per (table, name), ANDed over the lines of that one table. */
+  const perDeclaration = new Map();
+  /** @param {string} table @param {string} name @param {boolean} registryBound */
+  const note = (table, name, registryBound) => {
+    const clean = name.trim().replace(/^["']|["']$/g, "");
+    if (clean === "") return;
+    const key = `${table}\u0000${clean}`;
+    perDeclaration.set(key, (perDeclaration.get(key) ?? true) && registryBound);
+  };
+  /** @param {string} v */
+  const inlineIsLocal = (v) => /[{,]\s*(?:path|git|workspace)\s*=/.test(v);
+  /** @param {string} k */
+  const isLocalKey = (k) => /^(?:path|git|workspace)$/.test(k);
+
+  /** The header of the dependency table being read, or none. */
+  let table = /** @type {string | undefined} */ (undefined);
+  /** The dependency a `[dependencies.<name>]` sub-table describes. */
+  let subTable = /** @type {string | undefined} */ (undefined);
+  for (const raw of text.split("\n")) {
+    const line = raw.replace(/\s+#.*$/, "").trim();
+    if (line === "") continue;
+    const header = /^\[\[?([^\]]+)\]\]?$/.exec(line);
+    if (header !== null) {
+      const name = /** @type {string} */ (header[1]).trim();
+      const m = CARGO_DEP_TABLE_RE.exec(name);
+      table = undefined;
+      subTable = undefined;
+      if (m === null) continue;
+      table = name;
+      if (m[1] !== undefined) {
+        subTable = /** @type {string} */ (m[1]);
+        // Seeded registry-bound, then ANDed down by whatever local marker
+        // this sub-table's own lines carry.
+        note(table, subTable, true);
+      }
+      continue;
+    }
+    if (table === undefined) continue;
+    const pair = /^([A-Za-z0-9_."'-]+)\s*=\s*(.*)$/.exec(line);
+    if (pair === null) continue;
+    const key = /** @type {string} */ (pair[1]).replace(/^["']|["']$/g, "");
+    const value = /** @type {string} */ (pair[2]);
+    if (subTable !== undefined) {
+      if (isLocalKey(key)) note(table, subTable, false);
+      continue;
+    }
+    const dotted = /^([^.]+)\.(.+)$/.exec(key);
+    if (dotted !== null) {
+      note(table, /** @type {string} */ (dotted[1]), !isLocalKey(/** @type {string} */ (dotted[2])));
+      continue;
+    }
+    note(table, key, !inlineIsLocal(value));
+  }
+  /** @type {Map<string, boolean>} */
+  const byName = new Map();
+  for (const [key, bound] of perDeclaration) {
+    const name = key.slice(key.indexOf("\u0000") + 1);
+    byName.set(name, (byName.get(name) ?? false) || bound);
+  }
+  return { names: [...byName].filter(([, bound]) => bound).map(([name]) => name) };
+}
+
+/**
+ * `Cargo.lock` — the tightest reader of the four, because cargo writes
+ * this file and its shape is fixed. A `[[package]]` block carries a
+ * `source` only when the crate came from somewhere other than this
+ * workspace, and a registry source is spelled `registry+…`.
+ *
+ * @param {string} text
+ * @returns {DepRead}
+ */
+export function cargoLockDeps(text) {
+  /** @type {string[]} */
+  const names = [];
+  /** @type {{ name?: string, registry: boolean } | undefined} */
+  let block;
+  const close = () => {
+    if (block !== undefined && block.name !== undefined && block.registry) names.push(block.name);
+    block = undefined;
+  };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (line === "[[package]]") {
+      close();
+      block = { registry: false };
+      continue;
+    }
+    if (line.startsWith("[")) {
+      close();
+      continue;
+    }
+    if (block === undefined) continue;
+    const name = /^name\s*=\s*"([^"]*)"$/.exec(line);
+    if (name !== null) {
+      block.name = /** @type {string} */ (name[1]);
+      continue;
+    }
+    const source = /^source\s*=\s*"([^"]*)"$/.exec(line);
+    if (source !== null) block.registry = /** @type {string} */ (source[1]).startsWith("registry+");
+  }
+  close();
+  return { names: [...new Set(names)] };
+}
+
+/**
+ * BASENAME to reader, and the registry the reader's names live on.
+ *
+ * THE KEYS ARE FORMATS AND THE PATHS ARE DERIVED — the header's own
+ * paragraph on what can be derived from a tree and what cannot. A body in
+ * `landing-gate.spec.ts` measures this map's key set against every
+ * manifest and lockfile the live tree actually carries.
+ */
+export const MANIFEST_KINDS = Object.freeze({
+  "package.json": { registry: "npm", read: npmManifestDeps },
+  "package-lock.json": { registry: "npm", read: npmLockDeps },
+  "Cargo.toml": { registry: "crates", read: cargoManifestDeps },
+  "Cargo.lock": { registry: "crates", read: cargoLockDeps },
+});
+
+/**
+ * @param {string} rel a repository-relative path
+ * @returns {{ registry: string, read: (text: string) => DepRead } | undefined}
+ */
+export function manifestKindOf(rel) {
+  const base = rel.slice(rel.lastIndexOf("/") + 1);
+  return Object.hasOwn(MANIFEST_KINDS, base)
+    ? /** @type {{ registry: string, read: (text: string) => DepRead }} */ (
+        /** @type {Record<string, unknown>} */ (MANIFEST_KINDS)[base]
+      )
+    : undefined;
+}
+
+/**
+ * Where each registry answers, and where the ANSWER's first-publication
+ * date sits inside it. Both fields were measured by hand against the live
+ * services at this card's build and both are on the card.
+ *
+ * The `env` spelling is limit 6's shape and takes limit 6's ruling; the
+ * header's third cost says why it exists and what it gives away.
+ */
+export const REGISTRIES = Object.freeze({
+  npm: { env: "NPUTER_REGISTRY_NPM", base: "https://registry.npmjs.org", created: "time.created" },
+  crates: {
+    env: "NPUTER_REGISTRY_CRATES",
+    base: "https://crates.io/api/v1/crates",
+    created: "crate.created_at",
+  },
+});
+
+/** A range adding more names than this is refused rather than probed. */
+export const MAX_DEPENDENCIES_PROBED = 50;
+
+/**
+ * The probe, as a program rather than a call.
+ *
+ * `laneLandingVerdict` is SYNCHRONOUS and every caller of it reads a
+ * returned value, so an `await` here would have to ripple through
+ * `push-guard.mjs` and both hook runners. `expandTouches` already spawns
+ * a child for the same reason one function up, and this is that shape
+ * with the fetch inside it. Written without a template literal and
+ * without `${` so it can live inside one.
+ */
+export const PROBE_SOURCE = [
+  "const [, url, field] = process.argv;",
+  "const ctl = new AbortController();",
+  "const timer = setTimeout(() => ctl.abort(), 8000);",
+  "const say = (o) => { clearTimeout(timer); process.stdout.write(JSON.stringify(o)); process.exit(0); };",
+  "fetch(url, { signal: ctl.signal, headers: { accept: 'application/json', 'user-agent': 'nputer-landing-gate' } })",
+  "  .then(async (r) => {",
+  "    if (r.status === 404) return say({ absent: true });",
+  "    if (!r.ok) return say({ unreachable: 'the registry answered HTTP ' + r.status });",
+  "    let body;",
+  "    try { body = await r.json(); } catch (e) { return say({ unreachable: 'its answer was not JSON (' + String(e && e.message) + ')' }); }",
+  "    let cur = body;",
+  "    for (const part of field.split('.')) {",
+  "      if (cur === null || typeof cur !== 'object') { cur = undefined; break; }",
+  "      cur = cur[part];",
+  "    }",
+  "    if (typeof cur !== 'string') return say({ unreachable: 'its answer carries no ' + field });",
+  "    say({ created: cur });",
+  "  })",
+  "  .catch((e) => say({ unreachable: String((e && e.message) || e) }));",
+].join("\n");
+
+/**
+ * @typedef {{ created: string } | { absent: true } | { unreachable: string }} Probed
+ */
+
+/**
+ * Ask one registry about one name. NEVER THROWS, and never reads an
+ * inability as an absence: those are the two answers this whole check
+ * turns on.
+ *
+ * @param {string} registry
+ * @param {string} name
+ * @param {Record<string, string | undefined>} [env]
+ * @returns {Probed}
+ */
+export function probeRegistry(registry, name, env = process.env) {
+  if (!Object.hasOwn(REGISTRIES, registry)) {
+    return { unreachable: `this gate knows no registry called ${JSON.stringify(registry)}` };
+  }
+  const reg = /** @type {{ env: string, base: string, created: string }} */ (
+    /** @type {Record<string, unknown>} */ (REGISTRIES)[registry]
+  );
+  if (name === "" || /[\u0000-\u001f]/.test(name)) {
+    return { unreachable: `${JSON.stringify(name)} is not a name this gate will put in a URL` };
+  }
+  const override = (env[reg.env] ?? "").trim();
+  const base = (override === "" ? reg.base : override).replace(/\/+$/, "");
+  const url = `${base}/${encodeURIComponent(name)}`;
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    out = spawnSync(process.execPath, ["-e", PROBE_SOURCE, url, reg.created], {
+      encoding: "utf8",
+      maxBuffer: 4 * 1024 * 1024,
+      timeout: 20000,
+    });
+  } catch (err) {
+    return { unreachable: `the probe could not be started (${err instanceof Error ? err.message : String(err)})` };
+  }
+  if (out.error !== undefined && out.error !== null) {
+    return { unreachable: `the probe could not be run (${out.error.message})` };
+  }
+  if (out.status !== 0) {
+    return {
+      unreachable: `the probe exited ${String(out.status)} — ${String(out.stderr ?? "").trim() || "it said nothing"}`,
+    };
+  }
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(String(out.stdout ?? ""));
+  } catch (err) {
+    return { unreachable: `the probe printed no readable JSON (${err instanceof Error ? err.message : String(err)})` };
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { unreachable: "the probe printed no object" };
+  }
+  const obj = /** @type {Record<string, unknown>} */ (parsed);
+  if (obj["absent"] === true) return { absent: true };
+  if (typeof obj["created"] === "string") return { created: /** @type {string} */ (obj["created"]) };
+  return {
+    unreachable: typeof obj["unreachable"] === "string"
+      ? /** @type {string} */ (obj["unreachable"])
+      : "the probe answered nothing this gate understands",
+  };
+}
+
+/**
+ * @typedef {object} AddedDep
+ * @property {string} file     the manifest that gained it
+ * @property {string} registry which registry answers for it
+ * @property {string} name
+ */
+
+/**
+ * What a range ADDS, which is the after-set minus the before-set and not
+ * the after-set. A lockfile that merely moved a version carries every
+ * name it already carried, so reading the tip alone would put this gate's
+ * whole network cost on every routine `npm ci`.
+ *
+ * A manifest ABSENT at the tip is skipped rather than read as empty: the
+ * range deleted it, and a deletion adds nothing.
+ *
+ * @param {string} root
+ * @param {string} base
+ * @param {string} tip
+ * @param {string[]} paths
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ manifests: string[], added: AddedDep[], problems: string[] }}
+ */
+export function addedDependencies(root, base, tip, paths, git = runGit) {
+  const manifests = paths.filter((p) => manifestKindOf(p) !== undefined);
+  /** @type {AddedDep[]} */
+  const added = [];
+  /** @type {string[]} */
+  const problems = [];
+  const seen = new Set();
+  for (const rel of manifests) {
+    const kind = /** @type {{ registry: string, read: (text: string) => DepRead }} */ (manifestKindOf(rel));
+    /** @param {string} rev */
+    const at = (rev) => {
+      const show = git(root, ["show", `${rev}:${rel}`]);
+      return show.status === 0 ? show.stdout : undefined;
+    };
+    const afterText = at(tip);
+    if (afterText === undefined) continue;
+    const after = kind.read(afterText);
+    if ("problem" in after) {
+      problems.push(`${rel} at ${tip}: ${after.problem}`);
+      continue;
+    }
+    const beforeText = at(base);
+    /** @type {Set<string>} */
+    let before = new Set();
+    if (beforeText !== undefined) {
+      const read = kind.read(beforeText);
+      if ("problem" in read) {
+        problems.push(`${rel} at ${base}: ${read.problem}`);
+        continue;
+      }
+      before = new Set(read.names);
+    }
+    for (const name of after.names) {
+      if (before.has(name)) continue;
+      const key = `${kind.registry}\u0000${name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      added.push({ file: rel, registry: kind.registry, name });
+    }
+  }
+  return { manifests, added, problems };
+}
+
+/**
+ * The day a card was suggested, from the card AS COMMITTED at `rev` — the
+ * same copy the fence is read from, for the same reason.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {string} file
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ date: string } | { why: string }}
+ */
+export function cardSuggestedDate(root, rev, file, git = runGit) {
+  const show = git(root, ["show", `${rev}:${file}`]);
+  if (show.status !== 0) {
+    return { why: `\`git show ${rev}:${file}\` failed (${show.stderr.trim() || "no message"})` };
+  }
+  const line = frontmatterLineOf(show.stdout, "suggested_by");
+  if (line === undefined) return { why: `${file} at ${rev} declares no \`suggested_by:\`` };
+  const date = /(\d{4}-\d{2}-\d{2})/.exec(line);
+  if (date === null) return { why: `${file}'s \`suggested_by:\` at ${rev} carries no YYYY-MM-DD date` };
+  return { date: /** @type {string} */ (date[1]) };
+}
+
+/**
+ * Every reason this range's added dependencies refuse the landing, one
+ * sentence each and each naming its package.
+ *
+ * @param {string} root
+ * @param {string} base
+ * @param {string} tip
+ * @param {string[]} paths
+ * @param {{ rev: string, file: string }} card where `suggested_by:` is read IF it is ever needed
+ * @param {{ git?: (root: string, args: string[]) => Ran, probe?: (registry: string, name: string) => Probed }} [opts]
+ * @returns {{ refusals: string[], added: AddedDep[], manifests: string[] }}
+ */
+export function dependencyRefusals(root, base, tip, paths, card, opts = {}) {
+  const git = opts.git ?? runGit;
+  const probe = opts.probe ?? ((registry, name) => probeRegistry(registry, name));
+  const found = addedDependencies(root, base, tip, paths, git);
+  // THE ZERO-COST PATH, AND IT IS THE ONE ALMOST EVERY PUSH TAKES. The
+  // card's date is read LAZILY rather than handed in, because reading it
+  // eagerly would put a `git show` of the card on every push in this
+  // repository to answer a question no manifest asked.
+  // `landing-gate.spec.ts`'s *"a range that changes no manifest asks the
+  // registry nothing and reads no card"* COUNTS the calls rather than
+  // trusting this comment.
+  if (found.added.length === 0 && found.problems.length === 0) {
+    return { refusals: [], added: [], manifests: found.manifests };
+  }
+  const card_ = cardSuggestedDate(root, card.rev, card.file, git);
+  /** @type {string[]} */
+  const refusals = [];
+  for (const problem of found.problems) {
+    refusals.push(
+      `a changed manifest could not be READ, so what it adds is unknown — ${problem}`,
+    );
+  }
+  if (found.added.length > MAX_DEPENDENCIES_PROBED) {
+    refusals.push(
+      `this range adds ${found.added.length} dependency name(s), past the ${MAX_DEPENDENCIES_PROBED} ` +
+        "this gate will probe in one push — so NONE of them was checked, and a lockfile " +
+        "regeneration this large is the one supply-chain event that wants a human eye",
+    );
+    return { refusals, added: found.added, manifests: found.manifests };
+  }
+  for (const dep of found.added) {
+    const where = `${dep.name} (${dep.registry}, added in ${dep.file})`;
+    const answer = probe(dep.registry, dep.name);
+    if ("unreachable" in answer) {
+      refusals.push(`${where}: THE REGISTRY COULD NOT BE REACHED — ${answer.unreachable}`);
+      continue;
+    }
+    if ("absent" in answer) {
+      refusals.push(`${where}: DOES NOT RESOLVE on its registry`);
+      continue;
+    }
+    if ("why" in card_) {
+      refusals.push(
+        `${where}: resolves, but ${card_.why}, so whether it predates this card cannot be answered`,
+      );
+      continue;
+    }
+    // A DATE COMPARED AS A STRING, DELIBERATELY. Both sides are
+    // `YYYY-MM-DD`, where lexicographic order IS chronological order, and
+    // that keeps a timezone out of a comparison whose two sides come from
+    // a registry's clock and a human's card. A package published ON the
+    // card's own day is not younger than it.
+    const born = answer.created.slice(0, 10);
+    if (born > card_.date) {
+      refusals.push(
+        `${where}: first published ${born}, AFTER this card was suggested (${card_.date})`,
+      );
+    }
+  }
+  return { refusals, added: found.added, manifests: found.manifests };
+}
+
+/** The route a dependency refusal takes, which is not the fence's. */
+export const DEPENDENCY_ROUTE =
+  "A dependency this gate refuses is not a fence question and widening a `touches:` does not move " +
+  "it. If the name is a MISTAKE — a package that was never real, or one whose spelling is one " +
+  "character from a real one — remove it and say so on the card: that is the whole reason this " +
+  "check exists. If the package is real, young and genuinely wanted, the age rule is the card's " +
+  "own (`suggested_by:`), so the route is a card amendment COMMITTED ON MAIN that re-dates the " +
+  "need, taken by triage and never by the lane. And if the registry was merely unreachable, this " +
+  "gate refused because it could not verify rather than because it found anything — run the push " +
+  "again once it answers.";
+
 /** @param {string} code @param {string} reason */
 const allow = (code, reason) => ({ verdict: /** @type {const} */ ("allow"), code, reason });
 /** @param {string} code @param {string} reason */
@@ -606,6 +1261,7 @@ function fenceReport(touchesLine, fence) {
  * @property {(root: string, args: string[]) => Ran} [git]
  * @property {(request: { touches: string[], id?: string, file?: string }) => ({ fence: ExpandedFence } | { problem: string })} [expand]
  * @property {string} [branch] the integration branch, injectable for a fixture
+ * @property {(registry: string, name: string) => Probed} [probe] the registry, injectable for a fixture
  */
 
 /**
@@ -708,6 +1364,37 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
       "landing-gate-cannot-compare",
       `THE LANDING GATE DID NOT JUDGE THIS PUSH: ${range.problem}. The push is allowed and the ` +
         "diff is UNJUDGED.",
+    );
+  }
+
+  // THE SEVENTH LIMIT, ASKED BEFORE ANY FENCE QUESTION AND INDEPENDENT
+  // OF ALL OF THEM (T-247). A dependency is not a containment question:
+  // widening a `touches:` does not make a hallucinated package real, and
+  // a card with no fence at all still must not carry one in. It is asked
+  // here because `range` is the first thing that knows which paths the
+  // lane committed, and it costs NOTHING — not a git call, not a spawn —
+  // on a range whose paths include no manifest, which is nearly all of
+  // them.
+  const deps = dependencyRefusals(
+    root,
+    range.mergeBase,
+    "HEAD",
+    range.paths,
+    { rev, file: card.file },
+    { ...opts, git },
+  );
+  if (deps.refusals.length > 0) {
+    return block(
+      "landing-gate-dependency-refused",
+      `PUSH REFUSED: ${deps.refusals.length} dependency finding(s) in ${card.id}'s range.\n` +
+        `  the card, as committed on ${rev}: ${card.file}\n` +
+        `  the manifests this range changed: ${deps.manifests.join(", ")}\n` +
+        `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, the same range the ` +
+        "fence arm takes), and what is judged is what the range ADDED\n" +
+        deps.refusals.map((r) => `    ${r}\n`).join("") +
+        "  A guard that cannot verify does not answer `safe`, so an unreachable registry and an " +
+        "unreadable manifest refuse here exactly as a missing package does.\n" +
+        `  ${DEPENDENCY_ROUTE}`,
     );
   }
 
@@ -842,6 +1529,8 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
   /** @type {string[]} */
   const refusals = [];
   /** @type {string[]} */
+  const depRefusals = [];
+  /** @type {string[]} */
   const unjudged = [];
   for (const merge of merges) {
     const parents = git(root, ["rev-list", "--parents", "-n", "1", merge]);
@@ -889,6 +1578,27 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
       unjudged.push(`    ${merge} (${card.id}): ${range.problem}`);
       continue;
     }
+    // THE SEVENTH LIMIT AT THE MERGE MOMENT (T-247), and this is the
+    // moment the card's title actually names: "so a hallucinated or
+    // typosquatted package cannot RIDE A MERGE into main". The lane arm
+    // above only sees a lane that pushes its own branch; a lane merged
+    // locally by the seat that holds the integration checkout reaches
+    // origin through this arm and no other.
+    const merged = dependencyRefusals(
+      root,
+      range.mergeBase,
+      second,
+      range.paths,
+      { rev: first, file: card.file },
+      { ...opts, git },
+    );
+    if (merged.refusals.length > 0) {
+      depRefusals.push(
+        `    ${merge} (${card.id}, manifests ${merged.manifests.join(", ")}):\n` +
+          merged.refusals.map((r) => `      ${r}\n`).join("").replace(/\n$/, ""),
+      );
+      continue;
+    }
     if ("universalDual" in read) {
       refusals.push(
         `    ${merge} (${card.id}): ${read.universalDual}, so every one of the ` +
@@ -912,6 +1622,19 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
     );
   }
 
+  if (depRefusals.length > 0) {
+    return block(
+      "landing-gate-merge-dependency-refused",
+      `PUSH REFUSED: ${depRefusals.length} of the ${merges.length} merge commit(s) this push would ` +
+        "add to the integration branch ADD a dependency this gate refuses.\n" +
+        "  each merge is judged over merge-base(first parent, second parent)..second parent — the " +
+        "LANE's own range — with the card, and therefore its `suggested_by:` date, read from the " +
+        "FIRST parent, which is the only endpoint of a merge no lane has written to.\n" +
+        `${depRefusals.join("\n")}\n` +
+        (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
+        `  ${DEPENDENCY_ROUTE}`,
+    );
+  }
   if (refusals.length > 0) {
     return block(
       "landing-gate-merge-outside-the-fence",

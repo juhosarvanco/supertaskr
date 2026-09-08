@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **662 behaviours** — 660 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **674 behaviours** — 672 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -441,6 +441,18 @@ Census: **662 behaviours** — 660 extracted sentences + 2 named-not-extracted (
 - THE MERGE MOMENT: a merge carrying an out-of-fence path is refused, then a clean one lands
 - the merge's fence is read from its FIRST parent, so a widened card in the merge does not widen it
 - a merge whose lane branch is gone is announced as unjudged, never allowed silently
+- every manifest and lockfile the live tree carries has a reader in this gate
+- the readers judge this repository's OWN manifests, and skip the two entries a probe would refuse
+- THE POSITIVE CONTROL: a lockfile name that does not resolve is refused BY NAME, then a resolving one lands
+- a package first published AFTER the card was suggested is refused, naming both dates
+- a registry that cannot be reached refuses the landing rather than allowing it loudly
+- a card with no `suggested_by:` cannot answer the age question, so the gate refuses closed
+- a range that changes no manifest asks the registry nothing and reads no card
+- only what the range ADDS is judged — a name the merge-base already carried is not re-probed
+- THE MERGE MOMENT: a merge whose lane added an unresolvable dependency is refused, then a clean one lands
+- a range adding more names than this gate will probe is refused, and NONE of them is probed
+- a manifest the gate cannot READ refuses the landing, and is not read as empty
+- `addedDependencies` reads a lockfile's registry entries and skips its linked ones
 
 ## lane-fence
 
