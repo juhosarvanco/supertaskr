@@ -1716,3 +1716,454 @@ touched by the `npm install` CONVENTIONS' fresh-clone order prescribes for
 branch was created or moved.
 
 
+
+2026-09-09 — `claude-opus-5@subagent (phase 2, third verification after REJECTED dde56da and 40b22e4)`
+(verifier, BLIND TWO-PHASE, `review: independent`)
+
+VERDICT: APPROVED WITH ASSIGNED CORRECTIONS
+
+attack set: sha256:a07bde3b4f8e391e2a180477438c738224d16ea19b5b0216079fc6666e5d3496 (attack-set-T-224.md)
+ground truths: sha256:aae9491f1447ca547dd1396e4d87177efaed30d5b65b4d7e0b1f19953dce6977 (ground-T-224.md)
+
+previous verdicts `dde56da` (REJECTED) and `40b22e4` (REJECTED) · tip
+`63b9c3d` · base `dfe35a5` · amended-contract ref `6f1622e` · bench
+`../nputer-V-T-224`, detached · `SUPERTASKR_E2E_PORT=25224` · integration ref
+`main` read at `b825e87`.
+
+**THE FRAME I ACTUALLY HAD.** Phase 2, a FRESH spawn WITH tools. Both digests
+verified with `shasum -a 256` BEFORE either file was opened; both matched. The
+reading order was kept: `method/roles/verifier.md` in full, the card at
+`dfe35a5`, the AMENDED card on main at `6f1622e`, the sealed attack set with
+its dispatcher annotations, the ground truths, the two previous verdicts as
+committed at `dde56da` and `40b22e4`, STATE/ARCHITECTURE/CONVENTIONS at the
+tip, and ONLY THEN the diff. The commit list was taken with
+`git rev-list 40b22e4..63b9c3d` (`63b9c3d`, `d0b7910`, `aab21bc` — hashes
+only, no subjects); the bench was moved with `checkout --quiet --detach`. The
+card's `### Third pass` notes were opened only AFTER my own attack driver,
+my own thirteen-mutant drill, my own cost measurement and my own dogfood had
+all run, and every claim in them was re-derived here.
+**Phase 1's no-tool property is a self-report, not a guarantee** — this
+harness cannot deny a subagent tools; the set states `tool calls made: 0` and
+I record that as its claim, not as something I can check. **My brief's duties
+section named executor-derived specifics** — "48→51", "three bodies at spec
+lines ~1561/1635/1675", the pristine hash `5b8522c6…cea35`, "the executor
+RETRACTED '2 spawns ordinary' — it is now 4", "a renaming push 5, twenty
+renames 62", "62 claimed", the two new block-code names — so **phase 1 was
+above the line for those figures and I say so rather than pretend
+otherwise**; each was re-derived independently before any comparison, and two
+of them came out differently (below).
+
+**THE DELTA RULE (T-272) — WHAT I RE-JUDGED AND WHAT CARRIES.**
+*Re-judged by my own re-derivation and my own mutants at the site*: the
+closed finding at both landing moments; A1.1, A1.2 and A1.3 (the resolver and
+the record both sit in the changed functions); A1.4 and A1.5 (the raw-byte
+comparison is inside the changed loop); A1.6, A1.7, A1.8, A1.8b, A1.9 (the
+index changed); A1.11, A1.12a, A1.12b, A1.16 (reached through the changed
+verdict arms); A1.14 (two NEW block codes); A1.15 (the spawn count, which
+MOVED); falsifier 4 over both records; the dogfood over five live ranges; the
+security sweep over the third-pass diff.
+*Carried by blob hash, unchanged across the WHOLE lane `dfe35a5..63b9c3d`,
+never re-run*: `.claude/hooks/push-guard.mjs` `41c8eeabce9b38b3bcb15001caa4d3b86a57c05d`
+(A1.10 — exactly two call sites, and the lane arm's block reaches
+`process.exit(2)` through code this lane never touched);
+`.claude/hooks/push-guard-hook.mjs` `d1c6bab44d9f2c32e1935349ab06092bff8bc397`
+(the exit contract: block → reason on stderr + `exit(2)`, announced allow →
+stderr at `exit(0)`, and there is no exit 3 — GT-7 re-derived);
+`.claude/hooks/lane-fence.mjs` `d61025ad570303a9c29c87cb904919b079de1288`
+(A1.13 — `frontmatterLineOf`'s bounding at the closing `---`);
+`.claude/settings.json` `50c9d941184b1360532310924040804921d0d4ab` (the
+wiring the three new bodies push through); `lib/parser/src/fence.ts`
+`3bd2091b27f5ac3e463fd6193910a401bedd5dab` (GT-8 — `UNFENCEABLE_PATHS`).
+*Carried by the previous verdicts, cited rather than repeated*: A2.1–A2.4
+and A3.1–A3.4 for the AMENDMENT arm, A4.1–A4.3, the seventh body's ordering
+and the exoneration — `dde56da` and `40b22e4`, over hook regions the
+third-pass diff does not reach.
+
+**THE SPOILED GROUND TRUTHS, RE-TAKEN AT THE BASE — AND THE SAME MODIFIER BIT
+ME TWICE.** GT-4, GT-7, GT-8 and GT-10 carry `fatal: ambiguous argument`
+where a zsh `:t` modifier ate the path (`dfe35a5ools/e2e/...`). Re-derived at
+`dfe35a5` before the diff was opened: **GT-4 = 36** bodies in
+`landing-gate.spec.ts` (`grep -cE '^test\("'`); **GT-7** = block → stderr +
+`process.exit(2)`, announced allow → stderr at `exit(0)`, no exit 3;
+**GT-8** = `UNFENCEABLE_PATHS` is `Object.freeze(['docs/tasks'])` at
+`lib/parser/src/fence.ts:66`; **GT-10 = 550** entries directly under
+`docs/tasks/` and **594** recursively. GT-1/2/3/5/6/9/11/12/13 were intact and
+are used as sealed. **The modifier bit my own shell twice while I worked**
+(`$c:tools/...` must be `${c}:tools/...`), which I record as the mechanism
+rather than the accident: it is the same failure the sealed file carries.
+
+---
+
+### THE CLOSED FINDING IS CLOSED, RE-DERIVED IN MY OWN FIXTURES
+
+`attacks3-V-T-224.mjs` — my own throwaway repos, driving the two exported
+verdict functions, with `refs/remotes/origin/main` pinned at the board so the
+MERGE arm has a question to answer. **39 of 39 expectations met.**
+
+| my fixture | LANE moment | MERGE moment |
+|---|---|---|
+| X1 the decoy on a **SIBLING's** card (widen `T-900`, plant `T-900--decoy.md` repeating the OLD line, decoy sorts FIRST — precondition asserted) | `block/landing-gate-card-id-duplicated` | `block/landing-gate-merge-card-id-duplicated` |
+| X1 the same on the lane's **OWN** card | `block/…card-id-duplicated` | `block/…merge-card-id-duplicated` |
+| X1b the widening **ALONE**, no decoy | `block/landing-gate-touches-amended`, naming both lines and "fast path A" | — |
+| X1c the **ORDINARY two-card range** (two bodies changed, no line moved) | `allow/landing-gate-inside-the-fence` | — |
+| X1d the **DUPLICATE ALONE**, nothing widened anywhere | `block/…card-id-duplicated` | — |
+| X1e an **INHERITED** duplicate, board made ambiguous by another road | `allow/landing-gate-cannot-compare`, saying *"the ambiguity is the BOARD's"* | — |
+| X1e **PUSH 2 of the second verdict's three-push construction** (swap the decoy for one sorting earlier, widen behind it) | `block/…card-id-duplicated` | — |
+| X1f **THE RECORD HALF**: an UNSYNCED lane writing the file `main` already carries, its own merge-base lacking it (precondition asserted) | `allow/landing-gate-cannot-compare` | — |
+
+Both endpoints now resolve through the per-revision index — I read the
+function rather than the notes: `cardTouchesOf` opens on `index(rev)`, the
+three-line `git show <rev>:<the path the diff named>` short-circuit is gone,
+and the only blob it will read for an id is `paths[0]`, which IS the diff's
+path in the ordinary case. `paths.length > 1` answers `problem` with the list
+on a new `duplicate` field, and the caller decides what that MEANS.
+
+**THE WIDENING OF THE VERDICT'S LITERAL FORMULA IS LOAD-BEARING AND IT IS
+CORRECT.** The second verdict asked for `index(base)…length <= 1 &&
+index(tip)…length > 1`; the executor implemented *a tip path present at
+NEITHER the base NOR the record*. I judged the record half on its own, both
+ways. It is **not cosmetic**: X1e's push 2 swaps one decoy for another on a
+board already ambiguous at the base, where the narrow formula does not fire
+at all — and it refuses. And it is **not too weak**: the only way a tip path
+reaches `atRecord` is for it to be on the integration branch already, which
+no lane reaches through this gate (X1d refuses the act that would put it
+there), so the exoneration cannot be manufactured. X1f is the case it buys —
+an unsynced lane mirroring `main`'s own file is not charged, which is the
+fast-path-A mistake in a second costume. My mutant `RECORD_HALF_REMOVED`
+(`new Set([...atBase.at, ...atRecord.at])` → `new Set([...atBase.at])`) reds
+body **1675 alone**, and `REFUSE_EVERY_DUPLICATE` (`atTip.at.filter(…)` →
+`atTip.at`) reds body **1675 alone** from the opposite side. Both halves are
+measured.
+
+---
+
+### THE FINDING — ASSIGNED, NOT BLOCKING: AN INHERITED AMBIGUITY ON ONE ID DISCARDS A REFUSAL ALREADY FOUND FOR ANOTHER
+
+Limit 5(f) as this pass rewrites it, and the loop's own comment, both say the
+arm *"stops judging **that id**"*:
+
+> …while the board is ambiguous about which file IS a card this arm stops
+> judging that id.
+
+**It stops judging the whole RANGE.** `touchesAmendments` returns
+`{ problem }` from inside the loop for an inherited ambiguity, and that return
+discards the `moved` and `duplicated` lists it has already built — so a fence
+widening the arm HAS ALREADY DETECTED on another card is thrown away, and both
+verdict arms answer `landing-gate-cannot-compare`, an announced ALLOW.
+
+**MEASURED, in my own fixtures** (`x3-discard-V-T-224.mjs`; the board is made
+ambiguous about `T-990` by a road that is not this gate, before the lane is
+cut, so the ambiguity is INHERITED at both the base and the record):
+
+    (a) widen T-900 + write the BODY of one ambiguous file
+        allow/landing-gate-cannot-compare — T-900 not named at all
+    (b) plant a decoy for T-900, widen it, + the same body write
+        allow/landing-gate-cannot-compare — the decoy not named at all
+    (c) THE CONTROL, same builder, the ambiguous card left ALONE
+        block/landing-gate-card-id-duplicated
+
+(c) is the arming: the arrangement that decides (a) and (b) is ABSENT there
+and the arm refuses, so the allow is the inherited ambiguity's doing.
+
+**AND IT IS DEMONSTRATED THROUGH THE REAL HOOK, BECAUSE A CONTROL I PROPOSE
+IS MINE TO CHECK** (verifier.md 2b). I wrote the two bodies below into a COPY
+of the spec in my scratch worktree, using the spec's own
+`fixture`/`writeCard`/`commit`/`pushThroughGuard` helpers — which mint the
+gate token and run `.claude/settings.json`'s actual `PreToolUse` command over
+a real `git push` — and ran them against `63b9c3d`:
+
+    PROPOSED (V): an ambiguity the range INHERITED on one id does not
+                  discard the refusal found for another          FAILED
+    PROPOSED (V) CONTROL: the same widening, with the ambiguous card
+                  left alone, is refused                         passed
+    1 failed, 1 passed   exit 1
+
+The spec copy was restored (`git status` clean on that path). **The push was
+not refused at the hook, which is the whole claim.**
+
+**WHY THIS IS AN ASSIGNED CORRECTION AND NOT A THIRD REJECTION.** I weighed
+it against the standard the two previous rejections set, and it is materially
+weaker on every axis. It is **not lane-reachable through this gate**: the
+precondition is a card id carried by two files at the range's base AND on the
+fence of record, and arm one of body 1675 (and my X1d) refuse the act that
+would create one — what remains is `T-224-s4`'s disclosed route, a direct
+non-merge commit on the integration branch, or limit 6, which is strictly
+stronger and already disclosed. It **does not exist on the live board**: I
+counted card ids by `CARD_FILE_RE` at `main` (`b825e87`), at `63b9c3d` and at
+`dfe35a5` — **557 / 554 / 549 ids, 0 duplicated at all three**. The answer is
+an **ANNOUNCED** allow with its reason on stderr, not a silent one. And it is
+a consequence of executing the correction the previous verdict ASSIGNED —
+*"the index is authoritative at both ends"* necessarily surfaces the
+ambiguity at both ends, where `40b22e4`'s path-first read returned a line and
+never asked. Rejecting the faithful execution of an assigned correction, over
+a precondition no lane can reach, would be unjust and terminal.
+
+**THE CORRECTION, NAMED PRECISELY.** Either half closes it, and the first is
+better:
+
+1. **Keep the refusals and name the unjudged ids beside them.** Collect the
+   inherited-ambiguity ids into a third list instead of returning
+   `{ problem }` from inside the loop, return `{ moved, duplicated, unjudged }`,
+   and let both verdict arms refuse on `moved`/`duplicated` while ANNOUNCING
+   the ids they could not judge. The arm already has the shape — the merge arm
+   keeps an `unjudged` array one level up for exactly this.
+2. **Or make the words match the code**: limit 5(f) and the loop's comment
+   say the arm stops judging **the whole range**, not "that id", and say that
+   a refusal already found is discarded with it.
+
+One body is owed either way, and **it is written and run above rather than
+proposed on trust**: `PROPOSED (V)` reds through the wired hook at `63b9c3d`
+while its control passes.
+
+---
+
+### THE ATTACK SET, RE-JUDGED WHERE THE DIFF COULD MOVE IT
+
+| attack | result at `63b9c3d` | evidence |
+|---|---|---|
+| **A1.1** T-264's real fast-path-A shape (GT-9): unsynced lane, the grant committed by the lane, `main`'s line EQUAL | **ALLOWED** ✓ | `allow/landing-gate-inside-the-fence`. Falsifier 1 not tripped. |
+| **A1.2** THE LAUNDERING — two merges in ONE push, the widening inside merge 1 | **REFUSED, merge 1 NAMED** ✓ | `block/landing-gate-merge-touches-amended`; merge 1's sha printed, the **pushed tip not named**. The record is `M^1` per merge. |
+| **A1.3** the per-merge base | ✓ | the same fixture: merge 2's own range does not re-charge merge 1's card, and each merge is judged over `merge-base(first, second)..second` |
+| **A1.4** raw-byte comparison — reorder-only, quoted entry, trailing comma | **REFUSED** (3 fixtures) ✓ | `block/landing-gate-touches-amended` each; no split/sort/parse on the compared values |
+| **A1.5** whitespace-only re-spacing | **REFUSED**, and the header documents the decision | `[method/, app/]` → `[method/,  app/]` refuses; *"AND THE COMPARISON IS BYTES, SO A REFLOW IS A MOVE"* |
+| **A1.6** a SIBLING's card, both moments | **REFUSED at both**, naming `T-900` ✓ | lane + merge |
+| **A1.7** RENAME, **both orderings** | **REFUSED**, naming BOTH paths ✓ | a later-sorting slug and an earlier-sorting one; the PURE rename with the line preserved is **ALLOWED** |
+| **A1.8** a genuinely NEW card id with a wide fence | ALLOWED, residue (a), routed `T-224-s2` ✓ | by design |
+| **A1.8b** delete-then-re-add wider under a NEW name | **REFUSED** ✓ | `block/landing-gate-touches-amended` |
+| **A1.9** a card the range DELETES | ALLOWED, residue (b) ✓ | the DENIAL argument holds: that lane's next push is refused whole |
+| **A1.10** both call sites | ✓ **carried by blob hash** | `push-guard.mjs` `41c8eea…` is byte-identical to `dfe35a5` |
+| **A1.11** a NON-MERGE commit straight onto the integration branch | ALLOWED, `landing-gate-no-new-merges` — correct by design, disclosed, `T-224-s4` filed | re-run: unchanged |
+| **A1.12a** widen-then-revert in one range | **ALLOWED** ✓ | two file states, never the patch |
+| **A1.12b** widening via a NESTED merge inside the lane | **REFUSED** ✓ | `block/landing-gate-touches-amended` |
+| **A1.13** a body-quoted `touches:` in the notes | ✓ **carried by blob hash** | `lane-fence.mjs` `d61025a…` unchanged; `frontmatterLineOf` still bounded at the closing `---` |
+| **A1.14** the exit contract, and the TWO NEW BLOCK CODES | ✓ | `push-guard-hook.mjs` (unchanged blob) writes the reason to stderr and `process.exit(2)` for ANY block, so both new codes exit 2; nothing in the tree enumerates this gate's block codes (I grepped: the only cross-file consumer is `landing-gate-cannot-compare`); and the three new bodies assert the REMOTE REF after a real push through the wired command, not an exit code |
+| **A1.15** THE COST — **the figure MOVED and the executor retracts it in the header** | ✓ acceptable | measured with a `git` injected through the function's own last parameter: **0** spawns for a range with no card path; **4** for the ordinary push (2 `ls-tree docs/tasks/` + 2 `show`); **4** for one pure rename; **42** for twenty pure renames (**2** listings + 40 `show`); rename-and-widen is **6/63** with a distinct record ref and **5/62** where the record string equals the base — which is where the card's table's 5 and 62 come from, and the card does not say so. The criterion the sealed set set is *"two blob reads per card per range is fine; per directory listing is not"*: the listing is per REVISION (2, or 3 when a line moved), never per card. **PASSES.** |
+| **A1.16** block-sequence frontmatter | **REFUSED upstream**, never a silent allow ✓ | `block/landing-gate-no-fence` |
+| **A2.1/A2.2** the AMENDMENT refusal's text | ✓ | "fast path A", the BEFORE line and the AFTER line, untruncated — asserted in my X1b and by the body at 1561 |
+| **the new DUPLICATE_ID_ROUTE** | ✓ | names what the refusal is NOT (the fence question, the amendment question), gives the lane a remedy inside its own range (*"give the new card an id of its own"*), and says the inherited case is announced rather than refused. No `.nputer/` in any added string. |
+| **A3.1–A3.4** the positive controls | ✓ **armed in BOTH directions, by me** | below |
+| **A4.1** the record | ✓ | falsifier 4, below |
+| **A4.2/A4.3/A4.4** the disclosure | ✓ **except the scope of (f)** — the finding above | both files under the exact heading; mutants `NO_ARRIVED_MARKER` and the three new bodies red when the account is removed |
+
+### The falsifiers
+
+1. **a legitimate fast-path-A grant refused** — **NO.** A1.1 allows, and all
+   five live ranges allow (dogfood below).
+2. **a sibling-card amendment admitted** — **NO.** The decoy form is refused
+   at both moments, on the lane's own card and a sibling's; rename,
+   delete-and-re-add, nested merge and the second merge of one push all
+   refuse.
+3. **a positive control that cannot fail** — **NO.** Armed both ways at
+   assertion level by my own mutants, below.
+4. **a record rewritten** — **NO.** `git diff dfe35a5..63b9c3d --
+   'docs/tasks/T-212-*.md' | grep -cE '^-[^-]'` = **0**: the whole lane's
+   effect on `T-212` is a pure addition, and the seven `-` lines in the
+   third-pass diff are inside the paragraph THIS LANE added. In the hook's
+   "cannot see" list I compared each numbered item byte for byte between
+   `dfe35a5` and `63b9c3d`: items **1, 2, 3, 4, 6 and 7 are IDENTICAL**; only
+   item 5 — the entry that asserted the hole was OPEN and this card owned it,
+   which the diff makes false — changed. The card's own frontmatter moves only
+   `status: building → verifying` and `built_by:`.
+5. **fail-open** — **PARTLY**, and it is the finding above: an inherited
+   ambiguity discards refusals already found. Announced, never silent.
+6. **a tautological expectation** — **NO.** Every new expectation is a typed
+   literal (`"ARRIVED IN THIS RANGE"`, `"1 card id(s)"`, `"the ambiguity is
+   the BOARD's"`, `"touches: [method/]"`), and body 1561 asserts its own
+   decoy-sorts-first PRECONDITION from `git diff --no-renames`, so a fixture
+   that stopped reproducing the ordering would red rather than pass vacuously.
+
+### The drill — my own detached scratch worktree `../V3-T-224-mutants`
+
+`git worktree add --quiet --detach 63b9c3d`, its OWN `npm ci` + build for
+`lib/parser`, `npm install` for `app/`, `npm ci` for `tools/e2e` — CONVENTIONS'
+fresh-clone order, so the missing-`app/node_modules` harness failure the first
+verdict reported cannot recur. **BASELINE FIRST: 51 passed, exit 0** — the
+count read, not only the exit. Every mutation REFUSED unless its FROM string
+occurs exactly once; every landing read back from `git diff -U0` BEFORE the
+suite ran; every restoration by `git restore --source=63b9c3d --staged
+--worktree` and proved by sha256 against the pristine
+`aa12c5aa7a78ddcd879b96605b5978c0b6e945153be70595235afaf4dbbcffea`, which I
+verified against `git show 63b9c3d:.claude/hooks/landing-gate.mjs | shasum -a 256`.
+**Every restoration matched.**
+
+**THE PRISTINE HASH THE CARD CITES IS NOT THE TIP'S, AND I CHECKED WHY RATHER
+THAN ASSUMING.** `5b8522c66a60a44de9d8ac2069a567d1b8e0512a957f494e8ba3361b0d0cea35`
+is the hook at `aab21bc` and `d0b7910` — correct for the drill that ran there
+— and the tip's is `aa12c5aa…`. The delta is `63b9c3d`'s limit-5(f) edit, and
+it is **comment-only, proved mechanically**: `git diff d0b7910 63b9c3d --
+.claude/hooks/landing-gate.mjs` has **7** changed lines and **0** that do not
+begin with ` *`. `node --check` at the tip: exit 0. So no kill set in the
+executor's table can depend on it, and mine were taken at the tip regardless.
+
+| mutant | one-side change | exit | bodies RED |
+|---|---|---|---|
+| `PATH_FIRST_RESTORED` — **the regression itself** | the 3-line `git show` short-circuit re-inserted at the head of `cardTouchesOf` | 1 | **3** — 1561, 1635, 1675 (48 passed) |
+| `AMBIGUITY_ALLOW` | `if (arrived.length > 0) {` → `if (false) {` | 1 | **3** — 1561, 1635, 1675 |
+| `AMBIGUITY_PICKS_FIRST` — **the second verdict's SURVIVOR** | `if (paths.length > 1) {` → `if (false) {` | 1 | **3** — 1561, 1635, 1675 |
+| `DEDUPE_BY_PATH` | `seen.has(id)/add(id)` → `seen.has(rel)/add(rel)` | 1 | **2** — 1481, 1561 |
+| `RECORD_HALF_REMOVED` (mine) | `new Set([...atBase.at, ...atRecord.at])` → `new Set([...atBase.at])` | 1 | **1** — 1675 alone |
+| `REFUSE_EVERY_DUPLICATE` (mine) | `atTip.at.filter((p) => !known.has(p))` → `atTip.at` | 1 | **1** — 1675 alone |
+| `RECORD_INDEX_AT_TIP` (mine) | `pathsOf(record, id)` → `pathsOf(tip, id)` | 1 | **3** — 1561, 1635, 1675 |
+| `LANE_DUPLICATE_BLOCK_REMOVED` (mine) | the lane arm's `if (amended.duplicated.length > 0)` → `if (false)` | 1 | **2** — 1561, 1675 |
+| `MERGE_DUPLICATE_BLOCK_REMOVED` | the merge arm's, likewise | 1 | **1** — 1635 alone |
+| `REFUSEALL_DUPLICATE` (mine) | the lane arm's `> 0` → `>= 0` | 1 | **19**, incl. 1561's ALLOW half (32 passed) |
+| `REFUSEALL_MERGE_DUPLICATE` (mine) | the merge arm's `> 0` → `>= 0` | 1 | **5** — 939, 1269, 1403, 1635, 2048 |
+| `NO_ARRIVED_MARKER` | the `<- ARRIVED IN THIS RANGE` annotation dropped | 1 | **3** — 1561, 1635, 1675 |
+| `ID_DROPS_SUFFIX` (mine, a DATA mutant on the id grammar) | `(T-\d+(?:-s\d+)?)` → `(T-\d+)(?:-s\d+)?` | 1 | **3** — 464, 1031, 1481 |
+| `ABSENT_SHORT_CIRCUIT_RESTORED` (mine) | `if ("absent" in before) continue;` moved back ABOVE the ambiguity arm | **0** | **NONE — SURVIVES** |
+
+**THE SURVIVOR IS A CLAIM THE CODE MAKES AND NOTHING MEASURES.** The loop's
+new comment says *"a range that FILES two cards under one brand-new id is the
+same ambiguity, and skipping it on `absent` would hand it back"* — true, and
+unpinned. The same mutant flips a real verdict: two files under one brand-new
+id go from `block/landing-gate-card-id-duplicated` to
+`allow/landing-gate-inside-the-fence`, and all 51 bodies stay green. The
+consequence is a DENIAL rather than a widening — `cardAt` can no longer say
+which file is that card — so it is filed as `T-224-s6` and does not block.
+
+**KILL-SET CONTAINMENT, judged over BODIES and against ALL THREE earlier
+tables.** Over my fourteen landed mutants: 1561 `{PFR, AA, APF, DBP, RIAT,
+LDBR, RAD, NAM}`, 1635 `{PFR, AA, APF, RIAT, MDBR, RAMD, NAM}`, 1675 `{PFR,
+AA, APF, RHR, RED, RIAT, LDBR, NAM}`, 1481 `{DBP, IDS}`. **No two contain
+each other**: `DEDUPE_BY_PATH` and `LANE_DUPLICATE_BLOCK_REMOVED` kill 1561
+and not 1635; `MERGE_DUPLICATE_BLOCK_REMOVED` and `REFUSEALL_MERGE_DUPLICATE`
+kill 1635 and neither other; `RECORD_HALF_REMOVED` and `REFUSE_EVERY_DUPLICATE`
+kill 1675 and neither other. **One containment my own first set left standing
+I broke rather than reported**: 1481's kill set was `{DBP}` alone, contained
+in 1561's, so I planted `ID_DROPS_SUFFIX` — a mutant on the id GRAMMAR, where
+the property lives in data — and it kills 1481 and **not** 1561. Against the
+executor's table, my `PATH_FIRST_RESTORED`/`AMBIGUITY_ALLOW`/`DEDUPE_BY_PATH`/
+`AMBIGUITY_PICKS_FIRST`/`NO_ARRIVED_MARKER`/`MERGE_DUPLICATE_BLOCK_REMOVED`/
+`RECORD_HALF_REMOVED` reproduce its A, C, B, J, G, H and L **independently and
+identically**. Against the second verdict's table, its one deliberate survivor
+`AMBIGUITY_PICKS_FIRST` — *"residue (f) is asserted and measured by
+nothing"* — now reds three bodies, which I confirm rather than take on the
+card's word.
+
+**THE POSITIVE CONTROLS ARE DEMONSTRATED FAILING, BY ME, IN BOTH
+DIRECTIONS** — the arming shown where it differs:
+
+- **1561** — REFUSE half reds under `PATH_FIRST_RESTORED`, `AMBIGUITY_ALLOW`,
+  `AMBIGUITY_PICKS_FIRST`, `RECORD_INDEX_AT_TIP`, `LANE_DUPLICATE_BLOCK_REMOVED`
+  and `NO_ARRIVED_MARKER`; its **ALLOW half** (*"an ordinary range changing
+  TWO cards was refused"*) reds under `REFUSEALL_DUPLICATE`.
+- **1635** — REFUSE half reds under `MERGE_DUPLICATE_BLOCK_REMOVED` and the
+  shared five; its **ALLOW half** (*"a merge carrying ordinary card writes was
+  refused"*) reds under `REFUSEALL_MERGE_DUPLICATE`.
+- **1675** — REFUSE halves red under the shared five; its **ALLOW halves** red
+  under `REFUSE_EVERY_DUPLICATE` (arm three, the inherited duplicate) and
+  `RECORD_HALF_REMOVED` (arm four, the record's own file) — one each, from
+  opposite sides.
+
+### Dogfood — FIVE live ranges, read-only
+
+`dogfood3-V-T-224.mjs`, driving `touchesAmendments` with the integration ref
+`main` (`b825e87`) as the record, out of the bench's shared object store.
+Nothing was written and no lane worktree was touched.
+
+    ── T-224 (THIS lane)  dfe35a5..63b9c3d   9 paths, 7 card files   ALLOWED
+    ── T-265              15619b4..3589e0f  45 paths, 3 card files   ALLOWED
+    ── T-219-s6           90038e9..25b735b   6 paths, 2 card files   ALLOWED
+    ── T-153-s3           bcc833f..dd0bcff   6 paths, 3 card files   ALLOWED
+    ── T-205-s1           6dd44a6..4de3675  10 paths, 0 card files   ALLOWED
+
+**AND ONE READING I TOOK EARLIER IS WORTH THE RECORD, BECAUSE IT IS EVIDENCE
+FOR THE FIX RATHER THAN AGAINST IT.** At `T-219-s6`'s earlier tip `92d8bce` —
+a transient state of a lane that is live beside this bench — that range
+carried `docs/tasks/T-219-s6-s1-….md` and `…-s6-s2-….md`, whose names
+`CARD_FILE_RE` reads as the id `T-219-s6` (and `lib/parser`'s
+`validate.ts` reads them the same way, while `task.ts`'s
+`^T-\d+(?:-s\d+)?$` rejects the ids they declare). This tip answered
+`DUPLICATED T-219-s6` — a refusal, correctly in kind, with the remedy *"give
+the new card an id of its own"*. **The tip under the SECOND verdict answered
+`AMENDMENT T-219-s6 touches: [lib-parser] -> touches: [app/src/lib/board-model.ts]`
+— a fence move that never happened**, because the path-first read handed it a
+sub-card's line as if it were the parent's. That lane has since renamed both
+to `T-219-s7`/`T-219-s8` and its range now allows. Neither the transient nor
+the repair is `T-224`'s, and it is `T-219-s6`'s seat to know.
+
+### Security sweep — the third-pass diff
+
+No dependency added (no `package.json`, lockfile or `Cargo.toml` in the
+diff — 0 such paths). **No new import, no `fetch`, no `child_process`, no
+`spawn`, no `eval`, no `new RegExp`, no `process.env` read.** No secret, key
+or token. No `--no-verify`, no `continue-on-error`. **No new `return allow(`
+site** — `git diff 40b22e4..63b9c3d -- .claude/hooks/landing-gate.mjs | grep
+-cE '^\+.*return allow\('` = **0**. **No new git invocation at all**:
+`pathsOf` reads the SAME memoised listing `cardTouchesOf` reads, which I
+confirmed by counting spawns rather than reading the comment. The new strings
+interpolate only a card id, paths git itself listed, and a revision this gate
+resolved — all to stderr, never to a shell. No new input path, no endpoint, no
+authz surface. The id map is not poisonable by a crafted filename: the capture
+is anchored, `[^/]*` cannot cross a slash, and the listing is non-recursive.
+
+### Architecture and adjacent features
+
+No interface moves. Two new exports (`duplicateReport`, `DUPLICATE_ID_ROUTE`)
+and one new typedef (`DuplicateId`) sit beside `amendmentReport`/
+`AMENDMENT_ROUTE`, in the same `{verdict, code, reason}` shape;
+`push-guard.mjs` and `.claude/settings.json` are byte-identical to `dfe35a5`,
+so the two call sites `docs/ARCHITECTURE.md`'s interface rules govern are
+untouched. `judgePaths` is untouched and `docs/tasks` stays UNFENCEABLE —
+`lib/parser/src/fence.ts` is byte-identical too. The 48 pre-existing bodies
+stay green at the tip, which is the adjacent-feature check: the seventh body's
+ordering, the exoneration and `T-212`'s two in-lane-widening bodies all still
+pass. Every path this lane wrote is inside `touches: [.claude, tools/e2e]` or
+under the unfenceable directory.
+
+### Assigned corrections
+
+1. **An inherited ambiguity on one id must not discard a refusal already
+   found for another** — the finding above, with the body that is already
+   written and already red (`PROPOSED (V)`), and limit 5(f) plus the loop's
+   comment corrected to say what the code does either way.
+
+Everything else in this diff stands. Both corrections the second verdict
+assigned are delivered: the index answers at BOTH endpoints, and the duplicate
+a range arrives at is a verdict rather than a shrug. The widening of the
+`arrived` rule is the executor's own and it is right.
+
+### Filed, not blocking
+
+- `T-224-s6` — `touchesAmendments`' `absent` short-circuit sits BELOW the
+  ambiguity arm on purpose, and no body among the 51 says so; mutant
+  `ABSENT_SHORT_CIRCUIT_RESTORED` survives all 51 while flipping a real
+  verdict.
+
+### For the integrator
+
+- **THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S**: three body names were
+  added, `docs/CAPABILITIES.md` is outside this fence (`T-210`), and
+  `npm run capabilities` from `tools/e2e/` belongs in the merge commit.
+- **`T-224-s4` STILL ASKS FOR `(f)` AND THE NEXT FREE LETTER IS `(g)`.** Both
+  earlier verdicts and this lane's own notes say so; (a)–(f) are all live at
+  this tip. One word at triage.
+- `T-224-s5`'s two spawn figures (2 ordinary, 9 renaming) were taken at
+  `4a9f278` and are stale at this tip — 4 and 4/6. The card's ASK is
+  unaffected; its numbers move to `T-224`'s own table.
+
+### This verdict's own tip — step 7, OWED
+
+**PROSE IS A CODE INPUT HERE**, so the writes this verdict makes — this entry
+and `T-224-s6` — create a tip nobody has tested, and the gates are re-run at
+THAT tip rather than at `63b9c3d`. Under **SUITE-ONCE (T-262)** the four-leg
+battery is run ONCE, at this verdict commit, and never separately at the
+executor's tip: `docs-gate.mjs` on my two literal paths, then
+`gate-run.mjs parser|app|rust|e2e`, `npm run lint:tokens -- --selftest` and
+bare, `npm run lint:docs`, `npm run typecheck`, `npm run capabilities:check`
+(expected STALE — the integrator regenerates) and `index --check` from
+`app/src-tauri/`. **A FIGURE WITHOUT ITS REF IS WRONG AS SOON AS ANYBODY
+WRITES AGAIN**, so: every count in the tables above is at `63b9c3d` except the
+drill's, which are in `../V3-T-224-mutants` at `63b9c3d`, and the dogfood's,
+whose record is `main` at `b825e87` and whose lane tips are pinned in the
+block itself; the step-7 figures are at this commit's own tree and are
+reported with it.
+
+**HOUSEKEEPING.** My scratch worktree `../V3-T-224-mutants` is detached, is
+not a lane, and holds one incidental modification (`app/package-lock.json`,
+touched by the `npm install` CONVENTIONS' fresh-clone order prescribes for
+`app/`); the spec copy I appended two proposed bodies to was restored and
+`git status` is clean on that path. Nothing was written to
+`/Users/ujju/Projects/nputer`, to the lane `../nputer-T-224`, or to anything
+belonging to `T-265`, `T-219-s6`, `T-153-s3` or `T-205-s1`. This bench stays
+detached: no branch was created or moved.
