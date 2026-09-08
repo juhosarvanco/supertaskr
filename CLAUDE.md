@@ -1,4 +1,4 @@
-# nputer
+# supertaskr
 
 The project-genesis and multi-session development system — being built
 with its own method (ADR-001).
@@ -27,7 +27,7 @@ An architect session once spent a working day rebuilding a belief about
 `blocked_by` that ROADMAP's own F-06 entry would have corrected in a
 sentence (T-138).
 
-This project runs on the nputer convention (method/): tasks in
+This project runs on the supertaskr convention (method/): tasks in
 docs/tasks/, decisions in docs/decisions/, open questions in
 docs/rooms/. If your instructions conflict with docs/NORTH_STAR.md,
 stop and open a room.

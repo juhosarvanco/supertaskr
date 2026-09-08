@@ -17,7 +17,7 @@ graph TD
   A --> P["lib-parser"]
   C --> P
   A --> D["daemon sidecar: watcher + @mention router"]
-  C --> R["runtime: .nputer/ nputer.yaml + sessions.json"]
+  C --> R["runtime: .supertaskr/ supertaskr.yaml + sessions.json"]
   D --> R
 ```
 
@@ -27,11 +27,11 @@ graph TD
 |----|-----------|----------------|------------|--------|
 | C-01 | method/ | The convention: templates, formats, roles, interviews, docs-protocol | — | built (v0.1.9) |
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
-| C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
+| C-03 | Runtime | supertaskr.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
 | C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the docs watcher. History: the cards T-001…T-149 and `git show a6491e6` | C-01, C-06, C-07 | building |
 | C-06 | lib-parser | Pure library: docs → typed model; browser-safe exports; owns the fence (`fence.ts`, T-134) and the id layer. History: the cards and `git show a6491e6` | C-01 | verified |
-| C-07 | nputer-index | Rust crate + binary: code → committed graph (TS/JS/Rust); `index --check`, `arch`/`drift`/`cycles`/`blast`; depth-bounded (T-129); budget 1,040,000 bytes with a measured reason (T-139) — headroom derived with `index --check`, never quoted | — | building |
+| C-07 | supertaskr-index | Rust crate + binary: code → committed graph (TS/JS/Rust); `index --check`, `arch`/`drift`/`cycles`/`blast`; depth-bounded (T-129); budget 1,040,000 bytes with a measured reason (T-139) — headroom derived with `index --check`, never quoted | — | building |
 
 The component set is the REGISTRY, never this paragraph: one file per
 component under docs/architecture/components/, parsed by C-06. **THE
@@ -82,7 +82,7 @@ ADR-014/015).
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the
   app renders what lands, and app-side writes are confined to
-  `.nputer/` runtime files. Half of that rule is enforced by the type
+  `.supertaskr/` runtime files. Half of that rule is enforced by the type
   system: the app ships no `@types/node`, the write surface lives in a
   second tsc PROGRAM (`tsconfig.test.json`), and `npm run build`'s
   second `tsc` is the load-bearing gate (T-073). Entry is
@@ -111,7 +111,7 @@ ADR-014/015).
   under cargo test and rustdoc, T-047-s6/T-060). The honest residual:
   the gate checks SHAPE, never identity — a symlink named `claude` on
   a writable PATH directory passes.
-- Test surfaces (DEV, browser-only): three `window.__nputer*Harness`
+- Test surfaces (DEV, browser-only): three `window.__supertaskr*Harness`
   objects behind ONE gate (`!isTauri && import.meta.env.DEV`), handing
   out the shipped reducers by reference so the e2e lane drives real
   code; zero bytes in the production bundle, measured (T-041, T-027).
@@ -121,9 +121,9 @@ ADR-014/015).
   territories in `app/src/`; C-14 owns `app/src-tauri/src/agent/**` +
   `agent-store.ts`; C-15 owns `app/src-tauri/src/dispatch/**`) ·
   `lib/parser/` = C-06, self-contained · `app/src-tauri/crates/
-  nputer-index` = C-07 (workspace inside app/src-tauri) · `tools/e2e/`
+  supertaskr-index` = C-07 (workspace inside app/src-tauri) · `tools/e2e/`
   = the real-input lane + the docs-gate/token-lint/brief analysers,
-  dev tooling under no component, `.nputerignore`d out of the map ·
+  dev tooling under no component, `.supertaskrignore`d out of the map ·
   `.github/workflows/` = one CI job, a thin invoker of CONVENTIONS'
   commands, ENFORCING since the first push (2026-08-29; green end to
   end since run 33274798983). No root workspace (ADR-011,

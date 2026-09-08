@@ -1,4 +1,4 @@
-# nputer
+# supertaskr
 
 A product idea becomes a thoroughly planned roadmap broken into exact,
 dispatchable tasks, then governed multi-model execution of it — with the
@@ -8,8 +8,8 @@ The interview is the product; the pipeline is the proof.
 
 That paragraph is [docs/NORTH_STAR.md](docs/NORTH_STAR.md)'s own vision,
 quoted rather than re-worded. The claim that matters is one sentence:
-**this repository is its own proof.** nputer is built by the method
-nputer ships, so every claim made for the method has a file in this
+**this repository is its own proof.** supertaskr is built by the method
+supertaskr ships, so every claim made for the method has a file in this
 folder that substantiates it or contradicts it.
 
 ## What this file is

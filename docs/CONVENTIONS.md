@@ -12,7 +12,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Build & test
 - Fresh-clone ORDER (T-003, ADR-011): lib/parser FIRST — `npm ci` +
   `npm run build` from lib/parser/ — then set up app/. The app
-  depends on `@nputer/parser` via `file:../lib/parser`: its build
+  depends on `@supertaskr/parser` via `file:../lib/parser`: its build
   needs the parser's dist/ (fails with a clear TS2307 if missing),
   and the symlink resolves the parser's deps via the parser's own
   node_modules, so its `npm ci` must have run.
@@ -27,27 +27,27 @@ and T-236 (2026-09-02, whose pre-compaction text is
   (package).
 - app/src-tauri (C-05 Rust half + the C-07 workspace), run from
   app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
-  + nputer-index crate suite, T-009 — bare `cargo test` runs both
+  + supertaskr-index crate suite, T-009 — bare `cargo test` runs both
   workspace crates via default-members) ·
-  `cargo run -p nputer-index -- index --check --root ../..` (T-014's
+  `cargo run -p supertaskr-index -- index --check --root ../..` (T-014's
   GRAPH-CURRENCY GATE, and a CI step since T-054 — exit 0 current, 1
   STALE, 2 usage, 3 the gate could not run) · `cargo audit` (T-020 —
   RUSTSEC advisories against the exact `=` pins) ·
-  `cargo run -p nputer-index -- index --watch --root ../..` (keeps the
+  `cargo run -p supertaskr-index -- index --watch --root ../..` (keeps the
   graph current headless at the app watcher's 250 ms debounce; it runs
   until stopped, so it is LOCAL ONLY and never a CI step) ·
-  `cargo run -p nputer-index -- arch --root ../..` (components, observed
+  `cargo run -p supertaskr-index -- arch --root ../..` (components, observed
   edges and drift flags, read from the COMMITTED graph — a REPORTER
   rather than a gate, so LOCAL ONLY too; `arch drift --fail-on
   undeclared|unmapped|any` is its gating form and stays unwired while
   the registry carries live undeclared edges by design) ·
-  `cargo run -p nputer-index -- arch cycles --root ../..` (T-127 —
+  `cargo run -p supertaskr-index -- arch cycles --root ../..` (T-127 —
   reads the REGISTRY ONLY, so a stale graph cannot redden it; exit 0
   acyclic, 1 a declared cycle named as a path, 2 called wrong, 3 the
   registry could not be read; ANSWERS ACYCLIC exit 0 since T-127-s6
   (2026-08-29) broke the last declared cycle — the ENFORCING copy is
   `cargo test`'s exact-set census) ·
-  `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`
+  `cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..`
   (T-135 — dependents derived from the committed graph at read time, a
   REPORTER like `arch`, LOCAL ONLY). THE `--root` IS
   LOAD-BEARING on all five: the default root is the CURRENT DIRECTORY,
@@ -107,15 +107,15 @@ and T-236 (2026-09-02, whose pre-compaction text is
   leaves no orphaned vite listener; LOCAL ONLY, deliberately, and the CI
   bullet says why) ·
   `npm run boot:check` (spawns `tauri dev` and
-  asserts the two `[nputer]` startup lines; NOT part of `npm test` —
+  asserts the two `[supertaskr]` startup lines; NOT part of `npm test` —
   it opens a real window). Beside a live app, give it a scratch port:
-  `NPUTER_BOOT_PORT=14521 npm run boot:check` (T-046 — see PORT RULE;
+  `SUPERTASKR_BOOT_PORT=14521 npm run boot:check` (T-046 — see PORT RULE;
   1420 is refused, not borrowed). Exit 0 booted · 1 the boot failed,
   with the child's last output quoted · 2 the port is busy · 3 the check
   REFUSED to run before probing or spawning anything. THE ORPHAN DRILL
   ANSWERS IN THE SAME FOUR CODES: 0 clean, 1 the leak, 2 called wrong, 3
   the drill could not run. **CODE 3 HAS TWO REASONS** (T-061-s5):
-  `NPUTER_BOOT_PORT` is 1420 or not a port at all, OR the committed
+  `SUPERTASKR_BOOT_PORT` is 1420 or not a port at all, OR the committed
   build config the scratch-port overlay is DERIVED from cannot be read —
   deliberately no fallback for the second, because the only value to
   fall back to is the committed port, 1420. Both refusals happen before
@@ -153,7 +153,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   BODY COUNT and the ref. READ THE COUNT, NEVER THE CODE.
 - **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
   also writes that same verdict to a token beside the fence manifest in
-  `.nputer/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
+  `.supertaskr/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
   refuses a push whose four suites are not all GREEN against the tree
   being pushed. **So the battery is run LAST, after every commit** —
   otherwise the token names a tree that is no longer yours. The refusals
@@ -207,7 +207,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   PUSH — and with T-203's token gate each push wants a fresh four-suite
   battery anyway. **Since T-237 the push guard HOLDS this**: a push while
   a run for the branch is in flight is REFUSED, naming the run, and
-  `NPUTER_CANCEL_CI=<that run's id>` is the acknowledgement that cancels
+  `SUPERTASKR_CANCEL_CI=<that run's id>` is the acknowledgement that cancels
   it knowingly.
 - **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
   `gh run view <id> --log-failed` on anything red (`--attempt 1` when a
@@ -280,7 +280,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   conflict at the merge that cards stamped before did not. Moved here
   from docs/STATE.md — a MECHANISM belongs in a governing document
   (T-146).
-- **E2E PORT — DERIVE IT PER LANE: `NPUTER_E2E_PORT=15000+<card number>`.**
+- **E2E PORT — DERIVE IT PER LANE: `SUPERTASKR_E2E_PORT=15000+<card number>`.**
   The default 14520 is MACHINE-WIDE, so every concurrent lane takes the
   same one; `E2E_PORT` binds NOTHING. `lsof` to zero rows before binding,
   and never 1420. Third member of this family, beside the SCRATCH RULE and
@@ -324,14 +324,14 @@ and T-236 (2026-09-02, whose pre-compaction text is
   in a scratchpad and not in the tree. Do it by hand until `T-205-s1`
   lands, and read the gap as a gap rather than as a mechanism.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
-  runs its own vite on `NPUTER_E2E_PORT` (default 14520),
+  runs its own vite on `SUPERTASKR_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
   load by design, and the boot check bind-probes its port and aborts
   (exit 2) if anything holds it. The boot check moves off 1420 with
-  `NPUTER_BOOT_PORT` (T-046; default 1420, so unset is exactly the old
+  `SUPERTASKR_BOOT_PORT` (T-046; default 1420, so unset is exactly the old
   behavior), which also threads the matching `--config` — `devUrl` AND
   `beforeDevCommand` with `--strictPort` — through to `tauri dev` as
-  CLI flags; tauri.conf.json is never edited. Setting `NPUTER_BOOT_PORT`
+  CLI flags; tauri.conf.json is never edited. Setting `SUPERTASKR_BOOT_PORT`
   to 1420 REFUSES loudly (exit 3, before anything is probed or spawned),
   the same rule as the lane's throw: neither override may become a
   second way to contend for the human's app. The `--` in
@@ -408,13 +408,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   it deliberately does NOT run `npm run tauri dev` or
   `npm run tauri build` — one opens a window and the other packages a
   bundle; the xvfb boot step covers the dev path — nor
-  `cargo run -p nputer-index -- index --watch --root ../..`, which runs
-  until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
+  `cargo run -p supertaskr-index -- index --watch --root ../..`, which runs
+  until stopped, nor `cargo run -p supertaskr-index -- arch --root ../..`,
   which reports rather than gates, nor
-  `cargo run -p nputer-index -- arch cycles --root ../..`, which
+  `cargo run -p supertaskr-index -- arch cycles --root ../..`, which
   answers ACYCLIC since T-127-s6 (the enforcing copy is `cargo test`'s
   exact-set census, T-127), nor
-  `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`,
+  `cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..`,
   which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
   (T-061-s5, ruled here): it opens a window and builds the app, roughly
   DOUBLING the boot step's cost, and it deliberately SIGKILLs a process
@@ -462,7 +462,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
-  nputer-specific goes in it; product docs live in docs/. Changes to
+  supertaskr-specific goes in it; product docs live in docs/. Changes to
   method/ formats are version-bumped (currently v0.1.9) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
@@ -787,13 +787,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 
   | walk | authority (the file that decides) | what it sees |
   |---|---|---|
-  | the GRAPH — `nputer-index` | `.nputerignore`, plus `Lang::for_extension` and `walk_root` in app/src-tauri/crates/nputer-index/src/{graph,walk}.rs | `.ts .tsx .mts .cts .js .jsx` **and, since T-010, `.rs`** anywhere not ignored; `.git` and node_modules hard-skipped whatever the ignore files say; symlinks skipped outright |
+  | the GRAPH — `supertaskr-index` | `.supertaskrignore`, plus `Lang::for_extension` and `walk_root` in app/src-tauri/crates/supertaskr-index/src/{graph,walk}.rs | `.ts .tsx .mts .cts .js .jsx` **and, since T-010, `.rs`** anywhere not ignored; `.git` and node_modules hard-skipped whatever the ignore files say; symlinks skipped outright |
   | lint TOKEN — P1–P4 **and P6**, over MASKED source | `TOKEN_ROOTS`, `TOKEN_EXTENSIONS`, `SKIP_DIRS`, `TOKEN_EXCLUDED_FILES` in tools/e2e/scripts/token-scan.mjs | `.ts .tsx .mjs` under app/src, app/test, tools/e2e, minus the two lint implementation files by NAME |
   | lint CONTROL — P5, over RAW bytes | `git ls-files -z` minus `SKIP_DIRS` minus `CONTROL_BINARY_EXTENSIONS`, same file (T-058) | every TRACKED first-party text file — docs, method, .github, Rust, both lockfiles, dotfiles and extensionless fixtures included |
   | the PARSER's live docs | lib/parser/src/project.ts, pinned by lib/parser/test/smoke.test.ts | docs/tasks/`T-*.md` and docs/architecture/components/`C-*.md`, both FLAT and non-recursive, plus docs/ROADMAP.md |
 
   WHAT THAT MEANS AT A DIFF: a new `.ts` under tools/ is seen by TOKEN
-  and CONTROL and NOT by the graph (tools/ is `.nputerignore`d); a new
+  and CONTROL and NOT by the graph (tools/ is `.supertaskrignore`d); a new
   `.rs` is seen by CONTROL AND BY THE GRAPH, and it is a CODE INPUT to
   `cargo test` besides (T-010, `T-010-s1`). The AUTHORITY column has
   survived every change unmoved while this table's enumerations went
@@ -1010,7 +1010,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   `index --check` becomes the gate", is met in the same commit that
   makes `index --check` a CI step): at any merge whose diff touches
   `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside docs/, regenerate the
-  committed graph — `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index
+  committed graph — `SUPERTASKR_UPDATE_GOLDEN=1 cargo test -p supertaskr-index
   --test self_graph -- --ignored` — and commit docs/architecture/graph.json
   **with the CHECKPOINT**.
   **`*.rs` WAS ADDED 2026-08-25 AND THE GAP IT CLOSES WAS LIVE FOR ONE
@@ -1027,14 +1027,14 @@ and T-236 (2026-09-02, whose pre-compaction text is
   names, and it is not the same pair before the merge exists as at it.**
   **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE REGEN IS A
   NO-OP UNLESS AN INDEXED FILE MOVED** (T-054-s1): no suffix rule can
-  match the walk — see THE FOUR WALKS above — because `.nputerignore`
+  match the walk — see THE FOUR WALKS above — because `.supertaskrignore`
   excludes docs/, tools/ AND the indexer's own fixture trees, so a diff
   confined to `tools/**` MATCHES this trigger and CANNOT move the graph
   by construction (T-054's branch and T-058's merge are the measured
   examples). DO NOT NARROW THE WORDING TO CHASE THE WALK — a trigger
-  that restates `.nputerignore` goes stale the day that file changes,
+  that restates `.supertaskrignore` goes stale the day that file changes,
   and over-firing is the SAFE direction. **ASK THE GATE INSTEAD OF
-  PREDICTING**: `cargo run -p nputer-index -- index --check --root
+  PREDICTING**: `cargo run -p supertaskr-index -- index --check --root
   ../..` from app/src-tauri answers "did an indexed file move?" in about
   a second, and it is the same command the CI step runs. A regen that
   changes nothing costs a minute and PROVES it; a regen skipped on a
@@ -1114,7 +1114,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   - **THE BRIEF IS ASSEMBLED BY THE ASSEMBLER, AND THIS IS THE SPELLING
     method/roles/orchestrator.md 5b POINTS AT** (`T-133-s3`: the RULE
     is product-agnostic and lives in the role file, the COMMAND is an
-    nputer path and lives here). Run from the repository root:
+    supertaskr path and lives here). Run from the repository root:
 
         node tools/e2e/scripts/brief.mjs --task T-NNN
 
@@ -1129,7 +1129,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
     runs `node tools/e2e/scripts/brief.mjs --task T-NNN --write-fence
     <the lane worktree>`: it expands the card's `touches:` through the
     parser's ONE fence implementation and leaves the answer in the lane
-    as `.nputer/lane-fence.json`. **AND THE STEP BEFORE IT IS THE
+    as `.supertaskr/lane-fence.json`. **AND THE STEP BEFORE IT IS THE
     PREFLIGHT** (T-160). **THE RITUAL IS EIGHT STEPS AND THE ORDER IS
     THE LAW**: stamp `building` on the integration branch and COMMIT,
     cut the lane worktree at that commit, PREFLIGHT, write the fence,
@@ -1303,10 +1303,10 @@ and T-236 (2026-09-02, whose pre-compaction text is
   date it by. BOOT GATE's trigger is a THIRD set (what could stop the
   app BOOTING); derive none from another.
   **ANCHOR THE PROCESS MATCH OR THE MEASUREMENT LIES**:
-  `ps | grep 'target/debug/nputer'` matches `nputer-index` as a
+  `ps | grep 'target/debug/supertaskr'` matches `supertaskr-index` as a
   substring, so an integrator's own graph-gate run reads exactly like a
   relaunch — anchor with
-  `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'`.
+  `ps -eo pid,lstart,command | awk '$NF=="target/debug/supertaskr"'`.
   **THE FRESH INSTALL IS THE ONE CHANNEL THAT CORRUPTS RATHER THAN
   INTERRUPTS.** `npm ci` removes `app/node_modules` while the human's
   vite serves out of it; a running vite SURVIVES the removal, but what
@@ -1323,7 +1323,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   apart, which is the NEGATIVE ASSERTION rule below applied to a
   procedure.
   **`lib/parser/dist` REACHES THE RUNNING APP WITH NOTHING UNDER `app/`
-  IN THE DIFF.** The app depends on `@nputer/parser` through
+  IN THE DIFF.** The app depends on `@supertaskr/parser` through
   `file:../lib/parser`, which npm installs as a SYMLINK, so the built
   `dist/` the running vite serves is the parser's own directory: a
   lib-only merge that rebuilds it changes what the app is serving
@@ -1395,8 +1395,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
   the merge exists than at it** (that bullet carries this gate's oldest
   worked example, T-027, and the twelve merges on which the wrong pair
   changed a gate's answer, eight of them this gate's). Then run the boot
-  check — `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
-  tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
+  check — `SUPERTASKR_BOOT_PORT=<free scratch port> npm run boot:check` from
+  tools/e2e/ — and RECORD the result (exit code, both `[supertaskr]` lines)
   in the checkpoint; the four exit codes are legended in the tools/e2e
   commands bullet under "Build & test" above. IF the check cannot run
   THEN say so LOUDLY in the checkpoint, naming the reason and the exit
@@ -1532,7 +1532,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   out of `lib/parser/src/types.ts` rather than restating (T-057) — one
   status vocabulary, honoured here with no edit when a ninth is added
   there. It names the FILE, the FIELD and the near miss.
-  `.nputerignore` IS UNTOUCHED AND THAT IS DELIBERATE: it excludes
+  `.supertaskrignore` IS UNTOUCHED AND THAT IS DELIBERATE: it excludes
   docs/ because the graph is CODE-derived, so `index --check` is not the
   gate that missed this; the exclusion is asserted in the spec so "we
   decided" cannot be mistaken for "we forgot".
@@ -1590,7 +1590,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
   residual, taken at T-159): a `method/**` diff now matches a trigger,
   and it still owes `cargo test` that no trigger names — `kit.rs`
-  `include_str!`s a SUBSET of method/ into `nputer_lib`, and two cargo
+  `include_str!`s a SUBSET of method/ into `supertaskr_lib`, and two cargo
   bodies read `method/` off disk and assert against it,
   `every_compiled_entry_matches_its_method_file_byte_for_byte` and
   `the_snapshot_table_covers_every_method_scaffold_file`. **THE

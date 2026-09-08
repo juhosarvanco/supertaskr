@@ -96,7 +96,7 @@ than forecast, one side only and sha256-restored:
 this component's `paths:`. `arch cycles` is **unchanged**, because it
 reads DECLARED `depends_on` and a path move declares no edge:
 
-    cargo run -p nputer-index -- arch cycles --root ../..
+    cargo run -p supertaskr-index -- arch cycles --root ../..
     verdict  ACYCLIC   exit 0          <- the BASELINE, not a finding
 
 What the path move actually buys is an `arch drift` **D4**:
@@ -142,7 +142,7 @@ already declared, because this component sits above the whole board side.
 `index --check` at `T-112-s6`'s tip names **12** new graph edges and no
 removals: seven file-level `import`s — `-> Board.tsx` (this component's
 own), `-> board-model.ts` and `-> task-detail.ts` (C-17, declared),
-`-> p:@nputer/parser` (C-06, declared), and `p:react`, `p:react-dom`,
+`-> p:@supertaskr/parser` (C-06, declared), and `p:react`, `p:react-dom`,
 `p:vitest`, which are packages and no component's — plus three
 symbol-level `type_ref`s into those same C-17 symbols and two `call`s
 inside the file itself. **NOT ONE OF THEM IS A NEW COMPONENT EDGE**,

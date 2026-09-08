@@ -84,7 +84,7 @@ component's test double belongs to the component it doubles.
 IS THIS COMPONENT AND NOT EITHER ONE IT IMPORTS.**
 `tests/graph_budget_bench.rs` measures what it costs to deliver
 `docs/architecture/graph.json` to the map pane. It imports both sides of
-the seam it measures — `nputer_index` (C-07) and `docs_watch` (C-10) — so
+the seam it measures — `supertaskr_index` (C-07) and `docs_watch` (C-10) — so
 it landed under no component's globs at T-139's regen and became the
 THIRD D2 this repository has ever carried, drawing two undeclared shadow
 edges out of the unmapped node. **THE COUNT IS DERIVED, NOT REMEMBERED**

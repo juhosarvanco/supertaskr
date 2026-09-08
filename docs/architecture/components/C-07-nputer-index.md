@@ -1,9 +1,9 @@
 ---
 id: C-07
-name: nputer-index
+name: supertaskr-index
 layer: indexer
 paths:                    # decided location (ADR-015); code arrives with T-009
-  - app/src-tauri/crates/nputer-index/**
+  - app/src-tauri/crates/supertaskr-index/**
 depends_on: []
 decisions: [ADR-003, ADR-013, ADR-014, ADR-015]
 status: auto
@@ -40,7 +40,7 @@ which is what this half of the card existed to fix.
 
 Arm (b) — move `arch` to the Node CLI — was **refused**: it is the purest
 reading of ADR-015 and it costs the capability, since C-02 does not exist
-and the engine is not in a shareable package, so `nputer arch` could not
+and the engine is not in a shareable package, so `supertaskr arch` could not
 exist at all in the meantime. Arm (c) is **retained rather than
 replaced**: pinning the two engines' agreement is **`T-059`**, which
 therefore does **NOT** dissolve and stays `blocked_by: [T-033]`.

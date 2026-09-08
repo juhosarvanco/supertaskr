@@ -30,11 +30,11 @@ reuses this drawer primitive.
 KEPT RATHER THAN DELETED (T-127, 2026-08-25; CLOSED at T-127-s6,
 2026-08-29).** `C-08 -> C-09 -> C-08` was the whole declared census at
 `afe23c1` — derived, not read by eye, and answered by one command:
-`nputer-index arch cycles --root <repo>`, which exited 1 and named it as
+`supertaskr-index arch cycles --root <repo>`, which exited 1 and named it as
 a path. It predated @human's no-cycles ruling by nine days
 (`T-033-s10`) and it was nobody's new mistake. **It is gone: that command
 exits 0 from T-127-s6's commit forward, and the `KNOWN_DECLARED_CYCLES`
-allowlist entry in `nputer-index`'s own `tests/arch.rs` went with it in
+allowlist entry in `supertaskr-index`'s own `tests/arch.rs` went with it in
 the same commit** — the exact-set assertion reds in BOTH directions, so a
 stale entry is as loud as a new cycle.
 
