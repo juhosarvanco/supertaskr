@@ -354,6 +354,30 @@ RULED 2026-09-08 by @human ("Drop the executor-tip run, add the line to
 T-262"): the verifier runs the battery once, at its own tip; T-262
 carries the criterion.
 
+**32. Two full batteries per push, and the second one is not waste —
+it is the price of the two-commit landing under a tree-keyed token.**
+Recorded 2026-09-08 after @human asked why the battery runs again after
+the checkpoint commit. The two runs are two different rules: integrator
+step 3 (run the full suite after merging — two green lanes can break
+together, and the record stamps that run's readings) and T-203 (the
+push guard's token is keyed on the pushed TREE, so the battery runs
+last, after every commit). The checkpoint commit sits between them by
+design (docs-protocol law 4: the record and STATE land after the merge
+in their own commit), and it is NOT suite-free: the parser's smoke test
+parses docs/, the app's dogfood bodies read docs/tasks/, and two e2e
+specs walk every file under docs/ as app content — a malformed record
+or an over-budget STATE reds them, which is exactly what the second run
+proves. What is expensive is only the e2e leg (about ten minutes of
+background time) run for a commit that can move a handful of its
+bodies. The candidate reductions, none taken yet: (a) the guard accepts
+the PREVIOUS tree's token when the commits since touch only
+docs/checkpoints/ and docs/STATE.md AND the docs-reading bodies and
+lint:docs pass at the new tree (a token rule change, T-203's family,
+with its limit disclosed); (b) a faster docs walk (T-267's class; the
+harness loads the whole tree); (c) nothing — the seat's time is not
+spent, only the runner's. The seat's earlier sentence calling the second
+run "waste" was wrong and is retracted here.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
