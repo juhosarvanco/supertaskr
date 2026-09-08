@@ -7,7 +7,7 @@ size: S
 priority: 8
 status: suggested
 suggested_by: executor claude-opus-5@subagent @T-205-s1, 2026-09-09
-blocked_by: [T-205-s12]
+blocked_by: [T-205-s6]
 touches: [tools/e2e/scripts/gate-run.mjs]
 builder:
 verifier:
@@ -16,9 +16,15 @@ verified_by:
 review:
 ---
 
-CLASS PARENT: `T-205-s1`. DISPOSITION HINT: **park behind `T-205-s12`.**
+CLASS PARENT: `T-205-s1`. DISPOSITION HINT: **park behind `T-205-s6`.**
 A landing leg that can only ever answer "unavailable" buys a step and no
 verdict; give the sets a home first, then this is worth its bytes.
+
+**THIS IS THE ONE HALF OF `T-205-s1`'s ASK THAT NOBODY HAS ROUTED.** The
+architect seat answered ask 1 with `T-205-s6` and routed asks 2, 3 and 4a
+as corrections at `T-205-s1`'s merge (`b825e87` on main). Ask 4b — this
+leg — is outside that list, which is why it is a card and the other three
+are not.
 
 ## The finding
 

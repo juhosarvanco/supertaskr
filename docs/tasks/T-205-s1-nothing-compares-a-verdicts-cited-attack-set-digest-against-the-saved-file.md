@@ -218,11 +218,41 @@ claimed in its header with nothing able to fail on either.
 undetected`) and refuses to claim a baseline at all under M7 (`COULD NOT
 RUN — the UNDEGRADED checker already fails 2 matrix row(s)`).
 
-### PARKED, ROUTED, NOT BUILT
+### PARKED, ROUTED, NOT BUILT — AND RECONCILED AGAINST MAIN
 
-`T-205-s12` (a home in the tree for sealed sets — a ruling, not a build),
-`T-205-s13` (the gate's trigger, the bench bullet's own retraction, and
-`docs/reference/10-gates.md`'s MF-10 line), `T-205-s14` (the landing
-leg), `T-276` (`tools/method-evals` is under no typecheck and carries two
-JSDoc errors today). The ask was written before the build began and every
-item was parked, not waited on.
+The ask (`<scratch>/ask-T-205-s1.md`) was written before the build began
+and every item was parked, not waited on. **BY THE TIME THE BATTERY RAN,
+THE ARCHITECT SEAT HAD ALREADY ANSWERED IT ON MAIN, and two cards this
+lane had drafted were duplicates of that answer — they were withdrawn
+rather than filed.** Read at `b825e87` (main, 2026-09-09):
+
+- **ASK 1, a tree home for the sealed sets** — refused as a lane write
+  and ruled a card: **`T-205-s6`**, `docs/benches/<card-id>/` holding
+  `attack-set.md` / `ground.md` / `stamps.txt`, written by the INTEGRATOR
+  in the checkpoint commit that lands the verdict, `blocked_by:
+  [T-205-s1]`. Its criterion 2 is this lane's checker exiting 0 with no
+  `--scratch` — which is exactly the design here: **one more resolution
+  root and no code change.** This lane's draft card for the same class
+  was withdrawn; `T-205-s6` owns it and is better specified.
+- **ASKS 2, 3 and 4a** — the bench bullet's own retraction, the METHOD
+  EVAL GATE's trigger, and `docs/reference/10-gates.md`'s MF-10 line —
+  **routed as CORRECTIONS AT THIS MERGE**, per `b825e87`'s subject. This
+  lane's draft card for them was withdrawn too. **INTEGRATOR: those three
+  edits are owed at the merge and no card carries them.**
+- **ASK 4b, a leg at the landing**, is the one half nobody routed. Filed
+  as **`T-205-s14`**, parked behind `T-205-s6`.
+
+Also filed, and outside the ask entirely: **`T-276`** —
+`tools/method-evals` is under no typecheck although every sibling package
+is, and it carries two JSDoc errors today (`mf-05:60` TS2532,
+`mf-09:203` TS7006, both pre-existing).
+
+### THE PARSER LEG IS RED AT THE BASE AND THIS LANE DID NOT MOVE IT
+
+`gate-run.mjs parser` at `01afd48`: **exit 1, 377 bodies, 3 failed** —
+`test/fence.test.ts`'s three live-board census bodies, every one naming
+`T-274 docs/tasks`. Attributed at the base in a detached worktree at
+`6dd44a6`: **identical — 3 failed / 374 passed of 377, same three bodies,
+same name.** The diff moves nothing. Main has since repaired it at
+`ab00399`, whose own subject says *"the lanes cut in between attribute
+the red at their base"*, which is what this is.
