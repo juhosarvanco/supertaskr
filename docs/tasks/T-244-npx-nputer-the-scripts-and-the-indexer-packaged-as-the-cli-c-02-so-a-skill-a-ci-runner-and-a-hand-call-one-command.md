@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: L
 priority: 1
-status: building
+status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021): nputer is a skill, a CLI and a mirror — and ARCHITECTURE lists C-02 as planned because nothing packages the scripts"
 blocked_by: []
 touches: [tools/e2e/bin/, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/undo.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/package.json, tools/e2e/package-lock.json, tools/e2e/tests/cli.spec.ts, README.md, docs/CONVENTIONS.md]
-builder: claude-opus-5@subagent
-verifier: claude-opus-5@subagent
+builder:
+verifier:
 built_by:
 verified_by:
 review: independent
