@@ -748,6 +748,194 @@ describe('T-219-s4 — a fence that cannot be RESOLVED is not a fence that is fr
     expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
     expect(ok.startable[0]?.fence.paths).toEqual(['lib/parser']);
   });
+
+  it('T-219-s6 — an INTERIOR dot segment resolves, so the card is startable on the real directory and COLLIDES with a lane holding it', () => {
+    // THE TWO HALVES MEETING, one position over from the body above.
+    // `fence.test.ts` carries the normalisation half; this is the
+    // consequence at the dispatch site, and it is the one that matters:
+    // before this card `lib/./parser` reserved a domain no
+    // repository-relative path can sit inside, so the card came back
+    // STARTABLE beside a lane holding `lib/parser` — two writers, one
+    // tree, and no sentence anywhere saying so.
+    //
+    // KILLED BY: dropping step 7 from `normalizeFenceToken`, where the
+    // second half of this body answers `startable` and the fenced list
+    // comes back empty.
+    const board = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['lib/./parser'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['lib/parser/src/fence.ts'] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-002')]);
+    expect(order.startable.map((r) => r.id), 'a badly spelled fence got a green light').toEqual([]);
+    expect(order.fenced.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.fenced[0]?.reason ?? '';
+    expect(reason).toContain('T-002 (refs/heads/task/T-002-lane at /w/T-002)');
+    expect(reason).toContain('lib/parser/src/fence.ts');
+    expect(order.fenced[0]?.holds[0]?.verdict).toBe('overlapping');
+
+    // THE CONTROL: the SAME board with the holder somewhere else, where
+    // the resolved fence is startable and reserves the REAL directory —
+    // without it every assertion above is satisfied by a module that
+    // refuses `lib/./parser` outright, which is the remedy this card
+    // exists to reject.
+    const free = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['lib/./parser'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['app/src/main.tsx'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(free), [lane('T-002')]);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(ok.startable[0]?.fence.paths, 'the resolved fence lost its domain').toEqual([
+      'lib/parser',
+    ]);
+    expect(ok.startable[0]?.reason).toContain('disjoint from every live lane');
+  });
+});
+
+describe('T-219-s6 triage — the two readers of one fence say the same thing', () => {
+  it('V-T-219-s6: a card whose only token is UNRESOLVABLE gets the unresolved clause and NOT the reserves-nothing one', () => {
+    // THE THIRD VERIFIER'S ASSIGNED CORRECTION C1 (T-219-s6 at e74c12c): the
+    // reserves-nothing clause's own comment says "every token of it resolved",
+    // and the guard did not test it — a card whose ONLY token is unresolvable
+    // also has paths: [] and received two remedies in one sentence.
+    const board = [ROADMAP, card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['nowhere-at-all'] })];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason).toContain('resolves to neither a slug nor a path');
+    expect(reason, 'the reserves-nothing clause spoke for a fence that was never computed').not.toContain('reserves no path at all');
+  });
+
+  it('a fence that ARMS NOTHING is not startable, and the sentence says which domains were carved out', () => {
+    // `V-T-219-s4` observed this at both refs and did not file it; the
+    // card's TRIAGE routed it here. A card whose ONLY token is its own
+    // file has `tokens.length > 0` (it spoke), an empty `unusable` (the
+    // token resolved) and `paths: []` (its own file is never part of its
+    // own fence) — so every term of the `startable` guard passed and the
+    // card was cleared to start while `buildLaneFence` refused to arm it:
+    // *"expands to no path at all, so every write in the lane would be
+    // refused"*. Two readers of one fence, and the one that says a
+    // session MAY START said yes.
+    //
+    // KILLED BY: dropping `&& fence.paths.length > 0` from the
+    // `holds.length === 0` guard in `rule()`, where this card comes back
+    // `startable` wearing "it reserves nothing, disjoint from every live
+    // lane" — a fence that permits NOTHING advertised as a fence that
+    // collides with nothing.
+    const own = 'docs/tasks/T-001-subject.md';
+    const board = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: [own] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), []);
+
+    expect(order.lanes, 'a lane was handed in and this body cannot see the defect').toEqual([]);
+    expect(
+      order.startable.map((r) => r.id),
+      'a fence that arms nothing got a green light at the dispatch moment',
+    ).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.unfenceable[0]?.fence.paths, 'the fence reserved something after all').toEqual([]);
+    expect(order.unfenceable[0]?.fence.excluded).toEqual([own]);
+
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason).toContain('reserves no path at all');
+    expect(reason).toContain(own);
+    expect(reason).toContain("a card's own file is never part of its own fence");
+    // NOT THE WRONG CLAUSE: this card DECLARED a `touches:`, so T-227's
+    // clause must not speak for it — the two causes are near twins with
+    // different remedies and the sentence has to tell them apart.
+    expect(reason).not.toContain('declares no `touches:` at all');
+    // AND THE SENTENCE IT NO LONGER WEARS, asserted by name.
+    expect(reason, 'the refused sentence came back').not.toContain('disjoint from every live lane');
+    expect(reason, 'the clause list came back empty').not.toContain(': . A fence');
+
+    // THE CONTROL: the same card naming its own file AND one real path is
+    // startable, so this is a rule about what the fence RESERVES and not
+    // about a card mentioning itself.
+    const alsoReal = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: [own, 'lib/parser'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(alsoReal), []);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(ok.startable[0]?.fence.paths).toEqual(['lib/parser']);
+  });
+
+  it('a lane whose CARD declares no `touches:` is named in the sentence, instead of leaving an empty middle', () => {
+    // THE OTHER HALF OF THE TRIAGE, and it is `T-219`'s own guarded
+    // string reached from the other side. The SUBJECT's fence fully
+    // resolves; the HOLDER's card is present in this checkout and
+    // declares no fence, so `compareFences` answers `unusable` with an
+    // empty `unusable` list — there is no token to name. Every clause was
+    // keyed on a token, on a missing card or on the subject's own fence,
+    // so none fired and the reason read "…none could be ruled out: . A
+    // fence that cannot be COMPUTED…".
+    //
+    // KILLED BY: dropping the `silent` clause from `rule()`, where the
+    // last expectation below finds the empty middle verbatim.
+    const board = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['lib/parser'] }),
+      card('T-002', 'Holder', { status: 'building', touches: [] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-002')]);
+
+    expect(order.startable.map((r) => r.id)).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(reason, 'the clause list came back empty').not.toContain(': . A fence');
+    // IT NAMES THE HOLDING CARD, because that is the card a dispatcher
+    // repairs — the subject can do nothing to make this comparison
+    // answer.
+    expect(reason).toContain('T-002 (refs/heads/task/T-002-lane at /w/T-002)');
+    expect(reason).toContain('declares no `touches:` at all');
+    expect(reason).toContain('the remedy is on that card, not on this one');
+    // AND NOT THE SUBJECT'S OWN CLAUSE: the subject declared a fence and
+    // every token of it resolved.
+    expect(reason).not.toContain("T-001's own `touches:` carries");
+    expect(reason).not.toContain('reserves no path at all');
+
+    // THE CONTROL: the same board with the holder DECLARING a disjoint
+    // fence is startable — so the clause above is about the holder's
+    // silence and not about there being a lane at all.
+    const declared = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['lib/parser'] }),
+      card('T-002', 'Holder', { status: 'building', touches: ['app/src/main.tsx'] }),
+    ];
+    const ok = readDispatchOrder(parseProjectFromFiles(declared), [lane('T-002')]);
+    expect(ok.startable.map((r) => r.id)).toEqual(['T-001']);
+  });
+
+  it('and with TWO silent lanes the clause is PLURAL, and it does not speak for a lane whose card is MISSING', () => {
+    // NUMBER AGREEMENT IS NOT DECORATION HERE — the rule the `missing`
+    // clause beside it already states. And the two lane-side causes stay
+    // apart: a card that is ABSENT is fetched, a card that is PRESENT and
+    // silent is repaired, and one clause covering both would name the
+    // wrong remedy for one of them.
+    const board = [
+      ROADMAP,
+      card('T-001', 'Subject', { milestone: 4, priority: 1, touches: ['lib/parser'] }),
+      card('T-002', 'Holder', { status: 'building', touches: [] }),
+      card('T-003', 'Holder', { status: 'building', touches: [] }),
+    ];
+    const order = readDispatchOrder(parseProjectFromFiles(board), [
+      lane('T-002'),
+      lane('T-003'),
+      lane('T-004'),
+    ]);
+    const reason = order.unfenceable[0]?.reason ?? '';
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    expect(reason).toContain('declare no `touches:` at all');
+    expect(reason).toContain('those fences could not be compared');
+    expect(reason).toContain('the remedy is on those cards, not on this one');
+    // THE MISSING-CARD CLAUSE IS STILL ITS OWN, naming T-004 and nobody
+    // else — the control that the new clause did not swallow it.
+    expect(reason).toContain('this checkout has NO CARD for T-004');
+    expect(reason).not.toContain('NO CARD for T-002');
+  });
 });
 
 describe('T-228-s1 — A CRITERION DEMANDING A TEST BODY, OVER A FENCE THAT CANNOT HOLD ONE', () => {

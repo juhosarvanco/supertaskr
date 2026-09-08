@@ -25053,8 +25053,8 @@
       "id": "f:lib/parser/src/fence.ts",
       "path": "lib/parser/src/fence.ts",
       "lang": "ts",
-      "hash": "blake3:f8790bc22ebeaeff8a29c76ac40a1057f8c0a68286e1774c6a478f18117be3c4",
-      "loc": 649,
+      "hash": "blake3:e33a1e9e14b2ff3f7758ac40f7d16046810ccce6eaa524f8d4a26ee16fa902d5",
+      "loc": 741,
       "symbols": [
         {
           "id": "s:lib/parser/src/fence.ts#DOT_DOMAIN",
@@ -25062,8 +25062,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            224,
-            224
+            237,
+            237
           ]
         },
         {
@@ -25072,8 +25072,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            182,
-            208
+            184,
+            210
           ]
         },
         {
@@ -25082,8 +25082,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            108,
-            138
+            110,
+            140
           ]
         },
         {
@@ -25092,8 +25092,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            173,
-            179
+            175,
+            181
           ]
         },
         {
@@ -25102,8 +25102,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            88,
-            105
+            90,
+            107
           ]
         },
         {
@@ -25113,7 +25113,7 @@
           "exported": true,
           "range": [
             69,
-            85
+            87
           ]
         },
         {
@@ -25122,8 +25122,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            149,
-            160
+            151,
+            162
           ]
         },
         {
@@ -25132,8 +25132,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            163,
-            170
+            165,
+            172
           ]
         },
         {
@@ -25142,8 +25142,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            211,
-            211
+            213,
+            213
           ]
         },
         {
@@ -25152,8 +25152,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            141,
-            146
+            143,
+            148
           ]
         },
         {
@@ -25172,8 +25172,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            602,
-            649
+            694,
+            741
           ]
         },
         {
@@ -25182,8 +25182,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            365,
-            576
+            445,
+            668
           ]
         },
         {
@@ -25192,8 +25192,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            255,
-            261
+            313,
+            341
           ]
         },
         {
@@ -25202,8 +25202,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            306,
-            313
+            386,
+            393
           ]
         },
         {
@@ -25212,8 +25212,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            276,
-            293
+            356,
+            373
           ]
         },
         {
@@ -25222,8 +25222,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            336,
-            341
+            416,
+            421
           ]
         }
       ]
@@ -25566,8 +25566,8 @@
       "id": "f:lib/parser/src/lanes.ts",
       "path": "lib/parser/src/lanes.ts",
       "lang": "ts",
-      "hash": "blake3:071540e2bbb4b7c421d051d36a9a540d7809503a6b1ff963fe37b30f0155480f",
-      "loc": 906,
+      "hash": "blake3:0c080b635e7cc9cb7de4e8ddedf06c67f1c2989a39c0e96388dda1e2ddbd34b6",
+      "loc": 989,
       "symbols": [
         {
           "id": "s:lib/parser/src/lanes.ts#BODY_BEARING",
@@ -25575,8 +25575,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            333,
-            339
+            337,
+            343
           ]
         },
         {
@@ -25585,8 +25585,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            289,
-            300
+            293,
+            304
           ]
         },
         {
@@ -25595,8 +25595,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            275,
-            287
+            279,
+            291
           ]
         },
         {
@@ -25605,8 +25605,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            127,
-            160
+            131,
+            164
           ]
         },
         {
@@ -25615,8 +25615,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            162,
-            196
+            166,
+            200
           ]
         },
         {
@@ -25625,8 +25625,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            198,
-            213
+            202,
+            217
           ]
         },
         {
@@ -25655,8 +25655,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            471,
-            471
+            475,
+            475
           ]
         },
         {
@@ -25665,8 +25665,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            117,
-            124
+            121,
+            128
           ]
         },
         {
@@ -25675,8 +25675,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            342,
-            345
+            346,
+            349
           ]
         },
         {
@@ -25685,8 +25685,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            307,
-            314
+            311,
+            318
           ]
         },
         {
@@ -25695,8 +25695,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            424,
-            432
+            428,
+            436
           ]
         },
         {
@@ -25705,8 +25705,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            502,
-            506
+            506,
+            510
           ]
         },
         {
@@ -25715,8 +25715,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            393,
-            403
+            397,
+            407
           ]
         },
         {
@@ -25725,8 +25725,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            389,
-            391
+            393,
+            395
           ]
         },
         {
@@ -25735,8 +25735,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            360,
-            375
+            364,
+            379
           ]
         },
         {
@@ -25745,8 +25745,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            436,
-            450
+            440,
+            454
           ]
         },
         {
@@ -25755,8 +25755,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            453,
-            455
+            457,
+            459
           ]
         },
         {
@@ -25765,8 +25765,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            518,
-            612
+            522,
+            616
           ]
         },
         {
@@ -25775,8 +25775,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            616,
-            906
+            620,
+            989
           ]
         },
         {
@@ -25785,8 +25785,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            458,
-            460
+            462,
+            464
           ]
         },
         {
@@ -25795,8 +25795,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            474,
-            478
+            478,
+            482
           ]
         },
         {
@@ -25805,8 +25805,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            494,
-            499
+            498,
+            503
           ]
         }
       ]
@@ -26684,9 +26684,19 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:40cc8a85964bea6edbda1cd077645fbc12d88c0738fe0533f233be24f8c8f6e6",
-      "loc": 1112,
+      "hash": "blake3:704cae64d38dde8721aac0191dfec2da7fc2d4c241483c5736b0e7518a475348",
+      "loc": 1372,
       "symbols": [
+        {
+          "id": "s:lib/parser/test/fence.test.ts#beforeInteriorDots",
+          "name": "beforeInteriorDots",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            1014,
+            1020
+          ]
+        },
         {
           "id": "s:lib/parser/test/fence.test.ts#board",
           "name": "board",
@@ -26859,8 +26869,8 @@
       "id": "f:lib/parser/test/lanes.test.ts",
       "path": "lib/parser/test/lanes.test.ts",
       "lang": "ts",
-      "hash": "blake3:5f7240ba6ead10df9d165db42faee5a872c0b56267a8221da92c95fba61972f0",
-      "loc": 895,
+      "hash": "blake3:86b93821df36737e2cece15a3082fac5aa1d938a6016a4304de8583043975120",
+      "loc": 1070,
       "symbols": [
         {
           "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",
@@ -45054,7 +45064,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2542,
+    "symbols": 2543,
     "edges": 2441
   }
 }

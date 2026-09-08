@@ -105,10 +105,14 @@ export interface LaneHold {
  *                    because their remedies differ: a token on one side
  *                    could not be resolved, a LIVE LANE'S CARD IS NOT IN
  *                    THIS CHECKOUT so its fence could not be expanded at
- *                    all, the card declares no `touches:`, or ITS OWN
- *                    CRITERIA DEMAND A TEST BODY THE FENCE CANNOT HOLD
- *                    (T-228-s1) — the last of which needs no lane and is
- *                    a defect of the card. NOT `startable`, not `fenced`;
+ *                    all, the card declares no `touches:`, its `touches:`
+ *                    RESERVES NOTHING once the carve-outs are taken
+ *                    (T-219-s6), a LIVE LANE'S card declares no
+ *                    `touches:` so the comparison brought back no token
+ *                    to name (T-219-s6), or ITS OWN CRITERIA DEMAND A
+ *                    TEST BODY THE FENCE CANNOT HOLD (T-228-s1) — all
+ *                    but the two lane-side ones need no lane and are
+ *                    defects of the card. NOT `startable`, not `fenced`;
  * - `own-lane`     — `ready` and the only lane holding it is its OWN.
  *                    A card cannot be fenced out by the lane built to
  *                    build it, and reporting that as `fenced` is how a
@@ -733,18 +737,40 @@ function rule(
   // one word that says a session may start it. Falling through carries
   // the cause into the `unfenceable` clause list beside every other cause
   // rather than answering early and dropping them.
+  //
+  // AND THE FIFTH TERM IS `T-219-s6`'s TRIAGE, TAKEN FOR THE REASON THE
+  // THIRD AND FOURTH WERE: A FENCE THAT ARMS NOTHING IS NOT STARTABLE.
+  // A card every one of whose tokens is CARVED OUT — today that is a
+  // card whose only token is its OWN FILE, which `expandFence` subtracts
+  // by rule — has `tokens.length > 0`, an empty `unusable` and
+  // `paths: []`, so all four terms above pass and this branch called it
+  // startable while spelling the defect out loud in its own sentence:
+  // "it reserves nothing, disjoint from every live lane". `buildLaneFence`
+  // refuses exactly that fence — *"expands to no path at all, so every
+  // write in the lane would be refused"* — so the two readers of one
+  // fence disagreed, and the one that says a session MAY START is the
+  // one that said yes. Seen at both refs by `V-T-219-s4` and routed to
+  // this card's triage.
+  //
+  // THE TERM IS `fence.paths` AND NOT A COUNT OF CARVE-OUTS, for the
+  // reason the third term reads `fence.unusable`: `expandFence` already
+  // answers *"what does this fence reserve"*, and whether that is
+  // anything at all stays the right question the day a second kind of
+  // carve-out is added. Falling through carries the cause into the
+  // `unfenceable` clause list beside every other cause.
   if (
     holds.length === 0 &&
     fence.tokens.length > 0 &&
     fence.unusable.length === 0 &&
+    fence.paths.length > 0 &&
     unbodied.length === 0
   ) {
-    const spelled =
-      fence.paths.length === 0 ? 'it reserves nothing' : `its fence is ${spellPaths(fence.paths)}`;
     return {
       ...base,
       state: 'startable',
-      reason: `${card.id} has no unmet blocker and ${spelled}, disjoint from every live lane.`,
+      reason:
+        `${card.id} has no unmet blocker and its fence is ${spellPaths(fence.paths)}, ` +
+        'disjoint from every live lane.',
     };
   }
 
@@ -811,12 +837,22 @@ function rule(
     };
   }
 
-  // FOUR CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR
-  // REMEDIES DIFFER: a card declaring no fence is spelled ON THIS CARD;
-  // a token THIS card owns and nobody can resolve is spelled better HERE;
-  // a token the LANE'S card owns is spelled better THERE; a lane whose
-  // card is not here is fetched. The middle two were one clause until
-  // T-219-s4, and they read as one remedy while pointing at two cards.
+  // THE CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR REMEDIES
+  // DIFFER: a card declaring no fence is spelled ON THIS CARD; a card
+  // whose fence RESERVES nothing widens the one it has; a token THIS
+  // card owns and nobody can resolve is spelled better HERE; a token the
+  // LANE'S card owns is spelled better THERE; a lane whose card declares
+  // no fence is repaired THERE; a lane whose card is not here is
+  // fetched. Two of them were one clause until T-219-s4, and they read
+  // as one remedy while pointing at two cards.
+  //
+  // EACH CAUSE CARRIES AN ORDINAL AND THE ORDINALS ARE MINTED IN THE
+  // ORDER THE CAUSES WERE FOUND, NEVER IN THE ORDER THE CLAUSES ARE
+  // EMITTED (T-219-s6 added the sixth and seventh and sits them beside
+  // their near twins). Cite a cause by its ordinal and its own capitals,
+  // the way this project cites every other numbered catalogue: the
+  // clause ORDER is the sentence's and moves when the sentence reads
+  // better, and a citation keyed to a position would go stale silently.
   const missing = holds.filter((h) => h.cardMissing);
   const unresolved = holds.filter((h) => !h.cardMissing);
   // THIS CARD'S OWN UNCOMPARABLE TOKENS, WHICH IS THE ONLY CAUSE THAT
@@ -845,6 +881,25 @@ function rule(
     clauses.push(
       `${card.id} declares no \`touches:\` at all, so it has no fence to compare — an undeclared ` +
         'fence is not an empty one, and nothing can be ruled disjoint from it',
+    );
+  }
+  // THE SIXTH CAUSE IS THE THIRD ONE'S NEAR TWIN AND IS NOT IT
+  // (`T-219-s6`'s triage): this card DID declare a fence, every token of
+  // it resolved, and the expansion still reserves NOTHING because every
+  // domain was carved out — today the card whose only token is its own
+  // file, which is never part of its own fence. It is spelled apart from
+  // the clause above because the REMEDY differs: that card writes a
+  // `touches:`, this one widens the one it has to ground somebody else
+  // could collide with. `buildLaneFence` refuses this fence outright, and
+  // this clause is what makes the two readers say the same thing.
+  if (fence.tokens.length > 0 && fence.unusable.length === 0 && fence.paths.length === 0) {
+    const carved =
+      fence.excluded.length > 0
+        ? ` — every domain it names was carved out (${fence.excluded.join(', ')}), and a card's own file is never part of its own fence`
+        : '';
+    clauses.push(
+      `${card.id}'s \`touches:\` reserves no path at all${carved}, so there is nothing to arm: a ` +
+        'fence that reserves nothing permits nothing, and every write in the lane would be refused',
     );
   }
   // THE CAUSE THAT NEEDS NO LANE, AND THEREFORE THE ONE THE OLD CLAUSE
@@ -880,6 +935,34 @@ function rule(
     clauses.push(
       `against ${unresolved.map((h) => laneName(h.lane)).join(', ')}, ${tokens.join(', ')} ` +
         'resolved to neither a slug nor a path',
+    );
+  }
+  // THE SEVENTH CAUSE, AND IT IS THE ONE THAT LEAVES NOTHING BEHIND TO
+  // NAME (`T-219-s6`'s triage). A hold whose comparison came back
+  // `unusable` while NEITHER side contributed a raw token is
+  // `compareFences`'s token-less refusal seen from the other side: the
+  // LANE'S card declares no `touches:` at all, so it owns no token to be
+  // unresolved and its card is not missing either. Every clause above is
+  // keyed on a token, on a missing card or on this card's own fence, so
+  // such a hold produced NONE and the sentence arrived with an empty
+  // middle — "…none could be ruled out: . A fence that cannot be
+  // COMPUTED…", the exact string `T-219`'s own body guards against, one
+  // side over. Observed at both refs by `V-T-219-s4`.
+  //
+  // IT NAMES THE HOLDING CARD, because that is the card a dispatcher
+  // repairs: the subject's fence is fine and nothing it can do will make
+  // this comparison answer. The verdict is tested as well as the empty
+  // token list, so an `overlapping` hold against this card's OWN lane —
+  // which the branch above deliberately filters out — cannot be
+  // mis-described as a silent one.
+  const silent = unresolved.filter((h) => h.verdict === 'unusable' && h.unusable.length === 0);
+  if (silent.length > 0) {
+    const many = silent.length > 1;
+    clauses.push(
+      `${silent.map((h) => laneName(h.lane)).join(', ')} ` +
+        `${many ? 'declare' : 'declares'} no \`touches:\` at all, so ` +
+        `${many ? 'those fences' : 'that fence'} could not be compared and nothing can be ruled ` +
+        `disjoint from ${many ? 'them' : 'it'} — the remedy is on ${many ? 'those cards' : 'that card'}, not on this one`,
     );
   }
   // THE FIFTH CAUSE, AND IT NEEDS NO LANE EITHER (T-228-s1). It names the
