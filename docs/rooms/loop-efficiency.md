@@ -335,6 +335,24 @@ same day: keep one file, move the generic halves to the method's own
 files, keep every program-read sentence byte-identical, re-land the
 budget — the third compaction, T-255, behind T-254.
 
+**30. A seat's return duplicates the report it already wrote to the card,
+and the standing seat pays for the duplicate on every turn afterwards.**
+Recorded 2026-09-08 from GSD Core's agent reference, whose researchers
+write to disk and return nothing to the orchestrator. The rule that
+follows: the report lives on the card (executor.md § The report is a
+CARD section), and the return to the dispatcher is the card path, the
+tip, the stamp and at most ten lines. Not a feature; a line for the
+context pack's overlay (T-254) and for row 12 of the brief.
+
+**31. A verifier re-runs whole suites per must-have.** Three phase-2
+passes on 2026-09-08 each ran the full e2e lane (661 bodies) once for
+the standing gates and again in shards while attacking. GSD Core's
+verifier runs the full suite at most once per verification, then proves
+a test EXISTS by enumeration and PASSES via a single named body. The
+same rule fits verifier.md step 1 and costs nothing in coverage; it
+waits for the next verifier.md edit (T-258 or T-262) rather than a card
+of its own.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an

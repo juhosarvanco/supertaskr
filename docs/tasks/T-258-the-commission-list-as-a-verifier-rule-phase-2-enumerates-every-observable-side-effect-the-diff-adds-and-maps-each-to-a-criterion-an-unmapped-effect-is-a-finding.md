@@ -38,6 +38,15 @@ duty; the static enumerator in the landing gate is a later tool (v2).
   REJECTED-level on a guard-class card or where the effect touches
   secrets, persisted data or the network; a `status: suggested` card
   otherwise — never silently absorbed.
+- WHEN a criterion PASSES THE verdict SHALL say WHY it holds, in one
+  clause per criterion, and IF the reason is incidental — an undeclared
+  precondition, an ordering the criterion never stated, a fixture that
+  already carries the property, a default that happens to be set — THEN
+  the pass SHALL be marked COINCIDENTAL and carried as a finding, never
+  as VERIFIED (folded at the wave sitting of 2026-09-08 from GSD Core's
+  verifier, whose coincidental-reliance advisory asks a verified truth
+  why it holds; it is verifier.md 2b's one-arrangement rule widened to
+  every pass, and it lives in the same step this card edits).
 - WHEN the list is empty THE verdict SHALL say "commission list: none"
   on its own line, so an absent list and an empty list read differently.
 - The role file SHALL state the list's shape once, in its own step, and

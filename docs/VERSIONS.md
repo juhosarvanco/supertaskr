@@ -49,6 +49,8 @@ with the app as the mirror.
 | Two decision modes, audit and auto (ruled 2026-09-08, third sitting) | `decide: audit` — the preflight refuses an unanswered item, the human's name on the choices; `decide: auto` — the planner's defaults stamped and reviewed in one batch at the checkpoint; project default in the runtime config; guard-class and user-facing cards audit; the quick path auto; two health bands | T-257 planned p2, behind T-253 |
 | The commission list (ruled 2026-09-08, third sitting, "as proposed") | phase 2 enumerates every side effect the diff adds and maps each to a criterion; unmapped is a finding | T-258 planned p2 |
 | The oracle class and the escalation form (ruled 2026-09-08, third sitting) | each `proves:` note may carry proof, type, property or example; example-only on an in-every-state or no-other-recovery clause prints an advisory; TASK-FORMAT gains the halt-and-hand-off sentence | T-259 planned p3, behind T-252 |
+| Tool surfaces per role (added 2026-09-08 from the GSD agent reference) | phase 1 of the blind bench spawned as a defined agent type with no file, git or shell tool — blindness as a property of the spawn, measured before claimed | T-261 planned p9 |
+| The verdict marker and the completion-contract registry (added 2026-09-08) | three exact-case verdict markers, a registry of every role's markers and consumer, a method eval that reds on drift; the rejection-rate band gets its keeper | T-262 planned p17 |
 
 **Explicitly NOT in v1:** F-05's in-app orchestrator conversation and
 any in-app spawn path (ADR-021); a Codex spawn adapter inside the app;
@@ -110,6 +112,8 @@ has; no ruling needed, only the name to look under.
 - (The second-pass items of 2026-09-08 were ruled the same day — see the v1 table, the v2 and v3+ lists, and the moves log.)
 
 ## Moves, by sitting
+
+- **2026-09-08, the agent-reference reading** — @human: *"only add features that actually make our system reliably better"*. v1 gains T-261 (tool surfaces per role) and T-262 (the verdict marker and the registry); the coincidental-reliance rule folds into T-258; two efficiency items recorded in the loop-efficiency room, nothing else taken.
 
 - **2026-08-30** — the partition ruled as drafted: v1 = the F-01…F-04 arc + 01 + 03 + the launcher, Ring 2 as-is; v2 = 02, 04, 16, 21, the productization pass; v3+ = 14–20 and the registry (rooms/version-planning.md).
 - **2026-09-03** — F-05's conversation and spawn path v1 → v2-or-later; T-241, T-242, T-243, T-244 added to v1 (planned, none dispatched); the charter checked in; this page created (ADR-021, the form sitting record).

@@ -4,7 +4,7 @@ title: The dependency gate's three follow-ups — the cargo AND half measured wi
 feature: F-04
 milestone: 4
 size: S
-priority: 10
+priority: 12
 status: planned
 suggested_by: "the T-247 blind verifier, 2026-09-08 (three suggestions T-247-s1, T-247-s2, T-247-s3, absorbed at the wave sitting's triage)"
 blocked_by: []

@@ -505,6 +505,33 @@ it is denied) is a claim. Never let a nputer sentence rest on "told to".
   Never generalise one competitor's restraint into a category-wide
   gap.
 
+
+**From GSD Core's agent reference (github.com/open-gsd/gsd-core docs/AGENTS.md at 0ebc3cf (read 2026-09-08)), taken 2026-09-08 with @human's
+filter "only what makes the system reliably better":**
+
+- **A tool surface per role, declared in the agent definition and
+  enforced by the harness** — checkers with no Write or Edit; one agent
+  with browser tools. Taken as T-261: phase 1 of the blind bench spawned
+  as a defined agent type holding no file, git or shell tool, measured
+  before claimed. Closes the disclosure every verdict since 2026-09-01
+  has carried.
+- **A completion-contract registry a check enforces** — (agent, markers,
+  consumer, kind); a stale row fails the build. Taken as T-262: the
+  ratified verdict marker plus the registry, read by a method eval;
+  gives `north-star/rejection-rate-by-size` its keeper.
+- **The coincidental-reliance advisory** — a verified truth is asked why
+  it holds; an incidental reason is not VERIFIED. Folded into T-258's
+  verifier.md edit as a criterion.
+- Recorded, not taken as features: write-to-disk-return-a-pointer and
+  suite-once-then-named-bodies (rooms/loop-efficiency.md items 30–31);
+  model profiles as named sets of role defaults (the shape for
+  nputer.yaml under T-244). Not taken: thirty-four roles (five cover a
+  solo v1; the specialised checkers are v2 seats already), the debugger
+  role (v2), the user profiler (reads transcripts, which are not record),
+  the memory curator (knowledge outside the repository, against ADR-002),
+  the docs claim check (its subject is human-facing docs no seat reads;
+  the root-anchor ledger already covers the governing documents).
+
 ## Open items
 
 - The room question (@human's M4): if incumbents span the rings, is

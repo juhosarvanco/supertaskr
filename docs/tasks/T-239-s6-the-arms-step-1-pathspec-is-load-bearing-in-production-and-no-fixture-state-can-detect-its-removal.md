@@ -4,7 +4,7 @@ title: The arm's step-1 pathspec is load-bearing in production and no body can d
 feature: F-04
 milestone: 4
 size: S
-priority: 9
+priority: 11
 status: planned
 suggested_by: verifier claude-opus-5@subagent @T-239-s4, measured at 50b83d4, 2026-09-08
 blocked_by: []
