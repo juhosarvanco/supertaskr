@@ -1200,6 +1200,44 @@ and T-236 (2026-09-02, whose pre-compaction text is
     after the CHECKPOINT, so an Edit into a just-merged fence is refused
     for that window, where this project's verdict corrections land —
     remove the worktree before the reconciling writes (`T-154-s2`).
+    **AND SINCE `T-249` IT SCREENS A READ, WHICH IS NOT A FENCE AND IS
+    NOT WIDENED BY ONE**: `decide` asks `SECRET_SET` — ONE list in
+    `.claude/hooks/lane-fence.mjs`, as DATA, seven entries, each
+    carrying a `sample` the spec drives as that entry's own positive
+    control and requires no OTHER entry to claim — FIRST for a read
+    tool, and never reaches the fence. So a card whose `touches:` NAMES
+    an env file, a private key, an ssh or cloud credential directory or
+    a keychain export still may not read it: A FENCE WIDENS WRITES AND
+    NEVER SECRETS, and the seat that needs a secret's SHAPE asks the
+    human for a REDACTED sample in the transcript, where it is not a
+    record. **READS ARE SCREENED, NOT FENCED** — a read OUTSIDE the
+    lane's fence is ALLOWED, because a lane that may not read `docs/`
+    cannot work, and a guard that kills lanes is a guard somebody turns
+    off. **AND IT FAILS OPEN ON CLASSIFICATION**, the exact inverse of
+    the lane arm's every-uncertainty-is-a-refusal: a path this hook
+    cannot classify — no path in the request, a NUL in the target, a
+    target resolving to a filesystem root — is ALLOWED and LOGGED,
+    naming the path and the reason, because the one failure a fail-open
+    guard must not have is silence. Its two answers, `secret-read` and
+    `secret-unclassified`, are their OWN frozen set
+    (`SECRET_READ_CODES`) and deliberately NOT members of the four
+    below, which are the WRITE fence's limit codes and are published
+    here entry for entry. Exactly ONE entry is DERIVED from the tree's
+    own ignore files and records it — `*.local`, from `app/.gitignore`
+    — which is all NINE tracked ignore files name between them,
+    measured at `828621f5`; the spec re-derives at its own ref, so a
+    new ignore pattern that goes uncovered reds by name. TWO
+    OVER-REFUSALS ARE DELIBERATE AND DECLARED: `.env.example` is
+    refused with every other `.env.*`, because a suffix is chosen by
+    whoever named the file, and a project `.npmrc` is refused because
+    an auth token sits in one beside its ordinary settings. **AND IT IS
+    UNARMED AT THE HARNESS UNTIL `.claude/settings.json` MATCHES A READ
+    TOOL**: that matcher reads `Edit|Write|NotebookEdit` at `T-249`'s
+    tip, so `decide` answers correctly and nothing asks it. The hook's
+    own header says so, and `lane-fence.spec.ts` carries the record of
+    which world this is — asserting that sentence today and a real
+    exit-2 refusal through the process boundary the moment a read tool
+    is named.
     **THE LIMITS — A GUARD BELIEVED WIDER THAN IT IS IS WORSE THAN NO
     GUARD** — eight, numbered in `.claude/hooks/lane-fence.mjs`'s
     HONEST LIMITS header, whose count and four declining CODES

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **653 behaviours** — 651 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **662 behaviours** — 660 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -506,6 +506,15 @@ Census: **653 behaviours** — 651 extracted sentences + 2 named-not-extracted (
 - a card with an EMPTY `touches:` is refused rather than dispatched with the widest licence
 - a DETACHED worktree holds no fence, however much of the tree it is sitting on
 - THE COMPARISON IS THE PARSER'S — this module holds no second intersection
+- THE POSITIVE CONTROL, PER ENTRY: every entry refuses its OWN sample, and no other entry claims it
+- THE PLANTED NEGATIVE: the tree's own sources read freely, and the near-misses stay readable
+- A FENCE WIDENS WRITES AND NEVER SECRETS — the same path is written inside the fence and refused to a read
+- READS ARE SCREENED AND NOT FENCED — a lane reads OUTSIDE its own fence, and still may not write there
+- IT FAILS OPEN ON CLASSIFICATION, and every allow it cannot justify SAYS SO
+- the runner carries the secret refusal as an exit code, and the fail-open allow as a log line
+- the secret set covers every secret-bearing pattern the tree's OWN ignore files name
+- the read guard answers with its OWN code set, and the write fence's four are untouched
+- the secret read guard is UNARMED at the harness until settings.json names a read tool, and this body is the record of which
 
 ## lane-lock
 

@@ -28,6 +28,23 @@
  * exit code does not move, so which writes proceed does not move either
  * — only whether a decline leaves a trace.
  *
+ * ── AND SINCE T-249 IT CARRIES A READ VERDICT TOO, WITH NO NEW CODE ──
+ * `decide` now answers for READ tools as well (the SECRET READ GUARD in
+ * the module beside this one), and this runner needed not one line for
+ * it — which is the fact worth recording rather than a change. A refused
+ * secret read is a `block`, so it takes the exit-2 arm above and the
+ * session reads WHICH ENTRY matched on stderr. A path the guard could
+ * not classify is allowed and carries `judged: false`, so it takes the
+ * decline arm and is LOGGED, naming the path and the reason — which is
+ * exactly what the card asks of a guard that fails open: the allow is
+ * inspectable rather than silent.
+ *
+ * WHAT DOES NOT FOLLOW FROM THAT: the guard is reached only for tools
+ * `.claude/settings.json` actually routes here, and at T-249's tip that
+ * matcher is `Edit|Write|NotebookEdit`. Until it names a read tool this
+ * runner never sees a read at all. The registration is outside T-249's
+ * fence and the exact change is in its report.
+ *
  * Execution lives HERE and the decision lives in the module beside it, so
  * importing the decision is side-effect-free — the `lint-tokens.mjs`
  * shape, for the reason that file gives: an
