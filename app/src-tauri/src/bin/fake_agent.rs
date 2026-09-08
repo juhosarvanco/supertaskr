@@ -40,7 +40,7 @@ fn main() {
     // reaches FIRST, before any turn — it writes a file naming its own
     // argv. The poisoned-cache proof is the ABSENCE of that file: a cached
     // path the runner refuses is a path that never became a process.
-    if let Ok(tattle) = std::env::var("NPUTER_FAKE_TATTLE") {
+    if let Ok(tattle) = std::env::var("SUPERTASKR_FAKE_TATTLE") {
         if let Some(parent) = Path::new(&tattle).parent() {
             let _ = fs::create_dir_all(parent);
         }
@@ -50,14 +50,14 @@ fn main() {
     // The version probe: answer and exit, without disturbing the turn
     // dumps (the runner probes the version at every resolution).
     if argv.iter().any(|a| a == "--version") {
-        let version = std::env::var("NPUTER_FAKE_VERSION")
+        let version = std::env::var("SUPERTASKR_FAKE_VERSION")
             .unwrap_or_else(|_| "2.1.226 (Claude Code)".to_string());
         println!("{version}");
         return;
     }
 
-    let scenario = std::env::var("NPUTER_FAKE_SCENARIO").unwrap_or_else(|_| "happy".to_string());
-    let dump = std::env::var("NPUTER_FAKE_DUMP_DIR").ok().map(PathBuf::from);
+    let scenario = std::env::var("SUPERTASKR_FAKE_SCENARIO").unwrap_or_else(|_| "happy".to_string());
+    let dump = std::env::var("SUPERTASKR_FAKE_DUMP_DIR").ok().map(PathBuf::from);
 
     // The grandchild exists only to prove the process-group kill reaches
     // a process the runner never knew about.
@@ -142,7 +142,7 @@ fn main() {
         .and_then(|i| argv.get(i + 1))
         .cloned();
     let session_id = resumed.unwrap_or_else(|| "fake-session-0001".to_string());
-    let model = std::env::var("NPUTER_FAKE_MODEL").unwrap_or_else(|_| "fake-model-1".to_string());
+    let model = std::env::var("SUPERTASKR_FAKE_MODEL").unwrap_or_else(|_| "fake-model-1".to_string());
 
     match scenario.as_str() {
         "happy" => {
@@ -873,12 +873,12 @@ fn main() {
         }
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
-        // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
+        // (`SUPERTASKR_FAKE_SESSION_ID`), defaulting to the exact injection the
         // T-025 verifier measured. A CLI that emits this is either
         // compromised or is not the CLI we think it is; either way the id
         // must never reach argv, the registry, or a resume.
         "hostile-id" => {
-            let hostile = std::env::var("NPUTER_FAKE_SESSION_ID")
+            let hostile = std::env::var("SUPERTASKR_FAKE_SESSION_ID")
                 .unwrap_or_else(|_| "--dangerously-skip-permissions".to_string());
             emit_init(&hostile, &model);
             emit_delta("the id in my init line is a flag, not an id");
@@ -955,7 +955,7 @@ const WALK_MAX_DEPTH: usize = 8;
 ///
 /// **THIS IS A MEASUREMENT OF THE HANDED SURFACE, NOT A CLAIM ABOUT THE
 /// REAL CLI.** What it establishes is what the RUNNER put this child in
-/// front of: a body asserting that the project's `.nputer/` transcript is
+/// front of: a body asserting that the project's `.supertaskr/` transcript is
 /// absent from this list is asserting that the child was not started
 /// somewhere it could walk to it, which is the half of the cold-start
 /// restriction this repository owns. What the real CLI would do with an
@@ -1027,7 +1027,7 @@ fn spawn_late_stderr_writer() {
         }
     };
     let spawned = Command::new(exe)
-        .env("NPUTER_FAKE_SCENARIO", "stderr-late-writer")
+        .env("SUPERTASKR_FAKE_SCENARIO", "stderr-late-writer")
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::inherit())
@@ -1051,7 +1051,7 @@ fn spawn_grandchild(scenario: &str, turn_dir: Option<&Path>) {
         }
     };
     let mut command = Command::new(exe);
-    command.env("NPUTER_FAKE_SCENARIO", scenario);
+    command.env("SUPERTASKR_FAKE_SCENARIO", scenario);
     match command.spawn() {
         Ok(child) => {
             if let Some(turn_dir) = turn_dir {
@@ -1366,6 +1366,14 @@ fn emit_api_retry_401(session_id: &str, attempt: u32) {
 /// `tests/agent_runner.rs` reads the capture off disk and compares it to
 /// what this function prints, so an edit here that paraphrases the CLI
 /// reds against the file it claims to be quoting.
+///
+/// T-264: THE PRE-RENAME NAME STAYS IN EVERY STRING BELOW, and that is
+/// what being a transcription MEANS. The capture is
+/// `docs/research/captures/real-planner-turn-2026-08-19.jsonl`, a record
+/// of a real turn taken on 2026-08-19; ADR-022 decision 3 does not
+/// rewrite records, and the body above compares these bytes to that
+/// file's. A rename applied here would not update the CLI's history — it
+/// would only make this function stop quoting it.
 fn emit_observed_denials(session_id: &str) {
     println!(
         "{}",

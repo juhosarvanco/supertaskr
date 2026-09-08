@@ -1,5 +1,5 @@
 //! T-025 §5: the session registry and the transcript — both runtime
-//! files under `.nputer/`, both losable by charter (ADR-017 clause 4).
+//! files under `.supertaskr/`, both losable by charter (ADR-017 clause 4).
 //!
 //! `docs/` is the only project truth; nothing here is. Losing
 //! `sessions.json` loses the ability to RESUME a native CLI session;
@@ -34,10 +34,10 @@ use serde::{Deserialize, Serialize};
 use super::adapter::{validate_model, validate_session_id, ModelRejection, SessionIdRejection};
 use super::kit::write_atomic;
 
-/// `.nputer/sessions.json`, relative to the project root.
-pub const SESSIONS_REL: &str = ".nputer/sessions.json";
-/// `.nputer/genesis/transcript.jsonl`, relative to the project root.
-pub const TRANSCRIPT_REL: &str = ".nputer/genesis/transcript.jsonl";
+/// `.supertaskr/sessions.json`, relative to the project root.
+pub const SESSIONS_REL: &str = ".supertaskr/sessions.json";
+/// `.supertaskr/genesis/transcript.jsonl`, relative to the project root.
+pub const TRANSCRIPT_REL: &str = ".supertaskr/genesis/transcript.jsonl";
 /// One transcript line's text cap (§4's cap discipline).
 pub const TRANSCRIPT_TEXT_CAP: usize = 256 * 1024;
 
@@ -58,7 +58,7 @@ pub struct SessionEntry {
     pub native_session_id: Option<String>,
     /// UTC ISO-8601, hand-rolled (§9: zero new crates — no chrono).
     pub created: String,
-    /// Incremented per COMPLETED exchange; drives nputer.yaml's
+    /// Incremented per COMPLETED exchange; drives supertaskr.yaml's
     /// warn_after_turns sediment warning.
     pub turns: u64,
     pub tasks: Vec<String>,
@@ -99,7 +99,7 @@ impl SessionEntry {
     /// THE REGISTRY READ BOUNDARY (T-039 criterion 3).
     ///
     /// `native_session_id` is a value that came off a stream once and has
-    /// been sitting in a FILE ever since — `.nputer/sessions.json`, in the
+    /// been sitting in a FILE ever since — `.supertaskr/sessions.json`, in the
     /// user's own project directory, losable by charter and writable by
     /// anything with disk access: a sync client, another tool, a
     /// checked-in artifact, a corruption. T-029 resumes from this field,
@@ -152,7 +152,7 @@ impl SessionEntry {
             Ok(model) => model.map(str::to_string),
             Err(rejection) => {
                 println!(
-                    "[nputer] agent: session '{}' in {SESSIONS_REL} records an unusable model name ({rejection}) - showing it as not recorded",
+                    "[supertaskr] agent: session '{}' in {SESSIONS_REL} records an unusable model name ({rejection}) - showing it as not recorded",
                     truncate_utf8(&self.id, 32).escape_debug()
                 );
                 None
@@ -198,12 +198,12 @@ pub fn load(project_dir: &Path) -> SessionsFile {
             let aside = path.with_extension("json.corrupt");
             match fs::rename(&path, &aside) {
                 Ok(()) => println!(
-                    "[nputer] agent: {} did not parse ({err}) - moved to {} and starting a fresh registry",
+                    "[supertaskr] agent: {} did not parse ({err}) - moved to {} and starting a fresh registry",
                     path.display(),
                     aside.display()
                 ),
                 Err(rename_err) => eprintln!(
-                    "[nputer] agent: {} did not parse ({err}) and could not be moved aside ({rename_err}) - starting a fresh registry in memory",
+                    "[supertaskr] agent: {} did not parse ({err}) and could not be moved aside ({rename_err}) - starting a fresh registry in memory",
                     path.display()
                 ),
             }
@@ -250,9 +250,9 @@ pub fn find_planner(file: &SessionsFile) -> Option<&SessionEntry> {
 /// place it lives (T-029 criterion, folding T-026-s3).
 ///
 /// It is derived — never separately written — from the planner entry in
-/// `.nputer/sessions.json`, which is runtime state in the user's own
+/// `.supertaskr/sessions.json`, which is runtime state in the user's own
 /// project directory and losable by charter. **It is never written to
-/// `docs/`**, which stays project truth: a folder whose `.nputer/` is
+/// `docs/`**, which stays project truth: a folder whose `.supertaskr/` is
 /// deleted has lost the ability to RESUME a native session and has lost
 /// no fact about the project.
 ///
@@ -359,7 +359,7 @@ pub fn reachability_of(record: Option<&GenesisRecord>) -> GenesisReachability {
 
 /// [`reachability_of`] over the ONE place the fact lives, for a caller
 /// that wants the routing answer and nothing else. C-05's `docs_watch`
-/// asks THIS rather than statting `.nputer/` or re-parsing that JSON
+/// asks THIS rather than statting `.supertaskr/` or re-parsing that JSON
 /// itself: a rule with two implementations is two chances to disagree
 /// (T-057).
 pub fn genesis_reachability(project_dir: &Path) -> GenesisReachability {
@@ -683,7 +683,7 @@ mod tests {
                 .map(|d| d.as_millis())
                 .unwrap_or(0);
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t025-sess-{}-{}-{}",
+                "supertaskr-t025-sess-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now
@@ -1319,7 +1319,7 @@ mod tests {
         const LINES: usize = 10_000;
         let t = TempTree::new("tailcost");
         let path = transcript_path(&t.0);
-        fs::create_dir_all(path.parent().expect("parent")).expect("mk .nputer/genesis");
+        fs::create_dir_all(path.parent().expect("parent")).expect("mk .supertaskr/genesis");
 
         // Built here rather than through `append_transcript` so the test
         // owns the byte offsets it is about to assert against.
@@ -1389,7 +1389,7 @@ mod tests {
         const FILE: usize = 5 * 1024 * 1024;
         let t = TempTree::new("tailnonewline");
         let path = transcript_path(&t.0);
-        fs::create_dir_all(path.parent().expect("parent")).expect("mk .nputer/genesis");
+        fs::create_dir_all(path.parent().expect("parent")).expect("mk .supertaskr/genesis");
         // Five mebibytes, not one newline in it. Written as bytes so no
         // formatting helper can slip a line ending in.
         let content = vec![b'x'; FILE];

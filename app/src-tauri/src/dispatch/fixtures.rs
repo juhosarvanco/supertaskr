@@ -26,7 +26,7 @@ static NEXT: AtomicU32 = AtomicU32::new(0);
 pub fn scratch(label: &str) -> PathBuf {
     let n = NEXT.fetch_add(1, Ordering::SeqCst);
     let dir = std::env::temp_dir().join(format!(
-        "nputer-t110-{label}-{}-{}-{n}",
+        "supertaskr-t110-{label}-{}-{}-{n}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

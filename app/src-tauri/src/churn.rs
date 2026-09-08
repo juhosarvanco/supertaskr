@@ -250,7 +250,7 @@ struct ResolvedGit {
 
 /// The login-shell probe script — a compile-time literal, no
 /// interpolation (property 1's discipline, applied to resolution too).
-const GIT_LOGIN_PROBE: &str = "command -v git && echo NPUTER_GIT_PATH=$PATH";
+const GIT_LOGIN_PROBE: &str = "command -v git && echo SUPERTASKR_GIT_PATH=$PATH";
 
 /// Resolve `git` to a trusted absolute path and a sanitized child `PATH`,
 /// the same way C-14's CLI resolver resolves `claude` (T-060): a
@@ -366,7 +366,7 @@ fn login_shell_git() -> (Option<PathBuf>, Option<String>) {
     let mut login_path: Option<String> = None;
     for line in stdout.lines() {
         let line = line.trim();
-        if let Some(rest) = line.strip_prefix("NPUTER_GIT_PATH=") {
+        if let Some(rest) = line.strip_prefix("SUPERTASKR_GIT_PATH=") {
             login_path = Some(rest.to_string());
         } else if !line.is_empty() && found.is_none() {
             found = Some(PathBuf::from(line));
@@ -395,7 +395,7 @@ fn run_git(git: &ResolvedGit, root: &Path, argv: &[&'static str]) -> Option<Outp
         Ok(output) => Some(output),
         Err(err) => {
             eprintln!(
-                "[nputer] churn: git could not start: {}",
+                "[supertaskr] churn: git could not start: {}",
                 sanitize_for_log(&err.to_string())
             );
             None
@@ -585,7 +585,7 @@ pub fn churn_at(root: &Path) -> ChurnOutcome {
     };
     if !output.status.success() {
         eprintln!(
-            "[nputer] churn: git log exited {} - {}",
+            "[supertaskr] churn: git log exited {} - {}",
             output.status.code().unwrap_or(-1),
             sanitize_for_log(&String::from_utf8_lossy(&output.stderr))
         );
@@ -722,7 +722,7 @@ mod tests {
         // the SHARED gate — or the refusals below prove only a broken
         // predicate (a negative assertion needs a positive control).
         let root = std::env::temp_dir().join(format!(
-            "nputer-t013-gate-{}-{}",
+            "supertaskr-t013-gate-{}-{}",
             std::process::id(),
             now_ms()
         ));
@@ -771,7 +771,7 @@ mod tests {
             "cargo no longer runs tests from the package root — the relative fixture \
              below would not resolve and this test would pass for the wrong reason"
         );
-        let rel_dir = format!("target/nputer-t013-relgit-{}-{}", std::process::id(), now_ms());
+        let rel_dir = format!("target/supertaskr-t013-relgit-{}-{}", std::process::id(), now_ms());
         let abs_dir = cwd.join(&rel_dir);
         fs::create_dir_all(&abs_dir).expect("mk rel dir");
         let planted = abs_dir.join("git");
@@ -840,7 +840,7 @@ mod tests {
         // `Command::new("git")` moves `$0` off our program, and dropping
         // the `env("PATH", …)` moves `$PATH` off our sentinel.
         let root = std::env::temp_dir().join(format!(
-            "nputer-t013-rungit-{}-{}",
+            "supertaskr-t013-rungit-{}-{}",
             std::process::id(),
             now_ms()
         ));
@@ -850,7 +850,7 @@ mod tests {
             .expect("write");
         fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).expect("chmod");
 
-        let sentinel = "/nputer-sentinel-t013-only";
+        let sentinel = "/supertaskr-sentinel-t013-only";
         let git = ResolvedGit {
             program: program.clone(),
             child_path: OsString::from(sentinel),
@@ -1014,7 +1014,7 @@ mod tests {
     impl TempRepo {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t013-{}-{}-{}",
+                "supertaskr-t013-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now_ms()

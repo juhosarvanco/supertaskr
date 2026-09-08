@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-use nputer_index::arch;
-use nputer_index::rollup::{detail, rollup, Detail, Rollup};
-use nputer_index::{Graph, GRAPH_REL_PATH};
+use supertaskr_index::arch;
+use supertaskr_index::rollup::{detail, rollup, Detail, Rollup};
+use supertaskr_index::{Graph, GRAPH_REL_PATH};
 
 use crate::docs_watch::{has_plain_docs_dir, WatchState};
 
@@ -22,12 +22,12 @@ use crate::docs_watch::{has_plain_docs_dir, WatchState};
 /// that channel. Read the ruling before proposing a cap here.
 ///
 /// **WHAT TRAVELS AT REST AND WHAT TRAVELS ON A DRILL.** At rest:
-/// [`nputer_index::rollup::Rollup`] — components, their observed and
+/// [`supertaskr_index::rollup::Rollup`] — components, their observed and
 /// declared edges with counts, per-component file COUNTS, and nothing
 /// keyed by a file. On a drill: one [`Detail`] answer for one named
 /// target. The resting payload's size is a function of the REGISTRY, so
 /// the map's cost stops tracking the tree — the property
-/// `crates/nputer-index/tests/budget.rs` pins as a relation.
+/// `crates/supertaskr-index/tests/budget.rs` pins as a relation.
 ///
 /// **THE GRAPH IS READ HERE, FROM DISK, AND NEVER CROSSES IPC.** That is
 /// what removes the wall: `graph.json` can be any size the indexer wrote
@@ -46,7 +46,7 @@ use crate::docs_watch::{has_plain_docs_dir, WatchState};
 /// REFUSED rather than followed, the same refusal `index_cmd::run_index`
 /// makes on the write side. `arch_detail`'s one argument is a KEY into
 /// the document just read — never a path this process opens (see
-/// [`nputer_index::rollup::detail`]).
+/// [`supertaskr_index::rollup::detail`]).
 
 /// What `arch_rollup` can say. Every arm is a typed outcome; nothing
 /// panics and no error text from the filesystem reaches the webview
@@ -203,7 +203,7 @@ pub fn target_within_bounds(target: &str) -> bool {
 mod tests {
     use super::*;
     use crate::docs_watch::{now_ms, WatchCtl};
-    use nputer_index::{index, write_graph, IndexOptions};
+    use supertaskr_index::{index, write_graph, IndexOptions};
     // `Path` is borrowed by `TempTree::root` and by nothing outside this
     // module, so it belongs to the test build alone — at the file head it
     // was an unused import on every non-test `cargo build` (T-236-s6).
@@ -218,7 +218,7 @@ mod tests {
     impl TempTree {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t140s1-{}-{}-{}",
+                "supertaskr-t140s1-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now_ms()

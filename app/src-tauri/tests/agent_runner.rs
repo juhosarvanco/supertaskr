@@ -25,19 +25,19 @@ use std::sync::atomic::AtomicU64;
 use std::sync::{mpsc, Arc};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use nputer_lib::agent::adapter;
-use nputer_lib::agent::runner::{RunEvent, RunnerConfig, TurnError};
-use nputer_lib::agent::{
+use supertaskr_lib::agent::adapter;
+use supertaskr_lib::agent::runner::{RunEvent, RunnerConfig, TurnError};
+use supertaskr_lib::agent::{
     self, sessions, CancelOutcome, GenesisStatus, Phase, SendOutcome, StartOutcome,
 };
-use nputer_lib::docs_watch::{
+use supertaskr_lib::docs_watch::{
     self, apply_picked_folder, spawn_watcher_thread, DocsSnapshot, WatchCtl, WatchState, DEBOUNCE,
 };
 
 /// The canary planted in THIS process's environment. If it ever appears
 /// in the child's environment dump, `env_clear()` + allowlist is broken
 /// and an `ANTHROPIC_API_KEY` would ride along the same way.
-const CANARY: &str = "NPUTER_TEST_SECRET";
+const CANARY: &str = "SUPERTASKR_TEST_SECRET";
 const CANARY_VALUE: &str = "if-you-can-read-this-the-env-leaked";
 
 fn now_ms() -> u128 {
@@ -115,7 +115,7 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
     std::env::set_var(CANARY, CANARY_VALUE);
 
     let root = std::env::temp_dir().join(format!(
-        "nputer-t025-{}-{}-{}",
+        "supertaskr-t025-{}-{}-{}",
         tag,
         std::process::id(),
         now_ms()
@@ -131,15 +131,15 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
     }
 
     let mut extra_env = vec![
-        ("NPUTER_FAKE_SCENARIO".to_string(), opts.scenario.to_string()),
-        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
-        ("NPUTER_FAKE_VERSION".to_string(), opts.version.to_string()),
+        ("SUPERTASKR_FAKE_SCENARIO".to_string(), opts.scenario.to_string()),
+        ("SUPERTASKR_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+        ("SUPERTASKR_FAKE_VERSION".to_string(), opts.version.to_string()),
     ];
     if let Some(id) = opts.session_id {
-        extra_env.push(("NPUTER_FAKE_SESSION_ID".to_string(), id.to_string()));
+        extra_env.push(("SUPERTASKR_FAKE_SESSION_ID".to_string(), id.to_string()));
     }
     if let Some(model) = &opts.model {
-        extra_env.push(("NPUTER_FAKE_MODEL".to_string(), model.clone()));
+        extra_env.push(("SUPERTASKR_FAKE_MODEL".to_string(), model.clone()));
     }
 
     let cfg = RunnerConfig {
@@ -148,7 +148,7 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
         // the body's own, when it drives the PATH arm (T-153-s2).
         path_override: Some(
             opts.path_override
-                .unwrap_or_else(|| "/nputer-test-path/bin:/nputer-test-path/sbin".into()),
+                .unwrap_or_else(|| "/supertaskr-test-path/bin:/supertaskr-test-path/sbin".into()),
         ),
         extra_env,
         probe_login_shell: false,
@@ -185,7 +185,7 @@ const FIXTURE_DEADLINE: Duration = Duration::from_secs(20);
 ///
 /// **THE CITATION (T-025-s5).** On 2026-08-30 the real smoke ran against
 /// a real model for the first time in this project's life (this machine,
-/// claude 2.1.226, `NPUTER_REAL_CLI=1 cargo test --test agent_runner
+/// claude 2.1.226, `SUPERTASKR_REAL_CLI=1 cargo test --test agent_runner
 /// real_cli_smoke -- --ignored --nocapture`). The 2026-08-16 park reason
 /// — a revoked OAuth token — was stale: auth passed, the runner
 /// registered native session `677664de-…`, real text streamed ("I'll
@@ -221,7 +221,7 @@ const FIXTURE_DEADLINE: Duration = Duration::from_secs(20);
 ///    2026-08-30 is the worked example. Too large costs one human,
 ///    hand-running an `#[ignore]`d body with `--nocapture` in front of
 ///    them, a wait they can end with ^C. No suite and no CI can reach
-///    this constant: `#[ignore]` and `NPUTER_REAL_CLI=1` both stand.
+///    this constant: `#[ignore]` and `SUPERTASKR_REAL_CLI=1` both stand.
 const REAL_CLI_DEADLINE: Duration = Duration::from_secs(15 * 60);
 
 fn wait_for(
@@ -493,7 +493,7 @@ fn spawn_turn_resume_round_trip_with_the_prompt_on_stdin() {
     );
     let stdin1 = read_dump(&h.dump, 1, "stdin.txt");
     assert!(stdin1.contains("You are the planner"));
-    assert!(stdin1.contains(".nputer/genesis/kit"));
+    assert!(stdin1.contains(".supertaskr/genesis/kit"));
     // cwd is the canonical open project dir, from WatchState.
     assert_eq!(
         fs::canonicalize(read_dump(&h.dump, 1, "cwd.txt")).expect("cwd canonical"),
@@ -551,7 +551,7 @@ fn the_child_gets_the_allowlist_and_never_a_secret() {
     assert_eq!(env.get("TERM").map(String::as_str), Some("dumb"), "TERM is forced, not forwarded");
     assert_eq!(
         env.get("PATH").map(String::as_str),
-        Some("/nputer-test-path/bin:/nputer-test-path/sbin"),
+        Some("/supertaskr-test-path/bin:/supertaskr-test-path/sbin"),
         "PATH is the explicitly captured login PATH, not ours"
     );
     assert_eq!(
@@ -560,7 +560,7 @@ fn the_child_gets_the_allowlist_and_never_a_secret() {
         "HOME rides: the CLI's own login config lives under it (ADR-003's auth)"
     );
     // The seam's own variables are there because the TEST put them there.
-    assert_eq!(env.get("NPUTER_FAKE_SCENARIO").map(String::as_str), Some("happy"));
+    assert_eq!(env.get("SUPERTASKR_FAKE_SCENARIO").map(String::as_str), Some("happy"));
 }
 
 /// SESSION REGISTRY + TRANSCRIPT after a two-turn exchange (§10 ob. 8).
@@ -605,7 +605,7 @@ fn the_registry_and_transcript_record_the_exchange() {
     assert_eq!(status.turn, 2);
     assert_eq!(status.native_session_id.as_deref(), Some("fake-session-0001"));
     assert_eq!(status.cli_version.as_deref(), Some("2.1.226 (Claude Code)"));
-    assert_eq!(status.method_version, nputer_lib::agent::kit::METHOD_SNAPSHOT_VERSION);
+    assert_eq!(status.method_version, supertaskr_lib::agent::kit::METHOD_SNAPSHOT_VERSION);
     assert!(status.last_event_at_ms.is_some());
 }
 
@@ -618,7 +618,7 @@ fn the_kit_lands_inside_the_project_and_the_kickoff_points_at_it() {
     wait_completed(&h.events);
     settle(&h.agent);
 
-    let kit_root = h.project.join(".nputer/genesis/kit");
+    let kit_root = h.project.join(".supertaskr/genesis/kit");
     assert!(kit_root.join("roles/planner.md").exists());
     assert!(kit_root.join("interview/plan-interview.md").exists());
     assert!(kit_root.join("docs-templates/NORTH_STAR.md").exists());
@@ -650,8 +650,8 @@ fn cancel_kills_the_whole_process_group_including_a_grandchild() {
             .expect("grandchild pid"),
     );
     assert_ne!(child_pid, grandchild_pid);
-    assert!(nputer_lib::agent::runner::pid_alive(child_pid), "the child is running");
-    assert!(nputer_lib::agent::runner::pid_alive(grandchild_pid), "the grandchild is running");
+    assert!(supertaskr_lib::agent::runner::pid_alive(child_pid), "the child is running");
+    assert!(supertaskr_lib::agent::runner::pid_alive(grandchild_pid), "the grandchild is running");
 
     match agent::cancel(&h.agent) {
         CancelOutcome::Cancelled { turn } => assert_eq!(turn, 1),
@@ -663,16 +663,16 @@ fn cancel_kills_the_whole_process_group_including_a_grandchild() {
     // GROUP, not the process.
     let deadline = Instant::now() + Duration::from_secs(15);
     while Instant::now() < deadline {
-        if !nputer_lib::agent::runner::pid_alive(child_pid)
-            && !nputer_lib::agent::runner::pid_alive(grandchild_pid)
+        if !supertaskr_lib::agent::runner::pid_alive(child_pid)
+            && !supertaskr_lib::agent::runner::pid_alive(grandchild_pid)
         {
             break;
         }
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "THE GRANDCHILD OUTLIVED THE CANCEL - the kill did not reach the process group"
     );
 
@@ -713,7 +713,7 @@ fn the_exit_hook_reaps_the_turns_process_group() {
     // The GRANDCHILD is not our child, so nothing holds a zombie entry
     // for it: once the group signal lands it is gone immediately.
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "quitting the app leaves no grandchild"
     );
     // The direct child is signalled by the same `killpg`, but its pid
@@ -723,7 +723,7 @@ fn the_exit_hook_reaps_the_turns_process_group() {
     // anyway, so an unreaped zombie is collected by init regardless; this
     // ordering is a test-precision point, not a leak.)
     settle(&h.agent);
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
 }
 
 // ---- T-043: the kill path, its two limbs and its honest grace ---------
@@ -761,7 +761,7 @@ mod sig {
 #[cfg(unix)]
 struct OwnedGroup {
     child: std::process::Child,
-    handle: nputer_lib::agent::runner::ChildHandle,
+    handle: supertaskr_lib::agent::runner::ChildHandle,
     pid: i32,
     dump: PathBuf,
     root: PathBuf,
@@ -775,7 +775,7 @@ impl OwnedGroup {
     fn spawn(tag: &str, scenario: &str) -> Self {
         use std::os::unix::process::CommandExt;
         let root = std::env::temp_dir().join(format!(
-            "nputer-t043-{}-{}-{}",
+            "supertaskr-t043-{}-{}-{}",
             tag,
             std::process::id(),
             now_ms()
@@ -784,15 +784,15 @@ impl OwnedGroup {
         fs::create_dir_all(&dump).expect("mk dump");
         let mut command = std::process::Command::new(fake_agent_bin());
         command
-            .env("NPUTER_FAKE_SCENARIO", scenario)
-            .env("NPUTER_FAKE_DUMP_DIR", &dump)
+            .env("SUPERTASKR_FAKE_SCENARIO", scenario)
+            .env("SUPERTASKR_FAKE_DUMP_DIR", &dump)
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
         command.process_group(0);
         let child = command.spawn().expect("spawn the fake");
         let pid = child.id() as i32;
-        let handle = nputer_lib::agent::runner::ChildHandle::new(pid, 1);
+        let handle = supertaskr_lib::agent::runner::ChildHandle::new(pid, 1);
         // THE HANDSHAKE, not a sleep. `spawn` returns at fork; the child
         // installs its SIGTERM disposition after `exec`, and a signal
         // sent into that window kills a "resistant" fixture like a
@@ -830,16 +830,16 @@ impl OwnedGroup {
         self.cleanup();
         let deadline = Instant::now() + Duration::from_secs(10);
         for pid in pids {
-            while nputer_lib::agent::runner::pid_alive(*pid) && Instant::now() < deadline {
+            while supertaskr_lib::agent::runner::pid_alive(*pid) && Instant::now() < deadline {
                 std::thread::sleep(Duration::from_millis(20));
             }
             assert!(
-                !nputer_lib::agent::runner::pid_alive(*pid),
+                !supertaskr_lib::agent::runner::pid_alive(*pid),
                 "pid {pid} survived this test - a kill-path body must never leak a process"
             );
         }
         assert!(
-            !nputer_lib::agent::runner::group_has_members(self.pid),
+            !supertaskr_lib::agent::runner::group_has_members(self.pid),
             "process group {} still has members after cleanup",
             self.pid
         );
@@ -920,8 +920,8 @@ fn a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs() {
     let mut g = OwnedGroup::spawn("zombie", "sleeper");
     let pid = g.pid;
     // Alive and in its own group.
-    assert!(nputer_lib::agent::runner::pid_alive(pid), "the sleeper is running");
-    assert!(nputer_lib::agent::runner::group_has_members(pid), "its group holds it");
+    assert!(supertaskr_lib::agent::runner::pid_alive(pid), "the sleeper is running");
+    assert!(supertaskr_lib::agent::runner::group_has_members(pid), "its group holds it");
 
     // SIGTERM the PROCESS, deliberately not the group, and do not wait.
     unsafe {
@@ -938,7 +938,7 @@ fn a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs() {
 
     // THE ZOMBIE WINDOW: the process is dead and `kill(pid, 0)` says yes.
     assert!(
-        nputer_lib::agent::runner::pid_alive(pid),
+        supertaskr_lib::agent::runner::pid_alive(pid),
         "a dead-but-unreaped child must still answer kill(pid, 0) - if this reds, \
          the platform stopped behaving the way the two-limb poll is written for"
     );
@@ -946,9 +946,9 @@ fn a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs() {
     // Reap it. Now both questions agree, and only now.
     let status = g.child.wait().expect("wait");
     assert!(status.code().is_none(), "SIGTERM kills by signal, not by exit code: {status:?}");
-    assert!(!nputer_lib::agent::runner::pid_alive(pid), "the reaped pid is gone");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(pid), "the reaped pid is gone");
     assert!(
-        !nputer_lib::agent::runner::group_has_members(pid),
+        !supertaskr_lib::agent::runner::group_has_members(pid),
         "an empty process group must report empty - this is the ESRCH arm"
     );
     g.finish(&[pid]);
@@ -965,7 +965,7 @@ fn a_cooperative_group_releases_the_owning_poll_well_inside_the_grace() {
     let mut g = OwnedGroup::spawn("coop", "sleeper");
     let pid = g.pid;
     let handle = g.handle.clone();
-    let exit = nputer_lib::agent::runner::terminate_group_owning(
+    let exit = supertaskr_lib::agent::runner::terminate_group_owning(
         &mut g.child,
         &handle,
         Duration::from_millis(3000),
@@ -979,7 +979,7 @@ fn a_cooperative_group_releases_the_owning_poll_well_inside_the_grace() {
         exit.waited.as_millis()
     );
     assert!(handle.reaped(), "the owner must PUBLISH the reap for the observers");
-    assert!(!nputer_lib::agent::runner::pid_alive(pid), "no zombie behind an early release");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(pid), "no zombie behind an early release");
     g.finish(&[pid]);
 }
 
@@ -1000,10 +1000,10 @@ fn a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_
     let pid = g.pid;
     let gc = g.grandchild();
     assert_ne!(pid, gc);
-    assert!(nputer_lib::agent::runner::pid_alive(gc), "the resistant grandchild is running");
+    assert!(supertaskr_lib::agent::runner::pid_alive(gc), "the resistant grandchild is running");
 
     let handle = g.handle.clone();
-    let exit = nputer_lib::agent::runner::terminate_group_owning(
+    let exit = supertaskr_lib::agent::runner::terminate_group_owning(
         &mut g.child,
         &handle,
         Duration::from_millis(800),
@@ -1023,11 +1023,11 @@ fn a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_
     );
 
     let deadline = Instant::now() + Duration::from_secs(10);
-    while nputer_lib::agent::runner::pid_alive(gc) && Instant::now() < deadline {
+    while supertaskr_lib::agent::runner::pid_alive(gc) && Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(20));
     }
     assert!(
-        !nputer_lib::agent::runner::pid_alive(gc),
+        !supertaskr_lib::agent::runner::pid_alive(gc),
         "THE RESISTANT GRANDCHILD OUTLIVED THE GRACE - SIGKILL never reached the group"
     );
     g.finish(&[pid, gc]);
@@ -1042,7 +1042,7 @@ fn a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps() {
     let mut g = OwnedGroup::spawn("resistant", "sleeper-resistant");
     let pid = g.pid;
     let handle = g.handle.clone();
-    let exit = nputer_lib::agent::runner::terminate_group_owning(
+    let exit = supertaskr_lib::agent::runner::terminate_group_owning(
         &mut g.child,
         &handle,
         Duration::from_millis(800),
@@ -1061,7 +1061,7 @@ fn a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps() {
     let status = g.child.wait().expect("the SIGKILLed child is reapable");
     assert!(status.code().is_none(), "killed by a signal, not an exit code: {status:?}");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(pid),
+        !supertaskr_lib::agent::runner::pid_alive(pid),
         "the SIGKILLed child was left as a ZOMBIE - the escalation path must still reap"
     );
     g.finish(&[pid]);
@@ -1088,7 +1088,7 @@ fn the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group
     let published_pid = g.pid;
     let handle = g.handle.clone();
     let observer = std::thread::spawn(move || {
-        nputer_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(3000))
+        supertaskr_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(3000))
     });
     // Stand in for the worker: wait the child, then publish.
     let _ = g.child.wait();
@@ -1108,7 +1108,7 @@ fn the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group
     let silent_pid = silent.pid;
     let handle = silent.handle.clone();
     let observer = std::thread::spawn(move || {
-        nputer_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(800))
+        supertaskr_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(800))
     });
     // Reaped, so the group really is empty — but the flag stays false.
     let _ = silent.child.wait();
@@ -1172,9 +1172,9 @@ fn a_cancel_releases_the_turn_latch_well_inside_the_grace() {
          the grace is being paid in full again",
         latch_released.as_millis()
     );
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "the grandchild outlived the cancel"
     );
 }
@@ -1214,9 +1214,9 @@ fn the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group() {
         blocked.as_millis()
     );
     settle(&h.agent);
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "quitting the app leaves no grandchild"
     );
 }
@@ -1247,7 +1247,7 @@ fn the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists() {
             .parse()
             .expect("grandchild pid"),
     );
-    assert!(nputer_lib::agent::runner::pid_alive(grandchild_pid), "the resistant one is running");
+    assert!(supertaskr_lib::agent::runner::pid_alive(grandchild_pid), "the resistant one is running");
 
     let at_exit = Instant::now();
     h.agent.reap_for_exit();
@@ -1260,12 +1260,12 @@ fn the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists() {
     );
     settle(&h.agent);
     let deadline = Instant::now() + Duration::from_secs(10);
-    while nputer_lib::agent::runner::pid_alive(grandchild_pid) && Instant::now() < deadline {
+    while supertaskr_lib::agent::runner::pid_alive(grandchild_pid) && Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(20));
     }
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the exit");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "the child outlived the exit");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "THE RESISTANT GRANDCHILD OUTLIVED THE APP - SIGKILL never reached the group"
     );
 }
@@ -1292,7 +1292,7 @@ fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie()
     );
     // The disposition is installed after exec; wait for the fact itself.
     wait_for_file(&h.dump.join("ready.txt"));
-    assert!(nputer_lib::agent::runner::pid_alive(child_pid), "the resistant child is running");
+    assert!(supertaskr_lib::agent::runner::pid_alive(child_pid), "the resistant child is running");
 
     let at_cancel = Instant::now();
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
@@ -1317,11 +1317,11 @@ fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie()
         latch_released.as_millis()
     );
     assert!(
-        !nputer_lib::agent::runner::pid_alive(child_pid),
+        !supertaskr_lib::agent::runner::pid_alive(child_pid),
         "the resistant child outlived its SIGKILL, or was left as a ZOMBIE"
     );
     assert!(
-        !nputer_lib::agent::runner::group_has_members(child_pid),
+        !supertaskr_lib::agent::runner::group_has_members(child_pid),
         "the turn's process group still has members after the cancel"
     );
     // A cancel is an OUTCOME: no typed failure, even for a killed child.
@@ -1371,9 +1371,9 @@ fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
         assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Idle));
         // …and the fourth observation is `Drop`, at the end of this scope.
     }
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child survived four observers");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "the child survived four observers");
     assert!(
-        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        !supertaskr_lib::agent::runner::pid_alive(grandchild_pid),
         "the grandchild survived four observers"
     );
 }
@@ -1398,24 +1398,24 @@ fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
 #[test]
 #[cfg(unix)]
 fn a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle() {
-    use nputer_lib::agent::adapter::planner_adapter;
-    use nputer_lib::agent::runner::{run_turn, ChildHandle, Emitter, TurnRequest};
+    use supertaskr_lib::agent::adapter::planner_adapter;
+    use supertaskr_lib::agent::runner::{run_turn, ChildHandle, Emitter, TurnRequest};
     use std::sync::atomic::AtomicBool;
     use std::sync::Mutex;
 
     let h = harness("publish", Options::default());
     let cfg = RunnerConfig {
         binary_override: Some(fake_agent_bin()),
-        path_override: Some("/nputer-test-path/bin".into()),
+        path_override: Some("/supertaskr-test-path/bin".into()),
         extra_env: vec![
-            ("NPUTER_FAKE_SCENARIO".into(), "happy".into()),
-            ("NPUTER_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
+            ("SUPERTASKR_FAKE_SCENARIO".into(), "happy".into()),
+            ("SUPERTASKR_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
         ],
         probe_login_shell: false,
         ..RunnerConfig::default()
     };
     let adapter = planner_adapter();
-    let cli = nputer_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
+    let cli = supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
 
     let child_slot: Arc<Mutex<Option<ChildHandle>>> = Arc::new(Mutex::new(None));
     // The observer: exactly what `reap_for_exit` does — clone the handle
@@ -1459,7 +1459,7 @@ fn a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle() {
         "a turn that ended HAPPILY never published its reap, so an exit observer holding \
          this handle would poll the full grace for a child that is already gone"
     );
-    assert!(!nputer_lib::agent::runner::pid_alive(handle.pid), "and it really is gone");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(handle.pid), "and it really is gone");
     assert!(child_slot.lock().expect("slot").is_none(), "the slot is cleared after the turn");
 }
 
@@ -2155,7 +2155,7 @@ fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
         .expect("the capture's result line lists its denials");
 
     let out = std::process::Command::new(fake_agent_bin())
-        .env("NPUTER_FAKE_SCENARIO", "denied-then-completed")
+        .env("SUPERTASKR_FAKE_SCENARIO", "denied-then-completed")
         .stdin(std::process::Stdio::null())
         .output()
         .expect("the fake agent runs");
@@ -2237,7 +2237,7 @@ fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
 /// adds NO new reader — it is the same capture that body already reads.
 #[test]
 fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
-    use nputer_lib::agent::adapter::{
+    use supertaskr_lib::agent::adapter::{
         RefusalMechanism, OBSERVED_PLANNER_REFUSALS,
     };
 
@@ -2326,7 +2326,7 @@ fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
 /// above already read (CONVENTIONS, THE FOUR WALKS).
 #[test]
 fn the_cli_default_tool_table_is_read_off_the_2026_08_19_capture() {
-    use nputer_lib::agent::adapter::{CLAUDE_V1, EFFECTIVE_GRANT_TABLES};
+    use supertaskr_lib::agent::adapter::{CLAUDE_V1, EFFECTIVE_GRANT_TABLES};
 
     let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
@@ -3270,7 +3270,7 @@ fn a_missing_binary_is_a_typed_spawn_failure_not_a_panic() {
     let h = harness(
         "spawnfail",
         Options {
-            binary: Some(PathBuf::from("/nputer/definitely/not/here")),
+            binary: Some(PathBuf::from("/supertaskr/definitely/not/here")),
             ..Options::default()
         },
     );
@@ -3308,7 +3308,7 @@ fn a_cli_below_the_minimum_major_is_refused_loudly() {
         other => panic!("expected UnsupportedVersion, got {other:?}"),
     }
     // Nothing was spawned and nothing was written.
-    assert!(!h.project.join(".nputer").exists());
+    assert!(!h.project.join(".supertaskr").exists());
 }
 
 #[test]
@@ -3318,7 +3318,7 @@ fn a_missing_cli_is_a_typed_not_found_never_a_dead_end() {
     // the login-shell probe is off, so this cannot find the real CLI.
     let cfg = RunnerConfig {
         binary_override: None,
-        path_override: Some("/nputer-empty-path".into()),
+        path_override: Some("/supertaskr-empty-path".into()),
         probe_login_shell: false,
         ..RunnerConfig::default()
     };
@@ -3394,7 +3394,7 @@ fn a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write() {
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Idle));
 }
 
-// ---- .nputer/ stays outside the docs watch root (§5, criterion 3) ------
+// ---- .supertaskr/ stays outside the docs watch root (§5, criterion 3) ------
 
 /// THE TWO-DIRECTION TEST. One live watcher, one docs-bearing project:
 /// the runner's FULL write set produces ZERO snapshots, and then the
@@ -3420,13 +3420,13 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
         other => panic!("expected Picked, got {other:?}"),
     }
 
-    // DIRECTION ONE: the runner's whole write set — the `.nputer/` dir
+    // DIRECTION ONE: the runner's whole write set — the `.supertaskr/` dir
     // itself, the materialized kit, the registry, and a churn of
-    // transcript appends. `.nputer/` sits OUTSIDE the recursive docs
+    // transcript appends. `.supertaskr/` sits OUTSIDE the recursive docs
     // watch; the root sentinel is non-recursive, so its own creation
     // wakes one batch that collects EQUAL to the baseline and is
-    // suppressed. Nothing inside `.nputer/**` raises an event at all.
-    nputer_lib::agent::kit::materialize(&h.project).expect("kit");
+    // suppressed. Nothing inside `.supertaskr/**` raises an event at all.
+    supertaskr_lib::agent::kit::materialize(&h.project).expect("kit");
     sessions::upsert(
         &h.project,
         sessions::SessionEntry {
@@ -3440,7 +3440,7 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
             roles: vec!["planner".into()],
             status: "running".into(),
             // T-167 added the field; this body's subject is the WATCHER's
-            // silence over `.nputer/**` and no assertion in it moved.
+            // silence over `.supertaskr/**` and no assertion in it moved.
             skills: vec![],
         },
     )
@@ -3482,9 +3482,9 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
         "the snapshot carries what the agent wrote: {:?}",
         snapshot.files.iter().map(|f| &f.path).collect::<Vec<_>>()
     );
-    // Nothing under .nputer/ ever rides a snapshot.
+    // Nothing under .supertaskr/ ever rides a snapshot.
     assert!(
-        snapshot.files.iter().all(|f| !f.path.contains(".nputer")),
+        snapshot.files.iter().all(|f| !f.path.contains(".supertaskr")),
         "runtime files must never enter the docs model"
     );
 }
@@ -3544,7 +3544,7 @@ fn no_source_in_the_agent_module_builds_a_shell_command_line() {
     // The single shell invocation in the module is the PROBE, and its
     // script is a literal with no interpolation.
     let runner = fs::read_to_string(dir.join("runner.rs")).expect("runner.rs");
-    assert!(runner.contains(r#""command -v claude && echo NPUTER_LOGIN_PATH=$PATH""#));
+    assert!(runner.contains(r#""command -v claude && echo SUPERTASKR_LOGIN_PATH=$PATH""#));
     assert!(
         !runner.contains("format!(\"command -v"),
         "the probe script must never be format!-assembled"
@@ -3563,7 +3563,7 @@ fn no_source_in_the_agent_module_builds_a_shell_command_line() {
 
 /// THE REGRESSION PIN, end to end and data-borne: the fake CLI puts the
 /// verifier's exact injection in its own init line. Before the gate, this
-/// id was captured, emitted, written to `.nputer/sessions.json`, and
+/// id was captured, emitted, written to `.supertaskr/sessions.json`, and
 /// substituted into turn 2's argv as `["WebSearch", "--resume",
 /// "--dangerously-skip-permissions"]` — a real spawned child, measured.
 /// Now the turn fails typed and nothing downstream ever sees the id.
@@ -3678,7 +3678,7 @@ fn every_hostile_id_class_fails_the_turn_at_capture() {
     settle(&h.agent);
 }
 
-/// THE READ BOUNDARY (criterion 3). `.nputer/sessions.json` is a runtime
+/// THE READ BOUNDARY (criterion 3). `.supertaskr/sessions.json` is a runtime
 /// file in the user's project directory: a sync client, another tool, or a
 /// corruption can write it, and T-029 spawns from what it says. A hostile
 /// id in that file is refused with a typed outcome — and the discriminating
@@ -3687,7 +3687,7 @@ fn every_hostile_id_class_fails_the_turn_at_capture() {
 fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
     let h = harness("t039registry", Options::default());
     let path = sessions::sessions_path(&h.project);
-    fs::create_dir_all(path.parent().expect("parent")).expect("mkdir .nputer");
+    fs::create_dir_all(path.parent().expect("parent")).expect("mkdir .supertaskr");
     let planted = |id: &str| {
         serde_json::json!({ "sessions": [{
             "id": "S1", "agent": "claude", "model": "claude-sonnet-5",
@@ -3724,7 +3724,7 @@ fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
         // Nothing spawned, nothing materialized, and the file left alone
         // for the user to look at.
         assert!(!turn_dump(&h.dump, 1).exists(), "a refused read spawns no child");
-        assert!(!h.project.join(".nputer/genesis/kit").exists(), "and materializes no kit");
+        assert!(!h.project.join(".supertaskr/genesis/kit").exists(), "and materializes no kit");
         assert_eq!(fs::read_to_string(&path).expect("still there"), planted(hostile));
     }
 
@@ -3747,24 +3747,24 @@ fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
 /// validation.
 #[test]
 fn a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing() {
-    use nputer_lib::agent::adapter::planner_adapter;
-    use nputer_lib::agent::runner::{run_turn, Emitter, TurnRequest};
+    use supertaskr_lib::agent::adapter::planner_adapter;
+    use supertaskr_lib::agent::runner::{run_turn, Emitter, TurnRequest};
     use std::sync::atomic::AtomicBool;
     use std::sync::Mutex;
 
     let h = harness("t039choke", Options::default());
     let cfg = RunnerConfig {
         binary_override: Some(fake_agent_bin()),
-        path_override: Some("/nputer-test-path/bin".into()),
+        path_override: Some("/supertaskr-test-path/bin".into()),
         extra_env: vec![
-            ("NPUTER_FAKE_SCENARIO".into(), "happy".into()),
-            ("NPUTER_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
+            ("SUPERTASKR_FAKE_SCENARIO".into(), "happy".into()),
+            ("SUPERTASKR_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
         ],
         probe_login_shell: false,
         ..RunnerConfig::default()
     };
     let adapter = planner_adapter();
-    let cli = nputer_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
+    let cli = supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
     let (tx, events) = mpsc::channel();
     let emitter = Emitter::new(
         Arc::new(move |event| {
@@ -3851,7 +3851,7 @@ fn plant_agent_paths(config: &Path, path: &str, login_path: Option<&str>) {
 }
 
 /// A REAL, executable binary at `dest` — the fake agent, copied. Given
-/// `NPUTER_FAKE_TATTLE` it writes that file the instant it is executed, by
+/// `SUPERTASKR_FAKE_TATTLE` it writes that file the instant it is executed, by
 /// ANY argv including `--version`, which is what the resolve-time
 /// `probe_version` reaches first.
 fn plant_binary(dest: &Path) {
@@ -3905,7 +3905,7 @@ fn wired(project: &Path, cfg: RunnerConfig) -> (WatchState, agent::AgentState, m
 #[test]
 fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     let root = std::env::temp_dir().join(format!(
-        "nputer-t060-nocache-{}-{}",
+        "supertaskr-t060-nocache-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -3917,7 +3917,7 @@ fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     let planted = root.join("bin/claude").display().to_string();
     plant_agent_paths(&root.join("config"), &planted, None);
     assert_eq!(
-        nputer_lib::agent::runner::validate_resolved_binary(
+        supertaskr_lib::agent::runner::validate_resolved_binary(
             Path::new(&planted),
             adapter::planner_adapter()
         ),
@@ -3927,14 +3927,14 @@ fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     );
 
     let extra = vec![
-        ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
-        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("SUPERTASKR_FAKE_TATTLE".to_string(), tattle.display().to_string()),
+        ("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string()),
     ];
 
     // DOOR 1 — `resolve_cli` itself, where `probe_version` spawned.
-    let cfg = resolving_cfg(extra.clone(), Some("/nputer-test-path/bin"));
-    match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
-        Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => {
+    let cfg = resolving_cfg(extra.clone(), Some("/supertaskr-test-path/bin"));
+    match supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
+        Err(supertaskr_lib::agent::runner::ResolveError::NotFound { probed }) => {
             assert!(
                 !probed.iter().any(|p| p.contains("cached")),
                 "nothing may report having consulted a cache: {probed:?}"
@@ -3950,7 +3950,7 @@ fn there_is_no_agent_paths_json_to_poison_at_any_door() {
 
     // DOOR 2 — `start_genesis`, which resolves live on every start.
     let (watch, agent, _events) =
-        wired(&project, resolving_cfg(extra.clone(), Some("/nputer-test-path/bin")));
+        wired(&project, resolving_cfg(extra.clone(), Some("/supertaskr-test-path/bin")));
     match agent::start_genesis(&watch, &agent) {
         StartOutcome::CliNotFound { probed } => {
             assert!(!probed.iter().any(|p| p.contains("cached")), "{probed:?}")
@@ -3961,7 +3961,7 @@ fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     assert!(!tattle.exists(), "start_genesis executed the planted binary");
     // Nothing was written on the way to refusing, either.
     assert!(!sessions::sessions_path(&project).exists(), "registry written");
-    assert!(!project.join(".nputer/genesis/kit").exists(), "kit materialized");
+    assert!(!project.join(".supertaskr/genesis/kit").exists(), "kit materialized");
 
     // DOOR 3 — `send_turn`, which resolves again before every turn. Turn 1
     // goes through the SEAM so a live session exists; the file is planted
@@ -3971,10 +3971,10 @@ fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     let seam = RunnerConfig {
         binary_override: Some(fake_agent_bin()),
         extra_env: vec![
-            ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
-            ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+            ("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string()),
+            ("SUPERTASKR_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
         ],
-        ..resolving_cfg(vec![], Some("/nputer-test-path/bin"))
+        ..resolving_cfg(vec![], Some("/supertaskr-test-path/bin"))
     };
     let (watch, agent, events) = wired(&project, seam);
     assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
@@ -4054,7 +4054,7 @@ fn find_named(dir: &Path, name: &str, out: &mut Vec<PathBuf>) {
 #[test]
 fn a_relative_search_path_element_reaches_no_process() {
     let root = std::env::temp_dir().join(format!(
-        "nputer-t060-relpath-{}-{}",
+        "supertaskr-t060-relpath-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -4063,8 +4063,8 @@ fn a_relative_search_path_element_reaches_no_process() {
     fs::create_dir_all(&project).expect("mk project");
     plant_binary(&root.join("relbin/claude"));
     let extra = vec![
-        ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
-        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("SUPERTASKR_FAKE_TATTLE".to_string(), tattle.display().to_string()),
+        ("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string()),
     ];
 
     // **THE RELATIVE ELEMENT MUST RESOLVE TO A REAL FILE**, or arm one
@@ -4084,7 +4084,7 @@ fn a_relative_search_path_element_reaches_no_process() {
         "cargo no longer runs tests from the package root - the relative fixture below \
          would not resolve and this test would pass for the wrong reason"
     );
-    let rel_dir = format!("target/nputer-t060-relbin-{}-{}", std::process::id(), now_ms());
+    let rel_dir = format!("target/supertaskr-t060-relbin-{}-{}", std::process::id(), now_ms());
     plant_binary(&cwd.join(&rel_dir).join("claude"));
     assert!(
         Path::new(&format!("{rel_dir}/claude")).is_file(),
@@ -4094,8 +4094,8 @@ fn a_relative_search_path_element_reaches_no_process() {
     // ARM ONE: the relative element. Refused, and nothing executed.
     for hostile in [rel_dir.as_str(), ".", "", "relbin:.", ".:relbin"] {
         let cfg = resolving_cfg(extra.clone(), Some(hostile));
-        match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
-            Err(nputer_lib::agent::runner::ResolveError::NotFound { .. }) => {}
+        match supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
+            Err(supertaskr_lib::agent::runner::ResolveError::NotFound { .. }) => {}
             other => panic!("[{hostile}] expected NotFound, got {other:?}"),
         }
         assert!(
@@ -4115,7 +4115,7 @@ fn a_relative_search_path_element_reaches_no_process() {
     // the search path differs, which is precisely the variable under test.
     let absolute = root.join("relbin").display().to_string();
     let cfg = resolving_cfg(extra.clone(), Some(&absolute));
-    let resolved = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
+    let resolved = supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
         .expect("the absolute spelling of the same directory must resolve");
     assert_eq!(resolved.path, root.join("relbin/claude"));
     assert!(
@@ -4135,7 +4135,7 @@ fn a_relative_search_path_element_reaches_no_process() {
 /// out of `agent-paths.json` verbatim, with no gate at all. Measured
 /// pre-T-047, with the hostile element planted in the cache file:
 ///
-///     [t047-probe-c] CHILD PATH: /nputer-hostile/bin:/tmp/nputer-attacker-shims
+///     [t047-probe-c] CHILD PATH: /supertaskr-hostile/bin:/tmp/supertaskr-attacker-shims
 ///     [t047-probe-c] child PATH carries the planted hostile element: true
 ///
 /// T-047 removed the FIELD; T-060 removed the file. What is asserted is
@@ -4143,13 +4143,13 @@ fn a_relative_search_path_element_reaches_no_process() {
 /// nothing, and what the child does get came through the probe channel.
 #[test]
 fn no_login_path_ever_comes_from_a_file() {
-    const HOSTILE: &str = "/nputer-hostile/bin:/tmp/nputer-attacker-shims";
+    const HOSTILE: &str = "/supertaskr-hostile/bin:/tmp/supertaskr-attacker-shims";
 
     // ARM ONE, the discriminating one: NO `path_override`, so if a file
     // were still trusted its `login_path` is exactly what `apply_child_env`
     // would reach for — as it did, pre-T-047.
     let root = std::env::temp_dir().join(format!(
-        "nputer-t060-loginpath-{}-{}",
+        "supertaskr-t060-loginpath-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -4165,8 +4165,8 @@ fn no_login_path_ever_comes_from_a_file() {
     );
 
     let extra = vec![
-        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
-        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+        ("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("SUPERTASKR_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
     ];
     // The binary comes through the SEAM here: with the cache retired the
     // file cannot supply one, and the question this test asks is about the
@@ -4184,7 +4184,7 @@ fn no_login_path_ever_comes_from_a_file() {
 
     let child_path = read_env(&dump, 1).get("PATH").cloned().unwrap_or_default();
     assert!(
-        !child_path.contains("nputer-hostile") && !child_path.contains("nputer-attacker-shims"),
+        !child_path.contains("supertaskr-hostile") && !child_path.contains("supertaskr-attacker-shims"),
         "A FILE'S login_path REACHED THE CHILD'S PATH: {child_path}"
     );
     // What it DID get is the live environment's PATH — the documented
@@ -4200,7 +4200,7 @@ fn no_login_path_ever_comes_from_a_file() {
     // `path_override`), the child's PATH is the FRESH value, byte for
     // byte, while the same hostile element sits in the file unread.
     let root = std::env::temp_dir().join(format!(
-        "nputer-t060-freshpath-{}-{}",
+        "supertaskr-t060-freshpath-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -4215,8 +4215,8 @@ fn no_login_path_ever_comes_from_a_file() {
         Some(HOSTILE),
     );
     let extra = vec![
-        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
-        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+        ("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("SUPERTASKR_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
     ];
     // Here the binary IS resolved rather than injected, over an absolute
     // search path — the one shape resolution still accepts.
@@ -4232,7 +4232,7 @@ fn no_login_path_ever_comes_from_a_file() {
     assert!(
         fs::read_to_string(root.join("config/agent-paths.json"))
             .expect("the file is still there")
-            .contains("nputer-hostile"),
+            .contains("supertaskr-hostile"),
         "the planted login_path is still ON DISK - it is simply never read"
     );
     let _ = fs::remove_dir_all(&root);
@@ -4253,7 +4253,7 @@ fn no_login_path_ever_comes_from_a_file() {
 /// **AND NOTHING IN THIS BINARY CAN RACE IT (T-060-s3).** This body used
 /// to red 15 times in 15 at `--test-threads=8` and 9 in 15 at 4 —
 /// `ubuntu-24.04`'s vCPU count, and `ci.yml` runs a bare `cargo test` —
-/// because the guard's own proof test lifted `NPUTER_NO_REAL_CLI`
+/// because the guard's own proof test lifted `SUPERTASKR_NO_REAL_CLI`
 /// process-wide for the width of one resolve, and this assertion landed
 /// in the window. That lift now happens in a CHILD PROCESS. A tripwire
 /// that reds on CI is one an integrator learns to re-run until green,
@@ -4262,13 +4262,13 @@ fn no_login_path_ever_comes_from_a_file() {
 #[test]
 fn the_no_real_cli_guard_is_on_without_anything_being_set() {
     assert_eq!(
-        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        std::env::var(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
         None,
         "the guard must hold with the variable UNSET - if a suite has to set it, \
          a suite can forget it"
     );
     assert!(
-        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
         "an integration test binary must not be able to reach the real CLI"
     );
     // And the mechanism is the one documented, not an accident of this
@@ -4286,9 +4286,9 @@ fn the_no_real_cli_guard_is_on_without_anything_being_set() {
 /// The child-arm marker. **Absent means this process is the PARENT** and
 /// drives the two arms below; present means this process IS one arm,
 /// re-invoked by the parent with an environment the parent composed.
-const T060_ARM_VAR: &str = "NPUTER_T060_ARM";
+const T060_ARM_VAR: &str = "SUPERTASKR_T060_ARM";
 /// Where the parent put the fixtures, handed to each child.
-const T060_ROOT_VAR: &str = "NPUTER_T060_ROOT";
+const T060_ROOT_VAR: &str = "SUPERTASKR_T060_ROOT";
 /// The `--exact` filter the parent re-invokes itself with. It is the name
 /// of the test below; a filter that matches NOTHING exits 0 with
 /// "0 passed", so `t060_run_arm` refuses to accept a run it cannot see.
@@ -4312,7 +4312,7 @@ const T060_TEST_NAME: &str =
 ///
 /// **WHY THIS BODY SPAWNS ITSELF.** The discriminating half has to run
 /// with the guard LIFTED, and the first version lifted it by setting
-/// `NPUTER_NO_REAL_CLI` in THIS process. libtest runs these bodies on
+/// `SUPERTASKR_NO_REAL_CLI` in THIS process. libtest runs these bodies on
 /// threads of one process, so the window was visible to every sibling:
 /// `the_no_real_cli_guard_is_on_without_anything_being_set` — the tripwire
 /// whose entire job is "nothing has to be set" — read the lift and went
@@ -4361,8 +4361,8 @@ fn t060_run_arm(arm: &str, root: &Path, shell: &Path, guard: Option<&str>) -> St
         // can reach a real binary, guard or no guard.
         .env("PATH", root.join("nopath"));
     match guard {
-        Some(value) => command.env(nputer_lib::agent::runner::NO_REAL_CLI_VAR, value),
-        None => command.env_remove(nputer_lib::agent::runner::NO_REAL_CLI_VAR),
+        Some(value) => command.env(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR, value),
+        None => command.env_remove(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR),
     };
     let out = command.output().expect("re-invoke this test binary");
     let text = format!(
@@ -4389,7 +4389,7 @@ fn t060_parent_drives_both_arms() {
     use std::os::unix::fs::PermissionsExt;
 
     let root = std::env::temp_dir().join(format!(
-        "nputer-t060-accident-{}-{}",
+        "supertaskr-t060-accident-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -4413,7 +4413,7 @@ fn t060_parent_drives_both_arms() {
     fs::write(
         &fail_shell,
         format!(
-            "#!/bin/sh\necho ran > {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 1\n",
+            "#!/bin/sh\necho ran > {}\necho SUPERTASKR_LOGIN_PATH=/supertaskr-t060/bin\nexit 1\n",
             tattle.display()
         ),
     )
@@ -4431,7 +4431,7 @@ fn t060_parent_drives_both_arms() {
     fs::write(
         &ok_shell,
         format!(
-            "#!/bin/sh\necho ran > {}\necho {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 0\n",
+            "#!/bin/sh\necho ran > {}\necho {}\necho SUPERTASKR_LOGIN_PATH=/supertaskr-t060/bin\nexit 0\n",
             lifted_tattle.display(),
             root.join("bin/claude").display()
         ),
@@ -4447,7 +4447,7 @@ fn t060_parent_drives_both_arms() {
     // asserts its own expected guard state again on the far side of the
     // fork, because that is the process the resolve actually runs in.
     assert!(
-        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
         "the guard is already off before this test does anything - refusing to resolve"
     );
     let shell_before = std::env::var("SHELL").ok();
@@ -4491,21 +4491,21 @@ fn t060_parent_drives_both_arms() {
         Some(want.as_str()),
         "the lifted resolve must land on the FIXTURE and never on the machine"
     );
-    assert_eq!(lines.next(), Some("/nputer-t060/bin"));
+    assert_eq!(lines.next(), Some("/supertaskr-t060/bin"));
 
     // **AND NOTHING GLOBAL MOVED.** This is T-060-s3 itself, asserted:
     // the guard variable is still unset in this process and `$SHELL` is
     // whatever it was, so no sibling body can observe this test at any
     // thread count. The tripwire above is what would notice if it did.
     assert_eq!(
-        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        std::env::var(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
         None,
         "this body must leave the guard variable UNSET - a lift window in a threaded \
          test binary is what T-060-s3 was"
     );
     assert_eq!(std::env::var("SHELL").ok(), shell_before, "…and $SHELL untouched too");
     assert!(
-        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
         "the guard must be on for every test that runs after this one"
     );
     let _ = fs::remove_dir_all(&root);
@@ -4519,11 +4519,11 @@ fn t060_child_guarded_arm() {
     let tattle = root.join("shell-ran.txt");
 
     assert!(
-        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
         "the guard is already off before this arm does anything - refusing to resolve"
     );
     assert_eq!(
-        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        std::env::var(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
         None,
         "this arm must run on the DERIVED default - an explicit value would prove less"
     );
@@ -4536,16 +4536,16 @@ fn t060_child_guarded_arm() {
     // THE ACCIDENTAL CONFIGURATION, verbatim: the default idiom, with
     // nothing turned off.
     let cfg = RunnerConfig {
-        extra_env: vec![("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string())],
+        extra_env: vec![("SUPERTASKR_FAKE_SCENARIO".to_string(), "happy".to_string())],
         ..RunnerConfig::default()
     };
     assert!(cfg.probe_login_shell, "the default MUST still be true - that is the trap");
     assert_eq!(cfg.binary_override, None, "…and no seam is set");
 
-    let outcome = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter());
+    let outcome = supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter());
     match &outcome {
-        Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => assert!(
-            probed.iter().any(|p| p.contains("NPUTER_NO_REAL_CLI")),
+        Err(supertaskr_lib::agent::runner::ResolveError::NotFound { probed }) => assert!(
+            probed.iter().any(|p| p.contains("SUPERTASKR_NO_REAL_CLI")),
             "the refusal must NAME the guard that refused: {probed:?}"
         ),
         other => panic!("THE GUARD DID NOT HOLD: {other:?}"),
@@ -4576,12 +4576,12 @@ fn t060_child_guarded_arm() {
 fn t060_child_lifted_arm() {
     let root = t060_child_root();
     assert_eq!(
-        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok().as_deref(),
+        std::env::var(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR).ok().as_deref(),
         Some("0"),
         "the parent lifts the guard by BIRTH, not by set_var"
     );
     assert!(
-        !nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        !supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
         "this arm exists to run with the guard OFF - and it is the variable that lifts it"
     );
     // With the guard off, the one thing that MUST hold is that the machine
@@ -4600,12 +4600,12 @@ fn t060_child_lifted_arm() {
 
     let cfg = RunnerConfig {
         extra_env: vec![(
-            "NPUTER_FAKE_TATTLE".to_string(),
+            "SUPERTASKR_FAKE_TATTLE".to_string(),
             root.join("binary-ran.txt").display().to_string(),
         )],
         ..RunnerConfig::default()
     };
-    let resolved = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
+    let resolved = supertaskr_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
         .expect("the fixture shell names a real, absolute, correctly named file");
     fs::write(
         root.join("resolved.txt"),
@@ -4635,7 +4635,7 @@ fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
     for (tag, model) in [
         // T-153-s2: THIS NUMBER WAS 200,000 AND THAT MADE THE BODY A
         // MACOS-ONLY TEST. The `model` reaches the fake CLI as the
-        // `NPUTER_FAKE_MODEL` environment pair, and `execve` bounds each
+        // `SUPERTASKR_FAKE_MODEL` environment pair, and `execve` bounds each
         // string it copies — envp strings exactly as much as argv ones.
         // Linux's per-element cap is `MAX_ARG_STRLEN`, the kernel's
         // `PAGE_SIZE * 32`, so 131,072 bytes on a 4 KiB-page x86-64 and
@@ -4702,7 +4702,7 @@ fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
     }
 
     // The discriminating half: real model names still round-trip into
-    // `.nputer/sessions.json` untouched, including provider spellings the
+    // `.supertaskr/sessions.json` untouched, including provider spellings the
     // session-id character class would have refused.
     for model in ["claude-opus-5", "us.anthropic.claude-3-5-sonnet-20241022-v2:0"] {
         let h = harness(
@@ -4751,7 +4751,7 @@ fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
 #[test]
 fn an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands() {
     // The harness places the model as this key.
-    const KEY: &str = "NPUTER_FAKE_MODEL";
+    const KEY: &str = "SUPERTASKR_FAKE_MODEL";
     // `execve` copies ONE string per pair — `KEY=VALUE` and its NUL — so
     // the widest value that still fits is the bound less the key, the
     // `=` and the terminator. The arithmetic belongs to
@@ -4816,7 +4816,7 @@ fn an_env_pair_past_the_execve_element_bound_is_dropped_and_the_turn_stands() {
 
 /// **T-153-s2, THE VERDICT'S ASSIGNED CORRECTION (performed by the
 /// integrator at merge): the bound proven on channels PRODUCTION
-/// actually walks.** The sibling above drives `NPUTER_FAKE_MODEL`,
+/// actually walks.** The sibling above drives `SUPERTASKR_FAKE_MODEL`,
 /// which travels through `RunnerConfig.extra_env` — a documented test
 /// seam whose only production construction is an empty Vec. The
 /// verifier's mutants M5 and M6 (the allowlist loop and the PATH chain
@@ -4929,7 +4929,7 @@ fn plant_pack(project: &Path, dir: &str, body: &str) {
     fs::write(path.join("SKILL.md"), body).expect("write pack");
 }
 
-const BRAND_PACK: &str = "---\nname: brand\ndescription: Brand voice and naming rules. Use when writing any user-facing copy.\n---\n\nAlways say nputer in lower case.\n";
+const BRAND_PACK: &str = "---\nname: brand\ndescription: Brand voice and naming rules. Use when writing any user-facing copy.\n---\n\nAlways say supertaskr in lower case.\n";
 
 const SECURITY_PACK: &str = "---\nname: security\ndescription: The security policy.\nwhen: Any change that touches authentication or secrets.\n---\n\nNever put a secret in argv.\n";
 
@@ -4982,7 +4982,7 @@ fn a_planted_skill_pack_reaches_the_child_and_the_session_record() {
     for (pack, source) in entry.skills.iter().zip([BRAND_PACK, SECURITY_PACK]) {
         assert_eq!(
             pack.hash,
-            nputer_lib::agent::skills::sha256_hex(source.as_bytes()),
+            supertaskr_lib::agent::skills::sha256_hex(source.as_bytes()),
             "the stamp is the hash of the pack's own bytes"
         );
     }
@@ -5046,7 +5046,7 @@ fn a_malformed_skill_pack_is_skipped_and_never_stops_the_genesis() {
 
     // The REPORT itself, at the level the module owns it: discovery names
     // both by their directory, with a reason apiece.
-    let found = nputer_lib::agent::skills::discover(&h.project);
+    let found = supertaskr_lib::agent::skills::discover(&h.project);
     assert_eq!(
         found.rejected.iter().map(|r| r.dir.as_str()).collect::<Vec<_>>(),
         vec!["broken", "nameless"]
@@ -5090,9 +5090,9 @@ fn a_genesis_with_no_packs_sends_and_records_exactly_what_it_did_before() {
 Read roles/planner.md at the kit root now and follow it exactly: stage 0 scaffold first, then \
 the interview, one question at a time. Kit-internal paths resolve against the kit root; every \
 docs/ path resolves inside the project directory. Turns are plain text. Method v{version}.",
-        kit = project.join(".nputer").join("genesis").join("kit").display(),
+        kit = project.join(".supertaskr").join("genesis").join("kit").display(),
         project = project.display(),
-        version = nputer_lib::agent::kit::METHOD_SNAPSHOT_VERSION,
+        version = supertaskr_lib::agent::kit::METHOD_SNAPSHOT_VERSION,
     );
     assert_eq!(read_dump(&h.dump, 1, "stdin.txt"), expected, "the kickoff must not have moved");
 
@@ -5231,22 +5231,22 @@ fn assert_real_turn_observed(missing: Vec<&'static str>) {
 /// it is run ONCE, by hand, to record the real stream's line shapes as
 /// the fake fixtures' provenance.
 ///
-///     NPUTER_REAL_CLI=1 cargo test --test agent_runner real_cli -- --ignored --nocapture
+///     SUPERTASKR_REAL_CLI=1 cargo test --test agent_runner real_cli -- --ignored --nocapture
 #[test]
 #[ignore = "spawns the user's real agent CLI and calls a model; run explicitly, off-suite"]
 fn real_cli_smoke_records_the_stream_schema() {
-    if std::env::var("NPUTER_REAL_CLI").as_deref() != Ok("1") {
-        eprintln!("NPUTER_REAL_CLI=1 not set - refusing to call a real model");
+    if std::env::var("SUPERTASKR_REAL_CLI").as_deref() != Ok("1") {
+        eprintln!("SUPERTASKR_REAL_CLI=1 not set - refusing to call a real model");
         return;
     }
     // T-060: THE ONE DELIBERATE OPT-OUT. Every other test in the repo is
     // refused the login-shell and PATH arms because it runs from a cargo
     // test binary; this one asks for them, in one line, after two gates
-    // (`#[ignore]` and `NPUTER_REAL_CLI=1`) have already been passed by
+    // (`#[ignore]` and `SUPERTASKR_REAL_CLI=1`) have already been passed by
     // hand. Explicit `0` rather than an unset, because unset means
     // "derive it" and the derivation would forbid it again.
-    std::env::set_var(nputer_lib::agent::runner::NO_REAL_CLI_VAR, "0");
-    let root = std::env::temp_dir().join(format!("nputer-t025-realsmoke-{}", now_ms()));
+    std::env::set_var(supertaskr_lib::agent::runner::NO_REAL_CLI_VAR, "0");
+    let root = std::env::temp_dir().join(format!("supertaskr-t025-realsmoke-{}", now_ms()));
     let project = root.join("project");
     fs::create_dir_all(&project).expect("mk project");
 
@@ -5310,11 +5310,11 @@ fn the_real_smokes_verdict_names_which_premise_was_missing() {
     fn status(native_session_id: Option<&str>) -> GenesisStatus {
         GenesisStatus {
             phase: Phase::Idle,
-            project_dir: Some("/tmp/nputer-premise".into()),
+            project_dir: Some("/tmp/supertaskr-premise".into()),
             turn: 1,
             native_session_id: native_session_id.map(str::to_string),
             cli_version: Some("2.1.226 (Claude Code)".into()),
-            method_version: nputer_lib::agent::kit::METHOD_SNAPSHOT_VERSION.to_string(),
+            method_version: supertaskr_lib::agent::kit::METHOD_SNAPSHOT_VERSION.to_string(),
             last_error: None,
             last_event_at_ms: Some(1),
         }
@@ -5462,11 +5462,11 @@ struct Reboot {
 fn reboot(h: &Harness, scenario: &str) -> Reboot {
     let cfg = RunnerConfig {
         binary_override: Some(fake_agent_bin()),
-        path_override: Some("/nputer-test-path/bin:/nputer-test-path/sbin".into()),
+        path_override: Some("/supertaskr-test-path/bin:/supertaskr-test-path/sbin".into()),
         extra_env: vec![
-            ("NPUTER_FAKE_SCENARIO".to_string(), scenario.to_string()),
-            ("NPUTER_FAKE_DUMP_DIR".to_string(), h.dump.display().to_string()),
-            ("NPUTER_FAKE_VERSION".to_string(), "2.1.226 (Claude Code)".to_string()),
+            ("SUPERTASKR_FAKE_SCENARIO".to_string(), scenario.to_string()),
+            ("SUPERTASKR_FAKE_DUMP_DIR".to_string(), h.dump.display().to_string()),
+            ("SUPERTASKR_FAKE_VERSION".to_string(), "2.1.226 (Claude Code)".to_string()),
         ],
         probe_login_shell: false,
         start_timeout: Duration::from_millis(1500),
@@ -5508,7 +5508,7 @@ fn an_app_restart_mid_interview_resumes_the_recorded_session_off_disk() {
     );
     assert_eq!(agent::status(&app.agent).turn, 0);
 
-    // The offer, read off `.nputer/sessions.json`.
+    // The offer, read off `.supertaskr/sessions.json`.
     match agent::start_genesis(&app.watch, &app.agent) {
         StartOutcome::ResumeAvailable { native_session_id, turns, model } => {
             assert_eq!(native_session_id, "fake-session-0001");
@@ -5693,10 +5693,10 @@ fn a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_p
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
     settle(&h.agent);
     let deadline = Instant::now() + Duration::from_secs(15);
-    while Instant::now() < deadline && nputer_lib::agent::runner::pid_alive(child_pid) {
+    while Instant::now() < deadline && supertaskr_lib::agent::runner::pid_alive(child_pid) {
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
+    assert!(!supertaskr_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
     assert!(!h.project.join("docs").exists(), "a cancel never touches docs/");
 
     // …and the project reopens into a live offer.
@@ -5719,7 +5719,7 @@ fn a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_p
 /// THE "EXACTLY ONE PLACE" CRITERION (folding T-026-s3).
 ///
 /// The fact that an interview was running on this folder is derived from
-/// `.nputer/sessions.json` and from nothing else. Proved by REMOVING that
+/// `.supertaskr/sessions.json` and from nothing else. Proved by REMOVING that
 /// one file: the fact goes with it, which is only true if there is no
 /// second copy anywhere — and `docs/`, the project's actual truth, is
 /// unaffected either way.
@@ -5760,7 +5760,7 @@ fn the_fact_that_an_interview_ran_here_lives_in_exactly_one_file() {
 #[test]
 fn the_hand_driven_kickoff_materializes_a_real_kit_and_names_it() {
     let h = harness("t029handdriven", Options::default());
-    assert!(!h.project.join(".nputer/genesis/kit").exists(), "nothing is materialized yet");
+    assert!(!h.project.join(".supertaskr/genesis/kit").exists(), "nothing is materialized yet");
 
     match agent::kickoff(&h.watch) {
         // `..` rather than the exhaustive list T-070 would otherwise have
@@ -5826,7 +5826,7 @@ fn the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file() {
     const VALID_LINES: usize = 400;
     let h = harness("t070tailread", Options::default());
     let path = sessions::transcript_path(&h.project);
-    fs::create_dir_all(path.parent().expect("parent")).expect("mk .nputer/genesis");
+    fs::create_dir_all(path.parent().expect("parent")).expect("mk .supertaskr/genesis");
 
     // The HEAD: two mebibytes of undecodable bytes, laid out in
     // newline-terminated runs so the file is line-shaped throughout.
@@ -5893,7 +5893,7 @@ fn the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file() {
 /// CLI-gated commands cannot: WHAT WAS ALREADY BANKED HERE.
 ///
 /// `genesis_kickoff` is the one genesis command that resolves no CLI, and
-/// `sessions::genesis_record` reads `.nputer/sessions.json` with no CLI
+/// `sessions::genesis_record` reads `.supertaskr/sessions.json` with no CLI
 /// anywhere in the call — so the record rides the outcome that is still
 /// reachable when the user's CLI has been uninstalled or renamed.
 #[test]
@@ -6032,7 +6032,7 @@ const COLD_CANARIES: ColdCanaries = ColdCanaries {
 };
 
 /// Plant a project that looks like one the interview just finished: a
-/// docs tree with content, a `.nputer/` runtime directory holding the
+/// docs tree with content, a `.supertaskr/` runtime directory holding the
 /// interview transcript, and a file at the root beside `docs/`.
 fn plant_cold_project(project: &Path) {
     fs::create_dir_all(project.join("docs/tasks")).expect("mk docs");
@@ -6041,9 +6041,9 @@ fn plant_cold_project(project: &Path) {
         format!("# North star\n\n{}\n", COLD_CANARIES.docs),
     )
     .expect("write docs");
-    fs::create_dir_all(project.join(".nputer/genesis")).expect("mk runtime");
+    fs::create_dir_all(project.join(".supertaskr/genesis")).expect("mk runtime");
     fs::write(
-        project.join(".nputer/genesis/transcript.jsonl"),
+        project.join(".supertaskr/genesis/transcript.jsonl"),
         format!("{{\"turn\":1,\"role\":\"user\",\"text\":\"{}\"}}\n", COLD_CANARIES.transcript),
     )
     .expect("write transcript");
@@ -6052,7 +6052,7 @@ fn plant_cold_project(project: &Path) {
 }
 
 /// The docs half of [`plant_cold_project`] and NOTHING ELSE — for the
-/// bodies whose subject is the interview's own `.nputer/` state. Planting
+/// bodies whose subject is the interview's own `.supertaskr/` state. Planting
 /// the canary transcript over a real one is how the first draft of
 /// `a_cold_start_leaves_the_interview_finished_…` came to assert against
 /// an empty list: `read_transcript` parses, so a hand-written line without
@@ -6137,7 +6137,7 @@ fn the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it() {
     );
 
     // --- and now the absences, each named ----------------------------
-    for forbidden in [".nputer", "transcript.jsonl", "README.md"] {
+    for forbidden in [".supertaskr", "transcript.jsonl", "README.md"] {
         assert!(
             !visible.iter().any(|p| p == forbidden || p.contains(forbidden)),
             "{forbidden:?} is above the cold reader's cwd and must not be reachable from it: \
@@ -6170,7 +6170,7 @@ fn the_cold_start_child_is_stood_up_in_docs_and_can_reach_nothing_above_it() {
     // THE CANARIES ARE REAL: they are on disk where they were planted,
     // so "not found" above is a fact about reach rather than about a
     // string nobody ever wrote.
-    assert!(fs::read_to_string(h.project.join(".nputer/genesis/transcript.jsonl"))
+    assert!(fs::read_to_string(h.project.join(".supertaskr/genesis/transcript.jsonl"))
         .expect("the transcript is on disk")
         .contains(COLD_CANARIES.transcript));
     assert!(fs::read_to_string(h.project.join("README.md"))
@@ -6233,7 +6233,7 @@ fn the_cold_start_argv_and_prompt_hand_the_child_no_route_out() {
     // …and the CONTROL that makes that mean something: the INTERVIEW's
     // prompt, over the same project, does name it.
     assert!(
-        nputer_lib::agent::kit::assemble_kickoff(&h.project)
+        supertaskr_lib::agent::kit::assemble_kickoff(&h.project)
             .contains(&h.project.display().to_string()),
         "the interview's kickoff names the project - if it stopped, the line above is vacuous"
     );
@@ -6260,7 +6260,7 @@ fn a_cold_start_leaves_the_interview_finished_and_writes_nothing_to_the_project(
     // DOCS ONLY: the transcript this body is about is the one the turn
     // above wrote, and clobbering it is not a way to leave it alone.
     plant_docs_only(&h.project);
-    let registry_before = fs::read_to_string(h.project.join(".nputer/sessions.json")).ok();
+    let registry_before = fs::read_to_string(h.project.join(".supertaskr/sessions.json")).ok();
     let transcript_before = sessions::read_transcript(&h.project);
     assert!(!transcript_before.is_empty(), "there is a transcript to leave alone");
 
@@ -6275,7 +6275,7 @@ fn a_cold_start_leaves_the_interview_finished_and_writes_nothing_to_the_project(
     assert!(after.last_error.is_none(), "a cold start files no interview error");
 
     assert_eq!(
-        fs::read_to_string(h.project.join(".nputer/sessions.json")).ok(),
+        fs::read_to_string(h.project.join(".supertaskr/sessions.json")).ok(),
         registry_before,
         "the cold start must not touch the session registry"
     );
@@ -6301,7 +6301,7 @@ fn a_cold_start_that_cannot_resolve_a_cli_is_typed_and_leaves_the_offer_standing
     plant_cold_project(&h.project);
     let cfg = RunnerConfig {
         binary_override: None,
-        path_override: Some("/nputer-empty-path".into()),
+        path_override: Some("/supertaskr-empty-path".into()),
         probe_login_shell: false,
         ..RunnerConfig::default()
     };

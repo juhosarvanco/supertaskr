@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use serde::Serialize;
 
-use nputer_index::{index, stable_json, write_graph, IndexOptions, GRAPH_REL_PATH};
+use supertaskr_index::{index, stable_json, write_graph, IndexOptions, GRAPH_REL_PATH};
 
 use crate::docs_watch::{has_plain_docs_dir, now_ms, WatchState};
 
@@ -126,7 +126,7 @@ mod tests {
     impl TempTree {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t012-{}-{}-{}",
+                "supertaskr-t012-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now_ms()

@@ -1,5 +1,5 @@
 [package]
-name = "nputer"
+name = "supertaskr"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
@@ -10,16 +10,16 @@ edition = "2021"
 # to every gate we run (cargo test/build are happy with two binaries)
 # and to every agent (the headless rule means none of them runs the
 # app). Name the real one here; adding a third binary needs no change.
-default-run = "nputer"
+default-run = "supertaskr"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # T-009: the Rust sibling of ADR-011 — the tauri app stays the root
-# package; nputer-index (C-07) joins as a workspace member. With both in
+# package; supertaskr-index (C-07) joins as a workspace member. With both in
 # default-members, bare `cargo test` from app/src-tauri runs both suites.
 [workspace]
-members = ["crates/nputer-index"]
-default-members = [".", "crates/nputer-index"]
+members = ["crates/supertaskr-index"]
+default-members = [".", "crates/supertaskr-index"]
 resolver = "2"
 
 # Shared by both crates; centralized to prevent version skew (T-009 plan §1).
@@ -31,7 +31,7 @@ serde_json = "1"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "nputer_lib"
+name = "supertaskr_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -46,7 +46,7 @@ tauri-plugin-dialog = "2"
 # T-012: the app's first dependency edge on the indexer crate (C-05→C-07
 # at the Rust level) — exactly the seam T-009's plan reserved. Path dep,
 # zero new external packages.
-nputer-index = { path = "crates/nputer-index" }
+supertaskr-index = { path = "crates/supertaskr-index" }
 
 [dev-dependencies]
 # T-021: the ACL-surface pin (src/acl_pin.rs) drives real InvokeRequests

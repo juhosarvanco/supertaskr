@@ -11,13 +11,13 @@ use serde::Serialize;
 
 // T-123: the routing question's SECOND input. The fact itself stays in
 // C-14 — this module names the type and calls the accessor, and never
-// learns to read `.nputer/` for itself (T-057).
+// learns to read `.supertaskr/` for itself (T-057).
 use crate::agent::sessions::GenesisReachability;
 
 /// Docs watcher + snapshot pipeline (T-003), re-armable per project (T-007).
 ///
 /// The Rust side never parses: it watches `<project>/docs` and ships raw
-/// `.md` contents to the webview, where @nputer/parser builds the model
+/// `.md` contents to the webview, where @supertaskr/parser builds the model
 /// (parsing lives where TypeScript runs; the app stays a pure lens).
 /// Every push is a full snapshot of the docs tree — files are small, and
 /// full-state pushes make create/rename/delete handling race-free by
@@ -140,7 +140,7 @@ const TASKS_SUBDIR: &str = "tasks";
 /// `tests::the_emit_budget_stays_below_the_collectors_file_cap` enforced
 /// it across the two crates. Its premise was that both limits govern one
 /// file. They no longer do: this cap governs markdown, and
-/// `nputer_index::IndexOptions::max_graph_bytes` governs the graph, with
+/// `supertaskr_index::IndexOptions::max_graph_bytes` governs the graph, with
 /// nothing between them. The retirement is recorded at that test's own
 /// site with the reason, and the cliff it protected against cannot occur
 /// — a file that is never eligible is never `Oversize`.
@@ -278,7 +278,7 @@ pub enum PickOutcome {
     /// T-042 criterion 1: a genesis folder MAY already hold a plain
     /// `docs/`, because "no plan" is a weaker condition than "no docs/"
     /// — a lone `docs/ARCHITECTURE.md`, a `docs/decisions/` tree, any
-    /// repo whose docs/ predates nputer. When it does, the docs watch
+    /// repo whose docs/ predates supertaskr. When it does, the docs watch
     /// armed normally and `snapshot` carries that tree AT THE SAME `seq`,
     /// so the pane renders what is actually there instead of claiming
     /// nothing is written. `None` means the folder genuinely has no
@@ -646,7 +646,7 @@ impl PlanProbe {
 ///
 /// The fix is a SECOND INPUT rather than a softer plan test. *"Is one of
 /// our interviews running on this folder?"* has had an owner since T-029
-/// (`.nputer/sessions.json`) and an accessor since T-070
+/// (`.supertaskr/sessions.json`) and an accessor since T-070
 /// ([`crate::agent::sessions::genesis_record`]); nothing had ever asked
 /// it. Resuming an interview that authored a plan is not an overwrite; it
 /// is the opposite.
@@ -807,7 +807,7 @@ pub fn collect_docs_tree(project_dir: &Path) -> CollectOutcome {
         return out; // no docs/ at all
     };
     if docs_meta.file_type().is_symlink() || !docs_meta.is_dir() {
-        eprintln!("[nputer] watch: {} is not a plain directory - refusing to read it", docs_root.display());
+        eprintln!("[supertaskr] watch: {} is not a plain directory - refusing to read it", docs_root.display());
         return out;
     }
 
@@ -1091,7 +1091,7 @@ fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
     *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
     let seq = state.next_seq();
     state.clear_rejected(); // a project opened: no candidate is pending
-    println!("[nputer] project folder picked: {}", canon.display());
+    println!("[supertaskr] project folder picked: {}", canon.display());
     PickOutcome::Picked {
         snapshot: build_snapshot(&canon, seq),
     }
@@ -1163,7 +1163,7 @@ pub fn apply_genesis_folder(
 
     let probe = probe_plan(&canon);
     // T-123: THE SECOND INPUT. Asked through C-14's own accessor and never
-    // by statting `.nputer/` or re-parsing that JSON here — the shell does
+    // by statting `.supertaskr/` or re-parsing that JSON here — the shell does
     // not own this fact and must not learn to read it (T-057). Read ONCE
     // and carried to the post-ack re-read below, exactly as `probe.git`
     // is.
@@ -1180,11 +1180,11 @@ pub fn apply_genesis_folder(
         // what the rejected first pass did one layer down.
         match reach {
             GenesisReachability::NotResumable => println!(
-                "[nputer] genesis declined: {} holds a plan and registers an interview with no usable session id - nothing to resume, so opening it as a project",
+                "[supertaskr] genesis declined: {} holds a plan and registers an interview with no usable session id - nothing to resume, so opening it as a project",
                 canon.display()
             ),
             _ => println!(
-                "[nputer] genesis declined: {} already has a plan - opening it as a project",
+                "[supertaskr] genesis declined: {} already has a plan - opening it as a project",
                 canon.display()
             ),
         }
@@ -1197,7 +1197,7 @@ pub fn apply_genesis_folder(
         // only trace of a routing decision, so the new arm names itself
         // rather than looking like the old one.
         println!(
-            "[nputer] genesis reachable: {} holds a plan AND registers a RESUMABLE interview - routing to genesis so the resume offer is reachable",
+            "[supertaskr] genesis reachable: {} holds a plan AND registers a RESUMABLE interview - routing to genesis so the resume offer is reachable",
             canon.display()
         );
     }
@@ -1291,7 +1291,7 @@ pub fn apply_genesis_folder(
             if !routes_to_genesis(&PlanProbe::from_docs_snapshot(&snap, probe.git), reach) =>
         {
             println!(
-                "[nputer] genesis declined at the snapshot: {} gained a plan between the probe and the collect - opening it as a project",
+                "[supertaskr] genesis declined at the snapshot: {} gained a plan between the probe and the collect - opening it as a project",
                 canon.display()
             );
             return PickOutcome::Picked { snapshot: snap };
@@ -1299,7 +1299,7 @@ pub fn apply_genesis_folder(
         other => other,
     };
     println!(
-        "[nputer] genesis project opened: {} ({})",
+        "[supertaskr] genesis project opened: {} ({})",
         canon.display(),
         match &snapshot {
             Some(snap) => format!("docs/ already holds {} file(s)", snap.files.len()),
@@ -1403,12 +1403,12 @@ fn arm_sentinel<T: notify_debouncer_mini::notify::Watcher>(
         Ok(()) => {
             if let Some(old) = target.sentinel.take() {
                 if let Err(err) = debouncer.watcher().unwatch(&old) {
-                    eprintln!("[nputer] watch: sentinel unwatch {} failed: {err}", old.display());
+                    eprintln!("[supertaskr] watch: sentinel unwatch {} failed: {err}", old.display());
                 }
             }
             target.sentinel = Some(root.to_path_buf());
             println!(
-                "[nputer] watch: root sentinel on {} (docs/ create/replace re-arms the watch)",
+                "[supertaskr] watch: root sentinel on {} (docs/ create/replace re-arms the watch)",
                 root.display()
             );
         }
@@ -1416,7 +1416,7 @@ fn arm_sentinel<T: notify_debouncer_mini::notify::Watcher>(
             // Watching continues exactly as pre-T-018; only the
             // self-healing is lost, and we say so.
             eprintln!(
-                "[nputer] watch: root sentinel failed on {}: {err} - a replaced docs/ will need a manual re-pick",
+                "[supertaskr] watch: root sentinel failed on {}: {err} - a replaced docs/ will need a manual re-pick",
                 root.display()
             );
             if let Some(old) = target.sentinel.take() {
@@ -1464,10 +1464,10 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
             Ok(()) => {
                 target.docs = Some(docs.clone());
                 target.docs_id = dir_identity(&docs);
-                println!("[nputer] watch: docs/ appeared - watching {}", docs.display());
+                println!("[supertaskr] watch: docs/ appeared - watching {}", docs.display());
             }
             Err(err) => eprintln!(
-                "[nputer] watch: docs/ appeared but watch failed: {err} (will retry on the next event)"
+                "[supertaskr] watch: docs/ appeared but watch failed: {err} (will retry on the next event)"
             ),
         },
         // Armed and present: re-arm only when the directory is provably
@@ -1489,12 +1489,12 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
                         target.docs = Some(docs.clone());
                         target.docs_id = dir_identity(&docs);
                         println!(
-                            "[nputer] watch: docs/ was replaced - re-armed on {}",
+                            "[supertaskr] watch: docs/ was replaced - re-armed on {}",
                             docs.display()
                         );
                     }
                     Err(err) => eprintln!(
-                        "[nputer] watch: docs/ replaced but re-arm failed: {err} (will retry on the next event)"
+                        "[supertaskr] watch: docs/ replaced but re-arm failed: {err} (will retry on the next event)"
                     ),
                 }
             }
@@ -1511,7 +1511,7 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
             }
             target.docs_id = None;
             println!(
-                "[nputer] watch: docs/ gone from {} - sentinel waits for it to return",
+                "[supertaskr] watch: docs/ gone from {} - sentinel waits for it to return",
                 root.display()
             );
         }
@@ -1554,7 +1554,7 @@ fn handle_fs_batch<T: notify_debouncer_mini::notify::Watcher>(
     // other batch — including the very next one over the same tree.
     if outcome == target.last && !watch_state_changed {
         println!(
-            "[nputer] watch: {} fs event(s) coalesced, content unchanged - suppressed",
+            "[supertaskr] watch: {} fs event(s) coalesced, content unchanged - suppressed",
             events.len()
         );
         return;
@@ -1562,7 +1562,7 @@ fn handle_fs_batch<T: notify_debouncer_mini::notify::Watcher>(
     target.last = outcome.clone();
     let snapshot = snapshot_from(&root, seq, outcome);
     println!(
-        "[nputer] docs-changed: seq={} files={} skipped={} truncated={} fs_events={} at_ms={}",
+        "[supertaskr] docs-changed: seq={} files={} skipped={} truncated={} fs_events={} at_ms={}",
         snapshot.seq,
         snapshot.files.len(),
         snapshot.skipped_total,
@@ -1585,7 +1585,7 @@ fn run_watcher(
     }) {
         Ok(d) => d,
         Err(err) => {
-            eprintln!("[nputer] watch: failed to create watcher: {err}");
+            eprintln!("[supertaskr] watch: failed to create watcher: {err}");
             return;
         }
     };
@@ -1602,7 +1602,7 @@ fn run_watcher(
         Some(root) => {
             if let Err(msg) = rearm(&mut debouncer, &mut target, root.clone()) {
                 println!(
-                    "[nputer] watch: {msg} - watcher idle until docs/ appears or a project folder is picked"
+                    "[supertaskr] watch: {msg} - watcher idle until docs/ appears or a project folder is picked"
                 );
                 // T-018 (T-003-s1 case 1): the resolved project may grow a
                 // docs/ LATER — scope the sentinel to the root so its
@@ -1614,7 +1614,7 @@ fn run_watcher(
             }
         }
         None => {
-            println!("[nputer] watch: no project resolved - watcher idle until a project folder is picked");
+            println!("[supertaskr] watch: no project resolved - watcher idle until a project folder is picked");
         }
     }
 
@@ -1623,7 +1623,7 @@ fn run_watcher(
             WatchCtl::Fs(Ok(events)) => {
                 handle_fs_batch(&mut debouncer, &mut target, &seq, &events, &sink);
             }
-            WatchCtl::Fs(Err(err)) => eprintln!("[nputer] watch: watcher error: {err}"),
+            WatchCtl::Fs(Err(err)) => eprintln!("[supertaskr] watch: watcher error: {err}"),
             WatchCtl::Rearm { root, ack } => {
                 let _ = ack.send(rearm(&mut debouncer, &mut target, root));
             }
@@ -1691,7 +1691,7 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
             // Not fatal: any stale events collect from the NEW root and
             // are suppressed by content equality.
             eprintln!(
-                "[nputer] watch: unwatch {} failed: {err}",
+                "[supertaskr] watch: unwatch {} failed: {err}",
                 old_docs.display()
             );
         }
@@ -1702,7 +1702,7 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
     target.root = Some(new_root.clone());
     arm_sentinel(debouncer, target, &new_root);
     println!(
-        "[nputer] watch: watching {} (debounce {}ms)",
+        "[supertaskr] watch: watching {} (debounce {}ms)",
         new_docs.display(),
         DEBOUNCE.as_millis()
     );
@@ -1763,7 +1763,7 @@ fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
             // Not fatal: stale events collect from the NEW root and are
             // suppressed by outcome equality.
             eprintln!(
-                "[nputer] watch: unwatch {} failed: {err}",
+                "[supertaskr] watch: unwatch {} failed: {err}",
                 old_docs.display()
             );
         }
@@ -1774,7 +1774,7 @@ fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
     // (unarmed -> armed) transition is what emits later, not a diff.
     target.last = collect_docs_tree(&new_root);
     println!(
-        "[nputer] watch: genesis root {} (no docs/ yet - the sentinel is the watch)",
+        "[supertaskr] watch: genesis root {} (no docs/ yet - the sentinel is the watch)",
         new_root.display()
     );
     Ok(false)
@@ -1789,7 +1789,7 @@ mod tests {
     impl TempTree {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t003-{}-{}-{}",
+                "supertaskr-t003-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now_ms()
@@ -2108,7 +2108,7 @@ mod tests {
     //
     // **ITS PREMISE WAS DELETED, NOT ITS CONCLUSION WEAKENED.** The test
     // asserted a relation between two limits BECAUSE BOTH GOVERNED ONE
-    // FILE: `nputer-index` decided how big a `graph.json` it would emit,
+    // FILE: `supertaskr-index` decided how big a `graph.json` it would emit,
     // this module decided how big a file it would ship, and an emitter
     // budget at or above this cap turned the emitter's graceful
     // DEGRADATION (symbols dropped, files and import edges kept,
@@ -2133,7 +2133,7 @@ mod tests {
     // the emitter and the pane discards the file for being large — and
     // the degradation itself stays observable through
     // `stats.truncated_symbols` / `truncated_files` in the emitted graph
-    // and through `nputer_index::check::WARN_HEADROOM_BYTES`'s alarm at
+    // and through `supertaskr_index::check::WARN_HEADROOM_BYTES`'s alarm at
     // `index --check`. The collector's own cap keeps its own tests
     // (`oversized_files_are_skipped`,
     // `skips_carry_paths_and_reasons_for_oversize_and_non_utf8`), which
@@ -2245,7 +2245,7 @@ mod tests {
     // OUTSIDE-pointing link is refused five deep, which is why no
     // subset-of-three lift could ever have reddened those two.
     //
-    // The measured lift ledger, `cargo test -p nputer` per arm, drilled
+    // The measured lift ledger, `cargo test -p supertaskr` per arm, drilled
     // in a detached worktree at `ddefda4` — this file at that commit and
     // at this one differ by this comment block and nothing else. It is
     // the thing the card owed, and every row was RUN, not reasoned:
@@ -3514,8 +3514,8 @@ mod tests {
         ## Parked\n\
         <!-- Ideas noticed but not committed. -->\n";
 
-    /// `.nputer/sessions.json` in the shape the LIVE reproduction carries
-    /// — field for field what `~/nputer-genesis-probe` holds after one
+    /// `.supertaskr/sessions.json` in the shape the LIVE reproduction carries
+    /// — field for field what `~/supertaskr-genesis-probe` holds after one
     /// real-model turn, with a synthetic native id.
     ///
     /// Written as TEXT rather than through `sessions::upsert` on purpose:
@@ -3538,7 +3538,7 @@ mod tests {
             None => String::new(),
         };
         t.write(
-            ".nputer/sessions.json",
+            ".supertaskr/sessions.json",
             &format!(
                 "{{\n  \"sessions\": [\n    {{\n      \"id\": \"S1\",\n      \
                  \"agent\": \"claude\",\n      \"model\": \"claude-opus-5\",\n      \
@@ -3564,7 +3564,7 @@ mod tests {
     /// and all four rows of `routes_to_genesis` driven end to end.
     ///
     /// @human's first real-model genesis interview, 2026-08-24: one turn
-    /// banked stage 0 into `~/nputer-genesis-probe`, and afterwards
+    /// banked stage 0 into `~/supertaskr-genesis-probe`, and afterwards
     /// neither door could get back in. Stage 0 writes `docs/ROADMAP.md`; a
     /// folder holding a ROADMAP has a plan; a folder with a plan was
     /// routed to the ordinary open forever; and the resume offer lives
@@ -3637,7 +3637,7 @@ mod tests {
         // is still no overwrite path in this app.
         let control = stage_zero_tree("t123-control-unregistered");
         assert!(
-            !control.root().join(".nputer").exists(),
+            !control.root().join(".supertaskr").exists(),
             "no registry: nothing of ours is running here"
         );
         // Said as a VALUE and not only as an outcome, so the ABSENCE this

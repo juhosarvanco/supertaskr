@@ -37,7 +37,7 @@
 //! RUN IT (release — a debug serde_json is not the number a limit is set
 //! on, and a module that measures itself in debug is measuring rustc):
 //!
-//!   cargo test --release -p nputer --test graph_budget_bench \
+//!   cargo test --release -p supertaskr --test graph_budget_bench \
 //!     -- --ignored --nocapture
 //!
 //! `#[ignore]`d on purpose: it is a measurement, not an assertion. Its
@@ -45,7 +45,7 @@
 //! not carrying the graph, neither of which is a timing, so it cannot
 //! red on a slow machine — the numbers are READ, never gated. The pins
 //! this measurement JUSTIFIES are elsewhere and they do run by default:
-//! `crates/nputer-index/tests/budget.rs`, and — until T-140-s4 retired
+//! `crates/supertaskr-index/tests/budget.rs`, and — until T-140-s4 retired
 //! it with the coupling it enforced —
 //! `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`,
 //! whose reason is recorded at its own site.
@@ -76,8 +76,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use nputer_index::{stable_json, Edge, FileEntry, Graph};
-use nputer_lib::docs_watch::{collect_docs_tree, DocsFile, DocsSnapshot};
+use supertaskr_index::{stable_json, Edge, FileEntry, Graph};
+use supertaskr_lib::docs_watch::{collect_docs_tree, DocsFile, DocsSnapshot};
 
 /// Timed trials per cell, after one untimed warm-up. The reported figure
 /// is the MINIMUM — the least noisy estimator of a deterministic cost on
@@ -100,7 +100,7 @@ struct Scratch(PathBuf);
 impl Scratch {
     fn new(tag: &str) -> Self {
         let dir = std::env::temp_dir().join(format!(
-            "nputer-t139-{tag}-{}-{}",
+            "supertaskr-t139-{tag}-{}-{}",
             std::process::id(),
             now_nanos()
         ));
@@ -228,7 +228,7 @@ fn assemble(pool: &[Unit], count: usize) -> Graph {
         schema: 1,
         root: ".".to_string(),
         languages: vec!["js".into(), "rust".into(), "ts".into()],
-        stats: nputer_index::Stats {
+        stats: supertaskr_index::Stats {
             files: files.len(),
             symbols: files.iter().map(|f| f.symbols.len()).sum(),
             edges: edges.len(),
@@ -407,7 +407,7 @@ fn graph_delivery_cost_by_stage() {
 
         // Hand the JS half the same bytes, so both halves of the
         // measurement describe one document instead of two.
-        let out = std::env::temp_dir().join(format!("nputer-t139-doc-{:09}.json", doc.len()));
+        let out = std::env::temp_dir().join(format!("supertaskr-t139-doc-{:09}.json", doc.len()));
         fs::write(&out, &doc).expect("hand off to the JS half");
         measured += 1;
     }
@@ -463,6 +463,6 @@ fn graph_delivery_cost_by_stage() {
     println!("S1 collect  = collect_docs_tree: walk + canonicalize + size gate + read_to_string (markdown only since T-140-s4)");
     println!("S2a raw     = serde_json::to_string of a hand-built snapshot carrying the graph — the road not taken");
     println!("amp         = IPC payload bytes / graph bytes — the cost of shipping JSON inside a JSON string");
-    println!("\nDocuments written to {}/nputer-t139-doc-*.json", std::env::temp_dir().display());
+    println!("\nDocuments written to {}/supertaskr-t139-doc-*.json", std::env::temp_dir().display());
     println!("Now run the JS half:  node app/test/graph-budget-bench.mjs\n");
 }

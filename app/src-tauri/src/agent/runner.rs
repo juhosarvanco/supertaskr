@@ -30,12 +30,12 @@
 //! - `env_clear()` + an explicit allowlist, so `ANTHROPIC_API_KEY`,
 //!   `AWS_*`, `GOOGLE_*`, `GITHUB_TOKEN`, `NPM_TOKEN`, `TAURI_*` and
 //!   anything like them never reach the child. The user's own CLI login
-//!   (keychain/config) is the auth — ADR-003: nputer never holds keys or
+//!   (keychain/config) is the auth — ADR-003: supertaskr never holds keys or
 //!   proxies tokens, and forwarding one from our env would make the app a
 //!   token conduit;
 //! - cwd is the canonical open project dir from `WatchState`, never a
 //!   webview-supplied path;
-//! - no sockets: the runner's whole I/O is child pipes and `.nputer/`
+//! - no sockets: the runner's whole I/O is child pipes and `.supertaskr/`
 //!   files. Port 1420 is never involved;
 //! - T-039: the CLI's own session id is DATA, and it is validated at the
 //!   moment it is captured — before it is emitted, stored, or substituted
@@ -359,7 +359,7 @@ impl Emitter {
 ///   answered. Every candidate it produces now passes
 ///   [`validate_resolved_binary`], so a relative PATH entry can no longer
 ///   yield a relative binary that gets executed.
-/// - **`NPUTER_NO_REAL_CLI`** — the guard (see [`real_cli_arms_forbidden`]).
+/// - **`SUPERTASKR_NO_REAL_CLI`** — the guard (see [`real_cli_arms_forbidden`]).
 ///
 /// The CHILD's environment is a different question and is unchanged:
 /// `env_clear()` plus [`ENV_ALLOWLIST`] (ADR-003).
@@ -439,9 +439,9 @@ pub struct ResolvedCli {
 
 // ---- T-060 criterion 6: no test may resolve the user's real CLI --------
 
-/// The guard variable. `NPUTER_NO_REAL_CLI=1` forbids the two arms that
+/// The guard variable. `SUPERTASKR_NO_REAL_CLI=1` forbids the two arms that
 /// could reach the developer's own `claude`; `=0` permits them.
-pub const NO_REAL_CLI_VAR: &str = "NPUTER_NO_REAL_CLI";
+pub const NO_REAL_CLI_VAR: &str = "SUPERTASKR_NO_REAL_CLI";
 
 /// **THE ACCIDENT THIS PREVENTS ALREADY HAPPENED.** T-047's verifier
 /// built a `RunnerConfig` with `..RunnerConfig::default()`, whose
@@ -476,16 +476,16 @@ pub const NO_REAL_CLI_VAR: &str = "NPUTER_NO_REAL_CLI";
 /// `cargo build` and spawns the produced binary itself, with no cargo
 /// process between them — but it reconstructs cargo's run environment for
 /// that binary, and `[env]` rides along with it. An
-/// `[env] NPUTER_VERIFIER_PROBE = "reached"` in
+/// `[env] SUPERTASKR_VERIFIER_PROBE = "reached"` in
 /// `app/src-tauri/.cargo/config.toml` was measured reaching the spawned
 /// dev app, alongside the full `CARGO_*` set; the control — a binary
 /// `cargo build`-ed and exec'd with no cargo anywhere — sees nothing.
 /// Right conclusion, checkable mechanism.
 ///
 /// The escape is explicit and one-way: the `#[ignore]`d real smoke sets
-/// `NPUTER_NO_REAL_CLI=0` before it resolves anything. It is the only
+/// `SUPERTASKR_NO_REAL_CLI=0` before it resolves anything. It is the only
 /// test in the repo that may, and it is additionally `#[ignore]`d and
-/// gated on `NPUTER_REAL_CLI=1`.
+/// gated on `SUPERTASKR_REAL_CLI=1`.
 ///
 /// **THIS DOCTEST IS THE PROOF FOR THE ONE KIND OF TEST THE DERIVATION
 /// USED TO MISS** (T-060-s4). It is the crate's only doctest and it runs
@@ -498,7 +498,7 @@ pub const NO_REAL_CLI_VAR: &str = "NPUTER_NO_REAL_CLI";
 ///
 /// ```
 /// assert!(
-///     nputer_lib::agent::runner::real_cli_arms_forbidden(),
+///     supertaskr_lib::agent::runner::real_cli_arms_forbidden(),
 ///     "a DOCTEST must not be able to reach the real CLI - if this red, \
 ///      rustdoc's temp dir is no longer named `rustdoctest*` and the \
 ///      derivation needs a new mechanism"
@@ -729,7 +729,7 @@ pub fn validate_resolved_program(
 ///    regardless, cache hit or not. The cache saved nothing it claimed
 ///    to save.
 /// 2. **The probe already returns the binary path in the same spawn.**
-///    `command -v claude && echo NPUTER_LOGIN_PATH=$PATH` is one process
+///    `command -v claude && echo SUPERTASKR_LOGIN_PATH=$PATH` is one process
 ///    for both answers.
 /// 3. **The cost of not caching was measured, on this machine, by this
 ///    task** (see [`login_shell`] for the full table): the login-shell
@@ -786,7 +786,7 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
             // shell's `command -v` printed on stdout.
             if let Err(rejection) = validate_resolved_binary(&path, adapter) {
                 eprintln!(
-                    "[nputer] agent: refusing the probed {} path: {rejection} - treating this probe as having found nothing. Refused: {}",
+                    "[supertaskr] agent: refusing the probed {} path: {rejection} - treating this probe as having found nothing. Refused: {}",
                     adapter.key,
                     crate::docs_watch::sanitize_for_log(&path.display().to_string())
                 );
@@ -879,7 +879,7 @@ pub fn login_shell() -> PathBuf {
 // which had a binary path from the file and no PATH to go with it. With
 // the cache retired that caller does not exist, and the one remaining
 // probe answers both questions in one spawn (`command -v claude && echo
-// NPUTER_LOGIN_PATH=$PATH`). So retiring the file did not merely remove
+// SUPERTASKR_LOGIN_PATH=$PATH`). So retiring the file did not merely remove
 // a file: it removed a resolve path that could spawn the user's login
 // shell TWICE, and the resolver's `$SHELL` read sites went from two to
 // one — which is also the only reason the T-047-s4 name check has a
@@ -905,7 +905,7 @@ fn finish(
     Ok(ResolvedCli { path, version, login_path })
 }
 
-/// `[$SHELL -l -c "command -v <bin> && echo NPUTER_LOGIN_PATH=$PATH"]`.
+/// `[$SHELL -l -c "command -v <bin> && echo SUPERTASKR_LOGIN_PATH=$PATH"]`.
 ///
 /// One spawn, both answers: where the binary is, and the PATH a login
 /// shell would have given it. Which program that is, and why it is
@@ -923,7 +923,7 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     // `&'static str`, never user input. No interpolation of anything the
     // webview or the filesystem supplied.
     let script = match adapter.binary {
-        "claude" => "command -v claude && echo NPUTER_LOGIN_PATH=$PATH",
+        "claude" => "command -v claude && echo SUPERTASKR_LOGIN_PATH=$PATH",
         _ => return which_on_path(adapter).map(|p| (p, None)),
     };
     let mut command = Command::new(login_shell());
@@ -942,7 +942,7 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     let mut login_path: Option<String> = None;
     for line in output.stdout.lines() {
         let line = line.trim();
-        if let Some(rest) = line.strip_prefix("NPUTER_LOGIN_PATH=") {
+        if let Some(rest) = line.strip_prefix("SUPERTASKR_LOGIN_PATH=") {
             login_path = Some(rest.to_string());
         } else if !line.is_empty() && found.is_none() {
             let candidate = PathBuf::from(line);
@@ -1135,7 +1135,7 @@ fn set_child_env(command: &mut Command, key: &OsStr, value: &OsStr) {
         return;
     }
     eprintln!(
-        "[nputer] agent: refusing to pass env '{}' to the CLI - it is {} bytes, past the {}-byte per-element bound execve enforces; the turn stands without it",
+        "[supertaskr] agent: refusing to pass env '{}' to the CLI - it is {} bytes, past the {}-byte per-element bound execve enforces; the turn stands without it",
         key.to_string_lossy(),
         value.len(),
         adapter::SPAWN_ELEMENT_MAX_LEN
@@ -1836,7 +1836,7 @@ pub fn run_turn(
     // T-039, THE SPAWN-SIDE GATE. Assembly is fallible, and a refusal
     // happens BEFORE anything is spawned: no child, no argv, no partial
     // state. This is the second boundary for an id read out of
-    // `.nputer/sessions.json` (the first is `SessionEntry::resume_id`) and
+    // `.supertaskr/sessions.json` (the first is `SessionEntry::resume_id`) and
     // the last one for any future caller.
     let argv = match adapter.argv(req.resume.as_deref()) {
         Ok(argv) => argv,
@@ -2031,7 +2031,7 @@ pub fn run_turn(
                             // LOUDLY here rather than coerced into
                             // something acceptable, so `out
                             // .native_session_id` stays None, the settle
-                            // path writes no id to `.nputer/sessions.json`,
+                            // path writes no id to `.supertaskr/sessions.json`,
                             // and `send_turn` has nothing to resume from.
                             if let Err(rejection) = validate_session_id(&id) {
                                 // T-029 (T-039-s3): its OWN envelope, not
@@ -2052,7 +2052,7 @@ pub fn run_turn(
                         }
                         // T-047, THE MODEL GATE (absorbing T-039-s2). The
                         // model rides the same init line the id does and
-                        // is written to `.nputer/sessions.json` and
+                        // is written to `.supertaskr/sessions.json` and
                         // rendered — before this it was accepted unbounded
                         // behind only the 1 MiB line cap.
                         //
@@ -2074,7 +2074,7 @@ pub fn run_turn(
                             Some(model) => match validate_model(&model) {
                                 Ok(()) => out.model = Some(model),
                                 Err(rejection) => println!(
-                                    "[nputer] agent: the CLI's init line carried an unusable model name ({rejection}) - the turn stands, the name is not recorded"
+                                    "[supertaskr] agent: the CLI's init line carried an unusable model name ({rejection}) - the turn stands, the name is not recorded"
                                 ),
                             },
                             None => {}
@@ -2430,7 +2430,7 @@ pub fn run_turn(
         let exit = terminate_group_owning(&mut child, &handle, cfg.kill_grace);
         if exit.escalated {
             println!(
-                "[nputer] agent: turn {} did not leave within the {} ms grace - SIGKILLed process group {pid}",
+                "[supertaskr] agent: turn {} did not leave within the {} ms grace - SIGKILLed process group {pid}",
                 req.turn,
                 cfg.kill_grace.as_millis()
             );
@@ -2464,7 +2464,7 @@ pub fn run_turn(
         // guard and never the mechanism — but it is said out loud,
         // because a silently short tail is the defect this card is about.
         println!(
-            "[nputer] agent: turn {} stopped waiting for the child's stderr to close after {} ms - the tail may be short",
+            "[supertaskr] agent: turn {} stopped waiting for the child's stderr to close after {} ms - the tail may be short",
             req.turn,
             cfg.kill_grace.as_millis()
         );
@@ -2761,9 +2761,9 @@ mod tests {
         // A hostile env cannot redirect the production spawn THROUGH THIS
         // STRUCT: the three seam fields are Rust-only, filled by a test
         // constructing the struct — never by any variable.
-        std::env::set_var("NPUTER_AGENT_BIN", "/tmp/evil");
-        std::env::set_var("NPUTER_FAKE_SCENARIO", "happy");
-        std::env::set_var("NPUTER_AGENT_PATH", "/tmp/evil/bin");
+        std::env::set_var("SUPERTASKR_AGENT_BIN", "/tmp/evil");
+        std::env::set_var("SUPERTASKR_FAKE_SCENARIO", "happy");
+        std::env::set_var("SUPERTASKR_AGENT_PATH", "/tmp/evil/bin");
         let cfg = RunnerConfig::default();
         assert_eq!(cfg.binary_override, None);
         assert_eq!(cfg.path_override, None);
@@ -2772,9 +2772,9 @@ mod tests {
             cfg.probe_login_shell,
             "production DOES probe the login shell - that is T-025 criterion 4"
         );
-        std::env::remove_var("NPUTER_AGENT_BIN");
-        std::env::remove_var("NPUTER_FAKE_SCENARIO");
-        std::env::remove_var("NPUTER_AGENT_PATH");
+        std::env::remove_var("SUPERTASKR_AGENT_BIN");
+        std::env::remove_var("SUPERTASKR_FAKE_SCENARIO");
+        std::env::remove_var("SUPERTASKR_AGENT_PATH");
     }
 
     /// **THE COMPANION THE PIN ABOVE NEEDED (T-060, T-047-s4).**
@@ -2819,7 +2819,7 @@ mod tests {
         // …and the one read by constant is the guard, spelled out. A test
         // parametrised by a constant cannot pin that constant, so the
         // VALUE is pinned here, separately from every use of it.
-        assert_eq!(NO_REAL_CLI_VAR, "NPUTER_NO_REAL_CLI");
+        assert_eq!(NO_REAL_CLI_VAR, "SUPERTASKR_NO_REAL_CLI");
     }
 
     #[test]
@@ -3283,7 +3283,7 @@ mod tests {
         {
             use std::os::unix::fs::PermissionsExt;
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t047-cachepath-{}-{}",
+                "supertaskr-t047-cachepath-{}-{}",
                 std::process::id(),
                 now_ms()
             ));
@@ -3490,7 +3490,7 @@ mod tests {
 
         // And the derivation is not accidentally true of the shipped app:
         // a binary run from `<profile>/` or from a bundle is NOT a test.
-        for not_a_test in ["/x/target/debug/nputer", "/A.app/Contents/MacOS/nputer", "/usr/bin/x"] {
+        for not_a_test in ["/x/target/debug/supertaskr", "/A.app/Contents/MacOS/supertaskr", "/usr/bin/x"] {
             let parent = Path::new(not_a_test).parent().and_then(|p| p.file_name());
             assert_ne!(
                 parent,
@@ -3537,7 +3537,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         let adapter = super::super::adapter::planner_adapter();
         let root = std::env::temp_dir().join(format!(
-            "nputer-t060-relpath-{}-{}",
+            "supertaskr-t060-relpath-{}-{}",
             std::process::id(),
             now_ms()
         ));
@@ -3579,7 +3579,7 @@ mod tests {
             "cargo no longer runs tests from the package root - the relative fixture \
              below would not resolve and this test would pass for the wrong reason"
         );
-        let rel_dir = format!("target/nputer-t060-rel-{}-{}", std::process::id(), now_ms());
+        let rel_dir = format!("target/supertaskr-t060-rel-{}-{}", std::process::id(), now_ms());
         let rel_planted = cwd.join(&rel_dir).join(adapter.binary);
         std::fs::create_dir_all(cwd.join(&rel_dir)).expect("mk rel dir");
         std::fs::write(&rel_planted, "#!/bin/sh\nexit 0\n").expect("write");
