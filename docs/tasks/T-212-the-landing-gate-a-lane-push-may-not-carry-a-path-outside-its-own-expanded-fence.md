@@ -130,12 +130,18 @@ now judges the `touches:` LINE across the judged range at both landing
 moments and REFUSES a card whose line moved, its own or a sibling's,
 while `docs/tasks` stays unfenceable and every other write to a card
 (the stamp, the notes, a suggestion, a whole new card) is admitted
-exactly as before. What that arm still cannot see is FIVE things, listed
-in `landing-gate.mjs`'s own limit 5 and not copied here: a card the range
-ADDS, a card it DELETES, a range the containment arm already refuses, a
-card whose fence this gate could not expand from the integration branch,
-and limit 6, which reaches the new arm through the same movable local
-ref. The line a legitimate fast-path-A grant leaves in a lane's working
+exactly as before. **A card is resolved BY ITS ID and never by its path**,
+so a RENAME — an ordinary retitle, since a card's slug carries its title —
+and a delete-and-re-add are JUDGED rather than skipped; that clause was
+the rework of 2026-09-08, and until it landed a renamed card carried a
+widened `touches:` past BOTH landing moments. What that arm still cannot
+see is SIX things, listed in `landing-gate.mjs`'s own limit 5 and not
+copied here: a card the range ADDS **under an id no endpoint already
+carries**, a card it DELETES, a range the containment arm already refuses,
+a card whose fence this gate could not expand from the integration branch,
+limit 6, which reaches the new arm through the same movable local ref, and
+the cannot-compare the id resolution itself can answer. The line a
+legitimate fast-path-A grant leaves in a lane's working
 copy is exonerated by comparing it against the integration branch's own
 copy — argued in that module's header, since a gate refusing the route
 its own `ROUTE` text prescribes would be the `T-223` trap one paragraph

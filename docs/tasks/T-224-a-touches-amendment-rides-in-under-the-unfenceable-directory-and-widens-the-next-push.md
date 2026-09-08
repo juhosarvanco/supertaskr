@@ -349,6 +349,269 @@ Body count 42 → 43; `npm run typecheck` from tools/e2e **0**;
 suite figures in the table above were measured at the previous commit
 and re-run at this one; the re-runs are in the executor's report.
 
+### Rework — 2026-09-08, a FRESH executor, closing the REJECTED verdict's one finding
+
+Lane `task/T-224-amendment-under-unfenceable` at `dde56da` (the verdict
+commit, which the lane now carries). Fresh session, not the author — the
+lifecycle's rule. **ONE finding was assigned and one is closed**; nothing
+else in the diff was touched.
+
+**THE FINDING, RE-DERIVED HERE BEFORE ANYTHING WAS CHANGED.**
+`touchesAmendments` asked `cardTouchesAt(root, rev, rel)` with the SAME
+`rel` at the base, the tip and the record, so a card whose PATH moved
+inside the range answered `absent` at both endpoints and hit both
+`continue`s. A card's slug carries its title, so an ordinary retitle is a
+rename — and `rangePaths` passes `--no-renames` (right for the containment
+arm, which judges paths), which leaves the two names unrelated. The
+amended contract's own sentence, carried on this card at lines 78–79,
+rules it: *"a card id present on main under another path is resolved by
+id, not path, so delete-and-re-add and rename do not evade the
+comparison."* `CARD_FILE_RE` captured the id at `:414` and the capture was
+never read. **The card, the verdict and the code agreed; nothing had to be
+recorded as a contradiction.**
+
+**WHAT CHANGED — `.claude/hooks/landing-gate.mjs`, three functions and the
+header.**
+
+- **`cardPathsById(root, rev, git)`, new and exported.** One
+  `git ls-tree --name-only -z <rev> -- docs/tasks/` per revision, filtered
+  by `CARD_FILE_RE` ITSELF, into `Map<id, string[]>`. The filter is what
+  keeps two properties exact rather than hoped for: `T-224` does not match
+  `T-224-s1` (the pattern's optional `-s\d+` is greedy, so the capture
+  takes the suffix when the name carries one), and `docs/tasks/rejected/**`
+  is not a card path at all (the capture's `[^/]*` cannot cross a slash),
+  so a card FILED AWAY there still reads as a deletion — limit 5(b) —
+  rather than resolving to a blob nothing fences. **The listing is NOT
+  recursive**, for that same reason: below `docs/tasks/` there is no path
+  this pattern can match. A LIST per id, never one path, because two files
+  carrying one id is a state to report, not to pick a winner in.
+- **`cardTouchesOf(root, rev, id, file, index, git)`, new and exported.**
+  The PATH first — `cardTouchesAt` unchanged — and the ID only where that
+  answered `absent`. So the ordinary push spends **not one extra process**,
+  measured below. Four answers: a line WITH THE PATH IT WAS READ AT,
+  `absent` (no file at this revision carries this id), and `problem`, which
+  now also covers two files carrying one id and an `ls-tree` that failed —
+  both announced on the existing cannot-compare code, never a silent allow.
+- **`touchesAmendments` is keyed on the ID, and the dedupe is not
+  cosmetic.** With `--no-renames` a renamed card enters `paths` TWICE, as a
+  deletion of the old name and an addition of the new one; keyed on the
+  path, one amendment would be reported twice and the second report would
+  name the endpoints in the opposite order, which reads like two findings
+  about two cards. `index` memoises the listing PER REVISION inside one
+  call, so a range renaming twenty cards asks git once per ref.
+- **`amendmentReport` names a path only where it DIFFERS from the one on
+  the first line** — the old name is where the BEFORE line lives and is
+  what `git show <base>:<path>` needs — and says `RESOLVED BY ITS ID <id>,
+  not by its path` when it does. Where nothing was renamed the annotation
+  is absent entirely, so every pre-existing assertion in the spec reads
+  exactly as before.
+- **Limit 5's residue (a) is CORRECTED, not softened.** It read *"it
+  fences no live lane, since a lane's card exists before its branch
+  does"*, and the verdict is right that this is false for a rename, where
+  the id is preserved and the lane is live. The justification is retracted
+  in place and the residue is restated as **a genuinely new id and nothing
+  wider**; (b) now says a card filed under `docs/tasks/rejected/` reads as
+  a deletion; a SIXTH residue (f) is added for the cannot-compare the id
+  resolution can answer. The count in that sentence moves FIVE → SIX. A new
+  header section, *"AND THE CARD IS FOUND BY ITS ID, WHICH IS WHAT A SLUG
+  CANNOT DO"*, argues the whole thing. `T-212`'s dated 2026-09-08 line —
+  this lane's OWN addition, not a pre-existing record line — takes the same
+  correction in one clause.
+
+**WHAT DID NOT CHANGE**, each re-measured rather than assumed: the
+comparison is still raw BYTES; the record is still `rev` for the lane arm
+and the FIRST PARENT per merge for the merge arm; the arm still sits
+BETWEEN the containment block and the cannot-compare allow (the seventh
+body still owns that and still reds alone under `SKIP_UNRESOLVABLE`'s
+shape); `judgePaths` is untouched and `docs/tasks` stays UNFENCEABLE; both
+call sites in `push-guard.mjs` are unchanged; the exoneration is untouched.
+
+**THE GIT SPAWN COUNT, MEASURED WITH A COUNTING `git` INJECTED THROUGH THE
+FUNCTION'S OWN LAST PARAMETER** (`spawns-T-224.mjs`, a throwaway repo of
+40 cards, each range padded to 500 non-card paths as the verdict's A1.15
+did), at `bd60cba`:
+
+| range | spawns | which |
+|---|---|---|
+| 1 card, body changed, LINE UNMOVED | **2** | `show`, `show` — identical to the pre-rework figure |
+| 1 card, line MOVED | **3** | + the record read |
+| 1 card RENAMED and widened | **6** | + `ls-tree -- <file>` (pre-existing), + ONE `ls-tree docs/tasks/`, + the second `show` |
+| **20** cards renamed and widened | **101** | 5 per card + **ONE** listing for the whole range |
+
+The listing is O(1) per REVISION, not per card, which is the property the
+rework owed.
+
+**BODIES — five added, covering the six cases the rework was asked for;
+43 → 48.** Every refusal is PAIRED with an allow inside ONE fixture,
+because a guard that refused every RENAME would be indistinguishable from
+one that resolves ids and would refuse the ordinary retitle.
+
+| body | line | covers |
+|---|---|---|
+| *"A RENAMED card does not evade the comparison: rename-and-widen is refused, the pure rename lands"* | 1332 | rename+widen of the lane's OWN card at the LANE moment (both paths, both lines, `RESOLVED BY ITS ID`) **and** the pure rename ALLOWED |
+| *"a lane RENAMING and widening a SIBLING's card is refused too, not only its own"* | 1382 | the sibling form |
+| *"THE MERGE MOMENT: a merge whose lane RENAMED and widened a card is refused, then the retitle alone lands"* | 1403 | rename+widen at the MERGE moment, paired |
+| *"DELETE-AND-RE-ADD under a new slug is refused, while a genuinely NEW id is the disclosed residue"* | 1443 | delete-and-re-add REFUSED **and** a genuinely new id ALLOWED (limit 5(a), measured rather than asserted) |
+| *"`T-NNN` and `T-NNN-sN` are two ids: a suggestion card is never resolved against its parent"* | 1481 | the suffix distinction, and the dedupe (`1 card(s)`) |
+
+Every expectation is a TYPED LITERAL — `"touches: [tools/e2e, app/, .claude/]"`,
+`"RESOLVED BY ITS ID T-902-s1"`, `"1 card(s)"` — never a second call to the
+function under test. The first body asserts its own PRECONDITION from
+`git diff --no-renames`, so a fixture that stopped reproducing a rename
+would red rather than pass vacuously.
+
+### The rework's drill (verifier.md 2b; CONVENTIONS' POISON DRILL)
+
+**A DETACHED SCRATCH WORKTREE, NEVER THE LANE**: a sibling directory
+`/Users/ujju/Projects/nputer-D-T-224` (stem derived from the lane id),
+`git worktree add --quiet --detach` at `bd60cba`, `node_modules`/`dist`
+symlinked from the lane so the mutants ran against the same toolchain —
+and the app's really was present, which is the harness failure the verdict
+reported discarding. **BASELINE FIRST: 48 passed, exit 0** — the count read,
+not only the exit. Driver `drill-T-224.sh` in this lane's scratchpad; every
+landing read back from `git diff -U0` BEFORE the suite ran (one mutation
+was rejected by that read and re-planted — see D below); every restoration
+by `git restore --source=bd60cba --staged --worktree` and proved by sha256
+against the pristine hook
+`2edf98f91f1a5b3a2206ebd0e78ebdf0600101e455cb4bfce13861f308f8e1b5`
+(the pre-rework file was `093970bd…f51707`, the hash the first two drills
+used). Every restoration matched. Worktree removed, symlinks first; the
+lane's own hook hashed identical afterwards.
+
+| # | mutant | one-side change | exit | bodies RED |
+|---|---|---|---|---|
+| A | **THE VERIFIER'S EXACT EVASION** — resolution by path only | `listed.byId.get(id) ?? []` → `[]` | 1 | **5** — 1332, 1382, 1403, 1443, 1481 (43 passed) |
+| B | statuses A/R skipped, base side | `+ if (before.file !== rel) continue;` | 1 | **2** — 1382, 1443 (46 passed) |
+| B2 | statuses A/R skipped, BOTH ends | `+ if (before.file !== rel \|\| after.file !== rel) continue;` | 1 | **5** — the same five (43 passed) |
+| C | the id DEDUPE removed | `if (seen.has(id))` → `if (false)` | 1 | **1** — 1481 alone (47 passed) |
+| D2 | the index CONFUSES a suffix with its parent | `named[1]` → `named[1].split("-s")[0]` | 1 | **1** — 1481 alone (47 passed) |
+| E | the comparison DELETED (the verdict's `ALLOWALL`) | `if (before.line === after.line)` → `if (true)` | 1 | **10** — the verdict's five (1031, 1083, 1149, 1235, 1269) **plus** all five new (38 passed) |
+| F | the resolved path never NAMED in the refusal | `at === undefined \|\| at === m.file` → `true` | 1 | **5** — the same five (43 passed) |
+| G | `REFUSEALL`, lane arm (the verdict's M10) | `amended.moved.length > 0` → `>= 0` | 1 | **16**, incl. the ALLOW halves of 1332, 1443, 1481 (32 passed) |
+| H | `REFUSEALL`, MERGE arm | the same, on the second site | 1 | **4** — 939, 1269, 1403, 1816 (44 passed) |
+
+**A MUTATION THAT DID NOT LAND WAS CAUGHT BY READING IT BACK, AND IS
+REPORTED RATHER THAN SILENTLY REPLACED.** The first form of D wrote
+`/-s\\d+$/` into the file — a regex matching a literal backslash — so the
+suite came back **48 passed, exit 0**: a green indistinguishable from a
+vacuous assertion, exactly `T-078`'s shape. The `git diff -U0` landing is
+where it was seen. D2 is the re-plant, escape-free.
+
+**Kill-set containment, judged over BODIES and stated against the previous
+verdict's table.** The verdict's `ALLOWALL` killed {1031, 1083, 1149, 1235,
+1269}; mine kills that set **plus** {1332, 1382, 1403, 1443, 1481} — a
+strict superset, so no pre-existing body lost a kill to this rework.
+Within the new five: A/B2/F kill all five; B kills {1382, 1443} and NOT
+{1332, 1403, 1481}, and the reason is worth naming rather than smoothing —
+B skips only when the NEW slug sorts before the old one in the diff, which
+is a property of the two titles, so B is half of the evasion and two bodies
+own that half. C and D2 have **identical kill sets, {1481}**, and I state
+it rather than smooth it: 1481 is the sole owner of both properties. They
+are separated at ASSERTION level inside it, which is the arming the rule
+asks for — C reds line 1523 (*"more than one card was reported as moved"*)
+and D2 reds line 1517 (the `RESOLVED BY ITS ID T-902-s1` literal). No
+mutant in this set is killed by no body; the five new bodies are killed by
+at least one mutant each, and 1382's kill set {A, B, B2, E, F} is contained
+in nobody's.
+
+**THE POSITIVE CONTROLS ARE DEMONSTRATED FAILING IN BOTH DIRECTIONS, AT
+ASSERTION LEVEL** — not asserted, shown:
+
+- 1332: `E` reds its REFUSE half (*"a RENAMED card carried its widened
+  fence past the lane moment"*); `G` reds its ALLOW half (*"a PURE rename
+  was refused"*).
+- 1443: `E` reds *"delete-and-re-add laundered a `touches:` amendment"*;
+  `G` reds *"a genuinely new card id was refused"*.
+- 1481: `E` reds *"the suggestion's widening rode in behind its parent's
+  deletion"*; `G` reds *"a deletion and a retitle were refused"*.
+- 1403: `E` reds *"a merge carrying a renamed-and-widened card landed on
+  main"*; `H` — `REFUSEALL` on the MERGE arm, planted for exactly this —
+  reds *"a merge carrying a pure retitle was refused"*.
+- 1382 has **no allow arm by construction** and I say so: it is a
+  refusal-only body of the same shape as the pre-existing sibling body at
+  1083. Its allow-side control is the pure-rename half of 1332 and 1403,
+  and both of those are demonstrated failing above.
+
+### Dogfood — the reworked arm over two live ranges (`dogfood-T-224.mjs`, read-only)
+
+Record = the integration ref `main` (`98d3ef5`). Nothing written anywhere;
+T-265's range was read from this lane's own object store, its worktree
+untouched.
+
+    ── T-224 (THIS lane)   dfe35a5..bd60cba   8 paths, 6 card ids
+         T-212, T-224, T-224-s1, T-224-s2, T-224-s3, T-224-s4
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+    ── T-265 (the live sibling lane, READ-ONLY)  15619b4..3589e0f
+       45 paths, 3 card ids: T-265, T-265-s1, T-265-s2
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+Both were ALLOWED before the rework and are ALLOWED after it, which is the
+statement the rework owed: **id resolution did not turn either live range
+into a refusal.**
+
+### The rework's commands, in the order run, every exit read from `$?` unpiped
+
+| command | cwd | exit | count |
+|---|---|---|---|
+| `node --check .claude/hooks/landing-gate.mjs` | lane root | **0** | — |
+| `npm run typecheck` | tools/e2e | **2** then **0** | the first run named 10 `noUncheckedIndexedAccess` errors on the new captures; fixed with this module's own `/** @type {string} */` idiom |
+| `npx playwright test tests/landing-gate.spec.ts` | tools/e2e | **0** | **48 passed** (43 at `dde56da`, re-derived: `grep -cE '^test\("'`) |
+| `docs-gate.mjs <2 literal card paths>` | lane root | **1** | FIRES — 2 docs paths, owing `npm test` from app/, `npm test` from tools/e2e/, `npx vitest run` from lib/parser/; injection scan 0 hits in 0 of 2 |
+| `npm run lint:tokens -- --selftest` | tools/e2e | **0** | 65 TOKEN + 4 CONTROL samples, 90 walk-policy, 9 evidence-floor |
+| `npm run lint:tokens` | tools/e2e | **0** | TOKEN 177 files, CONTROL 1276 tracked text files |
+| `npm run lint:docs` | tools/e2e | **0** | whole-tree half, 0 findings |
+| `npm run capabilities:check` | tools/e2e | **1** | **STALE, EXPECTED** — committed 58883 bytes, fresh 60034; five bodies added |
+| the nine-mutant drill | `../nputer-D-T-224`, detached | see the table | baseline **48 passed**, exit 0 |
+| `gate-run.mjs parser` | lane root | **0** | **377** bodies, GREEN, ref `bd60cba` |
+| `gate-run.mjs app` | lane root | **0** | **1163** bodies, GREEN, ref `bd60cba` |
+| `gate-run.mjs rust` | lane root | **0** | **639** bodies, 18 targets, GREEN, ref `bd60cba` |
+| `gate-run.mjs e2e` (`SUPERTASKR_E2E_PORT=15224`) | lane root | **0** | **702** bodies, GREEN, ref `bd60cba` |
+| `cargo run -q -p supertaskr-index -- index --check --root ../..` | app/src-tauri | **0** | **CURRENT** — 201 files, 2542 symbols, 2441 edges |
+| `git merge-tree --write-tree main HEAD` | lane root | **0** | a TREE, not a conflict — forecast **8** paths |
+
+**THE CENSUS IS STALE AND THE REGENERATION IS THE INTEGRATOR'S**, as
+before: five more spec names, `docs/CAPABILITIES.md` is outside this
+lane's fence (`T-210`), so `npm run capabilities` lands in the MERGE
+commit. Reported, not regenerated.
+
+### Gates, derived from the merge forecast (8 paths at `f4fe3bf`)
+
+- **DOCS GATE — FIRES**: 6 `docs/tasks/*.md` paths in the forecast; run on
+  the two this rework writes, it named app/, tools/e2e/ and lib/parser/,
+  and all three ran GREEN through the blessed runner at `bd60cba`.
+- **GRAPH REGEN — FIRES by trigger** (`tools/e2e/tests/landing-gate.spec.ts`
+  is a `.ts` outside `docs/`) **and moves nothing**: asked rather than
+  argued this time — `index --check` answers **CURRENT** at the tip.
+- **BOOT GATE — NOT OWED**: no `app/src-tauri/**`, no `app/src/**`,
+  neither manifest, in the forecast's 8 paths.
+- **METHOD EVAL GATE — NOT OWED**: no `method/**` path. `T-224-s3` still
+  routes the method-text clause; `method/` is `T-265`'s while that lane
+  is live.
+
+The heavy legs were measured at `bd60cba`; the tip adds `docs/tasks/*.md`
+prose only, which moves no gate's ANSWER — the docs gate already fires and
+the graph regen already fires on the `.ts` path. The integrator re-derives
+at the merge.
+
+### For the verifier, on the rework only
+
+- **The least-confident point is the AMBIGUITY answer.** Two files
+  carrying one id at one revision returns `problem`, which reaches the
+  announced cannot-compare — an ALLOW. It is consistent with every other
+  `problem` in this module and it is disclosed as residue (f), but it is a
+  state a hostile lane could manufacture by committing two cards with one
+  id, and the honest reading is that it costs one refusal. Refusing there
+  instead is one condition, and no body would have to move.
+- **The second is the `docs/tasks/rejected/` reading.** A card filed away
+  into that directory is a DELETE to this arm rather than a rename,
+  because `CARD_FILE_RE` cannot cross a slash. That is the pre-rework
+  behaviour preserved deliberately and stated in (b); it is not measured
+  by a body of its own.
+- Nothing in this rework is out of fence: `.claude/` and `tools/e2e` are
+  the card's `touches:`, and `docs/tasks/` is unfenceable. No ask was
+  routed; nothing was parked; no new finding was filed.
+
 ## Verdicts
 
 2026-09-08 — `claude-opus-5@subagent (phase 2)` (verifier, BLIND
