@@ -43,7 +43,7 @@ legible while the verdict is what people come for.
   @human's weight sits.
 - The narrowed claim (landed map, conclusion 1): the only defensible
   conjunction is verdict-shaped — every clause excludes a named
-  competitor, and only nputer has evidence its verdicts catch
+  competitor, and only Supertaskr has evidence its verdicts catch
   anything (27% first-pass rejection rate at b505fca).
 - agentplane's convergence: independent arrival at repo-local task
   files proves the architecture alone is not a moat; "the moat has

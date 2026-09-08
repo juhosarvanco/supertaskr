@@ -1,11 +1,11 @@
-# Comparisons — why nputer, class by class (draft skeleton, 2026-09-08)
+# Comparisons — why Supertaskr, class by class (draft skeleton, 2026-09-08)
 
-The source for the website's "why use nputer instead of X" pages. Asked
+The source for the website's "why use Supertaskr instead of X" pages. Asked
 for by @human on 2026-09-08 (*"Should we create a doc where we collect
 features and ways in which we are better than our competition?"*) and
 owed since 2026-08-30 by docs/business/marketing.md's open-work line
 ("the comparison-page plan") and docs/business/plan.md's launch phase
-("honest 'nputer vs X' comparison pages — re-verify all vendor claims
+("honest 'Supertaskr vs X' comparison pages — re-verify all vendor claims
 before publishing — they churn monthly").
 
 ## The rules this file is under
@@ -34,7 +34,7 @@ before publishing — they churn monthly").
 > board; agents build it in parallel lanes that cannot collide; a
 > different model — denied the builder's reasoning — returns a
 > binding verdict on every card; and the whole history lands as
-> records in your repo. nputer runs the entire AI-native SDLC, and
+> records in your repo. Supertaskr runs the entire AI-native SDLC, and
 > built itself with it.
 
 The four clauses of the narrowed claim (map conclusion 1), each of

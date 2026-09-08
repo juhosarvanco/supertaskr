@@ -1,4 +1,4 @@
-# nputer — business plan (draft v0, opened 2026-08-30)
+# Supertaskr — business plan (draft v0, opened 2026-08-30)
 
 Drafted by the marketing session under the 2026-08-30 rulings.
 Everything here frames decisions for @human; nothing here is a
@@ -21,9 +21,9 @@ solo-founder maintainable.
 
 ## Positioning (M3 ruling)
 
-Lead with the full nputer SDLC approach — the whole loop as the
+Lead with the full Supertaskr SDLC approach — the whole loop as the
 story, the binding verdict as the sharpest proof inside it, the
-self-hosted proof (nputer built nputer, records readable) as the
+self-hosted proof (Supertaskr built Supertaskr, records readable) as the
 credibility floor. The competitive ground is the landed five-ring
 map (docs/research/competitors.md, 2026-08-30): nobody else spans
 idea → interview → exact tasks → governed multi-model execution →
@@ -61,13 +61,13 @@ and all meter AI.
   with program numbers (median interview→board minutes, %
   dispatching within a week) and the map's verified competitor
   claims (re-verify all vendor claims before publishing — they
-  churn monthly). Honest "nputer vs X" comparison pages — the
+  churn monthly). Honest "Supertaskr vs X" comparison pages — the
   one-person distribution engine (steal list).
 - **Phase 3 — the channel move** (landed map, conclusion 5): don't
   be a fourth tracker; BE THE AGENT the trackers delegate to.
   Linear's AgentSession, Agents in Jira, and Plane's @mentionable
   agents are one integration surface with three distributions, and
-  nputer returns the artifact none of them can produce: a
+  Supertaskr returns the artifact none of them can produce: a
   reproducible REJECTED. (Strategy, not promise — any integration
   is a card that needs a version ruling; the M4 strategy room owns
   the question of how central this becomes.)
@@ -103,7 +103,7 @@ Near-zero infrastructure by design (no cloud, no hosted backend, no
 inference costs — the user's own agent subscriptions do the
 building). The real costs are @human's time (triage capacity is the
 program's admitted bottleneck — the intake throttle prices it
-honestly) and model spend on nputer's own development (stamped per
+honestly) and model spend on Supertaskr's own development (stamped per
 card in the records; the seat-economics series makes even our costs
 quotable marketing material).
 
@@ -122,7 +122,7 @@ signups, traffic. The waitlist's length is an operations number
   model-agnostic — their improvements lower our dispatch cost; the
   interview/beginning is the defensible ground.
 - **Category mortality (Ring 1 graveyard):** mitigated by identity
-  — local-first files mean nputer can vanish and users lose
+  — local-first files mean Supertaskr can vanish and users lose
   nothing; now a supporting clause, still true.
 - **The riskiest assumption** (planning theater): if a thorough
   plan doesn't keep agents coherent over months, the product is a

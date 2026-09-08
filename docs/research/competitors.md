@@ -108,7 +108,7 @@ binding verdict. That is the whole opening.**
 
 ## Ring 2 — spec-method layer (vs the convention)
 
-- **agentplane** — the nearest architectural neighbour nputer has
+- **agentplane** — the nearest architectural neighbour Supertaskr has
   anywhere (github.com/basilisk-labs/agentplane; MIT, 76 stars,
   pushed 2026-08-30). "Git-native workflow control for coding agents:
   approved plans, verification, and reviewable evidence." Repo-local
@@ -157,7 +157,7 @@ a reading of a named file.
 - **GSD Core** (open-gsd/gsd-core; community, ex-TÂCHES; MIT; 9,217
   stars on the new repo, the archived gsd-build original at 64,580;
   created 2026-05-22; pushed 2026-09-08; `npx @opengsd/gsd-core`; 14
-  runtimes). **The closest thing to nputer anywhere, closer than
+  runtimes). **The closest thing to Supertaskr anywhere, closer than
   agentplane.** `.planning/` committed to git with PROJECT, REQUIREMENTS
   (REQ-IDs), ROADMAP and STATE.md; discuss → CONTEXT.md; plan with a
   researcher, a planner and a plan-checker (a revision gate with stall
@@ -176,18 +176,18 @@ a reading of a named file.
   (`models.verification`), multiple reviewer instances across Codex,
   Gemini, OpenCode and Ollama with consensus (`/gsd-review`), and
   `cross_ai_execution` to hand execution to another CLI. Also a security
-  layer nputer lacks: a package-legitimacy gate, a prompt-injection
+  layer Supertaskr lacks: a package-legitimacy gate, a prompt-injection
   scanner on `.planning/` writes, a secret read guard. **Where it
   stops:** the verifier is NOT denied the builder's notes — it reads
   SUMMARY.md, PLAN.md and CONTEXT.md and is instructed to distrust them
-  (nputer's phase 1 is tool-less and writes its attack set before it may
+  (Supertaskr's phase 1 is tool-less and writes its attack set before it may
   read anything of the builder's — a property of the spawn, T-205); the
   verifier's model is Sonnet in every default profile
   (CONFIGURATION.md's tier table), the same vendor and tier as the
   executor — a different vendor is a configuration, not the design; the
   binding lives in the ship WORKFLOW, a prose file running shell
   queries — `git push` outside `/gsd-ship` is not refused, where
-  nputer's guard refuses the push itself; plans NAME the files they
+  Supertaskr's guard refuses the push itself; plans NAME the files they
   touch and worktrees isolate executors, but nothing proves two plans
   disjoint or refuses a write outside the plan — the fence is
   planner-asserted; and there is no derivation-stamped figure, no doc
@@ -222,7 +222,7 @@ a reading of a named file.
   stars). "A control plane that accelerates AI agent workflows by
   automating planning and acceptance", signed decisions, SOC 2-ready
   audit trail, Free / Team $15 / Business $39 per seat per month. A
-  hosted service in nputer's category; read from the site only.
+  hosted service in Supertaskr's category; read from the site only.
 - **npm `superplan`** (published 2026-05-12, v0.0.4): "Superplan contract
   compiler plus local mission-control board for Claude Code and Codex
   workers." Small, but the name and the shape are ours.
@@ -232,7 +232,7 @@ a reading of a named file.
   descendant with drift detection), the wshobson/agents marketplace.
 
 **What this ring establishes.** Three projects with two to thirty times
-the stars nputer will see this year have converged on nputer's SHAPE —
+the stars Supertaskr will see this year have converged on its SHAPE —
 file-based state under a `.planning/` or `.superpowers` directory,
 fresh-context seats, plans that name files and criteria, non-overlapping
 waves, a STATE.md and a ROADMAP.md by those names, a verifier with an
@@ -391,7 +391,7 @@ comparison).
 
 **Mechanics**
 - Slash-command ergonomics (Spec Kit): ship the convention as
-  /nputer-plan, /nputer-checkpoint etc., one-line install.
+  /supertaskr-plan, /supertaskr-checkpoint etc., one-line install.
 - Deterministic spec-checking (Kiro): solvers/linting over EARS lines.
 - Container isolation (Sculptor): the path for enforced-touches
   sandboxing.
@@ -476,7 +476,7 @@ candidate in docs/VERSIONS.md's UNRULED section, never a card by itself**
   prompt files (parity with ADR-019's budgets, extended to method/).
 - **An MCP transport onto the CLI and the board** (GSD's `gsd-mcp-server`
   over its `command` and `state` interface points; read 2026-09-08): Claude
-  Code and Codex both speak MCP, so one server exposing `npx nputer`'s
+  Code and Codex both speak MCP, so one server exposing `npx supertaskr`'s
   verbs and the parsed board would let ANY MCP-capable app drive the loop
   without a per-vendor skill format — the vendor-neutral answer to
   ADR-021 Addendum 1, and a candidate surface for T-241/T-244/T-246 to
@@ -491,7 +491,7 @@ candidate in docs/VERSIONS.md's UNRULED section, never a card by itself**
 
 **Negative lesson, 2026-09-08:** an adversarial INSTRUCTION is one
 release away for anyone; only a MECHANISM (the verifier cannot read what
-it is denied) is a claim. Never let a nputer sentence rest on "told to".
+it is denied) is a claim. Never let a Supertaskr sentence rest on "told to".
 
 **Negative lessons**
 - Any cloud-dependent component is a death vector (Vibe Kanban).
@@ -525,7 +525,7 @@ filter "only what makes the system reliably better":**
 - Recorded, not taken as features: write-to-disk-return-a-pointer and
   suite-once-then-named-bodies (rooms/loop-efficiency.md items 30–31);
   model profiles as named sets of role defaults (the shape for
-  nputer.yaml under T-244). Not taken: thirty-four roles (five cover a
+  supertaskr.yaml under T-244). Not taken: thirty-four roles (five cover a
   solo v1; the specialised checkers are v2 seats already), the debugger
   role (v2), the user profiler (reads transcripts, which are not record),
   the memory curator (knowledge outside the repository, against ADR-002),
@@ -557,7 +557,7 @@ filter "only what makes the system reliably better":**
   one runtime most GSD users run." The fix is a default-off BETA
   capability gated on Agent SDK ≥ 0.3.149. Until it is on by default,
   "binding at ship" gates a verification that may never have run.
-  nputer's verifier is a property of the spawn (T-205) and the landing
+  Supertaskr's verifier is a property of the spawn (T-205) and the landing
   gate refuses a merge with no verdict — there is no path around it.
   Re-check the capability's default before any comparison page ships.
 - **GSD Core is an embeddable engine, not only a skill set** (their
