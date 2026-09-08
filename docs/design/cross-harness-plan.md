@@ -166,6 +166,86 @@ A brief that works for Claude under a slightly-too-narrow policy will
 permission policy as **per-adapter and load-bearing**, never as a shared
 default.
 
+### §5 Addendum 1 — the Codex SKILL form, measured 2026-09-08 (T-246)
+
+**Cite this section by number.** T-241, T-242 and T-244 may state a
+Codex claim only from here or from the captures it names.
+
+**The one paragraph.** Codex's reusable-prompt unit is a *skill*, and
+it is the same object as Claude's: a directory holding a `SKILL.md`
+whose YAML frontmatter carries `name:` and `description:`, with
+optional `scripts/`, `references/`, `assets/` and `agents/openai.yaml`
+beside it. Codex injects a `<skills_instructions>` block listing every
+discovered skill — name, description, and a source locator — into every
+turn's prompt, so a skill is selected by the model from its
+`description` and may also be invoked explicitly by the user with the
+`$<name>` sigil (`$visualize`, `$template-creator` — the vendor's own
+spelling), or picked from the composer's mention list and the slash
+popup's "Skills" group. Skills are discovered at four locations, all
+measured by planting probes and reading `codex debug prompt-input`:
+`$CODEX_HOME/skills/<name>/` (user level, `~/.codex/skills`),
+`<project>/.codex/skills/<name>/` and `<project>/.agents/skills/<name>/`
+(both project level, and **neither needs a git repository nor a
+`[projects.*] trust_level` entry**), and `<plugin>/skills/<name>/`
+inside an installed plugin, which registers namespaced as
+`<plugin>:<skill>` while the other three register under the bare
+`name:`. `<project>/skills/<name>/` is **not** discovered. The ChatGPT
+desktop app and this CLI **share one installation**: the app writes
+`CODEX_HOME = "~/.codex"` and `CODEX_CLI_PATH =
+"/Applications/ChatGPT.app/Contents/Resources/codex"` into the same
+`~/.codex/config.toml` the CLI reads, and a terminal `codex mcp list` /
+`codex plugin list` returns the app's own servers and plugin roster —
+so there is one place to install, not two. On MCP: both accept a
+server, registered with `codex mcp add <NAME> (--url <URL> | --
+<COMMAND>...)` into `[mcp_servers.<name>]` in that same shared
+`config.toml`, or shipped inside a plugin via `plugin.json`'s
+`mcpServers` field or a companion `.mcp.json`; Codex can also *be* an
+MCP server (`codex mcp-server`, stdio). **But a project-local
+`.mcp.json` is NOT read** (measured), so an MCP surface onto
+`npx nputer` is a user-level install step while a skill is a directory
+a clone already carries.
+
+**The card's fallback branch does not fire.** T-246 asked what to do
+"IF no reusable-prompt mechanism exists on this machine's Codex
+version". One exists, it is first-class, and it is shaped like
+Claude's — so nputer does not fall back to a pasted brief on the Codex
+side, and D-X1's hand-driven path stays a *choice* rather than a
+necessity.
+
+**What this changes for the second adapter.** Nothing in §7's list is
+retired — the event-schema work stands. What it adds is that the
+*content* half of a cross-harness dispatch is now nearly free: one
+`SKILL.md` body can be installed for Claude at
+`.claude/skills/<name>/SKILL.md` and for Codex at
+`.codex/skills/<name>/SKILL.md`, both repo-local, both discovered
+without configuration. The per-vendor cost is the wrapper, not the
+prose. The asymmetry that remains is MCP, which is user-level on the
+Codex side.
+
+**Provenance, against §0's rule.** This addendum is MEASURED, not read.
+Every figure comes from running
+`/Applications/ChatGPT.app/Contents/Resources/codex`
+(`codex-cli 0.147.0-alpha.1.2`) or from reading the files it reads, on
+2026-09-08, on Mac.lan; no model turn was spawned and nothing was
+billed. The captures are
+`docs/research/captures/codex-skill-form-2026-09-08.md` (the record,
+including the disagreements and the gaps),
+`codex-skill-discovery-probe-2026-09-08.txt` (the planted-probe
+experiment with its negative control),
+`codex-cli-plugin-help-2026-09-08.txt`, `codex-cli-mcp-help-2026-09-08.txt`
+and `codex-cli-version-2026-09-08.txt`. **§0's sentence that the binary
+is "not installed" is false as a present-tense claim** and survives
+above only as the record of a probe error; §5's own opening already
+supersedes it. **The five URLs in §10 were not consulted for any
+sentence here.**
+
+**Two gaps, stated rather than guessed.** The desktop app's GUI was
+never opened — the app-side invocation finding is a read of the app
+bundle's own message catalogue, not of a running composer, and someone
+should confirm by eye that `$` opens the skill list. And precedence on
+a name collision between a project skill and a user skill of the same
+name was not measured.
+
 ## 6. The one thing that must be WITHHELD rather than transmitted
 
 `method/roles/verifier.md:3` — the verifier receives "ONLY the task file
