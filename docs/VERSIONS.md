@@ -56,7 +56,9 @@ with the app as the mirror.
 any in-app spawn path (ADR-021); a Codex spawn adapter inside the app;
 the archaeology/Adopt variant (ADR-005); the non-coder spec studio
 (ADR-006, layer 2); everything in v2, v3+ and unruled below. Milestone
-0's domain and trademark sweep is still open — a gate, not a feature.
+0's name is RULED (ADR-022, 2026-09-08: Supertaskr); the rename lanes are
+T-264 (L, approval first), T-265, T-266; the trademark search for the new
+spelling is a gate before launch, not a feature.
 
 ## v2 — teams and depth
 

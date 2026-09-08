@@ -81,9 +81,11 @@ derive command. **When the byte band warns, content MOVES to the record
 5. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <paths>`,
    separate literal paths; it does NOT read placement fields or ID
    SHAPE — the parser's smoke test does (T-235).
-6. **@human holds; no card is cut from these** — the RENAME
-   (rooms/naming.md, open: Supertasker viable, Supertask dead), charter
-   entry 32's column, T-244's approval, T-025-s4, T-162-s1, T-131,
+6. **THE NAME IS RULED: Supertaskr** (ADR-022, 2026-09-08). The rename
+   is T-264 (L — approval first, no lane beside it), then T-265; T-266
+   is @human's checklist (remote, npm, domains, mark).
+7. **@human holds; no card is cut from these** — charter entry 32's
+   column, T-244's approval, T-025-s4, T-162-s1, T-131,
    T-229-s3's runner cost, the stray f.txt/g.txt, and
    docs/rooms/loop-efficiency.md (31 items, open, @human's).
 

@@ -1,11 +1,49 @@
 ---
 type: debate
 task:
-status: open
+status: resolved
 max_rounds: 3
 ---
 
-## Resolution
+## RULED 2026-09-08 — @human: *"Supertaskr it is. without the e."*
+
+**The product and the method are named Supertaskr** (one word, no e:
+super + taskr), recorded in ADR-022. This ruling replaces the 2026-08-14
+Resolution below, which stays as the record of why "nputer" was chosen
+then.
+
+**The sweep for the new spelling, run at 0b7cecd on 2026-09-08 by the
+architect seat (re-derive; none of these is a promise about tomorrow):**
+
+| surface | reading |
+|---|---|
+| npm `supertaskr` | free (registry 404) |
+| PyPI `supertaskr` | free (404) |
+| GitHub user/org `supertaskr`, `super-taskr` | free (404); one unrelated repo `supertaskRK2` |
+| supertaskr.com | REGISTERED by someone (NS records, no A record — parked or idle) |
+| supertaskr.app / .dev / .io / .ai, getsupertaskr.com | no DNS record (unregistered as far as DNS can say; a registrar lookup is @human's) |
+| trademark (EUIPO, USPTO) | NOT swept for this spelling — @human swept "supertasker" on 2026-09-03; a spelling variant is a new search |
+| the two marketplaces carrying "Supertasker" | still exist; the dropped e separates the spelling, not the sound — search-result confusion stays a cost |
+
+**What is @human's to do, in the order that protects the name:**
+1. Register the domains you want (`supertaskr.app` and `.dev` are
+   developer-native and read free; `.com` is taken).
+2. Run the EUIPO and USPTO searches for "supertaskr" and, if clear,
+   file whichever mark you intend to hold.
+3. Rename the GitHub repository (juhosarvanco/nputer → supertaskr;
+   GitHub redirects the old name) and, if you want the org, take
+   `supertaskr` while it is free.
+4. Reserve the npm names: publish a placeholder `supertaskr` and create
+   the `@supertaskr` scope, so `npx supertaskr` is ours before T-244
+   packages it.
+
+**What is the seat's:** the rename lanes (T-264, T-265, T-266) — filed
+planned; T-264 is size L and waits for @human's dispatch approval, as
+every L does. Records (docs/checkpoints/, docs/decisions/ bodies,
+docs/tasks/ bodies, this room's history) are never rewritten to the new
+name: the record is what happened, and "nputer" in a record stays true.
+
+## Resolution (2026-08-14 — superseded by the ruling above)
 - **Question** — what is the product's name?
 - **Decision** — **nputer** (computer minus "co"), chosen by @human.
 - **Why** — house style: sibling of Omputer (computer minus "c") —
