@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: rejected
 suggested_by: the T-248 blind verifier (claude-opus-5@subagent), 2026-09-08, measured at 1c60da3 on the bench
 blocked_by: []
 touches: []
@@ -46,3 +46,7 @@ why this is a suggestion and not a defect.
 - WHEN the command is run from a directory that cannot produce the
   corpus THE gate SHALL refuse rather than answer — already true, and
   the record SHALL say so beside the figure.
+
+## Triage (2026-09-08, the wave sitting)
+
+**discharged — the work landed at the wave checkpoint** (docs/checkpoints/2026-09-08-the-wave-sitting-the-break-lifted-five-cards-through-the-arm-four-merged-one-rejected-and-reworked-ci-green-the-guide-and-the-reference-written.md): the record stamps the injection census with its command AND its cwd ("from the repo root"), which is this card's whole ask; the standing-hazard line in STATE that names the class stays.

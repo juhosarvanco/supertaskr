@@ -2154,8 +2154,17 @@ test("the guard is wired into .claude/settings.json on the Bash matcher", () => 
   const bash = settings.hooks.PreToolUse.find((h) => h.matcher === "Bash");
   expect(bash, "no Bash matcher: the guard is code nothing calls").toBeDefined();
   expect(bash?.hooks.map((h) => h.command).join(" ")).toContain("push-guard-hook.mjs");
-  // The fence hook's own matcher is untouched by this card.
-  expect(settings.hooks.PreToolUse.some((h) => h.matcher === "Edit|Write|NotebookEdit")).toBe(true);
+  // The fence hook's own matcher is untouched by this card — READ AS A
+  // SET, not as a literal: T-249's merge (83712ed) added `Read` to it,
+  // and the literal this body pinned until the wave checkpoint of
+  // 2026-09-08 redded the whole lane for a change this guard never made.
+  // The three write tools must still be routed; what else is, is the
+  // fence hook's own business (lane-fence.spec.ts reads that list).
+  const fence = settings.hooks.PreToolUse.find((h) => h.matcher.split("|").includes("Write"));
+  expect(fence, "no matcher routes Write: the fence hook is code nothing calls").toBeDefined();
+  for (const tool of ["Edit", "Write", "NotebookEdit"]) {
+    expect(fence?.matcher.split("|"), tool).toContain(tool);
+  }
 });
 
 /* ═══════════ T-237 — THE RUN THAT IS ALREADY RUNNING ════════════════
