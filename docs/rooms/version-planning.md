@@ -215,3 +215,18 @@ into T-244. v2: reversibility rating, complexity-triggered refactor,
 calibrated effort estimation, forensics, the outstanding-human-checks
 view. v3+: scope-reduction detection under 14. Already delivered:
 verification-debt tracking (the metabolism). No card dispatched.
+
+## THE THIRD SITTING OF 2026-09-08 — the EARS-for-the-AI-era reading
+
+@human brought a redesign of EARS written with another session
+(docs/research holds no copy; the reading is recorded on the cards it
+produced). The seat's assessment: two ideas better than ours — the
+decision list and the commission list — several already ours under
+other names, and a few not yet. **RULED (@human, verbatim): "file it"**
+on the two decision modes (T-257, with the decision list folded into
+T-253), and **"as proposed"** on the rest: v1 T-258 (the commission
+list as a verifier rule) and T-259 (the oracle class and the escalation
+form, behind T-252); v2 catalogue-generated negatives, the two-lane
+blind builder, the uncertainty-bounded pattern and the static
+side-effect enumerator; six items recorded as already delivered. No
+card dispatched at the sitting; the wave of five lanes was live.

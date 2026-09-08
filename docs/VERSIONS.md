@@ -47,6 +47,8 @@ with the app as the mirror.
 | Safe undo (ruled 2026-09-08, second sitting) | `npx nputer undo <card>` reverts a card's merge with a dependency check | folded into T-244 |
 | The decision list (ruled 2026-09-08, third sitting) | decomposition writes each card's decisions — question, options, proposed default — only for what the interview and CONVENTIONS do not settle; past five items the card is to be split | folded into T-253 |
 | Two decision modes, audit and auto (ruled 2026-09-08, third sitting) | `decide: audit` — the preflight refuses an unanswered item, the human's name on the choices; `decide: auto` — the planner's defaults stamped and reviewed in one batch at the checkpoint; project default in the runtime config; guard-class and user-facing cards audit; the quick path auto; two health bands | T-257 planned p2, behind T-253 |
+| The commission list (ruled 2026-09-08, third sitting, "as proposed") | phase 2 enumerates every side effect the diff adds and maps each to a criterion; unmapped is a finding | T-258 planned p2 |
+| The oracle class and the escalation form (ruled 2026-09-08, third sitting) | each `proves:` note may carry proof, type, property or example; example-only on an in-every-state or no-other-recovery clause prints an advisory; TASK-FORMAT gains the halt-and-hand-off sentence | T-259 planned p3, behind T-252 |
 
 **Explicitly NOT in v1:** F-05's in-app orchestrator conversation and
 any in-app spawn path (ADR-021); a Codex spawn adapter inside the app;
@@ -82,6 +84,7 @@ has; no ruling needed, only the name to look under.
 - cost telemetry (parked list) → 13 and the Tokens line in every record
 - enforced touches, the write half (parked list) → 06, done; the sandbox and network half is v2
 - handoff score (parked list) → the cold-start band and the succession test, unscored
+- from the EARS-for-the-AI-era reading (2026-09-08): test-writer independence → the blind verifier, inverted (the attack set is written from the spec before the diff exists); coverage per requirement → the behaviour census in CAPABILITIES; IDs, owners and versions → the cards, the rulings quoted verbatim, the records; glossary entries bound to code symbols → the component registry with the graph over it and T-230's quoted-claims preflight; the escalation pattern → the rooms; the weekly regeneration job → charter 26–28
 
 ## v2 additions ruled 2026-09-08
 
@@ -93,6 +96,7 @@ has; no ruling needed, only the name to look under.
 - 22 The Version Table
 - from the parked list: pocket cockpit, calibration scorecards, retro role, spec red team, dry run, the sandbox half of enforced touches
 - ruled 2026-09-08, second sitting: a reversibility rating per card; a complexity-triggered refactor as a health band; calibrated effort estimation with an actuals loop (the shipped form of the calibration scorecards); forensics over git history; the dispatch view listing outstanding human checks (verification debt, whose tracking the metabolism already does)
+- ruled 2026-09-08, third sitting (the EARS reading): catalogue-generated negatives — "and not otherwise" tests generated from the component registry once it is complete enough (the Ring 2 productization pass); the two-lane blind builder — a code lane and a test lane cut from one card with disjoint fences so the builder never reads test source (under 21 Competitive Execution, it doubles the seats); the uncertainty-bounded pattern — a metric at or above a threshold on a named eval set with a deterministic fallback (under the method evals, when a model-produced behaviour becomes a product feature); the static side-effect enumerator in the landing gate (T-258's tool half)
 
 ## v3+ additions ruled 2026-09-08
 
@@ -114,3 +118,4 @@ has; no ruling needed, only the name to look under.
 - **2026-09-08, the version sitting** — @human: *"approve the v1 five, fold the rest as proposed"* and the quick path to v1. v1 gains T-247 (dependency-legitimacy gate), T-248 (injection scan on docs writes), T-249 (secret read guard), T-250 (gate taxonomy named), T-251 (debt-marker limit), and the quick path inside T-241; nine sweep items recorded as already delivered under other names; the rest of the sweep and the parked list ruled v2 or v3+ as listed above; two duplicates dropped. UNRULED is now entry 32 alone.
 - **2026-09-08, the second version sitting** — @human: *"approve the v1 three, fold safe undo into T-244, rest as proposed"*. v1 gains T-252 (a test named per SHALL clause, advisory at preflight) and T-253 (the edge and must-not questions in decomposition); safe undo folded into T-244; five items to v2, one to v3+ under 14, verification-debt tracking recorded as already delivered by the metabolism. UNRULED is entry 32 alone.
 - **2026-09-08, the third sitting (the EARS reading)** — @human: *"Can we build two modes, auto and audit"* → *"file it"*. The decision list folded into T-253; T-257 filed planned p2 behind it. From the same reading, still unruled and proposed: the commission list as a verifier rule (v1, S), the oracle class in T-252's note and the escalation sentence form in TASK-FORMAT (v1, S), catalogue-generated negatives, the two-lane blind builder and the uncertainty-bounded pattern (v2).
+- **2026-09-08, the third sitting, ruled** — @human: *"as proposed"*. v1: T-258 (the commission list as a verifier rule) and T-259 (the oracle class and the escalation form, behind T-252). v2: catalogue-generated negatives, the two-lane blind builder, the uncertainty-bounded pattern, the static enumerator. Six items recorded as already delivered under other names.
