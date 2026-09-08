@@ -55,5 +55,14 @@ file is one more name under it.
 - IF an ask names a path that overlaps a live lane THEN the seat's
   refusal is written back into the same file, so the lane reads a no
   as easily as a yes.
+- WHEN the dispatching seat starts the ask watcher THE watcher SHALL end
+  on its own at the FIRST of: the lane's card stamped `verifying` or
+  `done` in the lane's own checkout (the executor has reported and can
+  ask no more), the lane worktree removed, or an ask arriving (which
+  wakes the seat and is answered; a fresh watcher is started for the
+  next ask only while the card still reads `building`). A watcher that
+  outlives its executor is the retirement condition docs-protocol law 8
+  demands, written here because two did on 2026-09-08 (@human: the
+  watchers were still running while only a verifier was).
 - A brief.spec body SHALL pin that the brief names the ask path and
   that a lane-cut without it is a finding.
