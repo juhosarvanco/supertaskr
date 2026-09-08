@@ -348,3 +348,341 @@ Body count 42 → 43; `npm run typecheck` from tools/e2e **0**;
 `npx playwright test tests/landing-gate.spec.ts` **0**, 43 passed. The
 suite figures in the table above were measured at the previous commit
 and re-run at this one; the re-runs are in the executor's report.
+
+## Verdicts
+
+2026-09-08 — `claude-opus-5@subagent (phase 2)` (verifier, BLIND
+TWO-PHASE, `review: independent`)
+
+VERDICT: REJECTED
+
+attack set: sha256:a07bde3b4f8e391e2a180477438c738224d16ea19b5b0216079fc6666e5d3496 (attack-set-T-224.md)
+ground truths: sha256:aae9491f1447ca547dd1396e4d87177efaed30d5b65b4d7e0b1f19953dce6977 (ground-T-224.md)
+
+base `dfe35a5` · tip `7cebf35` · amended-contract ref `6f1622e` ·
+bench `../nputer-V-T-224`, detached, `SUPERTASKR_E2E_PORT=25224`.
+
+**THE FRAME I ACTUALLY HAD.** Phase 2, a fresh spawn WITH tools. Both
+digests verified with `shasum -a 256` before either file was opened; both
+matched. The reading order was kept: `method/roles/verifier.md` in full,
+then the card at `dfe35a5`, then the AMENDED card on main at `6f1622e`,
+then the sealed attack set with its dispatcher annotations, then the
+ground truths, then STATE/ARCHITECTURE/CONVENTIONS at the tip, and only
+then `git diff dfe35a5..7cebf35`. The commit list was taken with
+`git rev-list` (hashes only); no `git log` with subjects was run on the
+lane range, and the bench was moved with `checkout --quiet --detach`.
+The executor's Implementation notes were opened only AFTER my own attack
+driver had run, and every claim in them was re-derived here.
+**Phase 1's no-tool property is a self-report, not a guarantee** — this
+harness cannot deny a subagent tools; the set states `tool calls made: 0`
+and I record that as its claim, not as something I can check. My brief's
+duties section named executor-derived specifics (43 bodies, a six-mutant
+table, "a SEVENTH body"), so **phase 1 was above the line for those
+figures and I say so rather than pretend otherwise**; I re-derived each
+independently before comparing.
+
+**THE GROUND TRUTHS ARE PARTLY SPOILED, AND I RE-TOOK THEM AT THE BASE.**
+`ground-T-224.md`'s GT-4, GT-7, GT-8 and GT-10 were captured through a
+shell escape that ate `:t` (`dfe35a5ools/e2e/...`, `dfe35a5ib/parser/...`),
+so those four carry `fatal: ambiguous argument` instead of measurements —
+GT-10 reports **1** card in `docs/tasks` where there are **594**, and
+GT-2's function body came back empty. I re-derived all five AT `dfe35a5`,
+before opening the diff, and they are used below in that form. GT-9,
+GT-1, GT-3, GT-5, GT-6, GT-11, GT-12 and GT-13 were intact and are used
+as sealed.
+
+---
+
+### THE FAILURE: A RENAMED CARD CARRIES ITS WIDENED FENCE STRAIGHT PAST BOTH LANDING MOMENTS
+
+**The amended contract requires id-resolution in the words that dispatch
+added, and the implementation resolves by PATH alone.** `6f1622e`'s
+"What to build", carried verbatim on the lane's own copy at the tip
+(lines 78–79):
+
+> a card id present on main under another path is resolved by id, not
+> path, so delete-and-re-add and rename do not evade the comparison.
+
+`touchesAmendments` (`landing-gate.mjs:771`) iterates `paths` and asks
+`cardTouchesAt(root, rev, rel)` with the SAME `rel` at the base, the tip
+and the record. On a rename the two sides are different strings, so the
+new path is `absent` at the base and the old path is `absent` at the tip,
+and both hit a `continue`:
+
+    if ("absent" in before) continue;      // landing-gate.mjs:780
+    ...
+    if ("absent" in after) continue;       // landing-gate.mjs:783
+
+`CARD_FILE_RE` captures the id in group 1 (`:414`) and the capture is
+never read. `rangePaths` passes `--no-renames` deliberately (`:695`),
+which is right for the containment arm and is what leaves this arm
+looking at two unrelated paths.
+
+**Reproduction — the lane's own card** (`rename-hole-V-T-224.mjs`, a
+throwaway git repo, driving the two exported verdict functions):
+
+    PUSH 1, LANE MOMENT : allow / landing-gate-inside-the-fence
+    PUSH 1, MERGE MOMENT: allow / landing-gate-merges-inside-the-fence
+    THE FENCE OF RECORD ON MAIN AFTER PUSH 1:
+      touches: [tools/e2e, app/, .claude/]        (it was [tools/e2e])
+    PUSH 2 (the next push the amendment licensed):
+      allow / landing-gate-inside-the-fence — app/anything.ts and
+      .claude/hooks/anything.mjs, two paths the original fence never
+      permitted
+
+One commit renames `docs/tasks/T-920-a-narrow-card.md` to
+`…-a-retitled-card.md` — an ordinary retitle, since a card's slug carries
+its title — and widens `touches:` in the same act. This is exactly the
+sequence the card's own opening describes: *"it PUSHES, it MERGES, and it
+lands on main. From the next push onward the gate reads the widened
+`touches:` as the card of record."*
+
+**And the sibling form, which is the sharper one**
+(`sibrename-V-T-224.mjs`): lane A renames lane B's card and widens B's
+fence from `[app/]` to `[app/, .claude/, lib/, tools/]` —
+
+    LANE MOMENT : allow / landing-gate-inside-the-fence
+    MERGE MOMENT: allow / landing-gate-merges-inside-the-fence
+
+That is **falsifier 2 of the sealed set** — *"a sibling-card amendment
+admitted (incl. via rename …)"* — and it is the card's own headline
+consequence: *"lane A can widen lane B's fence."*
+
+**Three things make this REJECTED rather than a routed finding.** It is a
+named requirement of the contract as amended at dispatch, not an
+unstated corner. No body among the 43 measures it — the suite is green
+while the hole is live, which is the exact condition `T-212`'s section
+calls *"a guard trusted further than it measures"*. And it is
+undisclosed: limit 5's residues (a)–(e) do not name it, and (a)'s stated
+justification — *"it fences no live lane, since a lane's card exists
+before its branch does"* — is **false for a rename**, where the id is
+preserved and the lane is live. `T-224-s2` routes only the genuinely-new
+card, so nothing in the tree carries this.
+
+**THE CORRECTION, NAMED PRECISELY.** In `touchesAmendments`, where
+`cardTouchesAt` answers `absent` at the base (or at the record), resolve
+the card by the id `CARD_FILE_RE` already captures — one
+`git ls-tree -r --name-only <rev> docs/tasks` per range at most, gated on
+an `absent` answer so the ordinary path costs nothing extra — and compare
+against that blob. Then: a rename with the line preserved is ALLOWED, a
+rename that moves the line is REFUSED naming both paths, and
+delete-and-re-add of an existing id is REFUSED (it is already refused
+when the path is unchanged; my A1.8b measured that). Two bodies are owed:
+rename-plus-widen REFUSED naming both paths, and pure-rename ALLOWED —
+the pair, in one fixture, so the second cannot be a guard that refuses
+every rename. Limit 5 and `T-212`'s section then need the residue
+restated, since (a) is currently wrong about the live-lane case.
+
+---
+
+### THE ATTACK SET, ANSWERED
+
+Driven by `attacks-V-T-224.mjs` — my own fixtures, not the lane's — over
+the two exported verdict functions. 16 of 18 expectations met.
+
+| attack | result | evidence |
+|---|---|---|
+| **A1.1** T-264's real shape (GT-9): unsynced lane, grant in its working copy, main's line EQUAL | **ALLOWED** ✓ | `allow/landing-gate-inside-the-fence`. Falsifier 1 not tripped. |
+| **A1.1b** lane CUT after the grant | **ALLOWED** ✓ | `allow/landing-gate-inside-the-fence` |
+| **A1.2** THE CENTRAL ATTACK — two-merge push, widening inside merge 1 | **REFUSED, merge 1 NAMED** ✓ | `block/landing-gate-merge-touches-amended`; the record is `first` (`M^1`) per merge (`:1858`), never the pushed tip. The laundering does not work. |
+| **A1.3** per-merge base | ✓ | `range` is `merge-base(first, second)..second`; parents from `rev-list --parents -n 1` (`:1868`) |
+| **A1.4** reorder-only, quoted-entry, trailing-comma | **REFUSED** (raw bytes) ✓ | three fixtures, each `block/landing-gate-touches-amended` |
+| **A1.5** whitespace-only | **REFUSED**, and DOCUMENTED ✓ | limit 5: *"AND THE COMPARISON IS BYTES, SO A REFLOW IS A MOVE"*, argued from fast path A's own "character for character" |
+| **A1.6** a SIBLING's card, both moments | **REFUSED at both**, naming T-906 ✓ | `landing-gate-touches-amended` / `landing-gate-merge-touches-amended` |
+| **A1.7** RENAME | **ALLOWED — THE FAILURE ABOVE** ✗ | see above |
+| **A1.8** a card the range ADDS with a wide fence | ALLOWED, disclosed (a), routed `T-224-s2` ✓ | by design |
+| **A1.8b** delete-then-re-add at the SAME path | **REFUSED** ✓ | `block/landing-gate-touches-amended` — absence does not launder when the path is stable |
+| **A1.9** a card the range DELETES | ALLOWED, disclosed (b) ✓ | reachable damage is a denial, per (b)'s argument, which I checked: `landing-gate-no-card` refuses that lane's next push whole |
+| **A1.10** both call sites | ✓ | `push-guard.mjs:3086` lane, `:3094` merge — exactly two, unchanged from `dfe35a5` |
+| **A1.11** a NON-MERGE commit straight onto the integration branch | ALLOWED, `landing-gate-no-new-merges` — **correct by design, undisclosed** | `AMENDMENT_ROUTE` prescribes exactly this as the sanctioned route. Filed as `T-224-s4`, not a failure. |
+| **A1.12a** widen-then-revert in one range | ALLOWED ✓ | two file states, never the patch |
+| **A1.12b** widening via a NESTED merge inside the lane | **REFUSED** ✓ | `block/landing-gate-touches-amended` |
+| **A1.13** body-quoted `touches:` in a fenced block | not fooled ✓ | scanner returned `touches: [tools/e2e]`; `frontmatterLineOf` returns `undefined` at the closing `---` (`lane-fence.mjs:997`), bounded on purpose |
+| **A1.14** exit contract | ✓ | The set predicted "exit 2 / exit 3"; the real contract (re-derived, GT-7 spoiled) is `push-guard-hook.mjs`: **exit 2, reason on stderr** for a block, **exit 0 announced** for cannot-compare. There is no exit 3 here. No catch-and-allow: an UNREADABLE record still REPORTS the move, with `record: "UNREADABLE — …"` — measured. |
+| **A1.15** cost | ✓ | **2 git spawns** for a range of 501 changed paths containing 1 card. O(changed cards), enumerated from the range's diff, no directory listing. |
+| **A1.16** block-sequence frontmatter | **REFUSED, never silently allowed** ✓ | both endpoints read `touches:` bare, so the arm sees no move — but the push is refused upstream by `landing-gate-no-fence`. Never a silent allow. |
+| **A2.1/A2.2** the refusal's text | ✓ | asserts card path, the BEFORE line and the AFTER line untruncated (spec `:1042–1044`); `AMENDMENT_ROUTE` carries all three of "fast path A", "on main", "by triage" and addresses the seat that owes the grant, not the pusher |
+| **A2.4** stale naming | ✓ | no `.nputer/` in any added string |
+| **A3.1–A3.4** the positive control | ✓ | armed both ways, below; the sibling BODY-edit control is inside the same fixture as the sibling refusal |
+| **A4.1** the record | ✓ / disclosed | `T-212`'s section is a **pure dated addition, zero `-` lines**. The hook's limit 5 DOES carry `-` lines: the old entry asserted the hole was OPEN and `T-224` owned it, which the diff makes false. A statement that has become untrue is corrected, not erased — items 1,2,3,4,6,7 are untouched. I record the literal check as failed and judge it not a rewrite. |
+| **A4.2** an honest disclosure | ✓ except (a) | every added sentence maps to a body or an explicit residue — but (a)'s justification is wrong for a rename, which is part of the rejection |
+| **A4.3/A4.4** both places, with a reader | ✓ | both files under the exact heading; the disclosure bodies red under the mutants below |
+| **the SEVENTH body** — is an unresolvable fence a hole? | **A REFUSAL, not a hole** ✓ | the arm sits BETWEEN the containment block and the cannot-compare allow (`:1641` before `:1673`), so a fence with an unresolvable token is still asked. Mutant `SKIP_UNRESOLVABLE` confirms exactly one body owns it. |
+
+### The falsifiers
+
+1. **a legitimate fast-path-A grant refused** — **NO.** All three
+   deliveries allowed (A1.1, A1.1b, and the dogfood below).
+2. **a sibling-card amendment admitted** — **YES, via rename.** The
+   rejection.
+3. **a positive control that cannot fail** — **NO.** Armed both ways at
+   assertion level, below.
+4. **a record rewritten** — **NO** for `T-212` (zero `-` lines,
+   `git diff dfe35a5..7cebf35 -- docs/tasks/T-212-*.md` is a pure dated
+   addition, verified against GT-3's verbatim text); qualified for the
+   hook, disclosed in A4.1 above.
+5. **fail-open** — **NO.** Unreadable record → the move is still
+   reported; unresolvable fence → still asked; malformed/block
+   frontmatter → refused upstream, never silently allowed.
+6. **a tautological expectation** — **NO.** The spec asserts literal
+   strings (`"touches: [tools/e2e]"`), not a second call to
+   `frontmatterLineOf`.
+
+### The drill — my own detached scratch worktree `../V-T-224-mutants`
+
+Its own `npm ci`/build for `lib/parser`, `app` and `tools/e2e`. Every
+landing read from `git diff -U0`; every restoration proved by sha256
+against the pristine `093970bd7992dc97c467a6bc5a76594f13eea3f92ce4a129ab6b02a58ff51707`
+— **which independently matches the hash the executor's notes cite.**
+Baseline in that worktree: **43 passed, exit 0.**
+
+**A FIRST DRILL RUN WAS DISCARDED AND IS REPORTED.** My initial worktree
+had no `app/node_modules`, so `playwright.config.ts`'s
+`assertLanePreconditions` threw and every mutant "failed" at exit 1 with
+**zero bodies run** — a harness failure wearing a kill, the mirror of
+CONVENTIONS' "an exit 0 over zero bodies". Caught by reading the count
+rather than the code; the table below is the re-run after installing
+`app/`.
+
+| mutant | one-side change | exit | bodies RED |
+|---|---|---|---|
+| `ALLOWALL` | `if (before.line === after.line)` → `if (true)` | 1 | **5** — 1031, 1083, 1149, 1235, 1269 (38 passed) |
+| `INVERT` | `===` → `!==` | 1 | the SAME 5 (38 passed) |
+| `REFUSEALL` (M10) | `amended.moved.length > 0` → `>= 0`, lane arm | 1 | **13**, incl. `T-212`'s own positive control (30 passed) |
+| `NARROW_OWN_CARD` (M6) | `range.paths` → filtered to `card.file` | 1 | **1** — the SIBLING body alone (42 passed) |
+| `SKIP_UNRESOLVABLE` | `range.paths` → `[]` when the fence is unusable | 1 | **1** — the seventh body alone (42 passed) |
+| `MERGE_RECORD_AT_PUSHED_TIP` (M1) | merge arm `first` → `"HEAD"` | 1 | **1** — THE MERGE MOMENT (42 passed) |
+| `EXONERATION_DELETED` | the third-read condition → `if (false)` | 1 | **1** — THE THIRD DELIVERY (42 passed) |
+| `ABSENT_AS_MOVE` (M9's mirror) | `if ("absent" in before) continue;` → `if (false) continue;` | 1 | **2** — 1031 and 1213 (41 passed) |
+
+**Kill-set containment, judged over BODIES.** 1083 {ALLOWALL, INVERT,
+NARROW} and 1031 {ALLOWALL, INVERT, REFUSEALL, ABSENT_AS_MOVE}: neither
+contains the other. 1269 and 1031: neither contains the other
+(MERGE_RECORD vs REFUSEALL). 1235 and 1149: neither contains the other
+(SKIP_UNRESOLVABLE vs EXONERATION_DELETED). 1213 {REFUSEALL,
+ABSENT_AS_MOVE} and 1149: neither contains the other — **and I planted
+`ABSENT_AS_MOVE` for exactly that reason**, because against my first
+seven mutants 1213's kill set WAS contained in 1149's and it would have
+been wrong to call it a restatement on the strength of my own aim.
+**One containment stands and I state it rather than smooth it:** 1105
+(the fast-path-A grant, cut and merged-down) kills only `REFUSEALL` among
+my eight, so its kill set is contained in 1149's; separating it needs a
+mutant aimed at the merge-base endpoint, which I did not build. That is a
+limit of my drill, not a finding against the body.
+`ALLOWALL` and `INVERT` have identical kill sets — the executor's notes
+name this and explain it correctly (the inverted operator's distinctive
+state, a card whose line did not move while main's copy disagrees, is
+reached by no fixture because the lane never writes the card there).
+
+**THE POSITIVE CONTROL IS DEMONSTRATED FAILING IN BOTH DIRECTIONS, AT
+ASSERTION LEVEL** — the arming the rule demands, shown where it differs:
+
+- `REFUSEALL` (refuse every changed card) reds body 1031 at **line 1071**,
+  the ALLOW half: *"an ordinary write to a lane's own card was refused"*.
+  The refusal half (line 1041) still passes. **M10 reds the control and
+  NOT the subject.**
+- `ALLOWALL` reds the SAME body at **line 1041**, the REFUSE half:
+  *"a `touches:` amendment landed"*. The allow half still passes.
+  **The allow-all mutant reds the subject and NOT the control.**
+
+### The suites — every exit from `$?` unpiped, at the tip `7cebf35`
+
+| command | cwd | exit | count |
+|---|---|---|---|
+| `npx playwright test tests/landing-gate.spec.ts` | tools/e2e | **0** | **43 passed** (36 at `dfe35a5`, re-derived: `grep -cE '^test\("'`) |
+| `gate-run.mjs parser` | bench root | **0** | **377** bodies, GREEN, ref `7cebf35` |
+| `gate-run.mjs app` | bench root | **0** | **1163** bodies, GREEN |
+| `gate-run.mjs rust` | bench root | **0** | **639** bodies, 18 targets, GREEN |
+| `gate-run.mjs e2e` (`SUPERTASKR_E2E_PORT=25224`) | bench root | **0** | **697** bodies, GREEN |
+| `npm run lint:tokens -- --selftest` | tools/e2e | **0** | 65 TOKEN + 4 CONTROL, 90 walk-policy, 9 evidence-floor |
+| `npm run lint:tokens` | tools/e2e | **0** | TOKEN 177 files, CONTROL 1275 tracked text files |
+| `npm run lint:docs` | tools/e2e | **0** | whole-tree half, 0 findings |
+| `npm run typecheck` | tools/e2e | **0** | — |
+| `npm run capabilities:check` | tools/e2e | **1** | **STALE, EXPECTED** — committed 58883, fresh 59555; seven bodies added. **The integrator regenerates at the merge** (`npm run capabilities`, in the merge commit). |
+| `index --check --root ../..` | app/src-tauri | **0** | **CURRENT** — 201 files, 2542 symbols, 2441 edges. Every changed path (`.claude/hooks/*.mjs`, `docs/tasks/*.md`, `tools/e2e/tests/*.ts`) is outside what the indexer reads; confirmed rather than assumed. |
+
+The records guard in `identifier-rename.spec.ts` is **GREEN**, inside the
+697-body e2e leg — no renames in this lane.
+
+### Dogfood — the new arm over two live ranges
+
+Read-only, driving `touchesAmendments` with the integration ref `main`
+(`98d3ef5`) as the record.
+
+    ── T-224 (THIS lane)   dfe35a5..7cebf35   7 paths, 5 cards
+         T-212's card, T-224's card, T-224-s1, -s2, -s3
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+    ── T-265 (the live sibling lane, read-only)  15619b4..3589e0f
+       45 paths, 3 cards: T-265, T-265-s1, T-265-s2
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+T-224's own card was amended on main at `6f1622e` and the same line was
+delivered to the lane's copy; T-265's was amended at `5e1b305` and
+likewise. **Both are exonerated by the third read, which is the arm's
+central claim, dogfooded on the two ranges that actually exist.** A
+refusal of either would have been falsifier 1; neither refuses.
+
+### Security sweep
+
+No dependency added (no `package.json`, lockfile or `Cargo.toml` in the
+diff). No new import, no `fetch`, no new process spawn. No secret, key or
+token. No `continue-on-error`, no `--no-verify`, no widened allow: the
+two added `return allow(...)` sites are the announced cannot-compare
+arms, and the amendment check runs BEFORE them, which I verified by
+mutation (`SKIP_UNRESOLVABLE` reds a body). No new input path and no
+endpoint. `AMENDMENT_ROUTE` is a constant string, interpolated with a
+card path and two frontmatter lines that git already vouches for.
+
+### Architecture and adjacent features
+
+The arm adds no interface: two exported functions and a constant beside
+the existing ones, the same `{verdict, code, reason}` shape, the same two
+call sites in `push-guard.mjs`, unchanged. `frontmatterLineOf` is reused
+rather than re-implemented — `lane-fence.spec.ts` still drives the three
+callers over every live card, green in the e2e leg. `docs/tasks` remains
+unfenceable: `judgePaths` is untouched, and my A1.8/A1.9 fixtures confirm
+ordinary card writes still land.
+
+### Assigned corrections
+
+1. **Resolve a card by its id when the path is absent** (the failure
+   above), with the two bodies named there, and correct limit 5(a)'s
+   justification plus `T-212`'s section, both of which currently imply a
+   coverage the arm does not have.
+
+Everything else in this diff stands. The arm is well-aimed, the
+exoneration is right and is the thing the executor correctly named as its
+least-confident point, and the ordering argument against pre-empting
+`T-212`'s two bodies is sound. **The rejection is one branch of one
+function, and the contract already told it what to do.**
+
+### Filed, not blocking
+
+- `T-224-s4` — a non-merge commit on the integration branch is never
+  asked the `touches:` question (attack A1.11); the allow is correct, the
+  silence is not.
+
+### This verdict's own tip — step 7
+
+**Prose is a code input here, so the two writes this verdict makes are
+re-gated rather than assumed harmless.** Measured with this verdict and
+`T-224-s4` present in the tree, i.e. AT THE VERDICT COMMIT and not at
+`7cebf35`:
+
+| gate | cwd | exit | count |
+|---|---|---|---|
+| `docs-gate.mjs <my 2 literal paths>` | bench root | **1** | FIRES correctly — 2 docs paths, owing the three suites below. *"every live task card's frontmatter parses, with a legal status"*, so `T-224-s4` is a legal card and the board still reads. |
+| `npx vitest run` | lib/parser | **0** | **377 passed**, 16 files |
+| `npm test` | app | **0** | **1163 passed**, 51 files |
+| `npm test` (`SUPERTASKR_E2E_PORT=25224`) | tools/e2e | **0** | **697 passed** |
+
+The docs gate's injection scan flagged one phrase of **my own** prose in
+both files (`J3`, "…as the sanctioned…"); it is ADVISORY and moves no
+exit, but I reworded both rather than leave a false positive for the next
+reader, and re-ran the scan to **0 hits in 0 of 2 paths**.
+
+`npm run capabilities:check` stays at **1/STALE** and is NOT mine to fix:
+the staleness is the lane's seven new spec names, and the census is
+regenerated by the integrator in the merge commit. `index --check`
+remains **CURRENT** — a prose commit moves no code-derived graph.
