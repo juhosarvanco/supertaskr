@@ -10,6 +10,9 @@ blocked_by: [T-212]
 touches: [.claude, tools/e2e]
 suggested_by: "T-212's independent verifier, driving the gate's own `judgePaths` against a card file that is not the lane's own — the gate admits it, correctly per rule 5, and the consequence is not disclosed anywhere"
 builder: unassigned
+verifier:
+built_by:
+verified_by:
 review: independent
 ---
 
