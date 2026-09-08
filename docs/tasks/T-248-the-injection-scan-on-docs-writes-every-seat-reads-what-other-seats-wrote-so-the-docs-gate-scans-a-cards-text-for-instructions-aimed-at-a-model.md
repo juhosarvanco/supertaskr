@@ -969,3 +969,54 @@ stand as filed.
 #### THE GATES THIS VERDICT'S OWN COMMIT MOVES (step 7)
 
 Recorded beneath the commit that carries them.
+
+**MEASURED AT `fff3c5d`, the tip the verdict above created** — prose is a
+code input here, so this is the whole battery the docs gate names for
+this card's own path, not just the cheap half.
+
+| gate | cwd | exit | count / reading |
+|---|---|---|---|
+| `docs-gate.mjs <this card>` | bench root | **1** | FIRES on 1 path; names app, tools/e2e and lib/parser; 0 frontmatter issues; budgets hold; injection scan **0 hit(s) in 0 of 1** |
+| `npm run lint:docs` | tools/e2e | **0** | whole-tree half, 0 findings |
+| `npm run lint:tokens` | tools/e2e | **0** | clean — TOKEN 175 files, CONTROL 1222 tracked text files |
+| `gate-run.mjs parser` | bench root | **0** | GREEN, **377 bodies** — the section-split pin this card's prose can move is green |
+| `gate-run.mjs app` | bench root | **0** | GREEN, **1163 bodies** |
+| `gate-run.mjs e2e` | bench root | **1** | RED, **662 bodies** — 661 passed, the same single pre-existing `brief.spec.ts:3230` red, attributed at the base above |
+
+THE SECTION-SPLIT PIN WAS THE ONE AT RISK AND IT WAS CHECKED BEFORE THE
+COMMIT, NOT AFTER. The rework note records that a new heading placed
+after the verdict reds `lib/parser/test/task.test.ts`'s
+*"keeps every live task section split byte-identical to the pre-pass
+result"*, because an unbalanced backtick run opens an inert span that
+swallows the heading. Measured here rather than assumed: the previous
+verdict's line 489 carries a lone unclosed triple-backtick run, so this
+verdict was written with **zero** triple-backtick runs and **even**
+lone-backtick parity, appended as an `###` entry INSIDE `## Verdicts`,
+and the pin was run on the working tree before the commit was made
+(31 passed) and again at `fff3c5d` (377 bodies GREEN). A verifier
+appending to this card next should do the same check first.
+
+THIS BLOCK IS THE ONLY THING ITS OWN COMMIT ADDS, and its gates are
+reported by the verifier to the integrator rather than written into a
+third commit — the figures above carry `fff3c5d` and are true there
+forever.
+
+#### FOR THE INTEGRATOR
+
+1. **REGENERATE THE CENSUS IN THE MERGE COMMIT.**
+   `npm run capabilities:check` exits **1 STALE** on this lane (committed
+   55273 bytes, fresh generation 56250) because the rework adds a test
+   body and T-210 puts docs/CAPABILITIES.md outside every lane fence.
+   Run `npm run capabilities` in the merge commit and re-derive the byte
+   figures rather than transcribing these.
+2. **THE ONE E2E RED IS NOT THIS LANE'S.** `tests/brief.spec.ts:3230` is
+   red at the BASE `d1603bb` on this same bench with the whole lane
+   absent, identical symptom — the bench's age against a moving main.
+   Do not attribute it here.
+3. **MOVE THE LANE BRANCH TO `fff3c5d`** before merging (STATE's rule,
+   room 17), and take the LANE'S card copy on a conflict.
+4. Re-derive the criterion-five census at the merge. At `fff3c5d` it
+   reads **3 hit(s) in 3 of 743 path(s) scanned under docs/ against 7
+   pattern(s)**, derived from the repository root with
+   `paths=(${(0)"$(git ls-files -z docs/)"})` and the gate handed
+   `"${paths[@]}"` — T-248-s4 already carries the missing cwd.
