@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "@human ruling (2026-09-08, version sitting): \"approve the v1 five\" — GSD Core's secret read guard (T-245); nputer's fence is write-only"
 blocked_by: []
 touches: [.claude/hooks/lane-fence-hook.mjs, .claude/hooks/lane-fence.mjs, tools/e2e/tests/lane-fence.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
