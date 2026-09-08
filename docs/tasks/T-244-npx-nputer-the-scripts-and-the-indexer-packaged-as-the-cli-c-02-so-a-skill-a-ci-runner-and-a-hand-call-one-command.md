@@ -43,6 +43,12 @@ table says so in one word: C-02 planned. **Size L: dispatch needs
 - IF a verb needs a build (the indexer, lib/parser) THEN the package
   SHALL say so on first run with the one command that builds it,
   never fail silently.
+- **Folded 2026-09-08 (second version sitting, @human: "fold safe undo
+  into T-244"):** THE package SHALL expose an `undo <card>` verb that
+  reverts the card's merge commit (`git revert -m 1`) after listing every
+  later merge that touched the same fence and refusing when one exists
+  unless `--force` names it — the records make the revert derivable; the
+  verb makes it one command (GSD Core's safe undo, T-245's second pass).
 - **Folded 2026-09-08 (version sitting):** THE installer SHALL target
   Claude Code and Codex in v1 (the two forms T-241/T-242/T-246 carry)
   and SHALL be built so a third harness is one adapter entry, never a

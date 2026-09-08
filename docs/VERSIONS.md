@@ -42,6 +42,9 @@ with the app as the mirror.
 | The gate taxonomy, named | pre-flight, revision, escalation, abort — the four types nputer runs, written into CONVENTIONS | T-250 planned p3 |
 | The debt-marker limit | a TODO or FIXME a lane adds must cite a card id, or the landing is refused | T-251 planned p3 |
 | The quick path below the loop (ruled 2026-09-08, v1) | one line files a size-S card with a light review mode and lands with a verdict; guard-class cards refused | folded into T-241 |
+| A test named per SHALL clause (ruled 2026-09-08, second sitting) | preflight lists, advisory first, the suite that will prove each clause and the clauses that name none | T-252 planned p3 |
+| The edge and must-not questions in decomposition (ruled 2026-09-08, second sitting) | the interview asks each card's edges and prohibitions and writes the kept ones as criteria | T-253 planned p3 |
+| Safe undo (ruled 2026-09-08, second sitting) | `npx nputer undo <card>` reverts a card's merge with a dependency check | folded into T-244 |
 
 **Explicitly NOT in v1:** F-05's in-app orchestrator conversation and
 any in-app spawn path (ADR-021); a Codex spawn adapter inside the app;
@@ -87,16 +90,18 @@ has; no ruling needed, only the name to look under.
 - the multi-harness installer beyond Claude and Codex (T-244 carries the v1 stance)
 - 22 The Version Table
 - from the parked list: pocket cockpit, calibration scorecards, retro role, spec red team, dry run, the sandbox half of enforced touches
+- ruled 2026-09-08, second sitting: a reversibility rating per card; a complexity-triggered refactor as a health band; calibrated effort estimation with an actuals loop (the shipped form of the calibration scorecards); forensics over git history; the dispatch view listing outstanding human checks (verification debt, whose tracking the metabolism already does)
 
 ## v3+ additions ruled 2026-09-08
 
 - from the parked list: time machine, truth maintenance beyond the drift slice, production feedback, synthetic users, explainer
 - dropped as duplicates: seeds (= 23 The Kit Is the Product), proof of process (= 17 Compliance for Free)
+- ruled 2026-09-08, second sitting: scope-reduction detection with re-injection → under 14 Purpose-Drift Signal
 
 ## Unruled — needs a version ruling before it can become a card
 
 - **32 The Accountability Layer** — v3+ by its ring; never named in a ruling; awaits @human's word.
-- **Learned from the rest of GSD Core's docs folder (2026-09-08, second pass; T-245's map addendum names the source of each):** Nyquist validation — a test command mapped per requirement before code, with scaffolding as a first wave; the edge probe and the prohibition probe at spec time ("verifier reach = spec reach") as an interview stage; verification-debt tracking across phases; scope-reduction detection with re-injection; a reversibility rating on a card; a complexity-triggered refactor measuring the entropy a lane added; phase effort estimated against a calibrated budget with an actuals loop (the parked "calibration scorecards" in a shipped form); safe undo by card or lane with a dependency check; forensics over git history for stuck loops. Already delivered under other names: seeds with trigger conditions (parked cards' wake conditions), a byte-size ratchet on prompt files (ADR-019's budgets), the plan drift guard (T-230's quoted-claims preflight), the cross-phase regression gate (the four-suite battery), STATE consistency gates (STATE regenerated from the template; derive, never quote), a state.json contract for dashboards (lib-parser).
+- (The second-pass items of 2026-09-08 were ruled the same day — see the v1 table, the v2 and v3+ lists, and the moves log.)
 
 ## Moves, by sitting
 
@@ -105,3 +110,4 @@ has; no ruling needed, only the name to look under.
 - **2026-09-08** — ten competitor-sweep candidates added to UNRULED at @human's "do both"; no ruling, no column changed (T-245 filed for the map).
 - **2026-09-08, later** — @human: drive from the native apps, the app keeps its interview (ADR-021 Addendum 1); T-241, T-242, T-244 to priority 1; T-246 added to v1 (planned). No column changed.
 - **2026-09-08, the version sitting** — @human: *"approve the v1 five, fold the rest as proposed"* and the quick path to v1. v1 gains T-247 (dependency-legitimacy gate), T-248 (injection scan on docs writes), T-249 (secret read guard), T-250 (gate taxonomy named), T-251 (debt-marker limit), and the quick path inside T-241; nine sweep items recorded as already delivered under other names; the rest of the sweep and the parked list ruled v2 or v3+ as listed above; two duplicates dropped. UNRULED is now entry 32 alone.
+- **2026-09-08, the second version sitting** — @human: *"approve the v1 three, fold safe undo into T-244, rest as proposed"*. v1 gains T-252 (a test named per SHALL clause, advisory at preflight) and T-253 (the edge and must-not questions in decomposition); safe undo folded into T-244; five items to v2, one to v3+ under 14, verification-debt tracking recorded as already delivered by the metabolism. UNRULED is entry 32 alone.

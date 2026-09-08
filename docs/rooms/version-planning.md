@@ -201,3 +201,17 @@ quick path, intent triggering and the honest fallback sentence; T-244
 gains the two-harness v1 stance. The v2, v3+ and dropped rows are on
 the version page under their dated headings; UNRULED is entry 32 alone.
 No card was dispatched: @human's break of 2026-09-02 holds.
+
+## THE SECOND VERSION SITTING OF 2026-09-08 — the rest of GSD Core's docs folder
+
+After the whole docs folder was read (the map's sharpened conclusion 6),
+the seat walked nine new items and proposed rulings. **RULED (@human,
+verbatim): "approve the v1 three, fold safe undo into T-244, rest as
+proposed."** Filed planned: T-252 (every SHALL clause names the suite
+that will prove it, advisory at preflight — Nyquist validation in
+nputer's words) and T-253 (the decomposition step asks each card's edges
+and must-nots — "verifier reach = spec reach"). Folded: `undo <card>`
+into T-244. v2: reversibility rating, complexity-triggered refactor,
+calibrated effort estimation, forensics, the outstanding-human-checks
+view. v3+: scope-reduction detection under 14. Already delivered:
+verification-debt tracking (the metabolism). No card dispatched.
