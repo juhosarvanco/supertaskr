@@ -8,7 +8,7 @@ priority: 9
 status: planned
 suggested_by: "the architect seat, 2026-09-08, from the GSD Core agent reference (github.com/open-gsd/gsd-core docs/AGENTS.md at 0ebc3cf (read 2026-09-08)): every agent declares its tools and its disallowed tools, checkers get no Write or Edit"
 blocked_by: []
-touches: [.claude/agents, method/roles/orchestrator.md, method/roles/verifier.md, method/roles/executor.md, docs/CONVENTIONS.md, tools/e2e/tests]
+touches: [.claude/agents, method/roles/orchestrator.md, method/roles/verifier.md, method/roles/executor.md, docs/CONVENTIONS.md, tools/e2e/tests/agent-definitions.spec.ts]
 builder:
 verifier:
 built_by:

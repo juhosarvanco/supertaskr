@@ -8,7 +8,7 @@ priority: 1
 status: planned
 suggested_by: "@human ruling (2026-09-03, ADR-021): nputer is a skill, a CLI and a mirror — and ARCHITECTURE lists C-02 as planned because nothing packages the scripts"
 blocked_by: []
-touches: [tools/e2e/scripts, tools/e2e/package.json, tools/e2e/tests, README.md]
+touches: [tools/e2e/bin/, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/undo.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/package.json, tools/e2e/package-lock.json, tools/e2e/tests/cli.spec.ts, README.md, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -29,7 +29,7 @@ table says so in one word: C-02 planned. **Size L: dispatch needs
 
 ## Acceptance criteria
 
-- WHEN `npx nputer <verb>` runs in a project THE system SHALL dispatch
+- WHEN `npx supertaskr <verb>` runs in a project THE system SHALL dispatch
   to the existing script for that verb with its arguments unchanged —
   no logic moves, no script is rewritten; the package is a front, and
   a test SHALL prove each verb reaches its script by name.
@@ -83,3 +83,20 @@ the room measured belong in it as criteria:
   the app's dogfood bodies before the commit and re-derive the pins
   with the dated line the house pattern uses (main was red on the app
   suite for forty minutes at T-112-s6's merge).
+
+## Dispatch note (2026-09-09, the architect seat, at @human's night approval for L cards that need no decision of theirs)
+
+The name is ruled (ADR-022: `supertaskr`; npm free at the 2026-09-08
+sweep in rooms/naming.md — re-derive at your ref), so the last
+criterion's condition is met and the package is `supertaskr`. THE FENCE
+IS PATH-GRANULAR ON PURPOSE: the card says the package is a FRONT and
+no script is rewritten, so the fence names the files a front creates
+(a bin entry, cli.mjs, the `undo` and `merge` verbs as new scripts — the
+seat's merge-lane.sh in the scratchpad is the merge verb's prototype,
+read it — the package files, one spec, README and CONVENTIONS' CLI
+bullet) and NOT tools/e2e/scripts/ or tools/e2e/tests/ whole, so sibling
+lanes on brief.mjs, docs-gate.mjs and the other specs can run beside it.
+If a verb genuinely needs an existing script changed, that is an ASK
+through the ask file, never a widening from inside. Publishing to npm is
+@human's (T-266); the card proves `npx supertaskr` against a local
+`npm pack` tarball or `npm link`, never a publish.
