@@ -38,7 +38,7 @@ with the app as the mirror.
 | Map (F-06) | architecture + tasks lenses, intent over reality, drift, cycles, blast, churn, budget with a measured reason (the ADR-013 slice of truth maintenance) | shipped |
 | Ring 2, as it is | 05 Card Preflight · 06 Fences & Dispatch Sets · 07 Proof-of-Teeth · 08 Blind Adversarial Verification · 09 Record-First Landings · 10 Merge Pre-Proof · 11 Process Vital Signs · 12 The Metabolism · 13 Seat Economics — working internals, documented, no productization pass in v1 | shipped inside |
 | The launcher | one command launches the human's app worktree fresh | T-164 done |
-| Security at the write (ruled 2026-09-08) | the dependency-legitimacy gate (T-247), the injection scan on docs writes (T-248), the secret read guard in the fence hook (T-249) — the layer GSD Core ships and nputer lacked | T-247/T-248/T-249 planned p2 |
+| Security at the write (ruled 2026-09-08) | the dependency-legitimacy gate (T-247), the injection scan on docs writes (T-248), the secret read guard in the fence hook (T-249) — the layer GSD Core ships and nputer lacked | T-249 done (merged 2026-09-08), T-247 done (merged 2026-09-08), T-248 in rework after a blind REJECTED verdict (one missing test body) |
 | The gate taxonomy, named | pre-flight, revision, escalation, abort — the four types nputer runs, written into CONVENTIONS | T-250 planned p3 |
 | The debt-marker limit | a TODO or FIXME a lane adds must cite a card id, or the landing is refused | T-251 planned p3 |
 | The quick path below the loop (ruled 2026-09-08, v1) | one line files a size-S card with a light review mode and lands with a verdict; guard-class cards refused | folded into T-241 |
