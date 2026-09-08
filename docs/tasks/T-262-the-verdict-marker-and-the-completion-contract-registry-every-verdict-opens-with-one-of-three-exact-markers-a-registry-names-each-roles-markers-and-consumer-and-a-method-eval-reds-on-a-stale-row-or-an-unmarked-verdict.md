@@ -63,6 +63,14 @@ files and against every verdict on the board.
   authority that counts markers per size over the live cards, with the
   denominator named as verdicts stamped after the marker landed, and
   the band SHALL leave UNKEPT.
+- WHEN the verifier runs the owed suites THE role file SHALL say they
+  run ONCE, at the verifier's OWN tip (after the verdict and any filed
+  cards are committed), never a second time at the executor's tip — the
+  verdict sits on top of the executor's work, so one run covers both,
+  and the run at the executor's tip has never disagreed with the
+  executor's (ruled by @human, 2026-09-08: "Drop the executor-tip run";
+  loop-efficiency item 31). What stays is the re-run of the specific
+  bodies an attack names, which is not the battery.
 - IF a verdict's marker and its prose disagree (a REJECTED marker over
   an approving text) THEN the eval SHALL red naming the card: a marker
   is what a program reads and the prose is what a human reads, and the

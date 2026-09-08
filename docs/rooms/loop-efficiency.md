@@ -350,8 +350,9 @@ the standing gates and again in shards while attacking. GSD Core's
 verifier runs the full suite at most once per verification, then proves
 a test EXISTS by enumeration and PASSES via a single named body. The
 same rule fits verifier.md step 1 and costs nothing in coverage; it
-waits for the next verifier.md edit (T-258 or T-262) rather than a card
-of its own.
+RULED 2026-09-08 by @human ("Drop the executor-tip run, add the line to
+T-262"): the verifier runs the battery once, at its own tip; T-262
+carries the criterion.
 
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
