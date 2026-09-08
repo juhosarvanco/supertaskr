@@ -99,8 +99,12 @@ const FIXTURE_EXPECTATIONS = [
   {
     card: "T-901-the-citation-that-must-verify.md",
     exit: EXIT.CLEAN,
-    says: "the citation matches",
-    what: "a citation whose file hashes to the digest it cites",
+    says: "1 citation(s) in 1 card(s) — 1 verified",
+    // THE CARD ALSO QUOTES THE GRAMMAR MID-SENTENCE, the way two real
+    // cards on the board discuss the rule. So EXACTLY ONE is the
+    // assertion: a collector that dropped the line anchor would read the
+    // prose as a second, malformed citation and refuse a clean card.
+    what: "a citation whose file hashes to its digest, beside prose quoting the grammar",
   },
   {
     card: "T-902-the-citation-that-must-be-refused.md",
@@ -119,6 +123,12 @@ const FIXTURE_EXPECTATIONS = [
     exit: EXIT.FOUND,
     says: "names a digest and no file",
     what: "a digest citing no file, which nobody can ever check",
+  },
+  {
+    card: "T-905-a-card-with-no-citation.md",
+    exit: EXIT.CANNOT_RUN,
+    says: "an exit 0 over zero bodies is not a pass",
+    what: "a walk that found nothing, which is a claim about nothing and never a pass",
   },
 ];
 
