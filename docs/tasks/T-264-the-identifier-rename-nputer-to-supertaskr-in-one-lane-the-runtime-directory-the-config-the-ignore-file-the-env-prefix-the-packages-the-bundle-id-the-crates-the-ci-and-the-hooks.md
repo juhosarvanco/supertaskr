@@ -8,7 +8,7 @@ priority: 4
 status: planned
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022, docs/rooms/naming.md); measured at the form sitting of 2026-09-03"
 blocked_by: []
-touches: [app, lib, tools, .claude, .github, README.md, CLAUDE.md, AGENTS.md, Cargo.toml, Cargo.lock, package.json, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/architecture]
+touches: [app/, lib/, tools/, .claude/, .github/, README.md, CLAUDE.md, AGENTS.md, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/architecture/]
 builder:
 verifier:
 built_by:
@@ -19,7 +19,7 @@ review: independent
 ADR-022 names the product Supertaskr and fixes the identifier
 spellings. This card lands every identifier a program reads in one
 lane, because the identifiers cross the areas the form sitting measured
-(app 119 files, lib 11, tools 54, .claude 4, .github 1 at 0b7cecd; a
+(app 119 files, lib 11, tools 54, .claude 4, .github 1, files carrying the old name at 0b7cecd; a
 hook reads `.nputer/lane-fence.json` that brief.mjs writes that the app
 reads), and a tree renamed by area is broken between the lanes. Size L:
 @human approves the dispatch. No other lane runs beside it, by the
@@ -43,7 +43,7 @@ word in docs/tasks alone — those are RECORDS and stay (ADR-022 decision
   `@supertaskr/parser`, `@supertaskr/e2e`, the app's product name and
   bundle identifier `dev.supertaskr.app`, the crates `supertaskr`,
   `supertaskr_lib`, `supertaskr-index`, and the CI workflow's names —
-  each derived from ADR-022's list, and `git grep -i nputer` over app/,
+  each derived from ADR-022's list, and a case-insensitive search for the old name over app/,
   lib/, tools/, .claude/, .github/ and the root files SHALL return
   ONLY the lines this card's own notes enumerate as deliberate (a
   record quoted in a comment, a migration note).
@@ -58,7 +58,7 @@ word in docs/tasks alone — those are RECORDS and stay (ADR-022 decision
   the rename (never read the old directory silently), and the
   dispatch arm SHALL write the new one.
 - IF a record under docs/checkpoints/, docs/decisions/ (before 022),
-  docs/tasks/ bodies or docs/rooms/ histories carries "nputer" THEN it
+  docs/tasks/ bodies or docs/rooms/ histories carries the old name THEN it
   SHALL be left as it is — a body pins that these paths did not change
   in the lane's diff.
 - WHEN CONVENTIONS spells a command or a path THE spelling SHALL be the

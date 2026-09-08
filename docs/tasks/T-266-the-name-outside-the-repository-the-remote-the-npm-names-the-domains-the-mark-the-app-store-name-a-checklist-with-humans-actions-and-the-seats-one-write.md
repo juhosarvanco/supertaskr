@@ -1,6 +1,6 @@
 ---
 id: T-266
-title: The name outside the repository — the GitHub remote, the npm names and scope, the domains, the trademark search for the new spelling, the App Store developer name: a checklist of @human's actions, and the seat's one write (the remote URL)
+title: "The name outside the repository — the GitHub remote, the npm names and scope, the domains, the trademark search for the new spelling, the App Store developer name: a checklist of @human's actions, and the seat's one write (the remote URL)"
 feature: F-01
 milestone: 4
 size: S
@@ -8,7 +8,7 @@ priority: 6
 status: planned
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022); the sweep in docs/rooms/naming.md"
 blocked_by: []
-touches: [.github, docs/CONVENTIONS.md, README.md]
+touches: [.github/, docs/CONVENTIONS.md, README.md]
 builder:
 verifier:
 built_by:

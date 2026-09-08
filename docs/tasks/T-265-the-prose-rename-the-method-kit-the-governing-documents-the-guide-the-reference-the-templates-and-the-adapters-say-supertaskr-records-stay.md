@@ -8,7 +8,7 @@ priority: 5
 status: planned
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022)"
 blocked_by: [T-264]
-touches: [method, docs/guide, docs/reference, docs/NORTH_STAR.md, docs/ROADMAP.md, docs/STATE-template.md, docs/VERSIONS.md, docs/business, docs/research/competitors.md, docs/checkpoints/TEMPLATE.md]
+touches: [method/, docs/guide/, docs/reference, docs/NORTH_STAR.md, docs/ROADMAP.md, docs/STATE-template.md, docs/VERSIONS.md, docs/business, docs/research/competitors.md, docs/checkpoints/TEMPLATE.md]
 builder:
 verifier:
 built_by:
