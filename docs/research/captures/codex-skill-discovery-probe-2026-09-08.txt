@@ -1,0 +1,36 @@
+# Does Codex discover a PROJECT-LOCAL skill? A planted-probe experiment with controls.
+# binary: /Applications/ChatGPT.app/Contents/Resources/codex   version: codex-cli 0.147.0-alpha.1.2
+# host: Mac.lan   date: 2026-09-08
+# INSTRUMENT: 'codex debug prompt-input <PROMPT>' renders the model-visible prompt input
+#   list as JSON and spawns NO model turn (exit 0, no network turn, no billing).
+# The prompt input carries a <skills_instructions> block listing every discovered skill
+#   with a source locator, so discovery is directly observable.
+
+ARM 0 — NEGATIVE CONTROL: empty directory, no planted skill.
+$ cd <arm0-empty-dir> && codex debug prompt-input hello
+[exit 0]
+  occurrences of 'probe-dotcodex': 0
+  occurrences of 'probe-dotagents': 0
+  occurrences of 'probe-bare': 0
+  (expected 0 for each — this is the control that makes ARM 1's positives mean something)
+
+ARM 1 — three candidate project-local paths planted at once, same directory.
+  planted: .codex/skills/probe-dotcodex/SKILL.md
+  planted: .agents/skills/probe-dotagents/SKILL.md
+  planted: skills/probe-bare/SKILL.md
+  NOT a git repo; NOT listed in ~/.codex/config.toml's [projects.*] trust table.
+$ cd <arm1-dir> && codex debug prompt-input hello
+[exit 0]
+  occurrences of 'probe-dotcodex': 1
+  occurrences of 'probe-dotagents': 1
+  occurrences of 'probe-bare': 0
+
+  the registration lines, verbatim from the rendered prompt:
+    - probe-dotagents: PROBE-T246 marker planted at .agents/skills/probe-dotagents. (file: /private/tmp/claude-502/-Users-ujju-Projects-nputer/ff6c61b1-0d89-40f9-a2fe-6bf1515f6973/scratchpad/probe2-T-246/.agents/skills/probe-dotagents/SKILL.md)
+    - probe-dotcodex: PROBE-T246 marker planted at .codex/skills/probe-dotcodex. (file: /private/tmp/claude-502/-Users-ujju-Projects-nputer/ff6c61b1-0d89-40f9-a2fe-6bf1515f6973/scratchpad/probe2-T-246/.codex/skills/probe-dotcodex/SKILL.md)
+
+RESULT, measured:
+  .codex/skills/<name>/SKILL.md    DISCOVERED   (registered under its bare 'name:')
+  .agents/skills/<name>/SKILL.md   DISCOVERED   (registered under its bare 'name:')
+  skills/<name>/SKILL.md           NOT discovered
+  Neither a git repository nor a config.toml trust entry was needed for discovery.

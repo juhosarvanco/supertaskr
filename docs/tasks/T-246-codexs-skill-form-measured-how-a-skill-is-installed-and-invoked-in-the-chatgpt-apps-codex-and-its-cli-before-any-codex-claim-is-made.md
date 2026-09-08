@@ -5,13 +5,13 @@ feature: F-04
 milestone: 4
 size: S
 priority: 1
-status: building
+status: verifying
 suggested_by: "@human (2026-09-08): \"lets keep the focus on driving from the native apps\" — ADR-021 Addendum 1; the cross-harness plan's rule that a Codex claim is a hypothesis until captured"
 blocked_by: []
 touches: [docs/research/captures, docs/design/cross-harness-plan.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review: independent
 ---
@@ -57,5 +57,65 @@ T-241 and T-242 cannot claim a Codex form until this exists.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
+
+Built 2026-09-08 on `task/T-246-codex-skill-form`, base
+`9527a1480b08c406ae2996d6841b9cf1f2baf08b`.
+
+**The instrument that made this cheap.** `codex debug prompt-input`
+renders the model-visible prompt as JSON and spawns no turn. Because
+Codex injects a `<skills_instructions>` block listing every discovered
+skill with its source locator, skill discovery is *directly
+observable* for free. No model turn was spawned; nothing was billed;
+nothing was installed or written under `~/.codex/`.
+
+**The fallback branch does not fire.** A reusable-prompt mechanism
+exists and is first-class: a `SKILL.md` directory, the same shape as
+Claude's. So the "IF no mechanism exists ... pasted brief" criterion is
+answered in the negative, and the addendum says so.
+
+**Discovery was measured, not read** — three candidate project-local
+paths planted in one scratch directory against a clean negative
+control. `.codex/skills/<n>/` and `.agents/skills/<n>/` are discovered;
+bare `skills/<n>/` is not; no git repo and no `trust_level` entry
+needed. The arms and controls are in
+`docs/research/captures/codex-skill-discovery-probe-2026-09-08.txt`.
+
+**The app/CLI shared-home question answered itself in the app's own
+writing**: `~/.codex/config.toml` carries an `[mcp_servers.node_repl]`
+entry the desktop app wrote, declaring `CODEX_HOME = "~/.codex"` and
+`CODEX_CLI_PATH` = the binary inside ChatGPT.app — the same binary
+every command here ran against.
+
+**MCP, the criterion added today**: both surfaces accept a server via
+`codex mcp add <NAME> (--url <URL> | -- <COMMAND>...)` landing in the
+shared `config.toml`, or inside a plugin via `mcpServers`/`.mcp.json`;
+Codex can also *be* one (`codex mcp-server`). A project-local
+`.mcp.json` is **not** read (measured). So for T-241/T-244: the skill
+is repo-shippable, the MCP server is a user-level install.
+
+**A false finding I caught and did not ship.** `codex plugin add
+--help` appeared to print the root help. It was my own shell: zsh does
+not word-split an unquoted `$var`, so `codex "plugin add" --help` was
+read as a *prompt*. Re-run properly it behaves correctly. Nothing about
+this reached the captures.
+
+**Fence.** `npm install` from `app/` was refused (EACCES on
+`app/package-lock.json`) — correctly, it is outside the fence. `npm ci`
+is the non-mutating equivalent, exits 0, and leaves the lockfile
+untouched; `git status` confirms only the fenced paths changed.
+
+**Ceremony ruling, recorded rather than asked.** The diff is docs-only,
+which the ceremony table's rule of thumb ("docs, method and tooling
+self-integrate") routes to the cheapest row — no verifier owed, and the
+blast-radius rungs are explicitly advisory. But the card was dispatched
+carrying `verifier:` and `review: independent`, and this is a
+MEASUREMENT card whose whole value is that its claims are re-runnable.
+Stamped `verifying` rather than `done`: the cheaper stamp risks
+skipping a guarantee, the dearer one costs one session, and the
+worktree is worth keeping because "a worktree deleted before the
+verdict destroys the only reproducible copy of what was measured" has
+maximum force on a card that is nothing but measurement. This lane was
+not declared the seat holder, so it merges nothing and removes nothing:
+ready-to-merge, worktree standing.
 
 ## Verdicts
