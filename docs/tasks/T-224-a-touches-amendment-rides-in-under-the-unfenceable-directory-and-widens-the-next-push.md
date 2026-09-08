@@ -631,9 +631,9 @@ directly, at `40b22e4`):
     widen only      paths=2   REFUSED (amendment)          <- the control that worked
     decoy only      paths=2   ALLOWED — nothing moved      <- a duplicate id, silently
 
-`touchesAmendments` skipped an id already `seen` (`:954`) while
-`cardTouchesOf` resolved the PATH first and the id only on `absent`
-(`:860–864`). Composed, the two endpoints of ONE id straddle TWO FILES: at
+At `40b22e4`, `touchesAmendments` skipped an id already `seen` while
+`cardTouchesOf` resolved the PATH first and the id only on `absent` — the
+verdict cites those two sites at `:954` and `:860–864` of that file. Composed, the two endpoints of ONE id straddle TWO FILES: at
 the base the decoy is absent so the index resolves the id to the real card
 (old line), at the tip the direct `git show` short-circuits the index and
 returns the decoy's copy of that same line, `before.line === after.line`
@@ -660,8 +660,8 @@ contradiction.**
   the announced cannot-compare. The `absent` short-circuits moved BELOW the
   ambiguity arm on purpose — a range filing two cards under one brand-new id
   is the same ambiguity, and skipping it on `absent` would hand it back.
-- **THE `arrived` TEST IS BASE **OR** RECORD, AND THE RECORD HALF IS
-  LOAD-BEARING.** An UNSYNCED lane whose tip carries a file the integration
+- **THE `arrived` TEST TAKES THE BASE *OR* THE RECORD, AND THE RECORD HALF
+  IS LOAD-BEARING.** An UNSYNCED lane whose tip carries a file the integration
   branch already has invented nothing; a base-only rule would refuse it,
   which is the fast-path-A mistake in a second costume. Mutant L measures
   it (body 1675's arm four).
@@ -729,7 +729,9 @@ figures move to the table above.
 
 **A DETACHED SCRATCH WORKTREE, NEVER THE LANE**: sibling
 `/Users/ujju/Projects/nputer-D3-T-224` (stem derived from the lane id),
-`git worktree add --quiet --detach` at `aab21bc`, `node_modules`/`dist`
+`git worktree add --quiet --detach`, moved with `checkout --quiet --detach`
+to `aab21bc` when the last spec arm landed and RE-BASELINED there — every
+figure in the table below is at `aab21bc`. `node_modules`/`dist`
 symlinked from the lane so the mutants ran against the same toolchain — the
 app's included, the harness failure the first verdict reported discarding.
 **BASELINE FIRST: 51 passed, exit 0** — the count read, not only the exit.
@@ -740,8 +742,9 @@ landing read back from `git diff -U0` BEFORE the suite ran; every restoration
 by `git restore --source=aab21bc --staged --worktree` and proved by sha256
 against the pristine hook
 `5b8522c66a60a44de9d8ac2069a567d1b8e0512a957f494e8ba3361b0d0cea35`
-(the pre-third-pass file was `2edf98f9…e1b5`, the hash both earlier drills
-used). **Every restoration matched**; the worktree was removed, symlinks
+(the pre-third-pass file was `2edf98f9…e1b5`, which the REWORK's drill used
+and which this pass verified against `git show 40b22e4:…` before touching
+anything; the two drills before that used `093970bd…f51707`). **Every restoration matched**; the worktree was removed, symlinks
 first, and the lane's own hook hashed identical afterwards.
 
 | # | mutant | one-side change | exit | bodies RED |
@@ -839,12 +842,95 @@ statement it owed: **neither correction turned a live range into a refusal.**
 | command | cwd | exit | count |
 |---|---|---|---|
 | `node --check .claude/hooks/landing-gate.mjs` | lane root | **0** | — |
-| `repro-T-224.mjs` (the defect, at `40b22e4`) | lane root | **0** | 1 of 3 fixtures ALLOWED — the hole |
+| `repro-T-224.mjs` (the defect, at `40b22e4`) | lane root | **0** | **2 of 3** fixtures ALLOWED — the widening behind the decoy, and the duplicate id nobody judged |
 | `npm run typecheck` | tools/e2e | **0** | — |
 | `npx playwright test tests/landing-gate.spec.ts tests/push-checks.spec.ts` | tools/e2e | **0** | **62 passed** = **51** + **11** (48 + 11 at `40b22e4`; re-derived with `grep -cE '^test\("'`) |
 | `spawns-T-224.mjs` | lane root | **0** | the table above |
 | the thirteen-mutant drill | `../nputer-D3-T-224`, detached | see the table | baseline **51 passed**, exit 0 |
 | `dogfood-T-224.mjs` | lane root | **0** | both ranges ALLOWED |
+| `docs-gate.mjs <2 literal card paths>` | lane root | **1** | FIRES — 2 docs paths, owing `npm test` from app/, `npm test` from tools/e2e/, `npx vitest run` from lib/parser/; **injection scan 0 hits in 0 of 2**; 0 frontmatter issue(s) in the live tree; governing-document budgets hold |
+| `npm run lint:tokens -- --selftest` | tools/e2e | **0** | 65 TOKEN + 4 CONTROL samples, 90 walk-policy, 9 evidence-floor |
+| `npm run lint:tokens` | tools/e2e | **0** | TOKEN 177 files, CONTROL **1277** tracked text files |
+| `npm run lint:docs` | tools/e2e | **0** | whole-tree half, 0 findings — *"I was not asked"*, never *"nothing owed"* |
+| `npm run capabilities:check` | tools/e2e | **1** | **STALE, EXPECTED** — committed 58883 bytes, fresh 60381; three bodies added. **REPORTED, NOT REGENERATED**: `docs/CAPABILITIES.md` is outside this fence (`T-210`), so `npm run capabilities` is the INTEGRATOR's, in the merge commit |
+| `cargo run -q -p supertaskr-index -- index --check --root ../..` | app/src-tauri | **0** | **CURRENT** — 1191343 bytes, 201 files, 2542 symbols, 2441 edges |
+| `git merge-tree --write-tree <main> HEAD` | lane root | **1** at `aab21bc`, **0** at `d0b7910` | see the gates below |
+| `gate-run.mjs parser` | lane root | **0** | **377** bodies, 1 target, GREEN, ref `d0b7910` |
+| `gate-run.mjs app` | lane root | **0** | **1163** bodies, 1 target, GREEN, ref `d0b7910` |
+| `gate-run.mjs rust` | lane root | **0** | **639** bodies, 18 targets, GREEN, ref `d0b7910` |
+| `gate-run.mjs e2e` (`SUPERTASKR_E2E_PORT=15224`) | lane root | **0** | **705** bodies, 1 target, GREEN, ref `d0b7910` |
+
+#### The gates, derived from the merge forecast (9 paths)
+
+`git merge-tree --write-tree <main> HEAD` at the notes commit `d0b7910`,
+with `main` read at `cc5bf50`: **exit 0, a TREE**, and the forecast is **9**
+paths — `.claude/hooks/landing-gate.mjs`, `tools/e2e/tests/landing-gate.spec.ts`
+and 7 `docs/tasks/*.md`.
+
+**THE FORECAST CONFLICTED UNTIL THE ARCHITECT'S WAIVER WAS COMMITTED IN THIS
+LANE, AND ONLY THE EXIT CODE CAUGHT IT.** At `aab21bc` — the code commit,
+with the waiver paragraph sitting UNCOMMITTED in this lane's working copy
+exactly as the seat delivered it — `merge-tree --write-tree` exits **1** and
+prints CONFLICT on this card, because main gained that paragraph at `90bdd42`
+inside *"What to build"* while the lane's own copy moved in the same file.
+Read through a command substitution that swallows the status, it hands back
+an empty forecast — and an empty forecast says all four gates are NOT OWED,
+which is the exact failure CONVENTIONS' RANGE RULE names. Committing the
+delivered line makes it exit 0.
+
+- **DOCS GATE — FIRES**: 7 `docs/tasks/*.md` paths in the forecast. Run on
+  the two this pass writes, it named app/, tools/e2e/ and lib/parser/, and
+  all three ran GREEN through the blessed runner at `d0b7910`.
+- **GRAPH REGEN — FIRES by trigger** (`tools/e2e/tests/landing-gate.spec.ts`
+  is a `.ts` outside `docs/`) **and moves nothing**: asked rather than argued
+  — `index --check` answers **CURRENT** at the tip. The regen and the by-hand
+  check are the INTEGRATOR's at the checkpoint, and
+  `docs/architecture/graph.json` is outside this fence in any case.
+- **BOOT GATE — NOT OWED**: no `app/src-tauri/**`, no `app/src/**`, neither
+  manifest, among the forecast's 9 paths.
+- **METHOD EVAL GATE — NOT OWED**: no `method/**` path. `T-224-s3` still
+  routes the method-text clause; `method/` is `T-265`'s while that lane is
+  live.
+
+**THE HEAVY LEGS AND EVERY FIGURE ABOVE ARE MEASURED AT `d0b7910`, AND THE
+COMMIT CARRYING THIS BLOCK ADDS `docs/tasks` PROSE PLUS A COMMENT-ONLY EDIT
+TO `landing-gate.mjs`** — limit 5(f), tightened to say *"none of which this
+range arrived at"* rather than *"when the range was cut"*, which is the
+condition the code actually tests. **PROVED MECHANICALLY RATHER THAN
+ASSERTED**: `git diff d0b7910 -- .claude/hooks/landing-gate.mjs` has **0**
+changed lines that do not begin with ` *`, so no mutant's kill set and no
+suite's answer can depend on it, and the docs gate already fires on 7 card
+paths while the graph regen already fires on the `.ts`. The landing-gate and
+push-checks specs were RE-RUN at that tree and the integrator re-derives at
+the merge.
+
+#### For the verifier, on the third pass only
+
+- **The least-confident point is the RULE FOR "WHO ARRIVED".** The verdict's
+  own formula was `index(base).byId[id].length <= 1 && index(tip)…length > 1`;
+  I widened it to *a tip path present at NEITHER the base NOR the record*, and
+  the widening is not cosmetic — the verdict's own correction 3(iii) asks for
+  **push 2** of the three-push construction to be refused, and push 2 swaps
+  one decoy for another on a board that is ALREADY ambiguous at the base, so
+  the narrow formula does not fire there. Both halves are measured: mutant D
+  (refuse every duplicate) and mutant L (forget the record) each red body 1675
+  alone, from opposite sides.
+- **The second is that the INHERITED duplicate is still an ALLOW.** A board
+  carrying two files for one id stops this arm judging that id, and a widening
+  can ride it — announced, never silent. No lane reaches that state through
+  this gate any more (arm one of 1675 refuses it), so what remains is a
+  duplicate arriving by the route `T-224-s4` names: a direct non-merge commit
+  on the integration branch, which this gate never asks. That is limit 5(f)
+  and it is stated rather than closed.
+- **The third is the SPAWN BUDGET**, which went from 2 to 4 processes for the
+  ordinary push. It is the price of the correction and I say so in the header
+  rather than leaving the old claim standing; `T-224-s5` still asks for the
+  bodies that would pin it.
+- Nothing in this pass is out of fence: `.claude/` and `tools/e2e` are the
+  card's `touches:` (the manifest re-read at `dfe35a5`:
+  `touches: [.claude, tools/e2e]`, `alwaysWritable: ["docs/tasks"]`), and
+  `docs/tasks/` is unfenceable. No ask was routed; nothing was parked; no new
+  finding was filed and no suggestion card was written.
 
 ## Verdicts
 

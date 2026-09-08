@@ -208,9 +208,10 @@
  *    this gate cannot read there is a cannot-compare that never asks the
  *    question; (e) limit 6 reaches this arm too — the exoneration in the
  *    section below reads the integration branch through the same movable
- *    local ref; (f) a card id ALREADY carried by two files under
- *    `docs/tasks/` when the range was cut answers CANNOT-COMPARE, never a
- *    verdict, and so does an `ls-tree` of `docs/tasks/` that fails
+ *    local ref; (f) a card id carried by two files under `docs/tasks/`
+ *    NONE OF WHICH THIS RANGE ARRIVED AT — the ambiguity is already the
+ *    BOARD's, at the range's base or on the fence of record — answers
+ *    CANNOT-COMPARE, never a verdict, and so does an `ls-tree` that fails
  *    outright: both are announced on the existing cannot-compare code,
  *    neither is a silent allow, and while the board is ambiguous about
  *    which file IS a card this arm stops judging that id. **THE HALF THAT
