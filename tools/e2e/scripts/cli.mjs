@@ -154,6 +154,43 @@ export function bareDependencies(entry, seen = new Set()) {
 }
 
 /**
+ * The files a script reaches by a RELATIVE import that leaves the
+ * package — this tree's scripts import `.claude/hooks/*` that way, three
+ * directories up, which is invisible in a `bin` field and fatal in an
+ * installed copy where those directories are not there.
+ *
+ * MEASURED RATHER THAN ASSUMED (T-244): the first `npx supertaskr status`
+ * against a packed tarball died with `ERR_MODULE_NOT_FOUND` on
+ * `node_modules/.claude/hooks/lane-fence.mjs`. A stack trace is the one
+ * answer this command may not give, so the escape set is derived and the
+ * missing members are named before anything is spawned.
+ *
+ * @param {string} entry
+ * @param {string} pkgRoot
+ * @param {Set<string>} [seen]
+ * @returns {string[]}
+ */
+export function packageEscapes(entry, pkgRoot, seen = new Set()) {
+  /** @type {Set<string>} */
+  const escapes = new Set();
+  /** @param {string} file */
+  const walk = (file) => {
+    const abs = path.resolve(file);
+    if (seen.has(abs)) return;
+    seen.add(abs);
+    if (!existsSync(abs)) return;
+    const src = readFileSync(abs, "utf8");
+    for (const m of src.matchAll(/from\s*["'](\.[^"']*)["']/g)) {
+      const target = path.resolve(path.dirname(abs), /** @type {string} */ (m[1]));
+      if (path.relative(pkgRoot, target).startsWith("..")) escapes.add(target);
+      else walk(target);
+    }
+  };
+  walk(entry);
+  return [...escapes].sort();
+}
+
+/**
  * @typedef {object} Requirement
  * @property {string} id      what is missing, as a short name
  * @property {string} what    the sentence a user reads
@@ -174,21 +211,34 @@ export function bareDependencies(entry, seen = new Set()) {
  *
  * @param {VerbEntry} entry
  * @param {string} projectRoot
+ * @param {string} [pkgRoot] the installed package's root; the spec passes a fixture
  * @returns {Requirement[]}
  */
-export function requirementsFor(entry, projectRoot) {
+export function requirementsFor(entry, projectRoot, pkgRoot = packageRoot) {
   /** @type {Requirement[]} */
   const missing = [];
   if (entry.target.kind === "script") {
-    const file = path.join(packageRoot, "scripts", entry.target.file);
+    const file = path.join(pkgRoot, "scripts", entry.target.file);
     const bare = bareDependencies(file);
-    if (bare.length > 0 && !existsSync(path.join(packageRoot, "node_modules"))) {
+    if (bare.length > 0 && !existsSync(path.join(pkgRoot, "node_modules"))) {
       missing.push({
         id: "package-deps",
         what:
           `${entry.target.file} imports ${bare.join(", ")} and this package has no ` +
           "node_modules",
         build: buildCommandFor("tools/e2e", projectRoot),
+      });
+    }
+    const absent = packageEscapes(file, pkgRoot).filter((p) => !existsSync(p));
+    if (absent.length > 0) {
+      missing.push({
+        id: "package-escapes",
+        what:
+          `${entry.target.file} imports ${String(absent.length)} file(s) from OUTSIDE this ` +
+          `package that are not there: ${absent.map((p) => path.basename(p)).join(", ")}`,
+        build:
+          "there is nothing to build — this verb's script is not self-contained yet, so run it " +
+          "from a checkout of the project's own tooling rather than from an installed package",
       });
     }
   }
@@ -252,11 +302,19 @@ function onPath(name) {
  * which is the install step in all four bullets, plus `npm run build`
  * where that bullet carries one.
  *
+ * READ WITH ITS DEFAULT: called with no root it reads THIS repository's
+ * docs/CONVENTIONS.md, which is the dominant first-party helper
+ * signature in this tree (`(root = repoRoot)`) and is what makes the
+ * DOCS GATE see this front as a derived reader of docs/ — the card's
+ * third criterion, T-231's account. A front that reads a governing
+ * document and is invisible to the gate over that document is exactly
+ * the gap that gate exists to close.
+ *
  * @param {string} dir
- * @param {string} projectRoot
+ * @param {string} [projectRoot]
  * @returns {string}
  */
-export function buildCommandFor(dir, projectRoot) {
+export function buildCommandFor(dir, projectRoot = packageRepoRoot) {
   const conventions = path.join(projectRoot, "docs", "CONVENTIONS.md");
   if (!existsSync(conventions)) {
     return `run this project's setup for ${dir}/ (${path.relative(projectRoot, conventions)} is not in this project, so the command could not be derived)`;

@@ -36,6 +36,17 @@ import { fileURLToPath } from "node:url";
 
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
+/** Where this file lives: `<package>/scripts/`. */
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * This checkout's repository root — the DEFAULT root every derivation
+ * below takes, which is the dominant first-party helper signature in
+ * this tree (`(root = repoRoot)`) and what makes the DOCS GATE see this
+ * file as a derived reader of docs/tasks (the card's third criterion).
+ */
+export const repoRoot = path.resolve(here, "..", "..", "..");
+
 /** The integration branch when none is named. docs/CONVENTIONS.md's lane bullet spells it. */
 export const DEFAULT_BRANCH = "main";
 
@@ -51,11 +62,11 @@ export function git(root, args) {
  * The card file for one id, found by its own `id:` line rather than by
  * its filename — a slug is a convenience and the frontmatter is the fact.
  *
- * @param {string} root
  * @param {string} id
+ * @param {string} [root]
  * @returns {{ file: string } | { problem: string }}
  */
-export function cardFile(root, id) {
+export function cardFile(id, root = repoRoot) {
   const dir = path.join(root, "docs", "tasks");
   if (!existsSync(dir)) return { problem: `${path.join("docs", "tasks")} is not in ${root}` };
   const hits = readdirSync(dir)
@@ -330,7 +341,7 @@ export function main(argv, io = {}) {
     return EXIT.USAGE;
   }
 
-  const card = cardFile(root, id);
+  const card = cardFile(id, root);
   if ("problem" in card) {
     err(`undo ${id}: CANNOT RUN — ${card.problem}`);
     return EXIT.CANNOT_RUN;

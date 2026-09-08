@@ -44,7 +44,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
-import { cardFile, git } from "./undo.mjs";
+import { cardFile, git, repoRoot } from "./undo.mjs";
 
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
@@ -57,7 +57,7 @@ export const DEFAULT_BRANCH = "main";
  * @property {"precondition" | "git" | "setup" | "regen" | "suite" | "gate" | "stop"} kind
  * @property {string} title
  * @property {string} why
- * @property {{ command: string, argv: string[], cwd: string } | null} run
+ * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string> } | null} run
  */
 
 /** The sources whose arrival obliges a reinstall and rebuild (room item 18). */
@@ -103,10 +103,13 @@ export function movesSpecNames(paths) {
  * app resolves `@supertaskr/parser` through the parser's own
  * node_modules and needs its dist/.
  *
- * @param {string} projectRoot
+ * READ WITH ITS DEFAULT, for the reason `undo.mjs`'s `repoRoot` states:
+ * called with no root it reads THIS repository's docs/CONVENTIONS.md.
+ *
+ * @param {string} [projectRoot]
  * @returns {Step[]}
  */
-export function setupSteps(projectRoot) {
+export function setupSteps(projectRoot = repoRoot) {
   /** @type {Step[]} */
   const steps = [];
   for (const dir of ["lib/parser", "app"]) {
@@ -176,6 +179,11 @@ export function tailPlan(input) {
       title: "regenerate the committed graph — indexed source moved",
       why: "docs/CONVENTIONS.md GRAPH REGEN: ask the gate rather than predicting; a no-op regen PROVES it",
       run: {
+        // SUPERTASKR_UPDATE_GOLDEN=1 is what makes this a REGEN rather than a
+        // check — docs/CONVENTIONS.md's GRAPH REGEN bullet spells the whole
+        // command, and without the variable the ignored body asserts instead
+        // of writing.
+        env: { SUPERTASKR_UPDATE_GOLDEN: "1" },
         command: "cargo",
         argv: [
           "test",
@@ -397,7 +405,7 @@ export function main(argv, io = {}) {
     return EXIT.USAGE;
   }
 
-  const card = cardFile(root, id);
+  const card = cardFile(id, root);
   if ("problem" in card) {
     err(`merge ${id}: CANNOT RUN — ${card.problem}`);
     return EXIT.CANNOT_RUN;
@@ -476,7 +484,10 @@ function printStep(out, step) {
   out(`  [${step.kind}] ${step.title}`);
   out(`      why: ${step.why}`);
   if (step.run !== null) {
-    out(`      run: ${step.run.command} ${step.run.argv.join(" ")}   (in ${step.run.cwd})`);
+    const env = step.run.env === undefined
+      ? ""
+      : `${Object.entries(step.run.env).map(([k, v]) => `${k}=${v}`).join(" ")} `;
+    out(`      run: ${env}${step.run.command} ${step.run.argv.join(" ")}   (in ${step.run.cwd})`);
   }
 }
 
@@ -490,7 +501,11 @@ function runStep(step, io) {
     io.out(`      (no command — this step is the seat's own work)`);
     return 0;
   }
-  const r = spawnSync(step.run.command, step.run.argv, { cwd: step.run.cwd, stdio: "inherit" });
+  const r = spawnSync(step.run.command, step.run.argv, {
+    cwd: step.run.cwd,
+    stdio: "inherit",
+    ...(step.run.env === undefined ? {} : { env: { ...process.env, ...step.run.env } }),
+  });
   if (r.error !== undefined && r.error !== null) {
     io.err(`      ${step.run.command} could not be started — ${r.error.message}`);
     return 3;
