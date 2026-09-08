@@ -77,6 +77,7 @@ the archaeology/Adopt variant (ADR-005); the non-coder spec studio
   - cross-session memory of project learnings (gstack)
   - PR bodies written from the record (GSD, gstack)
   - an installer that targets many harnesses; nputer has one adapter (all three)
+  - added after the deeper read of 2026-09-08 (T-245): a gate taxonomy — pre-flight, revision, escalation, abort — with stall detection and iteration caps (GSD); a capability registry that declares its gates as blocking or advisory with `onError` (GSD); reviewer instances with consensus, several models verifying one change (GSD); the honest fallback line when the outside model is missing (gstack); a package-legitimacy gate, a prompt-injection scan on planning files and a secret read guard (GSD); shortcut markers harvested into a debt ledger (gstack)
 
 ## Moves, by sitting
 

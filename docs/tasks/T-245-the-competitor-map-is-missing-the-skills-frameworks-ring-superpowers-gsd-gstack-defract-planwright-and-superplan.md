@@ -5,15 +5,15 @@ feature: F-01
 milestone: 4
 size: M
 priority: 2
-status: planned
+status: done
 suggested_by: "@human (2026-09-08): \"Can you check those out and see if they are already better than us, or can we compete\" — and \"do it\" on the seat's finding that none of them is on docs/research/competitors.md"
 blocked_by: []
 touches: [docs/research/competitors.md, docs/business/marketing.md]
 builder:
 verifier:
-built_by:
-verified_by:
-review: independent
+built_by: claude-fable-5-1@architect-seat
+verified_by: none — @human waived the verifier seat (2026-09-08, "no need to do a subagent run for the T-245. You do it now")
+review: self-verified
 ---
 
 ## What was found (read 2026-09-08 on Juhos-MacBook-Pro.local; re-derive, registries move)
@@ -75,3 +75,32 @@ gstack's office hours) and the fresh-context executor.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Implementation notes
+
+Built 2026-09-08 by the architect seat on main, no lane, at @human's
+instruction. Read through the GitHub API (`gh api repos/<o>/<r>/contents/<path>`):
+GSD Core's `agents/gsd-verifier.md`, `agents/gsd-executor.md`,
+`hooks/gsd-agent-isolation-guard.js`, `gsd-read-guard.js`,
+`gsd-prompt-guard.js`, `gsd-core/references/gates.md`,
+`gsd-core/workflows/ship.md`, `docs/CONFIGURATION.md`,
+`docs/reference/gate-predicates.md`, `review-verification-capabilities.md`,
+`docs/explanation/multi-agent-orchestration.md`; Superpowers'
+`skills/subagent-driven-development/SKILL.md` and
+`task-reviewer-prompt.md`; gstack's `review/SKILL.md`,
+`review/sections/adversarial.md`, `ship/SKILL.md`. Landed: the map's
+Ring 2 addendum, conclusion 6 with the clause table, the steal-list
+block, three open items, the sources; comparisons.md's Class 2 rows
+rewritten from those files; VERSIONS.md's UNRULED block extended;
+marketing.md's pointer. **What the seat's own earlier reading got
+wrong** (the sitting of 2026-09-07 and the first comparisons draft):
+GSD Core's verifier is adversarial by instruction and its ship step is
+binding; gstack reviews with an outside model by default. The map now
+says so.
+
+## Verdicts
+
+No verifier seat ran: @human waived it (2026-09-08). The seat's own
+check: every "where it stops" sentence names the file it was read
+from, every star count carries its derive command and date, and the
+falsified supporting move is marked in place rather than deleted.

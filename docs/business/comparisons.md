@@ -59,30 +59,40 @@ tracker — map negative lessons).
 
 ## Class 2 — skills frameworks for the agent CLI (Superpowers, GSD, gstack)
 
-PENDING T-245 (planned p2): the map has no ring for these yet; the
-rows below are the seat's readings of 2026-09-08 through the GitHub
-API and each README, to be VERIFIED by that lane before any of it is
-published. Star counts: `gh api repos/<owner>/<repo> --jq
-'.stargazers_count'`, read 2026-09-08.
+VERIFIED 2026-09-08 under T-245 (built by the architect seat at
+@human's instruction, no lane): every row below is read from the
+project's own agent prompts, hooks and workflow files, named in the
+competitor map's Ring 2 addendum. Star counts: `gh api
+repos/<owner>/<repo> --jq '.stargazers_count'`, read 2026-09-08. **The
+honest line for this class:** their verifier is TOLD not to trust the
+builder; ours CANNOT read the builder — an instruction versus a
+mechanism — and that is a sentence any of them can close in one
+release, so the pages must also carry what they cannot copy in one:
+the fence refused at the write, the record that keeps itself honest,
+the map, the rejection corpus.
 
 | | what they do well | where they stop short of the claim | reading |
 |---|---|---|---|
-| **Superpowers** (obra/superpowers, 282,947 stars) | auto-triggering skills; Socratic brainstorm to spec; worktree per branch; subagent per task with two-stage review; TDD enforced; on the official Claude and Codex marketplaces; 14 harnesses | review runs under the same orchestrator and model lineage — not a different model, not denied the builder's reasoning; nothing stops a merge; no fence at the write; no record beyond git | 2026-09-08 |
-| **GSD Core** (open-gsd/gsd-core, 9,217; the archived original 64,580) | the closest structural neighbour: `.planning/` with PROJECT, REQUIREMENTS, ROADMAP and STATE.md; fresh-context executors in non-overlapping waves; a plan-checker; a verifier writing VERIFICATION.md; UAT walk; model cost profiles; cross-AI plan review | the verifier reads the executors' summaries — inherits the builder's story; waves are non-overlapping because the planner says so, nothing enforces it; the verdict does not stop anything; no derivations, budgets or bands over the record | 2026-09-08 |
-| **gstack** (garrytan/gstack, 132,009) | 23 role skills: office hours (six forcing questions), CEO and eng review, review, QA in a real browser, OWASP+STRIDE audit, ship, deploy, canary, retro, memory; a one-directory edit lock | every role is a lens in one session — no second model, no blindness, no binding verdict; the lock is manual and per directory, not derived from the work; no record discipline | 2026-09-08 |
+| **Superpowers** (obra/superpowers, 282,947 stars) | auto-triggering skills; Socratic brainstorm to spec; worktree per branch; fresh implementer subagent per task with a task review that is told "Do Not Trust the Report"; TDD enforced; on the official Claude and Codex marketplaces; 14 harnesses | the reviewer READS the implementer's report (an instruction, not a denial); its model is chosen per role inside one harness (not a different vendor by construction); the verdict binds the orchestrator's loop only, nothing refuses a merge; the ledger, briefs and reports are DELETED when the final review is clean — no verdict survives in the repo | 2026-09-08, `task-reviewer-prompt.md`, `subagent-driven-development/SKILL.md` |
+| **GSD Core** (open-gsd/gsd-core, 9,217; the archived original 64,580) | the closest neighbour we have: `.planning/` committed with PROJECT, REQUIREMENTS, ROADMAP and STATE.md; fresh-context executors in waves with worktree isolation hard-blocked by a hook; a plan-checker; an ADVERSARIAL verifier ("assume the phase goal was not achieved … falsify the SUMMARY.md narrative") writing a committed VERIFICATION.md; a ship step that refuses anything but `passed`; reviewer instances across Codex, Gemini, OpenCode and Ollama; per-phase model tiers; a package-legitimacy gate, a prompt-injection scanner and a secret read guard | the verifier is NOT denied the builder's notes — it reads SUMMARY.md and is told to distrust it; its model is Sonnet in every default profile, the executor's tier and vendor — a different vendor is a config, not the design; the binding lives in the ship WORKFLOW file, a raw `git push` is not refused; plans name their files and worktrees isolate, but nothing proves two plans disjoint or refuses a write outside the plan; no derivation-stamped figures, doc budgets, health bands or killed mutants | 2026-09-08, `agents/gsd-verifier.md`, `workflows/ship.md`, `hooks/gsd-agent-isolation-guard.js`, `docs/CONFIGURATION.md` |
+| **gstack** (garrytan/gstack, 132,009) | 23 role skills: office hours (six forcing questions), CEO and eng review, review, QA in a real browser, OWASP+STRIDE audit, ship, deploy, canary, retro, memory; an OUTSIDE-model review by default — every diff gets a Claude subagent and a Codex pass, with an honest "same model family" line when Codex is missing; a one-directory edit lock | the review is advisory — it "never blocks" and `/ship` opens the PR without reading any review result; the reviewers read the diff in the same session's context, nothing is denied; the record is a decision log and telemetry, not a per-change verdict file in the repo; the lock is manual and per directory, not derived from the work | 2026-09-08, `review/sections/adversarial.md`, `ship/SKILL.md` |
 
 What to lead with here: they have converged on our shape (file-based
-state, fresh-context seats, plans naming files and criteria) — which
-is the argument that the shape is right — and none of them has a
-verifier that is blind, a fence that is enforced, or a record that
-keeps itself honest. What to concede: install, breadth, community,
-and lighter ceremony for small work.
+state, fresh-context seats, plans naming files and criteria, an
+adversarial verifier) — which is the argument that the shape is right
+— and none of them has a verifier that CANNOT read the builder, a
+fence that is proved disjoint and refused at the write, or a record
+that keeps itself honest. What to concede, in their words: install,
+breadth (browser QA, security audits, deploy and canary, memory),
+community, lighter ceremony for small work — and, for GSD Core, a
+verifier that is adversarial and a ship step that is binding. Never
+write "they have no verdict"; it stopped being true in 2026.
 
 ## Class 3 — agent apps and boards (defract, Conductor, Vibe Kanban, Nimbalyst)
 
 | | what they do well | where they stop short | reading |
 |---|---|---|---|
-| **defract** | a desktop app, local-first, bring-your-own Claude: story → HTML mockups → architecture → parallel worktree agents → review → release; pitches "the app instead of a skills stack" | no verdict, no fence beyond the worktree, no planning interview producing governing docs, no architecture map; Claude-only today | 2026-09-08 (seat's reading; T-245 verifies) |
+| **defract** | a desktop app, local-first, bring-your-own Claude: story → HTML mockups → architecture → parallel worktree agents → review → release; pitches "the app instead of a skills stack" | as far as a product site shows (no repository to read): no verdict, no fence beyond the worktree, no planning interview producing governing docs, no architecture map; Claude-only today | 2026-09-08, defract.dev only (T-245) |
 | **Conductor / Vibe Kanban / Nimbalyst** | polished parallel-session boards; Vibe Kanban had the most stars in the category | all start AFTER someone decided what the tasks are; category mortality — the two highest-starred died or went dormant in 2026 with traction | 2026-08-30 |
 
 ## Class 4 — spec methods (Spec Kit, Kiro, agentplane)
@@ -101,7 +111,7 @@ and lighter ceremony for small work.
 
 ## Owed before any page ships
 
-- T-245 lands (Class 2 and defract verified, the map gains its ring).
+- T-245 LANDED 2026-09-08 (Class 2 verified from the projects' own files; defract from its site only).
 - Notion mapped, or dropped from the page list.
 - The timed genesis run exists (the "30 minutes from idea to a fenced
   board" claim counts only once it is measured — map, supporting moves).

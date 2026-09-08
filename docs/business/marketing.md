@@ -146,5 +146,6 @@ Open work this file owes next: grow plan.md's pricing frames into
 decision-ready options once the v1 version sitting rules the cut
 line; the launch-post outline under the M3 lead; the comparison-page
 plan (the steal list's one-person distribution engine) — its source
-doc is docs/business/comparisons.md (skeleton 2026-09-08, gated on
-T-245 and on Notion being mapped).
+doc is docs/business/comparisons.md (skeleton 2026-09-08; T-245 landed the same day with the map's Ring 2
+addendum and conclusion 6 — the verdict's CONSTRUCTION is the claim now,
+not its existence; still gated on Notion being mapped).
