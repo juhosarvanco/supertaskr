@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "@human ruling (2026-09-08, version sitting): \"approve the v1 five\" — GSD Core's prompt-injection guard on .planning/ writes (T-245); nputer's docs/ is read by every seat and scanned by nothing"
 blocked_by: []
 touches: [tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
