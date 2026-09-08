@@ -1,11 +1,11 @@
 ---
 id: T-239-s6
 title: The arm's step-1 pathspec is load-bearing in production and no body can detect its removal — the ritual fixture's only dirty path at step 1 IS the card, so `-- plan.card` and `-- .` commit the same tree and the mutation is EQUIVALENT
-feature: F-06
+feature: F-04
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 9
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-239-s4, measured at 50b83d4, 2026-09-08
 blocked_by: []
 touches: [tools/e2e/tests/brief.spec.ts]
@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 ## The finding
@@ -75,3 +75,25 @@ Out of that card's question. T-239-s4 is the fixture's git identity; this
 is the arm's pathspec, and the two share only the function they sit in.
 The finding is a SUGGESTION and blocks nothing (method/roles/verifier.md
 step 6).
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as filed: one body in brief.spec.ts's ritual section, F-04
+milestone 4, S, p9. The fixture cannot express the condition today
+(its only dirty path at step 1 is the card), so the body plants a
+second dirty tracked path first.
+
+## Acceptance criteria
+
+- WHEN the ritual fixture carries a SECOND dirty tracked path beside
+  the card at step 1 THE arm's step-1 commit SHALL contain exactly the
+  card path, and the second path SHALL remain uncommitted afterwards
+  (`git show --name-only` on the stamp commit; `git status --porcelain`
+  after it).
+- IF the pathspec at dispatch-brief.mjs's step-1 commit is replaced by
+  `-- .` or removed THEN that body SHALL red, naming the swept path —
+  the poison drill's mutant, landing read from `git diff`, restoration
+  proved by sha256.
+- IF the fixture's second dirty path is absent THEN the body SHALL
+  fail on its own precondition rather than pass vacuously (a control
+  that cannot fail is the defect class T-229 names).

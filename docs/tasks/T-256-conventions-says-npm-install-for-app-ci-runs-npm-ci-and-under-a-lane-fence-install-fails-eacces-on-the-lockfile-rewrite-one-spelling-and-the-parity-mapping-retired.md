@@ -33,6 +33,17 @@ paragraph should say so in its order, not only in its warning.
 
 ## Acceptance criteria
 
+- WHEN CONVENTIONS' RUN THE SUITE ONCE IN A BORROWED GIT ENVIRONMENT
+  bullet publishes its recipe THE recipe SHALL also suppress git's
+  identity AUTO-DETECTION (`-c user.useConfigOnly=true`, or the
+  `GIT_AUTHOR_*`/`GIT_COMMITTER_*` variables unset AND
+  `user.useConfigOnly=true`), and the bullet SHALL say why: the two
+  `GIT_CONFIG_*=/dev/null` variables suppress config FILES only, so on a
+  host whose hostname carries a dot the recipe answers green and
+  reproduces no runner red (T-239-s4's class; measured at 0f6b37f).
+- IF the recipe is run against the T-239 ritual fixture at 0f6b37f THEN
+  it SHALL reproduce the runner's exit 128 (the control T-239-s4's
+  verifier took at the base: `useConfigOnly` arming 1 failed / 56 passed).
 - WHEN CONVENTIONS' Build & test bullet is read THE app/ install line
   SHALL say `npm ci`, and the parity spec's install→ci mapping (the
   `steps: [{ dir: "app", run: "npm ci" }]` entry with its reason) SHALL
@@ -51,3 +62,5 @@ paragraph should say so in its order, not only in its warning.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Absorbs: T-239-s5 (2026-09-08, triage at the wave sitting) — the borrowed-git recipe's identity gap, measured by the T-239-s4 executor at 0f6b37f; the file is removed in this commit, this line is the surviving record.

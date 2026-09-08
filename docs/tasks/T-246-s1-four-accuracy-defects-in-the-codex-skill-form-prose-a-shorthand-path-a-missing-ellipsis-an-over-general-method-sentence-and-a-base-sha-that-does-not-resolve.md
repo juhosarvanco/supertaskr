@@ -1,11 +1,11 @@
 ---
 id: T-246-s1
 title: Four accuracy defects in the Codex skill-form prose — a shorthand path inside backticks, a verbatim block with no ellipsis, an over-general method sentence, and a base sha that does not resolve
-feature: F-04
+feature: F-01
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 16
+status: planned
 suggested_by: verifier claude-opus-5@subagent @T-246
 blocked_by: []
 touches: [docs/design/cross-harness-plan.md, docs/research/captures]
@@ -13,7 +13,7 @@ builder:
 verifier:
 built_by:
 verified_by:
-review: independent
+review: self-verified
 ---
 
 T-246's measurements all reproduce — a second seat re-ran every capture
@@ -62,3 +62,7 @@ pass over two files instead of four separate corrections.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as filed: four prose corrections in the T-246 capture and the cross-harness plan, docs-only (the S row that self-integrates, no verifier owed), F-01 milestone 4, p16. The criteria above stand as written by the verifier.
