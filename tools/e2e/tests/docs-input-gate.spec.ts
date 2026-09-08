@@ -1750,6 +1750,90 @@ test("THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live do
   expect(printedHits.length, "the binary printed exactly the derived hits").toBe(expected.length);
 });
 
+test("EVERY hit in one file is printed, not only the first — three hits on three lines under two patterns, each with its file, line and pattern name", () => {
+  // CRITERION ONE SAYS *EACH* HIT, AND THIS IS THE LIMB THE BODY ABOVE
+  // CANNOT DEFEND. That body's expected side is `scanInjection`'s own
+  // return, so both sides of its comparison move together; and its
+  // subject set is this repository's live docs/, which carries at most
+  // ONE hit in any single file. A scan that collapsed a file's hits to
+  // the first is therefore invisible to it, and to every other body
+  // here: the only per-text counts above are `toBe(1)`.
+  //
+  // MEASURED, NOT ARGUED — `if (hits.length > 0) break;` inside
+  // `scanInjection`'s match loop drops two of the three hits below, and
+  // the whole of this file stays green without this body.
+  //
+  // SO THE EXPECTATION IS TYPED, NEVER DERIVED. The three line numbers,
+  // the count and the two-pattern spread are literals this body chose.
+  // Only the payload TEXT comes from the table, because a pattern's own
+  // planted positive is the one text it is PROVED to match (the controls
+  // above), and a hand-written payload would be a second pattern set.
+  const j1 = INJECTION_PATTERNS.find((p) => p.id === "J1");
+  const j2 = INJECTION_PATTERNS.find((p) => p.id === "J2");
+  expect(j1, "the fixture's first pattern is in the table").toBeTruthy();
+  expect(j2, "and so is its second").toBeTruthy();
+  // THE PREMISE, ASSERTED (SHAPE TEN): three hits spread over TWO
+  // patterns. One pattern with three hits would leave a scan that stops
+  // at the first PATTERN alive; two patterns with one hit each would
+  // leave a scan that stops at the first HIT inside a pattern alive.
+  const EXPECTED = [
+    { line: 3, pattern: j2! },
+    { line: 9, pattern: j2! },
+    { line: 15, pattern: j1! },
+  ];
+  expect(EXPECTED.length, "three hits, so `each` has something to mean").toBe(3);
+  expect(new Set(EXPECTED.map((e) => e.pattern.id)).size, "spread over two pattern ids").toBe(2);
+
+  // THE FIXTURE IS A REAL FILE UNDER docs/, because the criterion is
+  // about what the GATE PRINTS and the gate resolves its root from its
+  // own location — there is no root to point it at. It is scratch, named
+  // for this lane (SCRATCH RULE), untracked, and removed in a `finally`
+  // so an assertion failure below still leaves the tree as it found it.
+  const rel = "docs/rooms/zz-each-hit-T-248.md";
+  const abs = path.join(repoRoot, rel);
+  const lines = Array.from({ length: 15 }, () => "pad");
+  for (const { line, pattern } of EXPECTED) lines[line - 1] = pattern.positive;
+  expect(existsSync(abs), "the fixture path is free — this body clobbers nothing").toBe(false);
+
+  const run = ((): { code: number; out: string } => {
+    writeFileSync(abs, `${lines.join("\n")}\n`, "utf8");
+    try {
+      return runGate([rel]);
+    } finally {
+      rmSync(abs, { force: true });
+    }
+  })();
+  expect(existsSync(abs), "and it is gone again").toBe(false);
+
+  // ALL THREE ARE PRINTED. This is the assertion the mutant dies on: a
+  // scan that stops after its first hit prints ONE line here.
+  const printed = run.out
+    .split("\n")
+    .filter((l) => l.startsWith("  injection  ") && l.includes(rel));
+  expect(printed.length, "every hit in the file is printed, not only the first").toBe(3);
+
+  // AND EACH CARRIES THE THREE THINGS THE CRITERION NAMES, in the line
+  // order the scan sorts into — so a reporter that printed three lines
+  // for one hit, or lost the line number on the second, fails here
+  // rather than passing on the count alone.
+  EXPECTED.forEach(({ line, pattern }, i) => {
+    expect(
+      printed[i]!,
+      `hit ${i + 1}: the FILE and the LINE, joined the way an editor takes them`,
+    ).toContain(`${rel}:${line}`);
+    expect(printed[i]!, `hit ${i + 1}: the pattern's NAME, id and all`).toContain(
+      `[${pattern.id}: ${pattern.what}]`,
+    );
+  });
+
+  // THE SUMMARY AGREES WITH THE LINES BENEATH IT. A count taken from
+  // somewhere other than the lines is what would let three printed hits
+  // sit under a summary saying one.
+  expect(run.out, "the summary counts the same three").toContain(
+    "3 hit(s) in 1 of 1 path(s) scanned under docs/",
+  );
+});
+
 test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a scan made blocking", () => {
   // IF A BODY CANNOT BE POISONED, SAY SO AND NAME IT (POISON DRILL).
   // This one is the honest half of the body above, and it is written
