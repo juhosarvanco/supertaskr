@@ -34,7 +34,7 @@ use super::skills;
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.9";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.10";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
@@ -580,12 +580,12 @@ mod tests {
         // planner creates the .gitignore line that keeps the runtime
         // directory (and so the materialized kit) out of the project's git.
         //
-        // T-264: THE NEEDLE IS THE PRE-RENAME SPELLING, DELIBERATELY, AND
-        // MOVES AT T-265. `interview` is `method/interview/plan-interview.md`
-        // compiled in verbatim; that file is outside this lane's fence, so
-        // the needle names what the SHIPPED text says rather than what this
-        // repository's own code now spells.
-        assert!(interview.contains("`.nputer/`"), "stage 0 must still bank the .gitignore line");
+        // T-265: the needle is the SHIPPED spelling, which is now the
+        // renamed one. `interview` is `method/interview/plan-interview.md`
+        // compiled in verbatim, so this assertion and that file's stage-0
+        // cell move together; T-264 held both at the old spelling because
+        // method/ was outside its fence (ADR-022 decision 2).
+        assert!(interview.contains("`.supertaskr/`"), "stage 0 must still bank the .gitignore line");
         assert!(interview.contains("docs-templates/"));
     }
 

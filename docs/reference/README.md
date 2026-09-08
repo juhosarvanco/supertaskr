@@ -47,7 +47,7 @@ what ships when is docs/VERSIONS.md.
 
 ## The vocabulary in one screen
 
-- **The method** — the versioned convention in method/ (v0.1.9): role
+- **The method** — the versioned convention in method/ (v0.1.10): role
   contracts, the lane protocol, the task format, the docs protocol, the
   interview, templates and adapter files. A project copies it in.
 - **The Loop** — one card's journey: born, triaged, dispatched, built in

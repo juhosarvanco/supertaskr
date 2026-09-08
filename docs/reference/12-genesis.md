@@ -9,7 +9,7 @@ method/interview/decomposition.md; the kit is method/ itself.
 
 ## The kit
 
-method/ is a versioned package (v0.1.9) a project copies in whole:
+method/ is a versioned package (v0.1.10) a project copies in whole:
 
 ```
 method/

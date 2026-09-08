@@ -24,7 +24,7 @@ with the app as the mirror.
 
 | area | in v1 | where (status read 2026-09-03) |
 |---|---|---|
-| Method (F-01) | the convention, versioned and eval-gated; genesis ships it into any folder | shipped, v0.1.9 |
+| Method (F-01) | the convention, versioned and eval-gated; genesis ships it into any folder | shipped, v0.1.10 |
 | Interview (F-03) | seven questions → the five governing docs, first cards, a board; ONE interview in two lenses — the skill in the native agent app is PRIMARY (ADR-021 Addendum 1), the app's split view stays as shipped | shipped; T-242 planned p1 |
 | — charter 01 Skill Packs | skills loaded into genesis, stamped into the record | T-167 done |
 | — charter 03 Customization by Interview | more interview, not a settings screen | T-173 planned (size L) |
