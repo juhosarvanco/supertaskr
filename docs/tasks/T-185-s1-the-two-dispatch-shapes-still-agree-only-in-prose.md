@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 3
 size: S
-status: planned
+status: parked
 blocked_by: []
 suggested_by: executor claude-opus-5@subagent @T-185 (2026-08-31) — routed from inside the lane rather than widening its fence
 touches: [app-dispatch, app-board, docs/architecture/components/C-15-dispatch.md, app/test/architecture-dogfood.test.ts]
@@ -107,3 +107,7 @@ The fence already reaches all four paths. `review: independent` set.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+## Parked (2026-09-09, the architect seat)
+
+ADR-021 (2026-09-03) and its addendum (2026-09-08) took the in-app dispatch and every in-app spawn path out of v1: the app spawns nothing and the seat drives from the agent app over the CLI. This card's subject is the Rust/in-app dispatch surface (app-dispatch, C-15). **Returns when** the cockpit returns to a version (docs/VERSIONS.md, v2: "not before v2, and only on evidence a user wants it") or when C-15's slug is next dispatched for any other reason; re-derive its need at that ref before building.

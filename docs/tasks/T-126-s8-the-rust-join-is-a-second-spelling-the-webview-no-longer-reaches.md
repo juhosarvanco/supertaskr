@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 4
-status: planned
+status: parked
 suggested_by: "T-126-s2's executor, which built the ruled shape and found the disposition of the Rust half was a decision the ruling did not take"
 blocked_by: []
 touches: [app-dispatch, app-shell]
@@ -82,3 +82,7 @@ does not join, and that sentence is falsified by disposition 1.
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-126-s2 merge
 
 The architect seat. The Rust join has no non-test caller but brief.rs and lanes.rs hold it; its disposition is a design call, not a deletion. No dispatch follows today by the user's instruction.
+
+## Parked (2026-09-09, the architect seat)
+
+ADR-021 (2026-09-03) and its addendum (2026-09-08) took the in-app dispatch and every in-app spawn path out of v1: the app spawns nothing and the seat drives from the agent app over the CLI. This card's subject is the Rust/in-app dispatch surface (app-dispatch, C-15). **Returns when** the cockpit returns to a version (docs/VERSIONS.md, v2: "not before v2, and only on evidence a user wants it") or when C-15's slug is next dispatched for any other reason; re-derive its need at that ref before building.

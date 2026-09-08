@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: parked
 suggested_by: "T-126-s2's executor, from inside the [app-board, app-dispatch] fence that reaches the join and neither of its callers"
 blocked_by: []
 touches: [app-shell, app-dispatch]
@@ -100,3 +100,7 @@ sites in `app/src` and `app/src-tauri/src`.
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-126-s2 merge
 
 The architect seat. The door: nothing passes a dispatch prop to Board, and the shipped app does not render the block; F-04 product work, with T-126-s1 parked as its ruling. No dispatch follows today by the user's instruction.
+
+## Parked (2026-09-09, the architect seat)
+
+ADR-021 (2026-09-03) and its addendum (2026-09-08) took the in-app dispatch and every in-app spawn path out of v1: the app spawns nothing and the seat drives from the agent app over the CLI. This card's subject is the Rust/in-app dispatch surface (app-dispatch, C-15). **Returns when** the cockpit returns to a version (docs/VERSIONS.md, v2: "not before v2, and only on evidence a user wants it") or when C-15's slug is next dispatched for any other reason; re-derive its need at that ref before building.

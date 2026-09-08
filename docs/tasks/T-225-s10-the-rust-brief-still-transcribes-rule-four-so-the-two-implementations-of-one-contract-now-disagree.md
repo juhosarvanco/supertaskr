@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: parked
 suggested_by: executor claude-opus-5@subagent @T-225-s2
 blocked_by: []
 touches: [app-dispatch]
@@ -57,3 +57,7 @@ not be a byte pin.
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 3, at the T-225-s2 merge (6691fc5)
 
 The architect seat. Two implementations of one contract row now differ by thirteen kilobytes; serialised with T-205-s2 on app-dispatch.
+
+## Parked (2026-09-09, the architect seat)
+
+ADR-021 (2026-09-03) and its addendum (2026-09-08) took the in-app dispatch and every in-app spawn path out of v1: the app spawns nothing and the seat drives from the agent app over the CLI. This card's subject is the Rust/in-app dispatch surface (app-dispatch, C-15). **Returns when** the cockpit returns to a version (docs/VERSIONS.md, v2: "not before v2, and only on evidence a user wants it") or when C-15's slug is next dispatched for any other reason; re-derive its need at that ref before building.
