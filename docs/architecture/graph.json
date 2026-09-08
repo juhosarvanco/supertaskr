@@ -25566,7 +25566,7 @@
       "id": "f:lib/parser/src/lanes.ts",
       "path": "lib/parser/src/lanes.ts",
       "lang": "ts",
-      "hash": "blake3:0c080b635e7cc9cb7de4e8ddedf06c67f1c2989a39c0e96388dda1e2ddbd34b6",
+      "hash": "blake3:675be9e2013a09e87e59f9b70290225dc7367d278ad9e4d08c2d015e3c171b79",
       "loc": 989,
       "symbols": [
         {
@@ -26869,8 +26869,8 @@
       "id": "f:lib/parser/test/lanes.test.ts",
       "path": "lib/parser/test/lanes.test.ts",
       "lang": "ts",
-      "hash": "blake3:86b93821df36737e2cece15a3082fac5aa1d938a6016a4304de8583043975120",
-      "loc": 1070,
+      "hash": "blake3:a45aef44d092d32c8495538ede1deb964958cb1f1621da3c41e348ad2c16d1b1",
+      "loc": 1083,
       "symbols": [
         {
           "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",
