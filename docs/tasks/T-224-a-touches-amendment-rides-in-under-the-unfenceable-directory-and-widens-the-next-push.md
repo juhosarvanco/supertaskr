@@ -144,9 +144,10 @@ announced code, never a refusal and never a silent allow.
 exonerated when the TIP's line is character for character the line the
 same card carries on the integration branch (the lane arm reads that at
 `rev`, the merge arm at the FIRST PARENT). **The dispatch brief's claim
-that a fast-path-A grant "never appears in a lane's own range" is true of
-two deliveries and false of the third, which is the one the repository
-prescribes**: `method/lane-protocol.md`'s fast path A says the amendment
+that a fast-path-A grant "never appears in a lane's own range" holds for
+a lane CUT after the amendment and for a lane that MERGES main down, and
+fails for the delivery the repository itself prescribes**:
+`method/lane-protocol.md`'s fast path A says the amendment
 goes onto the integration branch AND *"into the lane's working copy of
 the card"*, so an unsynced lane commits, inside its own
 merge-base-to-tip range, a line its base does not carry. Without the
