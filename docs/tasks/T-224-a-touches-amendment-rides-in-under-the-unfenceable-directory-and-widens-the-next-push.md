@@ -310,3 +310,40 @@ half was re-run at the true tip; the integrator re-derives at the merge.
 - `T-224-s3` — fast path A's lane-side write is now exonerated by name,
   and neither method file says so. **Out of fence** (`method/`), which is
   why it is a card and not an edit.
+
+### Addendum — the seventh body, and the branch it closes
+
+Written after the notes above, because reading the diff back found a
+BRANCH OF THIS ARM WITH NO BODY, and on this board it is the common case
+rather than a corner. A component SLUG cannot be expanded inside the
+hook's dependency budget (`T-220`), so a slug-fenced lane's out-of-domain
+paths reach the announced cannot-compare instead of a verdict. This arm
+is asked THERE too — after the containment arm, never instead of it — so
+that `T-224`'s fix is not inert for every lane whose fence names a
+component. Nothing in the suite measured that until now: a change making
+the arm skip an unresolvable fence reddened NOTHING.
+
+`landing-gate.spec.ts` gains *"a fence this gate cannot RESOLVE does not
+excuse an amendment — the arm is asked there too"*, a pair inside one
+fixture: the same unjudged path with NO amendment is ALLOWED and
+announced (so the refusal below cannot be the path's), and the same fence
+plus the amendment is REFUSED.
+
+**The drill, second pass**, same detached scratch worktree recut at the
+commit above, same `git diff -U0` landings and sha256 restoration proof:
+
+| mutant | one-side change | exit | bodies RED |
+|---|---|---|---|
+| the arm SKIPPED where the fence is unresolvable | `range.paths` → `read.fence.unusable.length > 0 ? [] : range.paths` | 1 | **1**: the new body alone — 42 passed |
+| the comparison DELETED, against the widened body set | `if (before.line === after.line)` → `if (true)` | 1 | **5**: the four above plus the new body — 38 passed |
+
+BASELINE first, in the recut worktree: 43 passed, exit 0. Both
+restorations PROVED against the same pristine sha256
+`093970bd…f51707` the first pass used, which is also the measurement
+that the first pass restored the file exactly: two independent drills,
+two commits apart, hashing the same bytes.
+
+Body count 42 → 43; `npm run typecheck` from tools/e2e **0**;
+`npx playwright test tests/landing-gate.spec.ts` **0**, 43 passed. The
+suite figures in the table above were measured at the previous commit
+and re-run at this one; the re-runs are in the executor's report.
