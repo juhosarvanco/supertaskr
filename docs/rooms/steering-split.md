@@ -1,3 +1,10 @@
+---
+type: consultation
+task: 
+status: resolved
+max_rounds: 3
+---
+
 # Room: the steering split — how much is steered from nputer, how much from Claude or Codex
 
 Opened 2026-08-30 at @human's directive, in @human's own words:

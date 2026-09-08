@@ -1,3 +1,10 @@
+---
+type: consultation
+task: 
+status: open
+max_rounds: 3
+---
+
 # Room: version planning — which charter features build v1, which wait
 
 Opened 2026-08-30 at @human's directive: *"I don't want all the

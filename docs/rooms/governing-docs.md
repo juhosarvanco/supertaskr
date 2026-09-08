@@ -1,3 +1,10 @@
+---
+type: consultation
+task: 
+status: resolved
+max_rounds: 3
+---
+
 # Room: what may the governing documents contain, and who keeps each sentence true? (resolved 2026-08-27)
 
 Opened 2026-08-27 at @human's direction, after a review of the four

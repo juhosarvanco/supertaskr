@@ -1,3 +1,10 @@
+---
+type: consultation
+task: 
+status: open
+max_rounds: 3
+---
+
 # Room: team enablement — several developers, one repo, one board
 
 Opened 2026-08-30 at @human's request, from the question: *if we want

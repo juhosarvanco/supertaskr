@@ -1,3 +1,10 @@
+---
+type: consultation
+task: T-166
+status: open
+max_rounds: 3
+---
+
 # Room: loop customization and org-skills import
 
 Opened 2026-08-30 at @human's directive: *build easy customization

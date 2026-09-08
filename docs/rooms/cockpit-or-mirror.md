@@ -1,3 +1,10 @@
+---
+type: consultation
+task: 
+status: resolved
+max_rounds: 3
+---
+
 # Room: is nputer the cockpit or the mirror? (resolved 2026-08-20)
 
 ## The question, as the human asked it
