@@ -56,3 +56,7 @@ an hour.
 - A body SHALL red when the wait is shortened below the harness's
   measured load time on the fixture tree (the drill's mutant), and
   pass at the landed budget.
+
+## Classification (2026-09-08)
+
+The failed job was re-run once (`gh run rerun 34242106460 --failed`): **completed success, linux=success**. Same tree, same runner class, six reds then zero — an INTERMITTENT of the timing class, not a deterministic red. Main is green on CI at f9ec5eb. The card stands: a wait that passes on the second try is a wait whose budget was never derived.
