@@ -46,6 +46,13 @@ T-241 and T-242 cannot claim a Codex form until this exists.
 - IF no reusable-prompt mechanism exists on this machine's Codex
   version THEN the addendum SHALL say so and name the fallback (a
   pasted brief), and the cards SHALL ship the Claude form alone.
+- **Added 2026-09-08 from the GSD Core read:** WHEN the Codex form is
+  measured THE capture SHALL also record whether the ChatGPT app's
+  Codex and the CLI accept an MCP server, and how — GSD ships a
+  `gsd-mcp-server` over its command and state interface points, and one
+  MCP surface onto `npx nputer`'s verbs and the parsed board may be the
+  vendor-neutral driver ADR-021 Addendum 1 wants; T-241 and T-244 weigh
+  it against per-vendor skills once this capture exists.
 - Nothing under method/ or app/ moves; the docs gate SHALL be run.
 
 ## Implementation notes

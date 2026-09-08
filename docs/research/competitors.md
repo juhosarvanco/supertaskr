@@ -302,7 +302,7 @@ code from a work item. The standalone-planning window is narrowing.
    |---|---|---|---|---|
    | a DIFFERENT MODEL verifies | no — per-role choice inside one harness | by configuration; default Sonnet on Sonnet | **yes** — Codex pass by default, honest fallback | no verifier |
    | DENIED the builder's reasoning | no — reads the report, told not to trust it | no — reads SUMMARY.md, told to falsify it | no — same session context | no |
-   | a BINDING verdict stops the merge | in the orchestrator's loop only | **yes at ship** — `/gsd-ship` refuses unless `passed`; blocking capability gates halt; the raw `git push` is not refused | no — advisory | no |
+   | a BINDING verdict stops the merge | in the orchestrator's loop only | **yes at ship** — `/gsd-ship` refuses unless `passed`; blocking capability gates halt; the raw `git push` is not refused; and see the open item below — on Claude Code's autonomous path the verify step itself can be SKIPPED before ship ever asks | no — advisory | no |
    | the exchange is A FILE IN YOUR REPO | no — the workspace is deleted when clean | **yes** — VERIFICATION.md under `.planning/` | partly — a decision log, no verdict file | no |
 
    The claim survives, and every clause still excludes somebody — but
@@ -410,6 +410,20 @@ candidate in docs/VERSIONS.md's UNRULED section, never a card by itself**
 - Setup with zero model round-trips (pi-gsd's WXP): the brief assembler
   already does this; the lesson is to keep every ritual step out of the
   model's hands.
+- **An MCP transport onto the CLI and the board** (GSD's `gsd-mcp-server`
+  over its `command` and `state` interface points; read 2026-09-08): Claude
+  Code and Codex both speak MCP, so one server exposing `npx nputer`'s
+  verbs and the parsed board would let ANY MCP-capable app drive the loop
+  without a per-vendor skill format — the vendor-neutral answer to
+  ADR-021 Addendum 1, and a candidate surface for T-241/T-244/T-246 to
+  weigh against skills. A host-integration interface with declared
+  axes and a version handshake is the same idea at engine scale; not
+  for v1.
+- A skipped gate that is loud, never silent, when a capability fails to
+  load (GSD's overlay model, #2009): parity with the checkpoint
+  template's rule — worth citing when the claim is made that the record
+  discipline is ours alone; the discipline of gates is shared, the
+  discipline of RECORDS is not.
 
 **Negative lesson, 2026-09-08:** an adversarial INSTRUCTION is one
 release away for anyone; only a MECHANISM (the verifier cannot read what
@@ -443,6 +457,24 @@ it is denied) is a claim. Never let a nputer sentence rest on "told to".
   project whose next release could close the "denied" clause; re-read
   `agents/gsd-verifier.md` and `workflows/ship.md` before every launch
   material.
+- **GSD Core's verifier can be silently dropped on Claude Code** — their
+  own words (docs/explanation/claude-orchestration-capability.md, read
+  2026-09-08, identical on `main` and `next`): backgrounded agents on
+  Claude Code cannot nest subagents, so "the autonomous loop therefore
+  falls back to inline sequential execution — and with it silently
+  drops wave parallelism, the plan-checker, and the verifier — on the
+  one runtime most GSD users run." The fix is a default-off BETA
+  capability gated on Agent SDK ≥ 0.3.149. Until it is on by default,
+  "binding at ship" gates a verification that may never have run.
+  nputer's verifier is a property of the spawn (T-205) and the landing
+  gate refuses a merge with no verdict — there is no path around it.
+  Re-check the capability's default before any comparison page ships.
+- **GSD Core is an embeddable engine, not only a skill set** (their
+  Embeddable Orchestration System: six interface points, eight
+  negotiated axes, a protocol-version handshake, fourteen runtimes as
+  descriptors, a VS Code extension, and a `gsd-mcp-server` exposing
+  `command` and `state` over MCP). That is the "be the engine hosts
+  delegate to" move already made; see the steal list.
 - gstack's Codex pass is on by default (2026-09-08): "a different model"
   is no longer exclusive; the claim's weight moves to "denied".
 - Notion: named by @human 2026-09-08 for the comparison pages; not
@@ -465,7 +497,12 @@ docs/explanation/the-phase-loop.md, multi-agent-orchestration.md;
 docs/ARCHITECTURE.md; docs/CONFIGURATION.md; docs/reference/gate-predicates.md,
 review-verification-capabilities.md; agents/gsd-verifier.md,
 gsd-executor.md; hooks/gsd-agent-isolation-guard.js, gsd-read-guard.js,
-gsd-prompt-guard.js; gsd-core/references/gates.md; gsd-core/workflows/ship.md);
+gsd-prompt-guard.js; gsd-core/references/gates.md; gsd-core/workflows/ship.md;
+docs/explanation/ — all ten, on `next` and `main`: capability-overlay-model,
+capability-trust-model, claude-orchestration-capability, context-engineering,
+embeddable-orchestration-system, interface-versioning-policy,
+live-dom-uat-capability, multi-agent-orchestration, security-model,
+the-phase-loop);
 github.com/garrytan/gstack (README; review/SKILL.md,
 review/sections/adversarial.md; ship/SKILL.md); github.com/fulgidus/pi-gsd
 (README); defract.dev and its post "Claude Code skills frameworks";
