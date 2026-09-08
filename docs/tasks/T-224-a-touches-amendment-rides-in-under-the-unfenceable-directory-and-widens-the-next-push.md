@@ -51,7 +51,7 @@ card, so lane A can widen lane B's fence.
 Not a demand that the gate refuse writes to `docs/tasks`. That would
 refuse every lane's status stamp and every set of implementation notes,
 and it is the collision rule 5 says a fence-versus-fence comparison
-"cannot discover, ever". The directory stays unfenceable.
+cannot discover, ever. The directory stays unfenceable.
 
 ## What to build
 
