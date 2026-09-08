@@ -58,6 +58,29 @@ cannot discover, ever. The directory stays unfenceable.
 
 ## What to build
 
+**AMENDED 2026-09-08 AT DISPATCH, BEFORE THE DIFF EXISTS (orchestrator 5c;
+measured by the blind phase 1's attack A1.1 and the dispatcher's ground
+truth GT-9 at dfe35a5): the comparison in the first bullet is NOT
+"base against tip". T-264's real fast-path-A grant (ebc51bc on main)
+left the lane's copy of the card carrying the widened line, committed
+BY THE LANE at 873d6d0, with no merge of main into the lane — so at the
+lane's merge-base the line is OLD and at its tip NEW, and a base-vs-tip
+rule would refuse a grant triage made. THE RULE IS: for every card file
+in the range, compare the `touches:` line AT THE RANGE'S TIP against the
+line ON THE INTEGRATION REF the fence itself is read from (the same ref,
+resolved once, as it stood before the push; the merge's first parent for
+a merge on an integration push). A tip line that EQUALS main's is a
+delivered grant or no change: ALLOWED. A tip line that DIFFERS from
+main's is an amendment riding in: REFUSED, naming the card, main's line
+and the tip's line, whether the card is the lane's own or a sibling's.
+A card ABSENT on the integration ref (filed in the range) is ALLOWED and
+DISCLOSED: its fence governs a future push this gate does not judge; a
+card id present on main under another path is resolved by id, not path,
+so delete-and-re-add and rename do not evade the comparison. The
+positive control and the disclosure bullets stand as written; the spec
+SHALL carry a body that replays T-264's exact shape and is ALLOWED, and a
+body where the tip line differs from main's and is REFUSED.**
+
 - **Judge the `touches:` LINE, not the file.** For every card file in
   the range, read `frontmatterLineOf(text, "touches")` at the range's
   base and at its tip and compare the two strings. The file may change
