@@ -77,3 +77,27 @@ at `90038e9` and inherited it.
 narrowing that does not help), the DOCS GATE bullet in
 `docs/CONVENTIONS.md` and its two recorded instances `9c64cd8` and
 `fede266`, `T-160` (the preflight).
+
+## DISCHARGED BY OTHER WORK — `closed_by: ab00399`, 2026-09-09
+
+`status:` stays `suggested` and the disposition is TRIAGE's, per
+`docs/CONVENTIONS.md`'s FOURTH QUESTION: *"resolved by other work" is not
+a fourth move and `closed` is not a ninth status*.
+
+Found while deriving this lane's merge forecast, not by asking. The
+architect seat repaired it on `main` at **`ab00399`** — *"T-274's fence
+named the unfenceable directory (docs/tasks) — the seat's own debris …
+the card's fence is `docs/research/` (it is a measurement the seat
+writes), the lanes cut in between attribute the red at their base"* —
+which is both remedies at once: a token that resolves, and NOT the
+own-file narrowing this card warned would move the defect rather than
+repair it.
+
+**MEASURED ON THE MERGE FORECAST**, `git merge-tree --write-tree main
+HEAD` at `main` `b825e879` and `T-219-s6` `9a0a747`, wrapped in a
+throwaway `git commit-tree` (`e782388`, no ref points at it) and checked
+out detached: `npx vitest run` from `lib/parser/` exits **0** with
+**388 passed of 388**. So the three bodies this card was filed for are
+green the moment `T-219-s6` merges, and the only thing left of this card
+is the filing-time gap its last bullet names — which is TRIAGE's to
+promote or park, not a lane's.

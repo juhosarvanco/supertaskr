@@ -340,3 +340,47 @@ about the EXPANSION's refusal; the doc says why in two places and `M2`
 kills the mutant that removes it, but a reviewer who thinks the coupling
 is the wrong shape is arguing with a real decision and not with an
 oversight.
+
+### THE MERGE FORECAST IS GREEN, AND THE RED BASE IS ALREADY DISCHARGED ON MAIN
+
+Derived after the notes above were written, at `main` `b825e879` and this
+lane's tip `9a0a747`. `main` moved past this lane's base while it built,
+and one of the commits it gained is **`ab00399`** — the architect seat's
+own repair of `T-274`'s fence to `docs/research/`. So the three red
+bodies attributed above are a BASE artefact and nothing else.
+
+`git merge-tree --write-tree main HEAD` exits **0** (a tree, not a
+conflict) over **7** paths; wrapped in a throwaway `git commit-tree`
+(`e782388`, no ref points at it) and checked out detached,
+`npx vitest run` from `lib/parser/` exits **0** with **388 passed of
+388**. `T-219-s8` records the discharge with `closed_by: ab00399` and
+keeps `status: suggested`, which is the FOURTH QUESTION's ruled shape.
+
+### THE FOUR LEGS, THROUGH THE BLESSED RUNNER, AT `9a0a747`
+
+| leg | exit | bodies | verdict |
+|---|---|---|---|
+| `gate-run.mjs parser` | 1 | 388 | RED — the 3 base bodies only; 385 passed. GREEN on the merge forecast, above |
+| `gate-run.mjs app` | 0 | 1163 | GREEN |
+| `gate-run.mjs rust` | 0 | 639 (targets 18) | GREEN |
+| `gate-run.mjs e2e` | 0 | 690 | GREEN |
+
+The e2e leg ran ONCE, at the tip, on `SUPERTASKR_E2E_PORT=15219`; `lsof
+-nP -iTCP:15219 -sTCP:LISTEN` was empty before it and after it. The DOCS
+GATE was re-run on the RANGE RULE's own forecast path list and FIRES with
+the same three suites, all three of which are in the table above.
+
+### THE GATES, DERIVED ON THE MERGE FORECAST RATHER THAN ON THIS REF
+
+7 forecast paths: 4 `.ts` under `lib/parser/`, 3 cards under
+`docs/tasks/`.
+
+- **GRAPH REGEN — FIRES** (4 of 7 paths). The integrator regenerates with
+  the checkpoint; a lane never re-pins the dogfood counts (`T-211`).
+- **BOOT GATE — NOT OWED** (0 of 7).
+- **DOCS GATE — FIRES** (3 of 7): `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/`.
+- **METHOD EVAL GATE — NOT OWED** (0 of 7).
+
+This derivation is stated against the tree this tip WILL have, so the
+commit carrying these notes does not move it.
