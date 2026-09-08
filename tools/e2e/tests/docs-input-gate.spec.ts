@@ -1793,12 +1793,24 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
     "the gate calls the scan exactly once, so this window is the whole call site",
   ).toBe(1);
 
-  // The window is the call and its guard — from the statement that opens
-  // the try to the end of its catch. `found` may not appear in it: the
-  // scan's summary is a RETURN VALUE the gate deliberately drops.
-  const from = source.indexOf(anchor);
+  // THE WINDOW OPENS AT THE BLOCK'S OWN COMMENT, NOT AT THE CALL, AND
+  // THAT IS A DRILL RESULT RATHER THAN A PRECAUTION. Written to open AT
+  // the call, this body was measured SURVIVING the exact mutant it
+  // exists to kill: `found += reportInjectionScan(...).hits` puts the
+  // counter immediately BEFORE the anchor, on the same line, so a window
+  // starting at the anchor begins one token past the damage. The failure
+  // was AIMING, not accounting — the bytes moved, the suite ran, and
+  // nothing died. Opening at the block's comment covers every line a
+  // mutant can add to this block, and that opener's uniqueness is
+  // asserted so the haystack cannot widen back to the whole file.
+  const blockOpener = "// THE INJECTION SCAN (T-248), and it sits HERE";
+  expect(
+    source.split(blockOpener).length - 1,
+    "the block opens exactly once, so this window has exactly one start",
+  ).toBe(1);
+  const from = source.indexOf(blockOpener);
   const window = source.slice(from, source.indexOf("if (issues.length > 0)", from));
-  expect(from, "the call site is found").toBeGreaterThan(-1);
+  expect(window, "the window really does contain the call it is about").toContain(anchor);
   expect(window, "the call is guarded, or a bad pattern becomes the gate's exit 3").toContain(
     "catch",
   );
