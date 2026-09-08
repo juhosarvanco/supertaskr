@@ -64,3 +64,22 @@ table says so in one word: C-02 planned. **Size L: dispatch needs
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Folded 2026-09-09 from docs/rooms/loop-efficiency.md (items 18 and 27)
+
+The `merge` verb is the integrator's ritual as one command, and the seat's
+scratch script merge-lane.sh is its prototype (read it: precondition,
+branch moved to the verdict commit, merge --no-ff --no-commit, the done
+stamp by the card's `id:` line, census regen when a spec name moved, the
+graph regen with the dogfood pins re-derived, the docs gate). Two rules
+the room measured belong in it as criteria:
+
+- WHEN a merge brings in sources under app/ or lib/ THE verb SHALL
+  reinstall and rebuild in CONVENTIONS' order BEFORE any suite runs
+  (the integrator ran the battery on a stale bundle at T-018-s5; the
+  dogfood pins redded at T-264's merge until `npm ci` ran in all three
+  packages) — derived from the merge's paths, never remembered.
+- WHEN a merge moves docs/architecture/graph.json THE verb SHALL run
+  the app's dogfood bodies before the commit and re-derive the pins
+  with the dated line the house pattern uses (main was red on the app
+  suite for forty minutes at T-112-s6's merge).

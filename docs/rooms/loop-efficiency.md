@@ -1,10 +1,39 @@
 ---
 type: consultation
-status: open
+status: resolved
 max_rounds: 3
 ---
 
 # Where the development loop loses time, and what would give it back
+
+## RULED 2026-09-09 — @human: *"yes to all four and everything else"*
+
+Walked item by item at the rename sitting, against the board of
+2026-09-09 (the seat's census of every referenced card's status):
+
+- **Discharged by cards that landed or by practice since 2026-09-02:**
+  3 (T-216-s4), 5 (T-225), 6 (T-239), 7 (T-238), 10 (T-237), 14 and 15
+  (the serial ritual and the arm), 17 (the branch moved to the verdict
+  before every merge; merge-lane.sh step 3), 20 (absorbed into T-238),
+  21, 22, 23 (the bench and phase-2 timing, kept as practice on every
+  lane of 2026-09-08), 24 (T-228), 25 (T-216-s8), 26 (T-202-s1), 27
+  (the merge script runs the dogfood pins; T-112-s6). 11 and 12 are
+  lessons: in STATE's hazards and the seat's notes.
+- **On the board, waiting for their lanes:** 1, 28, 29, 30 → T-254 and
+  T-255; 8 → T-234; 13 → T-143-s1 and T-187 (T-187's ask, a lane based
+  on the newest checkpoint reading a stale copy of its card, is
+  discharged by the arm cutting every lane from its own stamp commit —
+  re-derive at its next triage); 31 → T-262 (ruled 2026-09-08); 32
+  recorded, no machine taken.
+- **The four decisions, all yes:** (1) item 2 → T-120-s2 dispatches next,
+  as soon as T-224 lands and frees tools/e2e; (2) item 9 → T-270 filed
+  (a shared npm cache and cargo registry, per-lane targets kept); (3)
+  items 16 and 19 → folded into T-268 (the grant as one arm; the answer
+  names the control a widening invalidates); (4) items 18 and 27 →
+  folded into T-244's `merge` verb (rebuild when sources moved; the
+  dogfood pins at a graph regen), merge-lane.sh named as its prototype.
+
+The room closes; what remains lives on cards.
 
 Opened by the architect seat on the night of 2026-09-01/02 at @human's
 request: *"find ways how to make the development process/loop more

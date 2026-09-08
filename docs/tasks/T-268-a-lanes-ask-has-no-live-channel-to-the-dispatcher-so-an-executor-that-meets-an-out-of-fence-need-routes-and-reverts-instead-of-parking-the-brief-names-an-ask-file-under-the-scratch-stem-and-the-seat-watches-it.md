@@ -64,5 +64,17 @@ file is one more name under it.
   outlives its executor is the retirement condition docs-protocol law 8
   demands, written here because two did on 2026-09-08 (@human: the
   watchers were still running while only a verifier was).
+- WHEN the seat answers an ask with a grant THE grant SHALL be ONE arm
+  (`brief.mjs --grant <card> <path>…`): amend `touches:` on the
+  integration branch and commit, re-expand the lane's manifest (refusing
+  an overlap by construction), deliver the identical line into the
+  lane's copy of the card, and write the answer into the ask file — the
+  seat's half of fast path A typed by hand today (loop-efficiency room
+  item 16, folded here 2026-09-09).
+- WHEN a grant widens a fence THE answer SHALL name the control the
+  widening invalidates: a property that is a function of the fence's
+  arrangement is proved only under a clone fenced like the lanes that
+  owe the gate, and the executor SHALL measure it there (room item 19,
+  folded here 2026-09-09).
 - A brief.spec body SHALL pin that the brief names the ask path and
   that a lane-cut without it is a finding.
