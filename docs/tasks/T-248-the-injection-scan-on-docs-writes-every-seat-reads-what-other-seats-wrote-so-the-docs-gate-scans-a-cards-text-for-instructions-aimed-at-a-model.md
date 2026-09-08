@@ -194,6 +194,17 @@ a subagent tools — that is a construction, not a guarantee, and I say so
 rather than assert a blindness I cannot prove about another spawn. My
 own frame is above.
 
+FRAME CORRECTION, added after the verdict was committed and left visible
+rather than folded into the paragraph above. Verifying my own tip I ran
+`git log --oneline d1603bb..HEAD`, which printed the lane's five commit
+SUBJECTS at me — including two that name the drill's re-aiming. I had
+not read them before; the verdict and every finding above were written
+and COMMITTED at `27cbd9b` before that command ran, so nothing here was
+shaped by them. verifier.md names this exact leak ("two more leaked to
+THEMSELVES with an ordinary `git log` while orienting"), and the rule is
+to say so rather than to have kept a frame I did not keep. I read no
+commit BODY and no executor report at any point.
+
 ---
 
 #### THE FINDING — criterion one's "each hit" limb has no test, and a one-line mutant proves it
