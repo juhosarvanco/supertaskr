@@ -19,7 +19,7 @@ touches: [C-03, src/egress/]   # expected blast radius; orchestrator never
                                # parallelizes tasks with overlapping touches
 suggested_by:            # role, model@session, or human — set on suggestions;
                          # kept after promotion for attribution
-builder:                 # model[@session]; empty = nputer.yaml default
+builder:                 # model[@session]; empty = supertaskr.yaml default
 verifier:                # model[@session]; empty = default (independent)
 built_by:                # stamped on completion, e.g. codex/gpt-5.2 @S3
 verified_by:             # stamped, e.g. claude-fable-5 @fresh

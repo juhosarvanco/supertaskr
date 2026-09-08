@@ -8,7 +8,7 @@ priority: 5
 status: building
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022)"
 blocked_by: [T-264]
-touches: [method/, docs/guide/, docs/reference, docs/NORTH_STAR.md, docs/ROADMAP.md, docs/STATE-template.md, docs/VERSIONS.md, docs/business, docs/research/competitors.md, docs/checkpoints/TEMPLATE.md]
+touches: [method/, docs/guide/, docs/reference, docs/NORTH_STAR.md, docs/ROADMAP.md, docs/STATE-template.md, docs/VERSIONS.md, docs/business, docs/research/competitors.md, docs/checkpoints/TEMPLATE.md, app/src-tauri/src/agent/kit.rs, app/src/genesis/genesis-derive.ts, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/architecture/components/C-01-method.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -26,10 +26,16 @@ bodies, room histories — are not touched (ADR-022 decision 3).
 ## Acceptance criteria
 
 - WHEN method/ is read by a role THE IDENTIFIER spellings there SHALL be
-  the new ones too — method/runtime/nputer.yaml renamed to
-  supertaskr.yaml, and every `.nputer/`, `NPUTER_*`, `npx nputer` and
+  the new ones too — every `.nputer/`, `NPUTER_*`, `npx nputer` and
   `@nputer/` in a role file, the lane protocol, a template or an
-  adapter template — because a role-read path is a program-read path
+  adapter template — because a role-read path is a program-read path.
+  AMENDED 2026-09-08 at the executor's ASK 1: the FILE
+  method/runtime/nputer.yaml is NOT renamed in this lane — its three
+  readers include tools/e2e/scripts/token-scan.mjs, inside T-224's live
+  fence, so the rename lands in T-269 (blocked by T-224 and T-265) with
+  all four moving together; the two prose lines that name the file
+  (planner.md, reference/12-genesis.md) go with it. The rest of this
+  criterion stands
   (ruled at T-264's dispatch, 2026-09-08: method/ is outside T-264's
   fence, so its identifiers are this card's, and T-264's verifier
   routes any it finds here rather than failing T-264 on them).

@@ -1,4 +1,4 @@
-# Archaeology — adopting an EXISTING project (nputer init --existing; greenfield interview is the default path)
+# Archaeology — adopting an EXISTING project (supertaskr init --existing; greenfield interview is the default path)
 
 For repos with history (e.g. months of work in one long session). Run once,
 by a fresh session. The code is ground truth; any session dump or old

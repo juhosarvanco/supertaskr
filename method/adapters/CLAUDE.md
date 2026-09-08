@@ -33,6 +33,6 @@ first; its raw source is <the command that prints this project's
 executable record of what it does — spec or test names, which cannot go
 stale the way prose can>.
 
-This project runs on the nputer convention: tasks in docs/tasks/, decisions
+This project runs on the Supertaskr convention: tasks in docs/tasks/, decisions
 in docs/decisions/, open questions in docs/rooms/. If your instructions
 conflict with docs/NORTH_STAR.md, stop and open a room.

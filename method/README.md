@@ -1,9 +1,11 @@
-# Nputer — a project genesis and multi-session development method
+# Supertaskr — a project genesis and multi-session development method
 
-Nputer (computer minus "co" — Omputer's sibling) is a convention for running big development
-projects with AI coding agents: one planning interview up front, then
-disposable sessions executing one task each, coordinated entirely through
-markdown files in the repo.
+Supertaskr is a convention for running big development projects with AI
+coding agents: one planning interview up front, then disposable sessions
+executing one task each, coordinated entirely through markdown files in
+the repo. One sentence of history: it was called "nputer" (computer
+minus "co" — Omputer's sibling) from 2026-08-14 until 2026-09-08, when
+ADR-022 named it Supertaskr; the records keep the old spelling.
 
 **Core principle: the files are the shared brain — if it's not in the
 repo, it didn't happen.** Sessions and models never
@@ -14,7 +16,7 @@ resumes from disk. Any model that can read files can participate.
 ## The layers
 
 1. **Convention** (this package) — works by hand with any model, no tooling
-2. **CLI** — genesis + dispatch (`nputer init`, `nputer next`, `nputer verify`, `nputer merge`)
+2. **CLI** — genesis + dispatch (`supertaskr init`, `supertaskr next`, `supertaskr verify`, `supertaskr merge`)
 3. **Daemon** — file watcher + @mention routing for rooms
 4. **Dashboard** — story map, architecture map, rooms, sessions — all rendered from files
 
@@ -49,8 +51,8 @@ docs/
   decisions/               append-only ADRs
   tasks/                   one file per task (see tasks/TASK-FORMAT.md)
   rooms/                   consultation and debate threads
-.nputer/
-  nputer.yaml                role → model defaults, thresholds
+.supertaskr/
+  supertaskr.yaml          role → model defaults, thresholds
   sessions.json            session registry (runtime, not project truth)
 ```
 
