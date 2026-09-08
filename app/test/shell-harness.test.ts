@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * T-041 criterion 1 — THE GATE, looked at explicitly rather than
- * inherited. `window.__nputerShellHarness` is a test surface over the
+ * inherited. `window.__supertaskrShellHarness` is a test surface over the
  * shell's own state; it must not exist anywhere a user's app can reach
  * it, and "it sits next to a gated thing" is not evidence of that.
  *
@@ -65,14 +65,14 @@ async function loadStore(runtime: "tauri" | "browser"): Promise<StoreModule> {
 }
 
 beforeEach(() => {
-  delete window.__nputerDocsHarness;
-  delete window.__nputerShellHarness;
+  delete window.__supertaskrDocsHarness;
+  delete window.__supertaskrShellHarness;
 });
 
 afterEach(() => {
   delete (window as unknown as Record<string, unknown>)[TAURI];
-  delete window.__nputerDocsHarness;
-  delete window.__nputerShellHarness;
+  delete window.__supertaskrDocsHarness;
+  delete window.__supertaskrShellHarness;
 });
 
 describe("the gate, runtime half: a Tauri runtime never defines the harness", () => {
@@ -88,10 +88,10 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
     expect(ipc.invoke).toHaveBeenCalledWith("docs_snapshot");
     expect(store.getShellState().phase).toBe("noProject");
 
-    expect(window.__nputerShellHarness, "the shell harness must not exist under Tauri").toBe(
+    expect(window.__supertaskrShellHarness, "the shell harness must not exist under Tauri").toBe(
       undefined,
     );
-    expect(window.__nputerDocsHarness, "nor the docs harness it rides beside").toBe(undefined);
+    expect(window.__supertaskrDocsHarness, "nor the docs harness it rides beside").toBe(undefined);
   });
 
   it("stays undefined after the picker and a status both run", async () => {
@@ -103,7 +103,7 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
     await store.startGenesisHere();
     await store.runIndexRepo();
     store.keepCurrentProject();
-    expect(window.__nputerShellHarness).toBe(undefined);
+    expect(window.__supertaskrShellHarness).toBe(undefined);
   });
 });
 
@@ -124,7 +124,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
     expect(store.isTauriRuntime()).toBe(false);
     await store.startDocsWatcher();
 
-    const harness = window.__nputerShellHarness;
+    const harness = window.__supertaskrShellHarness;
     expect(harness, "the browser DEV bundle must expose the shell harness").toBeDefined();
     expect(Object.keys(harness ?? {}).sort()).toEqual([
       "applyPickOutcome",
@@ -145,7 +145,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("drives the shell's OWN state — the store's public read sees every move", async () => {
     const store = await loadStore("browser");
     await store.startDocsWatcher();
-    const harness = window.__nputerShellHarness;
+    const harness = window.__supertaskrShellHarness;
     expect(harness).toBeDefined();
 
     const seen: string[] = [];
@@ -184,7 +184,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("reaches every phase the shipped shell can reach", async () => {
     const store = await loadStore("browser");
     await store.startDocsWatcher();
-    const harness = window.__nputerShellHarness;
+    const harness = window.__supertaskrShellHarness;
     const probe = { roadmap: false, tasks: false, architecture: false, git: true };
 
     harness?.applyProjectStatus({ kind: "noProject" });
@@ -241,7 +241,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("keeps genesis when docs land under it, and only `picked` leaves for the board", async () => {
     const store = await loadStore("browser");
     await store.startDocsWatcher();
-    const harness = window.__nputerShellHarness;
+    const harness = window.__supertaskrShellHarness;
     const snapshot = (seq: number) => ({
       seq,
       projectDir: "/tmp/sketchpad",
@@ -308,11 +308,11 @@ describe("the gate, build half: the harness is absent from the shipped bundle", 
     // toContain against the bundle prints the whole bundle.
     const has = (needle: string): boolean => js.includes(needle);
 
-    expect(has("__nputerShellHarness"), "the shell harness must not reach production").toBe(
+    expect(has("__supertaskrShellHarness"), "the shell harness must not reach production").toBe(
       false,
     );
-    expect(has("__nputerDocsHarness"), "nor the docs harness beside it").toBe(false);
-    expect(has("__nputerEchoes"), "nor the dev echo capture").toBe(false);
+    expect(has("__supertaskrDocsHarness"), "nor the docs harness beside it").toBe(false);
+    expect(has("__supertaskrEchoes"), "nor the dev echo capture").toBe(false);
     // The whole DEV block went, not just the property names: its console
     // line is the block's own fingerprint.
     expect(has("browser dev harness active"), "the DEV block itself is dropped").toBe(false);
@@ -331,7 +331,7 @@ describe("the gate, build half: the harness is absent from the shipped bundle", 
      * which the harness would be present-but-gated rather than gone. It
      * does NOT catch the one lever T-041-s4 names: measured 2026-08-18, a
      * `NODE_ENV=development npm run build` bundle carries
-     * `__nputerShellHarness` and STILL contains zero `import.meta.env`,
+     * `__supertaskrShellHarness` and STILL contains zero `import.meta.env`,
      * because the flag was folded to `true` rather than left unfolded.
      * That lever is the assertion four lines up, which is exactly why the
      * two belong side by side. `import.meta.env` rather than bare

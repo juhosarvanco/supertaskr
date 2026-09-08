@@ -9,7 +9,7 @@ import { appDir, assertLanePreconditions, resolveLanePort } from "./preflight";
  * mid-propagation; see docs/CONVENTIONS.md, the pointerdown gotcha).
  *
  * Port discipline: the lane always owns its own vite dev server on
- * NPUTER_E2E_PORT (default 14520). resolveLanePort THROWS on 1420 — the
+ * SUPERTASKR_E2E_PORT (default 14520). resolveLanePort THROWS on 1420 — the
  * human's live app — and reuseExistingServer stays false so the lane
  * never attaches to a server it does not own.
  */

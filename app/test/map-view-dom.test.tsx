@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@supertaskr/parser/pure";
 import { centerViewport, indexHint, MapView, relativeTime } from "../src/architecture/MapView";
 import { UNANSWERED_INDEX_MESSAGE, type IndexOutcomePayload } from "../src/lib/watcher-store";
 import { deriveArchitecture } from "../src/lib/architecture/derive";

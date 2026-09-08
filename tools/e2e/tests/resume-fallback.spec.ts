@@ -184,12 +184,12 @@ test("a resumable session offers both exits, and a fresh one is never a dead end
   // …and the unusable-id state is its own affordance, not a toast.
   await pushOutcome(page, {
     kind: "sessionIdRejected",
-    registryPath: ".nputer/sessions.json",
+    registryPath: ".supertaskr/sessions.json",
     why: "refusing to resume session 'S1': it begins with '-'.",
   });
   const unusable = page.getByTestId("interview-session-unusable");
   await expect(unusable).toBeVisible();
-  await expect(unusable).toContainText(".nputer/sessions.json");
+  await expect(unusable).toContainText(".supertaskr/sessions.json");
   await expect(page.getByTestId("interview-resume-offer")).toHaveCount(0);
   await expect(page.getByTestId("interview-fresh")).toBeVisible();
 });

@@ -141,7 +141,7 @@ const OTHER = "# attack set — T-901\n1. a different set entirely\n";
  * @returns {string[]}  a line per row whose outcome was wrong; empty is correct
  */
 function matrix(subject) {
-  const dir = mkdtempSync(path.join(tmpdir(), "nputer-mf09-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "supertaskr-mf09-"));
   const file = path.join(dir, "attack-set-T-900.md");
   const gone = path.join(dir, "attack-set-T-902.md");
   try {

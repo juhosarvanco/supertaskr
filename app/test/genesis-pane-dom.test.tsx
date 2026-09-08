@@ -356,7 +356,7 @@ describe("updates ride the existing store (no polling, no new IPC)", () => {
       await startDocsWatcher();
       root.render(<LiveGenesis />);
     });
-    const harness = window.__nputerDocsHarness;
+    const harness = window.__supertaskrDocsHarness;
     expect(harness).toBeDefined();
 
     act(() => {

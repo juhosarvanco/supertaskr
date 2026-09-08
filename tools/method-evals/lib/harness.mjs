@@ -69,7 +69,7 @@ import { EXIT } from "./exit.mjs";
 import { suiteDir } from "./fixture-root.mjs";
 
 /** The environment variable that names a model runner. Absent = the set cannot run. */
-export const RUNNER_ENV = "NPUTER_EVAL_RUNNER";
+export const RUNNER_ENV = "SUPERTASKR_EVAL_RUNNER";
 
 export const SETS = Object.freeze(["model-free", "model-in-loop", "all"]);
 

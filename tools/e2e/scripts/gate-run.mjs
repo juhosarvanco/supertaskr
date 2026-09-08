@@ -124,7 +124,7 @@
  *
  * ── THE VERDICT IS ALSO LEFT WHERE A LATER PROCESS CAN ASK (T-203) ───
  * The line below is trustworthy to whoever is reading the terminal, and
- * to nobody else — so the same verdicts are written to `.nputer/`'s
+ * to nobody else — so the same verdicts are written to `.supertaskr/`'s
  * runtime token, keyed by the TREE the suites ran against, and the
  * pre-push guard refuses a push whose token is missing, stale or red.
  * That file's own header carries the argument for the tree hash and for
@@ -615,7 +615,7 @@ export function judge({ status, count, ref, suite }) {
  * of headroom, and no root length can move it.
  *
  * THE FILE ITSELF DOES NOT MOVE, DELIBERATELY. Its directory
- * (`tmpdir()`), its `nputer-gate-run-<key>.lock` name shape, its JSON
+ * (`tmpdir()`), its `supertaskr-gate-run-<key>.lock` name shape, its JSON
  * payload and its lifetime — written at acquire, removed by the holding
  * pid at release, reclaimed when the holder is gone — are unchanged,
  * because two readers depend on them: `acquireSolo` below, and
@@ -624,7 +624,7 @@ export function judge({ status, count, ref, suite }) {
  */
 export function lockPath(root = repoRoot) {
   const key = createHash("sha256").update(root, "utf8").digest("hex");
-  return path.join(tmpdir(), `nputer-gate-run-${key}.lock`);
+  return path.join(tmpdir(), `supertaskr-gate-run-${key}.lock`);
 }
 
 /** Is a pid alive? `kill -0` semantics; EPERM means alive-but-not-ours.

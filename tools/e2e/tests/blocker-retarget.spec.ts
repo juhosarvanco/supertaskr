@@ -15,7 +15,7 @@ import { cardTrigger, detailPanel, openBoard } from "./helpers";
 
 declare global {
   interface Element {
-    __nputerTag?: string;
+    __supertaskrTag?: string;
   }
 }
 
@@ -34,7 +34,7 @@ test("a real blocker-chip click re-targets the panel — same node, stays open, 
   await page.evaluate(() => {
     const el = document.querySelector('[data-testid="task-detail-panel"]');
     if (el === null) throw new Error("panel vanished before tagging");
-    el.__nputerTag = "same-node";
+    el.__supertaskrTag = "same-node";
   });
 
   // THE click: a real, trusted click on the resolved T-102 blocker chip.
@@ -46,7 +46,7 @@ test("a real blocker-chip click re-targets the panel — same node, stays open, 
 
   // SAME node: the tag survived the re-target.
   const tag = await page.evaluate(
-    () => document.querySelector('[data-testid="task-detail-panel"]')?.__nputerTag,
+    () => document.querySelector('[data-testid="task-detail-panel"]')?.__supertaskrTag,
   );
   expect(tag, "the panel must re-target in place, not remount").toBe("same-node");
 

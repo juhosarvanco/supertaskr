@@ -1,7 +1,7 @@
 /**
  * T-140-s1 — the resting payload's boundary, and the pull's.
  *
- * A TypeScript mirror of `nputer-index`'s `rollup::Rollup` and
+ * A TypeScript mirror of `supertaskr-index`'s `rollup::Rollup` and
  * `rollup::Detail` (the shapes `arch_rollup` and `arch_detail` return),
  * plus validating parsers. Same contract as `./graph`'s `parseGraph`:
  * collect-don't-throw, never throw, return whatever validates plus

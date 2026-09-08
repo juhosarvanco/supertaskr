@@ -4,7 +4,7 @@ import type {
   TaskRecord,
   TaskSize,
   TaskStatus,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 import {
   assignmentByFile,
   issuesByFile,

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { TaskSize } from "@nputer/parser/pure";
+import type { TaskSize } from "@supertaskr/parser/pure";
 
 /** Size tier chip (S | M | L) on the card face (T-004; T-006 look —
  * mono 11px, 6px chip radius, border one step darker than the card's.

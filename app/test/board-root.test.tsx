@@ -14,7 +14,7 @@
 //
 // **EVERY EDGE THIS FILE NEEDS IS ALREADY DECLARED, WHICH IS WHY IT COULD
 // BE A NEW FILE RATHER THAN A MOVE.** C-18 declares `[C-06, C-08, C-09,
-// C-17]`, so `@nputer/parser/pure` (C-06) and the two prop types out of
+// C-17]`, so `@supertaskr/parser/pure` (C-06) and the two prop types out of
 // `board-model.ts` / `task-detail.ts` (C-17) are all confirmed edges. It
 // imports NOTHING of C-05's — no `App`, nothing under
 // `app/src/components/shell/` — because `C-05 -> C-18` is declared and the
@@ -31,7 +31,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type ProjectParseResult } from "@supertaskr/parser/pure";
 import type { DispatchReading } from "../src/lib/board-model";
 import type { BriefOutcomeView } from "../src/lib/task-detail";
 import { Board } from "../src/components/board/Board";

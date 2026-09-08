@@ -1,4 +1,4 @@
-import type { ReviewMode } from "@nputer/parser/pure";
+import type { ReviewMode } from "@supertaskr/parser/pure";
 
 /**
  * Verification badge — TWO marks per ADR-016 (supersedes T-004's

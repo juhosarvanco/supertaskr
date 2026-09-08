@@ -169,7 +169,7 @@ describe("the lens is mounted in the screen's marked slot (criterion 1)", () => 
     // of nothing but the pane. T-026's `<h2>Starting a plan in <dir></h2>`
     // was the only other thing on the screen, so the dir was the way to
     // say it; the design's split has no such heading (and its chrome bar
-    // reads "nputer — new project", which is a WINDOW title this app
+    // reads "supertaskr — new project", which is a WINDOW title this app
     // deliberately does not set). The claim keeps its strength and gains
     // reach: the left half of the split is here, beside the slot, which
     // is more than a heading ever proved.
@@ -363,7 +363,7 @@ describe("a throwing pane cannot take the screen down (criterion 5)", () => {
     expect(failed.textContent).toContain("the view of docs/ stopped rendering");
     expect(failed.textContent).toContain("Nothing was written and nothing was lost");
     expect(logged).toHaveBeenCalledWith(
-      "[nputer] the genesis pane failed to render",
+      "[supertaskr] the genesis pane failed to render",
       expect.anything(),
     );
 

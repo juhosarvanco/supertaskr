@@ -67,7 +67,7 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   anywhere, pinned by
 ///   [`tests::permission_mode_is_accept_edits_and_scoped_to_cwd`], so
 ///   this mode grants no directory beyond the project. The materialized
-///   kit lives inside the project (`.nputer/genesis/kit/`, §3), so
+///   kit lives inside the project (`.supertaskr/genesis/kit/`, §3), so
 ///   reading it needs no extra grant either.
 ///   **AND THE SENTENCE THAT USED TO FOLLOW — that cwd scoping IS the
 ///   project-dir scoping T-025 criterion 2 demands — IS RETRACTED
@@ -196,7 +196,7 @@ pub const CLAUDE_V1: AgentAdapter = AgentAdapter {
 pub const ADAPTERS: &[&AgentAdapter] = &[&CLAUDE_V1];
 
 /// The adapter the planner role runs under. v1 hard-codes the single
-/// entry — reading a role→agent map out of `.nputer/nputer.yaml` is named
+/// entry — reading a role→agent map out of `.supertaskr/supertaskr.yaml` is named
 /// growth (§9), not this task.
 pub fn planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_V1
@@ -227,7 +227,7 @@ pub fn planner_adapter() -> &'static AgentAdapter {
 /// - **no `--add-dir`, and the cwd is the project's `docs/` tree** — the
 ///   whole of the restriction, and the only half this code owns. `docs/`
 ///   is not a directory the session is asked to stay inside; it is the
-///   directory it is started in, so `.nputer/` (the interview transcript,
+///   directory it is started in, so `.supertaskr/` (the interview transcript,
 ///   the session registry, the materialized kit) and every other sibling
 ///   of `docs/` sit ABOVE its working directory rather than beside it.
 /// - **no `--permission-mode`** — `acceptEdits` auto-accepts writes inside
@@ -238,7 +238,7 @@ pub fn planner_adapter() -> &'static AgentAdapter {
 ///   project); reading docs back needs none of it.
 /// - **`--disallowedTools` denies the seven tools whose whole purpose is
 ///   reaching past the working directory** — `Bash` above all, which is
-///   how `cat ../.nputer/genesis/transcript.jsonl` would have been
+///   how `cat ../.supertaskr/genesis/transcript.jsonl` would have been
 ///   spelled, plus the three writers and the two web verbs, plus `Task`
 ///   (a subagent is a second context this surface cannot vouch for).
 ///   Denying by name MEASURABLY bites — the T-025-s4 captures recorded
@@ -778,7 +778,7 @@ impl std::fmt::Display for SessionIdRejection {
 
 /// THE VALIDATION. One function, used by BOTH boundaries — the capture of
 /// an id off the CLI's init line and the read of one back out of
-/// `.nputer/sessions.json` — so the two can never drift apart.
+/// `.supertaskr/sessions.json` — so the two can never drift apart.
 ///
 /// **The pattern: `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.** Derived from
 /// what the CLI actually produces, not from a guess:
@@ -869,7 +869,7 @@ impl std::fmt::Display for ModelRejection {
 
 /// THE MODEL GATE (T-047, absorbing T-039-s2). The `model` field rides the
 /// same init line the session id does, is written to
-/// `.nputer/sessions.json`, and is RENDERED — and before this it was
+/// `.supertaskr/sessions.json`, and is RENDERED — and before this it was
 /// accepted unbounded and unchecked.
 ///
 /// **THE CHARACTER CLASS IS DELIBERATELY WIDER THAN
@@ -1876,7 +1876,7 @@ mod tests {
         );
 
         // The denial list, exactly. `Bash` is the load-bearing member:
-        // it is how `cat ../.nputer/genesis/transcript.jsonl` would have
+        // it is how `cat ../.supertaskr/genesis/transcript.jsonl` would have
         // been spelled from inside `docs/`.
         let start =
             argv.iter().position(|a| a == "--disallowedTools").expect("a denial list is present");
@@ -2084,7 +2084,7 @@ mod tests {
             ("git add -A", "git add"),
             ("git commit -m \"genesis\"", "git commit"),
             ("mkdir -p docs/decisions docs/tasks docs/rooms", "mkdir"),
-            ("cp .nputer/genesis/kit/adapters/CLAUDE.md .", "cp"),
+            ("cp .supertaskr/genesis/kit/adapters/CLAUDE.md .", "cp"),
         ] {
             assert_eq!(reach(command), Some(prefix), "the granted spelling: {command:?}");
         }
@@ -2338,14 +2338,14 @@ mod tests {
     fn a_child_env_pair_fits_up_to_the_bound_and_not_one_byte_past_it() {
         use std::ffi::OsStr;
 
-        let key = OsStr::new("NPUTER_FAKE_MODEL");
+        let key = OsStr::new("SUPERTASKR_FAKE_MODEL");
         let widest = SPAWN_ELEMENT_MAX_LEN - key.len() - "=".len() - 1;
         assert!(child_env_pair_fits(key, OsStr::new(&"M".repeat(widest))));
         assert!(!child_env_pair_fits(key, OsStr::new(&"M".repeat(widest + 1))));
 
         // A longer KEY takes its bytes out of the same budget — the bound
         // is on the assembled string, not on the value.
-        let longer = OsStr::new("NPUTER_FAKE_MODEL_XX");
+        let longer = OsStr::new("SUPERTASKR_FAKE_MODEL_XX");
         assert!(!child_env_pair_fits(longer, OsStr::new(&"M".repeat(widest))));
 
         // And an ordinary pair is nowhere near it.

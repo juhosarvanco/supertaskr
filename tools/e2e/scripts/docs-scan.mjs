@@ -157,9 +157,9 @@
  *      - `app/test/architecture-dogfood.test.ts` reads
  *        docs/architecture/graph.json through `read(GRAPH_PATH)`, where
  *        GRAPH_PATH is a constant exported by app/src.
- *      - `nputer-index/tests/arch.rs` reads the same file as
+ *      - `supertaskr-index/tests/arch.rs` reads the same file as
  *        `common::repo_root().join(GRAPH_REL_PATH)`.
- *      - `nputer-index/src/arch/registry.rs` reads
+ *      - `supertaskr-index/src/arch/registry.rs` reads
  *        docs/architecture/components as `root.join(REGISTRY_REL_DIR)`.
  *    CONSEQUENCE, stated exactly: the first two mean docs/architecture/
  *    graph.json is owed `npm test from tools/e2e/` and nothing else,
@@ -682,7 +682,7 @@ export function siteSelftest() {
 
 /** A synthetic root for the call samples: no file, no I/O, and a base
  *  that resolves to it exactly the way a package-relative one does. */
-const SAMPLE_ROOT = path.resolve(path.sep, "nputer-call-sample-root");
+const SAMPLE_ROOT = path.resolve(path.sep, "supertaskr-call-sample-root");
 
 /** One fragment's context, with the sample root as its package dir so
  *  `resolve(".")` inside the fragment IS the root. Imports resolve to
@@ -1431,7 +1431,7 @@ function readIfFile(abs) {
  * Rust has no import specifier this scanner can follow — `common::repo_root()`
  * names a module, not a file — so a Rust name is resolved inside its own
  * CRATE: every tracked `.rs` file under the same Cargo.toml is searched
- * for `fn <name>`. That is how `nputer-index`'s `arch.rs` reaches the
+ * for `fn <name>`. That is how `supertaskr-index`'s `arch.rs` reaches the
  * `repo_root()` in its `tests/common/mod.rs`, and it stays inside the
  * crate so two crates may each have their own without colliding.
  * Memoized per crate: the enumeration walks the corpus twice.
@@ -2141,7 +2141,7 @@ export function suitesOwedForAllOfDocs(readers) {
  */
 export const ROOT_ANCHOR_LEDGER = Object.freeze([
   Object.freeze({
-    file: "app/src-tauri/crates/nputer-index/src/arch/registry.rs",
+    file: "app/src-tauri/crates/supertaskr-index/src/arch/registry.rs",
     reads: "docs/architecture/components",
     why:
       "A REAL READER THIS SCAN CANNOT SEE, and the sharpest entry here. " +
@@ -2154,17 +2154,17 @@ export const ROOT_ANCHOR_LEDGER = Object.freeze([
       "asserting it here.",
   }),
   Object.freeze({
-    file: "app/src-tauri/crates/nputer-index/src/testutil.rs",
+    file: "app/src-tauri/crates/supertaskr-index/src/testutil.rs",
     reads: "",
     why: "Defines `repo_root()`. It forms no path under docs/ at all.",
   }),
   Object.freeze({
-    file: "app/src-tauri/crates/nputer-index/tests/common/mod.rs",
+    file: "app/src-tauri/crates/supertaskr-index/tests/common/mod.rs",
     reads: "",
     why: "Defines `repo_root()` for the crate's integration tests. Forms no docs path.",
   }),
   Object.freeze({
-    file: "app/src-tauri/crates/nputer-index/tests/perf.rs",
+    file: "app/src-tauri/crates/supertaskr-index/tests/perf.rs",
     reads: "",
     why:
       "`copy_repo_to` copies the whole tree, docs/ included — but its only caller " +
@@ -2172,13 +2172,13 @@ export const ROOT_ANCHOR_LEDGER = Object.freeze([
       "(\"perf harness: run on a release build\"), so bare `cargo test` never runs it.",
   }),
   Object.freeze({
-    file: "app/src-tauri/crates/nputer-index/tests/self_graph.rs",
+    file: "app/src-tauri/crates/supertaskr-index/tests/self_graph.rs",
     reads: "",
     why:
       "Indexes the live repo off `common::repo_root()`. The one body that reads a " +
       "path under docs/ — `self_graph_is_current`, `root.join(GRAPH_REL_PATH)` — is " +
       "`#[ignore]`d. The two that DO run assert docs/ is ABSENT from the graph " +
-      "(the root .nputerignore), which is the opposite of reading it.",
+      "(the root .supertaskrignore), which is the opposite of reading it.",
   }),
   Object.freeze({
     file: "app/test/genesis-derive.test.ts",

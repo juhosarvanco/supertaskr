@@ -84,7 +84,7 @@ fn git_walk_up(start: &Path) -> Option<PathBuf> {
     }
 }
 
-/// Resolve the project folder this nputer instance opens at launch.
+/// Resolve the project folder this supertaskr instance opens at launch.
 ///
 /// T-007 resolution order (recorded in docs/tasks/T-007-open-own-repo.md):
 /// 1. `.git` walk-up from the process working directory — T-001's rule,
@@ -150,7 +150,7 @@ const STARTUP_FAILED_EVENT: &str = "startup-failed";
 /// never lies by omission.
 fn startup_failed_line(payload: &str, recv_at_ms: u64) -> String {
     format!(
-        "[nputer] startup-failed: recv_at_ms={recv_at_ms} payload={}",
+        "[supertaskr] startup-failed: recv_at_ms={recv_at_ms} payload={}",
         docs_watch::sanitize_for_log(payload)
     )
 }
@@ -192,7 +192,7 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     let (tx, mut rx) = tauri::async_runtime::channel::<Option<tauri_plugin_dialog::FilePath>>(1);
     app.dialog()
         .file()
-        .set_title("Open an nputer project folder")
+        .set_title("Open an supertaskr project folder")
         .pick_folder(move |picked| {
             let _ = tx.blocking_send(picked);
         });
@@ -404,7 +404,7 @@ async fn arch_detail(app: tauri::AppHandle, target: String) -> DetailOutcome {
         // Refused without the echo: the answer is still the typed
         // refusal, so the pane's handling is one path rather than two.
         return DetailOutcome::Answered {
-            detail: nputer_index::rollup::Detail::Unknown {
+            detail: supertaskr_index::rollup::Detail::Unknown {
                 target: String::new(),
             },
         };
@@ -455,7 +455,7 @@ async fn repo_churn(app: tauri::AppHandle) -> ChurnOutcome {
     .unwrap_or_else(|err| {
         // The join error is a detail for the app's log, never for a
         // canvas — the outcome carries a typed reason and nothing else.
-        eprintln!("[nputer] churn: task failed: {}", docs_watch::sanitize_for_log(&err.to_string()));
+        eprintln!("[supertaskr] churn: task failed: {}", docs_watch::sanitize_for_log(&err.to_string()));
         ChurnOutcome::disabled(ChurnDisabled::GitFailed)
     })
 }
@@ -716,7 +716,7 @@ fn genesis_cancel(agent: tauri::State<'_, AgentState>) -> CancelOutcome {
 }
 
 /// T-029 criterion 1: respawn the RECORDED native session. Zero
-/// arguments — the id is read Rust-side out of `.nputer/sessions.json`
+/// arguments — the id is read Rust-side out of `.supertaskr/sessions.json`
 /// through its own gate, so no session id ever crosses the boundary in
 /// either direction. `async` for the same reason `genesis_start` is.
 #[tauri::command]
@@ -739,7 +739,7 @@ async fn genesis_fresh(
 }
 
 /// T-029 criteria 1–2: the chat's rehydration source. Reads the losable
-/// `.nputer/genesis/transcript.jsonl`; an empty answer means "render the
+/// `.supertaskr/genesis/transcript.jsonl`; an empty answer means "render the
 /// banked-progress summary instead" and is never an error.
 #[tauri::command]
 fn genesis_transcript(watch: tauri::State<'_, WatchState>) -> Vec<agent::sessions::TranscriptLine> {
@@ -765,9 +765,9 @@ pub fn run() {
             // instead of pretending cwd is a project.
             let project_dir = resolve_project_dir();
             match &project_dir {
-                Some(dir) => println!("[nputer] project folder: {}", dir.display()),
+                Some(dir) => println!("[supertaskr] project folder: {}", dir.display()),
                 None => println!(
-                    "[nputer] project folder: none resolved (no .git from cwd or executable) - pick a folder to open a project"
+                    "[supertaskr] project folder: none resolved (no .git from cwd or executable) - pick a folder to open a project"
                 ),
             }
 
@@ -779,7 +779,7 @@ pub fn run() {
                 project_dir.clone(),
                 move |snapshot| {
                     if let Err(err) = emit_handle.emit("docs-changed", snapshot) {
-                        eprintln!("[nputer] watch: emit failed: {err}");
+                        eprintln!("[supertaskr] watch: emit failed: {err}");
                     }
                 },
             );
@@ -793,14 +793,14 @@ pub fn run() {
             // overridden.** It used to carry `config_dir` — the app
             // config dir, which is where the resolved-binary cache lived.
             // That cache is retired, so the runner holds no durable state
-            // outside `.nputer/` at all and there is nothing for the
+            // outside `.supertaskr/` at all and there is nothing for the
             // shell to hand it. Resolution is a probe or a typed
             // not-found.
             let agent_emit = app.handle().clone();
             let agent_cfg = agent::runner::RunnerConfig::default();
             app.manage(AgentState::new(agent_cfg, move |event| {
                 if let Err(err) = agent_emit.emit(agent::GENESIS_EVENT, event) {
-                    eprintln!("[nputer] agent: emit failed: {err}");
+                    eprintln!("[supertaskr] agent: emit failed: {err}");
                 }
             }));
 
@@ -811,7 +811,7 @@ pub fn run() {
             // which is how the ≤1s criterion is measured.
             app.listen("model-updated", |event| {
                 println!(
-                    "[nputer] model-updated: recv_at_ms={} payload={}",
+                    "[supertaskr] model-updated: recv_at_ms={} payload={}",
                     docs_watch::now_ms(),
                     docs_watch::sanitize_for_log(event.payload())
                 );
@@ -838,9 +838,9 @@ pub fn run() {
 
             // Startup evidence that the main window actually exists.
             if let Some(window) = app.get_webview_window("main") {
-                println!("[nputer] window \"{}\" created", window.label());
+                println!("[supertaskr] window \"{}\" created", window.label());
             } else {
-                eprintln!("[nputer] warning: main window not found at setup");
+                eprintln!("[supertaskr] warning: main window not found at setup");
             }
             Ok(())
         })
@@ -934,7 +934,7 @@ mod tests {
     #[test]
     fn git_walk_up_finds_the_first_repo_root_from_a_nested_dir() {
         let base = env::temp_dir().join(format!(
-            "nputer-t007-walkup-{}-{}",
+            "supertaskr-t007-walkup-{}-{}",
             std::process::id(),
             docs_watch::now_ms()
         ));
@@ -970,7 +970,7 @@ mod tests {
         );
         // The shape a log reader greps for, and the same shape
         // `model-updated` uses one listener up.
-        assert!(line.starts_with("[nputer] startup-failed: recv_at_ms=1700000000123 payload="));
+        assert!(line.starts_with("[supertaskr] startup-failed: recv_at_ms=1700000000123 payload="));
         assert!(line.contains("\"step\":\"subscribe\""));
         assert!(line.contains("the event channel refused"));
         assert!(line.contains("\"attempt\":1"));
@@ -1081,7 +1081,7 @@ mod tests {
     #[test]
     fn git_walk_up_returns_none_without_a_repo() {
         let base = env::temp_dir().join(format!(
-            "nputer-t007-norepo-{}-{}",
+            "supertaskr-t007-norepo-{}-{}",
             std::process::id(),
             docs_watch::now_ms()
         ));

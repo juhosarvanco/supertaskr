@@ -68,7 +68,7 @@ export default {
   reads: ["method/roles/executor.md", "tools/method-evals/fixtures/executor-notes/**"],
   // The cheapest tier on the corpus: the discrimination here is
   // STRUCTURAL — did a card come back — rather than a judgement, so the
-  // small local seat nputer.yaml already names for doc upkeep is the
+  // small local seat supertaskr.yaml already names for doc upkeep is the
   // declared floor. Whether it clears the threshold is the first
   // calibration run's answer, not this line's.
   model: "ollama:qwen3-coder",

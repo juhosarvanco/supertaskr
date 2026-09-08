@@ -4,7 +4,7 @@ import { repoRoot } from "../preflight";
 import type { DocsSnapshotPayload } from "./board";
 
 /**
- * The shell-harness payloads (T-041). `window.__nputerShellHarness` is a
+ * The shell-harness payloads (T-041). `window.__supertaskrShellHarness` is a
  * DEV-only, non-Tauri surface over the shell's own reducers — the same
  * `applyProjectStatus` / `commitPickOutcome` the Tauri path calls once a
  * command has answered — so driving it with these payloads is exactly

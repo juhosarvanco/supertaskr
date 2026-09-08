@@ -307,7 +307,7 @@ describe("flightOf — a flag is a claim, the turn's own status is the measureme
 
   it("THE STRANDED CLAIM IS REFUSED — @human's walk, in one call", () => {
     // The 2026-08-30 genesis walk's terminal state, reconstructed from
-    // what its own `.nputer/` recorded: ten turns, the last one COMPLETED
+    // what its own `.supertaskr/` recorded: ten turns, the last one COMPLETED
     // (its planner line is on disk, which the runner writes only when the
     // turn produced text), the registry `idle`, a board of cards — and a
     // store still claiming flight. The screen rested on "planner is

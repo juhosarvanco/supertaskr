@@ -2,7 +2,7 @@
 //! CLI headless, hands it the method kit, and renders what it writes.
 //!
 //! ADR-017: the spawned planner is the writer of `docs/`; the app writes
-//! only `.nputer/` runtime files and remains a lens. ADR-003: spawn and
+//! only `.supertaskr/` runtime files and remains a lens. ADR-003: spawn and
 //! resume, never API calls, never keys. ADR-012: the surface lives
 //! Rust-side behind app-defined commands and the webview grant set stays
 //! exactly `core:default` — `std::process` is not a plugin, so there is
@@ -16,7 +16,7 @@
 //! travels as data on the child's stdin — never interpolated into a
 //! command line, never in argv. T-029's four additions take no arguments
 //! at all: the session id they resume from is read Rust-side out of
-//! `.nputer/sessions.json` through its own gate, so no id crosses the
+//! `.supertaskr/sessions.json` through its own gate, so no id crosses the
 //! boundary in either direction.
 //!
 //! Module layout follows the `index_cmd` seam precedent: everything the
@@ -138,7 +138,7 @@ pub enum Phase {
 ///
 /// **THIS IS THE RESTRICTION, AND IT IS A PATH RATHER THAN A SENTENCE.**
 /// The card says so in as many words — *"The restriction has to be stated
-/// against a path set, not against the project"* — because `.nputer/`
+/// against a path set, not against the project"* — because `.supertaskr/`
 /// holds the interview transcript, is gitignored, and is nonetheless
 /// present on disk in the generated project. A session started in the
 /// project ROOT can reach it; a session started HERE has it above its
@@ -374,12 +374,12 @@ impl AgentState {
         let handle = self.child.lock().expect("child slot poisoned").clone();
         if let Some(handle) = handle {
             println!(
-                "[nputer] agent: app exiting - terminating turn {} process group {}",
+                "[supertaskr] agent: app exiting - terminating turn {} process group {}",
                 handle.turn, handle.pid
             );
             let exit = runner::terminate_group_observing(&handle, self.cfg.kill_grace);
             println!(
-                "[nputer] agent: turn {} process group {} left after {} ms (reaped={} groupEmpty={} sigkilled={})",
+                "[supertaskr] agent: turn {} process group {} left after {} ms (reaped={} groupEmpty={} sigkilled={})",
                 handle.turn,
                 handle.pid,
                 exit.waited.as_millis(),
@@ -576,7 +576,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 /// absorbed").
 ///
 /// The report is a log line per rejected pack, in the module's own
-/// `[nputer] agent:` voice and through the same
+/// `[supertaskr] agent:` voice and through the same
 /// [`docs_watch::sanitize_for_log`] every other file-borne value here goes
 /// through. It is deliberately NOT an error outcome: one unreadable pack
 /// must not refuse a genesis, which is the whole difference between
@@ -589,7 +589,7 @@ fn report_skills(project_dir: &std::path::Path) -> skills::Discovered {
     let found = skills::discover(project_dir);
     for reject in &found.rejected {
         println!(
-            "[nputer] agent: skill pack '{}' under {} was SKIPPED - {}",
+            "[supertaskr] agent: skill pack '{}' under {} was SKIPPED - {}",
             docs_watch::sanitize_for_log(&reject.dir),
             skills::SKILLS_REL_DIR,
             docs_watch::sanitize_for_log(&reject.why),
@@ -597,7 +597,7 @@ fn report_skills(project_dir: &std::path::Path) -> skills::Discovered {
     }
     if !found.packs.is_empty() {
         println!(
-            "[nputer] agent: {} organization skill pack(s) loaded from {}: {}",
+            "[supertaskr] agent: {} organization skill pack(s) loaded from {}: {}",
             found.packs.len(),
             skills::SKILLS_REL_DIR,
             found
@@ -619,7 +619,7 @@ fn report_skills(project_dir: &std::path::Path) -> skills::Discovered {
 /// session through the adapter's resume template (T-029 criterion 1).
 ///
 /// THE SUCCESSION GUARANTEE APPLIED TO THE INTERVIEW. Everything this
-/// needs is on disk: the id comes from `.nputer/sessions.json` through
+/// needs is on disk: the id comes from `.supertaskr/sessions.json` through
 /// [`SessionEntry::resume_id`]'s gate, and the STAGE and the banked
 /// artifacts come from `docs/` — never from a cache, because `docs/` is
 /// the only project truth (ADR-017 clause 4). The transcript is a
@@ -681,7 +681,7 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             return StartOutcome::UnsupportedVersion { found }
         }
     };
-    // The kit is re-materialized rather than assumed: `.nputer/` is
+    // The kit is re-materialized rather than assumed: `.supertaskr/` is
     // losable by charter, so a resume must survive its own kit having
     // been deleted between sessions.
     if let Err(err) = kit::materialize(&project_dir) {
@@ -743,7 +743,7 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 /// resumable again. This one keeps the BARE `has_plan` refusal, because
 /// this is the destructive door: it marks the recorded session `dead` and
 /// spawns a NEW planner at stage 0. The case that makes the difference
-/// concrete is a CLONED repository that happens to carry a `.nputer/` —
+/// concrete is a CLONED repository that happens to carry a `.supertaskr/` —
 /// a registered session that did NOT write the plan sitting beside it. For
 /// that folder the right answer is resume and never a fresh interview,
 /// which is why T-029 kept `genesis_fresh` off `genesis_start`'s flag in
@@ -777,7 +777,7 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     // Abandon the old session BEFORE minting the new one, so `next_id`
     // sees the settled file and `find_planner` cannot pick the dead entry.
     match sessions::mark_planner_dead(&project_dir) {
-        Ok(Some(id)) => println!("[nputer] agent: abandoning planner session {id} - starting fresh"),
+        Ok(Some(id)) => println!("[supertaskr] agent: abandoning planner session {id} - starting fresh"),
         Ok(None) => {}
         Err(err) => {
             return StartOutcome::Error {
@@ -896,7 +896,7 @@ pub enum KickoffOutcome {
         /// WHAT WAS ALREADY BANKED HERE, on the ONE path that never
         /// resolves a CLI (T-070 criterion 3).
         ///
-        /// `sessions::genesis_record` reads `.nputer/sessions.json` with
+        /// `sessions::genesis_record` reads `.supertaskr/sessions.json` with
         /// no CLI anywhere in the call, so carrying it here costs
         /// nothing and is available exactly where the CLI-gated commands
         /// have already given up. `None` means no interview was ever
@@ -1062,7 +1062,7 @@ pub fn cancel(agent: &AgentState) -> CancelOutcome {
         Some(handle) => {
             agent.cancel.store(true, Ordering::SeqCst);
             println!(
-                "[nputer] agent: cancelling turn {} - signalling process group {}",
+                "[supertaskr] agent: cancelling turn {} - signalling process group {}",
                 handle.turn, handle.pid
             );
             runner::terminate_group_async(&handle, agent.cfg.kill_grace);
@@ -1085,13 +1085,13 @@ pub fn cancel(agent: &AgentState) -> CancelOutcome {
 /// could decline to follow:
 ///
 ///  1. **The child's working directory is `<project>/docs`**, never the
-///     project root — so `.nputer/` (transcript, session registry, the
+///     project root — so `.supertaskr/` (transcript, session registry, the
 ///     materialized kit) and every other sibling sit ABOVE it. This is the
 ///     half the card asks to be stated "against a path set, not against
 ///     the project".
 ///  2. **The argv is [`adapter::CLAUDE_COLD_START_V1`]**, which grants no
 ///     directory (`--add-dir` absent), no permission mode, no tool, and
-///     denies `Bash` by name — the spelling `cat ../.nputer/…` would have
+///     denies `Bash` by name — the spelling `cat ../.supertaskr/…` would have
 ///     needed. That table's own doc comment carries the flag-by-flag
 ///     reasoning and the residual.
 ///  3. **The prompt is [`kit::assemble_cold_start_prompt`], which takes no
@@ -1149,7 +1149,7 @@ pub fn cold_start(watch: &WatchState, agent: &AgentState) -> ColdStartOutcome {
     }
 
     println!(
-        "[nputer] agent: cold-start test - spawning a fresh session in {}",
+        "[supertaskr] agent: cold-start test - spawning a fresh session in {}",
         crate::docs_watch::sanitize_for_log(&docs.display().to_string()),
     );
 
@@ -1220,7 +1220,7 @@ fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flig
                 guard.phase = ColdStartPhase::Failed;
                 guard.error = Some(error.clone());
                 println!(
-                    "[nputer] agent: cold-start test failed: {}",
+                    "[supertaskr] agent: cold-start test failed: {}",
                     crate::docs_watch::sanitize_for_log(&format!("{error:?}"))
                 );
             }
@@ -1232,12 +1232,12 @@ fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flig
                 guard.phase = ColdStartPhase::Idle;
                 guard.started_at_ms = None;
                 guard.finished_at_ms = None;
-                println!("[nputer] agent: cold-start test cancelled");
+                println!("[supertaskr] agent: cold-start test cancelled");
             }
             (None, false, Some(text)) => {
                 guard.phase = ColdStartPhase::Done;
                 guard.answer = Some(text.clone());
-                println!("[nputer] agent: cold-start test answered ({} bytes)", text.len());
+                println!("[supertaskr] agent: cold-start test answered ({} bytes)", text.len());
             }
             // A turn that ended clean and said nothing. Typed rather than
             // rendered as an empty success: "the reader answered nothing"
@@ -1248,7 +1248,7 @@ fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flig
                 guard.error = Some(TurnError::MalformedStream {
                     why: "the cold-start session ended without an answer".to_string(),
                 });
-                println!("[nputer] agent: cold-start test ended with no answer");
+                println!("[supertaskr] agent: cold-start test ended with no answer");
             }
         }
     });
@@ -1333,7 +1333,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
             };
             drop(guard);
             if let Err(err) = sessions::upsert(&project_dir, entry) {
-                eprintln!("[nputer] agent: session registry write failed: {err}");
+                eprintln!("[supertaskr] agent: session registry write failed: {err}");
             }
         }
 
@@ -1344,12 +1344,12 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
 
         match (&outcome.error, outcome.cancelled) {
             (Some(error), _) => println!(
-                "[nputer] agent: turn {} failed: {}",
+                "[supertaskr] agent: turn {} failed: {}",
                 req.turn,
                 crate::docs_watch::sanitize_for_log(&format!("{error:?}"))
             ),
-            (None, true) => println!("[nputer] agent: turn {} cancelled", req.turn),
-            (None, false) => println!("[nputer] agent: turn {} completed", req.turn),
+            (None, true) => println!("[supertaskr] agent: turn {} cancelled", req.turn),
+            (None, false) => println!("[supertaskr] agent: turn {} completed", req.turn),
         }
     });
 }
@@ -1758,7 +1758,7 @@ mod tests {
     #[test]
     fn a_project_that_already_has_a_plan_is_refused_before_any_spawn() {
         let dir = std::env::temp_dir().join(format!(
-            "nputer-t025-planned-{}-{}",
+            "supertaskr-t025-planned-{}-{}",
             std::process::id(),
             now_ms()
         ));
@@ -1771,7 +1771,7 @@ mod tests {
             other => panic!("expected AlreadyPlanned, got {other:?}"),
         }
         // Nothing was written: no kit, no registry.
-        assert!(!dir.join(".nputer").exists(), "a refused start writes nothing");
+        assert!(!dir.join(".supertaskr").exists(), "a refused start writes nothing");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1783,7 +1783,7 @@ mod tests {
     /// `docs/tasks/`. Returned unregistered; each arm decides that.
     fn planned_dir(tag: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "nputer-t123-{}-{}-{}",
+            "supertaskr-t123-{}-{}-{}",
             tag,
             std::process::id(),
             now_ms()
@@ -1801,13 +1801,13 @@ mod tests {
     /// in the shape the live reproduction's registry carries. `native` is
     /// `None` for the entry that has nothing to resume from.
     fn register_planner(dir: &std::path::Path, native: Option<&str>) {
-        std::fs::create_dir_all(dir.join(".nputer")).expect("mkdir .nputer");
+        std::fs::create_dir_all(dir.join(".supertaskr")).expect("mkdir .supertaskr");
         let id_line = match native {
             Some(id) => format!("\"native_session_id\": \"{id}\",\n      "),
             None => String::new(),
         };
         std::fs::write(
-            dir.join(".nputer/sessions.json"),
+            dir.join(".supertaskr/sessions.json"),
             format!(
                 "{{\n  \"sessions\": [\n    {{\n      \"id\": \"S1\",\n      \
                  \"agent\": \"claude\",\n      \"model\": \"claude-opus-5\",\n      {id_line}\
@@ -1850,7 +1850,7 @@ mod tests {
         // The OFFER is not a spawn: nothing ran, nothing was materialized.
         assert!(matches!(status(&agent).phase, Phase::Idle));
         assert!(
-            !dir.join(".nputer/genesis").exists(),
+            !dir.join(".supertaskr/genesis").exists(),
             "an offer writes no kit"
         );
         let _ = std::fs::remove_dir_all(&dir);
@@ -1869,7 +1869,7 @@ mod tests {
     fn a_registered_session_with_nothing_to_resume_never_starts_a_fresh_one_on_a_plan() {
         let dir = planned_dir("start-no-id");
         register_planner(&dir, None);
-        let before = std::fs::read(dir.join(".nputer/sessions.json")).expect("registry");
+        let before = std::fs::read(dir.join(".supertaskr/sessions.json")).expect("registry");
         let watch = detached_watch(Some(dir.clone()));
         let agent = silent_agent(RunnerConfig::default());
         match start_genesis(&watch, &agent) {
@@ -1877,9 +1877,9 @@ mod tests {
             other => panic!("expected AlreadyPlanned, got {other:?}"),
         }
         assert!(matches!(status(&agent).phase, Phase::Idle));
-        assert!(!dir.join(".nputer/genesis").exists(), "no kit was written");
+        assert!(!dir.join(".supertaskr/genesis").exists(), "no kit was written");
         assert_eq!(
-            std::fs::read(dir.join(".nputer/sessions.json")).expect("registry"),
+            std::fs::read(dir.join(".supertaskr/sessions.json")).expect("registry"),
             before,
             "and no second session was registered - a fresh start would have upserted S2"
         );
@@ -1891,7 +1891,7 @@ mod tests {
     ///
     /// It is the destructive door: it marks the recorded session `dead`
     /// and spawns a NEW planner at stage 0. The case that makes the
-    /// difference concrete is a CLONED repository carrying a `.nputer/` —
+    /// difference concrete is a CLONED repository carrying a `.supertaskr/` —
     /// a registered session that did NOT write the plan beside it — where
     /// the right answer is resume and never a fresh interview. So the
     /// registry opens `start` and `resume` and does NOT open this.
@@ -1899,7 +1899,7 @@ mod tests {
     fn fresh_genesis_still_refuses_a_planned_folder_even_with_a_session_registered() {
         let dir = planned_dir("fresh-refused");
         register_planner(&dir, Some("00000000-1111-2222-3333-444444444444"));
-        let before = std::fs::read(dir.join(".nputer/sessions.json")).expect("registry");
+        let before = std::fs::read(dir.join(".supertaskr/sessions.json")).expect("registry");
         let watch = detached_watch(Some(dir.clone()));
         let agent = silent_agent(RunnerConfig::default());
         match fresh_genesis(&watch, &agent) {
@@ -1907,7 +1907,7 @@ mod tests {
             other => panic!("expected AlreadyPlanned from the destructive door, got {other:?}"),
         }
         assert_eq!(
-            std::fs::read(dir.join(".nputer/sessions.json")).expect("registry"),
+            std::fs::read(dir.join(".supertaskr/sessions.json")).expect("registry"),
             before,
             "the recorded session was NOT marked dead"
         );
@@ -1970,7 +1970,7 @@ mod tests {
         // ---- ARM 1: registered, no id recorded.
         let no_id = planned_dir("start-notresumable-noid");
         register_planner(&no_id, None);
-        let before = std::fs::read(no_id.join(".nputer/sessions.json")).expect("registry");
+        let before = std::fs::read(no_id.join(".supertaskr/sessions.json")).expect("registry");
         let watch = detached_watch(Some(no_id.clone()));
         let agent = silent_agent(RunnerConfig::default());
         match start_genesis(&watch, &agent) {
@@ -1978,9 +1978,9 @@ mod tests {
             other => panic!("expected AlreadyPlanned, got {other:?}"),
         }
         assert!(matches!(status(&agent).phase, Phase::Idle));
-        assert!(!no_id.join(".nputer/genesis").exists(), "no kit was written");
+        assert!(!no_id.join(".supertaskr/genesis").exists(), "no kit was written");
         assert_eq!(
-            std::fs::read(no_id.join(".nputer/sessions.json")).expect("registry"),
+            std::fs::read(no_id.join(".supertaskr/sessions.json")).expect("registry"),
             before,
             "and no second session was registered - a fresh start would have upserted S2"
         );
@@ -1994,7 +1994,7 @@ mod tests {
         // got before T-123: it holds a plan, so it opens as a project.
         let refused = planned_dir("start-notresumable-refused");
         register_planner(&refused, Some("--dangerously-skip-permissions"));
-        let before = std::fs::read(refused.join(".nputer/sessions.json")).expect("registry");
+        let before = std::fs::read(refused.join(".supertaskr/sessions.json")).expect("registry");
         let watch = detached_watch(Some(refused.clone()));
         let agent = silent_agent(RunnerConfig::default());
         match start_genesis(&watch, &agent) {
@@ -2004,7 +2004,7 @@ mod tests {
             other => panic!("expected AlreadyPlanned for a refused id on a plan, got {other:?}"),
         }
         assert_eq!(
-            std::fs::read(refused.join(".nputer/sessions.json")).expect("registry"),
+            std::fs::read(refused.join(".supertaskr/sessions.json")).expect("registry"),
             before,
             "the poisoned entry is left exactly as it was found"
         );
@@ -2041,7 +2041,7 @@ mod tests {
         // with NO plan still answers `SessionIdRejected`, and there
         // `genesis_fresh` really can start over.
         let unplanned = std::env::temp_dir().join(format!(
-            "nputer-t123-start-refused-noplan-{}-{}",
+            "supertaskr-t123-start-refused-noplan-{}-{}",
             std::process::id(),
             now_ms()
         ));
@@ -2126,7 +2126,7 @@ mod tests {
         );
         // T-029's new envelopes, in the same shape (T-039-s3).
         let json = serde_json::to_value(StartOutcome::SessionIdRejected {
-            registry_path: ".nputer/sessions.json".into(),
+            registry_path: ".supertaskr/sessions.json".into(),
             why: "it begins with '-'".into(),
         })
         .expect("serialize");
@@ -2134,7 +2134,7 @@ mod tests {
             json,
             serde_json::json!({
                 "kind": "sessionIdRejected",
-                "registryPath": ".nputer/sessions.json",
+                "registryPath": ".supertaskr/sessions.json",
                 "why": "it begins with '-'"
             })
         );

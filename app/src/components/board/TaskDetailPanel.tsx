@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ProjectParseResult } from "@nputer/parser/pure";
+import type { ProjectParseResult } from "@supertaskr/parser/pure";
 import { cn } from "@/lib/utils";
 import type { AssignmentDisclosure, DispatchReading } from "@/lib/board-model";
 import {

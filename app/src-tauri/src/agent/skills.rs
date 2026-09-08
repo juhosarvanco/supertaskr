@@ -14,7 +14,7 @@
 //! WHY THE PLAYBOOK'S FORMAT VERBATIM: the room
 //! (`docs/rooms/loop-customization.md`, design seed 1) rules that
 //! *compatibility IS the import UX* — an org's existing skills drop into
-//! a nputer project unchanged. So the required frontmatter set is exactly
+//! a supertaskr project unchanged. So the required frontmatter set is exactly
 //! what a real pack carries, `name` and `description`, and a pack that
 //! carries more is not punished for it.
 //!
@@ -382,10 +382,10 @@ fn unquote(value: &str) -> String {
 ///
 /// **WHY HAND-ROLLED**, the same answer `sessions::iso8601_utc` gives for
 /// having no `chrono`: this crate takes ZERO new dependencies, and the one
-/// hash already in the workspace — `nputer-index`'s blake3 wrapper — is
+/// hash already in the workspace — `supertaskr-index`'s blake3 wrapper — is
 /// `pub(crate)` inside a crate this fence does not reach, behind a
 /// dependency this crate does not declare. Reaching either would edit
-/// `app/src-tauri/Cargo.toml` or `crates/nputer-index/`, both outside
+/// `app/src-tauri/Cargo.toml` or `crates/supertaskr-index/`, both outside
 /// T-167's fence. SHA-256 is a fully specified function whose published
 /// vectors pin it exactly, which is what
 /// [`tests::sha256_matches_the_published_vectors`] does — an
@@ -482,7 +482,7 @@ mod tests {
     impl TempTree {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t167-skills-{}-{}-{}",
+                "supertaskr-t167-skills-{}-{}-{}",
                 tag,
                 std::process::id(),
                 std::time::SystemTime::now()
@@ -506,7 +506,7 @@ mod tests {
         }
     }
 
-    const BRAND: &str = "---\nname: brand\ndescription: Brand voice and naming rules. Use when writing any user-facing copy.\n---\n\nAlways say nputer in lower case.\n";
+    const BRAND: &str = "---\nname: brand\ndescription: Brand voice and naming rules. Use when writing any user-facing copy.\n---\n\nAlways say supertaskr in lower case.\n";
 
     /// THE PUBLISHED VECTORS (FIPS 180-4 / the SHA-256 examples). A
     /// hand-rolled hash is only as good as the vectors that pin it, so all

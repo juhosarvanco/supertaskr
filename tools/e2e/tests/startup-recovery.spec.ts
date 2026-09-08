@@ -39,7 +39,7 @@ import {
  */
 
 const HOSTILE =
-  "<script>window.__nputerPwned = true</script><img src=x onerror=\"window.__nputerPwned=true\">";
+  "<script>window.__supertaskrPwned = true</script><img src=x onerror=\"window.__supertaskrPwned=true\">";
 
 test("a failed startup says so, and carries three ways out", async ({ page }) => {
   await openShell(page);
@@ -60,7 +60,7 @@ test("a failed startup says so, and carries three ways out", async ({ page }) =>
   // broke — a refused subscribe means no file change can arrive at all.
   const screen = page.getByTestId("startup-screen");
   await expect(screen).toHaveAttribute("data-startup", "failed");
-  await expect(page.getByTestId("startup-message")).toContainText("nputer could not start");
+  await expect(page.getByTestId("startup-message")).toContainText("supertaskr could not start");
   await expect(page.getByTestId("startup-message")).toContainText(
     "the watcher subscription was refused",
   );
@@ -141,7 +141,7 @@ test("a hostile rejection message is text, in a real browser", async ({ page }) 
   );
   expect(await page.locator("img").count()).toBe(0);
   expect(
-    await page.evaluate(() => (window as unknown as Record<string, unknown>).__nputerPwned),
+    await page.evaluate(() => (window as unknown as Record<string, unknown>).__supertaskrPwned),
     "nothing from the message executed",
   ).toBeUndefined();
   expect(dialogs).toEqual([]);

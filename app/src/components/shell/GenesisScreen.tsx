@@ -126,7 +126,7 @@ export function GenesisScreen({
             contradicted each other across a fence. THE ATTRIBUTION WAS
             WRONG TOO, and it is the same border-box slip one level
             further back: the design of record
-            (docs/design/claudedesign_handoff/`nputer app.dc.html`, the
+            (docs/design/claudedesign_handoff/`supertaskr app.dc.html`, the
             `data-screen-label="Interview"` artboard) sets
             `* { box-sizing: border-box }`, gives the chat column
             `width:640px` with a 1px right border and gives the right
@@ -225,7 +225,7 @@ class GenesisPaneBoundary extends Component<
   }
 
   componentDidCatch(error: unknown): void {
-    console.error("[nputer] the genesis pane failed to render", error);
+    console.error("[supertaskr] the genesis pane failed to render", error);
   }
 
   render(): ReactNode {

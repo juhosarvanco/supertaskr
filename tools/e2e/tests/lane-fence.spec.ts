@@ -750,7 +750,7 @@ test("the writer refuses a worktree that is not this card's lane", async () => {
 test("the manifest cannot be committed into the tree everyone else reads", async () => {
   const fx = makeFixture();
   await arm(fx);
-  expect(readFileSync(path.join(fx.lane, ".nputer/.gitignore"), "utf8")).toBe(MANIFEST_DIR_IGNORE);
+  expect(readFileSync(path.join(fx.lane, ".supertaskr/.gitignore"), "utf8")).toBe(MANIFEST_DIR_IGNORE);
   // The property, asked of GIT rather than asserted about the file: a
   // manifest that reached the integration branch would hand every
   // checkout one lane's permanently stale fence, which is the guard's
@@ -820,7 +820,7 @@ test("the writer puts the manifest exactly where the reader opens it, at one ver
   expect(existsSync(onDisk), "the writer wrote somewhere the reader does not look").toBe(true);
   expect(JSON.parse(readFileSync(onDisk, "utf8")).version).toBe(MANIFEST_VERSION);
   expect(ask(fx.lane, path.join(fx.lane, "tools/e2e/x.ts")).code).toBe("inside-the-fence");
-  expect(MANIFEST_REL_PATH, "the manifest left the runtime directory").toMatch(/^\.nputer\//);
+  expect(MANIFEST_REL_PATH, "the manifest left the runtime directory").toMatch(/^\.supertaskr\//);
 
   // AND THE SOURCE PIN THAT MAKES IT ONE FACT: the writer must not hold
   // its own spelling of either constant, it must take the reader's.
@@ -1064,7 +1064,7 @@ test("the seat with no lane is seen from a LINKED worktree too, and the main che
   // so the walk has to follow `commondir` to reach the administration at
   // all — from the main checkout that file does not exist and this whole
   // hop is unexercised.
-  const seat = path.join(path.dirname(fx.lane), "nputer-review");
+  const seat = path.join(path.dirname(fx.lane), "supertaskr-review");
   git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-check", seat]);
   expect(readHeadRef(seat)).toBe("refs/heads/review/T-901-check");
   expect(liveLanes(seat).map((l) => l.manifest.taskId), "the walk lost the lane list").toEqual([
@@ -1945,7 +1945,7 @@ test("a lane whose worktree is gone fences nothing, and a stray manifest still l
   // never the path" is a measurement here and not a slogan.
   const stray = JSON.parse(readFileSync(path.join(fx.lane, MANIFEST_REL_PATH), "utf8"));
   stray.paths = ["app/src"];
-  const review = path.join(path.dirname(fx.lane), "nputer-review-stray");
+  const review = path.join(path.dirname(fx.lane), "supertaskr-review-stray");
   git(fx.repo, ["worktree", "add", "--quiet", "-b", "review/T-901-stray", review]);
   for (const home of [fx.drill, review]) {
     mkdirSync(path.join(home, path.dirname(MANIFEST_REL_PATH)), { recursive: true });
@@ -2996,7 +2996,7 @@ test("the runner carries the secret refusal as an exit code, and the fail-open a
 function trackedIgnoreFiles(): string[] {
   return execFileSync("git", ["-C", repoRoot, "ls-files"], { encoding: "utf8" })
     .split("\n")
-    .filter((f) => /(^|\/)_?\.?(git|nputer)ignore$/.test(f));
+    .filter((f) => /(^|\/)_?\.?(git|supertaskr)ignore$/.test(f));
 }
 
 /**

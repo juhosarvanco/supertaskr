@@ -170,7 +170,7 @@ export interface ParseProjectOptions {
 }
 
 /**
- * Parse a whole nputer project: docs/tasks/T-*.md, the ROADMAP backbone,
+ * Parse a whole supertaskr project: docs/tasks/T-*.md, the ROADMAP backbone,
  * plus docs/architecture/components/C-*.md (T-008). Returns the typed
  * model and every issue found; never throws. Unlike the required tasks
  * dir and roadmap, an ABSENT components directory is a legal state

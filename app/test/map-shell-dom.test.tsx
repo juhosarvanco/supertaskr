@@ -62,7 +62,7 @@ function openProject(): void {
   act(() => {
     root.render(<App />);
   });
-  const harness = window.__nputerDocsHarness;
+  const harness = window.__supertaskrDocsHarness;
   expect(harness).toBeDefined();
   act(() => {
     harness?.apply(
@@ -166,7 +166,7 @@ describe("the switcher through the real store", () => {
       unresolved: [],
     });
     act(() => {
-      window.__nputerDocsHarness?.apply(
+      window.__supertaskrDocsHarness?.apply(
         payload([
           { path: "docs/ROADMAP.md", content: ROADMAP },
           { path: "docs/tasks/T-001-one.md", content: TASK },

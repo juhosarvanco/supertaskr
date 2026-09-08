@@ -1,5 +1,5 @@
 /**
- * Typed model for the nputer file convention (method/tasks/TASK-FORMAT.md):
+ * Typed model for the supertaskr file convention (method/tasks/TASK-FORMAT.md):
  * task files in docs/tasks/T-*.md and backbone feature lines in
  * docs/ROADMAP.md. This package is C-06 (lib-parser): a pure library —
  * it turns files into this model and nothing else.
@@ -31,7 +31,7 @@ export type ReviewMode = (typeof REVIEW_MODES)[number];
 
 /**
  * Session policy derived from `model[@session]` syntax:
- * `codex` = default session policy (fresh unless nputer.yaml says else),
+ * `codex` = default session policy (fresh unless supertaskr.yaml says else),
  * `codex@fresh` = explicit fresh, `codex@S3` = resume registered session S3.
  */
 export type SessionPolicy = 'default' | 'fresh' | 'resume';
@@ -97,7 +97,7 @@ export interface TaskRecord {
   touches: string[];
   /** Attribution on suggestions (role, model@session, or human). Kept raw. */
   suggestedBy?: string;
-  /** Planned builder; absent = nputer.yaml default. */
+  /** Planned builder; absent = supertaskr.yaml default. */
   builder?: ModelSession;
   /** Planned verifier; absent = default (independent). */
   verifier?: ModelSession;

@@ -37,7 +37,7 @@
  * So a readings-authority band needs the run's captured output:
  *
  *   cargo test 2>&1 | tee /tmp/readings.txt
- *   cargo run -p nputer-index -- index --check --root ../.. 2>&1 | tee -a /tmp/readings.txt
+ *   cargo run -p supertaskr-index -- index --check --root ../.. 2>&1 | tee -a /tmp/readings.txt
  *   npm test 2>&1 | tee -a /tmp/readings.txt
  *   node scripts/health-bands-run.mjs --readings /tmp/readings.txt
  *
@@ -158,8 +158,8 @@ export function validateBands(bands) {
 /**
  * `index --check`'s budget line, verbatim from check.rs's `budget_line`:
  *
- *   [nputer-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left
- *   [nputer-index]   budget:      1200000 of 1040000 bytes (115.4%) - OVER by 160000: ...
+ *   [supertaskr-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left
+ *   [supertaskr-index]   budget:      1200000 of 1040000 bytes (115.4%) - OVER by 160000: ...
  *
  * OVER is not an error there and must not read like one here: the
  * emitter still emits, degraded. It is simply a negative headroom, which
@@ -190,7 +190,7 @@ export function parseGraphHeadroom(text) {
  * position: a workspace runs several binaries and the biggest one is not
  * always the lib.
  *
- *   Running unittests src/lib.rs (target/debug/deps/nputer-9a1b2c3)
+ *   Running unittests src/lib.rs (target/debug/deps/supertaskr-9a1b2c3)
  *   test result: ok. 412 passed; 0 failed; ... finished in 8.91s
  *
  * @param {string} text

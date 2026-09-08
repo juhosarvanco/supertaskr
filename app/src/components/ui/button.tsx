@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * Button (vendored shadcn shell, T-006 nputer look — no stock shadcn
+ * Button (vendored shadcn shell, T-006 supertaskr look — no stock shadcn
  * styling remains). Two first-class looks from the design handoff:
  *
  * - default:  the ink pill ("Open a folder…") — --primary fill, radius 10

@@ -29,7 +29,7 @@ import { repoRoot } from "../preflight";
  * spec goes red naming both sides — pinned by the fixtures at the end.
  *
  * ── WHAT T-054 CHANGED ───────────────────────────────────────────────
- * 1. `nputer-index index --check` joins CI_SEQUENCE after the cargo
+ * 1. `supertaskr-index index --check` joins CI_SEQUENCE after the cargo
  *    suite. CI had NEVER gated graph currency: ci.yml runs bare `cargo
  *    test`, which skips `#[ignore]`d tests, and `self_graph_is_current`
  *    — the one byte-comparison against the committed graph.json — is
@@ -194,7 +194,7 @@ export function commandBullets(section: string): { dir: string; commands: string
  *
  * The rule is the splitter's own, not markdown's: only a leading "- " is
  * a bullet here. `+` and `*` are deliberately NOT flagged — the section
- * legitimately wraps prose onto a line beginning "  + nputer-index crate
+ * legitimately wraps prose onto a line beginning "  + supertaskr-index crate
  * suite", and a rule that reds on real prose teaches editors to route
  * around it.
  */
@@ -298,7 +298,7 @@ const CI_SEQUENCE: Correspondence[] = [
   {
     kind: "verbatim",
     dir: "app/src-tauri",
-    cmd: "cargo run -p nputer-index -- index --check --root ../..",
+    cmd: "cargo run -p supertaskr-index -- index --check --root ../..",
   },
   {
     kind: "ci-only",
@@ -387,7 +387,7 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
   },
   {
     dir: "app/src-tauri",
-    cmd: "cargo run -p nputer-index -- index --watch --root ../..",
+    cmd: "cargo run -p supertaskr-index -- index --watch --root ../..",
     why:
       "a watcher: it blocks until stopped, so a CI step invoking it would hang " +
       "until the job timeout. `index --check` is the one-shot form and IS a " +
@@ -395,7 +395,7 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
   },
   {
     dir: "app/src-tauri",
-    cmd: "cargo run -p nputer-index -- arch --root ../..",
+    cmd: "cargo run -p supertaskr-index -- arch --root ../..",
     why:
       "a REPORTER, not a gate: it reads the COMMITTED graph and always exits 0 " +
       "(ADR-014). Its gating form is `arch drift --fail-on <sev>`, deliberately " +
@@ -404,7 +404,7 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
   },
   {
     dir: "app/src-tauri",
-    cmd: "cargo run -p nputer-index -- arch cycles --root ../..",
+    cmd: "cargo run -p supertaskr-index -- arch cycles --root ../..",
     why:
       "a REGISTRY-ONLY verdict whose red is DESIGNED to stand: the declared " +
       "C-08 <-> C-09 cycle is held open until T-127-s1, so a CI step would " +
@@ -414,7 +414,7 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
   },
   {
     dir: "app/src-tauri",
-    cmd: "cargo run -p nputer-index -- arch blast <path|slug> --root ../..",
+    cmd: "cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..",
     why:
       "a REPORTER like `arch`: derives dependents from the committed graph " +
       "at read time and gates nothing (T-135 Half A; documented at ADR-019 " +
@@ -653,7 +653,7 @@ test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
       '"Build & test" — these are the ways the doc and this spec disagree',
   ).toEqual([]);
   // A FLOOR on the derivation itself, never a count — the doc gains
-  // commands (T-054 added three nputer-index ones; T-090 added
+  // commands (T-054 added three supertaskr-index ones; T-090 added
   // `npm run lint:docs` as a step and `npm run boot:orphan-drill` as an
   // argued exclusion), and a floor stays true while an equality would
   // make every such edit a two-file change for no property.
@@ -984,10 +984,10 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
   const lost = names(md).filter((k) => !names(truncated).includes(k));
   expect(lost).toEqual([
     "[app/src-tauri] cargo audit",
-    "[app/src-tauri] cargo run -p nputer-index -- index --watch --root ../..",
-    "[app/src-tauri] cargo run -p nputer-index -- arch --root ../..",
-    "[app/src-tauri] cargo run -p nputer-index -- arch cycles --root ../..",
-    "[app/src-tauri] cargo run -p nputer-index -- arch blast <path|slug> --root ../..",
+    "[app/src-tauri] cargo run -p supertaskr-index -- index --watch --root ../..",
+    "[app/src-tauri] cargo run -p supertaskr-index -- arch --root ../..",
+    "[app/src-tauri] cargo run -p supertaskr-index -- arch cycles --root ../..",
+    "[app/src-tauri] cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..",
   ]);
   // And it is LOUD in this direction, which is the half the retracted
   // sentence got right: every command the spec still claims reds by name.

@@ -120,7 +120,7 @@ const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
  * that nobody holds.
  */
 const PORCELAIN_FIXTURE = [
-  "worktree /Users/x/nputer",
+  "worktree /Users/x/supertaskr",
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",
@@ -1306,7 +1306,7 @@ test("...and it spells BOTH arms — UNDER the buffer and OVER it — as stamped
   // KILLED BY: a disclosure that only fires near the boundary, which is
   // the shape this project has paid for twice: a guard that speaks only
   // in the bad case cannot be told from one that is broken. `budget_line`
-  // in nputer-index prints at every run for the same reason, and says
+  // in supertaskr-index prints at every run for the same reason, and says
   // "OVER by" rather than failing, because over is not an error here —
   // the answer is complete either way and what changes is who drains it.
   const at = "1999-01-01T00:00:00.000Z";
@@ -2486,7 +2486,7 @@ test("the WHOLE brief assembles on a pull_request-shaped checkout, and names the
  * turn every assertion into a green about the wrong thing. */
 const BLIND_PORCELAIN = (ids: string[], real: string): string =>
   [
-    "worktree /Users/x/nputer",
+    "worktree /Users/x/supertaskr",
     "HEAD 1111111111111111111111111111111111111111",
     "branch refs/heads/main",
     "",
@@ -2681,7 +2681,7 @@ test("A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, N
   // HELD for every slug the parent does.
   const spellings = laneSpellings(conventions());
   const suffixed = [
-    "worktree /Users/x/nputer",
+    "worktree /Users/x/supertaskr",
     "HEAD 1111111111111111111111111111111111111111",
     "branch refs/heads/main",
     "",
@@ -2776,7 +2776,7 @@ function nestedShapes(): NestedShapes {
   // worktrees as "not yours" in both runs and the sweep's positive
   // control went quiet.
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t179-nested-")));
-  const main = path.join(dir, "nputer");
+  const main = path.join(dir, "supertaskr");
   mkdirSync(main);
   const tar = path.join(dir, "tree.tar");
   writeFileSync(
@@ -2812,13 +2812,13 @@ test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no workin
   // something called `mainWorktree` is satisfied by an unused import.
   const main = mainWorktree(PORCELAIN_FIXTURE);
   expect(main.path, "git lists the MAIN worktree first, and that is the repository's root").toBe(
-    "/Users/x/nputer",
+    "/Users/x/supertaskr",
   );
   expect(main.reason).toBe("");
   expect(main.via).toContain("git worktree list --porcelain");
 
   // POSITIVE CONTROL FOR THE FIRST-ENTRY CLAIM. The fixture holds four
-  // more worktrees, so "it answered /Users/x/nputer" is a choice among
+  // more worktrees, so "it answered /Users/x/supertaskr" is a choice among
   // five and not the only path there was to hand back.
   const entries = parseWorktreePorcelain(PORCELAIN_FIXTURE);
   expect(entries.length).toBeGreaterThan(1);
@@ -2828,14 +2828,14 @@ test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no workin
   // THE REFUSALS — the tool's own established idiom, and better than a
   // confident wrong path. A BARE repository has no working tree for a
   // sibling to be a sibling OF, and git says so in one word.
-  const bare = mainWorktree(["worktree /Users/x/nputer.git", "bare", ""].join("\n"));
-  expect(parseWorktreePorcelain(["worktree /Users/x/nputer.git", "bare", ""].join("\n"))[0]?.bare)
+  const bare = mainWorktree(["worktree /Users/x/supertaskr.git", "bare", ""].join("\n"));
+  expect(parseWorktreePorcelain(["worktree /Users/x/supertaskr.git", "bare", ""].join("\n"))[0]?.bare)
     .toBe(true);
   expect(bare.path, "a bare repository is not a checkout, and this must not answer with one").toBe(
     "",
   );
   expect(bare.reason).toContain("BARE");
-  expect(bare.reason).toContain("/Users/x/nputer.git");
+  expect(bare.reason).toContain("/Users/x/supertaskr.git");
 
   const empty = mainWorktree("");
   expect(empty.path).toBe("");
@@ -2846,12 +2846,12 @@ test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no workin
   // THE CONTAINMENT TEST RULE THREE IS ABOUT, both directions. The sibling
   // is OUT; the nested path the brief used to print is IN; and the root
   // itself is IN, because the repository is not a sibling of itself.
-  expect(insideRepository("/Users/x/nputer", "/Users/x/nputer-T-179")).toBe(false);
+  expect(insideRepository("/Users/x/supertaskr", "/Users/x/nputer-T-179")).toBe(false);
   expect(
-    insideRepository("/Users/x/nputer", "/Users/x/nputer/.claude/worktrees/nputer-T-179"),
+    insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr/.claude/worktrees/nputer-T-179"),
     "this is the exact path the brief printed under the heading citing rule three",
   ).toBe(true);
-  expect(insideRepository("/Users/x/nputer", "/Users/x/nputer")).toBe(true);
+  expect(insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr")).toBe(true);
 });
 
 test("THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named", () => {
@@ -3140,7 +3140,7 @@ function ritualFixture(name: string, opts: { identity?: boolean } = {}): RitualF
   // resolved spelling and `mkdtemp` hands back the symlinked one.
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t239-ritual-")));
   const home = path.join(dir, name);
-  const root = path.join(home, "nputer");
+  const root = path.join(home, "supertaskr");
   mkdirSync(root, { recursive: true });
   const tar = path.join(dir, "tree.tar");
   writeFileSync(
@@ -3332,7 +3332,7 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
       expect(step.status, `${argv[1]} ${argv[4]}: ${step.stderr}`).toBe(EXIT.CLEAN);
     }
     // 5 — read the manifest back.
-    const handManifest = JSON.parse(readFileSync(path.join(laneWt, ".nputer", "lane-fence.json"), "utf8"));
+    const handManifest = JSON.parse(readFileSync(path.join(laneWt, ".supertaskr", "lane-fence.json"), "utf8"));
     expect(handManifest.taskId).toBe(FIXTURE_CARD_ID);
     // 6 — the bench, detached, at the same commit.
     fixtureGit(hand.root, ["worktree", "add", "--detach", benchWt, base]);
@@ -3395,13 +3395,13 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
     expect(
       inventory(armLane),
       "the manifest step five reads back is not in the lane at all",
-    ).toContain(path.join(".nputer", "lane-fence.json"));
+    ).toContain(path.join(".supertaskr", "lane-fence.json"));
 
     // The manifest, and the brief, byte for byte once the two things that
     // legitimately differ are normalised away.
     expect(
-      normalise(readFileSync(path.join(armLane, ".nputer", "lane-fence.json"), "utf8"), arm),
-    ).toBe(normalise(readFileSync(path.join(laneWt, ".nputer", "lane-fence.json"), "utf8"), hand));
+      normalise(readFileSync(path.join(armLane, ".supertaskr", "lane-fence.json"), "utf8"), arm),
+    ).toBe(normalise(readFileSync(path.join(laneWt, ".supertaskr", "lane-fence.json"), "utf8"), hand));
     const armBrief = path.join(arm.scratch, `brief-${FIXTURE_CARD_ID}.txt`);
     const briefValues = (file: string, fx: RitualFixture) =>
       values(normalise(readFileSync(file, "utf8"), fx));
@@ -3827,7 +3827,7 @@ test("THE PORT, THE SCRATCH STEM AND THE BENCH FOLLOW THE SPELLINGS CONVENTIONS 
   expect(laneScratchName("battery", "sh", "T-216-s1", sp)).toBe("battery-T-216-s1.sh");
 
   const moved = md
-    .replace(`\`${sp.portPattern}\``, "`NPUTER_E2E_PORT=27000+<card number>`")
+    .replace(`\`${sp.portPattern}\``, "`SUPERTASKR_E2E_PORT=27000+<card number>`")
     .replace(`bench worktree \`${sp.benchPattern}\``, "bench worktree `../bench-T-NNN`")
     .replace(`\`${sp.scratchPattern}\``, "`<purpose>_<card id>_<ext>`");
   expect(moved).not.toBe(md);

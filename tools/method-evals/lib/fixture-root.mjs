@@ -194,7 +194,7 @@ function makeWritable(root) {
  * @returns {FixtureRoot}
  */
 export function materialize(stem) {
-  const base = mkdtempSync(path.join(tmpdir(), `nputer-method-eval-${stem}-`));
+  const base = mkdtempSync(path.join(tmpdir(), `supertaskr-method-eval-${stem}-`));
   const dir = path.join(base, "project");
   mkdirSync(dir, { recursive: true });
 
@@ -223,7 +223,7 @@ export function materialize(stem) {
   git(["add", "-A"]);
   git([
     "-c",
-    "user.email=evals@nputer.invalid",
+    "user.email=evals@supertaskr.invalid",
     "-c",
     "user.name=method-evals",
     "commit",

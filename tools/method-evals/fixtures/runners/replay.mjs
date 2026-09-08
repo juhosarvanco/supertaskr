@@ -4,7 +4,7 @@
  * no model. It replays the recorded PASSING transcript for the eval id it
  * is handed.
  *
- *   NPUTER_EVAL_RUNNER="$PWD/tools/method-evals/fixtures/runners/replay.mjs" \
+ *   SUPERTASKR_EVAL_RUNNER="$PWD/tools/method-evals/fixtures/runners/replay.mjs" \
  *     node tools/method-evals/run.mjs --set model-in-loop
  *
  * WHAT IT IS FOR, AND WHAT IT IS EMPHATICALLY NOT. It exercises the
@@ -20,7 +20,7 @@
  * number nobody measured — the exact failure T-155's founding corpus is
  * built out of. That is why `drive()` echoes the runner program into
  * every result line and why `--bump` prints it: the reader can always see
- * which runner produced the rate. Point `NPUTER_EVAL_RUNNER` at a real
+ * which runner produced the rate. Point `SUPERTASKR_EVAL_RUNNER` at a real
  * agent CLI for a real one.
  *
  * It reports a token count of ZERO, honestly, because zero is what it

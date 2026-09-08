@@ -219,11 +219,11 @@ export function EmptyState({
       <div className="my-auto flex justify-center px-10 py-12">
       <div className="flex w-full max-w-150 flex-col gap-8">
         <div className="flex flex-col gap-3">
-          <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
+          <h2 className="font-mono text-3xl font-bold tracking-wordmark">supertaskr</h2>
           <p className="max-w-120 text-base text-secondary-foreground">
             Point it at a repo. It reads{" "}
             <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> and
-            renders the plan as a board. Nothing is copied, nothing is imported — if nputer
+            renders the plan as a board. Nothing is copied, nothing is imported — if supertaskr
             disappears, the project is still there.
           </p>
         </div>
@@ -402,14 +402,14 @@ export function StartupScreen({
       <div className="my-auto flex justify-center px-10 py-12">
       <div className="flex w-full max-w-150 flex-col gap-8">
         <div className="flex flex-col gap-3">
-          <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
+          <h2 className="font-mono text-3xl font-bold tracking-wordmark">supertaskr</h2>
           <p
             data-testid="startup-message"
             className="max-w-120 text-base text-secondary-foreground"
           >
             {failure === null
               ? "waiting for the first docs snapshot…"
-              : `nputer could not start — ${startupStepPhrase(failure.step, watcherLive)}`}
+              : `supertaskr could not start — ${startupStepPhrase(failure.step, watcherLive)}`}
           </p>
         </div>
 
@@ -624,14 +624,14 @@ function App() {
       <div className="flex h-screen min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-hairline px-6 pt-4.5 pb-3.5">
         <div className="flex items-baseline gap-3.5">
-          <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
+          <h1 className="font-mono text-3xl font-bold tracking-wordmark">supertaskr</h1>
           {screen.screen === "board" && (
             <p className="font-mono text-sm text-muted-foreground">{shell.docs.projectDir}</p>
           )}
           {/* T-027 criterion 1 — "the app's own header names the new
               project". The genesis screen used to carry an <h2> saying
               "Starting a plan in <dir>"; the design's split has no such
-              heading, and the design's own chrome bar reads "nputer —
+              heading, and the design's own chrome bar reads "supertaskr —
               new project", which is a WINDOW TITLE we deliberately do
               not set (it needs a window grant outside core:default, and
               the mockup's traffic lights are furniture). So the name

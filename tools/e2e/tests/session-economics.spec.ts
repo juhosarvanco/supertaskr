@@ -366,10 +366,10 @@ function assertSeatFollowsTheCardOnly(root: string): void {
     ...process.env,
     ANTHROPIC_MODEL: "a-model-that-does-not-exist",
     CLAUDE_MODEL: "another-one",
-    NPUTER_MODEL: "a-third",
+    SUPERTASKR_MODEL: "a-third",
     MODEL: "a-fourth",
     ANTHROPIC_SMALL_FAST_MODEL: "a-fifth",
-    NPUTER_SEAT: "strongest",
+    SUPERTASKR_SEAT: "strongest",
   });
   expect(loud.status, loud.stderr ?? "").toBe(0);
   expect(

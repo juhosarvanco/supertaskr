@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { ProjectParseResult } from "@nputer/parser/pure";
+import type { ProjectParseResult } from "@supertaskr/parser/pure";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { TaskDetailPanel } from "@/components/board/TaskDetailPanel";
@@ -92,7 +92,7 @@ const MAX_SCALE = 3;
  * left because the cliff cannot happen: nothing between the emitter and
  * this pane discards the graph for being large. The cliff's remaining
  * cousin — the emitter spending its own budget — is reported outside the
- * app entirely, by `nputer_index::check`'s headroom alarm at
+ * app entirely, by `supertaskr_index::check`'s headroom alarm at
  * `index --check`.
  */
 
@@ -232,7 +232,7 @@ export function MapView({
    * in a served bundle — it has no `invoke` — and this pane then derives
    * from `graphContent` exactly as it did before the channel existed,
    * which is the honest degradation that module's own doc promises. The
-   * feed is `window.__nputerDocsHarness.apply` (watcher-store.ts, DEV +
+   * feed is `window.__supertaskrDocsHarness.apply` (watcher-store.ts, DEV +
    * `!isTauri`), and `app/test/map-dogfood-render.test.tsx` drives this
    * path against the live repository's own graph on every `npm test`.
    *
@@ -888,7 +888,7 @@ export function MapView({
               DID NOT DISCHARGE THE OBLIGATION, SO HERE IS THE SENTENCE
               IT OWES: what speaks now is `truncated_files` /
               `truncated_symbols` in the emitted graph and
-              `nputer_index::check`'s headroom alarm at `index --check`,
+              `supertaskr_index::check`'s headroom alarm at `index --check`,
               and both of those report DEGRADATION — symbols thinned,
               files and import edges kept. What vanishes with this banner
               is the report of a CLIFF that can no longer happen, because

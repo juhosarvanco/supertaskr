@@ -18,23 +18,23 @@ export const repoRoot = path.resolve(here, "..", "..");
 export const appDir = path.join(repoRoot, "app");
 
 /**
- * The lane's dev-server port: NPUTER_E2E_PORT or 14520.
+ * The lane's dev-server port: SUPERTASKR_E2E_PORT or 14520.
  *
  * 1420 THROWS, always: 1420 is the human's live `tauri dev` app on this
  * machine (vite.config.ts owns it). The lane runs its OWN server and
  * must never bind or contact the human's — the standing order as code.
  */
 export function resolveLanePort(): number {
-  const raw = process.env.NPUTER_E2E_PORT;
+  const raw = process.env.SUPERTASKR_E2E_PORT;
   const port = raw === undefined || raw === "" ? 14520 : Number(raw);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(
-      `NPUTER_E2E_PORT=${JSON.stringify(raw)} is not a valid port number`,
+      `SUPERTASKR_E2E_PORT=${JSON.stringify(raw)} is not a valid port number`,
     );
   }
   if (port === 1420) {
     throw new Error(
-      "NPUTER_E2E_PORT is 1420 — refusing: 1420 is the human's live app " +
+      "SUPERTASKR_E2E_PORT is 1420 — refusing: 1420 is the human's live app " +
         "(app/vite.config.ts). The E2E lane always runs its own dev server " +
         "on its own port (default 14520) and never contacts 1420.",
     );
@@ -61,7 +61,7 @@ export function assertLanePreconditions(port: number): void {
     throw new Error(
       "lib/parser/dist is missing — ADR-011 build order: lib/parser FIRST " +
         "(`npm ci` + `npm run build` from lib/parser/), then app/. The app " +
-        "resolves @nputer/parser via file:../lib/parser and the dev bundle " +
+        "resolves @supertaskr/parser via file:../lib/parser and the dev bundle " +
         "imports its built dist/pure.js.",
     );
   }
@@ -85,7 +85,7 @@ export function assertLanePreconditions(port: number): void {
     throw new Error(
       `lane port ${port} is not bindable on 127.0.0.1 ` +
         `(${(probe.stderr ?? "").trim() || "probe failed"}) — something else ` +
-        "is listening. Set NPUTER_E2E_PORT to a free port (never 1420).",
+        "is listening. Set SUPERTASKR_E2E_PORT to a free port (never 1420).",
     );
   }
 }

@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@supertaskr/parser/pure";
 import { MapView } from "../src/architecture/MapView";
 import {
   __resetChurnForTests,
@@ -86,7 +86,7 @@ const NOW = 1_700_000_600_000;
 let container: HTMLDivElement;
 let root: Root;
 let seq = 0;
-let docsHarness: NonNullable<typeof window.__nputerDocsHarness>;
+let docsHarness: NonNullable<typeof window.__supertaskrDocsHarness>;
 
 beforeEach(async () => {
   vi.spyOn(Date, "now").mockReturnValue(NOW);
@@ -99,9 +99,9 @@ beforeEach(async () => {
   // is the shipped `applyDocsPayload` by reference — so a switch driven
   // here runs the shell's OWN reducer and not an imitation of it.
   await startDocsWatcher();
-  const harness = window.__nputerDocsHarness;
+  const harness = window.__supertaskrDocsHarness;
   if (harness === undefined) {
-    throw new Error("no __nputerDocsHarness: the browser DEV gate did not install it");
+    throw new Error("no __supertaskrDocsHarness: the browser DEV gate did not install it");
   }
   docsHarness = harness;
   // Reset AFTER the shell exists, so the churn store's idea of which

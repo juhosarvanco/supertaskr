@@ -498,7 +498,7 @@ for (const [label, size] of [
     // the tallest real board available. The guard below says so out loud.
     await openApp(page);
     await page.evaluate((payload) => {
-      window.__nputerDocsHarness!.apply(payload);
+      window.__supertaskrDocsHarness!.apply(payload);
     }, repoBoard(1));
     await expect(page.getByTestId("docs-model")).toHaveAttribute("data-screen", "board");
     await page.setViewportSize(size);

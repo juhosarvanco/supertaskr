@@ -2071,35 +2071,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nputer"
-version = "0.1.0"
-dependencies = [
- "notify-debouncer-mini",
- "nputer-index",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
-]
-
-[[package]]
-name = "nputer-index"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "ignore",
- "jsonc-parser",
- "notify-debouncer-mini",
- "serde",
- "serde_json",
- "tree-sitter",
- "tree-sitter-javascript",
- "tree-sitter-rust",
- "tree-sitter-typescript",
-]
-
-[[package]]
 name = "num-conv"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3192,6 +3163,35 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "supertaskr"
+version = "0.1.0"
+dependencies = [
+ "notify-debouncer-mini",
+ "serde",
+ "serde_json",
+ "supertaskr-index",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+]
+
+[[package]]
+name = "supertaskr-index"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "ignore",
+ "jsonc-parser",
+ "notify-debouncer-mini",
+ "serde",
+ "serde_json",
+ "tree-sitter",
+ "tree-sitter-javascript",
+ "tree-sitter-rust",
+ "tree-sitter-typescript",
+]
 
 [[package]]
 name = "swift-rs"

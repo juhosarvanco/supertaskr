@@ -2,7 +2,7 @@
 import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type ProjectParseResult } from "@supertaskr/parser/pure";
 import { Board } from "../src/components/board/Board";
 import App from "../src/App";
 
@@ -430,7 +430,7 @@ describe("header controls do not dismiss the panel (T-005-s3, full App)", () => 
     // Outside Tauri the store exposes the DEV browser harness; drive the
     // same snapshot the fixture model came from through the real store.
     await act(async () => {});
-    const harness = window.__nputerDocsHarness;
+    const harness = window.__supertaskrDocsHarness;
     if (harness === undefined) throw new Error("dev harness missing");
     act(() => {
       harness.apply({
@@ -455,7 +455,7 @@ describe("header controls do not dismiss the panel (T-005-s3, full App)", () => 
 
     // Bare chrome (the wordmark) is NOT exempt: outside press closes.
     const wordmark = [...container.querySelectorAll("h1")].find(
-      (h) => h.textContent === "nputer",
+      (h) => h.textContent === "supertaskr",
     );
     if (wordmark === undefined) throw new Error("wordmark missing");
     press(wordmark);
@@ -809,7 +809,7 @@ describe("soft issues reach the affected card (T-019-s1)", () => {
   it("the header's aggregate count is UNCHANGED — the card join adds a surface, never a filter", async () => {
     render(<App />);
     await act(async () => {});
-    const harness = window.__nputerDocsHarness;
+    const harness = window.__supertaskrDocsHarness;
     if (harness === undefined) throw new Error("dev harness missing");
     const files = [
       { path: "docs/ROADMAP.md", content: ROADMAP },

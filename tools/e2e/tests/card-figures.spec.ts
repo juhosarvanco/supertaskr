@@ -462,7 +462,7 @@ test("CONTENTION SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT REA
 
   const porcelain = (blindIds: string[]): string =>
     [
-      "worktree /Users/x/nputer",
+      "worktree /Users/x/supertaskr",
       "HEAD 1111111111111111111111111111111111111111",
       "branch refs/heads/main",
       "",

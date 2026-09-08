@@ -23,7 +23,7 @@ import {
  * pin the writing window without wall-clock flake).
  *
  * Design source: the `interview` screen of docs/design/
- * claudedesign_handoff/"nputer app.dc.html", right pane — values
+ * claudedesign_handoff/"supertaskr app.dc.html", right pane — values
  * extracted per the T-006 protocol, tokens only; dark values ride the
  * token families (flagged to the screenshot pass). Degradation rides
  * the existing machinery: torn/malformed model inputs keep their

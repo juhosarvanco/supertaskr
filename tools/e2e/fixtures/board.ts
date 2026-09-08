@@ -10,7 +10,7 @@
  * - T-103 planned, bodyless; T-104 parked (the exempt expander's row);
  * - component C-90 whose `paths` globs claim the fixture graph's two
  *   files (T-008 component-file format);
- * - a minimal valid graph.json in the nputer-index golden schema.
+ * - a minimal valid graph.json in the supertaskr-index golden schema.
  */
 
 /**

@@ -9,7 +9,7 @@ import type {
 import { openApp } from "./helpers";
 
 /**
- * Driving T-041's shell harness from the lane. `window.__nputerShellHarness`
+ * Driving T-041's shell harness from the lane. `window.__supertaskrShellHarness`
  * exists only on a non-Tauri DEV bundle; synthetic calls are fine for STATE
  * plumbing (plan §3) — only INPUT must be trusted, and every activation in
  * these specs is a real Playwright click or keypress.
@@ -17,7 +17,7 @@ import { openApp } from "./helpers";
 
 declare global {
   interface Window {
-    __nputerShellHarness?: {
+    __supertaskrShellHarness?: {
       applyProjectStatus: (status: ProjectStatusPayload) => void;
       applyPickOutcome: (outcome: PickOutcomePayload) => void;
       applyStartupFailure: (step: StartupStep, reason: unknown) => void;
@@ -32,12 +32,12 @@ declare global {
 export async function openShell(page: Page): Promise<void> {
   await openApp(page);
   try {
-    await page.waitForFunction(() => window.__nputerShellHarness !== undefined, undefined, {
+    await page.waitForFunction(() => window.__supertaskrShellHarness !== undefined, undefined, {
       timeout: 15_000,
     });
   } catch {
     throw new Error(
-      "window.__nputerShellHarness never appeared — the shell harness is " +
+      "window.__supertaskrShellHarness never appeared — the shell harness is " +
         "dev-only and non-Tauri (T-041, watcher-store.ts). Are you serving a " +
         "prod build, or a bundle from before the harness landed? Without it " +
         "the served bundle can only reach phase \"open\".",
@@ -48,7 +48,7 @@ export async function openShell(page: Page): Promise<void> {
 /** Hand the shell the status Rust's `docs_snapshot` would have answered. */
 export async function applyStatus(page: Page, status: ProjectStatusPayload): Promise<void> {
   await page.evaluate((s) => {
-    window.__nputerShellHarness!.applyProjectStatus(s);
+    window.__supertaskrShellHarness!.applyProjectStatus(s);
   }, status);
 }
 
@@ -56,7 +56,7 @@ export async function applyStatus(page: Page, status: ProjectStatusPayload): Pro
  * have answered — everything `runPicker` does after `invoke` resolves. */
 export async function applyPick(page: Page, outcome: PickOutcomePayload): Promise<void> {
   await page.evaluate((o) => {
-    window.__nputerShellHarness!.applyPickOutcome(o);
+    window.__supertaskrShellHarness!.applyPickOutcome(o);
   }, outcome);
 }
 
@@ -75,7 +75,7 @@ export async function applyStartupFailure(
 ): Promise<void> {
   await page.evaluate(
     (f) => {
-      window.__nputerShellHarness!.applyStartupFailure(f.step, f.reason);
+      window.__supertaskrShellHarness!.applyStartupFailure(f.step, f.reason);
     },
     { step, reason },
   );
@@ -86,12 +86,12 @@ export async function applyStartupFailure(
  * project the same event here as in the shipped app. */
 export async function applyDocs(page: Page, payload: DocsSnapshotPayload): Promise<void> {
   await page.evaluate((p) => {
-    window.__nputerDocsHarness!.apply(p);
+    window.__supertaskrDocsHarness!.apply(p);
   }, payload);
 }
 
 export function getShell(page: Page): Promise<ShellHarnessSnapshot> {
-  return page.evaluate(() => window.__nputerShellHarness!.getShell());
+  return page.evaluate(() => window.__supertaskrShellHarness!.getShell());
 }
 
 /**
@@ -215,7 +215,7 @@ export interface GenesisStatusPayload {
 
 declare global {
   interface Window {
-    __nputerInterviewHarness?: {
+    __supertaskrInterviewHarness?: {
       push: (event: GenesisEventPayload) => void;
       outcome: (outcome: GenesisOutcomePayload) => void;
       status: (payload: GenesisStatusPayload) => void;
@@ -227,7 +227,7 @@ declare global {
   }
 }
 
-/** One banked protocol half-turn, as `.nputer/genesis/transcript.jsonl`
+/** One banked protocol half-turn, as `.supertaskr/genesis/transcript.jsonl`
  * holds it (T-029). `machine` marks an APP-ASSEMBLED half — a kickoff or
  * a resume nudge — which the chat must not draw in the user's bubble. */
 export interface TranscriptLinePayload {
@@ -243,12 +243,12 @@ export interface TranscriptLinePayload {
 export async function openInterview(page: Page): Promise<void> {
   await openShell(page);
   try {
-    await page.waitForFunction(() => window.__nputerInterviewHarness !== undefined, undefined, {
+    await page.waitForFunction(() => window.__supertaskrInterviewHarness !== undefined, undefined, {
       timeout: 15_000,
     });
   } catch {
     throw new Error(
-      "window.__nputerInterviewHarness never appeared — the interview " +
+      "window.__supertaskrInterviewHarness never appeared — the interview " +
         "harness is dev-only and non-Tauri (T-027, genesis/interview-source.ts). " +
         "Are you serving a prod build? Without it a browser can only ever " +
         "reach the interview's empty frame.",
@@ -259,14 +259,14 @@ export async function openInterview(page: Page): Promise<void> {
 /** Push one `genesis-turn` payload through the SHIPPED reducer. */
 export async function pushTurnEvent(page: Page, event: GenesisEventPayload): Promise<void> {
   await page.evaluate((e) => {
-    window.__nputerInterviewHarness!.push(e);
+    window.__supertaskrInterviewHarness!.push(e);
   }, event);
 }
 
 /** Push a start/send outcome through the shipped reducer. */
 export async function pushOutcome(page: Page, outcome: GenesisOutcomePayload): Promise<void> {
   await page.evaluate((o) => {
-    window.__nputerInterviewHarness!.outcome(o);
+    window.__supertaskrInterviewHarness!.outcome(o);
   }, outcome);
 }
 
@@ -276,7 +276,7 @@ export async function pushStatus(
   patch: Partial<GenesisStatusPayload> = {},
 ): Promise<void> {
   await page.evaluate((p) => {
-    window.__nputerInterviewHarness!.status({
+    window.__supertaskrInterviewHarness!.status({
       phase: "idle",
       projectDir: null,
       turn: 0,
@@ -300,18 +300,18 @@ export async function pushStatus(
  */
 export async function pushListenerFailed(page: Page, failed = true): Promise<void> {
   await page.evaluate((f) => {
-    window.__nputerInterviewHarness!.listenerFailed(f);
+    window.__supertaskrInterviewHarness!.listenerFailed(f);
   }, failed);
 }
 
 /** T-029 criteria 1-2: the banked transcript a restart rehydrates from.
- * A served bundle has no `.nputer/` to read. */
+ * A served bundle has no `.supertaskr/` to read. */
 export async function pushRehydration(
   page: Page,
   lines: readonly TranscriptLinePayload[],
 ): Promise<void> {
   await page.evaluate((l) => {
-    window.__nputerInterviewHarness!.rehydrate(l);
+    window.__supertaskrInterviewHarness!.rehydrate(l);
   }, lines);
 }
 
@@ -319,5 +319,5 @@ export async function pushRehydration(
  * `invoke` on a non-Tauri runtime, so without this a served bundle can
  * prove a keystroke was claimed but never that it reached a command. */
 export function sentAnswers(page: Page): Promise<readonly string[]> {
-  return page.evaluate(() => window.__nputerInterviewHarness!.sent());
+  return page.evaluate(() => window.__supertaskrInterviewHarness!.sent());
 }

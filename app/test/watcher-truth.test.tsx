@@ -90,7 +90,7 @@ function mountAndApply(p: DocsSnapshotPayload): void {
   act(() => {
     root.render(<App />);
   });
-  const harness = window.__nputerDocsHarness;
+  const harness = window.__supertaskrDocsHarness;
   expect(harness).toBeDefined();
   act(() => {
     harness?.apply(p);
@@ -99,7 +99,7 @@ function mountAndApply(p: DocsSnapshotPayload): void {
 
 function apply(p: DocsSnapshotPayload): void {
   act(() => {
-    window.__nputerDocsHarness?.apply(p);
+    window.__supertaskrDocsHarness?.apply(p);
   });
 }
 

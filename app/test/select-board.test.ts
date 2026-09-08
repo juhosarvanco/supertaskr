@@ -7,7 +7,7 @@ import {
   type ParseIssue,
   type ProjectParseResult,
   type TaskStatus,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 import {
   assignmentByFile,
   CONCURRENCY_CEILING,

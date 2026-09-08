@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **684 behaviours** — 682 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **690 behaviours** — 688 extracted sentences + 2 named-not-extracted (listed at the end) — across 38 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -32,9 +32,9 @@ Census: **684 behaviours** — 682 extracted sentences + 2 named-not-extracted (
 - an underivable committed config REFUSES — it never falls back to the committed port
 - an OVERRIDE with no committed config refuses rather than emitting a bare overlay
 - the process-group guard refuses the two ids that mean something else entirely
-- NPUTER_BOOT_PORT=1420 is refused by the resolver — the lane's own throw, restated
+- SUPERTASKR_BOOT_PORT=1420 is refused by the resolver — the lane's own throw, restated
 - values that are not ports are refused, never silently defaulted
-- the real script refuses NPUTER_BOOT_PORT=1420 with exit 3, probing nothing
+- the real script refuses SUPERTASKR_BOOT_PORT=1420 with exit 3, probing nothing
 - a busy scratch port aborts with exit 2 and spawns nothing
 
 ## brief-flush
@@ -310,7 +310,7 @@ Census: **684 behaviours** — 682 extracted sentences + 2 named-not-extracted (
 - a title opening with a backtick is a named yaml-error, not a shorter board
 - a legal card reports nothing, and a path the parser does not collect is not judged
 - every live task card parses, with a status in the vocabulary
-- .nputerignore still excludes docs/ — the indexer is not the gate that missed this
+- .supertaskrignore still excludes docs/ — the indexer is not the gate that missed this
 - every injection pattern has a planted positive that FIRES and a planted negative that does NOT
 - THE PROOF OF TEETH IS DEMONSTRATED FAILING — three degradations, each caught by name
 - the three classes the card names are each covered, and the classes are DERIVED from the controls
@@ -410,6 +410,15 @@ Census: **684 behaviours** — 682 extracted sentences + 2 named-not-extracted (
 - the command refuses what it cannot answer rather than answering it
 - every band this project watches is present, and each names an authority
 - the tree-authority bands are read at the running ref, not remembered
+
+## identifier-rename
+
+- only the four enumerated classes of the pre-rename identifier survive in the code tree
+- every enumerated survivor class is occupied — a class nobody hits has stopped meaning anything
+- the records were not rewritten — every record tree still carries the old name
+- a pre-rename runtime directory refuses the fence manifest read, and names the rename
+- a pre-rename runtime directory refuses the verdict token read, and names the rename
+- the legacy detector answers a FILE at the old path with no migration finding
 
 ## interview
 

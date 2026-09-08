@@ -57,13 +57,13 @@ import { trackedFiles } from "./docs-scan.mjs";
  * because a guard that a routine act silently removes must be askable.
  *
  * ── FILES ONLY. NEVER A DIRECTORY. Three reasons and all three measured.
- * 1. `.nputer/` is the runtime directory (`T-154`'s fence manifest and
+ * 1. `.supertaskr/` is the runtime directory (`T-154`'s fence manifest and
  *    `T-203`'s verdict token) and it is created and rewritten AT THE
  *    WORKTREE ROOT. A read-only root would `EACCES` the token mint, and
  *    a push with no token is refused — so a directory lock would stop
  *    every lane from pushing at all. It is safe here by CONSTRUCTION
  *    rather than by an exception list: the corpus is `git ls-files`, and
- *    `.nputer/` is ignored by its own `.gitignore`, so no path under it
+ *    `.supertaskr/` is ignored by its own `.gitignore`, so no path under it
  *    is ever a candidate.
  * 2. `git worktree remove` unlinks files, and unlink is authorised by the
  *    PARENT DIRECTORY's mode, not the file's. Locking only files keeps
@@ -158,7 +158,7 @@ import { trackedFiles } from "./docs-scan.mjs";
  * `MANIFEST_REL_PATH` lives there: a ledger that reached the integration
  * branch would hand every checkout one lane's chmod history.
  */
-export const LEDGER_REL_PATH = ".nputer/lane-lock.json";
+export const LEDGER_REL_PATH = ".supertaskr/lane-lock.json";
 
 /**
  * The ledger's own version. A ledger this reader does not recognise is a

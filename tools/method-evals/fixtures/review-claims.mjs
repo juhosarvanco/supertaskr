@@ -138,7 +138,7 @@ export const REVIEW_CLAIMS = [
     verdict: "REFUTED",
     source: "T-155 §4 — an external review's Unix-convention claim that `diff(1)` refutes",
     derive() {
-      const dir = mkdtempSync(path.join(tmpdir(), "nputer-rc03-"));
+      const dir = mkdtempSync(path.join(tmpdir(), "supertaskr-rc03-"));
       try {
         const a = path.join(dir, "a");
         const b = path.join(dir, "b");

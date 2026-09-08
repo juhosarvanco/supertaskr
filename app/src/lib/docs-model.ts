@@ -7,7 +7,7 @@ import {
   parseTaskFile,
   type ParseIssue,
   type ProjectParseResult,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 
 /**
  * Pure model state for the docs watcher (T-003). No React, no Tauri, no IO:
@@ -31,7 +31,7 @@ export const ROADMAP_FILE = "docs/ROADMAP.md";
  * (T-012) actually delivered; it no longer does, and removing this fold
  * along with the rule was the other half of the choice. It stays because
  * this fold is not the collector's — it is the SNAPSHOT's, and the
- * snapshot has a second producer: `window.__nputerDocsHarness.apply`
+ * snapshot has a second producer: `window.__supertaskrDocsHarness.apply`
  * hands `applyDocsPayload` whatever payload a caller composes (DEV +
  * `!isTauri`, watcher-store.ts). That is how the browser bundle and the
  * e2e lane drive the shell's real reducers, and it is the supply line

@@ -2906,7 +2906,7 @@ mod tests {
     {
         a_spelling_survives_a_decoy(
             "worktree",
-            "../nputer-a-planted-worktree",
+            "../supertaskr-a-planted-worktree",
             |b| b.contains("../"),
             "worktree",
             "../nputer-T-900",
@@ -2929,7 +2929,7 @@ mod tests {
     fn row_fours_create_command_is_read_by_its_label_and_a_planted_worktree_add_does_not_move_it() {
         a_spelling_survives_a_decoy(
             "create",
-            "git worktree add --detach /tmp/nputer-a-planted-tree main",
+            "git worktree add --detach /tmp/supertaskr-a-planted-tree main",
             |b| b.starts_with("git worktree add"),
             "create",
             "git worktree add ../nputer-T-900 -b task/T-900-<slug> <base>",

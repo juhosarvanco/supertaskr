@@ -1078,7 +1078,7 @@ test("a failed preflight GATES the fence write — no manifest for a card whose 
   expect(refused.status, String(refused.stderr)).toBe(1);
   expect(String(refused.stdout)).toContain("fence: NOT WRITTEN");
   expect(
-    existsSync(path.join(lane, ".nputer", "lane-fence.json")),
+    existsSync(path.join(lane, ".supertaskr", "lane-fence.json")),
     "the manifest must not exist after a refused preflight",
   ).toBe(false);
 
@@ -1103,7 +1103,7 @@ test("a failed preflight GATES the fence write — no manifest for a card whose 
     ok.repo,
   );
   expect(written.status, String(written.stderr)).toBe(0);
-  expect(existsSync(path.join(okLane, ".nputer", "lane-fence.json"))).toBe(true);
+  expect(existsSync(path.join(okLane, ".supertaskr", "lane-fence.json"))).toBe(true);
 });
 
 test("a ruling discharges at a token boundary — suffixes and .map twins stay refused", () => {
@@ -2259,7 +2259,7 @@ async function until(ready: () => boolean, what: string): Promise<void> {
   throw new Error(`timed out waiting for ${what}`);
 }
 
-const HOLDER_FILE = ".nputer/holder.json";
+const HOLDER_FILE = ".supertaskr/holder.json";
 
 function holderIn(repo: string): { identity: { pid: number; startedAt: string } } {
   return JSON.parse(readFileSync(path.join(repo, HOLDER_FILE), "utf8")) as {
@@ -2369,7 +2369,7 @@ test("no manifest is written for a lane while another live session holds the int
   // and the POSITIVE CONTROL is the same invocation, in the same
   // fixture, with the seat free.
   const fx = makeFixture();
-  const manifest = path.join(fx.lane, ".nputer/lane-fence.json");
+  const manifest = path.join(fx.lane, ".supertaskr/lane-fence.json");
   const first = underHarness(fakeHarness("armer"), ["--task", OTHER_ID, "--write-fence", fx.lane, "--root", fx.repo], fx.repo);
   expect(first.status, `${first.out}\n${first.err}`).toBe(0);
   expect(existsSync(manifest), "the control: with the seat free the manifest IS written").toBe(true);

@@ -272,13 +272,13 @@ describe("2. failed — the screen stops claiming it is waiting (criterion 3)", 
     expect(screenOf()).toBe("startupFailed");
     expect(startupState()).toBe("failed");
     const message = q("[data-testid=startup-message]")?.textContent ?? "";
-    expect(message).toContain("nputer could not start");
+    expect(message).toContain("supertaskr could not start");
     expect(message, "and it names which half broke").toContain(
       "the watcher subscription was refused",
     );
     expect(message).not.toContain("waiting for the first docs snapshot");
     // The rejection was caught and recorded, not swallowed.
-    expect(errors.map((e) => e[0])).toContain("[nputer] startup failed at");
+    expect(errors.map((e) => e[0])).toContain("[supertaskr] startup failed at");
   });
 
   it("the escape is still there, and the retry is pressable again", () => {
@@ -457,7 +457,7 @@ describe("6. T-063: the DEADLINE case, rendered", () => {
       "failed",
     );
     const message = text("[data-testid=startup-message]");
-    expect(message).toContain("nputer could not start");
+    expect(message).toContain("supertaskr could not start");
     // N, in the copy, derived from the one constant rather than typed
     // twice — a deadline the screen and the store disagree about is a
     // worse bug than the one this card is fixing.

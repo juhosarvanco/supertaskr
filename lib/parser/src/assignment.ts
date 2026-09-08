@@ -12,7 +12,7 @@ import type {
  * "Of course the models the human assigns to different tasks do those
  * tasks as assigned." Assignment is BINDING, not advisory. Where a spawn
  * path can force the model the adapter forces it; where it cannot — a
- * hand-pasted brief, an adapter whose CLI takes no model flag — nputer
+ * hand-pasted brief, an adapter whose CLI takes no model flag — supertaskr
  * VERIFIES instead, and this module is the verification. It derives, per
  * card, whether what the human ASSIGNED (`builder:` / `verifier:`) is
  * among what actually RAN (`built_by:` / `verified_by:`), from fields the
@@ -228,7 +228,7 @@ export function readAssignment(task: TaskRecord): AssignmentReading[] {
     // constrains nothing — `unconstrained`. An EXECUTION stamp that
     // names no readable model, against an assignment that does, is a
     // pair this module cannot verify — and D5 makes assignment binding
-    // with nputer VERIFYING everywhere, so the unverifiable stamp is
+    // with supertaskr VERIFYING everywhere, so the unverifiable stamp is
     // reported `violated` with every assigned model missing, never
     // waved through. Both shapes are reachable through parseTaskFile
     // (`claude-opus-5 (completion)` parses clean and yields the empty

@@ -1069,7 +1069,7 @@ export function ownersOf(owners, rel) {
  * A CRITERION THAT DEMANDS A BODY, AGAINST A FENCE THAT CANNOT HOLD ONE
  * (T-228-s1) — CONSUMED, NEVER RE-DERIVED.
  *
- * The reading itself is `@nputer/parser`'s `criteriaDemandingABody` +
+ * The reading itself is `@supertaskr/parser`'s `criteriaDemandingABody` +
  * `fenceHoldsABody` in `lib/parser/src/lanes.ts`, because TWO consumers
  * need it: the dispatch view, which must rule such a card `unfenceable`
  * rather than startable, and this preflight, which must refuse with the

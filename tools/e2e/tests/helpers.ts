@@ -6,7 +6,7 @@ import { boardFixture, type DocsSnapshotPayload } from "../fixtures/board";
  * plumbing — only INPUT must be trusted (plan §3). */
 declare global {
   interface Window {
-    __nputerDocsHarness?: {
+    __supertaskrDocsHarness?: {
       apply: (payload: DocsSnapshotPayload) => void;
     };
   }
@@ -20,12 +20,12 @@ declare global {
 export async function openApp(page: Page): Promise<void> {
   await page.goto("/");
   try {
-    await page.waitForFunction(() => window.__nputerDocsHarness !== undefined, undefined, {
+    await page.waitForFunction(() => window.__supertaskrDocsHarness !== undefined, undefined, {
       timeout: 15_000,
     });
   } catch {
     throw new Error(
-      "window.__nputerDocsHarness never appeared — the harness is dev-only " +
+      "window.__supertaskrDocsHarness never appeared — the harness is dev-only " +
         "and non-Tauri; are you serving a prod build (or a Tauri runtime) " +
         "instead of `npm run dev`?",
     );
@@ -36,7 +36,7 @@ export async function openApp(page: Page): Promise<void> {
 export async function openBoard(page: Page, seq = 1): Promise<void> {
   await openApp(page);
   await page.evaluate((payload) => {
-    window.__nputerDocsHarness!.apply(payload);
+    window.__supertaskrDocsHarness!.apply(payload);
   }, boardFixture(seq));
   await expect(page.getByTestId("docs-model")).toHaveAttribute("data-screen", "board");
   await expect(page.locator('[data-testid="task-card"][data-task-id="T-101"]')).toBeVisible();

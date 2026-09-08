@@ -223,13 +223,13 @@ test("the graph headroom is READ OUT OF index --check's own budget line, in both
   // degraded — so it renders differently and must come back as a
   // NEGATIVE headroom rather than as nothing.
   const under = parseGraphHeadroom(
-    "[nputer-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left\n",
+    "[supertaskr-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left\n",
   );
   expect(under?.value).toBe(19977);
   expect(under?.derivation).toContain("1020023 of 1040000");
 
   const over = parseGraphHeadroom(
-    "[nputer-index]   budget:      1200000 of 1040000 bytes (115.4%) - OVER by 160000: symbol arrays dropped\n",
+    "[supertaskr-index]   budget:      1200000 of 1040000 bytes (115.4%) - OVER by 160000: symbol arrays dropped\n",
   );
   expect(over?.value).toBe(-160000);
 
@@ -242,7 +242,7 @@ test("THE PARSER IS PINNED TO THE SOURCE THAT PRODUCES THE LINE, not to a rememb
   // so — a missing number is exactly the failure the whole card is
   // about. Cite the SYMBOL, never a line (docs/CONVENTIONS.md).
   const check = readFileSync(
-    path.join(repoRoot, "app/src-tauri/crates/nputer-index/src/check.rs"),
+    path.join(repoRoot, "app/src-tauri/crates/supertaskr-index/src/check.rs"),
     "utf8",
   );
   expect(check).toContain("fn budget_line(");
@@ -262,9 +262,9 @@ test("the lib suite's duration is taken from the lib.rs binary BY NAME, never by
   // the name — measured: broadening the guard to /Running unittests/
   // survived that ordering with the suite at 20-for-20, and dies here.
   const cargo = [
-    "   Running unittests src/main.rs (target/debug/deps/nputer-1111111)",
+    "   Running unittests src/main.rs (target/debug/deps/supertaskr-1111111)",
     "test result: ok. 3 passed; 0 failed; finished in 22.10s",
-    "   Running unittests src/lib.rs (target/debug/deps/nputer-9a1b2c3)",
+    "   Running unittests src/lib.rs (target/debug/deps/supertaskr-9a1b2c3)",
     "test result: ok. 412 passed; 0 failed; 0 ignored; finished in 8.91s",
     "   Running tests/budget.rs (target/debug/deps/budget-2222222)",
     "test result: ok. 9 passed; 0 failed; finished in 31.70s",
@@ -275,7 +275,7 @@ test("the lib suite's duration is taken from the lib.rs binary BY NAME, never by
   // A workspace that ran binaries but not the lib one is UNREAD, never
   // some other binary's number wearing the lib band's name.
   const noLib = [
-    "   Running unittests src/main.rs (target/debug/deps/nputer-1111111)",
+    "   Running unittests src/main.rs (target/debug/deps/supertaskr-1111111)",
     "test result: ok. 3 passed; 0 failed; finished in 22.10s",
   ].join("\n");
   expect(parseLibSuiteSeconds(noLib)).toBeNull();
@@ -294,7 +294,7 @@ test("Playwright's summary unit is READ, never assumed — 2.6m is not 2.6 secon
 
 test("a readings file yields exactly the three readings-authority bands, and no more", () => {
   const text = [
-    "[nputer-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left",
+    "[supertaskr-index]   budget:      1020023 of 1040000 bytes (98.1%) - 19977 left",
     "   Running unittests src/lib.rs (target/debug/deps/x)",
     "test result: ok. 1 passed; finished in 9.00s",
     "  259 passed (2.6m)",

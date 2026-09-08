@@ -1,5 +1,5 @@
 //! T-025 §3: the method snapshot — compiled into the binary, materialized
-//! per genesis into `<project>/.nputer/genesis/kit/`.
+//! per genesis into `<project>/.supertaskr/genesis/kit/`.
 //!
 //! WHY COMPILED IN, not a Tauri resource (the criterion's amended
 //! parenthetical): `cargo test` has no `AppHandle` and no `resource_dir`,
@@ -37,7 +37,7 @@ use super::skills;
 pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.9";
 
 /// Where the kit is written inside a project (relative, POSIX).
-pub const KIT_REL_DIR: &str = ".nputer/genesis/kit";
+pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
 
 /// One file of the compiled-in kit.
 pub struct KitFile {
@@ -137,7 +137,7 @@ fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
-/// The kit root for a project: `<project>/.nputer/genesis/kit`.
+/// The kit root for a project: `<project>/.supertaskr/genesis/kit`.
 pub fn kit_root(project_dir: &Path) -> PathBuf {
     let mut path = project_dir.to_path_buf();
     for part in KIT_REL_DIR.split('/') {
@@ -146,7 +146,7 @@ pub fn kit_root(project_dir: &Path) -> PathBuf {
     path
 }
 
-/// Write `<project>/.nputer/genesis/kit/**` plus `kit.json`.
+/// Write `<project>/.supertaskr/genesis/kit/**` plus `kit.json`.
 ///
 /// Idempotent overwrite: this is app-owned runtime data, losable by
 /// charter (ADR-017 clause 4), so re-running a genesis simply refreshes
@@ -277,7 +277,7 @@ project directory. Turns are plain text. Method v{version}.{skills}",
 ///
 /// FILE EVIDENCE, not registry state, and deliberately so: it is what a
 /// human hand-driving the method would see, and ADR-017's whole rule is
-/// that `docs/` is the truth and `.nputer/` is a convenience. A genesis
+/// that `docs/` is the truth and `.supertaskr/` is a convenience. A genesis
 /// with an intact registry and an empty `docs/` is a stage-0 start; a
 /// genesis whose registry was deleted and whose `docs/` is full is a
 /// resume.
@@ -383,7 +383,7 @@ pub const COLD_START_GAPS_HEADING: &str = "GAPS:";
 /// **EVERY OTHER PROMPT IN THIS MODULE NAMES TWO ABSOLUTE PATHS — the kit
 /// root and the project directory — AND THIS ONE NAMES NONE.** A path
 /// above `docs/` written into the prompt is a path the session has been
-/// told about, and telling a cold reader where `.nputer/` lives would undo
+/// told about, and telling a cold reader where `.supertaskr/` lives would undo
 /// in one sentence what the spawn's cwd is doing. So this function takes
 /// no `project_dir`: it CANNOT interpolate one, and
 /// `the_cold_start_prompt_names_no_path_at_all` pins that the result stays
@@ -463,7 +463,7 @@ mod tests {
     impl TempTree {
         fn new(tag: &str) -> Self {
             let dir = std::env::temp_dir().join(format!(
-                "nputer-t025-kit-{}-{}-{}",
+                "supertaskr-t025-kit-{}-{}-{}",
                 tag,
                 std::process::id(),
                 now_ms()
@@ -577,8 +577,14 @@ mod tests {
             );
         }
         // Stage 0 is what the runner's own security posture leans on: the
-        // planner creates the .gitignore line that keeps .nputer/ (and so
-        // the materialized kit) out of the project's git.
+        // planner creates the .gitignore line that keeps the runtime
+        // directory (and so the materialized kit) out of the project's git.
+        //
+        // T-264: THE NEEDLE IS THE PRE-RENAME SPELLING, DELIBERATELY, AND
+        // MOVES AT T-265. `interview` is `method/interview/plan-interview.md`
+        // compiled in verbatim; that file is outside this lane's fence, so
+        // the needle names what the SHIPPED text says rather than what this
+        // repository's own code now spells.
         assert!(interview.contains("`.nputer/`"), "stage 0 must still bank the .gitignore line");
         assert!(interview.contains("docs-templates/"));
     }
@@ -645,7 +651,7 @@ mod tests {
             "the cold-start prompt must not name the project directory: {cold}"
         );
         assert!(
-            !cold.contains(KIT_REL_DIR) && !cold.contains(".nputer"),
+            !cold.contains(KIT_REL_DIR) && !cold.contains(".supertaskr"),
             "the cold-start prompt must not name the runtime directory it is fenced out of: {cold}"
         );
         assert!(
@@ -781,7 +787,7 @@ mod tests {
     fn the_kickoff_names_the_kit_root_the_project_and_the_method_version() {
         let project = Path::new("/tmp/some project/with space");
         let text = assemble_kickoff(project);
-        assert!(text.contains("/tmp/some project/with space/.nputer/genesis/kit"));
+        assert!(text.contains("/tmp/some project/with space/.supertaskr/genesis/kit"));
         assert!(text.contains("PROJECT DIRECTORY: /tmp/some project/with space"));
         assert!(text.contains("roles/planner.md"));
         assert!(text.contains("Turns are plain text"));
@@ -819,14 +825,14 @@ mod tests {
     fn the_no_packs_kickoffs_are_byte_identical_to_the_unskilled_text() {
         let project = Path::new("/tmp/some project/with space");
         let stage0 = format!(
-            "You are the planner. KIT ROOT: /tmp/some project/with space/.nputer/genesis/kit - \
+            "You are the planner. KIT ROOT: /tmp/some project/with space/.supertaskr/genesis/kit - \
 PROJECT DIRECTORY: /tmp/some project/with space. Read roles/planner.md at the kit root now and \
 follow it exactly: stage 0 scaffold first, then the interview, one question at a time. \
 Kit-internal paths resolve against the kit root; every docs/ path resolves inside the project \
 directory. Turns are plain text. Method v{METHOD_SNAPSHOT_VERSION}."
         );
         let resume = format!(
-            "You are the planner. KIT ROOT: /tmp/some project/with space/.nputer/genesis/kit - \
+            "You are the planner. KIT ROOT: /tmp/some project/with space/.supertaskr/genesis/kit - \
 PROJECT DIRECTORY: /tmp/some project/with space. Read roles/planner.md at the kit root now and \
 follow it exactly. THIS GENESIS IS ALREADY UNDER WAY: docs/ holds banked artifacts from earlier \
 turns. Apply the RESUME RULE - derive the next stage from disk (the first row of the banking map \

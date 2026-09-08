@@ -14,7 +14,7 @@ import type { DocsSnapshotPayload } from "../src/lib/docs-model";
  * accelerator table — only the IPC boundary is mocked (T-026's
  * genesis-entry precedent). The defect this file pins is a usability
  * one @human hit while using the app: "command + o and command + n are
- * not working in nputer". They were the right keys; the listener lived
+ * not working in supertaskr". They were the right keys; the listener lived
  * inside `EmptyState`, so it unmounted with the front door and the
  * chords reached nothing from the board, the map or the interview.
  *

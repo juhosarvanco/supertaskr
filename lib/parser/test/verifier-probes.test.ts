@@ -262,7 +262,7 @@ describe('verifier probes — model@session boundary forms', () => {
 });
 
 describe('verifier probes — filesystem layer keeps going', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'nputer-verifier-'));
+  const dir = mkdtempSync(join(tmpdir(), 'supertaskr-verifier-'));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it('three files sharing an id: two duplicate-id issues, all records kept', () => {

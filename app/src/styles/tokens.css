@@ -1,5 +1,5 @@
 /*
- * nputer design tokens — the single source of visual truth (T-001).
+ * supertaskr design tokens — the single source of visual truth (T-001).
  *
  * Every color, spacing, and type value the frontend renders resolves to a
  * CSS custom property defined in THIS file. The Tailwind theme mapping in
@@ -8,13 +8,13 @@
  * behind it simply does not exist.
  *
  * T-006: values are the measured Claude Design sheet — docs/design/
- * claudedesign_handoff/"nputer tokens.dc.html" §03 (core + status +
+ * claudedesign_handoff/"supertaskr tokens.dc.html" §03 (core + status +
  * additions), the scheme-independent type/geometry/motion block, and §06
  * (map + --warning, landed INERT for the future map pane — no utility
  * consumes them yet). The violet --drift-bg/--drift-fg pair from §04 is
  * deliberately ABSENT: superseded by §06's --warning (architect
  * directive; amber, stroke-only). Additions beyond the sheet's named
- * list are measured surface inks from the app mockups ("nputer
+ * list are measured surface inks from the app mockups ("supertaskr
  * app.dc.html" board/board·dark/card-states tabs), tokenized here
  * because the card spec mandates "token values only; the card never
  * carries a one-off" — each is annotated with its source.

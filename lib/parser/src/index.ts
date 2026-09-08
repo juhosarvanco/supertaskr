@@ -1,5 +1,5 @@
 /**
- * @nputer/parser — C-06 lib-parser.
+ * @supertaskr/parser — C-06 lib-parser.
  *
  * Pure library: docs/tasks/ + ROADMAP backbone -> typed model.
  * String-level parsers (parseTaskFile, parseRoadmap, parseModelSession)

@@ -99,7 +99,7 @@ function filesUnder(root) {
  * @returns {{ root: string; sourceFiles: number; dispose: () => void }}
  */
 function replicaSource(stem, mutate) {
-  const base = mkdtempSync(path.join(tmpdir(), `nputer-method-eval-${stem}-`));
+  const base = mkdtempSync(path.join(tmpdir(), `supertaskr-method-eval-${stem}-`));
   const root = path.join(base, "source");
   const dispose = () => rmSync(base, { recursive: true, force: true });
   try {

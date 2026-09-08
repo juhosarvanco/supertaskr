@@ -124,7 +124,7 @@ export type StartOutcomePayload =
 
 /**
  * Mirror of Rust's `GenesisRecord` — THE FACT THAT AN INTERVIEW WAS
- * RUNNING ON THIS FOLDER, derived from `.nputer/sessions.json` and from
+ * RUNNING ON THIS FOLDER, derived from `.supertaskr/sessions.json` and from
  * nowhere else.
  *
  * Runtime state in the user's own project directory, losable by charter:
@@ -307,7 +307,7 @@ export interface GenesisState {
    * The chat renders it as the existing inline-notice treatment.
    */
   listenerFailed: boolean;
-  /** Rehydrated planner/user halves from `.nputer/genesis/transcript.jsonl`
+  /** Rehydrated planner/user halves from `.supertaskr/genesis/transcript.jsonl`
    * (T-029 criteria 1–2). Empty is the ordinary case AND the
    * cache-is-gone case: the chat renders banked progress instead. */
   rehydrated: readonly TranscriptLinePayload[];
@@ -842,7 +842,7 @@ export async function cancelGenesis(): Promise<CancelOutcomePayload | null> {
 
 /**
  * T-029 criterion 1: respawn the RECORDED native session. Zero arguments
- * — the id lives in `.nputer/sessions.json` and is read Rust-side through
+ * — the id lives in `.supertaskr/sessions.json` and is read Rust-side through
  * its own gate, so no session id crosses the boundary in either
  * direction. Same shape as `startGenesis`, deliberately: the two are one
  * choice on the same screen and their outcomes are the same type.

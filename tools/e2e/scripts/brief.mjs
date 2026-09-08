@@ -7,7 +7,7 @@
  * ARMS: `--write-fence` writes the lane's manifest SOMEWHERE ELSE, into
  * the lane worktree it is handed, and `--take-seat` (T-238) writes the
  * holder record into the checkout `--root` names — which is the point of
- * it, since the seat IS that checkout. Both files sit under `.nputer/`
+ * it, since the seat IS that checkout. Both files sit under `.supertaskr/`
  * behind the same self-ignoring `.gitignore`, so neither is ever a
  * commit.
  *
@@ -51,7 +51,7 @@
  * ARM FIVE (`--write-fence`, T-154) is the ONE arm that writes, and the
  * DISPATCH STEP the whole T-154 mechanism rests on. It expands the card's
  * `touches:` through the parser's one fence implementation and leaves
- * `.nputer/lane-fence.json` in the LANE WORKTREE, so the PreToolUse hook
+ * `.supertaskr/lane-fence.json` in the LANE WORKTREE, so the PreToolUse hook
  * in `.claude/` can enforce the fence at the moment of the write with no
  * `node_modules` and no built parser — which a worktree cut ninety
  * seconds ago has neither of. It is a NAMED arm and requires `--task`, so
@@ -69,7 +69,7 @@
  *
  * ARM EIGHT (`--take-seat` / `--release-seat`, T-238) is the SECOND arm
  * that writes, and it writes ONE runtime file into the checkout `--root`
- * names: `.nputer/holder.json`, the on-disk record of who holds the
+ * names: `.supertaskr/holder.json`, the on-disk record of who holds the
  * integration checkout. `method/lane-protocol.md` rule 4 already rules
  * one holder at a time and says the holder is DECLARED at dispatch and
  * never inferred; until this arm there was nowhere to declare it, so two

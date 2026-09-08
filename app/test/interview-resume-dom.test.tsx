@@ -82,7 +82,7 @@ const { PlannerTurn } = await import("../src/genesis/interview-turns");
 const store = await import("../src/lib/agent-store");
 const source = await import("../src/genesis/interview-source");
 
-const PROJECT = "/tmp/nputer-t029-chat";
+const PROJECT = "/tmp/supertaskr-t029-chat";
 
 function docsWith(seq: number, files: Record<string, string> = {}): DocsModelState {
   const effective = new Map(Object.entries(files));
@@ -233,9 +233,9 @@ describe("an expired CLI login is a diagnosis, not a dead end", () => {
   it("routes straight to the hand-driven mode, with a prompt from the same assembler", async () => {
     ipc.outcomes.set("genesis_kickoff", {
       kind: "ready",
-      prompt: "You are the planner. KIT ROOT: /tmp/nputer-t029-chat/.nputer/genesis/kit …",
+      prompt: "You are the planner. KIT ROOT: /tmp/supertaskr-t029-chat/.supertaskr/genesis/kit …",
       projectDir: PROJECT,
-      kitRoot: "/tmp/nputer-t029-chat/.nputer/genesis/kit",
+      kitRoot: "/tmp/supertaskr-t029-chat/.supertaskr/genesis/kit",
       methodVersion: "0.1.5",
       resuming: false,
     });
@@ -373,7 +373,7 @@ describe("reopening a project mid-interview (criteria 1-3)", () => {
   it("an unusable saved id gets its own affordance, and it is not a retry (T-039-s3)", async () => {
     ipc.outcomes.set("genesis_start", {
       kind: "sessionIdRejected",
-      registryPath: ".nputer/sessions.json",
+      registryPath: ".supertaskr/sessions.json",
       why: "refusing to resume session 'S1': it begins with '-'.",
     });
     ipc.outcomes.set("genesis_fresh", { kind: "started", turn: 1 });
@@ -386,7 +386,7 @@ describe("reopening a project mid-interview (criteria 1-3)", () => {
     expect(q("[data-testid=interview-session-unusable-why]")?.textContent).toContain(
       "begins with '-'",
     );
-    expect(block.textContent).toContain(".nputer/sessions.json");
+    expect(block.textContent).toContain(".supertaskr/sessions.json");
     // It never reads as the generic error toast it used to share an
     // envelope with.
     expect(q("[data-testid=interview-notice]")).toBeNull();
@@ -732,9 +732,9 @@ describe("no CLI is a mode, not an apology (criterion 4)", () => {
     ipc.outcomes.set("genesis_kickoff", {
       kind: "ready",
       prompt:
-        "You are the planner. KIT ROOT: /tmp/nputer-t029-chat/.nputer/genesis/kit - PROJECT DIRECTORY: /tmp/nputer-t029-chat. Apply the RESUME RULE …",
+        "You are the planner. KIT ROOT: /tmp/supertaskr-t029-chat/.supertaskr/genesis/kit - PROJECT DIRECTORY: /tmp/supertaskr-t029-chat. Apply the RESUME RULE …",
       projectDir: PROJECT,
-      kitRoot: "/tmp/nputer-t029-chat/.nputer/genesis/kit",
+      kitRoot: "/tmp/supertaskr-t029-chat/.supertaskr/genesis/kit",
       methodVersion: "0.1.5",
       resuming: true,
     });
@@ -761,7 +761,7 @@ describe("no CLI is a mode, not an apology (criterion 4)", () => {
     ipc.outcomes.set("genesis_start", { kind: "cliNotFound", probed: ["PATH"] });
     ipc.outcomes.set("genesis_kickoff", {
       kind: "alreadyPlanned",
-      path: "/tmp/nputer-t029-chat",
+      path: "/tmp/supertaskr-t029-chat",
     });
     await withStatus();
     render();
@@ -813,9 +813,9 @@ describe("arriving with no CLI is told what is already on disk (T-070)", () => {
    */
   const withRecord = (turns: number) => ({
     kind: "ready",
-    prompt: "You are the planner. KIT ROOT: /tmp/nputer-t029-chat/.nputer/genesis/kit …",
+    prompt: "You are the planner. KIT ROOT: /tmp/supertaskr-t029-chat/.supertaskr/genesis/kit …",
     projectDir: PROJECT,
-    kitRoot: "/tmp/nputer-t029-chat/.nputer/genesis/kit",
+    kitRoot: "/tmp/supertaskr-t029-chat/.supertaskr/genesis/kit",
     methodVersion: "0.1.5",
     resuming: true,
     record: {

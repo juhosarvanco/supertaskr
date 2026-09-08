@@ -12,7 +12,7 @@
  * the runner's own verdict is left so a later, unrelated process can ask.
  *
  * ── WHERE IT LIVES, AND WHY IT MAY NEVER BE COMMITTABLE ──────────────
- * `.nputer/` at the checkout root — the runtime directory T-154 already
+ * `.supertaskr/` at the checkout root — the runtime directory T-154 already
  * created for the lane fence manifest. The card asked this to be argued
  * rather than assumed, and the argument is the amend: A TOKEN IN THE TREE
  * CAN BE STALE-BUT-MATCHING. Commit a green token, amend the commit to
@@ -24,13 +24,13 @@
  * has been measured here yet).
  *
  * ── AND THIS WRITER IS WHAT MAKES THAT TRUE, WHICH IT ONCE WAS NOT ───
- * The first version of this file said `.nputer/` "carries a self-ignoring
+ * The first version of this file said `.supertaskr/` "carries a self-ignoring
  * `.gitignore`" and left the writing of it to somebody else. Nothing in
- * this repository ignores `.nputer/` — not the root `.gitignore` — so
+ * this repository ignores `.supertaskr/` — not the root `.gitignore` — so
  * that sentence was true only where a DISPATCHER had armed a lane
  * worktree, and false everywhere else, INCLUDING THE INTEGRATION CHECKOUT
  * WHERE PUSHES HAPPEN. A verifier reproduced it on a fresh clone:
- * `?? .nputer/` in `git status`, and `git add -A` offering the token.
+ * `?? .supertaskr/` in `git status`, and `git add -A` offering the token.
  *
  * The bug had a second face, and it is the one worth remembering. The
  * body asserting non-committability used `docs/STATE.md` as its negative
@@ -90,10 +90,16 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { RUNTIME_DIR_IGNORE } from "./lane-fence.mjs";
+import { RUNTIME_DIR, RUNTIME_DIR_IGNORE, legacyRuntimeDirProblem } from "./lane-fence.mjs";
 
-/** The runtime directory T-154 established. Self-ignoring; never committed. */
-export const RUNTIME_DIR = ".nputer";
+/**
+ * The runtime directory T-154 established. Self-ignoring; never committed.
+ *
+ * RE-EXPORTED, NOT RE-TYPED (T-264): `lane-fence.mjs` is the one home of
+ * the name, because the legacy detector that refuses a pre-rename
+ * directory has to sit below both this reader and the fence's.
+ */
+export { RUNTIME_DIR };
 
 /** The token, relative to the checkout root. */
 export const TOKEN_REL_PATH = `${RUNTIME_DIR}/gate-verdict.json`;
@@ -151,7 +157,7 @@ export function tokenPath(root) {
 }
 
 /**
- * Make `.nputer/` un-committable, and return the file that does it.
+ * Make `.supertaskr/` un-committable, and return the file that does it.
  *
  * IT IS WRITTEN WHENEVER IT IS ABSENT, not only when this writer creates
  * the directory. The directory may already exist because a DISPATCHER
@@ -254,12 +260,19 @@ export function readToken(root) {
     raw = readFileSync(file, "utf8");
   } catch (err) {
     const e = /** @type {NodeJS.ErrnoException} */ (err);
-    return {
-      problem:
-        e && e.code === "ENOENT"
-          ? `no verdict token at ${TOKEN_REL_PATH} — nothing has been measured in this checkout`
-          : `${TOKEN_REL_PATH} could not be read (${e?.message ?? String(err)})`,
-    };
+    if (e && e.code === "ENOENT") {
+      // T-264: an absent token beside a pre-rename runtime directory is a
+      // MIGRATION, and "nothing has been measured" would be the one
+      // sentence that hides it — a checkout whose four suites are green
+      // under the old directory reads as never measured at all.
+      const legacy = legacyRuntimeDirProblem(root);
+      return {
+        problem: legacy
+          ? `no verdict token at ${TOKEN_REL_PATH}: ${legacy}`
+          : `no verdict token at ${TOKEN_REL_PATH} — nothing has been measured in this checkout`,
+      };
+    }
+    return { problem: `${TOKEN_REL_PATH} could not be read (${e?.message ?? String(err)})` };
   }
   /** @type {unknown} */
   let parsed;

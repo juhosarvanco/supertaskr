@@ -1,4 +1,4 @@
-import { isTaskFilePath } from "@nputer/parser/pure";
+import { isTaskFilePath } from "@supertaskr/parser/pure";
 import type { DocsModelState } from "@/lib/docs-model";
 import type { GenesisTurn } from "@/lib/agent-store";
 

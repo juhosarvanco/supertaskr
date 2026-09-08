@@ -10,7 +10,7 @@ paths:
   # umbrella at T-149. All four drive `watcher-store.ts` or
   # `docs-model.ts` and nothing else of anyone's. `shell-harness` is the
   # one whose NAME says shell: the surface it audits,
-  # `window.__nputerShellHarness`, is installed by `watcher-store.ts`,
+  # `window.__supertaskrShellHarness`, is installed by `watcher-store.ts`,
   # and the code a fix would edit is this component's.
   - app/test/docs-model.test.ts
   - app/test/shell-harness.test.ts
