@@ -28,8 +28,11 @@
  *      match at all, so a collector keyed on that grammar would never hand
  *      the line to the judge and the row would vanish between them.
  *
- *   3. THE FOUR FIXTURE CARDS, from the tree alone — a verifying citation,
- *      a mismatch, a truncated digest, a digest naming no file. These are
+ *   3. THE FIVE FIXTURE CARDS, from the tree alone — a verifying citation
+ *      (beside prose that QUOTES the grammar, so the line anchor is under
+ *      assertion too), a mismatch, a truncated digest, a digest naming no
+ *      file, and a card carrying no citation at all, which is exit 3
+ *      because an exit 0 over zero bodies is not a pass. These are
  *      committed rather than synthesized so the ACCEPT path is checkable
  *      with no scratchpad and no machine-scoped path anywhere.
  *
@@ -127,7 +130,7 @@ const FIXTURE_EXPECTATIONS = [
   {
     card: "T-905-a-card-with-no-citation.md",
     exit: EXIT.CANNOT_RUN,
-    says: "an exit 0 over zero bodies is not a pass",
+    says: "exit 0 over zero bodies is not a pass",
     what: "a walk that found nothing, which is a claim about nothing and never a pass",
   },
 ];
