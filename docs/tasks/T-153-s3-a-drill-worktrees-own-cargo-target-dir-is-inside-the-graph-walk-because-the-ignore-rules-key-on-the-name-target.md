@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 11
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [crate-index]
 suggested_by: executor claude-opus-5 @T-153-s2
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
