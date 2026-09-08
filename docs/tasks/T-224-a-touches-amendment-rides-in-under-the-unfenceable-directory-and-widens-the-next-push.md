@@ -58,6 +58,8 @@ cannot discover, ever. The directory stays unfenceable.
 
 ## What to build
 
+**WAIVER (2026-09-08, the architect seat — the seat that dispatched this card, which this line names as the rule requires): the second rejection at 40b22e4 is a DISTINCT, newly-found defect (a regression the first rework introduced: the `seen` dedupe with path-first resolution), not the first defect surviving a rebuild, with a remedy inside the fence named by the verifier. Waived once; a third pass follows; a third rejection is terminal. The escalation is docs/rooms/t224-second-rejection.md.**
+
 **AMENDED 2026-09-08 AT DISPATCH, BEFORE THE DIFF EXISTS (orchestrator 5c;
 measured by the blind phase 1's attack A1.1 and the dispatcher's ground
 truth GT-9 at dfe35a5): the comparison in the first bullet is NOT
