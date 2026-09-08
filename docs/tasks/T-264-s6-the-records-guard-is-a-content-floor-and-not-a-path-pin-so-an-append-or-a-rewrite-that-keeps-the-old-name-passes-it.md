@@ -1,13 +1,13 @@
 ---
 id: T-264-s6
 title: The records guard is a CONTENT floor, not a path pin — an append to a checkpoint or to another card passes it, and T-264's fourth criterion asked for a body pinning that the record paths did not change
-feature: F-01
+feature: F-06
 milestone: 4
 size: S
-priority: 7
-status: suggested
+priority: 28
+status: planned
 suggested_by: verifier claude-opus-5@subagent (phase 2), at T-264's bench, 2026-09-08 — measured with two data mutants that survived
-blocked_by: []
+blocked_by: [T-224]
 touches: [tools/e2e/tests/identifier-rename.spec.ts]
 builder:
 verifier:
@@ -77,3 +77,29 @@ content-versus-path, which is the substitution nobody argued for.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+## Triage (2026-09-08, at T-265's ASK 4)
+
+Promoted as an S behind T-224 (which holds tools/e2e): the instance
+arrived within the hour — T-265's legitimate renames of
+docs/checkpoints/TEMPLATE.md and docs/research/competitors.md drop two
+of the guard's four floors (65→64, 11→10), because the floors count the
+DIRECTORIES that contain the record trees, not the trees. The
+integrator re-scopes those two floors at T-265's merge as an assigned
+correction (the merge's own debris: a fixture the merge makes false);
+this card carries the durable fix.
+
+## Acceptance criteria
+
+- WHEN the records guard counts a record tree THE set SHALL be the
+  record subtree and nothing else: docs/checkpoints EXCLUDING
+  TEMPLATE.md, docs/research/captures (not docs/research), docs/rooms,
+  docs/decisions before 022, docs/tasks bodies — each floor re-measured
+  at the card's own base and stamped with the ref.
+- WHEN a record's blob changes in a lane's range THE guard SHALL red BY
+  NAME (a path pin: the blob manifest of the record trees at the base
+  compared to the tip, every difference listed), not only by a count
+  that a legitimate rename can move.
+- IF a non-record file inside those directories is renamed (the
+  template, the competitor map) THEN the guard SHALL stay green — the
+  positive control, shown failing against the old floors first.
