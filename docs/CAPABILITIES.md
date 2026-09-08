@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **674 behaviours** — 672 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **684 behaviours** — 682 extracted sentences + 2 named-not-extracted (listed at the end) — across 37 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -311,6 +311,16 @@ Census: **674 behaviours** — 672 extracted sentences + 2 named-not-extracted (
 - a legal card reports nothing, and a path the parser does not collect is not judged
 - every live task card parses, with a status in the vocabulary
 - .nputerignore still excludes docs/ — the indexer is not the gate that missed this
+- every injection pattern has a planted positive that FIRES and a planted negative that does NOT
+- THE PROOF OF TEETH IS DEMONSTRATED FAILING — three degradations, each caught by name
+- the three classes the card names are each covered, and the classes are DERIVED from the controls
+- a hit carries the FILE, the LINE and the PATTERN NAME, and an invisible character is rendered
+- THE SCAN IS ADVISORY — all four exit codes are unmoved, AND the scan is proven to have RUN
+- a path the scan cannot read SAYS SO on its own line — never a silent pass
+- A PATTERN THAT THROWS IS ABSORBED — a bad regex cannot turn this gate's answer into exit 3
+- THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus
+- EVERY hit in one file is printed, not only the first — three hits on three lines under two patterns, each with its file, line and pattern name
+- THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a scan made blocking
 
 ## front-door
 
