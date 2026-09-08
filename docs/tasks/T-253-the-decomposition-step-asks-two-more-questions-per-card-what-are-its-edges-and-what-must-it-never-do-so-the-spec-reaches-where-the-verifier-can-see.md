@@ -36,6 +36,15 @@ criteria and asks neither question.
   "what must it never do", and SHALL turn each answer the human keeps
   into an IF/THEN or a "SHALL NOT" criterion on the card — a probe that
   produces no criterion is written as "none surfaced", never silent.
+- **Folded 2026-09-08 (the EARS-for-the-AI-era reading, @human: "file
+  it"):** WHEN the decomposition step drafts a card THE step SHALL also
+  write the card's DECISION LIST under `## Decisions` — every point
+  where it would otherwise pick a default silently, as
+  `D-NN <question> [a] … [b] … → proposed <x>` — listing ONLY the
+  defaults the interview's banked answers and CONVENTIONS do not
+  already settle; a list past five items SHALL say so on its own line
+  (the card is to be split, not skimmed). Who answers, and when, is
+  T-257's (`decide: audit | auto`).
 - WHEN a must-not names a value judgment no test can hold (the
   judgment tier) THE criterion SHALL say so in its own words and route
   to a human check, never to a test that would go vacuous.
