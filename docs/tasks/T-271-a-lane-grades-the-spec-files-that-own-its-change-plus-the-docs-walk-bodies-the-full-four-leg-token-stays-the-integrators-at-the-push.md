@@ -1,6 +1,6 @@
 ---
 id: T-271
-title: "A lane grades the spec files that own its change plus the docs-walk bodies; the full four-leg token stays the integrator's at the push — a fix in one hook runs its own spec in a minute, not the ten-minute browser leg"
+title: "The EXECUTOR grades the spec files that own its change (owning = everything that reads the changed file, derived over imports) plus the docs-walk bodies while it iterates; the verifier's one run and the integrator's run before the push stay the full four legs"
 feature: F-06
 milestone: 4
 size: S
@@ -26,13 +26,26 @@ that run's job and always was.
 
 ## Acceptance criteria
 
-- WHEN a lane seat (executor or verifier) runs `gate-run.mjs e2e
-  --owning <changed paths…>` THE runner SHALL derive the spec files that
-  own those paths (the spec whose name or imports match the changed
-  hook/script, plus the docs-walk bodies when a docs path moved) and
-  grade ONLY those, with the same refusals (zero bodies, parts ≠
+- WHEN an EXECUTOR runs `gate-run.mjs e2e --owning <changed paths…>`
+  THE runner SHALL derive the spec files that own those paths — every
+  spec that reads the changed file, directly or through imports
+  (derived from the same static import graph the map is built from,
+  never from the spec's name alone), plus the docs-walk bodies when a
+  docs path moved — and grade ONLY those, with the same refusals (zero bodies, parts ≠
   baseline, a pipe, the wrong cwd) and a verdict line that names the
   subset and its body count — never the leg's name alone.
+- WHEN a VERIFIER runs the owed suites THE runner SHALL NOT accept the
+  scoped form: the verifier's one run (T-262: once, at its own tip) is
+  the full four legs, so the whole battery still runs before every
+  verdict; and the integrator's run on merged main before the push is
+  the full four legs (the token). AMENDED 2026-09-09 at @human's
+  question ("Is it sure that this doesn't make bugs more likely?"):
+  as first filed the scoped form applied to both lane seats, which
+  would have moved a cross-spec red — the class T-264's executor found
+  four of by running everything — from the lane to merged main, where
+  the answer is the revert play. Scoping the executor's iterations
+  keeps the time saved where suites run most often and loses no run
+  that stands before a verdict or a push.
 - WHEN the subset verdict is written THE token SHALL NOT be minted from
   it: a lane's subset run writes a `scoped` verdict the push guard
   refuses as a token, so a push still owes the integrator's full
