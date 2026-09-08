@@ -136,6 +136,89 @@ describe('normalizeFenceToken — one spelling, and a declared ceiling', () => {
     // rather than compare `app/src/**/*.ts` as a literal prefix.
     expect(normalizeFenceToken('app/src/**/*.ts')).toBe('app/src/**/*.ts');
   });
+
+  it('T-219-s6: resolves an INTERIOR dot segment, so one directory keeps one spelling', () => {
+    // THE SPELLINGS `T-111-s3` MISSED, one position over in the string.
+    // `lib/./parser` and `lib/x/../parser` are `lib/parser` spelled
+    // badly, exactly as `tools/e2e/` is `tools/e2e` spelled with a
+    // trailing slash — and the first body above is the shape this
+    // extends.
+    //
+    // KILLED BY: dropping step 7 from `normalizeFenceToken`, where each
+    // of these comes back as itself. That mutant is not merely a
+    // different string: `expandFence` classifies it `path` and reserves
+    // the domain verbatim, and no normalised repository-relative domain
+    // contains a dot segment, so the fence then matches NOTHING.
+    expect(normalizeFenceToken('lib/./parser')).toBe('lib/parser');
+    expect(normalizeFenceToken('lib/x/../parser')).toBe('lib/parser');
+    // and the two spellings are ONE, which is the property rather than
+    // the value — an assertion that survives the day `lib/parser` moves.
+    expect(normalizeFenceToken('lib/./parser')).toBe(normalizeFenceToken('lib/parser'));
+    expect(normalizeFenceToken('lib/x/../parser')).toBe(normalizeFenceToken('lib/parser'));
+    // IT COMPOSES WITH EVERY EARLIER STEP rather than replacing one: the
+    // trailing star run, the trailing slash, the leading `./`, the
+    // Windows separator and the repeated separator all still apply, and
+    // step 7 runs on what they leave.
+    expect(normalizeFenceToken('lib/./parser/**')).toBe('lib/parser');
+    expect(normalizeFenceToken('lib/x/../parser/')).toBe('lib/parser');
+    expect(normalizeFenceToken('./lib/x/./y/../parser')).toBe('lib/x/parser');
+    expect(normalizeFenceToken('lib\\x\\..\\parser')).toBe('lib/parser');
+    expect(normalizeFenceToken('lib//x//..//parser')).toBe('lib/parser');
+    expect(normalizeFenceToken('  lib/./parser/**  ')).toBe('lib/parser');
+    // SEVERAL SEGMENTS DEEP, and cancelling more than one.
+    expect(normalizeFenceToken('app/src/board/../../src-tauri')).toBe('app/src-tauri');
+    expect(normalizeFenceToken('docs/./architecture/./components')).toBe(
+      'docs/architecture/components',
+    );
+  });
+
+  it('T-219-s6: a dot inside a NAME is not a dot SEGMENT — the control that this is not a rule about the character', () => {
+    // The sibling of `T-219-s2`'s own control list. Without this body
+    // every assertion above is satisfied by a normalisation that strips
+    // dots wherever it finds them, which would silently rewrite live
+    // spellings on this board — `.claude/hooks` and every `.ts` path
+    // among them.
+    expect(normalizeFenceToken('lib/parser/src/fence.ts')).toBe('lib/parser/src/fence.ts');
+    expect(normalizeFenceToken('.claude/hooks')).toBe('.claude/hooks');
+    expect(normalizeFenceToken('lib/...')).toBe('lib/...');
+    expect(normalizeFenceToken('lib/..foo/parser')).toBe('lib/..foo/parser');
+    expect(normalizeFenceToken('lib/.hidden/parser')).toBe('lib/.hidden/parser');
+    expect(normalizeFenceToken('...odd')).toBe('...odd');
+  });
+
+  it('T-219-s6: the ceiling MOVED — the head is left to T-219-s4, and a climb that survives resolution reaches it too', () => {
+    // (a) THE HEAD IS NOT THIS FUNCTION'S TO RESOLVE. `.` still
+    // normalises to `.`, so `expandFence`'s `DOT_DOMAIN` branch answers
+    // it with the sentence about the repository ROOT rather than with
+    // the one about a token that normalises to nothing — a normalisation
+    // is not the place to decide which refusal a token gets.
+    //
+    // KILLED BY: dropping the `DOT_DOMAIN` guard on step 7's INPUT,
+    // where `.` and `./.` resolve to `''` and silently move to the other
+    // refusal, retiring a sentence two suites assert by name.
+    expect(normalizeFenceToken('.')).toBe('.');
+    expect(normalizeFenceToken('./.')).toBe('.');
+    expect(normalizeFenceToken('..')).toBe('..');
+    expect(normalizeFenceToken('../nputer-app')).toBe('../nputer-app');
+    expect(normalizeFenceToken('../../etc')).toBe('../../etc');
+    // and the two spellings that normalise to NOTHING still do.
+    expect(normalizeFenceToken('./')).toBe('');
+    expect(normalizeFenceToken('.//')).toBe('');
+
+    // (b) A CLIMB THAT SURVIVES RESOLUTION IS THE SAME DOMAIN REACHED BY
+    // ARITHMETIC INSTEAD OF BY SPELLING, and it is left for the same
+    // refusal rather than dropped. Dropping the uncancelled `..` would
+    // turn `lib/../../nputer-app` into `nputer-app` — a fence quietly
+    // reserving a domain the card never named, which is worse than the
+    // silence this card removes.
+    expect(normalizeFenceToken('lib/../../nputer-app')).toBe('../nputer-app');
+    expect(normalizeFenceToken('lib/../..')).toBe('..');
+    expect(normalizeFenceToken('a/b/../../../c')).toBe('../c');
+    // and a climb that lands EXACTLY on the root reaches the empty
+    // spelling, which is refused with the sentence written for it.
+    expect(normalizeFenceToken('lib/..')).toBe('');
+    expect(normalizeFenceToken('a/b/../..')).toBe('');
+  });
 });
 
 describe('slugPathIndex — the map is READ from touch_slugs:, never built', () => {
@@ -918,6 +1001,157 @@ describe('T-219-s2 — the repository ROOT has two spellings and only one of the
   });
 });
 
+/**
+ * MODEL THREE — THE NORMALISATION BEFORE `T-219-s6`, kept HERE and never
+ * in src/ for the reason the two models at the top of this file are: it
+ * is the control this card's claims are measured against, not behaviour
+ * anybody should be able to import.
+ *
+ * It is `normalizeFenceToken`'s body at `90038e9` — steps 1 to 6, with no
+ * step 7 — so the domain it produces is DERIVED from the defect rather
+ * than typed out beside it.
+ */
+function beforeInteriorDots(raw: string): string {
+  let out = raw.trim().replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+  while (out.startsWith('./')) out = out.slice(2);
+  out = out.replace(/(?:\/)?\*+$/, '');
+  while (out.endsWith('/')) out = out.slice(0, -1);
+  return out;
+}
+
+describe('T-219-s6 — an INTERIOR dot segment reserved a domain nothing could match', () => {
+  it('THE DEFECT, DEMONSTRATED AGAINST THE IMPLEMENTATION THAT LACKED THE PROPERTY', () => {
+    // THE POSITIVE CONTROL IS RUN, NEVER ASSERTED. Every body below
+    // expects the FIXED answer, and an expectation of the fixed answer is
+    // satisfied equally by a module that was always right — so the
+    // control comes FIRST and is the defect itself, driven through the
+    // same `compareFences` the fixed side uses.
+    //
+    // `MODEL THREE` above is the old normalisation, and the domain it
+    // yields is what the old `expandFence` reserved: the token carries a
+    // `/`, so it classified `path` and kept its spelling.
+    const staleDomain = beforeInteriorDots('lib/./parser');
+    expect(staleDomain, 'the old normalisation already resolved it').toBe('lib/./parser');
+
+    const real = expandFence(synthetic('T-943', ['lib-parser']), components);
+    expect(real.paths, 'the slug stopped expanding to the parser').toContain('lib/parser');
+
+    // THE FENCE THE OLD MODULE BUILT, shaped from that domain and
+    // nothing else — and `compareFences` calls it DISJOINT from the very
+    // directory it was written to reserve. That is the card's sentence,
+    // measured: the fence permits nothing and collides with nothing.
+    const stale: Fence = {
+      id: 'T-944',
+      tokens: [
+        {
+          raw: 'lib/./parser',
+          normalized: staleDomain,
+          kind: 'path',
+          components: [],
+          paths: [staleDomain],
+        },
+      ],
+      paths: [staleDomain],
+      excluded: [],
+      unusable: [],
+      issues: [],
+    };
+    expect(compareFences(stale, real).verdict, 'the defect did not reproduce').toBe('disjoint');
+    expect(compareFences(stale, real).unusable, 'it was not even flagged').toEqual([]);
+
+    // AND THE SAME TOKEN THROUGH THE FIXED EXPANSION, which is the only
+    // line that differs: it reserves the real directory and the
+    // comparison PROVES the overlap, naming the domain both sides hold.
+    const fixed = expandFence(synthetic('T-945', ['lib/./parser']), components);
+    expect(fixed.tokens[0]?.kind).toBe('path');
+    expect(fixed.tokens[0]?.normalized).toBe('lib/parser');
+    expect(fixed.paths).toEqual(['lib/parser']);
+    expect(fixed.issues, 'a real directory spelled badly was refused').toEqual([]);
+    const cmp = compareFences(fixed, real);
+    expect(cmp.verdict).toBe('overlapping');
+    expect(cmp.witnesses.map((w) => w.path)).toEqual(['lib/parser']);
+  });
+
+  it('and `a/b/../c` reserves `a/c`, with the sibling that only LOOKS like it as the control', () => {
+    // The other spelling, driven the same way. The control is the pair
+    // that must NOT collapse: `lib/..foo/parser` is a directory whose
+    // NAME begins with two dots, and a rule about the CHARACTER would
+    // fold it into `lib/parser` and hand two lanes one tree.
+    const climbed = expandFence(synthetic('T-946', ['app/src/board/../../src-tauri']), components);
+    expect(climbed.tokens[0]?.kind).toBe('path');
+    expect(climbed.paths).toEqual(['app/src-tauri']);
+    expect(climbed.issues).toEqual([]);
+
+    const named = expandFence(synthetic('T-947', ['lib/..foo/parser']), components);
+    expect(named.tokens[0]?.kind).toBe('path');
+    expect(named.paths, 'a name that begins with dots was resolved away').toEqual([
+      'lib/..foo/parser',
+    ]);
+    const real = expandFence(synthetic('T-948', ['lib-parser']), components);
+    expect(compareFences(named, real).verdict, 'the control collapsed into the subject').toBe(
+      'disjoint',
+    );
+  });
+
+  it('AND THE UNFENCEABLE DIRECTORY CANNOT BE REACHED BY SPELLING IT WITH A DOT SEGMENT', () => {
+    // THE CONSEQUENCE WORTH THE MOST, and it is a refusal this card
+    // GAINS rather than one it preserves. `T-219` refuses the domain a
+    // token HOLDS, through `sharedDomain` — but before step 7 a token
+    // spelled `docs/./tasks` normalised to itself, met neither
+    // `docs/tasks` nor anything else, and was accepted as a `path`. So
+    // the one directory no card may fence had a spelling that walked
+    // straight past the guard AND reserved nothing, which is both
+    // failures at once.
+    //
+    // KILLED BY: dropping step 7, where each of these comes back
+    // `kind: 'path'` with an issue list of length 0.
+    for (const raw of ['docs/./tasks', 'docs/tasks/../tasks', 'docs/architecture/../tasks']) {
+      const fence = expandFence(synthetic('T-949', [raw]), components);
+      expect(fence.tokens[0]?.kind, `${raw} walked past the guard`).toBe('rejected');
+      expect(fence.tokens[0]?.normalized, raw).toBe('docs/tasks');
+      expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
+      expect(fence.unusable, raw).toEqual([raw]);
+      expect(fence.issues[0]?.message ?? '', raw).toContain('which no card may hold');
+    }
+    // THE CONTROL, which is what makes the refusals above a rule about
+    // the DOMAIN and not about the string: a card file NAMED inside that
+    // directory is still fenceable, dot segment or not — `rule 5`'s
+    // "Name the individual files instead", reached through resolution.
+    const named = expandFence(
+      synthetic('T-950', ['docs/architecture/../tasks/T-108-a.md']),
+      components,
+      { ownFile: '' },
+    );
+    expect(named.tokens[0]?.kind).toBe('path');
+    expect(named.paths).toEqual(['docs/tasks/T-108-a.md']);
+    expect(named.issues).toEqual([]);
+  });
+
+  it('a token that RESOLVES to a climb is refused by T-219-s4, and one that resolves to the ROOT by the branch written for it', () => {
+    // THE CEILING, WHERE IT MOVED TO. Resolution does not make every
+    // token nameable — it makes the UNNAMEABLE ones arrive at the
+    // refusal already spelled as what they are.
+    for (const raw of ['lib/../../nputer-app', 'a/b/../../../c']) {
+      const fence = expandFence(synthetic('T-951', [raw]), components);
+      expect(fence.tokens[0]?.kind, `${raw} resolved to a domain`).toBe('unresolved');
+      expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
+      expect(fence.issues[0]?.message ?? '', raw).toContain('climbs OUT of the repository');
+    }
+    // AND THE ROOT REACHED BY ARITHMETIC gets the sentence written for
+    // the empty spelling rather than the one written for a bare dot —
+    // the two refusals stay apart, which is what the guard on step 7's
+    // input buys.
+    const root = expandFence(synthetic('T-952', ['lib/..']), components);
+    expect(root.tokens[0]?.kind).toBe('unresolved');
+    expect(root.tokens[0]?.normalized).toBe('');
+    expect(root.paths).toEqual([]);
+    expect(root.issues[0]?.message ?? '').toContain('normalises to nothing');
+    // and the bare dot still takes the OTHER sentence, unchanged.
+    const dot = expandFence(synthetic('T-953', ['.']), components);
+    expect(dot.issues[0]?.message ?? '').toContain('repository ROOT under its other spelling');
+  });
+});
+
 describe('the live board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
@@ -1039,18 +1273,44 @@ describe('the live board, censused through the expansion', () => {
     }
     expect(live).toEqual([]);
 
-    // THE DECLARED CEILING, CENSUSED RATHER THAN ASSERTED. An INTERIOR
-    // dot segment (`a/./b`, `a/../b`) has the identical symptom and a
-    // DIFFERENT remedy — normalisation should resolve the segment, not
-    // refuse the token — so `expandFence` deliberately does not reach it
-    // and `T-219-s6` is routed for it. This row is what stops that being
-    // a silent hole: it is zero today, and it reds the day one is written.
+    // THE DECLARED CEILING, CENSUSED RATHER THAN ASSERTED — AND SINCE
+    // `T-219-s6` THE ZERO HAS A DIFFERENT CAUSE, WHICH IS WHY IT GAINED A
+    // CONTROL. An INTERIOR dot segment (`a/./b`, `a/../b`) had the
+    // identical symptom and a DIFFERENT remedy: normalisation resolves
+    // the segment rather than refusing the token. It does now, so this
+    // census is no longer "nobody has written one" — it is "no NORMALISED
+    // token can carry one", and those two zeroes look identical from
+    // here. The control below is what tells them apart.
+    //
+    // THE CONTROL FIRST, AND IT IS TWO-ARMED. Arm one runs the census
+    // predicate over the RAW tokens of a planted card, so the instrument
+    // is seen FINDING an interior dot segment — without it the predicate
+    // could match nothing at all and every zero below would be green.
+    const plantedInterior = synthetic('T-942', ['lib/./parser', 'lib/x/../parser']);
+    const interiorOf = (token: string): boolean =>
+      /(?:^|\/)\.\.?(?:\/)/.test(token) && !/^\.\.?(?:\/|$)/.test(token);
+    expect(
+      plantedInterior.touches.filter(interiorOf),
+      'the census predicate found nothing even in a token written for it',
+    ).toEqual(['lib/./parser', 'lib/x/../parser']);
+
+    // ARM TWO: the SAME planted tokens through the SAME normalisation the
+    // census runs, where the predicate finds nothing — and the resolved
+    // spelling is asserted, so the zero is the RESOLUTION and not a dead
+    // predicate. This is the row that says which of the two zeroes the
+    // live census below is.
+    expect(plantedInterior.touches.map(normalizeFenceToken)).toEqual(['lib/parser', 'lib/parser']);
+    expect(plantedInterior.touches.map(normalizeFenceToken).filter(interiorOf)).toEqual([]);
+
+    // AND NOW THE LIVE BOARD, through the same predicate over the same
+    // normalisation: no live token carries one, which is now true by
+    // construction for every token whose head is not itself a dot
+    // segment — and those are `T-219-s4`'s and are censused above.
     const interior: string[] = [];
     for (const task of project.tasks) {
       if (task.id === undefined) continue;
       for (const raw of task.touches) {
-        const normalized = normalizeFenceToken(raw);
-        if (/(?:^|\/)\.\.?(?:\/)/.test(normalized) && !/^\.\.?(?:\/|$)/.test(normalized)) {
+        if (interiorOf(normalizeFenceToken(raw))) {
           interior.push(`${task.id} ${raw} [${task.status}]`);
         }
       }

@@ -80,7 +80,9 @@ export type FenceTokenKind =
    * Neither a slug nor anything this module can read as a path — which
    * includes a token that PARSES as a path and names a domain no
    * repository-relative path can sit inside: `.` (the root under its
-   * other spelling) and `..`/`../…` (outside the repository) (T-219-s4).
+   * other spelling) and `..`/`../…` (outside the repository) (T-219-s4),
+   * whether the card WROTE it that way or normalisation RESOLVED it to
+   * one — `lib/../../x` normalises to `../x` (T-219-s6).
    */
   | 'unresolved';
 
@@ -220,6 +222,17 @@ const GLOB_CHARS = /[*?[\]!]/;
  * so `./x` and `.//x` arrive as `x` and never reach this test; what
  * survives it is exactly `.`, `..` and `../…`. The refusal `expandFence`
  * hangs on this is spelled there, next to the two it sits between.
+ *
+ * AND IT IS ASKED TWICE, WHICH IS ONE RULE IN TWO POSITIONS AND NOT TWO
+ * RULES (T-219-s6). `normalizeFenceToken`'s dot-segment resolution asks
+ * it of its own INPUT and declines to touch a token that matches, so the
+ * three shapes above arrive at `expandFence` spelled exactly as they
+ * always were and the refusal below is reached unchanged. `expandFence`
+ * asks it of the RESULT, which is how a token that RESOLVES to a climb —
+ * `lib/../../x`, normalising to `../x` — reaches the same refusal by the
+ * same test rather than by a second one written to look like it. One
+ * constant, both positions: a second spelling of *"is this a dot
+ * domain"* is the T-057 defect this module removes everywhere else.
  */
 const DOT_DOMAIN = /^\.\.?(?:\/|$)/;
 
@@ -239,7 +252,52 @@ const DOT_DOMAIN = /^\.\.?(?:\/|$)/;
  * 4. drop leading `./` runs;
  * 5. drop a trailing `/**`, `/*` or bare `**`/`*` run — `app/src/styles/**`
  *    and `app/src/styles/` name one directory;
- * 6. drop the trailing `/`.
+ * 6. drop the trailing `/`;
+ * 7. resolve the dot segments that are left — a `.` segment is DROPPED,
+ *    and a `..` segment is dropped WITH THE SEGMENT BEFORE IT.
+ *
+ * STEP 7 IS `T-219-s6`, AND IT CLOSES A CEILING RATHER THAN ADDING A
+ * FEATURE. Until it existed this function resolved a dot segment in
+ * exactly ONE position — step 4's leading `./` run — so `lib/./parser`
+ * and `lib/x/../parser` survived normalisation whole. Both carry a `/`,
+ * so `expandFence` classified them `path` and reserved the domain
+ * verbatim; and `sharedDomain` compares normalised repository-relative
+ * domains, NONE of which contains a dot segment, so neither domain could
+ * ever meet one. The fence permitted nothing, collided with nothing and
+ * raised no issue — which is precisely the sentence `T-219-s2` was filed
+ * about, one position over in the string.
+ *
+ * THE REMEDY IS NORMALISATION AND NOT REFUSAL, and that difference is
+ * the whole reason this was a separate card rather than a rider on
+ * `T-219-s4`'s guard. `.` and `..` at the HEAD name a domain that is not
+ * repository-relative at all, so refusing is the honest answer;
+ * `lib/./parser` names a REAL directory spelled badly, so the honest
+ * answer is that it and `lib/parser` are one path — exactly as
+ * `tools/e2e/` and `tools/e2e` are one path and step 6 already says so.
+ * Refusing it would refuse a fence that reserves real ground.
+ *
+ * THE DOT-SEGMENT CEILING IS DECLARED THE SAME WAY THE GLOB ONE BELOW
+ * IS, AND IT IS TWO SENTENCES. (a) THE HEAD IS NOT THIS FUNCTION'S TO
+ * RESOLVE: step 7 is guarded on its own INPUT with `DOT_DOMAIN`, so `.`,
+ * `..` and `../…` come out spelled exactly as they went in and
+ * `expandFence`'s `T-219-s4` refusal is reached UNCHANGED. Resolving
+ * them here would quietly move `.` off that refusal and onto the
+ * empty-token one, retiring a sentence somebody has to keep — a
+ * normalisation is not the place to decide which refusal a token gets.
+ * (b) A CLIMB THAT SURVIVES RESOLUTION IS LEFT TO THAT SAME REFUSAL:
+ * `lib/../../x` resolves to `../x`, a dot domain, and is answered
+ * exactly as a token written that way in the first place; `lib/..`
+ * resolves to the root's empty spelling and is refused there. So the
+ * ceiling is not *"interior dot segments"* any more — it is *"a domain
+ * outside the repository"*, which is `DOT_DOMAIN`'s, by construction.
+ *
+ * AND THE RESOLUTION IS LEXICAL, DECLARED BECAUSE IT IS A REAL LIMIT AND
+ * NOT A DETAIL. This module reads no filesystem — its own header's
+ * promise — so `a/../b` resolves to `b` by counting segments, never by
+ * asking what `a` is. For a fence that is the right answer and the only
+ * available one: a fence is a claim on repository-relative PATHS, which
+ * is what every other rule here compares, and what a symlink-aware
+ * resolver would answer is a different question this module never asks.
  *
  * THE CEILING IS DECLARED RATHER THAN LEFT TO BE DISCOVERED, which is
  * what `T-111-s3` asks of a normalisation that cannot close every
@@ -257,7 +315,29 @@ export function normalizeFenceToken(raw: string): string {
   while (out.startsWith('./')) out = out.slice(2);
   out = out.replace(/(?:\/)?\*+$/, '');
   while (out.endsWith('/')) out = out.slice(0, -1);
-  return out;
+  // GUARDED ON THE INPUT, WHICH IS THE WHOLE OF WHAT KEEPS `T-219-s4`'s
+  // REFUSAL REACHABLE (see the ceiling's sentence (a) above). A token
+  // whose first segment is already a dot segment is that card's and is
+  // returned untouched; everything else is resolved, and a result that
+  // climbs out of the repository is that card's too.
+  if (DOT_DOMAIN.test(out)) return out;
+  const resolved: string[] = [];
+  for (const segment of out.split('/')) {
+    if (segment === '.') continue;
+    if (segment !== '..') {
+      resolved.push(segment);
+      continue;
+    }
+    // A `..` WITH NOTHING TO CANCEL IS KEPT, NOT DROPPED, so the climb
+    // survives into the normalised form and stays visible to the
+    // refusal. Dropping it would turn `lib/../../x` into `x` — a fence
+    // silently reserving a domain the card never named, which is worse
+    // than the silence this card removes.
+    const last = resolved[resolved.length - 1];
+    if (last === undefined || last === '..') resolved.push('..');
+    else resolved.pop();
+  }
+  return resolved.join('/');
 }
 
 /**
@@ -486,14 +566,26 @@ export function expandFence(
     // of the repository — and every one of them names a domain no
     // repository-relative path can sit inside.
     //
-    // THE CEILING IS DECLARED RATHER THAN LEFT TO BE DISCOVERED, the same
-    // way `normalizeFenceToken` declares its glob ceiling. An INTERIOR
-    // dot segment (`a/./b`, `a/../b`) has the identical symptom and a
-    // different remedy — it is a normalisation gap, and the honest fix
-    // resolves the segment rather than refusing the token — so it is
-    // routed (`T-219-s6`) rather than folded in here. Censused at
-    // `24bfec8e10b3`: 0 live tokens normalise to a dot domain and 0 carry
-    // an interior dot segment, so both arms are structural today.
+    // THE INTERIOR ARM OF THAT CEILING IS CLOSED, AND IT WAS CLOSED BY
+    // NORMALISATION RATHER THAN HERE (`T-219-s6`). This comment used to
+    // ROUTE it: an INTERIOR dot segment (`a/./b`, `a/../b`) had the
+    // identical symptom — a domain no repository-relative path can sit
+    // inside, reserved in silence — and a DIFFERENT remedy, because
+    // `a/./b` names a real directory spelled badly. `normalizeFenceToken`
+    // step 7 now resolves it, so such a token reaches this loop already
+    // spelled `a/b` and never reaches this branch at all. THE CEILING
+    // MOVED TO THAT FUNCTION'S DOC RATHER THAN BEING DELETED — read it
+    // there, where the resolution is.
+    //
+    // AND WHAT REACHES THIS BRANCH IS NOW TWO SHAPES, NOT ONE. A token
+    // WRITTEN as `.`, `..` or `../…`, which normalisation deliberately
+    // leaves alone; and a token that RESOLVED to one — `lib/../../x`
+    // becomes `../x` — which is the same domain reached by arithmetic
+    // instead of by spelling, and is answered here identically because
+    // the test is on the normalised form. Censused at `24bfec8e10b3` and
+    // re-derived by `fence.test.ts`'s own live-board bodies rather than
+    // quoted: no live token takes either shape, so both arms are
+    // structural today.
     if (DOT_DOMAIN.test(normalized)) {
       unusable.push(raw);
       tokens.push({ raw, normalized, kind: 'unresolved', components: [], paths: [] });
