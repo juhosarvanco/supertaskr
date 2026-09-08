@@ -25,6 +25,14 @@ bodies, room histories — are not touched (ADR-022 decision 3).
 
 ## Acceptance criteria
 
+- WHEN method/ is read by a role THE IDENTIFIER spellings there SHALL be
+  the new ones too — method/runtime/nputer.yaml renamed to
+  supertaskr.yaml, and every `.nputer/`, `NPUTER_*`, `npx nputer` and
+  `@nputer/` in a role file, the lane protocol, a template or an
+  adapter template — because a role-read path is a program-read path
+  (ruled at T-264's dispatch, 2026-09-08: method/ is outside T-264's
+  fence, so its identifiers are this card's, and T-264's verifier
+  routes any it finds here rather than failing T-264 on them).
 - WHEN the lane lands THE method kit, docs/guide/, docs/reference/,
   NORTH_STAR, ROADMAP, the STATE and checkpoint templates, VERSIONS,
   docs/business/ and the competitor map SHALL say Supertaskr where they
