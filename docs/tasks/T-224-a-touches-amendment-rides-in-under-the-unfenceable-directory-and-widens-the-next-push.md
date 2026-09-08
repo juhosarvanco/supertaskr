@@ -58,6 +58,8 @@ cannot discover, ever. The directory stays unfenceable.
 
 ## What to build
 
+**WAIVER (2026-09-08, the architect seat — the seat that dispatched this card, which this line names as the rule requires): the second rejection at 40b22e4 is a DISTINCT, newly-found defect (a regression the first rework introduced: the `seen` dedupe with path-first resolution), not the first defect surviving a rebuild, with a remedy inside the fence named by the verifier. Waived once; a third pass follows; a third rejection is terminal. The escalation is docs/rooms/t224-second-rejection.md.**
+
 **AMENDED 2026-09-08 AT DISPATCH, BEFORE THE DIFF EXISTS (orchestrator 5c;
 measured by the blind phase 1's attack A1.1 and the dispatcher's ground
 truth GT-9 at dfe35a5): the comparison in the first bullet is NOT
@@ -611,6 +613,238 @@ at the merge.
 - Nothing in this rework is out of fence: `.claude/` and `tools/e2e` are
   the card's `touches:`, and `docs/tasks/` is unfenceable. No ask was
   routed; nothing was parked; no new finding was filed.
+
+### Third pass — 2026-09-09, a FRESH executor, closing the re-verification's two corrections
+
+Lane `task/T-224-amendment-under-unfenceable` at `40b22e4` (the second
+verdict commit, which the lane carried). Fresh session, neither author. The
+architect's WAIVER of the second-rejection stop is on this card's "What to
+build" and in `docs/rooms/t224-second-rejection.md` on main (`90bdd42`);
+**a third rejection is terminal**, so this pass closes exactly the two
+corrections and the three bodies, and nothing else.
+
+**THE DEFECT, RE-DERIVED HERE BEFORE ANYTHING WAS CHANGED** (`repro-T-224.mjs`
+in this lane's scratchpad, three throwaway repos driving `touchesAmendments`
+directly, at `40b22e4`):
+
+    decoy + widen   paths=3   ALLOWED — nothing moved      <- the hole
+    widen only      paths=2   REFUSED (amendment)          <- the control that worked
+    decoy only      paths=2   ALLOWED — nothing moved      <- a duplicate id, silently
+
+`touchesAmendments` skipped an id already `seen` (`:954`) while
+`cardTouchesOf` resolved the PATH first and the id only on `absent`
+(`:860–864`). Composed, the two endpoints of ONE id straddle TWO FILES: at
+the base the decoy is absent so the index resolves the id to the real card
+(old line), at the tip the direct `git show` short-circuits the index and
+returns the decoy's copy of that same line, `before.line === after.line`
+holds, `continue` runs, and `seen` then blocks the real card entirely. **The
+card, both verdicts and the code agreed; nothing had to be recorded as a
+contradiction.**
+
+#### What changed — `.claude/hooks/landing-gate.mjs`
+
+- **`cardTouchesOf` asks the per-revision INDEX FIRST, at every endpoint**
+  (correction 1). The three-line path-first short-circuit is gone; the diff's
+  own path is read only where the index maps the id to exactly that one file
+  there, which is the ordinary case and is the same single `git show` as
+  before. When the index maps the id to two files it answers `problem` and
+  carries the list on a new `duplicate` field, so **the resolver decides that
+  a state is ambiguous and the CALLER decides what it MEANS** — one site for
+  each question rather than the same test in two places.
+- **`touchesAmendments` resolves BOTH endpoints before it trusts either, and
+  answers the ambiguity itself** (correction 2). `pathsOf` reads the same
+  memoised listing, so the decision costs no process. A tip path present at
+  NEITHER the range's base NOR the fence of record is one the RANGE ARRIVED
+  AT: `duplicated`, and the push is REFUSED naming every file and marking the
+  arriving one. A duplicate present at both ends is the board's own and stays
+  the announced cannot-compare. The `absent` short-circuits moved BELOW the
+  ambiguity arm on purpose — a range filing two cards under one brand-new id
+  is the same ambiguity, and skipping it on `absent` would hand it back.
+- **THE `arrived` TEST IS BASE **OR** RECORD, AND THE RECORD HALF IS
+  LOAD-BEARING.** An UNSYNCED lane whose tip carries a file the integration
+  branch already has invented nothing; a base-only rule would refuse it,
+  which is the fast-path-A mistake in a second costume. Mutant L measures
+  it (body 1675's arm four).
+- **`duplicateReport` and `DUPLICATE_ID_ROUTE`, new and exported**, beside
+  `amendmentReport`/`AMENDMENT_ROUTE` and for the same reason: two arms
+  describing one state two ways is two accounts of one finding. The refusal
+  marks WHICH file arrived, because that is the whole verdict — "this board
+  has two files with one id" is a notice, "this range put one there" is not.
+- **Two new BLOCK codes**, `landing-gate-card-id-duplicated` (lane) and
+  `landing-gate-merge-card-id-duplicated` (merge). A block needs no row in
+  `push-guard.mjs`'s `ANNOUNCED_ALLOW_CODES` — the runner prints a block's
+  reason whatever that list holds — and nothing in the tree enumerates this
+  gate's block codes (`git grep` over `.mjs`/`.ts`: the only consumer of any
+  landing-gate code is `landing-gate-cannot-compare`, which is unchanged).
+  The merge arm's outside-the-fence refusal appends duplicates the way it
+  already appends amendments, so a push carrying both kinds reports both.
+- **Limit 5's residue (f) is RESTATED, not softened**, and the count stays
+  SIX: (f) is now the duplicate the board ALREADY carried, with the duplicate
+  the range ARRIVES at named as refused rather than announced. Two header
+  paragraphs argue it — the decoy account under *"AND A SECOND FILE CARRYING
+  THE ID CANNOT STAND IN FOR THE CARD"*, and the cost, corrected below.
+  `T-212`'s dated line — this lane's OWN addition, still a pure addition
+  against `dfe35a5` (0 `-` lines, measured) — takes the same correction in
+  place.
+
+**`T-224-s4` ASKS FOR THE NEXT LETTER AND IT IS `(g)`.** That card's build
+instruction reads *"a sixth entry under limit 5 — `(f)`"*; `(f)` was spent by
+the rework and is now spent differently again, and (a)–(f) are all live. Read
+as `(g)` when it is picked up — the same word the second verdict left for the
+integrator, repeated here because s4's own text still says `(f)`.
+
+**WHAT DID NOT CHANGE**, each re-measured rather than assumed: the comparison
+is raw BYTES; the record is `rev` for the lane arm and the FIRST PARENT per
+merge for the merge arm; the arm still sits BETWEEN the containment block and
+the cannot-compare allow (the seventh body still owns that); id resolution
+still handles rename, delete-and-re-add and the `T-NNN` vs `T-NNN-sN`
+distinction; `judgePaths` is untouched and `docs/tasks` stays UNFENCEABLE;
+`push-guard.mjs` is byte-identical to `dfe35a5`; the exoneration is untouched.
+
+#### The spawn budget — MEASURED, and it went UP for the ordinary push
+
+`spawns-T-224.mjs`, a counting `git` injected through the function's own last
+parameter, a throwaway repo of 40 cards, each range padded to 500 non-card
+paths as the verdicts' A1.15 did, at `aab21bc`:
+
+| range | spawns | which |
+|---|---|---|
+| a range with NO card path | **0** | nothing is asked at all |
+| 1 card, body changed, LINE UNMOVED | **4** | 2 `ls-tree docs/tasks/` + 2 `show` |
+| 1 card, line MOVED | **5** | + the record read |
+| 1 card RENAMED and widened | **5** | (it was **6** before this pass) |
+| **20** cards renamed and widened | **62** | **2** listings for the whole range + 60 `show` (it was **101**) |
+
+**THE ORDINARY PUSH COSTS TWO PROCESSES MORE THAN IT DID, AND THE HEADER'S
+CLAIM THAT IT COSTS NONE IS RETRACTED IN PLACE.** That claim was true only of
+the `absent`-gated fast path, which is the defect: knowing an id is unique at
+a revision requires listing that revision, and there is no cheaper question.
+What IS preserved is the property the rework owed — **one listing per
+REVISION, never one per card** — and a renaming push is now cheaper than
+before, because the per-path `ls-tree` the old `absent` branch paid is gone.
+`T-224-s5` (unpinned cost) is unaffected: it still asks for bodies, and its
+figures move to the table above.
+
+#### The drill (verifier.md 2b; CONVENTIONS' POISON DRILL)
+
+**A DETACHED SCRATCH WORKTREE, NEVER THE LANE**: sibling
+`/Users/ujju/Projects/nputer-D3-T-224` (stem derived from the lane id),
+`git worktree add --quiet --detach` at `aab21bc`, `node_modules`/`dist`
+symlinked from the lane so the mutants ran against the same toolchain — the
+app's included, the harness failure the first verdict reported discarding.
+**BASELINE FIRST: 51 passed, exit 0** — the count read, not only the exit.
+Every mutation applied through `mutate-T-224.mjs`, which REFUSES unless the
+FROM string occurs exactly once, so a mutation that did not land is a failure
+rather than a green (`T-078`'s shape, which bit the previous pass). Every
+landing read back from `git diff -U0` BEFORE the suite ran; every restoration
+by `git restore --source=aab21bc --staged --worktree` and proved by sha256
+against the pristine hook
+`5b8522c66a60a44de9d8ac2069a567d1b8e0512a957f494e8ba3361b0d0cea35`
+(the pre-third-pass file was `2edf98f9…e1b5`, the hash both earlier drills
+used). **Every restoration matched**; the worktree was removed, symlinks
+first, and the lane's own hook hashed identical afterwards.
+
+| # | mutant | one-side change | exit | bodies RED |
+|---|---|---|---|---|
+| A | **THE REGRESSION ITSELF** — the path-first short-circuit put back | the 3 lines re-inserted at the head of `cardTouchesOf` | 1 | **3** — 1561, 1635, 1675 (48 passed) |
+| B | the dedupe by PATH (the verdict's `DEDUPE_BY_PATH`) | `seen.has(id)/add(id)` → `seen.has(rel)/add(rel)` | 1 | **2** — 1481, 1561 (49 passed) |
+| C | **ambiguity → ALLOW** (the fail-open the verdict named) | `if (arrived.length > 0) {` → `if (false) {` | 1 | **3** — 1561, 1635, 1675 (48 passed) |
+| D | EVERY duplicate refused, the inherited one included | `atTip.at.filter((p) => !known.has(p))` → `atTip.at` | 1 | **1** — 1675 alone (50 passed) |
+| E | `REFUSEALL` on the lane's DUPLICATE arm | `amended.duplicated.length > 0` → `>= 0` | 1 | **19**, incl. the ALLOW halves of 568, 1031, 1105, 1561 (32 passed) |
+| F | `REFUSEALL` on the lane's AMENDMENT arm (the verdict's M10) | `amended.moved.length > 0` → `>= 0` | 1 | **17** (34 passed) |
+| G | the ARRIVED marker never printed | `d.arrived.includes(p) ? … : ""` → `false ? … : ""` | 1 | **3** — 1561, 1635, 1675 (48 passed) |
+| H | the MERGE arm's duplicate refusal disabled | `if (amended.duplicated.length > 0) {` → `if (false) {` | 1 | **1** — 1635 alone (50 passed) |
+| H2 | `REFUSEALL` on the MERGE duplicate arm | the same site → `>= 0` | 1 | **5** — 939, 1269, 1403, 1635, 2048 (46 passed) |
+| I | the comparison DELETED (both earlier tables' `ALLOWALL`) | `if (before.line === after.line)` → `if (true)` | 1 | **11** (40 passed) |
+| J | **the verdict's SURVIVOR** `AMBIGUITY_PICKS_FIRST` | `if (paths.length > 1) {` → `if (false) {` | 1 | **3** — 1561, 1635, 1675 (48 passed) |
+| K | the verdict's `NO_ID_LOOKUP` | `listed.byId.get(id) ?? []` → `[]` | 1 | **13** (38 passed) |
+| L | the `arrived` test forgets the RECORD | `new Set([...atBase.at, ...atRecord.at])` → `new Set([...atBase.at])` | 1 | **1** — 1675 alone (50 passed) |
+
+**THE VERDICT'S ONE DELIBERATE SURVIVOR IS NOW KILLED, WHICH IS THE POINT OF
+MUTANT J.** The re-verification reported `AMBIGUITY_PICKS_FIRST` surviving all
+48 bodies — *"residue (f) … is asserted and measured by nothing"*. It reds
+three bodies here, because picking `paths[0]` silently is now a behaviour the
+suite owns rather than a branch nobody drives.
+
+**Kill-set containment, judged over BODIES and stated against BOTH earlier
+tables.** The three new bodies' kill sets are 1561 `{A,B,C,E,F,G,I,J,K}`,
+1635 `{A,C,G,H,H2,J,K}`, 1675 `{A,C,D,G,J,K,L}`. **No two of them contain
+each other**: D and L kill 1675 and neither 1561 nor 1635; H and H2 kill 1635
+and not 1561 or 1675; B, E, F and I kill 1561 and neither of the others.
+Against the SECOND verdict's table, mutant I is the same mutation as its
+`ALLOWALL` and its kill set is a **strict superset** — the rework's ten
+{1031, 1083, 1149, 1235, 1269, 1332, 1382, 1403, 1443, 1481} **plus** 1561 —
+so no pre-existing body lost a kill to this pass; against the FIRST verdict's
+table its five are contained in that ten. `NO_ID_LOOKUP` (K) likewise grows
+from the verdict's five to thirteen, because the index is now the only
+resolver.
+**AND ONE BODY IS NOT ISOLATED BY ANY MUTANT I BUILT, WHICH I STATE RATHER
+THAN SMOOTH** (shape SIX's asking): H isolates 1635 and D and L each isolate
+1675 at a failing-body count of ONE, and **nothing isolates 1561** — every
+mutant aimed at the lane arm's duplicate refusal reds 1675's first two arms
+as well, since both drive that same call site. What separates them is
+measured rather than argued: B reds 1561 and not 1675, D and L red 1675 and
+not 1561. What 1561 owns alone is the SIBLING widening suppressed behind a
+decoy — the verdict's own construction — and the ordinary-two-card ALLOW.
+
+**THE POSITIVE CONTROLS ARE DEMONSTRATED FAILING, NOT ASSERTED**, at
+assertion level and in both directions:
+
+- 1561's ALLOW half (*"an ordinary range changing TWO cards was refused"*)
+  reds under `E` and `F`, the two refuse-all mutants; its REFUSE half reds
+  under `A`, `C`, `G`, `J` and `K`.
+- 1635's ALLOW half (*"a merge carrying ordinary card writes was refused"*)
+  reds under `H2`; its REFUSE half (*"a merge carrying a same-id decoy landed
+  on main"*) reds under `A`, `C`, `G`, `H`, `J`, `K`.
+- 1675's ALLOW halves — arm three (*"an inherited duplicate refused the
+  push"*) and arm four (*"a lane was charged with the record's own
+  duplicate"*) — red under `D` and `L` respectively; its REFUSE halves red
+  under `A`, `C`, `G`, `J`, `K`.
+
+#### The three bodies, and what each covers — 48 → 51
+
+| body | line | covers |
+|---|---|---|
+| *"A SAME-ID DECOY CANNOT STAND IN FOR THE REAL CARD: the widening behind one is refused, and the ordinary two-card range still lands"* | 1561 | the verdict's construction (b), the SIBLING form, at the LANE moment — with its own PRECONDITION asserted (the decoy really does sort first in the range's paths); the same widening with NO decoy still REFUSED as an amendment (the control that already worked); an ordinary range changing TWO cards' bodies ALLOWED (so the fix is not "refuse any range touching two cards") |
+| *"THE MERGE MOMENT: a merge whose lane planted a same-id file is refused, then the same merge without it lands"* | 1635 | the same at the MERGE moment, records read from the FIRST parent, paired with the clean merge |
+| *"a duplicate card id the range ARRIVES AT is refused; one it INHERITS is the announced cannot-compare"* | 1675 | the duplicate ALONE refused (correction 2, no line moving anywhere); **PUSH 2 of the verdict's three-push construction refused** — the board made ambiguous by a road that is not this gate, then the decoy swapped for one sorting EARLIER; the INHERITED duplicate ALLOWED and ANNOUNCED (limit 5(f), measured); and the RECORD half — an unsynced lane writing a file main already carries is not charged |
+
+Every expectation is a TYPED LITERAL — `"ARRIVED IN THIS RANGE"`,
+`"1 card id(s)"`, `"the ambiguity is the BOARD's"`, `"touches: [method/]"` —
+never a second call to the function under test. All three drive a REAL
+`git push` through the command `.claude/settings.json` wires
+(`pushThroughGuard`) and assert the REMOTE REF, not an exit code, which is
+what the verdict's proposed body (i) demonstrated red at `4a9f278`.
+
+#### Dogfood — the reworked arm over two live ranges (`dogfood-T-224.mjs`, read-only)
+
+Record = the integration ref `main`, read at `cc5bf50` (a LIVE fact: main
+moved three times while this pass ran — `90bdd42`, `15684b4`, `cc5bf50`).
+Nothing was written anywhere; T-265's range was read from this lane's own
+object store and its worktree was never touched.
+
+    ── T-224 (THIS lane)   dfe35a5..HEAD   9 paths, 7 card ids
+         T-212, T-224, T-224-s1, T-224-s2, T-224-s3, T-224-s4, T-224-s5
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+    ── T-265 (the live sibling lane, READ-ONLY)  15619b4..3589e0f
+         45 paths, 3 card ids: T-265, T-265-s1, T-265-s2
+       RESULT: ALLOWED — no card's `touches:` line differs from main's copy
+
+Both were ALLOWED before this pass and are ALLOWED after it, which is the
+statement it owed: **neither correction turned a live range into a refusal.**
+
+#### Commands, in the order run, every exit read from `$?` unpiped
+
+| command | cwd | exit | count |
+|---|---|---|---|
+| `node --check .claude/hooks/landing-gate.mjs` | lane root | **0** | — |
+| `repro-T-224.mjs` (the defect, at `40b22e4`) | lane root | **0** | 1 of 3 fixtures ALLOWED — the hole |
+| `npm run typecheck` | tools/e2e | **0** | — |
+| `npx playwright test tests/landing-gate.spec.ts tests/push-checks.spec.ts` | tools/e2e | **0** | **62 passed** = **51** + **11** (48 + 11 at `40b22e4`; re-derived with `grep -cE '^test\("'`) |
+| `spawns-T-224.mjs` | lane root | **0** | the table above |
+| the thirteen-mutant drill | `../nputer-D3-T-224`, detached | see the table | baseline **51 passed**, exit 0 |
+| `dogfood-T-224.mjs` | lane root | **0** | both ranges ALLOWED |
 
 ## Verdicts
 
