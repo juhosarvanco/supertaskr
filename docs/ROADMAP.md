@@ -78,7 +78,7 @@ opens with the card id that still holds its story.
   LANDED (the board hands you the brief); D3 and D5 RULED 2026-08-30;
   and on 2026-09-03 the seat's chair was ruled for v1 — the architect
   sits in the user's agent app, the app assembles briefs and spawns
-  nothing (ADR-021). Next: T-241 (the seat skill), T-244 (`npx nputer`).
+  nothing (ADR-021). Next: T-241 (the seat skill), T-244 (`npx supertaskr`).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
   Not started. The in-app orchestrator conversation and any in-app
@@ -123,17 +123,19 @@ Goal: interview completed, milestone 1 decomposed into exact tasks.
       suggestions, room resolutions)
 - [x] Market map + steal list (docs/research/competitors.md)
 - [x] Interview complete, Q1–Q7 (rooms/first-user.md; NORTH_STAR)
-- [x] Name decided: nputer (rooms/naming.md; npm/PyPI free)
-- [ ] Domain + trademark sweep for "nputer"
+- [x] Name decided: Supertaskr (ADR-022, 2026-09-08; rooms/naming.md
+      records the 2026-08-14 choice, "nputer", and the reopening)
+- [ ] Trademark sweep for "Supertaskr" — the domains were swept
+      2026-09-08 (ADR-022); the mark was not
 - [x] Decomposition pass → docs/tasks/ T-001…T-007
 
 ### Milestone 1 — the mirror (scoped 2026-08-14, interview Q7)
-Goal: open the nputer app and watch nputer being built on its own
+Goal: open the Supertaskr app and watch Supertaskr being built on its own
 board — read-only story map of this repo; the method run by hand
 underneath. COMPLETE 2026-08-15, T-001…T-007.
 
 ### Milestone 2 — the map slice (decided 2026-08-15, rooms/map-sequencing.md)
-Goal: the architecture map's vertical slice on nputer's own repo.
+Goal: the architecture map's vertical slice on Supertaskr's own repo.
 COMPLETE 2026-08-15, T-008 → T-009 → T-011 → T-012.
 
 ### Milestone 3 — in-app genesis (F-03)

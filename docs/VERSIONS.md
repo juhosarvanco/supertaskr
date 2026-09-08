@@ -33,18 +33,18 @@ with the app as the mirror.
 | — app opens on a folder from outside | so a skill can put the mirror beside the chat | T-243 planned |
 | Dispatch (F-04) | dispatch view, brief as contract, fence at the write, preflight, blind verification as a spawn property, binding assignment, the one-command arm; the app spawns nothing | shipped (T-112, T-239 done) |
 | — the seat skill | the architect's hand work as a slash command over the arm — the primary way v1 is driven (ADR-021 Addendum 1) | T-241 planned p1 |
-| CLI (C-02) | the scripts and the indexer behind `npx nputer`, what both skills call | T-244 planned p1 (size L) |
+| CLI (C-02) | the scripts and the indexer behind `npx supertaskr`, what both skills call | T-244 planned p1 (size L) |
 | — Codex's skill form, measured | how a skill is installed and invoked in the ChatGPT app's Codex and its CLI, captured before any Codex claim | T-246 planned p1 |
 | Map (F-06) | architecture + tasks lenses, intent over reality, drift, cycles, blast, churn, budget with a measured reason (the ADR-013 slice of truth maintenance) | shipped |
 | Ring 2, as it is | 05 Card Preflight · 06 Fences & Dispatch Sets · 07 Proof-of-Teeth · 08 Blind Adversarial Verification · 09 Record-First Landings · 10 Merge Pre-Proof · 11 Process Vital Signs · 12 The Metabolism · 13 Seat Economics — working internals, documented, no productization pass in v1 | shipped inside |
 | The launcher | one command launches the human's app worktree fresh | T-164 done |
-| Security at the write (ruled 2026-09-08) | the dependency-legitimacy gate (T-247), the injection scan on docs writes (T-248), the secret read guard in the fence hook (T-249) — the layer GSD Core ships and nputer lacked | T-249 done (merged 2026-09-08), T-247 done (merged 2026-09-08), T-248 in rework after a blind REJECTED verdict (one missing test body) |
-| The gate taxonomy, named | pre-flight, revision, escalation, abort — the four types nputer runs, written into CONVENTIONS | T-250 planned p3 |
+| Security at the write (ruled 2026-09-08) | the dependency-legitimacy gate (T-247), the injection scan on docs writes (T-248), the secret read guard in the fence hook (T-249) — the layer GSD Core ships and Supertaskr lacked | T-249 done (merged 2026-09-08), T-247 done (merged 2026-09-08), T-248 in rework after a blind REJECTED verdict (one missing test body) |
+| The gate taxonomy, named | pre-flight, revision, escalation, abort — the four types Supertaskr runs, written into CONVENTIONS | T-250 planned p3 |
 | The debt-marker limit | a TODO or FIXME a lane adds must cite a card id, or the landing is refused | T-251 planned p3 |
 | The quick path below the loop (ruled 2026-09-08, v1) | one line files a size-S card with a light review mode and lands with a verdict; guard-class cards refused | folded into T-241 |
 | A test named per SHALL clause (ruled 2026-09-08, second sitting) | preflight lists, advisory first, the suite that will prove each clause and the clauses that name none | T-252 planned p3 |
 | The edge and must-not questions in decomposition (ruled 2026-09-08, second sitting) | the interview asks each card's edges and prohibitions and writes the kept ones as criteria | T-253 planned p3 |
-| Safe undo (ruled 2026-09-08, second sitting) | `npx nputer undo <card>` reverts a card's merge with a dependency check | folded into T-244 |
+| Safe undo (ruled 2026-09-08, second sitting) | `npx supertaskr undo <card>` reverts a card's merge with a dependency check | folded into T-244 |
 | The decision list (ruled 2026-09-08, third sitting) | decomposition writes each card's decisions — question, options, proposed default — only for what the interview and CONVENTIONS do not settle; past five items the card is to be split | folded into T-253 |
 | Two decision modes, audit and auto (ruled 2026-09-08, third sitting) | `decide: audit` — the preflight refuses an unanswered item, the human's name on the choices; `decide: auto` — the planner's defaults stamped and reviewed in one batch at the checkpoint; project default in the runtime config; guard-class and user-facing cards audit; the quick path auto; two health bands | T-257 planned p2, behind T-253 |
 | The commission list (ruled 2026-09-08, third sitting, "as proposed") | phase 2 enumerates every side effect the diff adds and maps each to a criterion; unmapped is a finding | T-258 planned p2 |
@@ -76,10 +76,10 @@ spelling is a gate before launch, not a feature.
 
 ## Already delivered under other names (walked 2026-09-08)
 
-Items from the competitor sweep and the parked list that nputer already
+Items from the competitor sweep and the parked list that Supertaskr already
 has; no ruling needed, only the name to look under.
 
-- per-agent model cost profiles → seat economics (13) plus D5's binding assignment per card; the routing table is `nputer.yaml`'s role defaults (C-03, planned)
+- per-agent model cost profiles → seat economics (13) plus D5's binding assignment per card; the routing table is `supertaskr.yaml`'s role defaults (C-03, planned)
 - cross-session memory → the record itself (STATE, checkpoints, rooms) under the cold-start test
 - PR bodies written from the record → record-first landings (09): the checkpoint record and the merge commit
 - the honest fallback line → T-169 (done); the sentence form is folded into T-241

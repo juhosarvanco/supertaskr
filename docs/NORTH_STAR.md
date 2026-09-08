@@ -22,11 +22,11 @@ technical users. Decided in rooms/first-user.md (resolved 2026-08-14).
 ## Success criteria (fixed 2026-08-14, interview Q2; planner-drafted,
 human-delegated)
 Within ~2 months:
-1. nputer ships nputer — milestone 1 built entirely through its own
+1. Supertaskr ships Supertaskr — milestone 1 built entirely through its own
    pipeline; every merged change traces to a task card with a verdict;
    zero retreats to a single mega-session. Git history is the proof.
 2. Idea → dispatchable milestone-1 board in ≤ 30 minutes via the
-   app's interview or `npx nputer init` (the magic moment, timed).
+   app's interview or `npx supertaskr init` (the magic moment, timed).
    (Mechanism amended 2026-08-16 with @human approval — ADR-008 made
    the app the front door; the CLI path arrives with C-02.)
 3. 2 of 3 outside technical users who run the interview on a real idea
@@ -35,7 +35,7 @@ Within ~2 months:
    first try (100%).
 
 Failure signals (tripwires):
-- Juho routes around the board while building nputer → ceremony
+- Juho routes around the board while building Supertaskr → ceremony
   heavier than value (magic principle 4 failing).
 - Interviews complete but nothing dispatches → planning theater
   inside the anti-planning-theater product.
@@ -53,9 +53,9 @@ Deliberately absent: stars, signups, traffic — applause metrics
 
 ## Riskiest assumption (interview Q6, 2026-08-14)
 That a thorough plan really keeps AI agents coherent over months.
-If false, nputer is planning theater with a beautiful board. Cannot be
+If false, Supertaskr is planning theater with a beautiful board. Cannot be
 proven in weeks — but leading indicators can, and milestone 1 must
-start the experiment on day one (nputer building nputer IS the
+start the experiment on day one (Supertaskr building Supertaskr IS the
 experiment). Tracked per milestone:
 - drift incidents: work contradicting NORTH_STAR/ARCHITECTURE caught
   by verifier or human (falling = coherence holding)
@@ -92,6 +92,6 @@ stop-the-line defect, the guard-integrity queue trends to zero, and a
 quality regression reds before it ships. The three gates it makes
 urgent are `T-025-s2` (no real genesis has ever run — the product's
 first credibility question), `T-140` (the map's ~1,000-file ceiling
-keeps nputer out of the workflows it must live in), and `T-112` (the
+keeps Supertaskr out of the workflows it must live in), and `T-112` (the
 dispatch loop people would use daily). The repository itself remains
 the proof: the finest example is the one whose own record shows it.
