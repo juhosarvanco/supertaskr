@@ -1309,6 +1309,232 @@ test("THE MERGE MOMENT: a merge carrying a `touches:` amendment is refused, then
   expect(git(fx.root, "show", `HEAD:${fx.card}`)).toContain("status: verifying");
 });
 
+/* ── the arm resolves a card BY ID, so a RENAME does not evade it (T-224) ─
+ *
+ * A CARD'S SLUG CARRIES ITS TITLE, SO RETITLING RENAMES THE FILE — an
+ * ordinary editorial act, which is exactly why an evasion can hide inside
+ * one. `rangePaths` passes `--no-renames` (right for the containment arm,
+ * which judges paths), so a renamed card reaches this arm as two unrelated
+ * strings: the old name, gone at the tip, and the new name, absent at the
+ * base. Compared BY PATH both halves answered `absent`, both were skipped,
+ * and a widened `touches:` landed at BOTH landing moments — the lane's own
+ * card and a sibling's alike. That is the hole this card's own verifier
+ * drove, and the contract as amended at dispatch names the remedy: *"a card
+ * id present on main under another path is resolved by id, not path, so
+ * delete-and-re-add and rename do not evade the comparison."*
+ *
+ * EVERY REFUSAL BODY HERE IS PAIRED INSIDE ONE FIXTURE, because a guard
+ * that refused every RENAME would be indistinguishable from one that
+ * resolves ids — and it would refuse the ordinary retitle, which is a write
+ * this project makes constantly.
+ */
+
+test("A RENAMED card does not evade the comparison: rename-and-widen is refused, the pure rename lands", () => {
+  const fx = fixture("rename-amendment");
+  const before = remoteRef(fx, fx.laneRef);
+  const renamed = "docs/tasks/T-901-a-retitled-card.md";
+
+  // ARM ONE — the retitle and the widening in ONE act, which is the shape
+  // the verifier drove. Nothing else in this range is out of fence, so a
+  // refusal here can only be this arm's.
+  git(fx.root, "mv", fx.card, renamed);
+  writeCard(fx.root, renamed, "T-901", "[tools/e2e, app/, .claude/]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "retitle the card and widen it in the same act");
+  // THE PRECONDITION, MEASURED: the range really does carry two unrelated
+  // paths and no rename detection, so a path-keyed arm would skip both.
+  const paths = git(fx.root, "diff", "--name-only", "--no-renames", `${fx.cut}..HEAD`)
+    .split("\n")
+    .filter((p) => p !== "");
+  expect(paths, "the fixture did not reproduce a rename as two paths").toContain(fx.card);
+  expect(paths).toContain(renamed);
+
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "a RENAMED card carried its widened fence past the lane moment").toBe(true);
+  // BOTH PATHS, so the reader can check the finding: the new name is where
+  // the card is, the old one is where the BEFORE line has to be read.
+  expect(refusal.stderr, "the refusal did not name the card's NEW path").toContain(renamed);
+  expect(refusal.stderr, "the refusal did not name the card's OLD path").toContain(fx.card);
+  expect(refusal.stderr, "the refusal did not say the card was resolved by ID").toContain(
+    "RESOLVED BY ITS ID T-901",
+  );
+  // BOTH LINES, untruncated.
+  expect(refusal.stderr, "the refusal did not name the line BEFORE").toContain("touches: [tools/e2e]");
+  expect(refusal.stderr, "the refusal did not name the line AFTER").toContain(
+    "touches: [tools/e2e, app/, .claude/]",
+  );
+  expect(refusal.stderr).toContain("fast path A");
+  expect(remoteRef(fx, fx.laneRef), "the refused push reached the remote anyway").toBe(before);
+
+  // THE CONTROL, same fixture, same armed lane: keep the retitle, put the
+  // LINE back. A pure rename moves no fence and must land — otherwise this
+  // arm has made retitling a card a fence breach.
+  writeCard(fx.root, renamed, "T-901", "[tools/e2e]");
+  commit(fx, {}, "the retitle kept, the line put back");
+  const allowed = pushThroughGuard(fx, fx.laneRef);
+  expect(allowed.refused, `a PURE rename was refused: ${allowed.stderr}`).toBe(false);
+  expect(remoteRef(fx, fx.laneRef), "the allowed push did not reach the remote").not.toBe(before);
+  // …and the rename really did happen in the allowed half, so the allow is
+  // about the LINE and not about a file nobody moved.
+  expect(git(fx.root, "ls-tree", "--name-only", "HEAD", "docs/tasks/")).toContain(renamed);
+  expect(git(fx.root, "ls-tree", "--name-only", "HEAD", "docs/tasks/")).not.toContain(fx.card);
+});
+
+test("a lane RENAMING and widening a SIBLING's card is refused too, not only its own", () => {
+  // THE SHARPER FORM, and the card's own headline consequence: *"lane A can
+  // widen lane B's fence."* A retitle of somebody else's card is the same
+  // ordinary act, and under a path-keyed arm it was the same free pass.
+  const fx = fixture("sibling-rename-amendment");
+  const before = remoteRef(fx, fx.laneRef);
+  const renamed = "docs/tasks/T-900-another-card-reworded.md";
+  git(fx.root, "mv", "docs/tasks/T-900-another-card.md", renamed);
+  writeCard(fx.root, renamed, "T-900", "[method/, .claude/, lib/, tools/]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "retitle the sibling's card and widen it");
+
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "a lane widened a SIBLING lane's fence behind a rename").toBe(true);
+  expect(refusal.stderr).toContain(renamed);
+  expect(refusal.stderr).toContain("docs/tasks/T-900-another-card.md");
+  expect(refusal.stderr).toContain("RESOLVED BY ITS ID T-900");
+  expect(refusal.stderr).toContain("touches: [method/]");
+  expect(refusal.stderr).toContain("touches: [method/, .claude/, lib/, tools/]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(before);
+});
+
+test("THE MERGE MOMENT: a merge whose lane RENAMED and widened a card is refused, then the retitle alone lands", () => {
+  const fx = fixture("merge-rename-amendment");
+  const renamed = "docs/tasks/T-901-a-retitled-card.md";
+  git(fx.root, "mv", fx.card, renamed);
+  writeCard(fx.root, renamed, "T-901", "[tools/e2e, docs]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "retitle and widen");
+  git(fx.root, "checkout", "-q", "main");
+  const mainBefore = remoteRef(fx, "refs/heads/main");
+  git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+
+  const refusal = pushThroughGuard(fx, "refs/heads/main");
+  expect(refusal.refused, "a merge carrying a renamed-and-widened card landed on main").toBe(true);
+  expect(refusal.stderr).toContain("AMENDMENT");
+  expect(refusal.stderr).toContain(renamed);
+  expect(refusal.stderr).toContain(fx.card);
+  expect(refusal.stderr).toContain("touches: [tools/e2e, docs]");
+  // The record at the merge moment is the FIRST parent, and the id is what
+  // finds the card there — the old name is main's, the new one the lane's.
+  expect(refusal.stderr).toContain("first parent");
+  expect(refusal.stderr).toContain("RESOLVED BY ITS ID T-901");
+  expect(remoteRef(fx, "refs/heads/main"), "the refused merge push reached the remote").toBe(
+    mainBefore,
+  );
+
+  // THE CONTROL: undo the merge, keep the retitle, put the line back, merge
+  // again. A merge carrying an ordinary retitle must land.
+  git(fx.root, "reset", "-q", "--hard", String(mainBefore));
+  git(fx.root, "checkout", "-q", fx.lane);
+  writeCard(fx.root, renamed, "T-901", "[tools/e2e]");
+  commit(fx, {}, "the retitle kept, the line back");
+  git(fx.root, "checkout", "-q", "main");
+  git(fx.root, "merge", "-q", "--no-ff", "--no-edit", fx.lane);
+  const allowed = pushThroughGuard(fx, "refs/heads/main");
+  expect(allowed.refused, `a merge carrying a pure retitle was refused: ${allowed.stderr}`).toBe(
+    false,
+  );
+  expect(remoteRef(fx, "refs/heads/main")).not.toBe(mainBefore);
+  expect(git(fx.root, "ls-tree", "--name-only", "HEAD", "docs/tasks/")).toContain(renamed);
+});
+
+test("DELETE-AND-RE-ADD under a new slug is refused, while a genuinely NEW id is the disclosed residue", () => {
+  // THE PAIR THAT SEPARATES THE FIX FROM THE RESIDUE. Both halves add a
+  // card path that did not exist at the base; only one of them carries an
+  // id the integration branch already knows. The first is the evasion the
+  // contract names beside rename — *"delete-and-re-add ... do not evade the
+  // comparison"* — and the second is limit 5(a), which stays open and is
+  // routed as `T-224-s2`. A guard that refused both would have closed the
+  // hole by refusing every lane's suggestion filing.
+  const fx = fixture("readd-and-new-id");
+  const before = remoteRef(fx, fx.laneRef);
+
+  // ARM ONE — the same id, a new slug, a wider line.
+  git(fx.root, "rm", "-q", fx.card);
+  writeCard(fx.root, "docs/tasks/T-901-a-brand-new-slug.md", "T-901", "[tools/e2e, method/]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "delete the card and re-add it wider");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "delete-and-re-add laundered a `touches:` amendment").toBe(true);
+  expect(refusal.stderr).toContain("docs/tasks/T-901-a-brand-new-slug.md");
+  expect(refusal.stderr).toContain(fx.card);
+  expect(refusal.stderr).toContain("RESOLVED BY ITS ID T-901");
+  expect(refusal.stderr).toContain("touches: [tools/e2e]");
+  expect(refusal.stderr).toContain("touches: [tools/e2e, method/]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(before);
+
+  // ARM TWO — THE DISCLOSED RESIDUE, in the same fixture: put the card back
+  // where it was and file a card under an id NO endpoint carries, with a
+  // fence far wider than the lane's. It is ALLOWED, and the header says so
+  // as limit 5(a): a genuinely new id has no line at the base to have moved
+  // from. This body is where that residue is measured rather than asserted.
+  git(fx.root, "rm", "-q", "docs/tasks/T-901-a-brand-new-slug.md");
+  writeCard(fx.root, fx.card, "T-901", "[tools/e2e]");
+  writeCard(fx.root, "docs/tasks/T-904-a-brand-new-id.md", "T-904", "[app/src, method/, docs]");
+  commit(fx, {}, "the card back, and a genuinely new id filed beside it");
+  const allowed = pushThroughGuard(fx, fx.laneRef);
+  expect(allowed.refused, `a genuinely new card id was refused: ${allowed.stderr}`).toBe(false);
+  expect(remoteRef(fx, fx.laneRef)).not.toBe(before);
+});
+
+test("`T-NNN` and `T-NNN-sN` are two ids: a suggestion card is never resolved against its parent", () => {
+  // THE DISTINCTION THAT MAKES ID RESOLUTION SAFE, and it is not
+  // hypothetical on this board — `normaliseTaskId`'s own comment records
+  // the T-153-s5 dispatch where a suffix read as its parent fenced the
+  // wrong lane. `CARD_FILE_RE`'s optional `-s\d+` is greedy, so the capture
+  // takes the suffix when the name carries one, and the index is keyed on
+  // that exact string.
+  const fx = fixture("suffix-ids-are-distinct");
+
+  // Both cards on main first, narrow and identical, so nothing about the
+  // LINES can distinguish them — only the id can.
+  git(fx.root, "checkout", "-q", "main");
+  writeCard(fx.root, "docs/tasks/T-902-a-parent.md", "T-902", "[tools/e2e]");
+  writeCard(fx.root, "docs/tasks/T-902-s1-a-suggestion.md", "T-902-s1", "[tools/e2e]");
+  commit(fx, {}, "a parent card and its suggestion, both narrow");
+  git(fx.root, "push", "-q", "origin", "refs/heads/main:refs/heads/main");
+  git(fx.root, "checkout", "-q", fx.lane);
+  git(fx.root, "merge", "-q", "--no-edit", "main");
+  // What `origin` holds for this lane right now — the ref every arm below
+  // compares against, so "was it refused?" has a mechanical answer.
+  const synced = remoteRef(fx, fx.laneRef);
+
+  // ARM ONE — DELETE the parent and RENAME-AND-WIDEN the suggestion. If the
+  // two ids were confused, the parent's deletion would resolve to the
+  // suggestion's blob (or the suggestion's rename to the parent's), and the
+  // gate would answer about a card nobody moved.
+  git(fx.root, "rm", "-q", "docs/tasks/T-902-a-parent.md");
+  git(fx.root, "mv", "docs/tasks/T-902-s1-a-suggestion.md", "docs/tasks/T-902-s1-reworded.md");
+  writeCard(fx.root, "docs/tasks/T-902-s1-reworded.md", "T-902-s1", "[tools/e2e, docs]");
+  commit(fx, { "tools/e2e/work.txt": "in fence\n" }, "delete the parent, retitle and widen the child");
+  const refusal = pushThroughGuard(fx, fx.laneRef);
+  expect(refusal.refused, "the suggestion's widening rode in behind its parent's deletion").toBe(
+    true,
+  );
+  // EXACTLY ONE card is named, and it is the SUGGESTION. The parent is a
+  // deletion — limit 5(b) — and must not appear as a move.
+  expect(refusal.stderr).toContain("RESOLVED BY ITS ID T-902-s1");
+  // The exact string the annotation WOULD carry if the parent's deletion had
+  // resolved to the suggestion's blob. Asserted as a literal, not derived.
+  expect(refusal.stderr, "the parent id was reported as a move").not.toContain(
+    "RESOLVED BY ITS ID T-902,",
+  );
+  expect(refusal.stderr, "more than one card was reported as moved").toContain("1 card(s)");
+  expect(refusal.stderr).toContain("docs/tasks/T-902-s1-reworded.md");
+  expect(refusal.stderr).toContain("touches: [tools/e2e, docs]");
+  expect(remoteRef(fx, fx.laneRef)).toBe(synced);
+
+  // ARM TWO — the same two acts with the LINE left alone: the parent still
+  // deleted, the child still retitled. Nothing moved, so nothing is refused,
+  // and the refusal above cannot have been the deletion's or the rename's.
+  writeCard(fx.root, "docs/tasks/T-902-s1-reworded.md", "T-902-s1", "[tools/e2e]");
+  commit(fx, {}, "the child's line put back, the parent still gone");
+  const allowed = pushThroughGuard(fx, fx.laneRef);
+  expect(allowed.refused, `a deletion and a retitle were refused: ${allowed.stderr}`).toBe(false);
+  expect(remoteRef(fx, fx.laneRef)).not.toBe(synced);
+});
+
 test("every manifest and lockfile the live tree carries has a reader in this gate", () => {
   // THE CARD'S OWN INSTRUCTION — "derive the manifest set from the tree,
   // never list it" — measured, and the split `landing-gate.mjs`'s header

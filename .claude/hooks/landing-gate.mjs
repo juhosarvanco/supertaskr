@@ -178,15 +178,27 @@
  *    must, since that is where every card's dispatch stamp and closing
  *    stamp are written; what is judged now is the `touches:` LINE rather
  *    than the file — `touchesAmendments` and the section below it. The
- *    FIVE things that arm still cannot see: (a) a card the range ADDS has
- *    no line at the base to have moved from, so a lane may commit a NEW
- *    card carrying any `touches:` — it fences no live lane, since a lane's
- *    card exists before its branch does, but a card planted this way
- *    carries a fence nobody triaged; (b) a card the range DELETES is not
- *    an amendment either — it cannot widen anything, because the lane it
- *    named then has no card on the integration branch and
- *    `landing-gate-no-card` refuses that lane's next push WHOLE, so the
- *    reachable damage is a DENIAL rather than a licence; (c) the arm is
+ *    SIX things that arm still cannot see: (a) a card the range ADDS UNDER
+ *    AN ID NO ENDPOINT ALREADY CARRIES has no line at the base to have
+ *    moved from, so a lane may commit a genuinely NEW card carrying any
+ *    `touches:`, and that card carries a fence nobody triaged (`T-224-s2`).
+ *    **THE JUSTIFICATION THIS RESIDUE USED TO CARRY WAS FALSE AND IS
+ *    RETRACTED RATHER THAN SOFTENED**: it read *"it fences no live lane,
+ *    since a lane's card exists before its branch does"*, which is exactly
+ *    wrong for the case `T-224`'s own verifier drove — a card RENAMED in
+ *    the range keeps its id while the lane it fences is live, and under a
+ *    path-keyed comparison it looked like an ADD at the base and a DELETE
+ *    at the tip and rode in unjudged at both landing moments. Resolution
+ *    is BY ID now (`cardPathsById`, `cardTouchesOf`), so a rename, a
+ *    delete-and-re-add and a re-slug are all JUDGED; this residue is the
+ *    genuinely new id and nothing wider; (b) a card the range DELETES — no
+ *    path at the tip carrying its id, which now includes a card FILED AWAY
+ *    under `docs/tasks/rejected/`, since `CARD_FILE_RE` does not reach
+ *    below `docs/tasks/` — is not an amendment either: it cannot widen
+ *    anything, because the lane it named then has no card on the
+ *    integration branch and `landing-gate-no-card` refuses that lane's next
+ *    push WHOLE, so the reachable damage is a DENIAL rather than a
+ *    licence; (c) the arm is
  *    asked only where the containment arm has nothing to refuse, so a
  *    range that is BOTH out-of-fence and amended is refused for the
  *    out-of-fence paths and meets this refusal on its next attempt —
@@ -196,7 +208,12 @@
  *    this gate cannot read there is a cannot-compare that never asks the
  *    question; (e) limit 6 reaches this arm too — the exoneration in the
  *    section below reads the integration branch through the same movable
- *    local ref.
+ *    local ref; (f) the id resolution answers CANNOT-COMPARE, never a
+ *    verdict, where it cannot resolve: two files carrying one id at one
+ *    revision, or an `ls-tree` of `docs/tasks/` that fails. Both are
+ *    announced on the existing cannot-compare code and neither is a silent
+ *    allow, but a board with a duplicated id is a board this arm stops
+ *    judging until somebody fixes the board.
  *    **AND THE COMPARISON IS BYTES, SO A REFLOW IS A MOVE**: the line is
  *    compared character for character, because that is what the
  *    write-time guard compares (`method/lane-protocol.md`'s fast path A:
@@ -221,7 +238,7 @@
  *    was paid rather than closed.
  *
  * ── THE FIFTH LIMIT IS NOW AN ARM: THE `touches:` LINE, NOT THE FILE ─
- * `T-224`. For every card file the judged range changed, `touchesAmendments`
+ * `T-224`. For every card ID the judged range changed, `touchesAmendments`
  * reads `frontmatterLineOf(text, "touches")` at the range's BASE and at
  * its TIP and compares the two strings. **The file may change freely** —
  * the status stamp, the implementation notes, a suggestion filed beside
@@ -233,6 +250,23 @@
  * bodies proved a lane cannot widen THIS push from inside; this arm is
  * the other half of that account — the amendment cannot LAND, so there is
  * no next push in which it is the card of record.
+ *
+ * ── AND THE CARD IS FOUND BY ITS ID, WHICH IS WHAT A SLUG CANNOT DO ──
+ * A card's FILENAME carries its title, so retitling a card renames its
+ * file while its id stands still — an ordinary editorial act, not an
+ * evasion, which is exactly why an evasion can hide inside it. Keyed on
+ * the path, this arm read a renamed card as a card ADDED (at the tip) and
+ * a card DELETED (at the base), skipped both halves, and let a widened
+ * `touches:` land at BOTH landing moments, on the lane's own card and on
+ * a sibling's alike; `rangePaths`' `--no-renames` — right for the
+ * containment arm, which judges paths — is what leaves the two names
+ * unrelated. So `cardTouchesOf` resolves each endpoint by the id
+ * `CARD_FILE_RE` captures, over one memoised `ls-tree` of `docs/tasks/`
+ * per REVISION, asked only where a path answered `absent`: the ordinary
+ * push spends not one extra process, a rename with the line preserved is
+ * ALLOWED, and a rename that moves the line is REFUSED with both paths
+ * printed. Delete-and-re-add resolves the same way, which is the other
+ * half of the sentence the card's contract states.
  *
  * ── THE ONE MOVED LINE THAT MOVES NOTHING, AND WHY IT IS EXONERATED ──
  * **A LEGITIMATE FAST-PATH-A GRANT CAN APPEAR INSIDE A LANE'S OWN RANGE,
@@ -742,11 +776,123 @@ export function cardTouchesAt(root, rev, file, git = runGit) {
 }
 
 /**
+ * Every card under `docs/tasks/` at one revision, indexed by THE ID ITS
+ * NAME CARRIES — the listing that makes a RENAME resolvable.
+ *
+ * **A CARD IS RESOLVED BY ID, NEVER BY PATH, AND THAT IS THE CONTRACT
+ * RATHER THAN AN OPTIMISATION.** A card's slug carries its title, so
+ * rewording the title RENAMES the file while the id stays put; `rangePaths`
+ * passes `--no-renames` (right for the containment arm, which judges paths),
+ * so such a card reaches this arm as two unrelated strings — the old path,
+ * gone at the tip, and the new path, absent at the base. Compared by path
+ * both sides answer `absent`, and a widened `touches:` rides in unjudged at
+ * BOTH landing moments, its own card or a sibling's. That is the hole
+ * `T-224`'s own verifier found and it is why this listing exists.
+ *
+ * **THE FILTER IS `CARD_FILE_RE` ITSELF**, which is what keeps two
+ * properties exact and both of them were measured rather than assumed:
+ * `T-224` does not match `T-224-s1` (the pattern's optional `-s\d+` is
+ * greedy, so the capture takes the suffix when the name carries one), and
+ * `docs/tasks/rejected/**` is not a card path at all (the capture's
+ * `[^/]*` cannot cross a slash), so a card FILED AWAY into that directory
+ * still reads as a deletion — limit 5(b) — instead of being resolved to a
+ * blob nothing fences. The listing is therefore NOT recursive: below
+ * `docs/tasks/` there is no path this pattern can match, so recursing
+ * would enumerate blobs only to discard them.
+ *
+ * A list per id rather than one path, because two files carrying one id is
+ * a board this gate must not silently pick a winner in: the caller answers
+ * that with a cannot-compare, never with a verdict.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ byId: Map<string, string[]> } | { problem: string }}
+ */
+export function cardPathsById(root, rev, git = runGit) {
+  const ls = git(root, ["ls-tree", "--name-only", "-z", rev, "--", "docs/tasks/"]);
+  if (ls.status !== 0) {
+    return {
+      problem:
+        `\`git ls-tree ${rev} docs/tasks/\` failed (${ls.stderr.trim() || "no message"}), ` +
+        "so a card this range renamed could not be resolved by its id",
+    };
+  }
+  /** @type {Map<string, string[]>} */
+  const byId = new Map();
+  for (const p of ls.stdout.split("\0")) {
+    const named = CARD_FILE_RE.exec(p);
+    if (named === null) continue;
+    const id = /** @type {string} */ (named[1]);
+    const at = byId.get(id);
+    if (at === undefined) byId.set(id, [p]);
+    else at.push(p);
+  }
+  return { byId };
+}
+
+/**
+ * One card's `touches:` line at one revision, BY ID — the path first,
+ * because the path is almost always right, and the id when it is not.
+ *
+ * **THE ID LOOKUP IS GATED ON `absent`, SO THE ORDINARY PUSH PAYS FOR
+ * NOTHING.** A card whose path is unchanged answers on the first `git
+ * show` exactly as before this function existed; only a card the range
+ * renamed, deleted-and-re-added, or filed under a name one endpoint does
+ * not have reaches the listing, and `index` memoises that listing PER
+ * REVISION so a range renaming twenty cards still asks git once per ref.
+ *
+ * FOUR ANSWERS, and the fourth is the one a resolver owes: a line (with
+ * the path it was actually read at, which the refusal prints when it is
+ * not the path the diff named), `absent` — no file at this revision
+ * carries this id — and `problem`, which now also covers TWO files
+ * carrying one id, a state this gate reports rather than guesses through.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {string} id   the card id, as `CARD_FILE_RE` captured it
+ * @param {string} file the path the range named, repository-relative
+ * @param {(rev: string) => ({ byId: Map<string, string[]> } | { problem: string })} index
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ line: string | undefined, file: string } | { absent: true } | { problem: string }}
+ */
+export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
+  const direct = cardTouchesAt(root, rev, file, git);
+  if ("problem" in direct) return direct;
+  if (!("absent" in direct)) return { line: direct.line, file };
+
+  const listed = index(rev);
+  if ("problem" in listed) return listed;
+  const paths = listed.byId.get(id) ?? [];
+  if (paths.length === 0) return { absent: true };
+  if (paths.length > 1) {
+    return {
+      problem:
+        `${paths.length} files under docs/tasks/ carry the id ${id} at ${rev} ` +
+        `(${paths.join(", ")}), so this gate cannot say which one ${file} is`,
+    };
+  }
+  const only = /** @type {string} */ (paths[0]);
+  const found = cardTouchesAt(root, rev, only, git);
+  if ("problem" in found) return found;
+  if ("absent" in found) {
+    return {
+      problem: `\`git ls-tree\` listed ${only} at ${rev} and \`git show\` then could not read it`,
+    };
+  }
+  return { line: found.line, file: only };
+}
+
+/**
  * @typedef {object} TouchesMove
- * @property {string} file    the card, repository-relative
- * @property {string} before  its `touches:` line at the range's base
- * @property {string} after   its `touches:` line at the range's tip
- * @property {string} record  what the integration branch's own copy says
+ * @property {string} file       the card, repository-relative, as it stands at the range's tip
+ * @property {string} id         the id both endpoints were resolved by
+ * @property {string} before     its `touches:` line at the range's base
+ * @property {string} beforeFile the path that line was read at
+ * @property {string} after      its `touches:` line at the range's tip
+ * @property {string} afterFile  the path that line was read at
+ * @property {string} record     what the integration branch's own copy says
+ * @property {string | undefined} recordFile the path THAT was read at, when there was one
  */
 
 /**
@@ -760,6 +906,21 @@ export function cardTouchesAt(root, rev, file, git = runGit) {
  * amendment: it re-states the fence of record instead of moving it. The
  * module header argues both halves.
  *
+ * **EVERY ENDPOINT IS RESOLVED BY THE CARD'S ID, NOT BY ITS PATH**
+ * (`cardTouchesOf`), which is what the amended contract requires in as
+ * many words: *"a card id present on main under another path is resolved
+ * by id, not path, so delete-and-re-add and rename do not evade the
+ * comparison."* A rename that leaves the line alone is still ALLOWED — the
+ * two lines are equal, whatever the file is called — and a rename that
+ * moves it is REFUSED with BOTH paths named.
+ *
+ * **AND THE LOOP IS KEYED ON THE ID, WHICH IS NOT COSMETIC**: with
+ * `--no-renames`, one renamed card enters `paths` TWICE, as a deletion of
+ * the old name and an addition of the new one. Keyed on the path, one
+ * amendment would be reported twice — and the second report would name the
+ * endpoints in the opposite order, which reads like two findings about two
+ * cards.
+ *
  * @param {string} root
  * @param {string} base   the range's left endpoint
  * @param {string} tip    the range's right endpoint
@@ -771,31 +932,52 @@ export function cardTouchesAt(root, rev, file, git = runGit) {
 export function touchesAmendments(root, base, tip, record, paths, git = runGit) {
   /** @param {string | undefined} line */
   const show = (line) => (line === undefined ? NO_TOUCHES_LINE : line);
+  /** ONE listing per REVISION, asked only when a path answers `absent`. */
+  /** @type {Map<string, { byId: Map<string, string[]> } | { problem: string }>} */
+  const listings = new Map();
+  /** @param {string} rev */
+  const index = (rev) => {
+    const had = listings.get(rev);
+    if (had !== undefined) return had;
+    const made = cardPathsById(root, rev, git);
+    listings.set(rev, made);
+    return made;
+  };
   /** @type {TouchesMove[]} */
   const moved = [];
+  /** @type {Set<string>} */
+  const seen = new Set();
   for (const rel of paths) {
-    if (!CARD_FILE_RE.test(rel)) continue;
-    const before = cardTouchesAt(root, base, rel, git);
+    const named = CARD_FILE_RE.exec(rel);
+    if (named === null) continue;
+    const id = /** @type {string} */ (named[1]);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const before = cardTouchesOf(root, base, id, rel, index, git);
     if ("problem" in before) return { problem: before.problem };
     if ("absent" in before) continue;
-    const after = cardTouchesAt(root, tip, rel, git);
+    const after = cardTouchesOf(root, tip, id, rel, index, git);
     if ("problem" in after) return { problem: after.problem };
     if ("absent" in after) continue;
     if (before.line === after.line) continue;
-    const onRecord = cardTouchesAt(root, record, rel, git);
+    const onRecord = cardTouchesOf(root, record, id, rel, index, git);
     if (!("problem" in onRecord) && !("absent" in onRecord) && onRecord.line === after.line) {
       continue;
     }
     moved.push({
-      file: rel,
+      file: after.file,
+      id,
       before: show(before.line),
+      beforeFile: before.file,
       after: show(after.line),
+      afterFile: after.file,
       record:
         "problem" in onRecord
           ? `UNREADABLE — ${onRecord.problem}`
           : "absent" in onRecord
             ? `(no such card at ${record})`
             : show(onRecord.line),
+      recordFile: "problem" in onRecord || "absent" in onRecord ? undefined : onRecord.file,
     });
   }
   return { moved };
@@ -805,19 +987,32 @@ export function touchesAmendments(root, base, tip, record, paths, git = runGit) 
  * Render the moves for a human, once, so the two arms cannot describe the
  * same finding two ways.
  *
+ * **A PATH IS NAMED WHERE IT DIFFERS FROM THE ONE ON THE FIRST LINE, AND
+ * NOWHERE ELSE.** A renamed card has two names and a reader who is shown
+ * only one cannot check the finding: the old name is where the BEFORE line
+ * lives and it is what `git show <base>:<path>` needs. Where the card was
+ * not renamed the annotation is absent entirely rather than repeating the
+ * same string three times.
+ *
  * @param {TouchesMove[]} moved
  * @param {string} record how to name the revision the third line was read at
  * @returns {string}
  */
 export function amendmentReport(moved, record) {
   return moved
-    .map(
-      (m) =>
+    .map((m) => {
+      /** @param {string | undefined} at */
+      const named = (at) =>
+        at === undefined || at === m.file
+          ? ""
+          : `\n        (read at ${at} — the card was RESOLVED BY ITS ID ${m.id}, not by its path)`;
+      return (
         `    ${m.file}\n` +
-        `      before, at the range's base: ${m.before}\n` +
-        `      after, at the range's tip:   ${m.after}\n` +
-        `      on ${record}: ${m.record}\n`,
-    )
+        `      before, at the range's base: ${m.before}${named(m.beforeFile)}\n` +
+        `      after, at the range's tip:   ${m.after}${named(m.afterFile)}\n` +
+        `      on ${record}: ${m.record}${named(m.recordFile)}\n`
+      );
+    })
     .join("");
 }
 
