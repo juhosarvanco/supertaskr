@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: building
 blocked_by: [T-212]
 touches: [.claude, tools/e2e]
 suggested_by: "T-212's independent verifier, driving the gate's own `judgePaths` against a card file that is not the lane's own — the gate admits it, correctly per rule 5, and the consequence is not disclosed anywhere"
-builder: unassigned
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
