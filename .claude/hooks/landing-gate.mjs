@@ -172,20 +172,60 @@
  * 4. A push reached through an alias, a function, a script or an `eval`
  *    is not seen at all, which is `gitInvocations`' declared ceiling and
  *    the pre-guard state rather than a regression from it.
- * 5. **A `touches:` AMENDMENT RIDES IN UNDER THE UNFENCEABLE DIRECTORY,
- *    AND WIDENS THE NEXT PUSH.** `judgePaths` admits every changed path
- *    under `docs/tasks` — it must, since that is where every card's
- *    dispatch stamp and closing stamp are written. So the two bodies
- *    proving a lane cannot widen THIS push by editing its own card are
- *    true and are not the whole account: the amendment is itself an
- *    ADMITTED path, so it pushes, it merges, and from the next push
- *    onward this gate reads the widened `touches:` as the card of
- *    record. That is `T-211`'s fast path A — which this file's own
- *    `ROUTE` text reserves to triage — taken unilaterally, one merge
- *    later, and the same route reaches a SIBLING's card. `T-224` owns
- *    the fix and it is precise: judge the `touches:` LINE across the
- *    range rather than the file, using the `frontmatterLineOf` this
- *    module already imports. The directory stays unfenceable.
+ * 5. **A `touches:` AMENDMENT NO LONGER RIDES IN UNDER THE UNFENCEABLE
+ *    DIRECTORY — `T-224` CLOSED THAT, AND WHAT IT LEFT OPEN IS BELOW.**
+ *    `judgePaths` still admits every changed path under `docs/tasks`, and
+ *    must, since that is where every card's dispatch stamp and closing
+ *    stamp are written; what is judged now is the `touches:` LINE rather
+ *    than the file — `touchesAmendments` and the section below it. The
+ *    SIX things that arm still cannot see: (a) a card the range ADDS UNDER
+ *    AN ID NO ENDPOINT ALREADY CARRIES has no line at the base to have
+ *    moved from, so a lane may commit a genuinely NEW card carrying any
+ *    `touches:`, and that card carries a fence nobody triaged (`T-224-s2`).
+ *    **THE JUSTIFICATION THIS RESIDUE USED TO CARRY WAS FALSE AND IS
+ *    RETRACTED RATHER THAN SOFTENED**: it read *"it fences no live lane,
+ *    since a lane's card exists before its branch does"*, which is exactly
+ *    wrong for the case `T-224`'s own verifier drove — a card RENAMED in
+ *    the range keeps its id while the lane it fences is live, and under a
+ *    path-keyed comparison it looked like an ADD at the base and a DELETE
+ *    at the tip and rode in unjudged at both landing moments. Resolution
+ *    is BY ID now (`cardPathsById`, `cardTouchesOf`), so a rename, a
+ *    delete-and-re-add and a re-slug are all JUDGED; this residue is the
+ *    genuinely new id and nothing wider; (b) a card the range DELETES — no
+ *    path at the tip carrying its id, which now includes a card FILED AWAY
+ *    under `docs/tasks/rejected/`, since `CARD_FILE_RE` does not reach
+ *    below `docs/tasks/` — is not an amendment either: it cannot widen
+ *    anything, because the lane it named then has no card on the
+ *    integration branch and `landing-gate-no-card` refuses that lane's next
+ *    push WHOLE, so the reachable damage is a DENIAL rather than a
+ *    licence; (c) the arm is
+ *    asked only where the containment arm has nothing to refuse, so a
+ *    range that is BOTH out-of-fence and amended is refused for the
+ *    out-of-fence paths and meets this refusal on its next attempt —
+ *    deliberate, because the alternative is preempting the refusal the
+ *    two `T-212` bodies measure; (d) the lane arm reaches it only after
+ *    the lane's OWN card expanded from the integration branch, so a card
+ *    this gate cannot read there is a cannot-compare that never asks the
+ *    question; (e) limit 6 reaches this arm too — the exoneration in the
+ *    section below reads the integration branch through the same movable
+ *    local ref; (f) a card id carried by two files under `docs/tasks/`
+ *    NONE OF WHICH THIS RANGE ARRIVED AT — the ambiguity is already the
+ *    BOARD's, at the range's base or on the fence of record — answers
+ *    CANNOT-COMPARE, never a verdict, and so does an `ls-tree` that fails
+ *    outright: both are announced on the existing cannot-compare code,
+ *    neither is a silent allow, and while the board is ambiguous about
+ *    which file IS a card this arm stops judging that id. **THE HALF THAT
+ *    IS NOT A RESIDUE IS THE DUPLICATE THE RANGE ITSELF ARRIVES AT, WHICH
+ *    IS REFUSED** (`duplicateReport`, `DUPLICATE_ID_ROUTE`): a
+ *    cannot-compare ALLOW there was the fail-open shape, and it is the one
+ *    `T-224`'s second verdict rode — see the decoy section below. So what
+ *    (f) leaves open is a board somebody ELSE made ambiguous, which no
+ *    lane reaches through this gate, and which triage repairs on main.
+ *    **AND THE COMPARISON IS BYTES, SO A REFLOW IS A MOVE**: the line is
+ *    compared character for character, because that is what the
+ *    write-time guard compares (`method/lane-protocol.md`'s fast path A:
+ *    "character for character"), and a reader that normalised whitespace
+ *    here would be a second opinion about what a fence says.
  * 6. **A LOCAL REF REWRITE MOVES THE FENCE, AND THE LOCAL NAME IS TRIED
  *    FIRST.** `integrationRefCandidates` resolves the bare branch name
  *    ahead of either remote spelling, and `git update-ref
@@ -203,6 +243,102 @@
  *    THE REGISTRY'S WORD, AND ITS BASE URL IS AN ENVIRONMENT VARIABLE**
  *    (`T-247`). The section below states all three costs and why each
  *    was paid rather than closed.
+ *
+ * ── THE FIFTH LIMIT IS NOW AN ARM: THE `touches:` LINE, NOT THE FILE ─
+ * `T-224`. For every card ID the judged range changed, `touchesAmendments`
+ * reads `frontmatterLineOf(text, "touches")` at the range's BASE and at
+ * its TIP and compares the two strings. **The file may change freely** —
+ * the status stamp, the implementation notes, a suggestion filed beside
+ * it, a whole card added — and that is the point rather than a tolerance:
+ * `docs/tasks` stays UNFENCEABLE (rule 5), because a lane holding it
+ * would collide with every other lane's stamps. **A card whose
+ * `touches:` LINE moved is a fence amendment and is REFUSED**, its own or
+ * a sibling's alike, with the before and the after named. `T-212`'s two
+ * bodies proved a lane cannot widen THIS push from inside; this arm is
+ * the other half of that account — the amendment cannot LAND, so there is
+ * no next push in which it is the card of record.
+ *
+ * ── AND THE CARD IS FOUND BY ITS ID, WHICH IS WHAT A SLUG CANNOT DO ──
+ * A card's FILENAME carries its title, so retitling a card renames its
+ * file while its id stands still — an ordinary editorial act, not an
+ * evasion, which is exactly why an evasion can hide inside it. Keyed on
+ * the path, this arm read a renamed card as a card ADDED (at the tip) and
+ * a card DELETED (at the base), skipped both halves, and let a widened
+ * `touches:` land at BOTH landing moments, on the lane's own card and on
+ * a sibling's alike; `rangePaths`' `--no-renames` — right for the
+ * containment arm, which judges paths — is what leaves the two names
+ * unrelated. So `cardTouchesOf` resolves each endpoint by the id
+ * `CARD_FILE_RE` captures, over one memoised `ls-tree` of `docs/tasks/`
+ * per REVISION: a rename with the line preserved is ALLOWED, a rename that
+ * moves the line is REFUSED with both paths printed, and delete-and-re-add
+ * resolves the same way, which is the other half of the sentence the
+ * card's contract states.
+ *
+ * ── AND A SECOND FILE CARRYING THE ID CANNOT STAND IN FOR THE CARD ───
+ * **THE INDEX IS ASKED AT BOTH ENDPOINTS, AND THE FIRST VERSION OF THIS
+ * ARM ASKED IT AT ONE.** It read `git show <rev>:<the path the diff
+ * named>` FIRST and consulted the index only where that answered `absent`
+ * — a fast path that looks free and is not, because the loop above is
+ * keyed on the ID. Compose the two and the pair of endpoints ONE id is
+ * judged on can straddle TWO FILES: plant a second file under
+ * `docs/tasks/` carrying the card's id, sorting first in the range's path
+ * list, repeating the card's CURRENT `touches:` line. At the base it is
+ * absent, so the index resolves the id to the real card and yields the OLD
+ * line; at the tip it exists, so the direct `show` short-circuits the
+ * index and yields the DECOY's copy of that same old line. Equal, so
+ * `continue` — and `seen` now holds the id, so the real card's own
+ * widening is never examined at all. Not announced, not `unjudged`: an
+ * ordinary inside-the-fence ALLOW, at BOTH landing moments, on the lane's
+ * own card or a sibling's. `T-224`'s second verdict measured it through
+ * this hook and ended with the widened fence as the unambiguous card of
+ * record after three allowed pushes.
+ * **THE FIX IS THE ORDER, AND THE PRICE IS ONE LISTING PER REVISION.**
+ * The index answers first at every endpoint; the diff's path is read only
+ * where the index maps the id to exactly that one path there, which is the
+ * ordinary case and is the same single `git show` as before. So a range
+ * that changes NO card still spends nothing, and a range that changes any
+ * card spends one `ls-tree` per REVISION — not per card, which is the
+ * property `index`'s memo exists for, and which is what the old
+ * `absent`-gated version bought at the cost of correctness.
+ * **AND THE AMBIGUITY ITSELF IS NOW A VERDICT RATHER THAN A SHRUG**: an
+ * id the range ARRIVES at a duplicate of is REFUSED, because a
+ * cannot-compare ALLOW is the one answer a lane can manufacture on
+ * purpose. The residue that survives — a board already ambiguous when the
+ * range was cut — is limit 5(f).
+ *
+ * ── THE ONE MOVED LINE THAT MOVES NOTHING, AND WHY IT IS EXONERATED ──
+ * **A LEGITIMATE FAST-PATH-A GRANT CAN APPEAR INSIDE A LANE'S OWN RANGE,
+ * AND THE BRIEF THAT DISPATCHED THIS CARD SAID IT COULD NOT.** Two of the
+ * three deliveries never do: a lane CUT after the amendment carries the
+ * new line at both endpoints, and a lane that MERGES main down moves its
+ * own merge-base past the amendment, so both endpoints agree again. But
+ * `method/lane-protocol.md`'s fast path A prescribes a THIRD, and it is
+ * the ordinary one: *"the amendment goes onto the integration branch AND
+ * into the lane's working copy of the card"* — and a lane that has not
+ * synced then commits, in its own range, a line its base does not carry.
+ * A gate refusing that would refuse the one widening route its own
+ * `ROUTE` text prescribes, which is exactly the trap `T-223` refused for
+ * the remote-tracking reorder one paragraph up.
+ * So a move is exonerated when the TIP's line is character for character
+ * the line the same card carries ON THE INTEGRATION BRANCH — the lane arm
+ * reads that at `rev`, the merge arm at the FIRST PARENT, the two
+ * endpoints no lane's commits can write. **That exoneration opens
+ * nothing**: the fence in force is read from that same copy, so a line
+ * the lane merely re-states there widens the fence by exactly zero. The
+ * only way to make the two agree in the lane's favour is to move the
+ * integration ref itself, which is limit 6 and is not new here.
+ * A move this gate cannot exonerate because it could not READ that copy
+ * is REFUSED, not allowed, and the refusal prints what it found there.
+ *
+ * ── AND IT IS ASKED AFTER THE CONTAINMENT ARM, ON PURPOSE ────────────
+ * The containment refusal names actual out-of-fence paths and is the more
+ * specific answer; more importantly, `landing-gate.spec.ts`'s *"a lane
+ * editing its OWN card's `touches:` does not widen this gate either"* and
+ * *"the merge's fence is read from its FIRST parent"* both drive a range
+ * that widens a card AND writes outside the narrow fence, and their kill
+ * power is the containment refusal. An amendment arm placed ahead of them
+ * would refuse those pushes for a different reason and quietly retire two
+ * bodies that measure where the fence is read from.
  *
  * ── THE SEVENTH LIMIT IS A CHECK, AND IT REFUSES WHERE THE OTHERS ALLOW
  * `T-247`. A lane's diff that ADDS a dependency name to a manifest or a
@@ -634,6 +770,481 @@ export function rangePaths(root, base, tip, git = runGit) {
   }
   return { mergeBase, paths: diff.stdout.split("\0").filter((p) => p !== "") };
 }
+
+/* ───────────── the fifth limit: the `touches:` LINE (T-224) ─────────── */
+
+/**
+ * How an absent `touches:` line is rendered where a line is expected.
+ * Named rather than inlined so the three sites that print one cannot
+ * describe the same state three ways.
+ */
+export const NO_TOUCHES_LINE = "(no `touches:` line)";
+
+/**
+ * One card's `touches:` line at one revision — or the fact that the card
+ * IS NOT THERE, which is a different answer and not a missing line.
+ *
+ * THREE ANSWERS, NEVER TWO, the same rule this module keeps everywhere
+ * else. `absent` is what a card the range ADDED looks like at the base
+ * and a card it DELETED looks like at the tip: neither is a line that
+ * moved, and reading either as an empty line would manufacture an
+ * amendment out of an ordinary suggestion filing. `problem` is git
+ * failing on a path the tree says is there, which is a cannot-compare and
+ * never a verdict.
+ *
+ * The `ls-tree` is asked ONLY when `show` failed, so the ordinary case
+ * costs one process and this second one is paid on the rare answer.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {string} file repository-relative
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ line: string | undefined } | { absent: true } | { problem: string }}
+ */
+export function cardTouchesAt(root, rev, file, git = runGit) {
+  const show = git(root, ["show", `${rev}:${file}`]);
+  if (show.status === 0) return { line: frontmatterLineOf(show.stdout, "touches") };
+  const ls = git(root, ["ls-tree", "--name-only", "-z", rev, "--", file]);
+  if (ls.status === 0 && ls.stdout.split("\0").filter((f) => f !== "").length === 0) {
+    return { absent: true };
+  }
+  return {
+    problem: `\`git show ${rev}:${file}\` failed (${show.stderr.trim() || "no message"})`,
+  };
+}
+
+/**
+ * Every card under `docs/tasks/` at one revision, indexed by THE ID ITS
+ * NAME CARRIES — the listing that makes a RENAME resolvable.
+ *
+ * **A CARD IS RESOLVED BY ID, NEVER BY PATH, AND THAT IS THE CONTRACT
+ * RATHER THAN AN OPTIMISATION.** A card's slug carries its title, so
+ * rewording the title RENAMES the file while the id stays put; `rangePaths`
+ * passes `--no-renames` (right for the containment arm, which judges paths),
+ * so such a card reaches this arm as two unrelated strings — the old path,
+ * gone at the tip, and the new path, absent at the base. Compared by path
+ * both sides answer `absent`, and a widened `touches:` rides in unjudged at
+ * BOTH landing moments, its own card or a sibling's. That is the hole
+ * `T-224`'s own verifier found and it is why this listing exists.
+ *
+ * **THE FILTER IS `CARD_FILE_RE` ITSELF**, which is what keeps two
+ * properties exact and both of them were measured rather than assumed:
+ * `T-224` does not match `T-224-s1` (the pattern's optional `-s\d+` is
+ * greedy, so the capture takes the suffix when the name carries one), and
+ * `docs/tasks/rejected/**` is not a card path at all (the capture's
+ * `[^/]*` cannot cross a slash), so a card FILED AWAY into that directory
+ * still reads as a deletion — limit 5(b) — instead of being resolved to a
+ * blob nothing fences. The listing is therefore NOT recursive: below
+ * `docs/tasks/` there is no path this pattern can match, so recursing
+ * would enumerate blobs only to discard them.
+ *
+ * A list per id rather than one path, because two files carrying one id is
+ * a board this gate must not silently pick a winner in — and picking one
+ * silently is precisely what the `absent`-gated fast path did through the
+ * back door, by letting a second file answer for the id at one endpoint.
+ * The caller decides what the list MEANS: a duplicate the judged range
+ * arrived at is REFUSED, one it inherited is announced, and neither is a
+ * blob chosen by sort order.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ byId: Map<string, string[]> } | { problem: string }}
+ */
+export function cardPathsById(root, rev, git = runGit) {
+  const ls = git(root, ["ls-tree", "--name-only", "-z", rev, "--", "docs/tasks/"]);
+  if (ls.status !== 0) {
+    return {
+      problem:
+        `\`git ls-tree ${rev} docs/tasks/\` failed (${ls.stderr.trim() || "no message"}), ` +
+        "so a card this range renamed could not be resolved by its id",
+    };
+  }
+  /** @type {Map<string, string[]>} */
+  const byId = new Map();
+  for (const p of ls.stdout.split("\0")) {
+    const named = CARD_FILE_RE.exec(p);
+    if (named === null) continue;
+    const id = /** @type {string} */ (named[1]);
+    const at = byId.get(id);
+    if (at === undefined) byId.set(id, [p]);
+    else at.push(p);
+  }
+  return { byId };
+}
+
+/**
+ * One card's `touches:` line at one revision, BY ID — resolved through the
+ * per-revision INDEX at both endpoints, never through the path the diff
+ * happened to name.
+ *
+ * **THE INDEX IS THE AUTHORITY AND THE DIFF'S PATH IS AT MOST A FAST
+ * PATH, AND THAT ORDER IS THE WHOLE OF `T-224`'s SECOND VERDICT.** This
+ * function used to `git show <rev>:<file>` FIRST and consult the index
+ * only where that answered `absent`. Composed with a loop keyed on the id,
+ * that let the two endpoints of ONE id straddle TWO FILES: plant a second
+ * file under `docs/tasks/` carrying the card's id, sorting first in the
+ * range's path list and repeating the card's CURRENT `touches:` line, and
+ * at the BASE it is absent so the index resolves the id to the real card
+ * (the old line), while at the TIP the direct `show` short-circuits the
+ * index and returns the DECOY's copy of that same line. The two compare
+ * equal, the id is marked seen, the real card's own widening is never
+ * examined, and the push is an ordinary inside-the-fence ALLOW. Resolving
+ * BOTH ends through the index closes it: `paths[0]` is the only file this
+ * gate will read for an id, and where that file IS the one the diff named
+ * the read is the same single `git show` as before.
+ *
+ * FOUR ANSWERS, and the fourth is the one a resolver owes: a line (with
+ * the path it was actually read at, which the refusal prints when it is
+ * not the path the diff named), `absent` — no file at this revision
+ * carries this id — and `problem`, which covers TWO files carrying one id,
+ * a state this gate reports rather than guesses through. **WHO ANSWERS
+ * FOR THAT AMBIGUITY IS THE CALLER'S**: `touchesAmendments` REFUSES one
+ * the judged range created and announces one it merely inherited.
+ *
+ * @param {string} root
+ * @param {string} rev
+ * @param {string} id   the card id, as `CARD_FILE_RE` captured it
+ * @param {string} file the path the range named, repository-relative
+ * @param {(rev: string) => ({ byId: Map<string, string[]> } | { problem: string })} index
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ line: string | undefined, file: string } | { absent: true } | { problem: string } | { problem: string, duplicate: string[] }}
+ */
+export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
+  const listed = index(rev);
+  if ("problem" in listed) return listed;
+  const paths = listed.byId.get(id) ?? [];
+  if (paths.length === 0) return { absent: true };
+  if (paths.length > 1) {
+    return {
+      problem:
+        `${paths.length} files under docs/tasks/ carry the id ${id} at ${rev} ` +
+        `(${paths.join(", ")}), so this gate cannot say which one the range's ${file} stands for`,
+      duplicate: paths,
+    };
+  }
+  const only = /** @type {string} */ (paths[0]);
+  const found = cardTouchesAt(root, rev, only, git);
+  if ("problem" in found) return found;
+  if ("absent" in found) {
+    return {
+      problem: `\`git ls-tree\` listed ${only} at ${rev} and \`git show\` then could not read it`,
+    };
+  }
+  return { line: found.line, file: only };
+}
+
+/**
+ * A card id this arm could NOT judge because the board was already
+ * ambiguous about it when the range was cut (limit 5(f)): the ambiguity is
+ * inherited, the range arrived at none of its files, and the arm stops
+ * judging THAT ID — and nothing else. Named beside whatever the arm did
+ * find, never in place of it (T-224, the third verdict's correction).
+ *
+ * @typedef {object} UnjudgedId
+ * @property {string} id
+ * @property {string[]} files   every file carrying the id at the base and the tip
+ * @property {string} problem   the announcement, as the allow would word it
+ */
+/**
+ * A card id MORE THAN ONE file carries, and the account of who put them
+ * there — which is what decides whether this is a refusal or a notice.
+ *
+ * @typedef {object} DuplicateId
+ * @property {string} id        the id carried more than once
+ * @property {string[]} paths   every path carrying it at the range's TIP
+ * @property {string[]} arrived those of them present at NEITHER the base nor the record
+ * @property {string[]} base    every path carrying it at the range's base
+ * @property {string[]} record  every path carrying it on the fence of record
+ */
+
+/**
+ * @typedef {object} TouchesMove
+ * @property {string} file       the card, repository-relative, as it stands at the range's tip
+ * @property {string} id         the id both endpoints were resolved by
+ * @property {string} before     its `touches:` line at the range's base
+ * @property {string} beforeFile the path that line was read at
+ * @property {string} after      its `touches:` line at the range's tip
+ * @property {string} afterFile  the path that line was read at
+ * @property {string} record     what the integration branch's own copy says
+ * @property {string | undefined} recordFile the path THAT was read at, when there was one
+ */
+
+/**
+ * Every `touches:` line the range MOVED — the fifth limit's arm.
+ *
+ * `record` is the revision whose copy of the card no lane's commits can
+ * write: the integration ref for a lane push, a merge's FIRST PARENT at
+ * the merge moment. A move whose tip line is character for character what
+ * that copy carries is a fast-path-A grant delivered into the lane's
+ * working copy (`method/lane-protocol.md`, fast path A) and is NOT an
+ * amendment: it re-states the fence of record instead of moving it. The
+ * module header argues both halves.
+ *
+ * **EVERY ENDPOINT IS RESOLVED BY THE CARD'S ID, NOT BY ITS PATH**
+ * (`cardTouchesOf`, which asks the per-revision INDEX first and reads the
+ * diff's own path only where the index maps the id to exactly that one
+ * path there), which is what the amended contract requires in as many
+ * words: *"a card id present on main under another path is resolved by id,
+ * not path, so delete-and-re-add and rename do not evade the
+ * comparison."* A rename that leaves the line alone is still ALLOWED — the
+ * two lines are equal, whatever the file is called — and a rename that
+ * moves it is REFUSED with BOTH paths named.
+ *
+ * **AND THE LOOP IS KEYED ON THE ID, WHICH IS NOT COSMETIC**: with
+ * `--no-renames`, one renamed card enters `paths` TWICE, as a deletion of
+ * the old name and an addition of the new one. Keyed on the path, one
+ * amendment would be reported twice — and the second report would name the
+ * endpoints in the opposite order, which reads like two findings about two
+ * cards.
+ *
+ * **AND AN ID CARRIED BY TWO FILES IS ANSWERED BEFORE EITHER LINE IS
+ * READ, BECAUSE THAT IS THE STATE THE DEDUPE IS DANGEROUS IN.** An id the
+ * range itself arrives at a duplicate of — a path at the tip present at
+ * NEITHER the base NOR the record — is REFUSED, naming every file, because
+ * a cannot-compare ALLOW there is the fail-open shape: it lets a lane
+ * manufacture the very ambiguity that stops the comparison. An id already
+ * carried twice when the range was cut is the honest cannot-compare and is
+ * ANNOUNCED, unchanged — limit 5(f).
+ *
+ * @param {string} root
+ * @param {string} base   the range's left endpoint
+ * @param {string} tip    the range's right endpoint
+ * @param {string} record the revision the fence of record is read at
+ * @param {string[]} paths the range's changed paths
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {{ moved: TouchesMove[], duplicated: DuplicateId[], unjudged: UnjudgedId[] } | { problem: string }}
+ */
+export function touchesAmendments(root, base, tip, record, paths, git = runGit) {
+  /** @param {string | undefined} line */
+  const show = (line) => (line === undefined ? NO_TOUCHES_LINE : line);
+  /** ONE listing per REVISION, and never one per card. */
+  /** @type {Map<string, { byId: Map<string, string[]> } | { problem: string }>} */
+  const listings = new Map();
+  /** @param {string} rev */
+  const index = (rev) => {
+    const had = listings.get(rev);
+    if (had !== undefined) return had;
+    const made = cardPathsById(root, rev, git);
+    listings.set(rev, made);
+    return made;
+  };
+  /**
+   * Every path one id resolves to at one revision, out of the SAME memoised
+   * listing `cardTouchesOf` reads — so asking this costs no process at all.
+   *
+   * @param {string} rev
+   * @param {string} id
+   * @returns {{ at: string[] } | { problem: string }}
+   */
+  const pathsOf = (rev, id) => {
+    const listed = index(rev);
+    return "problem" in listed ? listed : { at: listed.byId.get(id) ?? [] };
+  };
+  /** @type {TouchesMove[]} */
+  const moved = [];
+  /** @type {DuplicateId[]} */
+  const duplicated = [];
+  /** @type {UnjudgedId[]} */
+  const unjudged = [];
+  /** @type {Set<string>} */
+  const seen = new Set();
+  for (const rel of paths) {
+    const named = CARD_FILE_RE.exec(rel);
+    if (named === null) continue;
+    const id = /** @type {string} */ (named[1]);
+    if (seen.has(id)) continue;
+    seen.add(id);
+
+    // BOTH ENDPOINTS ARE RESOLVED BEFORE EITHER IS TRUSTED, because it is
+    // the PAIR that gets compared and the defect was a pair that straddled
+    // two files. The `absent` short-circuit that used to sit between them
+    // is below the ambiguity arm on purpose: a range that FILES two cards
+    // under one brand-new id is the same ambiguity, and skipping it on
+    // `absent` would hand it back.
+    const before = cardTouchesOf(root, base, id, rel, index, git);
+    const after = cardTouchesOf(root, tip, id, rel, index, git);
+
+    // AN ID CARRIED BY TWO FILES IS ANSWERED HERE, AND THE QUESTION IS WHO
+    // MADE IT. `seen` marks this id done whatever happens next, so an
+    // ambiguity read through rather than answered is an id nothing judges:
+    // that composition is exactly what the decoy rode.
+    if ("duplicate" in before || "duplicate" in after) {
+      const atBase = pathsOf(base, id);
+      if ("problem" in atBase) return { problem: atBase.problem };
+      const atTip = pathsOf(tip, id);
+      if ("problem" in atTip) return { problem: atTip.problem };
+      const atRecord = pathsOf(record, id);
+      if ("problem" in atRecord) return { problem: atRecord.problem };
+      const known = new Set([...atBase.at, ...atRecord.at]);
+      const arrived = atTip.at.filter((p) => !known.has(p));
+      if (arrived.length > 0) {
+        duplicated.push({ id, paths: atTip.at, arrived, base: atBase.at, record: atRecord.at });
+        continue;
+      }
+      const every = [...new Set([...atBase.at, ...atTip.at])];
+      // COLLECTED, NOT RETURNED. A return from inside this loop discarded
+      // the `moved` and `duplicated` already found for OTHER ids and
+      // answered cannot-compare for the whole range — an announced allow
+      // standing where a refusal had been found (the third verdict's
+      // finding). The arm stops judging THIS id and keeps judging the rest.
+      unjudged.push({
+        id,
+        files: every,
+        problem:
+          `${every.length} files under docs/tasks/ carry the id ${id} (${every.join(", ")}), and ` +
+          "this range arrived at none of them — the ambiguity is the BOARD's rather than this " +
+          `range's, so this gate stops judging ${id} instead of picking a file`,
+      });
+      continue;
+    }
+
+    if ("problem" in before) return { problem: before.problem };
+    if ("problem" in after) return { problem: after.problem };
+    if ("absent" in before) continue;
+    if ("absent" in after) continue;
+    if (before.line === after.line) continue;
+    const onRecord = cardTouchesOf(root, record, id, rel, index, git);
+    if (!("problem" in onRecord) && !("absent" in onRecord) && onRecord.line === after.line) {
+      continue;
+    }
+    moved.push({
+      file: after.file,
+      id,
+      before: show(before.line),
+      beforeFile: before.file,
+      after: show(after.line),
+      afterFile: after.file,
+      record:
+        "problem" in onRecord
+          ? `UNREADABLE — ${onRecord.problem}`
+          : "absent" in onRecord
+            ? `(no such card at ${record})`
+            : show(onRecord.line),
+      recordFile: "problem" in onRecord || "absent" in onRecord ? undefined : onRecord.file,
+    });
+  }
+  return { moved, duplicated, unjudged };
+}
+
+/**
+ * Render the moves for a human, once, so the two arms cannot describe the
+ * same finding two ways.
+ *
+ * **A PATH IS NAMED WHERE IT DIFFERS FROM THE ONE ON THE FIRST LINE, AND
+ * NOWHERE ELSE.** A renamed card has two names and a reader who is shown
+ * only one cannot check the finding: the old name is where the BEFORE line
+ * lives and it is what `git show <base>:<path>` needs. Where the card was
+ * not renamed the annotation is absent entirely rather than repeating the
+ * same string three times.
+ *
+ * @param {TouchesMove[]} moved
+ * @param {string} record how to name the revision the third line was read at
+ * @returns {string}
+ */
+export function amendmentReport(moved, record) {
+  return moved
+    .map((m) => {
+      /** @param {string | undefined} at */
+      const named = (at) =>
+        at === undefined || at === m.file
+          ? ""
+          : `\n        (read at ${at} — the card was RESOLVED BY ITS ID ${m.id}, not by its path)`;
+      return (
+        `    ${m.file}\n` +
+        `      before, at the range's base: ${m.before}${named(m.beforeFile)}\n` +
+        `      after, at the range's tip:   ${m.after}${named(m.afterFile)}\n` +
+        `      on ${record}: ${m.record}${named(m.recordFile)}\n`
+      );
+    })
+    .join("");
+}
+
+/**
+ * The ids a refusal could not judge, named beside it (T-224, the third
+ * verdict's correction): an inherited ambiguity stops the arm judging THAT
+ * id and nothing else, and a refusal already found stands.
+ *
+ * @param {UnjudgedId[]} unjudged
+ * @returns {string}
+ */
+function unjudgedReport(unjudged) {
+  if (unjudged.length === 0) return "";
+  return (
+    `  and ${unjudged.length} card id(s) in the same range this gate did NOT judge — the board ` +
+    "is ambiguous about them and this range arrived at none of their files:\n" +
+    unjudged.map((u) => `    ${u.id}: ${u.files.join(", ")}\n`).join("")
+  );
+}
+
+/**
+ * Render the DUPLICATED ids for a human, once, for the same reason
+ * `amendmentReport` exists: two arms describing one state two ways is two
+ * accounts of one finding.
+ *
+ * **THE ARRIVING PATH IS MARKED, BECAUSE IT IS THE WHOLE VERDICT.** The
+ * refusal is not "this board has two files with one id" — that is a
+ * notice — it is "this range PUT one of them there", and a reader who is
+ * shown the set without being shown which member arrived cannot check
+ * that.
+ *
+ * @param {DuplicateId[]} duplicated
+ * @param {string} record how to name the revision the third line was read at
+ * @returns {string}
+ */
+export function duplicateReport(duplicated, record) {
+  /** @param {string[]} at */
+  const list = (at) => (at.length === 0 ? "(no file carried this id)" : at.join(", "));
+  return duplicated
+    .map(
+      (d) =>
+        `    ${d.id} — ${d.paths.length} files under docs/tasks/ carry this id at the range's tip\n` +
+        d.paths
+          .map((p) => `      ${p}${d.arrived.includes(p) ? "   <- ARRIVED IN THIS RANGE" : ""}\n`)
+          .join("") +
+        `      at the range's base: ${list(d.base)}\n` +
+        `      on ${record}: ${list(d.record)}\n`,
+    )
+    .join("");
+}
+
+/**
+ * The route a refused DUPLICATED ID takes, which is neither of the two
+ * above: the fence question is "who may write here", the amendment
+ * question is "who may move the line that answers it", and this one is
+ * "which file IS the card".
+ */
+export const DUPLICATE_ID_ROUTE =
+  "A card id names ONE file under docs/tasks/, and this gate resolves every `touches:` endpoint " +
+  "by that id — so a second file carrying an id the board already knows leaves the fence of " +
+  "record ambiguous. THIS IS REFUSED RATHER THAN ANNOUNCED because the alternative is the " +
+  "fail-open shape: a cannot-compare ALLOW here lets a lane manufacture the very ambiguity that " +
+  "stops the comparison, which is how a widening rides in behind a file carrying the card's id " +
+  "(T-224's second verdict measured that end to end, through this hook). The remedy is the " +
+  "lane's and is inside its own range: give the new card an id of its own — `node " +
+  "tools/e2e/scripts/brief.mjs --state` prints the board's — or drop the duplicate file. A " +
+  "duplicate this range did NOT arrive at is a different state and is ANNOUNCED, never refused: " +
+  "the board was already ambiguous when the range was cut, and repairing it is triage's, on main.";
+
+/**
+ * The route a refused AMENDMENT takes, which is not the route a refused
+ * PATH takes — the fence question is "who may write here", and this one
+ * is "who may move the line that answers it".
+ */
+export const AMENDMENT_ROUTE =
+  "A card's `touches:` is the one line on it a lane never writes — its own or a sibling's " +
+  "(method/lane-protocol.md rule 5, method/tasks/TASK-FORMAT.md's field clause). docs/tasks stays " +
+  "UNFENCEABLE and every other write to a card is admitted here exactly as before: the status " +
+  "stamp, the implementation notes, a suggestion filed beside it, a whole new card. This arm " +
+  "judges the LINE, never the file. The widening itself is a card amendment COMMITTED ON MAIN " +
+  "plus a re-run of `brief.mjs --task <id> --write-fence <worktree>` (T-211's fast path A) — on " +
+  "main, by triage, and never from inside a lane. Taken that way it does not reach this refusal: " +
+  "a lane cut after the amendment carries the same line at both endpoints, a lane that merges " +
+  "main down moves its own merge-base past it, and a lane handed the amendment in its working " +
+  "copy commits a line character for character identical to the integration branch's, which this " +
+  "gate reads and allows. If the line above is NOT what the integration branch says, the grant " +
+  "was never made — report the half-delivered widening to the seat that owes it, and route the " +
+  "need as a `status: suggested` card rather than writing the field.";
 
 /**
  * The route a refused push takes. A REFUSAL THAT DOES NOT SAY WHAT
@@ -1412,6 +2023,71 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
   }
 
   const judged = judgePaths(range.paths, read.fence);
+  if (judged.outside.length > 0 && read.fence.unusable.length === 0) {
+    return block(
+      "landing-gate-outside-the-fence",
+      `PUSH REFUSED: ${judged.outside.length} committed path(s) are outside ${card.id}'s fence.\n` +
+        `  the card, as committed on ${rev}: ${card.file}\n` +
+        fenceReport(read.touchesLine, read.fence) +
+        `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, never base-at-cut-to-tip, ` +
+        "so a checkpoint sync is not charged with main's own paths)\n" +
+        "  the paths refused:\n" +
+        judged.outside.map((p) => `    ${p}\n`).join("") +
+        `  ${ROUTE}`,
+    );
+  }
+
+  // THE FIFTH LIMIT'S ARM (T-224), ASKED WHERE THE CONTAINMENT ARM HAS
+  // NOTHING TO REFUSE. The order is argued in this module's header: the
+  // two `T-212` bodies that measure WHERE THE FENCE IS READ FROM drive a
+  // range that is out-of-fence AND amended, and an amendment refusal
+  // placed ahead of them would answer those pushes for a different reason
+  // and retire both.
+  const amended = touchesAmendments(root, range.mergeBase, "HEAD", rev, range.paths, git);
+  if ("problem" in amended) {
+    return allow(
+      "landing-gate-cannot-compare",
+      "THE LANDING GATE DID NOT JUDGE THE `touches:` LINES THIS RANGE CHANGED: " +
+        `${amended.problem}. The push is allowed and no card's \`touches:\` was compared — which ` +
+        "is not a claim that none of them moved.",
+    );
+  }
+  if (amended.duplicated.length > 0) {
+    return block(
+      "landing-gate-card-id-duplicated",
+      `PUSH REFUSED: ${amended.duplicated.length} card id(s) in ${card.id}'s range are carried by ` +
+        "MORE THAN ONE file under docs/tasks/ at the range's tip, and this range is what put one " +
+        "of them there.\n" +
+        `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, the same range the ` +
+        "containment arm takes)\n" +
+        duplicateReport(amended.duplicated, `the integration branch (${rev})`) +
+        unjudgedReport(amended.unjudged) +
+        `  ${DUPLICATE_ID_ROUTE}`,
+    );
+  }
+  if (amended.moved.length > 0) {
+    return block(
+      "landing-gate-touches-amended",
+      `PUSH REFUSED: ${amended.moved.length} card(s) in ${card.id}'s range carry a \`touches:\` ` +
+        "AMENDMENT, which is a FENCE WIDENING and is not a lane's to make.\n" +
+        `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, the same range the ` +
+        "containment arm takes)\n" +
+        amendmentReport(amended.moved, `the integration branch (${rev})`) +
+        unjudgedReport(amended.unjudged) +
+        `  ${AMENDMENT_ROUTE}`,
+    );
+  }
+  if (amended.unjudged.length > 0) {
+    return allow(
+      "landing-gate-cannot-compare",
+      "THE LANDING GATE DID NOT JUDGE THE `touches:` LINES OF " +
+        `${amended.unjudged.length} card id(s) this range changed: ` +
+        amended.unjudged.map((u) => u.problem).join("; ") +
+        ". Every other card id in the range was compared and none moved. The push is allowed " +
+        "and those ids are UNJUDGED — which is not a claim that their lines stood still.",
+    );
+  }
+
   if (judged.outside.length === 0) {
     return allow(
       "landing-gate-inside-the-fence",
@@ -1419,33 +2095,20 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
         `merge-base ${range.mergeBase})`,
     );
   }
-  if (read.fence.unusable.length > 0) {
-    return allow(
-      "landing-gate-cannot-compare",
-      `THE LANDING GATE DID NOT JUDGE ${judged.outside.length} PATH(S): ${card.id}'s fence carries ` +
-        `token(s) this gate could not resolve — ${read.fence.unusable.join(", ")}.\n` +
-        "  A token that resolves to nothing is not `disjoint from everything` " +
-        "(method/lane-protocol.md rule 5), so a path outside the RESOLVED domains cannot be " +
-        "called out-of-fence: it may sit inside a domain that token stands for. The expansion " +
-        "reads no component slug map inside the hook's dependency budget (T-220).\n" +
-        fenceReport(read.touchesLine, read.fence) +
-        `  the range judged: ${range.mergeBase}..HEAD\n` +
-        "  paths NOT judged:\n" +
-        judged.outside.map((p) => `    ${p}\n`).join("") +
-        "  The push is allowed and those paths are UNJUDGED — which is not a claim that they are " +
-        "inside the fence.",
-    );
-  }
-  return block(
-    "landing-gate-outside-the-fence",
-    `PUSH REFUSED: ${judged.outside.length} committed path(s) are outside ${card.id}'s fence.\n` +
-      `  the card, as committed on ${rev}: ${card.file}\n` +
+  return allow(
+    "landing-gate-cannot-compare",
+    `THE LANDING GATE DID NOT JUDGE ${judged.outside.length} PATH(S): ${card.id}'s fence carries ` +
+      `token(s) this gate could not resolve — ${read.fence.unusable.join(", ")}.\n` +
+      "  A token that resolves to nothing is not `disjoint from everything` " +
+      "(method/lane-protocol.md rule 5), so a path outside the RESOLVED domains cannot be " +
+      "called out-of-fence: it may sit inside a domain that token stands for. The expansion " +
+      "reads no component slug map inside the hook's dependency budget (T-220).\n" +
       fenceReport(read.touchesLine, read.fence) +
-      `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, never base-at-cut-to-tip, ` +
-      "so a checkpoint sync is not charged with main's own paths)\n" +
-      "  the paths refused:\n" +
+      `  the range judged: ${range.mergeBase}..HEAD\n` +
+      "  paths NOT judged:\n" +
       judged.outside.map((p) => `    ${p}\n`).join("") +
-      `  ${ROUTE}`,
+      "  The push is allowed and those paths are UNJUDGED — which is not a claim that they are " +
+      "inside the fence.",
   );
 }
 
@@ -1531,6 +2194,10 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
   /** @type {string[]} */
   const depRefusals = [];
   /** @type {string[]} */
+  const amendments = [];
+  /** @type {string[]} */
+  const duplicates = [];
+  /** @type {string[]} */
   const unjudged = [];
   for (const merge of merges) {
     const parents = git(root, ["rev-list", "--parents", "-n", "1", merge]);
@@ -1607,8 +2274,42 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
       continue;
     }
     const judged = judgePaths(range.paths, read.fence);
-    if (judged.outside.length === 0) continue;
-    if (read.fence.unusable.length > 0) {
+    if (judged.outside.length > 0 && read.fence.unusable.length === 0) {
+      refusals.push(
+        `    ${merge} (${card.id}, fence ${read.touchesLine} read from first parent ${first}):\n` +
+          judged.outside.map((p) => `      ${p}\n`).join("").replace(/\n$/, ""),
+      );
+      continue;
+    }
+    // THE FIFTH LIMIT'S ARM AT THE MERGE MOMENT (T-224), asked where the
+    // containment arm has nothing to refuse — the ordering, and what it
+    // protects, are this module's header. The record is the FIRST PARENT
+    // for the same reason the fence is: it is the only endpoint of a
+    // merge no lane has written to.
+    const amended = touchesAmendments(root, range.mergeBase, second, first, range.paths, git);
+    if ("problem" in amended) {
+      unjudged.push(`    ${merge} (${card.id}): ${amended.problem}`);
+      continue;
+    }
+    for (const u of amended.unjudged) {
+      // named whatever the arm found for the OTHER ids of this merge
+      unjudged.push(`    ${merge} (${card.id}): ${u.problem}`);
+    }
+    if (amended.duplicated.length > 0) {
+      duplicates.push(
+        `    ${merge} (${card.id}):\n` +
+          duplicateReport(amended.duplicated, `its first parent ${first}`).replace(/\n$/, ""),
+      );
+      continue;
+    }
+    if (amended.moved.length > 0) {
+      amendments.push(
+        `    ${merge} (${card.id}):\n` +
+          amendmentReport(amended.moved, `its first parent ${first}`).replace(/\n$/, ""),
+      );
+      continue;
+    }
+    if (judged.outside.length > 0) {
       unjudged.push(
         `    ${merge} (${card.id}): ${judged.outside.length} path(s) sit outside the RESOLVED ` +
           `domains of a fence carrying unresolvable token(s) ${read.fence.unusable.join(", ")} — ` +
@@ -1616,10 +2317,6 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
       );
       continue;
     }
-    refusals.push(
-      `    ${merge} (${card.id}, fence ${read.touchesLine} read from first parent ${first}):\n` +
-        judged.outside.map((p) => `      ${p}\n`).join("").replace(/\n$/, ""),
-    );
   }
 
   if (depRefusals.length > 0) {
@@ -1644,8 +2341,48 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
         "LANE's own range — with the fence read from the FIRST parent, which is the only endpoint " +
         "of a merge no lane has written to.\n" +
         `${refusals.join("\n")}\n` +
+        (amendments.length > 0
+          ? `  and ${amendments.length} merge(s) carry a \`touches:\` AMENDMENT:\n` +
+            `${amendments.join("\n")}\n  ${AMENDMENT_ROUTE}\n`
+          : "") +
+        (duplicates.length > 0
+          ? `  and ${duplicates.length} merge(s) ARRIVE at a DUPLICATED card id:\n` +
+            `${duplicates.join("\n")}\n  ${DUPLICATE_ID_ROUTE}\n`
+          : "") +
         (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
         `  ${ROUTE}`,
+    );
+  }
+  if (duplicates.length > 0) {
+    return block(
+      "landing-gate-merge-card-id-duplicated",
+      `PUSH REFUSED: ${duplicates.length} of the ${merges.length} merge commit(s) this push would ` +
+        "add to the integration branch ARRIVE at a card id carried by MORE THAN ONE file under " +
+        "docs/tasks/, which leaves the fence of record ambiguous.\n" +
+        "  each merge is judged over merge-base(first parent, second parent)..second parent — the " +
+        "LANE's own range — with the files of record read from the FIRST parent, which is the only " +
+        "endpoint of a merge no lane has written to.\n" +
+        `${duplicates.join("\n")}\n` +
+        (amendments.length > 0
+          ? `  and ${amendments.length} merge(s) carry a \`touches:\` AMENDMENT:\n` +
+            `${amendments.join("\n")}\n  ${AMENDMENT_ROUTE}\n`
+          : "") +
+        (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
+        `  ${DUPLICATE_ID_ROUTE}`,
+    );
+  }
+  if (amendments.length > 0) {
+    return block(
+      "landing-gate-merge-touches-amended",
+      `PUSH REFUSED: ${amendments.length} of the ${merges.length} merge commit(s) this push would ` +
+        "add to the integration branch carry a `touches:` AMENDMENT, which is a FENCE WIDENING " +
+        "and is not a lane's to make.\n" +
+        "  each merge is judged over merge-base(first parent, second parent)..second parent — the " +
+        "LANE's own range — with the line of record read from the FIRST parent, which is the only " +
+        "endpoint of a merge no lane has written to.\n" +
+        `${amendments.join("\n")}\n` +
+        (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
+        `  ${AMENDMENT_ROUTE}`,
     );
   }
   if (unjudged.length > 0) {

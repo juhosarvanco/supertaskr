@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **690 behaviours** — 688 extracted sentences + 2 named-not-extracted (listed at the end) — across 38 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **706 behaviours** — 704 extracted sentences + 2 named-not-extracted (listed at the end) — across 38 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -460,6 +460,21 @@ Census: **690 behaviours** — 688 extracted sentences + 2 named-not-extracted (
 - THE MERGE MOMENT: a merge carrying an out-of-fence path is refused, then a clean one lands
 - the merge's fence is read from its FIRST parent, so a widened card in the merge does not widen it
 - a merge whose lane branch is gone is announced as unjudged, never allowed silently
+- THE POSITIVE CONTROL: a `touches:` move is refused, and the ordinary card write in the same lane is allowed
+- a lane amending a SIBLING's card is refused too, not only its own
+- a fast-path-A grant is not refused: a lane CUT after the amendment, and one that MERGES main down
+- THE THIRD DELIVERY: the grant handed to an UNSYNCED lane's working copy is allowed, and one line further is refused
+- THE DISCLOSED LIMIT, MEASURED: a card the range ADDS or DELETES is not an amendment
+- a fence this gate cannot RESOLVE does not excuse an amendment — the arm is asked there too
+- THE MERGE MOMENT: a merge carrying a `touches:` amendment is refused, then a clean one lands
+- A RENAMED card does not evade the comparison: rename-and-widen is refused, the pure rename lands
+- a lane RENAMING and widening a SIBLING's card is refused too, not only its own
+- THE MERGE MOMENT: a merge whose lane RENAMED and widened a card is refused, then the retitle alone lands
+- DELETE-AND-RE-ADD under a new slug is refused, while a genuinely NEW id is the disclosed residue
+- `T-NNN` and `T-NNN-sN` are two ids: a suggestion card is never resolved against its parent
+- A SAME-ID DECOY CANNOT STAND IN FOR THE REAL CARD: the widening behind one is refused, and the ordinary two-card range still lands
+- THE MERGE MOMENT: a merge whose lane planted a same-id file is refused, then the same merge without it lands
+- a duplicate card id the range ARRIVES AT is refused; one it INHERITS is the announced cannot-compare
 - every manifest and lockfile the live tree carries has a reader in this gate
 - the readers judge this repository's OWN manifests, and skip the two entries a probe would refuse
 - THE POSITIVE CONTROL: a lockfile name that does not resolve is refused BY NAME, then a resolving one lands
@@ -472,6 +487,7 @@ Census: **690 behaviours** — 688 extracted sentences + 2 named-not-extracted (
 - a range adding more names than this gate will probe is refused, and NONE of them is probed
 - a manifest the gate cannot READ refuses the landing, and is not read as empty
 - `addedDependencies` reads a lockfile's registry entries and skips its linked ones
+- an ambiguity the range INHERITED on one id does not discard the refusal found for another — it is announced beside it
 
 ## lane-fence
 

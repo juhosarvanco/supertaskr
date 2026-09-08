@@ -125,6 +125,37 @@ across the range rather than the file. The directory stays unfenceable.
 defect this section exists to prevent: a limits paragraph that omits the
 guard's own bypass is the shape this project keeps finding.*
 
+2026-09-08 (`T-224`): the `touches:` AMENDMENT above is CLOSED — the gate
+now judges the `touches:` LINE across the judged range at both landing
+moments and REFUSES a card whose line moved, its own or a sibling's,
+while `docs/tasks` stays unfenceable and every other write to a card
+(the stamp, the notes, a suggestion, a whole new card) is admitted
+exactly as before. **A card is resolved BY ITS ID and never by its path**,
+so a RENAME — an ordinary retitle, since a card's slug carries its title —
+and a delete-and-re-add are JUDGED rather than skipped; that clause was
+the rework of 2026-09-08, and until it landed a renamed card carried a
+widened `touches:` past BOTH landing moments. **BOTH ENDPOINTS ARE
+RESOLVED THROUGH THE PER-REVISION INDEX**, the diff's own path serving
+only where that index maps the id to exactly that one file — the third
+pass of 2026-09-09, and until it landed a SECOND file carrying a card's
+id could stand in for the card at one endpoint, make the two lines
+compare equal, and suppress the real card's widening at both landing
+moments. What that arm still cannot see is SIX things, listed in
+`landing-gate.mjs`'s own limit 5 and not copied here: a card the range
+ADDS **under an id no endpoint already carries**, a card it DELETES, a
+range the containment arm already refuses, a card whose fence this gate
+could not expand from the integration branch, limit 6, which reaches the
+new arm through the same movable local ref, and the cannot-compare left
+where a card id was ALREADY carried by two files when the range was cut
+— one the range itself ARRIVES at is REFUSED, naming every file and
+which of them this range added, because a cannot-compare allow there is a
+fail-open a lane can manufacture. The line a
+legitimate fast-path-A grant leaves in a lane's working
+copy is exonerated by comparing it against the integration branch's own
+copy — argued in that module's header, since a gate refusing the route
+its own `ROUTE` text prescribes would be the `T-223` trap one paragraph
+over.
+
 ## Acceptance criteria
 
 - A PUSH of a lane branch whose merge-base-to-tip diff contains a path
