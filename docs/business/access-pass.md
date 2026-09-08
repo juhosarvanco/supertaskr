@@ -1,4 +1,4 @@
-# The nputer access pass — terms & application (draft under the 2026-08-30 rulings)
+# The Supertaskr access pass — terms & application (draft under the 2026-08-30 rulings)
 
 Program design ruled by @human 2026-08-30 (the rulings record in
 marketing.md). This file is the operating document: the terms a
@@ -8,11 +8,11 @@ DESIGN is ruled, the PROSE is not yet.
 
 ## The program in one paragraph
 
-A limited-time free access pass to nputer for AI-native developers.
+A limited-time free access pass to Supertaskr for AI-native developers.
 The waitlist is open now; access begins when v1 ships (no date
 promised — you get a position number, not a countdown). Admission is
 rolling and deliberately throttled: feedback from pass-holders flows
-onto nputer's own development board as suggestion cards, and we admit
+onto Supertaskr's own development board as suggestion cards, and we admit
 only as fast as that board can honestly metabolize what you tell us.
 A pass is a signed file. Even our access passes have provenance.
 
@@ -26,17 +26,17 @@ A pass is a signed file. Even our access passes have provenance.
    program perk.
 2. **The window.** 30 days from issue. One renewal is EARNED, not
    requested: feedback of yours that produces a promoted card on
-   nputer's board extends your pass 30 days, with the renewal file
+   Supertaskr's board extends your pass 30 days, with the renewal file
    naming the card id it thanks you for.
-3. **What we ask of you.** Run nputer on a real project, not a toy.
+3. **What we ask of you.** Run Supertaskr on a real project, not a toy.
    File friction as it happens (template below) in the feedback
    repo. Take one 30-minute exit conversation near the end of your
    window. We measure what the north star measures: whether you
-   actually dispatched work from a board nputer planned — not
+   actually dispatched work from a board Supertaskr planned — not
    whether you liked it.
 4. **What your feedback becomes.** Each item is converted into a
    suggestion card carrying your pass id, and enters the same triage
-   queue every other piece of work on nputer's board enters. You can
+   queue every other piece of work on Supertaskr's board enters. You can
    watch what happened to it — promoted, parked with a resurfacing
    condition, or discharged with reasons — in the public record.
 5. **What you get afterwards.** Founding price: a locked discount on
@@ -54,13 +54,13 @@ Admission is by waitlist order under the weekly intake throttle.
 Setup questions exist for program metrics and better support, never
 for scoring applicants.
 
-    # nputer access-pass application
+    # Supertaskr access-pass application
     name / handle:
     contact (email):
-    which agent CLI(s) do you run today:        # e.g. Claude Code, Codex, Cursor, Aider
-    the real project you'd run nputer on:       # one sentence; private is fine
+    which agent CLI(s) do you run today:         # e.g. Claude Code, Codex, Cursor, Aider
+    the real project you'd run Supertaskr on:    # one sentence; private is fine
     what's breaking in your current AI workflow: # one sentence
-    where did you hear about nputer:            # optional
+    where did you hear about Supertaskr:         # optional
     ok with feedback landing publicly as board cards under your pass id? yes/no
 
 Expectation-setting text on the form: access begins at v1; no launch

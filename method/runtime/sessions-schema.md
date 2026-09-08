@@ -1,6 +1,6 @@
-# .nputer/sessions.json — session registry
+# .supertaskr/sessions.json — session registry
 
-Runtime state, not project truth: lives in .nputer/, not docs/. Losing it
+Runtime state, not project truth: lives in .supertaskr/, not docs/. Losing it
 loses nothing about the project.
 
 ```json
@@ -31,7 +31,7 @@ loses nothing about the project.
 }
 ```
 
-- `turns` drives the sediment warning (see nputer.yaml warn_after_turns).
+- `turns` drives the sediment warning (see supertaskr.yaml warn_after_turns).
 - The dashboard sessions pane renders this file; the card selector lists
   `agent — fresh` plus every idle registered session with its history.
 - Killing a session = mark status dead; the project resumes from docs/.

@@ -50,7 +50,7 @@ measures on `npm run tauri dev -- --config`.
 
 WHAT GOES IN THE READINGS FILE is the output of gates this checkpoint
 ALREADY RAN, captured as they run — `cargo test` and
-`cargo run -p nputer-index -- index --check --root ../..` from
+`cargo run -p supertaskr-index -- index --check --root ../..` from
 app/src-tauri/, `npm test` from tools/e2e/. Without them the three
 readings-authority bands (`graph/budget-headroom-bytes`,
 `suite/lib-seconds`, `suite/e2e-seconds`) are reported UNREAD, which is

@@ -13,8 +13,10 @@ bench bullet.
 ## The bench
 
 The verifier works on a bench: its own detached sibling worktree
-(`nputer-V-T-NNN`), cut at the lane's base when the lane is cut,
-holding no fence manifest. It installs and builds its own dependencies
+(`nputer-V-T-NNN` — the pre-rename spelling is the repository
+directory's, held by T-264-s3 until T-266), cut at the lane's base when
+the lane is cut, holding no fence manifest. It installs and builds its
+own dependencies
 and runs suites on its own port. It never runs a suite in the
 integration checkout (lane-protocol rule 4).
 

@@ -3,7 +3,7 @@
 The governing documents carry what a session must LOAD; the records
 carry what HAPPENED. This file is the generic contract; each project's
 ratifying decision record names its own budgets, template locations
-and gate. (First ratified as nputer's ADR-019, from the room
+and gate. (First ratified as Supertaskr's ADR-019, from the room
 docs/rooms/governing-docs.md, where the measurements live.)
 
 1. **Three kinds of fact, three keepers.** Every sentence in a

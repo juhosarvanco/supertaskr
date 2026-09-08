@@ -6,7 +6,7 @@ paths:
   - method/**
 depends_on: []
 decisions: [ADR-001, ADR-004, ADR-005, ADR-006]
-status: done              # pinned: built and versioned (v0.1.9); no task slug maps here
+status: done              # pinned: built and versioned (v0.1.10); no task slug maps here
 touch_slugs: []
 non_code: true            # T-033 decision (2), argued below
 ---

@@ -38,13 +38,26 @@ import { readToken } from "../../../.claude/hooks/gate-token.mjs";
  * An equality would red on the next checkpoint for no defect at all.
  */
 
-/** The records, with the file count carrying the old name at `fe2a2aa`. */
+/**
+ * The records, with the file count carrying the old name at `fe2a2aa`,
+ * RE-SCOPED TO THE RECORD TREES at T-265's merge (2026-09-08, the
+ * integrator's assigned correction): the first cut counted the
+ * DIRECTORIES that contain the records, so two non-record files this
+ * project legitimately renames — `docs/checkpoints/TEMPLATE.md` (a
+ * template) and `docs/research/competitors.md` (the competitor map) —
+ * dropped two floors on a lane that touched no record (T-265's ASK 4).
+ * The checkpoint floor is now the 64 RECORDS (the template excluded by
+ * name) and the research floor is the capture subtree, 5 files. A path
+ * pin by blob manifest is T-264-s6's, still owed.
+ */
 const RECORD_FLOORS: ReadonlyArray<readonly [string, number]> = [
-  ["docs/checkpoints", 65],
+  ["docs/checkpoints", 64],
   ["docs/rooms", 11],
   ["docs/tasks", 341],
-  ["docs/research", 11],
+  ["docs/research/captures", 5],
 ];
+/** Non-record files that live inside a record directory; never counted. */
+const NOT_A_RECORD = new Set(["docs/checkpoints/TEMPLATE.md"]);
 
 /** Files under `dir` whose bytes carry `needle`, case-insensitively. */
 function filesCarrying(dir: string, needle: string): string[] {
@@ -60,7 +73,7 @@ function filesCarrying(dir: string, needle: string): string[] {
     // legitimate answer and not a failure of the query.
     return [];
   }
-  return out.split("\n").filter(Boolean);
+  return out.split("\n").filter(Boolean).filter((f) => !NOT_A_RECORD.has(f));
 }
 
 test("only the four enumerated classes of the pre-rename identifier survive in the code tree", () => {

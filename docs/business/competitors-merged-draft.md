@@ -107,7 +107,7 @@ binding verdict. That is the whole opening.**
 
 ## Ring 2 — spec-method layer (vs the convention)
 
-- **agentplane** — the nearest architectural neighbour nputer has
+- **agentplane** — the nearest architectural neighbour Supertaskr has
   anywhere (github.com/basilisk-labs/agentplane; MIT, 76 stars,
   pushed 2026-08-30). "Git-native workflow control for coding agents:
   approved plans, verification, and reviewable evidence." Repo-local
@@ -199,7 +199,7 @@ comparison).
 
 **Mechanics**
 - Slash-command ergonomics (Spec Kit): ship the convention as
-  /nputer-plan, /nputer-checkpoint etc., one-line install.
+  /supertaskr-plan, /supertaskr-checkpoint etc., one-line install.
 - Deterministic spec-checking (Kiro): solvers/linting over EARS lines.
 - Container isolation (Sculptor): the path for enforced-touches
   sandboxing.

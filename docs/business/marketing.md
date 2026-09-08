@@ -1,18 +1,18 @@
-# nputer — marketing & business planning
+# Supertaskr — marketing & business planning
 
 Opened 2026-08-30 at @human's direction. THIS FILE IS THE SEED: a
 dedicated session owns marketing and general business planning for
-nputer, and its work products land here (docs/business/) — the same
+Supertaskr, and its work products land here (docs/business/) — the same
 files-first discipline as everything else, but this directory is
 BUSINESS territory: no code gates fire on it, @human rules everything
 in it, and engineering sessions treat it as read-only context.
 
 ## @human's opening idea (2026-08-30, verbatim in substance)
 
-When nputer is ready for test users: **limited-time free access
+When Supertaskr is ready for test users: **limited-time free access
 passes for serious AI-native developers**, and a feedback program
 built around them. The pass is the wedge — a scarce, earned artifact
-for exactly the audience whose workflow nputer is built for.
+for exactly the audience whose workflow Supertaskr is built for.
 
 ## The assets the planning session inherits
 
@@ -28,9 +28,9 @@ for exactly the audience whose workflow nputer is built for.
   competitors-merged-draft.md is now historical (the landed copy is
   authoritative).
 - docs/research/ai-native-sdlc-playbook-review.md — the positioning
-  evidence: where nputer meets or exceeds the reference playbook.
+  evidence: where Supertaskr meets or exceeds the reference playbook.
 - The Beyond-the-Playbook charter artifact (32 features, 4 rings,
-  vision-not-a-queue) and the nputer Loop artifact — the story of
+  vision-not-a-queue) and the Supertaskr Loop artifact — the story of
   what the product IS, told two ways.
 - docs/rooms/customization-form.md + team-enablement.md — the
   enterprise story's raw material (compliance-for-free, org skill
@@ -63,7 +63,7 @@ proof point INSIDE that story.
 > board; agents build it in parallel lanes that cannot collide; a
 > different model — denied the builder's reasoning — returns a
 > binding verdict on every card; and the whole history lands as
-> records in your repo. nputer runs the entire AI-native SDLC, and
+> records in your repo. Supertaskr runs the entire AI-native SDLC, and
 > built itself with it.
 
 Proof points inside the story, in order: the binding verdict (the
@@ -109,7 +109,7 @@ git history. The full terms + application template:
   testimonials-as-metrics.
 - **P5 — conversion: FOUNDING PRICE + TEAM-TIER PRIORITY, no
   credit.** @human asked whether a credit system is needed; ruled
-  no — a credit ledger is a whole product surface nputer doesn't
+  no — a credit ledger is a whole product surface Supertaskr doesn't
   need at v1. The offer is a locked price and a queue position,
   never a roadmap.
 - **P6 — the pass is a signed markdown file: YES**, with mechanics
@@ -135,7 +135,7 @@ keep the list warm).
 
 2026-08-30, @human via the engineering session: M1 yes (landed on
 main same day) · M2 yes (Ring 1.5 adopted) · M3 @human's own
-answer — lead with the full nputer SDLC approach · M4 yes
+answer — "lead with the full nputer SDLC approach" · M4 yes
 (strategy-room.md opened, business-side) · P0 T3 · P1 open
 waitlist · P2 rolling, intake-throttled · P3 30 days · P4a repo ·
 P5 price + priority, no credit · P6 yes, signed markdown ·

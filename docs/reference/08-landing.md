@@ -49,7 +49,7 @@ content, each named in the message:
   read-only, so the lane reports the stale census and the integrator
   regenerates it in the merge commit.
 - The **graph regeneration** when an indexed source moved: ask
-  `cargo run -q -p nputer-index -- index --check --root ../..` from
+  `cargo run -q -p supertaskr-index -- index --check --root ../..` from
   app/src-tauri/, never predict; regenerate; re-ask after every write.
   A regeneration moves the six dogfood pins in app/test that hold the
   committed graph's scale, and the app suite is owed.
@@ -74,7 +74,7 @@ cargo without `--no-fail-fast`, a second runner beside a timing bench
 `gate-verdict` line carries the exit, the body count and the ref. Read
 the count, never the code.
 
-Each run also mints a token in `.nputer/gate-verdict.json`, keyed on
+Each run also mints a token in `.supertaskr/gate-verdict.json`, keyed on
 `HEAD^{tree}` per suite. The push guard refuses a push whose four
 suites are not all GREEN against the tree being pushed, so **the
 battery runs last, after every commit**: a commit after the battery
@@ -185,5 +185,5 @@ Written before the first bad merge so it is never improvised:
    caught it earlier.
 
 A revert is not a disposition; which of the three moves the card gets
-is triage's. Safe undo as a command, `npx nputer undo <card>` with a
+is triage's. Safe undo as a command, `npx supertaskr undo <card>` with a
 dependency check, is v1 (folded into T-244).

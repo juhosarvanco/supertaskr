@@ -17,8 +17,8 @@ project directory.
    scaffold-safe: examples live in comments) and create empty
    docs/decisions/, docs/tasks/, docs/rooms/. Copy both adapter files
    from adapters/ to the project root. Ensure .gitignore exists and
-   carries a `.nputer/` line (append if missing). `git init` if the
-   project directory is not a repo. You MAY seed .nputer/nputer.yaml
+   carries a `.supertaskr/` line (append if missing). `git init` if the
+   project directory is not a repo. You MAY seed .supertaskr/supertaskr.yaml
    from runtime/nputer.yaml (runtime defaults, losable, gitignored).
    Stamp docs/STATE.md: Updated line filled in, In progress =
    "genesis interview running — next stage: 1 (Q1)".
@@ -89,7 +89,7 @@ project directory.
   (archaeology convention reused). [?] items are resolved or roomed
   later — never silently deleted.
 - The transcript is NOT project record — the banked docs are. A
-  driver may cache the conversation as a runtime file under .nputer/,
+  driver may cache the conversation as a runtime file under .supertaskr/,
   but if something exists only in the transcript, it does not exist
   (succession rule).
 

@@ -87,7 +87,7 @@ lane before anything is cut.
 After the lane is cut and before the session is briefed, the dispatcher
 runs `brief.mjs --task T-NNN --write-fence <lane worktree>`. It expands
 the card's `touches:` through the parser's one implementation and
-writes `.nputer/lane-fence.json` into the lane worktree, with a
+writes `.supertaskr/lane-fence.json` into the lane worktree, with a
 self-ignoring `.gitignore` beside it so no manifest ever lands on the
 integration branch. The manifest carries the expanded paths, the
 `excluded` list and the `touches:` line it was stamped from.

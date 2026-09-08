@@ -22,7 +22,7 @@ status: planned             # suggested | planned | building | verifying |
 blocked_by: [T-015]         # true technical blockers only
 touches: [C-03, src/egress/]   # the fence: component slugs and/or paths
 suggested_by:               # role, model@session, or human
-builder:                    # model[@session]; empty = nputer.yaml default
+builder:                    # model[@session]; empty = supertaskr.yaml default
 verifier:                   # model[@session]; empty = default (independent)
 built_by:                   # stamped at done
 verified_by:                # stamped at done

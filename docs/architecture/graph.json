@@ -4890,7 +4890,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:0f261f6e0a1b654617faaa69406e159a25fd48ed30ca027bd5d8cf81d4d50295",
+      "hash": "blake3:c1999db6a8acfef6834f526bd306c16cac6c19b7d1234ed8d5f927780936762b",
       "loc": 899,
       "symbols": [
         {
@@ -14776,7 +14776,7 @@
       "id": "f:app/src/genesis/genesis-derive.ts",
       "path": "app/src/genesis/genesis-derive.ts",
       "lang": "ts",
-      "hash": "blake3:2a7e7f40f76b08417ab5a1470b3f89586a4819cd18c480d85adafa5dfaa6e829",
+      "hash": "blake3:2a150f9797a38d9c12d9536abb55dc2a1740eaf5a5cfdff6a7a712c5d0512217",
       "loc": 503,
       "symbols": [
         {

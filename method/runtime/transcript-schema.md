@@ -1,8 +1,8 @@
-# .nputer/genesis/transcript.jsonl — the genesis transcript
+# .supertaskr/genesis/transcript.jsonl — the genesis transcript
 
-Runtime state, not project truth: lives in .nputer/, not docs/. Losing it
+Runtime state, not project truth: lives in .supertaskr/, not docs/. Losing it
 loses a chat rehydration and nothing about the project. It is one of the
-two runtime files under .nputer/ — sessions-schema.md next door documents
+two runtime files under .supertaskr/ — sessions-schema.md next door documents
 the other — and both are losable by charter (ADR-017 clause 4).
 
 ONE JSON OBJECT PER LINE, appended and never rewritten. A line is one

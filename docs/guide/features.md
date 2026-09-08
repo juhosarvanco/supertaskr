@@ -1,6 +1,6 @@
 # Features
 
-What nputer does today, by area. Plain sentences; the exact,
+What Supertaskr does today, by area. Plain sentences; the exact,
 test-backed list is [docs/CAPABILITIES.md](../CAPABILITIES.md), and
 which features are v1, v2 or later is [docs/VERSIONS.md](../VERSIONS.md).
 

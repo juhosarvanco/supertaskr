@@ -120,7 +120,10 @@ in one sitting carried a false assertion and every preflight ran green.
 2. Cut the lane from that commit: `git worktree add
    ../nputer-T-NNN -b task/T-NNN-<slug> <base hash>`. The worktree is a
    sibling directory with an absolute path; the base is a green
-   commit stated as a hash, never a merge commit.
+   commit stated as a hash, never a merge commit. The lane and bench
+   spellings below still carry the pre-rename name: they are siblings of
+   the repository DIRECTORY, which is @human's to rename (ADR-022
+   decision 4, T-266), and they move with it in T-264-s3 — not here.
 3. Arm the fence: `--write-fence`, then read the manifest back.
 4. Cut the verifier's bench at the same moment: a detached sibling
    worktree (`nputer-V-T-NNN`) at the same base, holding no manifest.
@@ -150,7 +153,7 @@ Some surfaces are scoped by the machine, not the checkout, and two lanes
 with disjoint fences still share them. The rule (lane-protocol rule 4):
 derive the value from the lane, never default it.
 
-- **The e2e port** — `NPUTER_E2E_PORT=15000+<card number>`; the default
+- **The e2e port** — `SUPERTASKR_E2E_PORT=15000+<card number>`; the default
   14520 is machine-wide. Port 1420 belongs to the human's live app and
   is refused, never borrowed.
 - **Scratch files** — `<purpose>-<card id>.<ext>`; the scratchpad is one
@@ -169,7 +172,7 @@ node tools/e2e/scripts/brief.mjs --release-seat
 ```
 
 The integration checkout has one holder at a time (T-238). The holder
-record lives in `.nputer/holder.json`, gitignored; a second seat that
+record lives in `.supertaskr/holder.json`, gitignored; a second seat that
 tries to take it is refused and told who holds it. The holder is
 declared at dispatch, never inferred: the brief's deliverable row says
 explicitly whether the lane merges, and a lane that was not told does

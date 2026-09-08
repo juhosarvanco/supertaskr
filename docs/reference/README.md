@@ -1,9 +1,9 @@
-# The nputer reference
+# The Supertaskr reference
 
 The in-depth, technical description of the whole system: every stage of
 the loop, every artifact, every guard, in the terms the code and the
 method use. It is written for a reader who wants to know exactly how
-nputer works before adopting it, or who runs it and wants the mechanism
+Supertaskr works before adopting it, or who runs it and wants the mechanism
 behind a rule. The short human-reader version is docs/guide/; the
 sentence-level behaviour census is docs/CAPABILITIES.md; the ruling on
 what ships when is docs/VERSIONS.md.
@@ -47,7 +47,7 @@ what ships when is docs/VERSIONS.md.
 
 ## The vocabulary in one screen
 
-- **The method** — the versioned convention in method/ (v0.1.9): role
+- **The method** — the versioned convention in method/ (v0.1.10): role
   contracts, the lane protocol, the task format, the docs protocol, the
   interview, templates and adapter files. A project copies it in.
 - **The Loop** — one card's journey: born, triaged, dispatched, built in

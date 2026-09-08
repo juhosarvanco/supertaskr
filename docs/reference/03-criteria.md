@@ -105,7 +105,7 @@ A card carries `decide: audit` or `decide: auto`. Under audit the
 preflight refuses an unanswered item and the human's name goes on the
 choices. Under auto the planner's proposed default stands, stamped as
 the planner's, and the record shows which mode ran. The mode is the
-project's default in nputer.yaml and a card may override it.
+project's default in supertaskr.yaml and a card may override it.
 
 ### A test named per SHALL clause (v1, planned: T-252)
 
@@ -123,7 +123,7 @@ because one example proves one path. The escalation pattern is the
 sixth EARS form written for agents that decide when to stop:
 *If <condition>, then the <agent> shall halt <action>, hand off to
 <role> with <context>, and shall not proceed until <decision event>.*
-nputer's rooms and stop rules already behave this way; T-259 gives the
+Supertaskr's rooms and stop rules already behave this way; T-259 gives the
 form a place on the card.
 
 ### The commission list as a verifier rule (v1, planned: T-258)
