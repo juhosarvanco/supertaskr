@@ -384,3 +384,41 @@ around the expectation that no spec in this tree could detect a wrong
 matcher, and this one can. Its position in `decide` is load-bearing and
 proven so by mutation, its fail-open envelope is narrow because there is
 no catch to widen, and it reads no bytes of anything it refuses.
+
+### GATES RE-RUN AT THE TIP THIS VERDICT ITSELF CREATED (`5ca35d5`)
+
+`method/roles/verifier.md` step 7 — appending a verdict and filing two
+cards are WRITES, and prose is a code input here. The DOCS GATE's diff
+half, run from the repo root against `main` at `dc9b124` with the one
+spelling CONVENTIONS publishes, **exits 1 and FIRES**: three paths under
+`docs/` are code inputs, and it names the suites owed. All were run at
+`5ca35d5` and all are green:
+
+| owed suite | exit | count |
+|---|---|---|
+| `npx vitest run` from `lib/parser/` | 0 | **377 passed**, 16 files |
+| `npm test` from `app/` | 0 | **1163 passed**, 51 files |
+| `npm test` from `tools/e2e/` (3 disjoint shards) | 0 | **661 passed** (224 + 220 + 217) |
+
+The gate also reports **every live task card's frontmatter parses, with a
+legal status** — the two cards this verdict filed included — and
+**governing-document budgets hold, 4 gated, 0 awaiting compaction**. The
+three dogfood pins `docs/STATE.md` warns a card write can move
+(`architecture-dogfood`, `map-dogfood-render`, `select-board`) were run
+first and separately: **113 passed, exit 0**.
+
+**A figure with its ref stays true.** Every number in this verdict was
+derived at `e41ebef` and the suite counts re-derived at `5ca35d5`; the
+census figures (652 -> 661, +10/-1) are measured at `e41ebef` and are
+unmoved by this commit, which adds no spec body. One process note worth
+leaving for the next seat in this chair: my first reading of
+`capabilities:check` and `lint:docs` was taken through a pipe to `tail`,
+so `$?` reported `tail`'s exit and both looked like 0. Re-run unpiped,
+`capabilities:check` is 1. The Run hygiene line about reading the count
+as well as the exit has a twin — read the exit of the thing you ran, not
+of what you piped it into.
+
+The docs gate REFUSED my first invocation of it, correctly and usefully:
+`$PATHS` unquoted does not word-split in zsh, so the whole path list
+arrived as one argument and the gate exited 2 `called wrong` rather than
+answering over nothing. Recorded because a 2 there is not a clean gate.
