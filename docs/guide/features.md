@@ -15,6 +15,9 @@ which features are v1, v2 or later is [docs/VERSIONS.md](../VERSIONS.md).
   record.
 - The interview runs in the mirror app's split view, and as a skill in
   your agent app **(v1, on the board)**; both write the same files.
+- Customisation is more interview, not a settings screen: the interview
+  asks whether your organisation has skill packs to load, banks the
+  answer, and files one auditable card per pack **(v1, on the board)**.
 
 ## The board
 
@@ -54,6 +57,10 @@ which features are v1, v2 or later is [docs/VERSIONS.md](../VERSIONS.md).
   before the build exists, in a session that cannot see the builder's
   work. The plan is sealed with a hash the verdict must cite.
 - The verdict is binding. REJECTED stops the merge.
+- The verifier is blind by construction: a different session, denied
+  the builder's reasoning, judging the diff against a sealed attack plan.
+- Before a merge lands, the exact merge object is built and gated as
+  the merge it will be, not as the branch it came from.
 - Every guard ships with its killed mutant: the defect it exists to
   catch is planted, seen to fail, and restored byte for byte with a hash
   proof. A test that never demonstrated it can fail is not a test.
@@ -89,6 +96,14 @@ which features are v1, v2 or later is [docs/VERSIONS.md](../VERSIONS.md).
   documentation headroom, arrivals per triage window.
 - A band with no keeper is reported as unkept, never trusted.
 - A breach lands on the board as work.
+
+## Seat economics
+
+- Every merge record stamps what the work cost: tokens per seat, tool
+  uses, minutes, rework cycles, and the wall clock of every gate it
+  owed.
+- Model assignment per seat is recorded as what ran, not what was
+  meant, so cost and quality can be read per model and per task size.
 
 ## The method itself
 
