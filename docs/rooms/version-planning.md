@@ -178,3 +178,26 @@ go and see which features are v1, v2, v3+"):** docs/VERSIONS.md — one
 page transcribing this room by version, the charter entries by number,
 and docs/future.md's parked items as UNRULED. It never rules; every
 version sitting re-touches it in the same commit as this room.
+
+## THE VERSION SITTING OF 2026-09-08 — the unruled list walked
+
+The seat walked docs/VERSIONS.md's UNRULED section against the census,
+the charter and the board (the cards named in each row) and proposed
+four groups: already delivered under other names, v1, v2, v3+ or drop.
+**RULED (@human, verbatim): "approve the v1 five, fold the rest as
+proposed."** And, asked *"Can we move the Quick path below the loop to
+v1?"* — RULED v1, inside T-241: the light review modes exist
+(TASK-FORMAT's `same-model` and `self-verified`) and guard-class cards
+are already barred from them, so the quick path is an affordance, not
+a method change; success criterion 1 holds (a card and a verdict for
+every merge).
+
+The v1 five, filed planned: T-247 the dependency-legitimacy gate,
+T-248 the injection scan on docs writes, T-249 the secret read guard
+in the fence hook (the three security layers GSD Core ships and nputer
+lacked — T-245), T-250 the gate taxonomy named in CONVENTIONS, T-251
+the debt-marker limit in the landing gate. Folded: T-241 gains the
+quick path, intent triggering and the honest fallback sentence; T-244
+gains the two-harness v1 stance. The v2, v3+ and dropped rows are on
+the version page under their dated headings; UNRULED is entry 32 alone.
+No card was dispatched: @human's break of 2026-09-02 holds.

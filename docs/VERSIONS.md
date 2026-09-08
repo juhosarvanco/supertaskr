@@ -38,6 +38,10 @@ with the app as the mirror.
 | Map (F-06) | architecture + tasks lenses, intent over reality, drift, cycles, blast, churn, budget with a measured reason (the ADR-013 slice of truth maintenance) | shipped |
 | Ring 2, as it is | 05 Card Preflight · 06 Fences & Dispatch Sets · 07 Proof-of-Teeth · 08 Blind Adversarial Verification · 09 Record-First Landings · 10 Merge Pre-Proof · 11 Process Vital Signs · 12 The Metabolism · 13 Seat Economics — working internals, documented, no productization pass in v1 | shipped inside |
 | The launcher | one command launches the human's app worktree fresh | T-164 done |
+| Security at the write (ruled 2026-09-08) | the dependency-legitimacy gate (T-247), the injection scan on docs writes (T-248), the secret read guard in the fence hook (T-249) — the layer GSD Core ships and nputer lacked | T-247/T-248/T-249 planned p2 |
+| The gate taxonomy, named | pre-flight, revision, escalation, abort — the four types nputer runs, written into CONVENTIONS | T-250 planned p3 |
+| The debt-marker limit | a TODO or FIXME a lane adds must cite a card id, or the landing is refused | T-251 planned p3 |
+| The quick path below the loop (ruled 2026-09-08, v1) | one line files a size-S card with a light review mode and lands with a verdict; guard-class cards refused | folded into T-241 |
 
 **Explicitly NOT in v1:** F-05's in-app orchestrator conversation and
 any in-app spawn path (ADR-021); a Codex spawn adapter inside the app;
@@ -59,25 +63,39 @@ the archaeology/Adopt variant (ADR-005); the non-coder spec studio
 - **Ring 3:** 14 Purpose-Drift Signal · 15 Counterfactual Policy Replay · 17 Compliance for Free · 18 The Self-Confessing Eval Corpus · 19 Method SemVer & the Method Marketplace · 20 Rooms & Standing Presence · 23 The Kit Is the Product.
 - **Ring 4, the gift registry:** 24 Retroactive Verification · 25 Session Ghosts · 26 Counterfactual Gardens · 27 Dream Lanes · 28 Intent Compilation · 29 The Proof Economy · 30 The Method Breeds · 31 Judgment Scheduling · 32 The Accountability Layer (v3+ by its ring; never named in a ruling — @human to confirm).
 
+## Already delivered under other names (walked 2026-09-08)
+
+Items from the competitor sweep and the parked list that nputer already
+has; no ruling needed, only the name to look under.
+
+- per-agent model cost profiles → seat economics (13) plus D5's binding assignment per card; the routing table is `nputer.yaml`'s role defaults (C-03, planned)
+- cross-session memory → the record itself (STATE, checkpoints, rooms) under the cold-start test
+- PR bodies written from the record → record-first landings (09): the checkpoint record and the merge commit
+- the honest fallback line → T-169 (done); the sentence form is folded into T-241
+- gate taxonomy with stall detection → we run all four types; T-250 names them
+- shortcut markers into a debt ledger → the metabolism (12); T-251 gives it teeth at the merge
+- cost telemetry (parked list) → 13 and the Tokens line in every record
+- enforced touches, the write half (parked list) → 06, done; the sandbox and network half is v2
+- handoff score (parked list) → the cold-start band and the succession test, unscored
+
+## v2 additions ruled 2026-09-08
+
+- plan-checker seat, design-mockup stage, UAT walk, browser QA seat, security audit seat — the Ring 2 productization pass or the non-coder layer
+- reviewer instances with consensus → under 21 Competitive Execution (T-170 parked)
+- ship, deploy and canary → under 04 Environment Tiers
+- a capability registry that declares its gates as blocking or advisory → the shape the landing gate's limits take in the productization pass
+- the multi-harness installer beyond Claude and Codex (T-244 carries the v1 stance)
+- 22 The Version Table
+- from the parked list: pocket cockpit, calibration scorecards, retro role, spec red team, dry run, the sandbox half of enforced touches
+
+## v3+ additions ruled 2026-09-08
+
+- from the parked list: time machine, truth maintenance beyond the drift slice, production feedback, synthetic users, explainer
+- dropped as duplicates: seeds (= 23 The Kit Is the Product), proof of process (= 17 Compliance for Free)
+
 ## Unruled — needs a version ruling before it can become a card
 
-- **22 The Version Table** — @human's idea; builds at a version sitting under the standing rule.
-- **docs/future.md's parked items** ("nothing enters scope until the first real project run"):
-  - v0.2 batch — cost telemetry (largely delivered as 13 Seat Economics), pocket cockpit, calibration scorecards, retro role, enforced touches.
-  - v0.3 batch — N-version building (the same idea as 21), spec red team, time machine, handoff score, dry run.
-  - horizon — truth maintenance (its drift slice is in F-06 v1 by ADR-013; the premise graph is not), production feedback, synthetic users, seeds, explainer, proof of process.
-- **Learned from the competitor sweep of 2026-09-08** (T-245 carries the readings; each item names where it was seen; none is ruled):
-  - a quick path for small changes that skips the full loop (GSD's quick command)
-  - skills that trigger without a slash command (Superpowers)
-  - a plan-checker seat that verifies the plan before execution (GSD)
-  - a design-mockup stage before code (defract; GSD's UI spec)
-  - a UAT walk where the human confirms each deliverable (GSD)
-  - a browser QA seat, a security audit seat, and ship, deploy and canary steps (gstack)
-  - per-agent model cost profiles — overlaps 13 Seat Economics (GSD)
-  - cross-session memory of project learnings (gstack)
-  - PR bodies written from the record (GSD, gstack)
-  - an installer that targets many harnesses; nputer has one adapter (all three)
-  - added after the deeper read of 2026-09-08 (T-245): a gate taxonomy — pre-flight, revision, escalation, abort — with stall detection and iteration caps (GSD); a capability registry that declares its gates as blocking or advisory with `onError` (GSD); reviewer instances with consensus, several models verifying one change (GSD); the honest fallback line when the outside model is missing (gstack); a package-legitimacy gate, a prompt-injection scan on planning files and a secret read guard (GSD); shortcut markers harvested into a debt ledger (gstack)
+- **32 The Accountability Layer** — v3+ by its ring; never named in a ruling; awaits @human's word.
 
 ## Moves, by sitting
 
@@ -85,3 +103,4 @@ the archaeology/Adopt variant (ADR-005); the non-coder spec studio
 - **2026-09-03** — F-05's conversation and spawn path v1 → v2-or-later; T-241, T-242, T-243, T-244 added to v1 (planned, none dispatched); the charter checked in; this page created (ADR-021, the form sitting record).
 - **2026-09-08** — ten competitor-sweep candidates added to UNRULED at @human's "do both"; no ruling, no column changed (T-245 filed for the map).
 - **2026-09-08, later** — @human: drive from the native apps, the app keeps its interview (ADR-021 Addendum 1); T-241, T-242, T-244 to priority 1; T-246 added to v1 (planned). No column changed.
+- **2026-09-08, the version sitting** — @human: *"approve the v1 five, fold the rest as proposed"* and the quick path to v1. v1 gains T-247 (dependency-legitimacy gate), T-248 (injection scan on docs writes), T-249 (secret read guard), T-250 (gate taxonomy named), T-251 (debt-marker limit), and the quick path inside T-241; nine sweep items recorded as already delivered under other names; the rest of the sweep and the parked list ruled v2 or v3+ as listed above; two duplicates dropped. UNRULED is now entry 32 alone.

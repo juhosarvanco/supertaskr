@@ -43,6 +43,11 @@ table says so in one word: C-02 planned. **Size L: dispatch needs
 - IF a verb needs a build (the indexer, lib/parser) THEN the package
   SHALL say so on first run with the one command that builds it,
   never fail silently.
+- **Folded 2026-09-08 (version sitting):** THE installer SHALL target
+  Claude Code and Codex in v1 (the two forms T-241/T-242/T-246 carry)
+  and SHALL be built so a third harness is one adapter entry, never a
+  rewrite — more harnesses are v2 (the multi-harness installer the
+  skills frameworks ship, VERSIONS.md UNRULED → v2).
 - The npm name SHALL be verified free at the ref the card is built
   (rooms/naming.md recorded it free on 2026-08-14; re-derive, never
   quote) — and IF the product is renamed under docs/rooms/naming.md

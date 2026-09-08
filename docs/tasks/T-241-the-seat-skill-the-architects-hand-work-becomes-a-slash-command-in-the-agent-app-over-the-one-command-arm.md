@@ -50,6 +50,21 @@ skill-driven turn from a hand-driven one.
   card.
 - IF the skill would spawn anything the arm does not THEN THE skill
   SHALL refuse and name the arm — no second spawn path.
+- **Folded 2026-09-08 (version sitting, @human: quick path to v1):** WHEN
+  the user asks for a small change THE skill SHALL offer the QUICK PATH
+  — one line files a size-S card with `review: same-model` or
+  `review: self-verified` (TASK-FORMAT's own values), runs the lighter
+  gates, and lands with a verdict; IF the card is guard-class THEN the
+  quick path SHALL refuse and name the rule that requires
+  `review: independent`. Success criterion 1 holds: a card and a
+  verdict for every merge, never a merge without.
+- **Folded 2026-09-08:** THE skill SHALL trigger on INTENT as well as on
+  the slash command (Superpowers' shape) — when the conversation shows
+  a card being built or a lane being cut, the skill offers itself.
+- **Folded 2026-09-08:** WHEN the verifier seat is not the assigned
+  model (T-169's mismatch) THE skill SHALL say so in one sentence at
+  the verdict — "verified by the builder's own model family, not an
+  outside one" — gstack's honest fallback line in nputer's words.
 - The method eval gate SHALL run (`node tools/method-evals/run.mjs`
   and `--selftest`) since method/ moves, and CAPABILITIES SHALL be
   regenerated if a spec name moves.
