@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: M
 priority: 4
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/method-evals]
@@ -73,3 +73,156 @@ one:
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-225-s2 merge (6691fc5)
 
 The architect seat. The digest checker MF-09 proves needs an invoker over a real verdict; one method-evals lane after T-205-s4.
+
+## Implementation notes — executor claude-opus-5@subagent, 2026-09-09
+
+Lane `/Users/ujju/Projects/nputer-T-205-s1`, branch
+`task/T-205-s1-digest-refusal-wired`, base `6dd44a6`. Fence
+`tools/method-evals`, read back off `.supertaskr/lane-fence.json`; nothing
+outside it was written.
+
+### THE DESIGN QUESTION, ANSWERED WITH REASONS
+
+The card names three shapes and says to pick rather than inherit.
+**Shapes 1 and 2 are both built, in the only order that makes shape 1
+survive its own objection; shape 3 is routed.**
+
+- **SHAPE 1 — a checker.** `tools/method-evals/verdict-digest.mjs`.
+  Cheap, catches an edited attack set, and the card's own objection is
+  fatal on its own: *"catches nothing if nobody runs it, and nobody runs
+  it is exactly what T-205 was written about."* So it is never shipped
+  alone.
+- **SHAPE 2 — the attack set committed beside the verdict. REFUSED, and
+  this is the card's own open question rather than mine to close.**
+  `roles/orchestrator.md` 5c says THE ATTACK SET NEVER REACHES THE
+  EXECUTOR; the card says after the verdict is a different question and
+  *"this card has to answer rather than assume"*. A lane executor
+  answering it by committing sets into the tree is precisely the seat 5c
+  excludes — and two of the sealed sets sitting in the scratchpad right
+  now belong to LIVE lanes (`T-224`, `T-265`), whose executors would
+  gain them. **No real attack set is committed anywhere in this diff.**
+  The fixtures are synthetic and say so in their own text. Routed as
+  `T-205-s12` for a ruling, and the checker needs no change when it
+  comes: a tree home is one more resolution root.
+- **SHAPE 3 — a gate at the landing.** The strongest, and outside this
+  fence twice over (`tools/e2e`, which was `T-224`'s fence at dispatch).
+  Routed as `T-205-s14`, parked behind `T-205-s12`.
+
+### WHAT INVOKES IT (the first criterion's answer, stated on the card)
+
+**`node tools/method-evals/run.mjs` — the METHOD EVAL GATE — through the
+new eval `MF-10`.** `MF-10` is in the corpus, so the gate every seat
+already owes runs the checker over the real board, over five committed
+fixture cards, and over a real verdict, with no seat remembering
+anything. **AND THE RESIDUAL IS NAMED RATHER THAN LEFT TO BE FOUND:**
+that gate's trigger is `method/**` and a verdict lands in `docs/tasks/`,
+so it fires on every merge except the one that lands the citation it
+would check. One clause in `docs/CONVENTIONS.md` closes it; that file is
+outside this fence. Routed as `T-205-s13`.
+
+### THE OUTCOMES, AND WHY THERE ARE THREE AND NOT TWO
+
+`VERIFIED` · `REFUSED` (exit 1) · `UNAVAILABLE` (exit 3, never a pass).
+**Collapsing the last two would be the defect.** MF-09's MISSING row
+already rules that a saved file we were POINTED at and could not read is
+a refusal — otherwise deleting the file is the bypass — and that row is
+enforced here unchanged, by the same judge. UNAVAILABLE is the different
+case this card was written about: the citation names a bare filename in
+a machine-scoped scratchpad, and `method/lane-protocol.md` rule 4 says
+DERIVE it from the lane, never default it. So the checker refuses to
+guess, prints where the method expects the file, and exits 3 — the house
+code for *this run is not a claim* (`lib/exit.mjs`). Reaching outside the
+tree is done through roots NAMED at the call and nowhere else:
+`--scratch <dir>` (repeatable), `SUPERTASKR_ATTACK_SET_DIR`, or an
+absolute path the citation itself carries. **There is no fourth root and
+no built-in guess.**
+
+### MEASURED AT `4de3675`, ON THE LIVE BOARD
+
+- 14 citations in 556 cards. With no root named: 0 verified, 0 refused,
+  **14 unavailable, exit 3**.
+- With `--scratch` on the dispatching session's scratchpad: **7 VERIFIED,
+  0 REFUSED, 7 unavailable, exit 3** — the seven whose sealed files still
+  exist (T-239-s4, T-246, T-247, T-248 ×2, T-249, T-264). **This is the
+  last link of T-205's chain, performed for the first time.**
+- A decoy file written under a real citation's name (`attack-set-T-264.md`)
+  is **REFUSED at exit 1**, naming the card, the line, the cited digest
+  and the hash the file actually has.
+
+### THE REUSE (fifth criterion, `T-057`)
+
+`judge` and the citation grammar are IMPORTED from
+`evals/mf-09-attack-set-digest-refusal.mjs`; `WELL_FORMED` and
+`FULL_DIGEST` are BUILT from `CITATION.source` rather than retyped beside
+it, so what a digest looks like is spelled once. MF-09 gains five
+`export` keywords and a header note and **no behaviour moves**. `MF-10`
+runs MF-09's `matrix` — the matrix, imported — through the checker's
+whole walk, which is the arm a judge-level proof cannot reach: MF-09's
+PREFIX row is a line the strict grammar never matches, so a collector
+keyed on that grammar would lose the row *between* the two files.
+
+### FOR THE VERIFIER
+
+- **The line anchor is a judgement call and it is load-bearing in both
+  directions.** `SITE` requires `attack set:` to open a line, because
+  `docs/CONVENTIONS.md` says the citation goes *"on a line of its own"*.
+  Two real cards (`T-205-s4:64`, `T-262:46`) quote the grammar
+  mid-sentence while discussing the rule; without the anchor both become
+  malformed citations and the gate reds for cards doing nothing wrong.
+  The T-901 fixture carries such a paragraph so the anchor is under
+  assertion rather than under trust.
+- **`inspect` has two seams** (`judge`, `collect`) that exist only for
+  the positive control. `MF-10` asserts BY IDENTITY that the production
+  path uses MF-09's judge and the checker's own collector —
+  `docs/CONVENTIONS.md`'s LIFTING A SAFETY GUARD TO DISCRIMINATE. Worth
+  a second look: a seam is a way in.
+- **Exit ordering: 3 outranks 1**, the same rule `run.mjs --bump` states,
+  and both counts are always printed so the ordering never hides a row.
+- I committed a red at `90b570e` (a substring expectation with the wrong
+  case) and caught it on the next run; `bf3d67c` is the repair and says
+  so. The cause was chaining a commit onto an edit without reading the
+  exit back — AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP, broken by a
+  seat able to quote it.
+
+### THE DRILL — 7 of 7, at `4de3675`, detached worktree, restored by sha256
+
+Producer mutated (`verdict-digest.mjs`), one side only, every landing
+read back with `git diff -U0` before the suite ran.
+
+| # | mutant | `run.mjs` | `--selftest` |
+|---|--------|-----------|--------------|
+| M1 | fail-open on UNAVAILABLE | 1 RED | 1 RED |
+| M2 | a walk that found nothing is CLEAN | 1 RED | 0 |
+| M3 | the collector drops its LINE ANCHOR | 1 RED | 0 |
+| M4 | the collector is MF-09's strict grammar alone | 1 RED | 0 |
+| M5 | a malformed citation is SKIPPED | 1 RED | 0 |
+| M6 | an absent absolute path becomes UNAVAILABLE | 1 RED | 1 RED |
+| M7 | the shipped judge is a PRESENCE check | 1 RED | 3 RED |
+
+Restoration: `sha256 1e64c8dc5e0d8d2e8fdb632b7de0ace681abeef834a8b7aaf62e1b74367ccbf2`
+against `git show 4de3675:tools/method-evals/verdict-digest.mjs`, equal,
+with `git status --porcelain` empty as the companion.
+
+**THE FIRST PASS KILLED 6 OF 7 AND THE SURVIVOR IS THE FINDING.** M6 —
+`resolveCited` returning `null` for an absolute path that does not exist
+— turned MF-09's MISSING row into an UNAVAILABLE and every arm stayed
+green, because the matrix only asks ACCEPT or REFUSE and both codes are
+non-zero. The caller, though, is told *I could not tell you* about a file
+somebody DELETED, which is MF-09's own bypass one level up. Arm 3b
+(`4de3675`) closes it, and two earlier arms (`90b570e`) came out of the
+same exercise: designing the kill set found two properties `MF-10`
+claimed in its header with nothing able to fail on either.
+
+**THE POSITIVE CONTROL IS DEMONSTRATED FAILING**, not merely passing:
+`--selftest` goes RED under M1 and M6 (`MF-10: 1 of 5 degradation(s) went
+undetected`) and refuses to claim a baseline at all under M7 (`COULD NOT
+RUN — the UNDEGRADED checker already fails 2 matrix row(s)`).
+
+### PARKED, ROUTED, NOT BUILT
+
+`T-205-s12` (a home in the tree for sealed sets — a ruling, not a build),
+`T-205-s13` (the gate's trigger, the bench bullet's own retraction, and
+`docs/reference/10-gates.md`'s MF-10 line), `T-205-s14` (the landing
+leg), `T-276` (`tools/method-evals` is under no typecheck and carries two
+JSDoc errors today). The ask was written before the build began and every
+item was parked, not waited on.
