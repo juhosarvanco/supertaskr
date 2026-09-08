@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: M
 priority: 5
-status: planned
+status: building
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022)"
 blocked_by: [T-264]
 touches: [method/, docs/guide/, docs/reference, docs/NORTH_STAR.md, docs/ROADMAP.md, docs/STATE-template.md, docs/VERSIONS.md, docs/business, docs/research/competitors.md, docs/checkpoints/TEMPLATE.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
