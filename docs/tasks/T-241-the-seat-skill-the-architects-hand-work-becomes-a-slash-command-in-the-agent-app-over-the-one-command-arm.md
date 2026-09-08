@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 size: M
 priority: 1
-status: planned
+status: building
 suggested_by: "@human ruling (2026-09-03, ADR-021, rooms/cockpit-or-mirror.md RE-RULED): the architect sits in the user's agent app; nputer is a skill, a CLI and a mirror"
 blocked_by: []
 touches: [method/]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
