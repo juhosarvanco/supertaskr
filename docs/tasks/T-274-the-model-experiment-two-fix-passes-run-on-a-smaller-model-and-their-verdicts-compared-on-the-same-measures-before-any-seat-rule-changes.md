@@ -8,7 +8,7 @@ priority: 16
 status: planned
 suggested_by: "@human, 2026-09-09: \"run the model experiment\"; every seat of 2026-09-08 ran on Opus (claude-opus-5@subagent); the fix passes cost 240K and 290K tokens"
 blocked_by: []
-touches: [docs/tasks]
+touches: [docs/research/]
 builder:
 verifier:
 built_by:
