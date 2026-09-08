@@ -311,6 +311,30 @@ dogfood files before the commit and updates the pins with the dated
 line the house pattern already uses; the integrator's own suite is the
 app suite whenever the graph moves.
 
+**28. Every seat reads CONVENTIONS whole, and most of it is rules a gate
+enforces anyway.** Measured 2026-09-08: an executor's standing read is
+its card plus STATE (7,565 bytes), ARCHITECTURE (9,267) and CONVENTIONS
+(123,685), re-read at every compaction and by the verifier's phase 2 —
+about 160 KB before its own files, three quarters of it one document
+written for the architect. @human, 2026-09-08: *"If there is any sense
+for them to only read what is relevant to their task."* The seat's
+answer, approved (*"This sounds good"*): a context pack in the brief —
+the method's protocol files plus the overlay bullets the card's gates
+cite, quoted byte-exact by the readers the brief already has — and the
+read cost stamped per seat before and after. T-254.
+
+**29. CONVENTIONS' four seat protocols carry 43 KB of generic text and
+history in the project overlay.** The range rule, the lane protocol,
+the poison drill and the docs gate; the lane protocol bullet itself
+says its generic rules live in method/lane-protocol.md. The split the
+method already defines is by TIER (generic in method/, overlay in
+CONVENTIONS), not by topic; a topic split would move the path
+thirty-three specs, the brief's five quoted headings, the CI
+derivation, the kit template and the budgets all read. Approved the
+same day: keep one file, move the generic halves to the method's own
+files, keep every program-read sentence byte-identical, re-land the
+budget — the third compaction, T-255, behind T-254.
+
 Not weak spots, and worth saying: the enforcement stack caught what it
 was built for tonight (a stale checkout, a duplicated naming phrase, a
 red merge), and the records made a cold hand-over possible in under an
