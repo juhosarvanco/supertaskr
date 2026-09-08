@@ -208,12 +208,18 @@
  *    this gate cannot read there is a cannot-compare that never asks the
  *    question; (e) limit 6 reaches this arm too — the exoneration in the
  *    section below reads the integration branch through the same movable
- *    local ref; (f) the id resolution answers CANNOT-COMPARE, never a
- *    verdict, where it cannot resolve: two files carrying one id at one
- *    revision, or an `ls-tree` of `docs/tasks/` that fails. Both are
- *    announced on the existing cannot-compare code and neither is a silent
- *    allow, but a board with a duplicated id is a board this arm stops
- *    judging until somebody fixes the board.
+ *    local ref; (f) a card id ALREADY carried by two files under
+ *    `docs/tasks/` when the range was cut answers CANNOT-COMPARE, never a
+ *    verdict, and so does an `ls-tree` of `docs/tasks/` that fails
+ *    outright: both are announced on the existing cannot-compare code,
+ *    neither is a silent allow, and while the board is ambiguous about
+ *    which file IS a card this arm stops judging that id. **THE HALF THAT
+ *    IS NOT A RESIDUE IS THE DUPLICATE THE RANGE ITSELF ARRIVES AT, WHICH
+ *    IS REFUSED** (`duplicateReport`, `DUPLICATE_ID_ROUTE`): a
+ *    cannot-compare ALLOW there was the fail-open shape, and it is the one
+ *    `T-224`'s second verdict rode — see the decoy section below. So what
+ *    (f) leaves open is a board somebody ELSE made ambiguous, which no
+ *    lane reaches through this gate, and which triage repairs on main.
  *    **AND THE COMPARISON IS BYTES, SO A REFLOW IS A MOVE**: the line is
  *    compared character for character, because that is what the
  *    write-time guard compares (`method/lane-protocol.md`'s fast path A:
@@ -262,11 +268,42 @@
  * containment arm, which judges paths — is what leaves the two names
  * unrelated. So `cardTouchesOf` resolves each endpoint by the id
  * `CARD_FILE_RE` captures, over one memoised `ls-tree` of `docs/tasks/`
- * per REVISION, asked only where a path answered `absent`: the ordinary
- * push spends not one extra process, a rename with the line preserved is
- * ALLOWED, and a rename that moves the line is REFUSED with both paths
- * printed. Delete-and-re-add resolves the same way, which is the other
- * half of the sentence the card's contract states.
+ * per REVISION: a rename with the line preserved is ALLOWED, a rename that
+ * moves the line is REFUSED with both paths printed, and delete-and-re-add
+ * resolves the same way, which is the other half of the sentence the
+ * card's contract states.
+ *
+ * ── AND A SECOND FILE CARRYING THE ID CANNOT STAND IN FOR THE CARD ───
+ * **THE INDEX IS ASKED AT BOTH ENDPOINTS, AND THE FIRST VERSION OF THIS
+ * ARM ASKED IT AT ONE.** It read `git show <rev>:<the path the diff
+ * named>` FIRST and consulted the index only where that answered `absent`
+ * — a fast path that looks free and is not, because the loop above is
+ * keyed on the ID. Compose the two and the pair of endpoints ONE id is
+ * judged on can straddle TWO FILES: plant a second file under
+ * `docs/tasks/` carrying the card's id, sorting first in the range's path
+ * list, repeating the card's CURRENT `touches:` line. At the base it is
+ * absent, so the index resolves the id to the real card and yields the OLD
+ * line; at the tip it exists, so the direct `show` short-circuits the
+ * index and yields the DECOY's copy of that same old line. Equal, so
+ * `continue` — and `seen` now holds the id, so the real card's own
+ * widening is never examined at all. Not announced, not `unjudged`: an
+ * ordinary inside-the-fence ALLOW, at BOTH landing moments, on the lane's
+ * own card or a sibling's. `T-224`'s second verdict measured it through
+ * this hook and ended with the widened fence as the unambiguous card of
+ * record after three allowed pushes.
+ * **THE FIX IS THE ORDER, AND THE PRICE IS ONE LISTING PER REVISION.**
+ * The index answers first at every endpoint; the diff's path is read only
+ * where the index maps the id to exactly that one path there, which is the
+ * ordinary case and is the same single `git show` as before. So a range
+ * that changes NO card still spends nothing, and a range that changes any
+ * card spends one `ls-tree` per REVISION — not per card, which is the
+ * property `index`'s memo exists for, and which is what the old
+ * `absent`-gated version bought at the cost of correctness.
+ * **AND THE AMBIGUITY ITSELF IS NOW A VERDICT RATHER THAN A SHRUG**: an
+ * id the range ARRIVES at a duplicate of is REFUSED, because a
+ * cannot-compare ALLOW is the one answer a lane can manufacture on
+ * purpose. The residue that survives — a board already ambiguous when the
+ * range was cut — is limit 5(f).
  *
  * ── THE ONE MOVED LINE THAT MOVES NOTHING, AND WHY IT IS EXONERATED ──
  * **A LEGITIMATE FAST-PATH-A GRANT CAN APPEAR INSIDE A LANE'S OWN RANGE,
@@ -801,8 +838,12 @@ export function cardTouchesAt(root, rev, file, git = runGit) {
  * would enumerate blobs only to discard them.
  *
  * A list per id rather than one path, because two files carrying one id is
- * a board this gate must not silently pick a winner in: the caller answers
- * that with a cannot-compare, never with a verdict.
+ * a board this gate must not silently pick a winner in — and picking one
+ * silently is precisely what the `absent`-gated fast path did through the
+ * back door, by letting a second file answer for the id at one endpoint.
+ * The caller decides what the list MEANS: a duplicate the judged range
+ * arrived at is REFUSED, one it inherited is announced, and neither is a
+ * blob chosen by sort order.
  *
  * @param {string} root
  * @param {string} rev
@@ -832,21 +873,33 @@ export function cardPathsById(root, rev, git = runGit) {
 }
 
 /**
- * One card's `touches:` line at one revision, BY ID — the path first,
- * because the path is almost always right, and the id when it is not.
+ * One card's `touches:` line at one revision, BY ID — resolved through the
+ * per-revision INDEX at both endpoints, never through the path the diff
+ * happened to name.
  *
- * **THE ID LOOKUP IS GATED ON `absent`, SO THE ORDINARY PUSH PAYS FOR
- * NOTHING.** A card whose path is unchanged answers on the first `git
- * show` exactly as before this function existed; only a card the range
- * renamed, deleted-and-re-added, or filed under a name one endpoint does
- * not have reaches the listing, and `index` memoises that listing PER
- * REVISION so a range renaming twenty cards still asks git once per ref.
+ * **THE INDEX IS THE AUTHORITY AND THE DIFF'S PATH IS AT MOST A FAST
+ * PATH, AND THAT ORDER IS THE WHOLE OF `T-224`'s SECOND VERDICT.** This
+ * function used to `git show <rev>:<file>` FIRST and consult the index
+ * only where that answered `absent`. Composed with a loop keyed on the id,
+ * that let the two endpoints of ONE id straddle TWO FILES: plant a second
+ * file under `docs/tasks/` carrying the card's id, sorting first in the
+ * range's path list and repeating the card's CURRENT `touches:` line, and
+ * at the BASE it is absent so the index resolves the id to the real card
+ * (the old line), while at the TIP the direct `show` short-circuits the
+ * index and returns the DECOY's copy of that same line. The two compare
+ * equal, the id is marked seen, the real card's own widening is never
+ * examined, and the push is an ordinary inside-the-fence ALLOW. Resolving
+ * BOTH ends through the index closes it: `paths[0]` is the only file this
+ * gate will read for an id, and where that file IS the one the diff named
+ * the read is the same single `git show` as before.
  *
  * FOUR ANSWERS, and the fourth is the one a resolver owes: a line (with
  * the path it was actually read at, which the refusal prints when it is
  * not the path the diff named), `absent` — no file at this revision
- * carries this id — and `problem`, which now also covers TWO files
- * carrying one id, a state this gate reports rather than guesses through.
+ * carries this id — and `problem`, which covers TWO files carrying one id,
+ * a state this gate reports rather than guesses through. **WHO ANSWERS
+ * FOR THAT AMBIGUITY IS THE CALLER'S**: `touchesAmendments` REFUSES one
+ * the judged range created and announces one it merely inherited.
  *
  * @param {string} root
  * @param {string} rev
@@ -854,13 +907,9 @@ export function cardPathsById(root, rev, git = runGit) {
  * @param {string} file the path the range named, repository-relative
  * @param {(rev: string) => ({ byId: Map<string, string[]> } | { problem: string })} index
  * @param {(root: string, args: string[]) => Ran} [git]
- * @returns {{ line: string | undefined, file: string } | { absent: true } | { problem: string }}
+ * @returns {{ line: string | undefined, file: string } | { absent: true } | { problem: string } | { problem: string, duplicate: string[] }}
  */
 export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
-  const direct = cardTouchesAt(root, rev, file, git);
-  if ("problem" in direct) return direct;
-  if (!("absent" in direct)) return { line: direct.line, file };
-
   const listed = index(rev);
   if ("problem" in listed) return listed;
   const paths = listed.byId.get(id) ?? [];
@@ -869,7 +918,8 @@ export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
     return {
       problem:
         `${paths.length} files under docs/tasks/ carry the id ${id} at ${rev} ` +
-        `(${paths.join(", ")}), so this gate cannot say which one ${file} is`,
+        `(${paths.join(", ")}), so this gate cannot say which one the range's ${file} stands for`,
+      duplicate: paths,
     };
   }
   const only = /** @type {string} */ (paths[0]);
@@ -882,6 +932,18 @@ export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
   }
   return { line: found.line, file: only };
 }
+
+/**
+ * A card id MORE THAN ONE file carries, and the account of who put them
+ * there — which is what decides whether this is a refusal or a notice.
+ *
+ * @typedef {object} DuplicateId
+ * @property {string} id        the id carried more than once
+ * @property {string[]} paths   every path carrying it at the range's TIP
+ * @property {string[]} arrived those of them present at NEITHER the base nor the record
+ * @property {string[]} base    every path carrying it at the range's base
+ * @property {string[]} record  every path carrying it on the fence of record
+ */
 
 /**
  * @typedef {object} TouchesMove
@@ -907,9 +969,11 @@ export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
  * module header argues both halves.
  *
  * **EVERY ENDPOINT IS RESOLVED BY THE CARD'S ID, NOT BY ITS PATH**
- * (`cardTouchesOf`), which is what the amended contract requires in as
- * many words: *"a card id present on main under another path is resolved
- * by id, not path, so delete-and-re-add and rename do not evade the
+ * (`cardTouchesOf`, which asks the per-revision INDEX first and reads the
+ * diff's own path only where the index maps the id to exactly that one
+ * path there), which is what the amended contract requires in as many
+ * words: *"a card id present on main under another path is resolved by id,
+ * not path, so delete-and-re-add and rename do not evade the
  * comparison."* A rename that leaves the line alone is still ALLOWED — the
  * two lines are equal, whatever the file is called — and a rename that
  * moves it is REFUSED with BOTH paths named.
@@ -921,18 +985,27 @@ export function cardTouchesOf(root, rev, id, file, index, git = runGit) {
  * endpoints in the opposite order, which reads like two findings about two
  * cards.
  *
+ * **AND AN ID CARRIED BY TWO FILES IS ANSWERED BEFORE EITHER LINE IS
+ * READ, BECAUSE THAT IS THE STATE THE DEDUPE IS DANGEROUS IN.** An id the
+ * range itself arrives at a duplicate of — a path at the tip present at
+ * NEITHER the base NOR the record — is REFUSED, naming every file, because
+ * a cannot-compare ALLOW there is the fail-open shape: it lets a lane
+ * manufacture the very ambiguity that stops the comparison. An id already
+ * carried twice when the range was cut is the honest cannot-compare and is
+ * ANNOUNCED, unchanged — limit 5(f).
+ *
  * @param {string} root
  * @param {string} base   the range's left endpoint
  * @param {string} tip    the range's right endpoint
  * @param {string} record the revision the fence of record is read at
  * @param {string[]} paths the range's changed paths
  * @param {(root: string, args: string[]) => Ran} [git]
- * @returns {{ moved: TouchesMove[] } | { problem: string }}
+ * @returns {{ moved: TouchesMove[], duplicated: DuplicateId[] } | { problem: string }}
  */
 export function touchesAmendments(root, base, tip, record, paths, git = runGit) {
   /** @param {string | undefined} line */
   const show = (line) => (line === undefined ? NO_TOUCHES_LINE : line);
-  /** ONE listing per REVISION, asked only when a path answers `absent`. */
+  /** ONE listing per REVISION, and never one per card. */
   /** @type {Map<string, { byId: Map<string, string[]> } | { problem: string }>} */
   const listings = new Map();
   /** @param {string} rev */
@@ -943,8 +1016,22 @@ export function touchesAmendments(root, base, tip, record, paths, git = runGit) 
     listings.set(rev, made);
     return made;
   };
+  /**
+   * Every path one id resolves to at one revision, out of the SAME memoised
+   * listing `cardTouchesOf` reads — so asking this costs no process at all.
+   *
+   * @param {string} rev
+   * @param {string} id
+   * @returns {{ at: string[] } | { problem: string }}
+   */
+  const pathsOf = (rev, id) => {
+    const listed = index(rev);
+    return "problem" in listed ? listed : { at: listed.byId.get(id) ?? [] };
+  };
   /** @type {TouchesMove[]} */
   const moved = [];
+  /** @type {DuplicateId[]} */
+  const duplicated = [];
   /** @type {Set<string>} */
   const seen = new Set();
   for (const rel of paths) {
@@ -953,11 +1040,45 @@ export function touchesAmendments(root, base, tip, record, paths, git = runGit) 
     const id = /** @type {string} */ (named[1]);
     if (seen.has(id)) continue;
     seen.add(id);
+
+    // BOTH ENDPOINTS ARE RESOLVED BEFORE EITHER IS TRUSTED, because it is
+    // the PAIR that gets compared and the defect was a pair that straddled
+    // two files. The `absent` short-circuit that used to sit between them
+    // is below the ambiguity arm on purpose: a range that FILES two cards
+    // under one brand-new id is the same ambiguity, and skipping it on
+    // `absent` would hand it back.
     const before = cardTouchesOf(root, base, id, rel, index, git);
-    if ("problem" in before) return { problem: before.problem };
-    if ("absent" in before) continue;
     const after = cardTouchesOf(root, tip, id, rel, index, git);
+
+    // AN ID CARRIED BY TWO FILES IS ANSWERED HERE, AND THE QUESTION IS WHO
+    // MADE IT. `seen` marks this id done whatever happens next, so an
+    // ambiguity read through rather than answered is an id nothing judges:
+    // that composition is exactly what the decoy rode.
+    if ("duplicate" in before || "duplicate" in after) {
+      const atBase = pathsOf(base, id);
+      if ("problem" in atBase) return { problem: atBase.problem };
+      const atTip = pathsOf(tip, id);
+      if ("problem" in atTip) return { problem: atTip.problem };
+      const atRecord = pathsOf(record, id);
+      if ("problem" in atRecord) return { problem: atRecord.problem };
+      const known = new Set([...atBase.at, ...atRecord.at]);
+      const arrived = atTip.at.filter((p) => !known.has(p));
+      if (arrived.length > 0) {
+        duplicated.push({ id, paths: atTip.at, arrived, base: atBase.at, record: atRecord.at });
+        continue;
+      }
+      const every = [...new Set([...atBase.at, ...atTip.at])];
+      return {
+        problem:
+          `${every.length} files under docs/tasks/ carry the id ${id} (${every.join(", ")}), and ` +
+          "this range arrived at none of them — the ambiguity is the BOARD's rather than this " +
+          `range's, so this gate stops judging ${id} instead of picking a file`,
+      };
+    }
+
+    if ("problem" in before) return { problem: before.problem };
     if ("problem" in after) return { problem: after.problem };
+    if ("absent" in before) continue;
     if ("absent" in after) continue;
     if (before.line === after.line) continue;
     const onRecord = cardTouchesOf(root, record, id, rel, index, git);
@@ -980,7 +1101,7 @@ export function touchesAmendments(root, base, tip, record, paths, git = runGit) 
       recordFile: "problem" in onRecord || "absent" in onRecord ? undefined : onRecord.file,
     });
   }
-  return { moved };
+  return { moved, duplicated };
 }
 
 /**
@@ -1015,6 +1136,55 @@ export function amendmentReport(moved, record) {
     })
     .join("");
 }
+
+/**
+ * Render the DUPLICATED ids for a human, once, for the same reason
+ * `amendmentReport` exists: two arms describing one state two ways is two
+ * accounts of one finding.
+ *
+ * **THE ARRIVING PATH IS MARKED, BECAUSE IT IS THE WHOLE VERDICT.** The
+ * refusal is not "this board has two files with one id" — that is a
+ * notice — it is "this range PUT one of them there", and a reader who is
+ * shown the set without being shown which member arrived cannot check
+ * that.
+ *
+ * @param {DuplicateId[]} duplicated
+ * @param {string} record how to name the revision the third line was read at
+ * @returns {string}
+ */
+export function duplicateReport(duplicated, record) {
+  /** @param {string[]} at */
+  const list = (at) => (at.length === 0 ? "(no file carried this id)" : at.join(", "));
+  return duplicated
+    .map(
+      (d) =>
+        `    ${d.id} — ${d.paths.length} files under docs/tasks/ carry this id at the range's tip\n` +
+        d.paths
+          .map((p) => `      ${p}${d.arrived.includes(p) ? "   <- ARRIVED IN THIS RANGE" : ""}\n`)
+          .join("") +
+        `      at the range's base: ${list(d.base)}\n` +
+        `      on ${record}: ${list(d.record)}\n`,
+    )
+    .join("");
+}
+
+/**
+ * The route a refused DUPLICATED ID takes, which is neither of the two
+ * above: the fence question is "who may write here", the amendment
+ * question is "who may move the line that answers it", and this one is
+ * "which file IS the card".
+ */
+export const DUPLICATE_ID_ROUTE =
+  "A card id names ONE file under docs/tasks/, and this gate resolves every `touches:` endpoint " +
+  "by that id — so a second file carrying an id the board already knows leaves the fence of " +
+  "record ambiguous. THIS IS REFUSED RATHER THAN ANNOUNCED because the alternative is the " +
+  "fail-open shape: a cannot-compare ALLOW here lets a lane manufacture the very ambiguity that " +
+  "stops the comparison, which is how a widening rides in behind a file carrying the card's id " +
+  "(T-224's second verdict measured that end to end, through this hook). The remedy is the " +
+  "lane's and is inside its own range: give the new card an id of its own — `node " +
+  "tools/e2e/scripts/brief.mjs --state` prints the board's — or drop the duplicate file. A " +
+  "duplicate this range did NOT arrive at is a different state and is ANNOUNCED, never refused: " +
+  "the board was already ambiguous when the range was cut, and repairing it is triage's, on main.";
 
 /**
  * The route a refused AMENDMENT takes, which is not the route a refused
@@ -1842,6 +2012,18 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
         "is not a claim that none of them moved.",
     );
   }
+  if (amended.duplicated.length > 0) {
+    return block(
+      "landing-gate-card-id-duplicated",
+      `PUSH REFUSED: ${amended.duplicated.length} card id(s) in ${card.id}'s range are carried by ` +
+        "MORE THAN ONE file under docs/tasks/ at the range's tip, and this range is what put one " +
+        "of them there.\n" +
+        `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, the same range the ` +
+        "containment arm takes)\n" +
+        duplicateReport(amended.duplicated, `the integration branch (${rev})`) +
+        `  ${DUPLICATE_ID_ROUTE}`,
+    );
+  }
   if (amended.moved.length > 0) {
     return block(
       "landing-gate-touches-amended",
@@ -1962,6 +2144,8 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
   /** @type {string[]} */
   const amendments = [];
   /** @type {string[]} */
+  const duplicates = [];
+  /** @type {string[]} */
   const unjudged = [];
   for (const merge of merges) {
     const parents = git(root, ["rev-list", "--parents", "-n", "1", merge]);
@@ -2055,6 +2239,13 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
       unjudged.push(`    ${merge} (${card.id}): ${amended.problem}`);
       continue;
     }
+    if (amended.duplicated.length > 0) {
+      duplicates.push(
+        `    ${merge} (${card.id}):\n` +
+          duplicateReport(amended.duplicated, `its first parent ${first}`).replace(/\n$/, ""),
+      );
+      continue;
+    }
     if (amended.moved.length > 0) {
       amendments.push(
         `    ${merge} (${card.id}):\n` +
@@ -2098,8 +2289,30 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
           ? `  and ${amendments.length} merge(s) carry a \`touches:\` AMENDMENT:\n` +
             `${amendments.join("\n")}\n  ${AMENDMENT_ROUTE}\n`
           : "") +
+        (duplicates.length > 0
+          ? `  and ${duplicates.length} merge(s) ARRIVE at a DUPLICATED card id:\n` +
+            `${duplicates.join("\n")}\n  ${DUPLICATE_ID_ROUTE}\n`
+          : "") +
         (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
         `  ${ROUTE}`,
+    );
+  }
+  if (duplicates.length > 0) {
+    return block(
+      "landing-gate-merge-card-id-duplicated",
+      `PUSH REFUSED: ${duplicates.length} of the ${merges.length} merge commit(s) this push would ` +
+        "add to the integration branch ARRIVE at a card id carried by MORE THAN ONE file under " +
+        "docs/tasks/, which leaves the fence of record ambiguous.\n" +
+        "  each merge is judged over merge-base(first parent, second parent)..second parent — the " +
+        "LANE's own range — with the files of record read from the FIRST parent, which is the only " +
+        "endpoint of a merge no lane has written to.\n" +
+        `${duplicates.join("\n")}\n` +
+        (amendments.length > 0
+          ? `  and ${amendments.length} merge(s) carry a \`touches:\` AMENDMENT:\n` +
+            `${amendments.join("\n")}\n  ${AMENDMENT_ROUTE}\n`
+          : "") +
+        (unjudged.length > 0 ? `  and ${unjudged.length} merge(s) could not be judged:\n${unjudged.join("\n")}\n` : "") +
+        `  ${DUPLICATE_ID_ROUTE}`,
     );
   }
   if (amendments.length > 0) {
