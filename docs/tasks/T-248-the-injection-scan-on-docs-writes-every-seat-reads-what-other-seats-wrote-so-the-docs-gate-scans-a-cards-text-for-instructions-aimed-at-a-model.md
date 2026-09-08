@@ -167,6 +167,177 @@ measured and small, which is the precondition the card sets for making
 NAMED patterns blocking. J2 is the one that produced the sole false
 positive. J1, J4, J5 and J6 produced none on 738 files.
 
+### REWORK — 2026-09-08, claude-opus-5@subagent (a FRESH executor, per the
+lifecycle: a rejected card never goes back to its author)
+
+The verdict below REJECTED this card for ONE finding, and this pass
+closes that finding and nothing else. **NO GATE BEHAVIOUR CHANGED**:
+the whole diff of this pass is one new body in
+`tools/e2e/tests/docs-input-gate.spec.ts`, this note, and one routed
+finding. `tools/e2e/scripts/docs-gate.mjs` is byte-identical to its
+state at the rejected tip — `shasum -a 256` reads
+`5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f` at
+`80fdd70`, the same digest the verdict and the first pass both record.
+
+**THE ONE BODY.** *"EVERY hit in one file is printed, not only the
+first — three hits on three lines under two patterns, each with its
+file, line and pattern name"*, added at the foot of the injection
+section, after the live-corpus body it is the counterpart to. It plants
+a fixture whose three payload lines are the PLANTED POSITIVES of J2, J2
+and J1 at lines 3, 9 and 15, drives the REAL BINARY over it through
+`runGate`, and asserts three printed `injection` lines, each carrying
+its file, its line and its pattern name, with the summary agreeing.
+
+**THE EXPECTATION IS TYPED, WHICH IS THE WHOLE POINT.** The verdict's
+measurement was that the live-corpus body derives its expected side
+from `scanInjection` itself, so a scan that drops hits moves both sides
+together — and that its subject set carries at most ONE hit in any one
+file, so even an independent expectation would have missed this. Here
+the count, the three line numbers and the two-pattern spread are
+literals this body chose. Only the payload TEXT comes from the pattern
+table, because a pattern's own planted positive is the one text it is
+PROVED to match, and a hand-written payload would be a second pattern
+set (T-057).
+
+**THE PREMISE IS ASSERTED** (shape TEN): three hits over TWO pattern
+ids. One pattern with three hits would leave a scan that stops at the
+first PATTERN alive; two patterns with one hit each would leave a scan
+that stops at the first hit INSIDE a pattern alive.
+
+**THE POISON DRILL — the verdict's own mutant, 1 killed, and the kill
+is this body's alone.** Drilled in a DETACHED SCRATCH WORKTREE,
+`../nputer-drill-T-248`, cut at `80fdd70` and installed in the
+fresh-clone order; never in the lane. The mutant is the verdict's,
+character for character, and its landing was read from `git diff -U0`
+rather than from an editor:
+
+    @@ -389,0 +390 @@ export function scanInjection(text, patterns = INJECTION_PATTERNS) {
+    +      if (hits.length > 0) break;
+
+`git diff --numstat` reads `1 0` — one line added, none removed. The
+full 52-body file under the mutant: **1 failed, 52 passed, exit 1**,
+and the one failure is the new body, naming the dropped hits by count —
+*"every hit in the file is printed, not only the first"*, Expected 3,
+Received 1. **So no pre-existing body kills this mutant** — the
+verdict's measurement, re-derived at this lane's own tip rather than
+read off the verdict.
+
+Restored with `git restore --source=80fdd70 --staged --worktree --` and
+proved by hash: `shasum -a 256` back to
+`5446e8deaa1ae6ed51865f5eeeae1aadda3ceb1a6099ca064d3287a9d5a8af8f`,
+matching the pristine digest above; the ranged per-path diff against
+`80fdd70` is empty as the companion, never as the alternative
+(T-092-s4). **THE POSITIVE CONTROL, BOTH WAYS**: the body PASSES on the
+restored gate in the same worktree (1 passed, exit 0) and FAILS against
+the implementation lacking the property, which is the demonstration
+`method/roles/verifier.md` step 2b asks for. The scratch worktree was
+removed.
+
+**KILL-SET CONTAINMENT.** MEASURED: the break mutant's kill set is
+exactly `{this body}` — every other body in the file survives it.
+ARGUED, not measured, for the rest: this body would also die to the
+verdict's M2 (the hit-printing statement deleted) and M5 (the PATH
+scanned instead of the file TEXT), both of which the live-corpus body
+already kills, so the two overlap. It is NOT CONTAINED by that body's
+kill set, because the break mutant separates them — which is the
+finding. Nothing here is contained by any other body's kill set.
+
+**COMMANDS, IN ORDER, EACH EXIT READ FROM `$?` UNPIPED.**
+
+| command | cwd | exit | reading |
+|---|---|---|---|
+| `npm run typecheck` | tools/e2e/ | 0 | clean |
+| `npx playwright test tests/docs-input-gate.spec.ts` (pristine) | tools/e2e/ | 0 | **53 passed** (4.8m) — 52 before, one added |
+| `npm run lint:tokens -- --selftest` | tools/e2e/ | 0 | 65 TOKEN + 4 CONTROL samples green |
+| `npm run lint:tokens` | tools/e2e/ | 0 | clean, 175 + 1221 files |
+| `npm run capabilities:check` | tools/e2e/ | 1 | **STALE**, and correctly so — see below |
+| `npm run lint:docs` | tools/e2e/ | 0 | whole-tree half, 0 findings |
+| `npx playwright test tests/docs-input-gate.spec.ts` (MUTANT) | drill worktree | 1 | **1 failed, 52 passed** (4.9m) |
+| `npx playwright test … -g "EVERY hit in one file is printed"` (restored) | drill worktree | 0 | 1 passed |
+| `node tools/e2e/scripts/docs-gate.mjs <this card> <the s5 card>` | lane root | see below | the docs gate on this pass's own docs paths |
+
+**THE CENSUS IS STALE AND IT IS THE INTEGRATOR'S TO REGENERATE.** This
+pass adds a test body, `docs/CAPABILITIES.md` is generated from test
+names, and that file is outside every lane fence by T-210.
+`npm run capabilities:check` exits 1 at this tip — *committed 55273
+bytes, a fresh generation is 56250*. `npm run capabilities` belongs in
+the merge commit (CONVENTIONS, WHOSE COMMIT).
+
+**ONE THING THE NEXT SEAT SHOULD KNOW, AND IT IS FILED AS `T-248-s5`.**
+The gate resolves its root from the SCRIPT's own location, so a body
+whose subject is what the gate PRINTS has no scratch tree to point it
+at: this body writes a real untracked fixture under `docs/rooms/`,
+named for the lane, and removes it in a `finally`. The tree is clean
+before and after the full run, and `git status --porcelain` was read
+back at both ends. The residual is a run killed between the write and
+the `finally`. `reportInjectionScan` already takes a root; the binary
+does not expose one.
+
+**WHERE THE BRIEF WAS WRONG, AND WHERE IT WAS RIGHT.** The brief
+described the mutant as inserted *after a hit is collected* while
+quoting the landing `@@ -389,0 +390 @@`; the two are different
+placements and only the LANDING reproduces the verdict's measurement —
+line 390 sits BEFORE `hits.push`, which is what collapses the scan to
+the first hit of the first matching pattern. The landing is what was
+planted. The brief also calls this card *tooling that ships in CI*;
+CONVENTIONS' SHIPPED PARTITION names `tools/e2e` under **NOT SHIPPED**
+explicitly, so the ceremony ROW is *S, diff outside shipped code*. The
+disposition is unchanged either way — this card carries
+`review: independent`, a verdict is already on it, and this seat does
+not hold the integration checkout — so this pass does NOT integrate,
+and does not remove the worktree.
+
+**A HAZARD THIS PASS PAID FOR, RECORDED SO THE NEXT REWORK DOES NOT.**
+This note was first written as a NEW `##` section at the FOOT of the card,
+after the verdict. That reds `lib/parser/test/task.test.ts`'s *"keeps every
+live task section split byte-identical to the pre-pass result"*: the
+verdict's prose carries an unbalanced single backtick, `splitSections`
+reads its headings off `blankInertSpans`'s structural view while the
+retained pre-pass splitter reads the raw lines, and the new heading fell
+inside the inert span the dangling backtick opened. The two splitters
+then disagreed on one live card and the pin named it. **A REWORK NOTE
+BELONGS INSIDE `## Implementation notes` UNDER AN `###` HEADING** — which
+is where this one is, and where the brief said to put it. Measured: 1
+disagreeing card as an h2 after the verdict, 0 as an h3 before it, over
+all live cards at this tip.
+
+**THE DOCS GATE ON THIS PASS'S OWN docs/ PATHS, AND WHAT IT NAMED.**
+`node tools/e2e/scripts/docs-gate.mjs <this card> <T-248-s5>` from the lane
+root: exit **1**, FIRES on 2 paths, 0 frontmatter issues, budgets hold,
+and the injection scan reads **0 hit(s) in 0 of 2 path(s)** — this pass's
+own prose fires nothing. It named three suites, and all three were run
+through the blessed runner at `635334a`, the commit this note is being
+written into:
+
+| suite | exit | gate-verdict |
+|---|---|---|
+| `gate-run.mjs parser` | 0 | GREEN, **377 bodies** |
+| `gate-run.mjs app` | 0 | GREEN, **1163 bodies** |
+| `gate-run.mjs e2e` | 1 | RED, **662 bodies** — 661 passed, 1 failed |
+
+**THE ONE E2E RED IS THE VERDICT'S OWN, NOT THIS PASS'S.**
+`tests/brief.spec.ts:3230` — *"THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND
+STEPS LEAVE, file for file"* — with the identical symptom the verdict
+records: *"the dispatch stopped at step 3 (preflight)"* where the body
+expects *"the checkout this session was started in is STALE"*. Re-run
+ONCE at this tip, still red, same symptom. Attributed at the BASE by the
+VERIFIER's own measurement recorded below — RED at `d1603bb` with the
+lane absent — which is that seat's claim and not re-derived here; what
+IS derived here is that this pass cannot reach it: the whole diff is two
+`docs/tasks/*.md` cards and one body in `docs-input-gate.spec.ts`, and
+that body spawns `brief.mjs` against a scratch fixture repository. The
+condition is the lane's age against a moving `main`, which has moved
+again since the verdict.
+
+**AND THE FIGURES ABOVE CARRY `635334a` AND NOT THE TIP, DELIBERATELY.**
+A suite figure written into a commit is measured before that commit
+exists, and `docs/tasks/*.md` is a CODE INPUT here — the parser's
+`task.test.ts` reads every live card, which is how the heading hazard
+above was caught. So the parser suite is re-run at the FINAL tip and
+reported in the executor's report rather than here; the app and e2e
+readings stand at `635334a` and the integrator re-derives all three at
+the merge, as it does anyway.
+
 ## Verdicts
 
 ### 2026-09-08 — claude-opus-5@subagent (blind verifier, phase 2) — REJECTED
