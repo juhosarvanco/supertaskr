@@ -67,6 +67,23 @@ keeps the fresh-seat rule.
   into the handoff files verbatim (never a summary — orchestrator 5c's
   rule for amendments applies), and that the arm prints both paths in
   its ledger; T-268's watcher pattern is reused for both.
+- WHEN the session that receives a finding DISPUTES it (the code is
+  right, the verdict is wrong) THE role file SHALL name the ONLY move:
+  record the conflict on the card with the command that shows it, open
+  a consultation room addressed to the architect, and stop — never
+  argue in the lane, never rebuild against a verdict it rejects. The
+  architect's contract SHALL name the three outcomes, each recorded:
+  the verdict's claim re-derived and REFUTED (written with the killing
+  command; a fresh phase 2 re-verifies the same tip with the refutation
+  in the sealed annotations, because a rejected card cannot merge on a
+  dead verdict); the executor's claim refuted (the failure is now
+  reproducible — kind one — and the fix returns to the same session);
+  or neither settled by measurement, which is a design question and
+  goes to @human as the room's addressee, the ruling landing as an
+  amendment to the card (5c) or a decision record. (Added 2026-09-09 at
+  @human's question: the route must say what happens when the author
+  disputes the finding, or it loses the one thing the fresh-seat rule
+  guaranteed.)
 - TASK-FORMAT's lifecycle rule SHALL be amended to the distinction
   above (reproducible failure → the author session; otherwise a fresh
   seat), with @human's override of 2026-09-09 as its provenance and the
