@@ -65,8 +65,20 @@ the archaeology/Adopt variant (ADR-005); the non-coder spec studio
   - v0.2 batch — cost telemetry (largely delivered as 13 Seat Economics), pocket cockpit, calibration scorecards, retro role, enforced touches.
   - v0.3 batch — N-version building (the same idea as 21), spec red team, time machine, handoff score, dry run.
   - horizon — truth maintenance (its drift slice is in F-06 v1 by ADR-013; the premise graph is not), production feedback, synthetic users, seeds, explainer, proof of process.
+- **Learned from the competitor sweep of 2026-09-08** (T-245 carries the readings; each item names where it was seen; none is ruled):
+  - a quick path for small changes that skips the full loop (GSD's quick command)
+  - skills that trigger without a slash command (Superpowers)
+  - a plan-checker seat that verifies the plan before execution (GSD)
+  - a design-mockup stage before code (defract; GSD's UI spec)
+  - a UAT walk where the human confirms each deliverable (GSD)
+  - a browser QA seat, a security audit seat, and ship, deploy and canary steps (gstack)
+  - per-agent model cost profiles — overlaps 13 Seat Economics (GSD)
+  - cross-session memory of project learnings (gstack)
+  - PR bodies written from the record (GSD, gstack)
+  - an installer that targets many harnesses; nputer has one adapter (all three)
 
 ## Moves, by sitting
 
 - **2026-08-30** — the partition ruled as drafted: v1 = the F-01…F-04 arc + 01 + 03 + the launcher, Ring 2 as-is; v2 = 02, 04, 16, 21, the productization pass; v3+ = 14–20 and the registry (rooms/version-planning.md).
 - **2026-09-03** — F-05's conversation and spawn path v1 → v2-or-later; T-241, T-242, T-243, T-244 added to v1 (planned, none dispatched); the charter checked in; this page created (ADR-021, the form sitting record).
+- **2026-09-08** — ten competitor-sweep candidates added to UNRULED at @human's "do both"; no ruling, no column changed (T-245 filed for the map).
