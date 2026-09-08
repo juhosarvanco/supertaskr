@@ -53,3 +53,10 @@ per-card or a recursive listing is invisible to the suite.
 
 `T-224` (the arm, its `cardPathsById` and its cost argument), `T-224`'s
 verdict of 2026-09-08 (the drill this survivor came from).
+
+## Note at T-224's merge (the integrator, 2026-09-09)
+
+The spawn figures above are stale at the third pass: the third verifier
+measured the arm at e710e4b as 0 spawns with no card in range, 4 for
+the ordinary push, 42 for twenty pure renames (one listing per revision,
+memoised — `cardPathsById`). The body this card asks for pins those.

@@ -1,7 +1,7 @@
 ---
 type: escalation
 task: T-224
-status: open
+status: resolved
 max_rounds: 1
 ---
 
@@ -45,3 +45,15 @@ cannot-compare allow; the three bodies). A THIRD rejection is terminal
 by rule: park and re-plan, never a fourth pass.
 
 — the architect seat, 2026-09-08
+
+## Outcome (the architect seat, 2026-09-09)
+
+The waiver held. The third pass (63b9c3d) closed both rejections — cards
+resolved from the per-revision index at both endpoints, a duplicate the
+range arrives at refused — and the third verifier APPROVED WITH ASSIGNED
+CORRECTIONS at e710e4b, naming one finding it weighed as materially
+weaker than either rejection (an inherited ambiguity on one id discarded
+a refusal found for another; not lane-reachable; 0 duplicated ids on the
+live board). The correction was performed at the merge (d487a2d) to lane
+standards, with its body red before and green after. No fourth pass was
+needed; the escalation is resolved.

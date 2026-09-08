@@ -113,7 +113,10 @@ opens with the card id that still holds its story.
   disclosed margin (T-225), refused unfenceable or unresolvable fences
   (T-219), the holder on disk (T-238), blindness as a property of the
   spawn (T-205) — is one record per merge in docs/checkpoints/, the
-  fourth Fable sitting record their index.
+  fourth Fable sitting record their index. The landing gate's
+  touches-line arm landed on its third pass (T-224, 2026-09-09): every
+  card id's line compared against the integration ref's copy at both
+  landing moments.
 
 ## Milestones
 
@@ -123,10 +126,11 @@ Goal: interview completed, milestone 1 decomposed into exact tasks.
       suggestions, room resolutions)
 - [x] Market map + steal list (docs/research/competitors.md)
 - [x] Interview complete, Q1–Q7 (rooms/first-user.md; NORTH_STAR)
-- [x] Name decided: Supertaskr (ADR-022, 2026-09-08; rooms/naming.md
-      records the 2026-08-14 choice, "nputer", and the reopening)
-- [ ] Trademark sweep for "Supertaskr" — the domains were swept
-      2026-09-08 (ADR-022); the mark was not
+- [x] Name decided: Supertaskr (ADR-022, 2026-09-08; rooms/naming.md)
+- [x] Trademark sweep for "Supertaskr" — domains 2026-09-08 (ADR-022),
+      EUIPO and USPTO clear per @human 2026-09-09 (T-266)
+- [x] The rename landed: identifiers (T-264) and prose (T-265); the
+      yaml rename is T-269
 - [x] Decomposition pass → docs/tasks/ T-001…T-007
 
 ### Milestone 1 — the mirror (scoped 2026-08-14, interview Q7)
