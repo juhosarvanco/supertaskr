@@ -1,5 +1,5 @@
 ---
-id: T-219-s6-s1
+id: T-219-s7
 title: "`normaliseTouchToken` in the board model is a SECOND `touches:` normalisation, and T-219-s6 widened the gap from two diverging shapes to six — the app's fence view calls `lib/./parser` disjoint from a lane holding `lib/parser`"
 feature: F-06
 milestone: 4
