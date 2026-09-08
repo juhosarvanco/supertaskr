@@ -33,3 +33,8 @@ behaviour list. That list is generated from the tests and lives in
 [docs/CAPABILITIES.md](../CAPABILITIES.md), where a sentence is false
 the moment its test fails. When this guide and that census disagree,
 the census is right.
+
+**Want the depth?** docs/reference/ is the technical reference: every
+stage, artifact and guard in the terms the code and the method use,
+with the file that holds each mechanism. Start at
+[docs/reference/README.md](../reference/README.md).
