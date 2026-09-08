@@ -569,3 +569,40 @@ and the hash oracle), both filed in this commit with the measurements.
 **THE BATTERY** — the four suites through `gate-run.mjs`, the method
 evals, and the gates prose can move — is appended in the next commit, at
 the tip this verdict creates, with that ref on every figure.
+
+#### The battery at `1596331` (`159633153dd70b1d00499ff7ee2731998c0a6469`, the tip the verdict above created), 2026-09-09, through `gate-run.mjs` from the bench root, `SUPERTASKR_E2E_PORT=25205`
+
+    gate-verdict suite=parser exit=1 bodies=377  targets=1  RED    3 failed / 374 passed
+    gate-verdict suite=app    exit=0 bodies=1163 targets=1  GREEN
+    gate-verdict suite=rust   exit=0 bodies=639  targets=18 GREEN
+    gate-verdict suite=e2e    exit=0 bodies=690  targets=1  GREEN  690 passed, 11.2 min
+
+The parser's three reds are `test/fence.test.ts`'s "the live board,
+censused through the expansion" bodies — *every token on every live card
+resolves…*, *ONE live card holds the directory the parser refuses…*,
+*T-219-s4: every ready card the DISPATCH oracle sees has a COMPARABLE
+fence…* — each naming only `T-274 docs/tasks`: T-274's fence token at the
+base `6dd44a6`, repaired on main at `ab00399` after this lane was cut,
+the same three the executor attributed at `f840f8f`. The two cards this
+verification files add nothing to that list. Not the lane's.
+
+Method evals at `1596331`: `run.mjs` exit 0 over 10 evals — MF-10 walks
+15 board citations in 560 cards (this verdict's own is the fifteenth), 0
+verified, 15 unavailable, 0 refused; `--selftest` exit 0, MF-10 5 of 5,
+MF-09 4 of 4. The checker over the board at `1596331`: no root → 15
+citations, 0 / 0 / 15, exit 3; `--scratch` on this session's scratchpad
+→ 8 verified (the seven named above plus this verdict's own, against the
+sealed `attack-set-T-205-s1.md`), 0 refused, 7 unavailable, exit 3.
+`docs-gate.mjs --census` exit 0 (every live card's frontmatter parses
+with a legal status; governing-document budgets hold, 4 gated); the
+docs gate over the three changed cards FIRES as it should (exit 1, the
+three suites owed and run above), 0 injection hits; `lint:tokens` exit 0
+(CONTROL 1293 tracked text files) and `--selftest` exit 0; `typecheck`
+from `tools/e2e` exit 0.
+
+The commit carrying this section changes the card's prose only. The
+gates prose can move — the parser suite, the docs gate over the card,
+the method evals and the token lint — are re-run at that tip and
+reported in the verifier's final message and in the scratchpad's
+`verdict-T-205-s1.md`; the app, rust and e2e figures stand at `1596331`,
+which holds the same cards, statuses and frontmatter.
