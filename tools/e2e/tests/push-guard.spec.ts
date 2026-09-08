@@ -113,7 +113,7 @@ import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
  * failure a positive control exists to exclude.
  *
  * ── WHAT THIS FILE DELIBERATELY DOES NOT RUN ─────────────────────────
- * The REAL `cargo run -p nputer-index -- index --check`. Two reasons,
+ * The REAL `cargo run -p supertaskr-index -- index --check`. Two reasons,
  * both cost-shaped and both stated so the next editor does not "fix"
  * the omission. It would make this suite's verdict a function of the
  * repository's GRAPH CURRENCY, so an unrelated stale graph would red a
@@ -324,16 +324,16 @@ const FIXTURE_WORKFLOW =
 
 /** A report shaped like the real check's STALE render (`check.rs`, `render`). */
 const STALE_REPORT =
-  "[nputer-index] graph.json is STALE - the committed graph does not match a fresh index of this tree\n" +
-  "[nputer-index]   committed:   1143153 bytes · 199 files · 2436 symbols · 2351 edges\n" +
-  "[nputer-index]   fresh index: 1143999 bytes · 200 files · 2440 symbols · 2355 edges\n" +
-  "[nputer-index]   ~ app/src/lib/agent-store.ts\n" +
-  "[nputer-index]\n" +
-  "[nputer-index]   regenerate: nputer-index index --root ../..";
+  "[supertaskr-index] graph.json is STALE - the committed graph does not match a fresh index of this tree\n" +
+  "[supertaskr-index]   committed:   1143153 bytes · 199 files · 2436 symbols · 2351 edges\n" +
+  "[supertaskr-index]   fresh index: 1143999 bytes · 200 files · 2440 symbols · 2355 edges\n" +
+  "[supertaskr-index]   ~ app/src/lib/agent-store.ts\n" +
+  "[supertaskr-index]\n" +
+  "[supertaskr-index]   regenerate: supertaskr-index index --root ../..";
 
 /** A report shaped like the real check's CURRENT render. */
 const CURRENT_REPORT =
-  "[nputer-index] graph.json is CURRENT - ../../docs/architecture/graph.json matches a fresh index " +
+  "[supertaskr-index] graph.json is CURRENT - ../../docs/architecture/graph.json matches a fresh index " +
   "(1143153 bytes, 199 files, 2436 symbols, 2351 edges)";
 
 interface Fixture {
@@ -440,7 +440,7 @@ function plantToken(root: string, state: TokenState): void {
  * A git repository that looks enough like this one for the guard to
  * recognise it, with a `cargo` on its own PATH answering `code`.
  *
- * `nputer: false` builds the same repository WITHOUT the indexer crate,
+ * `supertaskr: false` builds the same repository WITHOUT the indexer crate,
  * which is the sixth criterion's other side: a checkout that is not this
  * repository's.
  */
@@ -449,7 +449,7 @@ function fixture(
   code: number,
   report: string,
   opts: {
-    nputer?: boolean;
+    supertaskr?: boolean;
     branch?: string;
     fence?: string[];
     token?: TokenState;
@@ -471,9 +471,9 @@ function fixture(
   git("config", "user.name", "T-167-s8 fixture");
 
   mkdirSync(path.join(root, CHECK_DIR_REL_PATH), { recursive: true });
-  if (opts.nputer !== false) {
+  if (opts.supertaskr !== false) {
     mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
-    writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
+    writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "supertaskr-index"\n');
   }
   writeFileSync(path.join(root, "README.md"), "fixture\n");
   // THE FIXTURE MUST BE ABLE TO BE CLEAN. `dirtyTree` shells a real
@@ -500,7 +500,7 @@ function fixture(
   writeFileSync(path.join(root, CI_WORKFLOW_REL_PATH), FIXTURE_WORKFLOW);
   writeFileSync(
     path.join(root, ".gitignore"),
-    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.nputer/\nremote.git/\n",
+    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.supertaskr/\nremote.git/\n",
   );
   git("add", "-A");
   git("commit", "-qm", "fixture");
@@ -825,7 +825,7 @@ test("a STALE graph refuses the push and quotes the check's own regenerate line"
   expect(status, "a stale graph must refuse: exit 2 is the blocking mechanism").toBe(2);
   expect(stderr).toContain("PUSH REFUSED");
   // VERBATIM: the check's own regenerate line, which this guard never spells.
-  expect(stderr).toContain("regenerate: nputer-index index --root ../..");
+  expect(stderr).toContain("regenerate: supertaskr-index index --root ../..");
   expect(stderr).toContain("graph.json is STALE");
   expect(stderr).toContain("~ app/src/lib/agent-store.ts");
   // No hatch, and the refusal says so.
@@ -855,7 +855,7 @@ test("the guard reads the exit code and not the report's words", () => {
 /* ──────── could-not-run is not staleness (the third criterion) ───────── */
 
 test("exit 3 allows the push and says the graph was not asked", () => {
-  const fx = fixture("could-not-run", CHECK_EXIT.COULD_NOT_RUN, "[nputer-index] the gate could not run");
+  const fx = fixture("could-not-run", CHECK_EXIT.COULD_NOT_RUN, "[supertaskr-index] the gate could not run");
   const { status, stderr } = runHook(fx, "git push");
   expect(checkWasSpawned(fx)).toBe(true);
   expect(status, "a check that could not run must never refuse").toBe(0);
@@ -863,7 +863,7 @@ test("exit 3 allows the push and says the graph was not asked", () => {
 });
 
 test("exit 2 allows the push and is named as `called wrong`, never stale", () => {
-  const fx = fixture("usage", CHECK_EXIT.USAGE, "[nputer-index] usage");
+  const fx = fixture("usage", CHECK_EXIT.USAGE, "[supertaskr-index] usage");
   const { status, stderr } = runHook(fx, "git push");
   expect(status).toBe(0);
   expect(stderr).toContain("called wrong");
@@ -900,7 +900,7 @@ test("an unreadable request stands aside", () => {
 /* ────────── the sixth criterion: where the guard does not fire ───────── */
 
 test("a checkout without the indexer crate is not judged, and is not asked", () => {
-  const fx = fixture("not-nputer", CHECK_EXIT.STALE, STALE_REPORT, { nputer: false });
+  const fx = fixture("not-supertaskr", CHECK_EXIT.STALE, STALE_REPORT, { supertaskr: false });
   const { status, stderr } = runHook(fx, "git push");
   expect(status, "the guard must not fire outside this repository's checkouts").toBe(0);
   expect(checkWasSpawned(fx), "a second and a half was spent on somebody else's repository").toBe(
@@ -963,7 +963,7 @@ test("an allow that left the graph unverified is announced; an ordinary one is s
   // by deleting the arm outright (shape five).
   expect(ANNOUNCED_ALLOW_CODES).not.toContain("push-repository-unresolved");
   // Announced: the check answered a code that is not a verdict.
-  const spoke = fixture("announced", CHECK_EXIT.COULD_NOT_RUN, "[nputer-index] no");
+  const spoke = fixture("announced", CHECK_EXIT.COULD_NOT_RUN, "[supertaskr-index] no");
   expect(runHook(spoke, "git push").stderr).not.toBe("");
   // Silent: the check answered CURRENT. The control is that the same
   // fixture shape speaks when the answer is inconclusive.
@@ -1095,7 +1095,7 @@ test("the refusal travels through the WIRED command, not through a path this spe
   const stale = fixture("wired-stale", CHECK_EXIT.STALE, STALE_REPORT);
   const staleRun = runWiredHook(stale, "git push origin main");
   expect(staleRun.status, "the wired command must refuse with exit 2").toBe(2);
-  expect(staleRun.stderr).toContain("regenerate: nputer-index index --root ../..");
+  expect(staleRun.stderr).toContain("regenerate: supertaskr-index index --root ../..");
 
   const current = fixture("wired-current", CHECK_EXIT.CURRENT, CURRENT_REPORT);
   expect(runWiredHook(current, "git push origin main").status).toBe(0);
@@ -1153,10 +1153,10 @@ function boardFixture(
   git("config", "user.name", "T-203 fixture");
   mkdirSync(path.join(root, CHECK_DIR_REL_PATH), { recursive: true });
   mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
-  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
+  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "supertaskr-index"\n');
   writeFileSync(
     path.join(root, ".gitignore"),
-    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.nputer/\nremote.git/\n",
+    "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.supertaskr/\nremote.git/\n",
   );
 
   mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
@@ -1219,12 +1219,12 @@ test("writeToken makes its own token un-committable in a repository NOBODY armed
   //
   // The first version of this assertion asked `git check-ignore` in
   // `repoRoot` — a LANE WORKTREE, where the dispatcher had already
-  // written `.nputer/.gitignore` at arm time. So it passed without
+  // written `.supertaskr/.gitignore` at arm time. So it passed without
   // `writeToken` doing anything, and no mutant of `gate-token.mjs` could
   // red it. Worse, on a fresh clone the subject and its own negative
   // control BOTH returned 1: a control that degenerates to its subject,
   // which is the one outcome a control exists to exclude. A verifier
-  // reproduced `?? .nputer/` and `git add -A` offering the token.
+  // reproduced `?? .supertaskr/` and `git add -A` offering the token.
   //
   // So the question is now asked in a repository this suite builds and
   // nobody arms, and it is asked of the three things that actually
@@ -1239,7 +1239,7 @@ test("writeToken makes its own token un-committable in a repository NOBODY armed
   execFileSync("git", ["-C", root, "-c", "user.email=f@e.invalid", "-c", "user.name=f",
     ...NO_BACKGROUND_MAINTENANCE, "commit", "-qm", "one"], { stdio: "pipe" });
 
-  // THE PRECONDITION, ASSERTED: nothing here ignores `.nputer/` yet. This
+  // THE PRECONDITION, ASSERTED: nothing here ignores `.supertaskr/` yet. This
   // is what makes the assertions below a measurement of `writeToken`
   // rather than of whoever built the fixture.
   expect(
@@ -1538,7 +1538,7 @@ test("a checkout whose HEAD tree git will not name is announced, and allowed", (
   SCRATCH.push(root);
   execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
   mkdirSync(path.dirname(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH)), { recursive: true });
-  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "nputer-index"\n');
+  writeFileSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH), '[package]\nname = "supertaskr-index"\n');
   expect(headTree(root), "the precondition: git names no tree here").toBeUndefined();
 
   const decision = decide(
@@ -1904,7 +1904,7 @@ test("an unresolvable push outside this repository's checkouts is silent", () =>
   // of this repository's checkouts gets no narration, for
   // `not-this-repository`'s reason: we have nothing to say there, and a
   // notice on every unrelated push is a notice nobody reads.
-  const outside = fixture("t216-outside", CHECK_EXIT.CURRENT, CURRENT_REPORT, { nputer: false });
+  const outside = fixture("t216-outside", CHECK_EXIT.CURRENT, CURRENT_REPORT, { supertaskr: false });
   const d = decide({ toolName: "Bash", toolInput: { command: 'cd "$X" && git push' }, cwd: outside.root }, () => {
     throw new Error("the check must not be reached for an unresolved push");
   });

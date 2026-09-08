@@ -1406,7 +1406,7 @@ export const SPAWNSYNC_DEFAULT_MAXBUFFER = 1024 * 1024;
  * and one that reaches the person holding the decision.
  *
  * WHY IT IS PRINTED FIRST AND NOT LAST, which is the opposite of where
- * `nputer-index` puts its budget line: a truncation eats the TAIL. A
+ * `supertaskr-index` puts its budget line: a truncation eats the TAIL. A
  * disclosure at the foot of an answer too big to arrive is lost in
  * exactly the case it was written for, so the caller in `brief.mjs`
  * renders the whole answer, measures it, and emits this ahead of it.
@@ -3528,7 +3528,7 @@ export function dispatchLanePlan(ctx, opts) {
     portVariable: sp.portVariable,
     scratchStem: laneScratchStem(taskId, sp),
     briefFile: path.resolve(scratch, laneScratchName("brief", "txt", taskId, sp)),
-    manifestFile: path.join(worktree, ".nputer", "lane-fence.json"),
+    manifestFile: path.join(worktree, ".supertaskr", "lane-fence.json"),
     stamp,
     createArgv: createLaneArgv(ctx, { branchName, worktree }),
     steps: DISPATCH_STEPS,

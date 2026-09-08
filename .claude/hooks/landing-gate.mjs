@@ -21,7 +21,7 @@
  * containment rule at two call sites, and the rule is `within`.
  *
  * ── THE FENCE COMES FROM MAIN AND FROM NOWHERE ELSE ──────────────────
- * Not from `.nputer/lane-fence.json`, which lives IN the lane and which
+ * Not from `.supertaskr/lane-fence.json`, which lives IN the lane and which
  * a lane can rewrite. Not from the lane's own copy of its card at any
  * tip, because `method/lane-protocol.md` rule 5 rules that "a fence is
  * not widened from inside the lane it fences" and a gate reading a card
@@ -258,7 +258,7 @@
  * and cannot tell a typosquat that was registered two years ago from an
  * honest package — `T-247`'s card is about the hallucinated name and the
  * freshly-registered one, and those are the two this answers.
- * **THREE, `NPUTER_REGISTRY_NPM` AND `NPUTER_REGISTRY_CRATES` MOVE THE
+ * **THREE, `SUPERTASKR_REGISTRY_NPM` AND `SUPERTASKR_REGISTRY_CRATES` MOVE THE
  * BASE URL, AND A LANE CAN SET THEM.** They exist because
  * `landing-gate.spec.ts` drives its refusals through the REAL wired hook
  * against a REAL remote, and a suite that reached the live internet would
@@ -672,7 +672,7 @@ export const ROUTE =
  * spec pointing somewhere else — `file:`, `link:`, `workspace:`,
  * `git+https:`, `npm:` aliasing, `github:owner/repo` and the bare
  * `owner/repo` shorthand — and this repository ships one of them:
- * `app/package.json` resolves `@nputer/parser` through `file:../lib/parser`
+ * `app/package.json` resolves `@supertaskr/parser` through `file:../lib/parser`
  * (docs/CONVENTIONS.md's fresh-clone ORDER). Judging that name against
  * npm would refuse this project's own tree on the first push.
  *
@@ -799,7 +799,7 @@ export const CARGO_DEP_TABLE_RE =
  * `[workspace.dependencies]` and then writes `serde = { workspace = true }`
  * under `[dependencies]`. A single AND over every occurrence answers
  * NOT-registry-bound and `serde` goes unjudged; a single OR over every
- * occurrence answers registry-bound for `nputer-index`, whose
+ * occurrence answers registry-bound for `supertaskr-index`, whose
  * `[dependencies]` entry is a `path` — and THAT is a false refusal of
  * this project's own tree on the first push. Keying the accumulator on
  * the TABLE as well as the name keeps a local marker binding on its own
@@ -952,9 +952,9 @@ export function manifestKindOf(rel) {
  * header's third cost says why it exists and what it gives away.
  */
 export const REGISTRIES = Object.freeze({
-  npm: { env: "NPUTER_REGISTRY_NPM", base: "https://registry.npmjs.org", created: "time.created" },
+  npm: { env: "SUPERTASKR_REGISTRY_NPM", base: "https://registry.npmjs.org", created: "time.created" },
   crates: {
-    env: "NPUTER_REGISTRY_CRATES",
+    env: "SUPERTASKR_REGISTRY_CRATES",
     base: "https://crates.io/api/v1/crates",
     created: "crate.created_at",
   },
@@ -978,7 +978,7 @@ export const PROBE_SOURCE = [
   "const ctl = new AbortController();",
   "const timer = setTimeout(() => ctl.abort(), 8000);",
   "const say = (o) => { clearTimeout(timer); process.stdout.write(JSON.stringify(o)); process.exit(0); };",
-  "fetch(url, { signal: ctl.signal, headers: { accept: 'application/json', 'user-agent': 'nputer-landing-gate' } })",
+  "fetch(url, { signal: ctl.signal, headers: { accept: 'application/json', 'user-agent': 'supertaskr-landing-gate' } })",
   "  .then(async (r) => {",
   "    if (r.status === 404) return say({ absent: true });",
   "    if (!r.ok) return say({ unreachable: 'the registry answered HTTP ' + r.status });",

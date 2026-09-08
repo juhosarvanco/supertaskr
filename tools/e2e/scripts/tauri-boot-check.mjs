@@ -4,8 +4,8 @@
  * criteria): spawn `npm run tauri dev` (cwd app/), scan merged
  * stdout/stderr for BOTH startup lines —
  *
- *     [nputer] project folder:
- *     [nputer] window "main" created
+ *     [supertaskr] project folder:
+ *     [supertaskr] window "main" created
  *
  * — then kill the process tree and exit 0. In CI this runs as
  * `xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs` against
@@ -20,7 +20,7 @@
  * zero packets with whatever is listening. Busy -> abort loudly without
  * spawning anything.
  *
- * NPUTER_BOOT_PORT (T-046) moves the whole check to a scratch port so it
+ * SUPERTASKR_BOOT_PORT (T-046) moves the whole check to a scratch port so it
  * can run BESIDE that live app — the reason it guarded nothing at merge
  * time (T-020-s3: exit 2 whenever the human's app is open is not a gate;
  * T-040: the regression no other gate could see). Set it and the matching
@@ -45,15 +45,15 @@
  *      drill.mjs` is the shipped procedure that proves it.
  *
  * Failure modes, each loud (criterion 4):
- *   exit 3  REFUSED before anything is probed or spawned: NPUTER_BOOT_PORT
+ *   exit 3  REFUSED before anything is probed or spawned: SUPERTASKR_BOOT_PORT
  *           is 1420 or not a port at all, or the committed build config
  *           the scratch-port overlay is DERIVED from cannot be read. There
  *           is deliberately no fallback for the latter — the only value to
  *           fall back to is the committed port, and here that is 1420.
  *   exit 2  the port is busy (the bind-probe abort above)
- *   exit 1  overall timeout (NPUTER_BOOT_TIMEOUT_MS, default 20 min —
+ *   exit 1  overall timeout (SUPERTASKR_BOOT_TIMEOUT_MS, default 20 min —
  *           debug cargo dominates cold builds), no-output watchdog
- *           (NPUTER_BOOT_QUIET_MS, default 5 min), spawn failure, or the
+ *           (SUPERTASKR_BOOT_QUIET_MS, default 5 min), spawn failure, or the
  *           child exiting before both lines — always naming which lines
  *           were and were not seen. `cargo run`'s two-binary ambiguity
  *           (T-040) lands here: the child dies before either line.
@@ -78,8 +78,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
 const appDir = path.join(repoRoot, "app");
 
-const TIMEOUT_MS = Number(process.env.NPUTER_BOOT_TIMEOUT_MS ?? 20 * 60 * 1000);
-const QUIET_MS = Number(process.env.NPUTER_BOOT_QUIET_MS ?? 5 * 60 * 1000);
+const TIMEOUT_MS = Number(process.env.SUPERTASKR_BOOT_TIMEOUT_MS ?? 20 * 60 * 1000);
+const QUIET_MS = Number(process.env.SUPERTASKR_BOOT_QUIET_MS ?? 5 * 60 * 1000);
 
 /**
  * How long the CHILD-EXIT path waits for a SIGTERM'd process group to empty
@@ -88,9 +88,9 @@ const QUIET_MS = Number(process.env.NPUTER_BOOT_QUIET_MS ?? 5 * 60 * 1000);
  * `finish()`'s own 10 s grace is UNCHANGED — that path is waiting on a live
  * child's `exit` event, this one has no event left to wait for.
  */
-const ORPHAN_GRACE_MS = Number(process.env.NPUTER_BOOT_ORPHAN_GRACE_MS ?? 3000);
+const ORPHAN_GRACE_MS = Number(process.env.SUPERTASKR_BOOT_ORPHAN_GRACE_MS ?? 3000);
 
-const NEEDLES = ["[nputer] project folder:", '[nputer] window "main" created'];
+const NEEDLES = ["[supertaskr] project folder:", '[supertaskr] window "main" created'];
 
 /** How many trailing child-output lines a failure report carries. */
 const TAIL_LINES = 40;
@@ -414,7 +414,7 @@ async function main() {
     buffered = lines.pop() ?? "";
     for (const line of lines) {
       pushLine(line);
-      if (line.includes("[nputer]")) log(`app: ${line.trim()}`);
+      if (line.includes("[supertaskr]")) log(`app: ${line.trim()}`);
       for (const needle of NEEDLES) {
         if (!seen.has(needle) && line.includes(needle)) {
           seen.add(needle);

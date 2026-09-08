@@ -220,7 +220,7 @@ function motivatingFixture(name: string): Fixture {
   // correctly declines the fixture, which is the guard working and a
   // fixture that does not model what it claims to.
   mkdirSync(path.dirname(path.join(repo, REPOSITORY_PROBE_REL_PATH)), { recursive: true });
-  writeFileSync(path.join(repo, REPOSITORY_PROBE_REL_PATH), '[package]\nname = "nputer-index"\n');
+  writeFileSync(path.join(repo, REPOSITORY_PROBE_REL_PATH), '[package]\nname = "supertaskr-index"\n');
   writeFileSync(path.join(repo, SETTINGS_REL_PATH), SETTINGS_BEFORE);
   writeFileSync(path.join(repo, ".claude", "hooks", "lane-fence-hook.mjs"), "// fence hook\n");
   writeFileSync(path.join(repo, "README.md"), "before the guard\n");
@@ -358,7 +358,7 @@ function currentVantageCheckout(name: string): string {
   // this the arm answers UNANSWERED — the guard working, over a fixture
   // that does not model what it claims to.
   mkdirSync(path.dirname(path.join(at, REPOSITORY_PROBE_REL_PATH)), { recursive: true });
-  writeFileSync(path.join(at, REPOSITORY_PROBE_REL_PATH), '[package]\nname = "nputer-index"\n');
+  writeFileSync(path.join(at, REPOSITORY_PROBE_REL_PATH), '[package]\nname = "supertaskr-index"\n');
   return at;
 }
 

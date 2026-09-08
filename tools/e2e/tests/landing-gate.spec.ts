@@ -116,7 +116,7 @@ function writeCargoShim(root: string): void {
   mkdirSync(bin, { recursive: true });
   writeFileSync(
     path.join(bin, "cargo"),
-    "#!/bin/sh\necho '[nputer-index] graph.json is CURRENT'\nexit 0\n",
+    "#!/bin/sh\necho '[supertaskr-index] graph.json is CURRENT'\nexit 0\n",
     { mode: 0o755 },
   );
 }
@@ -140,17 +140,17 @@ function fixture(name: string, opts: FxOptions = {}): Fx {
 
   // What makes this checkout THIS repository's, per push-guard.mjs's own
   // sixth-criterion marker.
-  mkdirSync(path.join(root, "app/src-tauri/crates/nputer-index"), { recursive: true });
+  mkdirSync(path.join(root, "app/src-tauri/crates/supertaskr-index"), { recursive: true });
   writeFileSync(
-    path.join(root, "app/src-tauri/crates/nputer-index/Cargo.toml"),
-    '[package]\nname = "nputer-index"\n',
+    path.join(root, "app/src-tauri/crates/supertaskr-index/Cargo.toml"),
+    '[package]\nname = "supertaskr-index"\n',
   );
   // `remote.git/` is ignored because it lives INSIDE this root, and a BARE
   // repository has no `.git` directory — so without this line `git add -A`
   // stages its ordinary files as blobs and every commit is non-empty for a
   // reason that has nothing to do with the file under test. Measured in
   // push-guard.spec.ts's own fixture, by a poison drill that SURVIVED.
-  writeFileSync(path.join(root, ".gitignore"), "bin/\n.nputer/\nremote.git/\n");
+  writeFileSync(path.join(root, ".gitignore"), "bin/\n.supertaskr/\nremote.git/\n");
 
   const card = `docs/tasks/${id}-a-fixture-card.md`;
   if (opts.board !== false) {
@@ -333,8 +333,8 @@ function pushThroughGuard(
  * seventh limit's hook makes a NETWORK CALL. A body that reached
  * registry.npmjs.org would be measuring somebody else's uptime and would
  * break the live-config hermeticity every other body here has, so
- * `landing-gate.mjs` publishes `NPUTER_REGISTRY_NPM` and
- * `NPUTER_REGISTRY_CRATES` and its own header prices that override as
+ * `landing-gate.mjs` publishes `SUPERTASKR_REGISTRY_NPM` and
+ * `SUPERTASKR_REGISTRY_CRATES` and its own header prices that override as
  * part of limit 7. This is what they point at.
  *
  * ── WHY IT IS NOT AN `http.createServer` IN THIS PROCESS ─────────────
@@ -382,7 +382,7 @@ const REGISTRY_SOURCE = [
 ].join("\n");
 
 interface FakeRegistry {
-  /** What to set both `NPUTER_REGISTRY_*` variables to. */
+  /** What to set both `SUPERTASKR_REGISTRY_*` variables to. */
   env: Record<string, string>;
   /** Every package name this server was asked about, in order. */
   asked: () => string[];
@@ -411,7 +411,7 @@ async function fakeRegistry(answers: Record<string, string | number>): Promise<F
   expect(Number.isInteger(port) && port > 0, "the fake registry announced no usable port").toBe(true);
   const base = `http://127.0.0.1:${port}`;
   return {
-    env: { NPUTER_REGISTRY_NPM: base, NPUTER_REGISTRY_CRATES: base },
+    env: { SUPERTASKR_REGISTRY_NPM: base, SUPERTASKR_REGISTRY_CRATES: base },
     asked: () =>
       existsSync(log) ? readFileSync(log, "utf8").split("\n").filter((l) => l !== "") : [],
     close: () => {
@@ -698,11 +698,11 @@ test("a manifest edited INSIDE the lane does not widen this gate", () => {
   const fx = fixture("manifest-widening");
   const before = remoteRef(fx, fx.laneRef);
   // The shape the gate must be immune to: a lane rewriting the answer the
-  // dispatcher left in its own worktree. `.nputer/` is gitignored, so this
+  // dispatcher left in its own worktree. `.supertaskr/` is gitignored, so this
   // is exactly the file the write-time hook reads.
-  mkdirSync(path.join(fx.root, ".nputer"), { recursive: true });
+  mkdirSync(path.join(fx.root, ".supertaskr"), { recursive: true });
   writeFileSync(
-    path.join(fx.root, ".nputer/lane-fence.json"),
+    path.join(fx.root, ".supertaskr/lane-fence.json"),
     JSON.stringify({
       version: 1,
       taskId: "T-901",
@@ -1041,19 +1041,19 @@ test("the readers judge this repository's OWN manifests, and skip the two entrie
   // BUILT THE WAY THE PRODUCER BUILDS IT (docs/CONVENTIONS.md's positive
   // control bullet): these are the live files, not fixtures written to
   // look like them. Both entries below are the ones that would make this
-  // gate refuse nputer's own tree on its first real push.
+  // gate refuse supertaskr's own tree on its first real push.
   const appManifest = npmManifestDeps(readFileSync(path.join(repoRoot, "app/package.json"), "utf8"));
   expect("problem" in appManifest, "app/package.json did not read").toBe(false);
   const npmNames = (appManifest as { names: string[] }).names;
   expect(npmNames.length, "the reader found no npm dependency, so the next line proves nothing").toBeGreaterThan(5);
-  // `@nputer/parser` resolves through `file:../lib/parser` — the
+  // `@supertaskr/parser` resolves through `file:../lib/parser` — the
   // fresh-clone ORDER docs/CONVENTIONS.md publishes — and npm has never
   // heard of it.
   expect(
     npmNames,
     "a `file:` dependency was read as registry-bound, which refuses this project's own manifest",
-  ).not.toContain("@nputer/parser");
-  expect(readFileSync(path.join(repoRoot, "app/package.json"), "utf8")).toContain("@nputer/parser");
+  ).not.toContain("@supertaskr/parser");
+  expect(readFileSync(path.join(repoRoot, "app/package.json"), "utf8")).toContain("@supertaskr/parser");
 
   const cargo = cargoManifestDeps(readFileSync(path.join(repoRoot, "app/src-tauri/Cargo.toml"), "utf8"));
   const crateNames = (cargo as { names: string[] }).names;
@@ -1061,11 +1061,11 @@ test("the readers judge this repository's OWN manifests, and skip the two entrie
   // THE TWO HALVES OF THE ACCUMULATION RULE, ON THE ONE FILE THAT
   // CONTAINS BOTH. `serde` is `{ workspace = true }` under
   // `[dependencies]` and a real version under `[workspace.dependencies]`
-  // — a plain AND over occurrences drops it. `nputer-index` is a `path`
+  // — a plain AND over occurrences drops it. `supertaskr-index` is a `path`
   // dependency — a plain OR over occurrences keeps it and then refuses
   // it, because crates.io has never heard of it.
   expect(crateNames, "a workspace-inherited crate went unjudged").toContain("serde");
-  expect(crateNames, "a `path` dependency was read as registry-bound").not.toContain("nputer-index");
+  expect(crateNames, "a `path` dependency was read as registry-bound").not.toContain("supertaskr-index");
 });
 
 test("THE POSITIVE CONTROL: a lockfile name that does not resolve is refused BY NAME, then a resolving one lands", async () => {
@@ -1084,17 +1084,17 @@ test("THE POSITIVE CONTROL: a lockfile name that does not resolve is refused BY 
     // ARM ONE — a lockfile carrying a name the registry answers 404 for.
     commit(
       fx,
-      { "tools/e2e/package-lock.json": npmLock(["nputer-hallucinated-t247"]) },
+      { "tools/e2e/package-lock.json": npmLock(["supertaskr-hallucinated-t247"]) },
       "a lockfile naming a package that does not exist",
     );
     const refusal = pushThroughGuard(fx, fx.laneRef, registry.env);
     expect(refusal.refused, "a hallucinated package name pushed anyway").toBe(true);
     // BY NAME, which is the card's word: a refusal that says only "a
     // dependency" sends the seat back to reading the lockfile by hand.
-    expect(refusal.stderr, "the refusal did not name the package").toContain("nputer-hallucinated-t247");
+    expect(refusal.stderr, "the refusal did not name the package").toContain("supertaskr-hallucinated-t247");
     expect(refusal.stderr).toContain("DOES NOT RESOLVE");
     expect(refusal.stderr).toContain("tools/e2e/package-lock.json");
-    expect(registry.asked(), "the gate never asked the registry at all").toContain("nputer-hallucinated-t247");
+    expect(registry.asked(), "the gate never asked the registry at all").toContain("supertaskr-hallucinated-t247");
     expect(remoteRef(fx, fx.laneRef), "the refused push reached the remote anyway").toBe(before);
 
     // THE CONTROL, same lane, same fence, same remote: a name the
@@ -1285,7 +1285,7 @@ test("THE MERGE MOMENT: a merge whose lane added an unresolvable dependency is r
     const fx = fixture("merge-dependency", { suggested: "2026-09-08" });
     commit(
       fx,
-      { "tools/e2e/package-lock.json": npmLock(["nputer-hallucinated-t247"]) },
+      { "tools/e2e/package-lock.json": npmLock(["supertaskr-hallucinated-t247"]) },
       "a lockfile naming a package that does not exist",
     );
     git(fx.root, "checkout", "-q", "main");
@@ -1294,7 +1294,7 @@ test("THE MERGE MOMENT: a merge whose lane added an unresolvable dependency is r
 
     const refusal = pushThroughGuard(fx, "refs/heads/main", registry.env);
     expect(refusal.refused, "a hallucinated package rode a merge into main").toBe(true);
-    expect(refusal.stderr).toContain("nputer-hallucinated-t247");
+    expect(refusal.stderr).toContain("supertaskr-hallucinated-t247");
     expect(refusal.stderr).toContain("merge commit(s)");
     expect(remoteRef(fx, "refs/heads/main"), "the refused merge push reached the remote").toBe(mainBefore);
 

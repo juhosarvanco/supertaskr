@@ -457,7 +457,7 @@ test("the other screens follow the shell's one scroll model", async ({ page }) =
     const at = `${viewport.width}x${viewport.height}`;
 
     await page.evaluate(() => {
-      window.__nputerShellHarness!.applyProjectStatus({ kind: "noProject" });
+      window.__supertaskrShellHarness!.applyProjectStatus({ kind: "noProject" });
     });
     await expect(page.getByTestId("empty-state")).toBeVisible();
     expect(await bounded(page), `the front door is bounded at ${at}`).toBe(true);
@@ -469,7 +469,7 @@ test("the other screens follow the shell's one scroll model", async ({ page }) =
     // (663px at every width, T-048-s4), so it is the one that has to be
     // reachable inside the frame rather than below it.
     await page.evaluate(() => {
-      window.__nputerShellHarness!.applyPickOutcome({
+      window.__supertaskrShellHarness!.applyPickOutcome({
         kind: "noDocs",
         path: "/e2e/no-plan",
         probe: { roadmap: false, tasks: false, architecture: false, git: true },
@@ -480,7 +480,7 @@ test("the other screens follow the shell's one scroll model", async ({ page }) =
 
     // 3. the board
     await page.evaluate((s) => {
-      window.__nputerShellHarness!.applyPickOutcome({ kind: "picked", snapshot: s });
+      window.__supertaskrShellHarness!.applyPickOutcome({ kind: "picked", snapshot: s });
     }, streakFixture(20, "/e2e/board"));
     await expectPhase(page, "open", "board");
     await expect(page.getByTestId("pane-rail")).toBeVisible();

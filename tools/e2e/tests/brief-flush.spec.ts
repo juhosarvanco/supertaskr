@@ -1247,7 +1247,7 @@ test("the reader that STOPS after one read gets a silent PREFIX, and the writer'
  * THE RESIDUAL IS NAMED RATHER THAN PAPERED OVER: the last two were
  * measured on their REFUSAL paths only, because their success paths
  * spawn the app and this card's diff owes no boot gate. Their success
- * output is a fixed handful of `[nputer]` lines plus the child's last
+ * output is a fixed handful of `[supertaskr]` lines plus the child's last
  * output — bounded, but bounded by an argument rather than by a reading.
  */
 const EXITS_AFTER_WRITING = [

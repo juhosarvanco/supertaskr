@@ -151,14 +151,14 @@ jobs:
       # that match it. Twenty-nine regens were held up by a written ritual
       # and conscientious integrators, nothing else.
       #
-      # Exit 1 = STALE (regenerate: NPUTER_UPDATE_GOLDEN=1 cargo test -p
-      # nputer-index --test self_graph -- --ignored). 3 = the gate could
+      # Exit 1 = STALE (regenerate: SUPERTASKR_UPDATE_GOLDEN=1 cargo test -p
+      # supertaskr-index --test self_graph -- --ignored). 3 = the gate could
       # not run. `--root ../..` is NOT a CI adaptation: without it the
       # root defaults to the current directory and the check reports the
       # graph MISSING and exits 1, a false red that reads like staleness.
-      - name: graph currency (nputer-index index --check)
+      - name: graph currency (supertaskr-index index --check)
         working-directory: app/src-tauri
-        run: cargo run -p nputer-index -- index --check --root ../..
+        run: cargo run -p supertaskr-index -- index --check --root ../..
 
       # ---- advisory audit (T-009-s3): dev tool, never a repo dep -------
       # HARD fail on an advisory against the exact pins — a red run with

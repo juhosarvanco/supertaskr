@@ -54,7 +54,7 @@ export default {
   title: "a verifier rejects a planted defect and names it",
   contract: "method/roles/verifier.md — adversarial by design; vague objections are not verdicts",
   reads: ["method/roles/verifier.md", "tools/method-evals/fixtures/verifier-calibration/**"],
-  // The cheapest AGENT CLI that discriminates, in nputer.yaml's own
+  // The cheapest AGENT CLI that discriminates, in supertaskr.yaml's own
   // vocabulary rather than a model id — the method is CLI-shaped by
   // charter (NORTH_STAR's model-agnostic constraint, ADR-003). This is a
   // DECLARED floor: no calibration run has measured whether a cheaper

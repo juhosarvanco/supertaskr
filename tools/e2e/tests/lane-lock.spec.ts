@@ -531,7 +531,7 @@ test("POSITIVE CONTROL — the protocol's own writes all still succeed under the
   expect(filed.status, `a routed finding; stderr: ${filed.stderr}`).toBe(0);
   expect(existsSync(suggestion)).toBe(true);
 
-  // 3. T-203's VERDICT-TOKEN MINT. `.nputer/` is the runtime directory and
+  // 3. T-203's VERDICT-TOKEN MINT. `.supertaskr/` is the runtime directory and
   //    is ignored by its own `.gitignore`, so no path under it is ever in
   //    the tracked corpus this layer chmods — by CONSTRUCTION rather than
   //    by an exception list. If this ever fails, nobody can mint a token
@@ -542,7 +542,7 @@ test("POSITIVE CONTROL — the protocol's own writes all still succeed under the
   expect(existsSync(token)).toBe(true);
   // And the manifest's own directory is still writable, which is what
   // lets a re-expansion land at all.
-  expect(writable(path.join(fx.lane, ".nputer"))).toBe(true);
+  expect(writable(path.join(fx.lane, ".supertaskr"))).toBe(true);
 
   // 4. THE DISPATCH STAMP, which is written on the INTEGRATION BRANCH
   //    before a lane exists (lane-protocol.md, "Why the branch carries the

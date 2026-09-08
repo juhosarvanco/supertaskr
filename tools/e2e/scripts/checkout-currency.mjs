@@ -117,7 +117,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-// THE TWO FACTS THIS FILE REFUSES TO RE-SPELL (T-238). `.nputer/` and the
+// THE TWO FACTS THIS FILE REFUSES TO RE-SPELL (T-238). `.supertaskr/` and the
 // self-ignoring file that makes it un-committable have ONE home each, and
 // `readHeadRef` is the one implementation of "which ref does this checkout
 // have checked out". A second copy of any of the three would be a second
@@ -341,7 +341,7 @@ export function defaultVantage() {
  * they stay so. A second copy with a checker is one fact checked twice;
  * without one it is two facts.
  */
-export const REPOSITORY_PROBE_REL_PATH = "app/src-tauri/crates/nputer-index/Cargo.toml";
+export const REPOSITORY_PROBE_REL_PATH = "app/src-tauri/crates/supertaskr-index/Cargo.toml";
 
 /**
  * @typedef {object} SessionCheckout

@@ -225,7 +225,7 @@
  * arm exists to catch.
  *
  * ── THE ACKNOWLEDGEMENT NAMES THE RUN, AND THAT IS THE WHOLE DESIGN ──
- * `NPUTER_CANCEL_CI=<run id>` — as an environment prefix on the push's
+ * `SUPERTASKR_CANCEL_CI=<run id>` — as an environment prefix on the push's
  * own segment, or in this hook's own environment — lets a seat cancel a
  * run KNOWINGLY. It is not an override flag and this file's standing
  * refusal of those is intact: an override flag is a claim that the guard
@@ -307,7 +307,7 @@
  * staled the other's T-203 token at the moment it was minted, which is
  * this file's own arm three being corrupted from outside.
  *
- * So a seat DECLARES itself in `.nputer/holder.json` and this arm reads
+ * So a seat DECLARES itself in `.supertaskr/holder.json` and this arm reads
  * it. Its shape is the one this file already argues for everywhere:
  *
  *   A LIVE OTHER HOLDER REFUSES. It is the collision, it is on disk, and
@@ -429,17 +429,17 @@ export const GRAPH_REL_PATH = "docs/architecture/graph.json";
  * this repository's own checkouts. The honest test is not the directory's
  * name — a clone can be called anything — but whether the program this
  * guard delegates to is even present: a checkout carrying the
- * `nputer-index` crate is a checkout where `index --check` means
+ * `supertaskr-index` crate is a checkout where `index --check` means
  * something, and one without it is a checkout where the guard has no
  * question to ask. So the marker is the crate's own manifest, which is
- * the thing `cargo run -p nputer-index` resolves.
+ * the thing `cargo run -p supertaskr-index` resolves.
  */
-export const INDEX_CRATE_MANIFEST_REL_PATH = "app/src-tauri/crates/nputer-index/Cargo.toml";
+export const INDEX_CRATE_MANIFEST_REL_PATH = "app/src-tauri/crates/supertaskr-index/Cargo.toml";
 
 /**
  * The check, spelled as docs/CONVENTIONS.md's Rust bullet spells it.
  *
- * `cargo run -p nputer-index -- index --check --root ../..` run from
+ * `cargo run -p supertaskr-index -- index --check --root ../..` run from
  * `app/src-tauri/`. THE `--root` IS LOAD-BEARING and the bullet says why
  * at length: without it the default root is the current directory, the
  * check looks for `app/src-tauri/docs/architecture/graph.json`, and it
@@ -454,7 +454,7 @@ export const CHECK_DIR_REL_PATH = "app/src-tauri";
 export const CHECK_ARGV = Object.freeze([
   "run",
   "-p",
-  "nputer-index",
+  "supertaskr-index",
   "--",
   "index",
   "--check",
@@ -1014,7 +1014,7 @@ export const ANNOUNCED_RED_CONCLUSIONS = Object.freeze([
  * about ONE RUN checked against the id the remote just handed us. A
  * value left in a shell cannot outlive the run it was for.
  */
-export const CANCEL_CI_ENV = "NPUTER_CANCEL_CI";
+export const CANCEL_CI_ENV = "SUPERTASKR_CANCEL_CI";
 
 /**
  * `gh`'s exit codes, to the extent it publishes any — and the point of
@@ -1469,7 +1469,7 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  * of this function called that unresolved — which WEAKENED the guard
  * against its own pre-card state, because the arm used to ask about
  * HEAD's branch and refuse. A blind body caught it: `git push origin main
- * NPUTER_CANCEL_CI=7002` reads as two refspecs, and the live run it was
+ * SUPERTASKR_CANCEL_CI=7002` reads as two refspecs, and the live run it was
  * written to refuse was let through with a sentence.
  *
  * THE ARGUMENT THAT REPLACES IT: every name on that list is a REAL
@@ -2378,7 +2378,7 @@ export function reachesPackage(paths, dir) {
  * acknowledges.
  *
  * READ FROM THE PUSH'S OWN SEGMENT AND ONLY BEFORE THE WORD `git`, which
- * is what an environment PREFIX is. `echo NPUTER_CANCEL_CI=1 && git push`
+ * is what an environment PREFIX is. `echo SUPERTASKR_CANCEL_CI=1 && git push`
  * does not acknowledge anything, and neither does a `--message` that
  * happens to quote the name. The process environment is read too, because
  * a human running a session with the variable exported is making the same

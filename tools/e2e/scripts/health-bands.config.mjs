@@ -24,7 +24,7 @@
  * ── EVERY BAND CARRIES ITS MEASURED REASON, AND THE SCRIPT ENFORCES
  *    IT (acceptance criterion 3, the `max_graph_bytes` pattern) ──────
  * `IndexOptions::max_graph_bytes` in
- * app/src-tauri/crates/nputer-index/src/lib.rs is this repository's
+ * app/src-tauri/crates/supertaskr-index/src/lib.rs is this repository's
  * worked example of a number that states what measured it, on what
  * hardware, at which ref, by which re-runnable command — so that the
  * next reader argues with the measurement rather than with the digit.
@@ -131,13 +131,13 @@ export const STANDING_BANDS = [
     breach: 15751,
     authority: {
       kind: "readings",
-      name: "cargo run -p nputer-index -- index --check --root ../..",
-      marker: "its `[nputer-index]   budget:` line — the number NOTHING else reports",
+      name: "cargo run -p supertaskr-index -- index --check --root ../..",
+      marker: "its `[supertaskr-index]   budget:` line — the number NOTHING else reports",
     },
     measured: {
       at: "13c736e, transcribed from IndexOptions::max_graph_bytes's own doc comment",
       reason:
-        "app/src-tauri/crates/nputer-index/src/lib.rs measures single-commit graph growth " +
+        "app/src-tauri/crates/supertaskr-index/src/lib.rs measures single-commit graph growth " +
         "at a MEAN of 15,751 bytes over 55 growths on record (median 5,230, max 241,980 at " +
         "T-010). That doc comment rejected a 10,819-byte headroom in those words: 'one " +
         "ordinary merge from truncating'. So the breach line IS one mean growth — the state " +
@@ -186,7 +186,7 @@ export const STANDING_BANDS = [
       marker: "the list reporter's `N passed (Xs)` summary",
     },
     measured: {
-      at: "b060f90 on task/T-156-health-bands, macOS, NPUTER_E2E_PORT=14538, 279 passed in 2.6m (156s)",
+      at: "b060f90 on task/T-156-health-bands, macOS, SUPERTASKR_E2E_PORT=14538, 279 passed in 2.6m (156s)",
       reason:
         "NO CLIFF IS KNOWN FOR THIS SUITE, so this band is a RELAPSE tripwire and says so " +
         "rather than pretending to a mechanism — unlike suite/lib-seconds, whose limits are " +

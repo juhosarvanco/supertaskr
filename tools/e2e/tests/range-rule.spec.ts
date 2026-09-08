@@ -47,13 +47,13 @@ import {
  * ONE criterion rather than the whole bullet.
  *
  * ── THE DRILL AFFORDANCE ─────────────────────────────────────────────
- * `NPUTER_RANGE_RULE_ROOT` points this reader at another checkout of THIS
+ * `SUPERTASKR_RANGE_RULE_ROOT` points this reader at another checkout of THIS
  * repository. It exists for the POISON DRILL: the document under test is
  * a tracked file, so a drill mutates it in a detached scratch worktree
  * and never in the lane. The resolved root is printed by the first test.
  */
 
-const DRILL_ROOT = process.env.NPUTER_RANGE_RULE_ROOT;
+const DRILL_ROOT = process.env.SUPERTASKR_RANGE_RULE_ROOT;
 const ROOT = DRILL_ROOT ?? repoRoot;
 
 /**

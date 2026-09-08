@@ -21,13 +21,13 @@
  *
  * HOW TO RUN IT (from tools/e2e/, and never without the port):
  *
- *     NPUTER_BOOT_PORT=<free scratch port> npm run boot:orphan-drill
+ *     SUPERTASKR_BOOT_PORT=<free scratch port> npm run boot:orphan-drill
  *
  * Exit 0  the check cleaned up — no member of its process group survived.
  * Exit 1  THE LEAK: members survived. They are named, and then reaped by
  *         this drill, because a drill that deliberately manufactures an
  *         orphan must not leave one behind.
- * Exit 2  called wrong — no NPUTER_BOOT_PORT, or the port is busy.
+ * Exit 2  called wrong — no SUPERTASKR_BOOT_PORT, or the port is busy.
  * Exit 3  THE DRILL COULD NOT RUN — the port was refused, the boot check's
  *         child could not be identified, `detached` did not produce the
  *         process group this drill's safety rests on, or the tauri CLI
@@ -63,9 +63,9 @@ const EXIT_CALLED_WRONG = 2;
 const EXIT_CANNOT_RUN = 3;
 
 /** How long to wait for vite AND the tauri CLI to both be up. */
-const ARM_TIMEOUT_MS = Number(process.env.NPUTER_ORPHAN_ARM_MS ?? 180_000);
+const ARM_TIMEOUT_MS = Number(process.env.SUPERTASKR_ORPHAN_ARM_MS ?? 180_000);
 /** How long to wait for the boot check to exit after the CLI is killed. */
-const EXIT_TIMEOUT_MS = Number(process.env.NPUTER_ORPHAN_EXIT_MS ?? 60_000);
+const EXIT_TIMEOUT_MS = Number(process.env.SUPERTASKR_ORPHAN_EXIT_MS ?? 60_000);
 
 /** @param {string} line */
 const log = (line) => console.log(`[orphan-drill] ${line}`);

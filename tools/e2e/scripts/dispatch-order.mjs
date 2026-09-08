@@ -31,7 +31,7 @@ import {
  *
  *   - THE SCHEDULE — waves, the critical path, transitive holds, the
  *     worst blocker, `ready | waits | blocked | underway` — is
- *     `@nputer/parser`'s `selectTaskSchedule`, moved out of the map pane
+ *     `@supertaskr/parser`'s `selectTaskSchedule`, moved out of the map pane
  *     by this card. There is ONE implementation and the pane imports the
  *     same one.
  *   - THE FENCE — normalisation, slug expansion, containment,
@@ -52,7 +52,7 @@ import {
  *
  * ── HOW THE PARSER IS LOADED, AND WHY BY PATH ───────────────────────
  * `tools/e2e` is the repository's THIRD npm package and declares no
- * dependency on `@nputer/parser` (ADR-011 family; its own manifest says
+ * dependency on `@supertaskr/parser` (ADR-011 family; its own manifest says
  * it "imports neither app nor parser"). So the parser's BUILT entry is
  * loaded by relative path, exactly as `preflight.ts` already ASSERTS
  * `lib/parser/dist/pure.js` into existence for the same package. A

@@ -76,7 +76,7 @@
  *
  * ── ZERO DEPENDENCIES, AND THAT IS THE WHOLE DESIGN ──────────────────
  * The first draft of this card expanded the fence AT HOOK TIME through
- * `@nputer/parser`, which cannot work: a fresh lane worktree has nothing
+ * `@supertaskr/parser`, which cannot work: a fresh lane worktree has nothing
  * installed and nothing built (docs/CONVENTIONS.md, "A FRESH WORKTREE HAS
  * NOTHING INSTALLED AND NOTHING BUILT"), so a fail-closed hook needing
  * `lib/parser/dist` blocks the executor's FIRST LEGAL WRITE, and every
@@ -315,22 +315,73 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 /**
- * The manifest, relative to the checkout root it governs.
+ * The runtime directory, and the ONE home its name has.
  *
- * `.nputer/` is the runtime directory ADR-017 already confines app-side
- * writes to, and the writer drops a self-ignoring `.gitignore` beside
- * this file so a lane can never commit its own fence into the tree
- * everyone else then reads.
+ * `.supertaskr/` is the directory ADR-017 already confines app-side writes
+ * to, and the writer drops a self-ignoring `.gitignore` beside what it
+ * writes so a lane can never commit its own fence into the tree everyone
+ * else then reads. ADR-022 renamed it from `.nputer/` (T-264).
+ *
+ * IT LIVES HERE, THE LOWEST MODULE, BECAUSE THREE READERS NEED IT AND ONE
+ * OF THEM IS THE LEGACY DETECTOR BELOW. `gate-token.mjs` re-exports it
+ * rather than re-typing it — a constant with two copies is two chances to
+ * disagree (T-057).
  */
-export const MANIFEST_REL_PATH = ".nputer/lane-fence.json";
+export const RUNTIME_DIR = ".supertaskr";
 
 /**
- * The self-ignoring file every writer of `.nputer/` drops beside what it
+ * The runtime directory this project used BEFORE the rename, and the
+ * reason this reader knows the name at all: so that a checkout still
+ * carrying one is REFUSED BY NAME instead of answered as though nothing
+ * had ever been armed or measured there (T-264 criterion 3).
+ *
+ * NOTHING READS THE OLD DIRECTORY. A pre-rename manifest is a fence
+ * stamped by a dispatcher that spoke a different vocabulary, and a
+ * pre-rename verdict token is a claim about suites whose names moved; a
+ * reader that consumed either would be reading a stale claim under a
+ * fresh label. So the old directory is DETECTED and named, never parsed.
+ */
+export const LEGACY_RUNTIME_DIR = ".nputer";
+
+/**
+ * The manifest, relative to the checkout root it governs.
+ */
+export const MANIFEST_REL_PATH = `${RUNTIME_DIR}/lane-fence.json`;
+
+/**
+ * A pre-rename runtime directory in `root`, as a problem naming the
+ * rename — or `null` when there is none.
+ *
+ * The check is `statSync`-on-a-directory rather than `existsSync`,
+ * because the answer this guard owes is *"is there an old runtime
+ * directory here"*, and a FILE at that path is not one: a checkout
+ * carrying `.nputer` as an ordinary file would otherwise be refused for a
+ * migration it never had.
+ *
+ * @param {string} root
+ * @returns {string | null}
+ */
+export function legacyRuntimeDirProblem(root) {
+  try {
+    if (!statSync(path.join(root, LEGACY_RUNTIME_DIR)).isDirectory()) return null;
+  } catch {
+    return null;
+  }
+  return (
+    `${root} still carries the pre-rename \`${LEGACY_RUNTIME_DIR}/\` runtime directory, ` +
+    `which ADR-022 renamed to \`${RUNTIME_DIR}/\` (T-264). Nothing reads the old one. ` +
+    `Re-arm this checkout — \`brief.mjs --write-fence\` rewrites a lane's manifest and ` +
+    `\`gate-run.mjs\` re-mints a verdict token — then remove \`${LEGACY_RUNTIME_DIR}/\`.`
+  );
+}
+
+/**
+ * The self-ignoring file every writer of `.supertaskr/` drops beside what it
  * wrote — and it lives HERE, at the one home both writers can reach,
  * because it acquired a second writer (T-203).
  *
  * ── WHY IT MOVED, AND IT IS A MEASURED DEFECT RATHER THAN TIDYING ────
- * `.nputer/` is NOT ignored by this repository's root `.gitignore`, so
+ * `.supertaskr/` is NOT ignored by this repository's root `.gitignore`, so
  * NOTHING IN THE TREE IGNORES IT — only the byte string below, written
  * into the directory at the moment a writer creates it. T-154's fence
  * writer did that; T-203's token writer did not. That made the verdict
@@ -339,7 +390,7 @@ export const MANIFEST_REL_PATH = ".nputer/lane-fence.json";
  * dispatcher had already armed the directory and every check agreed; on a
  * fresh clone — and in the INTEGRATION CHECKOUT, WHICH IS NEVER ARMED AS
  * A LANE AND IS WHERE PUSHES ACTUALLY HAPPEN — `git status` showed
- * `?? .nputer/` and `git add -A` offered to commit the token. That is the
+ * `?? .supertaskr/` and `git add -A` offered to commit the token. That is the
  * stale-but-matching hazard `gate-token.mjs` argues against at length,
  * reintroduced by the guard written to close it.
  *
@@ -352,7 +403,7 @@ export const MANIFEST_REL_PATH = ".nputer/lane-fence.json";
  * check-ignore`.
  */
 export const RUNTIME_DIR_IGNORE =
-  "# T-154, T-203: .nputer/ holds RUNTIME files — a lane's fence manifest\n" +
+  "# T-154, T-203: .supertaskr/ holds RUNTIME files — a lane's fence manifest\n" +
   "# and the gate-runner's verdict token. Neither is ever a commit.\n" +
   "*\n";
 
@@ -1018,6 +1069,11 @@ export function readManifest(root) {
   try {
     raw = readFileSync(file, "utf8");
   } catch {
+    // T-264: an absent manifest BESIDE a pre-rename runtime directory is
+    // a migration, not an unarmed lane, and the two refusals read nothing
+    // alike to whoever has to act on them.
+    const legacy = legacyRuntimeDirProblem(root);
+    if (legacy) return { problem: `no fence manifest at ${MANIFEST_REL_PATH}: ${legacy}` };
     return { problem: `no fence manifest at ${MANIFEST_REL_PATH}` };
   }
   /** @type {unknown} */

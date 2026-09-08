@@ -1,8 +1,8 @@
 {
-  "name": "@nputer/e2e",
+  "name": "@supertaskr/e2e",
   "version": "0.1.0",
   "private": true,
-  "description": "nputer real-input E2E lane (T-020): Playwright drives the dev bundle + __nputerDocsHarness with trusted input — the rejection class synthetic tests provably cannot catch. Third standalone package (ADR-011 family); imports neither app nor parser.",
+  "description": "supertaskr real-input E2E lane (T-020): Playwright drives the dev bundle + __supertaskrDocsHarness with trusted input — the rejection class synthetic tests provably cannot catch. Third standalone package (ADR-011 family); imports neither app nor parser.",
   "type": "module",
   "engines": {
     "node": ">=22"

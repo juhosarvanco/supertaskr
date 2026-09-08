@@ -1354,13 +1354,13 @@ test("every live task card parses, with a status in the vocabulary", () => {
 
 // ── 5. what was deliberately left alone ───────────────────────────────
 
-test(".nputerignore still excludes docs/ — the indexer is not the gate that missed this", () => {
+test(".supertaskrignore still excludes docs/ — the indexer is not the gate that missed this", () => {
   // Stated as an assertion rather than as prose, because "we decided"
   // and "we forgot" look identical in an absent list. `index --check`
   // gates the GRAPH; the graph is code-derived and docs/ is not code, so
   // indexing docs/ would be wrong AND would not have caught either
   // incident. This gate exists because that exclusion is correct.
-  const ignore = readFileSync(path.join(repoRoot, ".nputerignore"), "utf8");
+  const ignore = readFileSync(path.join(repoRoot, ".supertaskrignore"), "utf8");
   expect(ignore.split(/\r?\n/).map((l) => l.trim())).toContain("docs/");
 });
 

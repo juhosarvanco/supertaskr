@@ -20,7 +20,7 @@ import nodeFs from "node:fs";
 import nodePath from "node:path";
 
 /** The env var that moves the boot check off the human's port. */
-export const BOOT_PORT_ENV = "NPUTER_BOOT_PORT";
+export const BOOT_PORT_ENV = "SUPERTASKR_BOOT_PORT";
 
 /**
  * The port `tauri dev` uses with the committed config — app/vite.config.ts

@@ -29,7 +29,7 @@ import {
  *
  * The centrepiece is the 1420 refusal, the same shape as
  * playwright.config.ts's `resolveLanePort` throw and for the same reason:
- * NPUTER_BOOT_PORT exists so the check can run BESIDE the human's live
+ * SUPERTASKR_BOOT_PORT exists so the check can run BESIDE the human's live
  * app, and must never become a second way to contend for it.
  *
  * NOTHING IN THIS FILE MAY BIND OR CONTACT 1420. The refusal is asserted
@@ -54,7 +54,7 @@ function assertNothingSpawned(stdout: string): void {
   expect(stdout, "the script logs `port … free — spawning` immediately before the spawn").not.toContain(
     "spawning",
   );
-  expect(stdout).not.toContain("[nputer]");
+  expect(stdout).not.toContain("[supertaskr]");
 }
 
 test("unset resolves to 1420 and threads no --config — the pre-T-046 command, byte for byte", () => {

@@ -48,7 +48,7 @@ const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
  * fences nobody holds.
  */
 const PORCELAIN_FIXTURE = [
-  "worktree /Users/x/nputer",
+  "worktree /Users/x/supertaskr",
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",
@@ -295,7 +295,7 @@ test("a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the
   // the same code path, a porcelain with NO lane at all — and both the
   // set and the sentence come back.
   const free = await dispatchContext({
-    porcelain: ["worktree /Users/x/nputer", "HEAD " + "1".repeat(40), "branch refs/heads/main", ""].join(
+    porcelain: ["worktree /Users/x/supertaskr", "HEAD " + "1".repeat(40), "branch refs/heads/main", ""].join(
       "\n",
     ),
   });
@@ -512,7 +512,7 @@ const FILTER_BOARD = [
 
 /** Only `T-901`, so `T-950`/`T-951` are fenced and `T-952` is not. */
 const ONE_LANE = [
-  "worktree /Users/x/nputer",
+  "worktree /Users/x/supertaskr",
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",

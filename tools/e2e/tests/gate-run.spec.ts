@@ -515,8 +515,8 @@ test("a colour-coded transcript counts identically to a plain one, because a rep
 test("stripping escapes leaves ordinary bracketed text alone, so the sanitiser cannot eat a card id", () => {
   // The ESC must be named in the pattern. Dropping it leaves
   // /\[[0-9;]*[A-Za-z]/, which would eat the "[T" of "[T-202]".
-  expect(stripAnsi("see [T-202] and [nputer-index] at 146ebb6")).toBe(
-    "see [T-202] and [nputer-index] at 146ebb6",
+  expect(stripAnsi("see [T-202] and [supertaskr-index] at 146ebb6")).toBe(
+    "see [T-202] and [supertaskr-index] at 146ebb6",
   );
   expect(stripAnsi("\u001B[32mgreen\u001B[39m")).toBe("green");
 });
@@ -618,7 +618,7 @@ test("two checkouts whose paths differ only BEFORE their last eight bytes get DI
   // stale-reclaim body above both go looking for it — and every body
   // here would still have passed.
   expect(path.dirname(lockPath(lane))).toBe(tmpdir());
-  expect(path.basename(lockPath(lane))).toMatch(/^nputer-gate-run-[0-9a-f]+\.lock$/);
+  expect(path.basename(lockPath(lane))).toMatch(/^supertaskr-gate-run-[0-9a-f]+\.lock$/);
   // AND THE KEY'S WIDTH IS FIXED, WHICH IS WHY IT IS A DIGEST AND NOT
   // THE PATH'S OWN HEX. The card offered either; the hex of the path
   // makes the basename 21 bytes plus TWICE the root, which passes

@@ -28,12 +28,12 @@ import { boardFiles, knownPathOracle, loadParser } from "./dispatch-order.mjs";
  * dispatcher's checkout HAS a built parser by definition — it is what
  * `brief.mjs --task` already runs on — so the dispatch step expands the
  * card's `touches:` through `fence.ts` and leaves the ANSWER in the lane
- * as `.nputer/lane-fence.json`. `.claude/hooks/lane-fence.mjs` then reads
+ * as `.supertaskr/lane-fence.json`. `.claude/hooks/lane-fence.mjs` then reads
  * it with node builtins and nothing else.
  *
  * ── ONE IMPLEMENTATION, AND THE IMPORT IS HOW ────────────────────────
  * Everything this module could have re-spelled it imports instead. The
- * expansion is `@nputer/parser`'s `expandFence` — the SAME function the
+ * expansion is `@supertaskr/parser`'s `expandFence` — the SAME function the
  * board, `brief.mjs --dispatch` and `readDispatchOrder` use, loaded the
  * same way `dispatch-order.mjs` loads it and for the reason its header
  * gives. The unfenceable set is that module's own `UNFENCEABLE_PATHS`,
@@ -54,13 +54,13 @@ import { boardFiles, knownPathOracle, loadParser } from "./dispatch-order.mjs";
  * manifest that under-reserves is a guard that permits.
  *
  * ── WHY IT ALSO WRITES A `.gitignore` ────────────────────────────────
- * `.nputer/` is not ignored in this repository, so without one the
+ * `.supertaskr/` is not ignored in this repository, so without one the
  * manifest is an untracked file in every lane and a `git add -A` commits
  * it. A manifest merged to the integration branch is the guard's own
  * worst failure: every checkout would then carry one lane's fence, and
  * the hook would read a foreign, permanently stale answer. One
  * self-ignoring file in the directory this writer creates costs nothing
- * and removes that shape entirely. Ignoring `.nputer/` from the
+ * and removes that shape entirely. Ignoring `.supertaskr/` from the
  * repository's own root `.gitignore` is the tidier home and is outside
  * this card's fence — routed as a suggestion, not taken here.
  *
@@ -84,7 +84,7 @@ export class LaneFenceFinding extends Error {}
 /**
  * The self-ignoring file written beside the manifest. See the header.
  *
- * IT IS NO LONGER SPELLED HERE (T-203). `.nputer/` acquired a second
+ * IT IS NO LONGER SPELLED HERE (T-203). `.supertaskr/` acquired a second
  * writer — the gate-runner's verdict token — and a directory whose
  * non-committability depends on a string each writer keeps its own copy
  * of is one disagreement away from committing a runtime file. The one
@@ -390,7 +390,7 @@ export function laneIdOf(ref, branchRe) {
  * @property {string} worktree  the lane this fence is being written into
  * @property {string} porcelain `git worktree list --porcelain`, verbatim
  * @property {{ branchRe: RegExp }} spellings
- * @property {Record<string, any>} parser the loaded `@nputer/parser` namespace —
+ * @property {Record<string, any>} parser the loaded `@supertaskr/parser` namespace —
  *   `compareFences` does the comparison and nothing here re-spells it
  * @property {readonly string[]} alwaysWritable the parser's `UNFENCEABLE_PATHS`
  */
