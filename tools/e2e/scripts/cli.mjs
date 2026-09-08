@@ -76,6 +76,16 @@ export const packageRoot = path.resolve(here, "..");
  */
 export const packageRepoRoot = path.resolve(packageRoot, "..", "..");
 
+/**
+ * THIS repository's own docs/CONVENTIONS.md — the file `buildCommandFor`
+ * reads when no project root is named, and the site that makes this
+ * front a DERIVED READER of docs/ to the docs gate (the card's third
+ * criterion, T-231's account). A front that reads a governing document
+ * while being invisible to the gate over that document is the exact gap
+ * that gate exists to close.
+ */
+export const CONVENTIONS_PATH = path.join(packageRepoRoot, "docs", "CONVENTIONS.md");
+
 /** The four house exit codes, the same set every gate in this tree uses. */
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
@@ -311,13 +321,16 @@ function onPath(name) {
  * the gap that gate exists to close.
  *
  * @param {string} dir
- * @param {string} [projectRoot]
+ * @param {string} [projectRoot] the project to read; THIS repository when omitted
  * @returns {string}
  */
-export function buildCommandFor(dir, projectRoot = packageRepoRoot) {
-  const conventions = path.join(projectRoot, "docs", "CONVENTIONS.md");
+export function buildCommandFor(dir, projectRoot) {
+  const conventions =
+    projectRoot === undefined
+      ? CONVENTIONS_PATH
+      : path.join(projectRoot, "docs", "CONVENTIONS.md");
   if (!existsSync(conventions)) {
-    return `run this project's setup for ${dir}/ (${path.relative(projectRoot, conventions)} is not in this project, so the command could not be derived)`;
+    return `run this project's setup for ${dir}/ (docs/CONVENTIONS.md is not in ${projectRoot ?? packageRepoRoot}, so the command could not be derived)`;
   }
   const commands = conventionCommandsFor(readFileSync(conventions, "utf8"), dir);
   if (commands.length === 0) {

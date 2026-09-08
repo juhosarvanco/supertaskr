@@ -52,6 +52,13 @@ export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 
 export const DEFAULT_BRANCH = "main";
 
 /**
+ * THIS repository's own docs/CONVENTIONS.md — the file `setupSteps`
+ * reads when no project root is named, and the site that makes this file
+ * a DERIVED READER of docs/ to the docs gate.
+ */
+export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
+
+/**
  * @typedef {object} Step
  * @property {string} id
  * @property {"precondition" | "git" | "setup" | "regen" | "suite" | "gate" | "stop"} kind
@@ -106,14 +113,18 @@ export function movesSpecNames(paths) {
  * READ WITH ITS DEFAULT, for the reason `undo.mjs`'s `repoRoot` states:
  * called with no root it reads THIS repository's docs/CONVENTIONS.md.
  *
- * @param {string} [projectRoot]
+ * @param {string} [projectRoot] the project to read; THIS repository when omitted
  * @returns {Step[]}
  */
-export function setupSteps(projectRoot = repoRoot) {
+export function setupSteps(projectRoot) {
+  const conventions =
+    projectRoot === undefined
+      ? CONVENTIONS_PATH
+      : path.join(projectRoot, "docs", "CONVENTIONS.md");
+  const root = projectRoot ?? repoRoot;
   /** @type {Step[]} */
   const steps = [];
   for (const dir of ["lib/parser", "app"]) {
-    const conventions = path.join(projectRoot, "docs", "CONVENTIONS.md");
     const commands = conventionCommandsFor(
       existsSync(conventions) ? readFileSync(conventions, "utf8") : "",
       dir,
@@ -127,14 +138,14 @@ export function setupSteps(projectRoot = repoRoot) {
         why:
           "room item 18: this merge brings sources under app/ or lib/, and a suite run on a " +
           "stale bundle measures the tree that was there before (T-018-s5, T-264)",
-        run: { command: "npm", argv, cwd: path.join(projectRoot, dir) },
+        run: { command: "npm", argv, cwd: path.join(root, dir) },
       });
     }
     if (commands.length === 0) {
       steps.push({
         id: `setup:${dir}:underivable`,
         kind: "setup",
-        title: `set up ${dir}/ — ${buildCommandFor(dir, projectRoot)}`,
+        title: `set up ${dir}/ — ${buildCommandFor(dir, root)}`,
         why: "room item 18, with the command underivable from this project's docs/CONVENTIONS.md",
         run: null,
       });
@@ -405,7 +416,7 @@ export function main(argv, io = {}) {
     return EXIT.USAGE;
   }
 
-  const card = cardFile(id, root);
+  const card = cardFile(id, path.join(root, "docs", "tasks"));
   if ("problem" in card) {
     err(`merge ${id}: CANNOT RUN — ${card.problem}`);
     return EXIT.CANNOT_RUN;

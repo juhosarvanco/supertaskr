@@ -47,6 +47,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
  */
 export const repoRoot = path.resolve(here, "..", "..", "..");
 
+/**
+ * THIS repository's own board — the directory `cardFile` reads when no
+ * other is named, and the site that makes this file a DERIVED READER of
+ * docs/tasks to the docs gate (the card's third criterion).
+ */
+export const TASKS_DIR = path.join(repoRoot, "docs", "tasks");
+
 /** The integration branch when none is named. docs/CONVENTIONS.md's lane bullet spells it. */
 export const DEFAULT_BRANCH = "main";
 
@@ -63,12 +70,11 @@ export function git(root, args) {
  * its filename — a slug is a convenience and the frontmatter is the fact.
  *
  * @param {string} id
- * @param {string} [root]
+ * @param {string} [dir] the board to read; THIS repository's when omitted
  * @returns {{ file: string } | { problem: string }}
  */
-export function cardFile(id, root = repoRoot) {
-  const dir = path.join(root, "docs", "tasks");
-  if (!existsSync(dir)) return { problem: `${path.join("docs", "tasks")} is not in ${root}` };
+export function cardFile(id, dir = TASKS_DIR) {
+  if (!existsSync(dir)) return { problem: `${dir} is not a directory` };
   const hits = readdirSync(dir)
     .filter((n) => n.endsWith(".md"))
     .filter((n) => {
@@ -341,7 +347,7 @@ export function main(argv, io = {}) {
     return EXIT.USAGE;
   }
 
-  const card = cardFile(id, root);
+  const card = cardFile(id, path.join(root, "docs", "tasks"));
   if ("problem" in card) {
     err(`undo ${id}: CANNOT RUN — ${card.problem}`);
     return EXIT.CANNOT_RUN;
