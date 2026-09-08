@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "@human ruling (2026-09-08, version sitting): \"approve the v1 five\" — the security layer GSD Core ships (its package-legitimacy gate) and nputer lacks (T-245, map conclusion 6)"
 blocked_by: []
 touches: [.claude/hooks/landing-gate.mjs, tools/e2e/tests/landing-gate.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
