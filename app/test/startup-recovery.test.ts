@@ -207,15 +207,15 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
     errors.push(args);
   });
-  delete window.__nputerShellHarness;
-  delete window.__nputerDocsHarness;
+  delete window.__supertaskrShellHarness;
+  delete window.__supertaskrDocsHarness;
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
-  delete window.__nputerShellHarness;
-  delete window.__nputerDocsHarness;
+  delete window.__supertaskrShellHarness;
+  delete window.__supertaskrDocsHarness;
 });
 
 // ---- criterion 1 + 4: a failed attempt is retryable --------------------
@@ -486,7 +486,7 @@ describe("the rejection is surfaced, not swallowed (criterion 2)", () => {
 
     expect(errors.length).toBe(1);
     const [line, step, reason] = errors[0] ?? [];
-    expect(line).toBe("[nputer] startup failed at");
+    expect(line).toBe("[supertaskr] startup failed at");
     expect(step).toBe("snapshot");
     expect(reason).toBeInstanceOf(Error);
     // The store's existing discipline: nothing from the boundary shapes
@@ -549,7 +549,7 @@ describe("the shell harness can reach the failure the shipped app reaches", () =
     const store: StoreModule = await import("../src/lib/watcher-store");
     await store.startDocsWatcher();
 
-    const harness = window.__nputerShellHarness;
+    const harness = window.__supertaskrShellHarness;
     expect(harness).toBeDefined();
     harness?.applyStartupFailure("subscribe", "the event channel refused");
 
@@ -1132,7 +1132,7 @@ describe("the failure reaches the LOG (criteria 6 and 7)", () => {
     ipc.emits = [];
     const store: StoreModule = await import("../src/lib/watcher-store");
     await store.startDocsWatcher();
-    window.__nputerShellHarness?.applyStartupFailure("subscribe", "refused");
+    window.__supertaskrShellHarness?.applyStartupFailure("subscribe", "refused");
     expect(store.getShellState().startupFailure?.step).toBe("subscribe");
     expect(ipc.emits, "no IPC in a browser, in either direction").toEqual([]);
   });
@@ -1171,7 +1171,7 @@ describe("a shell command that never answers is answered for (T-192)", () => {
     // whole reason this bound is not T-184's 30 s — so what it is derived
     // from is the indexer's own stated performance ceiling.
     const perf = readFileSync(
-      resolvePath("src-tauri/crates/nputer-index/tests/perf.rs"),
+      resolvePath("src-tauri/crates/supertaskr-index/tests/perf.rs"),
       "utf8",
     );
     const cold = /cold_max\s*<\s*(\d+)/.exec(perf);

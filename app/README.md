@@ -1,4 +1,4 @@
-# nputer app (C-05)
+# supertaskr app (C-05)
 
 Tauri 2 desktop shell + React/Vite/Tailwind/shadcn frontend. Self-contained
 package — no root workspace (per docs/ARCHITECTURE.md code layout).

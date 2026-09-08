@@ -4,14 +4,14 @@ import { join, resolve } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry } from "@supertaskr/parser/pure";
 import { edgeKey } from "../src/architecture/MapEdge";
 import { MapView } from "../src/architecture/MapView";
 import { deriveArchitecture } from "../src/lib/architecture/derive";
 import { GRAPH_FILE } from "../src/lib/docs-model";
 
 // THE DOGFOOD HERO (T-012 plan §8): the live docs/ tree + the committed
-// graph render the map of the nputer repo itself. Expectations follow
+// graph render the map of the supertaskr repo itself. Expectations follow
 // the reconciled dogfood fixture (architecture-dogfood.test.ts) and its
 // maintenance contract: they change only when the committed graph
 // regenerates or the registry changes.
@@ -78,13 +78,13 @@ const node = (id: string): HTMLElement => {
   return el;
 };
 
-describe("the nputer repo on its own map", () => {
+describe("the supertaskr repo on its own map", () => {
   it("renders all fifteen declared components in full mode, and the bucket is GONE again", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
     // TWELVE since T-088 declared C-15 (dispatch), and this one arrives
-    // WITHOUT a regen: docs/ is .nputerignored, so a component .md moves
+    // WITHOUT a regen: docs/ is .supertaskrignored, so a component .md moves
     // no indexed file and the hint below still reads 126. C-15 renders
     // as a declared-only face — zero files match either declared glob —
     // which is the C-07 treatment three bodies down, on a component that
@@ -175,7 +175,7 @@ describe("the nputer repo on its own map", () => {
     // 32 → 33 at the T-129 merge regen (2026-08-25) — the first file this
     // component has gained ON DISK since it joined the mapping, and so
     // the first move of this figure that is not a change of language.
-    // `crates/nputer-index/tests/depth.rs` is the integration target that
+    // `crates/supertaskr-index/tests/depth.rs` is the integration target that
     // pins every bounded traversal. Two figures move together here and in
     // architecture-dogfood's C-07 tally row, and NOTHING else does:
     // derived from `arch` over the regenerated graph before the suite was
@@ -183,12 +183,12 @@ describe("the nputer repo on its own map", () => {
     // carries a count is a count in two places (T-126's precedent).
     // 33 → 34 at the T-127 merge regen (2026-08-25), the second file this
     // component has gained on disk and the same shape as T-129's:
-    // `crates/nputer-index/src/arch/cycles.rs`, the registry cycle gate.
+    // `crates/supertaskr-index/src/arch/cycles.rs`, the registry cycle gate.
     // Derived from `arch` over the regenerated graph before the suite was
     // run, and the title moved with the digit again.
     // 34 → 35 at the T-135 Half A merge regen (2026-08-26), the third file
     // this component has gained on disk and the same shape once more:
-    // `crates/nputer-index/src/arch/blast.rs`, the derived-dependents
+    // `crates/supertaskr-index/src/arch/blast.rs`, the derived-dependents
     // report. Derived from `arch` over the regenerated graph before the
     // suite was run, and the title moved with the digit a third time.
     // THIS LINE IS ONE OF THE THREE `T-135-s3` DOES NOT NAME. That card
@@ -198,13 +198,13 @@ describe("the nputer repo on its own map", () => {
     // that card offers.
     // 35 → 36 at the T-139 merge regen (2026-08-26), the FOURTH file this
     // component has gained on disk and the same shape a fourth time:
-    // `crates/nputer-index/tests/budget.rs`, the degradation-path suite.
+    // `crates/supertaskr-index/tests/budget.rs`, the degradation-path suite.
     // Its sibling `app/src-tauri/tests/graph_budget_bench.rs` lands in the
     // BUCKET rather than here, which is why this row moves by one while
     // the merge added two indexed files. Derived from `arch` over the
     // regenerated graph before the suite was run.
     // 36 → 37 at the T-140-s1 merge regen (2026-08-30), the same shape
-    // a fifth time: `crates/nputer-index/src/rollup.rs`, the resting
+    // a fifth time: `crates/supertaskr-index/src/rollup.rs`, the resting
     // payload the whole card ships. THE TITLE MOVED WITH THE DIGIT.
     expect(c07.textContent).toContain("37 files");
     // The D3 ring is gone with the finding that drew it — the visible
@@ -398,7 +398,7 @@ describe("the nputer repo on its own map", () => {
     // 26 and planned at 9. 26 + 4 + 9 = 39. **BOTH NEW ROWS LEAVE THE SAME
     // NODE AND THAT NODE IS NOT A COMPONENT**: the unmapped bucket, holding
     // `app/src-tauri/tests/graph_budget_bench.rs`, which imports
-    // `nputer_index` (C-07) and `docs_watch` (C-10). So ONE unclaimed file
+    // `supertaskr_index` (C-07) and `docs_watch` (C-10). So ONE unclaimed file
     // draws TWO undeclared rows, and declaring it retires both at once.
     // Unlike C-05→C-15 above, this pair is CREATED by the merge and not
     // revealed by it — `arch drift` read `unmapped=0` at the parent — and
@@ -522,7 +522,7 @@ describe("the nputer repo on its own map", () => {
     // ["ts"] until T-010, so the map under-reports C-14 by design.
     // 88 → 89 at the T-041 merge regen (2026-08-16): one file —
     // app/test/shell-harness.test.ts. The merge's other five new .ts
-    // files live under tools/, which .nputerignore excludes, so a lane
+    // files live under tools/, which .supertaskrignore excludes, so a lane
     // that grew by ten specs adds exactly one node to the map.
     // 89 → 90 at the T-048 merge regen (2026-08-16): one file —
     // app/test/shell-frame.test.tsx. T-048's two SOURCE edits (App.tsx,
@@ -533,12 +533,12 @@ describe("the nputer repo on its own map", () => {
     // app/src/components/shell/accelerators.ts and its suite
     // app/test/accelerators.test.tsx. The third new file,
     // tools/e2e/tests/accelerators.spec.ts, lives under tools/ and is
-    // .nputerignored, so the lane's real trusted-chord test is invisible
+    // .supertaskrignored, so the lane's real trusted-chord test is invisible
     // here exactly as T-041's ten were.
     // 92 → 94 at the T-050 merge regen (2026-08-17): two files —
     // app/test/startup-recovery.test.ts and app/test/startup-screen.
     // test.tsx. The third new file, tools/e2e/tests/startup-recovery.
-    // spec.ts, is .nputerignored under tools/ like every lane spec
+    // spec.ts, is .supertaskrignored under tools/ like every lane spec
     // before it. T-050's two SOURCE edits (App.tsx, watcher-store.ts)
     // add no node: they move those files' hash, loc and symbol counts,
     // and they RETIRE four intra-file edges — the work moved out of
@@ -588,7 +588,7 @@ describe("the nputer repo on its own map", () => {
     // 109 → 110 at the T-051 merge regen (2026-08-17): ONE file, C-05's
     // app/test/window-manifest.test.ts. The branch added TWO .ts files and
     // the hint moves by ONE — tools/e2e/tests/window-contract.spec.ts is
-    // under .nputerignored `tools/` and never enters the index. Like the
+    // under .supertaskrignored `tools/` and never enters the index. Like the
     // T-053 entry above and unlike T-027's, the node and edge pictures do
     // NOT move: all three new edges are file→package (node:fs, node:path,
     // vitest), and an edge whose head is a package can create no component
@@ -598,7 +598,7 @@ describe("the nputer repo on its own map", () => {
     // crescendo.ts and BoardCrescendo.tsx to C-13, crescendo.test.ts and
     // crescendo-dom.test.tsx to C-05. The branch added FIVE .ts/.tsx
     // files and the hint moves by FOUR: tools/e2e/tests/crescendo.spec.ts
-    // is under .nputerignored `tools/`. Unlike T-051's and T-053's
+    // is under .supertaskrignored `tools/`. Unlike T-051's and T-053's
     // entries, the node and edge pictures DO move here — the new edges
     // reach real component heads rather than packages, so the relation
     // table gains two rows and four observedCounts climb.
@@ -607,7 +607,7 @@ describe("the nputer repo on its own map", () => {
     // umbrella. The merge changed ELEVEN indexed .ts/.tsx files and only
     // this one is NEW; the other ten are modifications, which move hash,
     // loc and symbols and add no node. Its sibling
-    // tools/e2e/tests/resume-fallback.spec.ts is .nputerignored under
+    // tools/e2e/tests/resume-fallback.spec.ts is .supertaskrignored under
     // `tools/`, so a lane that grew by four specs adds nothing here.
     // Like T-051's and T-053's entries and unlike T-027's and T-028's,
     // the node and edge pictures do NOT move: all the new cross-component
@@ -674,7 +674,7 @@ describe("the nputer repo on its own map", () => {
     // 126 → 126 at T-088 (2026-08-24), and this is the FIRST entry in
     // this ledger written from a LANE rather than at a merge regen —
     // because T-088's trigger is the other one. Declaring C-15 changes
-    // the REGISTRY and cannot change the graph: `.nputerignore` excludes
+    // the REGISTRY and cannot change the graph: `.supertaskrignore` excludes
     // docs/, so a component .md is not an indexed file, and
     // `index --check --root ../..` is exit 0 with C-15 on disk. So the
     // node count above moves 11 → 12 and the edge count 32 → 33 while
@@ -728,7 +728,7 @@ describe("the nputer repo on its own map", () => {
     // lights or clears. Derived from the regenerated graph and `arch`
     // before the suite was run.
     // 178 → 179 at the T-129 merge regen (2026-08-25): ONE file,
-    // `app/src-tauri/crates/nputer-index/tests/depth.rs`. The graph goes
+    // `app/src-tauri/crates/supertaskr-index/tests/depth.rs`. The graph goes
     // 933 931 → 939 161 bytes / 1990 → 2004 symbols / 1903 → 1907 edges.
     // WHAT MOVES WITH IT: `fileComponent.size` and the C-07 tally row in
     // architecture-dogfood (32 → 33) and this hint — and NOTHING ELSE.
@@ -739,7 +739,7 @@ describe("the nputer repo on its own map", () => {
     // edges to the graph and move no component relation at all. Derived
     // from the regenerated graph and `arch` before the suite was run.
     // 179 → 180 at the T-127 merge regen (2026-08-25): ONE file,
-    // `app/src-tauri/crates/nputer-index/src/arch/cycles.rs`. The graph
+    // `app/src-tauri/crates/supertaskr-index/src/arch/cycles.rs`. The graph
     // goes 939 161 → 944 590 bytes / 2004 → 2018 symbols / 1907 → 1911
     // edges, and `index --check` printed `files +1 -0 ~4` naming EXACTLY
     // this merge's five code paths, one for one. WHAT MOVES WITH IT:
@@ -752,7 +752,7 @@ describe("the nputer repo on its own map", () => {
     // findings hold at 3 and no ring lights or clears. Derived from the
     // regenerated graph and `arch` before the suite was run.
     // 180 → 181 at the T-135 Half A merge regen (2026-08-26): ONE file,
-    // `app/src-tauri/crates/nputer-index/src/arch/blast.rs`. The graph
+    // `app/src-tauri/crates/supertaskr-index/src/arch/blast.rs`. The graph
     // goes 944 590 → 955 710 bytes / 2018 → 2038 symbols / 1911 → 1943
     // edges, and `index --check` printed `files +1 -0 ~8` naming EXACTLY
     // this merge's nine `.rs` paths, one for one. **AND THIS ENTRY BREAKS
@@ -775,7 +775,7 @@ describe("the nputer repo on its own map", () => {
     // `mapped` and nothing else. Derived from the regenerated graph and
     // `arch` before the suite was re-run.
     // 183 → 185 at the T-139 merge regen (2026-08-26, merge `aed77b6`):
-    // TWO files, `app/src-tauri/crates/nputer-index/tests/budget.rs` and
+    // TWO files, `app/src-tauri/crates/supertaskr-index/tests/budget.rs` and
     // `app/src-tauri/tests/graph_budget_bench.rs`. The graph goes
     // 989 181 → 997 202 bytes / 2101 → 2124 symbols / 2033 → 2039 edges,
     // and `index --check` printed `files +2 -0 ~4` — the FOURTH modified

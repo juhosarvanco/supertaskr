@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry } from "@supertaskr/parser/pure";
 import { deriveArchitecture } from "../src/lib/architecture/derive";
 import { parseGraph } from "../src/lib/architecture/graph";
 import {

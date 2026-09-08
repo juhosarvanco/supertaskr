@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveArchitecture, type DeriveInputs } from "../src/lib/architecture/derive";
 import { parseGraph } from "../src/lib/architecture/graph";
 import { searchMap, SEARCH_CAP } from "../src/architecture/map-search";
-import { parseComponentFile } from "@nputer/parser/pure";
+import { parseComponentFile } from "@supertaskr/parser/pure";
 
 // Map search (T-012): components + files, one ranked list. Symbol
 // search is T-013's.

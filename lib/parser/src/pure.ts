@@ -1,5 +1,5 @@
 /**
- * @nputer/parser/pure — the browser-safe entry (T-003).
+ * @supertaskr/parser/pure — the browser-safe entry (T-003).
  *
  * Everything the package exports EXCEPT the node:fs layer (project.ts).
  * The app's webview imports from here: the root entry re-exports

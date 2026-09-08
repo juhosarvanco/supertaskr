@@ -37,7 +37,7 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
     fs: {
-      // @nputer/parser is a file: dependency symlinked to ../lib/parser
+      // @supertaskr/parser is a file: dependency symlinked to ../lib/parser
       // (T-003 wiring); vite resolves through the symlink to the real path,
       // which sits outside this package, so allow it explicitly alongside
       // the app itself (setting fs.allow replaces the default allow list).

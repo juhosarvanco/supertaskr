@@ -435,7 +435,7 @@ export function InterviewChat({
               this half of the screen is not receiving
             </span>
             <span className="text-sm text-secondary-foreground">
-              nputer could not subscribe to the planner&apos;s turn channel, so no
+              supertaskr could not subscribe to the planner&apos;s turn channel, so no
               question will appear here even if the interview runs. The plan
               still assembles beside this, and everything written to{" "}
               <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> is
@@ -609,7 +609,7 @@ function resumeSentence(turns: number, model: string | null): string {
  * WHAT WAS BANKED HERE, in one sentence (T-070 criterion 4).
  *
  * THE SHAPE THIS CLOSES IS T-029's OWN, ONE LAYER OUT: the fact was on
- * disk, typed, and free to read — `.nputer/sessions.json`, no CLI
+ * disk, typed, and free to read — `.supertaskr/sessions.json`, no CLI
  * anywhere in the call — and a user routed to the hand-driven mode
  * because the app could not find their CLI was told nothing about the
  * turns they had already banked with a CLI they have since uninstalled
@@ -781,7 +781,7 @@ function OutcomeNotice({
           <span data-testid="interview-cli-found" className="font-mono text-sm break-words">
             {outcome.found}
           </span>
-          . nputer stops rather than driving a CLI whose flags it cannot be sure
+          . supertaskr stops rather than driving a CLI whose flags it cannot be sure
           of — updating yours to its current release is the fix.
         </span>
         {/* THE COMMAND IS DELIBERATELY ABSENT, AND THIS IS WHERE THAT
@@ -824,7 +824,7 @@ function OutcomeNotice({
           no agent CLI found
         </span>
         <span className="text-sm text-secondary-foreground">
-          nputer looked for{" "}
+          supertaskr looked for{" "}
           <span data-testid="interview-cli-probed" className="font-mono text-sm break-words">
             {outcome.probed.join(", ")}
           </span>{" "}

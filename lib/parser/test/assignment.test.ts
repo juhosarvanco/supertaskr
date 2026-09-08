@@ -12,7 +12,7 @@ import type { AssignmentReading, ParseIssue, TaskRecord } from '../src/types.js'
 /**
  * THE ASSIGNMENT VERDICT (T-169) — @human's D5 ruling, verified: "of
  * course the models the human assigns to different tasks do those tasks
- * as assigned". Where a spawn path cannot force the model, nputer checks.
+ * as assigned". Where a spawn path cannot force the model, supertaskr checks.
  *
  * The live board is the fixture wherever it can be (the fence.test.ts
  * discipline, T-111-s3): the six stamps that motivated the comparison

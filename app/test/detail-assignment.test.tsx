@@ -8,7 +8,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type ProjectParseResult } from "@supertaskr/parser/pure";
 import type { DispatchReading } from "../src/lib/board-model";
 import type { BriefOutcomeView } from "../src/lib/task-detail";
 import { TaskDetailPanel } from "../src/components/board/TaskDetailPanel";

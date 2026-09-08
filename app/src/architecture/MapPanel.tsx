@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import type { ProjectParseResult } from "@nputer/parser/pure";
+import type { ProjectParseResult } from "@supertaskr/parser/pure";
 import { cn } from "@/lib/utils";
 import { attachPanelDismissal } from "@/components/board/panel-dismissal";
 import type { TaskRef } from "@/lib/task-detail";

@@ -134,7 +134,7 @@ describe("a throwing lens does not take the app down (T-037 criterion 5)", () =>
     // The shell: still mounted, still the genesis screen, still chrome.
     expect(container.querySelector("main")).not.toBeNull();
     expect(screenOf()).toBe("genesis");
-    expect(container.querySelector("h1")?.textContent).toBe("nputer");
+    expect(container.querySelector("h1")?.textContent).toBe("supertaskr");
     // T-027 RECONCILE — same claim, better instrument. "Starting a plan
     // in" was T-026's placeholder <h2> on the genesis screen; the
     // design's split has no such heading, so T-027 removed it and moved
@@ -157,7 +157,7 @@ describe("a throwing lens does not take the app down (T-037 criterion 5)", () =>
     expect(failed.textContent).toContain("the view of docs/ stopped rendering");
     expect(failed.textContent).toContain("Nothing was written and nothing was lost");
     expect(logged).toHaveBeenCalledWith(
-      "[nputer] the genesis pane failed to render",
+      "[supertaskr] the genesis pane failed to render",
       expect.anything(),
     );
     logged.mockRestore();

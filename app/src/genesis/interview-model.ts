@@ -488,7 +488,7 @@ export function rehydrate(lines: readonly TranscriptLinePayload[]): {
         text: line.text,
         activity: [],
         // T-081's new `GenesisTurn` field, and EMPTY here is a statement
-        // rather than a placeholder: `.nputer/genesis/transcript.jsonl`
+        // rather than a placeholder: `.supertaskr/genesis/transcript.jsonl`
         // banks the planner's text and nothing else, so a turn rebuilt
         // off disk genuinely has no record of what it was refused —
         // exactly as it has no record of `activity` above. Losable by the
@@ -562,7 +562,7 @@ export function mergeRehydrated(
  * banked against it.
  *
  * TURN 1 HAS NO USER HALF BY DESIGN. Its user half is the kickoff, which
- * lives in `.nputer/genesis/transcript.jsonl` and is exposed by no
+ * lives in `.supertaskr/genesis/transcript.jsonl` and is exposed by no
  * command — so the chat renders no bubble for it rather than inventing
  * one.
  *
@@ -698,7 +698,7 @@ export function failureAction(error: TurnErrorPayload): FailureAction | null {
       };
     case "toolDenied":
       return {
-        hint: `The planner asked for ${listOf(error.denials)} and nputer's allowlist does not carry it. Driving the interview by hand runs under your own CLI's permissions instead.`,
+        hint: `The planner asked for ${listOf(error.denials)} and supertaskr's allowlist does not carry it. Driving the interview by hand runs under your own CLI's permissions instead.`,
         command: null,
         // A denial is not deterministic across turns: the planner may
         // reach for something narrower next time.
@@ -707,7 +707,7 @@ export function failureAction(error: TurnErrorPayload): FailureAction | null {
       };
     case "rejectedSessionId":
       return {
-        hint: "The saved session in .nputer/ cannot be resumed. That file is runtime state — starting a fresh session loses nothing about the project, because docs/ is the record.",
+        hint: "The saved session in .supertaskr/ cannot be resumed. That file is runtime state — starting a fresh session loses nothing about the project, because docs/ is the record.",
         command: null,
         retry: false,
         fallback: false,

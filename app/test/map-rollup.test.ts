@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { parseComponentsFromFiles, type ComponentRecord } from "@nputer/parser/pure";
+import { parseComponentsFromFiles, type ComponentRecord } from "@supertaskr/parser/pure";
 import { deriveArchitecture, UNMAPPED_ID } from "../src/lib/architecture/derive";
 import {
   componentTarget,
@@ -26,7 +26,7 @@ import { expansionFor, fileDetail, intraEdges } from "../src/architecture/map-zo
  * T-140-s1 — THE RESTING PAYLOAD AND THE PULL, from the pane's side.
  *
  * WHAT THESE BODIES ARE FOR. The Rust half is pinned in
- * `crates/nputer-index/src/rollup.rs`, `tests/budget.rs` (the relation)
+ * `crates/supertaskr-index/src/rollup.rs`, `tests/budget.rs` (the relation)
  * and `src/arch_cmd.rs` (the channel). This file pins the half that lives
  * here: that the pane can FOLD what the channel says, DERIVE a map from
  * it with no file paths anywhere, tell a refusal from an absence, and

@@ -27,7 +27,7 @@ function baseGraph(): Record<string, unknown> {
     ],
     packages: [
       { id: "p:react", name: "react", ecosystem: "npm" },
-      { id: "p:@nputer/parser", name: "@nputer/parser", ecosystem: "npm", path: "lib/parser" },
+      { id: "p:@supertaskr/parser", name: "@supertaskr/parser", ecosystem: "npm", path: "lib/parser" },
     ],
     edges: [
       { from: "f:app/a.ts", to: "f:lib/b.ts", kind: "import", symbols: ["b"] },
@@ -47,7 +47,7 @@ describe("parseGraph: happy path", () => {
     expect(graph).toBeDefined();
     expect(graph?.files.map((f) => f.path)).toEqual(["app/a.ts", "lib/b.ts"]);
     expect(graph?.filesById.get("f:app/a.ts")?.loc).toBe(3);
-    expect(graph?.packagesById.get("p:@nputer/parser")?.path).toBe("lib/parser");
+    expect(graph?.packagesById.get("p:@supertaskr/parser")?.path).toBe("lib/parser");
     expect(graph?.edges).toHaveLength(2);
     expect(graph?.unresolved).toEqual([{ from: "f:app/a.ts", specifier: "./x.css", reason: "asset" }]);
     expect(graph?.stats).toEqual({ files: 2, symbols: 1, edges: 2 });
@@ -210,13 +210,13 @@ describe("parseGraph: containment on package paths", () => {
     it(`${name} package path is dropped with an issue`, () => {
       const g = baseGraph();
       (g.packages as Record<string, unknown>[])[1] = {
-        id: "p:@nputer/parser",
-        name: "@nputer/parser",
+        id: "p:@supertaskr/parser",
+        name: "@supertaskr/parser",
         ecosystem: "npm",
         path,
       };
       const { graph, issues } = parse(g);
-      expect(graph?.packagesById.get("p:@nputer/parser")?.path).toBeUndefined();
+      expect(graph?.packagesById.get("p:@supertaskr/parser")?.path).toBeUndefined();
       expect(issues.some((issue) => issue.message.includes("containment"))).toBe(true);
     });
   }

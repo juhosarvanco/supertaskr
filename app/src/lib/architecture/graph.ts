@@ -1,6 +1,6 @@
 /**
  * Reality-layer boundary (T-011): a TypeScript mirror of the graph.json
- * schema (map-technical-plan §3.1, as emitted by nputer-index — T-009)
+ * schema (map-technical-plan §3.1, as emitted by supertaskr-index — T-009)
  * plus a validating parser.
  *
  * graph.json is repo content and therefore UNTRUSTED input: it is
@@ -103,7 +103,7 @@ export interface ArchGraph {
 /**
  * Structured graph-boundary issues. A separate union from lib-parser's
  * ParseIssue on purpose: those kinds are frontmatter-shaped and the
- * union is closed inside @nputer/parser (out of T-011's boundary);
+ * union is closed inside @supertaskr/parser (out of T-011's boundary);
  * T-012 renders both channels.
  */
 export type GraphIssue =

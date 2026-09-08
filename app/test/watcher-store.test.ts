@@ -817,7 +817,7 @@ describe("T-018-s6: a startup `docs_snapshot` pull that arrives AFTER an emit fo
   it("a pull with NO content time is decided on its seq, not dropped as older than everything", () => {
     // The `generatedAtMs: 0` case. Nothing walked a tree to produce such
     // a payload — `snapshot_from` stamps `now_ms()`, which is never 0 —
-    // and both the dev harness (`__nputerDocsHarness.apply`, which IS
+    // and both the dev harness (`__supertaskrDocsHarness.apply`, which IS
     // `applyDocsPayload`) and pre-T-042 fixtures mint them. Read naively
     // by `<`, a zero is older than every real reading, so every one of
     // them would vanish behind any emit already applied.

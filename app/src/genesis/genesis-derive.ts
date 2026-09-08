@@ -41,6 +41,12 @@ export const BANKING_MAP: readonly BankingStage[] = [
   {
     stage: 0,
     step: "scaffold (pre-Q1)",
+    // T-264: `.nputer/` STAYS in this cell, by construction. The string is
+    // a VERBATIM transcription of method/interview/plan-interview.md's
+    // stage table — a file outside this lane's fence and T-265's to
+    // rename — and `every cell of the 9-row table matches
+    // plan-interview.md verbatim` reds the moment the two disagree. This
+    // cell moves WITH that file, never ahead of it.
     banks:
       "docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.nputer/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage)",
   },

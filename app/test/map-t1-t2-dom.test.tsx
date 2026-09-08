@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry, type ProjectParseResult } from "@supertaskr/parser/pure";
 import { MapView } from "../src/architecture/MapView";
 import { __resetChurnForTests, applyChurnPayload } from "../src/architecture/churn-source";
 

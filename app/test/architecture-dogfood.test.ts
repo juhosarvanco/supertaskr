@@ -2,14 +2,14 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type FileEntry } from "@supertaskr/parser/pure";
 import { deriveArchitecture, isDriftFinding, UNMAPPED_ID } from "../src/lib/architecture/derive";
 import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 
 // THE DOGFOOD CHECK (T-011 acceptance criterion 4): run the derivation on
 // THIS repo — the live component registry, the committed graph.json, the
 // live task model — and assert the actual findings. This test is the
-// current drift truth of the nputer repo, reviewed and pinned; plan §10
+// current drift truth of the supertaskr repo, reviewed and pinned; plan §10
 // wants the repo driven to zero drift before launch, and this is the
 // ratchet that makes each finding a deliberate architect decision
 // (T-008-s2 predicted the C-08/C-09 → C-05 pair; the derivation found
@@ -42,7 +42,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // verdicts.ts → C-05), D3:C-12 drains (C-12 now has files), the four
 // unmapped edges leave the table, C-05→C-12 materializes CONFIRMED
 // (the 4 architecture tests' 6 file edges), C-12→C-06 flips planned →
-// confirmed (derive.ts → @nputer/parser now counts as C-12's), and the
+// confirmed (derive.ts → @supertaskr/parser now counts as C-12's), and the
 // verdicts.ts consumers fold into the existing D1s: C-08→C-05 3→4
 // (board-model), C-09→C-05 1→2 (TaskDetailPanel). The four remaining
 // D1s are launch data (real drift the map exists to show), not
@@ -59,7 +59,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // joins its engine); D2 STAYS EMPTY and the unmapped node stays gone —
 // the amended registry claimed everything this branch added. Findings:
 // only D1:C-05→C-06 moves, 5→8 file edges (map-dogfood-render,
-// map-search, map-view-dom import @nputer/parser under the app/test/**
+// map-search, map-view-dom import @supertaskr/parser under the app/test/**
 // umbrella); the other three D1s and D3 C-01/C-07/C-11 are byte-
 // unchanged. Relation table: same 23 rows, tally 9/4/10 → 12/4/7 —
 // C-12's declared edges to C-05 (4: utils + button), C-09 (4:
@@ -79,7 +79,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // suites). Deltas, verified against the enumerated edge diff of the
 // regen (+21 edges, 0 removed) before this edit: mapping C-05 30→31;
 // D2 STAYS EMPTY; findings byte-unchanged — the new suite imports no
-// @nputer/parser, so all four D1s and the three D3s hold exactly (no
+// @supertaskr/parser, so all four D1s and the three D3s hold exactly (no
 // new finding families). Relation table: same 23 rows, same 12/4/7
 // tally — only C-05→C-10 grows 8→10, both new file edges in the
 // DECLARED direction: watcher-truth.test.tsx consumes docs-model
@@ -366,7 +366,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     37→40 symbols (ShellHarnessSnapshot, shellHarnessSnapshot,
 //     commitPickOutcome).
 //   · THE FIVE tools/e2e FILES IN THIS MERGE ARE INVISIBLE, checked
-//     rather than assumed: .nputerignore:8 is `tools/`, and the
+//     rather than assumed: .supertaskrignore:8 is `tools/`, and the
 //     regenerated file list contains zero paths under it. The lane's
 //     three specs and two modules cannot move the map, which is why a
 //     merge that lands ten new tests moves the graph by one file.
@@ -449,7 +449,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · stats 90→92 files, 616→642 symbols, 1013→1038 edges.
 //   · TWO new files, app/src/components/shell/accelerators.ts and
 //     app/test/accelerators.test.tsx; nothing removed.
-//     tools/e2e/tests/accelerators.spec.ts is invisible — .nputerignore
+//     tools/e2e/tests/accelerators.spec.ts is invisible — .supertaskrignore
 //     carries tools/. Content-changed (hash/loc only): app/src/App.tsx
 //     (loc 461→487) and app/test/project-shell.test.tsx (215→297).
 //   · mapping 90→92; C-05 40→42, because BOTH new files land in C-05's
@@ -503,7 +503,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · TWO new files, app/test/startup-recovery.test.ts and
 //     app/test/startup-screen.test.tsx; nothing removed.
 //     tools/e2e/tests/startup-recovery.spec.ts is invisible —
-//     .nputerignore carries tools/. Content-changed: app/src/App.tsx
+//     .supertaskrignore carries tools/. Content-changed: app/src/App.tsx
 //     (loc 487→623, symbols 6→8 — StartupScreen and startupStepPhrase),
 //     app/src/lib/watcher-store.ts (659→841, symbols 40→45 —
 //     StartupStep, StartupFailure, runStartup, recordStartupFailure and
@@ -649,7 +649,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     already correct.
 //   · findings: NOTHING added, removed or renumbered — six D1 rows and
 //     three D3s. Only the D1:C-05→C-06 fileEdges LIST grows, 8→10, both
-//     new suites importing @nputer/parser. No new component PAIR
+//     new suites importing @supertaskr/parser. No new component PAIR
 //     appears, which is derivable: C-12 declares C-05, C-06 and C-09,
 //     and C-05 declares C-12, so every one of the 19 new import edges
 //     lands on a pair the table already carries.
@@ -785,7 +785,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     3 symbols: MANIFEST, WindowBlock, windowBlock). THE BRANCH ADDED
 //     TWO `.ts` FILES AND ONLY ONE IS INDEXED: the other is
 //     tools/e2e/tests/window-contract.spec.ts, and `tools/` is
-//     .nputerignored, so the lane is not territory — the same reason
+//     .supertaskrignored, so the lane is not territory — the same reason
 //     T-041's five tools/e2e files landed nowhere. Derive the mapping
 //     move from the INDEXED added-file list, not from the merge's diff.
 //   · mapping 109→110; C-05 50→51 is the ONLY count that moves, and it
@@ -830,7 +830,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     (loc 232, 12 symbols) and BoardCrescendo.tsx (loc 140, 1) to C-13;
 //     crescendo.test.ts (loc 374, 9) and crescendo-dom.test.tsx (loc 548,
 //     19) to C-05. The fifth is tools/e2e/tests/crescendo.spec.ts, and
-//     `tools/` is .nputerignored, so the lane is not territory — the
+//     `tools/` is .supertaskrignored, so the lane is not territory — the
 //     third merge running where the merge's diff over-counts this row.
 //     THE TOKEN LINT IS THE MIRROR IMAGE and both were derived here: it
 //     walks tools/e2e/**, so that same file counts for the lint (109→114)
@@ -1016,7 +1016,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // to fire alone: the REGISTRY changed and the graph did not. The branch
 // declares C-15 dispatch (`app/src-tauri/src/dispatch/**` +
 // `app/src/lib/dispatch-store.ts`, slug `app-dispatch`) per
-// docs/design/dispatch-technical-plan.md's D2. docs/ is .nputerignored,
+// docs/design/dispatch-technical-plan.md's D2. docs/ is .supertaskrignored,
 // so a component .md moves no indexed file and `index --check` is exit 0
 // at the base with the file added; what moves is the INTENT layer alone.
 //   · DERIVED BEFORE ANYTHING WAS RUN, by a throwaway probe `it()`
@@ -1047,7 +1047,7 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     10, which is the same trap read the other way round. In
 //     lib/parser/test/smoke.test.ts: the live-tree id array alone.
 //   · T-024's THREE-FIXTURE RULE FIRES HERE, in full, and a FOURTH was
-//     checked rather than assumed: app/src-tauri/crates/nputer-index/
+//     checked rather than assumed: app/src-tauri/crates/supertaskr-index/
 //     tests/arch.rs drives the same live registry from Rust and pins no
 //     count on purpose (its own header says so), so `cargo test` does not
 //     move. Nothing else in the tree reads this registry live.
@@ -1085,10 +1085,10 @@ function liveModel() {
   return { project, graphResult, derived };
 }
 
-const PARSER_PKG = "p:@nputer/parser";
+const PARSER_PKG = "p:@supertaskr/parser";
 const LIB_PARSER = "lib/parser";
 
-describe("dogfood: the nputer repo through its own derivation engine", () => {
+describe("dogfood: the supertaskr repo through its own derivation engine", () => {
   const { project, graphResult, derived } = liveModel();
 
   it("both input layers parse clean (the smoke-test discipline)", () => {
@@ -1310,8 +1310,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // run, which is what the note in the body above asks for.
     // 178 → 179 at the T-129 merge regen (2026-08-25), and it is the
     // plainest entry in this log: ONE new file,
-    // `app/src-tauri/crates/nputer-index/tests/depth.rs`, which C-07's
-    // `app/src-tauri/crates/nputer-index/**` glob claims, so the C-07 row
+    // `app/src-tauri/crates/supertaskr-index/tests/depth.rs`, which C-07's
+    // `app/src-tauri/crates/supertaskr-index/**` glob claims, so the C-07 row
     // in the tally below moves with it (32 → 33) and `unmappedFiles`
     // stays []. `index --check` printed `files +1 -0 ~8`, and the nine
     // paths it names are EXACTLY this merge's nine code paths, one for
@@ -1321,8 +1321,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // regenerated graph and `arch` BEFORE the suite was run.
     // 179 → 180 at the T-127 merge regen (2026-08-25), the same plain
     // shape as the entry above: ONE new file,
-    // `app/src-tauri/crates/nputer-index/src/arch/cycles.rs`, which
-    // C-07's `app/src-tauri/crates/nputer-index/**` glob claims, so the
+    // `app/src-tauri/crates/supertaskr-index/src/arch/cycles.rs`, which
+    // C-07's `app/src-tauri/crates/supertaskr-index/**` glob claims, so the
     // C-07 row in the tally below moves with it (33 → 34) and
     // `unmappedFiles` stays []. `index --check` printed `files +1 -0 ~4`
     // and the five paths it names are EXACTLY this merge's five code
@@ -1334,8 +1334,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // was run, which is the instruction that caught it.
     // 180 → 181 at the T-135 Half A merge regen (2026-08-26), the same
     // plain shape as the two entries above: ONE new file,
-    // `app/src-tauri/crates/nputer-index/src/arch/blast.rs`, which C-07's
-    // `app/src-tauri/crates/nputer-index/**` glob claims, so the C-07 row
+    // `app/src-tauri/crates/supertaskr-index/src/arch/blast.rs`, which C-07's
+    // `app/src-tauri/crates/supertaskr-index/**` glob claims, so the C-07 row
     // in the tally below moves with it (34 → 35) and `unmappedFiles`
     // stays []. `index --check` printed `files +1 -0 ~8` and the nine
     // paths it names are exactly this merge's nine `.rs` paths, one for
@@ -1366,7 +1366,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // T-053, fired again on the pass that was reading the warning.
     // Measured: 2 failed / 971 passed on the first run, 3 red assertions.
     // 183 → 185 at the T-139 merge regen (2026-08-26, merge `aed77b6`), by
-    // TWO — `app/src-tauri/crates/nputer-index/tests/budget.rs` and
+    // TWO — `app/src-tauri/crates/supertaskr-index/tests/budget.rs` and
     // `app/src-tauri/tests/graph_budget_bench.rs`. **AND THIS IS THE FIRST
     // ENTRY IN THIS LEDGER WHERE THE BUCKET STOPS BEING EMPTY**: the second
     // of those two lands under NO component's globs, so `unmappedFiles`
@@ -1410,7 +1410,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // the predicted two-file D2 never existed — plus fake_agent.rs and
     // the index's own binary, which an unanchored `bin/` ignore line
     // briefly swallowed until the anchor gave them back. The bucket
-    // stays closed; .nputerignore gained /.claude/ this commit after a
+    // stays closed; .supertaskrignore gained /.claude/ this commit after a
     // nested session worktree doubled the walk (the T-153-s3 class).
     // 198 -> 199 at the T-112 merge regen (2026-08-30) — brief.rs under
     // C-15, mapped, the bucket still empty.
@@ -1427,7 +1427,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // C-14 declares `app/src-tauri/tests/agent_runner.rs` and nothing
     // declares a prefix. **T-141 CLAIMS IT FOR C-05 AND THE CLAIM COSTS NO
     // EDGE**, which is what chose C-05 over the two components the harness
-    // actually imports. `graph_budget_bench.rs` imports `nputer_index`
+    // actually imports. `graph_budget_bench.rs` imports `supertaskr_index`
     // (C-07) and `docs_watch` (C-10), so those two look like the closer
     // owners and each would INVERT a real dependency: C-07 is a standalone
     // crate with `depends_on: []` and the app depends on IT, while C-10 is
@@ -1445,7 +1445,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // trade a D2 for a D1 and write the inverted dependency into the map.
     // **AND NOTHING ON THE RUST SIDE REDDED FOR ANY OF IT**, in either
     // direction: `arch drift` exits 0 without `--fail-on` and
-    // `crates/nputer-index/tests/arch.rs` pins the CYCLE census rather than
+    // `crates/supertaskr-index/tests/arch.rs` pins the CYCLE census rather than
     // the drift census, so `cargo test` was byte-identical while the D2
     // opened and is byte-identical again now that it has closed. This
     // assertion and the three below it are still the only things in the
@@ -1464,7 +1464,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-14, which is what makes the new D1 below.
       // 38 → 39 at the T-041 merge regen: shell-harness.test.ts, the same
       // umbrella. T-041's five tools/e2e files land nowhere — `tools/` is
-      // .nputerignored, so the lane is not territory.
+      // .supertaskrignored, so the lane is not territory.
       // 39 → 40 at the T-048 merge regen: shell-frame.test.tsx, the same
       // umbrella a third time. This is the row the branch's forecast
       // missed both times — it hides behind the count assertion above,
@@ -1500,14 +1500,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // same route a sixth time: window-manifest.test.ts is under
       // app/test/**, C-05's alone. The branch added TWO .ts files and this
       // row moves by ONE, not two — tools/e2e/tests/window-contract.spec.ts
-      // is under .nputerignored `tools/`, so it never enters the index and
+      // is under .supertaskrignored `tools/`, so it never enters the index and
       // cannot be territory. Deriving this row from the MERGE's diff would
       // have over-counted it; derive it from the INDEXED added-file list.
       // 51 → 53 at the T-028 merge regen (2026-08-17), by TWO and by the
       // same route a seventh time: crescendo.test.ts and
       // crescendo-dom.test.tsx are under app/test/**, C-05's alone. The
       // branch added FIVE .ts/.tsx files and only FOUR are indexed —
-      // tools/e2e/tests/crescendo.spec.ts is under .nputerignored
+      // tools/e2e/tests/crescendo.spec.ts is under .supertaskrignored
       // `tools/`. Of those four, two land here and two land on C-13.
       // 53 → 54 at the T-029 merge regen (2026-08-18), by ONE and by the
       // same route an eighth time: interview-resume-dom.test.tsx is under
@@ -1515,7 +1515,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // .ts/.tsx files and only ONE of them is NEW — the other ten are
       // modifications, which move hash, loc and symbols and can never move
       // a mapping count. tools/e2e/tests/resume-fallback.spec.ts is under
-      // .nputerignored `tools/` and is invisible here (it counts for the
+      // .supertaskrignored `tools/` and is invisible here (it counts for the
       // token lint, which walks tools/e2e — two walks, two answers).
       // 54 → 55 at the T-073 merge regen (2026-08-19), by ONE and by the
       // same route a ninth time: node-builtins-write.d.ts is under
@@ -1620,23 +1620,23 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // in the same breath (see the drift body below), which is the arc
       // C-13 walked at T-024 and C-14 at T-025, one language later.
       // 32 → 33 at the T-129 merge regen (2026-08-25):
-      // `crates/nputer-index/tests/depth.rs`, the integration target that
+      // `crates/supertaskr-index/tests/depth.rs`, the integration target that
       // pins every bounded traversal, and the FIRST file this component
       // has gained on disk since it joined the mapping. Derived from
       // `arch` over the regenerated graph before the suite was run.
       // 33 → 34 at the T-127 merge regen (2026-08-25):
-      // `crates/nputer-index/src/arch/cycles.rs`, the registry cycle
+      // `crates/supertaskr-index/src/arch/cycles.rs`, the registry cycle
       // gate — the SECOND file this component has gained on disk, and
       // the only component whose count moves at this merge. Derived from
       // `arch` over the regenerated graph before the suite was run.
       // 34 → 35 at the T-135 Half A merge regen (2026-08-26):
-      // `crates/nputer-index/src/arch/blast.rs`, the derived-dependents
+      // `crates/supertaskr-index/src/arch/blast.rs`, the derived-dependents
       // report — the THIRD file this component has gained on disk, and
       // again the only component whose count moves at this merge.
       // Derived from `arch` over the regenerated graph before the suite
       // was run.
       // 35 → 36 at the T-139 merge regen (2026-08-26):
-      // `crates/nputer-index/tests/budget.rs`, the degradation-path suite —
+      // `crates/supertaskr-index/tests/budget.rs`, the degradation-path suite —
       // the FOURTH file this component has gained on disk. It is again the
       // only DECLARED component whose count moves, but this merge is the
       // first in the series that also adds a file NO component claims, so
@@ -1684,7 +1684,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `[app-shell]`, the same slug C-05 carries, so a test routed here is
       // routed for TRUTH and not for throughput. `shell-harness.test.ts` is
       // the one whose name argues for C-05 — the surface it audits,
-      // `window.__nputerShellHarness`, is installed by `watcher-store.ts`,
+      // `window.__supertaskrShellHarness`, is installed by `watcher-store.ts`,
       // which is this component's file.
       ["C-10", 7],
       // 11 → 14 at the T-034 merge regen: TasksLens.tsx, map-lens.ts and
@@ -2076,7 +2076,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // — `arch drift` read `unmapped=0` at
       // the parent `00e133a` and `unmapped=1` after the checkpoint's regen —
       // and the DECLARATION was routed rather than taken there, because the
-      // harness imports across two components (C-07's `nputer_index` and
+      // harness imports across two components (C-07's `supertaskr_index` and
       // C-10's `docs_watch`) and choosing an owner is a registry decision.
       // T-141 TAKES IT, AND TAKES IT FOR THE COMPONENT THAT LOOKED FURTHEST
       // AWAY. Neither importee is the owner: claiming it in C-07 would
@@ -2156,7 +2156,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // observed count is untouched, which is the tell that this row moved
       // by a DECLARATION and not by code.
       // 13 -> 14 at the T-116 merge regen: map-churn-age.test.tsx imports
-      // `@nputer/parser`, so this time the row moves by CODE and not by a
+      // `@supertaskr/parser`, so this time the row moves by CODE and not by a
       // declaration — the opposite tell to the one above. THE LANE'S OWN
       // FORECAST MISSED THIS ROW while recording the D1 entry the same
       // edge produces; the D1 entry no longer moves at all, because T-033
@@ -2164,7 +2164,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // list stopped holding it.
       ["C-05", "C-06", "confirmed", 1],   // T-149: 14 -> 1
       // 1 -> 2 AT T-141, and the observed count moves with NO code change
-      // and NO regen: `graph_budget_bench.rs` has imported `nputer_index`
+      // and NO regen: `graph_budget_bench.rs` has imported `supertaskr_index`
       // since T-139 and the file edge has been in the graph the whole time
       // — it was attributed to the bucket. Declaring an owner re-attributes
       // it, so the edge that WAS `unmapped -> C-07 undeclared 1` folds into
@@ -2368,7 +2368,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `unmapped -> C-10`, the first and only rows this table has ever
       // carried whose SOURCE is not a component: the bucket's imports.
       // `app/src-tauri/tests/graph_budget_bench.rs` was unclaimed territory
-      // and reaches `nputer_index` (C-07) and `docs_watch` (C-10), so one
+      // and reaches `supertaskr_index` (C-07) and `docs_watch` (C-10), so one
       // unmapped file produced TWO undeclared rows — which is what made
       // them a symptom of the D2 rather than two independent findings.
       // T-141 DECLARED IT AND BOTH VANISHED, exactly as the comment that
@@ -2437,7 +2437,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   });
 
   it("the T-009 package.path seam is consumed: C-0x→C-06 edges are real, never absent", () => {
-    // Declared consumers of @nputer/parser resolve to CONFIRMED edges
+    // Declared consumers of @supertaskr/parser resolve to CONFIRMED edges
     // through the package join (this closes the seam note in T-009 §6.6:
     // the file:-dep edge must not render as planned-forever, and must
     // never be silently absent).
@@ -2508,7 +2508,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     const c05 = derived.edges.find((e) => e.from === "C-05" && e.to === "C-06");
     expect(c05?.relation).toBe("confirmed");
     // 13 -> 14 at the T-116 merge regen: map-churn-age.test.tsx is a
-    // fourteenth C-05 file importing `@nputer/parser`. This body is
+    // fourteenth C-05 file importing `@supertaskr/parser`. This body is
     // T-033's, so the lane could not have forecast it — and the count
     // moving here while the relation holds is exactly what this body was
     // written to make visible.

@@ -86,7 +86,7 @@ describe("the transcript is a join, and turn 1 has no user half", () => {
 
     expect(assembleTranscript(turns, users, chips).map((e) => [e.kind, e.turn])).toEqual([
       // TURN 1'S USER HALF IS THE KICKOFF, which lives in
-      // .nputer/genesis/transcript.jsonl and is exposed by no command —
+      // .supertaskr/genesis/transcript.jsonl and is exposed by no command —
       // so no bubble is rendered for it even when one is recorded.
       ["planner", 1],
       ["banked", 1],

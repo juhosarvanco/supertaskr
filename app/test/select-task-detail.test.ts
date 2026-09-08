@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import { parseProjectFromFiles, type ProjectParseResult } from "@supertaskr/parser/pure";
 import type { DispatchReading } from "../src/lib/board-model";
 import {
   cardRef,

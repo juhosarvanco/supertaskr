@@ -1,5 +1,5 @@
-import type { ProjectParseResult, TaskScheduleModel, WaveLayering } from "@nputer/parser/pure";
-import { selectTaskSchedule } from "@nputer/parser/pure";
+import type { ProjectParseResult, TaskScheduleModel, WaveLayering } from "@supertaskr/parser/pure";
+import { selectTaskSchedule } from "@supertaskr/parser/pure";
 import { rejectedVerdictCount } from "@/lib/verdicts";
 
 /**
@@ -8,7 +8,7 @@ import { rejectedVerdictCount } from "@/lib/verdicts";
  *
  * THE ANALYSIS MOVED AT T-137 AND IS NOT COPIED HERE. Waves, the critical
  * path, transitive holds, the worst blocker, the schedule word and the
- * three summary sentences now live in `@nputer/parser/pure`
+ * three summary sentences now live in `@supertaskr/parser/pure`
  * (`lib/parser/src/task-waves.ts`) — ONE implementation (T-057), so a
  * terminal session and this pane can never disagree about which card is
  * ready. This file re-exports them unchanged and keeps the two things
@@ -25,7 +25,7 @@ import { rejectedVerdictCount } from "@/lib/verdicts";
  * C-16 and did not have to move for the analysis to.
  *
  * The design bundle's "map · tasks" screen is the spec of record
- * (docs/design/claudedesign_handoff/"nputer app.dc.html", the `isDeps`
+ * (docs/design/claudedesign_handoff/"supertaskr app.dc.html", the `isDeps`
  * screen; README §5). Its hand-laid card coordinates are illustrative —
  * it draws 15 cards while claiming 18 — so the RULES are normative and
  * the mock's geometry is the source for the constants (240×58 cards,
@@ -60,9 +60,9 @@ export {
   type WaveInput,
   type WaveLayering,
   type WaveStatus,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 
-import type { WaveCard, WaveEdge, WaveStatus } from "@nputer/parser/pure";
+import type { WaveCard, WaveEdge, WaveStatus } from "@supertaskr/parser/pure";
 
 // ---------------------------------------------------------------------
 // Geometry (design-extracted; see the notes' extraction table)

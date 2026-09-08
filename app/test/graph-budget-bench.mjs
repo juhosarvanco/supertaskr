@@ -199,7 +199,7 @@ function main() {
   const live = JSON.parse(liveText);
   const pool = buildPool(live, 20);
 
-  const work = mkdtempSync(join(tmpdir(), "nputer-t139-js-"));
+  const work = mkdtempSync(join(tmpdir(), "supertaskr-t139-js-"));
   try {
     // The REAL parseGraph, compiled — never a re-implementation. IIFE so
     // one file runs unchanged under both a CommonJS node and a bare jsc

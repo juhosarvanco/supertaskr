@@ -1,4 +1,4 @@
-import { compareComponentIds } from "@nputer/parser/pure";
+import { compareComponentIds } from "@supertaskr/parser/pure";
 import { UNMAPPED_ID, type DerivedComponentKind } from "@/lib/architecture/derive";
 
 /**

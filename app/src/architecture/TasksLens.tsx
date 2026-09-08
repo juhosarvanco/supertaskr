@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import type { ProjectParseResult, ReviewMode } from "@nputer/parser/pure";
+import type { ProjectParseResult, ReviewMode } from "@supertaskr/parser/pure";
 import { cn } from "@/lib/utils";
 import type { TaskRef } from "@/lib/task-detail";
 import {
@@ -23,7 +23,7 @@ import {
  * (critical path · worst blocker · ready now).
  *
  * Spec of record: the design bundle's "map · tasks" screen
- * (docs/design/claudedesign_handoff/"nputer app.dc.html"), README §5.
+ * (docs/design/claudedesign_handoff/"supertaskr app.dc.html"), README §5.
  * Every rule and every number lives in task-waves.ts — this file is a
  * VIEW. Zoom/pan repeats the architecture lens's construction (HTML
  * cards over an SVG edge layer inside ONE transformed wrapper; scale
@@ -439,7 +439,7 @@ function TaskReviewMark({ review }: { review?: ReviewMode }) {
 }
 
 /** Two arrowheads: the ordinary dependency edge and the critical path
- * (the mock's `nputerArrow` / `nputerArrowHot` pair, at its 7px size). */
+ * (the mock's `supertaskrArrow` / `supertaskrArrowHot` pair, at its 7px size). */
 function TaskEdgeMarkers() {
   const heads: { id: string; fill: string }[] = [
     { id: "plain", fill: "var(--map-edge)" },

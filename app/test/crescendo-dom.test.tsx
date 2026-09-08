@@ -62,7 +62,7 @@ const { default: App } = await import("../src/App");
 
 // ---- the temp project ---------------------------------------------------
 
-const PROJECT = mkdtempSync(join(tmpdir(), "nputer-t028-"));
+const PROJECT = mkdtempSync(join(tmpdir(), "supertaskr-t028-"));
 const DOCS = join(PROJECT, "docs");
 
 /**
@@ -406,7 +406,7 @@ describe("a planner that ends without a parseable board (criterion 4)", () => {
     const { GenesisScreen } = await import("../src/components/shell/GenesisScreen");
     const { applySnapshot, emptyState } = await import("../src/lib/docs-model");
 
-    const failed = mkdtempSync(join(tmpdir(), "nputer-t028-theater-"));
+    const failed = mkdtempSync(join(tmpdir(), "supertaskr-t028-theater-"));
     mkdirSync(join(failed, "docs", "tasks"), { recursive: true });
     writeFileSync(join(failed, "docs", "NORTH_STAR.md"), NORTH_STAR, "utf8");
     writeFileSync(join(failed, "docs", "ROADMAP.md"), ROADMAP, "utf8");
@@ -519,7 +519,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // takes over when it will not, the transcript rehydration, and the
     // hand-driven mode's assembled prompt. Every one takes ZERO
     // arguments — the session id they act on is read Rust-side out of
-    // `.nputer/sessions.json` through its own gate and never crosses the
+    // `.supertaskr/sessions.json` through its own gate and never crosses the
     // boundary in either direction.
     //
     // T-140-s1 ADDS TWO — `arch_rollup` and `arch_detail`, the map's own

@@ -74,7 +74,7 @@
  * indexed file, so every import it carries becomes an edge on the
  * architecture map. The board's task records are described by the
  * structural {@link BoardStamp} rather than by importing `TaskRecord`
- * from `@nputer/parser`, which would declare a C-15 → C-06 dependency the
+ * from `@supertaskr/parser`, which would declare a C-15 → C-06 dependency the
  * component file does not claim, for two fields. The one import is
  * `invoke` — a PACKAGE edge to `@tauri-apps/api` and not a component one,
  * added at `T-112-s1` because a mirror with no door is a mirror of
@@ -195,7 +195,7 @@ export type LaneScanRefusal =
 
 /**
  * One card, as much of it as the join reads. Structural on purpose:
- * `TaskRecord` from `@nputer/parser` satisfies it, and so does a fixture.
+ * `TaskRecord` from `@supertaskr/parser` satisfies it, and so does a fixture.
  *
  * The statuses that COUNT as in flight are `join.rs`'s
  * `IN_FLIGHT_STATUSES` — `building`, `verifying` and `merging`, spelled

@@ -2,7 +2,7 @@
  * The derivation engine (T-011): intent ⨝ reality ⨝ tasks.
  *
  * Pure, DOM-free TypeScript — the T-004 selector pattern. Inputs are the
- * already-parsed layers (component records from @nputer/parser, the graph
+ * already-parsed layers (component records from @supertaskr/parser, the graph
  * from ./graph, the task model); the output is everything the map pane
  * renders. Nothing here touches Tauri, React, or IO, which is also what
  * satisfies the live-update criterion: the derived model is a pure
@@ -23,7 +23,7 @@ import {
   type ReviewMode,
   type TaskRecord,
   type TaskStatus,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 import { claimingPattern, claimsDirContents, claimsPath } from "./glob";
 import type { ArchGraph } from "./graph";
 import type { ArchRollup } from "./rollup";
@@ -710,7 +710,7 @@ function deriveDeclared(
  *
  * **WHAT MOVED AND WHAT DID NOT.** The reality side — file→component
  * mapping, observed component edges with counts, the relation table, the
- * findings — was computed in Rust by `nputer-index`'s `arch` module,
+ * findings — was computed in Rust by `supertaskr-index`'s `arch` module,
  * which has reproduced this file's answer on this repository's live tree
  * row for row since T-014. What did NOT move, and must not, is
  * everything ADR-015 assigns to TypeScript: the status rollup, the

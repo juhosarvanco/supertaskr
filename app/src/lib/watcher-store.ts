@@ -184,7 +184,7 @@ export type StartupStep = "subscribe" | "snapshot" | "deadline";
  *   of the whole docs/ tree: 72 / 66 / 68 / 70 / 69 ms. Worst 72 ms.
  *
  *   A PADDED UPPER BOUND that additionally swallows webview boot — the
- *   `[nputer] window "main" created` line to the applied snapshot, which
+ *   `[supertaskr] window "main" created` line to the applied snapshot, which
  *   strictly CONTAINS the window above and is therefore the conservative
  *   number: 778 / 657 / 601 / 710 / 607 ms. Worst 778 ms.
  *
@@ -239,7 +239,7 @@ export const STARTUP_DEADLINE_MS = 8_000;
  * a derivation from a subsystem this command never enters.
  *
  * What the tree DOES state about this window is the indexer's own
- * performance criterion: `crates/nputer-index/tests/perf.rs` asserts a
+ * performance criterion: `crates/supertaskr-index/tests/perf.rs` asserts a
  * cold index under 1 500 ms and calls that its own "generous 3x ceiling"
  * over a 500 ms criterion. Measured here on this repository at
  * `57c1b39`, five `index --check` runs off a release build: 670 ms cold,
@@ -496,7 +496,7 @@ export function reduceDocs(
  * verbatim from T-007 — the "No plan in <folder>" card carries it as its
  * footnote, so redesigning the state lost none of what it said. */
 export const CONVENTION_HINT =
-  "an nputer project keeps its board in docs/tasks/, decisions in docs/decisions/";
+  "an supertaskr project keeps its board in docs/tasks/, decisions in docs/decisions/";
 
 /** One row of the "No plan in <folder>" checklist (T-026): a path the
  * front door looked for, and whether it is there. */
@@ -855,7 +855,7 @@ export function outcomeCarriesSnapshot(outcome: PickOutcomePayload): boolean {
 }
 
 /**
- * What `__nputerShellHarness.getShell()` answers (T-041). Deliberately a
+ * What `__supertaskrShellHarness.getShell()` answers (T-041). Deliberately a
  * SUMMARY rather than `ShellState` itself: the harness is read across the
  * browser boundary (`page.evaluate` structured-clones its return value)
  * and `DocsModelState` carries two `ReadonlyMap`s, which do not survive
@@ -895,14 +895,14 @@ declare global {
   interface Window {
     __TAURI_INTERNALS__?: unknown;
     /** Dev-only browser harness (absent in Tauri and in prod builds). */
-    __nputerDocsHarness?: {
+    __supertaskrDocsHarness?: {
       apply: (payload: DocsSnapshotPayload) => void;
       getState: () => DocsModelState;
     };
     /**
      * Dev-only shell harness (T-041) — absent in Tauri and in prod
      * builds, behind the SAME `!isTauri && import.meta.env.DEV` gate as
-     * `__nputerDocsHarness` and installed in the same statement, so
+     * `__supertaskrDocsHarness` and installed in the same statement, so
      * there is one gate to audit rather than two that could drift.
      *
      * A test surface over the shell's OWN state, never new IPC: both
@@ -914,7 +914,7 @@ declare global {
      * grant. In a packaged app the whole block is unreachable (isTauri)
      * and absent from the bundle (DEV).
      */
-    __nputerShellHarness?: {
+    __supertaskrShellHarness?: {
       applyProjectStatus: (status: ProjectStatusPayload) => void;
       applyPickOutcome: (outcome: PickOutcomePayload) => void;
       /** T-050: `recordStartupFailure` itself — what the store's own
@@ -928,7 +928,7 @@ declare global {
       getShell: () => ShellHarnessSnapshot;
     };
     /** Dev-only echo capture used by the browser harness. */
-    __nputerEchoes?: ModelUpdateEcho[];
+    __supertaskrEchoes?: ModelUpdateEcho[];
   }
 }
 
@@ -1093,10 +1093,10 @@ function sendEcho(next: DocsModelState): void {
   const echo = buildEcho(next);
   if (isTauri) {
     emit("model-updated", echo).catch((err) => {
-      console.error("[nputer] model-updated echo failed", err);
+      console.error("[supertaskr] model-updated echo failed", err);
     });
   } else if (import.meta.env.DEV) {
-    (window.__nputerEchoes ??= []).push(echo);
+    (window.__supertaskrEchoes ??= []).push(echo);
   }
 }
 
@@ -1163,7 +1163,7 @@ function recordStartupFailure(step: StartupStep, reason: unknown): void {
   });
   // The message is an ARGUMENT, never interpolated into the line — the
   // same discipline as the `model-updated` echo's error log.
-  console.error("[nputer] startup failed at", step, reason);
+  console.error("[supertaskr] startup failed at", step, reason);
   // T-063: AND THE LINE ABOVE IS WHERE THIS USED TO END, which is the
   // defect the only real user report in this backlog is about. A
   // WKWebView `console.error` never reaches the Tauri process's stdout,
@@ -1177,7 +1177,7 @@ function recordStartupFailure(step: StartupStep, reason: unknown): void {
   // unhandled rejections.
   if (isTauri) {
     emit(STARTUP_FAILED_EVENT, failure).catch((err) => {
-      console.error("[nputer] startup-failed emit failed", err);
+      console.error("[supertaskr] startup-failed emit failed", err);
     });
   }
 }
@@ -1268,7 +1268,7 @@ async function runStartup(): Promise<void> {
 
   if (!isTauri) {
     if (import.meta.env.DEV) {
-      window.__nputerDocsHarness = {
+      window.__supertaskrDocsHarness = {
         apply: applyDocsPayload,
         getState: () => shell.docs,
       };
@@ -1291,7 +1291,7 @@ async function runStartup(): Promise<void> {
       // sha-IDENTICAL asset (index-ByWKsUIt.js, 488 805 B, sha256
       // 3aec41b1…). The ONE lever that does change it is an INHERITED
       // `NODE_ENV=development`, which yields a visibly larger bundle
-      // carrying `__nputerShellHarness` — and `tauri.conf.json`'s
+      // carrying `__supertaskrShellHarness` — and `tauri.conf.json`'s
       // `beforeBuildCommand` IS `npm run build`, so a packaging run that
       // inherits it embeds this block. That is the case for having TWO
       // layers rather than one: the runtime `isTauri` guard above still
@@ -1300,13 +1300,13 @@ async function runStartup(): Promise<void> {
       // ci.yml arm of this (a step asserting NODE_ENV before the build)
       // is deliberately NOT here — it belongs to T-054, which owns that
       // file.
-      window.__nputerShellHarness = {
+      window.__supertaskrShellHarness = {
         applyProjectStatus,
         applyPickOutcome: commitPickOutcome,
         applyStartupFailure: recordStartupFailure,
         getShell: shellHarnessSnapshot,
       };
-      console.info("[nputer] no Tauri IPC detected — browser dev harness active");
+      console.info("[supertaskr] no Tauri IPC detected — browser dev harness active");
     }
     setShell({ starting: false });
     return;

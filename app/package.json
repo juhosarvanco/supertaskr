@@ -1,5 +1,5 @@
 {
-  "name": "nputer",
+  "name": "supertaskr",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,7 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@nputer/parser": "file:../lib/parser",
+    "@supertaskr/parser": "file:../lib/parser",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/api": "^2",
     "class-variance-authority": "^0.7.1",

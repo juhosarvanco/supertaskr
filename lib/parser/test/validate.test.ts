@@ -340,7 +340,7 @@ describe('validateProject — an id-bearing file whose name encodes no id (T-030
   });
 
   it('fires identically through the disk layer', () => {
-    const root = mkdtempSync(join(tmpdir(), 'nputer-fname-'));
+    const root = mkdtempSync(join(tmpdir(), 'supertaskr-fname-'));
     const tasks = join(root, 'docs', 'tasks');
     mkdirSync(tasks, { recursive: true });
     writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
@@ -565,7 +565,7 @@ describe('validateProject — numerically aliased task ids (T-053, promoting T-0
   });
 
   it('fires identically through the disk layer', () => {
-    const root = mkdtempSync(join(tmpdir(), 'nputer-alias-'));
+    const root = mkdtempSync(join(tmpdir(), 'supertaskr-alias-'));
     const tasks = join(root, 'docs', 'tasks');
     mkdirSync(tasks, { recursive: true });
     writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
@@ -743,7 +743,7 @@ describe('validateProject — blocked_by cycles (T-030, absorbing T-019-s3)', ()
   });
 
   it('fires identically through the disk layer', () => {
-    const root = mkdtempSync(join(tmpdir(), 'nputer-cycle-'));
+    const root = mkdtempSync(join(tmpdir(), 'supertaskr-cycle-'));
     const tasks = join(root, 'docs', 'tasks');
     mkdirSync(tasks, { recursive: true });
     writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
@@ -824,7 +824,7 @@ describe('validateProject — the standalone export (both entries)', () => {
 });
 
 describe('validateProject — wired into the disk layer identically', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'nputer-validate-'));
+  const dir = mkdtempSync(join(tmpdir(), 'supertaskr-validate-'));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it('parseProject reports cross-reference issues after per-layer ones and keeps the records', () => {
@@ -994,7 +994,7 @@ describe('validateProject — the near-miss HINT on a dangling reference (T-076)
   });
 
   it('fires identically through the disk layer', () => {
-    const root = mkdtempSync(join(tmpdir(), 'nputer-nearmiss-'));
+    const root = mkdtempSync(join(tmpdir(), 'supertaskr-nearmiss-'));
     const tasks = join(root, 'docs', 'tasks');
     mkdirSync(tasks, { recursive: true });
     writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);

@@ -33,7 +33,7 @@ import { flightOf, type FlightReading } from "./crescendo";
  * nothing more; there is no second subscriber on the `genesis-turn`
  * channel, no second fold, and no second stale-drop state. In a served
  * DEV bundle — which has no Tauri, therefore no runner, no CLI and no
- * watcher — a twin store is fed by `window.__nputerInterviewHarness`
+ * watcher — a twin store is fed by `window.__supertaskrInterviewHarness`
  * and folded with **the same exported `reduceGenesisEvent`**. That is
  * T-041's `commitPickOutcome` argument in a different shape: there is
  * exactly one reduction spelling in the tree, so a parallel
@@ -57,7 +57,7 @@ import { flightOf, type FlightReading } from "./crescendo";
  * `phase`/`turn`/`nativeSessionId` but never `turns`, and these maps live
  * in module state, so a remount or an app restart mid-interview showed an
  * EMPTY CHAT over a LIVE SESSION. The third source is now
- * `.nputer/genesis/transcript.jsonl`, pulled by `rehydrateInterview` and
+ * `.supertaskr/genesis/transcript.jsonl`, pulled by `rehydrateInterview` and
  * folded by `mergeRehydrated` — live state wins wherever both exist,
  * because a memory of a turn must never overwrite the turn.
  *
@@ -90,7 +90,7 @@ function subscribeTwin(callback: () => void): () => void {
 
 declare global {
   interface Window {
-    __nputerInterviewHarness?: {
+    __supertaskrInterviewHarness?: {
       /** Push one `genesis-turn` payload through the shipped reducer. */
       push: (event: GenesisEvent) => void;
       /** Push one start/send outcome through the shipped reducer. */
@@ -118,7 +118,7 @@ declare global {
        */
       listenerFailed: (failed: boolean) => void;
       /** T-029 criteria 1–2: the banked transcript a restart rehydrates
-       * from. A served bundle has no `.nputer/` to read. */
+       * from. A served bundle has no `.supertaskr/` to read. */
       rehydrate: (lines: readonly TranscriptLinePayload[]) => void;
     };
   }
@@ -135,7 +135,7 @@ declare global {
 export async function startInterviewSource(): Promise<void> {
   if (!isTauri) {
     if (import.meta.env.DEV) {
-      window.__nputerInterviewHarness = {
+      window.__supertaskrInterviewHarness = {
         push: (event) => setTwin(reduceGenesisEvent(twinState, event)),
         outcome: (outcome) => setTwin(reduceGenesisOutcome(twinState, outcome)),
         status: (payload) => setTwin(applyGenesisStatus(twinState, payload)),
@@ -144,7 +144,7 @@ export async function startInterviewSource(): Promise<void> {
         listenerFailed: (failed) => setTwin({ ...twinState, listenerFailed: failed }),
         rehydrate: (lines) => setTwin({ ...twinState, rehydrated: [...lines] }),
       };
-      console.info("[nputer] no Tauri IPC detected — interview harness active");
+      console.info("[supertaskr] no Tauri IPC detected — interview harness active");
     }
     return;
   }
@@ -159,7 +159,7 @@ export async function startInterviewSource(): Promise<void> {
   try {
     await startGenesisListener();
   } catch (err) {
-    console.error("[nputer] the interview event subscription was refused", err);
+    console.error("[supertaskr] the interview event subscription was refused", err);
   }
 }
 
@@ -482,7 +482,7 @@ export function cancelTurn(): void {
  *   So: an app RESTART re-bases the clock to zero, and a genesis resumed
  *   tomorrow reads the time since the app was reopened. That is a real
  *   limitation and it is deliberate — the only durable origin available
- *   would be a timestamp in `.nputer/`, which is state this task is
+ *   would be a timestamp in `.supertaskr/`, which is state this task is
  *   fenced out of writing (ADR-017: the app renders what lands, the
  *   planner writes), and `genesis_status` carries `lastEventAtMs` but no
  *   first-event stamp. A REMOUNT inside one session does NOT re-base,

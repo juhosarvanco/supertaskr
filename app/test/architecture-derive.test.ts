@@ -4,7 +4,7 @@ import {
   parseTaskFile,
   type ComponentRecord,
   type TaskRecord,
-} from "@nputer/parser/pure";
+} from "@supertaskr/parser/pure";
 import {
   deriveArchitecture,
   rollupProvenance,
@@ -484,14 +484,14 @@ describe("the package.path join (T-009 §6.6 seam, consumed here)", () => {
       ["C-06", { paths: ["lib/parser/**"] }],
     ]);
     const graph = graphOf(
-      [{ path: "app/model.ts", imports: ["p:@nputer/parser"] }, { path: "lib/parser/src/index.ts" }],
-      [{ name: "@nputer/parser", path: "lib/parser" }],
+      [{ path: "app/model.ts", imports: ["p:@supertaskr/parser"] }, { path: "lib/parser/src/index.ts" }],
+      [{ name: "@supertaskr/parser", path: "lib/parser" }],
     );
     const model = deriveArchitecture({ components, graph, tasks: [] });
     const edge = edgeOf(model, "C-05", "C-06");
     expect(edge?.relation).toBe("confirmed"); // NOT planned: the seam is consumed
     expect(edge?.fileEdges).toEqual([
-      { from: "app/model.ts", to: "lib/parser", package: "p:@nputer/parser" },
+      { from: "app/model.ts", to: "lib/parser", package: "p:@supertaskr/parser" },
     ]);
   });
 
@@ -501,8 +501,8 @@ describe("the package.path join (T-009 §6.6 seam, consumed here)", () => {
       ["C-06", { paths: ["lib/parser/**"] }],
     ]);
     const graph = graphOf(
-      [{ path: "app/model.ts", imports: ["p:@nputer/parser"] }, { path: "lib/parser/src/index.ts" }],
-      [{ name: "@nputer/parser", path: "lib/parser" }],
+      [{ path: "app/model.ts", imports: ["p:@supertaskr/parser"] }, { path: "lib/parser/src/index.ts" }],
+      [{ name: "@supertaskr/parser", path: "lib/parser" }],
     );
     const model = deriveArchitecture({ components, graph, tasks: [] });
     expect(edgeOf(model, "C-05", "C-06")?.relation).toBe("undeclared");
@@ -532,14 +532,14 @@ describe("the package.path join (T-009 §6.6 seam, consumed here)", () => {
   it("a package path no component owns is unclaimed territory: D2 + unmapped edge", () => {
     const components = componentsOf([["C-05", { paths: ["app/**"] }]]);
     const graph = graphOf(
-      [{ path: "app/model.ts", imports: ["p:@nputer/parser"] }],
-      [{ name: "@nputer/parser", path: "lib/parser" }],
+      [{ path: "app/model.ts", imports: ["p:@supertaskr/parser"] }],
+      [{ name: "@supertaskr/parser", path: "lib/parser" }],
     );
     const model = deriveArchitecture({ components, graph, tasks: [] });
     const edge = edgeOf(model, "C-05", UNMAPPED_ID);
     expect(edge?.relation).toBe("undeclared");
     expect(edge?.fileEdges).toEqual([
-      { from: "app/model.ts", to: "lib/parser", package: "p:@nputer/parser" },
+      { from: "app/model.ts", to: "lib/parser", package: "p:@supertaskr/parser" },
     ]);
     expect(model.findings).toEqual([
       { rule: "D2", id: "D2:unmapped", files: ["lib/parser"], count: 1 },
@@ -707,13 +707,13 @@ describe("degraded: no components (inferred pseudo-components)", () => {
   it("groups by top-level directory, flagged inferred, observed relations, zero findings", () => {
     const graph = graphOf(
       [
-        { path: "app/src/a.ts", imports: ["lib/x.ts", "p:@nputer/parser", "p:react"] },
+        { path: "app/src/a.ts", imports: ["lib/x.ts", "p:@supertaskr/parser", "p:react"] },
         { path: "app/src/b.ts", imports: ["app/src/a.ts"] },
         { path: "lib/x.ts" },
         { path: "lib/parser/y.ts" },
         { path: "rootfile.ts" },
       ],
-      [{ name: "@nputer/parser", path: "lib/parser" }, { name: "react" }],
+      [{ name: "@supertaskr/parser", path: "lib/parser" }, { name: "react" }],
     );
     const model = deriveArchitecture({ components: [], graph, tasks: [] });
     expect(model.mode).toBe("no-components");
@@ -734,7 +734,7 @@ describe("degraded: no components (inferred pseudo-components)", () => {
         declared: false,
         observedCount: 2,
         fileEdges: [
-          { from: "app/src/a.ts", to: "lib/parser", package: "p:@nputer/parser" },
+          { from: "app/src/a.ts", to: "lib/parser", package: "p:@supertaskr/parser" },
           { from: "app/src/a.ts", to: "lib/x.ts" },
         ],
       },

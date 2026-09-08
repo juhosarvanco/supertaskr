@@ -770,7 +770,7 @@ const REFUSED_COMPOUND = {
   toolName: "Bash",
   toolUseId: "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
   message:
-    "This Bash command contains multiple operations. The following part requires approval: KIT=.nputer/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp \"$KIT\"/docs-templates/*.md docs/ && cp \"$KIT\"/adapters/CLAUDE.md \"$KIT\"/adapters/AGENTS.md . && cp \"$KIT\"/runtime/nputer.yaml .nputer/nputer.yaml && printf '.nputer/\\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print",
+    "This Bash command contains multiple operations. The following part requires approval: KIT=.supertaskr/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp \"$KIT\"/docs-templates/*.md docs/ && cp \"$KIT\"/adapters/CLAUDE.md \"$KIT\"/adapters/AGENTS.md . && cp \"$KIT\"/runtime/nputer.yaml .supertaskr/supertaskr.yaml && printf '.supertaskr/\\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print",
 } as const;
 
 const REFUSED_GLOB = {
@@ -1502,7 +1502,7 @@ describe("the answer box takes the focus back (criterion 6)", () => {
  * The 2026-08-30 genesis walk finished its questions, banked every
  * answer and put a board on disk — and the screen held *"planner is
  * thinking… · ⌘. to stop"* with a disabled answer button, indefinitely,
- * over a turn that had already landed. The walk's own `.nputer/` is what
+ * over a turn that had already landed. The walk's own `.supertaskr/` is what
  * says the turn landed: the runner appends a planner transcript line only
  * when the turn produced text, that line is on disk, and the session
  * registry reads `turns: 10, status: idle`.

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /**
  * T-027's DEV gate, looked at explicitly rather than inherited.
  *
- * `window.__nputerInterviewHarness` is a test surface over the
+ * `window.__supertaskrInterviewHarness` is a test surface over the
  * interview's state; it must not exist anywhere a user's app can reach
  * it, and "it is written the same way as the one next door" is not
  * evidence of that. This file is `test/shell-harness.test.ts`'s protocol
@@ -77,12 +77,12 @@ async function loadSource(runtime: "tauri" | "browser"): Promise<SourceModule> {
 beforeEach(() => {
   ipc.invoke.mockClear();
   ipc.listen.mockClear();
-  delete window.__nputerInterviewHarness;
+  delete window.__supertaskrInterviewHarness;
 });
 
 afterEach(() => {
   delete (window as unknown as Record<string, unknown>)[TAURI];
-  delete window.__nputerInterviewHarness;
+  delete window.__supertaskrInterviewHarness;
 });
 
 describe("the gate, runtime half: a Tauri runtime never defines the harness", () => {
@@ -99,7 +99,7 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
     );
 
     expect(
-      window.__nputerInterviewHarness,
+      window.__supertaskrInterviewHarness,
       "the interview harness must not exist under Tauri",
     ).toBe(undefined);
   });
@@ -111,7 +111,7 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
     await source.sendAnswer("an answer");
     await source.retryTurn("/tmp/p", 1);
     source.cancelTurn();
-    expect(window.__nputerInterviewHarness).toBe(undefined);
+    expect(window.__supertaskrInterviewHarness).toBe(undefined);
   });
 });
 
@@ -120,14 +120,14 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
     const source = await loadSource("browser");
     await source.startInterviewSource();
 
-    const harness = window.__nputerInterviewHarness;
+    const harness = window.__supertaskrInterviewHarness;
     expect(harness, "the browser DEV bundle must expose the interview harness").toBeDefined();
     // An EXACT key set, so an eighth door reds here — the shape
     // `shell-harness.test.ts` settled on after T-050 added a fourth.
     //
     // T-029 adds two, and both reach states a browser CANNOT otherwise
     // produce: `listenerFailed` (there is no `listen` to refuse) and
-    // `rehydrate` (there is no `.nputer/` to read). Same argument
+    // `rehydrate` (there is no `.supertaskr/` to read). Same argument
     // `recordStartupFailure` made for T-050's screen — the lane drives
     // the shipped field on the shipped state rather than an imitation.
     expect(Object.keys(harness ?? {}).sort()).toEqual([
@@ -151,7 +151,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("folds events through THE SHIPPED reducer, identity discipline included", async () => {
     const source = await loadSource("browser");
     await source.startInterviewSource();
-    const harness = window.__nputerInterviewHarness!;
+    const harness = window.__supertaskrInterviewHarness!;
 
     harness.push({ kind: "started", seq: 1, turn: 1 });
     harness.push({ kind: "textDelta", seq: 2, turn: 1, text: "Who feels " });
@@ -181,7 +181,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("the status door reaches the mount-time state the auto-start keys off", async () => {
     const source = await loadSource("browser");
     await source.startInterviewSource();
-    const harness = window.__nputerInterviewHarness!;
+    const harness = window.__supertaskrInterviewHarness!;
     // Before it, the screen cannot know whether an interview is running,
     // so it must not start one.
     expect(harness.get().methodVersion).toBeNull();
@@ -212,7 +212,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   it("records what the UI asked to send, in order, with the typed text", async () => {
     const source = await loadSource("browser");
     await source.startInterviewSource();
-    const harness = window.__nputerInterviewHarness!;
+    const harness = window.__supertaskrInterviewHarness!;
     expect(harness.sent()).toEqual([]);
     await source.sendAnswer("Solo builders running agent CLIs.");
     await source.sendAnswer("skip");
@@ -242,8 +242,8 @@ describe("the two gates are the same gate, written the same way", () => {
 
   it("both harnesses sit behind !isTauri AND import.meta.env.DEV, in that nesting", () => {
     for (const [file, property] of [
-      ["src/lib/watcher-store.ts", "window.__nputerShellHarness ="],
-      ["src/genesis/interview-source.ts", "window.__nputerInterviewHarness ="],
+      ["src/lib/watcher-store.ts", "window.__supertaskrShellHarness ="],
+      ["src/genesis/interview-source.ts", "window.__supertaskrInterviewHarness ="],
     ] as const) {
       const { source, at } = gateOf(file, property);
       // Search BACKWARDS from the install site: both files use
@@ -306,14 +306,14 @@ describe("the gate, build half: the harness is absent from the shipped bundle", 
     // toContain against the bundle prints the whole bundle.
     const has = (needle: string): boolean => js.includes(needle);
 
-    expect(has("__nputerInterviewHarness"), "the interview harness must not ship").toBe(false);
+    expect(has("__supertaskrInterviewHarness"), "the interview harness must not ship").toBe(false);
     // The whole DEV block went, not just the property name: its console
     // line is the block's own fingerprint.
     expect(has("interview harness active"), "the DEV block itself is dropped").toBe(false);
     // Its two neighbours are still fenced too — this task must not have
     // loosened the gate it copied.
-    expect(has("__nputerShellHarness")).toBe(false);
-    expect(has("__nputerDocsHarness")).toBe(false);
+    expect(has("__supertaskrShellHarness")).toBe(false);
+    expect(has("__supertaskrDocsHarness")).toBe(false);
 
     // CONTROLS, in the same file: this IS the bundle that contains the
     // interview, so the absences above are about the gate and not about

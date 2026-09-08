@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { ProjectParseResult } from "@nputer/parser/pure";
+import type { ProjectParseResult } from "@supertaskr/parser/pure";
 import { selectBoard, type DispatchReading } from "@/lib/board-model";
 import type { BriefOutcomeView, TaskRef } from "@/lib/task-detail";
 import { FeatureColumn } from "./FeatureColumn";
