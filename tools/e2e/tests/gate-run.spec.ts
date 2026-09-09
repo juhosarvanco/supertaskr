@@ -1108,3 +1108,39 @@ test("a run that spanned a commit is refused even after the tree comes BACK, bec
     dropRepo(control.repo);
   }
 });
+
+test("a token entry written before this field existed is refused rather than read as clean, because an unrecorded moment is not a measurement", () => {
+  // THE MIGRATION CASE, DECIDED RATHER THAN LEFT TO CHANCE. A checkout
+  // holding a token minted by the previous runner has entries with no
+  // `treeAtWrite`, and there are only two things a reader can do with
+  // that: assume the run did not span a commit, or refuse. Assuming is
+  // the whole defect this card is about, one release earlier, so it
+  // refuses — on the same ground as an entry with no `dirty`. The cost
+  // is one battery re-run, which a push owes anyway.
+  //
+  // THE OLD SHAPE IS PRODUCED BY DELETING THE FIELD FROM A REAL TOKEN,
+  // never by typing a token literal here: a hand-built fixture would
+  // stay green if the writer stopped writing every other field too.
+  const repo = tokenRepo("pre-field");
+  try {
+    recordVerdicts([entryFor("parser", "GREEN")], repo);
+    const tree = String(headTree(repo));
+    const file = path.join(repo, TOKEN_REL_PATH);
+    // THE POSITIVE CONTROL FIRST: as written, this token is FRESH. The
+    // refusal below is therefore about the missing field and not about
+    // anything else the fixture happens to be.
+    expect(judgeToken({ token: tokenOf(repo), tree, required: ["parser"] }).state).toBe("fresh");
+
+    const raw = JSON.parse(readFileSync(file, "utf8"));
+    expect(raw.suites.parser.treeAtWrite, "the writer really records it").toBe(tree);
+    delete raw.suites.parser.treeAtWrite;
+    writeFileSync(file, `${JSON.stringify(raw, null, 2)}\n`);
+
+    const judged = judgeToken({ token: tokenOf(repo), tree, required: ["parser"] });
+    expect(judged.state).toBe("unkeyed");
+    expect(judged.code).toBe("token-unkeyed");
+    expect(judged.detail).toContain("did not record the tree HEAD had reached");
+  } finally {
+    dropRepo(repo);
+  }
+});
