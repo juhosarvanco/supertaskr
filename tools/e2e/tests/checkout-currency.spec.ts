@@ -1656,6 +1656,21 @@ test("the record's own probe tells ENOENT from every other errno, so a file that
   const file = path.join(repo, HOLDER_REL_PATH);
   chmodSync(file, 0o000);
   try {
+    // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED — a suite run as
+    // ROOT reads straight through mode 000, and then this body is about
+    // the user rather than about the probe. Asserted rather than skipped:
+    // this suite carries no skips, and the message is what makes such a
+    // red attribute itself instead of looking like the guard failing.
+    let unreadable = false;
+    try {
+      readFileSync(file, "utf8");
+    } catch {
+      unreadable = true;
+    }
+    expect(
+      unreadable,
+      "the precondition: this user cannot read a 000 file. A suite run as ROOT can",
+    ).toBe(true);
     const denied = holderVerdict({ root: repo, identity: me });
     expect(denied.state, "a record it could not READ is an inability, never a vacancy").toBe(
       "unknown",

@@ -947,6 +947,23 @@ test("*is this our repository* answered by a probe that COULD NOT LOOK is announ
 
   chmodSync(dir, 0o000);
   try {
+    // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED. A suite run as ROOT
+    // reads straight through a 000 directory, so every assertion below
+    // would red for a reason that has nothing to do with the guard —
+    // which is this card's own subject, a body measuring the machine. It
+    // is asserted rather than skipped because this suite carries no
+    // skips; the message is what makes the red attribute itself.
+    let denied = false;
+    try {
+      readFileSync(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH), "utf8");
+    } catch {
+      denied = true;
+    }
+    expect(
+      denied,
+      "the precondition: this user cannot read through a 000 directory. A suite run as ROOT can, " +
+        "and then this body is about the user rather than about the probe",
+    ).toBe(true);
     const blind = ask();
     expect(blind.code, `an unreadable probe is not "not ours" — ${said(blind)}`).not.toBe(
       "not-this-repository",
