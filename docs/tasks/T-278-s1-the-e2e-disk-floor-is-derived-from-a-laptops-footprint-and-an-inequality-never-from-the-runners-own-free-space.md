@@ -32,3 +32,16 @@ Class parent: T-278 (this is its own follow-up, not a second instance).
 Disposition hint: promote as soon as one green run exists on main after
 T-278 merges — the whole card is reading two numbers out of a log and
 either confirming 2 GiB or moving it in the one place it is written.
+
+## The first reading (the architect seat, 2026-09-09T06:30Z, from run 34317380241 on 9ba3b7b — the first run after T-278 landed)
+
+The runner printed its disk for the first time, before and after the e2e lane, on a GREEN run (26 min):
+
+    runner disk before the e2e lane (floor 2 GiB), 06:09:34Z
+    /dev/root        72G   68G  4.3G  95% /      (df -h . and df -h /tmp: the same filesystem)
+    /dev/root      9699328 1176653 8522675   13% /   (inodes)
+    runner disk after the e2e lane, 06:28:33Z
+    /dev/root        72G   68G  4.3G  95% /
+    /dev/root      9699328 1177269 8522059   13% /
+
+So a healthy ubuntu-24.04 runner reaches the lane with about 4.3 GiB free on a 72 GiB root at 95% used, and the lane's own footprint is below the reading's resolution (the same 4.3 GiB after; 616 inodes consumed). The 2 GiB floor sits under the healthy reading by roughly 2.3 GiB and above what the four red runners had (at most ~223 MiB, T-278's inequality). Re-derive the floor from this reading and the next few — one reading is a point, not a band.
