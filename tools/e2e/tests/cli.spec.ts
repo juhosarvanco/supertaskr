@@ -207,6 +207,13 @@ test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing f
       expect(VERBS.map((v) => v.verb), `${name} is honestly absent`).not.toContain(name);
       continue;
     }
+    // THE DISPOSITION IS THE VERB'S OWN NAME OR IT IS A RENAME, and a
+    // rename here would let a C-02 verb be claimed as fronted by some
+    // OTHER verb that happens to exist. A poison drill found exactly
+    // that: `init: "next"` left this body green, because "next" is a
+    // real verb. The front does not rename a C-02 verb, so the identity
+    // is the assertion.
+    expect(disposition, `${name} is fronted under its own name, not renamed`).toBe(name);
     expect(VERBS.map((v) => v.verb), `${name} is fronted as ${disposition}`).toContain(disposition);
   }
 });
