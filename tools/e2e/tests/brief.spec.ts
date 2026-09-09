@@ -30,6 +30,7 @@ import {
   assembleBrief,
   boardCensus,
   ceremonyRows,
+  citedConventionBullets,
   citedOpening,
   components,
   contractRows,
@@ -38,13 +39,17 @@ import {
   dispatchLanePlan,
   dispatchSpellings,
   docsNamed,
+  conventionHeadings,
   fenceLedger,
   fenceOverlaps,
   fieldList,
   findableNeedle,
   frontmatterFields,
+  gateSources,
   insideRepository,
   integrationRefCandidates,
+  PACK_TRANSCRIPTION_LIMIT,
+  GATE_SOURCE_DIRS,
   laneScratchName,
   laneScratchStem,
   laneSpellings,
@@ -55,6 +60,7 @@ import {
   marginRecs,
   namedDisciplines,
   note,
+  packRecs,
   packageCommands,
   parseWorktreePorcelain,
   readAdditions,
@@ -65,6 +71,7 @@ import {
   resolveIntegrationRef,
   roleText,
   runDispatchLane,
+  methodNamed,
   slugMapFromFields,
   slugMapFromProse,
   slugsSharingComponents,
@@ -3990,4 +3997,397 @@ test("THE RITUAL IS A NAMED ARM — its dials mean nothing without it, and it re
 
   const statusAfter = spawnSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" });
   expect(statusAfter.stdout, "a refused invocation moved the working tree").toBe(statusBefore.stdout);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE CONTEXT PACK (T-254).
+ *
+ * An executor's standing read is its card plus STATE, ARCHITECTURE and
+ * CONVENTIONS — and three quarters of that is the last document, most of
+ * which is rules a GATE enforces. These bodies pin the pack that replaces
+ * the whole-document read: that its bullet set is DERIVED from the gates'
+ * own citations rather than listed, that a long bullet is CITED and a
+ * short one TRANSCRIBED byte-exact, that the two ways a pack can be empty
+ * are said APART, and that the brief says in as many words whose read the
+ * whole document is.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * A phrase DEEP inside a passage that occurs exactly ONCE in the whole
+ * document, so its absence from the brief is evidence about THIS passage
+ * and not about whichever bullet happens to share a sentence with it.
+ *
+ * The window walks rather than being pinned at an offset: a fixed
+ * sixty-percent slice lands wherever the reflow puts it, and this
+ * document repeats whole clauses across its gate bullets on purpose.
+ * Returns "" when the passage carries no unique window at all — which is
+ * a FINDING the caller states, never a silent skip.
+ */
+function uniqueDeepPhrase(flat: string, flatDoc: string, width = 60): string {
+  for (let at = Math.floor(flat.length * 0.4); at + width <= flat.length; at += 1) {
+    const slice = flat.slice(at, at + width);
+    if (flatDoc.split(slice).length === 2) return slice;
+  }
+  return "";
+}
+
+/** The pack's lines, out of a whole assembled brief. */
+function packLines(taskId: string, full = false): string[] {
+  return render(assembleBrief(context({ taskId, full })).recs)
+    .split("\n")
+    .filter((l) => l.startsWith("pack") || l.startsWith("# THE CONTEXT PACK") || l.startsWith("# a bullet this pack"));
+}
+
+test("THE CONTEXT PACK CARRIES THE METHOD FILES, THE CITED BULLETS AND THE COMPONENTS — and says whose read the whole document is", () => {
+  // KILLED BY: dropping any of the three parts, by a method-file line
+  // naming a file the role file does not name, by the CONVENTIONS size
+  // drifting from the document, or by removing the sentence that hands
+  // the whole document to the architect.
+  const ctx = context({ taskId: "T-133" });
+  const rendered = render(assembleBrief(ctx).recs);
+  const lines = rendered.split("\n");
+
+  const header = lines.find((l) => l.startsWith("# THE CONTEXT PACK")) ?? "";
+  expect(header, "the brief carries no context pack at all").not.toBe("");
+  expect(
+    header,
+    "the pack does not say that the WHOLE document is the architect's read — the sentence the " +
+      "seat needs in order to stop reading is the one thing the pack may not leave to inference",
+  ).toContain("ARCHITECT'S read");
+
+  // PART ONE — the method files, cross-checked against a second reading
+  // of the role file rather than against a list written here.
+  const method = methodNamed(ctx.roleMd, `method/roles/${ctx.role}.md`, ctx.root);
+  expect(method.length, "this role file names no method file, so the pack's first part has no subject").toBeGreaterThan(0);
+  for (const m of method) {
+    const line = lines.find((l) => l.startsWith(`pack method file: ${m.rel} `)) ?? "";
+    expect(line, `the pack omits ${m.rel}, which this role file names`).not.toBe("");
+    expect(line, `${m.rel}'s size in the pack is not its size at this ref`).toContain(`(${m.bytes} bytes)`);
+    expect(
+      readDoc(m.rel, ctx.root).length,
+      `${m.rel} is in the pack and is not readable at this ref`,
+    ).toBeGreaterThan(0);
+  }
+  // AND NOTHING ELSE: a pack that named the whole method directory would
+  // satisfy every assertion above and none of the card's.
+  const named = lines.filter((l) => l.startsWith("pack method file: ")).length;
+  expect(named, "the pack names method files this role file does not").toBe(method.length);
+
+  // PART TWO — the size figure is the document's own.
+  const size = lines.find((l) => l.startsWith("pack: docs/CONVENTIONS.md is ")) ?? "";
+  expect(size, "the pack states no size for the document it is standing in for").not.toBe("");
+  expect(
+    size,
+    "the pack's CONVENTIONS size is not the document's size at this ref — a reader deciding what " +
+      "to skip on that figure would be deciding on a stale one",
+  ).toContain(`${Buffer.byteLength(ctx.conventions, "utf8")} bytes`);
+
+  // PART THREE — the components, on a card whose fence actually names a
+  // SLUG. The card is DERIVED, so a promoted or renamed card does not
+  // turn this body into a green over nothing.
+  const withSlug = [...ctx.cards.values()].find((c) =>
+    fieldList(c.fields, "touches").some((t) => ctx.slugs.has(t)),
+  );
+  expect(withSlug, "no live card fences a component slug, so this arm has no subject").toBeDefined();
+  const slugCtx = context({ taskId: (withSlug as NonNullable<typeof withSlug>).id });
+  const slugLines = render(assembleBrief(slugCtx).recs).split("\n");
+  const touchedSlugs = fieldList((withSlug as NonNullable<typeof withSlug>).fields, "touches").filter((t) =>
+    slugCtx.slugs.has(t),
+  );
+  for (const slug of touchedSlugs) {
+    for (const id of slugCtx.slugs.get(slug) ?? []) {
+      const comp = slugCtx.comps.find((c) => c.id === id);
+      expect(comp, `the slug map names ${id} and the registry does not carry it`).toBeDefined();
+      expect(
+        slugLines.some((l) => l.startsWith(`pack component: ${(comp as { file: string }).file} `)),
+        `the pack omits ${id}, which the touched slug ${slug} reaches`,
+      ).toBe(true);
+    }
+  }
+  // AND THE OTHER SIDE: a card whose fence is bare paths gets no
+  // component entry and SAYS so, rather than an empty section.
+  expect(
+    lines.some((l) => l.startsWith("pack component: ")) ||
+      lines.some((l) => l.startsWith("# ") && l.includes("names no component SLUG")),
+    "a fence with no slug produced neither a component entry nor the sentence saying why",
+  ).toBe(true);
+
+  process.stdout.write(
+    `\n  brief PACK: ${method.length} method file(s), ` +
+      `${citedConventionBullets(ctx.conventions, gateSources(ctx.root)).length} bullet(s) of ` +
+      `${conventionHeadings(ctx.conventions).length} named, in a pack of ` +
+      `${Buffer.byteLength(packLines("T-133").join("\n"), "utf8")} bytes against a document of ` +
+      `${Buffer.byteLength(ctx.conventions, "utf8")}.\n`,
+  );
+});
+
+test("THE PACK'S BULLET SET IS DERIVED FROM THE GATES' OWN CITATIONS, never listed here", () => {
+  // KILLED BY: a hand list in the module (a synthetic corpus citing one
+  // heading would still yield the live set), by a heading matched
+  // anywhere in a bullet rather than at its opener, or by the corpus
+  // widening past the two directories the gates live in.
+  const ctx = context({ taskId: "T-133" });
+  const sources = gateSources(ctx.root);
+  expect(sources.length, "no gate source was found, so every derivation below is vacuous").toBeGreaterThan(0);
+  for (const s of sources) {
+    expect(
+      GATE_SOURCE_DIRS.some((d) => s.rel.startsWith(d)),
+      `${s.rel} is in the corpus and is under neither gate directory`,
+    ).toBe(true);
+  }
+
+  const bullets = citedConventionBullets(ctx.conventions, sources);
+  const lines = render(assembleBrief(ctx).recs).split("\n");
+  expect(bullets.length, "the gates cite no bullet at this ref, so this body has no subject").toBeGreaterThan(0);
+
+  for (const b of bullets) {
+    expect(
+      lines.some((l) => l.startsWith(`pack bullet: ${b.heading} `)),
+      `the derivation names ${b.heading} and the pack does not carry it`,
+    ).toBe(true);
+    // EVERY CITATION IS REAL, asked of the file rather than of the
+    // derivation that produced it.
+    for (const rel of b.citedBy) {
+      expect(
+        readDoc(rel, ctx.root).includes(b.heading),
+        `the pack says ${rel} cites ${b.heading} and that file does not contain the heading`,
+      ).toBe(true);
+    }
+    // AND THE BULLET IS THE ONE THE HEADING OPENS, not one that merely
+    // mentions it: "GRAPH REGEN" appears in five bullets of this
+    // document and "DOCS GATE" in four.
+    expect(
+      b.raw.replace(/\s+/g, " ").startsWith(`- ${b.heading}`),
+      `the pack's ${b.heading} entry quotes a bullet that does not open with that heading`,
+    ).toBe(true);
+  }
+
+  // AND A HEADING NO SOURCE NAMES IS NOT IN THE PACK — the other
+  // direction, without which "every cited bullet is present" is
+  // satisfied by a pack carrying the whole document.
+  const uncited = conventionHeadings(ctx.conventions).filter(
+    (h) => !sources.some((s) => s.text.includes(h)),
+  );
+  expect(uncited.length, "every named bullet is cited, so the exclusion below proves nothing").toBeGreaterThan(0);
+  for (const h of uncited) {
+    expect(
+      lines.some((l) => l.startsWith(`pack bullet: ${h} `)),
+      `${h} is cited by no gate source and the pack carries it anyway — that is a hand list`,
+    ).toBe(false);
+  }
+
+  // THE DISCRIMINATOR. One side only: the CORPUS moves, in memory, and
+  // nothing in the module is touched. A set typed into the tool would
+  // answer identically whatever it was handed.
+  const one = bullets[0] as { heading: string };
+  const synthetic = [{ rel: "tools/e2e/scripts/synthetic.mjs", text: `cites ${one.heading} and nothing else` }];
+  const only = citedConventionBullets(ctx.conventions, synthetic);
+  expect(
+    only.map((b) => b.heading),
+    "a corpus citing exactly one heading did not yield exactly that bullet, so the set is not a " +
+      "reading of the corpus",
+  ).toEqual([one.heading]);
+  expect(
+    citedConventionBullets(ctx.conventions, [{ rel: "tools/e2e/scripts/silent.mjs", text: "no heading here" }]),
+    "a corpus citing nothing still produced bullets",
+  ).toEqual([]);
+});
+
+test("A LONG BULLET IS CITED BY ADDRESS AND A SHORT ONE IS TRANSCRIBED BYTE-EXACT — both arms driven", () => {
+  // KILLED BY: transcribing a long bullet back into the brief (the deep
+  // phrase reds), by a transcription that paraphrases, by a citation
+  // whose byte figure drifts, or by a needle the wrapped document does
+  // not contain.
+  const ctx = context({ taskId: "T-133" });
+  const rendered = render(assembleBrief(ctx).recs);
+  const lines = rendered.split("\n");
+  const bullets = citedConventionBullets(ctx.conventions, gateSources(ctx.root));
+  const flatConventions = ctx.conventions.replace(/\s+/g, " ");
+
+  const short = bullets.filter((b) => Buffer.byteLength(b.raw.replace(/\s+/g, " ").trim(), "utf8") <= PACK_TRANSCRIPTION_LIMIT);
+  const long = bullets.filter((b) => Buffer.byteLength(b.raw.replace(/\s+/g, " ").trim(), "utf8") > PACK_TRANSCRIPTION_LIMIT);
+  expect(short.length, "no cited bullet is short enough to transcribe, so that arm is unmet").toBeGreaterThan(0);
+  expect(long.length, "no cited bullet is long enough to cite, so that arm is unmet").toBeGreaterThan(0);
+
+  for (const b of short) {
+    const flat = b.raw.replace(/\s+/g, " ").trim();
+    const line = lines.find((l) => l.startsWith(`pack bullet: ${b.heading} — TRANSCRIBED`)) ?? "";
+    expect(line, `${b.heading} is short and the pack did not transcribe it`).not.toBe("");
+    expect(
+      line,
+      `${b.heading}'s transcription is not the document's own bytes — a paraphrased rule has ` +
+        "forked from the rule",
+    ).toContain(flat);
+  }
+
+  for (const b of long) {
+    const flat = b.raw.replace(/\s+/g, " ").trim();
+    const line = lines.find((l) => l.startsWith(`pack bullet: ${b.heading} `)) ?? "";
+    expect(line, `${b.heading} is missing from the pack`).not.toBe("");
+    expect(line, `${b.heading} is a screen of prose and the pack transcribed it`).toContain(
+      "CITED, NOT TRANSCRIBED",
+    );
+    expect(
+      line,
+      `${b.heading}'s citation states a size that is not the passage's at this ref`,
+    ).toContain(`${Buffer.byteLength(flat, "utf8")} bytes flattened at this ref`);
+
+    // THE NEEDLE IS ONE THIS REPOSITORY ANSWERS — run, not read, because
+    // every governing document here is wrapped at about 70 columns.
+    const printed = /READ IT: command grep -n "([^"]+)" (\S+)/.exec(line);
+    expect(printed, `${b.heading}'s citation prints no command to read it with`).not.toBeNull();
+    const hits = execFileSync(
+      "git",
+      [
+        ...NO_BACKGROUND_MAINTENANCE,
+        "grep",
+        "-c",
+        "-F",
+        (printed as RegExpExecArray)[1] as string,
+        "--",
+        (printed as RegExpExecArray)[2] as string,
+      ],
+      { cwd: repoRoot, encoding: "utf8" },
+    ).trim();
+    expect(
+      Number(hits.split(":").pop()),
+      `${b.heading}'s needle is not findable in the file the citation names`,
+    ).toBeGreaterThan(0);
+
+    // AND THE PASSAGE ITSELF IS NOT IN THE BRIEF. The citation quotes the
+    // opening legitimately, so the phrase asked for is DEEP inside — and
+    // it is chosen for UNIQUENESS in the document rather than by offset.
+    // docs/CONVENTIONS.md, SHAPE EIGHT: an assertion that SEARCHES a
+    // corpus has no uniqueness floor, so ONE duplicate anywhere keeps it
+    // green with its own subject deleted. Measured here rather than
+    // imagined: BOOT GATE and DOCS GATE both carry *"IF … cannot run THEN
+    // say so LOUDLY in the checkpoint, naming the reason"*, so the plain
+    // sixty-percent slice of DOCS GATE is present in the brief through the
+    // BOOT GATE transcription and this absence check reddened on a pack
+    // that was behaving correctly.
+    const deep = uniqueDeepPhrase(flat, flatConventions);
+    expect(
+      deep,
+      `${b.heading} carries no phrase unique to it in the document, so no absence check over the ` +
+        "brief can be evidence about this bullet",
+    ).not.toBe("");
+    expect(
+      rendered,
+      `${b.heading} was cited and its text is in the brief anyway, so the pack moved the cost ` +
+        "rather than removing it",
+    ).not.toContain(deep);
+    // POSITIVE CONTROL for that absence: the phrase IS in the passage.
+    expect(flat, `${b.heading}'s deep phrase is not in the passage either`).toContain(deep);
+  }
+
+  // THE CLASSIFIER, DRIVEN BOTH WAYS ON ONE SIDE ONLY — the LENGTH moves,
+  // the module does not.
+  expect(PACK_TRANSCRIPTION_LIMIT).toBeGreaterThan(0);
+  const shortest = short.reduce((a, b) =>
+    Buffer.byteLength(a.raw.replace(/\s+/g, " ").trim(), "utf8") <=
+    Buffer.byteLength(b.raw.replace(/\s+/g, " ").trim(), "utf8")
+      ? a
+      : b,
+  );
+  expect(
+    Buffer.byteLength(shortest.raw.replace(/\s+/g, " ").trim(), "utf8"),
+    "the shortest transcribed bullet is above the limit, so the arms are not what they claim",
+  ).toBeLessThanOrEqual(PACK_TRANSCRIPTION_LIMIT);
+});
+
+test("A PACK WITH NO BULLET SAYS SO — and NO GATE SOURCE and NO CITATION are said apart", () => {
+  // KILLED BY: one sentence for both zeros, by a silent empty pack, or by
+  // the assembler refusing a project that carries method/ and no hooks —
+  // which is every project this method is copied into.
+  const ctx = context({ taskId: "T-133" });
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t254-pack-")));
+  try {
+    const root = path.join(dir, "generic");
+    mkdirSync(path.join(root, "tools", "e2e", "scripts"), { recursive: true });
+    const g = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
+    execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "init", "-b", "main", "--quiet", root], {
+      encoding: "utf8",
+    });
+    g("config", "user.email", "fixture@example.invalid");
+    g("config", "user.name", "fixture");
+    writeFileSync(path.join(root, "README.md"), "a project that carries no gate at all\n");
+    g("add", "-A");
+    g("commit", "--quiet", "-m", "Checkpoint: a generic project");
+
+    // ARM ONE — NO GATE SOURCE. The derivation had nothing to read.
+    const noneRecs = packRecs({ ...ctx, root, findings: [] });
+    const none = render(noneRecs);
+    expect(
+      none,
+      "a project with no gate source got no sentence saying the derivation had nothing to read",
+    ).toContain("tracks NO gate source");
+    expect(
+      none,
+      "the empty pack does not tell the seat what to read instead, which is the fall-back-to-the-" +
+        "whole-document this card exists to stop",
+    ).toContain("never fall back to the whole document");
+    expect(unstampedLines(none), "the empty pack emitted a figure with no ref").toEqual([]);
+
+    // ARM TWO — A CORPUS THAT CITES NOTHING. One side only: a gate source
+    // now EXISTS and names no rule.
+    writeFileSync(path.join(root, "tools", "e2e", "scripts", "quiet.mjs"), "// this gate cites no rule\n");
+    g("add", "-A");
+    g("commit", "--quiet", "-m", "a gate that cites nothing");
+    const quiet = render(packRecs({ ...ctx, root, findings: [] }));
+    expect(
+      quiet,
+      "a corpus that exists and cites nothing was reported as a corpus that does not exist — two " +
+        "different facts under one sentence",
+    ).toContain("cite NONE of the");
+    expect(quiet, "the two zeros were collapsed into one sentence").not.toContain("tracks NO gate source");
+    expect(quiet, "the second zero does not say what to read instead").toContain(
+      "never fall back to the whole document",
+    );
+    expect(unstampedLines(quiet), "the empty pack emitted a figure with no ref").toEqual([]);
+
+    // AND THE LIVE REPOSITORY IS NEITHER, or both arms above are the only
+    // state this body has ever seen.
+    const live = render(packRecs(ctx));
+    expect(live, "the live pack reports itself empty").not.toContain("tracks NO gate source");
+    expect(live, "the live pack reports itself empty").not.toContain("cite NONE of the");
+  } finally {
+    removeGitFixture(dir, "packFixture");
+  }
+});
+
+test("THE ROLE FILES SEND THE SEAT TO THE PACK, and the pack is what stands where the document stood", () => {
+  // KILLED BY: a role file that names the whole document as the seat's
+  // read again, or by a pack the brief assembles and the role files never
+  // mention — a mechanism nobody is told about is a mechanism nobody uses.
+  for (const role of ["executor", "verifier"]) {
+    const md = roleText(role);
+    // FLATTENED BEFORE IT IS SEARCHED. Every method file here is wrapped
+    // at about 70 columns, so a phrase search is a search for a line break
+    // nobody chose (docs/CONVENTIONS.md, A MISS IS NOT A REFUTATION, cause
+    // THREE) — three of the four patterns below span a wrap in the file as
+    // written, and this body reddened on the document being correct.
+    const step = (md.split(/\n(?=\d+[a-z]?\. )/).find((s) => s.includes("docs/CONVENTIONS.md")) ?? "")
+      .replace(/\s+/g, " ");
+    expect(step, `${role}.md has no numbered step naming the document`).not.toBe("");
+    expect(
+      step,
+      `${role}.md's read step does not send the seat to the brief's pack, so the pack is a ` +
+        "mechanism the seat is never told about",
+    ).toMatch(/CONTEXT PACK/);
+    expect(
+      step,
+      `${role}.md's read step does not say whose read the whole document is`,
+    ).toMatch(/architect's read/i);
+    expect(
+      step,
+      `${role}.md's read step does not say that a gate still refuses where the pack is silent — ` +
+        "the safety net is the whole argument for reading less",
+    ).toMatch(/safety net is the gates/);
+    expect(
+      step,
+      `${role}.md's read step does not rule the empty pack, so a quiet pack reads as a licence to ` +
+        "open the whole document again",
+    ).toMatch(/never fall back to the whole document/);
+  }
 });

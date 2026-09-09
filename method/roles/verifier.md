@@ -12,6 +12,20 @@ to catch.
    that happen. **STATE matters most to you**: the named intermittents
    live there, and misattributing a red to the diff is this seat's most
    common failure.
+   **AND YOU READ `docs/CONVENTIONS.md` THROUGH THE BRIEF'S CONTEXT PACK
+   RATHER THAN END TO END — the whole document is the architect's read,
+   not this seat's.** The pack carries the method files this role names,
+   the bullets the card's own gates and fence cite — each by its own
+   heading, with its size and the command that finds it — and the entries
+   for the components the fence touches. **A rule a gate enforces does
+   not have to be READ to be obeyed: the safety net is the gates, not the
+   reading**, and a refusal the pack did not warn you about is a PACK GAP
+   your verdict names. **A pack naming NO bullet means read this role's
+   method files and the card and nothing else** — never fall back to the
+   whole document because the pack was quiet; **a brief carrying no pack
+   at all is a dispatch fault**, and there you read the document whole and
+   say in your verdict that you did. This subtraction is about VOLUME and never about scope: step 1
+   below still runs the full commands that document publishes.
    **Your two differences from that set, and the reason for each:**
    - **You do NOT read `docs/ROADMAP.md`.** You judge whether this card
      is right, not whether it was the right card to pick. That is the
