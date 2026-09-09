@@ -473,5 +473,11 @@ export function main(argv, io = {}) {
 // spawns this file by its ABSOLUTE resolved path — and a hand run
 // (`node scripts/undo.mjs T-NNN`) resolves the same way.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exit(main(process.argv.slice(2)));
+  // `process.exitCode`, NEVER `process.exit()`: a command that ends at
+  // process.exit drops whatever stdout has not drained, which is
+  // invisible to a file and to a TTY and silent to a pipe (T-225's
+  // sweep, tools/e2e/tests/brief-flush.spec.ts, which reds by name when
+  // a new command in this directory joins that class). This one writes a
+  // derivation a reader is meant to keep.
+  process.exitCode = main(process.argv.slice(2));
 }

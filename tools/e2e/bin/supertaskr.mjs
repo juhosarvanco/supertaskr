@@ -18,4 +18,7 @@
 
 import { main } from "../scripts/cli.mjs";
 
-process.exit(main(process.argv.slice(2)));
+// `process.exitCode`, never `process.exit()` — the same rule the scripts
+// beside this file keep: exiting drops undrained stdout, silently under
+// a pipe. Node leaves with this code once the stream has flushed.
+process.exitCode = main(process.argv.slice(2));

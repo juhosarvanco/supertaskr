@@ -267,6 +267,16 @@ export function tailPlan(input) {
       "that committed for you would commit them out",
     run: null,
   });
+  steps.push({
+    id: "after",
+    kind: "stop",
+    title: "AFTER the corrections: re-ask the graph, and keep the lane BRANCH until the push",
+    why:
+      "the prototype's step 11: a correction that moves a .ts/.rs under the walk stales the regen " +
+      "this run made, and the landing arm resolves a card by the branch at the merge's second " +
+      "parent — delete the branch after CI has been read, never before",
+    run: null,
+  });
   return steps;
 }
 
@@ -527,5 +537,11 @@ function runStep(step, io) {
 // The same bootstrap `gate-run.mjs` and `undo.mjs` use: execution lives
 // here so the module stays importable by the spec.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exit(main(process.argv.slice(2)));
+  // `process.exitCode`, NEVER `process.exit()`: a command that ends at
+  // process.exit drops whatever stdout has not drained, which is
+  // invisible to a file and to a TTY and silent to a pipe (T-225's
+  // sweep, tools/e2e/tests/brief-flush.spec.ts, which reds by name when
+  // a new command in this directory joins that class). This one writes a
+  // derivation a reader is meant to keep.
+  process.exitCode = main(process.argv.slice(2));
 }
