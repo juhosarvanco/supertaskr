@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: building
+status: verifying
 suggested_by: "verifier claude-opus-5@subagent @T-281, 2026-09-09, at d086c73"
 blocked_by: []
 touches: [app/src-tauri/tests/agent_runner.rs, app/src-tauri/src/agent/mod.rs]
