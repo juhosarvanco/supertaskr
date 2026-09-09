@@ -329,6 +329,27 @@ function errText(err) {
   return err instanceof Error ? err.message : String(err);
 }
 
+/**
+ * THE ERRNO A FILESYSTEM ERROR CARRIES, WHERE IT CARRIES ONE — the whole
+ * of what separates *"it is not there"* from *"I could not look"*
+ * (T-238-s1, taking T-216-s8's attribution).
+ *
+ * `existsSync` collapses the two: it answers FALSE for `EMFILE` and
+ * `EACCES` exactly as it does for `ENOENT`, so under the descriptor
+ * pressure of several concurrent suites a file that IS there reads as a
+ * file that is not — and in this module that turned a held seat into a
+ * VACANT one, silently. Every probe below that decides something asks for
+ * the errno instead, and every non-`ENOENT` answer becomes an inability
+ * the arms announce.
+ *
+ * @param {unknown} err
+ * @returns {string | undefined}
+ */
+export function errnoOf(err) {
+  const code = /** @type {{ code?: unknown } | null | undefined} */ (err)?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
 /** The checkout THIS FILE lives in — never `process.cwd()`. @returns {string} */
 export function defaultVantage() {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -874,12 +895,39 @@ export function renderSweep(results) {
  * whole of what another harness has to replace. **THE HARNESS IS CLAUDE
  * CODE**, running as the `claude` binary the Claude desktop app embeds
  * (`…/Claude/claude-code/<version>/claude.app/Contents/MacOS/claude`) or
- * as a `claude` on a PATH. A Bash tool call carries no session id — it is
- * a short-lived shell, and `CLAUDE_PROJECT_DIR` is not exported to it
- * either (`sessionCheckout` above carries that measurement) — but every
- * tool shell is a DESCENDANT of the harness process, so the harness's own
- * pid plus its start time is an identity that survives across calls and
- * dies with the session.
+ * as a `claude` on a PATH. Every tool shell is a DESCENDANT of that
+ * process, so the harness's own pid plus its start time is an identity
+ * that survives across calls and dies with the session.
+ *
+ * ── WHAT A TOOL CALL DOES CARRY, RE-MEASURED (T-238-s1) ──────────────
+ * **THIS PARAGRAPH OPENED WITH "a Bash tool call carries no session id",
+ * AND THAT WAS FALSE AS MEASURED.** Re-measured 2026-09-09 on Mac.lan, in
+ * a Bash tool call of this project's own harness, `env | grep -E
+ * '^CLAUDE'` and one `ps` on what it printed:
+ *
+ *     CLAUDE_CODE_SESSION_ID   SET
+ *     CLAUDE_PID               SET, and `ps` says that pid IS the tool
+ *                              shell's own parent — the very harness
+ *                              process this walk stops at
+ *     CLAUDE_PROJECT_DIR       UNSET — the one variable the old sentence
+ *                              was right about, and the half
+ *                              `sessionCheckout` above measures
+ *
+ * **THE ANCESTRY IS STILL THE INSTRUMENT, NOW FOR STATED REASONS RATHER
+ * THAN FOR A WRONG ONE.** (1) It survives a harness that stops exporting
+ * those names: a variable's presence is the harness's choice and carries
+ * no compatibility promise, where a process's parent is the kernel's
+ * answer. (2) It names a PROCESS `ps` can be asked about, and liveness is
+ * the whole of what lets a stale record retire itself — a session id is a
+ * string nothing on this machine can be asked to confirm. (3) Only the
+ * process carries a START TIME, which is what closes pid reuse; the
+ * variables give a pid with nothing to pin it to. (4) An environment
+ * variable is inherited by everything a seat spawns and can be set by
+ * hand, so it is a claim the party under test makes about itself, where
+ * the process table is read from outside it — this project's *a
+ * construction beats a check*. `CLAUDE_PID` and this walk AGREED on this
+ * machine, which is a CHECK on the derivation and not a reason to swap
+ * instruments.
  *
  * ── STABLE AND DISTINGUISHABLE WERE BOTH MEASURED, NOT ASSUMED ───────
  * Measured 2026-09-02 on Mac.lan, `ps -o pid=,ppid=,lstart=,comm=` walked
@@ -956,6 +1004,13 @@ export function renderSweep(results) {
  * careful.
  *
  * ── THE LIMITS, DECLARED RATHER THAN DISCOVERED ──────────────────────
+ * **THIS BLOCK IS THE HOME OF THESE LIMITS, AND `push-guard.mjs` POINTS
+ * AT IT RATHER THAN RESTATING THEM** (T-237-s8): a limit written in two
+ * files is two chances to disagree, and the pair had already drifted —
+ * the CONSUMER's header carried the runner while the identity's own home
+ * did not, so a reader who started where the pointer sent them met a list
+ * missing the limit that had actually fired.
+ *
  * A seat that never runs an arming step and never pushes is NOT SEEN — a
  * pure reader is not a holder, which is correct. A seat that edits and
  * commits without pushing is seen only at its next push. A harness whose
@@ -964,6 +1019,37 @@ export function renderSweep(results) {
  * same rule the currency arms above keep. And `ps` is asked once per
  * ancestor rather than once for the whole table, because a `ps -A` parse
  * is a wider surface for one fewer process spawn.
+ *
+ * ── AND THE ONE MACHINE WHERE IT DERIVES NOTHING AT ALL: A CI RUNNER ──
+ * (T-237-s8, whose whole subject is that this list did not name it.) The
+ * walk stops at the nearest ancestor that IS the harness, and a GitHub
+ * runner's job carries none: the chain there is `node <- bash <- Runner`.
+ * So on a runner `sessionIdentity` answers `ok: false` for EVERY call,
+ * `holderVerdict` returns `holder-identity-underivable`, and both callers
+ * ANNOUNCE AND ALLOW — `push-guard.mjs`'s holder arm and `brief.mjs`'s
+ * arm eight alike. That is the right answer rather than a gap to close,
+ * because a runner never holds this project's integration seat.
+ *
+ * **WHAT IT COST WAS A BODY, NOT A PUSH**: on 2026-09-02 a test armed the
+ * holder arm through the REAL process tree, was green twenty-for-twenty
+ * on a developer's machine, and reddened main from the one machine nobody
+ * was watching (T-238-s2, absorbed into T-237-s2 and closed there). The
+ * standing consequence is a rule about TESTS rather than about this file:
+ * no body may arm this derivation through the machine it happens to run
+ * on — the seam is an injected `readProcess`, and
+ * `checkout-currency.spec.ts` drives a synthetic ancestry carrying the
+ * runner's own shape.
+ *
+ * ── AND A DETACHED CHECKOUT HOLDS NO SEAT, SAID RATHER THAN PASSED OVER
+ * (T-238-s1) ─────────────────────────────────────────────────────────
+ * `isIntegrationCheckout` decides by the checked-out REF, so a checkout
+ * whose HEAD names NO BRANCH — a detached one, and a HEAD this reader
+ * could not read, which `headRefIn` deliberately collapses into one
+ * answer — is not the integration checkout even when it sits at the
+ * integration branch's own tip. A seat working there is unrecorded by
+ * construction: nothing it does takes the seat, and nothing refuses it.
+ * That was SILENT until this card. It now has its own code
+ * (`HOLDER_CODES.NO_BRANCH`) and the arms say it.
  */
 
 /**
@@ -1095,9 +1181,11 @@ export function sessionIdentity(options = {}) {
     ok: false,
     why:
       `no ancestor of pid ${String(options.pid ?? process.pid)} names this harness ` +
-      `(${walked.join(" <- ")}). The identity derivation is a fact about ONE harness — see ` +
-      "HARNESS_ARGV0_BASENAME — and it answers NOTHING rather than guessing, which the arms " +
-      "report as an unanswered question and never as a verdict.",
+      `(${walked.join(" <- ")}). The identity derivation is a fact about ONE harness, stated in ` +
+      "this file's holder section above `sessionIdentity` and matched by HARNESS_PROGRAM_BASENAME " +
+      "and HARNESS_PROGRAM_RE; it answers NOTHING rather than guessing, which the arms report as " +
+      "an unanswered question and never as a verdict. A CI RUNNER IS WHERE THIS IS THE ORDINARY " +
+      "ANSWER: its chain is `node <- bash <- Runner` and carries no harness at all.",
   };
 }
 
@@ -1222,11 +1310,30 @@ export function holderPath(root) {
  */
 export function readHolder(root) {
   const file = holderPath(root);
-  if (!existsSync(file)) return { absent: true };
+  /** @type {string} */
+  let text;
+  try {
+    // ONE READ, AND ITS ERRNO IS THE ANSWER (T-238-s1). This was
+    // `existsSync(file)` followed by a `readFileSync`, and `existsSync`
+    // cannot tell ENOENT from EMFILE or EACCES — so a record that was
+    // there read as `{ absent: true }`, `holderVerdict` returned VACANT,
+    // and the guard's silent allow became a verdict about a seat nobody
+    // had asked about. See `errnoOf`. It is also one fewer syscall.
+    text = readFileSync(file, "utf8");
+  } catch (err) {
+    const code = errnoOf(err);
+    if (code === "ENOENT" || code === "ENOTDIR") return { absent: true };
+    return {
+      problem:
+        `${HOLDER_REL_PATH} could not be READ (${code ?? "no errno"}): ${errText(err)}. That is ` +
+        "not an absence — this reader could not look — and a checkout whose record could not be " +
+        "read is not an unclaimed one",
+    };
+  }
   /** @type {unknown} */
   let parsed;
   try {
-    parsed = JSON.parse(readFileSync(file, "utf8"));
+    parsed = JSON.parse(text);
   } catch (err) {
     return { problem: `${HOLDER_REL_PATH} did not parse: ${errText(err)}` };
   }
@@ -1312,12 +1419,33 @@ export function writeHolder(root, identity, meta = {}) {
   return { file, ignoreFile, record };
 }
 
-/** Remove the record. @param {string} root @returns {boolean} did one exist? */
+/**
+ * Remove the record.
+ *
+ * TRUE it was removed, FALSE there was none — and a THROW for every other
+ * errno, because those are three different sentences and this function
+ * used to say the second for all three (T-238-s1). `existsSync` answering
+ * FALSE under `EACCES` made `--release-seat` print *"nothing to remove"*
+ * about a record that was there and stayed there; a caller that cannot
+ * remove a seat's declaration must not report that it did.
+ *
+ * @param {string} root
+ * @returns {boolean} did one exist?
+ */
 export function removeHolder(root) {
   const file = holderPath(root);
-  if (!existsSync(file)) return false;
-  rmSync(file);
-  return true;
+  try {
+    rmSync(file);
+    return true;
+  } catch (err) {
+    const code = errnoOf(err);
+    if (code === "ENOENT" || code === "ENOTDIR") return false;
+    throw new Error(
+      `checkout-currency: ${HOLDER_REL_PATH} could not be removed (${code ?? "no errno"}): ` +
+        `${errText(err)}. Nothing was removed, and "there was nothing to remove" is a different ` +
+        "sentence this function will not say on a failed removal's behalf.",
+    );
+  }
 }
 
 /**
@@ -1355,6 +1483,30 @@ export const HOLDER_STATES = Object.freeze([
   "held",
   "unknown",
 ]);
+
+/**
+ * Every `code` a decision carries, frozen for the same reason the states
+ * are — and exported so a CALLER keys on a constant rather than on a
+ * string it re-typed (T-238-s1).
+ *
+ * **A CODE IS NOT A STATE, AND TWO STATES CARRY TWO EACH.**
+ * `not-integration` splits because the two reasons want different
+ * sentences: a LANE holds no seat and that is ordinary and silent, while
+ * a checkout whose HEAD names no branch holds no seat and nobody knew —
+ * the arms say the second. `unknown` splits because `--release-seat` must
+ * tell a record it could not READ from a live record it merely cannot
+ * claim: it refuses on both, and only one of them is a shape failure.
+ */
+export const HOLDER_CODES = Object.freeze({
+  NOT_INTEGRATION: "holder-not-integration-checkout",
+  NO_BRANCH: "holder-head-names-no-branch",
+  VACANT: "holder-vacant",
+  UNREADABLE: "holder-unreadable",
+  DEAD: "holder-dead",
+  UNDERIVABLE: "holder-identity-underivable",
+  MINE: "holder-is-this-session",
+  HELD: "holder-live-elsewhere",
+});
 
 /**
  * @typedef {object} HolderDecision
@@ -1405,24 +1557,57 @@ export function holderVerdict(options) {
   };
 
   if (!seat.yes) {
+    // A STRAY RECORD IS THE SAME FOOTNOTE WHICHEVER WAY THIS CHECKOUT IS
+    // NOT THE INTEGRATION ONE, so it is built once and appended to both.
+    const stray =
+      "holder" in read
+        ? ` NOTE: a ${HOLDER_REL_PATH} exists here anyway — it is a runtime file left by ` +
+          "something, it governs nothing, and it can be deleted."
+        : "";
+    if (seat.headRef === undefined) {
+      // ── ITEM 4 OF T-238-s1 ────────────────────────────────────────
+      // A DETACHED HEAD IS NOT THE INTEGRATION CHECKOUT AND WAS SILENT
+      // ABOUT IT. `isIntegrationCheckout` decides by the checked-out
+      // REF, and a detached checkout sitting at the integration
+      // branch's own tip names no ref at all — so a seat working there
+      // takes no seat, is refused by nothing, and appears nowhere. The
+      // arms SAY it now rather than passing over it.
+      //
+      // AND THE SAME BRANCH CATCHES A HEAD THIS READER COULD NOT READ:
+      // `headRefIn` returns `undefined` for a detached head and for an
+      // unreadable one alike (its own header says so), so this sentence
+      // names both rather than claiming to tell them apart — which is
+      // also what stops an EMFILE on `.git/HEAD` from becoming a silent
+      // allow (T-216-s8's attribution).
+      return {
+        state: "not-integration",
+        code: HOLDER_CODES.NO_BRANCH,
+        detail:
+          `${root} has NO BRANCH checked out — a DETACHED HEAD, or a HEAD this reader could not ` +
+          `read; \`headRefIn\` collapses the two — so it is not the integration checkout ` +
+          `(${seat.wanted}) and it holds no seat: no holder is read here and none is written. A ` +
+          "DETACHED checkout sitting at the integration branch's own tip is still not that " +
+          "checkout, so a seat working there is UNRECORDED — nothing takes the seat and nothing " +
+          "refuses one. Check the branch out to be seen (T-238-s1)." +
+          stray,
+        figures,
+      };
+    }
     return {
       state: "not-integration",
-      code: "holder-not-integration-checkout",
+      code: HOLDER_CODES.NOT_INTEGRATION,
       detail:
-        `${root} has ${seat.headRef ?? "no readable HEAD ref"} checked out, not ${seat.wanted}, so ` +
+        `${root} has ${seat.headRef} checked out, not ${seat.wanted}, so ` +
         "it is not the integration checkout: no holder is read here and none is written. A lane " +
         "does not hold a seat (the fifth acceptance criterion of T-238)." +
-        ("holder" in read
-          ? ` NOTE: a ${HOLDER_REL_PATH} exists here anyway — it is a runtime file left by ` +
-            "something, it governs nothing, and it can be deleted."
-          : ""),
+        stray,
       figures,
     };
   }
   if ("absent" in read) {
     return {
       state: "vacant",
-      code: "holder-vacant",
+      code: HOLDER_CODES.VACANT,
       detail:
         `no ${HOLDER_REL_PATH} in ${root}: nobody has DECLARED the integration seat. ` +
         "lane-protocol rule 4 says the holder is declared and never inferred, so this is an " +
@@ -1434,7 +1619,7 @@ export function holderVerdict(options) {
   if ("problem" in read) {
     return {
       state: "unknown",
-      code: "holder-unreadable",
+      code: HOLDER_CODES.UNREADABLE,
       detail:
         `${read.problem}. Nothing about who holds ${root} was judged — that is an inability and ` +
         "never a pass. Delete the file or re-take the seat.",
@@ -1453,7 +1638,7 @@ export function holderVerdict(options) {
   if (!alive) {
     return {
       state: "dead",
-      code: "holder-dead",
+      code: HOLDER_CODES.DEAD,
       detail:
         `the recorded holder of ${root} is pid ${String(holder.identity.pid)} started ` +
         `${holder.identity.startedAt}${holder.host === "" ? "" : ` on ${holder.host}`}, and no ` +
@@ -1469,7 +1654,7 @@ export function holderVerdict(options) {
   if (!mine.ok) {
     return {
       state: "unknown",
-      code: "holder-identity-underivable",
+      code: HOLDER_CODES.UNDERIVABLE,
       detail:
         `${root} is held by a LIVE session — pid ${String(holder.identity.pid)} started ` +
         `${holder.identity.startedAt} — and this session could not derive its own identity, so ` +
@@ -1481,7 +1666,7 @@ export function holderVerdict(options) {
   if (sameIdentity(mine.identity, holder.identity)) {
     return {
       state: "mine",
-      code: "holder-is-this-session",
+      code: HOLDER_CODES.MINE,
       detail: `${root} is held by this session (pid ${String(mine.identity.pid)}), taken ${holder.takenAt}.`,
       figures,
       holder,
@@ -1489,7 +1674,7 @@ export function holderVerdict(options) {
   }
   return {
     state: "held",
-    code: "holder-live-elsewhere",
+    code: HOLDER_CODES.HELD,
     detail:
       `${root} is HELD BY ANOTHER LIVE SESSION: pid ${String(holder.identity.pid)}, started ` +
       `${holder.identity.startedAt}${holder.host === "" ? "" : ` on ${holder.host}`}, which took ` +

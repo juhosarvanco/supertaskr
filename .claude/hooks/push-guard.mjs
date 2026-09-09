@@ -331,33 +331,34 @@
  *     where the seat that could claim it is the reader.
  *
  * THE LIMITS ARE THE IDENTITY'S AND THEY ARE STATED WHERE IT IS DERIVED,
- * in `checkout-currency.mjs`: a seat that never arms and never pushes is
- * not seen, a seat that commits without pushing is seen at its next push,
- * and the derivation is a fact about ONE harness, named there with the
- * measurement that a harness process is both STABLE across tool calls and
- * DISTINGUISHABLE between concurrent sessions on this machine.
+ * in `checkout-currency.mjs`'s own DECLARED RATHER THAN DISCOVERED block
+ * — the seat that never arms, the seat that commits without pushing, the
+ * one-harness fact with its STABLE/DISTINGUISHABLE measurement, THE CI
+ * RUNNER on which nothing derives at all, and the DETACHED checkout that
+ * holds no seat. **THIS FILE POINTS AND DOES NOT RESTATE** (T-237-s8):
+ * the pair had already drifted once, with the runner named HERE — in the
+ * consumer — and missing from the home the pointer sends readers to, so a
+ * reader who followed it met a list short of the limit that had fired.
+ * One home, one pointer, and nothing to keep in step.
  *
- * ── AND THE MACHINE WHERE IT DOES NOT DERIVE IS NAMED HERE (T-238-s2) ─
- * **A CI RUNNER.** The identity is the nearest ancestor process that IS
- * the harness, and on a GitHub runner this file's whole ancestry is
- * `node ← bash ← Runner` — no harness anywhere in it. So on a runner the
- * derivation answers NOTHING, `holderVerdict` returns
- * `holder-identity-underivable`, and this arm ANNOUNCES that the seat
- * could not be checked here and ALLOWS: the disclosed fail-open shape the
- * CI arm already uses for an unreachable `gh`, and the right answer,
- * because a runner never holds this project's integration seat.
+ * ── WHAT THIS ARM DOES WHERE THE IDENTITY WILL NOT DERIVE ────────────
+ * That much is the CONSUMER's own fact and belongs here. `holderVerdict`
+ * returns `holder-identity-underivable`, this arm ANNOUNCES that the seat
+ * could not be checked and ALLOWS — the disclosed fail-open shape the CI
+ * arm already uses for an unreachable `gh` — and on a runner that is the
+ * answer on every push, so the arm is INERT there by construction.
  *
- * **THE COST IS THAT THE ARM IS INERT THERE, AND THAT IS SAID RATHER
- * THAN DISCOVERED — IT WAS DISCOVERED.** T-238 landed on 2026-09-01 with
- * a body that armed a holder record and asserted the arm READ it, and the
- * arm's answer depends on the CALLING PROCESS'S ANCESTRY rather than on
- * anything in the tree — so the body was green twenty-for-twenty on this
- * machine and red on the runner, and it reddened main. The repair is not
- * to make a runner derivable: it is that no body may arm this arm through
- * the REAL process tree. `decide` takes the holder runner as a parameter
- * for exactly the reason it takes `check`, `cheap` and `gh`, and the
- * bodies that need a live seat build one — a symlink to node named the
- * way the harness is — instead of borrowing the machine's.
+ * **THAT COST WAS DISCOVERED RATHER THAN DECLARED, AND WHAT IT COST WAS
+ * A BODY.** T-238 landed on 2026-09-01 with a test that armed a holder
+ * record and asserted the arm READ it; the arm's answer depends on the
+ * CALLING PROCESS'S ANCESTRY rather than on anything in the tree, so it
+ * was green twenty-for-twenty on this machine and red on the runner, and
+ * it reddened main. The repair is not to make a runner derivable: it is
+ * that no body may arm this arm through the REAL process tree. `decide`
+ * takes the holder runner as a parameter for exactly the reason it takes
+ * `check`, `cheap` and `gh`, and the bodies that need a live seat build
+ * one — a symlink to node named the way the harness is — instead of
+ * borrowing the machine's.
  *
  * ── NOTHING BUT NODE BUILTINS AND THE HOOK BESIDE IT ─────────────────
  * The lane-fence hook's rule, for the lane-fence hook's reason: a lane
@@ -404,7 +405,7 @@ import {
 // question and the *which checkout is this session in* question are one
 // subject, and splitting them across two modules would be the second
 // implementation this file refuses everywhere else.
-import { HOLDER_REL_PATH, holderVerdict } from "../../tools/e2e/scripts/checkout-currency.mjs";
+import { HOLDER_CODES, HOLDER_REL_PATH, holderVerdict } from "../../tools/e2e/scripts/checkout-currency.mjs";
 
 /**
  * The committed graph, relative to the checkout root.
@@ -1408,6 +1409,19 @@ export const PUSH_OPTS_WITH_VALUE = Object.freeze([
 ]);
 
 /**
+ * The option that names a repository, and it does NOT change the
+ * positional grammar (T-237-s9 — measured; `pushTargetBranch`'s limits
+ * block carries the readings).
+ *
+ * Exported because a body drives git itself over it: git's own parser
+ * takes the FIRST POSITIONAL as the repository whether or not this option
+ * appeared, so the scanner below drops one either way. It is a member of
+ * `PUSH_OPTS_WITH_VALUE` above, which is the only thing about it this
+ * file acts on — the separate-value spelling has to be stepped over.
+ */
+export const PUSH_REPOSITORY_OPT = "--repo";
+
+/**
  * Flags that push MORE BRANCHES THAN THE LINE NAMES — **and HEAD's own is
  * always one of them**, which is what makes them answerable.
  *
@@ -1503,23 +1517,6 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  *     verdict. It is the one limit on this list that costs a refusal the
  *     old code made, and it is said in those words rather than filed
  *     under a phrase that made it sound free.
- *   A `--repo=<value>` SUPPLIES THE REPOSITORY AND THIS SCANNER STILL
- *     EATS A POSITIONAL FOR ONE. `git push --repo=origin HEAD:main`
- *     therefore reads its only refspec as the repository and falls back
- *     to HEAD's branch. A FALSE NEGATIVE and never a false refusal, and
- *     it is declared here rather than repaired in this pass because the
- *     verifier filed it as non-blocking; the repair is `T-237-s9`.
- *   A DESTINATION BEGINNING WITH `-` REACHES `gh` AS `--branch`'s VALUE.
- *     `git push origin HEAD:--version` is read as a branch called
- *     `--version`, and `ghRunListArgv` puts it in the argv array where
- *     `gh`'s own parser will read it as an option. It is BOUNDED — there
- *     is no shell anywhere in this arm, nothing is executed, and `gh`
- *     answers non-zero, which `classifyGhFailure` turns into an announced
- *     ALLOW — and such a refspec is not a legal ref for git either, so
- *     the push it belongs to does not happen and no run is cancelled. It
- *     is nevertheless the class `pathsSince` shape-checks `headSha`
- *     against one arm over, which is why it is named here and carried by
- *     `T-237-s9` rather than left for somebody to find.
  *   THE CONFIGURED TARGETS ARE NOT TEXT AND ARE NOT READ. `push.default`,
  *     `remote.<name>.push` and a configured upstream can all send a bare
  *     `git push` to a branch of another name. Reading them would mean
@@ -1540,11 +1537,51 @@ export const HEAD_REFSPEC_WORDS = Object.freeze(["HEAD", "@"]);
  * NONE OF THESE IS A FALSE REFUSAL BY ITSELF, which is the property this
  * file's every scanner is bounded by. **THE PROPERTY THEY DO NOT ALL
  * HAVE IS "NEVER WEAKER THAN WHAT THIS CARD REPLACED", and that is the
- * distinction this block now draws**: the plain-`<name>` and
- * `--repo=<value>` limits are free, the literal-refspec limit costs a
- * refusal the base made, and `--all`/`--mirror` used to cost one until a
- * verifier measured it — they take the FALLBACK path now, for the reason
- * `PUSH_ALL_BRANCHES_FLAGS` carries.
+ * distinction this block now draws**: the plain-`<name>` limit is free,
+ * the literal-refspec limit costs a refusal the base made, and
+ * `--all`/`--mirror` used to cost one until a verifier measured it — they
+ * take the FALLBACK path now, for the reason `PUSH_ALL_BRANCHES_FLAGS`
+ * carries.
+ *
+ * ── TWO DECLARED ENTRIES THIS LIST LOST, AND ONLY ONE WAS A DEFECT ───
+ * Both were DECLARED here by T-237-s2's fix pass rather than fixed,
+ * because a fix pass that widens its own diff is one a verifier has to
+ * judge twice, and `T-237-s9` carried them so the declaration would have
+ * a repair behind it. **ONE OF THEM WAS NOT TRUE OF `git`**, which is
+ * what a repair pass is for.
+ *
+ *   `--repo=<value>` WAS SAID TO SUPPLY THE REPOSITORY WHILE THIS
+ *     SCANNER ATE A POSITIONAL FOR ONE ANYWAY, so `git push --repo=origin
+ *     HEAD:main` was said to lose its only refspec. **MEASURED ON git
+ *     2.50.1 AND THE CLAIM IS FALSE**: git takes the FIRST POSITIONAL as
+ *     the repository whatever `--repo` says, so that command does not
+ *     push to `main` at all — it looks for a repository CALLED
+ *     `HEAD:main`. Three readings in a scratch repository with one
+ *     working remote, all at `--dry-run`:
+ *
+ *         git push --repo=origin ./not-a-repo main
+ *             -> fatal: './not-a-repo' does not appear to be a repository
+ *         git push --repo=origin refs/heads/main
+ *             -> fatal: 'refs/heads/main' does not appear to be a repository
+ *         git push --repo=nonexistent origin main
+ *             -> pushed, through the POSITIONAL remote
+ *
+ *     So this scanner already agrees with git and the entry was a limit
+ *     nothing had. It is replaced by the measurement rather than deleted:
+ *     the next reader meets the reading instead of re-deriving it, and a
+ *     "repair" here would have read `origin` as the target branch of
+ *     `git push --repo=x origin main` — strictly weaker than the state it
+ *     was correcting.
+ *   A DESTINATION BEGINNING WITH `-` REACHED `gh` AS `--branch`'s VALUE.
+ *     `git push origin HEAD:--version` was read as a branch named
+ *     `--version` and `ghRunListArgv` placed it in the argv array where
+ *     `gh`'s own parser reads it as an option. It is now REFUSED to the
+ *     reader by `optionLikeTarget` — the narrowest shape check that can
+ *     be true of a branch name, since `git check-ref-format` rejects a
+ *     component beginning with `-` — and the whole line becomes
+ *     `unresolved`, which the CI arm turns into an ANNOUNCED ALLOW and
+ *     never a refusal, exactly the way `pathsSince` declines a `headSha`
+ *     that is not shaped like a commit id.
  *
  * @param {string} command
  * @returns {{ branch: string, others: string[] } | { fallback: string, others: string[] } | { unresolved: string }}
@@ -1615,6 +1652,8 @@ function refspecTargets(tokens) {
   }
   // The first positional is the REPOSITORY, and it is dropped rather than
   // read: a remote's name, a URL or a path says nothing about a branch.
+  // **AND `--repo` DOES NOT CHANGE THAT — MEASURED** (T-237-s9; the
+  // header's own entry carries the readings).
   const refspecs = positionals.slice(1);
   if (refspecs.length === 0) return { branches: [], head: true, more };
 
@@ -1656,6 +1695,7 @@ function refspecTargets(tokens) {
       if (name === "") {
         return { unresolved: `the refspec \`${raw}\` names an empty branch` };
       }
+      if (readsAsOption(name)) return optionLikeTarget(raw, name);
       branches.push(name);
       continue;
     }
@@ -1665,12 +1705,41 @@ function refspecTargets(tokens) {
       // contributes none the caller says so rather than guessing HEAD's.
       continue;
     }
+    if (readsAsOption(dst)) return optionLikeTarget(raw, dst);
     branches.push(dst);
   }
   if (branches.length === 0 && !head && !all) {
     return { unresolved: "this push names refs, and none of them is a branch" };
   }
   return { branches, head: head || all, more };
+}
+
+/**
+ * Would this value be read as an OPTION by the program it is handed to?
+ *
+ * THE NARROWEST SHAPE CHECK THAT CAN BE TRUE OF A BRANCH NAME (T-237-s9),
+ * and it is narrow because git's own `check-ref-format` already refuses a
+ * ref component beginning with `-`: no legal branch is lost here. There
+ * is no shell in this arm and there never was, so this is not about
+ * quoting — `gh`'s argument parser reads a leading `-` as an option out
+ * of an argv ARRAY, exactly as `git`'s does one arm over, where
+ * `pathsSince` shape-checks `headSha` for the same reason and in the same
+ * direction: the announcement loses a sentence and no verdict moves.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+function readsAsOption(name) {
+  return name.startsWith("-");
+}
+
+/** @see readsAsOption @param {string} raw @param {string} name */
+function optionLikeTarget(raw, name) {
+  return {
+    unresolved:
+      `the refspec \`${raw}\` names \`${name}\` where a branch name was expected, and this guard ` +
+      "will not hand a value beginning with `-` to `gh` as an argument",
+  };
 }
 
 /**
@@ -1715,6 +1784,32 @@ export function repointedBy(from, globals) {
     return { unresolved: `the push would run in ${dir}, which is not a directory now` };
   }
   return { dir };
+}
+
+/**
+ * IS THIS PATH THERE? — and *"no"* is kept apart from *"I could not
+ * look"*, which is the whole of this function (T-238-s1).
+ *
+ * `existsSync` answers FALSE for `EMFILE` and `EACCES` exactly as it does
+ * for `ENOENT`. Under the descriptor pressure of several concurrent
+ * suites this guard therefore read a checkout of THIS repository as a
+ * checkout of some other one and took the SILENT allow
+ * `not-this-repository` — an inability wearing a verdict's clothes, which
+ * is the one shape every arm in this file refuses. `ENOTDIR` joins
+ * `ENOENT`: a path whose parent is a file is genuinely not there.
+ *
+ * @param {string} p
+ * @returns {{ there: boolean } | { unreadable: string }}
+ */
+function probePath(p) {
+  try {
+    statSync(p);
+    return { there: true };
+  } catch (err) {
+    const code = /** @type {{ code?: unknown } | null | undefined} */ (err)?.code;
+    if (code === "ENOENT" || code === "ENOTDIR") return { there: false };
+    return { unreadable: typeof code === "string" ? code : String(err) };
+  }
 }
 
 /**
@@ -2957,9 +3052,18 @@ function decideWith(request, check, cheap, gh, holder, notices) {
     // whether this seat is anywhere near this project — which is the
     // only question this arm needs it for.
     const writerRoot = findCheckoutRoot(cwd);
-    const ours =
-      writerRoot !== undefined &&
-      existsSync(path.join(writerRoot, INDEX_CRATE_MANIFEST_REL_PATH));
+    // AN INABILITY IS NOT "NOT OURS" (T-238-s1). This was `existsSync`,
+    // which cannot tell a missing manifest from a probe that could not
+    // run — so under descriptor pressure a push INSIDE this repository
+    // read as a push outside it and took the silent allow below, which
+    // is exactly the ungraded push T-216-s8 made this arm refuse. A
+    // probe that could not look is treated as OURS, so the refusal
+    // fires and the seat is told; the errno rides along in its text.
+    const probe =
+      writerRoot === undefined
+        ? { there: false }
+        : probePath(path.join(writerRoot, INDEX_CRATE_MANIFEST_REL_PATH));
+    const ours = "unreadable" in probe ? true : probe.there;
     if (!ours) {
       return allow(
         "push-repository-unresolved-outside",
@@ -2984,7 +3088,13 @@ function decideWith(request, check, cheap, gh, holder, notices) {
         "  The graph, the board, the fence and the verdict token are ALL UNVERIFIED for this " +
         "push, which is why it is refused rather than narrated (T-216-s8). Spell it so this " +
         "guard can read it, and it is judged exactly:\n" +
-        "    git -C <the checkout being pushed> push",
+        "    git -C <the checkout being pushed> push" +
+        ("unreadable" in probe
+          ? `\n  AND EVEN *is this our repository* WENT UNANSWERED: reading ` +
+            `${INDEX_CRATE_MANIFEST_REL_PATH} in ${String(writerRoot)} failed with ` +
+            `${probe.unreadable}, which is not the file being absent. This refusal is the safe ` +
+            "direction of that doubt (T-238-s1)."
+          : ""),
     );
   }
   const pushCwd = /** @type {string} */ (resolved.dirs[0]);
@@ -2992,7 +3102,22 @@ function decideWith(request, check, cheap, gh, holder, notices) {
   if (root === undefined) {
     return allow("not-a-repository", `${pushCwd} sits in no git checkout`);
   }
-  if (!existsSync(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH))) {
+  // IS THIS OUR REPOSITORY — AND *COULD NOT LOOK* IS NOT *NO* (T-238-s1,
+  // taking T-216-s8's attribution). `existsSync` here was one of the two
+  // errno-swallowing probes that could turn a held seat into a silent
+  // allow: EMFILE under six concurrent suites answers exactly as ENOENT
+  // does, and this arm returns BEFORE the holder arm below, so the whole
+  // seat question went unasked while the run read as an ordinary pass.
+  const oursProbe = probePath(path.join(root, INDEX_CRATE_MANIFEST_REL_PATH));
+  if ("unreadable" in oursProbe) {
+    notices.push(
+      `WHETHER ${root} IS A CHECKOUT OF THIS REPOSITORY WAS NOT ESTABLISHED: reading ` +
+        `${INDEX_CRATE_MANIFEST_REL_PATH} there failed with ${oursProbe.unreadable}, which is not ` +
+        "the same answer as that file being absent. Every arm below judges this tree as though it " +
+        "IS ours; an inability is announced rather than turned into the silent allow it used to " +
+        "become (T-238-s1).",
+    );
+  } else if (!oursProbe.there) {
     return allow(
       "not-this-repository",
       `${root} carries no ${INDEX_CRATE_MANIFEST_REL_PATH}, so \`index --check\` is not a question ` +
@@ -3029,14 +3154,20 @@ function decideWith(request, check, cheap, gh, holder, notices) {
   // other's push token at the moment it is minted, which is the exact
   // artifact the arm below refuses on.
   //
-  // ONLY THE INTEGRATION CHECKOUT HAS A SEAT, so a lane push and a
-  // detached bench's push reach this line and pass through it silently:
-  // a lane does not hold a seat, and a notice on every lane push is the
-  // noise this file spends a paragraph refusing under `not-this-repository`.
+  // ONLY THE INTEGRATION CHECKOUT HAS A SEAT, so a LANE push reaches
+  // this line and passes through it silently: a lane does not hold a
+  // seat, and a notice on every lane push is the noise this file spends
+  // a paragraph refusing under `not-this-repository`.
   // A VACANT seat is silent too, and that is a stated limit rather than
   // an oversight — nobody having declared the seat is not a collision,
   // and the arming steps in `brief.mjs` are where the unclaimed checkout
   // is announced to the seat that could claim it.
+  // A DETACHED CHECKOUT USED TO BE SILENT WITH THEM AND IS NOT ANY MORE
+  // (T-238-s1): it holds no seat for the same reason a lane does not —
+  // it names no branch — but nobody had ever been told, so a seat could
+  // sit detached at the integration branch's own tip, unrecorded and
+  // unrefused. The `NO_BRANCH` arm below says it once, per push, in the
+  // one place a seat is already reading.
   //
   // THE THREE THINGS IT DOES SAY: a live OTHER holder REFUSES, a DEAD
   // holder's record is announced and stepped over, and a record this
@@ -3075,6 +3206,23 @@ function decideWith(request, check, cheap, gh, holder, notices) {
         "inability is not a verdict, in either direction — and nothing here has said this seat " +
         "is yours. THE SEAT CANNOT BE CHECKED WHERE THIS SESSION'S OWN IDENTITY WILL NOT DERIVE " +
         "— on a CI runner it never does, and this arm is inert there by construction.",
+    );
+  } else if (seat.code === HOLDER_CODES.NO_BRANCH) {
+    // ── THE ONE not-integration CASE THAT IS NOT SILENT (T-238-s1) ───
+    // A LANE push stays silent above and must: a lane holds no seat by
+    // rule 4, and a line on every lane push is the noise this file
+    // spends a paragraph refusing. A checkout that names NO BRANCH is a
+    // different fact and nobody was told it — a detached tree sitting
+    // at the integration branch's own tip is not that checkout, so a
+    // seat working there takes no seat and is refused by nothing. It is
+    // also where an UNREADABLE `.git/HEAD` lands, which is why this
+    // sentence names both and claims to tell them apart in neither.
+    notices.push(
+      `THIS CHECKOUT NAMES NO BRANCH, SO IT HOLDS NO SEAT: ${seat.detail} The push is allowed and ` +
+        "the seat question was not asked — nothing here has said this seat is yours, and nothing " +
+        "has said it is anybody's. If you are the integration seat, work in the checkout that " +
+        `has ${INTEGRATION_BRANCH} checked out and take it explicitly: ` +
+        "node tools/e2e/scripts/brief.mjs --take-seat",
     );
   }
 

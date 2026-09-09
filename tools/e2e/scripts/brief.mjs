@@ -154,6 +154,7 @@ import {
   withMargin,
 } from "./dispatch-brief.mjs";
 import {
+  HOLDER_CODES,
   HOLDER_REL_PATH,
   STALE_CLONE_LIMIT,
   holderVerdict,
@@ -625,6 +626,14 @@ async function main(argv) {
    * record it cannot show belongs to this session — removing another
    * seat's declaration is the one harm this arm could do.
    *
+   * **AND IT REFUSES AN UNREADABLE RECORD TOO** (T-238-s1). That is the
+   * same harm reached by a different route: a record whose SHAPE this
+   * reader cannot parse says nothing about whose it is, so removing it
+   * retires an unread claim — and the arm used to do exactly that and
+   * print RELEASED. `--take-seat` remains the way past it, because an
+   * explicit claim is a different act from a release stepping over
+   * evidence it never read.
+   *
    * THE ONE EARLY RETURN IS AN INABILITY. A session whose own identity
    * cannot be derived cannot record anything on its own behalf, and that
    * is `COULD NOT RUN` rather than a finding about the checkout: the
@@ -707,6 +716,39 @@ async function main(argv) {
           ),
         ]),
       );
+    } else if (h.code === HOLDER_CODES.UNREADABLE) {
+      // ── ITEM 2 OF T-238-s1 ────────────────────────────────────────
+      // A RECORD THIS COMMAND COULD NOT READ WAS REMOVED AND REPORTED
+      // AS "RELEASED … unopposed". `unknown` has two codes and only one
+      // of them was caught here: the branch above tests
+      // `figures.holderAlive === true`, which is set only when the
+      // record PARSED — so an UNREADABLE record fell through to the
+      // release below, was deleted, and the seat was told the next
+      // session takes it unopposed. Neither half was true: nothing had
+      // established the seat was free, and the one piece of evidence
+      // about who held it was what got deleted.
+      //
+      // AND THE REMEDY IS NOT LOST, it moves to the arm that owns it:
+      // `holderVerdict`'s own sentence for this state is *delete the
+      // file or re-take the seat*, and `--take-seat` still does exactly
+      // that — an explicit claim, which is a different act from a
+      // release stepping over a record it never read.
+      say(
+        render([
+          note("THE SEAT — NOT RELEASED. The record on disk is a SHAPE this reader cannot read,"),
+          note("so who holds this checkout was never established; removing it would retire an"),
+          note("unread claim and destroy the only evidence of whose it was."),
+          value(
+            `${asked} refused: ${h.detail}`,
+            liveProv(ctx.at, ctx.host, `${HOLDER_REL_PATH}, as it is on disk`),
+          ),
+        ]),
+      );
+      holderFindings.push(
+        `--release-seat refused an unreadable ${HOLDER_REL_PATH} rather than removing it — ` +
+          `${h.detail} Take the seat explicitly (--take-seat) if it is yours, or delete the file ` +
+          "by hand once you have read it.",
+      );
     } else if (h.state === "unknown" && h.figures["holderAlive"] === true) {
       say(
         render([
@@ -716,7 +758,24 @@ async function main(argv) {
       );
       holderFindings.push(`--release-seat could not establish that the live holder is this session — ${h.detail}`);
     } else {
-      const had = removeHolder(ctx.root);
+      /** @type {boolean} */
+      let had;
+      try {
+        had = removeHolder(ctx.root);
+      } catch (err) {
+        // A REMOVAL THAT FAILED IS NOT A RELEASE (T-238-s1). `rmSync`
+        // throwing anything but ENOENT means the record is still there,
+        // and this command's four-code contract keeps "I could not do
+        // it" apart from "I did it and found nothing".
+        console.error("brief: COULD NOT RUN");
+        console.error(`  ${err instanceof Error ? err.message : String(err)}`);
+        console.error(
+          "  The seat was NOT released and the record is still on disk. Nothing here has said " +
+            "this checkout is free.",
+        );
+        flush();
+        return EXIT.CANNOT_RUN;
+      }
       say(
         render([
           note("THE SEAT — RELEASED. The next session to arm this checkout takes it unopposed"),
