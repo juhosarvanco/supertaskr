@@ -1904,3 +1904,33 @@ test("an ABORTING drill still restores the site — the merged tree is never lef
     removeGitFixture(root, FIXTURE);
   }
 });
+
+test("a mutant block's file and spec are CONFINED to the project root — no traversal, no absolute path", () => {
+  // SECURITY. A block is TEXT off a card carried on a lane branch, and
+  // the drill WRITES the file it names, on the integrator's machine, with
+  // `path.join(projectRoot, block.file)`. A `../` segment leaves the
+  // repository entirely, and the write is live for the whole spec run.
+  for (const escape of [
+    "../outside.mjs",
+    "../../.git/hooks/pre-commit",
+    "src/../../outside.mjs",
+    "/etc/hosts",
+  ]) {
+    const read = readMutantBlocks(mutantBlockText({ file: escape }));
+    expect("problem" in read, `${escape} is refused as a \`file\``).toBe(true);
+    if ("problem" in read) expect(read.problem).toContain("outside the project root");
+  }
+  for (const escape of ["tools/e2e/../../../outside.spec.ts", "/tmp/outside.spec.ts"]) {
+    const read = readMutantBlocks(mutantBlockText({ spec: escape }));
+    expect("problem" in read, `${escape} is refused as a \`spec\``).toBe(true);
+  }
+  // THE POSITIVE CONTROL, run because a reader that refused every path
+  // would be indistinguishable from this one: ordinary in-tree paths are
+  // still accepted, and a dot PAIR inside a file name is not a traversal.
+  const ok = readMutantBlocks(mutantBlockText());
+  expect("problem" in ok, "an in-tree path is accepted").toBe(false);
+  const dotted = readMutantBlocks(
+    mutantBlockText({ file: "tools/e2e/scripts/a..b.mjs", spec: "tools/e2e/tests/b.spec.ts" }),
+  );
+  expect("problem" in dotted, "a dot pair inside a name is not a traversal").toBe(false);
+});
