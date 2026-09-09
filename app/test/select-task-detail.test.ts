@@ -842,4 +842,46 @@ describe("selectBriefPanel — the copyable block is gated on T-111's dispositio
         "row 9 could not be assembled from the project's CONVENTIONS",
     );
   });
+
+  /**
+   * **THE DOOR'S TWO ANSWERS, AND WHY THEY ARE ARMS RATHER THAN A
+   * MISSING BRIEF (`T-112-s5`).** Since that card `TaskDetailPanel` asks
+   * `dispatch_brief` for its own open card, which means a caller can now
+   * meet two facts the ASSEMBLER never produces: the app has no project
+   * open, and the request never crossed the boundary at all. **The cheap
+   * shape was available and is what the arms exist to refuse** — a caller
+   * that met either and passed `undefined` gets *"the assembler has not
+   * answered for this card yet"*, which says an answer is COMING. It is
+   * not, in either case.
+   *
+   * Both are asserted WHOLE, for the reason the sweep above established:
+   * a containment matcher cannot tell the sentence from the sentence plus
+   * anything, and the near-miss here is real — each of these ends in a
+   * clause saying what the fact is NOT about, and that clause is exactly
+   * the half a deletion would take.
+   */
+  it("the DOOR's two failures are their own sentences, never the pending one", () => {
+    const sentenceFor = (outcome: BriefOutcomeView | undefined): string => {
+      const panel = selectBriefPanel(dispatchableModel, byId("T-500"), NO_LANES, outcome);
+      if (panel.kind !== "unavailable") throw new Error(`expected unavailable, got ${panel.kind}`);
+      return panel.sentence;
+    };
+
+    expect(sentenceFor({ kind: "noProject" })).toBe(
+      "no project is open, so the assembler has no files to read — this is a fact about the app and not about this card",
+    );
+
+    // The detail travels VERBATIM: a boundary failure a reader cannot
+    // name is a boundary failure nobody can act on.
+    expect(sentenceFor({ kind: "boundaryFailed", detail: "dispatch_brief is not registered" })).toBe(
+      "the request for this brief never reached the assembler: dispatch_brief is not registered — the app's own boundary failed, so nothing here is an answer about the card",
+    );
+
+    // THE POSITIVE CONTROL, and it is what makes the two above findings:
+    // the arm they must not collapse into is right here, produced by the
+    // same call with the same fixture.
+    expect(sentenceFor(undefined)).toBe(
+      "the assembler has not answered for this card yet — the brief is assembled from files the app reads Rust-side",
+    );
+  });
 });

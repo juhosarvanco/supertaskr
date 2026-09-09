@@ -328,7 +328,7 @@ describe("the supertaskr repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 45-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
+  it("draws the full 46-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -423,13 +423,14 @@ describe("the supertaskr repo on its own map", () => {
     // 37 → 45 AT T-127-s6 (2026-08-29), AND THE UNDECLARED COUNT DOES NOT
     // MOVE, which is the whole shape of the change stated on this map:
     // eleven confirmed rows arrive and three leave (33 + 2 + 10 = 45),
+    // 45 -> 46 AT T-112-s5 (2026-09-09): the C-09 -> C-15 edge declared and imported (34 + 2 + 10 = 46),
     // every one of the eleven a RENAMED or RE-ATTRIBUTED edge rather than a
     // new import. The row that leaves and matters is `C-08 → C-09`, half of
     // `C-08 -> C-09 -> C-08`; `C-09 → C-08` is still drawn, which is what
     // makes this a broken cycle and not a hidden one. Derived from `arch`'s
     // own edge listing at the edited registry before the suite was re-run,
     // because a red on this count hides the two assertions below it.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(45);
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(46);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );

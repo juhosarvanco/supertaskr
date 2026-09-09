@@ -13,6 +13,15 @@ import type { DispatchReading } from "../src/lib/board-model";
 import type { BriefOutcomeView } from "../src/lib/task-detail";
 import { TaskDetailPanel } from "../src/components/board/TaskDetailPanel";
 
+// T-112-s5's bodies drive an ASYNC effect (the drawer asking the
+// assembler for its own card), and `await act(async () => …)` only
+// flushes it with this flag set — the repo's own idiom, taken verbatim
+// from review-badge.test.tsx rather than invented here.
+declare global {
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+}
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 let container: HTMLElement;
 let root: Root;
 beforeEach(() => {
@@ -306,5 +315,238 @@ describe("the dispatch brief block (T-112)", () => {
     // The positive control: the panel itself did render, so the absence
     // above is the block's and not a failed mount.
     expect(dom.querySelector('[data-testid="task-detail-panel"]')).not.toBeNull();
+  });
+});
+
+// ---- the drawer ASKS for the brief (T-112-s5) -------------------------
+//
+// **THE PROP HAD NO FILLER AND THE REASON WAS STRUCTURAL, NOT MISSING
+// WIRING.** `dispatch_brief` has been registered since `T-112-s1`, but
+// `readBrief(taskId, role)` needs the id of the card the user just
+// opened, and that ref is `Board.tsx`'s own `useState` — so `App.tsx`,
+// which mounts the board, can compute a `DispatchReading` (a fact about
+// the whole repository) and can never compute a `BriefOutcomeView` (a
+// fact about ONE card). Ruled at the architecture sitting of 2026-08-31:
+// shape 3, the drawer asks, because the drawer is what knows.
+//
+// **THE BODIES LIVE HERE FOR THE REASON THE T-112 BODIES ABOVE DO** —
+// this file is C-09's and mounts `TaskDetailPanel` directly, and a new
+// `app/test/**` path would be a registry edit plus a file-count move at
+// the integrator's graph regen, for bodies that already have a home.
+//
+// **THE RUNTIME IS THE SEAM AND IT IS THE APP'S OWN.** `invoke` is
+// `window.__TAURI_INTERNALS__.invoke`, which a dozen files in this suite
+// already flip; installing a recording stub is what lets these bodies
+// assert WHICH card was asked for, and its absence is what the browser
+// bundle actually is.
+
+interface InvokeCall {
+  readonly cmd: string;
+  readonly taskId: unknown;
+  readonly role: unknown;
+}
+
+/** Install a recording `invoke`, and hand back the log it writes to. */
+function installTauri(answer: (taskId: string) => Promise<unknown>): InvokeCall[] {
+  const calls: InvokeCall[] = [];
+  (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {
+    invoke: (cmd: string, args: Record<string, unknown>) => {
+      calls.push({ cmd, taskId: args?.taskId, role: args?.role });
+      return answer(String(args?.taskId));
+    },
+  };
+  return calls;
+}
+
+afterEach(() => {
+  delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+});
+
+/** One assembled brief whose single line is unique to the card it names,
+ * so an assertion proves the RIGHT card's answer arrived and not merely
+ * that some brief did. */
+const briefFor = (taskId: string, line: string): BriefOutcomeView => ({
+  kind: "assembled",
+  brief: {
+    role: "executor",
+    roleFile: "method/roles/executor.md",
+    taskId,
+    cardPath: `docs/tasks/${taskId}-fixture.md`,
+    rows: [
+      {
+        number: 1,
+        carries: "**Role**",
+        assembledFrom: "`roles/<role>.md`",
+        ifAbsent: "the session invents its own obligations",
+        lines: [{ label: "one line", text: line, provenance: { kind: "tree", source: "method/roles/executor.md" } }],
+        residual: null,
+      },
+    ],
+    marker: null,
+  },
+});
+
+/** Two dispatchable cards in DIFFERENT columns — the frontier answers
+ * per column's topmost card, so a second card in F-01 would not be
+ * dispatchable and the re-target body would prove nothing. */
+function twoCardModel(): ProjectParseResult {
+  return parseProjectFromFiles([
+    { path: "docs/ROADMAP.md", content: BOARD_ROADMAP },
+    { path: "docs/architecture/components/C-90-x.md", content: COMPONENT },
+    { path: "docs/tasks/T-960-fixture.md", content: card("T-960", "planned", "F-01") },
+    { path: "docs/tasks/T-962-fixture.md", content: card("T-962", "planned", "F-02") },
+  ]);
+}
+
+async function renderSettled(
+  model: ProjectParseResult,
+  taskId: string,
+  dispatch: DispatchReading | undefined,
+  brief: BriefOutcomeView | undefined,
+): Promise<HTMLElement> {
+  await act(async () => {
+    root.render(
+      <TaskDetailPanel
+        model={model}
+        taskRef={{ kind: "id", id: taskId }}
+        onOpen={() => {}}
+        onClose={() => {}}
+        dispatch={dispatch}
+        brief={brief}
+      />,
+    );
+  });
+  return container;
+}
+
+const copyable = (dom: HTMLElement): HTMLElement | null =>
+  dom.querySelector('[data-testid="detail-brief-copyable"]');
+const unavailable = (dom: HTMLElement): HTMLElement | null =>
+  dom.querySelector('[data-testid="detail-brief-unavailable"]');
+
+describe("the drawer asks the assembler for its OWN card (T-112-s5)", () => {
+  it("asks NOTHING when the dispatch prop is absent, because the block will not render", async () => {
+    // THE VERIFIER'S ASSIGNED CORRECTION 1 (T-112-s5 at cbc24d4): useAssembledBrief's
+    // design note says it asks only when the block will render, and mutant A-M8
+    // (the gate deleted) survived all 1170 bodies. The first body of this describe
+    // is the positive control: the same fixture and recorder WITH `dispatch`,
+    // asserting exactly one call — so an empty log here is a fact about the gate.
+    const calls = installTauri(async (taskId) =>
+      ({ kind: "answered", outcome: briefFor(taskId, "a brief nobody asked for") }));
+    const dom = await renderSettled(briefModel(false), "T-960", undefined, undefined);
+    expect(calls).toEqual([]);
+    expect(dom.querySelector('[data-testid="detail-brief"]')).toBeNull();
+  });
+
+  it("asks dispatch_brief for the open card's id and renders the answer, with no `brief` prop in sight", async () => {
+    // THE CARD'S WHOLE CLAIM. `undefined` is passed for the prop
+    // deliberately: before this card that argument was the only filler
+    // there was, and every body above supplies one.
+    const calls = installTauri(async (taskId) =>
+      ({ kind: "answered", outcome: briefFor(taskId, "You build exactly one task, then you end.") }));
+    const dom = await renderSettled(briefModel(false), "T-960", NO_LANES, undefined);
+
+    // WHICH CARD was asked for is the assertion, not that a call happened:
+    // an implementation that asked for the first card on the board, or for
+    // a constant, would satisfy "a brief rendered".
+    expect(calls).toEqual([{ cmd: "dispatch_brief", taskId: "T-960", role: "executor" }]);
+
+    const block = copyable(dom);
+    if (block === null) throw new Error("the copyable block did not render");
+    expect(block.getAttribute("data-task-id")).toBe("T-960");
+    expect(block.textContent).toContain("You build exactly one task, then you end.");
+    expect(unavailable(dom)).toBeNull();
+  });
+
+  it("a supplied `brief` prop is answered with itself, and NO question is asked", async () => {
+    // THE SEAM THE CARD'S RULING KEEPS ALIVE, pinned from inside
+    // `[app-board]`. `app/test/board-truth.test.tsx` drives the same
+    // property through `Board`, and it is C-05's — no board fence reaches
+    // it, so this file is where an `app-board` lane finds out it broke it.
+    const calls = installTauri(async () => {
+      throw new Error("the panel asked for a brief it was handed");
+    });
+    const dom = await renderSettled(
+      briefModel(false),
+      "T-960",
+      NO_LANES,
+      briefFor("T-960", "the prop's own sentence, and nothing else produces it"),
+    );
+    expect(calls).toEqual([]);
+    expect(copyable(dom)?.textContent).toContain("the prop's own sentence");
+  });
+
+  it("with no Tauri runtime it asks nothing, and the sentence on screen is the one that is already true", async () => {
+    // The browser bundle has no assembler to ask — the brief is read
+    // Rust-side — so the pre-T-112-s5 sentence is the WHOLE truth there
+    // and this card must not replace it with a failure. The positive
+    // control is the first body: the same fixture, WITH a runtime,
+    // renders the brief.
+    const dom = await renderSettled(briefModel(false), "T-960", NO_LANES, undefined);
+    expect(copyable(dom)).toBeNull();
+    expect(unavailable(dom)?.textContent).toContain(
+      "the assembler has not answered for this card yet",
+    );
+  });
+
+  it("`noProject` reaches the reader as ITS OWN fact, never as 'not answered yet'", async () => {
+    // The door's wrapper exists because `noProject` is a fact about the
+    // APP and every assembler arm is a fact about a PROJECT. A caller
+    // that met it and passed `undefined` would promise an answer that is
+    // never coming.
+    installTauri(async () => ({ kind: "noProject" }));
+    const dom = await renderSettled(briefModel(false), "T-960", NO_LANES, undefined);
+    expect(copyable(dom)).toBeNull();
+    const sentence = unavailable(dom)?.textContent;
+    expect(sentence).toBe(
+      "no project is open, so the assembler has no files to read — this is a fact about the app and not about this card",
+    );
+    // And it is NOT the pending sentence — the near neighbour this arm
+    // exists to be distinguishable from.
+    expect(sentence).not.toContain("has not answered for this card yet");
+  });
+
+  it("a REJECTED invoke reaches the reader as the app's own boundary failing", async () => {
+    // `readBrief`'s doc says the boundary rejects rather than answering
+    // when it fails, and that callers own that path. This is owning it.
+    installTauri(async () => {
+      throw new Error("dispatch_brief is not registered");
+    });
+    const dom = await renderSettled(briefModel(false), "T-960", NO_LANES, undefined);
+    expect(copyable(dom)).toBeNull();
+    expect(unavailable(dom)?.textContent).toBe(
+      "the request for this brief never reached the assembler: dispatch_brief is not registered — the app's own boundary failed, so nothing here is an answer about the card",
+    );
+  });
+
+  it("a re-targeted drawer never shows the PREVIOUS card's brief", async () => {
+    // The drawer re-targets in place on a blocker click. An answer that
+    // outlived its question would put one card's brief under another
+    // card's heading — the worst possible failure for a block whose whole
+    // purpose is to be pasted somewhere.
+    let releaseSecond: ((value: unknown) => void) | undefined;
+    const calls = installTauri((taskId) =>
+      taskId === "T-960"
+        ? Promise.resolve({ kind: "answered", outcome: briefFor("T-960", "FIRST CARD ONLY") })
+        : new Promise((resolve) => {
+            releaseSecond = resolve;
+          }),
+    );
+    const model = twoCardModel();
+    const dom = await renderSettled(model, "T-960", NO_LANES, undefined);
+    expect(copyable(dom)?.textContent).toContain("FIRST CARD ONLY");
+
+    await renderSettled(model, "T-962", NO_LANES, undefined);
+    expect(calls.map((c) => c.taskId)).toEqual(["T-960", "T-962"]);
+    // Still in flight for T-962 — and the first card's answer is GONE
+    // rather than standing in for it.
+    expect(dom.textContent).not.toContain("FIRST CARD ONLY");
+    expect(unavailable(dom)?.textContent).toContain("has not answered for this card yet");
+
+    await act(async () => {
+      releaseSecond?.({ kind: "answered", outcome: briefFor("T-962", "SECOND CARD ONLY") });
+    });
+    expect(copyable(dom)?.getAttribute("data-task-id")).toBe("T-962");
+    expect(copyable(dom)?.textContent).toContain("SECOND CARD ONLY");
   });
 });

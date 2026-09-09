@@ -12,9 +12,135 @@ import {
   type TaskRef,
 } from "@/lib/task-detail";
 import { verdictEntries, type VerdictEntry } from "@/lib/verdicts";
+import { readBrief } from "@/lib/dispatch-store";
 import { attachPanelDismissal } from "./panel-dismissal";
 import { CHIP_BORDER_CLASSES, STATUS_CLASSES } from "./TaskCard";
 import { ReviewBadge } from "./badges/ReviewBadge";
+
+/**
+ * Which brief the drawer asks for.
+ *
+ * **THE DRAWER HAS NO ROLE SELECTOR AND THIS IS NOT A DEFAULT STANDING IN
+ * FOR ONE.** `dispatch_brief` takes one of two spellings, and the block
+ * this feeds is titled *"dispatch brief"*: what a human copies out of the
+ * board is the brief that puts a fresh session to WORK, which is the
+ * executor's. A verifier's brief is assembled at a different moment, by
+ * whoever holds the seat, and choosing between the two on screen is a
+ * product decision this card did not carry — routed rather than guessed.
+ */
+const BRIEF_ROLE = "executor" as const;
+
+/**
+ * Is there a Tauri runtime to ask?
+ *
+ * **SPELLED LOCALLY, AND THE ALTERNATIVE IS WORSE FOR A REASON THAT IS
+ * NOT STYLE.** `watcher-store.ts` exports `isTauriRuntime()` and is
+ * C-10's; importing it would buy this component a second undeclared
+ * component edge for a two-term predicate, on a card whose whole registry
+ * claim is the ONE edge the ruling names. `agent-store.ts` and
+ * `watcher-store.ts` already spell it separately for the same reason.
+ */
+function hasTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/** What one answer belongs to — an outcome with no card attached to it
+ * is how a re-targeted drawer shows the previous card's brief. */
+interface AskedBrief {
+  readonly taskId: string;
+  readonly outcome: BriefOutcomeView;
+}
+
+/**
+ * Ask the assembler for THIS card's brief (T-112-s5, ruled at the
+ * architecture sitting of 2026-08-31 — shape 3).
+ *
+ * **THE PROBLEM WAS NEVER THE COMMAND, IT WAS WHO KNOWS THE CARD.**
+ * `dispatch_brief` has been registered since `T-112-s1` and reachable
+ * through C-15's `readBrief`, but `readBrief(taskId, role)` needs the id
+ * of the card the user just opened, and the open ref is `Board.tsx`'s own
+ * `useState` — so the shell that mounts the board can compute a
+ * `DispatchReading`, which is a fact about the whole repository, and can
+ * never compute a `BriefOutcomeView`, which is a fact about ONE card.
+ * The drawer is the component that knows, and so the drawer asks. The
+ * two shapes refused: lifting `openRef` to the shell moves ephemeral VIEW
+ * state across a component boundary to serve one consumer, and fetching
+ * in `Board.tsx` contradicts that file's own design note in as many words
+ * (*"this file makes no decision about them"*).
+ *
+ * **THE `brief` PROP STAYS, AND STAYS AUTHORITATIVE.** It is the seam
+ * `app/test/board-truth.test.tsx` and `app/test/detail-assignment.test.tsx`
+ * drive, and a supplied prop is answered with itself — no question is
+ * asked at all. So this hook ADDS a filler where there was none rather
+ * than replacing the one the suites use.
+ *
+ * **IT ASKS ONLY WHEN THE BLOCK WILL RENDER, WHICH IS `dispatch` BEING
+ * PRESENT — AND IT DOES NOT ASK WHETHER THE CARD IS DISPATCHABLE.** That
+ * second question is `selectBriefPanel`'s, and answering it here to save
+ * an `invoke` on a fenced card would be exactly the T-057 divergence the
+ * whole seam is built to avoid: two implementations of "may this be
+ * dispatched" are two chances to disagree. One question per opened card,
+ * and the judgement stays in one place.
+ *
+ * **NO RUNTIME MEANS NO QUESTION, AND THE EXISTING SENTENCE IS ALREADY
+ * THE TRUE ONE.** In the browser bundle there is no assembler to ask —
+ * the brief is read Rust-side — so the hook stays idle and
+ * `selectBriefPanel` says *"the assembler has not answered for this card
+ * yet — the brief is assembled from files the app reads Rust-side"*,
+ * which is the whole truth about that build. Under a runtime, the two
+ * ways a question can fail to become an answer get their OWN sentences
+ * (`noProject`, `boundaryFailed`), because *"has not answered yet"*
+ * promises an answer that is not coming.
+ *
+ * **AN ANSWER IS KEYED TO THE CARD IT WAS ASKED FOR.** The drawer
+ * re-targets in place on a blocker click, so an outcome that outlived its
+ * question would put one card's brief under another card's heading — the
+ * worst possible failure for a block whose whole purpose is to be pasted
+ * somewhere.
+ */
+function useAssembledBrief(
+  taskId: string | undefined,
+  blockWillRender: boolean,
+  supplied: BriefOutcomeView | undefined,
+): BriefOutcomeView | undefined {
+  const askFor = blockWillRender && supplied === undefined ? taskId : undefined;
+  const [answer, setAnswer] = useState<AskedBrief | undefined>(undefined);
+  useEffect(() => {
+    if (askFor === undefined || !hasTauriRuntime()) return;
+    // `live` IS REDUNDANT WITH THE ANSWER KEY, AND IT IS KEPT ON PURPOSE (T-112-s5's
+    // verdict, correction 2): a write after unmount is a no-op in React 18, and a
+    // stale answer is refused by `taskId` against the card the drawer shows now,
+    // so deleting this guard changes no observable outcome (mutant A-M4 survived
+    // every body). It stays as defence in depth; T-112-s10 holds whether a body
+    // should pin it. A seat deleting it deletes a redundancy, not a property.
+    let live = true;
+    readBrief(askFor, BRIEF_ROLE).then(
+      (wire) => {
+        if (!live) return;
+        setAnswer({
+          taskId: askFor,
+          outcome: wire.kind === "noProject" ? { kind: "noProject" } : wire.outcome,
+        });
+      },
+      (error: unknown) => {
+        if (!live) return;
+        setAnswer({
+          taskId: askFor,
+          outcome: {
+            kind: "boundaryFailed",
+            detail: error instanceof Error ? error.message : String(error),
+          },
+        });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [askFor]);
+  if (supplied !== undefined) return supplied;
+  if (askFor === undefined || answer === undefined || answer.taskId !== askFor) return undefined;
+  return answer.outcome;
+}
 
 /**
  * Card detail panel (T-005, read-only): a fixed right-side panel over
@@ -63,6 +189,10 @@ import { ReviewBadge } from "./badges/ReviewBadge";
  *
  * Pure-lens note: the open/closed ref is ephemeral VIEW state (like a
  * scroll position), never project state — nothing here writes files.
+ *
+ * T-112-s5: this file is also where the brief is ASKED FOR — see
+ * {@link useAssembledBrief} for the ruling, the refusals and the seam
+ * that survives it.
  */
 export function TaskDetailPanel({
   model,
@@ -93,22 +223,33 @@ export function TaskDetailPanel({
    */
   dispatch?: DispatchReading;
   /**
-   * The assembler's answer for this card, when one has been asked for.
-   * `dispatch_brief` is registered since `T-112-s1` and reachable through
-   * `dispatch-store.ts`'s `readBrief`; what has no caller yet is the prop
-   * above, which gates this one.
+   * The assembler's answer for this card, SUPPLIED from outside.
+   *
+   * **IT NO LONGER HAS TO BE FILLED FOR A BRIEF TO REACH THE SCREEN, AND
+   * IT IS STILL AUTHORITATIVE WHEN IT IS (`T-112-s5`).** Since that card
+   * this component asks `dispatch_brief` for its own `taskRef` — see
+   * {@link useAssembledBrief} — because it is the only component that
+   * knows which card is open. What survives is this prop as the TEST
+   * SEAM: supply it and no question is asked, which is what
+   * `app/test/board-truth.test.tsx` and `app/test/detail-assignment.test.tsx`
+   * drive, and what lets a suite put any outcome on screen without a
+   * runtime. The prop above still gates whether the block renders at all.
    */
   brief?: BriefOutcomeView;
 }) {
   const detail = useMemo(() => selectTaskDetail(model, taskRef), [model, taskRef]);
+  // T-112-s5: the brief's FILLER. A supplied prop is answered with
+  // itself; otherwise this component asks the assembler for its own
+  // card, which no other component is able to do. See useAssembledBrief.
+  const outcome = useAssembledBrief(detail?.id, dispatch !== undefined, brief);
   // T-112: the brief block. The JUDGEMENT is `selectBriefPanel`'s, which
   // takes T-111's disposition rather than re-deriving one here.
   const briefPanel = useMemo(
     () =>
       dispatch === undefined
         ? undefined
-        : selectBriefPanel(model, taskRef, dispatch, brief),
-    [model, taskRef, dispatch, brief],
+        : selectBriefPanel(model, taskRef, dispatch, outcome),
+    [model, taskRef, dispatch, outcome],
   );
   const panelRef = useRef<HTMLElement>(null);
 

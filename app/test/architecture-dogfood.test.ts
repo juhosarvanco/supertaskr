@@ -2099,7 +2099,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     ]);
   });
 
-  it("the full relation table: 33 confirmed, 2 undeclared, 10 planned", () => {
+  it("the full relation table: 34 confirmed, 2 undeclared, 10 planned", () => {
     // T-127-s6: 37 ROWS -> 45, AND EVERY ONE OF THE EIGHT IS A RENAMED OR
     // RE-ATTRIBUTED EDGE RATHER THAN A NEW IMPORT. The graph did not move
     // — `derived.fileComponent.size` is still 189 and `index --check` is
@@ -2265,6 +2265,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       ["C-09", "C-06", "confirmed", 3],   // T-149: 2 -> 3; T-127-s6: 3 -> 2; T-169: 2 -> 3 (detail-assignment.test.tsx, the moved panel test)
       ["C-09", "C-08", "confirmed", 2],   // T-127-s6: 3 -> 2
       ["C-09", "C-11", "planned", 0],
+      ["C-09", "C-15", "confirmed", 1],   // 2026-09-09, T-112-s5: the drawer asks C-15 for its brief
       // NEW at T-033, replacing `["C-09","C-05","undeclared",2]`: `cn` and
       // `verdicts` from TaskDetailPanel.tsx.
       ["C-09", "C-16", "confirmed", 3],   // T-149: 2 -> 3
@@ -2396,9 +2397,9 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // ALL, which is the whole shape of an extraction stated as a tally:
       // eleven confirmed rows arrive and three leave, and nothing becomes
       // or stops being drift. 33 + 2 + 10 = 45. Derived from `arch`'s own
-      // edge listing at the edited registry — 33 confirmed / 2 undeclared /
+      // edge listing at the edited registry — 34 confirmed / 2 undeclared /
       // 10 planned — before the suite was re-run.
-      ["confirmed", 33],
+      ["confirmed", 34]   // 2026-09-09, T-112-s5: 33 -> 34, the C-09 -> C-15 row,
       ["planned", 10],
       // 2 → 4 at T-139, both new rows from the one unmapped file above.
       // 4 → 2 AT T-141, both leaving for the same reason they arrived. This
