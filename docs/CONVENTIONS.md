@@ -448,7 +448,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
   AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 closed
   the two that were only CI spelling a documented command a second way,
   T-045-s1; T-256 closed app/'s install, which was never an environment
-  difference at all — the doc now says the `npm ci` CI always ran). The token lint runs as `npm run lint:tokens -- --selftest`
+  difference at all — the doc now says the `npm ci` CI always ran).
+  The token lint runs as `npm run lint:tokens -- --selftest`
   then `npm run lint:tokens` from tools/e2e — the job's FIRST step,
   ahead of every `npm ci`, because `npm run` needs no installed
   node_modules and `token-scan.mjs` is zero-dependency — and two steps,
