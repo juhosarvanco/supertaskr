@@ -71,7 +71,9 @@ shape: one home for the limits, and a consumer that refers to it rather
 than copying it. **It is now incomplete in the direction that cost main
 a red.** `sessionIdentity` derives from the nearest ancestor process
 that IS the harness, and there is a whole class of machine where no such
-ancestor exists: a CI runner, whose tree is `node <- bash <- Runner`.
+ancestor exists: a CI runner, whose process tree is Runner, then bash,
+then node (respelled by the seat on 2026-09-09: the preflight reads a
+`<-` in prose as a provenance arrow and refused the dispatch).
 Every local checkout has the ancestor and is green; the runner has none,
 and on 2026-09-02 that difference reddened main through a body that
 armed the arm from the real process tree (T-238-s2, absorbed into
