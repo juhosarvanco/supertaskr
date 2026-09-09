@@ -828,3 +828,33 @@ the token story holds against the real push guard with the control run
 both ways. One correction is assigned, with its body committed and
 drilled RED three ways and GREEN once. Criterion 2's verifier half is met
 in prose only, which I have named here rather than buried, and filed.
+
+#### Step 7 — the gates my OWN commits could move, re-run at my own tip
+
+The verdict above is measured at **a0ec8ad**, the tip judged. Appending it
+and filing T-271-s6 created **081b67f**, and the correction body created
+**267411d** — a tree nobody had tested. Prose is a code input here, so:
+
+    node tools/e2e/scripts/gate-run.mjs parser        (at 267411d)
+      exit 0  gate-verdict suite=parser exit=0 bodies=389 targets=1
+              ref=267411df0c6fadc77631e7e33a7736f3607e010f verdict=GREEN reason=ok
+      — the parser's smoke test parses this repo's live docs/ tree, which is
+        the gate a malformed card would red.
+
+    node tools/e2e/scripts/docs-gate.mjs <the two card paths I wrote>
+      exit 1 (HAS A VERDICT: suites owed — the normal answer for a docs path)
+      "0 frontmatter issue(s) in the live tree"
+      "every live task card's frontmatter parses, with a legal status"
+      "governing-document budgets hold — 4 gated, 0 awaiting their compaction landing"
+      injection scan: 0 hit(s) in 0 of 2 path(s) against 7 pattern(s)
+
+    npx playwright test gate-run.spec.ts              (at 267411d)
+      exit 0  57 passed (16.7 s) — 56 at the judged tip plus the correction body
+
+    npm run lint:tokens        exit 0  clean
+    card-preflight on T-271-s6 exit 0
+    npm run capabilities:check exit 1  STALE, 65947 committed against 67017 fresh
+      — EXPECTED and the INTEGRATOR'S at the merge (T-201); it wrote nothing.
+
+This footnote is itself a prose write, and the two gates it could move are
+the two that just passed on an identically shaped one.
