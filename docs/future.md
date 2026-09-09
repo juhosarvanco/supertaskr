@@ -77,3 +77,5 @@ own rules — must carry a mechanism for discovering it is wrong.
   traceability, cryptographically tied to the repo. Client deliverable
   now; possibly what professional AI-built software is required to
   look like later.
+
+- **The in-app cockpit** — F-05's orchestrator conversation inside the mirror app. Parked 2026-09-09 at @human's word ("the native apps are the cockpit for now"); scheduled in no version. The room is docs/rooms/cockpit-or-mirror.md.

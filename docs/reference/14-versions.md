@@ -78,8 +78,6 @@ the non-coder spec studio; everything below.
   declares its gates as blocking or advisory (the shape the landing
   gate's limits take); catalogue-generated negatives once the registry
   is complete enough.
-- **The cockpit** — the in-app orchestrator conversation, not before v2
-  and only on evidence a user wants it (ADR-021).
 - **22 The version table.**
 - Added 2026-09-08: plan-checker seat, design-mockup stage, UAT walk,
   browser QA seat, security audit seat; ship, deploy and canary under

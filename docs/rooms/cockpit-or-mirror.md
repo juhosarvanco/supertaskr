@@ -146,3 +146,5 @@ from the native apps"* — the Claude and ChatGPT/Codex apps are the
 primary driver, the app keeps its interview as shipped and stays the
 mirror. ADR-021 Addendum 1; T-241/T-242/T-244 to priority 1; T-246
 (measure Codex's skill form) filed.
+
+**RULED AGAIN (2026-09-09, @human):** *"We decided the native apps are the cockpit for now."* The in-app conversation is no longer a v2 item; it is parked (docs/future.md) and named in no version list or front page. The mirror stays the mirror.

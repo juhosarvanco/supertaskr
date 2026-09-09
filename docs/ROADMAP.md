@@ -84,6 +84,9 @@ opens with the card id that still holds its story.
   Not started. The in-app orchestrator conversation and any in-app
   spawn path LEFT v1 on 2026-09-03 (ADR-021): rooms stay files under
   the method; the registry pane waits for evidence a user wants it.
+  The user's own agent app is the cockpit (@human, 2026-09-09: "the
+  native apps are the cockpit for now"); the in-app conversation is
+  parked in docs/future.md, scheduled in no version.
 - F-06: Architecture map — intent + reality overlaid, drift as a
   first-class signal (docs/design/map-technical-plan.md, ADR-013/014/
   015; added 2026-08-15, sequencing open in rooms/map-sequencing.md).

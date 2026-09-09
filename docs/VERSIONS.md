@@ -68,7 +68,6 @@ spelling is a gate before launch, not a feature.
 - **16 Fleet Fences** — the fence system across machines (team-enablement room).
 - **21 Competitive Execution** — the same card, two models, a blinded judge (T-170, parked on its trigger).
 - **The Ring 2 productization pass** — dashboards and surfaces for preflight, economics and the bands.
-- **The cockpit** — F-05's in-app orchestrator conversation: "not before v2, and only on evidence a user wants it" (ADR-021).
 
 ## v3+ — the horizon
 
@@ -115,6 +114,8 @@ has; no ruling needed, only the name to look under.
 - (The second-pass items of 2026-09-08 were ruled the same day — see the v1 table, the v2 and v3+ lists, and the moves log.)
 
 ## Moves, by sitting
+
+- **2026-09-09, the cockpit** — @human: *"We decided the native apps are the cockpit for now."* The in-app orchestrator conversation leaves v2 for the parked list (docs/future.md); it is scheduled in no version and the README does not name it. NORTH_STAR's non-goals and ROADMAP's F-05 entry say so in the same commit.
 
 - **2026-09-09** — @human: *"Add rooms to the mirror app in v1"*. The rooms layer of the original dashboard moves from v2 to v1 as T-275 (F-02 p4); nothing else moves.
 

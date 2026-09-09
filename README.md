@@ -62,6 +62,13 @@ arguments are rooms with a ruling at the top. Every merge writes a
 checkpoint that is never edited. A new session, or a new model, cold-starts
 from files. There is no chat history to lose.
 
+**Models argue in the open.** A design question is a room: a file where
+sessions and models consult and debate. Positions are written before
+either side sees the other's, one participant is assigned to argue
+against, the rounds are bounded, and the human rules. The product is
+stress-tested options, never a consensus, and the ruling sits at the top
+of the file for everyone who comes after.
+
 **Derive it, never quote it.** A number lands in prose only where a program
 re-derives it. The behaviour census is generated from test names, so a
 sentence in it is false the moment its test reds and nobody keeps it true
@@ -137,6 +144,9 @@ transcribes it; where they disagree, that page is right.
   defaults are stamped and visible.
 - **The commission list**: the verifier enumerates every side effect the
   diff adds and maps each to a criterion. Unmapped is a finding.
+- **Rooms**: consultation, debate and the standing project room, as
+  files any session or model appends to and the human closes. Run by
+  hand today: append your turn, run the mentioned role yourself.
 - **The rooms lens** in the app: every design argument with its status
   and its ruling, read-only, live.
 - **The launcher**: one command boots your app worktree fresh.
@@ -147,8 +157,6 @@ transcribes it; where they disagree, that page is right.
 - **Environment tiers and rehearsed rollback**, for when services ship.
 - **Fleet fences**: the fence system across machines.
 - **Competitive execution**: the same card, two models, a blinded judge.
-- **The cockpit**: an in-app orchestrator conversation, only on evidence
-  a user wants it.
 - **More seats**: plan checker, design mock-up, UAT walk, browser QA,
   security audit, reviewer consensus.
 - **Ship, deploy and canary** under the environment tiers.

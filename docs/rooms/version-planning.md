@@ -275,3 +275,7 @@ next reader does not re-derive it:
   covers two suites per checkout), and "v0.1.12" is the method's
   version stamp, spent by whichever method-text change lands next, not
   a roadmap label.
+
+## Sitting of 2026-09-09 — the cockpit
+
+@human, on the README's v2 list: *"Lets not mention this. We decided the native apps are the cockpit for now. This should also be true in the northstar and other documents."* Ruled: the in-app orchestrator conversation (F-05's cockpit) leaves v2 for the parked list and is scheduled in no version; NORTH_STAR's non-goals carry the sentence, ROADMAP's F-05 entry and both versions pages follow; docs/rooms/cockpit-or-mirror.md records the same word.

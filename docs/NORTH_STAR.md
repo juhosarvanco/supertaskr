@@ -46,7 +46,10 @@ Deliberately absent: stars, signups, traffic — applause metrics
 - Not another kanban board; the story map is the home view.
 - Not a cloud service: no accounts, no hosted backend, no telemetry
   home-phoning. Local-first is identity, not deployment detail.
-- Not an IDE or an agent: we orchestrate agents users already have.
+- Not an IDE or an agent: we orchestrate agents users already have —
+  and the user's own agent app is the cockpit. Supertaskr sits in it as
+  a skill and mirrors the folder beside it, never the other way round
+  (ADR-021; @human, 2026-09-09: the native apps are the cockpit for now).
 - Never in the inference billing path — no proxying tokens or keys.
 - Not a fourth standalone product empire: layers ship in order
   (method → CLI → daemon → dashboard), each earning the next.
