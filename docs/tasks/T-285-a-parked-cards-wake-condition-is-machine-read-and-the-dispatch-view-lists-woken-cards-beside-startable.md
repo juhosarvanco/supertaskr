@@ -218,3 +218,204 @@ after that correction; the first reading was parser RED 389, app GREEN
 
 
 ## Verdicts
+
+### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
+
+Tip judged `ce461156f9a3f9e61c4b1af383a23e107987a8f8`; base
+`488e49511b5f43448fce754db2d733f757b60fd1`; bench
+`/Users/ujju/Projects/nputer-V-T-285`, detached. Sealed inputs, verified
+by `shasum -a 256` before anything else was opened:
+
+- attack set `sha256:787d10019b500a945b3b75a62cc944c63a3cd13d37248d911bcae555094ed6d2`
+- ground `sha256:78f00b08bdea259d1d33c306d54f4d9a5de3354205683bd479ef9696083eb3ba`
+- ground addendum `sha256:d551337a7cfe4767ae7efb5e34093519f6a4349ec368be47467f2b55d8b54c76`
+
+**THE FRAME I ACTUALLY HAD, stated because verifier.md requires it.**
+Two spawns: phase 1 wrote the attack set tool-less at the base and it is
+hashed above. This brief was hand-written by the seat and **carried no
+context pack**, so `docs/CONVENTIONS.md` was read by the bullet rather
+than through a pack — a PACK GAP, named here, not a defect in the work.
+The brief's duties section named no executor-derived figure, so phase 1
+stood above the line. **One leak, mine:** reading the card diff to check
+the `touches:` widening (H2) put the first ~30 lines of the executor's
+Implementation notes in front of me before my measurements were taken.
+Every finding below was nevertheless derived from the attack set and
+re-measured on the bench; the executor's report and the rest of the notes
+were opened only after the findings were written, and every claim in them
+was re-derived rather than accepted.
+
+**THE FENCE.** `git diff --name-only 488e495..ce46115` lands eight
+files and nothing else: the four fenced ones
+(`tools/e2e/scripts/dispatch-brief.mjs`, `tools/e2e/tests/brief.spec.ts`,
+`method/tasks/TASK-FORMAT.md`, and `tools/e2e/scripts/brief.mjs` since
+the widening), this card, and three NEW suggestion cards. No
+`dispatch-order.mjs`, no `health-bands.*`, no `gate-run.*`, no
+`agent_runner.rs`, and nothing belonging to T-280, T-281-s8 or T-283.
+The widening is legitimate and both halves are present: the lane's
+`touches:` line is **byte-identical** to the seat's grant at `97d5276`
+on main. One observation, not a finding: the widening reached the lane's
+copy **inside the executor's own code-and-notes commit `ad2ae93`**
+rather than as a separate seat commit, so the lane's history alone
+cannot show whose hand typed it. The seat states it wrote it; nothing in
+the tree contradicts that.
+
+**THE CRITERIA, RE-MEASURED.**
+
+1. *The three forms and the default.* All three read off the field and
+   the default EXECUTES — this was the reject I was hunting (a default
+   documented and never applied) and it is absent: all 16 currently
+   woken cards are on the default form with no `wake:` field. Card form
+   holds on `done` and on nothing else (driven over all eight status
+   words). Date form compares `today >= raw` as two `YYYY-MM-DD`
+   strings, so it is timezone-free by construction, and the clock is
+   **injected** (`ctx.at`, the same value the `read <ISO>` stamp
+   prints) — mutant M13 below proves it. **The sub-card truncation I
+   expected did not happen**: `wake: T-225-s11` with `T-225` done and
+   `T-225-s11` planned rules `waiting`, and the row is absent.
+2. *The render.* `brief.mjs --dispatch --full` carries THE WOKEN PARKED
+   CARDS with WOKEN, STILL PARKED, THE DEFAULT CONDITION NAMES NO
+   GROUND, COULD NOT BE RULED and PARKED WITHOUT A CONDITION. On the
+   real board at this tip: **16 of 129 woken, 17 waiting, 96 declaring
+   no fence, 0 unruleable, 90 flagged**. Every rendered value carries
+   its stamp — `unstampedLines` is empty on both arms — and the stamp is
+   a function of the form: card ⇒ tree ref, clock and lane list ⇒ live.
+   The section is BESIDE the base five, not folded into STARTABLE.
+3. *The flag.* Counted and named, with the ids on one line. See the
+   correction.
+4. *No card rewritten.* `git status --porcelain` at the bench is empty
+   before and after a full render, and twice more after a second. The
+   sha256 of every card blob under `docs/tasks/` **except** this card
+   and the three new ones is `6f8a7b15ca541337a0ec7e23239202e2d8ec55acc76c0a3215af5ed697c0d356`
+   at BOTH refs; the tree goes 707 → 710 files; `git diff 488e495..ce46115 -- docs/tasks/`
+   contains not one `+wake:` line. TASK-FORMAT states the encoding once,
+   with the prose test written down beside it.
+5. *The bodies.* Eight new, 66 → 74 top-level `test(` bodies, **none
+   removed** — the base set is a subset of the tip's, checked by name.
+   Each new body carries its own negative board inside it.
+
+**THE DRILL — seven mutants, every landing read from `git diff`, every
+one dead at the site.** Control first: unmutated, `brief.spec.ts` alone
+is 81 passed, exit 0.
+
+| # | mutant | body that died | kills |
+|---|---|---|---|
+| M10 | `status === WOKEN_BY_STATUS` → `!==` | NAMING A CARD HOLDS ONCE + the counted-line body | 2 |
+| M11 | `fenceOverlaps(me, lane)` → `fenceOverlaps(me, me)` | THE DEFAULT CONDITION IS THE FENCE | 1 |
+| M12 | date `>=` → `>` | NAMING A DATE HOLDS ON BOTH SIDES ("the day names its own start") | 1 |
+| M13 | `at.slice(0,10)` → `"1970-01-01"` | NAMING A DATE ("a clock reading is stamped live") | 1 |
+| M14 | unplaceable value falls back to the default | THE THREE FORMS ARE READ OFF THE FIELD | 1 |
+| M15 | prose rule loses its `\b` | PARKED WITHOUT A CONDITION COUNTS | 1 |
+| M16 | `no-ground` folded into `waiting` | THE DEFAULT CONDITION IS THE FENCE | 1 |
+
+No mutant cascaded into an unrelated section's body and none crashed in
+setup. M10's two kills are not contained in each other: one grades the
+ruling, the other the count.
+
+**THE SECURITY SWEEP.** The new section contains no `readFileSync`, no
+`spawnSync`/`execSync`, no `process.env`, no `eval`/`new Function` and
+no `Date.now` — a `wake:` value never becomes a path, a ref or an argv.
+Card lookup is a `Map.get`, so `wake: __proto__` and `wake: constructor`
+are ordinary unplaceable values. No ReDoS: the prose rule is 0.16 ms on
+200 000 characters, `readWake` 0.24 ms on a 50 000-digit id, `unquote`
+0.41 ms on a 200 000-character unterminated quote. A `wake:` value
+carrying a newline WOULD split a row and forge a plausible HELD line —
+but `frontmatterFields`, the one reader in this path, cannot produce a
+newline-bearing scalar (block scalars come back as the literal `|`, a
+plain multi-line scalar keeps only its first line), so the injection is
+unreachable at the render site. Filed forward as `T-285-s5`.
+
+**THE SUITES, ONCE, AT THIS TIP** through `gate-run.mjs` from the bench
+root, port 25285:
+
+| leg | exit | bodies | verdict |
+|---|---|---|---|
+| parser | 0 | 389 | GREEN |
+| app | 0 | 1171 | GREEN |
+| rust | 101 (gate-run 1) | 654 over 18 targets | **RED** |
+| e2e | 0 | 811 | GREEN |
+
+**THE RUST RED IS NOT THIS DIFF, and it is attributed by name.**
+`the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`
+panicked at `app/src-tauri/tests/agent_runner.rs:1255` — *"returned
+after 26 ms of a 900 ms grace"*. Re-run alone at this same tip it
+**passes** (`1 passed; 95 filtered out`). This diff contains **no Rust
+file at all**, and that test's file is the fence of the live lane
+`T-281-s8`, whose own title is *the Rust suite reds under the full run
+and PASSES alone*. **This is a second instance of T-281-s8's class, in
+T-281-s8's own file** — recorded here rather than on that card, which is
+live and outside this fence, so the seat can route it.
+The notes' claim of `rust GREEN 654` at `9f9df64` is therefore a true
+reading of an intermittent, not a false one; I could not reproduce it at
+`ce46115` and say so rather than repeat it.
+
+Method eval gate: `node tools/method-evals/run.mjs` exit 0, 10 model-free
+evals; `--selftest` exit 0, 10 evals, POSITIVE CONTROL. The method stamp
+is `v0.1.14` at both refs — unmoved, as it should be; the bump is the
+integrator's and the card carries the `--bump` block.
+
+**ASSIGNED CORRECTION 1 of 1 — the prose test cannot see the board's own
+`UN-PARK WHEN:` spelling.** `PROSE_WAKE_PATTERN` is
+`/\b(?:unpark|wake)/i`, so `UN-PARK` — hyphenated — does not match, and
+`**UN-PARK WHEN:** <event>` is the amnesty triage's own template. **Nine
+of the ninety cards this view flags as stating no condition at all carry
+that line, in bold**: `T-031-s2`, `T-033-s1`, `T-033-s9`, `T-110-s2`,
+`T-123-s2`, `T-124-s2`, `T-127-s3`, `T-135-s1`, `T-135-s2`. That is
+precisely the failure this section's own comment says the predicate must
+not have — *"a card whose author wrote a condition reported as having
+written none"* — and it lands on the flag that is criterion 3's whole
+product. **The remedy is two edits, both inside the fence**:
+`/\b(?:un-?park|wake)/i` in `dispatch-brief.mjs`, and one clause in
+TASK-FORMAT's prose-test sentence so the author and the reader still
+read one sentence. **WIDENED NO FURTHER, AND THAT IS MEASURED RATHER
+THAN CHOSEN**: `resurface` matches 69 of the same 90, because
+TASK-FORMAT's own *"resurfacing condition"* is quoted in the parking
+boilerplate — widening to it would empty the flag instead of sharpening
+it. `until` is likewise refused: it fires on ordinary prose
+(*"other cards, until the delay was noticed by hand"*).
+Run RED against the implementation as landed — one body failed, the
+other 81 passed, at *"the board's own hyphenated spelling is a
+condition"* — and GREEN with both edits applied: 82 passed, exit 0, and
+the live flag falls from **90 to 81**. The body is committed on this
+bench after this verdict.
+
+```mutant
+correction: the prose test sees the board's own UN-PARK WHEN spelling
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless
+message: the board's own hyphenated spelling is a condition
+--- old
+export const PROSE_WAKE_PATTERN = /\b(?:un-?park|wake)/i;
+--- new
+export const PROSE_WAKE_PATTERN = /\b(?:unpark|wake)/i;
+```
+
+**WHAT I FOUND AND DID NOT REJECT ON, pre-committed in the attack set
+before any of it was visible.**
+
+- **The flood did not happen, and the reason is a finding the executor
+  already filed.** 16 of 129, not forty — because 96 parked cards
+  declare no fence at all, so the default condition names no ground for
+  three quarters of the shelf. `T-285-s1` owns that and is correct.
+- **The fence form is a LEVEL, not an EDGE.** It reads the LIVE lane
+  list (`git worktree list`), so a card wakes while a lane is live and
+  **un-wakes when that worktree is torn down**. Coherent — the body arms
+  the same lane list the render spends, and the card's own text aims the
+  condition at *"whoever cuts that lane"* — but the 16 rows standing now
+  vanish when T-280, T-281-s8 and T-285 merge, whether or not anybody
+  read them. Filed as `T-285-s4`.
+- **A full ISO instant is not an ISO date here.** `wake: 2026-09-09T00:00:00Z`
+  is reported unplaceable. It fails LOUD, into COULD NOT BE RULED, so no
+  card is lost — recorded as a corroboration on `T-285-s2`, which
+  already owns the class.
+- Undefined inputs behave: `wake: T-999` ⇒ `unknown` naming the miss;
+  `wake:` naming itself ⇒ `waiting`, no recursion; a list ⇒ unplaceable;
+  `t-282`, ` T-282 `, `FENCE` normalise; `T-282 # comment` is reported
+  rather than mis-resolved. Non-parked cards carrying `wake:` never
+  reach the view. The empty board renders zeros without a crash.
+- The default view gains the counted line and NOT the page. That is the
+  T-225 dial applied, it is documented at the call site, and the wiring
+  body drives both arms.
+- The `--full` answer grows 126 808 → 138 001 bytes; the section is
+  9 806 of them. Both refs are already over one pipe buffer and the
+  margin block discloses it, so this changes no verdict about the view.

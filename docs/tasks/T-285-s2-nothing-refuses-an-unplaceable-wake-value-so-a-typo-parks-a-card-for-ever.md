@@ -56,6 +56,23 @@ day), and `wake:` written and left blank.
   legal value of each of the three forms accepted, and SHALL be seen
   red against the tree before the check exists.
 
+## Corroborations
+
+**2026-09-09, verifier claude-opus-5@subagent (T-285 phase 2), measured
+at `ce46115` on the bench `/Users/ujju/Projects/nputer-V-T-285`.** A
+SECOND INSTANCE of this class, appended here rather than filed beside it
+because this card already owns it. The unplaceable value that matters is
+not only a typo: **`wake: 2026-09-09T00:00:00Z` — a full ISO 8601
+instant, the most natural thing to type when a card says "an ISO
+date" — is reported unplaceable**, because `readWake`'s date form is
+`^\d{4}-\d{2}-\d{2}$` and a park is deliberately not scheduled to the
+second. So is `wake: 2026-9-9`. Both fail LOUD, into COULD NOT BE RULED,
+so no card is lost today — which is exactly the point this card makes:
+the only reader is a page somebody has to open, and the author who typed
+a legal-looking timestamp gets no signal at the moment they write it. A
+gate that refuses at the write would catch the timestamp spelling and
+the typo with one check.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
