@@ -68,3 +68,17 @@ The band so far: 4,439,936 / 4,439,564 / 4,439,512 KiB on three consecutive runs
 The same image as the second reading, the same free space to within 324 KiB, on a push whose diff from the red c8d49b3 is the T-256 merge and the T-271 stamp. Two consecutive runs on the older image, both at 184 MiB; four consecutive runs on 20260907.300.1 before them, all at 4.3 GiB. The fleet is handing out the older image now, so every push is red at the floor until either the image rotates or the job frees the runner's disk before the e2e lane — which is what T-278-s2's amendment asks for.
 
 The third consecutive red at the floor (the architect seat, 2026-09-09T10:22Z): run 34338891141 on 9763afc (the T-279 merge) — image 20260831.293.1 again, 188,120 KiB free at the floor step. Three runs on that image now read 188,480 / 188,156 / 188,120 KiB; four runs on 20260907.300.1 read 4,439,512–4,439,936 KiB. Two levels, each flat to within a few hundred KiB, so the free space at the floor is a property of the image and not of the run. T-278-s2's lane (dispatched 2e9233d) carries the remedy; its first run after the merge is the fourth reading.
+
+## The fourth reading (the architect seat, 2026-09-09T11:55Z, from run 34347086580 on 0a1c7cf — the first run with the ledger and the free-disk step)
+
+The job died at step 24, the cargo suite, on one body (`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`, 94 passed / 1 failed — T-281-s8's intermittent, now red on the runner), so the free-disk step and the floor were never reached and there is no freed-bytes figure yet. The ledger, read for the first time, on image 20260831.293.1:
+
+    disk at job start                              free on /: 14,065,728 KiB
+    after the apt prerequisites                    free on /: 13,615,428 KiB   (−450 MiB)
+    after the node toolchain and its npm cache     free on /: 13,548,044 KiB   (−66 MiB)
+    after the cargo cache                          free on /:  6,315,580 KiB   (−7,063 MiB — the restored target)
+    after the playwright cache                     free on /:  5,644,276 KiB   (−656 MiB)
+    after the parser install                       free on /:  5,585,936 KiB   (−57 MiB)
+    after the app install                          free on /:  5,333,120 KiB   (−247 MiB)
+
+So the older image arrives with 13.4 GiB free, not 4.3: the difference between the two images is what they hold at job start, and the 4.2 GiB the floor saw missing is the cargo cache's restored target (7 GiB) plus the build's own growth landing on a smaller starting margin. Attribution is what the ledger was for, and it attributed on its first run. The free-disk step's own reading and the floor's are the next run's.

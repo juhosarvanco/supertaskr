@@ -4,16 +4,16 @@ title: "The Rust suite reds on a_hostile_session_id_in_the_init_line_fails_the_t
 feature: F-01
 milestone: 4
 size: S
-priority: 4
-status: suggested
+priority: 1
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-281, 2026-09-09, at d086c73"
 blocked_by: []
-touches: [app/src-tauri/tests/agent_runner.rs, docs/STATE.md]
+touches: [app/src-tauri/tests/agent_runner.rs, app/src-tauri/src/agent/mod.rs]
 builder:
 verifier:
 built_by:
 verified_by:
-review:
+review: independent
 ---
 
 Measured on the T-281 bench at `d086c73`, through the blessed runner:
@@ -52,3 +52,12 @@ Two things are owed, and they are different:
    the wrong way is exactly the shape a leaked session between tests
    produces. Naming it in STATE without this is banking a hazard, which
    is what STATE's own contract says a record is for.
+
+## Amendment (the architect seat, 2026-09-09T11:58Z — promoted to planned p1 after the runner reproduced it)
+
+Run 34347086580 on 0a1c7cf (the first run carrying the free-disk step) died at the cargo suite on this very body — 94 passed / 1 failed — before the free-disk step or the floor was reached. Red once on a bench under the parallel run and once on the runner, green alone: not a local accident. STATE.md leaves this card's fence (STATE is the checkpoint's; the seat names the intermittent there itself if the fix does not land first) and the runner module joins it, since the fix may live where `send_turn` decides `NoSession`.
+
+- WHEN the cargo suite runs under the full parallel run, on this Mac and on the runner, THE body SHALL pass deterministically — the race, the shared state or the timing assumption it depends on found and removed, named in the notes with the measurement that showed it (the body run alone, then under the full suite, ten times each, all green).
+- WHEN the fix lands THE test SHALL still refuse a hostile session id — the assertion's subject is unchanged; only its arrangement moves.
+- IF the flake is in the test's own arrangement (a `recv_timeout`, a shared dump directory, a port) THEN the fix stays in the test file; IF it is in the runner THEN the notes SHALL say which state two tests shared.
+
