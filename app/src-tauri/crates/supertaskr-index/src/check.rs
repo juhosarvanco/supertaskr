@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use crate::diff::{diff, GraphDiff};
 use crate::graph::Graph;
-use crate::{index, stable_json, IndexOptions, GRAPH_REL_PATH};
+use crate::{stable_json, IndexOptions, GRAPH_REL_PATH};
 
 /// How many lines of any one delta list the report prints before it says
 /// "and N more". Enough to act on; short enough that a big regen does not
@@ -92,6 +92,27 @@ pub struct CheckReport {
     /// clause reading only the count would go silent in exactly the worst
     /// state.
     pub fresh_truncated_symbols: bool,
+    /// WHICH files those were (T-167-s13) — `emit::apply_budget`'s own
+    /// record of the arrays IT emptied, sorted, carried out of the emit
+    /// by [`crate::index_with_drops`] and empty when nothing was dropped.
+    ///
+    /// **IT IS THE EMITTER'S RECORD AND NEVER A RE-DERIVATION, AND THAT
+    /// DIFFERENCE IS THE WHOLE FIELD.** The obvious way to get this list
+    /// is to walk `fresh.files` for empty `symbols` arrays — and it is
+    /// wrong in the one direction that matters, because after a
+    /// truncation an emptied array and an array that was always empty are
+    /// the same bytes. A file with no symbols of its own would then be
+    /// reported to a reader as a file whose symbols the map has stopped
+    /// answering for, which is the opposite of the actionable half this
+    /// card exists to print.
+    ///
+    /// **THE COUNT ABOVE AND THIS LIST ARE ONE FACT READ TWICE**, taken
+    /// from the same `apply_budget` call, so `fresh_truncated_files` is
+    /// this vector's length in every state the emitter can produce. They
+    /// are carried separately because the count is `stats`' — committed,
+    /// T-167-s5's pin, and the floor arm can set the FLAG with no count
+    /// at all — while this list is transient and reaches no file.
+    pub fresh_truncated_paths: Vec<String>,
 }
 
 impl CheckReport {
@@ -107,7 +128,12 @@ impl CheckReport {
 /// is a REPORT, never an error, because the caller must be able to tell
 /// "the gate says no" from "the gate could not run".
 pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
-    let fresh = index(opts)?;
+    // T-167-s13: the fresh index AND the emitter's transient record of
+    // what it emptied to produce it. `index()` would have been the whole
+    // of what this gate needs until the report had to name the files —
+    // and the record cannot be recovered from the document afterwards,
+    // so it is taken here or it is lost here.
+    let (fresh, fresh_truncated_paths) = crate::index_with_drops(opts)?;
     let fresh_json = stable_json(&fresh);
     // T-140: the part of a fresh index truncation can never reclaim.
     // Measured through the emitter itself, never re-derived here.
@@ -133,6 +159,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             floor_bytes,
             fresh_truncated_files,
             fresh_truncated_symbols,
+            fresh_truncated_paths,
         });
     };
 
@@ -148,6 +175,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             floor_bytes,
             fresh_truncated_files,
             fresh_truncated_symbols,
+            fresh_truncated_paths,
         });
     }
 
@@ -179,6 +207,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
         floor_bytes,
         fresh_truncated_files,
         fresh_truncated_symbols,
+        fresh_truncated_paths,
     })
 }
 
@@ -527,6 +556,39 @@ fn headroom_alarm(report: &CheckReport) -> String {
 /// repair this family has had to make three times running (T-194, T-196,
 /// T-208), and the expensive half is not printing a number whose unit the
 /// reader has to guess.
+///
+/// **AND SINCE T-167-s13 IT NAMES THE FILES, WHICH IS THE HALF A READER
+/// CAN ACT ON.** The count tells a lane the map is lying; the list tells
+/// it WHERE, which is the difference between "regenerate and hope" and
+/// "these four files have no symbol panel in the map today". The count
+/// and its unit sentence above are UNMOVED — T-167-s5 pinned both and
+/// this is an addition beneath them, never a replacement — and the list
+/// is bounded by [`MAX_LINES`] through the same `bounded` helper every
+/// other delta list in this report spends, so "... and N more" has one
+/// implementation rather than two.
+///
+/// **THE SCHEMA DID NOT GAIN A MEMBER, AND THAT IS A DECISION AGAINST
+/// ADR-014's CONTENT-DETERMINED RULE RATHER THAN AN OMISSION.** A
+/// `stats.truncated_paths` would have SATISFIED that rule — it is a pure
+/// function of the tree, so determinism and byte-stability survive it —
+/// which is exactly why the rule could not decide this on its own. What
+/// decides it is the COST, and the cost is paid in the one state where
+/// the document can least afford it: the list's size grows with the
+/// truncation, so on a badly truncated graph it is hundreds of paths
+/// added to the very document whose size caused the drop, spending the
+/// budget that forced it and forcing further drops. **THE FIGURE, AT ITS
+/// OWN REF, and re-derivable rather than quoted:** over the 201 file
+/// entries of this repository's own `docs/architecture/graph.json` at
+/// `098cfe10a9e94fadf56122b77597df8e64a7f58f` the mean path is 35.5
+/// bytes, which is 45.5 bytes as an array element at `stats`' depth
+/// (6-space indent, quotes, comma, newline) — so a 200-file truncation
+/// would commit about 9 100 bytes to describe a truncation those bytes
+/// made worse. The mean moves with the tree; the SIGN of the feedback
+/// loop does not. **The gate is the only reader**,
+/// it runs against a FRESH index every time, and a fresh index is where
+/// the record is still alive — so the set travels in memory from
+/// `emit::apply_budget` to this function and reaches no file. The card
+/// argued this shape; this is the ruling.
 fn drop_clause(report: &CheckReport) -> String {
     if !report.fresh_truncated_symbols && report.fresh_truncated_files == 0 {
         return String::new();
@@ -543,7 +605,7 @@ fn drop_clause(report: &CheckReport) -> String {
     }
     let files = report.fresh_truncated_files;
     let plural = if files == 1 { "" } else { "s" };
-    format!(
+    let mut out = format!(
         "[supertaskr-index] !! GRAPH TRUNCATED - a fresh index of this tree DROPPED the symbol arrays of\n\
          [supertaskr-index] !! {files} file{plural} to fit the budget (unit: FILES whose array was emptied, never\n\
          [supertaskr-index] !! symbols - stats.truncated_files). The map is now smaller than the tree it\n\
@@ -552,7 +614,27 @@ fn drop_clause(report: &CheckReport) -> String {
          [supertaskr-index] !! map already lying by omission, and an emit that came in under the ceiling\n\
          [supertaskr-index] !! by DROPPING is not relief. T-140-s1 is the fix, and its urgency is measured\n\
          [supertaskr-index] !! in dropped files rather than in bytes left.\n"
-    )
+    );
+    // WHICH files (T-167-s13). Silent when the record is empty rather
+    // than printing an empty heading: the count above already carries the
+    // claim, and a heading over nothing would read as "and none of them".
+    let (head, more) = bounded(&report.fresh_truncated_paths);
+    if !head.is_empty() {
+        out.push_str(
+            "[supertaskr-index] !! WHICH FILES - the emitter's own record of the arrays IT emptied, never a\n\
+             [supertaskr-index] !! re-derivation from empty symbols arrays (a file that has none of its own is\n\
+             [supertaskr-index] !! indistinguishable in the document and never appears here):\n",
+        );
+        for path in head {
+            out.push_str(&format!("[supertaskr-index] !!   | - {path}\n"));
+        }
+        if more > 0 {
+            out.push_str(&format!(
+                "[supertaskr-index] !!   | - ... and {more} more\n"
+            ));
+        }
+    }
+    out
 }
 
 /// THE NUMBER THAT IS THE READER'S OWN (T-167-s5): what THIS working tree
@@ -696,15 +778,30 @@ fn section(
     }
 }
 
+/// [`MAX_LINES`] APPLIED, IN ONE PLACE: the head of a list, and how many
+/// it left behind for the "... and N more" tail.
+///
+/// Factored out for T-167-s13, which added the SECOND list this report
+/// prints. Until then the bound lived inside `emit_lines` and there was
+/// nothing to disagree with it; a copy of `take(MAX_LINES)` and its
+/// matching subtraction in the alarm block would have been one rule with
+/// two implementations, which is the defect this crate has already been
+/// bitten by (see `emit::floor_len`'s reason for measuring the floor
+/// through the emitter rather than by hand).
+fn bounded(all: &[String]) -> (&[String], usize) {
+    let head = all.len().min(MAX_LINES);
+    (&all[..head], all.len() - head)
+}
+
 fn emit_lines(out: &mut String, marker: &str, lines: impl Iterator<Item = String>) {
     let all: Vec<String> = lines.collect();
-    for line in all.iter().take(MAX_LINES) {
+    let (head, more) = bounded(&all);
+    for line in head {
         out.push_str(&format!("[supertaskr-index]   | {marker} {line}\n"));
     }
-    if all.len() > MAX_LINES {
+    if more > 0 {
         out.push_str(&format!(
-            "[supertaskr-index]   | {marker} ... and {} more\n",
-            all.len() - MAX_LINES
+            "[supertaskr-index]   | {marker} ... and {more} more\n"
         ));
     }
 }
@@ -721,6 +818,7 @@ fn rel_display(path: &Path, root_label: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::index;
     use crate::testutil::TempTree;
 
     fn opts(root: &Path) -> IndexOptions {
@@ -1132,6 +1230,21 @@ mod tests {
             .unwrap_or_else(|| panic!("unparseable drop count in:\n{text}"))
     }
 
+    /// The dropped-file PATHS, read back out of the rendered block
+    /// (T-167-s13). The "... and N more" tail is deliberately excluded:
+    /// it is a count, and a body that let it into this vector would read
+    /// the bound as a twenty-first path.
+    fn printed_dropped_paths(text: &str) -> Vec<String> {
+        text.split("WHICH FILES")
+            .nth(1)
+            .unwrap_or_else(|| panic!("no WHICH FILES block in:\n{text}"))
+            .lines()
+            .filter_map(|line| line.split("!!   | - ").nth(1))
+            .filter(|entry| !entry.starts_with("... and "))
+            .map(str::to_string)
+            .collect()
+    }
+
     /// The spend, read back out of the rendered block.
     fn printed_spend(text: &str) -> i128 {
         let tail = text
@@ -1301,6 +1414,174 @@ mod tests {
             text.find("GRAPH TRUNCATED").unwrap() < text.find("GRAPH HEADROOM ALARM").unwrap(),
             "the floor is the most serious state of all and must lead:\n{text}"
         );
+        // T-167-s13: no count, so no list, and no empty heading over
+        // nothing either — the floor paragraph is the whole claim here.
+        assert!(
+            report.fresh_truncated_paths.is_empty(),
+            "nothing was emptied at this floor: {report:?}"
+        );
+        assert!(
+            !text.contains("WHICH FILES"),
+            "a heading over an empty list reads as 'and none of them':\n{text}"
+        );
+    }
+
+    /// T-167-s13, CRITERION 2: the printed list is the EMITTER'S OWN
+    /// RECORD, and the control is a file that legitimately has no
+    /// symbols.
+    ///
+    /// **THE FIXTURE IS THE ARGUMENT.** After the budget empties
+    /// `src/fat.ts`, that file and `src/legitimately-symbol-less.ts` are
+    /// byte-for-byte the same shape in the document — `"symbols": []`
+    /// both — so the obvious implementation, walking `fresh.files` for
+    /// empty arrays, names BOTH. Naming the symbol-less one is not a
+    /// cosmetic surplus: it tells a reader the map has stopped answering
+    /// for a file whose symbols the map never had, which is the exact
+    /// inverse of the actionable half this clause exists to print.
+    ///
+    /// **AND THE CONTROL IS SHOWN ARMED BEFORE ITS ZERO IS WRITTEN
+    /// DOWN** (CONVENTIONS' proof clause; poison shape TEN): the body
+    /// asserts that the fresh graph really does carry the symbol-less
+    /// file with an empty array, so the re-derivation really would have
+    /// had a second hit to report. Without that half, `!contains(...)`
+    /// is satisfied equally by "correctly omitted" and "the fixture
+    /// never had one".
+    #[test]
+    fn the_named_files_are_the_emitters_record_never_a_re_derivation_from_empty_arrays() {
+        let t = TempTree::new("check-drop-which");
+        // One fat array the budget will take, one file the extractor
+        // finds no symbols in at all, and two thin survivors.
+        let fat: String = (0..400)
+            .map(|i| format!("export const s{i:03} = {i};\n"))
+            .collect();
+        t.write("src/fat.ts", &fat);
+        t.write(
+            "src/legitimately-symbol-less.ts",
+            "// a file with nothing to export: never truncated, because there\n\
+             // was never anything here to take.\n",
+        );
+        for i in 0..2 {
+            t.write(&format!("src/thin{i}.ts"), "export const alpha = 1;\n");
+        }
+
+        let roomy = check(&opts(t.root())).unwrap();
+        assert_eq!(
+            (roomy.fresh_truncated_files, roomy.fresh_truncated_symbols),
+            (0, false),
+            "the untruncated control must really be untruncated: {roomy:?}"
+        );
+        assert!(
+            roomy.fresh_truncated_paths.is_empty(),
+            "and must name nothing: {roomy:?}"
+        );
+
+        let tight = IndexOptions {
+            max_graph_bytes: roomy.fresh_bytes - 1_000,
+            ..opts(t.root())
+        };
+        let dropped = check(&tight).unwrap();
+        assert_eq!(
+            dropped.fresh_truncated_files, 1,
+            "the fixture must drop exactly the fat file: {dropped:?}"
+        );
+
+        // THE CONTROL, ARMED: in the emitted document the two files are
+        // indistinguishable, so a re-derivation would name two.
+        let fresh = index(&tight).unwrap();
+        let empty_arrays: Vec<&str> = fresh
+            .files
+            .iter()
+            .filter(|f| f.symbols.is_empty())
+            .map(|f| f.path.as_str())
+            .collect();
+        assert_eq!(
+            empty_arrays,
+            vec!["src/fat.ts", "src/legitimately-symbol-less.ts"],
+            "the control is only a control if the re-derivation really has TWO hits"
+        );
+
+        // THE RECORD: one path, and it is the emptied one.
+        assert_eq!(
+            dropped.fresh_truncated_paths,
+            vec!["src/fat.ts".to_string()],
+            "the report carries the emitter's record: {dropped:?}"
+        );
+
+        let loud = render(&dropped, ".");
+        assert_eq!(
+            printed_dropped_paths(&loud),
+            vec!["src/fat.ts".to_string()],
+            "and PRINTS it — the count alone is the half nobody can act on:\n{loud}"
+        );
+        assert!(
+            !loud.contains("legitimately-symbol-less"),
+            "a file that never had symbols was never truncated, and naming it \
+             would tell a reader the map lost something it never held:\n{loud}"
+        );
+        // The count and its unit are UNMOVED (criterion 4), with the list
+        // beneath them rather than instead of them.
+        assert_eq!(printed_dropped_files(&loud), 1, "{loud}");
+        assert!(
+            loud.contains("unit: FILES whose array was emptied, never"),
+            "{loud}"
+        );
+        assert!(
+            loud.find("DROPPED the symbol arrays of").unwrap() < loud.find("WHICH FILES").unwrap(),
+            "the list is an addition BENEATH the counted sentence:\n{loud}"
+        );
+    }
+
+    /// T-167-s13, CRITERION 1: the list is bounded the way every other
+    /// delta list in this report is bounded — [`MAX_LINES`] entries and
+    /// then "... and N more".
+    ///
+    /// A truncation big enough to matter is exactly the one whose list
+    /// would bury the headline, so the bound is not a nicety: the report
+    /// this clause lives in is read by whoever is holding the merge, and
+    /// an alarm that scrolls is an alarm nobody finishes.
+    #[test]
+    fn the_named_list_is_bounded_by_max_lines_like_every_other_delta_list() {
+        let t = TempTree::new("check-drop-bounded");
+        let n = MAX_LINES + 5;
+        for i in 0..n {
+            // Every file carries symbols, so every one is droppable and
+            // the record is the whole set.
+            t.write(
+                &format!("src/f{i:02}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        // A budget nothing can meet: every array goes, so the record is
+        // all `n` files and the list must be the one that gets cut.
+        let tight = IndexOptions {
+            max_graph_bytes: 1,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+        assert_eq!(
+            report.fresh_truncated_files, n,
+            "the fixture must empty every file: {report:?}"
+        );
+        assert_eq!(report.fresh_truncated_paths.len(), n);
+
+        let text = render(&report, ".");
+        let printed = printed_dropped_paths(&text);
+        assert_eq!(
+            printed.len(),
+            MAX_LINES,
+            "the list is cut at MAX_LINES:\n{text}"
+        );
+        assert_eq!(
+            printed[0], "src/f00.ts",
+            "and the cut takes the head, in the record's own sorted order:\n{text}"
+        );
+        assert!(
+            text.contains(&format!("... and {} more", n - MAX_LINES)),
+            "and says how many it did not print:\n{text}"
+        );
+        // The COUNT is the whole truth even where the list is not — the
+        // one place a bounded list could quietly become a smaller claim.
+        assert_eq!(printed_dropped_files(&text), n, "{text}");
     }
 
     /// T-167-s5, ASSIGNED CORRECTION 2: the NEGATIVE spend arm — this

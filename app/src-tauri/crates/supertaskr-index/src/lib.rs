@@ -255,7 +255,33 @@ impl Default for IndexOptions {
 
 /// Index `opts.root` and return the graph (full or incremental — the
 /// cache only skips parsing; resolution and emit always run).
+///
+/// The graph is the whole of what a WRITER needs, which is why this stays
+/// the public entry point and its signature did not move for T-167-s13:
+/// every caller that serializes, writes, watches or diffs wants exactly
+/// this. [`index_with_drops`] is the same run for the one caller that
+/// needs the emitter's TRANSIENT record beside the document.
 pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
+    index_with_drops(opts).map(|(graph, _dropped)| graph)
+}
+
+/// [`index`], plus the paths [`emit::apply_budget`] emptied on this run —
+/// sorted, and EMPTY when nothing was truncated (T-167-s13).
+///
+/// **THE SECOND HALF IS NOT IN THE DOCUMENT AND CANNOT BE PUT BACK.** A
+/// file the budget emptied and a file that never had symbols serialize
+/// identically, so `stats.truncated_files` — a count — was the last
+/// surviving trace, and `check::drop_clause` could name HOW MANY files
+/// the map had stopped answering for and never WHICH. This function is
+/// the whole of the repair: the record travels beside the graph, in
+/// memory, to the gate that prints it, and reaches `graph.json` at no
+/// point. See `check::drop_clause` for the ADR-014 decision that kept it
+/// out of the schema.
+///
+/// `pub(crate)` on purpose — the gate is the only reader, and a public
+/// second entry point would be an invitation to persist the thing whose
+/// whole design is that it is not persisted.
+pub(crate) fn index_with_drops(opts: &IndexOptions) -> Result<(Graph, Vec<String>), IndexError> {
     let canon_root = validate_root(&opts.root)?;
     let mut parsers = parse::Parsers::new()?; // fail fast on grammar load
     let walked = walk::walk_root(&canon_root, &opts.languages);
@@ -390,13 +416,15 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
         unresolved: resolved.unresolved,
     };
 
-    let graph = emit::apply_budget(graph, opts.max_graph_bytes)?;
+    let (graph, dropped) = emit::apply_budget(graph, opts.max_graph_bytes)?;
 
     if let Some(path) = cache_path {
         cache::store(&path, new_cache); // silent on failure, by contract
     }
 
-    Ok(graph)
+    // Sorted by construction (a `BTreeSet<String>`), so the gate's list is
+    // as deterministic as the document beside it.
+    Ok((graph, dropped.into_iter().collect()))
 }
 
 /// The stable serialization every consumer shares (goldens, write_graph,

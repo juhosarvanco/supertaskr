@@ -6,6 +6,7 @@
 //! byte-stable, diffable order) rather than alphabetization; byte
 //! identity is the tested contract.
 
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use serde::Serialize;
@@ -65,8 +66,28 @@ pub(crate) fn write_graph(graph: &Graph, path: &Path) -> Result<bool, IndexError
 /// symbols (no dangling `s:` ids); set `stats.truncated_symbols` +
 /// `stats.truncated_files`. Files and import edges are NEVER dropped —
 /// at the floor the valid over-budget graph is emitted anyway, flagged.
-pub(crate) fn apply_budget(mut graph: Graph, max_graph_bytes: usize) -> Result<Graph, IndexError> {
-    use std::collections::BTreeSet;
+///
+/// **AND IT RETURNS THE SET IT EMPTIED, WHICH USED TO DIE HERE**
+/// (T-167-s13). `all_dropped` was a local, so the only surviving trace of
+/// a truncation was `stats.truncated_files` — a COUNT — and the count
+/// cannot be turned back into the paths: **a file whose array this
+/// function emptied is byte-for-byte indistinguishable, in the emitted
+/// document, from a file that never had symbols**. So the actionable half
+/// of a truncation report was unprintable, not merely unprinted. The set
+/// is RETURNED rather than recorded in `stats` deliberately: see
+/// `check::drop_clause` for the ADR-014 decision, whose short form is
+/// that a list of paths inside the very document whose size caused the
+/// truncation is a feedback loop, and the gate is the only reader.
+///
+/// **THE SET'S MEMBERSHIP IS THE SAME FACT `stats.truncated_files`
+/// COUNTS** — arrays THIS call emptied, cumulative across passes, never a
+/// file that arrived with none — so the two can never disagree by
+/// construction, and `check` reads them as one record rather than
+/// re-deriving either.
+pub(crate) fn apply_budget(
+    mut graph: Graph,
+    max_graph_bytes: usize,
+) -> Result<(Graph, BTreeSet<String>), IndexError> {
     // Cumulative across passes: only arrays this function EMPTIED count
     // as truncated (a file with zero symbols to begin with was never
     // truncated).
@@ -74,7 +95,7 @@ pub(crate) fn apply_budget(mut graph: Graph, max_graph_bytes: usize) -> Result<G
     loop {
         let doc = stable_json_string(&graph)?;
         if doc.len() <= max_graph_bytes {
-            return Ok(graph);
+            return Ok((graph, all_dropped));
         }
 
         // Cost per file = exact serialized bytes its symbol block adds at
@@ -95,7 +116,7 @@ pub(crate) fn apply_budget(mut graph: Graph, max_graph_bytes: usize) -> Result<G
             if !all_dropped.is_empty() {
                 graph.stats.truncated_files = Some(all_dropped.len());
             }
-            return Ok(graph);
+            return Ok((graph, all_dropped));
         }
 
         costs.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
@@ -159,7 +180,7 @@ pub(crate) fn apply_budget(mut graph: Graph, max_graph_bytes: usize) -> Result<G
 /// rule with two implementations, and this crate has been bitten by
 /// that).
 pub(crate) fn floor_len(graph: &Graph) -> Result<usize, IndexError> {
-    let floored = apply_budget(graph.clone(), 0)?;
+    let (floored, _dropped) = apply_budget(graph.clone(), 0)?;
     Ok(stable_json_string(&floored)?.len())
 }
 
@@ -250,9 +271,64 @@ mod tests {
     #[test]
     fn under_budget_graphs_pass_through_untouched() {
         let g = graph(vec![file("a.ts", &["one", "two"])], vec![]);
-        let out = apply_budget(g.clone(), 1_000_000).unwrap();
+        let (out, dropped) = apply_budget(g.clone(), 1_000_000).unwrap();
         assert_eq!(out, g);
         assert_eq!(out.stats.truncated_symbols, None);
+        // T-167-s13: the record is EMPTY on a pass-through, not merely
+        // unread. An implementation that returned "every file with an
+        // empty array" would name nothing here only by luck of the
+        // fixture, so the emptiness is asserted where nothing was
+        // dropped and again, by name, in the body below.
+        assert!(dropped.is_empty(), "nothing was emptied: {dropped:?}");
+    }
+
+    /// T-167-s13: THE RECORD IS THE ARRAYS THIS CALL EMPTIED — never the
+    /// arrays that are empty.
+    ///
+    /// The fixture is the distinction: `bare.ts` arrives with no symbols
+    /// at all and `big.ts` is emptied by the budget, so after the pass
+    /// BOTH have `symbols: []` and the emitted document cannot tell them
+    /// apart. Any implementation that re-derived this set from the
+    /// document — the obvious one, and the one the card forbids — names
+    /// both. The emitter's own record names one.
+    #[test]
+    fn the_returned_record_names_the_files_this_pass_emptied_and_no_others() {
+        let big: Vec<String> = (0..40).map(|i| format!("bigSymbol{i:02}")).collect();
+        let big_refs: Vec<&str> = big.iter().map(String::as_str).collect();
+        let g = graph(
+            vec![
+                file("big.ts", &big_refs),
+                file("bare.ts", &[]),
+                file("small.ts", &["tiny"]),
+            ],
+            vec![],
+        );
+        let full_len = stable_json_string(&g).unwrap().len();
+        let (out, dropped) = apply_budget(g, full_len - 200).unwrap();
+
+        // THE CONTROL IS ARMED: after the pass the two are
+        // indistinguishable in the document, so the re-derivation really
+        // would have had a second hit to report.
+        let empty_now: BTreeSet<String> = out
+            .files
+            .iter()
+            .filter(|f| f.symbols.is_empty())
+            .map(|f| f.path.clone())
+            .collect();
+        assert_eq!(
+            empty_now,
+            BTreeSet::from(["bare.ts".to_string(), "big.ts".to_string()]),
+            "the fixture must leave BOTH arrays empty, or the control proves nothing"
+        );
+
+        assert_eq!(
+            dropped,
+            BTreeSet::from(["big.ts".to_string()]),
+            "the record is what this call emptied, never what is empty"
+        );
+        // And the record cannot drift from the count it is the same fact
+        // as (the field `check` prints beside it).
+        assert_eq!(out.stats.truncated_files, Some(dropped.len()));
     }
 
     #[test]
@@ -266,7 +342,7 @@ mod tests {
             vec![],
         );
         let full_len = stable_json_string(&g).unwrap().len();
-        let out = apply_budget(g, full_len - 200).unwrap();
+        let (out, _dropped) = apply_budget(g, full_len - 200).unwrap();
         let by_path: std::collections::BTreeMap<_, _> =
             out.files.iter().map(|f| (f.path.as_str(), f)).collect();
         assert!(by_path["big.ts"].symbols.is_empty(), "largest block dropped");
@@ -300,7 +376,7 @@ mod tests {
             edges,
         );
         let full_len = stable_json_string(&g).unwrap().len();
-        let out = apply_budget(g, full_len - 200).unwrap();
+        let (out, _dropped) = apply_budget(g, full_len - 200).unwrap();
         let kinds: Vec<(&str, &str)> = out
             .edges
             .iter()
@@ -330,12 +406,12 @@ mod tests {
         };
         let full_len = stable_json_string(&make()).unwrap().len();
         let budget = full_len - 300;
-        let one = stable_json_string(&apply_budget(make(), budget).unwrap()).unwrap();
-        let two = stable_json_string(&apply_budget(make(), budget).unwrap()).unwrap();
+        let one = stable_json_string(&apply_budget(make(), budget).unwrap().0).unwrap();
+        let two = stable_json_string(&apply_budget(make(), budget).unwrap().0).unwrap();
         assert_eq!(one, two);
         // Equal-cost tie (a.ts vs b.ts serialize identically apart from
         // the path): path asc means a.ts empties first.
-        let out = apply_budget(make(), budget).unwrap();
+        let (out, _dropped) = apply_budget(make(), budget).unwrap();
         assert!(out.files[0].symbols.is_empty(), "a.ts dropped on tie");
     }
 
@@ -345,7 +421,7 @@ mod tests {
             vec![file("a.ts", &["one"]), file("b.ts", &[])],
             vec![],
         );
-        let out = apply_budget(g, 10).unwrap(); // absurd budget
+        let (out, _dropped) = apply_budget(g, 10).unwrap(); // absurd budget
         assert_eq!(out.files.len(), 2, "files never dropped");
         assert!(out.files.iter().all(|f| f.symbols.is_empty()));
         assert_eq!(out.stats.truncated_symbols, Some(true));
