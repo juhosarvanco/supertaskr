@@ -363,8 +363,14 @@ phase-1 attack set, digest verified BEFORE opening it; (3) the
 dispatcher's ground truths, digest verified; (4) the card at its BASE ref
 via `git show 52fdbc3:…`; (5) `git diff 52fdbc3..0bf398c`, all four
 paths, whole; (6) `docs/STATE.md` for named intermittents (there are
-none recorded); (7) `method/tasks/TASK-FORMAT.md` on `review:`; and ONLY
-THEN (8) the executor's report at `<scratchpad>/report-T-205-s4.md`.
+none recorded, so no red below is attributable to one);
+(7) `docs/ARCHITECTURE.md`'s component registry and interfaces;
+(8) `docs/CONVENTIONS.md` at the sites this change reads and at the
+POISON DRILL, whose restore-and-prove clause governed every mutant I
+ran; (9) `method/tasks/TASK-FORMAT.md` on `review:`; and ONLY THEN
+(10) the executor's report at `<scratchpad>/report-T-205-s4.md`, read as
+evidence and never as authority — every figure it states that I quote
+below, I had already measured myself.
 
 **PHASE 1 WAS A SEPARATE SPAWN, AND IT WAS TOOL-LESS BY INSTRUCTION
 RATHER THAN BY THE HARNESS.** The harness cannot deny a spawn its tools,
@@ -489,9 +495,11 @@ path untouched. The new predicate is LOAD-BEARING, not a restatement of
 MF-04 — and D2.6, where both fire, is the one place they overlap
 (a missing FILE is MF-04's own subject).
 **AND THE PROPERTY LIVES IN DATA, SO THE DECISIVE MUTANTS ARE DATA
-MUTANTS** (`T-221`): 16 of the 25 above mutate `method/**` or
-`docs/CONVENTIONS.md`, never the code, and D2.1/D2.11 are the two that
-carry the card.
+MUTANTS** (`T-221`): **20 of the 25** above mutate `method/**` or
+`docs/CONVENTIONS.md` and never a line of code — 11 on the method tree,
+9 on `docs/CONVENTIONS.md` — with the 5 code mutants used only to prove
+the data mutants' reds land where I say they land. D2.1 and D2.11 are
+the two that carry the card, and both are DATA.
 
 **`--selftest` (S2.1–S2.3).**
 
@@ -636,8 +644,10 @@ it.** See correction 1.
 6. **Reads outside `method/` and `docs/`.** MF-02's corpus is 25 entries,
    every one under `method/`; MF-09's is 26, adding only
    `docs/CONVENTIONS.md`. MF-02 contains no `node:fs` import at all — it
-   is a pure function over a `Map`. The diff adds no `readFileSync`, no
-   `child_process`, no `fetch`, no dynamic `import`.
+   is a pure function over a `Map`. The diff adds **no `import` statement
+   at all** — the only `import(` among its added lines is a JSDoc type
+   annotation — so no `readFileSync`, no `child_process`, no `fetch` and
+   no dynamic import entered the tree with it.
 7. **Unbounded echo into CI output.** The lettered finding interpolates
    only `m[1]` (bounded by `FILE`'s character class), `ord` (bounded to
    `\d+[a-z]`) and the target's own item set. No file text is echoed.
@@ -780,6 +790,11 @@ nothing in the work below it is weakened.
   no `docs/CONVENTIONS.md` edit. Falsifier **F7** refuted, including its
   special case — the POISON DRILL bullet is untouched and the T-205-s7
   fix was made in the CODE, which is where it belonged.
+- **ARCHITECTURE INTERFACES — NOT TOUCHED.** `docs/ARCHITECTURE.md`'s
+  component registry names C-01 `method/` … C-07 `supertaskr-index`, and
+  `tools/method-evals/` is not among them: the suite READS C-01 and
+  writes nothing. No registered component's interface appears in the
+  diff, and no component boundary is crossed.
 - **ADJACENT FEATURES.** MF-04, MF-05, MF-08 and MF-10 are green at the
   tip and stay green under every mutant except D2.6, where MF-04 fires on
   its own subject. `lines` on a passing result is a declared part of
@@ -792,6 +807,13 @@ nothing in the work below it is weakened.
   `docs/tasks/`, of which **9** are the non-`docs/checkpoints/` ones the
   card's table lists. Checkpoints are historical records nobody rewrites,
   so excluding them is defensible — the card should say it does.
+- **THIS VERDICT'S OWN DIGEST CITATION VERIFIES.** Run through the
+  project's own reader rather than asserted: `node
+  tools/method-evals/verdict-digest.mjs --scratch <scratch> <this card>`
+  -> `VERIFIED … 1 citation(s) in 1 card(s) — 1 verified, 0 REFUSED, 0
+  unavailable`, exit **0**. (The checker collects `attack set:` alone, so
+  the `ground truth:` line above has no mechanical reader — a known board
+  finding, already carded, not raised again here.)
 - **FIGURES WITH THEIR REFS.** Every number in this verdict names the ref
   it was measured at. Falsifier **F9** does not apply.
 
@@ -841,3 +863,50 @@ nothing in the work below it is weakened.
 - **`T-205-s19`** — the method-eval corpus has NO FLOOR: deleting an eval
   file leaves `9 model-free eval(s)` at exit 0. Pre-existing, outside
   this fence, found by mutant C2.5.
+- **`T-205-s20`** — a list item inside a FENCED CODE BLOCK counts as a
+  definition, so a citation resolves against a sample line. **Measured at
+  BOTH refs, which is what attributes it:** at `52fdbc3` a fenced `99.`
+  in `lane-protocol.md` plus a citation of `rule 99` leaves MF-02 green
+  (*27 rule citations, all resolving*), and at `0bf398c` a fenced `9q.`
+  plus a citation of `9q` leaves it green too (*35 … (9 lettered)* — and
+  the 9 is the tell). **PRE-EXISTING in `numberedItems`, INHERITED by
+  `letteredItems` deliberately**, because `T-205-s4` mirrored the
+  numbered anchor rather than inventing a second dialect. That was the
+  right call and it is the argument for fixing both at once, so this is
+  filed rather than assigned.
+
+---
+
+## AMENDMENT — the four standing suites, run at THIS VERDICT'S OWN COMMIT
+
+`roles/verifier.md` step 7: a role that writes to the tree owes the
+tree's gates, even when what it wrote was prose. Two cards of prose are
+code inputs to twelve derived readers, and the DOCS GATE fires on them.
+Run with the blessed runner from the bench root, `SUPERTASKR_E2E_PORT
+=25205`, headless, each exit read unpiped and each COUNT read beside it:
+
+| Suite | Bodies | Targets | Exit | Verdict |
+|---|---|---|---|---|
+| `gate-run.mjs parser` | **389** | 1 | **0** | GREEN |
+| `gate-run.mjs app` | **1163** | 1 | **0** | GREEN |
+| `gate-run.mjs rust` | **639** | 18 | **0** | GREEN |
+| `gate-run.mjs e2e` | **706** | 1 | **0** | GREEN |
+| `node tools/method-evals/run.mjs` | 10 model-free; MF-02 `34 ordinal citations, all resolving (8 lettered sub-steps)`; MF-09 `5 matrix rows hold, and the four method sentences are in place` | — | **0** | GREEN |
+| `node tools/method-evals/run.mjs --selftest` | 10 model-free, POSITIVE CONTROL | — | **0** | GREEN |
+
+**2,897 bodies across the four suites, every one at
+`ref=4619425324b9696ebca592bd6c2cffeafcb2f533`** — the commit that
+carried this verdict and `T-205-s17`, `T-205-s18`, `T-205-s19` — as the
+runner's own `gate-verdict` token records for each.
+
+**AND THE REF IS NAMED BECAUSE IT MOVED AGAIN.** `T-205-s20` and this
+amendment are a LATER commit, so the figures above are true of
+`4619425` and its delta to the final tip is TWO CARD FILES OF PROSE —
+one new `status: suggested` card and this section. What that delta can
+break is frontmatter, and that is checked at the final tip, not here:
+`docs-gate.mjs` reports *every live task card's frontmatter parses, with
+a legal status*, `0 frontmatter issue(s) in the live tree`, and `0 hit(s)`
+from the injection scan. The e2e run above already had `T-205-s20` on
+disk while it walked the board, so the twelve board-reading bodies saw
+the card this amendment adds and stayed green. A figure without its ref
+is wrong the moment anybody writes again, including me.
