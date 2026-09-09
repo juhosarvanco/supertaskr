@@ -1379,6 +1379,36 @@ the name is FREE**. Positive control that the query answers otherwise:
 `npm view react version` → `19.2.8`. Nothing was published; no publish
 path exists in the diff.
 
+
+### Step 7 — the gates my OWN commit could move, re-run at the tip it created
+
+Prose is a code input here, so the verdict commit `057f0f8` (this second
+entry, plus the restored T-244-s4 and the new T-244-s5) owes the suites
+its three card writes oblige. `docs-gate.mjs` on those three paths at
+that tip names them: **`npm test` from app/, `npm test` from tools/e2e/,
+`npx vitest run` from lib/parser/** — and reports *every live task card's
+frontmatter parses, with a legal status*, `0` injection-scan hits over 3
+paths and 7 patterns, and governing-document budgets holding. Re-run
+through the blessed gate-runner at
+`057f0f8b753a4db4832ab6a6b87144811b9910a6`:
+
+| suite | verdict | bodies | exit |
+|---|---|---|---|
+| parser | GREEN | 377 | 0 |
+| app | GREEN | 1163 | 0 |
+| e2e | GREEN | 737 | 0 |
+
+`rust` is not owed by a docs write and was not re-run at this tip; its
+figure above carries its own ref, `870c14e`. The e2e leg at this tip ran
+in 744s **beside two peer benches' own solo `e2e` legs** — same
+disclosure as above: the verdict stands, the wall time is a contention
+reading.
+
+**The one commit this record cannot cover is the one carrying this
+paragraph**, which adds prose to the same card the `057f0f8` run just
+proved does not move these three suites. I name that rather than round it
+off.
+
 ### Cards filed
 
 **T-244-s5** — *an operator value reaches a `throw` instead of a named
