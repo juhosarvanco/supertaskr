@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **778 behaviours** — 776 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **783 behaviours** — 781 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -878,6 +878,11 @@ Census: **778 behaviours** — 776 extracted sentences + 2 named-not-extracted (
 - the apt step installs the Tauri v2 webkit2gtk set + xvfb
 - the runner's disk is read on both sides of the e2e lane, behind a floor that can fire
 - FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME
+- every step that can consume the runner's disk is followed by a reading, taken the same way
+- FIXTURE: four one-edit mutants of the ledger — a reading dropped, one drifted, the image version gone, the arrival taken late — each red BY NAME
+- the runner's disk is freed before the floor reads it, and never where the job would miss it
+- FIXTURE: six one-edit mutants of the free-disk step — deleted, moved after the floor, a protected path among the candidates, an unprotected cache, `du` dropped, and a step that can fail the job — each red BY NAME
+- THE EXECUTING ARM: the free-disk step's own script measures, removes, refuses a protected path and skips an absent one — in a sandbox, and never against the real candidate list
 - FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sides
 - FIXTURE: deleting a command from CONVENTIONS reds the lane
 - FIXTURE: an undocumented divergence reds the lane
