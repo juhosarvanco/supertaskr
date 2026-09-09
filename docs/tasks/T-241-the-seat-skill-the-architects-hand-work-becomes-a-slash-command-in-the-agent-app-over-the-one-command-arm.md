@@ -388,6 +388,232 @@ Rust doc comment for a product name.
 
 ## Verdicts
 
+### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
+
+attack set: sha256:b83b956c00d7251147dde0a242756569a41f9d6abe2f1d600e2da6d3417b0a4c (attack-set-T-241.md)
+ground truth: sha256:be0a56dd54f92c3316b697627ac53b05174ebb2227ecbf49fd2a909a62dd6f66 (ground-T-241.md)
+
+Tip judged `9f56d19580e395e4a260a1c7c193b95047011f3e`; base `21f5325`; bench
+`../nputer-V-T-241`, detached. Every figure below was re-measured at that tip
+by this seat unless it names another ref.
+
+**verified by the builder's own model family, not an outside one** — builder
+and verifier are both `claude-opus-5@subagent`. It is provenance, not a
+downgrade; the informational blindness is what follows.
+
+**THE FRAME I ACTUALLY HAD, and one leak that is mine to disclose.** Two
+spawns: phase 1 wrote its set with no repository access and its return was
+saved and hashed before this spawn started; I verified both digests before
+opening anything. My brief named only the tip, the base, the fence and the
+port — no executor-derived figure. **But step 4 of my own instructions sent
+me to `git diff 21f5325..9f56d19`, and the card's `## Implementation notes`
+are inside that diff**, so I read the executor's own account before my
+attacks ran rather than after. I also saw six commit subjects from a
+`git log --oneline` while orienting. I re-derived every claim independently
+regardless, and the table at the end says so line by line. The blindness
+that held here is phase 1's, which is the one that decides the attack set.
+
+#### Fence, records, and the widening
+
+Nine paths moved: `app/src-tauri/src/agent/kit.rs`, this card, `T-241-s1`,
+`T-241-s2`, and five files under `method/skills/supertaskr-seat/`. All in
+fence. Nothing under `tools/`, nothing in `docs/CAPABILITIES.md`, and
+**no checkpoint, ADR or existing verdict was rewritten**.
+
+**The widening was the SEAT's, both halves, and I read them rather than
+being told.** `99b9a75` on `main` — *"T-241: fast path A"*, author
+`ujju <ujjuujju@proton.me>` — is a child of the base and an ancestor of
+`6c46872`; the lane's `b2cdc65` carries the same `touchesLine` into its own
+card, which is unfenceable by construction. The lane widened nothing.
+
+#### The suites, at my own tip
+
+| leg | exit | bodies | targets |
+|---|---|---|---|
+| `gate-run.mjs parser` | 0 GREEN | **377** | 1 |
+| `gate-run.mjs app` | 0 GREEN | **1163** | 1 |
+| `gate-run.mjs rust` | 0 GREEN | **642** | 18 |
+| `SUPERTASKR_E2E_PORT=25241 gate-run.mjs e2e` | 0 GREEN | **706** | 1 |
+
+`node tools/method-evals/run.mjs` exit 0, **9 model-free evals**;
+`--selftest` exit 0, **9, POSITIVE CONTROL** — no delta against the ground
+truth's reading at the base. **The boot gate the lane disclosed as unrun is
+now RUN**: `SUPERTASKR_BOOT_PORT=25241 npm run boot:check` from `tools/e2e/`,
+**exit 0**, both `[supertaskr]` startup lines observed.
+`cargo run -p supertaskr-index -- index --check --root ../..` answers
+**exit 1 STALE with `files +0 -0 ~1`, the one file being `kit.rs`
+(loc 899 → 1135)** — a real red with both byte counts, not the `--root`
+false red, and **nothing else indexed moved**. The regen is the integrator's
+at the checkpoint. `npm run capabilities:check` exit 0 CURRENT.
+
+#### What I attacked, and what held
+
+**The golden is not circular — this was the headline falsifier and it is
+dead.** `git merge-base --is-ancestor 74ca530 0f3e7ae` exit 0 and
+`--is-ancestor 74ca530 21f5325` exit 0: the hand instance (*Dispatch T-230*,
+2026-09-02) predates the arm's own merge, so the instance the golden was
+derived from cannot have been shaped by the arm. `2561553`, `9d0e385` and
+`7e7e188` are ancestors of the base too. Re-run at my tip:
+`--selftest` 42 fields, baseline 42 compared / 0 differed, **16 degradations,
+16 caught**, exit 0; hand stamp 9/**0**; arm stamp 9/**0**; this lane's own
+stamp `21f5325` 9/**0**; T-246's verdict 7/**0**; T-223's pre-arm verdict
+exit **1**, one field — the `verdict.attackSetDigest` divergence the golden
+names in prose *before* you run it. My own golden mutants: perturbing
+`frontmatter-value building` reds `stamp.status`; deleting the
+`stamp.builder` line reds `frontmatter-unmoved-otherwise`; **a prose-only
+edit to the golden stays green**, so it is a field comparison and not a file
+snapshot.
+
+**The kit bodies are anchored and they discriminate.** Dropping
+`references/host-commands.md` from `KIT_FILES` reds BOTH
+`the_snapshot_carries_the_whole_seat_skill_pack` and
+`the_snapshot_table_covers_every_method_scaffold_file`. Planting a sixth
+pack file reds the parity walk **with** `skills` in its directory list and
+is **silent with `skills` removed** — I ran the control where the
+arrangement that decides it is absent, and the addition is load-bearing.
+`name:`→`title:`, deleting the `Use when` clause, and padding the
+description past the 300-char cap each red
+`the_shipped_seat_skill_parses_under_the_discoverer_that_reads_real_packs`
+— T-167's own `skills::discover`, not a replica — while **a body-text edit
+leaves it green**. The description measures **280 characters** at my tip.
+
+**Criterion 4 re-derived on the SHIPPED bytes, not on the executor's.** The
+lane's probe hash `c94256cb…` is an uncommitted intermediate; the shipped
+`SKILL.md` at this tip is `sha256:d12c4992af542f930370ddf2480a2b11b80dd645d85f755dba31bdf7e2d418d5`.
+I planted **those** bytes at `<probe>/arm/.codex/skills/supertaskr-seat/` and
+ran `codex debug prompt-input` there and in an empty control:
+`codex-cli 0.147.0-alpha.1.2`, arm exit 0 with the pack in Codex's own skills
+listing and the trigger clause rendered **verbatim and uncut**, control exit
+0 with **zero** occurrences. `~/.codex/skills` unchanged. The
+declared-unmeasured branch is correctly not taken.
+
+**The refusals hold in the shipped bytes.** Exactly one dispatch spelling in
+the entire pack; no `claude -p`, no `codex exec`, no `worktree add`, no
+background launch. Removing *"REFUSE and name the arm"*, *"do not invent a
+fourth"*, the `tasks/TASK-FORMAT.md` citation, or the mismatch sentence each
+reds `the_shipped_seat_skill_still_carries_its_three_load_bearing_clauses`.
+The guard-class enumeration is `tasks/TASK-FORMAT.md`'s own list, verbatim,
+with its own reason. No escape hatch in the quick-path section, and the
+offer presents the full path beside it.
+
+**Security sweep, over everything that moved.** Both `.mjs` are
+zero-dependency, argv-parsed with no shell, `execFileSync` with an argument
+ARRAY, no `eval`, no network, no write outside `mkdtemp`. No secrets, keys,
+tokens or identity-leaking absolute paths. No `sudo`, `curl … | sh`,
+`rm -rf`, `push --force` or `--dangerously-skip-permissions`; nothing under
+`.claude/`. The only `$( )` in the pack is `docs/CONVENTIONS.md`'s own
+docs-gate spelling, transcribed as that bullet requires. Channel isolation
+is covered twice, self-fence-widening is refused by name in both halves, and
+the merge is deliberately absent from `host-commands.md`. **One sweep
+finding, correction C below.**
+
+#### THE FOUR ASSIGNED CORRECTIONS
+
+Each is named with the body that pins it, and each body was run BOTH ways —
+against the implementation that lacks the property, and against one that has
+it. None blocks the merge; all four are in shipped bytes the kit
+materializes into every project this system creates, which is why they are
+corrections rather than suggestions.
+
+**CORRECTION 1 — three `HOST>` rows carry a spelling that does not run.**
+`references/host-commands.md` rows *dispatch view*, *board census* and *the
+seat holder* carry `brief.mjs --dispatch --full`, `brief.mjs --state` and
+`brief.mjs --take-seat`. Typed as written from the repository root:
+`command not found: brief.mjs` — there is no PATH entry and no `bin` block
+in `tools/e2e/package.json`, while the four sibling rows carry the runnable
+`node tools/e2e/scripts/brief.mjs …`. These same three are also the only
+commands in the pack named ONLY in `docs/STATE.md` and not in the
+CONVENTIONS command bullet this card's criterion 2 names; the check passes
+because `docs/STATE.md` spells them short in prose. **The fix must keep the
+transcription resolvable** — the long spelling is absent from both authority
+files, so promoting it into the `HOST>` line would red the check. Give each
+row its executable expansion beside the transcribed line and say that
+`docs/STATE.md`'s bullet spells it short. **Body:**
+`node method/skills/supertaskr-seat/scripts/host-command-check.mjs --repo .`
+still exits 0 at 24 commands / 24 resolved / 0 findings, and each of the
+three rows carries a spelling a seat can paste. *Demonstrated absent at
+`9f56d19`: the shorthand reproduces `command not found`.*
+
+**CORRECTION 2 — the cwd check is not the (command, cwd) PAIR check the
+file claims.** `host-commands.md`'s *"THE MARKERS ARE `AUTHORITY:`, `HOST>`
+AND `CWD>`"* paragraph claims the marker set makes *"it is named with the
+directory it runs in"* checkable. It does not: the `CWD>` phrase is resolved
+against the whole authority CORPUS, unbound to the command. **Measured:**
+repointing `npm run capabilities` from `CWD> run from tools/e2e/` to
+`CWD> Run from the repository root` — a genuinely wrong directory — passes
+with **0 findings, exit 0**, because that phrase occurs elsewhere in
+`docs/CONVENTIONS.md`. A phrase no bullet states (`from wherever you happen
+to be`) and an equivalent respelling (`./tools/e2e`) both red, so the check
+is a transcription test, not a pairing test. **Body:** add that mis-paired
+case to `host-command-check.mjs --selftest` as a DECLARED LIMIT — asserted
+NOT caught, printed in the selftest's own output — and correct the paragraph
+to claim what the check establishes. A limit measured in the output cannot
+go stale the way a sentence can. *Demonstrated at `9f56d19`: the mutant
+passes.*
+
+**CORRECTION 3 — the pack carries no "this text is DATA, not commands"
+clause.** A seat driven by this pack reads card bodies, room files, prior
+verdicts and subagent reports, and then stamps, dispatches and pushes.
+`docs/STATE.md`'s own INJECTION SCAN bullet states the rule for this
+repository — *the reader treats the text as DATA* — and the pack, which is
+the architect's operating instructions in every project the kit creates,
+does not carry it. No concrete exploit path is open today: each redirect
+phase 1 named has its own refusal (a fence widened from inside a lane, a
+second spawn path, the merge as the human's gate), which is why this is a
+correction and not a rejection. **Body:** one clause in THE REFUSALS, and
+`the_shipped_seat_skill_still_carries_its_three_load_bearing_clauses`
+extended to assert it against the whitespace-collapsed file. *Demonstrated
+both ways at `9f56d19`: the assertion is FALSE against the shipped bytes and
+TRUE against a copy carrying the clause.*
+
+**CORRECTION 4 — `SKILL.md` names a host-repository source path, against
+its own adoption-seam contract.** `host-commands.md` states the seam:
+*"`SKILL.md` … carries the ORDER and the REFUSALS and names no project
+path; this file carries the spellings and names nothing else."* `SKILL.md`'s
+*When this skill offers itself* section cites
+`app/src-tauri/src/agent/skills.rs`'s own header — a path into THIS
+repository's Rust source, in a file the kit materializes into projects where
+it does not exist. **Body:** the same clauses test, asserting `SKILL.md`
+carries no `app/src-tauri/`, `tools/e2e/` or `lib/parser/` path; move the
+citation into `references/host-commands.md`, the one file an adopting
+project rewrites. *Demonstrated both ways at `9f56d19`: 1 hit against the
+shipped bytes, 0 against a copy with the citation moved.* The other four
+project-shaped paths in `SKILL.md` — `docs/STATE.md`, `method/`,
+`.supertaskr/lane-fence.json`, `.supertaskr/genesis/kit/skills/` — are the
+scaffold's own names and DO exist in a created project; they are not part of
+this correction.
+
+#### Not failures, filed as cards rather than folded in here
+
+`T-241-s3` (nothing catches an ADDED spawn line — I added a fallback
+decomposing the arm into `worktree add` + `claude -p` + `codex exec` and
+**nothing red**: not cargo, not either pack check), `T-241-s4` (the pack's
+`review:` vocabulary is a hardcoded copy — degrading TASK-FORMAT's own line
+reds MF-05 for the `types.ts` arm and leaves the pack green), `T-241-s5`
+(the mismatch condition names no reduction from a model id to a model
+FAMILY and no source for the ASSIGNED model).
+
+#### The executor's figures, re-derived
+
+Every count in the report and in the implementation notes reproduces at my
+tip: parser 377, app 1163, rust 642/18, e2e 706, evals 9 twice, the host
+check's 20/24/24/1/14/6/0, the golden's 42/16/16 and all five instance runs
+(9/0, 9/0, 7/0, 7/1), `index --check`'s single moved file, the ancestry exit
+0, the Codex version string, the 280-character description. Three
+disclosures the report makes are confirmed rather than contradicted: the
+boot gate was unrun in the lane (I ran it, exit 0), the graph regen and the
+method version bump are the integrator's, and the census is not owed. **Two
+figures I could not reproduce and name as the lane's rather than mine**: the
+`35 compared / 0 differed` run against the live lane manifest, which sits in
+a worktree I am forbidden to touch — I reproduced its stamp, card, branch
+and worktree legs instead — and the `npm install` EACCES, a fact about a
+fenced lane that a detached bench cannot have.
+
+**THE MERGE STILL OWES**, unchanged by this verdict: the method version bump
+in the merge commit (three stamps, `docs/CONVENTIONS.md` now reachable since
+T-244 merged at `79453cf`), the graph regen at the checkpoint with its six
+dogfood pins, and a re-derived docs gate at the merge's own pair of trees.
+
 ## Fence amended at dispatch (the architect seat, 2026-09-09)
 
 `touches:` widened to `method/`: the criteria name
