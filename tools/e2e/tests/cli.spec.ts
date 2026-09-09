@@ -1934,3 +1934,36 @@ test("a mutant block's file and spec are CONFINED to the project root — no tra
   );
   expect("problem" in dotted, "a dot pair inside a name is not a traversal").toBe(false);
 });
+
+test("the integrator's never-rewrite rule carries NO hedge — the one clause that would refund this card", () => {
+  // A T-221 DATA MUTANT, because the property lives in PROSE: no code
+  // mutant can grade it. Inserting "unless it does not apply to the
+  // merged tree" into the row leaves the method eval gate at 10 and every
+  // other body in this file green — measured. One clause is the whole
+  // saving refunded, because "does not apply" is exactly what a tired
+  // seat concludes at 11pm.
+  const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
+  const at = integrator.indexOf("THE BODY IS NOT YOURS TO WRITE");
+  expect(at, "the row is there to be read").toBeGreaterThan(0);
+  const ends = integrator.indexOf("3. Checkpoint ritual", at);
+  expect(ends, "and it ends where the next numbered step begins").toBeGreaterThan(at);
+  const row = integrator.slice(at, ends).toLowerCase();
+  for (const hedge of [
+    "unless",
+    "if necessary",
+    "when needed",
+    "where needed",
+    "may adapt",
+    "discretion",
+    "where appropriate",
+    "does not apply",
+  ]) {
+    expect(row, `the never-rewrite row must not hedge with ${JSON.stringify(hedge)}`).not.toContain(
+      hedge,
+    );
+  }
+  // THE POSITIVE CONTROL: the row really is what is being read, so a body
+  // that passed because it was reading an empty string would be caught.
+  expect(row, "the prohibition itself").toContain("rewriting the body");
+  expect(row, "and the corner it governs").toContain("the committed body is what proves it");
+});
