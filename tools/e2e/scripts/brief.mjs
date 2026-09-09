@@ -152,6 +152,7 @@ import {
   treeProv,
   value,
   withMargin,
+  triageClusterRecs,
 } from "./dispatch-brief.mjs";
 import {
   HOLDER_CODES,
@@ -909,6 +910,9 @@ async function main(argv) {
     });
     UNITS = { count: listedCards(dctx), label: "listed card" };
     say(render(dispatchReport(dctx)));
+    // T-282's triage clusters — the section criterion 1 names, rendered
+    // from the same context the report reads (the wiring T-282-s1 owed).
+    if (full) say(render(triageClusterRecs(dctx)));
   }
 
   /**

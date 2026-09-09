@@ -3303,6 +3303,420 @@ export function slugsSharingComponents(slugs) {
     .sort((a, b) => a.component.localeCompare(b.component));
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE TRIAGE CLUSTERS (T-282) — the suggested column, grouped by the two
+ * things that make two cards ONE job.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * WHY THIS EXISTS, AND WHY IT DISPOSITIONS NOTHING.
+ *
+ * The second sitting of 2026-09-09 found the same defect filed THREE
+ * times (`T-216-s6`, `T-256`, `T-238-s5`) and one suggestion that
+ * duplicated a live lane's remedy. The rule that would have caught each
+ * of them already exists — search before filing, append a corroboration
+ * to the class parent — and two lanes OBEYED it. What is missing is the
+ * instrument that puts the third filing on the screen BESIDE the first
+ * at the moment somebody triages, and that is the whole of this section.
+ *
+ * IT IS A VIEW AND NEVER A DISPOSITION. A `DUPLICATE CANDIDATE` below is
+ * a FLAG FOR THE HUMAN: nothing here writes a card, moves a status or
+ * closes anything. The two signals it joins on are exactly the two a
+ * triage seat otherwise reconstructs by hand across sixty-odd cards — the
+ * ground two cards both reserve, and the class parent they share.
+ *
+ * AND IT SPENDS THE RESOURCE THE SAME COMMAND MEASURES. `T-225` proved
+ * that this answer's capacity is a function of the BYTES it prints per
+ * card; a section that printed a row per suggestion would take back what
+ * that card bought. So a cluster is ONE line however many cards it holds,
+ * a card that clusters with nothing is COUNTED rather than listed, and
+ * titles — the longest field on the board — appear nowhere here.
+ */
+
+/** The three statuses this view rules on. The criterion names them. */
+export const TRIAGE_STATUSES = Object.freeze(["suggested", "planned", "building"]);
+
+/** The two body lines a card carries its class kinship on. */
+export const CLASS_KIN_OPENERS = Object.freeze(["Absorbs", "Class parent"]);
+
+/**
+ * The class parent an id carries on its own face: `T-205-s16` -> `T-205`.
+ * A card with no suffix is its own stem, which is what makes a suggestion
+ * and the card it was filed against comparable at all.
+ *
+ * @param {string} id
+ * @returns {string}
+ */
+export function classStem(id) {
+  const m = /^(T-\d+)(?:-s\d+)?$/.exec(String(id).trim());
+  return m === null ? String(id).trim() : /** @type {string} */ (m[1]);
+}
+
+/** Every task id in a run of text, normalised to the board's spelling. */
+/** @param {string} s @returns {string[]} */
+function idsIn(s) {
+  /** @type {string[]} */
+  const out = [];
+  for (const m of s.matchAll(/\bT-\d+(?:-s\d+)?\b/g)) {
+    try {
+      out.push(normaliseTaskId(/** @type {string} */ (m[0])));
+    } catch {
+      // A token this module cannot name is not kinship evidence. It
+      // cannot happen through the pattern above and is caught rather
+      // than trusted, because an id parser that throws inside a REPORT
+      // takes the whole answer down with it.
+    }
+  }
+  return out;
+}
+
+/** Card ids in board order: stem numerically, then suffix numerically. */
+/** @param {string} a @param {string} b @returns {number} */
+export function byCardId(a, b) {
+  const pa = /^T-(\d+)(?:-s(\d+))?$/.exec(a);
+  const pb = /^T-(\d+)(?:-s(\d+))?$/.exec(b);
+  if (pa === null || pb === null) return a.localeCompare(b);
+  const na = Number(pa[1]);
+  const nb = Number(pb[1]);
+  if (na !== nb) return na - nb;
+  return Number(pa[2] ?? 0) - Number(pb[2] ?? 0);
+}
+
+/**
+ * The ids a card's own body claims kinship with — every task id on a line
+ * opening `Absorbs:` or `Class parent:`, and, where that opener is a
+ * HEADING with no id on it, on the first non-blank line under it (which
+ * is how `## Class parent` is spelled on this board).
+ *
+ * IT ERRS TOWARD SHOWING THE PAIR. A line's parenthetical prose can name
+ * a card that is context rather than kin, and this reads it as kin — the
+ * output is a FLAG a human reads, so a pair shown and dismissed costs one
+ * line while a pair never shown costs the duplicate filing this whole
+ * section exists to prevent.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function classKin(text) {
+  const lines = String(text).split(/\r?\n/);
+  /** @type {Set<string>} */
+  const out = new Set();
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    const bare = line.replace(/^[\s>#*+-]+/, "").replace(/\*\*/g, "").trim();
+    const opener = CLASS_KIN_OPENERS.find((o) => new RegExp(`^${o}\\b`, "i").test(bare));
+    if (opener === undefined) continue;
+    // THE COLON HAS TO BE NEAR THE OPENER, because the parenthetical form
+    // (`Absorbs (eighth triage, 2026-08-25):`) is live on this board and a
+    // sentence merely STARTING with the word is not a kinship line.
+    const colon = bare.indexOf(":");
+    const named = colon === -1 || colon > opener.length + 40 ? [] : idsIn(bare.slice(colon + 1));
+    if (named.length > 0) {
+      for (const id of named) out.add(id);
+      continue;
+    }
+    // A HEADING SPELLS THE OPENER AND LEAVES THE IDS UNDER IT, which is how
+    // `## Class parent` is written on this board.
+    if (!/^\s*#/.test(line)) continue;
+    for (let j = i + 1; j < lines.length && j <= i + 4; j += 1) {
+      const next = /** @type {string} */ (lines[j]);
+      if (next.trim() === "") continue;
+      for (const id of idsIn(next)) out.add(id);
+      break;
+    }
+  }
+  return [...out].sort(byCardId);
+}
+
+/**
+ * @typedef {object} TriageCard
+ * @property {string} id
+ * @property {string} status
+ * @property {string} file
+ * @property {string[]} entries  the card's `touches:` tokens, verbatim
+ * @property {string[]} parents  its own stem, plus every kin line's stem
+ */
+
+/**
+ * The board this view rules on: one entry per live card at a triage
+ * status, with its fence tokens and its class parents.
+ *
+ * @param {{ cards: Map<string, Card>, readText: (file: string) => string }} io
+ * @returns {TriageCard[]}
+ */
+export function triageBoard({ cards, readText }) {
+  /** @type {TriageCard[]} */
+  const out = [];
+  for (const card of cards.values()) {
+    const status = fieldScalar(card.fields, "status");
+    if (!TRIAGE_STATUSES.includes(status)) continue;
+    const kin = classKin(readText(card.file));
+    out.push({
+      id: card.id,
+      status,
+      file: card.file,
+      entries: fieldList(card.fields, "touches"),
+      parents: [...new Set([classStem(card.id), ...kin.map(classStem)])].sort(byCardId),
+    });
+  }
+  return out.sort((a, b) => byCardId(a.id, b.id));
+}
+
+/**
+ * Every path a card's fence reserves, its slugs expanded.
+ *
+ * @param {{ entries: string[] }} card
+ * @param {Map<string, string[]>} slugs
+ * @param {Component[]} comps
+ * @returns {string[]}
+ */
+export function fencePaths(card, slugs, comps) {
+  /** @type {Set<string>} */
+  const out = new Set();
+  for (const entry of card.entries) {
+    for (const p of expandFenceEntry(entry, slugs, comps).paths) out.add(p);
+  }
+  return [...out].sort();
+}
+
+/**
+ * The ground two cards BOTH reserve, in the reader's own fence tokens.
+ *
+ * IT SHARES ITS RULE WITH `fenceOverlaps` RATHER THAN RESTATING IT: both
+ * decide overlap with `pathsOverlap`, the one home of the prefix rule, so
+ * a fence this says is shared is a fence that module says is not
+ * disjoint. What differs is the ANSWER SHAPE — that one proves a verdict
+ * and names both sides, this one hands a triage reader the path itself,
+ * and the containing path where one covers the other.
+ *
+ * @param {{ entries: string[] }} a
+ * @param {{ entries: string[] }} b
+ * @param {Map<string, string[]>} slugs
+ * @param {Component[]} comps
+ * @returns {string[]}
+ */
+export function sharedGround(a, b, slugs, comps) {
+  /** @type {Set<string>} */
+  const out = new Set();
+  for (const pa of fencePaths(a, slugs, comps)) {
+    for (const pb of fencePaths(b, slugs, comps)) {
+      if (!pathsOverlap(pa, pb)) continue;
+      out.add(pa === pb || pa.length <= pb.length ? pa : pb);
+    }
+  }
+  return [...out].sort();
+}
+
+/**
+ * @typedef {object} TriageClusters
+ * @property {{ members: string[], ground: string[] }[]} fence
+ * @property {{ parent: string, members: string[] }[]} classes
+ * @property {{ id: string, match: string, status: string, parents: string[], ground: string[] }[]} duplicates
+ * @property {string[]} alone     suggestions sharing ground with no other suggestion
+ * @property {string[]} unfenced  suggestions declaring no fence at all
+ */
+
+/**
+ * The whole grouping, as a function of the board and the fence machinery.
+ *
+ * THE TWO GROUPINGS ARE KEPT APART ON PURPOSE. Joined into one graph they
+ * collapse: every card fenced on `tools/e2e` would land in one component
+ * with every card of every class, and a cluster that holds everything
+ * names nothing. So fence overlap answers *"is this one lane's worth of
+ * ground"* and the class parent answers *"is this one defect"* — and the
+ * DUPLICATE flag is the conjunction, which is the only place the card's
+ * criterion asks the two to agree.
+ *
+ * AND THE FENCE HALF IS KEYED ON THE GROUND, NOT ON CONNECTEDNESS, WHICH
+ * IS A MEASUREMENT RATHER THAN A TASTE. The first build of this function
+ * took the connected components of *shares ground with*, which is the
+ * obvious reading of "cluster by fence overlap". Driven against this
+ * board at `3a69385` it returned SEVENTY-FIVE of the eighty live
+ * suggestions as ONE cluster — because a card fenced on `tools/` and a
+ * card fenced on `app/` are joined by any third card fencing both, and
+ * the broad tokens are common. That answer is the failure the paragraph
+ * above names, arriving through the other door. Keyed on the ground, a
+ * cluster is *"the cards that reserve THIS path"*, a card may appear in
+ * several, and every row names ground a reader can act on.
+ *
+ * @param {TriageCard[]} board
+ * @param {Map<string, string[]>} slugs
+ * @param {Component[]} comps
+ * @returns {TriageClusters}
+ */
+export function triageClusters(board, slugs, comps) {
+  const suggestions = board.filter((c) => c.status === "suggested");
+  const claimed = board.filter((c) => c.status === "planned" || c.status === "building");
+
+  /** @type {Map<string, string[]>} */
+  const paths = new Map(suggestions.map((c) => [c.id, fencePaths(c, slugs, comps)]));
+  /** Every path any live suggestion reserves — the candidate cluster keys. */
+  const keys = [...new Set([...paths.values()].flat())].sort();
+  /** @type {Map<string, { members: string[], ground: string[] }>} */
+  const bySet = new Map();
+  for (const key of keys) {
+    const members = suggestions
+      .filter((c) =>
+        /** @type {string[]} */ (paths.get(c.id)).some((p) => pathsOverlap(p, key)),
+      )
+      .map((c) => c.id)
+      .sort(byCardId);
+    if (members.length < 2) continue;
+    // DEDUPED BY THE MEMBER SET AND NOT BY THE KEY. Two paths held by
+    // exactly the same cards are one cluster with two names, and printing
+    // it twice is the per-card byte cost this section is built to avoid.
+    const held = bySet.get(members.join(",")) ?? { members, ground: [] };
+    held.ground.push(key);
+    bySet.set(members.join(","), held);
+  }
+  const fence = [...bySet.values()].sort(
+    (a, b) => b.members.length - a.members.length || byCardId(a.members[0] ?? "", b.members[0] ?? ""),
+  );
+  const clustered = new Set(fence.flatMap((c) => c.members));
+  const alone = suggestions.filter((c) => !clustered.has(c.id)).map((c) => c.id).sort(byCardId);
+
+  /** @type {Map<string, string[]>} */
+  const byParent = new Map();
+  for (const c of suggestions) {
+    for (const p of c.parents) {
+      const held = byParent.get(p) ?? [];
+      held.push(c.id);
+      byParent.set(p, held);
+    }
+  }
+  const classes = [...byParent]
+    .filter(([, members]) => members.length > 1)
+    .map(([parent, members]) => ({ parent, members: [...members].sort(byCardId) }))
+    .sort((a, b) => byCardId(a.parent, b.parent));
+
+  /** @type {{ id: string, match: string, status: string, parents: string[], ground: string[] }[]} */
+  const duplicates = [];
+  for (const s of suggestions) {
+    for (const c of claimed) {
+      const parents = s.parents.filter((p) => c.parents.includes(p));
+      if (parents.length === 0) continue;
+      const ground = sharedGround(s, c, slugs, comps);
+      if (ground.length === 0) continue;
+      duplicates.push({ id: s.id, match: c.id, status: c.status, parents, ground });
+    }
+  }
+  duplicates.sort((a, b) => byCardId(a.id, b.id) || byCardId(a.match, b.match));
+
+  return {
+    fence,
+    classes,
+    duplicates,
+    alone: alone.sort(byCardId),
+    unfenced: suggestions.filter((c) => c.entries.length === 0).map((c) => c.id).sort(byCardId),
+  };
+}
+
+/**
+ * The section, as records. It needs `{root, ref, at, host, full}` and
+ * nothing else, so BOTH of this project's context shapes can hand it one.
+ *
+ * `full` is the same dial the rest of the dispatch answer spends: without
+ * it the section is one counted line naming what `--full` would spell
+ * out, because a triage answer is a page and the default view is what a
+ * session could START.
+ *
+ * @param {{ root?: string, ref: string, at?: string, host?: string, full?: boolean,
+ *   cards?: Map<string, Card>, comps?: Component[], slugs?: Map<string, string[]> }} ctx
+ * @param {{ cards?: Map<string, Card>, comps?: Component[], slugs?: Map<string, string[]>,
+ *   readText?: (file: string) => string, board?: TriageCard[] }} [deps]
+ * @returns {Rec[]}
+ */
+export function triageClusterRecs(ctx, deps = {}) {
+  const root = ctx.root ?? repoRoot;
+  const cards = deps.cards ?? ctx.cards ?? cardIndex(root);
+  const comps = deps.comps ?? ctx.comps ?? components(root);
+  const slugs = deps.slugs ?? ctx.slugs ?? slugMapFromFields(comps);
+  /** @param {string} file @returns {string} */
+  const readText = deps.readText ?? ((file) => readDoc(file, root));
+  const board = deps.board ?? triageBoard({ cards, readText });
+  const suggestions = board.filter((c) => c.status === "suggested");
+  /** @param {string} via @returns {Prov} */
+  const tree = (via) => treeProv(ctx.ref, via);
+  const fenceVia =
+    "the flat docs/tasks/T-*.md field touches, expanded through the component registry's own " +
+    "touch_slugs";
+  const classVia = "the flat docs/tasks/T-*.md ids, plus each card's own Absorbs / Class parent lines";
+
+  /** @type {Rec[]} */
+  const recs = [
+    note("THE TRIAGE CLUSTERS — the suggested column grouped by the two things that make two"),
+    note("cards ONE job: ground they both reserve, and a class parent they share. THIS VIEW"),
+    note("CHANGES NO CARD — nothing here writes, moves or closes one."),
+  ];
+  if (ctx.full !== true) {
+    recs.push(
+      value(
+        `${suggestions.length} live suggestion(s) — add --full for the fence clusters, the class ` +
+          "clusters and the duplicate candidates",
+        tree(fenceVia),
+      ),
+    );
+    return recs;
+  }
+
+  const clusters = triageClusters(board, slugs, comps);
+  recs.push(
+    blank(),
+    note("BY FENCE — suggestions whose expanded touches: overlap. A cluster is one lane's worth"),
+    note("of ground, and it is ONE line however many cards it holds."),
+  );
+  if (clusters.fence.length === 0) {
+    recs.push(value("no two live suggestions share ground", tree(fenceVia)));
+  }
+  for (const c of clusters.fence) {
+    recs.push(
+      value(`${c.members.join(", ")} — all reserve ${c.ground.join(", ")}`, tree(fenceVia)),
+    );
+  }
+  recs.push(
+    value(
+      `${clusters.alone.length} suggestion(s) share ground with no other suggestion`,
+      tree(fenceVia),
+    ),
+    value(
+      `${clusters.unfenced.length} suggestion(s) declare no fence at all, so no ground can cluster ` +
+        "them and no duplicate can be ruled out for them",
+      tree(fenceVia),
+    ),
+    blank(),
+    note("BY CLASS PARENT — the id's own stem, plus every Absorbs: or Class parent: line the card"),
+    note("carries. A parent with one live suggestion is not a cluster and is not printed."),
+  );
+  if (clusters.classes.length === 0) {
+    recs.push(value("no class parent holds more than one live suggestion", tree(classVia)));
+  }
+  for (const c of clusters.classes) {
+    recs.push(value(`${c.parent}: ${c.members.join(", ")}`, tree(classVia)));
+  }
+  recs.push(
+    blank(),
+    note("DUPLICATE CANDIDATES — the fence AND the class parent both match a card already planned"),
+    note("or building. A FLAG FOR THE HUMAN AND NEVER A CLOSURE: the search-before-filing rule is"),
+    note("the remedy, and appending a corroboration to the class parent is what it asks for."),
+  );
+  if (clusters.duplicates.length === 0) {
+    recs.push(
+      value("no live suggestion matches a planned or building card on both signals", tree(fenceVia)),
+    );
+  }
+  for (const d of clusters.duplicates) {
+    recs.push(
+      value(
+        `${d.id} ~ ${d.match} (${d.status}) — class parent ${d.parents.join(", ")}; both reserve ` +
+          d.ground.join(", "),
+        tree(fenceVia),
+      ),
+    );
+  }
+  return recs;
+}
+
+
 /**
  * ARM TWO. The same command answers both arms because the lane list is
  * the row both consumers get wrong.

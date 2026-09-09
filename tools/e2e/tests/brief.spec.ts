@@ -17,7 +17,7 @@ import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsText, liveTaskCards, trackedFiles } from "../scripts/docs-scan.mjs";
+import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
 import {
   BASE_TOKEN,
   DERIVERS,
@@ -28,10 +28,14 @@ import {
   PACK_TRANSCRIPTION_LIMIT,
   PIPE_BUFFER_BYTES,
   SPAWNSYNC_DEFAULT_MAXBUFFER,
+  TRIAGE_STATUSES,
   architectureText,
   assembleBrief,
   boardCensus,
+  byCardId,
   ceremonyRows,
+  classKin,
+  classStem,
   citedConventionBullets,
   citedOpening,
   components,
@@ -44,6 +48,7 @@ import {
   docsNamed,
   fenceLedger,
   fenceOverlaps,
+  fencePaths,
   fieldList,
   findableNeedle,
   frontmatterFields,
@@ -72,6 +77,7 @@ import {
   resolveIntegrationRef,
   roleText,
   runDispatchLane,
+  sharedGround,
   slugMapFromFields,
   slugMapFromProse,
   slugsSharingComponents,
@@ -80,6 +86,9 @@ import {
   standingGates,
   stateReport,
   treeProv,
+  triageBoard,
+  triageClusterRecs,
+  triageClusters,
   unstampedLines,
   value,
   withMargin,
@@ -4514,4 +4523,347 @@ test("THE BRIEF DOES NOT SAY BOTH THINGS ABOUT docs/CONVENTIONS.md — ROW 3's a
       "tells it the whole document is the ARCHITECT'S read — the same brief says both, and the " +
       "seat is left to pick which row it believes",
   ).toBe(false);
+});
+
+// ── §TRIAGE CLUSTERS (T-282) ─────────────────────────────────────────
+//
+// The triage view groups the SUGGESTED column by the two things that
+// make two cards one job. Every body below drives the derivation the
+// dispatch answer renders; none of them asserts a number off the live
+// board, because the board is a moving target and the properties are not.
+
+/** A card the triage view can rule on, spelled the way `triageBoard` builds one. */
+function triageFixture(
+  id: string,
+  status: string,
+  entries: string[],
+  parents: string[] = [],
+): { id: string; status: string; file: string; entries: string[]; parents: string[] } {
+  return {
+    id,
+    status,
+    file: `docs/tasks/${id}-fixture.md`,
+    entries,
+    parents: [...new Set([classStem(id), ...parents])].sort(byCardId),
+  };
+}
+
+/** One component, so the slug face of a fence is exercised and not assumed. */
+const TRIAGE_COMPS = [
+  {
+    id: "C-08",
+    file: "docs/architecture/components/C-08-fixture.md",
+    slugs: ["app-board"],
+    paths: ["app/src/components/board/"],
+  },
+];
+const TRIAGE_SLUGS = slugMapFromFields(TRIAGE_COMPS);
+
+/**
+ * The fixture board. Every pair below exists to be a control for another:
+ * shared ground with a shared parent, shared ground with a DIFFERENT
+ * parent, a shared parent with NO shared ground, a slug fence against a
+ * path fence, a card alone, and a card with no fence at all.
+ */
+function triageBoardFixture() {
+  return [
+    triageFixture("T-100-s1", "suggested", ["tools/e2e/scripts/gate-run.mjs"]),
+    triageFixture("T-100-s2", "suggested", ["tools/e2e/scripts/gate-run.mjs"]),
+    triageFixture("T-200-s1", "suggested", ["tools/e2e/scripts/gate-run.mjs"]),
+    triageFixture("T-300-s1", "suggested", ["app-board"]),
+    triageFixture("T-300-s2", "suggested", ["app/src/components/board/TaskCard.tsx"]),
+    triageFixture("T-400-s1", "suggested", ["docs/NORTH_STAR.md"]),
+    triageFixture("T-500-s1", "suggested", []),
+    triageFixture("T-100-s9", "planned", ["tools/e2e/scripts/gate-run.mjs"]),
+    triageFixture("T-400-s9", "planned", ["method/README.md"]),
+    triageFixture("T-600", "building", ["tools/e2e/scripts/gate-run.mjs"]),
+    triageFixture("T-700", "done", ["tools/e2e/scripts/gate-run.mjs"]),
+  ];
+}
+
+test("THE FENCE CLUSTERS ARE KEYED ON GROUND EVERY MEMBER RESERVES, never on who is connected to whom", () => {
+  // KILLED BY: the connected components of "shares ground with", which is
+  // the obvious reading of the criterion and was this function's first
+  // build. Driven against the live board at 3a69385 it returned 75 of the
+  // 80 live suggestions as ONE cluster — a card fenced on `tools/` and a
+  // card fenced on `app/` joined by any third card fencing both. The
+  // invariant below is what that implementation cannot satisfy: under a
+  // transitive join a member need not reserve the cluster's own ground.
+  const clusters = triageClusters(triageBoardFixture(), TRIAGE_SLUGS, TRIAGE_COMPS);
+
+  const gateRun = clusters.fence.find((c) => c.ground.includes("tools/e2e/scripts/gate-run.mjs"));
+  expect(gateRun?.members, "the three suggestions on one script are not one cluster").toEqual([
+    "T-100-s1",
+    "T-100-s2",
+    "T-200-s1",
+  ]);
+  // ...and the PLANNED and BUILDING cards holding the same path are NOT
+  // members: this half of the view rules on the suggested column.
+  expect(gateRun?.members).not.toContain("T-100-s9");
+  expect(gateRun?.members).not.toContain("T-600");
+
+  // THE SLUG FACE, against a path fence: a card fencing `app-board` and a
+  // card fencing one file under it are one cluster, and the ground named
+  // is the containing path a reader can act on.
+  const board = clusters.fence.find((c) => c.members.includes("T-300-s1"));
+  expect(board?.members).toEqual(["T-300-s1", "T-300-s2"]);
+  // ONE CLUSTER WITH TWO NAMES, deduped by its member set rather than by
+  // its key: the directory and the file under it are held by exactly the
+  // same cards, so they are one row naming both and not two rows naming
+  // the same pair twice.
+  expect(board?.ground).toEqual([
+    "app/src/components/board/",
+    "app/src/components/board/TaskCard.tsx",
+  ]);
+
+  // THE INVARIANT — every member reserves every path the row names. This
+  // is the sentence the row makes ("all reserve X"), asserted rather than
+  // trusted, and it is what a transitive join breaks.
+  const byId = new Map(triageBoardFixture().map((c) => [c.id, c]));
+  for (const cluster of clusters.fence) {
+    expect(cluster.members.length, "a cluster of one is not a cluster").toBeGreaterThan(1);
+    for (const id of cluster.members) {
+      const paths = fencePaths(byId.get(id)!, TRIAGE_SLUGS, TRIAGE_COMPS);
+      for (const g of cluster.ground) {
+        expect(
+          sharedGround({ entries: paths }, { entries: [g] }, TRIAGE_SLUGS, TRIAGE_COMPS).length,
+          `${id} does not reserve ${g}, which its own cluster row says it does`,
+        ).toBeGreaterThan(0);
+      }
+    }
+  }
+
+  // THE TWO WAYS OF SHARING NOTHING ARE SAID APART, because their remedies
+  // differ: a card alone shares no ground with any other suggestion; a
+  // card with no fence declares none, and nothing can cluster it OR rule
+  // a duplicate out for it.
+  expect(clusters.alone).toEqual(["T-400-s1", "T-500-s1"]);
+  expect(clusters.unfenced).toEqual(["T-500-s1"]);
+
+  // THE NEGATIVE CONTROL: move one card off the shared script and the
+  // cluster loses exactly that member, with nothing else changed.
+  const moved = triageBoardFixture().map((c) =>
+    c.id === "T-200-s1" ? { ...c, entries: ["docs/ROADMAP.md"] } : c,
+  );
+  const after = triageClusters(moved, TRIAGE_SLUGS, TRIAGE_COMPS);
+  expect(
+    after.fence.find((c) => c.ground.includes("tools/e2e/scripts/gate-run.mjs"))?.members,
+  ).toEqual(["T-100-s1", "T-100-s2"]);
+  expect(after.alone).toContain("T-200-s1");
+});
+
+test("A DUPLICATE CANDIDATE NEEDS BOTH SIGNALS, and either one alone is not a flag", () => {
+  // KILLED BY: flagging on fence overlap alone (T-200-s1 and T-600 would
+  // be flagged against T-100-s9 and every lane in tools/e2e would read as
+  // a duplicate of every other), or on the class parent alone (T-400-s1
+  // against T-400-s9, which share a stem and no ground at all). Both are
+  // the shape that makes a flag worthless: one that fires on everything is
+  // read as noise, and a triage seat stops looking.
+  const clusters = triageClusters(triageBoardFixture(), TRIAGE_SLUGS, TRIAGE_COMPS);
+  expect(clusters.duplicates.map((d) => `${d.id}~${d.match}`)).toEqual([
+    "T-100-s1~T-100-s9",
+    "T-100-s2~T-100-s9",
+  ]);
+  const first = clusters.duplicates[0]!;
+  expect(first.status, "the flag does not say what the card it matches is doing").toBe("planned");
+  expect(first.parents).toEqual(["T-100"]);
+  expect(first.ground).toEqual(["tools/e2e/scripts/gate-run.mjs"]);
+
+  // FENCE WITHOUT PARENT, AND PARENT WITHOUT FENCE — both present on the
+  // fixture, and neither is flagged.
+  expect(clusters.duplicates.map((d) => d.id)).not.toContain("T-200-s1");
+  expect(clusters.duplicates.map((d) => d.id)).not.toContain("T-400-s1");
+  // A `done` card holding the same ground is not a claim on it either.
+  expect(clusters.duplicates.map((d) => d.match)).not.toContain("T-700");
+
+  // THE POSITIVE CONTROL FOR THE KIN PATH: give T-200-s1 the class parent
+  // its id does not carry, change nothing else, and the same pair the
+  // fence already matched becomes a flag. Without this, "not flagged"
+  // above is satisfied by a matcher that flags nothing.
+  const kin = triageBoardFixture().map((c) =>
+    c.id === "T-200-s1" ? { ...c, parents: ["T-100", "T-200"] } : c,
+  );
+  const after = triageClusters(kin, TRIAGE_SLUGS, TRIAGE_COMPS);
+  expect(after.duplicates.map((d) => `${d.id}~${d.match}`)).toContain("T-200-s1~T-100-s9");
+});
+
+test("THE CLASS PARENT IS READ OFF THE CARD'S OWN LINES, in every spelling this board uses", () => {
+  // KILLED BY: reading only the id's stem. The three-times-filed defect of
+  // 2026-09-09 (T-216-s6, T-256, T-238-s5) has three different stems, and
+  // the corroboration rule's own remedy — append to the class parent —
+  // leaves its evidence on these lines and nowhere else.
+  expect(classStem("T-205-s16")).toBe("T-205");
+  expect(classStem("T-205")).toBe("T-205");
+
+  // The inline form, the bolded form, the parenthesised form, and the
+  // HEADING form — all four are live on this board today.
+  expect(classKin("Absorbs: T-137-s8 (the second half of this card's claim)")).toEqual(["T-137-s8"]);
+  expect(classKin("Absorbs (eighth triage, 2026-08-25): T-015-s1, T-015-s2")).toEqual([
+    "T-015-s1",
+    "T-015-s2",
+  ]);
+  expect(classKin("**Class parent: `T-018-s6`** (the startup pull could overtake an emit)")).toEqual(
+    ["T-018-s6"],
+  );
+  expect(classKin("## Class parent\n\n`T-203` — the verdict token; `T-202` owns the field set.")).toEqual(
+    ["T-202", "T-203"],
+  );
+
+  // THE NEGATIVE CONTROLS, and both are spelled on live cards: a card that
+  // searched and found no parent says so in the same words, and a card id
+  // in ordinary prose is not a kinship claim.
+  expect(classKin("**Class parent: none found.** Searched the live board.")).toEqual([]);
+  expect(classKin("This is the same defect T-216-s6 records, in another file.")).toEqual([]);
+  expect(classKin("Absorbed into T-167-s8 at the fifth triage.")).toEqual([]);
+
+  // AND THE BOARD BUILDER JOINS THE TWO: the id's own stem plus every kin
+  // line, deduped, on the card the index actually holds.
+  const cards = new Map([
+    [
+      "T-900-s1",
+      {
+        id: "T-900-s1",
+        file: "docs/tasks/T-900-s1-fixture.md",
+        title: "a fixture card",
+        fields: { id: "T-900-s1", status: "suggested", touches: ["tools/e2e"] } as Record<
+          string,
+          string | string[]
+        >,
+      },
+    ],
+  ]);
+  const built = triageBoard({
+    cards,
+    readText: () => "**Class parent: `T-100-s4`.** THE CLASS: one defect, two files.",
+  });
+  expect(built).toEqual([
+    {
+      id: "T-900-s1",
+      status: "suggested",
+      file: "docs/tasks/T-900-s1-fixture.md",
+      entries: ["tools/e2e"],
+      parents: ["T-100", "T-900"],
+    },
+  ]);
+});
+
+test("THE STATUSES THIS VIEW RULES ON ARE THE PARSER'S OWN WORDS, never a list retyped here", () => {
+  // KILLED BY: a status this file spells that the parser does not — the
+  // view would then rule on an empty column for ever and read as "nothing
+  // to triage". The vocabulary has one home (lib/parser), the same licence
+  // docs-scan.mjs takes for it.
+  const vocabulary = taskStatuses(repoRoot);
+  for (const status of TRIAGE_STATUSES) {
+    expect(vocabulary, `${status} is not a status this project's parser knows`).toContain(status);
+  }
+  expect(TRIAGE_STATUSES).toContain("suggested");
+});
+
+test("THE DEFAULT VIEW IS ONE COUNTED LINE AND `--full` IS THE PAGE, and every line carries its stamp", () => {
+  // KILLED BY: rendering the whole page at every verbosity — which is the
+  // regression T-225 already paid for once, on this same command, where
+  // the answer's own size turned out to be the triage queue's capacity.
+  // The clusters are ONE line per member set for the same reason.
+  const board = triageBoardFixture();
+  const at = "2026-09-09T00:00:00.000Z";
+  const brief = { root: repoRoot, ref: "abc1234", at, host: "fixture", full: false };
+  const short = render(triageClusterRecs(brief, { board }));
+  expect(short).toContain("add --full");
+  expect(short).toContain("7 live suggestion(s)");
+  expect(short).not.toContain("T-100-s1");
+
+  const full = render(triageClusterRecs({ ...brief, full: true }, { board }));
+  expect(full).toContain("BY FENCE");
+  expect(full).toContain("BY CLASS PARENT");
+  expect(full).toContain("DUPLICATE CANDIDATES");
+  expect(full).toContain("T-100-s1, T-100-s2, T-200-s1 — all reserve tools/e2e/scripts/gate-run.mjs");
+  expect(full).toContain("T-100: T-100-s1, T-100-s2");
+  expect(full).toContain("T-100-s1 ~ T-100-s9 (planned)");
+  // A parent with one live suggestion is not a cluster and is not a row.
+  expect(full).not.toMatch(/^T-400: /m);
+
+  // THE VIEW SAYS IT IS A VIEW. The criterion's own words — a flag for the
+  // human, never a closure — are on the page a triage seat reads, not only
+  // in a comment nobody opens.
+  expect(full).toContain("CHANGES NO CARD");
+  expect(full).toContain("NEVER A CLOSURE");
+
+  // THE PROVENANCE FLOOR, on both arms: every rendered line that is not a
+  // note ends in the stamp that says which tree it was read at.
+  expect(unstampedLines(short)).toEqual([]);
+  expect(unstampedLines(full)).toEqual([]);
+  expect(full).toContain("<- @ abc1234 ;");
+});
+
+test("THE VIEW IS A READ — it derives the live board and writes nothing into it", () => {
+  // KILLED BY: any write. This section's whole claim is that it changes no
+  // card, and a `DUPLICATE CANDIDATE` that closed one would be the worst
+  // available failure: a disposition nobody decided, wearing a report's
+  // clothes. The same guard health-bands.spec.ts keeps over docs/tasks/.
+  const before = spawnSync("git", ["status", "--porcelain", "docs/tasks/"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).stdout;
+  const ctx = context({ full: true });
+  const recs = triageClusterRecs(ctx);
+  const after = spawnSync("git", ["status", "--porcelain", "docs/tasks/"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).stdout;
+  expect(after).toBe(before);
+
+  // AND THE LIVE ANSWER IS INTERNALLY CONSISTENT, asserted as a shape
+  // rather than as a tally: every id it names is a live suggestion, and
+  // every live suggestion is either in a cluster or counted as alone.
+  const board = triageBoard({ cards: ctx.cards, readText: (file) => readDoc(file, ctx.root) });
+  const suggestions = board.filter((c) => c.status === "suggested").map((c) => c.id);
+  const clusters = triageClusters(board, ctx.slugs, ctx.comps);
+  const named = new Set([...clusters.fence.flatMap((c) => c.members), ...clusters.alone]);
+  expect([...named].sort(byCardId)).toEqual([...suggestions].sort(byCardId));
+  for (const d of clusters.duplicates) {
+    expect(suggestions, `${d.id} is flagged and is not a live suggestion`).toContain(d.id);
+    expect(suggestions, `${d.match} is a suggestion, so this is not a claim on a live card`).not.toContain(
+      d.match,
+    );
+  }
+  expect(unstampedLines(render(recs))).toEqual([]);
+});
+
+test("THE TRIAGE CLUSTERS REACH THE RENDERED ANSWER — `--dispatch --full` carries the section, and the default view does not", () => {
+  // T-282 criterion 1 names the RENDER SITE: "WHEN `brief.mjs --dispatch
+  // --full` renders its triage section". The lane built the derivation
+  // (`triageClusterRecs`) and six bodies over it inside its fence, and
+  // the one-line call that puts the section into the answer lived in
+  // `brief.mjs`, outside that fence (T-282-s1). This body is the one the
+  // wiring owes: the section's own headings, as `triageClusterRecs` spells
+  // them, must be IN the bytes the command writes — and only under
+  // `--full`, because the default view is the STARTABLE answer and the
+  // clusters are the triage view's. Measured through a file, never a
+  // pipe, so the assertion is over the whole answer (T-225-s1).
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t282s1-wiring-"));
+  try {
+    const answer = (argv: string[]): string => {
+      const out = path.join(dir, `${argv.length}.txt`);
+      const fd = openSync(out, "w");
+      let status: number | null;
+      try {
+        status = spawnSync(process.execPath, argv, { cwd: repoRoot, stdio: ["ignore", fd, "ignore"] }).status;
+      } finally {
+        closeSync(fd);
+      }
+      expect(status, `${argv.join(" ")} did not answer cleanly`).toBe(EXIT.CLEAN);
+      return readFileSync(out, "utf8");
+    };
+    const full = answer([CLI, "--dispatch", "--full"]);
+    for (const heading of ["THE TRIAGE CLUSTERS", "BY FENCE", "BY CLASS PARENT", "CHANGES NO CARD"]) {
+      expect(full, `the full view carries the section's own line ${JSON.stringify(heading)}`).toContain(heading);
+    }
+    // THE POSITIVE CONTROL: the default view is a different answer, so a
+    // body that passed because the heading was somewhere in every
+    // dispatch answer would be caught here.
+    const plain = answer([CLI, "--dispatch"]);
+    expect(plain, "the default view is the startable answer and carries no clusters").not.toContain("THE TRIAGE CLUSTERS");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

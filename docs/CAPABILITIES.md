@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **794 behaviours** — 792 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **803 behaviours** — 801 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -114,6 +114,13 @@ Census: **794 behaviours** — 792 extracted sentences + 2 named-not-extracted (
 - THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN — a gate citation the derivation cannot REACH is disclosed, never dropped
 - THE PACK'S COMPONENT ENTRIES ARE THE TOUCHED SLUGS' AND NOTHING ELSE
 - THE BRIEF DOES NOT SAY BOTH THINGS ABOUT docs/CONVENTIONS.md — ROW 3's applied set and the pack agree
+- THE FENCE CLUSTERS ARE KEYED ON GROUND EVERY MEMBER RESERVES, never on who is connected to whom
+- A DUPLICATE CANDIDATE NEEDS BOTH SIGNALS, and either one alone is not a flag
+- THE CLASS PARENT IS READ OFF THE CARD'S OWN LINES, in every spelling this board uses
+- THE STATUSES THIS VIEW RULES ON ARE THE PARSER'S OWN WORDS, never a list retyped here
+- THE DEFAULT VIEW IS ONE COUNTED LINE AND `--full` IS THE PAGE, and every line carries its stamp
+- THE VIEW IS A READ — it derives the live board and writes nothing into it
+- THE TRIAGE CLUSTERS REACH THE RENDERED ANSWER — `--dispatch --full` carries the section, and the default view does not
 
 ## card-figures
 
@@ -475,6 +482,8 @@ Census: **794 behaviours** — 792 extracted sentences + 2 named-not-extracted (
 - THE CONFIG'S REFUSAL REACHES THE COMMAND AS EXIT 3, not as a silent skip
 - --list is the TUNER's view: every band's measured reason, in full
 - a band whose drift and breach lines are ordered wrong can never say DRIFTING, and is refused
+- EVERY BAND'S LINES ARE STATED IN ITS OWN MEASURED REASON — a moved line owes a new derivation
+- A DERIVATION THAT NAMES NO RECORD IS REFUSED — a reason nobody can go and read is not a measurement
 - a doc-headroom band exists for every gated DOC_BUDGETS entry, derived and not listed
 - DOC_BUDGETS HAS ONE HOME — the gate and the bands read the same table
 - the graph headroom is READ OUT OF index --check's own budget line, in both of its shapes

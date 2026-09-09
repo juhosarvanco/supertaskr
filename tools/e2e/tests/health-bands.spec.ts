@@ -191,6 +191,131 @@ test("a band whose drift and breach lines are ordered wrong can never say DRIFTI
   expect(validateBands(broken)[0]).toContain("can never report DRIFTING");
 });
 
+/**
+ * Every number a measured reason STATES, comma grouping stripped. A line
+ * is "stated" only as a number token of its own: `140` does not state a
+ * breach of 40, and `9.3` does not state a drift of 9 — the substring
+ * reading passes both, and passing them is how a band drifts from its own
+ * derivation without anybody seeing it.
+ */
+function numbersStated(text: string): number[] {
+  return (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => Number(n.replace(/,/g, "")));
+}
+
+/**
+ * The records a derivation names: a commit ref, a card id, or a
+ * repository path. SHAPE ONLY, AND DELIBERATELY — ADR-019's Records
+ * clause says no suite, gate or generator may DEPEND on the contents of
+ * docs/checkpoints/, so this asks whether the reason cites something a
+ * reader can go and open, never whether that file is still there.
+ */
+function recordsNamed(text: string): string[] {
+  const refs = text.match(/\b(?=[0-9a-f]{7,40}\b)[0-9a-f]*[a-f][0-9a-f]*\b/g) ?? [];
+  const cards = text.match(/\bT-\d+(?:-s\d+)?\b/g) ?? [];
+  const paths = text.match(/\b[\w.-]+\/[\w./*-]+/g) ?? [];
+  return [...refs, ...cards, ...paths];
+}
+
+test("EVERY BAND'S LINES ARE STATED IN ITS OWN MEASURED REASON — a moved line owes a new derivation", () => {
+  // T-282 criterion 4. The failure this catches is the one the whole file
+  // is written against, arriving by the cheapest route: somebody moves a
+  // limit and leaves the paragraph that justified the old one, so the
+  // config still reads as measured while the number behind it is a guess.
+  // An outside review proposed exactly that for triage/live-suggestions —
+  // 40 to 80, no measurement — and the ruling was to re-derive instead.
+  for (const b of allBands(DOC_BUDGETS)) {
+    const stated = numbersStated(b.measured.reason);
+    for (const [name, line] of [
+      ["drift", b.drift],
+      ["breach", b.breach],
+    ] as const) {
+      if (line === null) continue;
+      expect(
+        stated,
+        `${b.id}'s ${name} line is ${line} and its measured reason never states that number — ` +
+          "a moved line owes a new derivation, and the remedy is the measurement, never the assertion",
+      ).toContain(line);
+    }
+  }
+
+  // THE POSITIVE CONTROL, because a checker that has only ever seen
+  // agreeing input cannot be told from one that decides nothing: move a
+  // real band's line by one and the same check fails on the same band.
+  const real = STANDING_BANDS.find((b) => b.id === "triage/live-suggestions")!;
+  expect(numbersStated(real.measured.reason)).toContain(real.breach);
+  const moved = { ...real, breach: (real.breach ?? 0) + 1 };
+  expect(numbersStated(moved.measured.reason)).not.toContain(moved.breach);
+
+  // AND THE RE-DERIVED BANDS' LINES ARE PINNED TO THE SENTENCE THAT
+  // DERIVES EACH ONE, never to the bag of numbers the paragraph happens
+  // to contain. MEASURED: triage/live-suggestions' reason states 19
+  // distinct values between 1 and 200, so the membership check above
+  // passes for breach 80 — the exact number the outside review proposed
+  // and this ruling REFUSED — and for 140, and for drift 22. A number
+  // that appears because the derivation argued AGAINST it is not a
+  // derivation of that number.
+  expect(
+    real.measured.reason,
+    "triage/live-suggestions' drift line is not the number its own derivation sentence derives",
+  ).toContain(`The drift line is that measured sitting: ${real.drift} cards`);
+  expect(
+    real.measured.reason,
+    "triage/live-suggestions' breach line is not the number its own derivation sentence derives",
+  ).toContain(`The breach line is TWO of it — ${real.breach} cards`);
+  const net = STANDING_BANDS.find((b) => b.id === "triage/net-arrivals-per-window")!;
+  expect(
+    net.measured.reason,
+    "triage/net-arrivals-per-window's breach line is not the ceiling its own sentence re-derives",
+  ).toContain(`to zero cheaply from 40 to ${net.breach}`);
+});
+
+test("A DERIVATION THAT NAMES NO RECORD IS REFUSED — a reason nobody can go and read is not a measurement", () => {
+  // T-282 criterion 4's second half. `validateBands` already refuses an
+  // EMPTY `measured`, which leaves the interesting case open: a reason
+  // full of confident prose that cites nothing. That is what a raised
+  // band looks like from the inside, and it is indistinguishable from a
+  // derived one on every check this file had before.
+  // MEASURED BY THIS CARD'S OWN DRILL, and the reason the check is on the
+  // ADDRESS rather than on the entry as a whole: an earlier form asked
+  // `at` and `reason` TOGETHER, and the mutant that replaced a real `at`
+  // with "raised at the review, by agreement" SURVIVED — the prose beside
+  // it still cited a source, so the band read as addressed while its
+  // address had become a sentence. `at` is where the measurement was
+  // TAKEN; the reason may argue in words, and one band's honestly does.
+  for (const b of allBands(DOC_BUDGETS)) {
+    expect(
+      recordsNamed(b.measured.at),
+      `${b.id}'s measured.at names no commit, no card and no path — there is nothing there a ` +
+        "later reader can open, and a measurement with no address is a sentence",
+    ).not.toEqual([]);
+    // AND THE DERIVATION ITSELF, which is what the criterion says: "a
+    // body SHALL red when THE DERIVATION names no record". MEASURED: with
+    // the address alone checked, this entry's whole reason could be
+    // replaced by "everybody at the review agreed ... we are confident
+    // this is right" — keeping the two numbers, naming nothing — and the
+    // suite stayed 24-for-24 green. The address says WHERE the reading
+    // was taken; the reason has to say WHAT it was taken from.
+    expect(
+      recordsNamed(b.measured.reason),
+      `${b.id}'s measured reason cites no commit, no card and no path — it argues, and an ` +
+        "argument nobody can go and check is the raised line this file exists to refuse",
+    ).not.toEqual([]);
+  }
+
+  // THE CONTROLS, both ways. The three shapes that ARE records, each
+  // alone, and the shape that is not one however sure it sounds.
+  expect(recordsNamed("3ff7f30, over the window")).toEqual(["3ff7f30"]);
+  expect(recordsNamed("standing in T-088-s4's own hazards")).toEqual(["T-088-s4"]);
+  expect(recordsNamed("docs/checkpoints/2026-08-29-amnesty-triage.md")).toEqual([
+    "docs/checkpoints/2026-08-29-amnesty-triage.md",
+  ]);
+  expect(
+    recordsNamed("the line felt too tight for the way this board moves now, so we doubled it"),
+    "a recordless justification passes as a derivation, which is the whole defect",
+  ).toEqual([]);
+  expect(recordsNamed("raised at the review of 2026-09-09 by agreement")).toEqual([]);
+});
+
 test("a doc-headroom band exists for every gated DOC_BUDGETS entry, derived and not listed", () => {
   // The staleness this avoids is the one this repository has paid for
   // repeatedly: a hand-written list that goes out of date the day a

@@ -141,9 +141,9 @@ export const STANDING_BANDS = [
         "at a MEAN of 15,751 bytes over 55 growths on record (median 5,230, max 241,980 at " +
         "T-010). That doc comment rejected a 10,819-byte headroom in those words: 'one " +
         "ordinary merge from truncating'. So the breach line IS one mean growth — the state " +
-        "the authority already refused — and the drift line is four of them, about a " +
-        "checkpoint window's worth at the cadence of 2026-08-29 (four checkpoints in one " +
-        "day). Crossing the budget DEGRADES rather than fails: symbol arrays are dropped " +
+        "the authority already refused — and the drift line is four of them, 63,004 bytes, " +
+        "about a checkpoint window's worth at the cadence of 2026-08-29 (four checkpoints in " +
+        "one day). Crossing the budget DEGRADES rather than fails: symbol arrays are dropped " +
         "and `truncated_*` is set, which is exactly why nothing reds and a band is the " +
         "only thing that would ever have said so.",
     },
@@ -191,9 +191,9 @@ export const STANDING_BANDS = [
         "NO CLIFF IS KNOWN FOR THIS SUITE, so this band is a RELAPSE tripwire and says so " +
         "rather than pretending to a mechanism — unlike suite/lib-seconds, whose limits are " +
         "an observed gap between two populations. The landed measurement is this lane's own " +
-        "full run, 279 specs at 156 seconds; the multiples are 1.5x and 2.0x, the ratio " +
-        "shape DOC_BUDGETS already uses for warn and fail, chosen because it is the pattern " +
-        "this repository tunes by triage. The lane runs `workers: 1, retries: 0` by design, " +
+        "full run, 279 specs at 156 seconds; the multiples are 1.5x and 2.0x — 234 and 312 " +
+        "seconds, which are the lines — the ratio shape DOC_BUDGETS already uses for warn and " +
+        "fail, chosen because it is the pattern this repository tunes by triage. The lane runs `workers: 1, retries: 0` by design, " +
         "so wall time is close to linear in spec count — which means THIS BAND MOVES AT " +
         "EVERY SUITE GROWTH and is expected to be re-landed rather than defended. Re-land " +
         "it with the run that measured it, and say which run that was.",
@@ -204,22 +204,47 @@ export const STANDING_BANDS = [
     metric: "live cards at status: suggested",
     unit: "cards",
     healthy: "below",
-    drift: 20,
-    breach: 40,
+    drift: 46,
+    breach: 92,
     authority: {
       kind: "tree",
       name: "the flat docs/tasks/T-*.md frontmatter, the board's own census",
     },
     measured: {
-      at: "3ff7f30, docs/checkpoints/2026-08-29-amnesty-triage.md",
+      at:
+        "3a69385, over the checkpoint records since the amnesty — " +
+        "docs/checkpoints/2026-08-29-amnesty-triage.md, the five standing-triage records of " +
+        "2026-08-30 and 2026-08-31, and the windows stamped in the 2026-09-02 fourth fable " +
+        "sitting and the 2026-09-03 form sitting; arrivals cross-read off the live cards' own " +
+        "suggested_by dates and their git add-dates at that ref",
       reason:
-        "THE AMNESTY IS THE ONLY MEASUREMENT THIS PROJECT HAS OF WHAT A BACKLOG COSTS: 140 " +
-        "cards dispositioned in one architect sitting for ~477k tokens, i.e. ~3.4k tokens " +
-        "per card. At that measured rate a 40-card backlog costs ~136k tokens — the largest " +
-        "one a single sitting clears without becoming its own project, which is what 140 " +
-        "had become. The drift line is half of it. The failure this band names is not size; " +
-        "it is a backlog crossing the threshold where clearing it needs a DECISION, because " +
-        "that is the point at which it stops being cleared at all.",
+        "RE-DERIVED FROM THE LOOP'S OWN MEASURED RATES, NOT RAISED (T-282, @human decision 4 of " +
+        "2026-09-09, which refused an outside review's proposal to move this line from 40 to 80 " +
+        "with no measurement behind it). THE AMNESTY IS NO LONGER THE ONLY READING, and that is " +
+        "why these lines moved. Eight sittings since it stamped a tally and TWO stamped a cost: " +
+        "the amnesty dispositioned 140 cards for 477,081 tokens over 45.5 minutes (~3.4k per " +
+        "card) — the band's own prior entry (git show 3a69385:tools/e2e/scripts/health-bands.config.mjs) called that the state where clearing had 'become its own " +
+        "project'; standing triage sitting #1 the next day took the queue 46 -> 0 for 227,693 " +
+        "tokens over 26 minutes (~4.9k per disposition, the premium being the preflight on " +
+        "every promotion). The sittings after it cleared 22, 14, 14 and 5, and the two later " +
+        "windows 16 and 5 — every one of them under 46. SO THE LARGEST BACKLOG A SINGLE SITTING " +
+        "HAS EVER TAKEN TO ZERO CHEAPLY IS 46, and the only larger clear on record is the " +
+        "amnesty's 140. The drift line is that measured sitting: 46 cards, the largest clear " +
+        "this project can prove is cheap. The breach line is TWO of it — 92 cards, which at the " +
+        "measured 4.9k per disposition costs ~451k tokens, the amnesty's own 477k bill reached " +
+        "from the other side — and it sits inside an EMPTY interval, because no sitting on " +
+        "record has ever cleared anything between 46 and 140, which is the shape " +
+        "suite/lib-seconds' band is cut from. WHAT MADE THE OLD 40 STOP DISCRIMINATING IS THE " +
+        "ARRIVAL RATE: the loop filed 14 suggestions on 2026-09-08 and 57 on 2026-09-09 by git " +
+        "add-date, so a line at 40 breaches after a single night of the loop by construction " +
+        "and says nothing about whether the queue can be cleared. THE UNIT STAYS `cards` " +
+        "DELIBERATELY (T-282 criterion 3, answered rather than assumed): the backlog's AGE and " +
+        "its arrival RATE — the two alternatives that criterion names — are already kept by " +
+        "triage/oldest-suggestion-days and triage/net-arrivals-per-window, so what this band " +
+        "owed was not a different quantity but a rate-derived line; and the reading itself is a " +
+        "card count computed by readingsFromTree in health-bands.mjs, outside this card's " +
+        "fence, so a unit renamed here would be a label disagreeing with its own number — the " +
+        "silent mis-report this whole file exists against.",
     },
   },
   {
@@ -236,7 +261,8 @@ export const STANDING_BANDS = [
     measured: {
       at: "3ff7f30; the first suggestion card was added 2026-08-14, the amnesty ran 2026-08-29",
       reason:
-        "15 DAYS IS NOT A ROUND NUMBER — it is the amnesty's own worst reading. The board's " +
+        "15 DAYS IS NOT A ROUND NUMBER — it is the amnesty's own worst reading " +
+        "(docs/checkpoints/2026-08-29-amnesty-triage.md). The board's " +
         "first suggestion card arrived on 2026-08-14 and was still untriaged when the " +
         "sitting that cleared 140 of them was finally called on 2026-08-29. The breach line " +
         "is therefore the exact age at which this project has already proved a backlog " +
@@ -251,20 +277,28 @@ export const STANDING_BANDS = [
     unit: "cards",
     healthy: "below",
     drift: 9,
-    breach: 40,
+    breach: 46,
     authority: {
       kind: "tree",
       name: "git log --diff-filter=A/D over docs/tasks/, since the newest `Checkpoint:` commit",
     },
     measured: {
-      at: "3ff7f30, over the window 2026-08-14 to 2026-08-29",
+      at:
+        "3ff7f30, over the window 2026-08-14 to 2026-08-29; the breach line re-read at 3a69385 " +
+        "against triage/live-suggestions' own re-derivation (T-282)",
       reason:
         "ADR-020's metabolism question is a RATE question, not a level one: 140 suggestions " +
         "accumulated over 15 days is 9.3 arrivals a day against dispositions that ran at " +
-        "ZERO until the amnesty. The drift line is one measured day's arrivals; the breach " +
+        "ZERO until the amnesty. The drift line is one measured day's arrivals, 9; the breach " +
         "line is the count band's own one-sitting ceiling reached inside a single checkpoint " +
         "window, which is the metabolic failure — not a big backlog, but a window in which " +
-        "the board took in more than the next sitting can give back.",
+        "the board took in more than the next sitting can give back. THAT CEILING IS A " +
+        "DERIVED QUANTITY AND IT MOVED, so this line moved with it: T-282 re-derived the " +
+        "largest backlog a single sitting has taken to zero cheaply from 40 to 46 (standing " +
+        "triage sitting #1 of 2026-08-30, 46 -> 0 for 227,693 tokens in 26 minutes), and a " +
+        "breach line still reading 40 would name a ceiling this config no longer holds. The " +
+        "drift line is NOT re-derived here — it belongs to the arrival measurement above and " +
+        "T-282 measured the clearing side.",
     },
   },
   {
