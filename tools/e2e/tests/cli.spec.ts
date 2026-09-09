@@ -1056,9 +1056,19 @@ test("every command the skills' own cards name is a verb this package exposes", 
   // into this file: the verb set is read off T-241's and T-242's cards,
   // which are where the skills' command lines live until the skills do.
   const cards = readdirSync(path.join(repoRoot, "docs", "tasks"))
-    .filter((n) => /^T-24[12]-/.test(n))
-    .map((n) => readFileSync(path.join(repoRoot, "docs", "tasks", n), "utf8"));
-  expect(cards.length, "both skill cards were found").toBe(2);
+    // The two PARENT cards only: a sub-card (T-241-s3-…) is a finding filed
+    // under the parent, not a skill card, and T-241's merge landed five of
+    // them — this body redded battery57 on 8bf42b0 by counting them.
+    .filter((n) => /^T-24[12]-(?!s\d+-)/.test(n))
+    .map((n) => readFileSync(path.join(repoRoot, "docs", "tasks", n), "utf8"))
+    // THE SPEC PART ONLY — the text before the card's implementation notes
+    // and verdicts. Those sections name whatever a lane and its verifier
+    // RAN (T-241's name the pack's own golden-check.mjs and
+    // host-command-check.mjs, which are the pack's scripts and not verbs
+    // this package owes); the criteria are where the skills' command
+    // lines live.
+    .map((c) => c.split(/\n## (?:Implementation notes|Verdicts)\b/)[0] ?? c);
+  expect(cards.length, "both skill cards were found, and no sub-card").toBe(2);
   const quoted = cards.flatMap((c) => [...c.matchAll(/`([^`\n]+)`/g)].map((m) => m[1] ?? ""));
   const commands = quoted.filter((q) => /\.mjs\b/.test(q));
   expect(commands.length, "the cards really name commands").toBeGreaterThan(0);
