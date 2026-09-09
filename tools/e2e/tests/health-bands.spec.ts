@@ -253,11 +253,18 @@ test("A DERIVATION THAT NAMES NO RECORD IS REFUSED — a reason nobody can go an
   // full of confident prose that cites nothing. That is what a raised
   // band looks like from the inside, and it is indistinguishable from a
   // derived one on every check this file had before.
+  // MEASURED BY THIS CARD'S OWN DRILL, and the reason the check is on the
+  // ADDRESS rather than on the entry as a whole: an earlier form asked
+  // `at` and `reason` TOGETHER, and the mutant that replaced a real `at`
+  // with "raised at the review, by agreement" SURVIVED — the prose beside
+  // it still cited a source, so the band read as addressed while its
+  // address had become a sentence. `at` is where the measurement was
+  // TAKEN; the reason may argue in words, and one band's honestly does.
   for (const b of allBands(DOC_BUDGETS)) {
     expect(
-      recordsNamed(`${b.measured.at} ${b.measured.reason}`),
-      `${b.id}'s measured entry names no commit, no card and no path — there is nothing here a ` +
-        "later reader can open and argue with",
+      recordsNamed(b.measured.at),
+      `${b.id}'s measured.at names no commit, no card and no path — there is nothing there a ` +
+        "later reader can open, and a measurement with no address is a sentence",
     ).not.toEqual([]);
   }
 
