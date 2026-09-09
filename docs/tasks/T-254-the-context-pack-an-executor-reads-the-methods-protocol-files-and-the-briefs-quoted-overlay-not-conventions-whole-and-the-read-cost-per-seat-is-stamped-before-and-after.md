@@ -293,3 +293,50 @@ Both are recorded because a body repaired on the assertion side is
 exactly the shape that should be visible to a verifier.
 
 ## Verdicts
+
+## The gates, derived against the MERGE'S TREE and not at the tip
+
+`TREE=$(git merge-tree --write-tree $(git rev-parse main) HEAD)` exit 0,
+then `git diff --name-only <main> "$TREE"` — **8 paths**, at main tip
+`44a5ff66bb831138707022c2626ec3062957f504`. Read with `range-rule.mjs`'s
+own trigger readers rather than by eye, and derived against the merge's
+tree because this notes commit is the one that feeds the DOCS GATE: a set
+derived at the tip before it would have missed the gate it triggers
+(executor.md's report row states this exactly). **The path set does not
+move when this commit lands** — it already contains this card.
+
+| gate | verdict | derived on |
+|---|---|---|
+| GRAPH REGEN | **FIRES** | 1 of 8 — `tools/e2e/tests/brief.spec.ts` |
+| BOOT GATE | NOT OWED | 0 of 8 |
+| DOCS GATE | **FIRES** | 4 paths under `docs/` |
+| METHOD EVAL GATE | **FIRES** | 2 paths under `method/` |
+
+**GRAPH REGEN FIRES AND THE GATE SAYS NOTHING MOVED — ASKED, NOT
+PREDICTED.** `cargo run -p supertaskr-index -- index --check --root ../..`
+from app/src-tauri/, exit **0**: *graph.json is CURRENT … (1,198,602
+bytes, 201 files, 2,560 symbols, 2,453 edges)*, budget 55.9%. That is the
+case CONVENTIONS' own trigger bullet names — `tools/**` matches the
+trigger and cannot move the graph, because `.supertaskrignore` excludes
+it. The regen at the checkpoint is the integrator's either way.
+
+**DOCS GATE, asked and answered**: `node tools/e2e/scripts/docs-gate.mjs`
+over the four card paths, exit **1**, three suites named — and all three
+run at this tip:
+
+| leg | exit | bodies | verdict |
+|---|---|---|---|
+| `gate-run.mjs parser` @ `2727e63` | 0 | 389 | GREEN |
+| `gate-run.mjs app` @ `2727e63` | 0 | 1171 | GREEN |
+| `SUPERTASKR_E2E_PORT=15254 gate-run.mjs e2e` @ `2727e63` | 0 | 747 | GREEN |
+| `SUPERTASKR_E2E_PORT=15254 gate-run.mjs e2e` @ `9c1a5fa` | 0 | 747 | GREEN |
+
+Every live card's frontmatter parses with a legal status; the injection
+scan reports 0 hits over the four paths. The RUST leg was not run and is
+not owed: BOOT GATE is not owed and no crate moved.
+
+**A LIVE FACT, READ RATHER THAN TRUSTED**: another session held the
+gate-runner's solo lock while this lane's final e2e leg queued behind it
+— a `gate-run.mjs e2e` and a four-leg battery in
+`/Users/ujju/Projects/nputer`, read at 2026-09-09T07:05Z on Mac.lan with
+`ps`. The leg ran to GREEN once the lock cleared.
