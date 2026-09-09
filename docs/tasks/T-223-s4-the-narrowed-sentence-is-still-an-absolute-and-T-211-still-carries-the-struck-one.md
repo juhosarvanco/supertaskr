@@ -612,3 +612,48 @@ already carries **49** lines over 74 columns and its longest line is
   string — the sentence a REFUSED executor actually reads — still carries
   the same absolute unbound.
 
+
+### The four blessed suites, run at THIS VERDICT'S OWN TIP
+
+**A verdict is a WRITE, and prose is a code input here** — three cards
+moved in the commit above, and the board is parsed by the suites. So the
+gates were run at the tip the verdict itself created rather than at the
+commit I was sent. **The ref is named so the figures stay true after this
+block lands**: every row below was measured at
+`2be001d32bbe8048b2c1045854477c82c1b3587e`, the verdict commit, with
+`node tools/e2e/scripts/gate-run.mjs <suite>` from the bench root and
+`SUPERTASKR_E2E_PORT=25223`. This block is the only content written
+afterwards, and it is card body prose — the frontmatter has not moved
+since those runs.
+
+| suite | exit | bodies | targets | verdict |
+|---|---|---|---|---|
+| `parser` | **0** | **389** | 1 | GREEN |
+| `app` | **0** | **1163** | 1 | GREEN |
+| `rust` | **0** | **639** | 18 | GREEN |
+| `e2e` | **0** | **706** | 1 | GREEN |
+
+**The count was read beside every exit**, not instead of it: an exit 0
+over zero bodies is a harness failure wearing a pass, and `gate-run`
+prints `bodies=` precisely so that cannot go unnoticed. `parser`, `app`
+and `e2e` match the executor's own figures exactly (389 / 1163 / 706),
+measured independently at a different commit in a different worktree.
+`rust` has no row in the executor's table — the DOCS GATE named only the
+other three, so it was not owed there; it is run here and it is green.
+
+The DOCS GATE's own three (`parser`, `app`, `e2e`) are therefore green at
+a tree that already contains this verdict, `T-223-s7` and the `T-223-s6`
+corroboration. Ancillary, at the same tip: `npm run lint:docs` exit
+**0**; `node tools/method-evals/run.mjs` exit **0** over **10**
+model-free evals; and the citation above judged **VERIFIED** against the
+saved file by `node tools/method-evals/verdict-digest.mjs --scratch
+<dir>`, exit **0**, 1 verified / 0 REFUSED / 0 unavailable.
+
+**THE METHOD EVAL GATE FIRES ON THIS COMMIT AND IT IS OWED AT THE
+MERGE.** The verdict above adds a line matching the citation grammar
+under `docs/tasks/` — `attack set: sha256:<hex> (<file>)` opening a line
+of its own — which is exactly the trigger `MF-10` was built for and the
+one the executor's own range correctly did NOT fire. The runner is
+`node tools/method-evals/run.mjs` from the repo root; it needs no
+install; it is exit **0** here and its result belongs in the merge's
+checkpoint.
