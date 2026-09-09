@@ -285,6 +285,92 @@ not that pass.
   put it; the name `supertaskr` is free), **T-244-s3** (the installer has
   nothing to install until `method/skills/` exists).
 
+## Fix pass (executor, 2026-09-09, after the REJECTED verdict at `f809cd9`)
+
+Every finding was inside the fence, so every one is fixed in place. The
+verdict's own reproductions were re-run against the fix.
+
+- **R1 — `undo` failed OPEN on an empty fence expansion.** `expandFence`
+  now carries the expander's whole answer — `paths`, `unusable`,
+  `unfenceable` — and `main` REFUSES (exit 3) when `paths` is empty,
+  naming the tokens that would not resolve. Re-derived at my ref: of
+  **253** done cards carrying a `touches:` line, **99** expand to an
+  empty fence and all 99 now refuse; **154** expand to paths and are
+  unaffected. The verdict's own reproduction, re-run:
+  `undo T-018 … --dry-run` → exit **3**, *"expands to NO paths (the ONE
+  expansion could not resolve app-shell) … Nothing was reverted."*
+- **R2 — the id was matched as an unbounded substring.** `mentionsCard`
+  matches on a token boundary, so `"Merge T-244-s3"` no longer answers to
+  `T-244`. Unit-checked in both directions plus an end-to-end body where
+  a `T-9` card must not select `Merge T-900`'s merge.
+- **R3 — the scanned ref and the mutated ref were uncoupled.** `undo`
+  now requires HEAD to be `refs/heads/<the scanned branch>` and refuses
+  otherwise, naming both. Re-run from this lane: exit **3**, *"this scans
+  main and `git revert` rewrites HEAD, and HEAD is
+  refs/heads/task/T-244-npx-supertaskr"*. A body covers the detached case
+  and the other-branch case, asserting HEAD did not move.
+- **R4 — `merge`'s clean-tree precondition could not fail.** The step
+  declares `assert: "empty-output"` and the runner grades it on its
+  OUTPUT, because `git status --porcelain` exits 0 on a filthy tree. A
+  body drives a dirty fixture (stopped, nothing staged) with the clean
+  tree as its positive control.
+- **VM1 — the passthrough had no body.** One now asserts the tail of the
+  child's argv IS the caller's arguments, over six literal arguments
+  including `--`, an empty string and `;id`, both through `planFor` and
+  through `main` with the spawn observed.
+- **VM2 — the executed revert had no body, and the printed string was a
+  second spelling.** The printed command is now built FROM the argv that
+  is spawned, and a body runs `undo` WITHOUT `--dry-run` against a
+  fixture and asserts the pre-lane tree is back — which is what `-m 1`
+  means and what `-m 2` would break.
+- **R6 — room item 27's second half was prose.** `graphPinLine` is a
+  pure function of the staged graph and a date, producing the house's
+  `RECONCILED AT THE <id> MERGE (<date>, integrator)` line with the
+  graph's own file, symbol and edge counts; the dogfood step carries
+  `action: "graph-pins"` and the runner prints it. A body decides the
+  VALUE, with a second graph proving the numbers move.
+- **AC-2's under-exposure** — `node tools/method-evals/run.mjs` is now
+  the `evals` verb (a new `project` target kind, resolved against the
+  PROJECT root), and the body that checks coverage is DERIVED: it reads
+  T-241's and T-242's own cards for their backticked command lines and
+  requires an exact-membership match, never a substring.
+- **The smaller ones:** the `merge` verb now WRITES the done stamp
+  (`stampDone`, filling only an EMPTY `built_by:`/`verified_by:`, with
+  `--built-by`/`--verified-by` required on a real run) and stages what it
+  regenerates (`git add docs/CAPABILITIES.md`, `git add docs/architecture`);
+  an absent project docs-gate is named as a step instead of becoming a
+  stack trace; a conflicted revert now names `git revert --abort`; and
+  the installer REFUSES to clobber a destination that differs, `--force`
+  being the named choice.
+- **T-244-s4's shape** (a ref reaching git with no `--`): the `--`
+  separator is added to every `git log`/`git diff` this lane spawns, and
+  R3's branch check makes the `--branch` vector unreachable by
+  construction. Re-run of the verifier's own probe:
+  `--branch '--output=/tmp/probe-T-244.txt'` → exit **3**, and the file
+  was **NOT created**. The card stands; its disposition is triage's.
+
+### The drill at the fix pass — 31-for-31
+
+Ten mutants added to the twenty-one, including the verifier's own two
+(VM1, VM2) and one per finding. **31-for-31 killed by the body that owns
+the property; restoration 31-for-31 sha256-proved.** Two needed a second
+aim and both are recorded rather than quietly re-run: VM10's anchor
+matched nothing on the first attempt (NOT-APPLIED, never counted as a
+kill), and **VM13 SURVIVED first** — repointing the `evals` verb at
+`gate-run.mjs` passed a `toContain("run.mjs")` check, because one
+script's name is inside another's. That is the verifier's R2 class in my
+own spec, and the body now tests exact membership.
+
+### The suites at the fix-pass tip `4aa3943`
+
+parser GREEN 377 · app GREEN 1163 · rust GREEN 639 over 18 targets · e2e
+GREEN **737** (up from 727: ten new bodies), every one exit 0, read off
+the blessed gate-runner's `gate-verdict` lines. One e2e failure was
+observed in a gate-run temp directory during this window and it is NOT
+this lane's run — the concurrent bench's, whose live-board arm reported
+*"BOARD MOVED"* while this lane was committing. This lane's own e2e leg
+carries zero failures.
+
 ## Verdicts
 
 ## Folded 2026-09-09 from docs/rooms/loop-efficiency.md (items 18 and 27)
