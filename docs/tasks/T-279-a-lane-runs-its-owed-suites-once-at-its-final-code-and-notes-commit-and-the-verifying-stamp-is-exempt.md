@@ -216,3 +216,213 @@ a block measured in a lane is a figure from the wrong tree:
   with CANNOT TELL meaning the suites are owed.
 
 ## Verdicts
+
+### APPROVED — 2026-09-09, claude-opus-5@subagent (verifier, phase 2)
+
+Tip judged `7b9f2ee49f0b19287206da929911c50990457d39`, against the base
+`c768f2f67b2227ea7490b69bbf2cebfe444d56d4`, on the detached bench
+`/Users/ujju/Projects/nputer-V-T-279`. Sealed inputs, verified by
+`shasum -a 256` before anything else was opened:
+
+- attack set `sha256:1fd9ebc4f9eeb6345d45dbb43d623742fb09255de9a339e4b88f6d716179a711`
+- ground truths `sha256:9ebe5c4e0a390d6ff170be7681a7896f7e5cf8b8256b1e53cbcc5d245781d589`
+
+**THE FRAME I ACTUALLY HAD.** Two spawns. Phase 1 wrote its attack set
+tool-less by instruction at the base and it is the file hashed above;
+this phase read, in order, the two sealed files, `method/roles/verifier.md`,
+`docs/STATE.md`, the card AT THE BASE, the diff, and the tip — and opened
+the executor's report and this card's implementation notes ONLY after its
+findings were written out (`findings-T-279.md`,
+`sha256:d52460883d719a3f41c06339bd7386deb6e9d3dbcd0b10c8d6224c1d5158f1a9`,
+written before either was read). **My brief carried NO CONTEXT PACK**,
+which `roles/verifier.md` step 0 calls a dispatch fault: I therefore read
+`docs/STATE.md` whole and opened `docs/CONVENTIONS.md` by the bullets I
+needed (the build order, the test commands, the POISON DRILL), and I say
+so here rather than claiming a pack I did not have. The brief's duties
+half named no mutant number, path count or suite figure, so phase 1 was
+not broken above the line.
+
+#### The structural check first — this card REMOVES work, so what went missing
+
+    f88b289  method/roles/executor.md, method/lane-protocol.md      (code)
+    c28ec46  the card + T-279-s1 + T-279-s2                         (notes and cards)
+    7b9f2ee  the card                                               (the stamp)
+
+The stamp commit's whole diff is one file, one hunk, one line pair:
+`-status: building` / `+status: verifying` (`git show --numstat` reports
+`1 1`). AC2's precondition holds exactly, and the exemption was earned
+rather than assumed.
+
+**Which tree the one surviving run graded.** Re-derived independently of
+the report, from the lane's own runner token
+(`nputer-T-279/.supertaskr/gate-verdict.json`, read-only): parser, app
+and e2e each `verdict=GREEN`, `dirty=false`, all three at
+`ref=c28ec464571d1058ab937e26de2adf4007ea3e68`, tree `63c1c1e` — the
+commit that carries the code AND the notes AND the two suggested cards,
+not its parent. No entry stands at `7b9f2ee`: nothing was re-run for the
+stamp. The token records only each suite's LAST run, so it cannot by
+itself forbid a second; the e2e stamp at 09:01:42Z against a leg the
+report clocks at 13.0m starting 08:48:43Z leaves room for exactly one.
+**One end-to-end leg on this lane, against T-278's two and T-256's
+three.** The lane is the first to obey the rule it lands.
+
+**Counts re-derived at MY tip, not transcribed.** My own four-suite
+battery at `7b9f2ee` returns parser 389, app 1171, e2e 764 — the same
+three numbers the report claims at `c28ec46`, and `method/` is
+byte-identical across those two commits (`git diff --stat c28ec46
+7b9f2ee -- method/` is empty). The eval block on this card is not typed:
+`node tools/method-evals/run.mjs --bump` re-run at `c28ec46` in a scratch
+clone prints those eight lines, byte for byte, exit 3 for the unset
+runner.
+
+**Fence.** `git diff --name-only c768f2f..7b9f2ee` is the two `touches:`
+paths, this card and two new cards under `docs/tasks/`. Untouched:
+`verifier.md`, `integrator.md`, `merge.mjs`, `cli.spec.ts` (T-281 live),
+`gate-run.mjs`, `gate-run.spec.ts`, `docs/CONVENTIONS.md` (T-271 live),
+`workflow-parity.spec.ts`, `plan-interview.md`, `kit.rs`. **No bump
+inside the fence**: no version literal moved and `0.1.12` still stands in
+all three stamp files. **No record rewritten**: everything above
+`## Implementation notes` is byte-identical to the base but for the
+status line — no criterion reworded, and the measured figures the card
+rests on (T-278 two, T-256 three, T-238-s1 three) are untouched. No provenance arrow — the two-character sequence the card preflight reads
+as one — was written into any file this lane authored.
+
+#### The criteria
+
+1. **MET.** Step 4 now separates the working runs ("as often as you need
+   … nobody counts them") from the graded one and points at the new
+   section; the section puts the suites at the commit already carrying
+   code, notes and cards; the report spec gained *"AND EVERY GRADED SUITE
+   BY NAME, WITH THE REF IT RAN AT AND ITS BODY COUNT BESIDE THE EXIT"*.
+   The attack set's likeliest failure — ONCE landed without the reorder,
+   so the one run grades a stale tree — does not apply in the text or on
+   this lane's own refs.
+2. **MET.** The exemption keys on the DIFF, never the subject: *"A last
+   commit that moves nothing but your card's own `status:` line to
+   `verifying` re-runs no suite"*. Tested adversarially against three
+   commits — (a) status only: exempt; (b) status plus a source file: NOT
+   exempt; (c) card notes plus a source file: NOT exempt. The grader is
+   named beside it (the bench at your tip; the merge's own battery where
+   the ceremony row gives no verifier), which is the reason clause AC2
+   asks to travel with the rule.
+3. **MET.** *"A FIX PASS AFTER A VERDICT IS A NEW TREE AND OWES ITS OWN
+   RUN"* — trigger is a fix pass, not a verdict, and the whole-suite
+   default is explicit ("scoped where your project can scope them and
+   whole where it cannot"). T-271 is not named; that is the RIGHT call,
+   not a miss — a project card id does not belong in project-neutral
+   method text, and the criterion's substance is carried.
+4. **MET, in the strict reading of "once".** The order is stated in
+   EXACTLY ONE file; `lane-protocol.md` rule 4 gains a pointer that
+   explicitly declines to second-spell it. The reason is the next
+   paragraph. The numbered steps do not contradict the section. Method
+   eval gate green (exit 0, 10 evals; `--selftest` exit 0), re-run by me
+   at both `c28ec46` and the tip.
+5. **MET.** *"IF YOU CANNOT TELL … RUN THEM AGAIN"*, direction RUN, with
+   the observation that settles it named (*"The check is one diff"*), and
+   *"the exemption is for the stamp alone"* in the same sentence. No
+   modal was softened anywhere in the chain: no MAY skip, no SHOULD.
+
+#### The grammar collision, checked whether or not the diff looked near it
+
+`readSubtractions` / `readAdditions` over the TIP's `executor.md` answer
+`["docs/CONVENTIONS.md","docs/ROADMAP.md"]` and `["tasks/TASK-FORMAT.md"]`
+— identical to the base. `lane-protocol.md` subtracts and adds nothing.
+No document was removed from every future brief by a wording accident.
+
+#### Security sweep (mandatory, and the diff being prose is why)
+
+The injection surface here is a sentence, and both shapes were tested: an
+exemption that widens (bounded, and it fails safe toward RUN) and a
+sentence a PROGRAM reads as a subtraction (the live readers, unmoved).
+`docs-gate.mjs` over the five changed paths: FIRES for the three
+`docs/tasks` writes, owing app + tools/e2e + lib/parser; **injection scan
+0 hits in 3 paths against 7 patterns**; every live card's frontmatter
+parses with a legal status; governing-document budgets hold. No
+dependency, endpoint, secret or executable path is added. The new rule
+leans on two files it does not touch and contradicts neither:
+`verifier.md` step 1 ("Run the full test commands") and `integrator.md`
+step 2 ("Run the FULL suite after merging") are named in the new text as
+different seats and, for the integrator, a different tree.
+
+#### The drills — 8 data mutants, one side only, each with its restoration proof
+
+The property lives in PROSE, so every mutant is a DATA mutant
+(`roles/verifier.md` 2b, T-221). M1–M8 were run in a `git clone --shared`
+of the bench under scratch, so the bench tree was never mutated; M6 and
+M7 were re-run against the real `brief.spec.ts` in the bench. Pristine
+`executor.md` `sha256:1721c90042fc7fb96fc9ca008cd6dc91b1d8da928d050162ba60e177f8be59df`;
+every mutation read back from `git diff --numstat` before its run, and
+every restore proved by sha256 back to that value with an empty
+`git status --porcelain`.
+
+CONTROL, unmutated tip: `node tools/method-evals/run.mjs` exit 0,
+`..........  10 model-free eval(s)` — the base reading.
+
+| # | one-side mutation of `method/roles/executor.md` | method eval gate | brief.spec.ts |
+|---|---|---|---|
+| M1 | the order sentence deleted | exit 0, 10 evals | — |
+| M2 | the order REVERSED, suites before the notes | exit 0, 10 evals | — |
+| M3 | the exemption widened to "A last commit re-runs no suite" | exit 0, 10 evals | — |
+| M4 | the fix-pass re-run sentence deleted | exit 0, 10 evals | — |
+| M5 | the reason clause deleted | exit 0, 10 evals | — |
+| M8 | the suite/ref/count row deleted from the report spec | exit 0, 10 evals | — |
+| M6 | a stray `do NOT read docs/STATE.md` inserted | exit 0 | exit 0, **66 passed** |
+| M7 | a stray `ADDITION TO THAT SET IS` + a backticked path | exit 0 | exit 0, **66 passed** |
+
+**NOT ONE MUTANT REDS ANYTHING.** That is the measurement, and it is
+reported here because it is a measurement — it is not a charge against
+this card, whose AC4 asked the gate to RUN (it does, green) and never
+asked for a new eval. **M2 is the one that matters**: with the order
+reversed a lane runs ONCE, reports "once", and grades a tree carrying
+neither its notes nor its cards — and no report can disclose it, because
+the report is true. The remedy is filed as **T-279-s3**, which carries a
+WORKING eval, not a description of one. M6/M7 are a different and
+PRE-EXISTING surface, not this lane's doing (the sets are unmoved at the
+tip); filed as **T-279-s4**.
+
+**AND THE CONTROL I PROPOSE IS MINE TO CHECK** (`roles/verifier.md` step
+0). MF-11, whose full text is in T-279-s3, was run three ways: green
+against the unmutated tip (`...........  11 model-free eval(s)`, MF-11
+reporting *"stated once in method/roles/executor.md; 1 bounded exemption
+sentence(s)"*); `--selftest` green with *"MF-11  4 degradations, all
+detected"*; and **red against an implementation lacking the property** —
+all six data mutants the current gate ignores now exit 1 with
+`..........F  11 model-free eval(s)`, each naming the missing property.
+It stays green on M6/M7, which are not its subject. I ran it where the
+arrangement that would decide it is absent; I am not passing on a control
+I only asserted.
+
+The executor's notes give a reason for filing no drill — *"the mutation
+site would be a sentence rather than a behaviour"*. The project's own
+POISON DRILL trigger is "a task that ADDS OR CHANGES a test body", which
+this card does not, so **no discipline was breached**; but the reason as
+stated is the one `roles/verifier.md` 2b rules against, and the eight
+mutants above are what a data mutant on this text looks like.
+
+#### My own battery — the whole four suites, ONCE, at my own tip (T-262)
+
+Run through the blessed runner from the bench root at
+`7b9f2ee`, `SUPERTASKR_E2E_PORT=25279`:
+
+    gate-verdict suite=parser exit=0 bodies=389  targets=1  ref=7b9f2ee… verdict=GREEN
+    gate-verdict suite=app    exit=0 bodies=1171 targets=1  ref=7b9f2ee… verdict=GREEN
+    gate-verdict suite=rust   exit=0 bodies=654  targets=18 ref=7b9f2ee… verdict=GREEN
+    gate-verdict suite=e2e    exit=0 bodies=764  targets=1  ref=7b9f2ee… verdict=GREEN
+
+`node tools/method-evals/run.mjs` exit 0 (10 evals) and `--selftest` exit
+0 at the tip. The rust leg is NOT owed by this diff and I re-derived that
+rather than taking it: `KIT_FILES` in `app/src-tauri/src/agent/kit.rs`
+names neither fenced file, and the snapshot-coverage test walks only `docs-templates`, `adapters`, `tasks` and
+`skills`. I ran it anyway; it is green.
+
+#### Filed as suggestions, blocking nothing (`roles/verifier.md` 6)
+
+- **T-279-s3** — the five SHALLs this card lands are pinned by nothing;
+  MF-11, demonstrated above, is in the card ready to lift.
+- **T-279-s4** — a stray `do NOT read <a docs path>` sentence in any role
+  file silently subtracts that document from every future brief, and
+  neither the eval gate nor brief.spec reds. Pre-existing.
+- **T-279-s5** — the report spec gained the suite row but not the
+  exemption sentence, so the one checklist a seat fills top to bottom
+  prompts for the count and not for *"no suite was re-run for the stamp"*.
+
