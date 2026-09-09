@@ -819,3 +819,31 @@ it is the one rough edge in an otherwise clean mechanism. Filed as **T-281-s7**.
 not exist yet), **T-281-s8** (the Rust intermittent nothing names).
 None of these blocks the merge.
 
+
+#### Step 7 — the gates my OWN commits could move, re-run at my own tip `eb7c9ac`
+
+My commits are five: the verdict, four suggested cards, and three bodies.
+They move prose the parser reads, paths the docs gate reads, and
+`cli.spec.ts` itself.
+
+| gate | exit | reading |
+|---|---|---|
+| `gate-run.mjs parser` | 0 | **389 bodies**, GREEN, `ref=eb7c9ac` |
+| `tools/method-evals/run.mjs` | 0 | **10 model-free**, unchanged |
+| `docs-gate.mjs` on the six paths I wrote | 0 | every live card's frontmatter parses with a legal status; injection scan 0 hits in 5 paths; governing-document budgets hold. It FIRES and names `npm test from app/`, `npm test from tools/e2e/`, `npx vitest run from lib/parser/` |
+| `cli.spec.ts` alone | 1 | **47 passed / 1 failed** |
+| `gate-run.mjs e2e` | 1 | **778 bodies, 777 passed / 1 failed**, `ref=eb7c9ac` |
+
+**THE ONE RED IS CORRECTION 2's BODY AND NOTHING ELSE.** Across all 778
+e2e bodies the only failure is
+`a mutant block's file and spec are CONFINED to the project root`, at
+`tests/cli.spec.ts:1908`. I checked specifically for collateral from the
+four cards I filed — a board census body, a health band, a suggestion
+count — and there is none. **This red is the assigned correction, and it
+goes green when the integrator applies correction 2's code change.**
+
+**THE CENSUS IS OWED AT THE MERGE, and by three more names than the lane
+counted**: I added three bodies to `tools/e2e/tests/cli.spec.ts`, so
+`docs/CAPABILITIES.md` is stale by the lane's eleven plus my three.
+`movesSpecNames` fires and `merge.mjs` plans and stages
+`npm run capabilities`. I did **not** regenerate it on the bench.
