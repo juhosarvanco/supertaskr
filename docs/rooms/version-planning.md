@@ -241,3 +241,37 @@ card dispatched at the sitting; the wave of five lanes was live.
 ## Sitting of 2026-09-09 — rooms in the mirror
 
 @human: *"Add rooms to the mirror app in v1"* (asked after learning the mirror does not render rooms and that rooms are never deleted). Ruled: the rooms lens is v1, filed as T-275 (F-02, M, p4): every room off docs/rooms/, status, type, card, addressee, the ruling at the top, live off the watcher, read-only. docs/VERSIONS.md carries the row and the move.
+
+
+## From the outside review of 2026-09-09 — ruled v2 by @human (decision 5)
+
+An outside session reviewed the model as described in
+docs/research/the-model-for-an-outside-review-2026-09-09.md and
+proposed a "Supertaskr Teams" architecture beside the solo core:
+distributed state in an object store or a shared git backend with
+remote locks, ephemeral execution cells, a server-side integration
+wall, a centralised context-caching proxy, and three human seats
+(product owner, staff engineer, security auditor). @human's ruling:
+**a room note as v2, not cards.** The seat's reading, recorded so the
+next reader does not re-derive it:
+
+- **Kept for v2: the server-side verdict check.** The push guard's
+  verdict token is judged locally today; a pre-receive hook or a
+  CI-side check that verifies the same token against the pushed tree
+  hardens the existing guard without a second architecture. It is the
+  one idea in the proposal that adds a guarantee.
+- **Not ruled in: distributed state and a context proxy.** The folder
+  is the record (NORTH_STAR; ADR-019); a Redis state machine or a
+  metadata broker beside git is a second record, and the proposal's
+  own "immutable, commit-bound markdown artifacts" clause concedes the
+  point. A context proxy answers a cost the context pack (T-254) and
+  its narrowing (T-254-s1, s2) answer inside the repository.
+- **Not ruled in: containers and elastic cells.** The first user runs
+  one machine (NORTH_STAR); parallel lanes on it are the scaling unit,
+  and the health bands measure its edge. Nothing here forbids a
+  runner-side execution cell later; nothing asks for it now.
+- **Two corrections to the proposal's premises**, for the record: lanes
+  are not sequential (four ran in parallel on 2026-09-09; the solo lock
+  covers two suites per checkout), and "v0.1.12" is the method's
+  version stamp, spent by whichever method-text change lands next, not
+  a roadmap label.
