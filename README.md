@@ -23,10 +23,13 @@ Three things, in the order they earn each other:
    verdicts, rooms, checkpoints — that any model that can read files can
    run by hand. It lives in [method/](method/) and is versioned and
    eval-gated like code.
-2. **A CLI.** `npx supertaskr` runs the loop: interview an idea into a
-   board, dispatch a card into an isolated lane, verify it blind, merge it
-   with a record, undo it safely. Every verb fronts a script this repo
-   already runs on itself, and a verb can never make a red gate look green.
+2. **A CLI.** `npx supertaskr` is the loop's machinery, not its mind. It
+   derives what can start, cuts and fences a lane, assembles the brief,
+   runs the gates, stages the merge and re-drills the verdict, and undoes
+   a landing safely. Every verb fronts a script this repo already runs
+   on itself, spawns nothing, and can never make a red gate look green.
+   The thinking — the interview, the building, the doubting — happens in
+   your own agent app, with Supertaskr as a skill inside it.
 3. **An app.** A local desktop mirror of the folder: the story map, the
    board, the lanes off git, the architecture map with drift, blast radius
    and churn — all rendered live off files. It spawns nothing. It shows.
