@@ -5324,3 +5324,55 @@ test("THE WOKEN SECTION REACHES THE RENDERED ANSWER — `--dispatch` carries the
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless", () => {
+  // ASSIGNED CORRECTION (verifier, phase 2, 2026-09-09, measured at
+  // ce46115). The flag's own stated failure mode is the CONFIDENT one —
+  // "a card whose author wrote a condition reported as having written
+  // none" — and the rule as dispatched has exactly that: `\b(?:unpark|
+  // wake)` cannot see `UN-PARK`, and `**UN-PARK WHEN:**` is the amnesty
+  // triage's own template. Nine of the ninety cards the live view flags
+  // carry it IN BOLD: T-031-s2, T-033-s1, T-033-s9, T-110-s2, T-123-s2,
+  // T-124-s2, T-127-s3, T-135-s1, T-135-s2.
+  //
+  // AND THE WIDENING STOPS HERE, WHICH IS MEASURED RATHER THAN CHOSEN:
+  // `resurface` fires on 69 of those same 90, because TASK-FORMAT's own
+  // "resurfacing condition" sentence is quoted in the parking
+  // boilerplate — widening to it would empty the flag instead of
+  // sharpening it. One spelling, the one the board actually uses.
+  expect(
+    PROSE_WAKE_PATTERN.test("Real and still true; not now. **UN-PARK WHEN:** C-08 declares C-10."),
+    "the board's own hyphenated spelling is a condition",
+  ).toBe(true);
+  expect(PROSE_WAKE_PATTERN.test("Unpark with the second adapter."), "and the unhyphenated one still is").toBe(
+    true,
+  );
+  expect(
+    PROSE_WAKE_PATTERN.test("Parked at the ninth triage."),
+    "the word every parking note spells about itself is still not a condition",
+  ).toBe(false);
+  expect(PROSE_WAKE_PATTERN.test("the runner is awake"), "and the rule is still bounded on the left").toBe(false);
+  expect(
+    PROSE_WAKE_PATTERN.test("a parking note carries a resurfacing condition"),
+    "the boilerplate quote is still not a condition — widening to it would empty the flag",
+  ).toBe(false);
+
+  // DRIVEN THROUGH THE VIEW, never asserted about a regex nobody calls:
+  // the flag must drop the card that spells it and keep the one that
+  // says nothing.
+  const board: WakeFixture[] = [
+    { id: "T-530", status: "parked", body: "Real and still true; not now. **UN-PARK WHEN:** C-08 declares C-10." },
+    { id: "T-531", status: "parked", body: "Parked at the ninth triage. Too early to build." },
+  ];
+  const line = wakeAnswer(board, []).split("\n").find((l) => l.includes("state no condition at all")) ?? "";
+  expect(line, "the hyphenated spelling is a condition").not.toContain("T-530");
+  expect(line, "and a card that states nothing is still flagged").toContain("T-531");
+  expect(line).toContain("1 parked card(s) state no condition at all");
+
+  // AND THE METHOD TEXT STATES THE SPELLING IT ACCEPTS, so the author
+  // writing `UN-PARK WHEN:` and this reader are looking at one sentence.
+  expect(
+    readDoc("method/tasks/TASK-FORMAT.md"),
+    "the hyphenated spelling is stated where the card author reads it",
+  ).toMatch(/un-park/i);
+});
