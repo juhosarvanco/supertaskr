@@ -155,3 +155,15 @@ arrived with), T-278-s7 (two large candidates left on the table, and the
 step's unconditional wall cost), T-278-s8 (the free step measures `/`
 while the floor judges `.` and `/tmp`, and nothing asserts they are one
 filesystem — measured as one in run 34334103318, unasserted anywhere).
+
+### Correction, at the lane's own second graded run
+
+The first graded `gate-run e2e` at 297a1a9 came back **RED, 4 of 769**,
+and every one of the four was `shell-frame.spec.ts` reporting
+`parse-error-details` — *Expected: 60, Received: 61*. The cause was this
+lane's own T-278-s8, filed with `size: XS` against a parser vocabulary
+of `S | M | L`. One card that would not parse, four bodies red three
+layers from it, and `npm run lint:docs` exit 0 in between — because the
+docs gate checks a card's `status:` and nothing else. Fixed here (`XS`
+to `S`); the gap is filed as **T-286**, which is the same class the DOCS
+GATE bullet already carries two instances of and now has a third.

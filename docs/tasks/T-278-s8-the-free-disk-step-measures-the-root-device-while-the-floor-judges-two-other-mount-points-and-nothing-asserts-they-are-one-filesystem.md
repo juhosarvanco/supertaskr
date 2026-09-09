@@ -3,7 +3,7 @@ id: T-278-s8
 title: "The free-disk step measures / while the floor judges . and /tmp, and nothing in the tree asserts they are one filesystem — on the hosted runner they are, measured once; on a runner where they are not, the job frees a device the floor never reads"
 feature: F-04
 milestone: 4
-size: XS
+size: S
 priority: 5
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-278-s2, 2026-09-09, at 2e9233d"
