@@ -614,6 +614,41 @@ in the merge commit (three stamps, `docs/CONVENTIONS.md` now reachable since
 T-244 merged at `79453cf`), the graph regen at the checkpoint with its six
 dogfood pins, and a re-derived docs gate at the merge's own pair of trees.
 
+#### Step 7 — the gates my OWN commits could move, re-run at MY tip
+
+This verdict and `T-241-s3`/`s4`/`s5` are four writes under `docs/tasks/`,
+which is a CODE INPUT. Asked rather than predicted, from the repo root with
+separate literal paths:
+`node tools/e2e/scripts/docs-gate.mjs <the four paths>` → **exit 1, FIRES**,
+28 derived readers across 4 suites, naming three: `npm test from app/`,
+`npm test from tools/e2e/`, `npx vitest run from lib/parser/`. It also
+reports **0 injection-scan hits** in the four paths, that every live task
+card's frontmatter parses with a legal status, and that the
+governing-document budgets hold. `cargo test` is NOT named — the Rust reader
+of `docs/` is `kit.rs` reading `docs/CONVENTIONS.md`, which I did not touch.
+
+All three owed legs re-run at my own commit
+`3d3c04dd4480d35ca23469eafed138d9025885a6`, through the blessed runner:
+
+| leg | exit | bodies | ref |
+|---|---|---|---|
+| `gate-run.mjs parser` | 0 GREEN | 377 | `3d3c04d` |
+| `gate-run.mjs app` | 0 GREEN | 1163 | `3d3c04d` |
+| `SUPERTASKR_E2E_PORT=25241 gate-run.mjs e2e` | 0 GREEN | 706 | `3d3c04d` |
+
+The tip this verdict created is measured, not assumed. The four-suite
+figures in the body above are at `9f56d19`, the commit under review; these
+three are at `3d3c04d`, the commit this verdict wrote — the two sets are
+identical because the writes were prose, and both carry their own ref so
+neither goes stale.
+
+**One self-application worth recording**: the pack's own
+`golden-check.mjs --card <this card>` run against this verdict answers
+**7 compared, 0 differed, exit 0** — date, seat, word, the attack-set digest
+on a line of its own, the blindness disclosure, the ground-truth digest and
+the seat-mismatch line. The golden accepts the verdict that judged it.
+
+
 ## Fence amended at dispatch (the architect seat, 2026-09-09)
 
 `touches:` widened to `method/`: the criteria name
