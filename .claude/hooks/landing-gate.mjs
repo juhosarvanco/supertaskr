@@ -267,8 +267,9 @@
  * 6. **ANY REF WRITE THAT DECIDES WHAT A COMMIT ADVANCES MOVES THE
  *    FENCE, AND THE LOCAL NAME IS TRIED FIRST.** The limit is stated
  *    over the CLASS and not over one command, because it WAS written as
- *    one command and a second member was found inside a week
- *    (`T-223-s4`). Two are measured, both from a lane worktree with
+ *    one command and a second member was found THE SAME DAY, by this
+ *    limit's own verifier (`T-223-s4`, filed at `2561553` against
+ *    `33e50b8`). Two are measured, both from a lane worktree with
  *    `<integration>` checked out in another, and each has a PORCELAIN
  *    twin that is refused in exactly that state:
  *    (i) THE REF ITSELF — `git update-ref refs/heads/<integration> <sha>`
