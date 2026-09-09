@@ -169,14 +169,31 @@ Both files' digests matched their pre-drill values after the drill, and
 
 ### The bytes
 
-`docs/CONVENTIONS.md` 129,306 -> 131,198 bytes (**+1,892**) against the
-ADR-019 band `landed 117,502 / warn 146,878 / fail 176,253` — the gate
-prints *governing-document budgets hold*, with 15,680 bytes of headroom
-to the warn line. Two cuts were taken in the same file rather than one:
+`docs/CONVENTIONS.md` 129,306 bytes at the base `89f23ca` to 131,328 at
+the lane tip `d3b5a16` (**+2,022**), against the ADR-019 band `landed
+117,502 / warn 146,878 / fail 176,253` — the gate prints
+*governing-document budgets hold*, with 15,550 bytes of headroom to the
+warn line. Two cuts were taken in the same file rather than one:
 the retired DIVERGENCE 1 sentence, and the fresh-worktree sub-bullet's
 pointer at the fresh-clone ORDER, which the new explicit ORDER makes
 redundant. **The additions still outweigh the cuts, and that is stated
 rather than rounded away.**
+
+### The battery, all at the lane tip `d3b5a16` unless a row says otherwise
+
+    node tools/e2e/scripts/gate-run.mjs e2e     exit 0  GREEN  742 bodies
+    node tools/e2e/scripts/gate-run.mjs parser  exit 0  GREEN  389 bodies
+    npm test            (app/)                  exit 0  1171 tests, 51 files
+    cargo test          (app/src-tauri/)        exit 0  650 bodies, 18 binaries
+    index --check       (app/src-tauri/)        exit 0  CURRENT
+    npx playwright test tests/workflow-parity   exit 0  22 passed
+    docs-gate.mjs docs/CONVENTIONS.md           exit 1  FIRES, budgets hold
+    capabilities:check / typecheck              exit 0 / exit 0
+    lint:tokens / --selftest / lint:docs        exit 0 / exit 0 / exit 0
+
+Both `gate-run` legs recorded `dirty: false` at that ref. The docs gate's
+exit 1 is its FIRES answer, not a failure: it names four owed suites
+(cargo, app, tools/e2e, lib/parser) and all four are above.
 
 ### For the verifier
 
