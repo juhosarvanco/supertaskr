@@ -1,10 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -915,6 +917,65 @@ test("a checkout without the indexer crate is not judged, and is not asked", () 
   });
   expect(d.code).toBe("not-this-repository");
   expect(d.reason).toContain(INDEX_CRATE_MANIFEST_REL_PATH);
+});
+
+test("*is this our repository* answered by a probe that COULD NOT LOOK is announced, never a silent allow", () => {
+  // T-238-s1, taking T-216-s8's ATTRIBUTION. This arm asked `existsSync`,
+  // which answers FALSE for EMFILE and EACCES exactly as it does for
+  // ENOENT — so under the descriptor pressure of concurrent suites a push
+  // INSIDE this repository took the silent `not-this-repository` allow,
+  // and every arm below it (the holder, the landing gate, the token, the
+  // graph) went unasked while the run read as an ordinary pass. That is
+  // an inability wearing a verdict's clothes, which is the one shape
+  // every arm in this file refuses.
+  //
+  // EACCES IS PRODUCED RATHER THAN SIMULATED: the directory holding the
+  // manifest is made unreadable, so `statSync` on a file that IS there
+  // fails for a reason that is not absence.
+  //
+  // KILLED BY: going back to `existsSync`, or treating every errno as an
+  // absence — either puts the silent allow back.
+  const fx = fixture("probe-unreadable", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const dir = path.dirname(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH));
+  const ask = () =>
+    decide(
+      { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
+      () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+      () => ({ status: CHEAP_CHECKS_EXIT.CLEAN, stdout: "", stderr: "" }),
+      NO_RUNS,
+    );
+
+  chmodSync(dir, 0o000);
+  try {
+    const blind = ask();
+    expect(blind.code, `an unreadable probe is not "not ours" — ${said(blind)}`).not.toBe(
+      "not-this-repository",
+    );
+    expect(
+      (blind.notices ?? []).join("\n"),
+      `and the inability is ANNOUNCED — ${said(blind)}`,
+    ).toContain("WAS NOT ESTABLISHED");
+    expect((blind.notices ?? []).join("\n"), "with the errno, so the next red attributes itself").toContain(
+      "EACCES",
+    );
+  } finally {
+    chmodSync(dir, 0o755);
+  }
+
+  // THE POSITIVE CONTROL, TWO WAYS ROUND. With the manifest READABLE the
+  // arm says nothing at all; with it genuinely ABSENT the arm takes the
+  // silent allow it is supposed to take. So the announcement above is
+  // about the errno and not about this arm having become noisy.
+  const readable = ask();
+  expect((readable.notices ?? []).join("\n"), `a readable probe is silent — ${said(readable)}`).not.toContain(
+    "WAS NOT ESTABLISHED",
+  );
+  rmSync(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH));
+  const absent = ask();
+  expect(absent.code, `a genuinely absent manifest still allows silently — ${said(absent)}`).toBe(
+    "not-this-repository",
+  );
+  expect((absent.notices ?? []).join("\n")).not.toContain("WAS NOT ESTABLISHED");
 });
 
 test("an allow that left the graph unverified is announced; an ordinary one is silent", () => {
