@@ -218,3 +218,227 @@ exit 1 is its FIRES answer, not a failure: it names four owed suites
 ## Verdicts
 
 Absorbs: T-239-s5 (2026-09-08, triage at the wave sitting) — the borrowed-git recipe's identity gap, measured by the T-239-s4 executor at 0f6b37f; the file is removed in this commit, this line is the surviving record.
+
+### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — APPROVED
+
+    tip:        8e9a9f5538a698c6749ba5aea429fcce2ae4b19f
+    base:       89f23ca0b9a0b96a25c149002e29ecc73fa045d2
+    bench:      /Users/ujju/Projects/nputer-V-T-256, detached, clean
+    port:       SUPERTASKR_E2E_PORT=25256
+    attack set: sha256:c3aa5a5210d7b3bcbeb4780f9b5b07d59127ef9e7b2505f1aa231371bff7c960 (attack-set-T-256.md)
+    ground:     sha256:3edaa019647e244e29ac1148939085e2a3f8db4552bab0641b28a291a6642a10 (ground-T-256.md)
+
+Both digests were verified with `shasum -a 256` before either file was
+opened. **All six criteria are met, the work is fenced, no record was
+rewritten, and the load-bearing mutant reds by name.** NO corrections are
+assigned. Two suggested cards are filed separately (T-256-s2, T-256-s3);
+neither blocks this merge.
+
+#### The frame I actually had
+
+Two spawns; phase 1 was tool-less by instruction, not by a harness that
+can deny tools. Before writing findings I read only: the two sealed
+files, `method/roles/verifier.md`, `docs/STATE.md` and the card at the
+base, T-216-s6 whole, the diff and the tree. Findings were written to
+`findings-T-256.md`
+(sha256:e66d64a3ff59869600b116d8b68e199eaa5fcb1f28a5f380564338aae89ad214)
+and hashed BEFORE the executor's report was opened.
+
+**TWO LEAKS I OWE, disclosed rather than tidied.** (1) Establishing the
+fence I ran `git log --oneline` on the range, which printed the
+executor's four commit SUBJECTS; `--name-status` alone would have done
+the job. (2) Checking that the six criteria were byte-identical required
+diffing the card, and `## Implementation notes` live in that same file,
+so roughly sixty lines of notes rendered before findings were written. I
+re-measured every figure below myself; none is transcribed from the
+report, and where the report and my measurement disagreed I say so.
+
+#### The standing checks
+
+- **FENCE.** `git diff --name-status` gives exactly four paths:
+  `docs/CONVENTIONS.md`, `tools/e2e/tests/workflow-parity.spec.ts`, this
+  card, and the NEW `docs/tasks/T-256-s1-*.md`. No `dispatch-brief.mjs`
+  (T-254's), no `brief.mjs` (T-238-s1's), no `ci.yml`, no T-216-s6, no
+  `docs/CAPABILITIES.md`, no `docs-scan.mjs` (which carries the byte
+  band), nothing under `method/`, no lockfile.
+- **RECORDS.** Everything above `## Implementation notes` differs from
+  the base in ONE line: `status: building` becomes `verifying`, the
+  convention's own ladder. The six criteria, `## What was found`,
+  `suggested_by`, `touches:` and the `Absorbs: T-239-s5` line are
+  byte-identical (`diff` empty). `touches:` was NOT widened.
+- **STAMP.** `currently v0.1.11` at base and tip; the diff carries zero
+  lines matching `currently v`. The rust suite, which contains kit.rs's
+  `snapshot_version_matches_the_live_method_stamps`, is green.
+- **T-216-s6 UNTOUCHED.** Blob `98d1ac30c9fd4fc19b413e4665b5ad54225f3fc4`
+  at base and tip. The lane says on ITS OWN card that the absorption
+  happened; the stamp remains the seat's act. `docs/CAPABILITIES.md` blob
+  `c48d860c624b3e83a961b1cc50b0c78694e79b08` likewise unchanged, so the
+  census was not regenerated inside the lane.
+- **SECURITY.** No `--no-verify`, `sudo`, `chmod`, `rm -rf`, piped
+  installer, `eval` or `base64` in any added line. The single
+  `alwaysWritable` occurrence REAFFIRMS T-216-s6's refusal ("no lockfile
+  added to `alwaysWritable`"); it does not reintroduce the refused
+  option.
+
+#### The six criteria
+
+**1. The recipe suppresses identity auto-detection, and says why — MET.**
+Exactly one recipe spelling exists in CONVENTIONS at the base and at the
+tip, so there is no second, un-armed copy. The arming is SUPPRESSION, not
+assignment: no `user.email`, `user.name` or `GIT_AUTHOR_*` value is set
+anywhere in the bullet. The "why" carries all four things it needs — the
+`GIT_CONFIG_*` pair nulls config FILES only; git then auto-constructs an
+identity from `getpwuid` and the hostname; on a dotted hostname that
+construction SUCCEEDS so the old recipe answered green; and a green there
+reproduces no runner red. I swept the whole repository for other users of
+the two-variable pattern: `golden-check.mjs` and `git-fixture.spec.ts`
+both supply their own identity (local `user.email`/`user.name`, and
+`GIT_AUTHOR_*` respectively), so neither carries the gap and no card is
+owed for them.
+
+**2. The recipe reproduces exit 128 at `0f6b37f` — MET, and the control
+decides.** In a `git clone --shared` under the scratch directory,
+detached at `0f6b37f`, three packages installed from that ref, whole-file
+`npx playwright test tests/brief.spec.ts` from `tools/e2e/`,
+`NPUTER_E2E_PORT=25256` (that ref predates the SUPERTASKR rename):
+
+    ARMED, the recipe this lane publishes   exit 1   1 failed / 56 passed
+        red body brief.spec.ts:3230, stopped at step 1 (stamp),
+        git exit 128, "Author identity unknown / *** Please tell me who you are."
+    UN-ARMED, the recipe as it was published exit 0   57 passed
+        zero identity refusals — the false green the bullet now describes
+    ARMED plus GIT_AUTHOR_*/GIT_COMMITTER_*  exit 0   57 passed
+        zero identity refusals — the switch is inert against an env identity
+
+The figures were re-derived here, not transcribed. **A TRAP WORTH THE
+RECORD, which I walked into independently before reading that the
+executor had walked into it too:** a `--shared` clone leaves its OWN
+`main` at the source's tip, `checkout-currency` then answers STALE, and
+the SAME body reds at step 3 (preflight) for an unrelated reason — so my
+first three arms all read "1 failed / 56 passed" and the control appeared
+not to discriminate. It discriminates only after `git branch -f main
+0f6b37f` in the clone. The COUNT the criterion cites is therefore
+reproduced by arrangements that LACK the property; what discriminates is
+the step reached and the stderr. The executor disclosed this correction
+in its report, which is the right call and is why its table and mine now
+agree. T-256-s2 is filed so the next seat does not pay for it a third
+time.
+
+**3. One spelling, and the mapping retired rather than widened — MET.**
+The doc's app/ setup line says `npm ci`; the `mapped` entry became
+`{ kind: "verbatim", dir: "app", cmd: "npm ci" }`. No normaliser, alias
+table, `startsWith`, case or whitespace tolerance, and no skip/ignore/
+exempt list appears anywhere in the diff. Three data mutants, each on a
+scratch copy in the clone, each landing read from `git diff` rather than
+from the mutator:
+
+    M1  the doc's app/ line back to `npm install`   4 failed / 18 passed
+        BY NAME, both directions: "lists [app] npm install, which this spec
+        has no entry for" AND "this spec expects [app] npm ci, which
+        docs/CONVENTIONS.md no longer lists"
+    M2  the `run from app/:` marker removed          5 failed / 17 passed
+        "no longer carries exactly the four `run from <dir>/:` command
+        bullets" — the class REQUIRES app/, it does not merely compare
+        rows it happens to find
+    M3  a scratch ci.yml whose app step says
+        `npm install`                                2 failed / 20 passed
+        "missing verbatim step: [app] npm ci" plus the unaccounted
+        "[app] npm install" — so BOTH sides are read, and "the doc and CI
+        say the same words" is enforced in both directions
+
+M3 is mine; the executor's three drills all moved the doc or the spec and
+none moved ci.yml, so nothing in its report established that the CI side
+is read. It is. The 22 body names are byte-identical between base and
+tip, so the suite was not made green by deleting or renaming anything.
+
+**4. The fresh-worktree ORDER, in the order the preflight demands — MET.**
+The sub-bullet now carries a sequence, not a parenthetical warning:
+lib/parser `npm ci` and `npm run build`, then app/ `npm ci`, then app/
+`npm run build`, then tools/e2e `npm ci`, then the suite. Both of the
+preflight's preconditions have a named producing step. The order is
+load-bearing, measured by removing each producer in the clone: with
+`lib/parser/dist` absent the preflight refuses with "lib/parser/dist is
+missing — ADR-011 build order"; with `app/node_modules` absent it refuses
+with "app/node_modules is missing — run `npm ci` in app/ first"; with the
+full order present, 22 passed. Note that the preflight's own message
+already said `npm ci` for app/ — the doc had been contradicting a message
+the suite has been printing all along.
+
+**5. Suite green with the mapping gone, docs gate run with the budget line
+— MET.** The parity spec alone at the tip: exit 0, 22 passed, unfiltered,
+whole file. The docs gate on CONVENTIONS exits 1, which is its FIRES
+signal naming the suites the path owes, and prints
+`governing-document budgets hold — 4 gated`. CONVENTIONS moved 129,306
+bytes at the base to **131,328** at the tip, against the band landed
+117,502 / warn 146,878 / fail 176,253 — 15,550 bytes of headroom, and the
+band itself is UNCHANGED because `docs-scan.mjs` is outside the diff. I
+checked that a passing budget line means something: adding filler to a
+scratch copy produces "budget WARN — 147239 bytes against its
+146878-byte warn line" and then "OVER BUDGET — 176839 against its
+176253-byte fail line".
+
+**6. The brief's build rows — MET, and the IF is TRUE.** I settled the
+antecedent without touching either assembler: a sentinel command in a
+scratch copy of the doc propagated into the brief's row 7, so the rows are
+DERIVED, not hand-listed. At the tip, row 7 prints `from app/: npm ci`,
+stamped to this ref with the provenance "docs/CONVENTIONS.md Build and
+test, verbatim". `brief.mjs` is the runnable half of `dispatch-brief.mjs`
+and imports from it, so the dispatch brief the criterion names is the one
+exercised. Neither file was edited.
+
+#### The suites, at my own tip
+
+    gate-run.mjs parser   exit 0   389 bodies    GREEN
+    gate-run.mjs app      exit 0   1171 bodies   GREEN
+    gate-run.mjs rust     exit 0   654 bodies    GREEN   (18 targets)
+    gate-run.mjs e2e      exit 0   742 bodies    GREEN   (port 25256)
+    capabilities:check    exit 0   CURRENT (63548 bytes)
+    index --check         exit 0   CURRENT
+
+The rust figure reconciles with the report's "650 bodies": the per-target
+sum is 650 passed plus 4 ignored, and gate-run counts both. No
+discrepancy.
+
+**The card's own point held for me.** This bench was a fresh worktree with
+nothing installed. Running the tip doc's order verbatim: lib/parser
+`npm ci` and `npm run build`, app/ `npm ci` (499 packages), app/
+`npm run build`, tools/e2e `npm ci` — every one exit 0, and
+`git status --porcelain` EMPTY after each, which is the whole reason the
+fence permits `npm ci` and refuses `npm install`. **I could not reproduce
+the exit 243 EACCES premise here**, and say so plainly: a detached bench
+is not on a lane branch, so the physical layer is not armed at this seat.
+That premise rests on T-216-s6's three-lane measurement, which is a
+record I read rather than a thing I re-ran.
+
+#### What I checked and did NOT find
+
+- A hypothesis of my own, disproved before it became a correction:
+  `brief.spec.ts`'s `noIdentityEnv()` also deletes `EMAIL`, which the new
+  bullet does not name. On git 2.50.1 `EMAIL` is inert under
+  `useConfigOnly` — the recipe plus `EMAIL`, and even plus `EMAIL` with
+  both NAME variables, still exits 128; only the full
+  `GIT_AUTHOR_*`/`GIT_COMMITTER_*` set defeats the switch. The published
+  sentence names exactly the variables that matter and is complete.
+- T-256-s1 is legal (`status: suggested`, `suggested_by` set, `touches`
+  naming three files) and accurate. My independent sweep found the same
+  three, and the card names a FOURTH my grep missed — `bin/app-dev.mjs`
+  at the `runStep(4, "install app", "npm", ["install"], ...)` call, where
+  the spelling is split across the argv and no `npm install` grep matches
+  it. I verified that line, and verified the relaunch bullet it leans on:
+  `npm ci` beside a live app does delete `node_modules/.vite`. Its
+  refusal to rename the launcher is correct.
+
+#### One limitation of the executor's evidence, noted not charged
+
+The report's restoration proof cites a sha256 for `docs/CONVENTIONS.md`
+that matches NO revision in the lane's history — not the base, not any of
+the four commits. The parity spec's companion hash matches `cf7c690`
+exactly. The likeliest reading is benign: the drill ran on an uncommitted
+tree that was polished before `cf7c690`, and the hash's only job, pre
+equals post, is served. But it is a figure without a ref and I could not
+re-derive it. It costs this verdict nothing, because C3 rests on my own
+three mutants rather than on the executor's drill.
+
+Recorded for the seat: `main` has moved past the `f298b81` the report
+forecast against, so the merge forecast is re-derived at the merge, as
+the report itself asks.
