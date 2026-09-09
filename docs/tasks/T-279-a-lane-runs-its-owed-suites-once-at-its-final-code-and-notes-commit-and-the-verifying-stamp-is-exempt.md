@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: building
+status: verifying
 suggested_by: "@human (2026-09-09): \"Yes, file both\" — on the seat's finding that every lane ran the end-to-end leg two or three times (25–36 minutes of a lane's clock) for one tree"
 blocked_by: []
 touches: [method/roles/executor.md, method/lane-protocol.md]
