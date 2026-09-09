@@ -484,6 +484,7 @@ export function shippedSkills(projectRoot) {
  * @property {string} source      where this verb comes from — the card, bullet or role step
  * @property {string[]} [alsoNeeds]
  * @property {string} [usage]
+ * @property {string} [positionalFlag]  the flag a LEADING positional becomes
  */
 
 /**
@@ -521,6 +522,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "brief",
+    positionalFlag: "--task",
     summary: "the dispatch brief for one card, derived row by row from its own sources",
     target: { kind: "script", file: "brief.mjs", args: [] },
     rootFlag: true,
@@ -529,6 +531,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "card",
+    positionalFlag: "--card",
     summary: "one card's figures, each with the ref it was measured at",
     target: { kind: "script", file: "brief.mjs", args: [] },
     rootFlag: true,
@@ -537,6 +540,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "preflight",
+    positionalFlag: "--task",
     summary: "re-derive a card's claims against the tree it is about to be built on",
     target: { kind: "script", file: "brief.mjs", args: ["--preflight"] },
     rootFlag: true,
@@ -545,6 +549,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "fence",
+    positionalFlag: "--task",
     summary: "write a lane's fence manifest into its worktree",
     target: { kind: "script", file: "brief.mjs", args: [] },
     rootFlag: true,
@@ -561,6 +566,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "arm",
+    positionalFlag: "--dispatch-lane",
     summary: "cut, stamp and arm one lane in a single command",
     target: { kind: "script", file: "brief.mjs", args: [] },
     rootFlag: true,
@@ -575,7 +581,9 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     target: { kind: "script", file: "gate-run.mjs", args: [] },
     rootFlag: false,
     usage: "supertaskr gate parser|app|rust|e2e|--all",
-    source: "docs/CONVENTIONS.md THE BLESSED GATE-RUNNER: `gate-run.mjs parser|app|rust|e2e`",
+    source:
+      "docs/CONVENTIONS.md THE BLESSED GATE-RUNNER: " +
+      "`node tools/e2e/scripts/gate-run.mjs parser|app|rust|e2e`",
   }),
   Object.freeze({
     verb: "docs-gate",
@@ -583,13 +591,15 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     target: { kind: "script", file: "docs-gate.mjs", args: [] },
     rootFlag: false,
     usage: "supertaskr docs-gate <changed path>...",
-    source: "docs/CONVENTIONS.md DOCS GATE: `node tools/e2e/scripts/docs-gate.mjs <paths>`",
+    source:
+      "docs/CONVENTIONS.md DOCS GATE, its ONE spelling: " +
+      "`node tools/e2e/scripts/docs-gate.mjs`",
   }),
   Object.freeze({
     verb: "push-check",
     summary: "the cheap board checks a push pays for unconditionally",
     target: { kind: "script", file: "push-checks.mjs", args: [] },
-    rootFlag: false,
+    rootFlag: true,
     source: "T-203's push guard: `push-checks.mjs`",
   }),
   Object.freeze({
@@ -605,7 +615,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     summary: "the method's own health bands, compared rather than eyeballed",
     target: { kind: "script", file: "health-bands-run.mjs", args: [] },
     rootFlag: false,
-    source: "docs/CONVENTIONS.md HEALTH BANDS: `npm run health`",
+    source: "docs/CONVENTIONS.md, the health bands: `npm run health`",
   }),
   Object.freeze({
     verb: "tokens",
@@ -729,9 +739,20 @@ export function planFor(input) {
   }
   const file = path.join(packageRoot, "scripts", entry.target.file);
   const rootArgs = entry.rootFlag ? ["--root", projectRoot] : [];
+  // A LEADING POSITIONAL BECOMES THE FLAG THE TARGET NAMES. `brief.mjs`
+  // refuses a positional by design — "a positional this command guessed
+  // at is a brief row filled from somewhere other than its source" — so
+  // `supertaskr card T-150` has to arrive there as `--card T-150`. The
+  // mapping is DECLARED per verb rather than guessed: a verb with no
+  // `positionalFlag` passes its arguments through untouched, which is
+  // what `undo` and `merge`, whose own scripts take a positional, need.
+  const rest =
+    entry.positionalFlag !== undefined && args.length > 0 && !(args[0] ?? "").startsWith("-")
+      ? [entry.positionalFlag, ...args]
+      : [...args];
   return {
     command: process.execPath,
-    argv: [file, ...entry.target.args, ...rootArgs, ...args],
+    argv: [file, ...entry.target.args, ...rootArgs, ...rest],
     cwd: projectRoot,
     names: path.relative(packageRoot, file),
   };

@@ -153,13 +153,16 @@ export function insideFence(p, fence) {
  * @typedef {object} Merge
  * @property {string} sha
  * @property {string} subject
- * @property {string[]} paths
  */
 
 /**
- * Every first-parent merge on `branch`, newest first, with the paths its
- * own merge diff carried (`M^1..M` — the pair THE RANGE RULE names for a
- * merge that already exists).
+ * Every first-parent merge on `branch`, newest first.
+ *
+ * DELIBERATELY WITHOUT THEIR DIFFS. A diff per merge is a git process
+ * per merge, and this repository's integration branch already carries
+ * more than a hundred of them; the diffs that are actually needed are a
+ * bounded set (the candidates, and the merges since the landing one), so
+ * they are asked for one at a time by `pathsOf`.
  *
  * @param {string} root
  * @param {string} branch
@@ -173,51 +176,63 @@ export function firstParentMerges(root, branch) {
   for (const line of log.out.split("\n").filter((l) => l.length > 0)) {
     const [sha, subject] = line.split("\x1f");
     if (sha === undefined) continue;
-    const diff = git(root, ["diff", "--name-only", `${sha}^1`, sha]);
-    if (!diff.ok) return { problem: `git diff for ${sha} failed — ${diff.err}` };
-    merges.push({
-      sha,
-      subject: subject ?? "",
-      paths: diff.out.split("\n").filter((l) => l.length > 0),
-    });
+    merges.push({ sha, subject: subject ?? "" });
   }
   return { merges };
 }
 
 /**
- * The merge that landed this card, identified by TWO agreeing facts: its
- * own diff carries the card file, and the side it merged carries a
- * commit whose message names the card (the executor's step 6 rule). One
- * fact alone is not enough — a checkpoint touches every card it stamps —
- * and where the two do not single out exactly one merge this refuses
- * rather than picking the newest.
+ * The paths ONE merge's own diff carried — `M^1..M`, the pair THE RANGE
+ * RULE names for a merge that already exists.
+ *
+ * @param {string} root
+ * @param {string} sha
+ * @returns {string[]}
+ */
+export function pathsOf(root, sha) {
+  const diff = git(root, ["diff", "--name-only", `${sha}^1`, sha]);
+  return diff.ok ? diff.out.split("\n").filter((l) => l.length > 0) : [];
+}
+
+/**
+ * The merge that landed this card.
+ *
+ * THE PRIMARY FACT IS THE LANE, not the card file: the side a merge
+ * brought in carries a commit whose message names the card, which is the
+ * executor's own step 6 rule and is true of every lane this method has
+ * ever merged. The card file is the TIE-BREAKER, used only when more
+ * than one merge answers to the first fact — a checkpoint touches every
+ * card it stamps, so the file alone would be ambiguous by construction.
+ * Where the two together do not single out exactly one merge this
+ * REFUSES rather than taking the newest.
  *
  * @param {{ root: string, id: string, cardPath: string, merges: readonly Merge[] }} input
  * @returns {{ merge: Merge } | { problem: string }}
  */
 export function landingMerge(input) {
-  const touching = input.merges.filter((m) => m.paths.includes(input.cardPath));
-  if (touching.length === 0) {
-    return { problem: `no first-parent merge on this branch carries ${input.cardPath}` };
-  }
-  const named = touching.filter((m) => {
+  const named = input.merges.filter((m) => {
     const side = git(input.root, ["log", "--format=%s", `${m.sha}^1..${m.sha}^2`]);
     if (!side.ok) return false;
     return side.out.split("\n").some((s) => s.includes(input.id));
   });
-  if (named.length === 1) return { merge: /** @type {Merge} */ (named[0]) };
   if (named.length === 0) {
     return {
       problem:
-        `${String(touching.length)} merge(s) carry ${input.cardPath} and NONE of them merged a ` +
-        `side whose commits name ${input.id} — this command will not guess which one landed the ` +
-        `card (${touching.map((m) => m.sha.slice(0, 12)).join(", ")})`,
+        `no first-parent merge on this branch merged a side whose commits name ${input.id} — ` +
+        "the executor's own rule is that a lane's commits carry the card id, and without one " +
+        "this command will not guess which merge landed the card",
     };
+  }
+  if (named.length === 1) return { merge: /** @type {Merge} */ (named[0]) };
+  const alsoCarryingTheCard = named.filter((m) => pathsOf(input.root, m.sha).includes(input.cardPath));
+  if (alsoCarryingTheCard.length === 1) {
+    return { merge: /** @type {Merge} */ (alsoCarryingTheCard[0]) };
   }
   return {
     problem:
-      `${String(named.length)} merges each carry ${input.cardPath} AND merge a side naming ` +
-      `${input.id}: ${named.map((m) => `${m.sha.slice(0, 12)} ${m.subject}`).join(" | ")}. ` +
+      `${String(named.length)} merges merged a side naming ${input.id}` +
+      `${alsoCarryingTheCard.length > 0 ? `, ${String(alsoCarryingTheCard.length)} of them also carrying ${input.cardPath}` : ""}: ` +
+      `${named.map((m) => `${m.sha.slice(0, 12)} ${m.subject}`).join(" | ")}. ` +
       "Name the one you mean with --merge <sha>.",
   };
 }
@@ -226,14 +241,16 @@ export function landingMerge(input) {
  * Every merge NEWER than `landing` on the same branch whose own diff
  * touched the card's fence.
  *
- * @param {{ merges: readonly Merge[], landing: Merge, fence: readonly string[] }} input
+ * @param {{ root: string, merges: readonly Merge[], landing: Merge, fence: readonly string[] }} input
  * @returns {Merge[]}
  */
 export function laterOnTheFence(input) {
   const at = input.merges.findIndex((m) => m.sha === input.landing.sha);
   if (at < 0) return [];
   // `merges` is newest first, so everything BEFORE the landing merge is later.
-  return input.merges.slice(0, at).filter((m) => m.paths.some((p) => insideFence(p, input.fence)));
+  return input.merges
+    .slice(0, at)
+    .filter((m) => pathsOf(input.root, m.sha).some((p) => insideFence(p, input.fence)));
 }
 
 /**
@@ -418,7 +435,7 @@ export function main(argv, io = {}) {
     forcedFull.push(full.out.trim());
   }
 
-  const later = laterOnTheFence({ merges: listed.merges, landing, fence: fence.paths });
+  const later = laterOnTheFence({ root, merges: listed.merges, landing, fence: fence.paths });
   out(`undo ${id}`);
   out(`  card:   ${card.file}`);
   out(`  fence:  ${fence.paths.join(", ")}`);
