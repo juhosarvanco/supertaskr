@@ -28,8 +28,10 @@ and T-236 (2026-09-02, whose pre-compaction text is
   (T-256, absorbing T-216-s6): `npm install` rewrites
   app/package-lock.json, which every lane fence leaves read-only, so it
   dies **exit 243 EACCES** with node_modules already populated and
-  nothing warning — measured on three lanes in one night. Reach for
-  `npm install` only to CHANGE a dependency, and never inside a lane.
+  nothing warning — measured on three lanes in one night. `npm install`
+  belongs OUTSIDE a lane and nowhere else: changing a dependency, or the
+  app launcher's own step, where a fresh `npm ci` would destroy a live
+  app's node_modules (the relaunch bullet below).
 - app/src-tauri (C-05 Rust half + the C-07 workspace), run from
   app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
   + supertaskr-index crate suite, T-009 — bare `cargo test` runs both
