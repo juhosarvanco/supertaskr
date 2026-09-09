@@ -58,8 +58,8 @@ pub struct KitFile {
 /// `runtime/nputer.yaml` because planner.md step 1's MAY-seed reads it,
 /// plus `skills/**` — T-241's seat skill, which is not the planner's
 /// input at all but the ARCHITECT's, and rides for ADR-021's reason: what
-/// nputer ships for that chair is the seat's hand work as a skill, so a
-/// project that got the method without it got the method without its
+/// this product ships for that chair is the seat's hand work as a skill,
+/// so a project that got the method without it got the method without its
 /// operating instructions.
 /// Deliberately NOT included: the other role files (a planner does not
 /// need executor.md), `interview/archaeology.md` (adoption is explicitly
