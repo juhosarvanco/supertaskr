@@ -384,3 +384,438 @@ Derived from the gate at this tip, not remembered — which is the rule the
 gates row states.
 
 ## Verdicts
+
+### VERDICT 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent (verifier, phase 2)
+
+**Tip judged** `d086c73` (the `verifying` stamp). **Base** `bceb22f`.
+Bench `../nputer-V-T-281`, detached, port 25281.
+
+**The two sealed inputs, verified by sha256 before anything else was opened:**
+
+- `attack-set-T-281.md` — `sha256:6b73c752a6b7dc65388f9248ba4eef0e8941acb742d9d87b3dd6a9333161f6ff`
+- `ground-T-281.md` — `sha256:b7238a06f296a2409a0e2be807a3b7f8a49c415546d6e2e97123cb6b90a921d9`
+
+Both matched. My conduct was read from `verifier.md` **at the base**
+(`git show bceb22f:method/roles/verifier.md`), not from the tip's copy,
+which is the diff under judgement.
+
+#### The frame I actually had, as step 0 requires
+
+**This brief was hand-written by the seat and carried NO CONTEXT PACK.**
+`verifier.md` step 0 calls that a dispatch fault and directs the seat to
+read `docs/CONVENTIONS.md` whole and say so. I did **not** read it whole:
+the brief explicitly instructed me to read it by named bullets only (the
+DOCS GATE, THE BLESSED GATE-RUNNER, the METHOD EVAL GATE, the PORT and
+SCRATCH rules). I followed the brief and I am recording the departure
+rather than hiding it. I read `docs/STATE.md` and `docs/ARCHITECTURE.md`
+as the standing set requires.
+
+**PHASE 1 WAS BROKEN ABOVE THE LINE, AND I SAY SO RATHER THAN PRETENDING
+OTHERWISE.** My brief's duties section named executor-derived figures
+before I had opened anything — *"the report says 9d7cb43 with cli.spec 45,
+parser 389, app 1171, e2e 775"*. `verifier.md` step 0 names exactly this:
+a brief whose duties section carries suite figures has already broken
+phase 1. The mitigation available to me was to **re-measure every one of
+those figures myself at my own tip before opening the report**, which I
+did, and to write my findings out to `findings-T-281.md` before the report
+was opened. Phase 1's attack set was written tool-less at the base, and
+its hash is cited above.
+
+The ordering I kept: sealed inputs → base `verifier.md` → STATE and
+ARCHITECTURE → the card at the base → the diff and every attack → findings
+written → **only then** the executor's report and the implementation notes.
+
+#### The battery, run ONCE at my own tip `d086c73`, through the blessed runner
+
+| suite | exit | count | verdict |
+|---|---|---|---|
+| `gate-run.mjs parser` | 0 | **389 bodies** | GREEN, `ref=d086c73` |
+| `gate-run.mjs app` | 0 | **1171 bodies** | GREEN, `ref=d086c73` |
+| `gate-run.mjs rust` | **101** | **654 bodies** | **RED**, `ref=d086c73` — see below |
+| `gate-run.mjs e2e` (port 25281) | 0 | **775 bodies** | GREEN, `ref=d086c73` |
+| `cli.spec.ts` alone | 0 | **45 passed** | — |
+| `tools/method-evals/run.mjs` | 0 | **10 model-free** | unchanged from the base's 10 |
+| `run.mjs --selftest` | 0 | **10 model-free, POSITIVE CONTROL** | — |
+
+Every figure the report claimed at `9d7cb43` re-derives at `d086c73`:
+45 / 389 / 1171 / 775. Confirmed by re-measurement, not by reading.
+
+**THE RUST RED IS NOT THIS DIFF, AND IT IS NOT NAMED IN STATE.** One body:
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+(`app/src-tauri/tests/agent_runner.rs:3623`), 94 passed / 1 failed in its
+target. Attributed: `git diff --name-only bceb22f..d086c73 -- app/ lib/
+'*.rs' '*.toml'` is **empty** — the diff touches no Rust input at all — and
+the test body reads no `method/` file. **Re-run once, alone: it PASSES.**
+An intermittent, and `docs/STATE.md` names no such intermittent. Filed as
+**T-281-s8**. The executor's "the Rust leg is not owed" is correct for the
+diff; the red is the tree's, not the lane's.
+
+#### The fence, the stamp, the records
+
+- `git diff --name-only bceb22f..d086c73` = **9 paths, every one inside the
+  fence**: the four fenced files, this card, and four new `docs/tasks/`
+  cards. No `CONVENTIONS.md`, no `executor.md`, no `lane-protocol.md`, no
+  `workflow-parity.spec.ts`, no `ci.yml`, no `gate-run.mjs`, no
+  `dispatch-brief.mjs`, no `kit.rs`, no `plan-interview.md`.
+- **The method stamp still reads 0.1.12** at all three sites inside the
+  lane (`CONVENTIONS.md:501`, `plan-interview.md:26`, `kit.rs:37`). The
+  bump is the integrator's, and the card carries its eval block. Correct.
+- The stamp commit `d086c73` is **exactly one status line**.
+- `docs/CAPABILITIES.md` sha256 is `6f4db752…`, **identical to the base** —
+  not regenerated inside the lane. Correct; the regen is the merge's.
+- No `.only`, `.skip` or `.fixme`. No literal U+001B in any fenced file.
+
+#### What I attacked and what held
+
+Thirteen of the sixteen mutants my set named were **killed**, each by one
+body, on a whole `cli.spec.ts` run with the landing read from `git diff`
+rather than from the mutator: the anchor count (`hits !== 1` → `hits === 0`),
+all three line-number refusals separately (`LINE_KEYS`, the `path:42` tail,
+the prose `line 40` form), the reds-more-than-itself grade, the survivor
+grade, the literal splice turned into `new RegExp(old)`, newest-verdict
+turned into first-verdict, the runner argv given a `-g` filter, the message
+check, and the body-present pre-check.
+
+Attacks that held, checked directly rather than read: the **positive
+schema** refuses `lineNumber:`, `at:`, `note:`, `L:` and a `file:` with a
+`:42` tail (it is a schema, not a blacklist); `old`/`new` are **byte-exact**
+(an anchor differing only by indentation matches nothing); the replacement
+is a **function** replacement, so `$&`, `$'` and `$1` are planted and never
+expanded; the drill runs the **whole owning spec** with no `-g`, so "red
+alone" is observable; two blocks are two steps, planted one at a time; the
+drill is the **last step before the STOP** on every shape of merge, with
+T-244's `capabilities`/`graph` order untouched; the drill performs **no git
+write** and **no shell** (`spawnSync` with an argv array); a misspelled
+`## Verdicts` heading **refuses** rather than reading as zero blocks; the
+never-rewrite row carries **no hedge**; and the grammar is stated **once**,
+in `verifier.md`, with a body comparing the published layout to the
+reader's own `MUTANT_KEYS`. That last one closes the drift my set predicted.
+
+**One departure from phase 1's pre-commitments, stated plainly.** The
+attack set's §4 lists *"the merged tree left mutated after an aborting
+drill (M12 surviving with no body)"* as REJECTED-level. M12 **does** survive
+(below). But the parenthetical is a test, not the defect: the `finally`
+**is present and correct** — I drove an aborting drill and the site was
+restored — so "the merged tree left mutated" is **false of this diff**. Only
+its fence is missing. Rejecting a correct implementation for an unfenced
+guard would be rejecting a defect that does not exist, and this card's own
+machinery exists precisely to turn that into an assigned body. Correction 1.
+
+---
+
+### CORRECTION 1 — the `finally` that restores the site after an ABORTING drill is unfenced
+
+`runMutantDrill` wraps the run in `try { … } finally { writeFileSync(file,
+pristine); }`, which is the right shape and the one that matters most on
+this card: if a run **throws** — a runner not installed, a spawn that dies,
+a Ctrl-C — the mutant otherwise stays on the MERGED tree and the
+integrator's next `git add` commits it. **Measured: removing the
+`try`/`finally` wrapper while leaving the happy-path restore in place
+leaves all 45 bodies GREEN.** The executor's own M7 ("the site is never
+restored") pins the *happy* path only; no body drives a throwing run.
+
+**THE BODY THAT PINS IT** — committed on the bench in `tools/e2e/tests/cli.spec.ts`
+after this verdict commit, in a commit named for this correction:
+
+```ts
+test("an ABORTING drill still restores the site — the merged tree is never left mutated", () => {
+  // THE WORST FAILURE THIS STEP CAN HAVE. The drill writes a mutant into
+  // a file on the MERGED tree. If the run throws — a runner that is not
+  // installed, a spawn that dies, a Ctrl-C — and the restore is not in a
+  // `finally`, the mutant STAYS, and the integrator's next `git add` puts
+  // it in the merge commit. The mechanism built to protect the merge
+  // becomes the thing that poisons it.
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-abort-"));
+  try {
+    const source = "export function f() {\n  return enumerated;\n}\n";
+    mkdirSync(path.join(root, "src"), { recursive: true });
+    writeFileSync(path.join(root, "src", "a.mjs"), source);
+    mkdirSync(path.join(root, "tools", "e2e", "tests"), { recursive: true });
+    writeFileSync(
+      path.join(root, "tools", "e2e", "tests", "brief.spec.ts"),
+      'test("the body that pins it", () => {});\n',
+    );
+    const block = {
+      correction: "C1",
+      file: "src/a.mjs",
+      spec: "tools/e2e/tests/brief.spec.ts",
+      body: "the body that pins it",
+      message: "m",
+      old: "  return enumerated;",
+      new: "  return everything;",
+    };
+    let sawOnDisk = "";
+    expect(() =>
+      runMutantDrill({
+        block,
+        projectRoot: root,
+        run: () => {
+          sawOnDisk = readFileSync(path.join(root, "src", "a.mjs"), "utf8");
+          throw new Error("the runner died mid-drill");
+        },
+      }),
+    ).toThrow("the runner died mid-drill");
+    expect(sawOnDisk, "the mutant really was on disk when the run died").toContain(
+      "return everything;",
+    );
+    expect(
+      readFileSync(path.join(root, "src", "a.mjs"), "utf8"),
+      "and the site is restored ANYWAY — this is what the `finally` buys",
+    ).toBe(source);
+    // THE POSITIVE CONTROL: the same drill whose run returns normally is
+    // restored too, so this body is about the ABORT and not about restoring.
+    runMutantDrill({
+      block,
+      projectRoot: root,
+      run: () => ({ code: 1, output: "  1) [chromium] › tests/brief.spec.ts:1:1 › the body that pins it \n    Error: m\n  1 failed" }),
+    });
+    expect(readFileSync(path.join(root, "src", "a.mjs"), "utf8")).toBe(source);
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+```
+
+**CHECKED BY ME BOTH WAYS.** GREEN at `d086c73` (the property is there).
+RED against an implementation lacking it — the `try`/`finally` collapsed to
+two straight statements — **alone: 1 failed / 47 passed**, printing
+``and the site is restored ANYWAY — this is what the `finally` buys``.
+**No code change is owed.** This correction is the fence, not the fix.
+
+```mutant
+correction: CORRECTION 1 — the aborting drill's restore is unfenced
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/cli.spec.ts
+body: an ABORTING drill still restores the site — the merged tree is never left mutated
+message: and the site is restored ANYWAY — this is what the `finally` buys
+--- old
+  try {
+    result = (input.run ?? spawnSpec)(runner);
+  } finally {
+    writeFileSync(file, pristine);
+  }
+--- new
+  result = (input.run ?? spawnSpec)(runner);
+  writeFileSync(file, pristine);
+```
+
+---
+
+### CORRECTION 2 — SECURITY: a block's `file` and `spec` are not confined to the project root
+
+**This is the security sweep's finding, and it is the one correction that
+needs a code change.** A mutant block is TEXT carried on a card on a lane
+branch. `runMutantDrill` resolves it with `path.join(projectRoot,
+block.file)` and **writes there**, with no containment check of any kind —
+the reader has no path rule at all.
+
+**MEASURED, not reasoned.** With `projectRoot` a fixture root and
+`file: "../VICTIM.txt"` naming a file **outside** it:
+
+```
+victim      : /var/folders/…/T/VICTIM-sec-t281-1ATcxj.txt
+block.file  : ../VICTIM-sec-t281-1ATcxj.txt
+OUT: restored and PROVED by sha256: ../VICTIM-sec-t281-1ATcxj.txt 0944cd89…
+OUT: C-EVIL: "b" RED ALONE in tools/e2e/tests/brief.spec.ts, with the message the block names
+exit code   : 0            <- EXIT.CLEAN. The merge proceeds.
+victim DURING the spec run : "PWNED\n"
+victim AFTER               : "SECRET LINE\n"
+```
+
+The write lands outside the repository, is **live for the whole spec run**,
+and the drill reports a clean re-drill. `block.spec` escapes the same way:
+`spec: tools/e2e/../../../OUTSIDE.spec.ts` is read with `readFileSync` and
+handed to playwright's argv. The reader accepts `file: ../../etc/x` and
+`file: /etc/x` outright. An absolute path is contained only by accident —
+`path.join` folds it under the root — which is luck, not a rule.
+
+**THE CODE CHANGE THE INTEGRATOR PERFORMS** (the block below anchors on
+this exact text, so write it verbatim). In `readOneBlock`, immediately
+**before** the existing `for (const key of MUTANT_KEYS)` loop that applies
+`PROSE_LINE`:
+
+```js
+  for (const key of ["file", "spec"]) {
+    const value = /** @type {string} */ (fields[key]);
+    if (path.isAbsolute(value) || path.posix.normalize(value).startsWith("..")) {
+      return {
+        problem:
+          `a mutant block's \`${key}: ${value}\` resolves outside the project root. A block is ` +
+          "text off a card, and the drill WRITES the file it names — a path that leaves the " +
+          "repository is a write on the integrator's machine",
+      };
+    }
+  }
+```
+
+**THE BODY THAT PINS IT** — committed on the bench after this verdict commit:
+
+```ts
+test("a mutant block's file and spec are CONFINED to the project root — no traversal, no absolute path", () => {
+  // SECURITY. A block is TEXT off a card carried on a lane branch, and
+  // the drill WRITES the file it names, on the integrator's machine, with
+  // `path.join(projectRoot, block.file)`. A `../` segment leaves the
+  // repository entirely, and the write is live for the whole spec run.
+  for (const escape of [
+    "../outside.mjs",
+    "../../.git/hooks/pre-commit",
+    "src/../../outside.mjs",
+    "/etc/hosts",
+  ]) {
+    const read = readMutantBlocks(mutantBlockText({ file: escape }));
+    expect("problem" in read, `${escape} is refused as a \`file\``).toBe(true);
+    if ("problem" in read) expect(read.problem).toContain("outside the project root");
+  }
+  for (const escape of ["tools/e2e/../../../outside.spec.ts", "/tmp/outside.spec.ts"]) {
+    const read = readMutantBlocks(mutantBlockText({ spec: escape }));
+    expect("problem" in read, `${escape} is refused as a \`spec\``).toBe(true);
+  }
+  // THE POSITIVE CONTROL, run because a reader that refused every path
+  // would be indistinguishable from this one: ordinary in-tree paths are
+  // still accepted, and a dot PAIR inside a file name is not a traversal.
+  const ok = readMutantBlocks(mutantBlockText());
+  expect("problem" in ok, "an in-tree path is accepted").toBe(false);
+  const dotted = readMutantBlocks(
+    mutantBlockText({ file: "tools/e2e/scripts/a..b.mjs", spec: "tools/e2e/tests/b.spec.ts" }),
+  );
+  expect("problem" in dotted, "a dot pair inside a name is not a traversal").toBe(false);
+});
+```
+
+**CHECKED BY ME BOTH WAYS.** RED at `d086c73` — the implementation lacks
+the property — failing on ``../outside.mjs is refused as a `file` ``. GREEN
+against an implementation carrying the code change above: **48 passed**.
+
+```mutant
+correction: CORRECTION 2 — a block's file and spec escape the project root
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/cli.spec.ts
+body: a mutant block's file and spec are CONFINED to the project root — no traversal, no absolute path
+message: ../outside.mjs is refused as a `file`
+--- old
+    if (path.isAbsolute(value) || path.posix.normalize(value).startsWith("..")) {
+--- new
+    if (false && path.isAbsolute(value)) {
+```
+
+---
+
+### CORRECTION 3 — AC-4's never-rewrite prohibition is PROSE ONLY
+
+`integrator.md` step 2b says it plainly and carries **no hedge today** — I
+checked. What nothing observes is a hedge being **added**. A `T-221` data
+mutant, planted where the property lives:
+
+    Rewriting the body — unless it does
+       not apply to the merged tree — makes the drill
+
+**Measured: the method eval gate still reports 10, and `cli.spec.ts` still
+reports 45 passed.** One clause refunds the card's whole saving, because
+"does not apply" is exactly what a tired seat concludes at 11pm. The
+existing published-layout body pins the *marker phrase's* presence, not the
+absence of a hedge beside it.
+
+**THE BODY THAT PINS IT** — committed on the bench after this verdict commit:
+
+```ts
+test("the integrator's never-rewrite rule carries NO hedge — the one clause that would refund this card", () => {
+  // A T-221 DATA MUTANT, because the property lives in PROSE: no code
+  // mutant can grade it. Inserting "unless it does not apply to the
+  // merged tree" into the row leaves the method eval gate at 10 and every
+  // other body in this file green — measured. One clause is the whole
+  // saving refunded, because "does not apply" is exactly what a tired
+  // seat concludes at 11pm.
+  const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
+  const at = integrator.indexOf("THE BODY IS NOT YOURS TO WRITE");
+  expect(at, "the row is there to be read").toBeGreaterThan(0);
+  const ends = integrator.indexOf("3. Checkpoint ritual", at);
+  expect(ends, "and it ends where the next numbered step begins").toBeGreaterThan(at);
+  const row = integrator.slice(at, ends).toLowerCase();
+  for (const hedge of [
+    "unless",
+    "if necessary",
+    "when needed",
+    "where needed",
+    "may adapt",
+    "discretion",
+    "where appropriate",
+    "does not apply",
+  ]) {
+    expect(row, `the never-rewrite row must not hedge with ${JSON.stringify(hedge)}`).not.toContain(
+      hedge,
+    );
+  }
+  // THE POSITIVE CONTROL: the row really is what is being read, so a body
+  // that passed because it was reading an empty string would be caught.
+  expect(row, "the prohibition itself").toContain("rewriting the body");
+  expect(row, "and the corner it governs").toContain("the committed body is what proves it");
+});
+```
+
+**CHECKED BY ME BOTH WAYS.** GREEN at `d086c73`. RED under the data mutant
+above — **alone: 1 failed / 47 passed** — printing `the never-rewrite row
+must not hedge with "unless"`. **No code change is owed.**
+
+```mutant
+correction: CORRECTION 3 — the never-rewrite row admits a hedge nothing notices
+file: method/roles/integrator.md
+spec: tools/e2e/tests/cli.spec.ts
+body: the integrator's never-rewrite rule carries NO hedge — the one clause that would refund this card
+message: the never-rewrite row must not hedge with "unless"
+--- old
+Rewriting the body — even to
+   improve it, even where you can see a better assertion — makes the drill
+--- new
+Rewriting the body — unless it does
+   not apply to the merged tree — makes the drill
+```
+
+---
+
+### THE ORDER THESE MUST BE TAKEN IN — read this before drilling
+
+**CORRECTION 2's CODE CHANGE COMES FIRST.** Its body is committed RED,
+because the property is genuinely absent — that is what a code-change
+correction looks like under this card's own rule. Until the code change
+lands, `cli.spec.ts` on the merged tree is **47 passed / 1 failed**, and
+planting CORRECTION 1's or CORRECTION 3's mutant would then show **two**
+reds, which `gradeDrill` correctly refuses as REDS MORE THAN ITSELF. So:
+
+1. Merge. Apply CORRECTION 2's code change verbatim (the block anchors on it).
+2. Confirm `cli.spec.ts` is **48 passed**.
+3. Then the drill re-runs all three blocks; each reds its own body alone.
+
+This is `integrator.md` 2b's own corner — *"where a correction needs a code
+change beside the body, the verdict names it"* — met for the first time, and
+it is the one rough edge in an otherwise clean mechanism. Filed as **T-281-s7**.
+
+### On the criteria
+
+- **AC-1** met. The contract names the spec file, the per-correction commit
+  and the after-the-verdict ordering, and the drill enforces the *purpose*
+  of that ordering better than an ancestry check would: it verifies the
+  named body is really on the MERGED tree and says so in one read when a
+  merge was given the verdict sha instead of the bench tip.
+- **AC-2** met, and the layout is stated once. The `file`/`spec` split is
+  better than the criterion asked for.
+- **AC-3** met. All three named refusals shown REFUSING by me, reproducibly,
+  on my own fixtures — survivor, stale anchor, line-number block.
+- **AC-4** met in the contract, and now fenced by CORRECTION 3.
+- **AC-5** met: 10 model-free evals, exit 0, unchanged; the gate script is
+  untouched; the bump is correctly left to the integrator with its eval
+  block on the card.
+- **AC-6 NOT MET, and correctly so.** The checkpoint record is the
+  integrator's artifact and lives outside this fence; writing it here would
+  have breached the fence. The executor said so plainly and filed the
+  machine-time half as T-281-s2. The "after" figure is also vacuous until a
+  merge has actually drilled a block — which this merge will be the first to
+  do. It is owed at the checkpoint, from this merge's own clock.
+
+### Suggested cards filed with this verdict
+
+**T-281-s5** (the sha256 restore proof cannot be made to fail),
+**T-281-s6** (a block whose `file` is its own `spec` mutates the assertion),
+**T-281-s7** (a code-change correction's block must anchor on text that does
+not exist yet), **T-281-s8** (the Rust intermittent nothing names).
+None of these blocks the merge.
+
