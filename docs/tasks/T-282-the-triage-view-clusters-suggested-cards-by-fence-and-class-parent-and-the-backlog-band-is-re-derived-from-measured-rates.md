@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: building
+status: verifying
 suggested_by: "@human (2026-09-09): decision 4 of the seat's review of the outside review — \"re-derive via the keeper\"; the outside review had proposed a filtering agent and raising the band from 40 to 80"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/scripts/health-bands.config.mjs, tools/e2e/tests/health-bands.spec.ts]
@@ -262,5 +262,44 @@ For the verifier: the two places to press are the fence half's keying
 (the invariant body is the one that separates it from the transitive
 build) and the `measured` entry's arithmetic, which is re-derivable from
 the eight records named in the entry's own `at` field.
+
+### The poison drill — 8 mutants, 8 bodies, 8-for-8
+
+Drilled at commit `e909b79` (M1-M6) and `2b442bb` (M7, M8), tree clean at
+both, one mutant at a time. Every mutant moves the PRODUCER — the module
+under test, or the CONFIG DATA where the property is data — never an
+assertion and never a literal the two share; each mutation was read back
+with `git diff` before its suite ran; each restore used `git restore
+--source=<commit> --staged --worktree` and is proved by **sha256 against
+the drill commit, which MATCHED on all eight**.
+
+| mutant | one-side change | suite | tally | killed |
+|---|---|---|---|---|
+| M1 | fence clustering keys on `p === key` instead of `pathsOverlap(p, key)` | brief.spec.ts | exit 1, 1 failed / 71 passed | THE FENCE CLUSTERS ARE KEYED ON GROUND |
+| M2 | the class-parent test is dropped from the duplicate flag | brief.spec.ts | exit 1, 1 failed / 71 passed | A DUPLICATE CANDIDATE NEEDS BOTH SIGNALS |
+| M3 | the heading lookahead in `classKin` never runs | brief.spec.ts | exit 1, 1 failed / 71 passed | THE CLASS PARENT IS READ OFF THE CARD'S OWN LINES |
+| M4 | `TRIAGE_STATUSES` says `suggestion` where the parser says `suggested` | brief.spec.ts | exit 1, 2 failed / 70 passed | THE STATUSES ... ARE THE PARSER'S OWN WORDS, and the class-parent body with it |
+| M5 | the `--full` gate is `if (false)`, so the default view prints the page | brief.spec.ts | exit 1, 1 failed / 71 passed | THE DEFAULT VIEW IS ONE COUNTED LINE |
+| M6 | the duplicate match set becomes every card that is not `done` | brief.spec.ts | exit 1, 2 failed / 70 passed | A DUPLICATE CANDIDATE NEEDS BOTH SIGNALS, and THE VIEW IS A READ |
+| M7 | `triage/live-suggestions` drift 46 -> 47 with its derivation untouched | health-bands.spec.ts | exit 1, 1 failed / 23 passed | EVERY BAND'S LINES ARE STATED IN ITS OWN MEASURED REASON |
+| M8 | a real `measured.at` replaced by "raised at the review, by agreement" | health-bands.spec.ts | exit 1, 1 failed / 23 passed | A DERIVATION THAT NAMES NO RECORD IS REFUSED |
+
+**THE DRILL CHANGED THE WORK, WHICH IS THE ONLY REASON TO RUN ONE.** M8
+SURVIVED its first pass — 24-for-24, exit 0 — because the body asked
+`measured.at` and `measured.reason` TOGETHER and the reason beside the
+mutated address still cited a source: the band read as addressed while
+its address had become a sentence. The body now asks the ADDRESS itself,
+which is stronger, is satisfied by every band at this ref, and is what
+criterion 2's own words ask for (*"beside the commit and the records it
+read"*). One band's reason — `triage/oldest-suggestion-days` — argues
+honestly in prose and cites nothing of its own, which is why the check is
+on `at` and not on the whole entry. That correction is commit `2b442bb`.
+
+Kill-set containment, stated rather than assumed: M4 and M6 each killed
+TWO bodies and both spillovers are the property's own site. M4 empties
+the fixture board for every body that builds one through `triageBoard`,
+and M6's widened match set is exactly what the live-board body's *"a
+duplicate never names a card that is itself a suggestion"* assertion
+exists to catch.
 
 ## Verdicts
