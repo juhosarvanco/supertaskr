@@ -30,11 +30,22 @@ import {
   rootMismatch,
 } from "../scripts/cli.mjs";
 import {
+  MUTANT_KEYS,
+  MUTANT_NEW,
+  MUTANT_OLD,
   bringsBuiltSources,
+  drillSteps,
+  failingBodies,
+  gradeDrill,
   graphPinLine,
   movesGraph,
+  newestVerdict,
+  plantMutant,
   preludePlan,
+  readMutantBlocks,
+  runMutantDrill,
   setupSteps,
+  specRunner,
   stampDone,
   tailPlan,
   main as mergeMain,
@@ -1190,4 +1201,546 @@ test("the done stamp fills only an empty built_by, not only an empty verified_by
   );
   expect(stamped, "and the empty seat is still filled").toContain("verified_by: v@k");
   expect(stamped).toContain("status: done");
+});
+
+// ── the mutant blocks a verdict carries, and the merge's re-drill (T-281) ──
+
+interface BlockFields {
+  correction: string;
+  file: string;
+  spec: string;
+  body: string;
+  message: string;
+  old: string;
+  new: string;
+}
+
+/** One well-formed block, as the fixed layout spells it. */
+function mutantBlockText(over: Partial<BlockFields> = {}): string {
+  const f: BlockFields = {
+    correction: "CORRECTION 1 — the denominator is silent",
+    file: "tools/e2e/scripts/dispatch-brief.mjs",
+    spec: "tools/e2e/tests/brief.spec.ts",
+    body: "THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN",
+    message: "the pack neither carries it nor names it as out of reach",
+    old: "  return enumerated;",
+    new: "  return [...enumerated, ...bolded];",
+    ...over,
+  };
+  return [
+    "```mutant",
+    `correction: ${f.correction}`,
+    `file: ${f.file}`,
+    `spec: ${f.spec}`,
+    `body: ${f.body}`,
+    `message: ${f.message}`,
+    "--- old",
+    f.old,
+    "--- new",
+    f.new,
+    "```",
+  ].join("\n");
+}
+
+/** A card whose `## Verdicts` section carries the given entries, in order. */
+function cardWithVerdicts(...entries: string[]): string {
+  return ["---", "id: T-000", "status: verifying", "---", "", "## Verdicts", "", ...entries].join(
+    "\n",
+  );
+}
+
+/** A verdict entry heading plus its body. */
+function verdictEntry(heading: string, ...body: string[]): string {
+  return [heading, "", ...body, ""].join("\n");
+}
+
+test("the merge reads its mutant blocks off the card's NEWEST verdict, and a verdict's own sub-headings are not verdicts", () => {
+  // A REJECTED pass and the APPROVED pass that follows it carry DIFFERENT
+  // corrections. Reading the first would drill a body the second replaced,
+  // and reading "the last ### heading" would read a sub-heading of the
+  // last verdict — verdicts nest their own `###` sections freely.
+  const card = cardWithVerdicts(
+    verdictEntry(
+      "### 2026-09-08 — REJECTED (claude-opus-5@subagent, verifier, phase 2)",
+      mutantBlockText({ correction: "THE OLD PASS'S CORRECTION" }),
+    ),
+    verdictEntry(
+      "### VERDICT 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+      "### The bodies, and the window is CONSTRUCTED rather than simulated",
+      "",
+      mutantBlockText({ correction: "THE NEWEST PASS'S CORRECTION" }),
+    ),
+  );
+  const newest = newestVerdict(card);
+  expect("problem" in newest, "the newest verdict is found").toBe(false);
+  if ("problem" in newest) return;
+  expect(newest.heading, "and it is the LAST dated entry, not the last heading").toContain(
+    "2026-09-09",
+  );
+  const read = readMutantBlocks(newest.text);
+  expect("problem" in read, "its blocks parse").toBe(false);
+  if ("problem" in read) return;
+  expect(read.blocks.map((b) => b.correction), "only the newest pass's block is read").toEqual([
+    "THE NEWEST PASS'S CORRECTION",
+  ]);
+
+  // A card with no verdict at all is SAID to have none, never treated as
+  // one carrying no corrections.
+  const bare = newestVerdict("---\nid: T-000\n---\n\n## Verdicts\n\nnothing yet\n");
+  expect("problem" in bare, "a section with no dated entry is a problem, not an empty read").toBe(
+    true,
+  );
+  expect(newestVerdict("---\nid: T-000\n---\n")).toHaveProperty("problem");
+});
+
+test("a mutant block naming a LINE NUMBER is refused by the reader, in each shape a line number takes", () => {
+  // docs/CONVENTIONS.md's A CITATION NAMES A SYMBOL, NOT A LINE, applied
+  // where getting it wrong is silent: the merge re-drills on a tree that
+  // has moved, so a coordinate names a different site or none.
+  const shapes = [
+    { over: { file: "tools/e2e/scripts/dispatch-brief.mjs:1798" }, why: "a path with a line tail" },
+    {
+      over: { spec: "tools/e2e/tests/brief.spec.ts:4406:1" },
+      why: "a path with a line and column tail",
+    },
+    { over: { correction: "CORRECTION 1 at line 1798" }, why: "a line number written in prose" },
+    { over: { message: "expected at lines 40-52" }, why: "a line RANGE written in prose" },
+  ];
+  for (const shape of shapes) {
+    const read = readMutantBlocks(mutantBlockText(shape.over));
+    expect("problem" in read, `${shape.why} is refused`).toBe(true);
+    if (!("problem" in read)) continue;
+    expect(read.problem, "and the refusal says what it refused").toContain("LINE NUMBER");
+  }
+  // The key form, which is the one a hand reaches for first.
+  const keyed = readMutantBlocks(
+    mutantBlockText().replace("file: tools", "line: 1798\nfile: tools"),
+  );
+  expect("problem" in keyed, "a `line:` key is refused by name").toBe(true);
+  if ("problem" in keyed) expect(keyed.problem).toContain("LINE NUMBER");
+
+  // THE POSITIVE CONTROL, run because a reader that refused everything
+  // would be indistinguishable from this one: the same block WITHOUT a
+  // line number reads clean, with every field on it.
+  const clean = readMutantBlocks(mutantBlockText());
+  expect("problem" in clean, "the same block without a coordinate is accepted").toBe(false);
+  if ("problem" in clean) return;
+  expect(clean.blocks).toHaveLength(1);
+  expect(clean.blocks[0]?.file).toBe("tools/e2e/scripts/dispatch-brief.mjs");
+  expect(clean.blocks[0]?.old).toBe("  return enumerated;");
+  expect(clean.blocks[0]?.new).toBe("  return [...enumerated, ...bolded];");
+});
+
+test("the mutant block's layout is FIXED — order, both markers, and a mutant that changes something", () => {
+  const good = mutantBlockText();
+  // ORDER. The keys are a layout, not a bag; swapping two is refused and
+  // the refusal names the key the layout expected there.
+  const swapped = good
+    .replace("file: tools/e2e/scripts/dispatch-brief.mjs\n", "")
+    .replace("spec: tools/e2e/tests/brief.spec.ts", "spec: tools/e2e/tests/brief.spec.ts\nfile: tools/e2e/scripts/dispatch-brief.mjs");
+  const outOfOrder = readMutantBlocks(swapped);
+  expect("problem" in outOfOrder, "a key out of order is refused").toBe(true);
+  if ("problem" in outOfOrder) expect(outOfOrder.problem).toContain("fixed layout has `file:`");
+
+  for (const [missing, why] of [
+    ["--- old", "no `--- old` marker"],
+    ["--- new", "no `--- new` marker"],
+  ] as const) {
+    const cut = readMutantBlocks(good.replace(`${missing}\n`, ""));
+    expect("problem" in cut, why).toBe(true);
+  }
+  // An empty field, a no-op mutant, and an unclosed fence.
+  expect(readMutantBlocks(mutantBlockText({ body: "" }))).toHaveProperty("problem");
+  expect(readMutantBlocks(mutantBlockText({ new: "  return enumerated;" }))).toHaveProperty(
+    "problem",
+  );
+  expect(readMutantBlocks(good.slice(0, good.length - 4))).toHaveProperty("problem");
+
+  // ONE BAD BLOCK REFUSES THE WHOLE READ — the alternative reports a
+  // clean drill over a correction nobody checked. The bad half is a
+  // LAYOUT fault rather than a line number, deliberately: leaning on the
+  // line-number rule here would put this body's kill set inside the
+  // sibling body's, and a contained body is a restatement.
+  const both = `${mutantBlockText()}\n\n${mutantBlockText({ body: "" })}`;
+  expect(readMutantBlocks(both), "a good block beside a bad one does not rescue it").toHaveProperty(
+    "problem",
+  );
+
+  // AN INDENTED FENCE IS NOT A BLOCK: `method/roles/verifier.md` prints
+  // this layout as an indented example, and a verdict quoting it must not
+  // become a parse failure. The refusal for a forgotten block is
+  // `drillSteps`', which the sibling body drives.
+  const indented = good
+    .split("\n")
+    .map((l) => `    ${l}`)
+    .join("\n");
+  const quoted = readMutantBlocks(indented);
+  expect("problem" in quoted, "an indented example parses as nothing at all").toBe(false);
+  if (!("problem" in quoted)) expect(quoted.blocks).toHaveLength(0);
+});
+
+test("a mutant anchor that does not match its file exactly once names no site, and planting refuses", () => {
+  const block = {
+    correction: "C1",
+    file: "src/a.mjs",
+    spec: "tools/e2e/tests/a.spec.ts",
+    body: "a body",
+    message: "a message",
+    old: "return enumerated;",
+    new: "return everything;",
+  };
+  const once = plantMutant({ source: "function f() {\n  return enumerated;\n}\n", block });
+  expect("problem" in once, "one match is a site").toBe(false);
+  if (!("problem" in once)) expect(once.text).toContain("return everything;");
+
+  const twice = plantMutant({
+    source: "function f() {\n  return enumerated;\n}\nfunction g() {\n  return enumerated;\n}\n",
+    block,
+  });
+  expect("problem" in twice, "two matches name no site").toBe(true);
+  if ("problem" in twice) expect(twice.problem).toContain("2 time(s)");
+
+  const none = plantMutant({ source: "function f() {\n  return 1;\n}\n", block });
+  expect("problem" in none, "a stale anchor matches nothing and is refused").toBe(true);
+  if ("problem" in none) expect(none.problem).toContain("0 time(s)");
+
+  // A `new` text carrying `$&` is PLANTED, never expanded: a string
+  // replacement would have written the matched text back instead.
+  const dollar = plantMutant({
+    source: "const x = 1;\n",
+    block: { ...block, old: "const x = 1;", new: "const x = 2; // $& $' $1" },
+  });
+  expect("problem" in dollar).toBe(false);
+  if (!("problem" in dollar)) expect(dollar.text).toBe("const x = 2; // $& $' $1\n");
+});
+
+test("the failing bodies are read off the run's own report, in both dialects this repository runs", () => {
+  // A PROGRESS LINE IS NOT A FAILURE. Playwright prints every body's
+  // name as it starts it, in the same `file:L:C › name` shape, and the
+  // ONLY thing separating the two is the `N)` a failure carries. The
+  // green body below is what makes that separation measurable: a reader
+  // that dropped the ordinal would report it as failing.
+  const playwright = [
+    "Running 2 tests using 1 worker",
+    "",
+    "[1/2] [chromium] › tests/brief.spec.ts:99:1 › a body that passed and must not be reported",
+    "[2/2] [chromium] › tests/brief.spec.ts:4406:1 › THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN",
+    "  1) [chromium] › tests/brief.spec.ts:4406:1 › THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN ",
+    "",
+    "    Error: the pack neither carries it nor names it as out of reach",
+    "",
+    "  1 failed",
+    "    [chromium] › tests/brief.spec.ts:4406:1 › THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN",
+  ].join("\n");
+  expect(failingBodies(playwright), "only the numbered line is a failure").toEqual([
+    "THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN",
+  ]);
+
+  // AND ONE BODY REPORTED TWICE IS ONE BODY. Vitest prints a failure in
+  // the run AND again under its own failed-tests summary, in the same
+  // shape — so without a distinct read, "red alone" would grade a single
+  // failure as two and stop a merge that should proceed.
+  const vitest = [
+    "FAIL  test/fence.test.ts > a fence expands its slugs",
+    "",
+    " Failed Tests 1 ",
+    "FAIL  test/fence.test.ts > a fence expands its slugs",
+    " 1 failed",
+  ].join("\n");
+  expect(failingBodies(vitest), "twice reported is once counted").toEqual([
+    "a fence expands its slugs",
+  ]);
+
+  // TWO failures are TWO names — the whole "red alone" claim depends on
+  // this being a set and not a count.
+  const two = [
+    "  1) [chromium] › tests/a.spec.ts:1:1 › first body ",
+    "  2) [chromium] › tests/a.spec.ts:9:1 › second body ",
+  ].join("\n");
+  expect(failingBodies(two)).toEqual(["first body", "second body"]);
+  // A GREEN run names nobody.
+  expect(failingBodies("Running 34 tests using 4 workers\n\n  34 passed (6.9s)")).toEqual([]);
+});
+
+test("the drill refuses a survivor, a body that reds more than itself, and a red without the message", () => {
+  const block = {
+    correction: "C1",
+    file: "src/a.mjs",
+    spec: "tools/e2e/tests/a.spec.ts",
+    body: "the body",
+    message: "the message it must print",
+    old: "a",
+    new: "b",
+  };
+  const survivor = gradeDrill({ block, failing: [], code: 0, output: "  34 passed" });
+  expect("problem" in survivor, "a green spec under a planted mutant is a SURVIVOR").toBe(true);
+  if ("problem" in survivor) expect(survivor.problem).toContain("THE MUTANT SURVIVED");
+
+  const wide = gradeDrill({
+    block,
+    failing: ["the body", "somebody else"],
+    code: 1,
+    output: "the message it must print",
+  });
+  expect("problem" in wide, "a mutant that kills a set is not evidence about one property").toBe(
+    true,
+  );
+  if ("problem" in wide) expect(wide.problem).toContain("REDS MORE THAN ITSELF");
+
+  const elsewhere = gradeDrill({ block, failing: ["somebody else"], code: 1, output: "" });
+  expect("problem" in elsewhere, "the NAMED body has to be the one that redded").toBe(true);
+
+  const quiet = gradeDrill({ block, failing: ["the body"], code: 1, output: "some other error" });
+  expect("problem" in quiet, "red without the block's message is not the failure it claims").toBe(
+    true,
+  );
+
+  const broken = gradeDrill({ block, failing: [], code: 3, output: "Error: Cannot find module" });
+  expect("problem" in broken, "a run that broke is not a drill result").toBe(true);
+  if ("problem" in broken) expect(broken.problem).not.toContain("SURVIVED");
+
+  // THE POSITIVE CONTROL: the arrangement the three refusals are about,
+  // done right, is graded ok by the same function.
+  expect(
+    gradeDrill({
+      block,
+      failing: ["the body"],
+      code: 1,
+      output: "Error: the message it must print — and the rest of the run",
+    }),
+  ).toEqual({ ok: true });
+});
+
+test("the whole drill plants, runs, restores and PROVES the restore by sha256 — and a survivor stops the merge", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-drill-"));
+  try {
+    const source = "export function f() {\n  return enumerated;\n}\n";
+    mkdirSync(path.join(root, "src"), { recursive: true });
+    writeFileSync(path.join(root, "src", "a.mjs"), source);
+    const block = {
+      correction: "C1 — the denominator is silent",
+      file: "src/a.mjs",
+      spec: "tools/e2e/tests/brief.spec.ts",
+      body: "the body that pins it",
+      message: "the pack neither carries it nor names it",
+      old: "  return enumerated;",
+      new: "  return everything;",
+    };
+    /** What the runner saw when it was called — the mutant really reaches the disk. */
+    let sawOnDisk = "";
+    const runner = (r: { command: string; argv: string[]; cwd: string }) => {
+      sawOnDisk = readFileSync(path.join(root, "src", "a.mjs"), "utf8");
+      expect(r.command, "the spec's own package supplies the runner").toBe("npx");
+      expect(r.argv).toEqual(["playwright", "test", "tests/brief.spec.ts", "--reporter=line"]);
+      expect(r.cwd).toBe(path.join(root, "tools", "e2e"));
+      return {
+        code: 1,
+        output: [
+          "  1) [chromium] › tests/brief.spec.ts:1:1 › the body that pins it ",
+          "    Error: the pack neither carries it nor names it",
+          "  1 failed",
+        ].join("\n"),
+      };
+    };
+    const said: string[] = [];
+    const ok = runMutantDrill({
+      block,
+      projectRoot: root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+      run: runner,
+    });
+    expect(ok, "a body RED ALONE with the message is the drill holding").toBe(EXIT.CLEAN);
+    expect(sawOnDisk, "the mutant really reached the file the block names").toContain(
+      "return everything;",
+    );
+    expect(readFileSync(path.join(root, "src", "a.mjs"), "utf8"), "and the site is restored").toBe(
+      source,
+    );
+    expect(said.join("\n"), "the restore is PROVED, not asserted").toContain(
+      "restored and PROVED by sha256",
+    );
+    expect(said.join("\n")).toContain("RED ALONE");
+
+    // A SURVIVOR STOPS IT — same drill, same file, a green run.
+    const survivorSaid: string[] = [];
+    const survived = runMutantDrill({
+      block,
+      projectRoot: root,
+      out: (s) => survivorSaid.push(s),
+      err: (s) => survivorSaid.push(s),
+      run: () => ({ code: 0, output: "  34 passed (6.9s)" }),
+    });
+    expect(survived, "a survivor is a stop, with the merge still staged").toBe(EXIT.FOUND);
+    expect(survivorSaid.join("\n")).toContain("THE MUTANT SURVIVED");
+    expect(
+      readFileSync(path.join(root, "src", "a.mjs"), "utf8"),
+      "and a refused drill restores the site too",
+    ).toBe(source);
+
+    // A STALE ANCHOR NEVER RUNS THE SPEC AT ALL.
+    let ran = false;
+    const stale = runMutantDrill({
+      block: { ...block, old: "  return something that is not there;" },
+      projectRoot: root,
+      err: (s) => survivorSaid.push(s),
+      run: () => {
+        ran = true;
+        return { code: 0, output: "" };
+      },
+    });
+    expect(stale, "an anchor matching nothing stops before anything is planted").toBe(EXIT.FOUND);
+    expect(ran, "and the spec is never run").toBe(false);
+    expect(readFileSync(path.join(root, "src", "a.mjs"), "utf8")).toBe(source);
+
+    // A spec no package in this project owns is SAID to be, never guessed.
+    expect(
+      runMutantDrill({ block: { ...block, spec: "somewhere/else.spec.ts" }, projectRoot: root }),
+    ).toBe(EXIT.CANNOT_RUN);
+    expect(specRunner("lib/parser/test/fence.test.ts", root)).toEqual({
+      command: "npx",
+      argv: ["vitest", "run", "test/fence.test.ts"],
+      cwd: path.join(root, "lib", "parser"),
+    });
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+
+test("a verdict assigning corrections with NO mutant block is refused, and one assigning none is not", () => {
+  const plan = (card: string | undefined): ReturnType<typeof drillSteps> =>
+    drillSteps({ cardText: card, projectRoot: repoRoot, id: "T-000" });
+
+  const forgotten = plan(
+    cardWithVerdicts(
+      verdictEntry(
+        "### 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+        "#### CORRECTION 1 — the denominator is silent",
+        "",
+        "The remedy is to widen the candidate set.",
+      ),
+    ),
+  );
+  expect(forgotten.map((s) => s.id), "a correction with no block refuses").toEqual(["drill:refused"]);
+  expect(forgotten[0]?.problem).toContain("carries NO mutant block");
+
+  // THE POSITIVE CONTROL, and it is the ordinary case: an APPROVED verdict
+  // owes no block, and the plan SAYS there was nothing rather than
+  // planning nothing.
+  const approved = plan(
+    cardWithVerdicts(
+      verdictEntry("### 2026-09-09 — APPROVED — claude-opus-5@subagent", "Everything held."),
+    ),
+  );
+  expect(approved.map((s) => s.id)).toEqual(["drill:none"]);
+  expect(approved[0]?.problem, "and it is not a refusal").toBeUndefined();
+  expect(approved[0]?.title).toContain("assigns no correction");
+
+  // A block per correction is a step per correction, and the first step
+  // carries both counts so a shortfall is visible without arithmetic.
+  const two = plan(
+    cardWithVerdicts(
+      verdictEntry(
+        "### 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+        "#### CORRECTION 1 — one",
+        mutantBlockText({ correction: "CORRECTION 1" }),
+        "#### CORRECTION 2 — two",
+        mutantBlockText({ correction: "CORRECTION 2", old: "  return two;" }),
+      ),
+    ),
+  );
+  expect(two.map((s) => s.id)).toEqual(["drill:1", "drill:2"]);
+  expect(two[0]?.title, "the correction count is printed beside the block count").toContain(
+    "2 correction heading(s), 2 block(s)",
+  );
+  expect(two.every((s) => s.action === "mutant-drill")).toBe(true);
+
+  // A card the planner could not read is a REFUSAL, never a quiet skip.
+  expect(plan(undefined).map((s) => s.id)).toEqual(["drill:refused"]);
+  expect(plan("---\nid: T-000\n---\n").map((s) => s.id)).toEqual(["drill:refused"]);
+});
+
+test("the mutant drill is the LAST step before the merge's STOP, on every shape of merge", () => {
+  const card = cardWithVerdicts(
+    verdictEntry(
+      "### 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+      mutantBlockText(),
+    ),
+  );
+  for (const paths of [
+    ["docs/tasks/T-000-a-card.md"],
+    ["app/src/x.ts", "docs/architecture/graph.json"],
+    ["tools/e2e/tests/cli.spec.ts"],
+  ]) {
+    const plan = tailPlan({ paths, projectRoot: repoRoot, id: "T-000", cardText: card });
+    const drill = plan.findIndex((s) => s.id === "drill:1");
+    const stop = plan.findIndex((s) => s.kind === "stop");
+    expect(drill, `the drill is planned for ${paths.join(", ")}`).toBeGreaterThanOrEqual(0);
+    expect(drill, "it comes before the stop that hands the commit back").toBeLessThan(stop);
+    expect(drill, "and it is the LAST step before it — nothing runs after the drill").toBe(stop - 1);
+    const lastSetup = plan.map((s) => s.kind).lastIndexOf("setup");
+    expect(lastSetup, "every setup step precedes it, because it runs a spec").toBeLessThan(drill);
+  }
+  // THE POSITIVE CONTROL for "the drill is a function of the VERDICT":
+  // the same paths with no card text plan a refusal in the same slot,
+  // never nothing.
+  const blind = tailPlan({ paths: ["README.md"], projectRoot: repoRoot, id: "T-000" });
+  expect(blind.map((s) => s.id)).toContain("drill:refused");
+});
+
+test("the layout verifier.md publishes IS the layout the merge parses, and each contract states its half once", () => {
+  // T-057: a rule with two statements is two chances to disagree. The
+  // block's layout is stated in `method/roles/verifier.md`, where the
+  // verifier reads it, and implemented in `merge.mjs`, where it is
+  // parsed. This body is the only thing that compares them.
+  const verifier = readFileSync(path.join(repoRoot, "method", "roles", "verifier.md"), "utf8");
+  const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
+
+  const fence = verifier.indexOf("```mutant");
+  expect(fence, "verifier.md prints the layout").toBeGreaterThan(0);
+  const template = verifier
+    .slice(fence)
+    .split("\n")
+    .slice(1)
+    .map((l) => l.trim());
+  const close = template.indexOf("```");
+  expect(close, "and closes it").toBeGreaterThan(0);
+  const printed = template.slice(0, close);
+  const oldAt = printed.indexOf(MUTANT_OLD);
+  const newAt = printed.indexOf(MUTANT_NEW);
+  expect(oldAt, "with the `old` anchor after the keys").toBeGreaterThan(0);
+  expect(newAt, "and the `new` anchor after that").toBeGreaterThan(oldAt);
+  expect(
+    printed.slice(0, oldAt).map((l) => l.split(":")[0]),
+    "the keys it publishes are the keys the reader takes, in order",
+  ).toEqual([...MUTANT_KEYS]);
+  expect(verifier, "with the line-number refusal stated where the block is written").toContain(
+    "NEVER A LINE",
+  );
+
+  // ONCE EACH, and in its own file: the verifier's half is the block and
+  // the commit, the integrator's is the drill and the never-rewrite rule.
+  const once = (text: string, marker: string): number => text.split(marker).length - 1;
+  expect(once(verifier, "A CORRECTION YOU ASSIGN IS A BODY YOU COMMIT")).toBe(1);
+  expect(once(integrator, "RE-DRILL THE VERDICT'S MUTANT BLOCKS")).toBe(1);
+  expect(once(integrator, "THE BODY IS NOT YOURS TO WRITE")).toBe(1);
+  expect(once(integrator, "A CORRECTION YOU ASSIGN IS A BODY YOU COMMIT"), "one home each").toBe(0);
+  expect(once(verifier, "RE-DRILL THE VERDICT'S MUTANT BLOCKS"), "and a pointer, not a copy").toBe(
+    0,
+  );
+  // The pointers themselves — each file names the other's step, which is
+  // what the method-eval corpus resolves against the numbered items.
+  expect(verifier).toContain("`roles/integrator.md` step 2b");
+  expect(integrator).toContain("`roles/verifier.md` step 5b");
+  // The stop conditions the integrator's half promises are the ones the
+  // reader implements, named in the contract rather than described.
+  const flat = integrator.replace(/\s+/g, " ");
+  for (const said of [
+    "on a survivor",
+    "reds more than itself",
+    "anchors do not match exactly once",
+    "PROVE the restore by sha256",
+  ]) {
+    expect(flat, `the contract names ${JSON.stringify(said)}`).toContain(said);
+  }
 });
