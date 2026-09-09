@@ -1,15 +1,15 @@
 ---
 id: T-223-s4
 title: "The narrowed sentence is still an absolute — `git symbolic-ref HEAD refs/heads/main` from a lane worktree exits 0 and an ORDINARY commit then moves main — and T-211's card still carries the struck clause"
-status: planned
+status: building
 feature: F-06
 milestone: 4
 priority: 4
 size: S
 blocked_by: []
 touches: [.claude/hooks/landing-gate.mjs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
