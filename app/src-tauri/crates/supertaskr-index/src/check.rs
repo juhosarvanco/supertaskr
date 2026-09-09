@@ -1531,6 +1531,50 @@ mod tests {
         );
     }
 
+    /// T-167-s13: a COUNT WITH NO LIST prints the count and no empty
+    /// heading — the one state `check` cannot produce and a caller can.
+    ///
+    /// **THIS BODY EXISTS BECAUSE THE DRILL FOUND ITS GUARD UNKILLABLE.**
+    /// `check()` fills `fresh_truncated_files` and
+    /// `fresh_truncated_paths` from the same `apply_budget` call, so a
+    /// count without a list is unreachable THROUGH the gate — and
+    /// `drop_clause`'s `if !head.is_empty()` was therefore defensive code
+    /// no mutation could reach: replacing it with `if true` left the
+    /// suite at 273 passed / 0 failed (crate scope), measured before this
+    /// body existed. `CheckReport` is public and its fields are public,
+    /// so the state IS constructible by a caller — the app crate, a
+    /// future reporter — and the property is worth holding: a heading
+    /// over nothing reads as "and none of them", which is a smaller claim
+    /// than the count above it.
+    #[test]
+    fn a_count_with_no_record_prints_the_count_and_never_an_empty_heading() {
+        let report = CheckReport {
+            stale: None,
+            graph_path: PathBuf::from("docs/architecture/graph.json"),
+            committed_bytes: 100,
+            fresh_bytes: 100,
+            committed_stats: Some((3, 0, 0)),
+            fresh_stats: (3, 0, 0),
+            budget_bytes: 1_000,
+            floor_bytes: 100,
+            fresh_truncated_files: 4,
+            fresh_truncated_symbols: true,
+            // The record a hand-built report can omit and the gate never
+            // does.
+            fresh_truncated_paths: Vec::new(),
+        };
+        let text = render(&report, ".");
+        assert_eq!(
+            printed_dropped_files(&text),
+            4,
+            "the count is the claim and it survives an absent list:\n{text}"
+        );
+        assert!(
+            !text.contains("WHICH FILES"),
+            "a heading over nothing reads as 'and none of them':\n{text}"
+        );
+    }
+
     /// T-167-s13, CRITERION 1: the list is bounded the way every other
     /// delta list in this report is bounded — [`MAX_LINES`] entries and
     /// then "... and N more".
