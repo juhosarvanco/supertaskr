@@ -1,26 +1,36 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
+  ALL_SUITES,
   EXIT,
   GRADED_SUITES,
+  OWED_SET_FLAG,
+  PACKAGE_ROOTS,
+  RANGE_FLAG,
   REQUIRED_VERDICT_FIELDS,
+  SCOPED_SUITE,
+  TREE_FLAG,
   VERDICT_TOKEN,
   acquireSolo,
   countBodies,
   countCargo,
   countPlaywright,
+  deriveOwed,
   deriveOwning,
   formatVerdict,
   importSpecifiers,
   judge,
   lockPath,
+  owedSuites,
   owningSpecs,
+  packageDependents,
   parseVerdict,
+  rangeChanged,
   recordVerdicts,
   resolveImport,
   runSuite,
@@ -29,18 +39,22 @@ import {
   specFiles,
   specReach,
   stripAnsi,
+  suiteOfPath,
   validateRegistry,
   validateSuite,
 } from "../scripts/gate-run.mjs";
+import { docsGate, docsReaders } from "../scripts/docs-scan.mjs";
 import {
   GREEN,
   REQUIRED_SUITES,
+  SCOPABLE_SUITE,
   TOKEN_REL_PATH,
   TOKEN_VERSION,
   headTree,
   judgeToken,
   readToken,
 } from "../../../.claude/hooks/gate-token.mjs";
+import { OWED_SET_FLAGS, OWED_SET_PATH } from "../../../.claude/hooks/push-guard.mjs";
 
 /**
  * THE BLESSED GATE-RUNNER'S POSITIVE CONTROL (T-202) — no browser.
@@ -1709,5 +1723,628 @@ test("the scoped arm's own CLI path prints the subset's verdict, writes it to th
     );
   } finally {
     red.cleanup();
+  }
+});
+
+/** The derivation at a fixture root, with the readings that root's own
+ *  tree gives. `owedForRange` is the same composition over a git range;
+ *  this is it over a path list, so a body can move ONE file and read the
+ *  answer move without writing a commit. */
+function deriveOwedIn(root: string, changed: string[]) {
+  const { reach, unresolved } = specReach(root);
+  return deriveOwed({ changed, reach, unresolved, dependents: packageDependents(root) });
+}
+
+/** One task card this repository really tracks, DERIVED — the flat,
+ *  non-recursive walk the parser's own census uses. A body naming a card
+ *  would be a body that reds when that card lands. */
+function trackedCard(): string {
+  const card = execFileSync("git", ["-C", repoRoot, "ls-files", "docs/tasks/T-*.md"], {
+    encoding: "utf8",
+  })
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.endsWith(".md"))
+    .sort()[0];
+  if (card === undefined) throw new Error("no task card is tracked, and this body is about one");
+  return card;
+}
+
+// ── §THE OWED SET (T-280) ────────────────────────────────────────────
+//
+// The scoped reading above answers "which specs own these paths", for a
+// path list a SEAT typed. This section is about the whole question, for
+// a path list nobody typed: given a RANGE, which of the graded suites
+// does it owe, and which spec files does the end-to-end leg owe?
+//
+// ── WHAT MAKES THESE BODIES DISCRIMINATIONS AND NOT DESCRIPTIONS ────
+// The rule is a pure function of named inputs, so every body below moves
+// ONE input and reads the answer move with it. A body that only asserted
+// today's answer for today's tree would be green under a derivation that
+// ignored its inputs entirely — which is exactly the shape "a hand-listed
+// set" takes once somebody writes it down.
+//
+// AND THE DIRECTION THAT COSTS SOMETHING IS SHORT, NEVER LONG. Every way
+// the derivation can fail lands on the WHOLE battery, and each of those
+// ways has a body that also shows the same call WITHOUT the failure
+// deriving a proper subset — because "fails closed" asserted alone is
+// satisfied by a function that always answers four.
+
+/** Criterion 2's own word, read off the card. It is ADDITIVE: the five
+ *  reasons that existed before it keep their names, and a body below
+ *  requires each of them still to be reachable. */
+const CRITERION_2_PARTIAL = "token-partial";
+
+test("the package roots the owed set is derived through are the registry's own directories, so no second list of them can exist", () => {
+  // THE FIRST WAY THIS FEATURE COULD BE A HAND-LISTED SET IS A MAP OF
+  // PACKAGE ROOTS TYPED BESIDE THE REGISTRY. There is none: the map IS
+  // the registry, read through each entry's own `cwd`.
+  expect(Object.keys(PACKAGE_ROOTS).sort()).toEqual(Object.keys(GRADED_SUITES).sort());
+  for (const s of Object.values(GRADED_SUITES)) {
+    expect(PACKAGE_ROOTS[s.id], `${s.id}'s root is its own cwd`).toBe(s.cwd);
+  }
+  expect([...ALL_SUITES]).toEqual(Object.keys(GRADED_SUITES).sort());
+  // AND THE SECOND WAY IS THE GUARD HOLDING ITS OWN COPY OF THE NAMES IT
+  // ASKS WITH. It may not import this module — it loads on every Bash
+  // call in a session — so the two are pinned to each other here, the
+  // treatment `REQUIRED_SUITES` already gets four bodies up.
+  expect(OWED_SET_FLAGS.ask).toBe(OWED_SET_FLAG);
+  expect(OWED_SET_FLAGS.range).toBe(RANGE_FLAG);
+  expect(OWED_SET_FLAGS.tree).toBe(TREE_FLAG);
+  expect(SCOPABLE_SUITE, "the one leg a token entry may have graded in part").toBe(SCOPED_SUITE);
+  expect(OWED_SET_PATH, "the guard asks the runner that owns the rule").toBe(
+    path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"),
+  );
+});
+
+test("a path is placed by the roots the derivation was GIVEN, so the same path owes different suites under different roots", () => {
+  // THE HAND-LISTED-SET REJECTION, MADE MEASURABLE. If the placement
+  // were written into the function, moving the roots could not move the
+  // answer. It moves.
+  const reach = { "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts"] };
+  const asShipped = deriveOwed({ changed: ["lib/parser/src/x.ts"], reach });
+  expect(asShipped.suites).toEqual(["parser"]);
+  const relabelled = deriveOwed({
+    changed: ["lib/parser/src/x.ts"],
+    reach,
+    roots: { app: "lib/parser", parser: "nowhere" },
+  });
+  expect(relabelled.suites, "the roots decide, and nothing else does").toEqual(["app"]);
+  // AND THE LONGEST ROOT WINS, which is what keeps a Rust file inside
+  // `app/` out of the app suite.
+  expect(suiteOfPath("app/src-tauri/src/lib.rs")).toBe("rust");
+  expect(suiteOfPath("app/src/main.tsx")).toBe("app");
+  expect(suiteOfPath("method/roots.md"), "no root claims it").toBeUndefined();
+});
+
+test("a directory whose NAME merely begins with a package root is not INSIDE it, so a sibling fails CLOSED to the whole battery instead of placing under its neighbour", () => {
+  // THE BOUNDARY IS A PATH SEGMENT AND NOT A STRING PREFIX, and the body
+  // above cannot see the difference: every path it names is either a real
+  // child of a root or claimed by no root at all. Drop the `/` from the
+  // match and `lib/parser2/` becomes the parser's, `apples/` the app's,
+  // `tools/e2e2/` the end-to-end leg's — each of them PLACING a path this
+  // derivation is supposed to fail closed on, which turns the whole
+  // battery into one leg with nothing said. That is the narrowing
+  // direction, so it is the direction this card owes a body.
+  //
+  // THE CONTROL FIRST, run where the property under test is absent from
+  // the question: a real child still places and the longest root still
+  // wins. Without these three lines every expectation below is satisfied
+  // by a matcher that places NOTHING.
+  expect(suiteOfPath("lib/parser/src/x.ts"), "the control: a real child places").toBe("parser");
+  expect(suiteOfPath("app/src-tauri/src/lib.rs"), "the control: the longest root wins").toBe(
+    "rust",
+  );
+  expect(suiteOfPath("app/src-tauri"), "the control: a root is its own suite's").toBe("rust");
+
+  // AND NOW THE SIBLINGS, one per root, each of which a prefix match
+  // would swallow.
+  expect(
+    suiteOfPath("lib/parser2/x.ts"),
+    "a sibling of lib/parser is not inside lib/parser",
+  ).toBeUndefined();
+  expect(suiteOfPath("apples/x.ts"), "a sibling of app is not inside app").toBeUndefined();
+  expect(
+    suiteOfPath("tools/e2e2/x.mjs"),
+    "a sibling of tools/e2e is not inside tools/e2e",
+  ).toBeUndefined();
+  expect(
+    suiteOfPath("app/src-tauri-notes/x.md"),
+    "a sibling of app/src-tauri belongs to the APP, which does contain it",
+  ).toBe("app");
+
+  // THE CONSEQUENCE THAT MAKES THIS A SAFETY PROPERTY AND NOT A NAMING
+  // ONE: being unplaceable is what makes a sibling fail CLOSED.
+  const sibling = deriveOwed({ changed: ["lib/parser2/x.ts"], reach: {} });
+  expect(sibling.suites, "an unplaceable sibling owes the WHOLE battery").toEqual([...ALL_SUITES]);
+  expect(sibling.failClosed ?? "", "and the answer says why").toContain("lib/parser2/x.ts");
+});
+
+test("planting a reader in a spec GROWS the owed set, over real files and the real graph", () => {
+  // THE DATA MUTANT THE CARD ASKS FOR (criterion 5), in its import face.
+  // The subject is not the derivation's code — it is the DATA the
+  // derivation reads, which is an import statement in a spec file. The
+  // pristine hook must NOT own the subject, or the mutant proves nothing.
+  const { root, cleanup } = makeOwningFixture();
+  try {
+    const owner = path.join(root, "tools", "e2e", "tests", "owner.spec.ts");
+    const pristine = readFileSync(owner, "utf8");
+
+    // THE HOOK: the reader REMOVED. Nothing in this fixture imports the
+    // subject, so the end-to-end leg is owed WHOLE — the honest answer
+    // for a path under the leg's root that no spec owns.
+    writeFileSync(owner, pristine.replace(/^import \{ ANSWER \}.*\n/m, "").replace("ANSWER", "41"));
+    const before = deriveOwedIn(root, ["tools/e2e/scripts/subject.mjs"]);
+    expect(before.suites).toEqual(["e2e"]);
+    expect(before.e2e.whole, "no spec owns it, so the leg cannot be narrowed").toBe(true);
+    expect(before.e2e.specs).toEqual([]);
+
+    // THE MUTANT: the reader planted back. One import statement, and the
+    // owed set names the spec that now reads the subject.
+    writeFileSync(owner, pristine);
+    const after = deriveOwedIn(root, ["tools/e2e/scripts/subject.mjs"]);
+    expect(after.suites).toEqual(["e2e"]);
+    expect(after.e2e.whole, "a spec owns it now, so the leg narrows").toBe(false);
+    expect(after.e2e.specs).toEqual(["tools/e2e/tests/owner.spec.ts"]);
+  } finally {
+    cleanup();
+  }
+});
+
+test("adding a doc READ grows the owed set through the DOCS GATE's map, and removing it shrinks the answer back", () => {
+  // THE SAME MUTANT IN ITS DOCS FACE, on the data the docs gate hands
+  // in. A reader under `lib/parser/` makes a document owe the parser
+  // suite; the same document with no reader owes nothing at all — which
+  // is the positive empty answer half the wasted batteries were.
+  const reach = {
+    "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts", "tools/e2e/scripts/reads.mjs"],
+  };
+  const asked = ["docs/GUIDE.md"];
+  const unread = deriveOwed({ changed: asked, reach, docsAsked: asked });
+  expect(unread.suites, "no code suite reads it — a measurement, not a gap").toEqual([]);
+  expect(unread.unplaceable, "and it is PLACED, never fail-closed").toEqual([]);
+  expect(unread.failClosed).toBeUndefined();
+
+  const read = deriveOwed({
+    changed: asked,
+    reach,
+    docsAsked: asked,
+    docsReadersByPath: { "docs/GUIDE.md": ["lib/parser/src/census.ts"] },
+  });
+  expect(read.suites, "one reader added, one suite owed").toEqual(["parser"]);
+
+  // AND A SECOND READER, UNDER THE END-TO-END ROOT, ADDS ITS SUITE AND
+  // NARROWS IT TO THE SPEC THAT IMPORTS THAT READER.
+  const both = deriveOwed({
+    changed: asked,
+    reach,
+    docsAsked: asked,
+    docsReadersByPath: {
+      "docs/GUIDE.md": ["lib/parser/src/census.ts", "tools/e2e/scripts/reads.mjs"],
+    },
+  });
+  expect(both.suites).toEqual(["e2e", "parser"]);
+  expect(both.e2e).toEqual({ whole: false, specs: ["tools/e2e/tests/a.spec.ts"] });
+});
+
+test("the live reader map places a real task card, and the set it owes is smaller than the battery", () => {
+  // THE INTEGRATION HALF, at this checkout's own ref: a card-only push
+  // is the case this card was written about. It must owe LESS than four
+  // legs, or the mechanism buys nothing.
+  const card = trackedCard();
+  const readers = docsReaders(repoRoot);
+  const gate = docsGate([card], readers);
+  const owed = deriveOwed({
+    changed: [card],
+    reach: specReach().reach,
+    dependents: packageDependents(),
+    docsAsked: gate.docsPaths,
+    docsReadersByPath: Object.fromEntries(gate.byPath.map((e) => [e.path, e.readers])),
+  });
+  expect(owed.failClosed, `${card} must be placeable`).toBeUndefined();
+  expect(owed.suites.length, "a proper subset of the battery").toBeLessThan(ALL_SUITES.length);
+  expect(owed.e2e.whole, "and the end-to-end leg is narrowed").toBe(false);
+  expect(owed.e2e.specs.length).toBeGreaterThan(0);
+  expect(owed.e2e.specs.length, "to fewer specs than the leg has").toBeLessThan(
+    specFiles().length,
+  );
+});
+
+test("a path the derivation cannot place makes the owed set the WHOLE battery and the answer says why", () => {
+  // CRITERION 3, WITH ITS CONTROL FIRST. Without the control, "owes four
+  // suites" is satisfied by a function that always answers four.
+  const reach = { "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts"] };
+  const placed = deriveOwed({ changed: ["lib/parser/src/x.ts"], reach });
+  expect(placed.suites, "the control really derives a subset").toEqual(["parser"]);
+  expect(placed.failClosed).toBeUndefined();
+
+  // A FILE UNDER NO PACKAGE ROOT THAT NO SPEC READS.
+  const stray = deriveOwed({ changed: ["lib/parser/src/x.ts", "method/roles/executor.md"], reach });
+  expect(stray.suites).toEqual([...ALL_SUITES]);
+  expect(stray.e2e.whole).toBe(true);
+  expect(stray.failClosed ?? "").toContain("method/roles/executor.md");
+  expect(stray.unplaceable.map((u) => u.path)).toEqual(["method/roles/executor.md"]);
+
+  // A READER THE MAP NAMES THAT LIES UNDER NO PACKAGE ROOT — the card's
+  // own second case, and the one a package-root arm alone would answer
+  // "nothing owed" to.
+  const strayReader = deriveOwed({
+    changed: ["docs/GUIDE.md"],
+    reach,
+    docsAsked: ["docs/GUIDE.md"],
+    docsReadersByPath: { "docs/GUIDE.md": [".claude/hooks/somewhere.mjs"] },
+  });
+  expect(strayReader.suites).toEqual([...ALL_SUITES]);
+  expect(strayReader.failClosed ?? "").toContain(".claude/hooks/somewhere.mjs");
+
+  // AN IMPORT EDGE THAT WILL NOT RESOLVE, which would make the SPEC half
+  // short rather than the suite half wrong.
+  const dropped = deriveOwed({
+    changed: ["lib/parser/src/x.ts"],
+    reach,
+    unresolved: ["tools/e2e/tests/a.spec.ts -> ./gone"],
+  });
+  expect(dropped.suites).toEqual([...ALL_SUITES]);
+  expect(dropped.failClosed ?? "").toContain("./gone");
+
+  // AND A DOCS PATH THE GATE WAS NEVER ASKED ABOUT IS AN INABILITY, not
+  // the empty answer that an unread document gets: the two look
+  // identical in the map and mean opposite things.
+  const unasked = deriveOwed({ changed: ["docs/GUIDE.md"], reach });
+  expect(unasked.suites).toEqual([...ALL_SUITES]);
+  expect(unasked.failClosed ?? "").toContain("never asked");
+});
+
+test("a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted", () => {
+  // THE PACKAGE ROOTS ALONE WOULD MISS THIS: `lib/parser/` lies under
+  // the parser's root and nothing else, yet the app imports the parser
+  // through `file:../lib/parser` and its suite really can red.
+  const live = packageDependents();
+  expect(live["parser"], "this repository's own manifest edge").toContain("app");
+  const reach = { "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts"] };
+  expect(
+    deriveOwed({ changed: ["lib/parser/src/x.ts"], reach, dependents: live }).suites,
+  ).toEqual(["app", "parser"]);
+  // THE CONTROL: the same call with NO edges owes one suite, so the
+  // second name above came from the manifest and not from the rule.
+  expect(deriveOwed({ changed: ["lib/parser/src/x.ts"], reach, dependents: {} }).suites).toEqual([
+    "parser",
+  ]);
+  // AND THE EDGE IS READ OFF A MANIFEST: a tree with no such dependency
+  // has no such edge.
+  const bare = mkdtempSync(path.join(tmpdir(), "t280-deps-"));
+  try {
+    mkdirSync(path.join(bare, "app"), { recursive: true });
+    mkdirSync(path.join(bare, "lib", "parser"), { recursive: true });
+    writeFileSync(path.join(bare, "app/package.json"), '{"dependencies":{"left-pad":"^1"}}\n');
+    writeFileSync(path.join(bare, "lib/parser/package.json"), "{}\n");
+    expect(packageDependents(bare)["parser"]).toEqual([]);
+    // …and the same tree WITH the specifier has it, so the reader is
+    // reading and not defaulting.
+    writeFileSync(
+      path.join(bare, "app/package.json"),
+      '{"dependencies":{"@x/parser":"file:../lib/parser"}}\n',
+    );
+    expect(packageDependents(bare)["parser"]).toEqual(["app"]);
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test("the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies", () => {
+  // THE RANGE RULE, HELD RATHER THAN QUOTED. `git diff A..B` is `git diff
+  // A B`, so between two divergent tips the OTHER side's work comes back
+  // reversed — the measured lie the rule exists to prevent.
+  const { root, cleanup } = makeArmFixture("41");
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+    const base = git("rev-parse", "HEAD");
+    writeFileSync(path.join(root, "tools/e2e/scripts/subject.mjs"), "export const ANSWER = 7;\n");
+    git("add", "-A");
+    git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", "one");
+    const tip = git("rev-parse", "HEAD");
+
+    // THE CONTROL: an ancestor pair is answered, and it names the path.
+    const ok = rangeChanged(`${base}..${tip}`, root);
+    expect("problem" in ok ? ok.problem : "").toBe("");
+    expect("paths" in ok ? ok.paths : []).toEqual(["tools/e2e/scripts/subject.mjs"]);
+
+    // THE DIVERGENCE: a second commit off the base, and neither tip is
+    // the other's ancestor.
+    git("checkout", "-q", "-b", "other", base);
+    writeFileSync(path.join(root, "tools/e2e/scripts/subject.mjs"), "export const ANSWER = 9;\n");
+    git("add", "-A");
+    git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", "two");
+    const other = git("rev-parse", "HEAD");
+    const bad = rangeChanged(`${other}..${tip}`, root);
+    expect("problem" in bad, "a divergent pair must be REFUSED, not answered").toBe(true);
+    expect("problem" in bad ? bad.problem : "").toContain("not an ancestor");
+
+    // AND A RANGE THAT IS NOT TWO REVISIONS AT ALL NEVER REACHES git.
+    const shell = rangeChanged("HEAD~1..HEAD; rm -rf /", root);
+    expect("problem" in shell).toBe(true);
+    expect("problem" in shell ? shell.problem : "").toContain("two-dot range");
+  } finally {
+    cleanup();
+  }
+});
+
+test("a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all", () => {
+  // THE LARGEST NARROWING THIS DERIVATION CAN MAKE IS AN EMPTY PATH SET:
+  // no path, no owed suite, and a push the guard then asks the token
+  // nothing about. A `--diff-filter` that dropped deletions would produce
+  // exactly that for a range whose only change is a removal — and
+  // removals are ordinary here: a card is deleted, a script is retired, a
+  // spec is folded into another. Deleting a task card moves the parser's
+  // census; deleting a source file moves what still compiles.
+  const { root, cleanup } = makeArmFixture("41");
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+    const commit = (m: string) => {
+      git("add", "-A");
+      git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", m);
+    };
+    const doomed = path.join(root, "tools/e2e/scripts/doomed.mjs");
+    writeFileSync(doomed, "export const GONE = 1;\n");
+    commit("plant the file this range will remove");
+    const base = git("rev-parse", "HEAD");
+
+    // THE CONTROL, where the arming is absent: the SAME fixture and the
+    // same reader over an ADDITION already names its path, so a reader
+    // that named nothing at all could not pass this line.
+    writeFileSync(path.join(root, "tools/e2e/scripts/added.mjs"), "export const NEW = 2;\n");
+    commit("an addition");
+    const added = rangeChanged(`${base}..HEAD`, root);
+    expect("paths" in added ? added.paths : [], "the control: an addition is named").toEqual([
+      "tools/e2e/scripts/added.mjs",
+    ]);
+
+    // AND THE DELETION, which is the reading this body exists for.
+    const afterAdd = git("rev-parse", "HEAD");
+    rmSync(doomed);
+    commit("remove it");
+    const seen = rangeChanged(`${afterAdd}..HEAD`, root);
+    expect(
+      "paths" in seen ? seen.paths : [],
+      "a removal is a change, and the path set must carry it",
+    ).toEqual(["tools/e2e/scripts/doomed.mjs"]);
+
+    // THE CONSEQUENCE: the deleted path still owes the suite whose root
+    // contained it, rather than owing nothing.
+    const owed = deriveOwed({ changed: "paths" in seen ? seen.paths : [], reach: {} });
+    expect(owed.suites, "a deletion under a package root owes that suite").toEqual(["e2e"]);
+  } finally {
+    cleanup();
+  }
+});
+
+test("the ASK arm answers the owed set as JSON without running anything, and answers a JSON problem when it cannot", () => {
+  // THIS IS THE ARM THE PUSH GUARD SPAWNS, so its answer must be
+  // machine-readable in BOTH directions: a refusal a caller had to parse
+  // out of English is a caller that fails open by accident.
+  const { root, cleanup } = makeArmFixture("41");
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+    const base = git("rev-parse", "HEAD");
+    writeFileSync(path.join(root, "tools/e2e/scripts/subject.mjs"), "export const ANSWER = 41;\n");
+    writeFileSync(path.join(root, "tools/e2e/scripts/second.mjs"), "export const OTHER = 1;\n");
+    git("add", "-A");
+    git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", "one");
+    const tip = git("rev-parse", "HEAD");
+
+    const ask = spawnSync(
+      process.execPath,
+      [
+        path.join(root, "tools/e2e/scripts/gate-run.mjs"),
+        OWED_SET_FLAG,
+        RANGE_FLAG,
+        `${base}..${tip}`,
+        TREE_FLAG,
+        root,
+      ],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(ask.status, ask.stderr).toBe(EXIT.GREEN);
+    const answer = JSON.parse(String(ask.stdout));
+    expect(answer.suites).toEqual(["e2e"]);
+    expect(answer.changed).toEqual(["tools/e2e/scripts/second.mjs"]);
+    expect(answer.e2e.whole, "a script no spec imports cannot narrow the leg").toBe(true);
+    // THE INPUTS TRAVEL WITH THE ANSWER, so a set nobody can re-derive
+    // never leaves this program.
+    expect(answer.inputs.packageRoots).toEqual({ ...PACKAGE_ROOTS });
+    expect(answer.inputs.base).toBe(base);
+    expect(answer.inputs.tip).toBe(tip);
+    expect(answer.inputs.specFiles).toBeGreaterThan(0);
+    // AND NOTHING RAN: the ask arm writes no token.
+    expect(existsSync(path.join(root, TOKEN_REL_PATH))).toBe(false);
+
+    const bad = spawnSync(
+      process.execPath,
+      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), OWED_SET_FLAG, RANGE_FLAG, "not-a-range"],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(bad.status).toBe(EXIT.USAGE);
+    expect(JSON.parse(String(bad.stdout)).problem).toContain("two-dot range");
+  } finally {
+    cleanup();
+  }
+});
+
+test("the RANGE arm grades the owed set, records the set and its range in the token, and its e2e entry names the specs it graded", () => {
+  // THE WHOLE FEATURE, END TO END, AND IT IS NOT VACUOUS: this fixture's
+  // `stranger.spec.ts` always fails, so a run that reached the whole leg
+  // could not answer green. The subset answers GREEN with one body.
+  const { root, cleanup } = makeArmFixture("41");
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+    const base = git("rev-parse", "HEAD");
+    writeFileSync(path.join(root, "tools/e2e/scripts/subject.mjs"), "export const ANSWER = 41;\n");
+    writeFileSync(
+      path.join(root, "tools/e2e/scripts/subject.mjs"),
+      "export const ANSWER = 41; // touched\n",
+    );
+    git("add", "-A");
+    git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", "one");
+    const tip = git("rev-parse", "HEAD");
+
+    const run = spawnSync(
+      process.execPath,
+      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), RANGE_FLAG, `${base}..${tip}`],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(run.status, run.stderr).toBe(EXIT.GREEN);
+    const line =
+      String(run.stdout)
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith(`${VERDICT_TOKEN} `))
+        .at(-1) ?? "";
+    // THE WORD IS THE LEG'S OWN, not `SCOPED-`: this subset was derived
+    // from two commit ids the guard re-derives, so it is mintable.
+    expect(line).toContain("verdict=GREEN");
+    expect(line).not.toContain(CRITERION_3_SCOPED_GREEN);
+    expect(line).toContain("scope=tools/e2e/tests/owner.spec.ts");
+    expect(line, "one body, because one spec owns the change").toContain("bodies=1");
+
+    const token = JSON.parse(readFileSync(path.join(root, TOKEN_REL_PATH), "utf8"));
+    expect(token.suites["e2e"].verdict).toBe("GREEN");
+    expect(token.suites["e2e"].scope).toBe("tools/e2e/tests/owner.spec.ts");
+    expect(token.owed.range).toBe(`${base}..${tip}`);
+    expect(token.owed.suites).toEqual(["e2e"]);
+    expect(token.owed.e2e).toEqual({ whole: false, specs: ["tools/e2e/tests/owner.spec.ts"] });
+    expect(token.owed.inputs.packageRoots).toEqual({ ...PACKAGE_ROOTS });
+
+    // THE DISCRIMINATION: the WHOLE leg over the same tree is RED, so the
+    // green above is a narrower reading and not a runner that cannot say
+    // red.
+    const whole = spawnSync(
+      process.execPath,
+      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), "e2e"],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(whole.status, "the leg really reaches the stranger").toBe(EXIT.RED);
+  } finally {
+    cleanup();
+  }
+});
+
+test("the owed set becomes runnable suites in the registry's own order, with the end-to-end leg scoped only when it is narrowed", () => {
+  const narrowed = owedSuites({
+    suites: ["e2e", "parser"],
+    e2e: { whole: false, specs: ["tools/e2e/tests/a.spec.ts"] },
+    byPath: [],
+    unplaceable: [],
+    failClosed: undefined,
+  });
+  expect(narrowed.map((s) => s.id)).toEqual(["parser", "e2e"]);
+  expect(narrowed.at(-1)?.argv.at(-1), "spelled relative to the leg's own cwd").toBe(
+    "tests/a.spec.ts",
+  );
+  // A LEG OWED WHOLE IS THE REGISTRY'S ENTRY UNCHANGED — no empty scope,
+  // no argv this runner would then have to interpret.
+  const wholeLeg = owedSuites({
+    suites: ["e2e"],
+    e2e: { whole: true, specs: [] },
+    byPath: [],
+    unplaceable: [],
+    failClosed: undefined,
+  });
+  expect(wholeLeg[0]?.argv).toEqual([...GRADED_SUITES.e2e.argv]);
+});
+
+test("a token that does not cover what the range owes is refused as token-partial, and the five earlier reasons keep their names", () => {
+  // CRITERION 2 AT THE JUDGE. The control comes FIRST and must PASS: a
+  // token carrying exactly the owed set IS accepted, so the refusal that
+  // follows is a discrimination and not a constant.
+  const repo = tokenRepo("owed");
+  try {
+    const tree = String(headTree(repo));
+    const owed = {
+      range: "aaa..bbb",
+      suites: ["e2e", "parser"],
+      e2e: { whole: false, specs: ["tools/e2e/tests/a.spec.ts"] },
+    };
+    recordVerdicts(
+      [
+        { ...entryFor("parser", "GREEN"), targets: 1 },
+        { ...entryFor("e2e", "GREEN"), targets: 1, scope: "tools/e2e/tests/a.spec.ts" },
+      ],
+      repo,
+    );
+    expect(
+      judgeToken({ token: tokenOf(repo), tree, owed }).state,
+      "two suites, and the range owes exactly those two",
+    ).toBe("fresh");
+    // AND THE SAME TOKEN IS INCOMPLETE AGAINST THE WHOLE BATTERY, which
+    // is what makes the acceptance above the owed set's doing.
+    expect(judgeToken({ token: tokenOf(repo), tree }).code).toBe("token-incomplete");
+
+    // A SUITE THE RANGE OWES THAT NOTHING MEASURED.
+    const missing = judgeToken({
+      token: tokenOf(repo),
+      tree,
+      owed: { ...owed, suites: ["e2e", "parser", "rust"] },
+    });
+    expect(missing.state).toBe("partial");
+    expect(missing.code).toBe(CRITERION_2_PARTIAL);
+    expect(missing.detail).toContain("rust");
+    expect(missing.detail, "and it names the range it is judging").toContain("aaa..bbb");
+
+    // A SPEC FILE THE RANGE OWES THAT THE RECORDED RUN DID NOT GRADE.
+    const short = judgeToken({
+      token: tokenOf(repo),
+      tree,
+      owed: {
+        ...owed,
+        e2e: { whole: false, specs: ["tools/e2e/tests/a.spec.ts", "tools/e2e/tests/b.spec.ts"] },
+      },
+    });
+    expect(short.code).toBe(CRITERION_2_PARTIAL);
+    expect(short.detail).toContain("tools/e2e/tests/b.spec.ts");
+
+    // AND A LEG OWED WHOLE IS NOT COVERED BY A SUBSET RUN.
+    expect(
+      judgeToken({ token: tokenOf(repo), tree, owed: { ...owed, e2e: { whole: true, specs: [] } } })
+        .code,
+    ).toBe(CRITERION_2_PARTIAL);
+
+    // AN ENTRY WITH NO SCOPE GRADED THE WHOLE LEG AND COVERS ANY SUBSET,
+    // which is what makes this arm additive rather than a new demand on
+    // every token that already exists.
+    recordVerdicts([{ ...entryFor("e2e", "GREEN"), targets: 1 }], repo);
+    expect(
+      judgeToken({
+        token: tokenOf(repo),
+        tree,
+        owed: { ...owed, e2e: { whole: true, specs: [] } },
+      }).state,
+    ).toBe("fresh");
+
+    // THE FIVE EARLIER REASONS ARE UNRENAMED AND STILL REACHABLE WITH AN
+    // OWED SET IN HAND — additive, in the card's own word.
+    recordVerdicts([{ ...entryFor("parser", "RED"), targets: 1 }], repo);
+    expect(judgeToken({ token: tokenOf(repo), tree, owed }).code).toBe("token-red");
+    expect(judgeToken({ token: tokenOf(repo), tree: "0".repeat(40), owed }).code).toBe(
+      "token-stale",
+    );
+    expect(judgeToken({ problem: "none", tree, owed }).code).toBe("token-missing");
+  } finally {
+    dropRepo(repo);
   }
 });

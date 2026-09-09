@@ -195,17 +195,24 @@ and T-236 (2026-09-02, whose pre-compaction text is
   name, plus the docs-walk bodies the DOCS GATE's own reader map names
   when a docs path moved. Same refusals, and a verdict line naming the
   SUBSET beside its body count rather than the leg's name alone.
-  **THE VERIFIER'S ONE RUN IS THE FULL FOUR LEGS, AND THE INTEGRATOR
-  RUNS THE FULL BATTERY LAST**, on merged main before the push: a
-  cross-spec red — the class T-264's executor found four of by running
-  everything — must land inside the lane's ceremony, not on merged main
-  where the answer is the revert play. The subset's verdict word is
-  `SCOPED-GREEN` or `SCOPED-RED`, which the push guard REFUSES as a
-  token, so a push still owes that battery and a scoped run POISONS a
-  stale green rather than leaving it standing. A changed path the
-  derivation CANNOT PLACE is exit 2 naming the path, and the full leg is
-  owed: this form can only ever be wrong by running too MUCH. The other
-  three legs are seconds each and are still run whole.
+  **THE VERIFIER'S ONE RUN AND THE INTEGRATOR'S RUN BEFORE THE PUSH ARE
+  THE OWED SET FOR THEIR OWN RANGE** — `--range <base>..<tip>` at the
+  bench's tip, `@{upstream}..HEAD` at the push — and NOT this hand-typed
+  form: a cross-spec red, the class T-264's executor found four of by
+  running everything, must land inside the lane's ceremony rather than
+  on merged main where the answer is the revert play, and the range form
+  is what keeps that true while costing the range's own paths instead of
+  the whole battery (T-280, superseding this bullet's four-legs sentence
+  by the later @human ruling of 2026-09-09; the bench's report names the
+  set and its derivation). **THE HAND-TYPED FORM STILL MINTS NOTHING**:
+  `--owning`'s subset verdict is worded `SCOPED-GREEN` or `SCOPED-RED`,
+  which the push guard REFUSES as a token, so a scoped run POISONS a
+  stale green rather than leaving it standing. The difference is who
+  chose the paths — a seat, unaudited, against two commit ids the guard
+  re-derives for itself. A changed path the derivation CANNOT PLACE is
+  exit 2 naming the path, and the full leg is owed: this form can only
+  ever be wrong by running too MUCH. The other three legs are seconds
+  each and are still run whole when they are owed at all.
 - **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
   also writes that same verdict to a token beside the fence manifest in
   `.supertaskr/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
@@ -219,6 +226,59 @@ and T-236 (2026-09-02, whose pre-compaction text is
   **A checkout without cargo cannot push, deliberately**: an unrun suite
   is unmeasured, and that is disclosed at the refusal rather than hidden
   behind a wrong label.
+- **AND SINCE T-280 A PUSH OWES THE SET ITS OWN RANGE OWES, NOT THE
+  BATTERY BY DEFAULT.** About a dozen four-suite batteries ran on the
+  integration checkout in one night of 2026-09-09 — roughly 3.5 machine
+  hours, two of them colliding on the solo lock — and around half were
+  for commits that moved no source under any package: dispatch stamps,
+  card promotions, a checkpoint, a guide page. **THE OWED SET IS
+  DERIVED, NEVER LISTED**, by one function with three arms composed:
+  the PACKAGE ROOTS (each graded suite's own `cwd` in the runner's
+  registry, longest prefix wins, plus the `file:` dependency edges read
+  off the manifests — so a change under `lib/parser/` owes the app suite
+  too); the STATIC IMPORT GRAPH rooted at the spec files (T-271's, which
+  narrows the end-to-end leg to the specs that own the changed paths);
+  and the DOCS GATE's own reader map, whose readers are FILES and are
+  placed through those same package roots — which is how a document read
+  by the parser's census owes the parser suite with nobody writing that
+  down. Give the blessed runner `--range <base>..<tip>` and it grades
+  exactly that set and writes the token with the set, the range and the
+  INPUTS the derivation read. **THE PUSH GUARD RE-DERIVES THE SAME SET
+  FROM THE PUSH'S OWN RANGE** — `@{upstream}..HEAD`, both endpoints
+  resolved to object ids, the upstream checked to be an ANCESTOR because
+  THE RANGE RULE below bans a two-dot diff between divergent tips — by
+  spawning that same function rather than holding a second copy of it,
+  and refuses a token whose measured set does not cover it as
+  **`token-partial`**, naming the missing suites and the missing SPEC
+  FILES. Additive: no earlier reason is renamed, and an entry that
+  recorded no scope graded the whole leg and covers any subset.
+  **IT FAILS CLOSED, AND THAT IS THE WHOLE SAFETY ARGUMENT.** A path
+  under no package root that no spec reaches and the docs gate cannot
+  place, a reader the map cannot put in a package, an import edge that
+  will not resolve, no upstream to range against, a runner this checkout
+  does not have, an answer the guard cannot parse — every one of them
+  makes the owed set THE WHOLE BATTERY, with the reason recorded in the
+  token and printed at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR
+  WHOLE LEGS, WHICH IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis
+  is which legs ran; the SPEC axis is whether the one scopable leg ran
+  whole. This arm gave the range form the power to mint a plain `GREEN`
+  for a NARROWED end-to-end leg — recording what it graded in the
+  entry's `scope` — so "four suites GREEN at this tree" stopped implying
+  "the battery ran". A token whose end-to-end entry carries a `scope` is
+  therefore refused as **`token-partial`** EVEN WHERE NO RANGE COULD BE
+  DERIVED: a scoped GREEN says nothing failed among the spec files it
+  ran, and it never says the leg ran. That sentence cost a rejection —
+  the fallback shipped reading the verdict word alone, and a bench
+  measured it passing a push whose end-to-end entry had graded 16 of 39
+  spec files. This mechanism can only ever be wrong by owing too MUCH.
+  A docs path NOTHING reads is the one positive
+  empty answer: the reader map is derived from the whole source corpus,
+  so "no code suite reads this document" is a measurement, not a gap —
+  and it is exactly the case the dozen wasted batteries were.
+  **CI STILL RUNS THE WHOLE BATTERY AFTER EVERY PUSH**, on a machine
+  that is not yours, and `workflow-parity` keeps it on four legs: the
+  local rule narrows what a SEAT must measure before pushing, and
+  narrows nothing about what the runner then measures.
 - **AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP** (`18d8166`): never
   chain a commit after a scripted edit — read the diff back FIRST. The
   rule was earned, recorded ONLY in checkpoint records, and then broken

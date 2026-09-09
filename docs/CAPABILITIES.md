@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **816 behaviours** — 814 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **835 behaviours** — 833 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -471,6 +471,20 @@ Census: **816 behaviours** — 814 extracted sentences + 2 named-not-extracted (
 - every relative import in this lane's own tree resolves, because a dropped edge would make a subset SHORT
 - a fixture program written as a STRING is not this file's own import list
 - the scoped arm's own CLI path prints the subset's verdict, writes it to the token and answers with the subset's own exit code
+- the package roots the owed set is derived through are the registry's own directories, so no second list of them can exist
+- a path is placed by the roots the derivation was GIVEN, so the same path owes different suites under different roots
+- a directory whose NAME merely begins with a package root is not INSIDE it, so a sibling fails CLOSED to the whole battery instead of placing under its neighbour
+- planting a reader in a spec GROWS the owed set, over real files and the real graph
+- adding a doc READ grows the owed set through the DOCS GATE's map, and removing it shrinks the answer back
+- the live reader map places a real task card, and the set it owes is smaller than the battery
+- a path the derivation cannot place makes the owed set the WHOLE battery and the answer says why
+- a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted
+- the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies
+- a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all
+- the ASK arm answers the owed set as JSON without running anything, and answers a JSON problem when it cannot
+- the RANGE arm grades the owed set, records the set and its range in the token, and its e2e entry names the specs it graded
+- the owed set becomes runnable suites in the registry's own order, with the end-to-end leg scoped only when it is narrowed
+- a token that does not cover what the range owes is refused as token-partial, and the five earlier reasons keep their names
 
 ## genesis-screen
 
@@ -811,6 +825,11 @@ Census: **816 behaviours** — 814 extracted sentences + 2 named-not-extracted (
 - `--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too
 - `--repo` does not move the positional grammar, and the reader is measured against git's own parser
 - a destination that would read as an OPTION never reaches `gh`, and the push is allowed
+- a push whose range moves one package's source owes only that package's suite, and a token recording only it is ACCEPTED
+- a token that does not cover the owed set refuses as token-partial, naming the suite the range owes and nothing measured
+- the five token reasons that existed before this arm are all still reachable, none renamed
+- every way the owed set cannot be derived lands on the WHOLE battery, and none of them narrows a push
+- a token whose end-to-end entry graded PART of the leg is refused even when no owed set could be derived, because a scoped GREEN is not a whole leg
 
 ## range-rule
 

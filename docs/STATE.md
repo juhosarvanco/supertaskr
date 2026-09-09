@@ -80,7 +80,8 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 3. **THE NEXT CI RUN IS A READING** onto T-278-s1; a green run judges
    the seven kept lane branches.
 4. **A LANE RUNS ITS SUITES ONCE** (T-279), scoped with `--owning`
-   (T-271); the push and the bench owe four legs until T-280.
+   (T-271); since T-280 the push and the bench owe the set their own
+   range owes (`--range <base>..<tip>`; the guard re-derives it).
 5. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <paths>`;
    a fence token for a file not yet in the tree is DEAD until T-287.
 6. **@human holds; no card is cut from these** — the pruning sitting
@@ -107,7 +108,7 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 - **THREE WRITES THAT RED THE TREE AND NO CHEAP GATE SEES**: a test
   rename owes `npm run capabilities` (in the merge commit); any .ts
   moved owes the graph regen; a prose commit stales the push token.
-  **EVERY PUSH OWES THE FOUR-SUITE BATTERY, RUN LAST** (T-203) — **a COMMIT or a
+  **EVERY PUSH OWES ITS RANGE'S OWED SET, RUN LAST** (T-203, T-280) — **a COMMIT or a
   staged merge during the run UNKEYS the token**: hold every write
   until it finishes. **GATE
   THE MERGE COMMIT ON THE COUNTS** (2d6d354). **A MERGED BODY CAN RED

@@ -59,9 +59,11 @@ import {
   parseRunList,
   pathsSince,
   pushCwds,
+  pushRange,
   pushTargetBranch,
   reachesPackage,
   repointedBy,
+  runOwedSet,
   runStartedAt,
   segments,
   stepWorkingDirectory,
@@ -3887,4 +3889,223 @@ test("a destination that would read as an OPTION never reaches `gh`, and the pus
   expect("unresolved" in read, "the reader declines rather than naming a branch").toBe(true);
   const ordinary = pushTargetBranch("git push origin HEAD:main");
   expect("branch" in ordinary && ordinary.branch, "and still reads an ordinary one").toBe("main");
+});
+
+/* ───────────── T-280: the push owes the set its RANGE owes ────────── */
+//
+// Everything above this line requires the WHOLE battery, and still does:
+// none of those fixtures names an upstream, so no range is derivable in
+// them, so the guard falls back to all four suites exactly as it did
+// before this arm existed. THAT IS THE FALLBACK BEING EXERCISED BY
+// NINETY-ODD BODIES rather than by an assertion, and it is why they are
+// all still green.
+//
+// The bodies below arm an upstream, which is what makes a push range
+// exist, and then move ONE thing at a time: what the range touches, and
+// what the token measured.
+
+/** Give a fixture the upstream a push range is derived from.
+ *
+ *  WRITTEN EXPLICITLY RATHER THAN LEFT TO A PUSH'S SIDE EFFECT: whether
+ *  `git push <remote> <refspec>` also moves the remote-tracking ref is a
+ *  fact about a git version, and a body whose subject silently stopped
+ *  being reachable would go quiet rather than red. */
+function armUpstream(fx: Fixture, at: string): void {
+  const git = (...args: string[]): void => {
+    execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, ...args], { stdio: "pipe" });
+  };
+  git("update-ref", "refs/remotes/origin/main", at);
+  git("config", "branch.main.remote", "origin");
+  git("config", "branch.main.merge", "refs/heads/main");
+}
+
+/** A token recording exactly these suites GREEN at this checkout's HEAD. */
+function plantSuites(root: string, suites: string[], scope?: string): void {
+  const ref = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(
+    root,
+    suites.map((s) =>
+      s === "e2e" && scope !== undefined
+        ? { ...suiteVerdict(s, GREEN, ref), scope }
+        : suiteVerdict(s, GREEN, ref),
+    ),
+  );
+}
+
+/** The guard's own decision for a fixture, with the expensive arms shimmed. */
+function decideFor(fx: Fixture) {
+  return decide(
+    { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
+    () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+    () => ({ status: 0, stdout: "", stderr: "" }),
+    NO_RUNS,
+  );
+}
+
+test("a push whose range moves one package's source owes only that package's suite, and a token recording only it is ACCEPTED", () => {
+  // THE CARD'S WHOLE POINT, AT THE GUARD. Half the batteries this card
+  // was written about were pushes that owed almost nothing, and the rule
+  // that cost them was the guard demanding four suites regardless.
+  const fx = fixture("owed-narrow", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+
+  // THE DERIVATION THE GUARD WILL MAKE, ASKED HERE TOO, so the body says
+  // what it is relying on rather than only what it concluded.
+  const range = pushRange(fx.root);
+  expect("range" in range ? range.range : "").toContain(fx.base);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.suites : []).toEqual(["parser"]);
+
+  plantSuites(fx.root, ["parser"]);
+  const narrow = decideFor(fx);
+  expect(narrow.verdict, `a token covering the owed set must pass: ${narrow.reason}`).toBe("allow");
+
+  // THE CONTROL, AND IT IS THE SAME TOKEN IN THE SAME TREE: strip the
+  // upstream, and there is no range to derive, so the whole battery is
+  // required and this token is INCOMPLETE. Without this line, "allow"
+  // above is satisfied by a guard whose token arm stopped firing.
+  execFileSync(
+    "git",
+    [
+      "-C",
+      fx.root,
+      ...NO_BACKGROUND_MAINTENANCE,
+      "config",
+      "--unset",
+      "branch.main.remote",
+    ],
+    { stdio: "pipe" },
+  );
+  const wide = decideFor(fx);
+  expect(wide.verdict, "no upstream is no range, and no range is the whole battery").toBe("block");
+  expect(wide.code).toBe("token-incomplete");
+  expect(wide.reason).toContain("COULD NOT BE DERIVED");
+});
+
+test("a token that does not cover the owed set refuses as token-partial, naming the suite the range owes and nothing measured", () => {
+  const fx = fixture("owed-partial", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+
+  // A token measuring a suite this range does NOT owe, and missing the
+  // one it does. It is not a lie — it says exactly what it measured —
+  // and it is the READER that would lie by accepting it.
+  plantSuites(fx.root, ["rust"]);
+  const refused = decideFor(fx);
+  expect(refused.verdict).toBe("block");
+  expect(refused.code).toBe("token-partial");
+  expect(refused.reason).toContain("parser");
+  expect(refused.reason, "the refusal names the range it judged").toContain(fx.base);
+  expect(refused.reason, "and the one command that clears it").toContain("--range");
+
+  // THE DISCRIMINATION: adding the owed suite to the same token clears
+  // the same push. Nothing else moves.
+  plantSuites(fx.root, ["parser", "rust"]);
+  expect(decideFor(fx).verdict).toBe("allow");
+});
+
+test("the five token reasons that existed before this arm are all still reachable, none renamed", () => {
+  // ADDITIVE, IN THE CARD'S OWN WORD, ASSERTED RATHER THAN ASSUMED. Each
+  // of these is a fixture whose only difference is the token's state.
+  const codes = [
+    ["token-missing", "missing"],
+    ["token-stale", "stale"],
+    ["token-red", "red"],
+    ["token-incomplete", "partial"],
+  ] as const;
+  for (const [code, state] of codes) {
+    const fx = fixture(`still-${state}`, CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: state });
+    const d = decideFor(fx);
+    expect(d.verdict, `${state} must still refuse`).toBe("block");
+    expect(d.code, `${state} must still be called ${code}`).toBe(code);
+  }
+  // The fifth: a suite the runner DECLINED to grade.
+  const fx = fixture("still-unmeasured", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  writeToken(
+    fx.root,
+    REQUIRED_SUITES.map((s) =>
+      s === "rust"
+        ? {
+            suite: s,
+            exit: -1,
+            bodies: 0,
+            targets: 0,
+            verdict: "REFUSED",
+            reason: "could-not-run: spawnSync cargo ENOENT",
+            ref,
+          }
+        : suiteVerdict(s, GREEN, ref),
+    ),
+  );
+  expect(decideFor(fx).code).toBe("token-unmeasured");
+});
+
+test("every way the owed set cannot be derived lands on the WHOLE battery, and none of them narrows a push", () => {
+  // CRITERION 3 AT THE ASKING BOUNDARY. The derivation fails closed
+  // inside the runner; this is the other half — the guard failing closed
+  // when it cannot ask at all.
+  const fx = fixture("owed-closed", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+  plantSuites(fx.root, ["parser"]);
+  expect(decideFor(fx).verdict, "the control: the narrow token really passes").toBe("allow");
+
+  // A RANGE THAT IS NOT TWO REVISIONS NEVER REACHES git.
+  expect("problem" in runOwedSet(fx.root, "HEAD; rm -rf /")).toBe(true);
+  // A RUNNER THAT ANSWERS SOMETHING THIS CANNOT READ.
+  const notJson = runOwedSet(fx.root, "0000000000000000000000000000000000000000..HEAD");
+  expect("problem" in notJson, "an unresolvable base is a problem, never a set").toBe(true);
+  // AND A BRANCH WITH NO UPSTREAM, which is every lane in this project.
+  const lane = fixture("owed-lane", CHECK_EXIT.CURRENT, CURRENT_REPORT, { token: "missing" });
+  expect("problem" in pushRange(lane.root)).toBe(true);
+  plantSuites(lane.root, ["parser"]);
+  const laneDecision = decideFor(lane);
+  expect(laneDecision.verdict, "a lane owes the battery, exactly as before").toBe("block");
+  expect(laneDecision.code).toBe("token-incomplete");
+});
+
+test("a token whose end-to-end entry graded PART of the leg is refused even when no owed set could be derived, because a scoped GREEN is not a whole leg", () => {
+  // THE FALLBACK'S OTHER AXIS, AND THE ONE THIS ARM ADDED.
+  //
+  // Before this card a plain GREEN `e2e` entry could only have come from
+  // a WHOLE leg: the one form that graded a subset wore `SCOPED-GREEN`,
+  // which this guard refuses as a token. `--range` now mints a plain
+  // GREEN for a NARROWED leg and records what it graded in `scope`, so
+  // "four suites GREEN at this tree" no longer implies "the battery
+  // ran". The suite axis and the spec axis are two separate claims, and
+  // a fallback that checks only the first accepts a leg that ran in
+  // part.
+  //
+  // THE ARMING IS THE ABSENCE OF A RANGE, which is the case the header
+  // above says ninety-odd bodies exercise — every one of them with an
+  // unscoped token, so none of them can see this.
+  const lane = fixture("owed-scope-fallback", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+  });
+  expect("problem" in pushRange(lane.root), "the arming: no range is derivable here").toBe(true);
+
+  // THE CONTROL, WHERE THE PROPERTY UNDER TEST IS ABSENT: the same four
+  // suites with NO scope really did grade whole legs, and that push must
+  // still pass. Without this line the expectation below is satisfied by
+  // a guard that refuses everything.
+  plantSuites(lane.root, [...REQUIRED_SUITES]);
+  expect(
+    decideFor(lane).verdict,
+    "the control: a genuine whole four-leg battery still passes",
+  ).toBe("allow");
+
+  // AND NOW THE SAME TOKEN, THE SAME TREE, ONE LEG GRADED IN PART.
+  plantSuites(lane.root, [...REQUIRED_SUITES], "tools/e2e/tests/cli.spec.ts");
+  const decision = decideFor(lane);
+  expect(decision.verdict, "a leg graded in part is not the battery").toBe("block");
+  expect(decision.code).toBe("token-partial");
+  expect(decision.reason, "and the refusal says which leg was short").toContain("e2e");
 });
