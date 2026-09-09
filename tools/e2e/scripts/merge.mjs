@@ -40,7 +40,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
@@ -64,7 +64,8 @@ export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
  * @property {"precondition" | "git" | "setup" | "regen" | "suite" | "gate" | "stop"} kind
  * @property {string} title
  * @property {string} why
- * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string> } | null} run
+ * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string>, assert?: "empty-output" } | null} run
+ * @property {"graph-pins" | "stamp-done"} [action] work the runner does AFTER the command
  */
 
 /** The sources whose arrival obliges a reinstall and rebuild (room item 18). */
@@ -182,6 +183,19 @@ export function tailPlan(input) {
         "regeneration lands in the MERGE commit, the integrator's",
       run: { command: "npm", argv: ["run", "capabilities"], cwd: path.join(projectRoot, "tools", "e2e") },
     });
+    steps.push({
+      id: "capabilities:add",
+      kind: "git",
+      title: "git add docs/CAPABILITIES.md",
+      why:
+        "the prototype's step 7 stages what it regenerated — a seat that trusts \"the merge is " +
+        "staged\" would otherwise commit without the census it just rebuilt",
+      run: {
+        command: "git",
+        argv: ["-C", projectRoot, "add", "docs/CAPABILITIES.md"],
+        cwd: projectRoot,
+      },
+    });
   }
   if (movesIndexedSource(paths)) {
     steps.push({
@@ -219,12 +233,20 @@ export function tailPlan(input) {
         cwd: path.join(projectRoot, "app", "src-tauri"),
       },
     });
+    steps.push({
+      id: "graph:add",
+      kind: "git",
+      title: "git add docs/architecture",
+      why: "the prototype's step 8 stages the regenerated graph into the merge commit",
+      run: { command: "git", argv: ["-C", projectRoot, "add", "docs/architecture"], cwd: projectRoot },
+    });
   }
   if (movesGraph(paths) || movesIndexedSource(paths)) {
     steps.push({
       id: "dogfood",
       kind: "suite",
-      title: "the app's dogfood bodies, then re-derive the pins",
+      action: "graph-pins",
+      title: "the app's dogfood bodies, then the re-derived pins and their dated line",
       why:
         "room item 27: a merge that moves the graph moves six pins in app/test, and main was red " +
         "on the app suite for forty minutes at T-112-s6's merge. Run them BEFORE the commit; " +
@@ -243,20 +265,32 @@ export function tailPlan(input) {
   }
   const docsPaths = paths.filter((p) => p.startsWith("docs/"));
   if (docsPaths.length > 0) {
-    steps.push({
-      id: "docs-gate",
-      kind: "gate",
-      title: `docs-gate.mjs on ${String(docsPaths.length)} path(s) under docs/`,
-      why: "docs/CONVENTIONS.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger can see it",
-      run: {
-        command: process.execPath,
-        argv: [
-          path.join(projectRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
-          ...docsPaths,
-        ],
-        cwd: projectRoot,
-      },
-    });
+    // THE PROJECT'S OWN GATE, never this package's copy: `docs-gate.mjs`
+    // computes its root from its own location, so the package's copy
+    // would answer about the package. When the project has none, that is
+    // said as a step rather than left to become a stack trace.
+    const gate = path.join(projectRoot, "tools", "e2e", "scripts", "docs-gate.mjs");
+    steps.push(
+      existsSync(gate)
+        ? {
+            id: "docs-gate",
+            kind: "gate",
+            title: `docs-gate.mjs on ${String(docsPaths.length)} path(s) under docs/`,
+            why:
+              "docs/CONVENTIONS.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
+              "can see it",
+            run: { command: process.execPath, argv: [gate, ...docsPaths], cwd: projectRoot },
+          }
+        : {
+            id: "docs-gate:absent",
+            kind: "gate",
+            title: `THE DOCS GATE COULD NOT RUN — ${path.relative(projectRoot, gate)} is not in this project`,
+            why:
+              `${String(docsPaths.length)} path(s) under docs/ are in this merge and no gate in ` +
+              "this project can say what they owe; that is news, never silence",
+            run: null,
+          },
+    );
   }
   steps.push({
     id: "stop",
@@ -294,8 +328,17 @@ export function preludePlan(input) {
       id: "precondition:clean",
       kind: "precondition",
       title: `a clean tree on ${branch}`,
-      why: "the prototype's step 0: a merge onto a dirty tree cannot be told from the dirt",
-      run: { command: "git", argv: ["-C", projectRoot, "status", "--porcelain"], cwd: projectRoot },
+      why:
+        "the prototype's step 0: a merge onto a dirty tree cannot be told from the dirt. " +
+        "`git status --porcelain` EXITS 0 on a filthy tree, so this step is graded on its " +
+        "OUTPUT being empty and not on its exit code (R4, the verifier's bench at f809cd9: " +
+        "the step passed over a dirty tree and the merge staged on top of the dirt)",
+      run: {
+        command: "git",
+        argv: ["-C", projectRoot, "status", "--porcelain"],
+        cwd: projectRoot,
+        assert: "empty-output",
+      },
     },
     {
       id: "precondition:verdict",
@@ -344,19 +387,80 @@ export function preludePlan(input) {
     {
       id: "stamp",
       kind: "git",
-      title: `stamp status: done on ${id}'s card`,
-      why: "the checkpoint moves a lane's `verifying` to `done`; the merge is where it lands",
+      action: "stamp-done",
+      title: `stamp status: done on ${id}'s card, and git add it`,
+      why:
+        "the prototype's step 5: the card is resolved by its own `id:` line and the stamp lands " +
+        "IN the merge commit — a step that only said so left the write to somebody's memory",
       run: null,
     },
   );
   return steps;
 }
 
+/**
+ * THE RE-DERIVED PINS AND THEIR DATED LINE (room item 27's second half).
+ *
+ * PURE, and that is the point: the numbers come from the graph the merge
+ * just staged, the date from the caller, and nothing here edits a
+ * fixture. T-211 is explicit that a lane never updates the dogfood pins
+ * and that the reconciliation is integration-seat WORK — so this hands
+ * the seat the sentence and the figures to write, in the shape
+ * `app/test/architecture-dogfood.test.ts` already uses, and stops.
+ *
+ * The criterion this closes was PROSE before (R6, the verifier's bench at
+ * f809cd9): the step ran the bodies, the comment said the pins were
+ * re-derived, and the body asserted the comment.
+ *
+ * @param {{ graph: unknown, id: string, at: Date }} input
+ * @returns {string}
+ */
+export function graphPinLine(input) {
+  const g = /** @type {Record<string, unknown>} */ (
+    input.graph !== null && typeof input.graph === "object" ? input.graph : {}
+  );
+  const files = Array.isArray(g["files"]) ? g["files"].length : 0;
+  const edges = Array.isArray(g["edges"]) ? g["edges"].length : 0;
+  const symbols = Array.isArray(g["files"])
+    ? g["files"].reduce((n, f) => {
+        const sym = /** @type {Record<string, unknown>} */ (
+          f !== null && typeof f === "object" ? f : {}
+        )["symbols"];
+        return n + (Array.isArray(sym) ? sym.length : 0);
+      }, 0)
+    : 0;
+  const day = input.at.toISOString().slice(0, 10);
+  return (
+    `RECONCILED AT THE ${input.id} MERGE (${day}, integrator). Re-derived from the staged ` +
+    `graph: ${String(files)} files, ${String(symbols)} symbols, ${String(edges)} edges. ` +
+    "Check each dogfood pin against `git show HEAD:docs/architecture/graph.json` and write the " +
+    "deltas here before the commit — a lane never updates the pins (T-211)."
+  );
+}
+
+/**
+ * THE DONE STAMP, as the prototype's step 5 writes it.
+ *
+ * Pure text in, pure text out. `built_by:` and `verified_by:` are filled
+ * only where they are EMPTY, because a value already on the card is
+ * somebody's record and this is not the seat that may overwrite it.
+ *
+ * @param {{ text: string, builtBy: string, verifiedBy: string }} input
+ * @returns {string}
+ */
+export function stampDone(input) {
+  return input.text
+    .replace(/^status: (building|verifying|merging)[ \t]*$/m, "status: done")
+    .replace(/^built_by:[ \t]*$/m, `built_by: ${input.builtBy}`)
+    .replace(/^verified_by:[ \t]*$/m, `verified_by: ${input.verifiedBy}`);
+}
+
 /** @returns {string} */
 export function usageText() {
   return [
-    "usage: supertaskr merge <T-NNN> --slug <slug> --verdict <sha> [--root <path>]",
-    "                      [--branch <name>] [--dry-run]",
+    "usage: supertaskr merge <T-NNN> --slug <slug> --verdict <sha>",
+    "                      --built-by <m@k> --verified-by <m@k>",
+    "                      [--root <path>] [--branch <name>] [--dry-run]",
     "",
     "  The integrator's ritual in its order, stopping with the merge STAGED.",
     "  The tail is derived from the merge's own paths: a merge bringing app/ or lib/",
@@ -385,6 +489,10 @@ export function main(argv, io = {}) {
   let root = cwd;
   let branch = DEFAULT_BRANCH;
   let dryRun = false;
+  /** @type {string | undefined} */
+  let builtBy;
+  /** @type {string | undefined} */
+  let verifiedBy;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
     if (a === "--help") {
@@ -411,6 +519,14 @@ export function main(argv, io = {}) {
       verdict = argv[++i];
       continue;
     }
+    if (a === "--built-by") {
+      builtBy = argv[++i];
+      continue;
+    }
+    if (a === "--verified-by") {
+      verifiedBy = argv[++i];
+      continue;
+    }
     if (a.startsWith("-")) {
       err(`merge: unknown flag ${a}.\n${usageText()}`);
       return EXIT.USAGE;
@@ -423,6 +539,13 @@ export function main(argv, io = {}) {
   }
   if (id === undefined || slug === undefined || verdict === undefined) {
     err(`merge: a card, its --slug and its --verdict sha are all required.\n${usageText()}`);
+    return EXIT.USAGE;
+  }
+  if (!dryRun && (builtBy === undefined || verifiedBy === undefined)) {
+    err(
+      "merge: --built-by and --verified-by are required for a real run — the stamp writes them " +
+        `into the card, and a stamp with an empty seat is a record nobody can read.\n${usageText()}`,
+    );
     return EXIT.USAGE;
   }
 
@@ -462,8 +585,17 @@ export function main(argv, io = {}) {
     return EXIT.CLEAN;
   }
 
+  const stepIo = {
+    out,
+    err,
+    projectRoot: root,
+    id,
+    card: card.file,
+    builtBy: builtBy ?? "",
+    verifiedBy: verifiedBy ?? "",
+  };
   for (const step of prelude) {
-    const code = runStep(step, { out, err });
+    const code = runStep(step, stepIo);
     if (code !== 0) {
       err(`merge ${id}: stopped at ${step.id} (exit ${String(code)}).`);
       return EXIT.FOUND;
@@ -478,7 +610,7 @@ export function main(argv, io = {}) {
   out(`  the merge stages ${String(paths.length)} path(s); the tail is derived from them.`);
   for (const step of tailPlan({ paths, projectRoot: root, id })) {
     printStep(out, step);
-    const code = runStep(step, { out, err });
+    const code = runStep(step, stepIo);
     if (code !== 0) {
       err(`merge ${id}: stopped at ${step.id} (exit ${String(code)}). The merge stays staged.`);
       return EXIT.FOUND;
@@ -514,24 +646,65 @@ function printStep(out, step) {
 
 /**
  * @param {Step} step
- * @param {{ out: (s: string) => void, err: (s: string) => void }} io
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, builtBy: string, verifiedBy: string }} io
  * @returns {number}
  */
 function runStep(step, io) {
-  if (step.run === null) {
+  if (step.run === null && step.action === undefined) {
     io.out(`      (no command — this step is the seat's own work)`);
     return 0;
   }
-  const r = spawnSync(step.run.command, step.run.argv, {
-    cwd: step.run.cwd,
-    stdio: "inherit",
-    ...(step.run.env === undefined ? {} : { env: { ...process.env, ...step.run.env } }),
-  });
-  if (r.error !== undefined && r.error !== null) {
-    io.err(`      ${step.run.command} could not be started — ${r.error.message}`);
-    return 3;
+  if (step.run !== null) {
+    const graded = step.run.assert === "empty-output";
+    const r = spawnSync(step.run.command, step.run.argv, {
+      cwd: step.run.cwd,
+      stdio: graded ? "pipe" : "inherit",
+      encoding: "utf8",
+      ...(step.run.env === undefined ? {} : { env: { ...process.env, ...step.run.env } }),
+    });
+    if (r.error !== undefined && r.error !== null) {
+      io.err(`      ${step.run.command} could not be started — ${r.error.message}`);
+      return 3;
+    }
+    if (graded) {
+      const said = `${String(r.stdout ?? "")}${String(r.stderr ?? "")}`.trim();
+      if (said.length > 0) {
+        io.err(`      the tree is NOT clean — this step is graded on its output, not its exit:\n${said}`);
+        return 1;
+      }
+    }
+    if ((r.status ?? 3) !== 0) return r.status ?? 3;
   }
-  return r.status ?? 3;
+  if (step.action === "stamp-done") {
+    const file = path.join(io.projectRoot, io.card);
+    const before = readFileSync(file, "utf8");
+    const after = stampDone({ text: before, builtBy: io.builtBy, verifiedBy: io.verifiedBy });
+    if (after === before) {
+      io.err(`      ${io.card} carries no \`status:\` this stamp may move — nothing was written`);
+      return 1;
+    }
+    writeFileSync(file, after);
+    io.out(`      stamped: ${after.split("\n").filter((l) => /^(status|built_by|verified_by):/.test(l)).join(" | ")}`);
+    const added = spawnSync("git", ["-C", io.projectRoot, "add", "--", io.card], { encoding: "utf8" });
+    return added.status ?? 3;
+  }
+  if (step.action === "graph-pins") {
+    const graphPath = path.join(io.projectRoot, GRAPH_PATH);
+    if (!existsSync(graphPath)) {
+      io.err(`      ${GRAPH_PATH} is not in this project, so no pin could be re-derived`);
+      return 3;
+    }
+    /** @type {unknown} */
+    let graph;
+    try {
+      graph = JSON.parse(readFileSync(graphPath, "utf8"));
+    } catch (e) {
+      io.err(`      ${GRAPH_PATH} did not parse — ${e instanceof Error ? e.message : String(e)}`);
+      return 3;
+    }
+    io.out(`      ${graphPinLine({ graph, id: io.id, at: new Date() })}`);
+  }
+  return 0;
 }
 
 // The same bootstrap `gate-run.mjs` and `undo.mjs` use: execution lives

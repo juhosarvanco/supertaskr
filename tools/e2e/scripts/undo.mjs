@@ -102,8 +102,16 @@ export function touchesTokens(text) {
 /**
  * The fence a card reserves, through the project's ONE expansion.
  *
+ * THE EMPTY ANSWER IS NOT "NOTHING LANDED" (R1, found by the verifier's
+ * bench at f809cd9). `expandFence` answers `unusable` for a token it
+ * cannot resolve — every slug-era `touches:` on this board does exactly
+ * that — and a caller that read only `paths` got an EMPTY fence, compared
+ * every later merge against nothing, matched nothing, and reported a
+ * clear fence. Measured: 99 of the 253 done cards expand that way. So the
+ * whole answer is carried out of here, and `main` refuses on it.
+ *
  * @param {{ root: string, id: string, file: string, tokens: string[] }} input
- * @returns {{ paths: string[] } | { problem: string }}
+ * @returns {{ paths: string[], unusable: string[], unfenceable: string[] } | { problem: string }}
  */
 export function expandFence(input) {
   const expander = path.join(input.root, ".claude", "hooks", "expand-fence.mjs");
@@ -137,11 +145,35 @@ export function expandFence(input) {
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     return { problem: "the fence expander printed no object" };
   }
-  const paths = /** @type {Record<string, unknown>} */ (parsed)["paths"];
-  if (!Array.isArray(paths) || !paths.every((p) => typeof p === "string")) {
-    return { problem: "the fence expander's answer carries no `paths`" };
-  }
-  return { paths: /** @type {string[]} */ (paths) };
+  const obj = /** @type {Record<string, unknown>} */ (parsed);
+  /** @param {unknown} v @returns {v is string[]} */
+  const strings = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
+  const { paths, unusable, unfenceable } = obj;
+  if (!strings(paths)) return { problem: "the fence expander's answer carries no `paths`" };
+  if (!strings(unusable)) return { problem: "the fence expander's answer carries no `unusable`" };
+  return {
+    paths: /** @type {string[]} */ (paths),
+    unusable: /** @type {string[]} */ (unusable),
+    unfenceable: strings(unfenceable) ? /** @type {string[]} */ (unfenceable) : [],
+  };
+}
+
+/**
+ * Does one commit subject NAME this card?
+ *
+ * A TOKEN BOUNDARY, NEVER A SUBSTRING (R2, found by the verifier's bench
+ * at f809cd9). `"Merge T-244-s3".includes("T-244")` is true, and this
+ * board carries 320 strict-prefix id pairs — so an unbounded match lets
+ * one card's undo select ANOTHER card's merge, and where exactly one
+ * matches it proceeds on the wrong one.
+ *
+ * @param {string} subject
+ * @param {string} id
+ * @returns {boolean}
+ */
+export function mentionsCard(subject, id) {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`).test(subject);
 }
 
 /** @param {string} p @param {readonly string[]} fence @returns {boolean} */
@@ -169,7 +201,7 @@ export function insideFence(p, fence) {
  * @returns {{ merges: Merge[] } | { problem: string }}
  */
 export function firstParentMerges(root, branch) {
-  const log = git(root, ["log", "--first-parent", "--merges", "--format=%H%x1f%s", branch]);
+  const log = git(root, ["log", "--first-parent", "--merges", "--format=%H%x1f%s", branch, "--"]);
   if (!log.ok) return { problem: `git log on ${branch} failed — ${log.err}` };
   /** @type {Merge[]} */
   const merges = [];
@@ -190,7 +222,7 @@ export function firstParentMerges(root, branch) {
  * @returns {string[]}
  */
 export function pathsOf(root, sha) {
-  const diff = git(root, ["diff", "--name-only", `${sha}^1`, sha]);
+  const diff = git(root, ["diff", "--name-only", `${sha}^1`, sha, "--"]);
   return diff.ok ? diff.out.split("\n").filter((l) => l.length > 0) : [];
 }
 
@@ -211,9 +243,9 @@ export function pathsOf(root, sha) {
  */
 export function landingMerge(input) {
   const named = input.merges.filter((m) => {
-    const side = git(input.root, ["log", "--format=%s", `${m.sha}^1..${m.sha}^2`]);
+    const side = git(input.root, ["log", "--format=%s", `${m.sha}^1..${m.sha}^2`, "--"]);
     if (!side.ok) return false;
-    return side.out.split("\n").some((s) => s.includes(input.id));
+    return side.out.split("\n").some((s) => mentionsCard(s, input.id));
   });
   if (named.length === 0) {
     return {
@@ -393,6 +425,35 @@ export function main(argv, io = {}) {
     err(`undo ${id}: CANNOT RUN — ${fence.problem}`);
     return EXIT.CANNOT_RUN;
   }
+  if (fence.paths.length === 0) {
+    err(
+      `undo ${id}: CANNOT RUN — ${card.file}'s \`touches:\` expands to NO paths` +
+        (fence.unusable.length > 0
+          ? ` (the ONE expansion could not resolve ${fence.unusable.join(", ")})`
+          : "") +
+        ".\n  An empty fence matches nothing, so \"nothing has landed since\" would be a fence " +
+        "that MEASURED nothing rather than a clear one — which is the fail-open this whole " +
+        "command exists against. Nothing was reverted.",
+    );
+    return EXIT.CANNOT_RUN;
+  }
+
+  // R3: THE REF THIS SCANS AND THE REF IT MUTATES MUST BE ONE REF.
+  // `git revert` runs against HEAD; the later-merge scan runs against
+  // --branch. On a detached HEAD, or on any other branch, the command
+  // would analyse one history and rewrite another — measured on the
+  // bench, where it committed a revert onto a detached HEAD after
+  // analysing main.
+  const head = git(root, ["symbolic-ref", "--quiet", "HEAD"]);
+  const onBranch = head.ok ? head.out.trim() : "";
+  if (onBranch !== `refs/heads/${branch}`) {
+    err(
+      `undo ${id}: CANNOT RUN — this scans ${branch} and \`git revert\` rewrites HEAD, and HEAD ` +
+        `is ${onBranch === "" ? "DETACHED" : onBranch} rather than refs/heads/${branch}.\n` +
+        `  Check out ${branch}, or name the branch you are on with --branch. Nothing was reverted.`,
+    );
+    return EXIT.CANNOT_RUN;
+  }
 
   const listed = firstParentMerges(root, branch);
   if ("problem" in listed) {
@@ -451,14 +512,24 @@ export function main(argv, io = {}) {
     return verdict.code;
   }
 
-  const command = `git -C ${root} revert -m 1 --no-edit ${landing.sha}`;
+  // ONE SPELLING (VM2, the verifier's surviving mutant at f809cd9): the
+  // string that gets PRINTED is built from the argv that gets SPAWNED, so
+  // a body reading the dry run is reading the real command. Two spellings
+  // meant `-m 2` could be spawned while `-m 1` was printed, and every
+  // body passed --dry-run.
+  const revertArgv = ["revert", "-m", "1", "--no-edit", landing.sha];
+  const command = `git -C ${root} ${revertArgv.join(" ")}`;
   if (dryRun) {
     out(`  --dry-run, nothing was run. The command is:\n    ${command}`);
     return EXIT.CLEAN;
   }
-  const reverted = git(root, ["revert", "-m", "1", "--no-edit", landing.sha]);
+  const reverted = git(root, revertArgv);
   if (!reverted.ok) {
-    err(`undo ${id}: the revert did not complete — ${reverted.err}\n  it was run as: ${command}`);
+    err(
+      `undo ${id}: the revert did not complete — ${reverted.err}\n  it was run as: ${command}\n` +
+        "  A revert stopped by a conflict leaves REVERT_HEAD standing: finish it with " +
+        "`git revert --continue`, or undo the attempt with `git revert --abort`.",
+    );
     return EXIT.FOUND;
   }
   out(reverted.out.trimEnd());

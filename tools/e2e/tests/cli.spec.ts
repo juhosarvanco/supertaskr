@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -23,14 +31,19 @@ import {
 } from "../scripts/cli.mjs";
 import {
   bringsBuiltSources,
+  graphPinLine,
   movesGraph,
+  preludePlan,
   setupSteps,
+  stampDone,
   tailPlan,
+  main as mergeMain,
 } from "../scripts/merge.mjs";
 import {
   forceVerdict,
   insideFence,
   main as undoMain,
+  mentionsCard,
   touchesTokens,
 } from "../scripts/undo.mjs";
 import { docsReaders } from "../scripts/docs-scan.mjs";
@@ -118,7 +131,13 @@ test("npx supertaskr dispatches every verb to a target this tree already carries
       ]);
       continue;
     }
-    const target = path.join(packageRoot, "scripts", entry.target.file);
+    // A `project` target belongs to the PROJECT, not to this package, and
+    // is resolved against the project root — which is what makes it
+    // correct from an installed copy as well as from a checkout.
+    const target =
+      entry.target.kind === "project"
+        ? path.join(repoRoot, entry.target.file)
+        : path.join(packageRoot, "scripts", entry.target.file);
     expect(existsSync(target), `${entry.verb} fronts ${entry.target.file}, which must exist`).toBe(
       true,
     );
@@ -167,7 +186,12 @@ test("an unknown verb is refused with the whole verb list, and nothing is spawne
 test("every verb that hands its target --root fronts a script whose own flags carry it", () => {
   for (const entry of VERBS) {
     if (entry.target.kind === "cargo") continue;
-    const source = readFileSync(path.join(packageRoot, "scripts", entry.target.file), "utf8");
+    const source = readFileSync(
+      entry.target.kind === "project"
+        ? path.join(repoRoot, entry.target.file)
+        : path.join(packageRoot, "scripts", entry.target.file),
+      "utf8",
+    );
     const takesRoot = /"--root"/.test(source);
     expect(
       entry.rootFlag,
@@ -338,7 +362,9 @@ test("a verb whose script resolves its own repository root is refused from an in
   try {
     for (const entry of VERBS) {
       const verdict = rootMismatch(entry, project);
-      if (entry.rootFlag || entry.target.kind === "cargo") {
+      if (entry.rootFlag || entry.target.kind === "cargo" || entry.target.kind === "project") {
+        // A `project` target is RESOLVED against the project root, so it
+        // cannot answer about the package's own tree and needs no refusal.
         expect(verdict, `${entry.verb} is told which project it is about`).toBeNull();
         continue;
       }
@@ -478,7 +504,11 @@ test("npx supertaskr runs out of a packed tarball installed into a project that 
  * A repository with one card, its lane merge, and optionally a later
  * merge on the same fence.
  */
-function undoFixture(opts: { later: boolean }): { root: string; later: string } {
+function undoFixture(opts: {
+  later: boolean;
+  touches?: string;
+  extraLane?: { id: string; file: string };
+}): { root: string; later: string; git: (...args: string[]) => string } {
   const root = mkdtempSync(path.join(tmpdir(), "supertaskr-undo-"));
   const git = (...args: string[]): string =>
     execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
@@ -507,7 +537,7 @@ function undoFixture(opts: { later: boolean }): { root: string; later: string } 
   const card = path.join("docs", "tasks", "T-900-a-fenced-card.md");
   writeFileSync(
     path.join(root, card),
-    ["---", "id: T-900", "status: building", "touches: [src/]", "---", "", "body", ""].join("\n"),
+    ["---", "id: T-900", "status: building", `touches: [${opts.touches ?? "src/"}]`, "---", "", "body", ""].join("\n"),
   );
   writeFileSync(path.join(root, "src", "a.ts"), "export const a = 1;\n");
   git("add", "-A");
@@ -536,7 +566,16 @@ function undoFixture(opts: { later: boolean }): { root: string; later: string } 
     git("merge", "-q", "--no-ff", "-m", "Merge T-901", "task/T-901-another");
     later = git("rev-parse", "HEAD").trim();
   }
-  return { root, later };
+  if (opts.extraLane !== undefined) {
+    const { id, file } = opts.extraLane;
+    writeFileSync(
+      path.join(root, "docs", "tasks", file),
+      ["---", `id: ${id}`, "status: building", "touches: [src/]", "---", "", "body", ""].join("\n"),
+    );
+    git("add", "-A");
+    git("commit", "-qm", `file the ${id} card`);
+  }
+  return { root, later, git };
 }
 
 test("undo refuses while a later merge stands on the card's fence, and names it", () => {
@@ -688,4 +727,352 @@ test("the front reaches nothing outside its own package that it does not name", 
     packageEscapes(path.join(packageRoot, "scripts", "token-scan.mjs"), packageRoot),
     "and the zero-dependency scanner leaves it not at all",
   ).toEqual([]);
+});
+
+// ── the properties the verifier's bench found unaimed (2026-09-09) ─────
+//
+// Five bodies below exist because two of the verifier's own mutants
+// SURVIVED this suite at f809cd9 — the front passing NO arguments at all,
+// and the executed revert taking `-m 2` — and because four defects in the
+// two verbs that are not fronts were reproducible against this
+// repository's own history. Each body is written against the BEHAVIOUR
+// rather than against a comment.
+
+test("the caller's own arguments reach the child verbatim, in order, and nothing is added", () => {
+  // KILLED BY: dropping `...rest` from planFor's argv. That mutant
+  // survived the whole suite before this body existed, because the
+  // by-name body called planFor with no arguments at all and the
+  // exit-code body only looked for the script's name.
+  const args = ["--", "-x", "a b", "", "--y=$(echo pwned)", ";id"];
+  const gate = VERBS.find((v) => v.verb === "gate");
+  expect(gate).toBeDefined();
+  const plan = planFor({ entry: gate!, args, projectRoot: repoRoot });
+  expect(plan.argv.slice(-args.length), "the tail of the argv IS the caller's arguments").toEqual(
+    args,
+  );
+
+  // And through the real entry point, with the spawn observed.
+  let seen: string[] = [];
+  const status = cliMain(["gate", ...args], {
+    cwd: repoRoot,
+    stdout: () => {},
+    stderr: () => {},
+    spawn: ((_command: string, argv: string[]) => {
+      seen = argv;
+      return { status: 0, signal: null, error: undefined };
+    }) as never,
+  });
+  expect(status).toBe(0);
+  expect(seen.slice(-args.length), "the child receives them unchanged").toEqual(args);
+  // A POSITIVE CONTROL for the "nothing is added" half: a verb with a
+  // declared positionalFlag DOES add one, and only that one.
+  const card = VERBS.find((v) => v.verb === "card");
+  const mapped = planFor({ entry: card!, args: ["T-150"], projectRoot: repoRoot });
+  expect(mapped.argv.slice(-2)).toEqual(["--card", "T-150"]);
+});
+
+test("undo EXECUTES the revert it printed, and it reverts onto the merge's first parent", () => {
+  test.setTimeout(120_000);
+  // KILLED BY: `-m 2` in the spawned argv. That mutant survived because
+  // every undo body passed --dry-run and asserted the printed STRING,
+  // which was built independently of the argv actually spawned.
+  const { root, git } = undoFixture({ later: false });
+  try {
+    const before = readFileSync(path.join(root, "src", "a.ts"), "utf8");
+    expect(before, "the lane's change is in the tree before the undo").toBe("export const a = 2;\n");
+    const said: string[] = [];
+    const status = undoMain(["T-900", "--root", root], {
+      cwd: root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+    });
+    expect(status, "the revert ran").toBe(EXIT.CLEAN);
+    const after = readFileSync(path.join(root, "src", "a.ts"), "utf8");
+    expect(after, "reverting onto the FIRST parent puts the pre-lane tree back").toBe(
+      "export const a = 1;\n",
+    );
+    expect(git("log", "-1", "--format=%s").trim(), "and it is a revert commit").toContain("Revert");
+    expect(git("status", "--porcelain").trim(), "which left the tree clean").toBe("");
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+
+test("a card whose fence expands to NOTHING is refused, never reverted", () => {
+  test.setTimeout(120_000);
+  // Measured on this repository at f809cd9: 99 of the 253 done cards
+  // carry a slug-era `touches:` the expander answers `unusable` for, and
+  // reading only `paths` turned every one of them into a clear fence.
+  const { root } = undoFixture({ later: true, touches: "app-shell" });
+  try {
+    const said: string[] = [];
+    const status = undoMain(["T-900", "--root", root, "--dry-run"], {
+      cwd: root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+    });
+    expect(status, "an underivable fence is CANNOT RUN, not a clear one").toBe(EXIT.CANNOT_RUN);
+    const text = said.join("\n");
+    expect(text, "and the token that would not expand is named").toContain("app-shell");
+    expect(text).toContain("Nothing was reverted.");
+    expect(text, "it never claims a clear fence").not.toContain("0 later merge(s)");
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+  // THE POSITIVE CONTROL: the same fixture with a fence that DOES expand
+  // reaches the later-merge refusal instead, so the body above is about
+  // the empty expansion and not about the fixture.
+  const control = undoFixture({ later: true });
+  try {
+    const said: string[] = [];
+    const status = undoMain(["T-900", "--root", control.root, "--dry-run"], {
+      cwd: control.root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+    });
+    expect(status, "a fence that expands gets as far as the later-merge scan").toBe(EXIT.FOUND);
+    expect(said.join("\n")).toContain("REFUSED");
+  } finally {
+    removeGitFixture(control.root, FIXTURE);
+  }
+});
+
+test("a card id is matched on a token boundary, so one card cannot select another's merge", () => {
+  test.setTimeout(120_000);
+  expect(mentionsCard("T-244: the lane's commit", "T-244")).toBe(true);
+  expect(mentionsCard("Merge T-244", "T-244")).toBe(true);
+  expect(mentionsCard("Merge T-244-s3", "T-244"), "a strict prefix is NOT the id").toBe(false);
+  expect(mentionsCard("T-244-s3: work", "T-244-s3"), "and the longer id still matches").toBe(true);
+  expect(mentionsCard("nothing here", "T-244")).toBe(false);
+
+  // End to end: a card that was never merged must not pick up the merge
+  // of a card whose id merely has it as a prefix.
+  const { root } = undoFixture({ later: false, extraLane: { id: "T-9", file: "T-9-a-card.md" } });
+  try {
+    const said: string[] = [];
+    const status = undoMain(["T-9", "--root", root, "--dry-run"], {
+      cwd: root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+    });
+    expect(status, "T-9 has no merge of its own, so this cannot run").toBe(EXIT.CANNOT_RUN);
+    expect(said.join("\n"), "and it does not name T-900's merge").not.toContain("Merge T-900");
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+
+test("undo refuses when the ref it scans is not the ref the revert would rewrite", () => {
+  test.setTimeout(120_000);
+  const { root, git } = undoFixture({ later: false });
+  try {
+    git("checkout", "--quiet", "--detach", "HEAD");
+    const headBefore = git("rev-parse", "HEAD").trim();
+    const said: string[] = [];
+    const status = undoMain(["T-900", "--root", root], {
+      cwd: root,
+      out: (s) => said.push(s),
+      err: (s) => said.push(s),
+    });
+    expect(status, "a detached HEAD is CANNOT RUN").toBe(EXIT.CANNOT_RUN);
+    expect(said.join("\n")).toContain("DETACHED");
+    expect(git("rev-parse", "HEAD").trim(), "and NOTHING moved").toBe(headBefore);
+    // The same refusal on another branch, which is the case a lane meets.
+    git("checkout", "--quiet", "main");
+    git("checkout", "--quiet", "-b", "task/T-901-elsewhere");
+    const said2: string[] = [];
+    expect(
+      undoMain(["T-900", "--root", root], {
+        cwd: root,
+        out: (s) => said2.push(s),
+        err: (s) => said2.push(s),
+      }),
+    ).toBe(EXIT.CANNOT_RUN);
+    expect(said2.join("\n")).toContain("refs/heads/task/T-901-elsewhere");
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+
+test("the merge's clean-tree precondition is graded on its OUTPUT, and a dirty tree stops it", () => {
+  test.setTimeout(120_000);
+  // `git status --porcelain` exits 0 on a filthy tree, so an exit-code
+  // grading made this step unfailable and the merge staged on top of the
+  // dirt. The step now declares `assert: "empty-output"`.
+  const clean = preludePlan({
+    projectRoot: repoRoot,
+    id: "T-000",
+    branch: "main",
+    lane: "task/T-000-x",
+    verdict: "0".repeat(40),
+    worktree: null,
+  });
+  const precondition = clean.find((s) => s.id === "precondition:clean");
+  expect(precondition?.run?.assert, "the step declares its own grading").toBe("empty-output");
+
+  const { root, git } = undoFixture({ later: false });
+  try {
+    writeFileSync(path.join(root, "src", "a.ts"), "dirty\n");
+    const said: string[] = [];
+    const status = mergeMain(
+      ["T-900", "--slug", "a-fenced-card", "--verdict", "HEAD", "--root", root,
+       "--built-by", "x@y", "--verified-by", "x@y"],
+      { cwd: root, out: (s) => said.push(s), err: (s) => said.push(s) },
+    );
+    expect(status, "a dirty tree stops the ritual").toBe(EXIT.FOUND);
+    expect(said.join("\n")).toContain("the tree is NOT clean");
+    expect(git("diff", "--cached", "--name-only").trim(), "and nothing was staged").toBe("");
+    // THE POSITIVE CONTROL: the same command on the same fixture, clean,
+    // gets past this step (and stops later, on its own preconditions).
+    git("checkout", "--", "src/a.ts");
+    const said2: string[] = [];
+    mergeMain(
+      ["T-900", "--slug", "a-fenced-card", "--verdict", "HEAD", "--root", root,
+       "--built-by", "x@y", "--verified-by", "x@y"],
+      { cwd: root, out: (s) => said2.push(s), err: (s) => said2.push(s) },
+    );
+    expect(said2.join("\n"), "a clean tree passes the precondition").not.toContain(
+      "the tree is NOT clean",
+    );
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
+
+test("a graph-moving merge re-derives the pins into a dated line carrying the graph's own counts", () => {
+  // Room item 27's second half was PROSE: the step ran the bodies and the
+  // body asserted the comment. It is a value now, and this decides it.
+  const graph = {
+    files: [
+      { path: "a.ts", symbols: [1, 2, 3] },
+      { path: "b.ts", symbols: [4] },
+    ],
+    edges: [1, 2, 3, 4, 5],
+  };
+  const line = graphPinLine({ graph, id: "T-000", at: new Date("2026-09-09T04:05:06Z") });
+  expect(line, "the house's dated line").toContain("RECONCILED AT THE T-000 MERGE (2026-09-09,");
+  expect(line, "the graph's own file count").toContain("2 files");
+  expect(line, "its symbols, summed off the files").toContain("4 symbols");
+  expect(line, "and its edges").toContain("5 edges");
+  expect(line, "with T-211's rule beside them").toContain("a lane never updates the pins");
+  // NOT A CONSTANT: a different graph moves every number.
+  const other = graphPinLine({
+    graph: { files: [{ path: "a.ts", symbols: [1] }], edges: [] },
+    at: new Date("2026-09-09T04:05:06Z"),
+    id: "T-000",
+  });
+  expect(other).toContain("1 files");
+  expect(other).toContain("1 symbols");
+  expect(other).toContain("0 edges");
+  // And the plan really carries the step that produces it.
+  const plan = tailPlan({ paths: ["docs/architecture/graph.json"], projectRoot: repoRoot, id: "T-000" });
+  expect(plan.find((s) => s.id === "dogfood")?.action, "the step does the derivation").toBe(
+    "graph-pins",
+  );
+});
+
+test("the merge stamps done by the card's own status line, and fills only an empty seat", () => {
+  const card = [
+    "---",
+    "id: T-000",
+    "status: verifying",
+    "built_by:",
+    "verified_by: somebody@already",
+    "---",
+    "",
+  ].join("\n");
+  const stamped = stampDone({ text: card, builtBy: "b@k", verifiedBy: "v@k" });
+  expect(stamped).toContain("status: done");
+  expect(stamped, "an empty seat is filled").toContain("built_by: b@k");
+  expect(stamped, "a seat already recorded is NOT overwritten").toContain(
+    "verified_by: somebody@already",
+  );
+  // A card with no movable status is left alone, which is what lets the
+  // runner refuse rather than write nothing quietly.
+  expect(stampDone({ text: "---\nid: T-000\nstatus: done\n---\n", builtBy: "b", verifiedBy: "v" })).toBe(
+    "---\nid: T-000\nstatus: done\n---\n",
+  );
+  const plan = preludePlan({
+    projectRoot: repoRoot,
+    id: "T-000",
+    branch: "main",
+    lane: "task/T-000-x",
+    verdict: "0".repeat(40),
+    worktree: null,
+  });
+  expect(plan.find((s) => s.id === "stamp")?.action, "and the ritual performs it").toBe("stamp-done");
+});
+
+test("the installer refuses a destination it would clobber, and --force is the named choice", () => {
+  const project = scratchProject();
+  try {
+    const skill = path.join(project, "method", "skills", "seat");
+    mkdirSync(skill, { recursive: true });
+    writeFileSync(path.join(skill, "SKILL.md"), "the shipped skill\n");
+    expect(cliMain(["install", "--harness", "claude", "--root", project], {
+      cwd: project,
+      stdout: () => {},
+      stderr: () => {},
+    })).toBe(EXIT.CLEAN);
+    const landed = path.join(project, ".claude", "skills", "seat", "SKILL.md");
+    expect(readFileSync(landed, "utf8")).toBe("the shipped skill\n");
+
+    // A second run over an IDENTICAL destination is a no-op, not a refusal.
+    expect(cliMain(["install", "--harness", "claude", "--root", project], {
+      cwd: project,
+      stdout: () => {},
+      stderr: () => {},
+    })).toBe(EXIT.CLEAN);
+
+    // A hand edit is somebody's work, and it is not overwritten in silence.
+    writeFileSync(landed, "a hand edit\n");
+    const said: string[] = [];
+    expect(
+      cliMain(["install", "--harness", "claude", "--root", project], {
+        cwd: project,
+        stdout: (s) => said.push(s),
+        stderr: (s) => said.push(s),
+      }),
+      "a differing destination is refused",
+    ).toBe(EXIT.FOUND);
+    expect(said.join("\n")).toContain("REFUSED");
+    expect(readFileSync(landed, "utf8"), "and the hand edit still stands").toBe("a hand edit\n");
+    // --force is the named choice, and it is the only thing that overwrites.
+    expect(
+      cliMain(["install", "--harness", "claude", "--root", project, "--force"], {
+        cwd: project,
+        stdout: () => {},
+        stderr: () => {},
+      }),
+    ).toBe(EXIT.CLEAN);
+    expect(readFileSync(landed, "utf8")).toBe("the shipped skill\n");
+  } finally {
+    removeGitFixture(project, FIXTURE);
+  }
+});
+
+test("every command the skills' own cards name is a verb this package exposes", () => {
+  // THE DERIVATION THE CRITERION ASKS FOR, and it replaces a list typed
+  // into this file: the verb set is read off T-241's and T-242's cards,
+  // which are where the skills' command lines live until the skills do.
+  const cards = readdirSync(path.join(repoRoot, "docs", "tasks"))
+    .filter((n) => /^T-24[12]-/.test(n))
+    .map((n) => readFileSync(path.join(repoRoot, "docs", "tasks", n), "utf8"));
+  expect(cards.length, "both skill cards were found").toBe(2);
+  const quoted = cards.flatMap((c) => [...c.matchAll(/`([^`\n]+)`/g)].map((m) => m[1] ?? ""));
+  const commands = quoted.filter((q) => /\.mjs\b/.test(q));
+  expect(commands.length, "the cards really name commands").toBeGreaterThan(0);
+  const reachable = VERBS.flatMap((v) => {
+    if (v.target.kind === "script") return [v.target.file, ...v.target.args, v.positionalFlag ?? ""];
+    if (v.target.kind === "project") return [v.target.file, ...v.target.args];
+    return [];
+  }).join(" ");
+  for (const command of commands) {
+    const script = /([\w.-]+\.mjs)/.exec(command)?.[1] ?? "";
+    expect(reachable, `${command} is reachable — some verb fronts ${script}`).toContain(script);
+    const arm = /\s(--[a-z-]+)/.exec(command)?.[1];
+    if (arm !== undefined) expect(reachable, `and its arm ${arm}`).toContain(arm);
+  }
+  // NOT VACUOUS: a command no verb fronts is not silently reachable.
+  expect(reachable).not.toContain("definitely-not-a-script.mjs");
 });

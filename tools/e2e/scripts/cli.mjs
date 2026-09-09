@@ -252,6 +252,16 @@ export function requirementsFor(entry, projectRoot, pkgRoot = packageRoot) {
       });
     }
   }
+  if (entry.target.kind === "project") {
+    const file = path.join(projectRoot, entry.target.file);
+    if (!existsSync(file)) {
+      missing.push({
+        id: "project-script",
+        what: `${entry.target.file} is not in this project`,
+        build: `there is nothing to build — ${entry.verb} fronts a script this project does not carry`,
+      });
+    }
+  }
   if (entry.target.kind === "cargo") {
     const manifest = path.join(projectRoot, entry.target.cwd, "Cargo.toml");
     if (!existsSync(manifest)) {
@@ -471,8 +481,13 @@ export function shippedSkills(projectRoot) {
 
 /**
  * @typedef {{ kind: "script", file: string, args: readonly string[] }
+ *          | { kind: "project", file: string, args: readonly string[] }
  *          | { kind: "cargo", package: string, cwd: string, args: readonly string[] }
  *          | { kind: "builtin", file: string, args: readonly string[] }} Target
+ *
+ * `project` is a script belonging to the PROJECT rather than to this
+ * package — resolved against the project root, which is what makes it
+ * correct from an installed copy as well as from a checkout.
  */
 
 /**
@@ -676,6 +691,16 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
       "`cargo run -p supertaskr-index -- arch --root ../..` and its family",
   }),
   Object.freeze({
+    verb: "evals",
+    summary: "the method eval gate, over the convention's own text",
+    target: { kind: "project", file: path.join("tools", "method-evals", "run.mjs"), args: [] },
+    rootFlag: false,
+    usage: "supertaskr evals [--selftest]",
+    source:
+      "docs/CONVENTIONS.md METHOD EVAL GATE, its own ONE SPELLING: " +
+      "`node tools/method-evals/run.mjs`",
+  }),
+  Object.freeze({
     verb: "undo",
     summary: "revert one card's merge, after saying what has landed on its fence since",
     target: { kind: "script", file: "undo.mjs", args: [] },
@@ -689,7 +714,9 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     summary: "the integrator's ritual, in its order, stopping with the merge staged",
     target: { kind: "script", file: "merge.mjs", args: [] },
     rootFlag: true,
-    usage: "supertaskr merge <T-NNN> --slug <slug> --verdict <sha> [--dry-run]",
+    usage:
+      "supertaskr merge <T-NNN> --slug <slug> --verdict <sha> " +
+      "--built-by <m@k> --verified-by <m@k> [--dry-run]",
     source: "docs/ARCHITECTURE.md C-02 (`merge`); T-244's folded room items 18 and 27",
   }),
   Object.freeze({
@@ -697,7 +724,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     summary: "install this project's skills into an agent harness",
     target: { kind: "builtin", file: "cli.mjs", args: [] },
     rootFlag: true,
-    usage: `supertaskr install [--harness ${HARNESSES.map((h) => h.id).join("|")}] [--dry-run]`,
+    usage: `supertaskr install [--harness ${HARNESSES.map((h) => h.id).join("|")}] [--force] [--dry-run]`,
     source: "T-244's folded criterion (the v1 installer targets Claude Code and Codex)",
   }),
 ]));
@@ -729,6 +756,15 @@ export function findVerb(verb) {
  */
 export function planFor(input) {
   const { entry, args, projectRoot } = input;
+  if (entry.target.kind === "project") {
+    const file = path.join(projectRoot, entry.target.file);
+    return {
+      command: process.execPath,
+      argv: [file, ...entry.target.args, ...args],
+      cwd: projectRoot,
+      names: entry.target.file,
+    };
+  }
   if (entry.target.kind === "cargo") {
     return {
       command: "cargo",
@@ -772,7 +808,7 @@ export function planFor(input) {
  */
 export function rootMismatch(entry, projectRoot) {
   if (entry.rootFlag) return null;
-  if (entry.target.kind === "cargo") return null;
+  if (entry.target.kind === "cargo" || entry.target.kind === "project") return null;
   if (path.resolve(projectRoot) === path.resolve(packageRepoRoot)) return null;
   return (
     `supertaskr ${entry.verb}: REFUSED — ${entry.target.file} resolves the repository root ` +
@@ -963,6 +999,24 @@ export function runInstall(args, io) {
   if (dryRun) {
     out(`supertaskr install: --dry-run, ${String(plan.length)} file(s) NOT written.`);
     return EXIT.CLEAN;
+  }
+  // IT REFUSES TO CLOBBER (the verifier's bench at f809cd9: a hand-edited
+  // destination was overwritten with no backup and no warning, and the
+  // output said "written" either way). A destination whose bytes already
+  // match is a no-op; one that differs is somebody's edit.
+  const collisions = plan.filter((step) => {
+    const to = path.join(projectRoot, step.to);
+    if (!existsSync(to)) return false;
+    return readFileSync(to, "utf8") !== readFileSync(path.join(projectRoot, step.from), "utf8");
+  });
+  if (collisions.length > 0 && !args.includes("--force")) {
+    err(
+      `supertaskr install: REFUSED — ${String(collisions.length)} destination(s) already exist ` +
+        "and differ from what would be written:\n" +
+        collisions.map((c) => `  ${c.to}`).join("\n") +
+        "\n  Nothing was written. Re-run with --force to overwrite them.",
+    );
+    return EXIT.FOUND;
   }
   for (const step of plan) {
     const from = path.join(projectRoot, step.from);
