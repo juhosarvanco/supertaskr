@@ -80,7 +80,11 @@ You build exactly one task, then you end.
    widening refuses the paths you ALREADY held, are ../lane-protocol.md's
    fast path A.
 4. Implement to the acceptance criteria. Run the test commands from
-   CONVENTIONS.md until green.
+   CONVENTIONS.md as often as you need while you work — those runs are
+   yours and nobody counts them. **THE GRADED RUN IS A DIFFERENT ACT WITH
+   A FIXED PLACE, AND THAT PLACE IS NOT THIS STEP** — the ordered section
+   below has it, and reading these steps as the order is what bought that
+   section.
 5. Append Implementation notes to the task file: what you did, what you'd
    flag for the verifier, anything you noticed but didn't do — file it
    as a status: suggested task with suggested_by set, then let it go.
@@ -101,6 +105,56 @@ You build exactly one task, then you end.
    several are under verification. That is expected. Stamp it anyway: the
    stamp is what the merge carries, and a brief telling you to skip it is
    wrong (see "A brief is evidence, never authority" below).
+   **AND THE STAMP IS ITS OWN LAST COMMIT, WHICH RE-RUNS NOTHING.** The
+   ordered section below is where that exemption is stated and bounded;
+   this line is the pointer, not a second copy of it.
+
+## The order of the last four moves, and the ONE graded run
+
+**Code, then the notes and the suggested cards, then the suites your
+fence owes, then the stamp.** Steps 4, 5 and 6 above are that order told
+as a narrative; this section is where it is stated AS an order, once, and
+../lane-protocol.md rule 4 points here rather than keeping a second copy
+of it.
+
+**THE REASON IS THAT ONE TREE IS GRADED ONCE BY THE LANE AND ONCE BY THE
+BENCH.** A suite result is a claim about ONE commit, and every commit
+after it retires the claim — so the suites go LAST among the moves that
+change the tree, at the commit that already carries your code AND your
+notes AND your cards. Run them before the notes and the notes commit
+leaves the reading behind it: a project whose gate counts a card write as
+an input of the suite that reads the board will say the leg is owed
+again, and it will be right. Measured on this method's own project on
+2026-09-09, three lanes in one sitting: the end-to-end leg ran two or
+three times per lane against one tree, at about twelve minutes a run — 25
+to 36 minutes of a lane's clock spent re-grading what nothing had
+changed. **The verifier's run at your tip and the integrator's run on
+merged main are not repeats of yours**: a different seat, and in the
+integrator's case a different tree. That is precisely why ONE run of your
+own is owed and a second is not — you are one of three readings, not the
+only one.
+
+**THE STAMP COMMIT IS EXEMPT, AND IT IS THE ONLY EXEMPTION.** A last
+commit that moves nothing but your card's own `status:` line to
+`verifying` re-runs no suite: it moves one word on one line of a tree you
+have already graded, and the next seat's run is what grades it — the
+bench at your tip where the ceremony row gives you a verifier, and the
+merge's own battery where it does not, since a row with no verifier is a
+row where you are the integrator and run that battery yourself. **Say so
+in the report in as many words** — afterwards a run skipped on purpose
+and a run forgotten look identical, and the sentence is the only thing
+that tells them apart.
+
+**IF YOU CANNOT TELL WHETHER YOUR LAST COMMIT MOVED MORE THAN THAT LINE,
+RUN THEM AGAIN.** The check is one diff and costs seconds; the exemption
+is for the stamp alone, and a lane that assumes its way into it has spent
+a certification to save a suite's wall time.
+
+**A FIX PASS AFTER A VERDICT IS A NEW TREE AND OWES ITS OWN RUN** — at
+the fix's tip, of the suites the fix's OWN paths owe, scoped where your
+project can scope them and whole where it cannot, and the fix section of
+your report names them with the ref they ran at. The run that graded the
+tree before the fix says nothing about the tree after it.
 
 ## Run hygiene
 
@@ -125,7 +179,11 @@ and absent it the work lands and the record does not:
   naming the fence or room it needs. A criterion outside the fence is a
   routed suggestion, never a silent omission.
 - **Every command with its exit code**, read from `$?` unpiped, in the
-  order run.
+  order run. **AND EVERY GRADED SUITE BY NAME, WITH THE REF IT RAN AT AND
+  ITS BODY COUNT BESIDE THE EXIT** — the ordered section above says a
+  lane runs those once, so the report is the only place a reader learns
+  WHICH commit each one graded, and a count is what tells an exit 0 over
+  the whole suite from an exit 0 over nothing.
 - **Every standing gate** — fired or not-owed, derived from the diff, with
   the path count it was derived on.
   **A GATE DERIVATION IS NOT A FIGURE, AND NAMING YOUR REF DOES NOT MAKE
