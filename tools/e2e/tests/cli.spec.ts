@@ -1847,3 +1847,60 @@ test("the layout verifier.md publishes IS the layout the merge parses, and each 
     expect(flat, `the contract names ${JSON.stringify(said)}`).toContain(said);
   }
 });
+
+test("an ABORTING drill still restores the site — the merged tree is never left mutated", () => {
+  // THE WORST FAILURE THIS STEP CAN HAVE. The drill writes a mutant into
+  // a file on the MERGED tree. If the run throws — a runner that is not
+  // installed, a spawn that dies, a Ctrl-C — and the restore is not in a
+  // `finally`, the mutant STAYS, and the integrator's next `git add` puts
+  // it in the merge commit. The mechanism built to protect the merge
+  // becomes the thing that poisons it.
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-abort-"));
+  try {
+    const source = "export function f() {\n  return enumerated;\n}\n";
+    mkdirSync(path.join(root, "src"), { recursive: true });
+    writeFileSync(path.join(root, "src", "a.mjs"), source);
+    mkdirSync(path.join(root, "tools", "e2e", "tests"), { recursive: true });
+    writeFileSync(
+      path.join(root, "tools", "e2e", "tests", "brief.spec.ts"),
+      'test("the body that pins it", () => {});\n',
+    );
+    const block = {
+      correction: "C1",
+      file: "src/a.mjs",
+      spec: "tools/e2e/tests/brief.spec.ts",
+      body: "the body that pins it",
+      message: "m",
+      old: "  return enumerated;",
+      new: "  return everything;",
+    };
+    let sawOnDisk = "";
+    expect(() =>
+      runMutantDrill({
+        block,
+        projectRoot: root,
+        run: () => {
+          sawOnDisk = readFileSync(path.join(root, "src", "a.mjs"), "utf8");
+          throw new Error("the runner died mid-drill");
+        },
+      }),
+    ).toThrow("the runner died mid-drill");
+    expect(sawOnDisk, "the mutant really was on disk when the run died").toContain(
+      "return everything;",
+    );
+    expect(
+      readFileSync(path.join(root, "src", "a.mjs"), "utf8"),
+      "and the site is restored ANYWAY — this is what the `finally` buys",
+    ).toBe(source);
+    // THE POSITIVE CONTROL: the same drill whose run returns normally is
+    // restored too, so this body is about the ABORT and not about restoring.
+    runMutantDrill({
+      block,
+      projectRoot: root,
+      run: () => ({ code: 1, output: "  1) [chromium] › tests/brief.spec.ts:1:1 › the body that pins it \n    Error: m\n  1 failed" }),
+    });
+    expect(readFileSync(path.join(root, "src", "a.mjs"), "utf8")).toBe(source);
+  } finally {
+    removeGitFixture(root, FIXTURE);
+  }
+});
