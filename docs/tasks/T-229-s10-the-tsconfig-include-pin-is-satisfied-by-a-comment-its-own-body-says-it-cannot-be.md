@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-229-s8
 blocked_by: []
 touches: [app/test/crescendo-dom.test.tsx]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
