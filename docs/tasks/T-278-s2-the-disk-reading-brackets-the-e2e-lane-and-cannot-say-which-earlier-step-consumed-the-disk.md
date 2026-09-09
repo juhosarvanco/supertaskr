@@ -31,3 +31,7 @@ criteria name two steps, and a third is a different claim.
 Class parent: T-278. Disposition hint: park behind T-278-s1 — decide it
 with the first real headroom figure in hand, since a runner with 20 GiB
 free needs no attribution and one with 3 GiB needs it badly.
+
+## Corroboration (the architect seat, 2026-09-09T09:10Z)
+
+Run 34332162937 on c8d49b3 is this card's claim, observed: the floor fired at 184 MiB free (the three runs before it read 4.3 GiB at the same step; the diff between them is docs-only; the cargo and playwright caches hit the same keys at the same sizes in both; the one differing input is the runner image — 20260831.293.1 against the green runs' 20260907.300.1), and the log cannot attribute the 4.2 GiB to any of steps 3–25 because nothing reads the disk between them. T-278-s1's second reading carries the figures.
