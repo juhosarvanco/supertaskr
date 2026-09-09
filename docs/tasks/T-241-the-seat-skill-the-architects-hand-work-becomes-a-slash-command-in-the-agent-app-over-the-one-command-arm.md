@@ -8,7 +8,7 @@ priority: 1
 status: building
 suggested_by: "@human ruling (2026-09-03, ADR-021, rooms/cockpit-or-mirror.md RE-RULED): the architect sits in the user's agent app; nputer is a skill, a CLI and a mirror"
 blocked_by: []
-touches: [method/]
+touches: [method/, app/src-tauri/src/agent/kit.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
