@@ -842,7 +842,16 @@ test("a real run's verdict survives the round trip into the token and is judged 
     // A REAL SUITE, REALLY RUN — the verdict is the runner's own, not a
     // literal this body typed, so the token's shape is checked against
     // what `runSuite` actually produces.
-    const { verdict } = runSuite(fixtureSuite(dir), { root: dir });
+    //
+    // `root` IS THE TOKEN REPOSITORY AND THE SUITE STILL RUNS IN `dir`
+    // (T-203-s1): the fixture's `cwd` is absolute, so `runSuite` resolves
+    // it the same either way, while `root` is the checkout whose ref AND
+    // TREE the runner reads. Handing it `dir` — a temp directory with no
+    // `.git` — made the runner read "git would not say" and the writer
+    // read this repository's tree, which is the very split this card
+    // closed; the body's own name says "the tree it ran at", and now one
+    // checkout answers for both halves of that sentence.
+    const { verdict } = runSuite(fixtureSuite(dir), { root: repo });
     expect(verdict.verdict).toBe("GREEN");
 
     const written = recordVerdicts([verdict], repo);
@@ -930,5 +939,172 @@ test("a token written where it cannot be written is said out loud and changes no
     expect(out.message).toContain("this is a claim about the file, not about the suites");
   } finally {
     dropRepo(repo);
+  }
+});
+
+// ── §THE RUN THAT SPANNED A COMMIT (T-203-s1) ────────────────────────
+//
+// The two identifiers on a token entry used to be read at DIFFERENT
+// MOMENTS: `gate-run.mjs` captured the ref before it spawned the suite,
+// and `writeToken` read `HEAD^{tree}` when it wrote — after the suite had
+// finished. This repository has one such token on its own record
+// (`ref=300d04b` beside `tree=48d50df`, two commits apart, one run), and
+// the e2e leg's duration band says the window is the ordinary shape of a
+// run beside a working seat rather than a rarity.
+//
+// THE WINDOW IS CONSTRUCTED HERE RATHER THAN SIMULATED. The fixture's own
+// test body commits into the token repository, so the commit really does
+// land after `runSuite` has read the tree and before `recordVerdicts`
+// writes it — which is the only arrangement that can tell the fixed
+// runner from the broken one. A body that merely handed `writeToken` two
+// trees would pass against both.
+
+/**
+ * One real suite run over a real git repository, with the option of a
+ * real commit landing WHILE it runs.
+ *
+ * The caller owns the repository and must `dropRepo` it; the Playwright
+ * fixture directory is cleaned here, because nothing outside needs it.
+ *
+ * `NO_BACKGROUND_MAINTENANCE` is threaded into the CHILD's git calls too
+ * (T-178): the commit that makes this fixture interesting is exactly the
+ * command that detaches a maintenance grandchild into the `.git` the
+ * teardown is about to walk.
+ */
+function runOverRepo(
+  name: string,
+  commitDuringRun: boolean,
+): {
+  repo: string;
+  startedCommit: string;
+  startedTree: string;
+  reachedTree: string;
+  verdict: ReturnType<typeof runSuite>["verdict"];
+} {
+  const repo = tokenRepo(name);
+  const startedCommit = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  const startedTree = String(headTree(repo));
+  const during = commitDuringRun
+    ? "  writeFileSync(repo + '/DURING.md', 'this landed mid-run\\n');\n" +
+      "  execFileSync('git', ['-C', repo, ...maint, 'add', '-A'], { stdio: 'pipe' });\n" +
+      "  execFileSync('git', ['-C', repo, ...maint, 'commit', '-qm', 'landed while the suite ran'], { stdio: 'pipe' });\n"
+    : "";
+  const { dir, cleanup } = makeFixture(
+    "import { test, expect } from '@playwright/test';\n" +
+      "import { execFileSync } from 'node:child_process';\n" +
+      "import { writeFileSync } from 'node:fs';\n" +
+      `const repo = ${JSON.stringify(repo)};\n` +
+      `const maint = ${JSON.stringify(NO_BACKGROUND_MAINTENANCE)};\n` +
+      "test('this body passes, and the commit lands while it does', () => {\n" +
+      during +
+      "  expect(1).toBe(1);\n" +
+      "});\n",
+  );
+  try {
+    // `root` is the REPOSITORY: the fixture's cwd is absolute, so the
+    // suite runs in `dir` either way, and `root` is the checkout whose ref
+    // and tree the runner reads — which is what a real run's root is.
+    const { verdict } = runSuite(fixtureSuite(dir), { root: repo });
+    recordVerdicts([verdict], repo);
+    return { repo, startedCommit, startedTree, reachedTree: String(headTree(repo)), verdict };
+  } finally {
+    cleanup();
+  }
+}
+
+test("a commit landing while a suite runs leaves the token keyed to the tree the suite STARTED at, so the push guard's stale refusal can see it", () => {
+  const spanned = runOverRepo("spanned", true);
+  const control = runOverRepo("unspanned", false);
+  try {
+    // THE PRECONDITION, ASSERTED: the fixture really moved HEAD, and it
+    // did so while the suite was running. Without this the body below is
+    // satisfied by a repository nothing happened in.
+    expect(spanned.reachedTree, "the fixture must really have moved HEAD mid-run").not.toBe(
+      spanned.startedTree,
+    );
+    // AND THE RUN WAS GREEN, which is what makes this the dangerous case
+    // rather than an academic one: a red run refuses on its own.
+    expect(spanned.verdict.verdict).toBe("GREEN");
+    expect(spanned.verdict.tree, "the runner reads the tree BEFORE it spawns").toBe(
+      spanned.startedTree,
+    );
+
+    const token = tokenOf(spanned.repo);
+    const entry = token.suites["fixture"];
+    expect(entry?.tree, "the token may not claim a tree the suite never saw").toBe(
+      spanned.startedTree,
+    );
+    expect(entry?.tree).not.toBe(spanned.reachedTree);
+    expect(entry?.treeAtWrite, "and it records what HEAD had reached by write time").toBe(
+      spanned.reachedTree,
+    );
+
+    // THE REFUSAL THE DEFECT DEFEATED. Keyed at WRITE time the entry
+    // would have carried the tree the push is about to carry and read
+    // FRESH — a green for content the suite never graded.
+    expect(
+      judgeToken({ token, tree: spanned.reachedTree, required: ["fixture"] }).state,
+      "a run that spanned a commit is stale against the tree it ended at",
+    ).toBe("stale");
+
+    // THE POSITIVE CONTROL, BUILT THE SAME WAY WITH ONE FLAG FLIPPED: the
+    // identical fixture WITHOUT the mid-run commit is judged FRESH, so
+    // `stale` above is a discrimination and not what this runner says to
+    // everything.
+    const clean = tokenOf(control.repo);
+    expect(clean.suites["fixture"]?.tree).toBe(control.startedTree);
+    expect(clean.suites["fixture"]?.treeAtWrite).toBe(control.startedTree);
+    expect(
+      judgeToken({ token: clean, tree: control.reachedTree, required: ["fixture"] }).state,
+    ).toBe("fresh");
+  } finally {
+    dropRepo(spanned.repo);
+    dropRepo(control.repo);
+  }
+});
+
+test("a run that spanned a commit is refused even after the tree comes BACK, because the entry records both trees rather than a verdict about them", () => {
+  // WHY BOTH TREES AND NOT JUST THE GRADED ONE. Recording the tree the
+  // suite started at makes `token-stale` fire in the ordinary case — the
+  // body above — and that is still not sound: a tree that moves during a
+  // run and moves BACK (a reset, a revert, an amend onto the same
+  // content) leaves the graded tree equal to HEAD's at push time, and a
+  // guard comparing one number against one number has nothing left to
+  // see. So the entry carries the tree at WRITE time as well and the
+  // disagreement is refused as `token-unkeyed`, whose own words are that
+  // the key does not describe what the suites ran against.
+  const spanned = runOverRepo("spanned-and-back", true);
+  const control = runOverRepo("unspanned-control", false);
+  try {
+    // THE TREE COMES BACK, by a real reset to the commit the suite
+    // started at — not by editing the token.
+    gitIn(spanned.repo, "reset", "--hard", "--quiet", spanned.startedCommit);
+    expect(String(headTree(spanned.repo)), "the precondition: HEAD's tree is the graded one again")
+      .toBe(spanned.startedTree);
+
+    const token = tokenOf(spanned.repo);
+    // STALE CANNOT FIRE HERE, and that is the whole reason this body
+    // exists: the graded tree IS the tree being pushed.
+    expect(token.suites["fixture"]?.tree).toBe(spanned.startedTree);
+    const judged = judgeToken({ token, tree: spanned.startedTree, required: ["fixture"] });
+    expect(judged.state).toBe("unkeyed");
+    expect(judged.code).toBe("token-unkeyed");
+    expect(judged.detail).toContain("a commit landed WHILE it ran");
+    expect(judged.detail).toContain(spanned.reachedTree);
+
+    // THE POSITIVE CONTROL: the same construction, the same kind of
+    // reset, without the mid-run commit — judged FRESH. Without it
+    // `unkeyed` above is equally satisfied by a judge that refuses every
+    // token it is shown.
+    gitIn(control.repo, "reset", "--hard", "--quiet", control.startedCommit);
+    expect(
+      judgeToken({ token: tokenOf(control.repo), tree: control.startedTree, required: ["fixture"] })
+        .state,
+    ).toBe("fresh");
+  } finally {
+    dropRepo(spanned.repo);
+    dropRepo(control.repo);
   }
 });

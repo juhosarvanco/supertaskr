@@ -133,6 +133,22 @@
  * would make a red run indistinguishable from a run nobody made, which is
  * this file's charter one layer downstream.
  *
+ * ── AND THE TREE IS READ BESIDE THE REF, BEFORE THE SPAWN (T-203-s1) ─
+ * The two identifiers used to be read at different times: this file
+ * captured `ref` before it spawned the suite, and the token writer read
+ * `HEAD^{tree}` when it wrote — after the suite had finished. A commit
+ * landing in between minted an entry whose `ref` named the commit the
+ * suite graded and whose `tree` named a LATER one, and the push guard's
+ * `token-stale` is keyed on the tree, so the refusal built for exactly
+ * this could not fire. This repository has one such token on the record
+ * (`ref=300d04b` beside `tree=48d50df`, two commits apart, one run), and
+ * the e2e leg's own duration band says the window is ordinary rather
+ * than rare. So `runSuite` now reads the TREE and the DIRT beside the
+ * ref, before anything is spawned, and carries both on the verdict; the
+ * writer records them next to what HEAD reached by write time, and a
+ * disagreement is refused there. THE SAME LESSON AS THE VERDICT LINE:
+ * a figure is worth what the moment it was read at is worth.
+ *
  * ── THE COMPANION RULE THIS FILE MAKES THIS REPOSITORY IMMUNE TO ─────
  * Scripts print their own `$?` last; readers trust the printed line and
  * never a wrapper's summary. Measured three times on 2026-08-31 in three
@@ -158,7 +174,12 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TOKEN_REL_PATH, writeToken } from "../../../.claude/hooks/gate-token.mjs";
+import {
+  TOKEN_REL_PATH,
+  headTree,
+  trackedDirt,
+  writeToken,
+} from "../../../.claude/hooks/gate-token.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -499,6 +520,12 @@ export function countBodies(family, text) {
  * @property {string} ref
  * @property {"GREEN"|"RED"|"REFUSED"} verdict
  * @property {string} reason
+ * @property {string | undefined} [tree]   HEAD's tree, read BESIDE the ref
+ *   and BEFORE the spawn (T-203-s1). `""` means git would not say; absent
+ *   means this verdict was built by something that does not read trees,
+ *   and the token writer falls back to its own reading for it.
+ * @property {boolean | undefined} [dirty] Were tracked files modified when
+ *   the run STARTED? OR-ed with the writer's own late reading.
  */
 
 /**
@@ -555,11 +582,25 @@ export function parseVerdict(line) {
 /**
  * The judgement, separated from the running so a body can drive it with
  * no suite at all. THIS IS THE FUNCTION THE CARD IS ABOUT.
- * @param {{ status: number, count: Count, ref: string, suite: string }} r
+ *
+ * `tree` and `dirty` are OPTIONAL and travel through untouched: nothing
+ * here judges them, and a caller with no reading of its own must not have
+ * one invented for it (T-203-s1). They are on the verdict so the token
+ * writer receives the moment the RUNNER read, not the moment IT runs.
+ *
+ * @param {{ status: number, count: Count, ref: string, suite: string, tree?: string | undefined, dirty?: boolean | undefined }} r
  * @returns {Verdict}
  */
-export function judge({ status, count, ref, suite }) {
-  const base = { suite, exit: status, bodies: count.bodies, targets: count.targets, ref };
+export function judge({ status, count, ref, suite, tree, dirty }) {
+  const base = {
+    suite,
+    exit: status,
+    bodies: count.bodies,
+    targets: count.targets,
+    ref,
+    tree,
+    dirty,
+  };
   // ZERO BODIES IS NEVER SUCCESS — and it is checked BEFORE the status,
   // deliberately, because instance 2 exited 1 and instance 5 exited 0
   // and the defect is identical in both. Reading the status first would
@@ -688,6 +729,23 @@ export function currentRef(root = repoRoot) {
 }
 
 /**
+ * The TREE the run happened at, read BESIDE the ref (T-203-s1).
+ *
+ * IT IS DELIBERATELY THE HOOK'S OWN READER RATHER THAN A SECOND SPELLING
+ * of `git rev-parse HEAD^{tree}`. The token is compared against
+ * `headTree`'s answer by `push-guard.mjs`, so a competing implementation
+ * here could disagree with the guard about what HEAD's tree is — two
+ * readers of one fact is the shape this repository keeps paying for.
+ *
+ * `""` AND NEVER A FABRICATION when git will not say, matching the empty
+ * string the writer already stores: a key nobody could read is refused
+ * downstream, which is the honest end of "I could not tell".
+ */
+export function currentTree(root = repoRoot) {
+  return headTree(root) ?? "";
+}
+
+/**
  * Run one graded suite and return its verdict.
  *
  * THE CD GUARD, THE REDIRECT AND THE CAPTURE ARE THE THREE THINGS THIS
@@ -700,11 +758,18 @@ export function currentRef(root = repoRoot) {
  */
 export function runSuite(suite, opts = {}) {
   const root = opts.root ?? repoRoot;
+  // THE THREE READINGS THAT MUST SHARE ONE MOMENT, AND THE MOMENT IS
+  // BEFORE THE SPAWN (T-203-s1). The ref was always read here; the tree
+  // and the dirt used to be read by the token writer, after the suite had
+  // finished, so a commit landing during a long leg gave one entry two
+  // identifiers from two different trees.
   const ref = currentRef(root);
+  const tree = currentTree(root);
+  const dirty = trackedDirt(root);
   /** @param {string} reason @returns {{ verdict: Verdict, output: string, outputPath: string }} */
   const refuse = (reason) => ({
     verdict: {
-      suite: suite.id, exit: -1, bodies: 0, targets: 0, ref,
+      suite: suite.id, exit: -1, bodies: 0, targets: 0, ref, tree, dirty,
       verdict: /** @type {const} */ ("REFUSED"), reason,
     },
     output: "",
@@ -771,7 +836,11 @@ export function runSuite(suite, opts = {}) {
     const status = r.status ?? -1;
     const readBack = readFileSync(outputPath, "utf8");
     const count = countBodies(suite.family, readBack);
-    return { verdict: judge({ status, count, ref, suite: suite.id }), output: readBack, outputPath };
+    return {
+      verdict: judge({ status, count, ref, tree, dirty, suite: suite.id }),
+      output: readBack,
+      outputPath,
+    };
   } finally {
     try {
       closeSync(fd);
@@ -798,6 +867,12 @@ export function runSuite(suite, opts = {}) {
  * failure is said out loud instead, because the guard downstream will
  * then refuse for want of a token and the seat should meet the reason
  * here rather than there.
+ *
+ * EACH VERDICT CARRIES ITS OWN TREE AND THE WRITER USES IT (T-203-s1).
+ * This function passes no `opts.tree`, on purpose: the verdicts in one
+ * batch were graded at whatever HEAD held when EACH suite started, and
+ * `--all` spans tens of minutes, so one tree for the batch would be the
+ * same mistake as one tree for the write.
  *
  * @param {Verdict[]} verdicts
  * @param {string} [root]
