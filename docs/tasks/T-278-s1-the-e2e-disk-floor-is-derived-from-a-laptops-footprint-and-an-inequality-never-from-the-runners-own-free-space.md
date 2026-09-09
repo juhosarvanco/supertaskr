@@ -60,3 +60,9 @@ What differs from the first reading and what does not: the diff from the last gr
 What the floor bought: a red with the RUNNER'S DISK named in its first line at 09:09:30Z, eleven minutes in, instead of an ENOSPC ninety seconds into the lane with the repository blamed. Main is red on CI at c8d49b3 for that reason and no other; the tree is the tree that was green at 9d82341 plus four docs commits.
 
 The band so far: 4,439,936 / 4,439,564 / 4,439,512 KiB on three consecutive runs, then 188,480 KiB. Two points at two levels is not a distribution either; the floor is not re-derived from this reading. The reading the next card needs is a `df` AFTER EACH of steps 3, 6, 7, 15, 17, 21 and 25 (the prerequisites, the two caches, the app build, cargo, e2e install, browsers) — one line each, with the image version printed beside the first — so a swing like this one is attributed to a step on a named image, not to "the VM".
+
+## The third reading (the architect seat, 2026-09-09T09:31Z, from run 34334103318 on cc41ff3 — the floor fired AGAIN)
+
+    free at .: 188156 KiB against a floor of 2097152 KiB (2 GiB); image ubuntu-24.04 version 20260831.293.1
+
+The same image as the second reading, the same free space to within 324 KiB, on a push whose diff from the red c8d49b3 is the T-256 merge and the T-271 stamp. Two consecutive runs on the older image, both at 184 MiB; four consecutive runs on 20260907.300.1 before them, all at 4.3 GiB. The fleet is handing out the older image now, so every push is red at the floor until either the image rotates or the job frees the runner's disk before the e2e lane — which is what T-278-s2's amendment asks for.
