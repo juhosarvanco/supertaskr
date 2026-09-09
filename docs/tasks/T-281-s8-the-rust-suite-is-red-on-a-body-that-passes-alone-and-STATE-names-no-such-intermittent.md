@@ -61,3 +61,86 @@ Run 34347086580 on 0a1c7cf (the first run carrying the free-disk step) died at t
 - WHEN the fix lands THE test SHALL still refuse a hostile session id — the assertion's subject is unchanged; only its arrangement moves.
 - IF the flake is in the test's own arrangement (a `recv_timeout`, a shared dump directory, a port) THEN the fix stays in the test file; IF it is in the runner THEN the notes SHALL say which state two tests shared.
 
+
+## Implementation notes (executor claude-opus-5@subagent, 2026-09-09, lane at `1b5061ec`)
+
+**The race, named: the end of a turn was published through TWO pieces of
+shared state, in the wrong order, and the gap between them was the
+flake.** Not a `recv_timeout`, not a shared dump directory, not a port,
+not a global — and not, as this card's third criterion supposed, state
+that two *tests* shared. The sharing is between `spawn_turn`'s worker
+thread and every caller of the module, and one body happened to be the
+one that asked both questions in a row.
+
+A caller learns a turn is over from `agent::status()`, which takes the
+`inner` mutex and reads `phase`. It claims the runner through
+`begin_turn()`, which CASes the `running` `AtomicBool` that `TurnInFlight`
+owns. `spawn_turn` wrote the terminal phase under the mutex, dropped the
+mutex, and then released the latch **when the thread ended** — so between
+the two sat the tail of the closure: the `println!` that formats and
+sanitizes the error, and every captured local's drop. A caller that polls
+the phase until it leaves `Running` and then sends is racing that gap, and
+`send_turn`'s first line answers `SendOutcome::Busy` when it loses.
+
+That is exactly what `settle()` does — poll `status` every 20 ms, return
+on the first non-`Running` read — and exactly what the body did on the
+next line. `SendOutcome::Busy` is not `SendOutcome::NoSession`, so the
+assertion at the old line 3623 failed. **It is a live app defect, not
+only a test defect**: the webview polls `genesis_status` and re-arms its
+send box on the same signal, so a person typing fast enough into a
+settled interview could be told the runner was busy with a turn that had
+already failed.
+
+### The measurement, in four steps
+
+| step | tree | command | result |
+|---|---|---|---|
+| 1. reproduce | base `1b5061ec` | `--exact` body × 720, under 12 concurrent copies of the whole target | **1 red in 720** at `tests/agent_runner.rs:3623`, the card's own assertion |
+| 2. name the cause | base + a 50 ms `sleep` between the phase publication and the thread's end | `--exact` body × 10 | **10 red of 10** — the intermittent made deterministic |
+| 3. name the outcome | as above, assertion rewritten to report what it got | `--exact` body × 1 | `no captured id means nothing to resume, got **Busy**` |
+| 4. confirm the fix | fixed, same 50 ms stall re-injected at BOTH positions (inside the lock; and at the old site after `drop(guard)`) | `--exact` body × 10 each | **0 red of 20** |
+
+The body alone never redded in 20 runs of the target and 40 runs of the
+body on an idle machine; the load is the instrument, and 12× is what it
+took here. CI's own runner needs no help — it took this red once already
+(run `34347086580` on `0a1c7cf`), as did the T-281 bench at `d086c73`.
+
+### The fix
+
+`drop(flight)` moved **inside the lock that publishes the terminal
+phase**, in `spawn_turn` and — the sweep — in `spawn_cold_start`, which
+carries the identical shape (`cold_start_status()` is its phase reader and
+`settle_cold` its poller). The two are now one step: whoever can see the
+terminal phase acquired that mutex *after* the worker released it, so the
+freed latch is visible to them too. The other direction is safe by the
+same edge — a `send_turn` that wins the latch inside the window blocks on
+the mutex until the worker drops it, then sets `Running` itself.
+
+Nothing else moved. `send_turn` is untouched; the assertion's subject is
+unchanged (a hostile session id is still refused, still unrecorded, still
+never resumed) — only its diagnosis moved, from a bare
+`assert!(matches!(..))` that reported one source line into an `other =>
+panic!("… got {other:?}")` in the file's own idiom. The seat that met this
+red twice had to rebuild the outcome from the module; the next one reads
+it.
+
+### The pin, and its poison drill
+
+`a_settled_turn_has_already_released_the_single_flight_latch` is the
+mirror of `a_turn_in_flight_refuses_a_second_one`: that body measures the
+latch refusing while a turn is live, this one measures it already free the
+instant the turn is over — the half nothing measured and the half that
+reddened. Its poll deliberately does not sleep, which is the whole
+instrument: `settle`'s 20 ms nap wins the race by accident nearly every
+time. Drilled by restoring the old ordering: **20 red of 20**, naming the
+defect in words. With the fix: **20 green of 20**. A 1-in-720 intermittent
+is now a deterministic pin.
+
+### What was NOT fixed, and is filed instead
+
+The 8× oversubscription used to hunt this one reddened two *other* bodies
+in the same file, and both survive this fix — 6 reds in 40 runs at 8×,
+none of them this card's body. They are different defects with different
+causes and they are filed as T-288 and T-289 rather than swept in here.
+Neither has ever been seen at 1×: this card's body is the only one of the
+three CI has actually taken.
