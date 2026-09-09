@@ -347,3 +347,361 @@ clean: `cargo test -p supertaskr-index --no-fail-fast` exit **0**, 274
 passed / 0 failed / 2 ignored; `cargo run -q -p supertaskr-index --
 index --check --root ../..` exit **1**, STALE, the same three-file delta
 recorded above.
+
+## VERDICT — phase 2 of the blind bench
+
+**APPROVED WITH ASSIGNED CORRECTIONS** — claude-opus-5@subagent,
+2026-09-09, judged on a detached bench at
+`/Users/ujju/Projects/nputer-V-T-167-s13`, tip
+`c51b7ba26b1e809ea0b4644885017a1f6c5cde71`, base
+`098cfe10a9e94fadf56122b77597df8e64a7f58f`.
+
+attack set: sha256:9ad985e88ab3cfdfa3f1c91aed8570e140724f41b1a0b842b136e7f85b8f611b (attack-set-T-167-s13.md)
+ground truth: sha256:afefc9f83d1f90662066b0d7a324ed497e1c1f1ede77fc25c2da31e2ee96cc01 (ground-T-167-s13.md)
+
+Both digests were verified with `shasum -a 256` before either file was
+opened, and both matched.
+
+**All four criteria are MET in BEHAVIOUR and I could not falsify one.**
+The corrections are two properties the criteria name that no body pins —
+both proved live by mutants that survive the shipped suite, and both
+closed by a body I wrote and demonstrated failing where the arming is
+absent. Neither is a behaviour defect: I ran the correct behaviour at
+the tip in both states before writing them down.
+
+### THE FRAME I ACTUALLY HAD
+
+- **Phase 1 was a genuinely separate spawn** and I did not write it. It
+  was tool-less BY INSTRUCTION — this harness cannot deny a spawn its
+  tools (STATE's bench bullet; `docs/reference/07-verification.md`,
+  "Phase 2") — and its own return reports **0 tool calls**, 53,420
+  tokens, 199 s. That is the honest weaker thing and it is why this
+  paragraph exists.
+- **MY BRIEF CARRIED EXECUTOR-DERIVED SPECIFICS, above the line, and I
+  say so rather than pretend otherwise**: it named `index_with_drops`,
+  `fresh_truncated_paths` and the commit subjects from the executor's
+  report. I re-derived every one of them from `git diff 098cfe1..c51b7ba`
+  and from the tree; no figure below is taken from the brief.
+- **THE CARD AT THE TIP IS THE EXECUTOR'S REPORT.** Commits `2cb7c09`
+  and `c51b7ba` write the implementation notes and the addendum INTO the
+  card, so the instruction "read the card whole" and the instruction
+  "read the notes only after the diff" cannot both be kept at this tip.
+  I read the card first. Phase 1's blindness is unaffected — it read the
+  card at the BASE, where those sections do not exist — but my own
+  reading order was notes-then-diff, and a later reader should know it.
+  `report-T-167-s13.md` (sha256:093da9672e154998fd875ac06a08f9b382888792bcd139d926b043ea6f142b22)
+  I opened only AFTER the diff, to enumerate claims; it adds nothing the
+  card does not carry.
+- **A PREVIOUS PHASE-2 SPAWN WAS CUT OFF AT 02:40Z MID-DRILL.** Its
+  scratch files (`V-T-167-s13-*`) were present. I ran one `ls` over the
+  scratchpad and saw their names; **I opened none of them**, and every
+  worktree, script, log and figure below is my own, written under
+  `V2-` names. Nothing of that spawn was committed.
+
+### THE BODIES I RAN, WITH COUNTS AND EXITS
+
+Every count is my own measurement at a named ref, read from the
+`test result:` lines summed across targets, never from an exit code
+alone.
+
+| run | ref | exit | bodies |
+|---|---|---|---|
+| `cargo test -p supertaskr-index --no-fail-fast` | base `098cfe1`, scratch worktree | **0** | 270 passed / 0 failed / 2 ignored, 12 targets |
+| `cargo test -p supertaskr-index --no-fail-fast` | tip `c51b7ba`, drill worktree | **0** | **274 passed / 0 failed / 2 ignored**, 12 targets |
+
++4 bodies against the base, which is exactly the four `#[test]` fns the
+diff adds. GT-6's 270 is confirmed independently.
+
+The four graded suites were run at MY OWN tip — the commit this verdict
+creates, not the commit I was sent — through the blessed runner from the
+bench root, and their counts are recorded in the addendum commit at the
+foot of this verdict.
+
+### THE DRILL — 23 MUTANTS, 3 SURVIVORS
+
+Detached scratch worktree at `c51b7ba`, its own `CARGO_TARGET_DIR` under
+the scratchpad, work committed first. **Every landing read from
+`git diff -U1`, never from the mutator's report** — the mutator refuses
+unless its pattern matches exactly once, and each landing was printed.
+**Every restore proved by sha256** against `git show c51b7ba:<path>` for
+all four crate sources, with an empty per-path diff and a clean
+`git status --porcelain` as companions. All 23 restores: `SHA_OK`,
+`PERPATH_DIFF_LINES=0`, `STATUS_DIRTY=0`.
+
+| # | mutation | result | bodies it reds |
+|---|---|---|---|
+| M1 | `check::check` re-derives the list from empty `symbols` arrays — **the card's own named mutant** | **KILLED** (272/2) | `the_named_files_are_the_emitters_record_never_a_re_derivation_from_empty_arrays` (at the ROOMY arm: "and must name nothing", `fresh_stats (4, 402, 0)`), `the_flag_alone_still_speaks_when_no_file_count_was_ever_recorded` ("nothing was emptied at this floor") |
+| M2 | list ← committed-vs-fresh `symbols` diff | **KILLED** (272/2) | `the_named_files_…`, `the_named_list_is_bounded_…` (left 0, right 25) |
+| M2b | the same, falling back to the naive re-derivation when no committed graph exists | **KILLED** (exit 101) | same class — no committed-vs-fresh shape survives |
+| M3 | `apply_budget` accumulates the FIRST pass only | **SURVIVED** (274/0) | none — **ASSIGNED CORRECTION 2** |
+| M4a | the under-budget return hands back an empty record | **KILLED** (272/2) | `the_named_files_…`, `emit::tests::the_returned_record_names_the_files_this_pass_emptied_and_no_others` |
+| M4b | the FLOOR return hands back an empty record | **KILLED** (273/1) | `the_named_list_is_bounded_…` (left 0, right 25) |
+| M5 | `bounded` takes the TAIL instead of the head | **KILLED** (273/1) | `the_named_list_is_bounded_…` (head order) |
+| M6 | the drop list gets its own literal `19` instead of the shared bound | **KILLED** (273/1) | `the_named_list_is_bounded_…` |
+| M7 | `... and N more` prints the TOTAL rather than the remainder | **KILLED** (273/1) | `the_named_list_is_bounded_…` |
+| M8a | `drop_clause`'s count ← `fresh_truncated_paths.len()` | **KILLED** (273/1) | `a_count_with_no_record_prints_the_count_and_never_an_empty_heading` |
+| M8b | `drop_clause`'s count ← the PRINTED head's length | **KILLED** (272/2) | `a_count_with_no_record_…`, `the_named_list_is_bounded_…` |
+| M9 | the unit word: `FILES whose array was emptied` → `SYMBOLS dropped from those arrays` | **KILLED** (272/2) | `a_drop_speaks_even_at_healthy_headroom_which_is_where_it_used_to_be_silent` (T-167-s5's pin), `the_named_files_…` |
+| M10 | a schema member emitted at empty (`skip_serializing_if` dropped from `Stats::truncated_files`) | **KILLED** (269/5) | `mixed_matches_golden`, `rust_workspace_matches_golden`, `ts_basic_matches_golden`, `ts_paths_alias_matches_golden`, `stable_json_ends_with_single_trailing_lf_and_2_space_indent` |
+| M11 | `if !head.is_empty()` → `if true` (the executor's own survivor at `e4c818b`) | **KILLED** (273/1) | `a_count_with_no_record_…` — the `86ce9f1` body does its job |
+| M12 | paths printed absolute and with `\` separators | **KILLED** (272/2) | `the_named_files_…`, `the_named_list_is_bounded_…` |
+| M13 | the record's order reversed leaving `index_with_drops` | **KILLED** (273/1) | `the_named_list_is_bounded_…` |
+| M16a | the record emptied at the **CURRENT** construction site (committed graph present and matching) | **SURVIVED** (274/0) | none — **ASSIGNED CORRECTION 1** |
+| M16b | the record emptied at the **STALE** construction site (committed graph present and differing) | **SURVIVED** (274/0) | none — **ASSIGNED CORRECTION 1** |
+| P1 | containment: the COUNT alone (`check`'s `truncated_files` + 1 where present) | KILLED (272/2) | `the_named_files_…`, `the_named_list_is_bounded_…` |
+| P2 | containment: the RECORD alone (one member dropped in `index_with_drops`) | KILLED (272/2) | the same two |
+| D1 | **DATA**: the legitimately-symbol-less file REMOVED from the fixture | **KILLED** (273/1) | `the_named_files_…`, on the ARMING assertion: *"the control is only a control if the re-derivation really has TWO hits"* — left `["src/fat.ts"]`, right `["src/fat.ts", "src/legitimately-symbol-less.ts"]` |
+| D2 | **DATA**: the symbol-less file GIVEN a symbol | **KILLED** (273/1) | the same assertion, the same message |
+| D3 | **DATA**: the symbol-less file made one the walk does not admit (`.txt`) | **KILLED** (273/1) | the same assertion, the same message |
+
+**M10 answers the attack set's open question.** The set said a schema
+member emitted at empty must die on a byte-identity body, *"and if no
+such body exists, that is the finding"*. A body exists — five of them,
+four goldens and the serialization pin. C3-a is guarded.
+
+**M8a/M8b answer the other one.** The set said a count re-derived from
+the list must die on a `> MAX_LINES` body *"or its absence is the
+finding"*. Both re-derivation shapes die, in two different bodies. The
+one the set predicted would survive — `list.len()` — dies on the
+`86ce9f1` body, which is the body the executor added because its own
+drill found the guard unreachable.
+
+**D1/D2/D3 are the control's own demonstration, from the data side.**
+All three disarm the control, and all three red on the ARMING assertion
+by name rather than on the property. **The fixture cannot be silently
+disarmed** — the failure this method produces most (T-210, T-203) is
+guarded here, and the guard is what fires.
+
+### THE CONTAINMENT MATRIX — FOUR CELLS
+
+The attack set asked for a diagonal. **The honest answer is that the
+diagonal is not where the separation lives, and this is a property of
+the card rather than a defect:** criterion 4 asks the list to sit
+BESIDE the count, so the two bodies that render both assert both, and
+they red on either perturbation.
+
+| perturbation (one fact only) | T-167-s5's COUNT pins | T-167-s13's joint LIST bodies |
+|---|---|---|
+| **P1 — the count alone** | **GREEN** ×3 | **RED** ×2 (`the_named_files_…`, `the_named_list_is_bounded_…`) |
+| **P2 — the record alone** | **GREEN** ×3 | **RED** ×2 (the same two) |
+
+T-167-s5's pins stay green under P1 for a reason worth naming rather
+than waving at: `a_drop_speaks_even_at_healthy_headroom_…` asserts
+`fresh_truncated_files > 0` and the rendered sentence, never an exact
+value, and `the_flag_alone_…` reaches the floor arm where the count is
+`None` and the perturbation is a no-op. **This lane's bodies assert the
+EXACT count beside the list, so they are strictly stronger than the pins
+they sit beside** — which is the opposite of the C4-c risk the attack
+set flagged.
+
+The separation the matrix was after is carried by the two SINGLE-fact
+bodies, and their kill sets are disjoint — **neither contains the
+other**:
+
+| mutant | `a_count_with_no_record_…` (count, no list) | `the_returned_record_names_…` (record, no count path) |
+|---|---|---|
+| M8a — count ← list length | **RED** | GREEN |
+| M4a — record emptied at the emit's return | GREEN | **RED** |
+
+### THE CRITERIA, ONE BY ONE
+
+**C1 — the alarm block names WHICH files, bounded like every other delta
+list. MET.** The list renders beneath the counted sentence under a
+`WHICH FILES` heading and goes through `check::bounded`, which is now
+the ONE implementation of `MAX_LINES` + `"... and N more"` — `emit_lines`
+spends it too. M5, M6, M7 and M13 all die on
+`the_named_list_is_bounded_…` (25 dropped, 20 printed, `... and 5 more`,
+head in sorted order, count still 25). **C1-e is proved by bytes rather
+than asserted**: the full `index --check` report from the BASE binary
+and from the TIP binary, on the same untruncated tree, is
+**byte-identical** — both `sha256:f9909503bdf02a0dbb1945a127bb97b49da1f646a381e4dc07df7d524dfd1942`
+— and identical again on a STALE tree whose report carries the delta
+lists the `bounded` refactor moved. The refactor is behaviour-preserving
+on the sibling lists, measured, not argued. C1-g holds: paths are
+repo-root-relative with forward slashes, and M12 dies.
+
+**C2 — the emitter's own record, never a re-derivation. MET, and this
+is the criterion the lane is built around.** `apply_budget` returns its
+`all_dropped` accumulator; `index_with_drops` carries it; `check` takes
+it from the same call that produced the document. Every re-derivation
+shape dies: the naive one (M1), the committed-vs-fresh one (M2), and the
+hybrid that falls back to naive (M2b). The control — `src/fat.ts`
+emptied by the budget beside `src/legitimately-symbol-less.ts` that the
+walk indexes and the extractor finds nothing in — is **asserted armed
+before its zero is written down**, and D1/D2/D3 prove that arming is
+load-bearing. C2-f, the attack set's "most likely quiet failure", is
+covered.
+
+**C3 — the schema decision against ADR-014. MET. THE BRANCH TAKEN IS
+THE CHEAP ONE: NO SCHEMA MEMBER.** I say so explicitly because the
+attack set required it (C3-e), and it is not vacuous — the decision is
+argued, recorded twice (the card and `check::drop_clause`'s doc
+comment), and **it is correct about ADR-014's text.** I read ADR-014 at
+the base. It requires the committed graph to be deterministic — *"same
+tree → byte-identical bytes"* — and OMITS volatile fields (HEAD sha,
+timings). A `stats.truncated_paths` is a pure function of the tree, so
+it would SATISFY that rule; the record says exactly this, and refuses
+the member on COST instead. **That is the honest reading**, and a record
+that had refused the member "because ADR-014" would have been wrong.
+The cost figure (mean path 35.5 bytes over the 201 file entries at
+`098cfe10`, 45.5 bytes as an array element at `stats`' depth, ≈9 100
+bytes for a 200-file truncation) is stated AT ITS OWN REF and is
+re-derivable; the sign of the feedback loop — a record whose size grows
+with the truncation, spending the budget that caused it — does not
+depend on the mean.
+**C3-a and C3-c, the claim that the schema did not move in practice,
+are proved by bytes.** The TIP binary run against the BASE tree emits a
+document that is byte-identical to the committed
+`docs/architecture/graph.json`: **CURRENT, exit 0, 1 192 822 bytes, 201
+files, 2 547 symbols, 2 441 edges**, the budget line unchanged at 55.6 %.
+A schema member — even one omitted at empty by a wrong predicate —
+could not survive that. M10 confirms the guard is live.
+
+**C4 — the COUNT and its printed unit unmoved. MET.** The counted
+sentence and the `unit: FILES whose array was emptied, never symbols`
+clause are unchanged in the diff (the only edit to that `format!` is
+binding its result to `out`), the list is appended beneath it, and
+`the_named_files_…` re-asserts the ORDER so a later edit that swapped
+the addition for a replacement reds by name. M9 kills the unit word on
+T-167-s5's own pin. M8a and M8b kill both re-derivations of the count.
+**C4-c: no T-167-s5 body was edited** — the diff removes no assertion
+anywhere (`git diff | grep '^-\s*assert'` is empty); the two existing
+bodies it touches (`the_flag_alone_…` and `emit::tests::under_budget_…`)
+gain assertions and lose none. **C4-d: no downstream reader is exposed.**
+`CheckReport` has exactly one non-test consumer, `cli.rs`'s
+`Command::Check`, and GT-15's `Stats` consumers all read `graph.json`,
+which did not move.
+
+**`index --check`'s exit contract is unchanged**, measured on both
+binaries over five probes: CURRENT **0**, STALE **1**, unknown flag
+**2**, invalid root **3**, `--version` **0** — identical, base and tip.
+`cli.rs` is not in the diff.
+
+### SECURITY SWEEP
+
+**S1 — paths printed verbatim: a REAL surface, and it is NOT this
+lane's.** The walk admits a filename containing a newline or an ESC
+byte; both reach `files[].path` in the emitted document verbatim
+(`'src/ev\nil.ts'`, `'src/e\x1b[31m.ts'`), and the report's delta list
+then emits a second physical line carrying no `[supertaskr-index]`
+prefix. **I measured the base binary and the tip binary on that tree and
+their reports diff to nothing**, so the class is older than this card
+and the `WHICH FILES` list adds one more list to a surface that already
+had one. Filed as `T-167-s15`, `status: suggested`; **not held against
+this lane**. No absolute path leaks: the report is repo-root-relative
+throughout.
+
+**S2 — no new input path.** The diff adds no `fs::`, `File::`,
+`metadata`, `read_to_string`, `env::`, `Command`, `process::` or
+`unsafe`. No dependency was added; no `Cargo.toml` moved. The one new
+public-facing surface is `pub fresh_truncated_paths` on an
+already-public struct, and `index_with_drops` is deliberately
+`pub(crate)`.
+
+**S3 — no new panic path.** The only production slice added is
+`&all[..head]` with `head = all.len().min(MAX_LINES)`, which cannot
+exceed the length and cannot underflow in `all.len() - head`. Every
+`unwrap`/`expect` the diff adds is inside `#[cfg(test)]`. Committed-
+document parsing is untouched, so an older or malformed `graph.json`
+still takes the same `Staleness::Unreadable` path.
+
+**S4 — the report's size is bounded** at `MAX_LINES` entries plus one
+tail line, on any truncation however large; the bounded body drives 25
+and prints 20. The schema branch was declined, so no document grows.
+
+**No finding is REJECTED-level.** All eight of the attack set's
+falsifiers are clear: no re-derived list, no schema member, the count
+unmoved and not re-derived, the list bounded with correct arithmetic,
+the exit contract unchanged, the graph and the app dogfood pins
+untouched, the fence intact (five paths, three of them the crate's own
+sources, two of them `docs/tasks/`), and nothing in the security sweep.
+
+### ASSIGNED CORRECTION 1 — the record is pinned only on the arm no indexed repository ever takes
+
+`check` builds `CheckReport` at **three** sites: `Staleness::Missing`
+(no committed graph), CURRENT (committed graph present and byte-equal),
+and the general STALE arm. All three carry `fresh_truncated_paths`
+correctly — **I ran the correct behaviour at the tip and saw it** — but
+every shipped body reaches only the FIRST, because `TempTree` starts
+with no `docs/architecture/graph.json` at all. **Emptying the record at
+either of the other two leaves the suite at 274 passed / 0 failed**
+(M16a, M16b). **In this repository every `index --check` takes one of
+those two arms**, so criterion 1's production path is unguarded: the
+feature could break on every real invocation and the crate suite would
+stay green.
+
+**THE BODY THAT PINS IT — WRITTEN AND CHECKED BY ME, IN A SCRATCH
+WORKTREE, NOT PROPOSED ON FAITH.** `check::tests::probe_the_record_reaches_the_report_on_the_current_and_stale_arms`:
+build the T-167-s13 fixture, take the tight budget, write
+`stable_json(&index(&tight))` to `GRAPH_REL_PATH` so the CURRENT arm is
+really reached (`current.stale.is_none()` asserted, not assumed), assert
+the record and the printed list are `["src/fat.ts"]` there; then move
+`src/thin0.ts` so the STALE arm is really reached (`stale.is_some()`
+asserted) and assert the record survives and still prints.
+**THE DEMONSTRATION I OWE FOR IT:** at the tip **1 passed / 0 failed**;
+under M16a **0 passed / 1 failed**; under M16b **0 passed / 1 failed**.
+It reds where the arming is absent, on both arms, and it passes where
+the property is present.
+
+### ASSIGNED CORRECTION 2 — the multi-pass accumulation has no body
+
+`apply_budget` loops: emptying arrays changes `stats`, which changes the
+document's size, so a marginal budget needs a further pass.
+`all_dropped.extend(dropped)` is what makes the record cumulative.
+**Restricting that to the first pass leaves the suite at 274 passed / 0
+failed** (M3). The gap is inherited rather than created — the same
+mutation corrupts `stats.truncated_files`, which is T-167-s5's count —
+but criterion 2 is exactly the property it breaks, and the card's own
+rule (a body that cannot red is the finding, which is why `86ce9f1`
+exists) applies to a property that has no body at all.
+
+**AND IT IS NOT AN EQUIVALENT MUTANT, WHICH I CHECKED BEFORE ASSIGNING
+IT.** `emit::tests::probe_the_record_equals_what_was_emptied_at_every_budget`:
+41 files (40 with one symbol each, so the greedy loop's overshoot is
+small and a second pass is reachable, plus one that arrives bare),
+sweeping **every** budget from 0 to the full document length and
+asserting at each that the returned record equals exactly the set of
+arrays this call emptied, and that `stats.truncated_files` is the
+record's length. **THE DEMONSTRATION:** at the tip **1 passed / 0
+failed**; under M3 it reds with **2 244 budgets disagreeing**, the first
+at budget 8 900 (*record 39 != emptied 40*). Multi-pass is real, it is
+reachable on a 41-file fixture, and nothing in the crate sees it today.
+My earlier, coarser probe (files of 30/20/10 symbols, a 4 000-byte
+sweep) PASSED under M3 — recorded because a control that cannot fail is
+the defect this method produces most, and the first one I wrote could
+not.
+
+**Both corrections are test-only, inside the fence
+(`app/src-tauri/crates/supertaskr-index/src/`), and neither asks the
+implementation to change.** Applying them owes `npm run capabilities`
+nothing (Rust bodies are not the e2e census) but does move the graph,
+because `check.rs` and `emit.rs` are indexed files.
+
+### WHAT I DID NOT JUDGE
+
+Nothing was left UNJUDGED. The ground truths covered every fact the
+attack set named; GT-6 (270 at the base) and GT-8 (`index --check`
+CURRENT at 55.6 %) I re-measured myself and both held. The one arming
+the attack set wanted that no body carries — D7, a file emptied by the
+budget **and** already empty in the committed graph — is not load-
+bearing here: every committed-vs-fresh implementation (M2, M2b) dies on
+the plain control before D7 could be reached, so its absence lets no
+wrong implementation through. It is noted, not assigned.
+
+### FOR THE INTEGRATOR
+
+- **The emitter's DOCUMENT did not move.** The tip binary on the base
+  tree reproduces the committed graph byte-for-byte. No schema change,
+  no golden moved, no app dogfood pin moved — this lane left
+  `docs/architecture/graph.json` and `app/test/` alone, correctly.
+- **THE GRAPH REGEN IS OWED ANYWAY, and it is content, not schema.**
+  `index --check` at this tip is **STALE, exit 1**, because the lane's
+  own three source files are indexed files: `files +0 -0 ~3`
+  (`check.rs` loc 1556→1881 symbols 17→18; `emit.rs` loc 395→471;
+  `lib.rs` loc 528→556 symbols 25→26), `edges +1 -1` (emit.rs's `std`
+  import gains `BTreeSet`), fresh 1 193 357 bytes against the committed
+  1 192 822. The regen is the integrator's at the merge (T-211) and it
+  moves the six app dogfood pins with it.
+- My own commits touch `docs/tasks/` only, and the graph indexes no
+  `.md` (201 files: 92 `.ts`, 59 `.rs`, 50 `.tsx`), so this verdict adds
+  nothing to that obligation.
