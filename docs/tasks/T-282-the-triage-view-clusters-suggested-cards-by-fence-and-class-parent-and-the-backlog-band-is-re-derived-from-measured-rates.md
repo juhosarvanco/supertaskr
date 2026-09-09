@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: building
 suggested_by: "@human (2026-09-09): decision 4 of the seat's review of the outside review — \"re-derive via the keeper\"; the outside review had proposed a filtering agent and raising the band from 40 to 80"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/scripts/health-bands.config.mjs, tools/e2e/tests/health-bands.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
