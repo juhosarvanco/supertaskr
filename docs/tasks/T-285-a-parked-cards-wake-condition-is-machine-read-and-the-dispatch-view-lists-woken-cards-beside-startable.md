@@ -419,3 +419,51 @@ before any of it was visible.**
 - The `--full` answer grows 126 808 → 138 001 bytes; the section is
   9 806 of them. Both refs are already over one pipe buffer and the
   margin block discloses it, so this changes no verdict about the view.
+
+#### 2026-09-09, appended to the verdict above — the WOKEN figure RE-DERIVED at the verifier's own tip, and what re-deriving it proved
+
+**A record, appended, not a rewrite.** verifier.md's figure case says a
+count in a verdict is a claim about a tree and must be re-derived at the
+tip the verdict's own commits create. Re-derived at `6eac9e5`:
+**13 of 129**, against the **16 of 129** the verdict above measured at
+`ce46115` at 13:55Z. **My commits added no parked card and changed no
+code that counts one.** The lane list moved: `T-281-s8`'s worktree was
+removed between the two readings, and the three cards it alone had
+woken — **`T-167-s3`, `T-167-s4`, `T-180`** — left the WOKEN section
+without anybody acting on them. They are back in STILL PARKED.
+
+**That is `T-285-s4` happening, inside one verification pass, to three
+real cards.** The suggestion was filed from the CODE — the fence form
+reads the live worktree list, so a wake is a level and not an edge — and
+it turned into a measured instance forty minutes later without being
+looked for. It is recorded here because the verdict above cites it as a
+non-failure, and a non-failure with a witness is a different weight of
+claim than one without.
+
+**THE FIGURE THE INTEGRATOR SHOULD CARRY** is neither 16 nor 13: it is
+*"however many the lane list says at the moment of the read"*, and both
+readings above are honest at their own instant. The WOKEN count is a
+LIVE fact and the view stamps it as one — `<- read <ISO> on <host>` —
+which is the module's own contract working exactly as written.
+
+**THE SUITES AT THE VERIFIER'S OWN TIP `6eac9e5`**, owed because steps 5
+and 6 were writes (verifier.md 7) and because `docs-gate.mjs` FIRES on
+the four `docs/` paths and names three suites:
+
+| leg | exit | bodies | verdict |
+|---|---|---|---|
+| parser | 0 | 389 | GREEN |
+| app | 0 | 1171 | GREEN |
+| e2e | 1 | 812 (811 passed, 1 failed) | **RED — the assigned correction body, and nothing else** |
+
+The single e2e failure is
+`THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING …` at
+`tests/brief.spec.ts`, failing at *"the board's own hyphenated spelling
+is a condition"*. **That is the assigned correction, committed RED on
+purpose** (verifier.md 5b): the two in-fence edits named in the mutant
+block turn it green, and the verifier has run them green — 82 passed,
+exit 0 — before reverting them so the lane makes its own fix. Every
+other body in the suite passes. `docs-gate.mjs` reports *every live task
+card's frontmatter parses, with a legal status*, which covers the two
+cards filed above. The method eval gate is exit 0 at this tip, 10
+model-free evals.

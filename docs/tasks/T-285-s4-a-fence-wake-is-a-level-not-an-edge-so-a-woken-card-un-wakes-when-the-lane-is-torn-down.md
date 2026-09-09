@@ -43,6 +43,19 @@ worktree exists resurfaces the card only for whoever renders the view
 inside that window. If nobody does, the card was woken and re-forgotten,
 which is the same failure with a shorter period.
 
+## The instance, measured after this card was filed
+
+**2026-09-09, the same verification pass, forty minutes after this card
+was written from the code alone.** Between a render at `ce46115` (13:55Z)
+and one at `6eac9e5`, `T-281-s8`'s worktree was removed. The WOKEN count
+fell from **16 to 13** with no card written and no code changed, and the
+three cards that left were **`T-167-s3`, `T-167-s4`, `T-180`** — every
+one of them woken by `T-281-s8` alone, every one of them now back in
+STILL PARKED, none of them read by anybody in between.
+
+This card was filed as a design observation. It is now an observation
+with a witness: the window is not theoretical and it is not long.
+
 ## What would settle it
 
 Three readings, and the choice is a ruling rather than a preference:
