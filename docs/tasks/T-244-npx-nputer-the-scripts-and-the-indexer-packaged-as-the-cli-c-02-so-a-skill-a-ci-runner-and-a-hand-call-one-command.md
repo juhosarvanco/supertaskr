@@ -205,6 +205,53 @@ reaches its target by SPAWNING it.
   `npm ci` (CI's own documented divergence) is the spelling that works
   from a lane.
 
+### The poison drill — 21-for-21, and one mutant SURVIVED first
+
+Twenty-one mutants, ONE SIDE ONLY (the code under test, never an
+assertion, and no literal shared by the two sides), one per property this
+lane added. Each was read back with `git diff` before its suite ran —
+the diff-line count is recorded per mutant — and each was restored with
+`git restore --source=<commit> --staged --worktree` and PROVED by
+sha256 against `git show <commit>:<path>`, with the empty per-path diff
+kept only as a companion. Driver and log:
+`<scratch>/drill-T-244.mjs`, `<scratch>/drill-run-T-244.log`.
+
+First pass at `643d377`: **20 of 21 killed by the body that owns the
+property**, restoration 21-for-21. **M05 SURVIVED, and it was a real
+gap.** Mutating `ARCHITECTURE_VERBS.init` from its NOT-FRONTED sentence
+to `"next"` left the suite GREEN, because the body only asked whether
+the disposition named a verb that exists — so a C-02 verb could be
+claimed as fronted by SOME OTHER verb. The body now requires the
+disposition to equal its own key (the front does not rename a C-02
+verb), and M05 re-drilled at `33927b9` is **1-for-1 killed**, restoration
+1-for-1. The kill set therefore stands at 21-for-21 across the two
+passes.
+
+The twenty that were killed on the first pass: the target dropped from
+`planFor`'s argv; the child's exit relabelled to CLEAN; an unknown verb
+accepted; a `rootFlag` claim flipped against its script; a verb source
+quoting a command docs/CONVENTIONS.md does not carry; the `run from
+<dir>/:` marker regex broken; the package-deps requirement suppressed;
+`bareDependencies` blinded; `rootMismatch` never refusing;
+`findProjectRoot` never walking up; `installPlan` branching on a harness
+id; the `bin` entry removed from the manifest (a DATA mutant, where the
+property is data); `CONVENTIONS_PATH` pointed outside docs/;
+`forceVerdict` accepting a commit it did not list; `laterOnTheFence`
+returning nothing; `insideFence` losing its path boundary; the setup
+steps landing after the suite step; the dogfood step dropped;
+`movesGraph` always true; and `packageEscapes` blinded.
+
+**One disclosure about the drill's own conduct.** Three of these mutants
+(M01-M03) were first executed BY ACCIDENT, while the four-suite battery's
+e2e leg was still running — the driver executes at import and it was
+imported rather than run. Nothing was left behind: all three restored,
+and every drilled file was afterwards sha256-compared against `HEAD` and
+matched. The battery's e2e leg finished GREEN at 727 bodies with the
+mutations having been live only during `docs-input-gate.spec.ts`, whose
+bodies do not read the mutated functions, and the whole e2e suite was
+re-run to GREEN at the tip afterwards. The figures below are the re-runs,
+not that pass.
+
 ### For the verifier and the integrator
 
 - **`npm run capabilities:check` is STALE at my tip and that is owed to
@@ -222,6 +269,14 @@ reaches its target by SPAWNING it.
   `brief-flush.spec.ts`'s sweep named `merge.mjs` and `undo.mjs` for
   ending at `process.exit()`. They now set `process.exitCode`, as does
   the bin entry, and the sweep is green.
+- **The suites, with the ref each was measured at.** The blessed
+  gate-runner at `643d377`: parser GREEN 377 bodies exit 0, app GREEN
+  1163 bodies exit 0, rust GREEN 639 bodies over 18 targets exit 0, e2e
+  GREEN 727 bodies exit 0. Re-run after the drill's finding landed: e2e
+  GREEN 727 bodies exit 0 at `33927b9`. `index --check` at `643d377`:
+  CURRENT, exit 0 — GRAPH REGEN's suffix trigger fires (`cli.spec.ts` is
+  a `.ts` outside docs/) and the regen is a NO-OP, which is what asking
+  the gate proves rather than predicting.
 - Three findings are filed as `status: suggested`: **T-244-s1** (the
   fronted scripts import `../../../.claude/hooks/*`, so an installed copy
   cannot load them — the front refuses by name instead of crashing, but
