@@ -158,6 +158,47 @@
  * not a card here. What this file owns is the local immunity: the
  * verdict line below IS the printed line, it is printed last, and it
  * carries the exit code as DATA rather than as the process's own status.
+ *
+ * ── AND ONE LEG MAY BE GRADED NARROWER THAN A LEG (T-271) ────────────
+ * `e2e --owning <changed path>…` grades the SPEC FILES THAT OWN a
+ * change and nothing else. It exists because the e2e leg is ten of the
+ * battery's eleven minutes and a lane iterates on one hook and one spec;
+ * measured on T-224's fix passes, every seat paid the whole leg for a
+ * change whose owning spec runs in seconds.
+ *
+ * WHICH SEATS, AND THE ANSWER IS ONE (the card's second criterion,
+ * amended at @human's question "is it sure that this doesn't make bugs
+ * more likely?"): the EXECUTOR'S ITERATIONS. The verifier's one run and
+ * the integrator's run on merged main before the push stay the full four
+ * legs, because a cross-spec red — the class T-264's executor found four
+ * of by running everything — must be found in the lane's own ceremony
+ * and not on merged main, where the answer is the revert play. Scoping
+ * the iterations keeps the time where suites run most often and loses no
+ * run that stands before a verdict or a push.
+ *
+ * THE SUBSET IS DERIVED, NEVER NAMED. `owningSpecs` reads a STATIC
+ * IMPORT GRAPH rooted at the spec files themselves — a spec owns a
+ * changed path when it IS that path or reaches it through imports — and
+ * for a path under docs/ it reuses THE DOCS GATE'S OWN READER MAP rather
+ * than deriving a second one (T-057: a rule with two implementations is
+ * two chances to disagree). A SPEC'S NAME IS NEVER CONSULTED: the file
+ * `gate-run.spec.ts` owning `gate-run.mjs` is a fact about an import
+ * statement here, and matching stems would have been a heuristic that
+ * silently misses `helpers.ts`.
+ *
+ * AND IT REFUSES RATHER THAN GRADING NOTHING. A changed path the
+ * derivation cannot place — an app source the e2e lane drives through a
+ * browser, a script nothing imports, the Playwright config itself — is
+ * exit 2 naming the path, and the full leg is owed. That direction is
+ * the whole safety of the feature: the scoped form can only ever be
+ * WRONG by running too MUCH.
+ *
+ * THE SUBSET NEVER MINTS THE PUSH TOKEN. Its verdict word is
+ * `SCOPED-GREEN` or `SCOPED-RED`, written to the token under the leg's
+ * own key, and `judgeToken` refuses anything that is not exactly GREEN —
+ * so a lane that only ever ran scoped legs cannot push, and a scoped run
+ * after a full battery POISONS the stale green rather than leaving it
+ * standing. The push still owes the integrator's full battery.
  */
 
 import { spawnSync } from "node:child_process";
@@ -168,7 +209,9 @@ import {
   mkdtempSync,
   openSync,
   readFileSync,
+  readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -180,6 +223,7 @@ import {
   trackedDirt,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
+import { docsGate, docsReaders, stripComments } from "./docs-scan.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -518,8 +562,13 @@ export function countBodies(family, text) {
  * @property {number} bodies
  * @property {number} targets
  * @property {string} ref
- * @property {"GREEN"|"RED"|"REFUSED"} verdict
+ * @property {"GREEN"|"RED"|"REFUSED"|"SCOPED-GREEN"|"SCOPED-RED"} verdict
  * @property {string} reason
+ * @property {string | undefined} [scope]  The SUBSET this verdict graded,
+ *   as the spec files themselves, comma-joined (T-271). Absent on a whole
+ *   leg; present means the verdict describes part of one, and the word in
+ *   `verdict` says so too so that a reader who has only the word is not
+ *   misled.
  * @property {string | undefined} [tree]   HEAD's tree, read BESIDE the ref
  *   and BEFORE the spawn (T-203-s1). `""` means git would not say; absent
  *   means this verdict was built by something that does not read trees,
@@ -533,13 +582,22 @@ export function countBodies(family, text) {
  * carries the graded command's exit code as a FIELD — so a reader never
  * has to infer it from this process's own status, and a wrapper that
  * summarises this process cannot contradict it.
+ *
+ * `scope=` IS EMITTED BEFORE `reason=` AND ONLY WHEN THERE IS ONE
+ * (T-271). Before, because `reason` is the one field whose value may hold
+ * spaces and `parseVerdict` splits on whitespace, so anything after it is
+ * unreadable to the parser; only when there is one, because a whole-leg
+ * verdict that carried an empty `scope=` would make "this graded part of
+ * a leg" and "this graded a leg" the same line with a different blank.
  * @param {Verdict} v
  * @returns {string}
  */
 export function formatVerdict(v) {
   return (
     `${VERDICT_TOKEN} suite=${v.suite} exit=${v.exit} bodies=${v.bodies} ` +
-    `targets=${v.targets} ref=${v.ref} verdict=${v.verdict} reason=${v.reason}`
+    `targets=${v.targets} ref=${v.ref} verdict=${v.verdict} ` +
+    `${v.scope === undefined || v.scope === "" ? "" : `scope=${v.scope} `}` +
+    `reason=${v.reason}`
   );
 }
 
@@ -851,6 +909,392 @@ export function runSuite(suite, opts = {}) {
   }
 }
 
+// ── THE OWNING-SPEC DERIVATION (T-271) ───────────────────────────────
+//
+// EVERY FUNCTION IN THIS SECTION IS A FUNCTION OF ITS ARGUMENTS AND THE
+// TREE, AND THE PURE ONE IS SEPARATED FROM THE READING ON PURPOSE.
+// `owningSpecs` takes the graph and the reader map as DATA — no disk, no
+// git, no clock — so a body can drive it over a fixture graph, and so
+// that the next card to want a DIFFERENT set of changed paths (T-280
+// wants the ones a diff names) supplies them without touching the rule.
+// `specFiles` and `specReach` are the readings that feed it.
+
+/** Playwright's `testDir` for this lane's suite, and what makes a file a
+ *  spec in it. The directory is flat — every body lives directly in it —
+ *  which is why the walk below is one `readdirSync`. */
+export const SPEC_DIR = "tools/e2e/tests";
+export const SPEC_SUFFIX = ".spec.ts";
+
+/**
+ * The extensions a specifier may be missing, in the order a resolver
+ * tries them. `""` FIRST because most of this tree writes the extension
+ * out (`../scripts/gate-run.mjs`), and the extensionless TypeScript form
+ * (`../preflight`, `./git-fixture`) is what the rest is for.
+ */
+const IMPORT_EXTENSIONS = Object.freeze([
+  "",
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".mjs",
+  ".cjs",
+  ".js",
+  ".jsx",
+]);
+
+/**
+ * Every STATIC import specifier in one source text, in source order.
+ *
+ * ── A LINE SCANNER AND NOT ONE REGEX, AND THE REASON IS THIS CORPUS ──
+ * A spec file in this lane writes whole fixture programs as STRING
+ * LITERALS, and those strings contain the word `import` followed by a
+ * quoted specifier. `stripComments` keeps strings (deliberately — a docs
+ * site inside one is still a site), so a regex that matched `import …
+ * from "…"` anywhere would read a fixture's imports as this file's. Real
+ * import statements begin a LINE; a quoted one is preceded by its own
+ * quote. So the scanner is anchored at the start of a line, and the
+ * continuation rule below is what lets it still read the multi-line
+ * braced form this tree uses everywhere.
+ *
+ * DYNAMIC `import()` IS OUT OF SCOPE AND SAID SO. It is a call, not a
+ * statement, and its argument need not be a literal; the corpus has none
+ * today (`grep` for `import(` over tools/e2e and .claude/hooks finds
+ * nothing), and if one arrives the edge is simply absent — which the
+ * refusal at the other end turns into "the full leg is owed" rather than
+ * into a short subset.
+ *
+ * @param {string} source
+ * @returns {string[]}
+ */
+export function importSpecifiers(source) {
+  const lines = stripComments(String(source ?? "")).split("\n");
+  /** @type {string[]} */
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? "";
+    if (!/^[ \t]*(?:import|export)\b/.test(line)) continue;
+    // THE CONTINUATION: keep appending lines until the statement can be
+    // decided. A braced list spans lines; a terminated statement never
+    // does. The cap is a guard against a file that opens a brace and
+    // never closes it — a scanner that ran to EOF would report the whole
+    // file's next specifier as this statement's.
+    let stmt = line;
+    let j = i;
+    while (
+      j + 1 < lines.length &&
+      stmt.length < 4000 &&
+      !/;\s*$/.test(stmt) &&
+      !/\bfrom\s*(["'])[^"'\n]+\1/.test(stmt)
+    ) {
+      j += 1;
+      stmt += `\n${lines[j] ?? ""}`;
+    }
+    i = j;
+    const named = stmt.match(/\bfrom\s*(["'])([^"'\n]+)\1/);
+    if (named?.[2] !== undefined) {
+      out.push(named[2]);
+      continue;
+    }
+    // The side-effect form, `import "…";`, which carries no `from`.
+    const bare = stmt.match(/^[ \t]*import\s*(["'])([^"'\n]+)\1/);
+    if (bare?.[2] !== undefined) out.push(bare[2]);
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} ResolvedImport
+ * @property {"resolved"|"external"|"unresolved"} kind
+ * @property {string | undefined} [rel] repo-relative POSIX path, when resolved.
+ */
+
+/**
+ * Resolve one specifier against the file that wrote it.
+ *
+ * A BARE SPECIFIER IS `external` AND NOT AN ERROR: `@playwright/test`
+ * and `node:fs` are somebody else's tree and no change in this repository
+ * moves them. A RELATIVE specifier that resolves to no file is
+ * `unresolved` and is REPORTED — a dropped edge makes the subset SHORT,
+ * which is the one direction this feature may not fail in, so the caller
+ * turns it into a refusal rather than into a smaller graph.
+ *
+ * @param {string} fromRel   the importing file, repo-relative, POSIX
+ * @param {string} spec      the specifier exactly as written
+ * @param {(rel: string) => boolean} isFile  does this repo-relative path exist as a file?
+ * @returns {ResolvedImport}
+ */
+export function resolveImport(fromRel, spec, isFile) {
+  if (!spec.startsWith(".")) return { kind: "external" };
+  const base = path.posix.normalize(path.posix.join(path.posix.dirname(fromRel), spec));
+  // A CLIMB THAT LEAVES THE REPOSITORY is external, not unresolved: there
+  // is nothing here to grade and nothing here that could have moved it.
+  if (base === ".." || base.startsWith("../")) return { kind: "external" };
+  /** @type {string[]} */
+  const candidates = [];
+  for (const ext of IMPORT_EXTENSIONS) candidates.push(`${base}${ext}`);
+  // NodeNext's `.js` for a `.ts` source — the spelling TypeScript asks
+  // for when a module resolves at runtime and is authored in TS.
+  const swapped = base.replace(/\.(m|c)?js$/, (_m, p1) => `.${p1 ?? ""}ts`);
+  if (swapped !== base) candidates.push(swapped, `${swapped}x`);
+  for (const ext of IMPORT_EXTENSIONS) candidates.push(`${base}/index${ext}`);
+  for (const c of candidates) {
+    if (c !== "" && isFile(c)) return { kind: "resolved", rel: c };
+  }
+  return { kind: "unresolved" };
+}
+
+/**
+ * The spec files this lane grades, repo-relative and sorted.
+ * @param {string} [root]
+ * @returns {string[]}
+ */
+export function specFiles(root = repoRoot) {
+  const dir = path.join(root, SPEC_DIR);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((n) => n.endsWith(SPEC_SUFFIX))
+    .map((n) => `${SPEC_DIR}/${n}`)
+    .sort();
+}
+
+/**
+ * @typedef {object} SpecReach
+ * @property {Record<string, string[]>} reach  spec -> every repo file it
+ *   reads through static imports, ITSELF INCLUDED. Sorted.
+ * @property {string[]} unresolved  `<file> -> <specifier>` for every
+ *   relative import this walk could not land on a file.
+ */
+
+/**
+ * Walk the static import graph out from each spec.
+ *
+ * ITSELF INCLUDED, deliberately: "which spec owns tests/gate-run.spec.ts"
+ * has an answer, and it is that file. Treating the roots as outside their
+ * own reach would have made a spec the only kind of file that cannot own
+ * a change to itself.
+ *
+ * @param {string} [root]
+ * @param {string[]} [specs]
+ * @returns {SpecReach}
+ */
+export function specReach(root = repoRoot, specs = specFiles(root)) {
+  /** @param {string} rel @returns {boolean} */
+  const isFile = (rel) => {
+    try {
+      return statSync(path.join(root, rel)).isFile();
+    } catch {
+      return false;
+    }
+  };
+  /** @type {Record<string, string[]>} */
+  const reach = {};
+  /** @type {Set<string>} */
+  const unresolved = new Set();
+  /** @type {Map<string, string[]>} */
+  const edges = new Map();
+  /** @param {string} rel @returns {string[]} */
+  const importsOf = (rel) => {
+    const cached = edges.get(rel);
+    if (cached !== undefined) return cached;
+    /** @type {string[]} */
+    const out = [];
+    let src = "";
+    try {
+      src = readFileSync(path.join(root, rel), "utf8");
+    } catch {
+      edges.set(rel, out);
+      return out;
+    }
+    for (const spec of importSpecifiers(src)) {
+      const r = resolveImport(rel, spec, isFile);
+      if (r.kind === "resolved" && r.rel !== undefined) out.push(r.rel);
+      else if (r.kind === "unresolved") unresolved.add(`${rel} -> ${spec}`);
+    }
+    edges.set(rel, out);
+    return out;
+  };
+  for (const spec of specs) {
+    /** @type {Set<string>} */
+    const seen = new Set([spec]);
+    const queue = [spec];
+    while (queue.length > 0) {
+      const cur = queue.shift();
+      if (cur === undefined) break;
+      for (const next of importsOf(cur)) {
+        if (seen.has(next)) continue;
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+    reach[spec] = [...seen].sort();
+  }
+  return { reach, unresolved: [...unresolved].sort() };
+}
+
+/**
+ * Normalise one changed path as a caller may have typed it: a `./`
+ * prefix, a trailing slash, a Windows separator, an absolute path inside
+ * this checkout. Anything that still escapes the repository is returned
+ * unchanged and will be UNPLACEABLE, which is the honest end.
+ * @param {string} raw
+ * @param {string} [root]
+ * @returns {string}
+ */
+export function normaliseChanged(raw, root = repoRoot) {
+  let p = String(raw ?? "").trim().split(path.sep).join("/");
+  if (p.startsWith(`${root.split(path.sep).join("/")}/`)) {
+    p = p.slice(root.split(path.sep).join("/").length + 1);
+  }
+  p = p.replace(/^\.\//, "").replace(/\/+$/, "");
+  return path.posix.normalize(p);
+}
+
+/**
+ * @typedef {object} OwningDerivation
+ * @property {string[]} specs        the subset to grade, sorted.
+ * @property {{ path: string, specs: string[], via: string[] }[]} byPath
+ * @property {{ path: string, why: string }[]} unplaceable
+ */
+
+/**
+ * THE RULE, AND IT IS A PURE FUNCTION OF ITS THREE NAMED INPUTS.
+ *
+ * A spec OWNS a changed path when the path IS that spec, when the spec
+ * reaches the path through static imports, or — for a path under docs/ —
+ * when the DOCS GATE'S OWN reader map says some file reads it and this
+ * spec is that file or reaches it. The docs arm composes with the import
+ * arm rather than duplicating it: `docs/CONVENTIONS.md` is read by
+ * `tools/e2e/scripts/cli.mjs`, which is not a spec, and the spec that
+ * owns THAT is the one that imports it.
+ *
+ * NOTHING HERE READS A SPEC'S NAME. `gate-run.spec.ts` owning
+ * `gate-run.mjs` is a fact about an import statement, and the two files
+ * agreeing on a stem is a coincidence this rule must not lean on:
+ * `helpers.ts` and `git-fixture.ts` are owned by a dozen specs that share
+ * no stem with them at all.
+ *
+ * @param {object} input
+ * @param {string[]} input.changed  repo-relative paths the lane changed
+ * @param {Record<string, string[]>} input.reach  from `specReach`
+ * @param {Record<string, string[]>} [input.docsReadersByPath]  docs path ->
+ *   the repo-relative files the DOCS GATE's reader map says read it
+ * @returns {OwningDerivation}
+ */
+export function owningSpecs({ changed, reach, docsReadersByPath = {} }) {
+  const specs = Object.keys(reach).sort();
+  /** @type {Set<string>} */
+  const owed = new Set();
+  /** @type {{ path: string, specs: string[], via: string[] }[]} */
+  const byPath = [];
+  /** @type {{ path: string, why: string }[]} */
+  const unplaceable = [];
+  for (const p of changed) {
+    /** @type {Map<string, string>} */
+    const hits = new Map();
+    for (const s of specs) {
+      if (s === p) hits.set(s, "the changed path IS this spec");
+      else if ((reach[s] ?? []).includes(p)) hits.set(s, "imports it, directly or transitively");
+    }
+    for (const reader of docsReadersByPath[p] ?? []) {
+      for (const s of specs) {
+        if (hits.has(s)) continue;
+        if (s === reader) hits.set(s, `is the docs-walk body that reads ${p}`);
+        else if ((reach[s] ?? []).includes(reader)) {
+          hits.set(s, `imports ${reader}, which the docs gate says reads ${p}`);
+        }
+      }
+    }
+    if (hits.size === 0) {
+      unplaceable.push({
+        path: p,
+        why:
+          p.startsWith("docs/")
+            ? "the docs gate's reader map names no spec in this lane for it"
+            : "no spec in this lane reaches it through a static import, and it is not a spec",
+      });
+      continue;
+    }
+    const owning = [...hits.keys()].sort();
+    for (const s of owning) owed.add(s);
+    byPath.push({ path: p, specs: owning, via: owning.map((s) => `${s} — ${hits.get(s)}`) });
+  }
+  return { specs: [...owed].sort(), byPath, unplaceable };
+}
+
+/**
+ * The derivation as the CLI runs it: the readings taken, then the rule.
+ * Kept separate from `owningSpecs` so the rule stays testable with no
+ * tree at all, and so this function is the ONE place a reading happens.
+ *
+ * THE DOCS SCAN IS PAID FOR ONLY WHEN A DOCS PATH MOVED. It walks the
+ * whole source corpus; a lane changing one script should not pay for it.
+ *
+ * @param {string[]} rawChanged
+ * @param {string} [root]
+ * @returns {OwningDerivation & { changed: string[], unresolved: string[] }}
+ */
+export function deriveOwning(rawChanged, root = repoRoot) {
+  const changed = rawChanged.map((p) => normaliseChanged(p, root));
+  const { reach, unresolved } = specReach(root);
+  /** @type {Record<string, string[]>} */
+  const docsReadersByPath = {};
+  if (changed.some((p) => p === "docs" || p.startsWith("docs/"))) {
+    const gate = docsGate(changed, docsReaders(root));
+    for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
+  }
+  return { changed, unresolved, ...owningSpecs({ changed, reach, docsReadersByPath }) };
+}
+
+/**
+ * The subset as a runnable suite: the leg's own entry with the spec files
+ * appended to its argv, spelled relative to the leg's own cwd because
+ * that is where the runner will be standing.
+ * @param {string[]} specs  repo-relative spec paths
+ * @param {Suite} [leg]
+ * @returns {Suite}
+ */
+export function scopedSuite(specs, leg = GRADED_SUITES.e2e) {
+  const cwd = `${leg.cwd}/`;
+  return {
+    ...leg,
+    argv: [...leg.argv, ...specs.map((s) => (s.startsWith(cwd) ? s.slice(cwd.length) : s))],
+  };
+}
+
+/** The word a scoped verdict wears, so no reader has only the leg's name.
+ *  It is deliberately NOT `GREEN`: `judgeToken` accepts exactly that one
+ *  string, so this prefix is what makes a subset unable to mint a token. */
+export const SCOPED_PREFIX = "SCOPED-";
+
+/**
+ * Re-word a whole-leg verdict as the subset reading it actually is.
+ *
+ * A REFUSAL STAYS A REFUSAL. `REFUSED` already means "no verdict this
+ * runner would stand behind", and prefixing it would invent a fifth word
+ * for a thing that is not a grade at all.
+ *
+ * @param {Verdict} v
+ * @param {{ specs: string[], changed: string[] }} scope
+ * @returns {Verdict}
+ */
+export function scopeVerdict(v, scope) {
+  const word =
+    v.verdict === "GREEN" || v.verdict === "RED"
+      ? /** @type {"SCOPED-GREEN"|"SCOPED-RED"} */ (`${SCOPED_PREFIX}${v.verdict}`)
+      : v.verdict;
+  return {
+    ...v,
+    verdict: word,
+    scope: scope.specs.join(","),
+    reason:
+      v.verdict === "GREEN" || v.verdict === "RED"
+        ? `${v.reason} over ${scope.specs.length} owning spec(s) for ` +
+          `${scope.changed.length} changed path(s) — NOT the leg, and not a token`
+        : v.reason,
+  };
+}
+
 // ── THE TOKEN ────────────────────────────────────────────────────────
 
 /**
@@ -897,11 +1341,21 @@ export function recordVerdicts(verdicts, root = repoRoot) {
 
 // ── CLI ──────────────────────────────────────────────────────────────
 
+/** The one suite whose scoped form exists, and the flag that asks for it. */
+export const OWNING_FLAG = "--owning";
+export const SCOPED_SUITE = "e2e";
+
 const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-202)
 
   node tools/e2e/scripts/gate-run.mjs <suite>...   run the named suites
   node tools/e2e/scripts/gate-run.mjs --list       the registry
   node tools/e2e/scripts/gate-run.mjs --all        every graded suite
+  node tools/e2e/scripts/gate-run.mjs ${SCOPED_SUITE} ${OWNING_FLAG} <changed path>...
+                                                  the EXECUTOR's scoped
+      reading: only the spec files that OWN those paths (T-271). The
+      verifier's one run and the integrator's run before the push stay
+      the full four legs, and this form's ${SCOPED_PREFIX}* verdict cannot
+      mint the push token. A path the derivation cannot place is exit 2.
 
 suites: ${Object.keys(GRADED_SUITES).join(", ")}
 
@@ -910,6 +1364,70 @@ they ran against; the pre-push guard reads that token (T-203).
 
 exit: 0 every suite GREEN · 1 a suite is RED · 2 called wrong ·
       3 REFUSED — no verdict this runner would stand behind`;
+
+/**
+ * The scoped arm (T-271): `e2e --owning <changed path>…`.
+ *
+ * IT REFUSES BEFORE IT SPAWNS, always. Every way this can be wrong —
+ * the wrong leg, an empty path list, an unresolvable import edge, a path
+ * nothing owns, a derivation that came back with no spec — ends at exit
+ * 2 with the reason and the sentence THE FULL LEG IS OWED, because the
+ * only failure this feature may not have is grading a subset that is
+ * short. It can be wrong by running too much; it must never be wrong by
+ * running too little.
+ *
+ * @param {string[]} argv
+ * @returns {number}
+ */
+function mainOwning(argv) {
+  const at = argv.indexOf(OWNING_FLAG);
+  const names = argv.slice(0, at);
+  const changed = argv.slice(at + 1).filter((a) => a !== "");
+  /** @param {string} why @returns {number} */
+  const refuse = (why) => {
+    process.stderr.write(
+      `gate-run: REFUSING the scoped reading — ${why}. THE FULL ${SCOPED_SUITE} LEG IS OWED: ` +
+        `run this command again with no ${OWNING_FLAG}.\n`,
+    );
+    return EXIT.USAGE;
+  };
+  if (names.length !== 1 || names[0] !== SCOPED_SUITE) {
+    return refuse(
+      `${OWNING_FLAG} is the ${SCOPED_SUITE} leg's form and only its own — it was given ` +
+        `${names.length === 0 ? "no suite" : names.join(", ")}`,
+    );
+  }
+  if (changed.length === 0) {
+    return refuse(`${OWNING_FLAG} was given no changed paths, and a run over nothing grades nothing`);
+  }
+  const derived = deriveOwning(changed);
+  if (derived.unresolved.length > 0) {
+    return refuse(
+      "the static import graph has an edge it could not land on a file, so the subset would be " +
+        `SHORT: ${derived.unresolved.join("; ")}`,
+    );
+  }
+  if (derived.unplaceable.length > 0) {
+    return refuse(
+      `the derivation cannot place ${derived.unplaceable
+        .map((u) => `${u.path} (${u.why})`)
+        .join("; ")}`,
+    );
+  }
+  if (derived.specs.length === 0) {
+    return refuse("the derivation named no spec at all, and this runner never grades nothing");
+  }
+  for (const entry of derived.byPath) {
+    process.stderr.write(`gate-run: ${entry.path} is owned by\n  ${entry.via.join("\n  ")}\n`);
+  }
+  const { verdict, outputPath } = runSuite(scopedSuite(derived.specs));
+  const scoped = scopeVerdict(verdict, { specs: derived.specs, changed: derived.changed });
+  if (outputPath) process.stderr.write(`gate-run: ${SCOPED_SUITE} output at ${outputPath}\n`);
+  recordVerdicts([scoped]);
+  process.stdout.write(`${formatVerdict(scoped)}\n`);
+  if (scoped.verdict === "REFUSED") return EXIT.REFUSED;
+  return scoped.verdict === `${SCOPED_PREFIX}GREEN` ? EXIT.GREEN : EXIT.RED;
+}
 
 /** @param {string[]} argv @returns {number} */
 function main(argv) {
@@ -930,6 +1448,7 @@ function main(argv) {
     }
     return EXIT.GREEN;
   }
+  if (argv.includes(OWNING_FLAG)) return mainOwning(argv);
   /** @type {string[]} */
   const names = argv.includes("--all") ? Object.keys(GRADED_SUITES) : argv;
   const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);

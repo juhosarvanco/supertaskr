@@ -60,3 +60,98 @@ that run's job and always was.
 - A body SHALL show the scoped run red on a planted defect in the
   owning spec's subject and green on the pristine hook; a second body
   SHALL show the push guard refusing a `scoped` verdict as the token.
+
+## Implementation notes (executor, 2026-09-09, lane task/T-271-scoped-e2e-leg-by-spec-file from cc41ff3)
+
+**What moved.** `tools/e2e/scripts/gate-run.mjs` gains an owning-spec
+derivation and one CLI arm; `tools/e2e/tests/gate-run.spec.ts` gains ten
+bodies; `docs/CONVENTIONS.md` gains the spelling in two bullets.
+
+**The derivation, and why it is shaped this way.** `owningSpecs` is a
+PURE function of three named inputs — `changed`, `reach` (the static
+import graph) and `docsReadersByPath` — so T-280 can hand it a
+DIFF-derived path set without touching the rule, which is what that
+card's blocker asked for. `specFiles`/`specReach` are the readings;
+`deriveOwning` composes them; `scopedSuite`/`scopeVerdict` render. A
+spec OWNS a path when it IS that path, when it reaches it over static
+imports, or, for a docs path, when the DOCS GATE's OWN reader map
+(`docs-scan.mjs`) names a reader that this spec is or reaches. The two
+arms COMPOSE rather than duplicate: `docs/CONVENTIONS.md` is read by
+`tools/e2e/scripts/cli.mjs`, which is not a body, and the spec that owns
+THAT is the one importing it. Nothing reads a spec's NAME; the fixture
+in the new bodies makes that measurable rather than asserted, with a
+stem-sharing stranger whose one body always fails.
+
+**Every failure ends at a refusal, and only in one direction.** An
+unplaceable path, an unresolvable import edge, an empty path list, a leg
+that is not `e2e`, a derivation that named no spec — all exit 2, naming
+the cause and saying THE FULL e2e LEG IS OWED, before anything is
+spawned and before a token is written. The scoped form can be wrong by
+running too MUCH; it may not be wrong by running too little.
+
+**The token.** The subset's verdict word is `SCOPED-GREEN` or
+`SCOPED-RED`, written under the leg's own `e2e` key. `judgeToken`
+accepts exactly the string `GREEN`, so the existing shape rules already
+refuse it — NO EDIT TO `.claude/hooks/gate-token.mjs` WAS NEEDED, and a
+body pins the refusal in both words with a four-green control that must
+pass first. A scoped run therefore POISONS a stale green rather than
+leaving one standing.
+
+**The read cost, measured at cc41ff3 before the first edit** (per file,
+`wc -c` over exactly the slices opened):
+
+    brief-T-271.txt                    52604   whole
+    docs/tasks/T-271-….md               3574   whole
+    docs/STATE.md                       8322   whole
+    docs/ROADMAP.md                    11878   whole
+    docs/ARCHITECTURE.md                9300   whole
+    docs/CAPABILITIES.md                4996   the gate-run section
+    docs/CONVENTIONS.md                12110   two bullets, by heading
+    tools/e2e/scripts/gate-run.mjs     42107   whole
+    tools/e2e/tests/gate-run.spec.ts   12972   header, CLI and pin bodies
+    .claude/hooks/gate-token.mjs       11426   writeToken and judgeToken
+    tools/e2e/scripts/docs-scan.mjs    13599   six slices, by symbol
+    tools/e2e/tests/docs-input-gate…    5886   the three bullet-pin bodies
+    tools/e2e/tests/cli.spec.ts         2901   the two CONVENTIONS bodies
+    tools/e2e/scripts/cli.mjs           1602   the gate verb entry
+    tools/e2e/scripts/range-rule.mjs    2422   parseDocsGateRecipe
+    tools/e2e/preflight.ts              2549   the port rule
+    playwright.config/package/tsconfig  4727   whole
+    TOTAL BEFORE THE FIRST EDIT       202975
+
+A further 17453 bytes were read AFTER the first edit while checking the
+row-7 question and the document's pins (`dispatch-brief.mjs` 5665,
+CONVENTIONS' tools/e2e command bullet 1521, `docs-scan.mjs`
+`conventionsBullet` 1865, this spec's token helpers 8402) — 220428 in
+all. **The CONTEXT PACK is what made this affordable**: 13631 bytes of
+docs/CONVENTIONS.md were opened out of 131472, 10.4 per cent, and every
+bullet opened was one the pack named.
+
+**The byte band, recorded.** `docs/CONVENTIONS.md` moved 131472 to
+133574 bytes against ADR-019's landed 117502 / warn 146878 / fail
+176253; the docs gate prints `governing-document budgets hold — 4 gated,
+0 awaiting their compaction landing`. Headroom under the warn line is
+13304 bytes. NO CUT WAS MADE and the reason is stated rather than
+assumed: the band holds with room, and a hand cut in this document is a
+compaction (T-236's shape) where more than twenty bodies pin exact
+strings — a size-S card is the wrong vehicle for it.
+
+**A pack limit worth knowing about.** The BLESSED GATE-RUNNER bullet is
+now 1603 bytes flattened against `dispatch-brief.mjs`'s
+`PACK_TRANSCRIPTION_LIMIT` of 2000. Under it, the pack transcribes the
+bullet VERBATIM and every assembled brief carries this card's spelling —
+verified by assembling an executor brief in the lane. Over it, the pack
+would cite it by address instead and the briefs would stop carrying the
+words. 397 bytes of margin. T-271-s1 owns that.
+
+**What this lane could NOT do, and it is outside the fence.** Ten spec
+names were added, so `docs/CAPABILITIES.md` is STALE until
+`npm run capabilities` runs from tools/e2e/ — THAT IS OWED IN THE MERGE
+COMMIT and this lane's fence does not reach that file.
+
+**Suggestions filed:** T-271-s1 (row 7 does not carry the runner's
+spelling and the pack's margin is 397 bytes), T-271-s2 (`judgeToken`
+calls a scoped entry "RAN AND FAILED"), T-271-s3 (no verifier brief can
+be assembled at this ref), T-271-s4 (the docs census cannot see a reader
+that goes through `docs-scan.mjs` itself), T-271-s5 (the scoped leg
+still pays for the dev server).

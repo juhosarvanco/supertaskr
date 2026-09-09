@@ -14,12 +14,20 @@ import {
   countBodies,
   countCargo,
   countPlaywright,
+  deriveOwning,
   formatVerdict,
+  importSpecifiers,
   judge,
   lockPath,
+  owningSpecs,
   parseVerdict,
   recordVerdicts,
+  resolveImport,
   runSuite,
+  scopeVerdict,
+  scopedSuite,
+  specFiles,
+  specReach,
   stripAnsi,
   validateRegistry,
   validateSuite,
@@ -1217,4 +1225,354 @@ test("a tree dirty when the suite STARTS and clean when the token is written kee
   } finally {
     dropRepo(repo);
   }
+});
+
+// ── §THE SCOPED READING (T-271) ──────────────────────────────────────
+//
+// The executor may grade NARROWER than a leg while it iterates: the spec
+// files that OWN a changed path, and nothing else. Everything below is a
+// positive control for one of two directions.
+//
+//   THE SUBSET MUST REALLY BE A SUBSET — otherwise the feature saves
+//   nothing, and the §POSITIVE CONTROL argument at the top of this file
+//   applies unchanged: a scoped run that quietly ran the whole leg would
+//   be indistinguishable from one that worked.
+//
+//   AND IT MUST NEVER BE SHORT. That is the direction that costs
+//   something, so every way the derivation can fail to place a path ends
+//   at a REFUSAL naming it, and every one of those refusals has a body.
+//
+// THE EXPECTATIONS BELOW ARE TYPED HERE AND THE IMPLEMENTATION NEVER
+// SEES THEM, for the reason the §THE INDEPENDENT EXPECTATIONS block
+// gives: a comparison over a corpus the mutation itself empties reports
+// agreement and measures nothing.
+
+/** Criterion 3 — the two words a subset verdict may wear, read off the
+ *  card. Neither is `GREEN`, which is the whole of why `judgeToken`
+ *  refuses one: that function accepts exactly the one string. */
+const CRITERION_3_SCOPED_GREEN = "SCOPED-GREEN";
+const CRITERION_3_SCOPED_RED = "SCOPED-RED";
+
+/** Criterion 4 — the sentence a refused scoped run must print, so a seat
+ *  that meets one is told what to do rather than only what went wrong. */
+const CRITERION_4_SENTENCE = "THE FULL e2e LEG IS OWED";
+
+/** The pristine subject: a module whose one exported figure its owning
+ *  spec asserts. `41` is the pristine hook; the planted defect moves it. */
+const PRISTINE_SUBJECT = "export const ANSWER = 41;\n";
+
+/**
+ * A REPOSITORY-SHAPED fixture for the scoped reading.
+ *
+ * It holds the two directories the derivation walks and THREE files that
+ * make the two halves of the claim measurable at once:
+ *
+ *   scripts/subject.mjs      the changed path.
+ *   tests/owner.spec.ts      IMPORTS it, and passes while it is pristine.
+ *   tests/subject.spec.ts    SHARES ITS STEM, imports nothing of it, and
+ *                            its one body ALWAYS FAILS.
+ *
+ * That third file is the discriminator this card needs and a name-based
+ * derivation could not survive: matching stems would grade it, and it
+ * fails, so "derived from imports, never from the name" is a difference
+ * a run can see rather than a claim in a comment.
+ */
+function makeOwningFixture(): { root: string; subject: string; cleanup: () => void } {
+  const root = mkdtempSync(path.join(tmpdir(), "t271-owning-"));
+  const e2e = path.join(root, "tools", "e2e");
+  mkdirSync(path.join(e2e, "tests"), { recursive: true });
+  mkdirSync(path.join(e2e, "scripts"), { recursive: true });
+  symlinkSync(path.join(repoRoot, "tools/e2e/node_modules"), path.join(e2e, "node_modules"), "dir");
+  writeFileSync(
+    path.join(e2e, "pw.config.mjs"),
+    "export default { testDir: './tests', reporter: [['list']], workers: 1, retries: 0 };\n",
+  );
+  const subject = path.join(e2e, "scripts", "subject.mjs");
+  writeFileSync(subject, PRISTINE_SUBJECT);
+  writeFileSync(
+    path.join(e2e, "tests", "owner.spec.ts"),
+    "import { test, expect } from '@playwright/test';\n" +
+      "import { ANSWER } from '../scripts/subject.mjs';\n" +
+      "test('the subject answers what its owner expects', () => { expect(ANSWER).toBe(41); });\n",
+  );
+  writeFileSync(
+    path.join(e2e, "tests", "subject.spec.ts"),
+    "import { test, expect } from '@playwright/test';\n" +
+      "test('the stranger that shares the stem, and always fails', () => { expect(1).toBe(2); });\n",
+  );
+  return { root, subject, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+}
+
+/** The fixture's leg — the blessed runner pointed at the fixture's own
+ *  tools/e2e, so `scopedSuite` strips the same prefix it strips for real. */
+function owningLeg(root: string) {
+  return {
+    id: "fixture",
+    cwd: "tools/e2e",
+    sentinel: "pw.config.mjs",
+    argv: [
+      process.execPath,
+      path.join(repoRoot, "tools/e2e/node_modules/@playwright/test/cli.js"),
+      "test",
+      "--config",
+      path.join(root, "tools", "e2e", "pw.config.mjs"),
+    ],
+    family: "playwright" as const,
+    solo: false,
+    why: "the scoped reading's own fixture",
+  };
+}
+
+test("the scoped run is RED on a planted defect in the owning spec's subject and GREEN on the pristine hook", () => {
+  // THE CARD'S OWN CRITERION 6, AND IT IS THE §POSITIVE CONTROL ARGUMENT
+  // ONE LAYER IN: the first question is not "does a scoped run pass a
+  // passing subset" — it is CAN A SCOPED RUN SAY RED AT ALL. Both arms
+  // spawn a real runner over the same fixture and the only thing that
+  // moves between them is one character of the SUBJECT.
+  const { root, subject, cleanup } = makeOwningFixture();
+  try {
+    const derived = deriveOwning(["tools/e2e/scripts/subject.mjs"], root);
+    expect(derived.unplaceable, "the fixture's change is placeable").toEqual([]);
+    expect(derived.specs).toEqual(["tools/e2e/tests/owner.spec.ts"]);
+    const scope = { specs: derived.specs, changed: derived.changed };
+
+    // THE PRISTINE HOOK.
+    const green = scopeVerdict(
+      runSuite(scopedSuite(derived.specs, owningLeg(root)), { root }).verdict,
+      scope,
+    );
+    expect(green.verdict).toBe(CRITERION_3_SCOPED_GREEN);
+    expect(green.exit, "the graded command's own status, as data").toBe(0);
+    expect(green.bodies, "one body, because one spec owns the change").toBe(1);
+
+    // THE PLANTED DEFECT, IN THE SUBJECT — the module the owning spec
+    // grades, and not in the spec itself: a defect planted in a body
+    // would prove only that a failing body fails.
+    writeFileSync(subject, PRISTINE_SUBJECT.replace("41", "42"));
+    const red = scopeVerdict(
+      runSuite(scopedSuite(derived.specs, owningLeg(root)), { root }).verdict,
+      scope,
+    );
+    expect(red.verdict).toBe(CRITERION_3_SCOPED_RED);
+    expect(red.exit, "the suite really failed").not.toBe(0);
+    expect(red.bodies, "and it failed having RUN something").toBe(1);
+
+    // AND THE HOOK IS RESTORED AND GREEN AGAIN, so the red above is the
+    // defect's and not the fixture's.
+    writeFileSync(subject, PRISTINE_SUBJECT);
+    expect(
+      scopeVerdict(runSuite(scopedSuite(derived.specs, owningLeg(root)), { root }).verdict, scope)
+        .verdict,
+    ).toBe(CRITERION_3_SCOPED_GREEN);
+  } finally {
+    cleanup();
+  }
+});
+
+test("the scoped run grades ONLY the owning spec, and a spec that merely shares the changed file's name is not one", () => {
+  // NOT VACUOUS, AND THE FIXTURE IS BUILT SO THAT IT CANNOT BE: the spec
+  // the derivation excludes has a body that always fails, so a run that
+  // reached it could not report green. The whole leg over the same tree
+  // is RED with two bodies; the scoped reading is GREEN with one.
+  const { root, cleanup } = makeOwningFixture();
+  try {
+    const derived = deriveOwning(["tools/e2e/scripts/subject.mjs"], root);
+    expect(derived.specs).toEqual(["tools/e2e/tests/owner.spec.ts"]);
+    expect(
+      derived.specs,
+      "the stem-sharing stranger is NOT owed — the graph is what owns, not the name",
+    ).not.toContain("tools/e2e/tests/subject.spec.ts");
+
+    const whole = runSuite(owningLeg(root), { root }).verdict;
+    expect(whole.verdict, "the whole leg really reaches the stranger").toBe("RED");
+    expect(whole.bodies).toBe(2);
+
+    const scoped = runSuite(scopedSuite(derived.specs, owningLeg(root)), { root }).verdict;
+    expect(scoped.verdict, "and the subset really does not").toBe("GREEN");
+    expect(scoped.bodies).toBe(1);
+  } finally {
+    cleanup();
+  }
+});
+
+test("the push guard refuses a scoped verdict as the token, so a lane's subset run can never mint one", () => {
+  // THE CARD'S CRITERION 3. The control comes FIRST and it must PASS:
+  // four whole-leg greens against this tree ARE a token this guard
+  // accepts, so the refusal that follows is a discrimination rather than
+  // a constant — and the only thing that changes between them is one
+  // suite's verdict WORD.
+  const repo = tokenRepo("scoped");
+  try {
+    const tree = String(headTree(repo));
+    for (const s of REQUIRED_SUITES) recordVerdicts([entryFor(s, "GREEN")], repo);
+    expect(judgeToken({ token: tokenOf(repo), tree }).state, "the control is a token").toBe("fresh");
+
+    const scoped = scopeVerdict(
+      { ...entryFor("e2e", "GREEN"), targets: 1, verdict: "GREEN" as const },
+      { specs: ["tools/e2e/tests/gate-run.spec.ts"], changed: ["tools/e2e/scripts/gate-run.mjs"] },
+    );
+    expect(scoped.verdict, "the word the card names").toBe(CRITERION_3_SCOPED_GREEN);
+    recordVerdicts([scoped], repo);
+    expect(
+      tokenOf(repo).suites["e2e"]?.verdict,
+      "the subset run really overwrote the leg's own entry",
+    ).toBe(CRITERION_3_SCOPED_GREEN);
+
+    const judged = judgeToken({ token: tokenOf(repo), tree });
+    expect(judged.state, "a scoped entry is not GREEN and this token is no longer one").not.toBe(
+      "fresh",
+    );
+    expect(judged.detail).toContain(CRITERION_3_SCOPED_GREEN);
+    // AND THE SAME HOLDS FOR THE RED WORD, which is the arm a seat meets
+    // when its scoped run actually failed.
+    recordVerdicts(
+      [
+        scopeVerdict(
+          { ...entryFor("e2e", "RED"), targets: 1, verdict: "RED" as const },
+          { specs: ["tools/e2e/tests/gate-run.spec.ts"], changed: ["tools/e2e/scripts/gate-run.mjs"] },
+        ),
+      ],
+      repo,
+    );
+    expect(judgeToken({ token: tokenOf(repo), tree }).state).not.toBe("fresh");
+    expect(judgeToken({ token: tokenOf(repo), tree }).detail).toContain(CRITERION_3_SCOPED_RED);
+  } finally {
+    dropRepo(repo);
+  }
+});
+
+test("a changed path the derivation cannot place REFUSES the scoped run at the usage code, naming the path and saying the full leg is owed", () => {
+  // THE CARD'S CRITERION 4, driven through the CLI because that is where
+  // a seat meets it. It refuses BEFORE it spawns anything and before it
+  // writes a token, which is why this body may drive `main` at all where
+  // the §THE VERDICT TOKEN bodies deliberately may not.
+  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
+  const unplaceable = "app/src/main.tsx";
+  const r = spawnSync(process.execPath, [cli, "e2e", "--owning", unplaceable], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  expect(r.status).toBe(EXIT.USAGE);
+  expect(`${r.stderr}`, "the refusal names the path it could not place").toContain(unplaceable);
+  expect(`${r.stderr}`, "and says what is owed instead").toContain(CRITERION_4_SENTENCE);
+  // NOT VACUOUS: the same runner places this lane's own change without a
+  // murmur, so the refusal above is about the PATH and not about the flag.
+  expect(deriveOwning([unplaceable]).unplaceable.length).toBe(1);
+  expect(deriveOwning(["tools/e2e/scripts/gate-run.mjs"]).unplaceable).toEqual([]);
+});
+
+test("the scoped form belongs to the e2e leg alone, and an empty path list is refused rather than graded as nothing", () => {
+  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
+  const wrongLeg = spawnSync(process.execPath, [cli, "parser", "--owning", "lib/parser/src/fence.ts"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  expect(wrongLeg.status).toBe(EXIT.USAGE);
+  expect(`${wrongLeg.stderr}`).toContain(CRITERION_4_SENTENCE);
+  const empty = spawnSync(process.execPath, [cli, "e2e", "--owning"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  expect(empty.status).toBe(EXIT.USAGE);
+  expect(`${empty.stderr}`, "a run over nothing grades nothing").toContain("no changed paths");
+});
+
+test("the scoped verdict line names the subset beside its body count, and a whole-leg line still carries no scope at all", () => {
+  // Criterion 1's last clause — "never the leg's name alone" — as a
+  // difference between two rendered lines rather than as a claim.
+  const count = countPlaywright(PLAYWRIGHT_GREEN);
+  const whole = judge({ status: 0, count, ref: "146ebb6", suite: "e2e" });
+  const scoped = scopeVerdict(whole, {
+    specs: ["tools/e2e/tests/gate-run.spec.ts"],
+    changed: ["tools/e2e/scripts/gate-run.mjs"],
+  });
+  const wholeLine = formatVerdict(whole);
+  const scopedLine = formatVerdict(scoped);
+  expect(wholeLine, "a whole leg carries no scope field").not.toContain("scope=");
+  expect(scopedLine).toContain("scope=tools/e2e/tests/gate-run.spec.ts");
+  expect(scopedLine).toContain(`bodies=${count.bodies}`);
+  // AND IT IS STILL A VERDICT LINE: every required field parses, so the
+  // scoped form cannot smuggle a token past the parser's own refusal.
+  const parsed = parseVerdict(scopedLine);
+  expect(parsed.ok).toBe(true);
+  if (parsed.ok) {
+    for (const f of REQUIRED_VERDICT_FIELDS) expect(parsed.value[f]).toBeTruthy();
+    expect(parsed.value["verdict"]).toBe(CRITERION_3_SCOPED_GREEN);
+    expect(parsed.value["suite"]).toBe("e2e");
+  }
+});
+
+test("a docs path is placed by the DOCS GATE's own reader map, composed with the import graph rather than re-derived", () => {
+  // The rule, over a graph typed here: a docs path whose reader is a
+  // SCRIPT is owned by the spec that imports that script. Nothing in this
+  // body touches the tree, so it measures the rule and not the day.
+  const reach = {
+    "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts", "tools/e2e/scripts/reads-docs.mjs"],
+    "tools/e2e/tests/b.spec.ts": ["tools/e2e/tests/b.spec.ts"],
+  };
+  const placed = owningSpecs({
+    changed: ["docs/CONVENTIONS.md"],
+    reach,
+    docsReadersByPath: { "docs/CONVENTIONS.md": ["tools/e2e/scripts/reads-docs.mjs"] },
+  });
+  expect(placed.specs).toEqual(["tools/e2e/tests/a.spec.ts"]);
+  // AND WITHOUT THE MAP THE SAME PATH IS UNPLACEABLE, never silently
+  // ungraded: the docs arm is load-bearing, and its absence is a refusal.
+  const unmapped = owningSpecs({ changed: ["docs/CONVENTIONS.md"], reach });
+  expect(unmapped.specs).toEqual([]);
+  expect(unmapped.unplaceable.map((u) => u.path)).toEqual(["docs/CONVENTIONS.md"]);
+});
+
+test("the live reader map really places this document, and the subset it owes is smaller than the leg", () => {
+  // The integration half of the body above, at this checkout's own ref.
+  // docs/CONVENTIONS.md is read by a script (`cli.mjs`) as well as by
+  // bodies, so it exercises the composition and not only the direct arm.
+  const derived = deriveOwning(["docs/CONVENTIONS.md"]);
+  expect(derived.unplaceable).toEqual([]);
+  expect(derived.specs).toContain("tools/e2e/tests/docs-input-gate.spec.ts");
+  expect(derived.specs).toContain("tools/e2e/tests/cli.spec.ts");
+  expect(derived.specs.length, "a subset, and a proper one").toBeLessThan(specFiles().length);
+  // This lane's own change, the narrowest case there is.
+  const mine = deriveOwning(["tools/e2e/scripts/gate-run.mjs"]);
+  expect(mine.specs).toContain("tools/e2e/tests/gate-run.spec.ts");
+  expect(mine.specs.length).toBeLessThan(specFiles().length);
+});
+
+test("every relative import in this lane's own tree resolves, because a dropped edge would make a subset SHORT", () => {
+  expect(specReach().unresolved).toEqual([]);
+  // NOT VACUOUS, both ways: a specifier that lands nowhere is reported,
+  // and a package specifier is external rather than a hole.
+  expect(resolveImport("tools/e2e/tests/x.spec.ts", "./nope-T-271", () => false).kind).toBe(
+    "unresolved",
+  );
+  expect(resolveImport("tools/e2e/tests/x.spec.ts", "@playwright/test", () => false).kind).toBe(
+    "external",
+  );
+  expect(
+    resolveImport("tools/e2e/tests/x.spec.ts", "../scripts/y.mjs", (rel) => rel === "tools/e2e/scripts/y.mjs"),
+  ).toEqual({ kind: "resolved", rel: "tools/e2e/scripts/y.mjs" });
+  // The extensionless TypeScript form this tree writes for `../preflight`.
+  expect(
+    resolveImport("tools/e2e/tests/x.spec.ts", "../preflight", (rel) => rel === "tools/e2e/preflight.ts"),
+  ).toEqual({ kind: "resolved", rel: "tools/e2e/preflight.ts" });
+});
+
+test("a fixture program written as a STRING is not this file's own import list", () => {
+  // The failure this scanner was written around, and this file is where
+  // it would bite: the bodies above build whole Playwright programs as
+  // string literals, and `stripComments` keeps strings on purpose. An
+  // unanchored matcher would read a fixture's imports as the spec's and
+  // grade a file that does not exist.
+  const source =
+    'import { EXIT } from "../scripts/gate-run.mjs";\n' +
+    "const fixture =\n" +
+    "  \"import { test } from '@playwright/test';\\n\" +\n" +
+    "  \"import { x } from '../scripts/not-a-real-import.mjs';\\n\";\n";
+  expect(importSpecifiers(source)).toEqual(["../scripts/gate-run.mjs"]);
+  // The forms this tree really writes, each read whole.
+  expect(importSpecifiers('import {\n  a,\n  b,\n} from "./m.mjs";\n')).toEqual(["./m.mjs"]);
+  expect(importSpecifiers('import "./side-effect.mjs";\n')).toEqual(["./side-effect.mjs"]);
+  expect(importSpecifiers('export { a } from "./re-export.mjs";\n')).toEqual(["./re-export.mjs"]);
+  expect(importSpecifiers('import * as ns from "./ns.mjs";\n')).toEqual(["./ns.mjs"]);
+  expect(importSpecifiers('// import { z } from "./commented-out.mjs";\n')).toEqual([]);
 });
