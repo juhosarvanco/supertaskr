@@ -9,6 +9,9 @@ status: planned
 blocked_by: [T-190]
 suggested_by: executor claude-opus-5@subagent @T-112-s1
 touches: [app-board, docs/architecture/components]
+verifier:
+built_by:
+verified_by:
 builder:
 review:
 ---
