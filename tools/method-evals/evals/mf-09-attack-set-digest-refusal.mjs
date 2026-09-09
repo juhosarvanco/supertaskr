@@ -54,6 +54,21 @@
  * happy path, plus a softening of the method sentence itself. The
  * degradation is applied where the subject's arming is ABSENT, so no
  * single arrangement decides both the subject's answer and the control's.
+ *
+ * THE TEXT ARM USED TO CARRY A CONJUNCT THAT COULD NOT FAIL (`T-205-s7`,
+ * absorbed into `T-205-s4`). The command half was written as a
+ * WHOLE-DOCUMENT presence test — `/shasum -a 256/.test(conv)` — and
+ * `docs/CONVENTIONS.md` has carried that command since long before
+ * `T-205`, in the POISON DRILL bullet, which has nothing to do with
+ * attack-set digests. Measured at `48285b5`: replacing the attack-set
+ * bullet's own `` `shasum -a 256 <file>` `` with the words *"the usual
+ * hashing command"* left the suite at exit 0. `T-057` is this project's
+ * name for exactly that, and `roles/verifier.md` step 2b calls a control
+ * that grades every arrangement the same the defect this method produces
+ * most. So the command test is now SCOPED TO THE BULLET that documents
+ * the citation — the bullet is found by the GRAMMAR it spells, never by
+ * a byte-exact sentence, so rewording it survives and moving the command
+ * off it does not — and the strike has a degradation arm of its own.
  */
 
 import { createHash } from "node:crypto";
@@ -195,7 +210,61 @@ export function matrix(subject) {
   }
 }
 
-/** The three method sentences this eval holds, read off the corpus. */
+/** The digest command docs/CONVENTIONS.md spells, and the only one this platform has. */
+export const DIGEST_COMMAND = /shasum -a 256/;
+
+/**
+ * The top-level bullets of a markdown document, each as its own text.
+ *
+ * A bullet runs from its `- ` opener to the next top-level bullet, the
+ * next heading, or the next unindented paragraph. This is the unit the
+ * command test is scoped to, and the reason it is a UNIT rather than a
+ * sentence: `T-205-s7` measured a whole-document presence test being
+ * satisfied by a bullet 1,400 lines away, and a byte-exact sentence test
+ * would only have traded that hole for brittleness to rewording.
+ *
+ * @param {string} doc
+ * @returns {string[]}
+ */
+export function topLevelBullets(doc) {
+  /** @type {string[]} */
+  const bullets = [];
+  /** @type {string[] | null} */
+  let current = null;
+  for (const line of doc.split("\n")) {
+    if (/^-\s/.test(line)) {
+      if (current !== null) bullets.push(current.join("\n"));
+      current = [line];
+    } else if (/^#{1,6}\s/.test(line) || /^[^\s-]/.test(line)) {
+      if (current !== null) bullets.push(current.join("\n"));
+      current = null;
+    } else if (current !== null) {
+      current.push(line);
+    }
+  }
+  if (current !== null) bullets.push(current.join("\n"));
+  return bullets;
+}
+
+/**
+ * The bullet that DOCUMENTS the attack-set citation — found by the
+ * grammar it spells, so it is the bullet's job that identifies it and not
+ * its wording. `<hex>` is the document's placeholder for the digest, and
+ * every occurrence is filled so the grammar reads as it would in a real
+ * verdict.
+ *
+ * @param {string} doc
+ * @returns {string | null}
+ */
+export function attackSetBullet(doc) {
+  for (const bullet of topLevelBullets(doc)) {
+    const flat = bullet.replace(/\s+/g, " ").replace(/<hex>/g, "0".repeat(64));
+    if (CITATION.test(flat)) return bullet;
+  }
+  return null;
+}
+
+/** The four method sentences this eval holds, read off the corpus. */
 /** @param {import("../lib/corpus.mjs").Corpus} corpus @returns {string[]} */
 function textFindings(corpus) {
   /** @type {string[]} */
@@ -215,11 +284,22 @@ function textFindings(corpus) {
   if (!/CITE ITS HASH IN YOUR VERDICT/i.test(flat("method/roles/verifier.md"))) {
     findings.push("method/roles/verifier.md does not put the citation on the verifier");
   }
-  const conv = flat("docs/CONVENTIONS.md");
-  if (!/shasum -a 256/.test(conv) || !CITATION.test(conv.replace("<hex>", "0".repeat(64)))) {
+  // THE LINE, AND THEN THE COMMAND ON THAT SAME BULLET — two findings and
+  // not one conjunction, because a conjunct whose other half is satisfied
+  // somewhere else in the document is a conjunct that cannot fail
+  // (`T-205-s7`). Each half now names what is missing.
+  const bullet = attackSetBullet(corpus.get("docs/CONVENTIONS.md") ?? "");
+  if (bullet === null) {
     findings.push(
-      "docs/CONVENTIONS.md spells neither the digest command nor the line a verdict " +
-        "cites it on, so the grammar this eval parses is a grammar nobody documents",
+      "no bullet in docs/CONVENTIONS.md spells the line a verdict cites the digest on " +
+        "(`attack set: sha256:<hex> (<file>)`), so the grammar this eval parses is a " +
+        "grammar nobody documents",
+    );
+  } else if (!DIGEST_COMMAND.test(bullet.replace(/\s+/g, " "))) {
+    findings.push(
+      "docs/CONVENTIONS.md documents the attack-set citation but spells no " +
+        "`shasum -a 256` on THAT bullet, so the digest a verdict cites has no command " +
+        "behind it — a `shasum` mention on some other bullet documents some other hash",
     );
   }
   return findings;
@@ -242,7 +322,7 @@ export default {
     if (findings.length > 0) {
       return { ok: false, detail: `${findings.length} finding(s)`, lines: findings };
     }
-    return { ok: true, detail: "5 matrix rows hold, and the three method sentences are in place" };
+    return { ok: true, detail: "5 matrix rows hold, and the four method sentences are in place" };
   },
 
   async degrade() {
@@ -300,6 +380,49 @@ export default {
           found.length > 0
             ? { ok: true, line: `softening the refusal in ${home} is detected: ${found[0]}` }
             : { ok: false, line: `softening the refusal in ${home} was NOT detected` },
+        );
+      }
+    }
+
+    // AND THE COMMAND ARM (`T-205-s7`): strike the digest command from the
+    // bullet that documents the citation, leaving every OTHER `shasum -a
+    // 256` in the document exactly where it was, and require the eval to
+    // notice. This is the control the old whole-document conjunct never
+    // had — and the assertion that the surviving mentions do NOT satisfy
+    // the check is the half that makes it a control rather than a
+    // rewording of the subject.
+    const convClean = /** @type {string} */ (clean.get("docs/CONVENTIONS.md"));
+    const documenting = attackSetBullet(convClean);
+    if (documenting === null) {
+      arms.push({ ok: false, line: "no bullet documents the attack-set citation to strike from" });
+    } else {
+      const struck = documenting.replace(/`?shasum -a 256[^`\n]*`?/, "the usual hashing command");
+      if (struck === documenting) {
+        arms.push({ ok: false, line: "striking the digest command from its bullet changed nothing" });
+      } else {
+        const convBroken = convClean.replace(documenting, struck);
+        const elsewhere = (convBroken.match(/shasum -a 256/g) ?? []).length;
+        const broken = new Map(clean);
+        broken.set("docs/CONVENTIONS.md", convBroken);
+        const found = textFindings(broken).filter((f) => f.includes("shasum -a 256"));
+        arms.push(
+          found.length > 0 && elsewhere > 0
+            ? {
+                ok: true,
+                line:
+                  `striking the digest command from the bullet that documents the citation ` +
+                  `is detected while ${elsewhere} unrelated \`shasum -a 256\` mention(s) ` +
+                  `survive elsewhere in the document: ${found[0]}`,
+              }
+            : {
+                ok: false,
+                line:
+                  elsewhere === 0
+                    ? "the strike removed EVERY `shasum -a 256` in the document, so this " +
+                      "arm cannot tell a scoped check from a whole-document one"
+                    : "striking the digest command from its own bullet was NOT detected — " +
+                      "the command test is still satisfied from somewhere else",
+              },
         );
       }
     }
