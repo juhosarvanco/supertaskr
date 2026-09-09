@@ -96,6 +96,18 @@ import { repoRoot } from "../preflight";
  * The last section of this file is the keeper for that dependency, and
  * the scanner it checks is IMPORTED rather than re-implemented, for the
  * same reason the command list stopped being a sixteen-entry array.
+ *
+ * ── WHAT T-256 CHANGED ───────────────────────────────────────────────
+ * ONE divergence is left, and the T-054 note above is the record of the
+ * night it said two. DIVERGENCE 1 — `npm ci` in CI where the doc said
+ * `npm install` for app/ — is RETIRED: CONVENTIONS now says `npm ci`
+ * too, so the mapping became a verbatim entry and the doc and the
+ * workflow say the same words. It was the one "environment difference"
+ * that was not one; a lane's fence makes `npm install` from app/ fail
+ * (exit 243 EACCES on the read-only app/package-lock.json), so the
+ * spelling the doc published was the spelling that could not be run by
+ * the seats the doc is for. T-216-s6 carries that class and is absorbed
+ * by this lane's work.
  */
 
 interface WorkflowStep {
@@ -284,13 +296,17 @@ const CI_SEQUENCE: Correspondence[] = [
   { kind: "verbatim", dir: "lib/parser", cmd: "npx vitest run" },
   { kind: "verbatim", dir: "lib/parser", cmd: "npx tsc --noEmit" },
   { kind: "verbatim", dir: "lib/parser", cmd: "npm run build" },
-  {
-    kind: "mapped",
-    dir: "app",
-    cmd: "npm install",
-    steps: [{ dir: "app", run: "npm ci" }],
-    why: "DIVERGENCE 1: lockfile-exact installs in CI, everywhere.",
-  },
+  // T-256 RETIRED THE INSTALL MAPPING. This was DIVERGENCE 1 — the doc
+  // said `npm install` for app/ and CI ran `npm ci`, argued as
+  // "lockfile-exact installs in CI, everywhere". It was never an
+  // ENVIRONMENT difference like the browser install below: it was two
+  // spellings of one step, and the doc's was the one that FAILS for the
+  // seats who read it — inside a lane `npm install` rewrites
+  // app/package-lock.json, which the fence leaves read-only, and dies
+  // exit 243 EACCES (measured on three lanes; T-216-s6 carries the
+  // class). CONVENTIONS now says `npm ci`, so app/ joins the verbatim
+  // class the parser package has always been in.
+  { kind: "verbatim", dir: "app", cmd: "npm ci" },
   { kind: "verbatim", dir: "app", cmd: "npm run build" },
   { kind: "verbatim", dir: "app", cmd: "npm test" },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo test" },

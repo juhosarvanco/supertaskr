@@ -20,11 +20,18 @@ and T-236 (2026-09-02, whose pre-compaction text is
   `npx vitest run` (suite) · `npx tsc --noEmit` (types) ·
   `npm run build` (emits dist/, gitignored). The suite's smoke test
   parses this repo's live docs/ tree and requires zero issues.
-- app/ (C-05), run from app/: `npm install` (setup) ·
+- app/ (C-05), run from app/: `npm ci` (setup) ·
   `npm run build` (typecheck + frontend build — the fast gate) ·
   `npm test` (vitest — model-store unit tests, T-003) ·
   `npm run tauri dev` (run the desktop app) · `npm run tauri build`
-  (package).
+  (package). THE SETUP SPELLING IS `npm ci` AND CI RUNS THE SAME WORDS
+  (T-256, absorbing T-216-s6): `npm install` rewrites
+  app/package-lock.json, which every lane fence leaves read-only, so it
+  dies **exit 243 EACCES** with node_modules already populated and
+  nothing warning — measured on three lanes in one night. `npm install`
+  belongs OUTSIDE a lane and nowhere else: changing a dependency, or the
+  app launcher's own step, where a fresh `npm ci` would destroy a live
+  app's node_modules (the relaunch bullet below).
 - app/src-tauri (C-05 Rust half + the C-07 workspace), run from
   app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
   + supertaskr-index crate suite, T-009 — bare `cargo test` runs both
@@ -267,20 +274,39 @@ and T-236 (2026-09-02, whose pre-compaction text is
   shaving words is how a rule ends up in neither (T-146, T-225).
 - **RUN THE SUITE ONCE IN A BORROWED GIT ENVIRONMENT BEFORE YOU BELIEVE
   IT.** A local green proves it passes *on the machine that wrote it*,
-  which is the weakest claim available. Two variables reproduce a
+  which is the weakest claim available. Five variables reproduce a
   runner's git environment — no global identity, no `init.defaultBranch`,
-  nothing this developer configured years ago:
+  nothing this developer configured years ago, and no identity git
+  invented for itself:
 
-      GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null npm test
+      GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+        GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly \
+        GIT_CONFIG_VALUE_0=true npm test
 
+  **THE LAST THREE ARE LOAD-BEARING AND THE FIRST TWO CANNOT DO THEIR
+  WORK** (T-239-s4's class, measured at `0f6b37f`; published by T-256):
+  the two `GIT_CONFIG_*` variables suppress config FILES only, and with
+  no configured identity git AUTO-DETECTS one from `getpwuid` and the
+  hostname, refusing only where it judges the result bogus — which is a
+  property of the HOST. On a hostname carrying a dot git reads a domain
+  and COMMITS, so the two-variable recipe answers GREEN here and
+  reproduces no runner red; a runner's hostname carries none and git
+  exits **128**, *"Please tell me who you are"*.
+  `user.useConfigOnly=true` is git's own switch for *do not
+  auto-detect*, and the `GIT_CONFIG_COUNT`/`KEY_0`/`VALUE_0` triple is
+  how one key reaches every git a SUITE spawns (`-c
+  user.useConfigOnly=true` is the spelling for a single command).
+  **AND UNSET ANY `GIT_AUTHOR_*`/`GIT_COMMITTER_*` YOU CARRY** —
+  measured: they outrank the switch and hand the commit an identity
+  anyway.
   It would have caught both of the CI reds this rule was written from,
   in seconds, before either push. A suite green here and red there is
   not flaky; it is measuring the machine. **DO NOT CLOBBER `HOME` TO GET
   THERE.** The first version of this rule did (`HOME=$(mktemp -d)`) and
   reddened 54 browser bodies, because Playwright caches its browsers
-  under `~/`: suppressing git's config files is the whole of what is
-  wanted, and the wrong recipe was caught by running it — this bullet's
-  own point applied to itself.
+  under `~/`: git's config and its auto-detected identity are the whole
+  of what is wanted, and the wrong recipe was caught by running it —
+  this bullet's own point applied to itself, twice now.
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an
@@ -414,15 +440,16 @@ and T-236 (2026-09-02, whose pre-compaction text is
   commands, ENFORCING since the repo's first push (2026-08-29).
   tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from
   the bullets above (T-045): every command they list is a workflow step
-  VERBATIM, except the TWO deliberate divergences below — each one a
-  commented mapping in that spec, and a lane failure if either side
-  drifts. (1) `npm ci` for app/ where local setup says `npm install` —
-  lockfile-exact installs in CI, everywhere. (2) `npx playwright install
+  VERBATIM, except the ONE deliberate divergence below — a commented
+  mapping in that spec, and a lane failure if either side drifts:
+  `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
-  install chromium` — the Linux system libs a fresh runner lacks. BOTH
-  ARE ENVIRONMENT DIFFERENCES, and that is the whole list (T-054 closed
+  install chromium` — the Linux system libs a fresh runner lacks. IT IS
+  AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 closed
   the two that were only CI spelling a documented command a second way,
-  T-045-s1). The token lint runs as `npm run lint:tokens -- --selftest`
+  T-045-s1; T-256 closed app/'s install, which was never an environment
+  difference at all — the doc now says the `npm ci` CI always ran).
+  The token lint runs as `npm run lint:tokens -- --selftest`
   then `npm run lint:tokens` from tools/e2e — the job's FIRST step,
   ahead of every `npm ci`, because `npm run` needs no installed
   node_modules and `token-scan.mjs` is zero-dependency — and two steps,
@@ -1143,10 +1170,15 @@ and T-236 (2026-09-02, whose pre-compaction text is
     a worktree's existence is a LIVE-ENVIRONMENT fact like a pid.
   - A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT: no
     node_modules in any of the three packages, no `lib/parser/dist`, no
-    `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
-    file covers parser-before-app and stops there. **THE APP'S OWN BUILD
-    IS ALSO ORDER-DEPENDENT, and the suite does not say so**: several
-    app test files read the built bundle off `app/dist`, so `npm test`
+    `app/dist`, no `target/`. **THE ORDER A LANE RUNS BEFORE ITS SUITE
+    IS THE ORDER tools/e2e's OWN PREFLIGHT DEMANDS**, and it refuses at
+    config load naming whichever is missing: lib/parser `npm ci` + `npm
+    run build` (its `dist/pure.js`), then app/ `npm ci` — **never `npm
+    install` inside a lane**, which dies EACCES on the fenced lockfile
+    (T-256) — then app/ `npm run build`, then tools/e2e `npm ci`, then
+    the suite. **THE APP'S OWN BUILD IS ALSO ORDER-DEPENDENT, and the
+    suite does not say so**: several app test files read the built
+    bundle off `app/dist`, so `npm test`
     from app/ on an unbuilt worktree fails a handful of bodies — every
     message about a build being stale or absent rather than about the
     tree — and is whole again after `npm run build`. DERIVE the count
