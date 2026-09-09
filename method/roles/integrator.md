@@ -73,6 +73,32 @@ ordinal is stable until somebody inserts, and silent when it moves.
    with a fresh dependency install THEN read "The checkout you merge
    into may be in use" below BEFORE you run one** — that step is the one
    that can break a product a human is running out of this same tree.
+2b. **RE-DRILL THE VERDICT'S MUTANT BLOCKS ON THE MERGED TREE, AND NEVER
+   REWRITE A BODY THE VERIFIER COMMITTED.** The verifier commits the body
+   that pins each correction it assigns and writes a MUTANT BLOCK for it
+   into the verdict (`roles/verifier.md` step 5b). That block is what you
+   act on, and the act is a DRILL rather than a reading: read every block
+   off the card's NEWEST verdict, plant each mutant on the MERGED tree,
+   run the spec the block names, require the named body RED ALONE with the
+   message the block names, restore the site and PROVE the restore by
+   sha256. **STOP BEFORE THE COMMIT** on a survivor, on a body that reds
+   more than itself, or on a block whose anchors do not match exactly
+   once — each of those means the correction is not pinned by what was
+   committed, and a merge that proceeds past one has shipped an approval
+   nobody gave it.
+   **THE BODY IS NOT YOURS TO WRITE.** Where a correction needs a code
+   change beside the body, the verdict names it: you make the code change
+   and the committed body is what proves it. Rewriting the body — even to
+   improve it, even where you can see a better assertion — makes the drill
+   a test of your own writing and destroys the one measurement the
+   verifier took that you cannot retake, since it ran RED against an
+   implementation that no longer exists. It is step 3's authority rule one
+   room over: a lane writes bodies, this seat does not hold a lane, and
+   the fact that you can see the fix is not the question.
+   **WHAT DOES THE READING IS A PROGRAM, and where a project has none
+   this is still the step** — plant, run, require, restore, prove, by
+   hand, and say in the checkpoint which way it was done. The block's
+   layout is fixed so that the two are the same act.
 3. Checkpoint ritual, in order, as ONE commit distinct from the merge
    (../docs-protocol.md governs what may live where):
    - checkpoint record FIRST: one append-only file per integration in

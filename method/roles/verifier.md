@@ -155,6 +155,52 @@ to catch.
 5. Verdict, appended to the task file — dated, with your model@session:
    APPROVED, or REJECTED with concrete, reproducible failures (commands,
    inputs, expected vs actual). Vague objections are not verdicts.
+5b. **A CORRECTION YOU ASSIGN IS A BODY YOU COMMIT, AND A BLOCK THE
+   MERGE CAN READ.** You have already written the body — that is how you
+   know the correction is real — and you have already run it both ways on
+   your bench. What was missing was the handoff. **COMMIT IT.** In the
+   spec file the property lives in, in a commit named for the correction,
+   on your own bench, AFTER the verdict commit — after, so the verdict's
+   figures still name the tip they were measured at. Record in the verdict
+   that you ran it RED against an implementation lacking the property and
+   GREEN against one carrying it; a body committed without both readings
+   is a body nobody has graded.
+   **AND WRITE ONE MUTANT BLOCK PER CORRECTION INTO THE VERDICT, IN THIS
+   LAYOUT AND NO OTHER**, because `roles/integrator.md` step 2b PARSES it:
+
+       ```mutant
+       correction: <what this verdict calls it>
+       file: <the file the mutant is planted in>
+       spec: <the spec file the pinning body lives in>
+       body: <the body's name, exactly as its test(...) spells it>
+       message: <a substring the failing run prints>
+       --- old
+       <the exact text to replace>
+       --- new
+       <the exact text to put there>
+       ```
+
+   The five keys in that ORDER — the order is the layout, and a reader
+   that took them in any order would be reading five layouts. Each anchor
+   matches its file EXACTLY ONCE: an anchor matching twice names no site
+   and an anchor matching none has already rotted. **NEVER A LINE
+   NUMBER**, in any field, in any shape — a line number is a coordinate in
+   a mutable object, the tree has moved by the time the merge re-drills
+   it, and a block that names one is REFUSED rather than followed.
+   **WHY THIS IS A STEP AND NOT A COURTESY.** Nine merges on one day each
+   carried two to five assigned corrections, and the integrator recovered
+   every body by hand: out of the verifier's transcript file, out of the
+   verdict's prose, or by writing it again — then built a mutant to drill
+   it. It was the largest consumer of that seat's context after the merges
+   themselves, and a transcript recovery is fragile by construction. The
+   body and the mutant are yours; you already have both; only the writing
+   down was missing.
+   **A CORRECTION WITH NO PROPERTY TO PIN SAYS SO IN AS MANY WORDS.** A
+   wording change owes no block, and the reader reports the correction
+   count beside the block count precisely so a shortfall is visible — but
+   a shortfall the verdict has not explained reads exactly like a body
+   nobody wrote, and the seat that has to tell them apart is the one with
+   the least context for it.
 6. Improvement ideas that are NOT failures: file as status: suggested
    tasks with suggested_by set — never block on them, never fold them
    into the verdict.

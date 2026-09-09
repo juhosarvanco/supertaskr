@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **764 behaviours** — 762 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **778 behaviours** — 776 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -285,6 +285,20 @@ Census: **764 behaviours** — 762 extracted sentences + 2 named-not-extracted (
 - a fence with ANY unresolved token is refused, never called clear
 - a merge STAGES the census and the graph it regenerated, by the argv it runs
 - the done stamp fills only an empty built_by, not only an empty verified_by
+- the merge reads its mutant blocks off the card's NEWEST verdict, and a verdict's own sub-headings are not verdicts
+- a mutant block naming a LINE NUMBER is refused by the reader, in each shape a line number takes
+- the mutant block's layout is FIXED — order, both markers, and a mutant that changes something
+- a mutant anchor that does not match its file exactly once names no site, and planting refuses
+- the failing bodies are read off the run's own report, in both dialects this repository runs
+- the drill refuses a survivor, a body that reds more than itself, and a red without the message
+- the whole drill plants, runs, restores and PROVES the restore by sha256 — and a survivor stops the merge
+- a verdict assigning corrections with NO mutant block is refused, and one assigning none is not
+- a verdict written before the rule is acknowledged by NAMING its own sha, and never by a blanket
+- the mutant drill is the LAST step before the merge's STOP, on every shape of merge
+- the layout verifier.md publishes IS the layout the merge parses, and each contract states its half once
+- an ABORTING drill still restores the site — the merged tree is never left mutated
+- a mutant block's file and spec are CONFINED to the project root — no traversal, no absolute path
+- the integrator's never-rewrite rule carries NO hedge — the one clause that would refund this card
 
 ## crescendo
 
