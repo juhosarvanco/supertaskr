@@ -1,19 +1,18 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+// THE WHOLE NAMESPACE, for ONE body: the citation keeper asks whether a
+// name the refusal cites is a name this module EXPORTS, and the only way
+// to ask that is to hold the export list rather than a chosen subset of
+// it (T-238-s1). Every other body imports what it names.
+import * as currency from "../scripts/checkout-currency.mjs";
 import {
   DEFAULT_INTEGRATION_REF,
   EXIT,
   GUARD_SURFACE,
+  HOLDER_CODES,
   HOLDER_REL_PATH,
   HOLDER_STATES,
   REPOSITORY_PROBE_REL_PATH,
@@ -87,22 +86,25 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 const SCRATCH: string[] = [];
 
 /**
- * Worktrees this file registered in THIS REPOSITORY, removed first.
+ * NOTHING IN THIS FILE REGISTERS A WORKTREE IN THE HOST'S LIST ANY MORE
+ * (T-238-s1, item 5) — and this paragraph is the keeper of an ABSENCE,
+ * which is the only kind of keeper an absence can have.
  *
- * `method/lane-protocol.md` rule 4 names *the host's list of worktrees*
- * as a MACHINE-scoped surface in those words, so the two things it asks
- * for are both done here: the path is DERIVED (an `mkdtemp` root, so two
- * concurrent lanes running this suite cannot pick the same one — a
- * construction rather than a check), and the entry is given back at the
- * end of the file rather than left for `git worktree prune` to find.
+ * `method/lane-protocol.md` rule 4 names *the host's list of worktrees* a
+ * MACHINE-scoped surface in those words. This file borrowed one anyway:
+ * `currentVantageCheckout` ran `git -C <this repository> worktree add`
+ * and gave the entry back in this hook. The path was DERIVED and the
+ * cleanup was correct on every run the verifier made — and it was still
+ * a WRITE into a surface every other checkout on this machine reads,
+ * which is the hazard rule 4 states rather than a tidiness problem: a
+ * sibling lane's sweep sees an entry appear and vanish mid-run and reds
+ * about neither card. The fixture is a CLONE now (see
+ * `currentVantageCheckout`) — about 30 ms with `--shared`, and invisible
+ * to `git worktree list`. `git worktree prune` is not run here either:
+ * pruning the host's administration is the same shared write in a tidier
+ * costume.
  */
-const BORROWED_WORKTREES: string[] = [];
-
 test.afterAll(() => {
-  for (const wt of BORROWED_WORKTREES) {
-    spawnSync("git", ["-C", repoRoot, "worktree", "remove", "--force", wt], { stdio: "ignore" });
-  }
-  spawnSync("git", ["-C", repoRoot, "worktree", "prune"], { stdio: "ignore" });
   for (const dir of SCRATCH) removeGitFixture(dir, "checkout-currency");
 });
 
@@ -310,16 +312,37 @@ function staleClone(fx: Fixture, at: string): string {
  * byte-identical tree — which is `T-240`'s claim that a verifier bench
  * cannot run the e2e leg green at any ref for any diff.
  *
- * ── WHY THE FIXTURE HAS TO BE A WORKTREE OF THIS REPOSITORY ──────────
+ * ── WHY IT CANNOT BE AN ORDINARY `mkdtemp` REPOSITORY ────────────────
  * The arm's VANTAGE is `defaultVantage()`, which resolves against the
  * catcher's own file and is therefore always `repoRoot`; only the TARGET
  * can be steered. A target reads CURRENT only if the vantage can answer
  * both arms about it — the registration compared against `main`'s own,
  * and the guard-surface commit CONTAINED in the target's HEAD, asked
- * with `git cat-file` IN THE VANTAGE. A `mkdtemp` directory fails the
- * second by construction: the vantage has never heard of its HEAD. A
- * worktree of this repository at the integration ref passes both, and
- * `--no-checkout` means it costs an admin entry and no working tree.
+ * with `git cat-file` IN THE VANTAGE. A freshly `git init`ed directory
+ * fails the second by construction: the vantage has never heard of its
+ * HEAD.
+ *
+ * ── AND IT IS A CLONE, NEVER A WORKTREE OF THE HOST (T-238-s1) ───────
+ * This ran `git -C <repoRoot> worktree add --no-checkout` and gave the
+ * entry back in `afterAll`. Correct on every run, and still a WRITE into
+ * `git worktree list` — a surface every checkout on this machine shares
+ * and rule 4 names. A `--shared --no-checkout --single-branch` CLONE at
+ * the integration ref satisfies both arms for the same reason the
+ * worktree did — its HEAD IS `main`'s commit, so the vantage has that
+ * object and the guard-surface commit is an ancestor of it — copies no
+ * objects at all (measured at about 30 ms and 104 KB against this
+ * repository), and appears in nobody's worktree list.
+ *
+ * WHAT IT BORROWS, DECLARED (T-238-s1's verifier): `--shared` writes
+ * `.git/objects/info/alternates` pointing at the HOST's object store, so
+ * the criterion's *a clone or a worktree of a SCRATCH repository, never of
+ * the host's* is NOT met, and cannot be while the vantage is this checkout.
+ * The hazard is one-directional and bounded: a host `gc` can break this
+ * fixture, this fixture can never touch the host, and the object borrowed
+ * is the integration tip, which is reachable by definition.
+ *
+ * The one property it drops is SHARED REFS, which `judge` reports as a
+ * figure and no arm here reads.
  *
  * ── AND THE `.claude` IT IS JUDGED ON IS WRITTEN BY THIS BODY ────────
  * Which is the whole point of the move: the settings text comes from
@@ -333,10 +356,19 @@ function currentVantageCheckout(name: string): string {
   const at = path.join(root, "at-integration-ref");
   execFileSync(
     "git",
-    ["-C", repoRoot, "worktree", "add", "--no-checkout", "--detach", at, DEFAULT_INTEGRATION_REF],
+    [
+      "clone",
+      "--quiet",
+      "--shared",
+      "--no-checkout",
+      "--single-branch",
+      "--branch",
+      DEFAULT_INTEGRATION_REF,
+      repoRoot,
+      at,
+    ],
     { stdio: "pipe" },
   );
-  BORROWED_WORKTREES.push(at);
   const settings = execFileSync(
     "git",
     ["-C", repoRoot, "show", `${DEFAULT_INTEGRATION_REF}:${SETTINGS_REL_PATH}`],
@@ -353,7 +385,7 @@ function currentVantageCheckout(name: string): string {
     }
   }
   // THE REPOSITORY PROBE, for the reason `motivatingFixture` writes one:
-  // `sessionCheckout`'s DERIVED signal declines a worktree that does not
+  // `sessionCheckout`'s DERIVED signal declines a checkout that does not
   // carry it, and `--no-checkout` materialises no files at all. Without
   // this the arm answers UNANSWERED — the guard working, over a fixture
   // that does not model what it claims to.
@@ -955,7 +987,9 @@ test("THE WIRING'S POSITIVE CONTROL: the same arming step says CURRENT for a cur
   // after the newest `.claude` commit and red in one cut before it, on
   // a byte-identical tree. `currentVantageCheckout` composes a checkout
   // that is current BY CONSTRUCTION, so this body now measures the
-  // wiring instead of the machine.
+  // wiring instead of the machine. T-238-s1 made that fixture a CLONE
+  // rather than a worktree of this repository; what it is a checkout OF
+  // is invisible to every assertion below, which is the point.
   const current = currentVantageCheckout("wiring-control");
   const run = runBrief(["--task", "T-999", "--preflight"], current);
   expect(run.out).toContain("THE SESSION'S OWN CHECKOUT");
@@ -1069,6 +1103,15 @@ test("THE SWEEP AT ARM TIME: the arming step RUNS it, and names every checkout g
   // verifier bench cut before a `.claude` commit landed. The derived
   // signal is still the production one — nothing is DECLARED here — and
   // what changed is only which checkout the seat is sitting in.
+  //
+  // T-238-s1: AND THAT FIXTURE IS A CLONE RATHER THAN A WORKTREE OF THE
+  // HOST, so this body no longer writes `git worktree list`. What it
+  // gave up with the worktree is the assertion that the sweep names a
+  // checkout REGISTERED SECONDS AGO — an assertion that cost a write
+  // into a machine-scoped surface to make. The property it was buying
+  // is unmoved and is asserted where it costs nothing: THE SWEEP NEEDS
+  // NOTHING DECLARED above builds every checkout it then counts, over a
+  // scratch repository, and pins the count exactly.
   const current = currentVantageCheckout("sweep-at-arm-time");
   const run = runBrief(["--task", "T-999", "--preflight"], undefined, current);
   expect(run.out, "the checkout being typed in is current").toContain("verdict: current");
@@ -1076,27 +1119,25 @@ test("THE SWEEP AT ARM TIME: the arming step RUNS it, and names every checkout g
   expect(run.out, "and the sweep ran anyway").toContain(
     "EVERY CHECKOUT OF THIS REPOSITORY ON THIS MACHINE",
   );
-  // This repository's own worktree list is a live fact, so the body
-  // asserts the MECHANISM rather than a machine's contents: the sweep
-  // reads git's own administration, so a checkout registered SECONDS
-  // AGO by this body is in the answer without anything pointing at it.
-  //
-  // TWO NAMED CHECKOUTS RATHER THAN THE WHOLE LIST, and the reason is
-  // the same rule the paragraph below already cites: the list is a
-  // MACHINE-scoped surface, so a sibling lane opening or closing between
-  // the sweep's read and this body's read would red a body about
-  // neither. The fixture this body registered and the main worktree are
-  // both there BY CONSTRUCTION; exhaustiveness over a controlled machine
-  // is THE SWEEP NEEDS NOTHING DECLARED above, which builds every
-  // checkout it then counts.
+  // THE SWEEP IS READ OFF GIT'S OWN ADMINISTRATION AND THE MECHANISM IS
+  // WHAT IS ASSERTED, never a machine's contents: the vantage's own
+  // checkout is in `git worktree list` BY CONSTRUCTION — git always
+  // reports the checkout it is asked from — and nothing pointed the
+  // sweep at it. The fixture the seat is sitting in is deliberately NOT
+  // expected here: it is a clone, so it is in no worktree list at all,
+  // and the sweep judging the machine while the seat sits outside it is
+  // exactly the hole the sweep exists to cover.
   const listed = worktreesOf(repoRoot);
   expect(listed.length, "git always reports at least the checkout we are in").toBeGreaterThanOrEqual(1);
   expect(
     listed.map((w) => w.path),
-    "the worktree this body registered is in git's own list",
-  ).toContain(current);
-  expect(run.out, "and the sweep names it").toContain(current);
-  expect(run.out, "beside the checkout the vantage itself is").toContain(repoRoot);
+    "the vantage's own checkout is in git's own list, with nothing declaring it",
+  ).toContain(repoRoot);
+  expect(run.out, "and the sweep names it").toContain(repoRoot);
+  expect(
+    listed.map((w) => w.path),
+    "while the fixture the seat sits in is a CLONE, and writes no entry into that list",
+  ).not.toContain(current);
 });
 
 test("the repository probe is ONE fact checked twice — the catcher and the push guard ask with the same path", () => {
@@ -1319,6 +1360,100 @@ test("a chain with no harness in it answers NOTHING, naming what it walked, and 
   if (got.ok) return;
   expect(got.why, "it names the processes it walked").toContain("launchd");
   expect(got.why, "and says the derivation is about one harness").toContain("harness");
+
+  // ── THE CI RUNNER, WHICH IS THE MACHINE THIS IS TRUE OF (T-237-s8) ──
+  // Not a hypothetical ancestry: a GitHub runner's job runs `node` under
+  // `bash` under `Runner`, and on 2026-09-02 that difference reddened
+  // main through a body that armed the guard from the real process tree.
+  // It is DRIVEN THROUGH THE INJECTED READER rather than through the
+  // machine this suite happens to run on, which is that incident's own
+  // standing lesson — a body that measured the host would be vacuous
+  // here and green everywhere.
+  const runner: PsRow[] = [
+    { pid: 1, ppid: 0, startedAt: "Tue Sep 1 09:00:00 2026", command: "/sbin/init" },
+    { pid: 300, ppid: 1, startedAt: "Tue Sep 1 09:00:01 2026", command: "/home/runner/Runner.Listener run" },
+    { pid: 301, ppid: 300, startedAt: "Tue Sep 1 09:00:02 2026", command: "/bin/bash -e /home/runner/work/_temp/x.sh" },
+    { pid: 302, ppid: 301, startedAt: "Tue Sep 1 09:00:03 2026", command: "node /w/tools/e2e/scripts/brief.mjs" },
+  ];
+  const onRunner = sessionIdentity({ pid: 302, readProcess: chain(runner) });
+  expect(onRunner.ok, "a runner's chain carries no harness, so nothing is claimed").toBe(false);
+  if (!onRunner.ok) {
+    expect(onRunner.why, "and it names what it walked, runner and all").toContain("Runner.Listener");
+    expect(onRunner.why, "saying the runner is where this is the ordinary answer").toContain(
+      "CI RUNNER",
+    );
+  }
+
+  // THE POSITIVE CONTROL, IN THIS BODY: the same reader, one row
+  // different — a harness in the chain — and the derivation answers.
+  // Without it every assertion above is satisfied by a `sessionIdentity`
+  // that answers `ok: false` for everything, which is the shape a
+  // never-firing guard has.
+  const derivable: PsRow[] = [
+    ...runner.slice(0, 2),
+    { pid: 301, ppid: 300, startedAt: "Tue Sep 1 09:00:02 2026", command: HARNESS_CMD },
+    { pid: 302, ppid: 301, startedAt: "Tue Sep 1 09:00:03 2026", command: "node /w/tools/e2e/scripts/brief.mjs" },
+  ];
+  const local = sessionIdentity({ pid: 302, readProcess: chain(derivable) });
+  expect(local.ok, "the SAME walk over an ancestry that has one does derive").toBe(true);
+  if (local.ok) expect(local.identity.pid, "and it is the harness, not the runner").toBe(301);
+});
+
+test("the identity's refusal cites only names this module really exports, so a citation cannot dangle", () => {
+  // T-238-s1, ITEM 1. The refusal read *"see HARNESS_ARGV0_BASENAME"* and
+  // no such symbol has ever existed here: a reader who followed the one
+  // pointer a user-facing refusal offers found nothing. A citation is
+  // cheap to write and free to rot, so this body makes it MECHANICAL —
+  // every SHOUTED_SNAKE token in the sentence must be a name this module
+  // exports.
+  //
+  // KILLED BY: citing any name the module does not export, which is
+  // exactly the state this repairs.
+  const rows: PsRow[] = [
+    { pid: 20, ppid: 1, startedAt: "Tue Sep 1 10:00:00 2026", command: "/sbin/launchd" },
+    { pid: 21, ppid: 20, startedAt: "Tue Sep 1 10:00:01 2026", command: "node /x/brief.mjs" },
+  ];
+  const got = sessionIdentity({ pid: 21, readProcess: chain(rows) });
+  expect(got.ok).toBe(false);
+  if (got.ok) return;
+
+  // The needle is a SHAPE — a run of capitals carrying an underscore —
+  // so ordinary shouted prose (NOTHING, ONE) is not a citation and a
+  // renamed constant is. `\b` on both ends keeps a name out of a longer
+  // token.
+  const cited = [...got.why.matchAll(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g)].map((m) => m[0]);
+  expect(cited.length, "the refusal cites at least one symbol, or this body proves nothing").toBeGreaterThan(0);
+  const exported = Object.keys(currency);
+  for (const name of cited) {
+    expect(exported, `the refusal cites ${name}, and this module exports it`).toContain(name);
+  }
+
+  // THE SEARCH IS SHOWN CAPABLE OF FAILING BEFORE ITS ZERO IS WRITTEN
+  // DOWN (docs/CONVENTIONS.md's proof clause): the same extractor over
+  // the sentence AS IT STOOD finds the dangling name, and the same
+  // membership test rejects it. Without this half, an extractor that
+  // matched nothing would pass the loop above vacuously.
+  const asItStood =
+    "The identity derivation is a fact about ONE harness — see HARNESS_ARGV0_BASENAME — and it " +
+    "answers NOTHING rather than guessing.";
+  const before = [...asItStood.matchAll(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g)].map((m) => m[0]);
+  expect(before, "the extractor finds the citation that used to be here").toContain(
+    "HARNESS_ARGV0_BASENAME",
+  );
+  expect(exported, "and that name is exported by nothing, which is the defect").not.toContain(
+    "HARNESS_ARGV0_BASENAME",
+  );
+  expect(
+    readFileSync(CLI, "utf8"),
+    "nor does the file mention it anywhere else",
+  ).not.toContain("HARNESS_ARGV0_BASENAME");
+  // AND THE DERIVATION'S OWN HEADER IS CITED, not only a constant: the
+  // refusal points at the section above `sessionIdentity`, which is the
+  // function it is the refusal of.
+  expect(got.why, "the refusal names where the derivation is stated").toContain(
+    "this file's holder section",
+  );
+  expect(got.why, "and names the function that section is about").toContain("sessionIdentity");
 });
 
 test("liveness is the pid AND its start time, so a recycled pid is a dead holder", () => {
@@ -1435,6 +1570,9 @@ test("every holder state is reachable in one fixture, and a live OTHER session i
   execFileSync("git", ["-C", repo, "checkout", "-q", "-b", "task/T-999-a-lane"], { stdio: "pipe" });
   const lane = ask();
   expect(lane.state, "a lane does not hold a seat").toBe("not-integration");
+  expect(lane.code, "and it is the LANE's code, not the branchless one").toBe(
+    HOLDER_CODES.NOT_INTEGRATION,
+  );
   expect(lane.detail, "and the arm SAYS so rather than skipping silently").toContain(
     "not the integration checkout",
   );
@@ -1443,6 +1581,115 @@ test("every holder state is reachable in one fixture, and a live OTHER session i
     HOLDER_STATES.slice().sort(),
     "and the frozen list is exactly the states the branches produce",
   ).toEqual(["dead", "held", "mine", "not-integration", "unknown", "vacant"]);
+});
+
+test("a DETACHED checkout holds no seat, and it is its own answer rather than the lane's silence", () => {
+  // T-238-s1, ITEM 4. `isIntegrationCheckout` decides by the checked-out
+  // REF, so a detached checkout sitting at the integration branch's own
+  // TIP is not that checkout — and every arm passed over it in the same
+  // silence a lane gets, which is correct for a lane (rule 4: a lane
+  // holds no seat, and a line on every lane push is noise) and wrong
+  // here: a seat working detached in the integration tree takes no seat,
+  // is refused by nothing, and appears nowhere.
+  //
+  // KILLED BY: collapsing the two codes back into one — which is the
+  // state this repairs, and which the LANE half below would still pass.
+  const repo = seatFixture("detached");
+  const me = injected(500, "Tue Sep 1 23:52:34 2026");
+  const onBranch = holderVerdict({ root: repo, identity: me });
+  expect(onBranch.state, "the precondition: on its branch this fixture IS the seat").toBe("vacant");
+
+  const tip = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  execFileSync("git", ["-C", repo, "checkout", "--quiet", "--detach", tip], { stdio: "pipe" });
+  expect(
+    execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    "and detaching moved NOTHING but the ref: same commit, same tree",
+  ).toBe(tip);
+
+  const d = holderVerdict({ root: repo, identity: me });
+  expect(d.state, "a detached checkout is not the integration checkout").toBe("not-integration");
+  expect(d.code, "and it says which kind of not-integration it is").toBe(HOLDER_CODES.NO_BRANCH);
+  expect(d.detail, "naming the condition").toContain("NO BRANCH");
+  expect(d.detail, "and the consequence a seat needs to hear").toContain("UNRECORDED");
+  expect(d.figures["headRef"], "with the ref it read, which is none").toBe(null);
+
+  // AND THE TWO CODES ARE NOT INTERCHANGEABLE, which is the whole of the
+  // repair: a LANE reaches the other one, in this same fixture, one
+  // checkout apart. Without this half a single code would satisfy every
+  // assertion above.
+  execFileSync("git", ["-C", repo, "checkout", "--quiet", "-b", "task/T-999-a-lane"], {
+    stdio: "pipe",
+  });
+  expect(holderVerdict({ root: repo, identity: me }).code, "a lane's is the other code").toBe(
+    HOLDER_CODES.NOT_INTEGRATION,
+  );
+  expect(
+    Object.values(HOLDER_CODES).filter((c) => c === HOLDER_CODES.NO_BRANCH).length,
+    "and the frozen list carries it exactly once",
+  ).toBe(1);
+});
+
+test("the record's own probe tells ENOENT from every other errno, so a file that IS there is never read as a vacant seat", () => {
+  // T-238-s1, taking T-216-s8's ATTRIBUTION. `readHolder` opened with
+  // `existsSync`, which answers FALSE for EMFILE and EACCES exactly as it
+  // does for ENOENT — so under the descriptor pressure of several
+  // concurrent suites a record that WAS there read as `{ absent: true }`,
+  // `holderVerdict` answered VACANT, and the guard's silent allow became
+  // a verdict about a seat nobody had asked about. That is the one shape
+  // this project's guards may not have.
+  //
+  // KILLED BY: going back to `existsSync`, or by treating every errno as
+  // an absence.
+  const repo = seatFixture("errno");
+  const me = injected(500, "Tue Sep 1 23:52:34 2026");
+
+  // ENOENT, WHICH IS THE ONLY ABSENCE: no record at all.
+  expect(holderVerdict({ root: repo, identity: me }).state, "genuinely absent is VACANT").toBe(
+    "vacant",
+  );
+
+  // AND A REAL RECORD THAT CANNOT BE OPENED. `chmod 000` produces EACCES
+  // on the OPEN, which is the errno class the incident is about; the
+  // record is BUILT the way the producer builds it, so nothing here is a
+  // file that merely looks similar.
+  writeHolder(repo, { pid: 4242, startedAt: "Tue Sep 1 00:00:00 2026", program: "/x/claude" });
+  const file = path.join(repo, HOLDER_REL_PATH);
+  chmodSync(file, 0o000);
+  try {
+    // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED — a suite run as
+    // ROOT reads straight through mode 000, and then this body is about
+    // the user rather than about the probe. Asserted rather than skipped:
+    // this suite carries no skips, and the message is what makes such a
+    // red attribute itself instead of looking like the guard failing.
+    let unreadable = false;
+    try {
+      readFileSync(file, "utf8");
+    } catch {
+      unreadable = true;
+    }
+    expect(
+      unreadable,
+      "the precondition: this user cannot read a 000 file. A suite run as ROOT can",
+    ).toBe(true);
+    const denied = holderVerdict({ root: repo, identity: me });
+    expect(denied.state, "a record it could not READ is an inability, never a vacancy").toBe(
+      "unknown",
+    );
+    expect(denied.code).toBe(HOLDER_CODES.UNREADABLE);
+    expect(denied.detail, "and the errno is in the sentence, so the next reader attributes it").toContain(
+      "EACCES",
+    );
+    expect(denied.figures["holderFile"], "the figure says a file was found, not that none was").toBe(
+      true,
+    );
+  } finally {
+    chmodSync(file, 0o644);
+  }
+
+  // THE POSITIVE CONTROL: the SAME file, the SAME reader, mode restored —
+  // so the refusal above was about the open and not about the record.
+  const readable = holderVerdict({ root: repo, identity: me });
+  expect(readable.state, "the same bytes readable again are an ordinary dead holder").toBe("dead");
 });
 
 test("the DEAD holder is proved with a pid that genuinely does not exist, and the live one with a pid that does", () => {
@@ -1468,6 +1715,101 @@ test("the DEAD holder is proved with a pid that genuinely does not exist, and th
   writeHolder(repo, { pid: process.pid, startedAt: live?.startedAt ?? "", program: "" });
   const held = holderVerdict({ root: repo, identity: me });
   expect(held.state, "and a genuinely live one holds it").toBe("held");
+});
+
+/**
+ * A checkout `brief.mjs` will run in — the governing documents and the
+ * whole of `method/`, copied rather than invented.
+ *
+ * `context()` reads the lane spellings out of docs/CONVENTIONS.md's own
+ * bullet, the read-first set out of the root adapter, and the row set out
+ * of the role file's normative table, so a `--release-seat` body needs
+ * those on disk. They are COPIED for the reason `card-preflight.spec.ts`
+ * copies the same set one card over: a hand-written stand-in is a second
+ * copy of the text these commands exist to derive against.
+ *
+ * It is an ORDINARY repository on the integration branch and NOT a
+ * worktree of this one — a seat fixture writes and deletes a holder
+ * record, which is the one file the host's own seat is decided by.
+ */
+function briefSeatFixture(name: string): string {
+  const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), `T-238-s1-seat-${name}-`)));
+  SCRATCH.push(root);
+  const repo = path.join(root, "repo");
+  mkdirSync(repo, { recursive: true });
+  execFileSync("git", ["init", "-q", "-b", DEFAULT_INTEGRATION_REF, repo], { stdio: "pipe" });
+  for (const rel of ["docs/CONVENTIONS.md", "docs/ARCHITECTURE.md", "docs/ROADMAP.md"]) {
+    mkdirSync(path.dirname(path.join(repo, rel)), { recursive: true });
+    execFileSync("cp", [path.join(repoRoot, rel), path.join(repo, rel)], { stdio: "pipe" });
+  }
+  for (const rel of ["CLAUDE.md", "AGENTS.md"]) {
+    execFileSync("cp", [path.join(repoRoot, rel), path.join(repo, rel)], { stdio: "pipe" });
+  }
+  cpSync(path.join(repoRoot, "method"), path.join(repo, "method"), { recursive: true });
+  execFileSync(
+    "git",
+    ["-C", repo, ...NO_BACKGROUND_MAINTENANCE, "-c", "user.email=fixture@example.invalid",
+      "-c", "user.name=T-238-s1 fixture", "add", "-A"],
+    { stdio: "pipe" },
+  );
+  execFileSync(
+    "git",
+    ["-C", repo, ...NO_BACKGROUND_MAINTENANCE, "-c", "user.email=fixture@example.invalid",
+      "-c", "user.name=T-238-s1 fixture", "commit", "-qm", "Checkpoint: fixture base"],
+    { stdio: "pipe" },
+  );
+  return repo;
+}
+
+test("`--release-seat` REFUSES a record it could not read, and removes nothing", () => {
+  // T-238-s1, ITEM 2. The arm removed the file and printed *"THE SEAT —
+  // RELEASED. The next session to arm this checkout takes it unopposed"*.
+  // Neither half was true: nothing had established the seat was free, and
+  // the one piece of evidence about whose it was is what got deleted. The
+  // branch that was supposed to catch this tested
+  // `figures.holderAlive === true`, which is set only once the record has
+  // PARSED — so the unreadable case walked straight past it.
+  //
+  // KILLED BY: dropping the new branch, which puts the record back on the
+  // release path; and by refusing WITHOUT leaving the file, which is the
+  // same harm with a better sentence.
+  const repo = briefSeatFixture("release-unreadable");
+  const file = path.join(repo, HOLDER_REL_PATH);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, "{ not json");
+
+  const run = runBrief(["--release-seat", "--root", repo], undefined, repo);
+  expect(run.status, "a finding, not a clean release").toBe(EXIT.FOUND);
+  expect(run.out, "and it says the seat was NOT released").toContain("THE SEAT — NOT RELEASED");
+  expect(run.out, "never the sentence it used to print").not.toContain("THE SEAT — RELEASED");
+  expect(run.err, "the refusal reaches the summary a seat reads").toContain(
+    "refused an unreadable",
+  );
+  expect(run.err, "with the reason, so it is actionable").toContain("did not parse");
+  expect(existsSync(file), "AND THE RECORD IS STILL THERE — the point of the refusal").toBe(true);
+
+  // THE POSITIVE CONTROL, in the same fixture: a record this reader CAN
+  // read, naming a session that is gone, IS released — so the refusal
+  // above is about the shape and not about this arm having stopped
+  // working. Without it, an arm that refused everything would pass.
+  writeFileSync(
+    file,
+    `${JSON.stringify(
+      {
+        version: 1,
+        identity: { pid: 999999, startedAt: "Tue Sep 1 00:00:00 2026", program: "/x/claude" },
+        checkout: repo,
+        takenAt: "2026-09-01T00:00:00Z",
+        host: "fixture",
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const released = runBrief(["--release-seat", "--root", repo], undefined, repo);
+  expect(released.status, "a readable record releases cleanly").toBe(EXIT.CLEAN);
+  expect(released.out).toContain("THE SEAT — RELEASED");
+  expect(existsSync(file), "and that one is gone").toBe(false);
 });
 
 test("the identity derivation is named in the artifact's own header, with the harness it is a fact about", () => {
@@ -1497,4 +1839,136 @@ test("the identity derivation is named in the artifact's own header, with the ha
   expect(section, "with the measurement that it is stable across tool calls").toContain("STABLE");
   expect(section, "and distinguishable between concurrent sessions").toContain("DISTINGUISHABLE");
   expect(section, "and that a subagent shares its session's harness").toContain("SUBAGENT");
+
+  // ── T-238-s1, ITEM 3: THE PREMISE IS THE MEASUREMENT ────────────────
+  // The header opened *"A Bash tool call carries no session id"*, and
+  // that was false as measured: `CLAUDE_CODE_SESSION_ID` and `CLAUDE_PID`
+  // ARE exported to a tool shell and only `CLAUDE_PROJECT_DIR` is not.
+  // The section must carry the measurement AND the reasons the ancestry
+  // is still the instrument, because a header that merely dropped the
+  // wrong sentence would leave the choice of instrument unargued.
+  expect(section, "the variables that ARE exported are named").toContain("CLAUDE_CODE_SESSION_ID");
+  expect(section, "including the one that names the very process this walks to").toContain(
+    "CLAUDE_PID",
+  );
+  expect(section, "and the one that is not, which is the half that was right").toContain(
+    "CLAUDE_PROJECT_DIR",
+  );
+  expect(section, "the reading carries the date it was taken at").toContain("2026-09-09");
+  expect(section, "and the ancestry is argued rather than assumed").toContain(
+    "THE ANCESTRY IS STILL THE INSTRUMENT",
+  );
+  // AND THE FALSE PREMISE IS NOT ASSERTED ANY MORE — which is a narrower
+  // claim than ABSENT, and deliberately so: the header QUOTES the old
+  // sentence in order to retract it, and a body demanding the words be
+  // gone would push the next editor into deleting the record of the
+  // mistake. So the phrase must occur EXACTLY ONCE and that occurrence
+  // must sit inside the retraction (shape eight's remedy: narrow the
+  // haystack to the sentence, anchor on something that is not the
+  // needle).
+  const premise = "carries no session id";
+  expect(section.split(premise).length - 1, "the premise appears exactly once").toBe(1);
+  const around = section.slice(
+    Math.max(0, section.indexOf(premise) - 200),
+    section.indexOf(premise) + 200,
+  );
+  expect(around, "and it is quoted only to be retracted").toContain("FALSE AS MEASURED");
+  // THE ANCHOR IS SHOWN CAPABLE OF FAILING: the same window test over the
+  // sentence as it STOOD — the premise with no retraction near it — does
+  // not find the anchor, so the assertion above is a measurement rather
+  // than a needle that matches anything it is pointed at.
+  expect(
+    "A Bash tool call carries no session id — it is a short-lived shell, and CLAUDE_PROJECT_DIR " +
+      "is not exported to it either",
+    "the text this replaced carried the premise and no retraction",
+  ).not.toContain("FALSE AS MEASURED");
+
+  // ── T-237-s8: THE LIMITS' HOME IS HERE, AND THE CONSUMER POINTS ─────
+  // The runner is the ONE machine where nothing derives at all, and the
+  // pointer in `push-guard.mjs` promised limits this list did not carry.
+  // One home, one pointer, and a body that reads both files so the pair
+  // cannot drift back apart.
+  expect(section, "the runner is named where the limits live").toContain("CI RUNNER");
+  expect(section, "with the ancestry that makes it so").toContain("node <- bash <- Runner");
+  expect(section, "and what the callers do there").toContain("ANNOUNCE AND ALLOW");
+  expect(section, "and the detached checkout, which is the same kind of limit").toContain(
+    "A DETACHED CHECKOUT HOLDS NO SEAT",
+  );
+
+  const consumer = readFileSync(
+    path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"),
+    "utf8",
+  );
+  const pointerAnchor = "THE LIMITS ARE THE IDENTITY'S AND THEY ARE STATED WHERE IT IS DERIVED";
+  expect(consumer.split(pointerAnchor).length - 1, "the pointer is unique in the consumer").toBe(1);
+  const pointer = consumer
+    .slice(consumer.indexOf(pointerAnchor), consumer.indexOf("*/", consumer.indexOf(pointerAnchor)))
+    .replace(/^\s*\*\s?/gm, "")
+    .replace(/\s+/g, " ");
+  expect(pointer, "the consumer points at the file that owns them").toContain(
+    "checkout-currency.mjs",
+  );
+  expect(pointer, "names the runner as one of the limits it is pointing AT").toContain("CI RUNNER");
+  expect(
+    pointer,
+    "and does NOT restate the ancestry, which is the drift this repairs",
+  ).not.toContain("bash");
+  expect(
+    pointer,
+    "while what THIS arm does there stays here, because that is the consumer's own fact",
+  ).toContain("ALLOWS");
+});
+
+test("the vantage fixture DECLARES what it borrows from the host, because a clone that borrows is not a scratch repository", () => {
+  // T-238-s1's FIFTH CRITERION asks for "a clone or a worktree of a
+  // SCRATCH repository, never of the host's". `currentVantageCheckout`
+  // cannot be that, and the reason is structural: the arm's vantage is
+  // `defaultVantage()` — this file's own checkout — and a target reads
+  // CURRENT only if the vantage can `git cat-file` its HEAD, which a
+  // freshly `git init`ed repository's HEAD never is. So the fixture
+  // clones THE HOST, and `--shared` leaves `.git/objects/info/alternates`
+  // pointing into the host's object store.
+  //
+  // THE WRITE IS GONE AND THAT IS THE POINT: nothing is added to
+  // `git worktree list` any more. What replaced it is a READ dependency
+  // on a surface this machine shares — one-directional (a host `gc`
+  // breaks the fixture; the fixture cannot touch the host) and near-zero
+  // in practice, because the object borrowed is the integration branch's
+  // tip and is reachable by definition. This project's rule is that such
+  // a limit is DECLARED rather than discovered — T-237-s8, absorbed into
+  // this very card, is a whole card about a limits list missing the limit
+  // that had fired — so the borrow is named where the fixture is built.
+  //
+  // KILLED BY: dropping the declaration from the header, or by making the
+  // fixture borrow without saying so.
+  const source = readFileSync(
+    path.join(repoRoot, "tools", "e2e", "tests", "checkout-currency.spec.ts"),
+    "utf8",
+  );
+  const at = source.indexOf("function currentVantageCheckout");
+  expect(at, "the fixture this body is about is in this file").toBeGreaterThan(-1);
+  // NORMALISED the way this file's other header bodies normalise, because
+  // the prose wraps: a sentence split across two ` * ` lines is the same
+  // sentence, and an assertion that could be defeated by a line break is
+  // measuring the wrapping rather than the declaration.
+  const header = source
+    .slice(source.lastIndexOf("/**", at), at)
+    .replace(/^\s*\*\s?/gm, "")
+    .replace(/\s+/g, " ");
+  expect(header, "the header names the clone flag that makes it borrow").toContain("--shared");
+  expect(header, "and the file that borrow leaves behind").toContain("alternates");
+  expect(header, "and says the criterion's SCRATCH half is not met, rather than implying it is").toContain(
+    "never of the host's",
+  );
+
+  // AND THE BORROW IS REAL, so the declaration cannot outlive the code it
+  // declares: the clone this helper builds carries the alternates file,
+  // and it points somewhere that is NOT the fixture's own object store.
+  const built = currentVantageCheckout("borrow-declared");
+  const alternates = path.join(built, ".git", "objects", "info", "alternates");
+  expect(existsSync(alternates), "the clone borrows, exactly as the header says").toBe(true);
+  expect(
+    readFileSync(alternates, "utf8").trim(),
+    "and it borrows from OUTSIDE itself — which is the whole of what is being declared",
+  ).not.toContain(built);
 });

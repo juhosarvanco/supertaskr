@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **756 behaviours** — 754 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -229,12 +229,17 @@ Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (
 - the session identity is the NEAREST harness ancestor, at whatever depth the caller sits
 - the shared application root is never the identity, and neither is the launcher that names the harness in its own arguments
 - a chain with no harness in it answers NOTHING, naming what it walked, and never guesses a seat
+- the identity's refusal cites only names this module really exports, so a citation cannot dangle
 - liveness is the pid AND its start time, so a recycled pid is a dead holder
 - 0 and -1 are refused as holder pids at the write and at the read, because both answer ALIVE to kill(2)
 - the holder record is un-committable by construction, in a repository nobody armed
 - every holder state is reachable in one fixture, and a live OTHER session is the only one that refuses
+- a DETACHED checkout holds no seat, and it is its own answer rather than the lane's silence
+- the record's own probe tells ENOENT from every other errno, so a file that IS there is never read as a vacant seat
 - the DEAD holder is proved with a pid that genuinely does not exist, and the live one with a pid that does
+- `--release-seat` REFUSES a record it could not read, and removes nothing
 - the identity derivation is named in the artifact's own header, with the harness it is a fact about
+- the vantage fixture DECLARES what it borrows from the host, because a clone that borrows is not a scratch repository
 
 ## cli
 
@@ -676,6 +681,7 @@ Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (
 - no cargo at all allows the push rather than refusing every toolchain-less machine
 - an unreadable request stands aside
 - a checkout without the indexer crate is not judged, and is not asked
+- *is this our repository* answered by a probe that COULD NOT LOOK is announced, never a silent allow
 - an allow that left the graph unverified is announced; an ordinary one is silent
 - a command that is not a push costs nothing at all
 - a lane whose fence cannot reach the graph is not refused, and one that can is
@@ -738,6 +744,7 @@ Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (
 - a holder record this guard cannot READ is announced and allowed, never refused
 - a lane holds no seat, so a holder record in one refuses nothing
 - a session whose own identity will not derive is ANNOUNCED and allowed — the runner's case
+- a push from a DETACHED checkout is ANNOUNCED as holding no seat, where it used to be silent
 - WITH the holder arm, a push from a checkout another session holds never reaches the remote
 - a run that timed out, failed to start or waits on a human is announced as the red it is
 - `cancelled` stays OUT of the announced set, and the reason is recorded beside the constant
@@ -747,6 +754,8 @@ Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (
 - a refspec push from a LANE checkout is judged on the branch it lands on, and is refused there
 - a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkout (T-238's fifth criterion)
 - `--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too
+- `--repo` does not move the positional grammar, and the reader is measured against git's own parser
+- a destination that would read as an OPTION never reaches `gh`, and the push is allowed
 
 ## range-rule
 

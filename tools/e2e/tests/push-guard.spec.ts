@@ -1,10 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -35,6 +37,7 @@ import {
   NON_VERDICT_CONCLUSIONS,
   PUSH_ALL_BRANCHES_FLAGS,
   PUSH_OPTS_WITH_VALUE,
+  PUSH_REPOSITORY_OPT,
   PUSH_UNRESOLVING_FLAGS,
   RUN_LIST_JSON_FIELDS,
   RUN_LIST_REQUIRED_FIELDS,
@@ -914,6 +917,82 @@ test("a checkout without the indexer crate is not judged, and is not asked", () 
   });
   expect(d.code).toBe("not-this-repository");
   expect(d.reason).toContain(INDEX_CRATE_MANIFEST_REL_PATH);
+});
+
+test("*is this our repository* answered by a probe that COULD NOT LOOK is announced, never a silent allow", () => {
+  // T-238-s1, taking T-216-s8's ATTRIBUTION. This arm asked `existsSync`,
+  // which answers FALSE for EMFILE and EACCES exactly as it does for
+  // ENOENT — so under the descriptor pressure of concurrent suites a push
+  // INSIDE this repository took the silent `not-this-repository` allow,
+  // and every arm below it (the holder, the landing gate, the token, the
+  // graph) went unasked while the run read as an ordinary pass. That is
+  // an inability wearing a verdict's clothes, which is the one shape
+  // every arm in this file refuses.
+  //
+  // EACCES IS PRODUCED RATHER THAN SIMULATED: the directory holding the
+  // manifest is made unreadable, so `statSync` on a file that IS there
+  // fails for a reason that is not absence.
+  //
+  // KILLED BY: going back to `existsSync`, or treating every errno as an
+  // absence — either puts the silent allow back.
+  const fx = fixture("probe-unreadable", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const dir = path.dirname(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH));
+  const ask = () =>
+    decide(
+      { toolName: "Bash", toolInput: { command: "git push" }, cwd: fx.root },
+      () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
+      () => ({ status: CHEAP_CHECKS_EXIT.CLEAN, stdout: "", stderr: "" }),
+      NO_RUNS,
+    );
+
+  chmodSync(dir, 0o000);
+  try {
+    // THE PRECONDITION, ASSERTED RATHER THAN ASSUMED. A suite run as ROOT
+    // reads straight through a 000 directory, so every assertion below
+    // would red for a reason that has nothing to do with the guard —
+    // which is this card's own subject, a body measuring the machine. It
+    // is asserted rather than skipped because this suite carries no
+    // skips; the message is what makes the red attribute itself.
+    let denied = false;
+    try {
+      readFileSync(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH), "utf8");
+    } catch {
+      denied = true;
+    }
+    expect(
+      denied,
+      "the precondition: this user cannot read through a 000 directory. A suite run as ROOT can, " +
+        "and then this body is about the user rather than about the probe",
+    ).toBe(true);
+    const blind = ask();
+    expect(blind.code, `an unreadable probe is not "not ours" — ${said(blind)}`).not.toBe(
+      "not-this-repository",
+    );
+    expect(
+      (blind.notices ?? []).join("\n"),
+      `and the inability is ANNOUNCED — ${said(blind)}`,
+    ).toContain("WAS NOT ESTABLISHED");
+    expect((blind.notices ?? []).join("\n"), "with the errno, so the next red attributes itself").toContain(
+      "EACCES",
+    );
+  } finally {
+    chmodSync(dir, 0o755);
+  }
+
+  // THE POSITIVE CONTROL, TWO WAYS ROUND. With the manifest READABLE the
+  // arm says nothing at all; with it genuinely ABSENT the arm takes the
+  // silent allow it is supposed to take. So the announcement above is
+  // about the errno and not about this arm having become noisy.
+  const readable = ask();
+  expect((readable.notices ?? []).join("\n"), `a readable probe is silent — ${said(readable)}`).not.toContain(
+    "WAS NOT ESTABLISHED",
+  );
+  rmSync(path.join(fx.root, INDEX_CRATE_MANIFEST_REL_PATH));
+  const absent = ask();
+  expect(absent.code, `a genuinely absent manifest still allows silently — ${said(absent)}`).toBe(
+    "not-this-repository",
+  );
+  expect((absent.notices ?? []).join("\n")).not.toContain("WAS NOT ESTABLISHED");
 });
 
 test("an allow that left the graph unverified is announced; an ordinary one is silent", () => {
@@ -2964,20 +3043,65 @@ test("a holder record this guard cannot READ is announced and allowed, never ref
  * parameter and never an environment override: nothing outside this
  * process can reach it, so it can never be used to silence the guard.
  *
+ * ── AND THE PROCESS TABLE IS A SEAM TOO (T-238-s1) ──────────────────
+ * `identity` composes THIS SESSION; `readProcess` composes the table the
+ * RECORD's liveness is judged against. A body that supplied only the
+ * first still borrowed the machine for the second — it wrote a record
+ * naming `process.pid` with `processRow(process.pid)?.startedAt ?? ""`,
+ * so a `ps` that came back slow or empty under load left `startedAt`
+ * empty, the record failed its own shape check, and the arm answered
+ * about the machine. Both halves are composed now: the record names a
+ * process the body invented and the table says it is running, so nothing
+ * in the seat arm depends on what else is on this host.
+ *
  * @param identity what this session's identity DERIVES to, or why it does not.
+ * @param readProcess the process table the RECORD's liveness is read from.
  */
 function decideWithSeat(
   cwd: string,
   command: string,
   identity: { ok: true; identity: { pid: number; startedAt: string; program: string } } | { ok: false; why: string },
+  readProcess?: (pid: number) => PsRow | undefined,
 ) {
   return decide(
     { toolName: "Bash", toolInput: { command }, cwd },
     () => ({ status: CHECK_EXIT.CURRENT, stdout: CURRENT_REPORT, stderr: "" }),
     () => ({ status: CHEAP_CHECKS_EXIT.CLEAN, stdout: "", stderr: "" }),
     NO_RUNS,
-    (options) => holderVerdict({ ...options, identity }),
+    (options) =>
+      holderVerdict({ ...options, identity, ...(readProcess === undefined ? {} : { readProcess }) }),
   );
+}
+
+/** One row of the process table, in the shape `processRow` returns. */
+interface PsRow {
+  pid: number;
+  ppid: number;
+  startedAt: string;
+  command: string;
+}
+
+/** A process table a body wrote, read the way `processRow` reads one. */
+function table(rows: PsRow[]): (pid: number) => PsRow | undefined {
+  const byPid = new Map(rows.map((r) => [r.pid, r]));
+  return (pid: number) => byPid.get(pid);
+}
+
+/**
+ * WHAT THE ARM ACTUALLY ANSWERED, for an assertion's own message
+ * (T-238-s1, taking T-216-s8's ATTRIBUTION).
+ *
+ * The body below reds only inside a full suite run on a loaded machine,
+ * and its recorded failure was an OR over `verdict` and the notices —
+ * which names WHICH assertion fell and nothing about WHY. Enumerating the
+ * arm's reachable states by hand afterwards is how four cards were spent
+ * on it. The `code` and the notices are exactly what separate a SILENT
+ * allow (`not-a-repository`, `not-this-repository`, `holder-vacant`,
+ * `holder-head-names-no-branch`) from a speaking one, so they go INTO the
+ * message: the next red attributes itself in the line that reports it.
+ */
+function said(d: ReturnType<typeof decide>): string {
+  return `verdict=${d.verdict} code=${d.code} notices=${JSON.stringify(d.notices ?? [])}`;
 }
 
 test("a lane holds no seat, so a holder record in one refuses nothing", () => {
@@ -2986,47 +3110,65 @@ test("a lane holds no seat, so a holder record in one refuses nothing", () => {
   // lane push on this machine. The record planted here is the SAME one
   // that refuses on the integration branch two bodies up — only the
   // checked-out ref differs.
+  //
+  // ── T-238-s1: THIS BODY USED TO MEASURE THE MACHINE ────────────────
+  // It reds only inside the FULL e2e run and only on a loaded host —
+  // measured that way by four lanes (T-225-s14, T-229-s11, T-219-s4,
+  // T-216-s8) and never alone — and its failure was the control's OR,
+  // which reports nothing about WHY. Two changes, in the order T-216-s8's
+  // attribution asks for. FIRST, IT ATTRIBUTES: `said` puts the arm's
+  // `code` and its notices into every message, so the next red names the
+  // silent allow it came through instead of leaving the next seat to
+  // enumerate the states by hand. SECOND, IT STOPS DEPENDING ON THE HOST:
+  // the record used to name `process.pid` with
+  // `processRow(process.pid)?.startedAt ?? ""` — a `ps` read that comes
+  // back empty under load makes the record fail its own shape check —
+  // and the session it is compared against read `processRow(process.ppid)`
+  // the same way. Both are COMPOSED now, table and all, so the only
+  // things left in this body's path are the fixture's own files.
   const fx = fixture("holder-lane", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
     branch: "task/T-901-holder-lane",
     fence: ["docs"],
   });
-  const live = processRow(process.pid);
-  const record = {
-    pid: process.pid,
-    startedAt: live?.startedAt ?? "",
-    program: "/x/claude",
-  };
+  const HOLDER_PID = 90_501;
+  const OTHER_PID = 90_502;
+  const rows: PsRow[] = [
+    { pid: HOLDER_PID, ppid: 1, startedAt: "Tue Sep 1 23:29:18 2026", command: "/x/claude" },
+    { pid: OTHER_PID, ppid: 1, startedAt: "Tue Sep 1 23:52:34 2026", command: "/x/claude" },
+  ];
+  const ps = table(rows);
+  const record = { pid: HOLDER_PID, startedAt: "Tue Sep 1 23:29:18 2026", program: "/x/claude" };
   writeHolder(fx.root, record);
   // A SESSION THAT IS NOT THE HOLDER, composed here rather than borrowed
-  // from this machine's ancestry: a pid that is alive and is not the
-  // record's. `process.ppid` is this worker's parent, which is running
-  // for as long as this body is.
+  // from this machine's ancestry: an identity the table says is alive and
+  // is not the record's.
   const someoneElse = {
     ok: true as const,
-    identity: {
-      pid: process.ppid,
-      startedAt: processRow(process.ppid)?.startedAt ?? "",
-      program: "/x/claude",
-    },
+    identity: { pid: OTHER_PID, startedAt: "Tue Sep 1 23:52:34 2026", program: "/x/claude" },
   };
-  const d = decideWithSeat(fx.root, "git push", someoneElse);
-  expect(d.verdict, "a lane does not hold a seat").toBe("allow");
-  expect(d.code, "and the refusal code never appears").not.toBe("holder-live-elsewhere");
-  expect((d.notices ?? []).join("\n"), "nor is anything said about a seat").not.toContain(
-    "SEAT",
+  const d = decideWithSeat(fx.root, "git push", someoneElse, ps);
+  expect(d.verdict, `a lane does not hold a seat — ${said(d)}`).toBe("allow");
+  expect(d.code, `and the refusal code never appears — ${said(d)}`).not.toBe(
+    "holder-live-elsewhere",
   );
+  expect(
+    (d.notices ?? []).join("\n"),
+    `nor is anything said about a seat — ${said(d)}`,
+  ).not.toContain("SEAT");
 
   // THE POSITIVE CONTROL: the very same record, in the very same shape,
   // and the very same composed session — on the integration branch, which
   // is the one place a seat exists.
   const onMain = fixture("holder-lane-control", CHECK_EXIT.CURRENT, CURRENT_REPORT);
   writeHolder(onMain.root, record);
-  const control = decideWithSeat(onMain.root, "git push", someoneElse);
+  const control = decideWithSeat(onMain.root, "git push", someoneElse, ps);
   expect(
     control.verdict === "block" || (control.notices ?? []).join("").includes("SEAT"),
-    "the same record on the integration branch is not ignored",
+    `the same record on the integration branch is not ignored — ${said(control)}`,
   ).toBe(true);
-  expect(control.code, "and it is the collision, named").toBe("holder-live-elsewhere");
+  expect(control.code, `and it is the collision, named — ${said(control)}`).toBe(
+    "holder-live-elsewhere",
+  );
 });
 
 test("a session whose own identity will not derive is ANNOUNCED and allowed — the runner's case", () => {
@@ -3071,6 +3213,58 @@ test("a session whose own identity will not derive is ANNOUNCED and allowed — 
   expect(seeing.verdict, "the derivable case refuses a live OTHER holder").toBe("block");
   expect(seeing.code).toBe("holder-live-elsewhere");
   expect(seeing.reason).toContain("HELD BY ANOTHER LIVE SESSION");
+});
+
+test("a push from a DETACHED checkout is ANNOUNCED as holding no seat, where it used to be silent", () => {
+  // T-238-s1, ITEM 4. `holderVerdict` decides "the integration checkout"
+  // by the checked-out REF, so a DETACHED tree — a verifier bench, a
+  // poison drill, the human's app checkout, and a seat that detached in
+  // the integration tree itself — answers `not-integration` and was
+  // passed over in the same silence a LANE gets. For a lane that silence
+  // is correct and deliberate (rule 4: a lane holds no seat, and a line
+  // on every lane push is the noise this file refuses). For a detached
+  // checkout nobody had ever been told: the seat is taken by nothing and
+  // refused by nothing, and a seat working there is unrecorded.
+  //
+  // KILLED BY: collapsing the two `not-integration` codes back into one,
+  // which puts the detached case back in the lane's silence — and the
+  // LANE half below would still pass, which is why both are here.
+  const fx = fixture("holder-detached", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const tip = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  execFileSync("git", ["-C", fx.root, "checkout", "--quiet", "--detach", tip], { stdio: "pipe" });
+  const mine = {
+    ok: true as const,
+    identity: { pid: 90_601, startedAt: "Tue Sep 1 23:52:34 2026", program: "/x/claude" },
+  };
+  const d = decideWithSeat(fx.root, "git push", mine);
+  expect(d.verdict, `a detached checkout is not refused — ${said(d)}`).toBe("allow");
+  const notices = (d.notices ?? []).join("\n");
+  expect(notices, `but it is SAID — ${said(d)}`).toContain("NAMES NO BRANCH, SO IT HOLDS NO SEAT");
+  expect(notices, "with the consequence a seat needs to hear").toContain("UNRECORDED");
+  expect(notices, "and the way back into being seen").toContain("--take-seat");
+
+  // THE CONTROL, TWICE, because this notice's whole risk is becoming
+  // noise. A LANE reaches the other `not-integration` code and says
+  // NOTHING; the integration branch itself says nothing either when the
+  // seat is unclaimed. One fixture, three refs.
+  execFileSync("git", ["-C", fx.root, "checkout", "--quiet", "-b", "task/T-901-detach-control"], {
+    stdio: "pipe",
+  });
+  const lane = decideWithSeat(fx.root, "git push", mine);
+  expect(lane.verdict, `a lane still allows — ${said(lane)}`).toBe("allow");
+  expect((lane.notices ?? []).join("\n"), `and still silently — ${said(lane)}`).not.toContain(
+    "SEAT",
+  );
+
+  execFileSync("git", ["-C", fx.root, "checkout", "--quiet", "main"], { stdio: "pipe" });
+  const onMain = decideWithSeat(fx.root, "git push", mine);
+  expect(onMain.verdict, `an unclaimed integration checkout allows — ${said(onMain)}`).toBe("allow");
+  expect(
+    (onMain.notices ?? []).join("\n"),
+    `and stays silent, which is the declared limit — ${said(onMain)}`,
+  ).not.toContain("SEAT");
 });
 
 test("WITH the holder arm, a push from a checkout another session holds never reaches the remote", () => {
@@ -3572,4 +3766,125 @@ test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's
   expect(deleted.status, "a deletion lands on no branch, so there is nothing to refuse").toBe(0);
   expect(deleted.stderr).toContain("CI WAS NOT ASKED");
   expect(ghCalls(del), "and no round trip was spent").toEqual([]);
+});
+
+/* ════════ T-237-s9 — THE REFSPEC READER'S TWO FILED RESIDUES ════════
+ *
+ * T-237-s2's verifier rejected its three residuals on ONE defect and
+ * recorded these two beside it as findings that do NOT block. The fix
+ * pass DECLARED them in `pushTargetBranch`'s limits block rather than
+ * repairing them, because a fix pass that widens its own diff is one a
+ * verifier has to judge twice — so the declaration and the repair are one
+ * card apart by design, and the block loses both entries here as it gains
+ * them.
+ */
+
+test("`--repo` does not move the positional grammar, and the reader is measured against git's own parser", () => {
+  // RESIDUE ONE, AND IT WAS NOT TRUE OF `git`. The declared limit read:
+  // `--repo=<value>` supplies the repository, so `git push --repo=origin
+  // HEAD:main` loses its only refspec to a scanner that drops a
+  // positional anyway. THE REPAIR THIS CARD CAME TO MAKE WOULD HAVE MADE
+  // THE GUARD WORSE — with every positional read as a refspec, `git push
+  // --repo=x origin main` reads its target as `origin`, and CI is asked
+  // about a branch of that name while `main` goes unasked.
+  //
+  // SO THE BODY MEASURES GIT INSTEAD OF ASSERTING THE CARD. git takes the
+  // FIRST POSITIONAL as the repository whatever `--repo` says, which is
+  // observable without a network: point the positional at something that
+  // is not a repository and git says so, in a fixture whose `--repo`
+  // value names a remote that works.
+  //
+  // KILLED BY: making the scanner treat every positional as a refspec
+  // under `--repo` — the "repair" — which flips the last two assertions.
+  const fx = fixture("s9-repo-grammar", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const git = (...args: string[]) =>
+    spawnSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
+  expect(
+    git("remote").stdout,
+    "the precondition: this fixture has a remote called origin",
+  ).toContain("origin");
+
+  const positionalWins = git("push", `${PUSH_REPOSITORY_OPT}=origin`, "./not-a-repository", "main", "--dry-run");
+  expect(
+    String(positionalWins.stderr),
+    "git reads the POSITIONAL as the repository even with --repo given",
+  ).toContain("does not appear to be a git repository");
+  expect(String(positionalWins.stderr)).toContain("not-a-repository");
+
+  // AND THE OTHER DIRECTION, so the reading above is not one error
+  // message doing all the work: a BROKEN `--repo` beside a WORKING
+  // positional pushes anyway.
+  const optionIgnored = git("push", `${PUSH_REPOSITORY_OPT}=no-such-remote`, "origin", "main", "--dry-run");
+  expect(
+    optionIgnored.status,
+    `a working positional wins over a broken --repo: ${String(optionIgnored.stderr)}`,
+  ).toBe(0);
+
+  // THE READER AGREES WITH THAT PARSER, which is the whole claim: the
+  // first positional is dropped, `--repo` or not.
+  expect(
+    "fallback" in pushTargetBranch("git push --repo=origin HEAD:main"),
+    "so `HEAD:main` is a REPOSITORY here, not a target this guard should name",
+  ).toBe(true);
+  const withRepo = pushTargetBranch("git push --repo=x origin main");
+  expect(
+    "branch" in withRepo && withRepo.branch,
+    "and the refspec after the positional repository is still the target",
+  ).toBe("main");
+
+  // ONE FACT, CHECKED TWICE: the option takes a SEPARATE value, so the
+  // scanner steps over it and never reads it as a positional.
+  expect(PUSH_OPTS_WITH_VALUE, "the option takes a separate value").toContain(PUSH_REPOSITORY_OPT);
+  expect(
+    "branch" in pushTargetBranch("git push --repo some-remote origin main")
+      ? (pushTargetBranch("git push --repo some-remote origin main") as { branch: string }).branch
+      : "NOT READ",
+    "so the separate-value spelling reads the same target",
+  ).toBe("main");
+});
+
+test("a destination that would read as an OPTION never reaches `gh`, and the push is allowed", () => {
+  // RESIDUE TWO, AND THE BODY THE CARD ASKS FOR: drive `HEAD:--version`
+  // through the WIRED hook and read the shim's own record of every
+  // argument. `git push origin HEAD:--version` was read as a branch named
+  // `--version` and `ghRunListArgv` placed it in the argv array where
+  // `gh`'s own parser reads it as an option. Bounded — no shell, nothing
+  // executed, `gh` answers non-zero and that becomes an announced allow —
+  // and still the class `pathsSince` shape-checks `headSha` against one
+  // arm over, which is the reason this is repaired rather than tolerated.
+  //
+  // KILLED BY: removing `readsAsOption`, which puts the value back in the
+  // argv array — and `ghCalls` is what makes that visible, since the exit
+  // code is 0 either way.
+  const fx = fixture("s9-option-like-target", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  const run = runWiredHook(fx, "git push origin HEAD:--version");
+  expect(run.status, "an inability is announced and allowed, never refused").toBe(0);
+  expect(run.stderr, "and it says the question went unasked").toContain("CI WAS NOT ASKED");
+  expect(run.stderr, "naming the shape it refused to hand over").toContain(
+    "will not hand a value beginning with `-`",
+  );
+  expect(ghCalls(fx), "AND `gh` WAS NEVER ASKED ANYTHING — the shim's own record").toEqual([]);
+
+  // THE SAME THROUGH `refs/heads/`, because the name is what matters and
+  // not the spelling that carried it.
+  const spelled = fixture("s9-option-like-refs", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(runWiredHook(spelled, "git push origin HEAD:refs/heads/--version").status).toBe(0);
+  expect(ghCalls(spelled), "the fully spelled ref is refused to the reader too").toEqual([]);
+
+  // THE POSITIVE CONTROL: the same fixture, the same hook, a destination
+  // that is an ordinary branch name — `gh` IS asked, with the branch as
+  // one element of the argv array. Without it, a guard that had simply
+  // stopped asking `gh` anything would pass every assertion above.
+  const ok = fixture("s9-option-like-control", CHECK_EXIT.CURRENT, CURRENT_REPORT);
+  expect(runWiredHook(ok, "git push origin HEAD:main").status).toBe(0);
+  const calls = ghCalls(ok);
+  expect(calls.length, "the ordinary destination is asked about").toBeGreaterThan(0);
+  expect(calls[0], "argv, element for element").toEqual(ghRunListArgv("main"));
+
+  // AND THE READER ITSELF, so the property is pinned where it lives and
+  // not only through the process boundary.
+  const read = pushTargetBranch("git push origin HEAD:--version");
+  expect("unresolved" in read, "the reader declines rather than naming a branch").toBe(true);
+  const ordinary = pushTargetBranch("git push origin HEAD:main");
+  expect("branch" in ordinary && ordinary.branch, "and still reads an ordinary one").toBe("main");
 });
