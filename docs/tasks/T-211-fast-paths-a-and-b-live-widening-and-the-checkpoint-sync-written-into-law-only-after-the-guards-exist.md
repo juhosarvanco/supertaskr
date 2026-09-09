@@ -196,6 +196,19 @@ time-and-host it was taken at.
    `T-223` owns the fix. The law here therefore says the landing check
    reads the fence from the integration branch — where a legitimate
    widening lands — and claims no absolute about reachability.
+   **AND THE STRUCK CLAUSE IS STILL STANDING IN THIS CARD'S OWN FAST
+   PATH A ABOVE** — *"where `T-212`'s gate reads it, on a ref the lane
+   cannot move"* — left where it is because a `done` card is a record
+   and this project does not rewrite records, so it is marked struck
+   HERE instead: the surviving property is `landing-gate.mjs`'s, which
+   `T-223-s4` bound to its premise after finding the replacement was an
+   absolute too — `<integration>` is the ref a lane's own COMMITS cannot
+   move WHILE `HEAD` names the lane branch, since `git symbolic-ref HEAD
+   refs/heads/main` exits 0 from a lane worktree with no
+   checked-out-elsewhere guard and an ORDINARY commit then moves `main`
+   (measured, git 2.50.1 (Apple Git-155), Darwin 25.6.0 arm64), while
+   `method/lane-protocol.md`'s fast path A never carried the absolute at
+   all and needs no edit.
 3. **The merge-tree exit typing in the card is wrong in the costly
    direction.** Measured at git 2.50.1 (Apple Git-155) on a throwaway
    repository: a clean forecast exits 0 with a tree oid on stdout; a
