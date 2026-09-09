@@ -351,6 +351,34 @@ commit that IS the tip. Stated rather than smoothed: run it at the merge.
   Codex *prompt-file form*; the measurement says there is none to ship —
   Codex reads the same `SKILL.md` pack. Recorded under criterion 4.
 
+### The e2e suite caught one defect of mine, and it is fixed in place
+
+Running the blessed gate-runner's `e2e` arm on the lane port turned up
+**one** red at `0107142`, and it was mine:
+
+    gate-verdict suite=e2e exit=1 bodies=706 targets=1 verdict=RED
+    1) tests/identifier-rename.spec.ts:79 › only the four enumerated
+       classes of the pre-rename identifier survive in the code tree
+    Error: an occurrence of the pre-rename identifier that belongs to no
+    enumerated class
+    + "app/src-tauri/src/agent/kit.rs:61: /// nputer ships for that chair
+      is the seat's hand work as a skill, so a"
+
+A doc comment I wrote quoting ADR-021's reason used the pre-rename
+product identifier in a `.rs` file. **ADR-022 ruled the name; records are
+never rewritten, but a comment written today is not a record.** Reworded
+to *"what this product ships for that chair"*. The sweep: every non-`docs/`
+path in the merge forecast was grepped for the bare identifier — the five
+pack files carry zero, and `kit.rs`'s four remaining occurrences are all
+the real filename `runtime/nputer.yaml`, which is an enumerated class and
+predates this lane. Landed at `80a3bca`;
+`tests/identifier-rename.spec.ts` 6 passed exit 0, `cargo test` 638
+passed exit 0, `cargo build` exit 0.
+
+**The suite is the reason this was found rather than shipped**, and it is
+worth naming: no gate cheaper than the twelve-minute e2e arm looks at a
+Rust doc comment for a product name.
+
 ### Suggestions filed, and let go
 
 - `T-241-s1` — genesis carries the pack into the kit and nothing installs
