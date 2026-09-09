@@ -100,6 +100,30 @@ measurement. And **one home per fact**: a fact is written where its
 question lives and cited everywhere else, because two copies of one fact
 are two chances to disagree.
 
+## One command
+
+`npx supertaskr <verb>` is the terminal door (C-02). It is a FRONT: every
+verb dispatches to a script this repository already runs by hand, and the
+child's exit code is the command's exit code, unchanged — so a verb can
+never make a red gate look green. `node tools/e2e/bin/supertaskr.mjs
+--help` prints the verbs at your own ref, which is why none are listed
+here; the table they come from is `tools/e2e/scripts/cli.mjs` and the
+test that holds it to the repository is `tools/e2e/tests/cli.spec.ts`.
+
+Two of the verbs are new work rather than fronts, because the record made
+them derivable and nothing made them one command: `undo <card>` reverts a
+card's merge after listing every later merge that touched the same fence,
+and refuses while one of them is unnamed; `merge <card>` walks the
+integrator's ritual in its order and stops with the merge staged, so the
+writes only that card needs are still yours to add.
+
+The package is not published. It is proved by packing it and installing
+the tarball into a project that is not this one — that install runs in
+the lane on every suite run — and the registry name is @human's to claim.
+An installed copy REFUSES the verbs whose scripts resolve their own
+repository root, naming both roots, rather than answering about the wrong
+tree.
+
 ## Where the rules live
 
 - [docs/NORTH_STAR.md](docs/NORTH_STAR.md) — the vision, the first user,
