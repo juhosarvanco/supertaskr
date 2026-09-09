@@ -270,7 +270,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
   ran, and it never says the leg ran. That sentence cost a rejection —
   the fallback shipped reading the verdict word alone, and a bench
   measured it passing a push whose end-to-end entry had graded 16 of 39
-  spec files. This mechanism can only ever be wrong by owing too MUCH. A docs path NOTHING reads is the one positive
+  spec files. This mechanism can only ever be wrong by owing too MUCH.
+  A docs path NOTHING reads is the one positive
   empty answer: the reader map is derived from the whole source corpus,
   so "no code suite reads this document" is a measurement, not a gap —
   and it is exactly the case the dozen wasted batteries were.

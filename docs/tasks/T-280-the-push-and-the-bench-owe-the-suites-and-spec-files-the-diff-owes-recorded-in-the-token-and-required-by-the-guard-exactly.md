@@ -208,6 +208,87 @@ is rewritten at every checkpoint and that line is the checkpoint's.
 the merge on the `.ts` in this diff and is the integrator's.
 
 
+### FIX PASS — 2026-09-09, after the phase-2 REJECTED verdict below
+
+THE VERDICT NAMED ONE DEFECT AND THIS PASS ANSWERS EXACTLY IT.
+`judgeToken` nested the spec-file coverage check inside
+`if (owed !== undefined)`, so when the guard could not derive a range it
+passed no owed set, `need` fell back to `REQUIRED_SUITES`, and the
+`scope` field was never read — a token minted by `--range` over 16 of 39
+spec files (612 of 810 bodies) passed the fallback as a whole battery.
+The base refused the same shape (`SCOPED-GREEN` → `token-red`), so it
+was a regression against the base on the spec axis, not an unbuilt
+check.
+
+WHAT MOVED, in `aceec12`:
+
+- **`.claude/hooks/gate-token.mjs`** — the `scope` read is lifted OUT of
+  the owed branch and asked on both paths. A `GREEN` entry carrying a
+  `scope`, with no owed set derivable, is `token-partial`: *a scoped
+  GREEN says nothing failed among the spec files it ran; it does not say
+  the leg ran*. The owed branch keeps its two sentences and now reads
+  the same hoisted value rather than recomputing it.
+- **ONE JUDGEMENT THE VERDICT DID NOT DICTATE, said plainly**: the new
+  check asks only of an entry whose verdict WORD would otherwise pass
+  (`=== GREEN`). Without that clause it fires first on T-271's
+  `--owning` entries, whose word is `SCOPED-GREEN`/`SCOPED-RED` and
+  which the verdict check at the end of the function already refuses by
+  name — measured: `gate-run.spec.ts` went 68 passed / 1 failed on the
+  body *"the push guard refuses a scoped verdict as the token…"*, which
+  asserts the refusal DETAIL contains the scoped word. Safety is
+  unchanged either way (both paths refuse); the clause picks the more
+  specific sentence and keeps that body green. 69 passed after it.
+- **`.claude/hooks/push-guard.mjs` and `docs/CONVENTIONS.md`** — the two
+  artefacts the verdict named as false. Both said a missing range makes
+  the owed set THE WHOLE BATTERY and left "battery" meaning four suite
+  entries; both now say it means four WHOLE LEGS, on the SUITE axis and
+  the SPEC axis, and carry the measurement that made the distinction
+  real.
+- **The bench's body is the pin and was NOT rewritten** — cherry-picked
+  into the lane as `62f4342` (with the verdict and T-280-s3 as
+  `edfc369`), RED at `cc7905d` by construction, GREEN here.
+
+THE SWEEP THIS FIX OWES, and its class: *a safety field on a token entry
+that one code path reads and another does not*. Every other field
+`judgeToken` reads — `tree`, `dirty`, `treeAtWrite`, `verdict`, `exit`,
+`bodies` — is read AFTER the owed branch, in a loop over `need`, so it
+is asked identically whether or not a range was derived. `scope` was the
+only field inside the branch, and it is now outside it. Swept by reading
+every entry-field access in the function; no second instance of the
+class.
+
+WHAT WAS RE-RUN, AND AT WHICH REF. The fix's paths are two hooks and one
+governing document; what they owe is the two spec files that read them
+plus the range form over the lane's own diff.
+
+| run | ref | exit | bodies |
+|---|---|---|---|
+| `push-guard.spec.ts` alone | working tree of `aceec12` | 0 | **95 passed** (94 + the bench's body) |
+| `gate-run.spec.ts` alone | working tree of `aceec12` | 0 | **69 passed** |
+| `tools/e2e: npm run typecheck` | working tree of `aceec12` | 0 | — |
+| `--range a1bb590..aceec12` parser | `aceec12` | 0 | 389 |
+| `--range a1bb590..aceec12` app | `aceec12` | 0 | 1171 |
+| `--range a1bb590..aceec12` rust | `aceec12` | 0 | 654 (18 targets) |
+| `--range a1bb590..aceec12` e2e | `aceec12` | 0 | **613** over 16 of 39 spec files |
+
+`range-exit=0`, wall 14:49:40Z→15:02:54Z = **794 s**, with another
+bench's battery on the same machine throughout — the number is
+contended and is not offered as a saving. The owed set is unchanged from
+the first pass (`app, e2e, parser, rust`, e2e over the same 16 spec
+files, `failClosed` none); the e2e count moved 612 → 613, which is the
+bench's one body. Every token entry reads `dirty=false` against tree
+`2236639`, HEAD's own.
+
+THE WHOLE BATTERY WAS NOT RUN AND THAT IS A DERIVATION, not a skip: the
+docs gate on this pass's changed docs paths names the same four suites
+and its e2e readers are a subset of the 16 the range owes, so the range
+form names everything the gate does.
+
+STILL OWED AT THE MERGE, unchanged and re-measured: `docs/CAPABILITIES.md`
+is STALE (committed 69267 bytes, a fresh generation 71224) — this lane
+now adds **17** test bodies, so the merge commit owes `npm run
+capabilities`.
+
 ## Verdicts
 
 ### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — REJECTED
