@@ -76,6 +76,46 @@
  * carrying dirt is refused. The claim is true because that check stands
  * behind it, not because a tree hash implies it.
  *
+ * ── AND THE TREE IS THE ONE THE SUITE STARTED AT, PLUS THE ONE THE
+ *    WRITER SAW (T-203-s1) ──────────────────────────────────────────
+ * This writer used to read `HEAD^{tree}` HERE, when the token is
+ * written, which is AFTER the suite has finished — while `gate-run.mjs`
+ * captured the `ref` BEFORE it spawned. A commit landing between those
+ * two reads therefore minted an entry whose `ref` named the commit the
+ * suite graded and whose `tree` named a LATER one, and this repository
+ * has one of those on the record: `ref=300d04b` beside `tree=48d50df`,
+ * two commits apart, written by one run. The e2e leg takes tens of
+ * minutes on a loaded machine, so that window is the ORDINARY shape of
+ * a run beside a working seat rather than a corner case.
+ *
+ * IT DEFEATED THE REFUSAL BUILT FOR IT. `token-stale` compares the
+ * entry's tree against the tree a push carries; a token keyed at write
+ * time carries the CURRENT tree by construction, so the guard saw
+ * nothing while the suites had graded something else.
+ *
+ * SO THE ENTRY NOW CARRIES BOTH, AND THE CARD OFFERED EITHER. `tree` is
+ * the tree the suite STARTED against — captured beside the ref, handed
+ * here on the verdict — and `treeAtWrite` is what HEAD named when this
+ * writer ran. Recording only the graded tree would make `token-stale`
+ * fire in the ordinary case and would still be UNSOUND: a tree that
+ * moves during a run and moves BACK (an amend, a reset, a revert to the
+ * same content) leaves the graded tree equal to HEAD's at push time, and
+ * a guard comparing one number against one number cannot see that a run
+ * spanned two. Refusing without recording would lose the evidence of
+ * WHICH tree was graded, which is the sentence a refused seat needs. So
+ * both are written, `judgeToken` refuses their disagreement as
+ * `token-unkeyed` — the reason whose own words are "the key does not
+ * describe what its suites ran against" — and no HEAD movement
+ * afterwards can turn that back into a green.
+ *
+ * THE FIELD IS ADDED AND NOTHING IS RENAMED. `push-guard.mjs` reads this
+ * module; a token written by an older runner simply has no
+ * `treeAtWrite`, and that is refused rather than assumed clean, on the
+ * same ground as a missing `dirty`: an unreadable claim is not a
+ * measurement. The cost is one battery re-run in a checkout holding a
+ * token older than this file, and the battery is owed before a push
+ * anyway.
+ *
  * ── NOTHING BUT NODE BUILTINS ────────────────────────────────────────
  * `push-guard.mjs` imports this at module load and its `Bash` matcher
  * fires on EVERY tool call in a session, so this file may cost node's
@@ -137,8 +177,12 @@ export const GREEN = "GREEN";
  * @property {number} targets
  * @property {string} verdict  GREEN | RED | REFUSED
  * @property {string} reason
- * @property {string} ref      the commit HEAD pointed at
- * @property {string} tree     the TREE that commit named — the honest key
+ * @property {string} ref      the commit HEAD pointed at when the run STARTED
+ * @property {string} tree     the TREE that commit named — the honest key,
+ *                             read BESIDE the ref and never after the suite
+ * @property {string} treeAtWrite  the tree HEAD named when this entry was
+ *                             WRITTEN; equal to `tree` unless a commit
+ *                             landed while the suite ran (T-203-s1)
  * @property {boolean} dirty   were TRACKED files modified when this ran?
  * @property {string} at       ISO time the entry was written
  */
@@ -322,15 +366,31 @@ export function readToken(root) {
  * is nothing in it to keep, and refusing to write would leave the
  * checkout permanently unable to record a green run.
  *
+ * ── THE TREE COMES OFF THE VERDICT, PER SUITE, AND NOT OFF THIS CALL ─
+ * (T-203-s1.) A verdict carrying its own `tree` is a verdict whose
+ * runner read the tree BEFORE it spawned the suite, and that is the only
+ * reading that names what the suite graded. `opts.tree` remains as the
+ * BATCH default for callers that have no per-suite reading — but the
+ * runner does not use it, deliberately: `--all` runs four suites in
+ * sequence over tens of minutes, so one tree for the batch is wrong for
+ * exactly the reason a write-time tree is wrong, one loop further out.
+ * The same holds for `dirty`, which a verdict may raise for its own run
+ * without lowering it for anybody else's: the dirt is OR-ed, never
+ * overwritten, because a tree seen dirty at either end of a run was dirt
+ * this key does not name.
+ *
  * @param {string} root
- * @param {{ suite: string, exit: number, bodies: number, targets: number, verdict: string, reason: string, ref: string }[]} verdicts
- * @param {{ tree?: string, dirty?: boolean, now?: () => string }} [opts]
+ * @param {{ suite: string, exit: number, bodies: number, targets: number, verdict: string, reason: string, ref: string, tree?: string | undefined, dirty?: boolean | undefined }[]} verdicts
+ * @param {{ tree?: string, treeAtWrite?: string, dirty?: boolean, now?: () => string }} [opts]
  * @returns {{ path: string, ignoreFile: string, token: Token }}
  */
 export function writeToken(root, verdicts, opts = {}) {
   const now = opts.now ?? (() => new Date().toISOString());
-  const tree = opts.tree ?? headTree(root) ?? "";
-  const dirty = opts.dirty ?? trackedDirt(root);
+  // WHAT HEAD NAMES *NOW*, which is after every suite in this batch has
+  // finished. It is recorded rather than used as the key.
+  const treeAtWrite = opts.treeAtWrite ?? headTree(root) ?? "";
+  const batchTree = opts.tree ?? treeAtWrite;
+  const batchDirty = opts.dirty ?? trackedDirt(root);
   const prior = readToken(root);
   /** @type {Record<string, SuiteEntry>} */
   const suites = "token" in prior ? { ...prior.token.suites } : {};
@@ -344,8 +404,12 @@ export function writeToken(root, verdicts, opts = {}) {
       verdict: v.verdict,
       reason: v.reason,
       ref: v.ref,
-      tree,
-      dirty,
+      // AN EXPLICIT EMPTY STRING IS AN ANSWER — "the runner asked git and
+      // git would not say" — and it is kept, not replaced by this call's
+      // own reading. Only an ABSENT field falls back to the batch.
+      tree: v.tree === undefined ? batchTree : v.tree,
+      treeAtWrite,
+      dirty: v.dirty === true ? true : batchDirty,
       at,
     };
   }
@@ -448,12 +512,31 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
   // ever graded. So the dirt is recorded at write time and refused here,
   // and the header above no longer claims the key names what ran without
   // this check standing behind it.
+  //
+  // AND A SUITE WHOSE TREE MOVED WHILE IT RAN IS THE SAME DEFECT ONE
+  // IDENTIFIER OVER (T-203-s1). The entry names the tree the suite
+  // STARTED against and the tree HEAD had reached when its verdict was
+  // written; when those disagree the run spanned a commit, and no single
+  // tree hash describes what it graded. STALE above already catches the
+  // ordinary case, where HEAD stayed at the later tree — this catches
+  // the one STALE cannot see, where the tree moved and moved BACK, and
+  // the comparison is derived from the two recorded numbers rather than
+  // trusted to a boolean somebody could compute wrong.
   /** @type {string[]} */
   const unkeyed = [];
   for (const s of required) {
     const entry = /** @type {SuiteEntry} */ (token.suites[s]);
     if (entry.dirty === true) unkeyed.push(`${s} ran with tracked files modified`);
     else if (entry.dirty !== false) unkeyed.push(`${s} did not record whether the tree was clean`);
+    const atWrite = entry.treeAtWrite;
+    if (typeof atWrite !== "string" || atWrite === "") {
+      unkeyed.push(`${s} did not record the tree HEAD had reached when its verdict was written`);
+    } else if (atWrite !== entry.tree) {
+      unkeyed.push(
+        `${s} started against tree ${entry.tree || "(none recorded)"} and HEAD's tree was ` +
+          `${atWrite} by the time its verdict was written — a commit landed WHILE it ran`,
+      );
+    }
   }
   if (unkeyed.length > 0) {
     return {
@@ -462,8 +545,9 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
       detail:
         "the verdict token's key does not describe what its suites ran against: " +
         `${unkeyed.join("; ")}. A suite grades the WORKING TREE and this token is keyed to ` +
-        `HEAD's tree ${tree}, so a battery run over uncommitted work certifies content that no ` +
-        "commit carries. Commit or stash, then run the battery again",
+        `HEAD's tree ${tree}, so a battery run over uncommitted work — or one that spanned a ` +
+        "commit — certifies content that no single tree carries. Commit or stash, then run the " +
+        "battery again, LAST, after every commit",
     };
   }
   // RED AND UNMEASURED ARE BOTH REFUSALS AND ARE NOT THE SAME SENTENCE

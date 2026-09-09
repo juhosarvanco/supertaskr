@@ -66,3 +66,20 @@ paragraph should say so in its order, not only in its warning.
 ## Verdicts
 
 Absorbs: T-239-s5 (2026-09-08, triage at the wave sitting) — the borrowed-git recipe's identity gap, measured by the T-239-s4 executor at 0f6b37f; the file is removed in this commit, this line is the surviving record.
+
+## Corroborations
+
+- **2026-09-09, the `T-203-s1` executor, at base `c2a0952`** — a second
+  instance, reproduced from a cold lane worktree rather than from a
+  brief's transcription. `npm install` from `app/` in
+  `/Users/ujju/Projects/nputer-T-203-s1` exited **243** with
+  `npm error code EACCES` / `npm error path .../app/package-lock.json`
+  / `errno -13`; `ls -l` shows the lockfile at mode `-r--r--r--`, which
+  is the lane fence's own read-only chmod on a tracked file outside the
+  fence. `npm ci` in the same directory exited **0** and the worktree
+  went on to run parser (389 bodies), app (1171) and e2e (743) all
+  GREEN. So the finding is not particular to the seat that first
+  reported it: **every fresh lane whose fence excludes `app/` meets it**,
+  and the only reason it is not louder is that the failing command is
+  the FIRST thing a lane runs, so it reads as a broken worktree rather
+  than as a documented command being wrong.

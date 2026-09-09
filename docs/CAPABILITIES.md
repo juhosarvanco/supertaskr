@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **742 behaviours** — 740 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **747 behaviours** — 745 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -408,6 +408,11 @@ Census: **742 behaviours** — 740 extracted sentences + 2 named-not-extracted (
 - a RED verdict is recorded rather than dropped, so a red run is never mistaken for a run nobody made
 - a second run MERGES into the token rather than replacing it, because the battery is run in pieces
 - a token written where it cannot be written is said out loud and changes no verdict
+- a commit landing while a suite runs leaves the token keyed to the tree the suite STARTED at, so the push guard's stale refusal can see it
+- a run that spanned a commit is refused even after the tree comes BACK, because the entry records both trees rather than a verdict about them
+- a token entry written before this field existed is refused rather than read as clean, because an unrecorded moment is not a measurement
+- a REFUSED verdict carries the tree and the dirt read BEFORE the spawn, because the card's own specimen was a refusal keyed to a later tree
+- a tree dirty when the suite STARTS and clean when the token is written keeps its dirt in the entry, so the judgement is unkeyed rather than a clean read
 
 ## genesis-screen
 
