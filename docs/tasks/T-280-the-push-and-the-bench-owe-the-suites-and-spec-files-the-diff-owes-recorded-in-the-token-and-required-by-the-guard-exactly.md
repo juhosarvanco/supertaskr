@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: building
+status: verifying
 suggested_by: "@human (2026-09-09): \"Yes, file both\" — ruling decision 2 of the seat's review of the outside review (docs/research/the-model-for-an-outside-review-2026-09-09.md); supersedes T-271's second criterion (amended by @human earlier the same day to keep the verifier and the integrator on four legs) by this later ruling"
 blocked_by: [T-271]
 touches: [tools/e2e/scripts/gate-run.mjs, .claude/hooks/gate-token.mjs, .claude/hooks/push-guard.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/gate-run.spec.ts, tools/e2e/tests/push-guard.spec.ts, docs/CONVENTIONS.md]
