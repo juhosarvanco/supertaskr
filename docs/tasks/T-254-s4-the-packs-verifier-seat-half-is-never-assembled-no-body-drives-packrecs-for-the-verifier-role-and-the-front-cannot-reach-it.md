@@ -65,3 +65,7 @@ arm already has (`expect(named).toBe(method.length)`), which is what makes
 the executor half mutation-tight. Whether the front should also serve a
 verifier brief is a larger question and belongs to whoever owns the
 contract table, not to this card.
+
+## Corroboration (the architect seat, 2026-09-09T10:05Z, at the T-279 merge)
+
+Two readings of this card's claim, both at 2e9233d–9763afc: (1) `brief.mjs --task T-271 --role verifier` and `--task T-281 --role verifier` both exit 3 with "found 0 tables headed # / The brief carries / Assembled from / If it is absent, expected exactly one" — the arm cannot render a verifier brief at all, because method/roles/verifier.md carries no contract table (executor.md's is at its line 250); (2) T-279's phase-2 verifier disclosed in its verdict that its brief carried no context pack and read STATE whole and CONVENTIONS by bullet instead, naming it a dispatch fault by verifier.md step 0. The seat's phase-2 prompts are hand-written for that reason: the pack T-254 built reaches the executor and never the verifier. Promote when verifier.md is free (T-281 holds it).
