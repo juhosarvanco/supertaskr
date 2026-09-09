@@ -1,7 +1,7 @@
 ---
 id: T-223-s4
 title: "The narrowed sentence is still an absolute — `git symbolic-ref HEAD refs/heads/main` from a lane worktree exits 0 and an ORDINARY commit then moves main — and T-211's card still carries the struck clause"
-status: verifying
+status: done
 feature: F-06
 milestone: 4
 priority: 4
@@ -10,8 +10,8 @@ blocked_by: []
 touches: [.claude/hooks/landing-gate.mjs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent — build 4a9aed6, notes 7d95dab
+verified_by: claude-opus-5@subagent — APPROVED, verdict at the commit this line lands in
 review: independent
 suggested_by: verifier claude-opus-5@subagent @V-223
 ---
@@ -317,3 +317,298 @@ never contacted.
 4. **ROW 7 transcribes `npm install` for `app/` and a lane cannot run
    it** — row 5 of the table above. The brief is faithful to
    CONVENTIONS; CONVENTIONS is what is out of step with the fence.
+
+## Verification — APPROVED
+
+Adversarial verification by a seat that did not build this, `claude-opus-5@subagent`,
+2026-09-09. **Tip** `7d95dabb84e8cff073cab298400c2474150f01f8`, **base**
+`542d94191c514fb30ba86d9dc2b09bdfca311e10`, judged in a bench worktree
+detached at that tip (`/Users/ujju/Projects/nputer-V-T-223-s4`; `git symbolic-ref
+-q HEAD` exit **1** throughout — this seat never held a branch).
+
+### The sealed inputs, cited so a later reader re-runs one command
+
+attack set: sha256:9ca8810d977341726ede0be5e2f6a5ed30933e4b71fffcb2f0ac4aa6e906eae1 (attack-set-T-223-s4.md)
+
+The ground record taken by the dispatcher at the BASE, before any of this
+work was visible: sha256:00cdd4dd2724235c9dae0afe4b4e39e3e027728b9ba96a6608b761b1994ec75a
+(ground-T-223-s4.md). Both verified with `shasum -a 256`; both matched on
+the first read, so nothing here is judged against a file that moved.
+
+### THE FRAME I ACTUALLY HAD, stated rather than promised
+
+**Phase 1 was its own spawn and it made 0 tool calls — but it was
+tool-less BY INSTRUCTION, not by construction, because this harness
+cannot deny a spawn its tools.** That is a discipline kept, not a
+guarantee held, and a later reader cannot tell the two apart from the
+artefact; the attack set's own header records the same thing.
+
+**AND MY PHASE-2 BRIEF CARRIED EXECUTOR-DERIVED SPECIFICS, WHICH IS
+PHASE 1 BROKEN ABOVE THE LINE.** It named the diff's **four paths** and
+called the hook change **"comment-only"** — both of which are the
+executor's claims about its own work, handed to me as if they were
+setting. I say so rather than pretend otherwise, and I **re-derived both
+from the tree** instead of accepting either:
+
+- the four paths, from `git diff --name-status 542d941..7d95dab`;
+- "comment-only", from the file itself and not from the diff's shape —
+  the leading block comment ends at line **410** at the base and line
+  **466** at the tip, and **everything after it is byte-identical at the
+  two refs**, `sha256:bec2545621c626590df02579ab6f2a2ad3314e8bb1d0c262e69eb45b2524459c`
+  on both. All four hunks land at base lines 34, 44, 229 and 325, i.e.
+  inside that comment. Independently: of the **73 added** and **17
+  removed** lines, **0** fail to match `^[+-] \*`. The export surface is
+  identical at both refs (**42** symbols, `diff` exit 0).
+
+### The criteria, one by one
+
+The card carries no `## Acceptance criteria` heading; its **TRIAGE** is
+the build instruction and it has four clauses.
+
+**1. "Bind the narrowed sentence to its premise (HEAD names the lane
+branch) OR widen limit 6 to any ref write." — MET. Both arms taken, and
+both are correct.**
+
+The card's own question, asked of the new sentence: *does a reader
+holding only this sentence predict exit 0 and main moving?* It does now.
+The clause is a **checkable state**, not one of the hedge adverbs the
+attack set pre-committed to refusing (`normally`, `ordinarily`, `in
+practice`, `directly`, `by itself`) — a reader can run `git symbolic-ref
+-q HEAD` and get a yes or a no.
+
+BEFORE (`542d941`, hook line 34):
+
+    * **`<integration>` is the ref the lane's own COMMITS cannot move**
+    * (`T-223`). That is the whole of what the paragraph above needs and the
+
+AFTER (`7d95dab`, hook line 34):
+
+    * **WHILE `HEAD` NAMES THE LANE BRANCH, `<integration>` is the ref the
+    * lane's own COMMITS cannot move** (`T-223`; the opening clause is
+    * `T-223-s4`). That is the whole of what the paragraph above needs and
+
+**It is bound to the RIGHT premise, and that distinction was measured.**
+The attack set weighted a precision failure here: *"while the lane branch
+is checked out"* would have been the wrong condition, because a detached
+HEAD names no branch. The sentence says **`HEAD` NAMES**, not *is checked
+out*, and ARM 4 below confirms the case it thereby declines to claim —
+a detached commit moves nothing at all, so the sentence is silent exactly
+where it should be silent rather than false.
+
+Limit 6, BEFORE (`542d941`, hook line 229):
+
+    * 6. **A LOCAL REF REWRITE MOVES THE FENCE, AND THE LOCAL NAME IS TRIED
+    *    FIRST.** `integrationRefCandidates` resolves the bare branch name
+    *    ahead of either remote spelling, and `git update-ref
+    *    refs/heads/<integration>` is accepted from inside a lane worktree
+    *    where `git branch -f` is refused — measured above.
+
+Limit 6, AFTER (`7d95dab`, hook line 267):
+
+    * 6. **ANY REF WRITE THAT DECIDES WHAT A COMMIT ADVANCES MOVES THE
+    *    FENCE, AND THE LOCAL NAME IS TRIED FIRST.** The limit is stated
+    *    over the CLASS and not over one command, because it WAS written as
+    *    one command and a second member was found THE SAME DAY, by this
+    *    limit's own verifier (`T-223-s4`, filed at `2561553` against
+    *    `33e50b8`).
+
+**The floor argument survives the widening**, which is the half a
+widening most easily breaks: it still reads *"each route costs a
+deliberate plumbing command that no ordinary lane runs, and the same seat
+could `--no-verify` past this hook entirely"* — pluralised from the
+base's *"the route costs"*, so the argument was re-stated over the class
+rather than left behind on the old singular. `--no-verify` is available
+to the same seat on either route, so the reason still follows.
+
+**The LIMITS list is consistent at the tip.** Headings censused at both
+refs: **1–7, contiguous, unique, none lost its number**, only limit 6's
+text changed. The limit 5 block is **byte-identical** at the two refs,
+letters **(a)–(f)** unchanged — **`(g)` was NOT taken**, so there is no
+collision with `T-224`'s `(f)` from the same night, and this card added
+no lettered residue, which its TRIAGE never asked for.
+
+**A third occurrence was found and bound that the card did not name** —
+the exoneration paragraph's miniature, base line 325 *"the two endpoints
+no lane's commits can write"*, now *"…can write while `HEAD` names the
+lane branch (limit 6, which states the exception over the class)"*.
+
+**2. "Measured." — MET, and it reproduces independently.** Re-run from
+scratch in a **throwaway repository under `mktemp`** — never against this
+repository's refs — git **2.50.1 (Apple Git-155)**, Darwin **25.6.0
+arm64**, `main` in worktree A, `lane` in worktree B, every command from
+B, every exit read unpiped. Five arms:
+
+| arm | command | exit | effect |
+|---|---|---|---|
+| 1 CONTROL | `add`/`commit`, `HEAD` untouched | **0** | lane `e8e9c9ab…`→`686cfacd…`; **`main` UNMOVED** |
+| 2 porcelain | `git checkout main` | **128** | `fatal: 'main' is already used by worktree at …` |
+| 3 plumbing | `git symbolic-ref HEAD refs/heads/main` | **0** | **empty stderr** (0 bytes); HEAD names `main` |
+| 3 plumbing | then an ORDINARY `add`/`commit` | **0** | **`main` MOVED `e8e9c9ab…`→`32ea6055…`; the lane branch STAYED** |
+| 4 detached | `checkout --detach`, then `add`/`commit` | **0** | `symbolic-ref -q HEAD` exit **1**; **NO branch moved** |
+| 5 limit 6 (i) | `git branch -f main` / `git update-ref refs/heads/main` | **128** / **0** | the porcelain twin refused, the plumbing accepted, empty stderr |
+
+Every factual claim the new prose makes is in that table, including the
+two the card itself did not carry — the refused porcelain twin
+`git checkout main` and the fact that the lane branch does not move — and
+including the **positive control** the header claims runs "in the same
+drill". It does, and it decides: with `HEAD` left alone the identical
+pair advances the lane branch and leaves `main` on the byte it started
+on, so ARM 3 is decided by the `HEAD` write and not by the fixture. The
+card's premise stands and the prose built on it is true.
+
+**3. "Append one sentence to T-211's card." — MET.** Exactly **one
+sentence** (no internal sentence break), **+13 / −0**, a **single hunk**,
+appended to review-note **item 2** — where that card's retraction already
+lives — and it **agrees** with item 2 rather than contradicting it.
+Nothing else on that card moved: **frontmatter, status and verdict fields
+untouched.**
+
+**The struck clause at line 29 is left standing, and I judge that
+correct rather than a shortfall.** `T-211` is `status: done`, and
+`method/tasks/TASK-FORMAT.md:270` codifies the norm the append invokes —
+*"is appended, never rewritten over what is there."* The correction is
+visible and quotes the struck clause verbatim, so a reader searching that
+card meets it. I record the residual honestly: it is **not adjacent** to
+line 29, so a reader who stops inside fast path A still meets the
+absolute. Adjacency and the record norm are in genuine tension here and
+the human owns that trade; the lane took the side its own project
+codified, disclosed the choice in the sentence itself, and that is not a
+defect to assign against it.
+
+**4. "Fence: the hook alone." — HELD.** `git diff --name-only
+542d941..7d95dab` is **4 paths**, a strict subset of the fence:
+
+    .claude/hooks/landing-gate.mjs                  (in fence)
+    docs/tasks/T-211-…-guards-exist.md              (authorised by TRIAGE)
+    docs/tasks/T-223-s4-…-struck-one.md             (this card)
+    docs/tasks/T-223-s6-…-two-routes.md             (new suggestion card)
+
+`method/` is **byte-identical** at both refs — tree
+`619096af3de849d4f976446dc68d335e643fe2a7`, and `lane-protocol.md` blob
+`3ea24dbbefba…` — so fast path A was correctly left alone. `tools/e2e/`
+has **0** paths changed; `landing-gate.spec.ts` is byte-identical
+(`sha256:e56f5b68…`, **52** bodies at both refs). No `docs/CAPABILITIES.md`,
+no `docs/STATE.md`.
+
+### The drill — and the finding it produced is NOT a pass
+
+The property this card repairs lives in **data** (prose inside an
+executable file), so the mutants are data mutants, per the role's `T-221`
+rule. Every landing was read from `git diff`, never from the mutator.
+
+| # | mutant | result |
+|---|---|---|
+| M7 | stray `*/` inside the header | **KILLED** — `node --check` exit **1** |
+| M10 | flip `judgePaths`'s refusal (`? inside : outside` → `? outside : inside`) | **KILLED** — `landing-gate.spec.ts` **31 failed / 21 passed**, exit 1, against a **52 passed** baseline; the mutant **parses** (`node --check` exit 0), so the red is the SPEC talking |
+| M1 | delete the new condition clause, restoring the absolute | **SURVIVED** |
+| M3 | revert limit 6's widening to the single command | **SURVIVED** |
+| M4 | renumber limit 6 to `5.` — list becomes 1,2,3,4,5,**5**,7 | **SURVIVED** |
+| M5 | letter collision under limit 5 — `(f)`→`(g)` | **SURVIVED** |
+| M6 | mangle limit 6's floor argument | **SURVIVED** |
+| M8/M9 | on `T-211`'s card, replace the append with a sentence **contradicting** review-note item 2 and re-asserting the false absolute | **SURVIVED** |
+
+M1, M3, M4, M5 and M6 were applied **together** and the suite still ran
+**52 passed, exit 0** — with the absolute restored, limit 6 reverted, the
+list carrying a duplicate number, a duplicated letter, and the floor
+argument broken. M2 (inverting the condition) is unarmed by the same
+construction and is not scored. M8/M9 left the parser suite at **389
+passed, exit 0**.
+
+**THE HONEST FINDING, AND I DO NOT SCORE IT AS A PASS: this repair is
+enforced by no body.** It is not merely unpinned by accident — it is
+unpinnable as the suite currently stands, which I established
+mechanically rather than by the mutants alone: `landing-gate.spec.ts`
+**imports** the hook as a module (line 31) and **no spec anywhere reads
+`landing-gate.mjs` as text** (`readFileSync` scan over `tools/`, `lib/`,
+`app/src/`: zero hits for this hook). So no mutation of the header's
+prose can red anything, and the two ground-truth greps agree at **both**
+refs — `"own COMMITS cannot move"` **0 hits**, `"HEAD names the lane
+branch"` **0 hits**, `"limit 6"` **0 hits** in `tools/e2e/tests`.
+
+**What holds this sentence true tomorrow is the next reader, not the
+suite.** That is the verdict's answer to its own central question, and
+it is a gap in the repository rather than a defect in this lane: the spec
+is outside this fence and rule 5 forbids widening from inside, so routing
+it was the only move available. The executor routed it (`T-223-s6`) and I
+have filed the pin gap separately (`T-223-s7`).
+
+**M10 is the control that makes the "comment-only" claim mean something.**
+It is armed differently from M1–M6 — a code mutant against a code-covering
+spec — and it shows the spec **would** have caught an executable change at
+this site. The spec is green at the tip and the executable residue is
+byte-identical, so the claim "this lane changed no behaviour" is measured
+from both sides rather than asserted from one.
+
+### Security sweep — clean, and it ran precisely because the diff is 100% comment
+
+A smuggled line hides in exactly this kind of diff, so the sweep was not
+skipped. Executable residue byte-identical (`sha256:bec25456…`); export
+surface identical (42 symbols); **0** dependency-manifest paths in the
+range; **0** hits in the added lines for `child_process`, `execSync`,
+`spawnSync`, `exec(`, `new RegExp`, `fetch(`, a URL, `require(` or
+`import(`; **0** hits for secrets, keys or tokens; no new input path, no
+weakened refusal, no new network or filesystem read. Byte hygiene: **no
+BOM**, **no CR**, **0** C0/DEL bytes at either ref; the only non-ASCII the
+added lines introduce is `U+2014` and `U+2026`, both already throughout
+the header. Mode bits unchanged (`100644`). `node --check` exit **0**;
+`npm run typecheck` (tools/e2e) exit **0**.
+
+### Bodies run during verification, each with the ref it was measured at
+
+At the **review tip `7d95dab`**, clean tree, `SUPERTASKR_E2E_PORT=25223`:
+
+| body | exit | count |
+|---|---|---|
+| `npx playwright test tests/landing-gate.spec.ts` (baseline) | **0** | **52 passed** (40.4s) |
+| the same, under M10 | **1** | **31 failed / 21 passed** (38.7s) |
+| the same, under the combined data mutant M1+M3+M4+M5+M6 | **0** | **52 passed** (48.8s) |
+| `npx vitest run` (lib/parser), under M8/M9 | **0** | **389 passed** / 16 files |
+| `npm run typecheck` (tools/e2e) | **0** | `tsc --noEmit` |
+| `node --check .claude/hooks/landing-gate.mjs` | **0** | — |
+| `node tools/method-evals/run.mjs` | **0** | **10** model-free evals |
+| the card's measurement, 5 arms, throwaway repo | — | table above |
+
+Every mutant was restored and the restoration verified by digest, not by
+assumption: the hook returns to
+`sha256:a6c252ec5e864e9df5e0c74476ef82e7581e367c6248a368d9a1a24f081e58db`
+and `git status --porcelain` to **0** paths after each.
+
+### The falsifiers I pre-committed to — none fires
+
+Out-of-fence path: no. `node --check` fails: no. Spec pass or body count
+moves: no (52/52, byte-identical). Prose still states a falsified
+absolute: no — all three occurrences in the header are bound. Re-run
+contradicts the premise: no, it reproduces in five arms. LIMITS list
+inconsistent: no. Executable behaviour changed: no, proven twice. T-211's
+append contradicts item 2 or alters other fields: no. Security: clean.
+Figures unattributed to a ref: no — and the three commits the new prose
+cites (`2561553`, `33e50b8`, `4a9aed6`) all resolve to real objects in
+this repository.
+
+### ASSIGNED CORRECTIONS: none
+
+Nothing is required of this lane before it merges.
+
+**Recorded and NOT assigned**, so the next reader is not misled: one
+added line runs to **88 columns** where the header mostly wraps near 72.
+It is cosmetic and it is not a convention breach — the base header
+already carries **49** lines over 74 columns and its longest line is
+**176** at both refs, unchanged by this diff. No correction is owed.
+
+### Filed as suggestions, never blocking
+
+- **`T-223-s7`** — the hook header's prose and its LIMITS structure are
+  enforced by no body, evidenced by M1/M3–M6 above. It carries the
+  control's own demonstration, which is this seat's to owe and not the
+  next lane's: the check I propose was run against the **base** hook,
+  where the binding is absent, and **RED** with both assertions firing;
+  against the **tip** it is **GREEN**. It is modelled on a body that
+  passes on this board today — `tools/e2e/tests/lane-fence.spec.ts:689`
+  pins `lane-fence.mjs`'s header text exactly this way — so the class is
+  demonstrated working before it is spent on a file that lacks it.
+- **A corroboration appended to `T-223-s6`**, not a fourth card, per
+  `method/tasks/TASK-FORMAT.md`'s rule that a second instance of a class
+  another card owns is a corroboration: the hook's own exported `ROUTE`
+  string — the sentence a REFUSED executor actually reads — still carries
+  the same absolute unbound.
+

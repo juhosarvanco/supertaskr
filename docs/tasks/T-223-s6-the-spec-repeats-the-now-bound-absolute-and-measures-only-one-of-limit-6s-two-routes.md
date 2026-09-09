@@ -74,3 +74,41 @@ prose change it made is not pinned by any body — nothing in the suite
 reads the hook's comment text — so no spec change was OWED, and a
 widening from inside the lane is the one repair an executor may never
 make (`method/lane-protocol.md` rule 5). Routed here instead.
+
+## CORROBORATION, 2026-09-09 — a THIRD copy, in the hook's own `ROUTE` string
+
+Appended rather than filed beside, per `method/tasks/TASK-FORMAT.md`:
+this card already owns the class, and a second instance is worth more
+attached to the first than as a fourth file.
+
+Found by the verifier of `T-223-s4` at tip
+`7d95dabb84e8cff073cab298400c2474150f01f8`, sweeping the whole hook for
+survivors of the class after the header's three occurrences were bound.
+`.claude/hooks/landing-gate.mjs:1312-1314`, the exported `ROUTE`
+constant — **not a comment, a string, and the one a REFUSED executor
+actually reads at a push**:
+
+> this gate reads the card as committed on the integration branch
+> precisely so that editing the card here — or the manifest — cannot
+> move it.
+
+The *"precisely so that"* is the same over-reach the header just
+retired: it is true WHILE `HEAD` names the lane branch, and false after
+one `git symbolic-ref` — the route this card's §TWO measures. A refused
+executor is exactly the reader who should not be told the guarantee is
+stronger than it is.
+
+**Why `T-223-s4` did not take it, and why that was right.** The string
+IS inside that lane's fence (`.claude/hooks/landing-gate.mjs`), so it
+COULD have been edited — but the card's TRIAGE named the header sentence
+and limit 6, and `ROUTE` is executable surface rather than prose. A
+string-literal edit inside a card that asked for none is the change class
+the verifier's attack set weighted highest against, and `landing-gate.spec.ts`
+is where a `ROUTE` assertion would live. Correctly left, correctly
+routed here.
+
+**Whoever takes this card should take all three sites in one pass** —
+the spec comment (§ONE), the missing `symbolic-ref` body (§TWO) and this
+string — because they are one sentence written in three places, and
+`T-223`, `T-223-s4` and this line are the record of what happens when
+they are repaired one at a time.
