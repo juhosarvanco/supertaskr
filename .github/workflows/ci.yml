@@ -271,9 +271,103 @@ jobs:
       - name: e2e browsers
         working-directory: tools/e2e
         run: npx playwright install --with-deps chromium
+
+      # ---- the runner's disk, read and floored (T-278) -----------------
+      # THE RED THIS PAIR OF STEPS EXISTS TO RENAME. Four consecutive runs
+      # on main died inside the lane of ENOSPC and this job never printed
+      # the word disk: 34300080330 (a6355bb, twice), 34304932475 (5775ac0)
+      # and 34306871214 (6c46872); the last green runner is 683cd60. In
+      # all three logs the FIRST red body is the same one — brief.spec's
+      # "THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for
+      # file", ordinal 64 of 706, about 90 seconds into an 18.8-minute
+      # lane — and what it printed was the arm stopping inside its ritual with
+      # exit 3 (step 4, the fence, in two attempts; step 6, the bench, in the
+      # other two — re-derived from the four logs at the merge, T-278's verdict).
+      # A reader who does not open the log reads that as a landing-gate
+      # defect. The runner's own reason appeared ONCE, indented inside
+      # that one body's stderr, and nowhere else in 4103 log lines.
+      #
+      # WHY A FLOOR AND NOT ONLY A PRINT. A print makes the reason
+      # findable; a floor makes the JOB say it. `gh` reports the step that
+      # failed BY NAME and .claude/hooks/push-guard.mjs looks that name up
+      # to tell the seat which package the red run was testing, so the
+      # sentence the seat gets becomes "runner disk before the e2e lane"
+      # instead of a spec file's path — before any body can wear a failure
+      # that was never its own.
+      #
+      # WHERE THE NUMBER COMES FROM, and it is DERIVED rather than
+      # chosen. The lane's whole temp-directory footprint was sampled
+      # every 5 s through two full local `gate-run e2e` runs — macOS
+      # 26.6.2, arm64, node v22.22.0, 742 bodies — by snapshotting the
+      # names in the temp directory before the run and `du`-ing, at each
+      # sample, exactly the entries that were not in the snapshot. It
+      # PEAKS at 223 MiB (228,420 KiB, and 224,684 KiB on the second run)
+      # about a minute in, during brief.spec's ritual fixtures — the same
+      # neighbourhood the runner reds in — and the graded run ended with
+      # 25 entries totalling 1,000 KiB, none larger than 144 KiB. The
+      # fixtures DO tear themselves down (tools/e2e/tests/git-fixture.ts),
+      # so the lane's need is bounded by its largest fixture and not by
+      # the sum of them.
+      #
+      # THAT BOUND IS WHAT SIZES THE FLOOR. The runner redded ~90 s in,
+      # having spent at most that peak, with nothing left — so its free
+      # space BEFORE the lane was at most ~223 MiB. 2 GiB is an order of
+      # magnitude above what the lane was measured to need AND an order of
+      # magnitude above what those four runners actually had, so the floor
+      # fires on every one of the four red runs while asking for headroom
+      # no healthy runner should miss.
+      #
+      # WHAT IT IS NOT is a reading of the runner: the free figure at this
+      # point in the job has never been printed. THE FIRST RUN AFTER THIS
+      # LANDS PRINTS IT — re-derive the floor from that reading rather
+      # than from this paragraph (T-278-s1).
+      #
+      # `df -i` costs one line and is here because ENOSPC is ALSO what an
+      # exhausted inode table returns — a `df -h` showing gigabytes free
+      # beside that error is the reading that sends the next seat looking
+      # in the wrong place.
+      - name: runner disk before the e2e lane (floor 2 GiB)
+        working-directory: tools/e2e
+        env:
+          # THE FLOOR, WRITTEN ONCE. The step's NAME states the same
+          # figure and tools/e2e/tests/workflow-parity.spec.ts reds when
+          # the two disagree: a number in two places is a number with no
+          # keeper.
+          E2E_DISK_FLOOR_GIB: "2"
+        run: |
+          df -h .
+          df -h /tmp
+          df -i .
+          df -i /tmp
+          floor_kib=$(( E2E_DISK_FLOOR_GIB * 1024 * 1024 ))
+          for where in . /tmp; do
+            free_kib=$(df -Pk "$where" | awk 'NR==2 { print $4 }')
+            echo "free at ${where}: ${free_kib} KiB against a floor of ${floor_kib} KiB (${E2E_DISK_FLOOR_GIB} GiB)"
+            if [ "$free_kib" -lt "$floor_kib" ]; then
+              echo "::error title=runner disk below the e2e floor::${where} has $(( free_kib / 1024 )) MiB free and the e2e lane's floor is ${E2E_DISK_FLOOR_GIB} GiB. This is the RUNNER'S DISK, not a defect in a body: the lane builds scratch git repositories under the temp directory and the arm's ritual fixture is the largest of them."
+              exit 1
+            fi
+          done
+
       - name: e2e lane
         working-directory: tools/e2e
         run: npm test
+
+      # THE OTHER HALF OF THE READING, and `always()` is the whole of why
+      # it is worth a step: the run this exists for is the one where the
+      # lane went RED, and a step that runs only after a green lane can
+      # never show the disk that emptied. The `du` line is the attribution
+      # a bare `df` cannot give — WHICH entry is still there, by name and
+      # by size, so a leak arrives as a directory rather than a suspicion.
+      - name: runner disk after the e2e lane
+        if: always()
+        working-directory: tools/e2e
+        run: |
+          df -h .
+          df -h /tmp
+          df -i /tmp
+          echo "the twenty largest entries left in /tmp:"
+          du -sk /tmp/* 2>/dev/null | sort -n | tail -20 || true
 
       # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
       # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI

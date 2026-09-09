@@ -1,4 +1,6 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse } from "yaml";
@@ -103,6 +105,10 @@ interface WorkflowStep {
   "working-directory"?: string;
   env?: Record<string, string>;
   with?: Record<string, unknown>;
+  // T-278: a step's CONDITION is a fact about the job like its command.
+  // The disk reading taken after the lane is only worth a step while it
+  // runs after a RED one, and `if:` is where that is written.
+  if?: string;
 }
 
 /** A workflow step's identity for parity purposes: what it runs, where. */
@@ -460,6 +466,17 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
 const INFRASTRUCTURE_STEPS: { match: RegExp; why: string }[] = [
   { match: /^sudo apt-get update/, why: "the Tauri v2 Linux prerequisites + xvfb." },
   { match: /^rustc --version/, why: "records the runner's preinstalled toolchain." },
+  {
+    match: /^df -h \./,
+    why:
+      "T-278: the runner's own disk, read on both sides of the e2e lane and " +
+      "floored before it. NOT a CONVENTIONS command and deliberately not one — " +
+      "nothing here is a suite, a lint or a gate over the TREE; it is a reading " +
+      "of the MACHINE, which is the one thing the doc's per-package command " +
+      "bullets cannot be about. What each of the two steps has to look like is " +
+      "derived by `diskGuardProblems` below, so this entry accounts for them " +
+      "without becoming the place their shape is written down.",
+  },
 ];
 
 /** The doc's own command list, flattened. */
@@ -730,6 +747,344 @@ test("the apt step installs the Tauri v2 webkit2gtk set + xvfb", () => {
   expect(apt, "apt step present").toBeDefined();
   for (const pkg of APT_PACKAGES) {
     expect(apt!.run, `apt step must install ${pkg}`).toContain(pkg);
+  }
+});
+
+// ── the runner's disk around the e2e lane (T-278) ──────────────────────
+//
+// THE RED THIS SECTION KEEPS. Four consecutive runs on main died inside
+// the e2e lane of ENOSPC — 34300080330 (a6355bb, twice), 34304932475
+// (5775ac0) and 34306871214 (6c46872), against 683cd60 as the last green
+// runner — and in every one of them the FIRST red body was the same one:
+// brief.spec's "THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE,
+// file for file", ordinal 64 of 706, reporting the arm stopping inside its
+// ritual with exit 3 (step 4, the fence, in two attempts; step 6, the
+// bench, in the other two). The runner's reason appeared ONCE, indented inside that
+// body's stderr, and nowhere else in the job's 4103 log lines. A disk red
+// wearing a landing-gate defect's clothes, three runs running.
+//
+// ci.yml now reads the disk on both sides of the lane and REFUSES below a
+// stated floor. That is two steps and a number, and each of the three
+// rots silently in its own way: a reading that drifts away from the lane
+// it guards measures a different moment; an `if:` dropped from the second
+// one means the disk is only ever read after a GREEN lane, which is the
+// run nobody needed it for; a floor edited in the `env:` and left stale
+// in the step's NAME publishes one figure and tests another. So the shape
+// is DERIVED here rather than asserted once, and `problems` empty is the
+// assertion — the idiom `deriveExpectedSteps` and `stepPackageProblems`
+// already use in this file.
+//
+// AND THE FLOOR IS NOT TRANSCRIBED. Nothing below states 2 GiB. The
+// derivation reads the figure out of the step's `env:` and requires the
+// step's NAME to state the SAME one; what it pins is the AGREEMENT, so
+// raising the floor stays a one-line edit to ci.yml and a floor raised in
+// one of the two places reds. A number copied into a spec is the mirror
+// failure T-045 already took out of this file once.
+
+/** The e2e lane step itself — the anchor both disk steps are placed against. */
+const LANE_STEP: Step = { dir: "tools/e2e", run: "npm test" };
+
+/** The one place ci.yml writes the floor down. */
+const DISK_FLOOR_ENV = "E2E_DISK_FLOOR_GIB";
+
+/** The before-step's name, which must STATE the floor its `env:` declares. */
+const DISK_BEFORE_NAME = /^runner disk before the e2e lane \(floor (\d+) GiB\)$/;
+
+/** The after-step's name; it carries no figure, so it is a literal. */
+const DISK_AFTER_NAME = "runner disk after the e2e lane";
+
+/** The two `df` readings the before-step owes: the workspace AND the fixtures' own tree. */
+const DISK_PROBES = ["df -h .", "df -h /tmp"] as const;
+
+/** Everything wrong with the BEFORE step, given that it is in the right place. */
+function diskFloorProblems(step: WorkflowStep, name: string): string[] {
+  const problems: string[] = [];
+  const stated = Number(DISK_BEFORE_NAME.exec(name)?.[1]);
+  const declared = step.env?.[DISK_FLOOR_ENV];
+  const run = step.run ?? "";
+
+  if (declared === undefined) {
+    problems.push(
+      `\`${name}\` declares no \`${DISK_FLOOR_ENV}\` in its \`env:\`. The floor is ` +
+        "written ONCE, in that key, and the step's name repeats it for `gh` to " +
+        "report; a step that only prints the disk is the half of T-278 a print " +
+        "already gave.",
+    );
+  } else if (!/^[1-9][0-9]*$/.test(declared)) {
+    problems.push(
+      `\`${name}\` declares \`${DISK_FLOOR_ENV}: "${declared}"\`, which is not a ` +
+        "positive whole number of GiB. A floor of zero — or of a word, which the " +
+        "shell reads as zero — can never fire, and a guard that cannot fire is the " +
+        "vacuous keeper this suite exists to refuse.",
+    );
+  } else if (Number(declared) !== stated) {
+    problems.push(
+      `\`${name}\` states ${String(stated)} GiB in its NAME and declares ` +
+        `${declared} in \`${DISK_FLOOR_ENV}\`. The name is what a seat reads — ` +
+        "`gh` reports the step that failed by name, and push-guard.mjs looks it " +
+        "up — while the env is what the shell tests, so the two disagreeing is a " +
+        "published figure nobody enforces.",
+    );
+  }
+
+  if (step["working-directory"] !== LANE_STEP.dir) {
+    problems.push(
+      `\`${name}\` declares \`working-directory: ${String(step["working-directory"])}\` ` +
+        `rather than \`${String(LANE_STEP.dir)}\`. It reads \`df -h .\`, so its cwd IS ` +
+        "one of its two measurements, and it is the lane's cwd this step is about.",
+    );
+  }
+
+  for (const probe of DISK_PROBES) {
+    if (!run.includes(probe)) {
+      problems.push(
+        `\`${name}\` never runs \`${probe}\`. Both readings are owed: the workspace ` +
+          "is where the checkout, the installs and the built target sit, and /tmp is " +
+          "where every fixture in the lane builds its scratch repositories — on a " +
+          "hosted runner they are usually one filesystem, and the run that proves " +
+          "they are not is the run this step exists for.",
+      );
+    }
+  }
+
+  if (!run.includes(DISK_FLOOR_ENV)) {
+    problems.push(
+      `\`${name}\` never reads \`${DISK_FLOOR_ENV}\` in its script, so the floor it ` +
+        "declares is decorative: the env key is set, the name advertises it, and " +
+        "nothing compares it to anything.",
+    );
+  }
+
+  if (!/\bexit 1\b/.test(run)) {
+    problems.push(
+      `\`${name}\` never exits non-zero. Printing the disk makes the reason FINDABLE ` +
+        "by whoever opens the log; the criterion is that the JOB says it, at a step " +
+        "whose name is the diagnosis, before a body can wear a failure that was " +
+        "never its own.",
+    );
+  }
+
+  return problems;
+}
+
+/**
+ * Where ci.yml's disk guard has come apart. `problems` empty is the
+ * assertion; each entry names the step it is about and what to do.
+ *
+ * Takes the STEP LIST as its argument, the way `stepPackageProblems`
+ * takes its files, so a fixture can feed it a mutated copy — no body in
+ * this file writes to `.github/`.
+ */
+export function diskGuardProblems(steps: WorkflowStep[]): string[] {
+  const problems: string[] = [];
+  const laneIndex = steps.findIndex(
+    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
+  );
+  if (laneIndex < 0) {
+    return [
+      `.github/workflows/ci.yml has no \`[${String(LANE_STEP.dir)}] ${LANE_STEP.run}\` ` +
+        "step, so there is nothing for the disk guard to be placed against. That " +
+        "step is the e2e lane T-278's ENOSPC red ran inside; without it every " +
+        "check below would pass by having nothing to check.",
+    ];
+  }
+
+  const before = laneIndex > 0 ? steps[laneIndex - 1] : undefined;
+  const beforeName = before?.name;
+  if (before === undefined || beforeName === undefined || !DISK_BEFORE_NAME.test(beforeName)) {
+    const elsewhere = steps.findIndex((s) => s.name !== undefined && DISK_BEFORE_NAME.test(s.name));
+    problems.push(
+      "the step immediately before the e2e lane is " +
+        (beforeName === undefined ? "unnamed or absent" : `\`${beforeName}\``) +
+        `, not the disk read T-278 put there (a name matching ${String(DISK_BEFORE_NAME)}). ` +
+        (elsewhere < 0
+          ? "NO step in the file carries that name: the floor is gone, and an ENOSPC " +
+            "inside the lane goes back to arriving as one body's stderr."
+          : `The step sits at index ${String(elsewhere)} instead of ` +
+            `${String(laneIndex - 1)} — a disk reading taken anywhere but immediately ` +
+            "before the lane measures a different moment than the one that fills, and " +
+            "everything installed in between is unaccounted for."),
+    );
+  } else {
+    problems.push(...diskFloorProblems(before, beforeName));
+  }
+
+  const after = steps[laneIndex + 1];
+  if (after === undefined || after.name !== DISK_AFTER_NAME) {
+    problems.push(
+      `the step immediately after the e2e lane is ${after?.name === undefined ? "unnamed or absent" : `\`${after.name}\``}` +
+        `, not \`${DISK_AFTER_NAME}\`. The reading AFTER the lane is what turns a ` +
+        "floor into a measurement: it is the only place the job says what the lane " +
+        "actually spent, and the only place a leaked fixture can be named.",
+    );
+  } else {
+    if (after.if !== "always()") {
+      problems.push(
+        `\`${DISK_AFTER_NAME}\` carries \`if: ${String(after.if)}\` rather than ` +
+          "`if: always()`. Without it the disk is read only after a GREEN lane — the " +
+          "run nobody needs it for — and the red run it exists for skips it.",
+      );
+    }
+    if (after["working-directory"] !== LANE_STEP.dir) {
+      problems.push(
+        `\`${DISK_AFTER_NAME}\` declares \`working-directory: ` +
+          `${String(after["working-directory"])}\` rather than \`${String(LANE_STEP.dir)}\`, ` +
+          "so its `df -h .` reads a different tree than the before-step's and the " +
+          "pair stops being a before/after of one thing.",
+      );
+    }
+    if (!(after.run ?? "").includes("df -h /tmp")) {
+      problems.push(
+        `\`${DISK_AFTER_NAME}\` never runs \`df -h /tmp\`, which is the half of the ` +
+          "pair that answers what the lane spent where its fixtures live.",
+      );
+    }
+  }
+
+  return problems;
+}
+
+test("the runner's disk is read on both sides of the e2e lane, behind a floor that can fire", () => {
+  const { steps } = loadWorkflow();
+  expect(
+    diskGuardProblems(steps),
+    "T-278: ci.yml reads the runner's disk before and after the e2e lane and refuses " +
+      "below a floor it states once — these are the ways that guard has come apart",
+  ).toEqual([]);
+
+  // AND THE PAIR IS NOT THE JOB'S TAIL. The boot step stays last (pinned
+  // by the xvfb body above), so the after-reading sits BETWEEN the lane
+  // and the boot check. Appending it instead would have been the obvious
+  // spelling and the wrong one: `always()` at the end of the job reads a
+  // disk the boot check had already moved.
+  const laneIndex = steps.findIndex(
+    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
+  );
+  expect(
+    laneIndex + 1,
+    "the after-reading is not the job's last step — the boot check follows it",
+  ).toBeLessThan(steps.length - 1);
+
+  // THE EXECUTING ARM (T-278's verdict, correction 2): `diskGuardProblems`
+  // derives that the step CARRIES an `exit 1`; whether the floor can FIRE
+  // is a property of the shell, and `if [ … ] && false; then` keeps the
+  // token while making it unreachable — every derivation above stayed
+  // green against that edit. So the step's own script is run, twice,
+  // against a stub `df` on PATH: one KiB above the floor it must exit 0,
+  // one KiB below it must exit 1 and say `::error`. The stub answers every
+  // `df` spelling the step uses (-h, -i, -Pk) with one POSIX table whose
+  // Available column is the figure under test.
+  const before = steps[laneIndex - 1]!;
+  const gib = Number(before.env?.[DISK_FLOOR_ENV]);
+  expect(Number.isInteger(gib) && gib > 0, "the floor step declares an integer GiB floor").toBe(true);
+  const floorKib = gib * 1024 * 1024;
+  const stubDir = mkdtempSync(path.join(tmpdir(), "t278-stub-df-"));
+  try {
+    const stub = path.join(stubDir, "df");
+    writeFileSync(
+      stub,
+      "#!/bin/sh\n" +
+        'printf "Filesystem 1024-blocks Used Available Capacity Mounted on\\n"\n' +
+        'printf "stub 0 0 %s 0%% /\\n" "$STUB_AVAIL_KIB"\n',
+    );
+    chmodSync(stub, 0o755);
+    const runAt = (availKib: number) =>
+      spawnSync("bash", ["-e", "-c", before.run ?? ""], {
+        cwd: path.join(repoRoot, String(before["working-directory"] ?? ".")),
+        env: {
+          ...process.env,
+          PATH: `${stubDir}:${process.env.PATH ?? ""}`,
+          [DISK_FLOOR_ENV]: String(gib),
+          STUB_AVAIL_KIB: String(availKib),
+        },
+        encoding: "utf8",
+      });
+    const above = runAt(floorKib + 1);
+    expect(above.status, `one KiB above the floor the step passes: ${above.stdout}${above.stderr}`).toBe(0);
+    const below = runAt(floorKib - 1);
+    expect(below.status, `one KiB below the floor the step FAILS: ${below.stdout}${below.stderr}`).toBe(1);
+    expect(below.stdout, "and the red names itself as the runner's disk").toContain("::error title=runner disk below the e2e floor");
+  } finally {
+    rmSync(stubDir, { recursive: true, force: true });
+  }
+});
+
+test("FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME", () => {
+  const { steps } = loadWorkflow();
+
+  // THE CONTROL. Every mutant below is this list with ONE edit, so a red
+  // is the edit and never the scaffolding (method/roles/verifier.md 2b).
+  expect(diskGuardProblems(steps), "the real workflow derives clean").toEqual([]);
+  const laneIndex = steps.findIndex(
+    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
+  );
+  expect(laneIndex, "the e2e lane step is found").toBeGreaterThan(0);
+  const before = steps[laneIndex - 1]!;
+  const after = steps[laneIndex + 1]!;
+
+  // (1) THE GUARD DELETED — the state ci.yml was in for every one of the
+  //     four red runs.
+  const deleted = steps.filter((_, i) => i !== laneIndex - 1);
+  expect(diskGuardProblems(deleted).join("\n"), "a deleted floor is named as absent").toContain(
+    "NO step in the file carries that name",
+  );
+
+  // (2) THE GUARD MOVED to the head of the job, where it would read the
+  //     disk before three installs, a cargo build and a browser download.
+  const moved = [before, ...steps.filter((_, i) => i !== laneIndex - 1)];
+  expect(diskGuardProblems(moved).join("\n"), "a moved reading is named by index").toContain(
+    "measures a different moment",
+  );
+
+  // (3) THE FLOOR RAISED IN ONE PLACE. The env says 8, the name still
+  //     says what it always said — the shape a floor edit takes when the
+  //     editor forgets that `gh` reports the NAME.
+  const stale = steps.map((s, i) =>
+    i === laneIndex - 1 ? { ...s, env: { ...s.env, [DISK_FLOOR_ENV]: "8" } } : s,
+  );
+  expect(diskGuardProblems(stale).join("\n"), "a half-edited floor names both sides").toContain(
+    `declares 8 in \`${DISK_FLOOR_ENV}\``,
+  );
+
+  // (4) A FLOOR THAT CANNOT FIRE. Zero is free space every runner has.
+  const zero = steps.map((s, i) =>
+    i === laneIndex - 1 ? { ...s, env: { ...s.env, [DISK_FLOOR_ENV]: "0" } } : s,
+  );
+  expect(diskGuardProblems(zero).join("\n"), "a zero floor is refused as vacuous").toContain(
+    "can never fire",
+  );
+
+  // (5) PRINT-ONLY. The step still reads both filesystems and still
+  //     declares the floor; it just stops refusing — which is exactly
+  //     what "print the disk" alone would have shipped.
+  const printOnly = steps.map((s, i) =>
+    i === laneIndex - 1 ? { ...s, run: (s.run ?? "").replace("exit 1", "true") } : s,
+  );
+  expect(diskGuardProblems(printOnly).join("\n"), "a print-only guard is named").toContain(
+    "never exits non-zero",
+  );
+
+  // (6) THE `always()` DROPPED from the after-reading — the mutant that
+  //     leaves the file looking complete and takes the measurement away
+  //     from exactly the run that needed it.
+  const { if: _condition, ...unconditional } = after;
+  const conditional = steps.map((s, i) => (i === laneIndex + 1 ? unconditional : s));
+  expect(diskGuardProblems(conditional).join("\n"), "a dropped condition is named").toContain(
+    "the red run it exists for skips it",
+  );
+
+  // EACH MUTANT IS ALONE. Six edits, six problem lists, and every one of
+  // them carries exactly one entry: a derivation that reds for two
+  // reasons at once cannot say which property it was pinning.
+  for (const [what, mutated] of [
+    ["deleted", deleted],
+    ["moved", moved],
+    ["stale floor", stale],
+    ["zero floor", zero],
+    ["print-only", printOnly],
+    ["unconditional", conditional],
+  ] as const) {
+    expect(diskGuardProblems(mutated), `the ${what} mutant reds on ONE property`).toHaveLength(1);
   }
 });
 

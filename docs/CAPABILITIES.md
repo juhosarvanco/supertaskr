@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **740 behaviours** — 738 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **742 behaviours** — 740 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -840,6 +840,8 @@ Census: **740 behaviours** — 738 extracted sentences + 2 named-not-extracted (
 - every `uses:` is pinned by a full 40-hex commit SHA
 - the xvfb boot step runs the documented boot check with the webkit workaround
 - the apt step installs the Tauri v2 webkit2gtk set + xvfb
+- the runner's disk is read on both sides of the e2e lane, behind a floor that can fire
+- FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME
 - FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sides
 - FIXTURE: deleting a command from CONVENTIONS reds the lane
 - FIXTURE: an undocumented divergence reds the lane
