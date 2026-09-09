@@ -54,6 +54,75 @@ spec file.
   entry.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Built at @ `8cd11020e631`, in `tools/e2e/scripts/card-preflight.mjs` and
+`tools/e2e/tests/card-preflight.spec.ts` — the whole fence, nothing else
+touched.
+
+**The rule, and it is ONE function.** `newFileReservation(domain,
+oracle)` in the preflight, exported, asked once per untracked fence
+domain by the arm that used to raise `DEAD FENCE ENTRY`. It adds no
+second expander: the domains it judges are the parser's own
+`expandFence` output, and the tracked tree it judges them against is
+`pathOracle`'s two sets, which that arm already held. Three verdicts —
+already tracked, no file extension, parent directory untracked — and
+everything else is a reservation carrying the parent it hangs from. The
+finding, when it stays dead, now says WHICH of the three it was.
+
+**Why the parent and not any ancestor.** A file a lane is about to write
+is untracked by definition, so nothing about the token can be asked; only
+about the ground it hangs from. The nearest ancestor is the parent, and a
+path whose parent is untracked too is a claim about a tree the checkout
+cannot see. `app/src-tauri/crates/nputer-index/tests/perf.rs` on `T-216-s7`
+is that shape at this ref and stays dead.
+
+**What it gives up, said rather than left to be found.** A filename TYPO
+under a real directory is indistinguishable from a file about to be
+written and now reads as a reservation. No reader of a tracked tree can
+separate the two. It is bounded by what a reservation buys: the lane
+manifest carries the exact path, so the write hook allows that one
+spelling and refuses every sibling — a typo costs the lane its first
+write and names itself, where the directory token it replaces permitted
+the whole directory silently. The claim-class disclosure says this in the
+`cannot` clause, and the pinned copy in the spec says it back.
+
+**The write-time half needed no code at all, and that is measured rather
+than assumed.** `buildLaneFence` copies `fence.paths` into the manifest
+verbatim, and the expander reads a dotted token as a path standing for
+itself whether or not it is tracked — so an exact untracked path reaches
+the hook already, and the hook holds it by name. The body asserts the
+manifest carries the reservation BEFORE it asks the hook anything, so a
+dispatch step that ever started intersecting the fence against the
+tracked tree reds here. Criteria three and four are therefore pins on
+behaviour this card makes load-bearing, not new behaviour; no edit
+outside the fence was needed and no ask was written.
+
+**Measured on the live board at @ `8cd11020e631`**, over six hundred and
+eighty-two cards, expanding every fence through the parser and
+classifying every untracked domain with the shipped function: fourteen
+tokens across three cards become reservations, ten tokens across seven
+cards stay dead. Twelve of those fourteen are on `T-159-s1`, which is
+done, and they are stale `docs/tasks/` card filenames rather than files
+anybody will write — the trade-off above, in the wild. The two that
+matter are the spec files on `T-261` and `T-275`, each of which had to
+fence a directory for one file.
+
+**What this does NOT unblock, against the card that says it would.**
+`T-292` carries no dead fence entry at this ref at all — every token it
+names is tracked — and its wait is its `blocked_by` on this card and
+nothing else. `T-290` stays refused: its `docs/conventions/` is a
+DIRECTORY token with nothing under it, which criterion two keeps dead by
+name. `T-261` and `T-275` are in the same state, each holding one live
+directory token beside a reservation that now passes. The follow-on is
+filed as `T-287-s1`.
+
+**The drill.** Three mutants of the classifier, the spec file run whole
+at each: making every untracked domain dead again killed three bodies,
+dropping the extension test killed four — including the pre-existing dead
+entry body — and dropping the parent test killed two. Body counts and
+exits are in the report. The write-hook body and the overlap body are
+killed by no mutation of this file, because neither half is this file: the
+control inside each is a board mutation instead — the directory fence
+that permits the sibling, and the one-card board that reads `DISJOINT`.
 
 ## Verdicts

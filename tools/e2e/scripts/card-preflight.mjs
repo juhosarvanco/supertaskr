@@ -146,14 +146,19 @@ export const CLAIM_CLASSES = Object.freeze([
     checks:
       "the card's touches, expanded through the live slug map by the parser's own fence module",
     refuses:
-      "an entry that reserves no tracked file at all, an entry this expansion cannot resolve, " +
-      "a path the criteria name that a DECLARED component owns and this fence does not carry, and " +
-      "a criterion that demands a TEST BODY over a fence holding nothing any suite would collect",
+      "an entry that reserves no tracked file at all AND is not a NEW-FILE RESERVATION — an " +
+      "exact file path, extension and all, whose parent directory IS tracked — an entry this " +
+      "expansion cannot resolve, a path the criteria name that a DECLARED component owns and " +
+      "this fence does not carry, and a criterion that demands a TEST BODY over a fence holding " +
+      "nothing any suite would collect",
     cannot:
       "whether a path under NO component ought to be inside the fence — a criterion cites far more " +
       "files than it writes, and outside the slug map this tool cannot tell a citation from a " +
-      "write target; and whether a body-demanding criterion is demanding one OF THIS CARD or " +
-      "WRITING A RULE about bodies into a document, which no lexical test separated",
+      "write target; whether a body-demanding criterion is demanding one OF THIS CARD or " +
+      "WRITING A RULE about bodies into a document, which no lexical test separated; and whether " +
+      "an untracked file path under a tracked directory is a file this card is ABOUT TO WRITE or " +
+      "a filename TYPO — both read as a NEW-FILE RESERVATION, and a typo survives to the write " +
+      "hook, which then allows the misspelt name and refuses the right one",
   },
   {
     key: "figures",
@@ -1196,6 +1201,85 @@ export function pathOracle(root) {
 }
 
 /**
+ * @typedef {{ reserved: true, parent: string } | { reserved: false, why: string }} ReservationVerdict
+ */
+
+/**
+ * THE ONE UNTRACKED FENCE DOMAIN THAT IS NOT DEAD (T-287): a NEW-FILE
+ * RESERVATION — the file this card is about to write.
+ *
+ * A fence entry reserving no tracked file used to be refused outright,
+ * and the refusal is right for the case it was written for: a fence that
+ * was true when the card was written and is empty at dispatch protects
+ * nothing, and T-127-s1 paid a lane for it. It is wrong for the case a
+ * NARROW fence needs most. A card whose work is a NEW spec file has no
+ * way to name that file, so it names the DIRECTORY instead — and a
+ * directory token is held against every lane that touches one file under
+ * it, which is how fifty planned cards came to fence `tools/e2e` whole.
+ *
+ * THE DISCRIMINATOR IS THE TRACKED TREE AND NOTHING ELSE, because this
+ * command reads the tracked tree: a file a lane is about to create is
+ * untracked BY DEFINITION, so nothing about the token itself can be asked
+ * — only about the ground it hangs from. Two questions, both answered
+ * from `pathOracle`'s own sets:
+ *
+ *   1. Does the leaf carry a FILE EXTENSION? A token with none is a
+ *      DIRECTORY token, and a directory with nothing under it reserves
+ *      nothing however tracked its parent is. `docs/conventions/` is that
+ *      shape and stays DEAD.
+ *   2. Is the PARENT DIRECTORY tracked at HEAD? A path whose parent is
+ *      untracked too is a claim about a tree nobody can see, and
+ *      accepting it would make every mistyped directory a reservation.
+ *
+ * WHAT THIS GIVES UP, SAID RATHER THAN LEFT TO BE FOUND: a filename TYPO
+ * under a real directory is indistinguishable from a file about to be
+ * written, and now reads as a reservation. That is not a hole this
+ * function can close — no reader of a tracked tree can tell the two apart
+ * — and it is bounded by what a reservation BUYS: the lane's manifest
+ * carries the exact path, so the write hook allows that spelling and
+ * refuses every other new file under the directory. A typo therefore
+ * costs the lane its first write and names itself, where the directory
+ * token it replaces would have permitted the whole directory silently.
+ *
+ * THE REPOSITORY ROOT IS A TRACKED PARENT. A token with no slash reaches
+ * this function only when the expansion read it as a path, and the root
+ * of a repository with tracked files in it exists by construction.
+ *
+ * @param {string} domain one normalised path domain the fence reserves
+ * @param {PathOracle} oracle the tracked tree
+ * @returns {ReservationVerdict}
+ */
+export function newFileReservation(domain, oracle) {
+  if (oracle.tracked.has(domain) || oracle.dirs.has(domain)) {
+    return {
+      reserved: false,
+      why: `${domain} is tracked at HEAD, so it reserves something already and this question is not asked of it`,
+    };
+  }
+  const cut = domain.lastIndexOf("/");
+  const parent = cut === -1 ? "" : domain.slice(0, cut);
+  const leaf = cut === -1 ? domain : domain.slice(cut + 1);
+  const dot = leaf.lastIndexOf(".");
+  if (dot <= 0 || dot === leaf.length - 1) {
+    return {
+      reserved: false,
+      why:
+        `${JSON.stringify(leaf)} carries no file extension, so the token names a DIRECTORY and a ` +
+        "directory with nothing under it reserves nothing — name the files the card will write",
+    };
+  }
+  if (parent !== "" && !oracle.dirs.has(parent)) {
+    return {
+      reserved: false,
+      why:
+        `its parent directory ${parent} holds no tracked file at HEAD either, so the token is a ` +
+        "claim about a tree this checkout cannot see and a typo in it would look identical",
+    };
+  }
+  return { reserved: true, parent };
+}
+
+/**
  * Which tokens THIS repository ignores. A build artefact is not a claim
  * about the tracked tree — `lib/parser/dist` and `app/dist` are named by
  * cards constantly and exist only after a build — so the question is
@@ -1613,15 +1697,56 @@ export async function preflight(ctx, options = {}) {
       ),
     );
     if (held.length > 0) continue;
+    /* AN UNTRACKED FENCE DOMAIN HAS TWO READINGS AND ONLY ONE OF THEM IS
+     * DEAD (T-287). The classification is `newFileReservation`'s and is
+     * asked ONCE, here, of the domains the PARSER's own expansion
+     * produced — this arm adds no second expander and no second reading
+     * of the tracked tree. Every domain the token reserves must be a
+     * reservation for the token to be one: a token that is half a new
+     * file and half a dead directory is dead, and the finding names the
+     * half that failed. */
+    const readings = token.paths.map(
+      /** @param {string} d */ (d) => ({ domain: d, verdict: newFileReservation(d, oracle) }),
+    );
+    const dead = readings.filter(
+      /** @param {{ verdict: ReservationVerdict }} r */ (r) => !r.verdict.reserved,
+    );
+    if (readings.length > 0 && dead.length === 0) {
+      for (const r of readings) {
+        const parent = /** @type {{ reserved: true, parent: string }} */ (r.verdict).parent;
+        recs.push(
+          value(
+            `  NEW-FILE RESERVATION: ${r.domain} — absent at HEAD and hanging off ` +
+              `${parent === "" ? "the repository root" : parent}, which is tracked`,
+            tree(ctx, `${viaFence}, against git ls-files and its directory prefixes`),
+          ),
+        );
+      }
+      recs.push(
+        note("  so this is a card about to WRITE that file, not a fence true at writing and empty"),
+        note("  now — and it is not refused. The lane's manifest carries the EXACT path, so the"),
+        note("  write hook allows that one name and refuses every other new file under the same"),
+        note("  directory: the narrowness a directory token cannot express, and the reason a card"),
+        note("  adding one spec file has had to fence the whole tests directory until now."),
+      );
+      continue;
+    }
+    const why = dead[0]?.verdict;
+    const deadWhy =
+      why !== undefined && !why.reserved ? why.why : "the token expands to no path at all";
     recs.push(
       note(`  and that is a DEAD entry — it reserves a path set nothing in the tree sits under`),
+      value(
+        `  and no NEW-FILE RESERVATION either: ${deadWhy}`,
+        tree(ctx, `${viaFence}, against git ls-files and its directory prefixes`),
+      ),
     );
     raise(
       token.raw,
       `DEAD FENCE ENTRY at ${card.file}: ${JSON.stringify(token.raw)} expands to ` +
         `${token.paths.join(" ") || "no path at all"} and no tracked file is under it at HEAD. A ` +
         "fence true when the card was written and empty at dispatch is the shape that cost T-127-s1 " +
-        "a whole lane.",
+        `a whole lane. AND IT IS NOT A NEW-FILE RESERVATION EITHER (T-287): ${deadWhy}.`,
     );
   }
   const cited = claims.filter((c) => c.state === "exists" && c.scope === "criteria" && !c.inFence);
@@ -1712,6 +1837,12 @@ export async function preflight(ctx, options = {}) {
     note("  suite vocabulary is the tree's, not a suffix list: a tests/ directory, a *.spec.* or"),
     note("  *.test.* file, any Rust source, and tools/method-evals/evals. A fence naming a body"),
     note("  that does not exist yet is a card about to write one and is not refused."),
+    note("  AND AN UNTRACKED FENCE ENTRY IS THE SAME SENTENCE ONE CLASS OVER: an exact"),
+    note("  file path whose PARENT DIRECTORY is tracked is a NEW-FILE RESERVATION and passes; a"),
+    note("  directory token with nothing under it, and a path whose parent is untracked too,"),
+    note("  stay DEAD. What that trades away is stated: a filename TYPO under a real directory"),
+    note("  reads as a reservation here, and is caught at the first write instead — the hook"),
+    note("  holds the exact spelling and refuses the sibling the lane meant to write."),
     blank(),
   );
 
