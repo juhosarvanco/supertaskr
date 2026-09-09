@@ -2399,7 +2399,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // or stops being drift. 33 + 2 + 10 = 45. Derived from `arch`'s own
       // edge listing at the edited registry — 34 confirmed / 2 undeclared /
       // 10 planned — before the suite was re-run.
-      ["confirmed", 34]   // 2026-09-09, T-112-s5: 33 -> 34, the C-09 -> C-15 row,
+      ["confirmed", 34],   // 2026-09-09, T-112-s5: 33 -> 34, the C-09 -> C-15 row
       ["planned", 10],
       // 2 → 4 at T-139, both new rows from the one unmapped file above.
       // 4 → 2 AT T-141, both leaving for the same reason they arrived. This
