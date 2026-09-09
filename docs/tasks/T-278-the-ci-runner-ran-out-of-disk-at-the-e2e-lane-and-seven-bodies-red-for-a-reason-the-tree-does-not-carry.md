@@ -54,3 +54,27 @@ reads as a landing-gate defect to anyone who does not open the log.
   other step (a command changed in one place reds).
 - The record of run 34300080330 and its re-run SHALL be in the next
   checkpoint's CI section, attributed to this class.
+
+## Measured at the third red (run 34304932475 on 5775ac0, the seat, 2026-09-09 ~03:25Z)
+
+The first `No space left on device` lands INSIDE the e2e lane, after
+roughly five hundred bodies have passed (the log's line 3875, the arm's
+bench cut `.git/worktrees/nputer-V-T-901/refs`), not before it: the
+runner's caches restore fine (npm ~54 MB, cargo + target ~1.5 GB) and
+the cargo suite, the app build and the lints all complete. So the disk
+fills DURING the lane — the suspect is the e2e fixtures' own footprint
+under /tmp (the ritual fixtures clone the repository with its history
+and add worktrees per body; the landing-gate and lane-fence fixtures
+each make a repository with a bare remote), not the caches. Three runs
+in a row (a6355bb twice, 5775ac0 once) red the same seven bodies; the
+last green runner is 683cd60 at 01:14Z with the same 706 bodies, so the
+footprint sits at the runner's edge and any growth tips it.
+
+Two more criteria this measurement adds:
+- THE job SHALL print `df -h /tmp` before and after the e2e lane, and
+  the lane's Playwright config SHALL remove each fixture's temp
+  directory at the body's end (or the spec's), so the footprint is
+  bounded by the largest single fixture, never by the sum.
+- WHERE a fixture clones the repository, THE clone SHALL be
+  `--depth 1 --no-tags` (or a `git worktree` of the runner's own
+  checkout) unless the body needs history, and the body SHALL say so.
