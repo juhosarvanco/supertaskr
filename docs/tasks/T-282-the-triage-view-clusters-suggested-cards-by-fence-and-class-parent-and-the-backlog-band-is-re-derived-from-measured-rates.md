@@ -674,3 +674,34 @@ the two corrections above close the gap between its shape and its words. Criteri
 is outside the fence, the ask was made and never granted, the lane did not widen
 itself, and `T-282-s1` names the one line; the fence held, which is the property
 that mattered more than the section.
+
+#### Step 7 — the gates my own commits could move, run at my own tip
+
+My range is `bf22ede..0c5442a`: four cards under `docs/tasks/` (this one and
+`T-282-s4/s5/s6`) plus the two correction files. Recorded here because a role that
+writes to the tree owes the tree's gates even when what it wrote was prose.
+
+- **DOCS GATE — FIRES and is DISCHARGED.** `node tools/e2e/scripts/docs-gate.mjs`
+  handed the four literal paths, exit **1**, naming three owed suites. All three
+  GREEN at `0c5442af12470331e5ea0548311e4ff18be94ba0` through the blessed runner:
+  `parser exit=0 bodies=389`, `app exit=0 bodies=1171`, `e2e exit=0 bodies=772`.
+  The gate also reports *"every live task card's frontmatter parses, with a legal
+  status"* and 0 injection hits over the four paths.
+- **METHOD EVAL GATE — FIRES and is DISCHARGED.** This verdict adds a line matching
+  the citation grammar under `docs/tasks/`. `node tools/method-evals/run.mjs` exits
+  **0**, 10 model-free evals. And `node tools/method-evals/verdict-digest.mjs
+  --scratch <this session's scratchpad>` reports this card's own citation
+  **VERIFIED** against the saved attack set.
+- **GRAPH REGEN — trigger matches, act NOT MINE and not run here.** My range touches
+  a `.ts` outside `docs/` (`health-bands.spec.ts`). It adds assertions inside two
+  EXISTING bodies and exports nothing new, and the regen is the checkpoint's act by
+  the bullet's own words. Said out loud rather than skipped in silence.
+- **BOOT GATE — NOT OWED.** No path under `app/src/**`, `app/src-tauri/**` or a
+  manifest.
+- **CAPABILITIES — NOT OWED BY MY COMMITS.** `git diff bf22ede..HEAD --
+  tools/e2e/tests/` adds no `test(` opener, so no spec NAME moved. The lane's own
+  eight new names still owe `npm run capabilities` in the merge commit (T-201).
+- **THE BENCH IS NOT PUSHED AND THE LANE WAS NOT TOUCHED.** Two commits here, both
+  detached: `5cc7556` (this verdict and the three cards) and `0c5442a` (the two
+  correction bodies, after the verdict so its figures still name the tip they were
+  measured at).
