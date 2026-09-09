@@ -442,3 +442,26 @@ three mutants rather than on the executor's drill.
 Recorded for the seat: `main` has moved past the `f298b81` the report
 forecast against, so the merge forecast is re-derived at the merge, as
 the report itself asks.
+
+#### Step 7 — the gates my own writes owe, re-run at the tip I created
+
+**Every figure above the line was measured at `8e9a9f5`, the commit under
+review.** Appending this verdict and filing two cards created
+`d686ef4bfd2fb1b016661f7a43b71696cab0377a`, a tip nobody had tested, so
+the gates that read cards were asked again there. The docs gate, run on
+my own three written paths, FIRES and names three suites; all three are
+green at my tip:
+
+    gate-run.mjs parser   exit 0   389 bodies    GREEN   ref d686ef4
+    gate-run.mjs app      exit 0   1171 bodies   GREEN   ref d686ef4
+    gate-run.mjs e2e      exit 0   742 bodies    GREEN   ref d686ef4
+    method-evals/run.mjs  exit 0   10 model-free evals
+    docs-gate.mjs (my 3 card paths)  FIRES; every live task card's
+        frontmatter parses with a legal status; 0 injection hits;
+        governing-document budgets hold
+
+The method eval gate was run because this verdict adds two lines matching
+the `attack set: sha256:<hex> (<file>)` citation grammar under
+`docs/tasks/`. `cargo test` is NOT owed by these writes: the docs gate
+names it only for `docs/CONVENTIONS.md`, which my commit does not touch —
+it was nonetheless green at `8e9a9f5` in the battery above.
