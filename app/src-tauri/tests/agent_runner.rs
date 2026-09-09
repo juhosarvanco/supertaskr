@@ -3366,6 +3366,58 @@ fn a_turn_in_flight_refuses_a_second_one() {
     settle(&h.agent);
 }
 
+/// **THE MIRROR OF THE BODY ABOVE, AND THE ORDERING PIN FOR T-281-s8.**
+/// That one measures the latch REFUSING while a turn is live; this one
+/// measures it already FREE the instant the turn is over, which is the
+/// half nothing measured and the half that reddened twice — on the T-281
+/// bench at `d086c73` and on CI run 34347086580 at `0a1c7cf`, both times
+/// as `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+/// failing its `NoSession` assertion with `Busy`.
+///
+/// A caller learns a turn ended through TWO pieces of shared state:
+/// `status()` for the phase and the `running` latch for the claim.
+/// `spawn_turn` published the phase and then released the latch WHEN THE
+/// THREAD ENDED, so between them sat every drop and every `println!` of
+/// the thread's tail — and any caller that polled the phase and then sent
+/// was racing that gap. The intermittent was that race losing, at a
+/// measured 1 in 720 runs under 12x load.
+///
+/// **THE POLL HERE DELIBERATELY DOES NOT SLEEP, and that is the whole
+/// instrument.** `settle`'s 20 ms nap is an eternity beside the window,
+/// so it wins the race by accident nearly every time; arriving at the
+/// terminal phase as early as a caller can is what makes the ordering
+/// observable rather than lucky. Poisoned by restoring the old order (the
+/// latch dropped at the end of the thread instead of under the phase's
+/// own lock), this body reds; with the two published as one step it
+/// cannot, because the mutex release that made the phase visible
+/// happened-after the latch store.
+#[test]
+fn a_settled_turn_has_already_released_the_single_flight_latch() {
+    let h = harness("t281s8latch", Options { scenario: "hostile-id", ..Options::default() });
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+
+    let deadline = Instant::now() + FIXTURE_DEADLINE;
+    loop {
+        if agent::status(&h.agent).phase != Phase::Running {
+            break;
+        }
+        assert!(Instant::now() < deadline, "the turn never settled");
+        std::hint::spin_loop();
+    }
+
+    // The claim on the runner must be gone by now. Any other outcome is a
+    // real answer about this session (`NoSession` is the one this scenario
+    // gives) and not this test's business — only `Busy` is the defect.
+    match agent::send_turn(&h.watch, &h.agent, "answer".into()) {
+        SendOutcome::Busy => panic!(
+            "the terminal phase was published while the single-flight latch was still held: \
+          a caller that polls status and then sends gets Busy for a turn that is over"
+        ),
+        SendOutcome::NoSession => {}
+        other => panic!("expected NoSession from a turn that captured no id, got {other:?}"),
+    }
+}
+
 #[test]
 fn a_project_switch_mid_genesis_yields_stale_project_not_a_cross_write() {
     let h = harness("stale", Options::default());
@@ -3620,7 +3672,16 @@ fn a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded() 
 
     // NO RESUME ATTEMPTED: there is nothing to resume with, and no second
     // child was ever spawned.
-    assert!(matches!(agent::send_turn(&h.watch, &h.agent, "answer".into()), SendOutcome::NoSession));
+    // T-281-s8: the outcome is NAMED in the failure. The bare
+    // `assert!(matches!(..))` this replaces reported only its own source
+    // line, so the intermittent it reddened on twice — once on a bench,
+    // once on the runner — said nothing about WHICH outcome arrived, and
+    // the seat that met it had to rebuild the answer from the module.
+    // Same subject, same refusal; only the diagnosis moves.
+    match agent::send_turn(&h.watch, &h.agent, "answer".into()) {
+        SendOutcome::NoSession => {}
+        other => panic!("no captured id means nothing to resume, got {other:?}"),
+    }
     assert!(!turn_dump(&h.dump, 2).exists(), "no second child ran");
     let argv1 = read_argv(&h.dump, 1);
     assert!(!argv1.iter().any(|a| a == "--resume"), "turn 1 spawns fresh: {argv1:?}");

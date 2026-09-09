@@ -1208,7 +1208,11 @@ fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flig
     cancel.store(false, Ordering::SeqCst);
 
     std::thread::spawn(move || {
-        let _flight = flight; // released when this thread ends
+        // Released under the `cold` lock at the end of this block, for the
+        // reason spelled out in `spawn_turn` (T-281-s8's sweep): the same
+        // two-observable shape lives here, with `cold_start_status()` as
+        // the phase reader and `settle_cold` as the poller that would race
+        // it.
         let adapter = adapter::cold_start_adapter();
         let emitter = Emitter::new(Arc::new(|_event| {}), Arc::new(AtomicU64::new(0)));
         let outcome = runner::run_turn(&cfg, adapter, &cli, &req, &emitter, &child, &cancel);
@@ -1251,6 +1255,8 @@ fn spawn_cold_start(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flig
                 println!("[supertaskr] agent: cold-start test ended with no answer");
             }
         }
+        // Still inside the lock the terminal phase was written under.
+        drop(flight);
     });
 }
 
@@ -1266,7 +1272,10 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
     cancel.store(false, Ordering::SeqCst);
 
     std::thread::spawn(move || {
-        let _flight = flight; // released when this thread ends
+        // The latch travels in and is released BELOW, under the very lock
+        // that publishes the terminal phase — not at the end of this
+        // thread (T-281-s8). An unwind still releases it: the closure owns
+        // it, so a panic anywhere here drops it.
         let adapter = planner_adapter();
         let outcome = runner::run_turn(&cfg, adapter, &cli, &req, &emitter, &child, &cancel);
 
@@ -1337,9 +1346,30 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
             }
         }
 
+        // THE TERMINAL PHASE AND THE LATCH ARE PUBLISHED AS ONE STEP
+        // (T-281-s8). A caller reads the end of a turn through TWO pieces
+        // of shared state — `status()` takes this mutex for the phase,
+        // `begin_turn()` reads the `running` latch — and every caller that
+        // polls the phase until it leaves `Running` and then sends is
+        // racing the gap between them. Written phase-first and released at
+        // the END OF THE THREAD, that gap was every drop and every
+        // `println!` after this block, and it was measured: a 50 ms stall
+        // dropped into it turns
+        // `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+        // from a 1-in-720 intermittent (720 runs under 12x load, this Mac,
+        // 2026-09-09) into 10 reds out of 10, `send_turn` answering `Busy`
+        // for a turn that was already over — the same red the T-281 bench
+        // took at d086c73 and CI run 34347086580 took on 0a1c7cf.
+        // Releasing the latch WHILE THIS LOCK IS HELD orders the two:
+        // whoever can see the terminal phase acquired this mutex after we
+        // released it, so the free latch is visible to them too. It is
+        // safe in the other direction as well — a `send_turn` that wins
+        // the latch here blocks on this mutex until the line below, then
+        // sets `Running` itself.
         let mut guard = inner.lock().expect("agent state poisoned");
         guard.phase = if outcome.error.is_some() { Phase::Failed } else { Phase::Idle };
         guard.last_error = outcome.error.clone();
+        drop(flight);
         drop(guard);
 
         match (&outcome.error, outcome.cancelled) {
