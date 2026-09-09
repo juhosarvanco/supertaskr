@@ -270,6 +270,16 @@ this file is a project's actual name.
    whose work reaches outside its own `touches:` has found a dispatch
    error, not a licence: record it, route it, and build the part that
    fits. A fence is not widened from inside the lane it fences.
+   **AND THE CONVERSE IS THE OTHER HALF OF THE SAME RULE: WORK THAT NEVER
+   REACHES OUTSIDE THE FENCE IS NOT ROUTED OUT OF IT.** A finding whose
+   remedy lies wholly inside the lane's own `touches:` is PERFORMED in the
+   lane and declared in its notes, under the further limits
+   `roles/executor.md` step 5 sets, and graded as part of the diff by
+   `roles/verifier.md` step 6; everything else is recorded and routed
+   exactly as the sentence above says. What this rule contributes is the
+   boundary those two read, and it contributes only that: **the fence
+   decides, never the effort** — neither how small a remedy is nor how
+   much a lane costs moves a path across it.
    **A FENCE NAMES PATHS. A COMPONENT NAME IS SHORTHAND FOR THE PATH SET
    IT STANDS FOR, AND DISJOINTNESS IS COMPUTED OVER THE EXPANDED SETS —
    NEVER OVER THE TOKENS.** Both halves of that sentence were bought with

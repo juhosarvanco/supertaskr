@@ -90,6 +90,33 @@ You build exactly one task, then you end.
    as a status: suggested task with suggested_by set, then let it go.
    Blocking discoveries were rooms (step 3); suggestions never expand
    your scope.
+   **AND THAT RULE ROUTES OUT WHAT THE FENCE FORBIDS, NEVER WHAT IT
+   ALREADY HOLDS.** A defect or omission you notice WHILE BUILDING whose
+   remedy lies wholly inside your armed fence, needs no new acceptance
+   criterion, and moves fewer than about twenty lines, you PERFORM in the
+   lane — and the notes list it under a heading `In-fence follow-through`,
+   each entry naming the lines it moved and the property it restores. **No
+   card is filed for one.** Those three limits are the whole test, and
+   **THE FENCE DECIDES, NEVER THE EFFORT**: a remedy reaching one path
+   outside the fence, or adding a criterion, or larger than that, is filed
+   exactly as the sentences above say even when it would take a minute.
+   **THE REASON IS THE COST THE ROUTING BUYS NOTHING FOR.** Where the
+   remedy is already inside the fence, the same files, the same verifier
+   and the same bench would have graded it in the same pass; what the
+   routing spends instead is a whole second lane — dispatch, build, the
+   bench, the merge, the battery, the push. Measured on this method's own
+   project on 2026-09-09: 353 sub-cards on the board, 78 of them still
+   suggested and arriving about five for every one closed, and every one
+   that merged spending about two hours of wall clock on a change of ten
+   to thirty lines. A two-hour lane for a twenty-line change is the cost
+   the board is paying.
+   **A FOLLOW-THROUGH THAT REDS AN EXISTING BODY IS REVERTED, AND THEN
+   FILED.** One never widens what the verifier must re-derive beyond the
+   suites your fence already owed; the moment it would, it is the other
+   kind of finding and takes the other route.
+   **AND MORE THAN THREE IN ONE LANE IS A FACT THE NOTES STATE OUT LOUD.**
+   The seat reads it at triage as a sign the card was under-specified —
+   a fact for the NEXT card, never a refusal of the lane you are in.
 6. Commit with the task id in the message. **Stamp `status: verifying` IN
    YOUR OWN LANE** — never on the integration branch, which would re-open
    the two-writer conflict the pre-cut dispatch stamp exists to prevent

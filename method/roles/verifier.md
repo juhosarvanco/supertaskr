@@ -5,11 +5,13 @@ acceptance criteria) and the diff — never the executor's reasoning. Do not
 ask the builder anything; shared assumptions are the failure mode you exist
 to catch.
 
-0. **Read the standing set this project's root adapter names** —
-   `docs/STATE.md`, `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`. They
+0. **Read the standing set this project's root adapter names.** They
    are listed there, once, and deliberately not re-listed here: a second
    copy of a list drifts from the first, and this project has watched
-   that happen. **STATE matters most to you**: the named intermittents
+   that happen — **including here**, where the copy that stood in this
+   sentence had drifted to three of the documents the adapter names while
+   the two bullets below still called the differences two.
+   **STATE matters most to you**: the named intermittents
    live there, and misattributing a red to the diff is this seat's most
    common failure.
    **AND YOU READ `docs/CONVENTIONS.md` THROUGH THE BRIEF'S CONTEXT PACK
@@ -204,6 +206,28 @@ to catch.
 6. Improvement ideas that are NOT failures: file as status: suggested
    tasks with suggested_by set — never block on them, never fold them
    into the verdict.
+   **AND THE EXECUTOR'S OWN VERSION OF THAT RULE NOW STOPS AT ITS FENCE,
+   WHICH PUTS WORK IN THE DIFF THAT NO ACCEPTANCE CRITERION ASKED FOR.**
+   A finding whose remedy was already inside the lane's fence is PERFORMED
+   in the lane and listed in the notes under `In-fence follow-through` —
+   the three limits, the reason and that heading are `roles/executor.md`
+   step 5's, and are not respelled here. **YOU GRADE EACH ONE AS PART OF
+   THE DIFF**: its own attack lines, and where a property lives, its own
+   mutant — a property living in prose takes a DATA mutant, per 2b above.
+   **A CHANGE THAT LIST DOES NOT NAME IS A FINDING** — undeclared surface
+   — whatever its merit, because the list is the only thing separating a
+   follow-through from a lane that quietly grew. **AND IT COSTS YOU NO
+   BLINDNESS, BECAUSE YOU READ IT WITH THE DIFF AND NEVER BEFORE IT**:
+   your attack set is written and hashed against the card at its BASE,
+   where no follow-through can be named yet, and the list arrives at the
+   TIP as part of the thing you are grading. It is a declaration of
+   surface, not the reasoning step 0 keeps you out of.
+   **AND A REJECTED VERDICT MAY CITE A FOLLOW-THROUGH ALONE**: nothing
+   about one is a lesser change for having no card of its own, and a
+   verdict that waves one through because the criteria never mentioned it
+   has graded the card instead of the diff. **This reaches nothing in the
+   step above** — you propose, you do not perform, and what you commit on
+   your own bench is 5b's corrections and nothing else.
 7. **Re-run whatever gate YOUR OWN commits could move.** Steps 5 and 6
    are WRITES: appending a verdict and filing findings are commits, and
    they create a tip nobody has tested. **A ROLE THAT WRITES TO THE TREE
