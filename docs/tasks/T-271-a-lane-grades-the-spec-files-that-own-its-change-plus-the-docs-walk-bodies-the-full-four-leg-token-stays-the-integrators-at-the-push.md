@@ -155,3 +155,57 @@ calls a scoped entry "RAN AND FAILED"), T-271-s3 (no verifier brief can
 be assembled at this ref), T-271-s4 (the docs census cannot see a reader
 that goes through `docs-scan.mjs` itself), T-271-s5 (the scoped leg
 still pays for the dev server).
+
+## The suites, measured at 2069d22 with the tree clean (added without re-running)
+
+Run ONCE, at the code-and-notes commit, per T-279's rule. This section
+was written in a LATER commit and NOTHING WAS RE-RUN to write it.
+
+    gate-run.spec.ts direct (SUPERTASKR_E2E_PORT=15271)  exit 0   56 passed, 14.5s reported, 15s wall
+    gate-run.mjs parser                                  exit 0   bodies=389  GREEN   3s
+    gate-run.mjs app                                     exit 0   bodies=1171 GREEN   8s
+    gate-run.mjs e2e --owning tools/e2e/scripts/gate-run.mjs
+                                                         exit 0   bodies=56   SCOPED-GREEN  14s
+    gate-run.mjs e2e (the full leg)                       exit 0   bodies=774 GREEN   853s wall (14m13s; the reporter says 14.2m)
+
+**THE COMPARISON THIS CARD EXISTS FOR: 774 bodies in 853 s, against 56 bodies in 14 s for the one spec that
+owns this lane's runner change. **Sixty-one times faster, and it is the
+same instrument** — same registry entry, same cd guard, same zero-body
+and parts-do-not-sum refusals, same verdict line. Taken over this
+lane's WHOLE diff (all nine changed paths, docs and code together) the
+derivation names **13 of the 39 spec files** and takes 1.65 s to say so,
+with nothing unplaceable — so even the widest reading of this card's own
+change is a third of the leg. The full leg ran here beside another
+lane's browser suite throughout, which the e2e-seconds band would read
+as contention rather than as the suite.**
+
+The scoped verdict line, whole:
+
+    gate-verdict suite=e2e exit=0 bodies=56 targets=1
+    ref=2069d22484dbffe99508db8d3978de432369f007 verdict=SCOPED-GREEN
+    scope=tools/e2e/tests/gate-run.spec.ts
+    reason=ok over 1 owning spec(s) for 1 changed path(s) — NOT the leg, and not a token
+
+and the derivation it printed first:
+
+    gate-run: tools/e2e/scripts/gate-run.mjs is owned by
+      tools/e2e/tests/gate-run.spec.ts — imports it, directly or transitively
+
+**The fixed cost, since the leg is now narrow enough for it to matter:**
+14s wall, 13.4s inside the reporter's own window, 12.4s summed over the
+56 bodies — so the dev server, node's start and the derivation together
+are about 1.6s, roughly 11 per cent, on a warm worktree. T-271-s5 was
+FILED claiming that share was "the larger half" and CORRECTED to this
+measurement before the lane closed.
+
+**`cargo test` was NOT run** and the reason is named: a fresh worktree
+with no `target/`, and three other lanes driving browser suites on this
+machine throughout. The docs gate names the rust leg because
+`app/src-tauri/src/agent/kit.rs` reads docs/CONVENTIONS.md — it reads
+the one line carrying "formats are version-bumped", the method version
+stamp, which this diff does not touch. It is owed at the merge.
+
+**`npm run capabilities:check` exits 1, STALE — committed 65947 bytes
+against a fresh generation of 67017.** Ten spec names were added. The
+regeneration is owed IN THE MERGE COMMIT and that file is outside this
+lane's fence. The check wrote nothing, verified by `git status`.
