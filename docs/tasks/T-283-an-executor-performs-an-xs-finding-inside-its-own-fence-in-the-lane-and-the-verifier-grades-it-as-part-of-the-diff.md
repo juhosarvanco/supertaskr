@@ -659,3 +659,50 @@ method version bump past **0.1.14** in its three files, with the `--bump`
 block, and the re-drill of the four blocks above on the merged tree
 (`roles/integrator.md` 2b). **The bump did not move inside the lane, and
 must not have.**
+
+#### 2026-09-09 — the same verifier, step 7 at the tip MY OWN commits created
+
+**A CORRECTION TO THIS VERDICT'S OWN FIGURE, appended rather than
+rewritten.** The verdict above reports `docs-gate.mjs` on the diff's six
+paths as **exit 0**. That is wrong, and it is wrong in this seat's own
+named way: the exit was read through a pipe into `tail`, so the number
+recorded was `tail`'s. Re-measured **unpiped**: the six paths give
+**exit 1**, and `EXIT = { CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 }`
+— **1 is FOUND, the gate FIRING and naming three owed suites**, not a
+failure. The three method paths alone give **exit 0**, "not owed",
+matching the ground truth taken at the base. The gate's substance in the
+verdict above is unchanged: it fires on the four `docs/` paths and names
+`npm test from app/`, `npm test from tools/e2e/` and
+`npx vitest run from lib/parser/`. The same misreading bit my first
+mutant control and was caught there too; both are recorded rather than
+quietly fixed.
+
+**Step 7 — the gates my own two commits (`a753265` verdict + cards,
+`f4c9c3f` bodies) could move, run at `f4c9c3f`:**
+
+| gate | result |
+|---|---|
+| `gate-run.mjs parser` | **exit 0**, GREEN, **389** bodies |
+| `gate-run.mjs app` | **exit 0**, GREEN, **1171** bodies — *on the second reading; see below* |
+| `gate-run.mjs e2e` | **exit 1**, RED, **782** bodies: **4 failed, 778 passed** |
+| `docs-gate.mjs` on my three card paths + the spec | **exit 1 = FOUND**, three suites named; every live card's frontmatter parses with a legal status; injection scan 0 hits; ADR-019 budgets hold |
+| `node tools/method-evals/run.mjs` | **exit 0**, 10 model-free |
+
+**The e2e red is the four bodies this verdict assigns, and nothing else.**
+By name: `T-283 C1`, `T-283 C2`, `T-283 C3`, `T-283 C4`, all in
+`tools/e2e/tests/brief.spec.ts`. The other **778 pass — the same count
+that was green at `afd454b`** — so the verdict and the two cards moved no
+existing body. This is the shape `T-281-s7` already names: a correction
+needing a text change is pinned by a body that is committed RED and turns
+GREEN when the integrator applies the change the block anchors on. **The
+bench tip is knowingly red on exactly those four and on nothing else.**
+
+**AND THE APP LEG REDDED ONCE AT THIS TIP AND IS NOT ATTRIBUTABLE TO
+THESE COMMITS.** Run 1 gave exit 1 over 1171 bodies with **9 failures,
+all in `app/test/genesis-switch-truth.test.tsx`** — a file no card feeds
+and my diff does not touch. The file passes **10/10 alone**, and the full
+leg re-run gave **exit 0, GREEN, 1171**. Attributed by name as a
+load-sensitive intermittent, per `docs/STATE.md`'s own
+re-run-once-then-attribute move; STATE names no such intermittent for the
+app suite, so it is filed as **T-283-s6** (the rust sibling is
+`T-281-s8`). **The verdict stands: APPROVED WITH ASSIGNED CORRECTIONS.**
