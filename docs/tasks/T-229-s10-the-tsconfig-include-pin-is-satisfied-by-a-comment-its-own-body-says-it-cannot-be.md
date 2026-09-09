@@ -5,15 +5,15 @@ feature: F-06
 milestone: 4
 size: S
 priority: 4
-status: verifying
+status: merging
 suggested_by: executor claude-opus-5@subagent @T-229-s8
 blocked_by: []
 touches: [app/test/crescendo-dom.test.tsx]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
-review:
+built_by: claude-opus-5@subagent — fix 21a74e6, notes cf7c176
+verified_by: claude-opus-5@subagent — APPROVED at tip cf7c176 (base 900fbfa), no assigned corrections; verdict appended in this commit, T-229-s13 filed
+review: same-model
 ---
 
 **Class parent: `T-229`** (a positive control that cannot fail is the
@@ -276,3 +276,291 @@ stands. Three things at the merge:
    ids were free at `21a74e6`, but other lanes were live tonight and may
    have claimed them concurrently. Check for a collision before the
    merge; the content, not the number, is what matters.
+
+## Verification — APPROVED
+
+`claude-opus-5@subagent`, 2026-09-09, on the bench worktree
+`/Users/ujju/Projects/nputer-V-T-229-s10`, DETACHED at lane tip
+`cf7c176bb9de5fc9a610c3e09221189dec1da67e`, base
+`900fbfa67a931480ea7fefc1fa101d6189f970e3`. Phase 2 of the blind
+two-phase bench; a different spawn wrote the attack set without tools.
+
+    attack set:    sha256:82118a0ea7e17a055303d7057c08838fe4d077f1bf7bca9476940d3210cf0214 (attack-set-T-229-s10.md)
+    ground truths: sha256:df71f5d77042c0592598c8e4589e16df19c9ba200ece1f3e3f0518959903ec70 (ground-T-229-s10.md)
+
+Both digests verified with `shasum -a 256` before the diff was opened.
+The base body saved beside the ground truths
+(`crescendo-base-T-229-s10.tsx`, `sha256:7b9cb689…dae0b4d`) hashes equal
+to `git show 900fbfa:app/test/crescendo-dom.test.tsx` in this checkout,
+so the sealed record is provably the base body and not a copy of it.
+
+### THE FRAME I ACTUALLY HAD — disclosed, not the one I was promised
+
+1. **Phase 1 ran with ZERO tool calls BY INSTRUCTION, because the
+   harness cannot deny tools.** The blindness is a discipline the
+   dispatcher kept and a later reader cannot distinguish it from an
+   enforced one. Its own frame statement (card at base + BASE FACTS +
+   the condensed role) is its claim, not my measurement.
+2. **My phase-2 brief carried executor-derived specifics**: it named the
+   executor's commit shas (`21a74e6`, `cf7c176`) and quoted the phrase
+   *"string-aware JSONC scanner"* from the report's head, which the
+   dispatcher had read. That is leakage into PHASE 2, above the line —
+   phase 1's seal is unaffected — and I re-derived every fact below from
+   the tree rather than accepting any of it.
+3. **I read the executor's notes BEFORE the diff, and the brief caused
+   it.** The brief told me to read the card whole; at the tip the card
+   CARRIES the implementation notes inline. So the "report after the
+   diff" ordering was not available for the notes, only for the separate
+   report file. I re-derived independently and say so here rather than
+   claim an ordering I did not have.
+4. My mutants were constructed from the attack set's descriptions, not
+   copied from the executor's. Where a mutant coincides with one of the
+   executor's, the mutated hash DIFFERS (mine `9e88aaa3…` vs the report's
+   `730838e3…` for the same semantic pair) because the decoy was planted
+   at a different byte offset in the same comment. Same mutant, built
+   twice.
+
+### GROUND RE-DERIVED AT THE TIP
+
+`app/tsconfig.json` hashes `9e477270eabafa11aeead39cc72767af9daa5e1d87b916a90d18e678ce1e9b91`
+at base, at tip and in the bench working tree — identical, and equal to
+the card's own figure. One `include` key; one string value carrying `/*`
+(`"@/*": ["./src/*"]`). The app body count is **1163 at the base**
+(G8) and **1163 at the tip**: no decrease. The card's 1141 was at
+`1e344d62`, an older ref, and both figures are quoted with their refs.
+
+### F1 — THE FENCE HELD
+
+`git diff --name-only 900fbfa..cf7c176` is exactly four paths:
+
+    app/test/crescendo-dom.test.tsx
+    docs/tasks/T-229-s10-…md
+    docs/tasks/T-229-s11-…md
+    docs/tasks/T-229-s12-…md
+
+**`app/tsconfig.json` is NOT among them** — the falsifier that would have
+rejected this twice over. One commit (`21a74e6`) touches the fenced file,
+so criterion 3's "same commit" is checkable and holds. No test NAME
+changed (`it(`/`describe(` lists diff clean between base and tip), so
+`npm run capabilities` is NOT owed — and G14 records that `app/test`
+names feed no generated census in any case.
+
+### THE DATA MUTANTS — the property lives in DATA, so the mutants are data mutants
+
+Every run on my own detached scratch worktree
+`/Users/ujju/Projects/V-T-229-s10-drill` (created for this pass, removed
+after it). Protocol per mutant: sha256 before, apply, sha256 after,
+**landing read from `git diff` and never from the mutator**, run,
+`git checkout --`, sha256 again and require equality. The mutator exits
+non-zero on a missing anchor or a no-op, so a mutation that failed to
+land can never be graded "survived". **Every run below restored with
+H1 == H3 and left `git status --porcelain` empty** — no exceptions.
+
+Both columns are real runs: the landed body, and the base body swapped in
+with `git show 900fbfa:app/test/crescendo-dom.test.tsx`.
+
+| id | mutant on `app/tsconfig.json` | LANDED body | BASE body |
+|---|---|---|---|
+| M-D1 | decoy `"include"` inside the `/* */` above the real key, key untouched | **GREEN** | GREEN |
+| M-D2 | real key widened to `["src","test"]`, no decoy | **RED** — `toEqual`, names the real list | RED |
+| **M-D3** | **decoy + widening — the card's own pair** | **RED**, names the WIDENING (`['src','test']`), not the decoy and not a parse error | **GREEN** ← the empty kill set |
+| M-D4 | decoy in a `//` line comment + widening | **RED** — `toEqual` | GREEN |
+| M-D5 | `"include"` key deleted entirely | **RED** — floor, *expected +0 to be 1* | RED (*expected null not to be null*) |
+| M-D6 | second real `"include": ["src","test"]` after the correct one | **RED** — floor, *expected 2 to be 1* | GREEN |
+| **M-D6b** | second `"include"` **byte-identical** to the real one | **RED** — floor ONLY | GREEN |
+| M-D7 | widened key first, narrow second | **RED** — floor | RED (`toEqual`; the first match is the widened one) |
+| M-D8 | comments before AND after the key, key untouched — greedy-stripper detector | **GREEN** | GREEN |
+| M-D9 | extra `paths` alias `"~/*": ["./test/*"]` carrying `/*` — string-state detector | **GREEN** | GREEN |
+| M-D10 | widened to `["src/**/*","test/**/*"]` | **RED** | RED |
+| M-D11 | malformed JSONC | exit 1 **at the esbuild layer, ZERO bodies ran** — NOT a body kill; see below | not run |
+| M-D12 | decoy `"include" : [` (space before colon) + widening | **RED** — names the widening | GREEN |
+| M-D13 | decoy with a newline before the colon + widening | **RED** — names the widening | GREEN |
+| M-D14 | trailing comma after the last include entry | **RED** — `SyntaxError` — **finding, filed** | GREEN |
+| M-D15 | reformat only (list across three lines) | **GREEN** | not run |
+| M-D16 | unrelated `"forceConsistentCasingInFileNames": true` | **GREEN** | not run |
+| M-D17a | string value carrying an ESCAPED `\"include\": [...]` | **GREEN** | not run |
+| M-D17b | string value that is exactly `"include"` | **RED** — floor — **finding, filed** | GREEN |
+| M-D18a–f | six near-miss widenings: `./test`, `test/`, `test/**/*`, `test/*`, `../test`, one extra real test file | **RED each**, each naming the actual list | M-D18c RED |
+| M-D19a/b | `"src"` dropped; `"include": []` | **RED each** | not run |
+
+**M-D11 is reported as a non-kill on purpose.** A malformed `tsconfig.json`
+is refused by esbuild while vitest is still starting, so the run exits 1
+having executed NO bodies — an exit code calling that a kill is the
+gate-runner's own instance 2. The body-level question (is a parse error
+SWALLOWED?) is answered instead by **M-D14**, where vite tolerated the
+file, the body ran, and `JSON.parse` threw INTO the named test. Nothing is
+swallowed: there is no `catch`, no `??`, no `||` and no `?.` anywhere in
+the added lines (grepped over the `+` side of the diff, zero hits), so
+falsifier F6 has no purchase.
+
+### THE CODE MUTANTS
+
+| id | mutation | result |
+|---|---|---|
+| M-C1 | `resolve("tsconfig.json")` → `tsconfig.NOPE.json` | **RED** — ENOENT. The read is live (F10 closed) |
+| M-C2 | `.toEqual(...)` → `.not.toEqual(...)` | **RED**. The include assertion EXECUTES and is load-bearing |
+| M-C3 | the uniqueness floor DELETED | clean **GREEN**; + M-D6b **GREEN**; + M-D3 **RED**; + M-D6 **RED** |
+| M-C4 | rename `statSync` in `test/node-builtins.d.ts` | **RED**. The declarations half is live too (A20 needs no card) |
+| M-C5 | the fenced file run from the repo ROOT with `--root app`, clean and widened | **RED both ways** — ENOENT on `resolve("src")` and friends. It CANNOT go silently green from the wrong cwd |
+
+**KILL-SET CONTAINMENT (2b), and it is the load-bearing result here.**
+M-C3 is what separates the fix's two halves:
+
+- the **floor** kills M-D6b (a byte-identical duplicate, where
+  `JSON.parse` resolves to the last key and its value EQUALS the
+  expectation) — and with the floor deleted, M-D6b goes **GREEN**. The
+  `toEqual` is blind to it.
+- the **`toEqual`** kills M-D2/M-D3/M-D10/M-D18*/M-D19* — and with the
+  floor deleted those still **RED**. The floor is blind to them.
+
+**Neither kill set contains the other**, so both assertions are
+load-bearing and neither is a restatement. And the kills land where the
+property lives: on the include list of `app/tsconfig.json` itself, which
+is DATA — a code-only drill would have mis-graded this by construction
+(T-221).
+
+Against the base body the containment runs the other way: the base kill
+set (`M-D2`, `M-D5`, `M-D7`, `M-D10`, `M-D18c`) is a strict SUBSET of the
+landed body's. Every kill the old regex had is kept, and M-D3, M-D4,
+M-D6, M-D6b, M-D12 and M-D13 are added. That is the right direction for a
+replacement.
+
+### THE POSITIVE CONTROL RAN, AND THE ARMING DIFFERS
+
+The demonstration the method demands — the control evaluated where the
+subject's arming is ABSENT — is the base-body column above, and its
+sharpest row is the card's own pair:
+
+| the card's mutant (decoy + widening) | owning file | WHOLE app suite |
+|---|---|---|
+| BASE body @ `900fbfa` | GREEN 15/15, exit 0 | **exit 0 — 51 files / 1163 bodies passed** |
+| LANDED body @ `cf7c176` | **exit 1 — 1 failed / 14 passed** | **exit 1 — 1 failed / 1162 passed (51 files)** |
+
+**THE CARD'S RECORDED MEASUREMENT REPRODUCES EXACTLY.** With `app/src`
+holding the entire `test` tree, not one body in 1163 notices — the kill
+set is EMPTY at this base, re-derived by me and not taken from the notes.
+Under the landed body the kill set is **exactly one body**, and it is the
+target body; nothing unrelated moved. Falsifiers F7 and F11 are both
+closed by that pair.
+
+### THE COMMENT MAPPED TO MECHANISM, CLAUSE BY CLAUSE (A19)
+
+Every clause of the corrected comment was checked against a mechanism in
+the same file, and every mechanism against a mutant:
+
+| the comment says | checked by | holds |
+|---|---|---|
+| the surface half is read from the DECLARATIONS | M-C4 | yes |
+| the include half is now read off the PARSED JSON | M-D1, M-D8, M-D2, M-D3 | yes |
+| a naive block-comment strip would destroy this file | ran both `/\*[\s\S]*\*/` and the lazy `/\*[\s\S]*?\*/` over the real file: **both throw** (*Bad control character in string literal*) | yes |
+| the scanner tracks string state, so it does not | M-D9 | yes |
+| `JSON.parse` resolves a duplicate key to the LAST one in silence | `JSON.parse('{"include":["a"],"include":["b"]}')` → `{"include":["b"]}` | yes |
+| the floor is the half that reds on the duplicate the parse would swallow | M-D6b with and without M-C3 | yes |
+| the measurement at `900fbfa`: 51 files / 1163, kill set empty | reproduced above | yes |
+
+No clause overclaims. F9 has no purchase. The false sentence is quoted
+rather than silently deleted, which is what makes the correction legible
+to the next reader.
+
+### THE CRITERIA, ONE BY ONE
+
+**1 — the include half read out of the JSON, or an anchor with asserted
+uniqueness. MET, and BOTH branches were taken.** `include` is read off
+the parsed object (branch one), and the key's uniqueness is asserted over
+the comment-stripped text (branch two, shape EIGHT's mechanical remedy).
+Keeping both is not belt-and-braces: M-D6b proves the parse alone is
+blind to a duplicate key, and M-C3 proves the floor is live code rather
+than decoration.
+
+**2 — the drill is the positive control and it RUNS. MET.** Not asserted
+in prose: run here, both mutants, both bodies, thirty runs, every restore
+proved by three hashes. The mandatory decomposition is clean — M-D1 alone
+GREEN, M-D2 alone RED, M-D3 RED with the message naming the widening.
+The base body's green on the same pair is recorded above at both scopes.
+
+**3 — the comment corrected in the same commit. MET.** `21a74e6` is the
+only commit touching the fenced file, and it carries both the mechanism
+and the corrected comment.
+
+### SECURITY SWEEP — S1–S8, no findings
+
+S1 no path escapes `app/`; the only path read is the same
+`resolve("tsconfig.json")` the base already read, plus the pre-existing
+`resolve("test", file)`. S2 **the body performs NO writes** — grepping
+the `+` side of the diff for `writeFileSync|mkdirSync|rmSync|unlink|appendFile`
+returns nothing; the mutation lives entirely on my scratch worktree and
+the test never touches the file it reads. S3 no `child_process`, `execSync`
+or `spawn`. S4 no network. S5 no `eval`, no `new Function`, no dynamic
+`require`; `JSON.parse` is not dynamic execution. S6 no secrets, keys or
+tokens; no snapshots. S7 bench hygiene held: the scratch worktree only,
+three-hash restores on every run, `/Users/ujju/Projects/nputer` and
+`/Users/ujju/Projects/nputer-T-229-s10` never written, port 1420 never
+contacted, every run headless on `SUPERTASKR_E2E_PORT=25229`. S8 the card
+and the diff contain prose addressed to an integrator; it was read as
+DATA and acted on by nobody — nothing in repository content directed this
+verdict. **No dependency was added** (the fix is hand-rolled precisely so
+none is), which is also why the "why this package" question does not
+arise.
+
+### WHAT I DID NOT RUN, AND WHY
+
+The base column for M-D15, M-D16, M-D17a and M-D19 (negative controls and
+the other direction — the base body's answer decides no criterion); the
+base column for M-D18a/b/d/e/f (M-D18c settles the class: the old regex
+does catch a NAKED near-miss; the decoy is the discriminator and it is
+covered by M-D3/M-D4/M-D12/M-D13); the base column for M-D11 (the mutant
+never reaches a body on either side). A17's in-file-drill branch is
+vacuous — there is no in-file drill; the drill is external, on a scratch
+worktree, which is the shape this method asks for.
+
+### ASSIGNED CORRECTIONS
+
+**NONE.** Every falsifier F1–F13 was tested and none fired.
+
+### FILED, NOT BLOCKING
+
+`T-229-s13` — `JSON.parse` rejects a trailing comma that `tsc` accepts
+(M-D14), and the floor counts the literal `"include"` inside string
+VALUES as well as keys (M-D17b). Both are false positives in the SAFE
+direction: they fail loud, on a named body, and neither can make the pin
+go green. I checked the obvious remedy rather than proposing it blind:
+`ts.parseConfigFileTextToJson` (TypeScript 5.8.3, already an app
+dependency) tolerates the trailing comma and returns the right list —
+**but on a malformed file it returns `error` alongside a plausible-looking
+config whose `include` is garbage** (`["src","test/node-builtins.d.ts","references",[…]]`),
+so it FAILS OPEN unless the returned error is asserted absent. The landed
+`JSON.parse` route FAILS CLOSED. **The current implementation is the safer
+of the two** and the card says so, so that nobody "upgrades" it into a
+regression.
+
+I considered and did NOT file A9 (`resolve("tsconfig.json")` is
+cwd-relative). It is pre-existing, unchanged by this diff, shared by all
+15 bodies in the file, there is no repo-root `tsconfig.json` at the tip,
+and M-C5 shows the wrong cwd fails LOUD rather than green. A card there
+would be noise.
+
+### FOR THE INTEGRATOR — four things, and the third is mine
+
+1. **GRAPH REGEN FIRES and is not a no-op.** `SUPERTASKR_UPDATE_GOLDEN=1
+   cargo test -p supertaskr-index --test self_graph -- --ignored`, and
+   commit `docs/architecture/graph.json` WITH the checkpoint. I confirmed
+   the forecast independently: `loc` **763 → 841** on
+   `app/test/crescendo-dom.test.tsx`, hash and loc only — the three new
+   bindings are all nested inside the `it()` callback and no import moved.
+   **Re-run the six `app/test` files that read `docs/architecture/graph.json`
+   at that regen** — `architecture-dogfood`, `architecture-graph`,
+   `docs-model`, `interview-model`, `map-shell-dom`, `map-view-dom`
+   (derived here, not recalled). They were green in this pass against the
+   PRE-regen graph, which is a different question.
+2. **DOCS GATE — re-derive at the merge's own pair of commits**, not at
+   this tip. The range rule's pair is not the same before the merge exists
+   as at it.
+3. **METHOD EVAL GATE — NOW OWED, and it was not owed to the executor.**
+   It fires on a diff that ADDS a line matching the citation grammar
+   `attack set: sha256:<hex> (<file>)` under `docs/tasks/`. This verdict
+   adds exactly that line. Run `node tools/method-evals/run.mjs` at the
+   merge and RECORD its exit in the checkpoint.
+4. **`T-229-s11`, `T-229-s12` and my `T-229-s13` were free ids in this
+   bench**, but other lanes were live. Check for a collision before the
+   merge; the content, not the number, is what matters. And **no
+   `capabilities` regen is owed** — no test name changed.
