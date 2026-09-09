@@ -270,3 +270,418 @@ that makes it visible.
 5. **The ADVISORY seat block reads "the card carries no acceptance
    criteria, so there is nothing to build against".** There is: the RULED
    section. The criteria above are derived from it.
+
+## Verdicts
+
+### 2026-09-09 — claude-opus-5@subagent (phase 2)
+
+VERDICT: APPROVED WITH ASSIGNED CORRECTIONS
+
+attack set: sha256:4f0cd49b8c89073c2cda33c4bf7f7c588dfecf4c620517ef2a4682a106bb9be8 (attack-set-T-112-s5.md)
+ground truths: sha256:d31799c0835de21f446fa967ec5d457613657a325bad4d098886b6143f547085 (ground-T-112-s5.md)
+
+base `f34be88a7ae7f39ad501a9638bdc55ba5b69cae3` · tip
+`cbc24d456370830360f4bd7ea3167d401ff1834a` · bench
+`../nputer-V-T-112-s5` detached · scratch worktree
+`<scratch>/V-T-112-s5-drill`, detached at the tip, for every mutant, with
+its own `app/dist` built so the bundle-staleness bodies do not fire.
+
+**THE FRAME I ACTUALLY HAD.** Phase 2 of two spawns, fresh, with tools.
+Both digests verified with `shasum -a 256` before either file was opened;
+both matched. **Phase 1 was tool-less BY INSTRUCTION, not by
+construction** — this harness cannot deny a spawn its tools — and the
+attack set's own foot reports `tool calls made: 0`. That is the honest
+weaker thing and it is written down rather than rounded off.
+
+**MY BRIEF CARRIED EXECUTOR-DERIVED SPECIFICS, AND I SAY SO RATHER THAN
+PRETENDING IT DID NOT.** The dispatching seat named the executor's two
+commit subjects and its hook name `useAssembledBrief`, read out of the
+report's head; it also told me *which* dogfood body to expect red and why
+the ask was refused. Phase 1 was above that line — its return names
+neither — so the blindness that matters held, but phase 2's brief did
+not, and the reader should discount my orientation accordingly. Every
+figure below is my own measurement at a named ref; nothing is relayed. I
+read the diff whole before opening `report-T-112-s5.md`.
+
+**AND THE SEAT'S ONE KNOWN-FACT WAS WRONG IN MY FAVOUR.** I was told ONE
+app body would be red. **Two are.** The lane's own notes name both,
+correctly, so this is the seat's understatement and not the lane's
+omission — but it is exactly the misattribution this role is warned about
+and I record it: had I trusted the brief, I would have charged the second
+red to the lane.
+
+---
+
+## 1. The suites, each at a named ref, through the blessed runner
+
+Run from the bench root, `SUPERTASKR_E2E_PORT=25112`, after `npm ci` in
+lib/parser, app and tools/e2e and `npm run build` in lib/parser and app
+(all exit 0).
+
+| leg | exit | bodies | ref | verdict |
+|---|---|---|---|---|
+| `gate-run.mjs parser` | **0** | **389** | `cbc24d4` | GREEN |
+| `gate-run.mjs app` | **1** | **1170** | `cbc24d4` | RED — the two pins below |
+| `gate-run.mjs rust` | **0** | **645** over 18 targets | `cbc24d4` | GREEN |
+| `gate-run.mjs e2e` | **0** | **706** | `cbc24d4` | GREEN |
+
+The count is read beside the code in every row. `+7` app bodies over the
+base figure of 1163 the ground truths carry (6 DOM bodies in
+`detail-assignment.test.tsx`, 1 sweep in `select-task-detail.test.ts`).
+My cargo figure is **645**, not the report's 641 — `gate-run` and a bare
+`cargo test` count differently; both are exit 0 and I quote mine.
+
+**THE APP RED, CLASSIFIED BEFORE IT IS ATTRIBUTED.** Two bodies, one
+cause, and `npx vitest run` names them:
+
+    test/architecture-dogfood.test.ts  "the full relation table: 33 confirmed, 2 undeclared, 10 planned"
+        expected [ …(46) ] to deeply equal [ …(45) ]  — the extra row is ["C-09","C-15","planned",0]
+    test/map-dogfood-render.test.tsx   "draws the full 45-edge relation table, with TWO undeclared rows left"
+        expected …(46) to have a length of 45 but got 46
+
+Both files are **outside this lane's fence** (the manifest's 19 paths,
+GT-11 — neither appears), both are C-12's `app-map` dogfood pins over the
+derived relation table, and both move for the one reason: C-09 now
+declares C-15, so the table gains a row. `docs/CONVENTIONS.md`'s GRAPH
+REGEN bullet and T-211 put pin reconciliation at the integration seat and
+forbid a lane to touch it; the ask was written, answered NO, and **neither
+file is in the diff** — I checked `git diff --name-status`, which lists
+ten paths and no test outside `app/test/detail-assignment.test.tsx` and
+`app/test/select-task-detail.test.ts`. **Not charged to the lane. No
+OTHER app body reds**, at the tip or under any mutant's control run.
+
+**I RE-DERIVED THE INTEGRATOR'S POST-REGEN VALUES RATHER THAN RELAYING
+THEM.** `supertaskr-index index --root <drill worktree>` regenerated the
+graph in place (`index --check` in that copy then reads **CURRENT**,
+1198065 bytes / 201 files / 2558 symbols / 2453 edges, exit 0), and the
+two pins run against it give exactly:
+
+- `architecture-dogfood` — one row, **`["C-09", "C-15", "confirmed", 1]`**,
+  between `["C-09","C-11","planned",0]` and `["C-09","C-16","confirmed",3]`;
+  the body's name moves to *"34 confirmed, 2 undeclared, 10 planned"*.
+- `map-dogfood-render` — the rendered edge count **45 → 46**.
+
+The lane's stated values are correct. In the lane the same row reads
+`planned 0` because the relation column comes from the COMMITTED graph,
+which is stale by construction here — `index --check` at the tip is exit
+**1** STALE, and it is a REAL stale, not the `--root` false red: it prints
+both byte/file/symbol/edge counts and `files +0 -0 ~5`, where the false
+red prints `committed: MISSING`.
+
+---
+
+## 2. The criteria, one by one, against the RULING
+
+The card carries no `## Acceptance criteria` heading, so the RULED section
+of 2026-08-31 binds. The attack set derived **eight** criteria from it
+before the diff existed; the executor wrote **seven** on the card. I judge
+against the ruling and give both mappings.
+
+**C1 — the drawer fetches, and it is `TaskDetailPanel.tsx` that does.
+MET.** `git diff --name-status` adds **no file**, so attack 1.1's "a
+helper only Board calls" has nowhere to live. Grepping the whole board
+tree for store call sites returns exactly one executable site —
+`TaskDetailPanel.tsx:15` (`import { readBrief } from "@/lib/dispatch-store"`)
+and `TaskDetailPanel.tsx:111` (`readBrief(askFor, BRIEF_ROLE)`). Every
+other hit in `Board.tsx` is inside a comment. The call is not dead: A-M1
+kills four bodies.
+
+**C2 — the `brief` prop remains the seam. MET, and load-bearing rather
+than merely untouched.** Attack 2.1 asked for the base version of
+`app/test/board-truth.test.tsx` run against the lane's source; that is
+vacuous here in the strongest possible way — **the file's blob is
+byte-identical at both refs**, `085a3ecd1c63e219f475d2faf223d61960ce5154`
+at `f34be88` and at `cbc24d4`, matching the blob the ground truths
+recorded. It was not edited, not weakened, not narrowed. And A-M5 (delete
+`if (supplied !== undefined) return supplied;`) kills **8** bodies
+including that file's own *"a card opened with both props renders the
+drawer's copyable brief, and neither prop alone will do"* and three in
+`board-root.test.tsx`. Attack 2.2's precedence question is answered in
+code and pinned in a body: a supplied prop wins and **no `invoke`
+happens at all**. Attack 2.3/2.4: the prop still threads through Board
+byte-identically; no `lazy`, `Suspense` or portal enters the path.
+
+**C3 — the C-09 → C-15 edge is declared. MET.** I derived the real import
+edge from the indexer rather than from the registry:
+`index --check` at the tip reports, among `edges +12 -0`, exactly one
+cross-component file edge —
+`f:app/src/components/board/TaskDetailPanel.tsx -> f:app/src/lib/dispatch-store.ts (import) symbols=[readBrief]`.
+C-09 owns `TaskDetailPanel.tsx` and C-15 owns `dispatch-store.ts` (GT-6),
+so the edge IS C-09 → C-15, and `C-09-detail-panel.md` declares
+`depends_on: [C-06, C-08, C-11, C-15, C-16, C-17]`. Direction correct
+(3.2), node correct (3.3), and **no line was removed** (3.4) — the
+declared-edge total goes 43 → 44, which is +1 net, so nothing was traded
+away to keep a count.
+
+**C4 — `arch cycles` stays clean. MET, and the instrument is shown
+live.** At the tip: `ACYCLIC · components=15 · declared_edges=44 · exit
+0`. That is a measurement and not a vacuous pass, because the positive
+control fails: data mutant **A-D3**, injecting the reverse edge alongside
+the true one in an isolated copy of the registry, gives
+`cycle C-09 -> C-15 -> C-09 · DECLARED CYCLE · exit 1`.
+
+**C5 — shape 2 stays refused. MET.** `Board.tsx`'s diff is
+**comment-only** — `index --check` reports it as `(content, loc 108 ->
+118)` with **no symbol change**, and grepping the added lines for
+`useEffect|await|async|invoke|then(|import` returns nothing (exit 1).
+Attack 5.3 is the one that needed care and it is NOT triggered: the
+paragraph the lane edited is the *account* paragraph (*"and `T-112-s5`
+carries the account"*), while the DESIGN NOTE proper — *"Both props are
+optional and are threaded VERBATIM — this file makes no decision about
+them"* — is untouched, and the replacement text says in as many words
+that fetching here **was refused on this file's own note**. That is
+recording a change, not licensing one.
+
+**C6 — shape 1 stays refused. MET.** `app/src/App.tsx` is not in the diff
+at all. `const [openRef, setOpenRef] = useState<TaskRef | undefined>(undefined);`
+is byte-identical (it moves 73 → 83 only because the header comment grew).
+No `createContext`, no module-level mutable: the sole `let` added
+anywhere is `let live = true` **inside** the effect, which is per-effect
+closure state and the opposite of lifting.
+
+**C7 — async honesty. MET on every observable, with one guard unheld —
+see the correction.** Re-fetch on a reused drawer (1.3) is real: the
+re-target body renders `T-960`, then re-renders the same root at `T-962`
+without unmounting, and asserts `calls` is `["T-960","T-962"]`. The
+dependency array (1.4) is `[askFor]` and is pinned — A-M7 narrows it to
+`[]` and the re-target body reds. Error is distinct from empty (7.3):
+`boundaryFailed` carries its own whole sentence, `toBe`-pinned beside the
+pending one in `select-task-detail.test.ts`, and A-M6 kills it. Sticky
+error across a switch (7.5) cannot happen: the answer is keyed and the
+key is pinned by A-M4b. No unhandled rejection escapes (7.6): the
+rejection is taken by `.then`'s second argument, and the suite runs clean.
+**Where it is thinner than the attack set asked:** there is no loading
+affordance DISTINCT from the never-asked state — a pending fetch renders
+*"the assembler has not answered for this card yet"*, which is literally
+true and is asserted mid-flight in the re-target body, so I do not call it
+a defect; and the unmount-mid-flight path (7.2) is not exercised by any
+body, which is the correction below.
+
+**C8 — the call is right. MET.** The arg assertion is exact —
+`expect(calls).toEqual([{ cmd: "dispatch_brief", taskId: "T-960", role: "executor" }])`
+— which is WHICH card, not that a call happened (attack 8.1/1.5). I
+cross-checked both arguments against the real signatures rather than the
+fixture: `readBrief(taskId: string, role: "executor" | "verifier")` and,
+Rust-side, `Role` is `#[serde(rename_all = "camelCase")]` over
+`Executor | Verifier`, so `"executor"` is one of exactly two accepted
+spellings (8.2). The id passed is `detail?.id`, model-derived, not a
+`TaskRef` object. Call count is one per settled mount and A-M3 proves the
+role is pinned, A-M2 the id (8.3).
+
+**WHERE THE TWO LISTS DIFFER.** The executor's seven and the attack set's
+eight are not one a superset of the other:
+
+- The executor has **no criterion for C7's staleness half** — its 6 covers
+  only the door's two arms. The property is built and pinned anyway
+  (A-M4b, A-M7), so this is a gap in the LIST, not in the work.
+- The executor has **no criterion for C8** — the role, the exact args and
+  the call count are asserted in a body but never claimed as a criterion.
+- The attack set has **no counterpart to the executor's 7** (the
+  `dispatch` half of `T-112-s1`'s criterion 3 is NOT built and is routed).
+  That is a scoping statement derived from a different card, and filing it
+  is right: it is the sentence that stops a reader believing a brief now
+  reaches a screen. It does not.
+- The rest map one-to-one: 1+2↔C1, 4↔C2, 3↔C3+C4, 5↔C5+C6, 6↔C7's door
+  half.
+
+---
+
+## 3. The poison drill — my own mutants, at the site the property lives
+
+Detached scratch worktree, work committed first, one side per mutant,
+**every landing read from `git diff`** and every restore proved by
+`shasum -a 256` against the pristine values plus an empty
+`git status --porcelain`. Pristine
+`TaskDetailPanel.tsx` = `c36eb847b9225ce2ad6f3fd8f3b37bbace5ff75e156131672a60696cf58c85a3`;
+every restore printed it back.
+
+**A note on the first attempt, because it is the exact failure this method
+names.** My first drill reported all fourteen mutants "survived". They had
+not run: the file list was an unquoted zsh scalar, zsh does not word-split
+one, and vitest answered `No test files found, exiting with code 1` — an
+**exit 1 over ZERO bodies**, a harness failure wearing a red. Reading the
+count as well as the code is what caught it. Everything below is the
+re-run, with the list as an array.
+
+Kill sets are over a seven-file set (118 bodies: `detail-assignment`,
+`board-truth`, `select-task-detail`, `board-root`, `detail-presentation`
+and the two dogfood files); the two dogfood pins red in every run and are
+excluded as baseline. Survivals were re-confirmed against the **full**
+1170-body suite.
+
+| ID | mutation (one side) | result | the body it reds |
+|---|---|---|---|
+| **A-M1** | the `readBrief` call disabled | **KILLED ×4** | *asks dispatch_brief for the open card's id…*; *`noProject` reaches the reader…*; *a REJECTED invoke…*; *a re-targeted drawer…* |
+| **A-M2** | asks for the constant `"T-001"` | **KILLED ×2** | *asks dispatch_brief for the open card's id…*; *a re-targeted drawer…* |
+| **A-M3** | `BRIEF_ROLE` → `"verifier"` | **KILLED ×1** | *asks dispatch_brief for the open card's id…* |
+| **A-M4** | the in-flight `live` guard deleted | **SURVIVED** | nothing, in 1170 bodies — see the correction |
+| **A-M4b** | the answer un-keyed (`answer.taskId !== askFor` dropped) | **KILLED ×1** | *a re-targeted drawer never shows the PREVIOUS card's brief* |
+| **A-M5** | a supplied prop stops winning | **KILLED ×8** | incl. `board-truth.test.tsx`'s own body and three in `board-root.test.tsx` |
+| **A-M6** | a rejection swallowed into `noSuchCard` | **KILLED ×1** | *a REJECTED invoke reaches the reader as the app's own boundary failing* |
+| **A-M7** | the dep array narrowed to `[]` | **KILLED ×1** | *a re-targeted drawer never shows the PREVIOUS card's brief* |
+| **A-M8** | the `blockWillRender` gate ignored — it always asks | **SURVIVED** | nothing, in 1170 bodies — see the correction |
+| **A-M9** | the `hasTauriRuntime()` guard dropped | **KILLED ×1** | *with no Tauri runtime it asks nothing…* |
+| **A-M10** | `noProject` collapsed into the assembler's silence | **KILLED ×1** | *`noProject` reaches the reader as ITS OWN fact…* |
+| **A-D1** *(data)* | the declared C-15 edge deleted, the import left | **SURVIVED — and turns the suite GREEN** | 118/118, exit 0 |
+| **A-D2** *(data)* | the edge declared BACKWARDS (C-15 → C-09) | **SURVIVED** `arch cycles` | ACYCLIC, 44 edges, exit 0 |
+| **A-D3** *(data)* | the reverse edge injected alongside | **KILLED** | `arch cycles`: `cycle C-09 -> C-15 -> C-09`, exit 1 |
+| **A-D4** *(data)* | the fixture brief's line changed at the PRODUCER | **KILLED ×1** | *asks dispatch_brief for the open card's id…* — so the assertion is on the brief's VALUE |
+| **A-D5** *(data)* | the answer is about `T-999` while `T-960` is open | **SURVIVED** | nothing, in 1170 bodies |
+| **F1** | a `readBrief` call planted in `Board.tsx` | **no new red** (structural) | — |
+| **F2** | `openRef` lifted to `App.tsx` | not planted — `App.tsx` is out of fence, which is the keeper | — |
+
+**CONTAINMENT, NOT THE COUNT.** Reading the table by BODY rather than by
+mutant: *the open card's id* is killed by {M1,M2,M3,D4}; *re-target* by
+{M1,M2,M4b,M7}; *noProject* by {M1,M10}; *boundary* by {M1,M6};
+*no-runtime* by {M9}; *supplied prop* by {M5}. **No body's set is
+contained in another's**, so none of the six bodies this lane added is a
+restatement of another. A-M4b and A-M7 share a single killing body, which
+is a property of that body being load-bearing for two things, not of
+either mutant being redundant.
+
+**WHERE THE PROPERTY LIVES IN DATA, THE MUTANT IS A DATA MUTANT.** Five of
+them (D1–D5) — and they are what separated the registry claim from the
+suite, which no code mutant could have.
+
+**A-D1 SAID PLAINLY, BECAUSE THE ATTACK SET PRE-COMMITTED TO IT.** Delete
+the C-15 entry from C-09's `depends_on`, leave the import, and the app
+suite goes from two red to **118/118 exit 0**: no gate inside this lane
+holds the declaration, and removing it makes the lane LOOK better.
+**A-D2 adds the same for direction** — declaring the edge backwards is
+invisible to `arch cycles` too. Both are the finding the lane already
+routed as `T-112-s7`, measured independently here and, on the direction
+half, widened.
+
+---
+
+## 4. Security sweep
+
+- **S1 — no HTML injection. CLEAN, and measured rather than reasoned.**
+  Zero `dangerouslySetInnerHTML` / `innerHTML` / `outerHTML` in the whole
+  of `app/src`. The brief renders as a React text child inside `<pre>`. I
+  planted the fixture the attack set asked for — a brief whose line is
+  `<img src=x onerror="globalThis.__pwned=1"><script>…</script>` — and
+  asserted `img` and `script` element counts are 0, `__pwned` is
+  undefined, and the literal text is on screen. Passes.
+- **S3 — the Rust payload. NO HOLE, at the base or here, and the attack
+  set's expectation of a pre-existing one is FALSE.** `task_id` is never
+  joined into a path. `brief_for_card` calls `list_dir("docs/tasks")` — a
+  constant rel path joined to the project root — and uses the id only as a
+  **basename filter**, `name.starts_with(&format!("{task_id}-"))`, over
+  `p.rsplit('/').next()`. A basename cannot contain `/`, so a
+  traversal-shaped id matches nothing and yields `NoSuchCard`. The length
+  bound `task_id_within_bounds` sits on the testable seam (T-112-s1's own
+  correction 1). **This card touches no Rust at all**, so it cannot widen
+  what is not open. Reported at the base as the sweep requires, with the
+  finding being that there is none.
+- **S4/S5/S7 — CLEAN.** The reachable file set is the tasks directory. The
+  one string on this path authored outside the app is the rejection's
+  message, and it travels verbatim into `refusalSentence`; I planted a
+  hostile one and it renders as text, creating no element. It is
+  boundary-authored (a missing command, a serde failure), not
+  attacker-supplied, and it names no host path.
+- **S6 — CLEAN.** No anchors, no `href`, no `javascript:` in the panel.
+- **S2 — no change.** No new truncation and none removed; the fetched
+  answer travels the same render path the prop already did.
+- **Dependencies: none added.** No `package.json` or lockfile in the diff.
+- **No secrets or keys in the diff.**
+
+Nothing here is REJECTED-level.
+
+---
+
+## 5. ASSIGNED CORRECTIONS
+
+Both are the same class and it is the class this feature's own `T-112-s1`
+verdict named: **a bound that nothing can poison is a bound nothing
+keeps.** Neither changes behaviour; each pins a property the new code
+states about itself and nothing holds. The integrator performs them at
+the landing, held to lane standards.
+
+**CORRECTION 1 — pin the gate on asking.** `useAssembledBrief`'s design
+note claims in capitals *"IT ASKS ONLY WHEN THE BLOCK WILL RENDER, WHICH
+IS `dispatch` BEING PRESENT"*. Mutant **A-M8** deletes that gate —
+
+    -  const askFor = blockWillRender && supplied === undefined ? taskId : undefined;
+    +  const askFor = supplied === undefined ? taskId : undefined;
+
+— and survives all **1170** bodies. Add to
+`app/test/detail-assignment.test.tsx`, inside the T-112-s5 describe:
+
+    it("asks NOTHING when the dispatch prop is absent, because the block will not render", async () => {
+      const calls = installTauri(async (taskId) =>
+        ({ kind: "answered", outcome: briefFor(taskId, "a brief nobody asked for") }));
+      const dom = await renderSettled(briefModel(false), "T-960", undefined, undefined);
+      expect(calls).toEqual([]);
+      expect(dom.querySelector('[data-testid="detail-brief"]')).toBeNull();
+    });
+
+**AND THIS CONTROL IS MINE, SO I CHECKED IT, BOTH WAYS.** Appended to
+that file in the scratch worktree at the tip: **16 passed (16), exit 0** —
+it passes against the implementation as built. Then, with **A-M8**
+applied — the arming absent — **1 failed | 15 passed (16)**, and the one
+failure is this body by name. Its positive control is the first T-112-s5
+body: the same fixture and the same recorder WITH `dispatch`, asserting
+exactly one call, so the empty log is a fact about the gate and not about
+a recorder that never worked. The two security bodies I appended beside
+it stayed green under A-M8, so the body is aimed at the gate and at
+nothing else.
+
+**CORRECTION 2 — resolve the unheld `live` flag, one way or the other.**
+Mutant **A-M4** deletes `if (!live) return;` from the resolution arm and
+survives all **1170** bodies, because the answer key already decides every
+observable outcome. Either pin it (a body that unmounts the drawer
+mid-flight and asserts no write follows — attack 7.2, which no body
+reaches) or state in the code that it is redundant with the key, so a
+later seat deleting it knows which it is deleting. **I do not prescribe
+which**: the choice is a judgement about defence in depth, and the defect
+is that the code does not say. Filed also as `T-112-s10` so it is not lost
+if the integrator takes the second option.
+
+---
+
+## 6. Findings filed as `status: suggested`
+
+- **`T-112-s10`** — the drawer's staleness contract: the `live` flag is
+  held by no body (A-M4), and nothing checks that the ANSWER is about the
+  card it was asked for (A-D5 survives 1170 bodies — the drawer renders
+  `T-999`'s brief text under `T-960`'s heading and every assertion
+  passes). Not reachable today; written down rather than fixed in a hurry.
+- **`T-112-s11`** — shape 2's refusal has no keeper while shape 1's is
+  kept by the fence. F1 plants a `readBrief` call in `Board.tsx` and reds
+  **nothing new**. Read it beside the lane's own `T-112-s7`: both point at
+  the same unwired instrument (`arch drift --fail-on undeclared`), from
+  opposite sides.
+
+I did not fold either into the verdict, and neither blocks.
+
+---
+
+## 7. What the integrator must do at the merge
+
+1. **GRAPH REGEN, then the pins — in that order.** `index --check` is exit
+   1 STALE at this tip and five indexed files moved. Regenerate, then
+   reconcile `architecture-dogfood`'s table with **one** row,
+   `["C-09","C-15","confirmed",1]`, its body name moving to *"34
+   confirmed, 2 undeclared, 10 planned"*, and `map-dogfood-render`'s edge
+   count **45 → 46** with `undeclared` unchanged at 2. **Re-derived here,
+   not relayed**; re-derive again if another lane lands first.
+2. **Perform corrections 1 and 2**, drilling correction 1 with A-M8 —
+   the demonstration is above and reproduces.
+3. **Nothing else moves**: no new file, no file-count move, no findings
+   move, no `arch cycles` move (44 declared edges, ACYCLIC), and
+   `capabilities:check` is CURRENT — this lane adds no e2e spec body.
+4. Move the lane branch to this verdict commit before merging (room 17).
+
+## 8. The gates my own commits could move
+
+This verdict and the two cards are writes under `docs/tasks/`, and prose
+is a code input here. `docs-gate.mjs` on the two new cards answers
+**FIRES** (exit 1 — the gate RAN) and names `npm test from app/`,
+`npm test from tools/e2e/` and `npx vitest run from lib/parser/`; its
+census line reads *"every live task card's frontmatter parses, with a
+legal status"*, `0 frontmatter issue(s) in the live tree`, and the
+injection scan reports **0 hits**. Those three suites are re-run at the
+tip THIS verdict creates, and the figures are recorded in the commit that
+carries them — the figures in section 1 are stamped at `cbc24d4` and stay
+true there forever.
