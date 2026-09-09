@@ -1,5 +1,5 @@
 ---
-id: T-286
+id: T-287
 title: A fence token naming a file that does not exist yet is a NEW-FILE reservation when its parent directory is tracked, not a DEAD FENCE ENTRY — narrow fences need it, since a card that adds a spec file today can only fence the whole tests directory
 feature: F-04
 milestone: 4
