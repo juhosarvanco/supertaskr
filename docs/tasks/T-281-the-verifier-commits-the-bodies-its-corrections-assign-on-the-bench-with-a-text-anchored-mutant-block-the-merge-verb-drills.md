@@ -149,6 +149,21 @@ a mismatch is its own stop naming both hashes.
 precedes it because it runs a spec; nothing follows it because it
 decides whether the commit may happen.
 
+**A VERDICT WRITTEN BEFORE THIS RULE ASSIGNS CORRECTIONS AND CARRIES NO
+BLOCK, and every verdict on this board is that shape.** Run against the
+four real verdicts on disk at this ref, the reader finds the newest entry
+in every one and reads its heading shape correctly — including
+`### VERDICT 2026-09-09 ...` — and then refuses three of them, because
+they assign corrections and carry none. A refusal with no way through
+would make every in-flight card unmergeable, which is a behavioural
+regression this merge would have introduced. The way through is
+`undo.mjs`'s own shape and not a blanket: `--blocks-absent` takes the
+run's OWN verdict sha, so it cannot be typed once and reused, it lands in
+the run's output, and it turns the refusal into NEWS on stderr rather
+than into silence. A block that IS present is drilled regardless, and a
+prefix shorter than seven characters, a different sha, or an empty string
+are each refused as "not a blanket override".
+
 **And the drill reads the block's spec off the MERGED tree before it
 plants anything.** Criterion 1 puts the body commits AFTER the verdict
 commit, so what has to be merged is the bench TIP. A merge given the
@@ -159,15 +174,17 @@ left the body behind. This was found by building it, not by reasoning:
 the flag is still spelled `--verdict` and room 17's sentence still says
 the verdict commit. Filed as T-281-s3.
 
-### THE DRILLS — twelve mutants, each RED ALONE, restored, sha256-proved
+### THE DRILLS — fifteen mutants, graded on their KILL SETS
 
 Driven by `drill-T-281.sh` in the scratch directory; log
 `drill-T-281-log.txt`. Each mutant was planted at a site matching
 exactly once, the WHOLE of `tests/cli.spec.ts` was run, and the run was
-required to report `1 failed` naming the intended body. Every restore
-compared sha256 against the pristine copy: all PROVED, and the two files
-mutated (`merge.mjs`, `verifier.md`) hash identical to their pre-drill
-values at the end of the run.
+required to kill the set the mutant DECLARES — never a fixed count of
+one, which verifier.md 2b is explicit is a property of a well-chosen
+mutant and not an invariant. Every restore compared sha256 against the
+pristine copy: all PROVED, and the two files mutated (`merge.mjs`,
+`verifier.md`) hash identical to their pre-drill values at the end of the
+run. FAILED=0.
 
 | mutant | what it relaxes | body it kills |
 |---|---|---|
@@ -180,17 +197,23 @@ values at the end of the run.
 | M6 | a mutant killing two bodies is allowed | the five grades |
 | M7 | the site is never restored | the whole plant/run/restore loop |
 | M7b | the body-present check is truncated to one character | the same |
-| M8 | a forgotten block stops being noticed | the forgotten-block refusal |
+| M8 | a forgotten block stops being noticed | the forgotten-block refusal AND the acknowledgement (both, by construction) |
+| M8b | the correction count stops being printed beside the block count | the forgotten-block refusal |
 | M9 | the drill is planned first instead of last | the drill's position |
+| M11 | colour is no longer stripped from a run's report | both reporter dialects |
+| M12 | the acknowledgement stops naming the verdict and becomes a blanket | the acknowledgement |
 | M10 | the layout `verifier.md` publishes drifts one key | published-equals-parsed |
 
 M10 is a DATA mutant, planted in the method text rather than in code,
 because that is where the property lives (verifier.md 2b).
 
-**Kill-set containment: no body's kill set contains another's.** Each
-mutant kills exactly one body, and the reporter body is killed by two
-mutants that kill nothing else. **THE FIRST DRILL PASS FOUND TWO REAL
-WEAKNESSES AND THEY ARE FIXED IN THE DIFF, not written round.** (1) The
+**Kill-set containment: no body's kill set contains another's.** M8 kills
+two bodies because it relaxes the branch both decide; M8b and M12 are
+what keep either from being the other's restatement — kill(forgotten) is
+{M8, M8b}, kill(acknowledgement) is {M8, M12}, and neither contains the
+other. Every other mutant kills exactly one body. **THE DRILL PASSES
+FOUND FOUR REAL WEAKNESSES AND ALL FOUR ARE FIXED IN THE DIFF, not
+written round.** (1) The
 fixed-layout body proved "one bad block refuses the whole read" using a
 block whose fault was a LINE NUMBER, so M2 killed both bodies and the
 line-number body's kill set sat inside the layout body's; the bad half
@@ -198,7 +221,13 @@ is now a layout fault. (2) The reporter body pinned neither the
 numbered-line requirement nor the distinct read — both mutants SURVIVED
 it — because its fixtures happened to make both properties invisible;
 the playwright fixture now carries a passing body's progress line and
-the vitest fixture carries the duplicate vitest really prints.
+the vitest fixture carries the duplicate vitest really prints. (3) The
+ANSI strip was UNPINNED code — no fixture carried an escape code, so
+removing the strip entirely survived every body; the reporter body now
+carries a coloured failure line, because a harness with `FORCE_COLOR`
+set colourises even through a pipe and the codes would land inside the
+name the whole "red alone" comparison comes down to. (4) The
+acknowledgement's own branch, added late, had no drill until M12.
 
 ### THE THREE REFUSALS, SHOWN — with the positive control shown first
 
@@ -244,7 +273,12 @@ saying *"assigns no correction, so nothing is re-drilled"*.
    the STOP; five refusals implemented (survivor, reds-more-than-itself,
    the wrong body, a red without the message, a run that broke) plus the
    anchor and body-present refusals; restore proved by sha256; the merge
-   stays staged on every one.
+   stays staged on every one. **ONE STOP CONDITION HERE IS BEYOND THE
+   CRITERION AND IS SAID SO**: a verdict that assigns corrections and
+   carries NO block. It is what makes criterion 2 enforceable rather than
+   aspirational, and it is what forced the `--blocks-absent`
+   acknowledgement, because without it this merge would have made every
+   card whose verdict predates the rule unmergeable.
 4. **MET in the contract** — `integrator.md` step 2b, stated once, with
    the code-change-beside-the-body case and the reason (the verifier's
    RED reading cannot be retaken, because the implementation it was
@@ -311,6 +345,27 @@ and re-runs nothing.
   verdict commit.
 - **T-281-s4** — whether a verdict assigns corrections at all is decided
   by a text predicate over prose a model wrote.
+
+### ONE RED THIS LANE CAUSED AND FIXED
+
+The first full e2e leg at `e4dab01` came back **RED: 1 failed, 773
+passed, 774 bodies** — `token-scan.spec.ts` *"the gate distinguishes
+clean, found-something and could-not-run"*, and the cause was this
+lane's: a LITERAL U+001B at byte 17891 of `tools/e2e/scripts/merge.mjs`,
+inside the regex that strips colour from a run's report. The escape is
+now SPELLED (`\u001b`) rather than typed; behaviour is byte-identical and
+`lint:tokens` reads *"clean (TOKEN 182 files ...; CONTROL 1377 tracked
+text files)"*. **Class**: a literal control character written into
+tracked text by a hand that meant an escape sequence. **Sweep**: the
+token lint IS the sweep — it walks all 1,377 tracked text files, and it
+is clean at this tip.
+
+### CHECKED, AND NOT A FINDING
+
+`brief.mjs --role verifier` and `--role integrator` exit 3 with *"found 0
+tables headed # / The brief carries"*. That is TRUE AT THE BASE TOO:
+`method/roles/executor.md` is the only role file carrying the contract
+table, at `bceb22f` and at this tip alike. Not caused by this lane.
 
 ### WHERE THE BRIEF WAS WRONG, AND WHERE IT WAS RIGHT
 

@@ -95,6 +95,7 @@ export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
  * @property {"graph-pins" | "stamp-done" | "mutant-drill"} [action] work the runner does AFTER the command
  * @property {MutantBlock} [block] the correction this step re-drills
  * @property {string} [problem] why this step cannot be performed at all
+ * @property {string} [warning] news the step prints and does not stop for
  */
 
 /**
@@ -443,7 +444,10 @@ export function failingBodies(output) {
   /** @type {string[]} */
   const names = [];
   for (const raw of output.split("\n")) {
-    const line = raw.replace(/\[[0-9;]*m/g, "");
+    // THE ESCAPE IS SPELLED, NEVER TYPED: a literal U+001B in tracked
+    // text is a CONTROL violation the token lint reds by byte offset,
+    // and it is invisible to every binary-skipping searcher.
+    const line = raw.replace(/\u001b\[[0-9;]*m/g, "");
     const playwright = /^\s*\d+\)\s.*?:\d+:\d+\s*›\s*(.+?)\s*$/.exec(line);
     const vitest = /^\s*(?:FAIL|✕|×)\s+\S+\s+>\s+(.+?)\s*$/.exec(line);
     const hit = playwright ?? vitest;
@@ -637,6 +641,16 @@ export function runMutantDrill(input) {
 }
 
 /**
+ * THE SHORTEST PREFIX OF A SHA THIS ACKNOWLEDGEMENT WILL TAKE.
+ *
+ * The same length `undo.mjs` prints its `--force <sha>` refusals at, for
+ * the same reason: an acknowledgement is a thing somebody TYPED after
+ * reading, and a prefix short enough to guess is a blanket override
+ * wearing a sha.
+ */
+export const ACKNOWLEDGE_PREFIX = 7;
+
+/**
  * THE DRILL STEPS a merge owes, read off the card's newest verdict.
  *
  * A verdict that assigns NO correction owes no block, and that is a step
@@ -644,7 +658,17 @@ export function runMutantDrill(input) {
  * between "there was nothing to drill" and "nobody looked" is the whole
  * reason this exists.
  *
- * @param {{ cardText: string | undefined, projectRoot: string, id: string }} input
+ * AND A VERDICT WRITTEN BEFORE THIS RULE EXISTED ASSIGNS CORRECTIONS AND
+ * CARRIES NO BLOCK. Every verdict on this board older than T-281 is that
+ * shape, so a refusal with no way through would make every in-flight card
+ * unmergeable — and the way through must not be a blanket, or the first
+ * seat to meet it learns to pass the flag by habit. `--blocks-absent`
+ * takes the run's OWN verdict sha, the shape `undo.mjs`'s `--force <sha>`
+ * already uses on this board: it cannot be typed once and reused, it
+ * lands in the run's output, and it downgrades the refusal to NEWS rather
+ * than silence. Blocks that ARE present are drilled either way.
+ *
+ * @param {{ cardText: string | undefined, projectRoot: string, id: string, verdictSha?: string | undefined, blocksAbsent?: string | undefined }} input
  * @returns {Step[]}
  */
 export function drillSteps(input) {
@@ -672,10 +696,37 @@ export function drillSteps(input) {
   const heads = correctionHeadings(verdict.text);
   if (read.blocks.length === 0) {
     if (assignsCorrections(verdict.text)) {
-      return refuse(
+      const said =
         `the newest verdict (${verdict.heading}) assigns corrections and carries NO mutant ` +
-          "block — a correction whose body has to be recovered from a transcript is the thing " +
-          "this step exists to end",
+        "block — a correction whose body has to be recovered from a transcript is the thing " +
+        "this step exists to end";
+      const sha = input.verdictSha;
+      const named = input.blocksAbsent;
+      if (named !== undefined && named.length >= ACKNOWLEDGE_PREFIX && sha !== undefined && sha.startsWith(named)) {
+        return [
+          {
+            id: "drill:none",
+            kind: "gate",
+            action: "mutant-drill",
+            warning: `${said}. ACKNOWLEDGED by --blocks-absent ${named}: nothing was re-drilled.`,
+            title: `NO MUTANT BLOCK on ${id}'s newest verdict — acknowledged, not drilled`,
+            why:
+              "T-281: a verdict written before this rule existed carries no block, and the way " +
+              "through NAMES the verdict rather than blanketing the check",
+            run: null,
+          },
+        ];
+      }
+      if (named !== undefined) {
+        return refuse(
+          `--blocks-absent named ${named}, which is not this run's verdict ` +
+            `${sha === undefined ? "(none resolved)" : sha.slice(0, 12)}. It is not a blanket ` +
+            "override: it names the specific verdict you have read and accepted",
+        );
+      }
+      return refuse(
+        `${said}. If this verdict PREDATES the rule, read it and re-run naming it: ` +
+          `--blocks-absent ${sha === undefined ? "<verdict sha>" : sha.slice(0, 12)}`,
       );
     }
     return [
@@ -773,7 +824,7 @@ export function setupSteps(projectRoot) {
  * spec, so every setup step has to precede it, and it decides whether
  * the commit may happen at all, so nothing may follow it but the stop.
  *
- * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined }} input
+ * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined, verdictSha?: string | undefined, blocksAbsent?: string | undefined }} input
  * @returns {Step[]}
  */
 export function tailPlan(input) {
@@ -900,7 +951,15 @@ export function tailPlan(input) {
           },
     );
   }
-  steps.push(...drillSteps({ cardText: input.cardText, projectRoot, id }));
+  steps.push(
+    ...drillSteps({
+      cardText: input.cardText,
+      projectRoot,
+      id,
+      verdictSha: input.verdictSha,
+      blocksAbsent: input.blocksAbsent,
+    }),
+  );
   steps.push({
     id: "stop",
     kind: "stop",
@@ -1074,6 +1133,7 @@ export function usageText() {
     "usage: supertaskr merge <T-NNN> --slug <slug> --verdict <sha>",
     "                      --built-by <m@k> --verified-by <m@k>",
     "                      [--root <path>] [--branch <name>] [--dry-run]",
+    "                      [--blocks-absent <verdict sha>]",
     "",
     "  The integrator's ritual in its order, stopping with the merge STAGED.",
     "  The tail is derived from the merge's own paths: a merge bringing app/ or lib/",
@@ -1081,7 +1141,9 @@ export function usageText() {
     "  the dogfood bodies before the commit; and every MUTANT BLOCK on the card's newest",
     "  verdict is re-drilled on the merged tree — planted, run, restored, proved by sha256 —",
     "  with the run STOPPING on a survivor, on a body that reds more than itself, or on an",
-    "  anchor that does not match exactly once.",
+    "  anchor that does not match exactly once. A verdict that assigns corrections and",
+    "  carries no block is REFUSED; --blocks-absent naming that verdict's own sha accepts it",
+    "  as news instead — it is not a blanket, and blocks that are present are drilled anyway.",
     "  exit: 0 staged · 1 a step failed · 2 called wrong · 3 could not run",
   ].join("\n");
 }
@@ -1109,6 +1171,8 @@ export function main(argv, io = {}) {
   let builtBy;
   /** @type {string | undefined} */
   let verifiedBy;
+  /** @type {string | undefined} */
+  let blocksAbsent;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
     if (a === "--help") {
@@ -1133,6 +1197,10 @@ export function main(argv, io = {}) {
     }
     if (a === "--verdict") {
       verdict = argv[++i];
+      continue;
+    }
+    if (a === "--blocks-absent") {
+      blocksAbsent = argv[++i];
       continue;
     }
     if (a === "--built-by") {
@@ -1196,7 +1264,14 @@ export function main(argv, io = {}) {
         `${verdictSha.slice(0, 12)}\` (${String(paths.length)} path(s)); a real run derives it ` +
         "from the STAGED merge.",
     );
-    for (const step of tailPlan({ paths, projectRoot: root, id, cardText: readCard(root, card.file) })) {
+    for (const step of tailPlan({
+      paths,
+      projectRoot: root,
+      id,
+      cardText: readCard(root, card.file),
+      verdictSha,
+      blocksAbsent,
+    })) {
       printStep(out, step);
     }
     out("  --dry-run, nothing was run.");
@@ -1230,7 +1305,7 @@ export function main(argv, io = {}) {
   // steps come off arrives WITH the lane's branch, so a copy read before
   // the merge would be the integration branch's older card.
   const cardText = readCard(root, card.file);
-  for (const step of tailPlan({ paths, projectRoot: root, id, cardText })) {
+  for (const step of tailPlan({ paths, projectRoot: root, id, cardText, verdictSha, blocksAbsent })) {
     printStep(out, step);
     const code = runStep(step, stepIo);
     if (code !== 0) {
@@ -1333,6 +1408,12 @@ function runStep(step, io) {
     if (step.problem !== undefined) {
       io.err(`      ${step.problem}`);
       return EXIT.FOUND;
+    }
+    if (step.warning !== undefined) {
+      // NEWS, NEVER SILENCE: this goes to stderr so a seat piping stdout
+      // to a record still sees it, and the run continues.
+      io.err(`      NEWS — ${step.warning}`);
+      return EXIT.CLEAN;
     }
     if (step.block === undefined) {
       io.out("      the newest verdict assigns no correction — nothing to re-drill");

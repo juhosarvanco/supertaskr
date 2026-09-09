@@ -30,6 +30,7 @@ import {
   rootMismatch,
 } from "../scripts/cli.mjs";
 import {
+  ACKNOWLEDGE_PREFIX,
   MUTANT_KEYS,
   MUTANT_NEW,
   MUTANT_OLD,
@@ -1451,6 +1452,17 @@ test("the failing bodies are read off the run's own report, in both dialects thi
     "a fence expands its slugs",
   ]);
 
+  // COLOUR IS STRIPPED, because the run's colouring is a property of the
+  // ENVIRONMENT and not of the failure: a harness with FORCE_COLOR set
+  // gets escape codes even through a pipe, and they would land INSIDE the
+  // name the "red alone" comparison comes down to.
+  const coloured =
+    "  1) \u001b[31m[chromium]\u001b[39m \u203a tests/a.spec.ts:1:1 \u203a " +
+    "\u001b[1mfirst body\u001b[22m ";
+  expect(failingBodies(coloured), "an escape code is not part of a body's name").toEqual([
+    "first body",
+  ]);
+
   // TWO failures are TWO names — the whole "red alone" claim depends on
   // this being a set and not a count.
   const two = [
@@ -1685,6 +1697,70 @@ test("a verdict assigning corrections with NO mutant block is refused, and one a
   // A card the planner could not read is a REFUSAL, never a quiet skip.
   expect(plan(undefined).map((s) => s.id)).toEqual(["drill:refused"]);
   expect(plan("---\nid: T-000\n---\n").map((s) => s.id)).toEqual(["drill:refused"]);
+});
+
+test("a verdict written before the rule is acknowledged by NAMING its own sha, and never by a blanket", () => {
+  // Every verdict on this board older than T-281 assigns corrections and
+  // carries no block, so a refusal with no way through makes every
+  // in-flight card unmergeable. The way through is `undo.mjs`'s own
+  // shape: it names the run's verdict, so it cannot be typed once and
+  // reused, and it downgrades the refusal to NEWS rather than to silence.
+  const forgotten = cardWithVerdicts(
+    verdictEntry(
+      "### 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+      "#### CORRECTION 1 — the denominator is silent",
+    ),
+  );
+  const sha = "5dca625ba66679f9f1deb5820ef8124d0191a38a";
+  const at = (blocksAbsent?: string): ReturnType<typeof drillSteps> =>
+    drillSteps({
+      cardText: forgotten,
+      projectRoot: repoRoot,
+      id: "T-000",
+      verdictSha: sha,
+      ...(blocksAbsent === undefined ? {} : { blocksAbsent }),
+    });
+
+  // WITHOUT it: refused, and the refusal NAMES the way through.
+  const bare = at();
+  expect(bare.map((s) => s.id)).toEqual(["drill:refused"]);
+  expect(bare[0]?.problem).toContain(`--blocks-absent ${sha.slice(0, 12)}`);
+
+  // NAMING IT: news, not silence, and the run goes on.
+  const named = at(sha.slice(0, 12));
+  expect(named.map((s) => s.id)).toEqual(["drill:none"]);
+  expect(named[0]?.problem, "it is no longer a stop").toBeUndefined();
+  expect(named[0]?.warning, "and it is still said out loud").toContain("ACKNOWLEDGED");
+
+  // NOT A BLANKET, in three directions: another sha, a prefix short
+  // enough to guess, and the empty string.
+  for (const wrong of ["0".repeat(12), sha.slice(0, ACKNOWLEDGE_PREFIX - 1), ""]) {
+    const refused = at(wrong);
+    expect(refused.map((s) => s.id), `${JSON.stringify(wrong)} is not an acknowledgement`).toEqual([
+      "drill:refused",
+    ]);
+  }
+  expect(at("0".repeat(12))[0]?.problem, "and naming the wrong one says so").toContain(
+    "not a blanket override",
+  );
+
+  // AND IT NEVER REACHES A BLOCK THAT IS THERE: the acknowledgement is
+  // about an ABSENT block, so a verdict carrying one is still drilled.
+  const carried = drillSteps({
+    cardText: cardWithVerdicts(
+      verdictEntry(
+        "### 2026-09-09 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent",
+        mutantBlockText(),
+      ),
+    ),
+    projectRoot: repoRoot,
+    id: "T-000",
+    verdictSha: sha,
+    blocksAbsent: sha.slice(0, 12),
+  });
+  expect(carried.map((s) => s.id), "a block that IS there is drilled regardless").toEqual([
+    "drill:1",
+  ]);
 });
 
 test("the mutant drill is the LAST step before the merge's STOP, on every shape of merge", () => {
