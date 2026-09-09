@@ -27,6 +27,7 @@ import {
   componentOwners,
   markerEnd,
   MIN_QUOTE_CHARS,
+  newFileReservation,
   ownersOf,
   pathOracle,
   preflight,
@@ -39,6 +40,11 @@ import {
 import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
 import { context, render } from "../scripts/dispatch-brief.mjs";
 import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
+// THE WRITE-TIME HALF IS THE HOOK'S OWN MODULE AND NOT A STAND-IN (T-287).
+// A reservation is only worth anything if the guard that reads the manifest
+// holds the exact name, so the body below drives `decide` itself — the
+// program the harness runs — the way `lane-fence.spec.ts` drives it.
+import { decide } from "../../../.claude/hooks/lane-fence.mjs";
 
 /**
  * THE CARD PREFLIGHT (T-160) — no browser.
@@ -126,6 +132,12 @@ interface Planted {
   title?: string;
   /** The frontmatter fence, verbatim. */
   touches?: string;
+  /**
+   * The OTHER live card's fence, verbatim. The board needs two cards
+   * whose fences a body can aim at each other — a reservation only
+   * collides with another card's, never with its own (T-287).
+   */
+  otherTouches?: string;
   /** The frontmatter blocker list, verbatim. */
   blockedBy?: string;
   /** Replaces the whole criteria section, heading included, when given. */
@@ -284,7 +296,7 @@ function makeFixture(planted: Planted = {}): Fixture {
       "size: S",
       "status: planned",
       "blocked_by: []",
-      `touches: [${OTHER_SLUG}]`,
+      planted.otherTouches ?? `touches: [${OTHER_SLUG}]`,
       "builder:",
       "verifier:",
       "built_by:",
@@ -462,6 +474,235 @@ test("a DEAD fence entry reds — an entry true at writing that reserves nothing
   expect(joined(findings)).toContain("DEAD FENCE ENTRY");
   expect(joined(findings)).toContain("docs/architecture/decisions");
   expect((await run(makeFixture())).findings).toEqual([]);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE NEW-FILE RESERVATION (T-287) — the one untracked fence entry that
+ * is not dead
+ *
+ * A card whose work is a NEW file could not name it. The expander reads
+ * a dotted token as a path standing for itself, tracked or not, and the
+ * preflight then refused that same token as a DEAD FENCE ENTRY — so the
+ * card fenced the DIRECTORY instead, and a directory token is held
+ * against every lane that touches one file under it. Measured on the
+ * live board at the dispatch ref: three planned cards fenced a whole
+ * directory for the sake of one file they were about to write.
+ *
+ * THE DISCRIMINATOR IS THE TRACKED TREE, and it has to be: the file a
+ * lane is about to create is untracked BY DEFINITION, so nothing about
+ * the token can be asked — only about the ground it hangs from. The
+ * parent directory is tracked, or the entry stays dead.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A file the fixture tree does not carry, under a directory it does. */
+const RESERVED = "docs/architecture/components/C-93-arrives-here.md";
+/** Its sibling — same directory, not reserved, and that is the point. */
+const SIBLING = "docs/architecture/components/C-94-never-reserved.md";
+
+test("an untracked fence token whose PARENT is tracked is a NEW-FILE RESERVATION and does not refuse", async () => {
+  const reserving = await run(makeFixture({ touches: `touches: [${SLUG}, ${RESERVED}]` }));
+  expect(
+    reserving.findings,
+    `a NEW-FILE RESERVATION was refused:\n${joined(reserving.findings)}`,
+  ).toEqual([]);
+  // PRINTED AS SUCH, WITH THE ANCESTOR IT HANGS FROM — a reservation that
+  // passes silently is indistinguishable from a class nobody checked.
+  expect(reserving.text).toContain("NEW-FILE RESERVATION");
+  expect(reserving.text).toContain(RESERVED);
+  expect(reserving.text).toContain("docs/architecture/components, which is tracked");
+
+  // ── THE TYPO CASE IS UNCHANGED, and it is two halves, not one ───────
+  // Half one: the path's own parent is untracked too, so the token is a
+  // claim about a tree this checkout cannot see.
+  const orphan = await run(
+    makeFixture({ touches: `touches: [${SLUG}, docs/nowhere/at/all/arrives-here.md]` }),
+  );
+  expect(joined(orphan.findings)).toContain("DEAD FENCE ENTRY");
+  expect(joined(orphan.findings)).toContain("holds no tracked file at HEAD either");
+  expect(orphan.text).not.toContain("NEW-FILE RESERVATION:");
+
+  // Half two: a DIRECTORY token with nothing under it. It carries no
+  // file extension, so no reading of it names a file, however tracked
+  // its own parent is — `docs` is tracked and `docs/architecture` is,
+  // and neither makes an empty directory reserve anything.
+  const dir = await run(makeFixture({ touches: `touches: [${SLUG}, docs/architecture/decisions]` }));
+  expect(joined(dir.findings)).toContain("DEAD FENCE ENTRY");
+  expect(joined(dir.findings)).toContain("carries no file extension");
+
+  // THE CLEAN TWIN, one mutation from all three: the same board with the
+  // fixture's own fence. Without it a green above is a preflight that
+  // stopped refusing.
+  expect((await run(makeFixture())).findings).toEqual([]);
+});
+
+test("the reservation is read off the TRACKED tree and nothing else — four verdicts, one oracle", () => {
+  // THE CLASSIFIER IS ADDRESSED DIRECTLY HERE, and the bodies above go
+  // through the whole preflight, so a mutation that keeps the four
+  // verdicts and drops the WIRING reds up there rather than here.
+  const fx = makeFixture();
+  const oracle = pathOracle(fx.repo);
+
+  expect(newFileReservation(`${SLUG_PATH}/arrives-here.ts`, oracle)).toEqual({
+    reserved: true,
+    parent: SLUG_PATH,
+  });
+  // A ROOT FILE HANGS OFF THE REPOSITORY ROOT, which a repository with
+  // tracked files in it has by construction.
+  expect(newFileReservation("ARRIVES-HERE.md", oracle)).toEqual({ reserved: true, parent: "" });
+
+  const tracked = newFileReservation(`${SLUG_PATH}/lens.ts`, oracle);
+  expect(tracked.reserved).toBe(false);
+  expect(tracked.reserved === false && tracked.why).toContain("is tracked at HEAD");
+
+  const noExtension = newFileReservation("docs/architecture/decisions", oracle);
+  expect(noExtension.reserved).toBe(false);
+  expect(noExtension.reserved === false && noExtension.why).toContain("carries no file extension");
+
+  const orphan = newFileReservation("docs/nowhere/at/all/arrives-here.md", oracle);
+  expect(orphan.reserved).toBe(false);
+  expect(orphan.reserved === false && orphan.why).toContain("holds no tracked file at HEAD either");
+});
+
+test("the file extension is read off the BASENAME, and a leading dot is not one", () => {
+  /* THE EXTENSION TEST HAS TWO BOUNDARIES AND THE PARENT RULE HIDES BOTH
+   * (T-287, assigned by the verifier). `newFileReservation` asks two
+   * questions in order — does the LEAF carry an extension, and is the
+   * PARENT tracked — and on this board almost every token that would
+   * separate them fails the second question anyway, so a reading of the
+   * WHOLE token instead of the leaf, or one that counts a dotfile's own
+   * leading dot, changes no answer anybody can see. The arrangement that
+   * makes them decidable is a tracked directory whose NAME carries a dot:
+   * `app/.vscode` is one in this repository and is planted here, so the
+   * parent rule cannot be what refuses the two negatives below. */
+  const fx = makeFixture({ files: [{ rel: "app/.vscode/settings.json", content: "{}\n" }] });
+  const oracle = pathOracle(fx.repo);
+  expect(oracle.dirs.has("app/.vscode"), "the dotted parent this body needs is not tracked").toBe(
+    true,
+  );
+
+  // A DOT IN THE DIRECTORY PART IS NOT THE LEAF'S EXTENSION. Read over
+  // the whole token this is a file; read over the basename it is the
+  // directory token it actually is, and stays dead.
+  const dottedDirectory = newFileReservation("app/.vscode/settings", oracle);
+  expect(dottedDirectory.reserved, "a dotted DIRECTORY made the leaf look extended").toBe(false);
+  expect(dottedDirectory.reserved === false && dottedDirectory.why).toContain(
+    '"settings" carries no file extension',
+  );
+
+  // A LEADING DOT IS NOT AN EXTENSION. `.nputerignore` is this shape on
+  // the live board (T-020, T-264), and T-287-s1 is the card that argues
+  // about it — so the rule this pins is the one that card must move.
+  const dotfile = newFileReservation("app/.vscode/.newrc", oracle);
+  expect(dotfile.reserved, "a dotfile's own leading dot was counted as an extension").toBe(false);
+  expect(dotfile.reserved === false && dotfile.why).toContain(
+    '".newrc" carries no file extension',
+  );
+
+  // THE HALF THAT KEEPS THE TWO ABOVE FROM BEING A RULE THAT REFUSES
+  // EVERYTHING: the same tracked dotted directory, a leaf that really
+  // does carry an extension, and it reserves.
+  expect(newFileReservation("app/.vscode/tasks.json", oracle)).toEqual({
+    reserved: true,
+    parent: "app/.vscode",
+  });
+});
+
+test("the ARM's exit is unchanged by a reservation and changed by a dead entry", async () => {
+  // Criterion five, and it is the exit code rather than the text: the
+  // dispatch arm's step three runs this command and reads a NUMBER, so a
+  // reservation that prints beautifully and still answers 1 unblocks
+  // nothing.
+  const reserving = cli([
+    "--task",
+    FIXTURE_ID,
+    "--preflight",
+    "--root",
+    makeFixture({ touches: `touches: [${SLUG}, ${RESERVED}]` }).repo,
+  ]);
+  expect(reserving.status, String(reserving.stderr)).toBe(0);
+  expect(String(reserving.stdout)).toContain("NEW-FILE RESERVATION");
+
+  const dead = cli([
+    "--task",
+    FIXTURE_ID,
+    "--preflight",
+    "--root",
+    makeFixture({ touches: `touches: [${SLUG}, docs/architecture/decisions]` }).repo,
+  ]);
+  expect(dead.status, String(dead.stderr)).toBe(1);
+  expect(String(dead.stderr)).toContain("DEAD FENCE ENTRY");
+});
+
+test("the write hook holds a reservation BY NAME — the reserved file is allowed and its sibling refused", async () => {
+  const fx = makeFixture({ touches: `touches: [${SLUG}, ${RESERVED}]` });
+  // The fixture's other lane is armed first, for the reason the fence-gate
+  // body one screen up gives: an unarmed sibling lane makes every fence
+  // here unwritable, and arming it is the fixture becoming faithful.
+  writeLaneFence(await buildLaneFence(OTHER_ID, fx.lane, { root: fx.repo }));
+  const lane = path.join(fx.repo, "..", "reservation-lane");
+  git(fx.repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-reservation`, lane]);
+  const manifest = await buildLaneFence(FIXTURE_ID, lane, { root: fx.repo });
+  // THE MANIFEST CARRIES THE UNTRACKED PATH VERBATIM. If the dispatch
+  // step ever intersected the fence against the tracked tree, every
+  // assertion below would be about a manifest that had already dropped
+  // the reservation — so the manifest is read before the hook is asked.
+  expect(manifest.paths, "the manifest dropped the reservation").toContain(RESERVED);
+  writeLaneFence(manifest);
+
+  const reserved = decide({
+    toolName: "Write",
+    cwd: lane,
+    toolInput: { file_path: path.join(lane, RESERVED) },
+  });
+  const sibling = decide({
+    toolName: "Write",
+    cwd: lane,
+    toolInput: { file_path: path.join(lane, SIBLING) },
+  });
+  expect(reserved.verdict, reserved.reason).toBe("allow");
+  expect(sibling.verdict, sibling.reason).toBe("block");
+  expect(sibling.code).toBe("outside-the-fence");
+
+  // ── THE BOARD THAT LACKS THE ARRANGEMENT ────────────────────────────
+  // The same work, fenced the only way it could be fenced before this
+  // card: the DIRECTORY. The reserved file is still allowed — and so is
+  // every sibling, which is exactly what a narrow fence is for. This is
+  // the half the assertion above reds on when the reservation is gone.
+  const wide = makeFixture({ touches: `touches: [${SLUG}, docs/architecture/components/]` });
+  writeLaneFence(await buildLaneFence(OTHER_ID, wide.lane, { root: wide.repo }));
+  const wideLane = path.join(wide.repo, "..", "directory-lane");
+  git(wide.repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-directory`, wideLane]);
+  writeLaneFence(await buildLaneFence(FIXTURE_ID, wideLane, { root: wide.repo }));
+  const wideSibling = decide({
+    toolName: "Write",
+    cwd: wideLane,
+    toolInput: { file_path: path.join(wideLane, SIBLING) },
+  });
+  expect(wideSibling.verdict, wideSibling.reason).toBe("allow");
+});
+
+test("two cards reserving the SAME new file OVERLAP — one lane at a time", async () => {
+  const fx = makeFixture({
+    touches: `touches: [${SLUG}, ${RESERVED}]`,
+    otherTouches: `touches: [${OTHER_SLUG}, ${RESERVED}]`,
+  });
+  const view = cli(["--task", FIXTURE_ID, "--root", fx.repo], fx.repo);
+  const seen = String(view.stdout);
+  expect(seen).toContain("OVERLAP");
+  expect(seen).toContain(RESERVED);
+  expect(seen).toContain(FIXTURE_ID);
+  expect(seen).toContain(OTHER_ID);
+
+  // THE DISCRIMINATING HALF: the identical board with the reservation on
+  // one card only. Two fences that share nothing but the reservation are
+  // DISJOINT without it, so the overlap above is the reservation's and
+  // not the fixture's.
+  const alone = cli(
+    ["--task", FIXTURE_ID, "--root", makeFixture({ touches: `touches: [${SLUG}, ${RESERVED}]` }).repo],
+    fx.repo,
+  );
+  expect(String(alone.stdout)).toContain("DISJOINT");
+  expect(String(alone.stdout)).not.toContain("OVERLAP");
 });
 
 /* ────────────────────────────────────────────────────────────────────
@@ -722,16 +963,19 @@ const PINNED_CLAIM_CLASSES = [
       "the card's touches, expanded through the live slug map by the parser's own fence " +
       "module",
     refuses:
-      "an entry that reserves no tracked file at all, an entry this expansion cannot " +
-      "resolve, a path the criteria name that a DECLARED component owns and this fence " +
-      "does not carry, and a criterion that demands a TEST BODY over a fence holding " +
+      "an entry that reserves no tracked file at all AND is not a NEW-FILE RESERVATION — an " +
+      "exact file path, extension and all, whose parent directory IS tracked — an entry this " +
+      "expansion cannot resolve, a path the criteria name that a DECLARED component owns and " +
+      "this fence does not carry, and a criterion that demands a TEST BODY over a fence holding " +
       "nothing any suite would collect",
     cannot:
-      "whether a path under NO component ought to be inside the fence — a criterion cites " +
-      "far more files than it writes, and outside the slug map this tool cannot tell a " +
-      "citation from a write target; and whether a body-demanding criterion is demanding " +
-      "one OF THIS CARD or WRITING A RULE about bodies into a document, which no lexical " +
-      "test separated",
+      "whether a path under NO component ought to be inside the fence — a criterion cites far " +
+      "more files than it writes, and outside the slug map this tool cannot tell a citation " +
+      "from a write target; whether a body-demanding criterion is demanding one OF THIS CARD or " +
+      "WRITING A RULE about bodies into a document, which no lexical test separated; and " +
+      "whether an untracked file path under a tracked directory is a file this card is ABOUT TO " +
+      "WRITE or a filename TYPO — both read as a NEW-FILE RESERVATION, and a typo survives to " +
+      "the write hook, which then allows the misspelt name and refuses the right one",
   },
   {
     key: "figures",

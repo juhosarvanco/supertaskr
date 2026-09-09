@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **835 behaviours** — 833 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **841 behaviours** — 839 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -174,6 +174,12 @@ Census: **835 behaviours** — 833 extracted sentences + 2 named-not-extracted (
 - a planted UNCOVERED CRITERION PATH reds, and only when a component owns it
 - a missing path INSIDE the card's own fence is a creation target, not a refusal
 - a DEAD fence entry reds — an entry true at writing that reserves nothing now
+- an untracked fence token whose PARENT is tracked is a NEW-FILE RESERVATION and does not refuse
+- the reservation is read off the TRACKED tree and nothing else — four verdicts, one oracle
+- the file extension is read off the BASENAME, and a leading dot is not one
+- the ARM's exit is unchanged by a reservation and changed by a dead entry
+- the write hook holds a reservation BY NAME — the reserved file is allowed and its sibling refused
+- two cards reserving the SAME new file OVERLAP — one lane at a time
 - a criterion demanding a BODY over a fence that holds none is REFUSED, and one spec file clears it
 - a DANGLING REF stamp reds, and a ref this checkout holds does not
 - a blocked_by entry with no live card reds, and the parser's own ruling is reported
