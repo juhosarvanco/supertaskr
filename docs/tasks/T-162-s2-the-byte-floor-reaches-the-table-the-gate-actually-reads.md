@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: planned
 blocked_by: [T-162-s1]
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/health-bands.config.mjs, tools/e2e/tests/health-bands.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-162-s1
 builder:
 verifier:

@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e]
+touches: [docs/CONVENTIONS.md, tools/e2e/scripts/range-rule.mjs, tools/e2e/tests/range-rule.spec.ts]
 suggested_by: "T-211's executor, which measured the exit codes while writing fast path B's exit typing into method/lane-protocol.md; class parent T-083 (the RANGE RULE's owner). DISPOSITION HINT: promote — it is one sentence in an existing bullet, and the bullet is the one every gate derivation in this repository routes through."
 builder:
 review: independent

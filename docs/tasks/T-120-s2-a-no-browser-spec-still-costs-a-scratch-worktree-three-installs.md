@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/playwright.config.ts, tools/e2e/preflight.ts, tools/e2e/package.json]
 suggested_by: executor claude-opus-5 @T-120
 builder:
 verifier:

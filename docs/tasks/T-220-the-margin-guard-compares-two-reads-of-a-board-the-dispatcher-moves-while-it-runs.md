@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: planned
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/tests/brief-flush.spec.ts]
 suggested_by: "T-167-s9's executor, which met the red, refused to re-run it, and attributed it from a stable triple-read plus the worktree evidence; confirmed at the architect/integrator seat, whose own dispatch was the cause"
 builder:
 review: independent

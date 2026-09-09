@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: [T-212]
-touches: [tools/e2e, .claude]
+touches: [.claude/hooks/expand-fence.mjs, .claude/hooks/landing-gate.mjs, tools/e2e/scripts/lane-fence.mjs, tools/e2e/tests/landing-gate.spec.ts]
 suggested_by: "T-212's executor, from its own build: the landing gate expands `touches:` through the parser's own `expandFence`, and `expandFence` needs `ComponentRecord[]` to resolve a SLUG — which needs the frontmatter parser, which needs `yaml`, which the hook dependency budget excludes"
 builder: unassigned
 review: independent

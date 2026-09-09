@@ -8,7 +8,7 @@ size: L
 status: planned
 blocked_by: []
 suggested_by: "@human's genesis walk debrief (2026-08-30) — a direction statement, near-verbatim below"
-touches: [app-interview, method/interview, docs/CONVENTIONS.md, app-agent]
+touches: [app-interview, method/interview/plan-interview.md, docs/CONVENTIONS.md, app-agent]
 builder:
 verifier:
 built_by:

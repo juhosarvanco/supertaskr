@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: executor claude-fable-5-1@subagent @T-236
 blocked_by: [T-162-s2]
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/health-bands.spec.ts]
 builder:
 verifier:
 built_by:

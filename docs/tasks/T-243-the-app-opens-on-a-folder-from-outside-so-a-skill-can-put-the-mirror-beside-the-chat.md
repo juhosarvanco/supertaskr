@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: "@human (2026-09-03): \"Should it automatically open the nputer app with the right board?\" — yes, at the start, as a follower move (ADR-021)"
 blocked_by: []
-touches: [app/src-tauri/src, app/src/App.tsx, tools/e2e/tests]
+touches: [app/src-tauri/src/lib.rs, app/src/App.tsx, tools/e2e/tests/front-door.spec.ts]
 builder:
 verifier:
 built_by:

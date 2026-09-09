@@ -7,7 +7,7 @@ priority: 4
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/tests/lane-fence.spec.ts, .github/workflows/ci.yml, docs/CONVENTIONS.md]
 suggested_by: executor claude-opus-5@subagent @T-160
 builder:
 verifier:

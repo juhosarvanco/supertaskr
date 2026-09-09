@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: planned
 blocked_by: []
-touches: [tools/e2e, method/roles]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/orchestrator.md]
 suggested_by: "the incident itself, 2026-08-31: T-185-s2's lane and T-199's lane each minted T-214 for unrelated subjects, neither able to see the other. Filed on the trigger condition a peer seat and this seat agreed on — file it when a collision actually happens, with the incident as evidence"
 builder:
 review: independent

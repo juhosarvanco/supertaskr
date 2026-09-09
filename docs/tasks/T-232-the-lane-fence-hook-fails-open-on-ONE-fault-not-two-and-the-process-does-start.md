@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1 phase 1 ground truth, 2026-09-01; re-derived independently at the integration seat before filing"
 blocked_by: []
-touches: [tools/e2e, docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, tools/e2e/tests/lane-fence.spec.ts]
 builder:
 verifier:
 built_by:

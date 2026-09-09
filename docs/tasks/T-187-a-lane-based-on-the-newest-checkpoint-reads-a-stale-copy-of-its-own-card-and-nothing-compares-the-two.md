@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: planned
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
 suggested_by: "architect/integrator seat, 2026-08-31 — met while dispatching T-112-s4, not read: the card had been amended two commits above its own derived base"
 builder:
 review:

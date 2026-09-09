@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-143
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/tests/session-economics.spec.ts]
 builder:
 verifier:
 built_by:

@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "the architect/integrator seat, 2026-09-01 — met while dispatching T-216-s1, measured rather than predicted"
 blocked_by: []
-touches: [tools/e2e, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/lane-fence.spec.ts, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:

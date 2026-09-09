@@ -8,7 +8,7 @@ priority: 1
 status: planned
 suggested_by: "@human (2026-09-03): \"Should we move the interview also to Claude or Codex as a skill or in other format?\" — ruled with ADR-021 (rooms/cockpit-or-mirror.md RE-RULED)"
 blocked_by: []
-touches: [method/interview, method/adapters, tools/e2e/tests]
+touches: [method/interview/plan-interview.md, method/interview/decomposition.md, method/adapters/CLAUDE.md, method/adapters/AGENTS.md, tools/e2e/tests/interview.spec.ts]
 builder:
 verifier:
 built_by:

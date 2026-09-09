@@ -8,7 +8,7 @@ priority: 4
 status: planned
 suggested_by: verifier claude-opus-5@subagent @V-236
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/range-rule.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:

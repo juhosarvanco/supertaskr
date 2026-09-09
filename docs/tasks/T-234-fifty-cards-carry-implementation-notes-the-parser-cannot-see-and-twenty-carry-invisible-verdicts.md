@@ -8,7 +8,7 @@ size: M
 status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1, as a verdict item against one card; the board-wide census was measured at the integration seat, which is what turned it from a nit into this"
 blocked_by: []
-touches: [lib/parser, tools/e2e]
+touches: [lib/parser/src/task.ts, lib/parser/test/task.test.ts, tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:

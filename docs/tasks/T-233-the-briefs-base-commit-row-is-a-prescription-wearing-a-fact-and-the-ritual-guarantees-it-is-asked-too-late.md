@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "executor claude-opus-5@subagent @T-216-s1, which read the row as its own base; confirmed at the integration seat against the lane it was wrong about"
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
 builder:
 verifier:
 built_by:

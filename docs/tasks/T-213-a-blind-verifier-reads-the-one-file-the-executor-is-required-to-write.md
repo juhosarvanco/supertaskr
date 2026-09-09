@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: planned
 blocked_by: []
-touches: [method/roles, tools/e2e]
+touches: [method/roles/verifier.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts]
 suggested_by: "T-197's verifier, which reported its own contamination in its first sentence rather than proceeding; the setup defect is the architect/integrator seat's, measured at 2026-08-31"
 builder:
 review: independent

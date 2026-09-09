@@ -7,7 +7,7 @@ priority: 3
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/card-figures.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-figures.spec.ts, tools/e2e/tests/card-preflight.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-160
 builder:
 verifier:

@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [.claude, tools/e2e, docs/CONVENTIONS.md]
+touches: [.claude/hooks/, .claude/settings.json, tools/e2e/scripts/health-bands.mjs, tools/e2e/tests/, docs/CONVENTIONS.md]
 suggested_by: "this seat's own skipped-obligations self-audit, returned by the outgoing architect seat with the provenance of three of the four; relayed 2026-08-31, approved in direction by @human"
 builder:
 review: independent

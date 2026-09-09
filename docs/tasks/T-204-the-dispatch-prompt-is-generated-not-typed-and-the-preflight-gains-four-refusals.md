@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e, method/roles]
+touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/brief.spec.ts, method/roles/orchestrator.md]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); every instance is this seat's own, reported by the lane that met it"
 builder:
 review:

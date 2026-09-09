@@ -7,7 +7,7 @@ milestone: 4
 priority: 3
 size: S
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/tests/brief.spec.ts]
 review: independent
 suggested_by: "executor claude-opus-5 @T-189, 2026-08-31 — AC 4 asked for a body and tools/e2e/tests/ is outside T-189's fence"
 ---

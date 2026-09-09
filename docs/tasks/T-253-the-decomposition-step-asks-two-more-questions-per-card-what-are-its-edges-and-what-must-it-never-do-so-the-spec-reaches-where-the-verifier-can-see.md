@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: "@human ruling (2026-09-08, second version sitting): \"approve the v1 three\" — GSD Core's edge probe and prohibition probe at spec time, \"verifier reach = spec reach\" (docs/design/verifier-reach.md; T-245's second pass)"
 blocked_by: []
-touches: [method/interview]
+touches: [method/interview/decomposition.md]
 builder:
 verifier:
 built_by:

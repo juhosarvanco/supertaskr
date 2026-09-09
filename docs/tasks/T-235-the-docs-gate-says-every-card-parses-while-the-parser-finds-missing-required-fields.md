@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "the architect/integrator seat, 2026-09-01 — met by reddening main's own merge commit, with the docs gate green over the same tree minutes earlier"
 blocked_by: []
-touches: [tools/e2e, lib/parser]
+touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts, lib/parser/src/task.ts]
 builder:
 verifier:
 built_by:

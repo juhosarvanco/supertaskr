@@ -7,7 +7,7 @@ priority: 3
 size: S
 status: planned
 blocked_by: []
-touches: [.claude, tools/e2e]
+touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 suggested_by: "T-210's executor, 2026-09-01 — found by measuring the failure its own card predicted and meeting a quieter one instead"
 builder:
 review: independent

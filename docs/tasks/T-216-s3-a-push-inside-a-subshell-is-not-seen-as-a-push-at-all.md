@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-216
 blocked_by: []
-touches: [.claude, tools/e2e]
+touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder:
 verifier:
 built_by:

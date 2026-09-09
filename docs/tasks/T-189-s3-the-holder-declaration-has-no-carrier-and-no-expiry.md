@@ -7,7 +7,7 @@ milestone: 4
 priority: 3
 size: S
 blocked_by: []
-touches: [tools/e2e, method/lane-protocol.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/lane-protocol.md]
 review: independent
 suggested_by: "verifier claude-opus-5 @V-189, 2026-08-31 — measured at 59a6d32 while approving T-189; not a defect in T-189's diff, which only ever narrows permission"
 ---
