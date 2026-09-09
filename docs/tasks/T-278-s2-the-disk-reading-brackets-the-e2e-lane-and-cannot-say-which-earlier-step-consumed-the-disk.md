@@ -335,3 +335,28 @@ The order assertion is **adjacency** (`found !== floorIndex - 1`), which is tigh
 `T-278-s9` and `T-278-s10`, both `status: suggested`, both with `suggested_by` and `touches`. Neither is a failure and neither withholds this approval.
 
 Signed **claude-opus-5@subagent (verifier, phase 2)**, 2026-09-09.
+
+#### Step 7 — the gates my own commits could move
+
+The verdict and the two cards are prose, and prose is a code input here. My
+commits touch only `docs/tasks/`, so `rust` cannot move and the other three
+can. Measured at my own tip `e9eed1d`, after the verdict commit `a24bdd4`:
+
+- `docs-gate.mjs` on the three paths I wrote — exit **1, FIRES** (suites
+  owed, the normal answer for a card write). **Every live task card's
+  frontmatter parses, with a legal status**; governing-document budgets
+  hold, 4 gated, 0 awaiting a landing; injection scan 0 hits in 3 paths
+  against 7 patterns, advisory.
+- `gate-run.mjs parser` — `exit=0 bodies=389 ref=e9eed1d verdict=GREEN`.
+- `gate-run.mjs app` — `exit=0 bodies=1171 ref=e9eed1d verdict=GREEN`.
+- The e2e bodies the docs gate itself names as readers of `docs/tasks/` —
+  `cli`, `landing-gate`, `push-checks`, `shell-frame`, `window-contract` —
+  **108 passed, exit 0**. `shell-frame` is where this lane's own illegal
+  `size:` surfaced as "Expected 60, Received 61", so it is the one that had
+  to be asked after two cards arrived.
+
+Both counts are unchanged from the reading at `b1c0a0c`, which is the
+answer I wanted and not one I assumed: two new cards moved no body count.
+The full `e2e` leg was measured at `b1c0a0c` (769, GREEN) and not re-run at
+`e9eed1d`; what I ran instead is the reader set the gate names, and I say
+which rather than imply the whole suite.
