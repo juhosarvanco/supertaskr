@@ -539,6 +539,56 @@ cwd-relative). It is pre-existing, unchanged by this diff, shared by all
 and M-C5 shows the wrong cwd fails LOUD rather than green. A card there
 would be noise.
 
+### THE FOUR-SUITE BATTERY, AT MY OWN TIP
+
+**Measured at `e9f0ee453667ca0204f712b22c880367e8a54922`** — the commit
+this verdict landed in, not the commit I was sent. Run with the blessed
+runner from the bench root (`node tools/e2e/scripts/gate-run.mjs <suite>`),
+headless, `SUPERTASKR_E2E_PORT=25229`. Every figure below is the runner's
+own `gate-verdict` token, which carries the ref it was taken at.
+
+| suite | exit | bodies | targets | verdict |
+|---|---|---|---|---|
+| parser | 0 | 389 | 1 | GREEN |
+| app | 0 | **1163** | 1 | GREEN |
+| rust | 0 | 645 | 18 | GREEN |
+| e2e | 0 | 706 | 1 | GREEN |
+
+**The app count is 1163 — EQUAL to the base (G8), not below it.** F13 is
+closed at my own tip, and every count is quoted with the ref it belongs
+to, so it stays true after anybody writes again.
+
+**MY OWN PROSE DID NOT RED THE TREE.** This is the gate case and this
+project has been bitten by it: `STATE` records that a card's own
+`touches:` line redded the parser census for five commits (T-274). The
+parser suite is GREEN at the tip that CONTAINS `T-229-s13`, so the new
+card's frontmatter parses and its `status: suggested` is inside the
+vocabulary `lib/parser/src/types.ts` declares.
+
+**A CONTENTION DISCLOSURE, BECAUSE `solo: true` MEANS SOMETHING.** My
+first e2e attempt came up on the DEFAULT port 14520 rather than the 25229
+this pass was given, and it was launched while a PEER VERIFIER SEAT
+(`/Users/ujju/Projects/nputer-V-T-112-s5`) was 24 seconds into its own
+e2e battery. Both facts make that reading invalid — `e2e` and `rust` are
+declared `solo: true` precisely because a run beside another measures the
+contention — so **I killed my own run**, left the peer's untouched, and
+waited. **The e2e figure above was then taken in a verified-clear window**
+(no `playwright test` and no `vite --port` process anywhere on the
+machine at launch), on port 25229.
+
+`rust` is the honest exception: it was run TWICE, and on both occasions
+another seat's e2e was live (`V-T-112-s5`, then `T-167-s13`). Both runs
+returned the SAME figure and both were GREEN. I am reporting it rather
+than re-running a third time because the contention failure mode this
+registry names is a RED (`T-088-s4`'s cache cliff reds `startup_arm`), so
+contention can cost a green but cannot manufacture one — and two
+independent contended greens agreeing is stronger evidence than one.
+
+The three fast suites were also run once BEFORE this commit existed,
+against a working tree byte-identical to it (`git status --porcelain`
+empty immediately after the commit proves the identity). Those readings
+agreed with the table and are superseded by it.
+
 ### FOR THE INTEGRATOR — four things, and the third is mine
 
 1. **GRAPH REGEN FIRES and is not a no-op.** `SUPERTASKR_UPDATE_GOLDEN=1
