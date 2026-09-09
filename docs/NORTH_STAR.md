@@ -5,7 +5,7 @@ A product idea becomes a thoroughly planned roadmap broken into exact,
 dispatchable tasks, then governed multi-model execution of it — with the
 project folder as the complete, successor-proof record. The better
 builder models get, the more the bottleneck is knowing what to build.
-The interview is the product; the pipeline is the proof.
+The product is the whole loop; the proof is a repository it built.
 
 ## Users
 **First user: the technical builder** — has an AI coding agent CLI

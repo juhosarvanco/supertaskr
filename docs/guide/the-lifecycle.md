@@ -22,7 +22,8 @@ every finding becomes a new card.
 *The industry:* defining user needs, core problems and project goals
 through collaborative user stories.
 
-*Supertaskr:* **the interview is the product.** A project begins with
+*Supertaskr:* **requirements are interviewed out, never written down
+from memory.** A project begins with
 seven questions asked one at a time — the problem and the person, what
 success measurably means, the non-goals, the constraints, the stack
 and why, the riskiest assumption, the first slice — and each answer is

@@ -6,7 +6,7 @@
 > dispatchable tasks, then governed multi-model execution of it — with the
 > project folder as the complete, successor-proof record. The better
 > builder models get, the more the bottleneck is knowing what to build.
-> The interview is the product; the pipeline is the proof.
+> The product is the whole loop; the proof is a repository it built.
 > — [docs/NORTH_STAR.md](docs/NORTH_STAR.md)
 
 This repository is built by the method it ships. Every claim below has a
@@ -38,10 +38,11 @@ You bring the agents you already have.
 
 ## Why it hits different
 
-**The interview is the product.** Seven questions turn an idea into the
-five governing documents and the first dispatchable cards. Thirty minutes
-from "I have an idea" to a board an agent can start on. Not a settings
-screen. Not a template. An interview that gets sharper every time it runs.
+**It starts with a conversation, not a form.** Seven questions turn an
+idea into the five governing documents and the first dispatchable cards.
+Thirty minutes from "I have an idea" to a board an agent can start on.
+Weak answers get challenged, not transcribed, and the interview gets
+sharper every time it runs.
 
 **Parallel by construction, not by hope.** Every card declares the files it
 will touch. Every lane gets its own branch, worktree and write hook. Two

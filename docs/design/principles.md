@@ -1,9 +1,9 @@
 # Product principles — decisions of record (pre-market-research)
 
 ## The four magic principles
-1. **The interview is the product.** Facilitation craft, encoded —
-   challenge weak answers, never transcribe them. Polish relentlessly;
-   keep everything else thin.
+1. **Facilitation is a craft, and it is encoded.** Challenge weak
+   answers, never transcribe them; an answer is banked only once it has
+   survived the challenge. Polish the interview relentlessly.
 2. **Zero-config gradient.** One installed model → everything defaults
    to it. Advanced (multi-model roles) is revealed, never required.
    Magic dies at the first mandatory config.
