@@ -578,3 +578,20 @@ CREATED, not at the one I was sent, and their exits are recorded in the report
 accompanying this verdict. **Every figure in §1 is stamped at `4327aff`** and is
 stale at my own tip by exactly the three files I wrote — none of which any suite
 counts as a body.
+
+**The gates, re-run at `651e7e4` — the commit this verdict and the two suggestion
+cards created.** `docs-gate.mjs` handed the three literal paths I wrote FIRES
+(exit 1) and names three suites; all three are GREEN at that commit:
+
+| gate at `651e7e4` | bodies | exit |
+|---|---|---|
+| `gate-run.mjs parser` (the census reads every card) | 389 | 0 |
+| `gate-run.mjs app` | 1171 | 0 |
+| `SUPERTASKR_E2E_PORT=25278 … gate-run.mjs e2e` | 742 | 0 |
+| `npm run lint:docs` (whole-tree half) | — | 0 |
+| `docs-gate.mjs <my 3 paths>` | — | 1, FIRES, *every live task card's frontmatter parses, with a legal status*; injection scan 0 hits; ADR-019 budgets hold |
+| `npm run capabilities:check` | — | 1, STALE, unchanged by prose — still the integrator's, in the merge commit |
+
+The only commit after `651e7e4` is this paragraph, appended to the same card: it
+moves no frontmatter field and no test name, and the parser suite that reads every
+card was green over this card's frontmatter one commit earlier.
