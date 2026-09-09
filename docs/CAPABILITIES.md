@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **803 behaviours** — 801 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **807 behaviours** — 805 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -121,6 +121,10 @@ Census: **803 behaviours** — 801 extracted sentences + 2 named-not-extracted (
 - THE DEFAULT VIEW IS ONE COUNTED LINE AND `--full` IS THE PAGE, and every line carries its stamp
 - THE VIEW IS A READ — it derives the live board and writes nothing into it
 - THE TRIAGE CLUSTERS REACH THE RENDERED ANSWER — `--dispatch --full` carries the section, and the default view does not
+- T-283 C1 — the follow-through SIZE limit states what is counted and what to do at the boundary
+- T-283 C2 — `inside the fence` is determined by the dispatch-time MANIFEST, in both files that say it
+- T-283 C3 — a LISTED follow-through is checked against the limits, never waved through for being listed
+- T-283 C4 — the file carrying the BASE-REF ruling names the follow-through carve-out that amends it
 
 ## card-figures
 

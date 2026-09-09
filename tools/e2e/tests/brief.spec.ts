@@ -4867,3 +4867,126 @@ test("THE TRIAGE CLUSTERS REACH THE RENDERED ANSWER — `--dispatch --full` carr
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+/**
+ * T-283's VERDICT CORRECTIONS (verifier, phase 2, bench /Users/ujju/Projects/nputer-V-T-283).
+ *
+ * The in-fence follow-through rule lands wholly in method PROSE, and the
+ * method eval gate is blind to its substance — nine one-side data mutants
+ * on the rule leave `node tools/method-evals/run.mjs` at exit 0, measured
+ * both by the lane and again here (only MF-04's PATH check reds, and only
+ * on a citation's path, never on its ordinal). These four bodies are the
+ * kill set the verdict assigns: each one is RED against the text as it
+ * landed at afd454b and GREEN against the corrected text the verdict
+ * prescribes. They are FLATTENED before they are searched, because every
+ * method file here wraps at about 70 columns and a phrase search is
+ * otherwise a search for a line break nobody chose.
+ */
+const flat = (s: string) => s.replace(/\s+/g, " ");
+/** The text between two anchors of a role file, flattened. */
+function methodSpan(rel: string, from: string, to: string | null) {
+  const md = readFileSync(path.join(repoRoot, rel), "utf8");
+  const a = md.indexOf(from);
+  expect(a, `${rel} no longer carries the anchor ${JSON.stringify(from)}`).toBeGreaterThan(-1);
+  const b = to === null ? md.length : md.indexOf(to, a);
+  expect(b, `${rel} no longer carries the closing anchor ${JSON.stringify(to)}`).toBeGreaterThan(-1);
+  return flat(md.slice(a, b));
+}
+const FOLLOW_THROUGH = "AND THAT RULE ROUTES OUT WHAT THE FENCE FORBIDS";
+
+test("T-283 C1 — the follow-through SIZE limit states what is counted and what to do at the boundary", () => {
+  // KILLED BY: `fewer than about twenty lines` standing alone. "About" with
+  // no unit and no tie-break is unbounded upward under pressure: one change
+  // of +5/-3 is a 5, an 8 or a 2 depending on which reading a tired seat
+  // takes, and three follow-throughs of 15 lines are 15 or 45 depending on
+  // whether the limit is per follow-through or per lane. A limit nobody can
+  // count is a limit in name only.
+  const step5 = methodSpan("method/roles/executor.md", FOLLOW_THROUGH, "6. Commit with the task id");
+  expect(step5, "executor.md's follow-through rule states no size limit at all").toMatch(/twenty lines/);
+  expect(
+    step5,
+    "the size limit names no COUNTING UNIT — added, removed, or added plus removed is left to the " +
+      "reader, and one change yields three defensible numbers",
+  ).toMatch(/added (?:plus|and) removed/i);
+  expect(
+    step5,
+    "the size limit does not say whether it is counted PER FOLLOW-THROUGH or per lane, so three " +
+      "small ones and one large one are indistinguishable under it",
+  ).toMatch(/per follow-through/i);
+  expect(
+    step5,
+    "the size limit carries no TIE-BREAK, so `about twenty` decides nothing at 20, 25 or 30 and " +
+      "the executor certifying its own work is the only reader",
+  ).toMatch(/(?:in doubt|arguable|cannot tell)[^.]*file the card/i);
+});
+
+test("T-283 C2 — `inside the fence` is determined by the dispatch-time MANIFEST, in both files that say it", () => {
+  // KILLED BY: executor.md's `your armed fence` — a term that appears
+  // nowhere else in method/, whose only neighbouring vocabulary (`armed`,
+  // `re-armed`) names the PHYSICAL LAYER and not the fence — beside
+  // lane-protocol.md's `the lane's own touches:`, which rule 5 itself
+  // forbids a lane to compute for itself four paragraphs later: *"the
+  // expansion happens at dispatch and not at the write because a lane that
+  // computes its own fence can compute a wider one"*. Two files, two
+  // determiners, neither naming the manifest that actually decides.
+  const step5 = methodSpan("method/roles/executor.md", FOLLOW_THROUGH, "6. Commit with the task id");
+  const rule5 = methodSpan(
+    "method/lane-protocol.md",
+    "AND THE CONVERSE IS THE OTHER HALF OF THE SAME RULE",
+    "**A FENCE NAMES PATHS.",
+  );
+  expect(
+    step5,
+    "executor.md decides `inside the fence` by a term it never defines — the fence the follow-through " +
+      "must lie inside is the MANIFEST written at dispatch, and the file must say so",
+  ).toMatch(/manifest/i);
+  expect(
+    rule5,
+    "lane-protocol.md's converse clause decides `inside the fence` without naming the manifest, " +
+      "which invites the lane to read its own `touches:` — the one computation rule 5 forbids it",
+  ).toMatch(/manifest/i);
+});
+
+test("T-283 C3 — a LISTED follow-through is checked against the limits, never waved through for being listed", () => {
+  // KILLED BY: a verifier text whose only stated duty about the list is
+  // that an UNLISTED change is a finding. Then the heading launders: an
+  // out-of-fence or oversized remedy acquires legitimacy by appearing
+  // under it, and the two limits no machinery enforces — the size and the
+  // no-new-criterion clause — have no reader at all.
+  const step6 = methodSpan(
+    "method/roles/verifier.md",
+    "AND THE EXECUTOR'S OWN VERSION OF THAT RULE NOW STOPS AT ITS FENCE",
+    "7. **Re-run whatever gate",
+  );
+  expect(step6, "verifier.md does not make an undeclared change a finding").toMatch(/DOES NOT NAME IS A FINDING/);
+  expect(
+    step6,
+    "verifier.md tells the seat to flag what the list omits and never to CHECK what it contains, so " +
+      "the heading is a licence rather than a declaration — an entry outside the fence, adding a " +
+      "criterion, or over the size must be a finding exactly as an unlisted change is",
+  ).toMatch(/never a licence|checked against the (?:three )?limits/i);
+});
+
+test("T-283 C4 — the file carrying the BASE-REF ruling names the follow-through carve-out that amends it", () => {
+  // KILLED BY: executor.md's brief rules still saying the verifier reads
+  // "the card without this role's notes", which T-283 makes false in the
+  // same diff — verifier.md step 6 now reads the `In-fence follow-through`
+  // list from those notes, at the TIP. The ruling paragraph is inside this
+  // lane's own fence and was left standing. Two descriptions of one rule
+  // are two rules the day one of them is corrected, which is this method's
+  // own stated failure mode, committed in the paragraph that states it.
+  const ruling = methodSpan(
+    "method/roles/executor.md",
+    "THE VERIFIER READS THE CARD THIS ROLE WRITES INTO",
+    null,
+  );
+  expect(ruling, "executor.md no longer carries the base-ref ruling this body grades").toMatch(
+    /the card without this role's notes/,
+  );
+  expect(
+    ruling,
+    "the base-ref ruling still reads as complete while verifier.md step 6 now reads part of these " +
+      "notes AT THE TIP — the ruling must name the `In-fence follow-through` carve-out and the ref " +
+      "it is read at, or the two files contradict each other on their face",
+  ).toMatch(/In-fence follow-through/);
+});
