@@ -12,7 +12,9 @@ side. This file is touched only when an INTERFACE moves.
 ## System map
 ```mermaid
 graph TD
-  M["method/ convention"] --> A["app: Tauri shell + panes (front door, ADR-008)"]
+  M["method/ convention"] --> S["the user's agent app + the seat skill (front door, ADR-021)"]
+  S --> C
+  S --> A["app: the Tauri mirror — panes over files (ADR-021)"]
   M --> C["CLI: plumbing — init/next/verify/merge/status"]
   A --> P["lib-parser"]
   C --> P
@@ -26,10 +28,10 @@ graph TD
 | ID | Component | Responsibility | Depends on | Status |
 |----|-----------|----------------|------------|--------|
 | C-01 | method/ | The convention: templates, formats, roles, interviews, docs-protocol | — | built (v0.1.10) |
-| C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
+| C-02 | CLI | The loop's machinery (ADR-021): dispatch, the gates, merge, undo — what the seat and interview skills call; spawns nothing | C-01, C-06 | planned |
 | C-03 | Runtime | supertaskr.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the docs watcher. History: the cards T-001…T-149 and `git show a6491e6` | C-01, C-06, C-07 | building |
+| C-05 | App | The mirror (ADR-021): Tauri shell + panes over files beside the agent app; hosts the docs watcher; spawns nothing. History: the cards T-001…T-149 and `git show a6491e6` | C-01, C-06, C-07 | building |
 | C-06 | lib-parser | Pure library: docs → typed model; browser-safe exports; owns the fence (`fence.ts`, T-134) and the id layer. History: the cards and `git show a6491e6` | C-01 | verified |
 | C-07 | supertaskr-index | Rust crate + binary: code → committed graph (TS/JS/Rust); `index --check`, `arch`/`drift`/`cycles`/`blast`; depth-bounded (T-129); budget 1,040,000 bytes with a measured reason (T-139) — headroom derived with `index --check`, never quoted | — | building |
 
@@ -143,7 +145,7 @@ ADR-014/015).
   `blocked_by` waves and needs nothing from C-07 (T-034).
 
 ## Related decisions
-decisions/001–019. 007 (stack) and 008 (app-first) shape the map
+decisions/001–019. 007 (stack) and 021 (the agent app as the front door, superseding 008's app-first) shape the map
 above; 011 fixes the app → parser wiring (file: dep, no root
 workspace); 012 keeps native OS surfaces Rust-side (webview grant set
 stays empty, pinned by acl_pin.rs); 013–015 charter the architecture

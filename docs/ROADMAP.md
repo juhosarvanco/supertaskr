@@ -13,7 +13,7 @@ file, 1,199 lines of per-card chronicle, is permanently readable at
 `git show 08aef1c:docs/ROADMAP.md`, and every paragraph it carried
 opens with the card id that still holds its story.
 
-## Backbone (revised per ADR-008 — app-first)
+## Backbone (revised per ADR-021 — the skill in the agent app is the front door, the app is the mirror)
 
 - F-01: Method — the convention itself (method/), usable by hand.
   Runs this project daily: lanes, fences, verdicts, checkpoints, and
@@ -176,7 +176,7 @@ THE OTHERS ARE NOT, and hands you the exact brief and lane commands.
 Deliberately, not one card in it spawns a process (milestone 3's own
 hand-driven-first precedent, one role over).
 Rulings and standing facts: D1 ruled 2026-08-19; D2 taken (dispatch
-is C-15, slug `app-dispatch`); D3 ruled, D5 open. Most cards carrying
+is C-15, slug `app-dispatch`); D3 and D5 ruled 2026-08-30. Most cards carrying
 `milestone: 4` are inherited backlog rather than slice content — a
 known, accepted cost of the ruling, and the count is a DERIVATION, not
 a figure this file keeps; a milestone census and a board census answer
