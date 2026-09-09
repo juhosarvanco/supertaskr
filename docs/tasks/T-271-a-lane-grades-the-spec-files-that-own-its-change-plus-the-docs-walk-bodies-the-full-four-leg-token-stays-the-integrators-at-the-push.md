@@ -5,13 +5,13 @@ feature: F-06
 milestone: 4
 size: S
 priority: 29
-status: building
+status: verifying
 suggested_by: "@human, 2026-09-09: \"We need to make changes like these faster and more token efficient\" → \"file the first two\"; measured on T-224's fix passes (each seat ran the full battery: ~11 min, the e2e leg ~10 of them, for a change in one hook and one spec)"
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, tools/e2e/tests/gate-run.spec.ts, docs/CONVENTIONS.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review: independent
 ---
